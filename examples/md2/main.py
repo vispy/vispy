@@ -27,12 +27,10 @@ from renderer.scene.scene_node import SceneNode
 from renderer.scene.render_callback_node import RenderCallbackNode
 from renderer.fps_camera import FPS_Camera
 from renderer.six_dof_camera import SixDOF_Camera
+from input.keyboard import Keyboard
+from input.mouse import Mouse
 from mesh.md2_mesh import MD2_Mesh
 #from mesh.oai_mesh import OAI_Mesh
-#from voxel.SVO import SVO
-
-from input.Keyboard import Keyboard
-from input.Mouse import Mouse
 
 
 # TODO: write a sierpinski drawing program using bit drawing
@@ -59,11 +57,8 @@ class Application( object ):
             )
         
         # create our input devices
-        self.keyboard = Keyboard()
-        self.keyboard.attachToWindow( self.window )
-        
-        self.mouse = Mouse()
-        self.mouse.attachToWindow( self.window )
+        self.keyboard = Keyboard( self.window )
+        self.mouse = Mouse( self.window )
         
         # create our renderer
         self.renderer = Renderer( self.window )
@@ -149,7 +144,7 @@ class Application( object ):
     def initialise_mesh( self ):
         self.mesh = MD2_Mesh(
         #self.mesh = OAI_Mesh(
-            r'example/data/sydney.md2'
+            r'examples/data/sydney.md2'
             )
         print 'Loading mesh'
         self.mesh.load()
@@ -157,7 +152,7 @@ class Application( object ):
         
         # load the texture
         #self.image = pyglet.image.load(
-        #    #r'C:\Users\adam\workspace\python\3d_engine\test_app\src\data\sydney-scaled.bmp'
+        #    #r'examples/data/sydney-scaled.bmp'
         #    )
         #self.texture = self.image.get_texture( rectangle = False )
         
@@ -220,7 +215,7 @@ class Application( object ):
         
         # camera rotation
         # FPS camera
-        mouse_relative = self.mouse.mouseRel
+        mouse_relative = self.mouse.relative_position
         mouse_speed = (1.0 / 3.0) * 0.02
         
         frame_pitch = math.pi * mouse_speed * mouse_relative[ 1 ]# * dt
@@ -233,7 +228,7 @@ class Application( object ):
         self.camera_controller.orient( pitch = frame_pitch, yaw = frame_yaw )
         
         # reset our mouse relative position
-        self.mouse.clearRelativeValue()
+        self.mouse.clear_delta()
         
         # set the ambient light
         glEnable( GL_LIGHTING )
