@@ -22,6 +22,7 @@ import maths.quaternion
 import maths.matrix33
 from renderer.renderer import Renderer
 from renderer.viewport import Viewport
+from renderer.window import Window
 from scene.camera_node import CameraNode
 from scene.scene_node import SceneNode
 from scene.render_callback_node import RenderCallbackNode
@@ -41,7 +42,10 @@ class Application( object ):
     def __init__( self ):
         super( Application, self ).__init__()
         
-        # create our window
+        # create our renderer
+        self.renderer = Renderer()
+        
+        # setup our opengl requirements
         config = pyglet.gl.Config(
             sample_buffers = 1,
             samples = 4,
@@ -49,19 +53,35 @@ class Application( object ):
             double_buffer = True
             )
         #config = None
-        self.window = pyglet.window.Window(
-            fullscreen = False,
-            width = 1024,
-            height = 768,
-            config = config
+
+        # create our window
+        self.window = Window(
+            self.renderer,
+            pyglet.window.Window(
+                fullscreen = False,
+                width = 1024,
+                height = 768,
+                config = config
+                )
+            )
+        self.renderer.add_window( self.window )
+
+        # create a viewport
+        self.viewport = Viewport(
+            window = self.window,
+            rect = (0.0, 0.0, 1.0, 1.0),
+            z_value = 1
+            )
+
+        self.sub_viewport = Viewport(
+            window = self.window,
+            rect = (0.7, 0.0, 0.3, 0.3),
+            z_value = 2
             )
         
         # create our input devices
         self.keyboard = Keyboard( self.window )
         self.mouse = Mouse( self.window )
-        
-        # create our renderer
-        self.renderer = Renderer( self.window )
         
         # setup our update loop the app
         frequency = 60.0
@@ -110,7 +130,8 @@ class Application( object ):
         self.camera_controller.camera = self.camera
         
         # set it as the primary camera
-        self.renderer.viewport.set_camera( camera )
+        self.viewport.set_camera( camera )
+        self.sub_viewport.set_camera( camera )
         
         # move our nodes
         
@@ -122,17 +143,22 @@ class Application( object ):
         self.mesh_node.rotate_quaternion( quat )
         
         
-        glShadeModel(GL_SMOOTH)
-        
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
-        glEnable(GL_NORMALIZE)
+        # set the opengl settings for each viewport
+        for viewport_tuple in self.window.viewports:
+            viewport = viewport_tuple[ 1 ]
+            viewport.set_active()
 
-        glLightfv(GL_LIGHT1, GL_AMBIENT, (GLfloat * 4)(*[0.5, 0.5, 0.5, 1.0]) )
-        glLightfv(GL_LIGHT1, GL_DIFFUSE, (GLfloat * 4)(*[1.0, 1.0, 1.0, 1.0]) )
-        glLightfv(GL_LIGHT1, GL_POSITION, (GLfloat * 4)(*[0.0, 0.0, 15.0, 1.0]) )
-        glEnable(GL_LIGHT1)
+            glShadeModel(GL_SMOOTH)
+            
+            glEnable(GL_LIGHTING)
+            glEnable(GL_LIGHT0)
+            glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
+            glEnable(GL_NORMALIZE)
+
+            glLightfv(GL_LIGHT1, GL_AMBIENT, (GLfloat * 4)(*[0.5, 0.5, 0.5, 1.0]) )
+            glLightfv(GL_LIGHT1, GL_DIFFUSE, (GLfloat * 4)(*[1.0, 1.0, 1.0, 1.0]) )
+            glLightfv(GL_LIGHT1, GL_POSITION, (GLfloat * 4)(*[0.0, 0.0, 15.0, 1.0]) )
+            glEnable(GL_LIGHT1)
     
     def initialise_grid( self ):
         self.grid_display_list = generate_grid_display_list( (10, 10), (20, 20) )
@@ -172,6 +198,12 @@ class Application( object ):
             self.mesh.frame = frame
             self.animation_time = 0.0
         """
+        
+        # set the ambient light
+        glEnable( GL_LIGHTING )
+        ambient = [ 0.8, 0.8, 0.8, 1.0 ]
+        glAmbient = ( GLfloat * 4 )( *ambient )
+        glLightModelfv( GL_LIGHT_MODEL_AMBIENT, glAmbient )
         
         self.mesh.render()
         
@@ -229,12 +261,6 @@ class Application( object ):
         
         # reset our mouse relative position
         self.mouse.clear_delta()
-        
-        # set the ambient light
-        glEnable( GL_LIGHTING )
-        ambient = [ 0.8, 0.8, 0.8, 1.0 ]
-        glAmbient = ( GLfloat * 4 )( *ambient )
-        glLightModelfv( GL_LIGHT_MODEL_AMBIENT, glAmbient )
         
         # render the scene
         self.renderer.render()
