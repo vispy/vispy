@@ -22,11 +22,11 @@ import maths.quaternion
 import maths.matrix33
 from renderer.renderer import Renderer
 from renderer.viewport import Viewport
-from renderer.scene.camera_node import CameraNode
-from renderer.scene.scene_node import SceneNode
-from renderer.scene.render_callback_node import RenderCallbackNode
-from renderer.fps_camera import FPS_Camera
-from renderer.six_dof_camera import SixDOF_Camera
+from scene.camera_node import CameraNode
+from scene.scene_node import SceneNode
+from scene.render_callback_node import RenderCallbackNode
+from scene.fps_camera import FPS_Camera
+from scene.six_dof_camera import SixDOF_Camera
 from input.keyboard import Keyboard
 from input.mouse import Mouse
 from mesh.md2_mesh import MD2_Mesh
