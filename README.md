@@ -4,10 +4,10 @@ PyGLy
 PyGLy is a flexible OpenGL framework that sits ontop of Pyglet.
 
 PyGLy's aims are:
--To NOT be an engine
--To NOT force any one method upon the user
--To be as flexible as possible
--To not hide functionality
+    * To NOT be an engine
+    * To NOT force any one method upon the user
+    * To be as flexible as possible
+    * To not hide functionality
 
 PyGLy is in active development and is currently alpha software, but is already usable for many situations.
 
@@ -29,9 +29,9 @@ Installation
 
 PyGLy requires the following software:
 
--Python 2(.6?)+
--Pyglet
--NumPy
+    * Python 2(.6?)+
+    * Pyglet
+    * NumPy
 
 
 Usage
