@@ -19,10 +19,16 @@ PyGLy is perfect for you.
 Features
 -------------
 
-   * Scene graph
-   * Multiple viewports
-   * MD2 loading and animation
-   * Rendering callbacks to allow full control
+   * Cross-platform - actively developed on Windows and OS-X.
+   * Modular design - Take almost any part of PyGLy and use it on its own.
+   * Framework design, not an engine - Don't like an existing class? Don't use it!
+   * Multiple Window and viewport support.
+   * Multiple parallel scene graphs.
+   * Full control over rendering process.
+   * Maths helper classes - Quaternion, Matrix, Vectors.
+   * NumPy - Translate vectors and matrices en-masse.
+   * Mesh loading support - MD2 loading and animation only at the moment.
+   * Liberal licensing - Do what you want.
 
 
 Installation
