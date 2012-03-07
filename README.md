@@ -5,10 +5,14 @@ PyGLy is a flexible OpenGL framework that sits ontop of Pyglet.
 
 PyGLy's aims are:
 
+   * Fix deficiencies in existing 3D libraries
+   * Be fast to develop for
+   * Maintain full user control over the rendering process
+   * To not hide functionality
+   * To have modules as loosely coupled as is feasible
+   * To be as flexible as possible
    * To NOT be an engine
    * To NOT force any one method upon the user
-   * To be as flexible as possible
-   * To not hide functionality
 
 PyGLy is in active development and is currently alpha software, but is already usable for many situations.
 
@@ -28,6 +32,7 @@ Features
    * Maths helper classes - Quaternion, Matrix, Vectors.
    * NumPy - Translate vectors and matrices en-masse.
    * Mesh loading support - MD2 loading and animation only at the moment.
+   * Duck-typing - Replace any class with your own. Just meet the minimal inter-object contracts.
    * Liberal licensing - Do what you want.
 
 
