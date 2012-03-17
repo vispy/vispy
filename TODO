@@ -33,4 +33,6 @@ SceneManagement: implement octree
 Lights: add light nodes
 Textures: implement mipmaps
 
-
+Unspecified module
+Add shader support
+Add shadow projections
