@@ -1,8 +1,5 @@
 Render Module
-Window: Change Window class into simple functions as the class does nothing.
 Window: make most of these into useful helper / optional functions.
-Window: Remove 'set_active' and just use pyglets function.
-Viewport: Rename set_active to 'switch_to' to match Pyglet's window function.
 Picking: render a 1x1 viewport, assign unique colours to each mesh, pull value out of render buffer.
 
 Mesh Module
@@ -10,7 +7,6 @@ MD2: Check if numpy usage in MD2.py is actually slowing loading down.
 OAI: Clean up OAI partially implemented code
 UV_Generators: Add some more commenting, these can be complex.
 UV_Generators: Split planar uv_generator into 2 classes, one that uses vertex position, another that uses vertex normals.
-
 
 Scene Module
 RenderNode: Remove as it does nothing.
