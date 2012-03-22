@@ -9,7 +9,6 @@ UV_Generators: Add some more commenting, these can be complex.
 UV_Generators: Split planar uv_generator into 2 classes, one that uses vertex position, another that uses vertex normals.
 
 Scene Module
-RenderNode: Remove as it does nothing.
 RenderCallbackNode: Call a new callback when context is lost. This will prevent multiple initialisations for shared
 callbacks.
 SceneNode: add inheritance of scale down the scene graph.
@@ -32,3 +31,4 @@ Textures: implement mipmaps
 Unspecified module
 Add shader support
 Add shadow projections
+Add support for using PyGLy as a Cocos2D layer
