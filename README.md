@@ -51,7 +51,7 @@ PyGLy requires the following software:
 Usage
 -----------------------
 
-Check the pygly/examples directory for for some example code.
+Check the 'examples' directory for for some example code.
 
 
 License
