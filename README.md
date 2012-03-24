@@ -32,7 +32,7 @@ Features
    * Full control over rendering process.
    * Maths helper classes - Quaternion, Matrix, Vectors.
    * NumPy - Translate vectors and matrices en-masse.
-   * Mesh loading support - MD2 loading and animation only at the moment.
+   * Mesh loading support - Basic support for: MD2, OBJ.
    * Duck-typing - Replace any class with your own. Just meet the minimal inter-object contracts.
    * Liberal licensing - Do what you want!
    * Active development - Being developed for games.
