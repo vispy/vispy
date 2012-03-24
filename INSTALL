@@ -1,0 +1,8 @@
+Install PyGLy
+=============
+Install python 2.7.x 32-bit
+Install cython (needed for pyglet)
+Install pil
+Install numpy
+Install pyglet
+
