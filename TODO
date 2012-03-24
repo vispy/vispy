@@ -4,6 +4,9 @@ Picking: render a 1x1 viewport, assign unique colours to each mesh, pull value o
 
 Mesh Module
 MD2: Check if numpy usage in MD2.py is actually slowing loading down.
+MD2: Optimise the list -> opengl code. Pushing into opengl is very slow.
+MD2: read vertices directly into opengl instead of via numpy
+http://www.pyglet.org/doc/programming_guide/using_opengl.html
 OAI: Clean up OAI partially implemented code
 UV_Generators: Add some more commenting, these can be complex.
 UV_Generators: Split planar uv_generator into 2 classes, one that uses vertex position, another that uses vertex normals.
