@@ -19,7 +19,7 @@ def initialise_mesh():
         return
 
     mesh = MD2_Mesh(
-        r'examples/data/sydney.md2'
+        r'examples/data/md2/sydney.md2'
         )
     print 'Loading mesh'
     mesh.load()
@@ -27,7 +27,7 @@ def initialise_mesh():
     
     # load the texture
     #image = pyglet.image.load(
-    #    #r'examples/data/sydney-scaled.bmp'
+    #    #r'examples/data/md2/sydney.bmp'
     #    )
     #texture = image.get_texture( rectangle = False )
     
