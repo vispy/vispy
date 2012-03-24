@@ -3,18 +3,17 @@ PyGLy
 
 PyGLy is a flexible OpenGL framework that sits ontop of Pyglet.
 
-PyGLy's aims are:
-
-   * Fix deficiencies in existing 3D libraries
-   * Be fast to develop for
-   * Maintain full user control over the rendering process
-   * To not hide functionality
-   * To have modules as loosely coupled as is feasible
-   * To be as flexible as possible
-   * To NOT be an engine
-   * To NOT force any one method upon the user
-
-PyGLy is in active development and is currently alpha software, but is already usable for many situations.
+PyGLy's core values are the following:
+   * FRAMEWORK, not an engine. Program any way you want.
+   * FLEXIBLE, don't force any one method upon the user
+   * FULL CONTROL at all times. Full access to rendering, objects, data. No obfuscation. No 'awesome' tricks. Just good, simple code.
+   * EASY INSTALLATION. No crazy C++ bindings and complex build procedures.
+   * EXPOSE as much funcitonality as possible. Lower classes are always accessible or usable on their own.
+   * LOOSE COUPLING. Code designed to be reused in various sitations.
+   * OPTIONAL high level classes. Low level code is always usable. High level API is optional.
+   * EXAMPLES of high quality.
+   * PYTHON to the core.
+   * SPEED in development. Provide convenience functions where it makes sense.
 
 If you want to experiement with OpenGL without having to worry about writing camera's, viewports and scene graphs. Then
 PyGLy is perfect for you.
@@ -24,6 +23,7 @@ Features
 -------------
 
    * Cross-platform - actively developed on Windows and OS-X.
+   * Easy to install - Written in pure python and making use of Pyglet for windowing.
    * Modular design - Take almost any part of PyGLy and use it on its own.
    * Framework design, not an engine - Don't like an existing class? Don't use it!
    * Multiple Window and viewport support.
@@ -33,7 +33,8 @@ Features
    * NumPy - Translate vectors and matrices en-masse.
    * Mesh loading support - MD2 loading and animation only at the moment.
    * Duck-typing - Replace any class with your own. Just meet the minimal inter-object contracts.
-   * Liberal licensing - Do what you want.
+   * Liberal licensing - Do what you want!
+   * Active development - Being developed for games.
 
 
 Installation
