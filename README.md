@@ -4,6 +4,7 @@ PyGLy
 PyGLy is a flexible OpenGL framework that sits ontop of Pyglet.
 
 PyGLy's core values are the following:
+
    * FRAMEWORK, not an engine. Program any way you want.
    * FLEXIBLE, don't force any one method upon the user
    * FULL CONTROL at all times. Full access to rendering, objects, data. No obfuscation. No 'awesome' tricks. Just good, simple code.
