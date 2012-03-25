@@ -170,7 +170,7 @@ class Application( object ):
         renderer.window.render( self.window, viewports )
 
         # render the fps
-        self.display_fps.draw()
+        self.fps_display.draw()
         
         # display the frame buffer
         self.window.flip()
