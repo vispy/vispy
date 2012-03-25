@@ -7,8 +7,12 @@ MD2: Check if numpy usage in MD2.py is actually slowing loading down.
 MD2: Optimise the list -> opengl code. Pushing into opengl is very slow.
 MD2: read vertices directly into opengl instead of via numpy
 http://www.pyglet.org/doc/programming_guide/using_opengl.html
+MD2: Convert to Pyglet vertex lists
+http://www.pyglet.org/doc/programming_guide/vertex_lists.html
+http://www.pyglet.org/doc/api/pyglet.graphics-module.html#vertex_list_indexed
 OBJ: implement as much of the Wavefront OBJ spec was possible
 http://www.martinreddy.net/gfx/3d/OBJ.spec
+OBJ: perhaps convert trifans to triangles and draw using pyglet vertexlist
 OAI: Clean up OAI partially implemented code
 UV_Generators: Add some more commenting, these can be complex.
 UV_Generators: Split planar uv_generator into 2 classes, one that uses vertex position, another that uses vertex normals.
@@ -33,6 +37,8 @@ Collision: object picking via mesh
 SceneManagement: implement octree
 Lights: add light nodes
 Textures: implement mipmaps
+Text: Implement text label nodes
+Text: Implement billboard and sprite text labels (fixed rotation, facing)
 
 Unspecified module
 Add shader support
