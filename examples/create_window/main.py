@@ -38,6 +38,7 @@ class Application( object ):
         # we'll render at 60 fps
         frequency = 60.0
         self.update_delta = 1.0 / frequency
+        self.fps_display = pyglet.clock.ClockDisplay()
         # use a pyglet callback for our render loop
         pyglet.clock.schedule_interval(
             self.step,
@@ -53,6 +54,9 @@ class Application( object ):
         # render the scene
         viewports = []
         renderer.window.render( self.window, viewports )
+
+        # render the fps
+        self.fps_display.draw()
 
         # display the frame buffer
         self.window.flip()
