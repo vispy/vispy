@@ -52,7 +52,6 @@ class Application( object ):
         # over-ride the viewports setup method
         # so we can set some opengl states
         self.viewport.setup_viewport = self.setup_viewport
-        self.viewport.tear_down_viewport = self.tear_down_viewport
         
         # setup our scene
         self.setup_scene()
@@ -89,7 +88,7 @@ class Application( object ):
         self.scene_node.add_child( self.mesh_node )
 
         # move the mesh so we can see it
-        self.mesh_node.translate_object_z( -80.0 )
+        self.mesh_node.translate_object_z( -30.0 )
         
         # rotate the mesh so we can see it
         self.mesh_node.rotate_object_x( math.pi / 4.0 )
@@ -109,33 +108,13 @@ class Application( object ):
         
         # set the viewports camera
         self.viewport.set_camera( self.scene_node, self.camera )
-        
-    def setup_viewport( self ):
-        # use the z-buffer when drawing
-        glEnable( GL_DEPTH_TEST )
-
-        # normalise any normals for us
-        glEnable( GL_NORMALIZE )
-
-        # enable smooth shading
-        # instead of flat shading
-        glShadeModel( GL_SMOOTH )
-            
-        # setup lighting for our viewport
-        glEnable( GL_LIGHTING )
-
-        # set our ambient lighting
-        glAmbient = glLightModelfv(
-            GL_LIGHT_MODEL_AMBIENT,
-            (GLfloat * 4)( *[ 0.8, 0.8, 0.8, 1.0 ] )
-            )
 
         # create a light
         glEnable( GL_LIGHT0 )
         glLightfv(
             GL_LIGHT0,
             GL_POSITION,
-            (GLfloat * 4)( *[-10.0, 0.0, 0.0, 1.0] )
+            (GLfloat * 4)( *[0.0, 0.0, 0.0, 1.0] )
             )
         glLightfv(
             GL_LIGHT0,
@@ -147,20 +126,34 @@ class Application( object ):
             GL_DIFFUSE,
             (GLfloat * 4)( *[1.0, 1.0, 1.0, 1.0] )
             )
-    
-    def tear_down_viewport( self ):
-        glDisable( GL_LIGHT0 )
-        glDisable( GL_LIGHTING )
-        glDisable( GL_NORMALIZE )
-        glDisable( GL_DEPTH_TEST )
+        
+    def setup_viewport( self ):
+        # use the z-buffer when drawing
+        glEnable( GL_DEPTH_TEST )
 
+        # normalise any normals for us
+        glEnable( GL_NORMALIZE )
+
+        # enable smooth shading
+        # instead of flat shading
+        glShadeModel( GL_SMOOTH )
+
+        # setup lighting for our viewport
+        glEnable( GL_LIGHTING )
+
+        # set our ambient lighting
+        glAmbient = glLightModelfv(
+            GL_LIGHT_MODEL_AMBIENT,
+            (GLfloat * 4)( *[ 0.8, 0.8, 0.8, 1.0 ] )
+            )
+    
     def run( self ):
         pyglet.app.run()
     
     def step( self, dt ):
         # rotate the mesh about it's own vertical axis
         self.mesh_node.rotate_object_y( dt )
-        
+
         # render the scene
         viewports = [ self.viewport ]
         renderer.window.render( self.window, viewports )
