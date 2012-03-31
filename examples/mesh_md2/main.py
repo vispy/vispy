@@ -75,13 +75,23 @@ class Application( object ):
         # create a scene
         self.scene_node = SceneNode( '/root' )
 
-        # add a grid so we can see wtf we're doing
-        self.mesh_node = RenderCallbackNode(
+        self.mesh_node = SceneNode( '/mesh' )
+        self.scene_node.add_child( self.mesh_node )
+
+        # create our render node
+        # this is seperate to the mesh node because
+        # we need to rotate it about it's X axis
+        # due to the model being on its side
+        self.render_node = RenderCallbackNode(
             '/md2/rendernode',
             md2.initialise_mesh,
             md2.render_mesh
             )
-        self.scene_node.add_child( self.mesh_node )
+        self.mesh_node.add_child( self.render_node )
+
+        # the md2 is oriented at 90 degrees about X
+        # re-orient the mesh
+        self.render_node.rotate_object_x( -math.pi / 2.0 )
 
         # move the mesh so we can see it
         self.mesh_node.translate_inertial_z( -80.0 )
@@ -101,10 +111,6 @@ class Application( object ):
         
         # set the viewports camera
         self.viewport.set_camera( self.scene_node, self.camera )
-        
-        # the md2 is oriented at 90 degrees about X
-        # re-orient the mesh
-        self.mesh_node.rotate_object_x( -math.pi / 2.0 )
 
         # use a variable for accumulating time
         # for animating the mesh

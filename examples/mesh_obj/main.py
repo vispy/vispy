@@ -91,6 +91,9 @@ class Application( object ):
         # move the mesh so we can see it
         self.mesh_node.translate_object_z( -80.0 )
         
+        # rotate the mesh so we can see it
+        self.mesh_node.rotate_object_x( math.pi / 4.0 )
+        
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
             fov = 60.0,
@@ -106,10 +109,6 @@ class Application( object ):
         
         # set the viewports camera
         self.viewport.set_camera( self.scene_node, self.camera )
-        
-        # the md2 is oriented at 90 degrees about X
-        # re-orient the mesh
-        self.mesh_node.rotate_object_x( -math.pi / 2.0 )
         
     def setup_viewport( self ):
         # use the z-buffer when drawing
