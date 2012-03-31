@@ -1,8 +1,9 @@
 Render Module
-Window: make most of these into useful helper / optional functions.
 Picking: render a 1x1 viewport, assign unique colours to each mesh, pull value out of render buffer.
 
 Mesh Module
+MD2: re-write md2 parser. Make sure each vertice can have multiple TCs due to insane mesh format. yay!
+MD2: re-write to just use trilist. This will let us use pyglet batches =).
 MD2: Check if numpy usage in MD2.py is actually slowing loading down.
 MD2: Optimise the list -> opengl code. Pushing into opengl is very slow.
 MD2: read vertices directly into opengl instead of via numpy
