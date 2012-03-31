@@ -80,18 +80,18 @@ class Application( object ):
         self.sn3.set_scale( [2.0, 2.0, 2.0] )
 
         # move our scene nodes
-        self.sn1.translate(
+        self.sn1.translate_object(
             [ 0.0,10.0, 0.0 ]
             )
-        self.sn2.translate(
+        self.sn2.translate_object(
             [10.0, 0.0, 0.0 ]
             )
-        self.sn3.translate(
+        self.sn3.translate_object(
             [ 5.0, 0.0, 0.0 ]
             )
 
         # rotate the scene so it is tilting forward
-        self.sn1.pitch( math.pi / 4.0 )
+        self.sn1.rotate_object_x( math.pi / 4.0 )
 
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
@@ -107,7 +107,7 @@ class Application( object ):
 
         # move the camera so we're not inside
         # the root scene node's debug cube
-        self.camera.translate(
+        self.camera.translate_object(
             [ 0.0, 20.0, 40.0 ]
             )
 
@@ -121,8 +121,8 @@ class Application( object ):
     
     def step( self, dt ):
         # rotate the scene nodes about their vertical axis
-        self.sn1.yaw( dt )
-        self.sn2.yaw( dt )
+        self.sn1.rotate_object_y( dt )
+        self.sn2.rotate_object_y( dt )
 
         # render the scene
         viewports = [ self.viewport ]
