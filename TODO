@@ -22,8 +22,6 @@ Misc: use resource locations - http://www.pyglet.org/doc/programming_guide/loadi
 Scene Module
 RenderCallbackNode: Call a new callback when context is lost. This will prevent multiple initialisations for shared
 callbacks.
-SceneNode: add inheritance of scale down the scene graph.
-SceneNode: add a bit more commenting, it's one of the more complex classes.
 SceneNode: implement 'set_world_translation' / etc.
 SceneNode: implement 'rotate_matrix'.
 SceneNode: implement 'rotate_eulers'.
@@ -35,7 +33,7 @@ Collision: implement mouse ray casting into scene
 Collision: object picking via AABB
 Collision: object picking via BB
 Collision: object picking via mesh
-SceneManagement: implement octree
+SceneManagement: implement octree, requires aa_bounding_box
 Lights: add light nodes
 Textures: implement mipmaps
 Text: Implement text label nodes
