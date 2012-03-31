@@ -75,6 +75,9 @@ class Application( object ):
         print "Rendering at %iHz" % int(frequency)
 
     def setup_scene( self ):
+        # enable debug so we can see the ndoes
+        SceneNode.debug = True
+
         # create a scene
         self.scene_node = SceneNode( '/root' )
 
@@ -88,6 +91,14 @@ class Application( object ):
         # move the grid backward so we can see it
         # and move it down so we start above it
         self.grid_node.translate_object_z( -80.0 )
+
+        # create a node that we'll move around
+        self.test_node = SceneNode( '/test' )
+        self.scene_node.add_child( self.test_node )
+
+        # create a fps controller for the node
+        self.node_controller = FPS_Controller()
+        self.node_controller.scene_node = self.test_node
         
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
@@ -109,6 +120,10 @@ class Application( object ):
         
         # set the viewports camera
         self.viewport.set_camera( self.scene_node, self.camera )
+
+        self.pitch_time = 0.0
+        self.pitch_change = math.pi / 4.0
+        self.yaw_change = math.pi / 4.0
         
     def run( self ):
         pyglet.app.run()
@@ -177,6 +192,14 @@ class Application( object ):
         # we should do this each time we take a reading
         # or the delta will continue to accumulate
         self.mouse.clear_delta()
+
+        # move the test node
+        self.pitch_time += dt
+        if self.pitch_time > 5.0:
+            self.pitch_change *= -1.0
+            self.pitch_time = 0.0
+        self.node_controller.translate_forward( math.pi * dt )
+        self.node_controller.orient( self.pitch_change * dt, self.yaw_change * dt )
         
         # render the scene
         viewports = [ self.viewport ]
