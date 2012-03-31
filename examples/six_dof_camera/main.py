@@ -87,9 +87,7 @@ class Application( object ):
 
         # move the grid backward so we can see it
         # and move it down so we start above it
-        self.grid_node.translate(
-            [ 0.0, -10.0, -80.0 ]
-            )
+        self.grid_node.translate_inertial_z( -80.0 )
         
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(

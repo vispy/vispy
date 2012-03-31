@@ -89,9 +89,7 @@ class Application( object ):
         self.scene_node.add_child( self.mesh_node )
 
         # move the mesh so we can see it
-        self.mesh_node.translate(
-            [ 0.0, 0.0, -80.0 ]
-            )
+        self.mesh_node.translate_object_z( -80.0 )
         
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
@@ -111,8 +109,7 @@ class Application( object ):
         
         # the md2 is oriented at 90 degrees about X
         # re-orient the mesh
-        quat = maths.quaternion.set_to_rotation_about_x( -math.pi / 2.0 )
-        self.mesh_node.rotate_quaternion( quat )
+        self.mesh_node.rotate_object_x( -math.pi / 2.0 )
         
     def setup_viewport( self ):
         # use the z-buffer when drawing
@@ -163,7 +160,7 @@ class Application( object ):
     
     def step( self, dt ):
         # rotate the mesh about it's own vertical axis
-        self.mesh_node.yaw( dt )
+        self.mesh_node.rotate_object_y( dt )
         
         # render the scene
         viewports = [ self.viewport ]

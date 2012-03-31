@@ -76,12 +76,10 @@ class Application( object ):
         self.scene_node.add_child( self.grid_node )
 
         # rotate the mesh so it is tilting forward
-        self.grid_node.pitch( math.pi / 4.0 )
+        self.grid_node.rotate_object_x( math.pi / 4.0 )
 
         # move the grid backward so we can see it
-        self.grid_node.translate(
-            [ 0.0, 0.0, -80.0 ]
-            )
+        self.grid_node.translate_inertial_z( -80.0 )
 
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
@@ -103,7 +101,7 @@ class Application( object ):
     
     def step( self, dt ):
         # rotate the mesh about it's own vertical axis
-        self.grid_node.yaw( dt )
+        self.grid_node.rotate_object_y( dt )
 
         # render the scene
         viewports = [ self.viewport ]

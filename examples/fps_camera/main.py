@@ -87,9 +87,7 @@ class Application( object ):
 
         # move the grid backward so we can see it
         # and move it down so we start above it
-        self.grid_node.translate(
-            [ 0.0, -10.0, -80.0 ]
-            )
+        self.grid_node.translate_object_z( -80.0 )
         
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
@@ -125,24 +123,30 @@ class Application( object ):
         # and then sending forward, backward, etc
         # to the camera controller with an amount that
         # is scaled by the current time delta
+
+        # move forward
         if self.keyboard[ self.keyboard.keys.W ] or self.keyboard[ self.keyboard.keys.UP ]:
-            # move forward
-            self.camera_controller.translate_inertial_forward( camera_speed * dt )
+            self.camera_controller.translate_forward( camera_speed * dt )
+
+        # move backward
         if self.keyboard[ self.keyboard.keys.S ] or self.keyboard[ self.keyboard.keys.DOWN ]:
-            # move backward
-            self.camera_controller.translate_inertial_backward( camera_speed * dt )
+            self.camera_controller.translate_backward( camera_speed * dt )
+
+        # move right
         if self.keyboard[ self.keyboard.keys.D ] or self.keyboard[ self.keyboard.keys.RIGHT ]:
-            # move right
             self.camera_controller.translate_right( camera_speed * dt )
+
+        # move right
         if self.keyboard[ self.keyboard.keys.A ] or self.keyboard[ self.keyboard.keys.LEFT ]:
-            # move right
             self.camera_controller.translate_left( camera_speed * dt )
+
+        # move up
         if self.keyboard[ self.keyboard.keys.SPACE ]:
-            # move up
-            self.camera_controller.translate_inertial_up( camera_speed * dt )
+            self.camera_controller.translate_up( camera_speed * dt )
+
+        # move up
         if self.keyboard[ self.keyboard.keys.LSHIFT ]:
-            # move up
-            self.camera_controller.translate_inertial_down( camera_speed * dt )
+            self.camera_controller.translate_down( camera_speed * dt )
         
         # handle camera rotation
         # get the relative movement of the mouse
