@@ -60,12 +60,14 @@ class Application( object ):
         # we'll render at 60 fps
         frequency = 60.0
         self.update_delta = 1.0 / frequency
-        self.fps_display = pyglet.clock.ClockDisplay()
         # use a pyglet callback for our render loop
         pyglet.clock.schedule_interval(
             self.step,
             self.update_delta
             )
+
+        # display the current FPS
+        self.fps_display = pyglet.clock.ClockDisplay()
         
         print "Rendering at %iHz" % int(frequency)
 
@@ -122,9 +124,6 @@ class Application( object ):
         glEnable( self.texture.target )
         glBindTexture(self.texture.target, self.texture.id)
 
-        # normalise any normals for us
-        #glEnable( GL_NORMALIZE )
-
         # enable smooth shading
         # instead of flat shading
         glShadeModel( GL_SMOOTH )
@@ -168,19 +167,6 @@ class Application( object ):
             decoder=pyglet.image.codecs.pil.PILImageDecoder()
             )
 
-        """
-        self.mesh = MD2_Mesh(
-            'examples/data/md2/Ogros.md2'
-            )
-        # load our texture
-        # use the PIL decoder as the pyglet one is broken
-        # and loads most images as greyscale
-        self.image = pyglet.image.load(
-            'examples/data/md2/igdosh.pcx',
-            decoder=pyglet.image.codecs.pil.PILImageDecoder()
-            )
-        """
-
         self.mesh.load()
         self.texture = self.image.get_texture()
 
@@ -196,8 +182,8 @@ class Application( object ):
 
         # check if we should move to the next frame
         # 20 fps
-        self.mesh.frame += dt * 10.0
-        if self.mesh.frame > float(len(self.mesh.frames)):
+        self.mesh.frame += dt * 20.0
+        if self.mesh.frame > float(len(self.mesh.frames) - 1):
             self.mesh.frame = 0.0
 
         # rotate the mesh about it's own vertical axis
