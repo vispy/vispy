@@ -159,6 +159,9 @@ class Application( object ):
         self.mesh = MD2_Mesh(
             'examples/data/md2/sydney.md2'
             )
+        # load the mesh
+        self.mesh.load()
+
         # load our texture
         # use the PIL decoder as the pyglet one is broken
         # and loads most images as greyscale
@@ -166,8 +169,6 @@ class Application( object ):
             'examples/data/md2/sydney_h.bmp',
             decoder=pyglet.image.codecs.pil.PILImageDecoder()
             )
-
-        self.mesh.load()
         self.texture = self.image.get_texture( rectangle = True )
 
     def render_mesh( self ):
