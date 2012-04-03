@@ -62,7 +62,7 @@ def setup_pygly_scene():
 
 
 #
-# cocos2d
+# messy cocos2d code, verbatim from their examples, yuck
 # http://cocos2d.org
 #
 # This code is so you can run the samples without installing the package
@@ -90,6 +90,7 @@ class Square(cocos.layer.Layer):
                 
     def draw(self):
         super(Square,self).draw()
+        gl.glDisable( gl.GL_DEPTH_TEST )
 
         gl.glColor4f(*self.layer_color)
         x, y = self.x, self.y
@@ -101,6 +102,8 @@ class Square(cocos.layer.Layer):
         gl.glVertex2f( w, y )
         gl.glEnd()
         gl.glColor4f(1,1,1,1) 
+
+        #gl.glEnable( gl.GL_DEPTH_TEST )
         
 if __name__ == "__main__":
     director.init()
@@ -108,7 +111,10 @@ if __name__ == "__main__":
 
     # Create a large number of layers
     for i in range(5,12):
-        sc.add( Square((0.03*i,0.03*i,0.03*i,1) , i*20, i*20) )
+        colour = (0.03*i,0.03*i,0.03*i,1)
+        x = i * 20
+        y = i * 20
+        sc.add( Square(colour, x, y) )
 
     # add our pygly scene as a layer
     setup_pygly_scene()
@@ -116,6 +122,10 @@ if __name__ == "__main__":
 
     # add some layers ontop of our pygly scene
     for i in range(15,20):
-        sc.add( Square((0.03*i,0.03*i,0.03*i,1) , i*20, i*20) )
+        colour = (0.03*i,0.03*i,0.03*i,1)
+        x = i * 20
+        y = i * 20
+        sc.add( Square(colour, x, y) )
 
     director.run( sc )
+
