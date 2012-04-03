@@ -170,25 +170,6 @@ class Application( object ):
         self.mesh.load()
         self.texture = self.image.get_texture( rectangle = True )
 
-        # pyglet has issues with rectangular textures
-        # it scales them up to be square powers of 2
-        # but it doesn't change the texture coordinates and
-        # our textures end up being TOTALLY wrong.
-        # so here, we need to get the texture width and height
-        # and apply that to our texture matrix
-        # instead of being from 0->1, the texture is now from
-        # 0->original width
-        glMatrixMode( GL_TEXTURE )
-        glLoadIdentity()
-        # texture coords are printed as X,Y,Z triples
-        # in the order of, bottom left, bottom right, top right, top left
-        glScalef(
-            self.texture.tex_coords[ 3 ],
-            self.texture.tex_coords[ 7 ],
-            1.0
-            )
-        glMatrixMode( GL_MODELVIEW )
-
     def render_mesh( self ):
         self.mesh.render()
 
@@ -207,10 +188,34 @@ class Application( object ):
 
         # rotate the mesh about it's own vertical axis
         self.mesh_node.rotate_object_y( dt )
+
+        # pyglet has issues with rectangular textures
+        # it scales them up to be square powers of 2
+        # but it doesn't change the texture coordinates and
+        # our textures end up being TOTALLY wrong.
+        # so here, we need to get the texture width and height
+        # and apply that to our texture matrix
+        # instead of being from 0->1, the texture is now from
+        # 0->original width
+        glMatrixMode( GL_TEXTURE )
+        glLoadIdentity()
+        # texture coords are printed as X,Y,Z triples
+        # in the order of, bottom left, bottom right, top right, top left
+        glScalef(
+            self.texture.tex_coords[ 3 ],
+            self.texture.tex_coords[ 7 ],
+            1.0
+            )
+        glMatrixMode( GL_MODELVIEW )
         
         # render the scene
         viewports = [ self.viewport ]
         renderer.window.render( self.window, viewports )
+
+        # reset the matrix
+        glMatrixMode( GL_TEXTURE )
+        glLoadIdentity()
+        glMatrixMode( GL_MODELVIEW )
 
         # render the texture on the screen
         texture_y_offset = 80.0
