@@ -9,8 +9,8 @@ PyGLy's core values are the following:
    * FLEXIBLE, don't force any one method upon the user
    * FULL CONTROL at all times. Full access to rendering, objects, data. No obfuscation. No 'awesome' tricks. Just good, simple code.
    * EASY INSTALLATION. No crazy C++ bindings and complex build procedures.
-   * EXPOSE as much funcitonality as possible. Lower classes are always accessible or usable on their own.
-   * LOOSE COUPLING. Code designed to be reused in various sitations.
+   * EXPOSE as much functionality as possible. Lower classes are always accessible or usable on their own.
+   * LOOSE COUPLING. Code designed to be reused in various situations.
    * OPTIONAL high level classes. Low level code is always usable. High level API is optional.
    * EXAMPLES of high quality.
    * PYTHON to the core.
