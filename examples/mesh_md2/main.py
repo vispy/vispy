@@ -21,9 +21,8 @@ from renderer.projection_view_matrix import ProjectionViewMatrix
 from scene.scene_node import SceneNode
 from scene.camera_node import CameraNode
 from scene.render_callback_node import RenderCallbackNode
+from mesh.md2_mesh import MD2_Mesh
 import maths.quaternion
-
-import md2
 
 
 class Application( object ):
@@ -53,7 +52,6 @@ class Application( object ):
         # over-ride the viewports setup method
         # so we can set some opengl states
         self.viewport.setup_viewport = self.setup_viewport
-        self.viewport.tear_down_viewport = self.tear_down_viewport
         
         # setup our scene
         self.setup_scene()
@@ -84,8 +82,8 @@ class Application( object ):
         # due to the model being on its side
         self.render_node = RenderCallbackNode(
             '/md2/rendernode',
-            md2.initialise_mesh,
-            md2.render_mesh
+            self.initialise_mesh,
+            self.render_mesh
             )
         self.mesh_node.add_child( self.render_node )
 
@@ -94,7 +92,7 @@ class Application( object ):
         self.render_node.rotate_object_x( -math.pi / 2.0 )
 
         # move the mesh so we can see it
-        self.mesh_node.translate_inertial_z( -80.0 )
+        self.mesh_node.translate_inertial_z( -40.0 )
         
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
@@ -120,15 +118,19 @@ class Application( object ):
         # use the z-buffer when drawing
         glEnable( GL_DEPTH_TEST )
 
+        # enable texturing
+        glEnable( self.texture.target )
+        glBindTexture(self.texture.target, self.texture.id)
+
         # normalise any normals for us
-        glEnable( GL_NORMALIZE )
+        #glEnable( GL_NORMALIZE )
 
         # enable smooth shading
         # instead of flat shading
         glShadeModel( GL_SMOOTH )
             
         # setup lighting for our viewport
-        glEnable( GL_LIGHTING )
+        #glEnable( GL_LIGHTING )
 
         # set our ambient lighting
         glAmbient = glLightModelfv(
@@ -153,12 +155,37 @@ class Application( object ):
             GL_DIFFUSE,
             (GLfloat * 4)( *[1.0, 1.0, 1.0, 1.0] )
             )
-    
-    def tear_down_viewport( self ):
-        glDisable( GL_LIGHT0 )
-        glDisable( GL_LIGHTING )
-        glDisable( GL_NORMALIZE )
-        glDisable( GL_DEPTH_TEST )
+
+    def initialise_mesh( self ):
+        self.mesh = MD2_Mesh(
+            'examples/data/md2/sydney.md2'
+            )
+        # load our texture
+        # use the PIL decoder as the pyglet one is broken
+        # and loads most images as greyscale
+        self.image = pyglet.image.load(
+            'examples/data/md2/sydney_h.bmp',
+            decoder=pyglet.image.codecs.pil.PILImageDecoder()
+            )
+
+        """
+        self.mesh = MD2_Mesh(
+            'examples/data/md2/Ogros.md2'
+            )
+        # load our texture
+        # use the PIL decoder as the pyglet one is broken
+        # and loads most images as greyscale
+        self.image = pyglet.image.load(
+            'examples/data/md2/igdosh.pcx',
+            decoder=pyglet.image.codecs.pil.PILImageDecoder()
+            )
+        """
+
+        self.mesh.load()
+        self.texture = self.image.get_texture()
+
+    def render_mesh( self ):
+        self.mesh.render()
 
     def run( self ):
         pyglet.app.run()
@@ -169,10 +196,9 @@ class Application( object ):
 
         # check if we should move to the next frame
         # 20 fps
-        if self.animation_time > (1.0 / 20.0):
-            md2.mesh.frame += 1
-            md2.mesh.frame %= md2.mesh.frames
-            self.animation_time = 0.0
+        self.mesh.frame += dt * 10.0
+        if self.mesh.frame > float(len(self.mesh.frames)):
+            self.mesh.frame = 0.0
 
         # rotate the mesh about it's own vertical axis
         self.mesh_node.rotate_object_y( dt )
@@ -180,6 +206,15 @@ class Application( object ):
         # render the scene
         viewports = [ self.viewport ]
         renderer.window.render( self.window, viewports )
+
+        # render the texture on the screen
+        self.texture.blit( 0.0, 80.0 )
+
+        # render the tc's ontop of the texture
+        self.mesh.render_tcs(
+            (0.0, 80.0),
+            (self.texture.width, self.texture.height)
+            )
         
         # render the fps
         self.fps_display.draw()
