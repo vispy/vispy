@@ -122,7 +122,7 @@ class Application( object ):
 
         # enable texturing
         glEnable( self.texture.target )
-        glBindTexture(self.texture.target, self.texture.id)
+        glBindTexture( self.texture.target, self.texture.id )
 
         # enable smooth shading
         # instead of flat shading
@@ -168,7 +168,26 @@ class Application( object ):
             )
 
         self.mesh.load()
-        self.texture = self.image.get_texture()
+        self.texture = self.image.get_texture( rectangle = True )
+
+        # pyglet has issues with rectangular textures
+        # it scales them up to be square powers of 2
+        # but it doesn't change the texture coordinates and
+        # our textures end up being TOTALLY wrong.
+        # so here, we need to get the texture width and height
+        # and apply that to our texture matrix
+        # instead of being from 0->1, the texture is now from
+        # 0->original width
+        glMatrixMode( GL_TEXTURE )
+        glLoadIdentity()
+        # texture coords are printed as X,Y,Z triples
+        # in the order of, bottom left, bottom right, top right, top left
+        glScalef(
+            self.texture.tex_coords[ 3 ],
+            self.texture.tex_coords[ 7 ],
+            1.0
+            )
+        glMatrixMode( GL_MODELVIEW )
 
     def render_mesh( self ):
         self.mesh.render()
@@ -194,11 +213,12 @@ class Application( object ):
         renderer.window.render( self.window, viewports )
 
         # render the texture on the screen
-        self.texture.blit( 0.0, 80.0 )
+        texture_y_offset = 80.0
+        self.texture.blit( 0.0, texture_y_offset )
 
         # render the tc's ontop of the texture
         self.mesh.render_tcs(
-            (0.0, 80.0),
+            (0.0, texture_y_offset),
             (self.texture.width, self.texture.height)
             )
         
