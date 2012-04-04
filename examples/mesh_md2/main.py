@@ -182,8 +182,8 @@ class Application( object ):
         self.animation_time += dt
 
         # check if we should move to the next frame
-        # 20 fps
-        self.mesh.frame += dt * 20.0
+        # 10 fps
+        self.mesh.frame += dt * 10.0
         if self.mesh.frame > float(len(self.mesh.frames) - 1):
             self.mesh.frame = 0.0
 
