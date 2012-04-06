@@ -126,6 +126,9 @@ class Application( object ):
         self.sn1.rotate_object_y( dt )
         self.sn2.rotate_object_y( dt )
 
+        # clear our frame buffer and depth buffer
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
+
         # render the scene
         viewports = [ self.viewport ]
         renderer.window.render( self.window, viewports )

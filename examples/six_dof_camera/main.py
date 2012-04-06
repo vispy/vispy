@@ -174,6 +174,9 @@ class Application( object ):
         # we should do this each time we take a reading
         # or the delta will continue to accumulate
         self.mouse.clear_delta()
+
+        # clear our frame buffer and depth buffer
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
         
         # render the scene
         viewports = [ self.viewport ]

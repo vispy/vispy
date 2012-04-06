@@ -156,6 +156,9 @@ class Application( object ):
         # rotate the mesh about it's own vertical axis
         self.mesh_node.rotate_object_y( dt )
 
+        # clear our frame buffer and depth buffer
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
+
         # render the scene
         viewports = [ self.viewport ]
         renderer.window.render( self.window, viewports )

@@ -202,6 +202,9 @@ class Application( object ):
             self.pitch_time = 0.0
         self.node_controller.translate_forward( math.pi * dt )
         self.node_controller.orient( self.pitch_change * dt, self.yaw_change * dt )
+
+        # clear our frame buffer and depth buffer
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
         
         # render the scene
         viewports = [ self.viewport ]
