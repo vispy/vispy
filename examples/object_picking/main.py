@@ -66,7 +66,7 @@ class Application( object ):
         
         # setup our update loop the app
         # we'll render at 60 fps
-        frequency = 120.0
+        frequency = 60.0
         self.update_delta = 1.0 / frequency
         # use a pyglet callback for our render loop
         pyglet.clock.schedule_interval(
