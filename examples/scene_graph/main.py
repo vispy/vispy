@@ -42,7 +42,7 @@ class Application( object ):
         # create a viewport that spans
         # the entire screen
         self.viewport = Viewport(
-            [ 0.0, 0.0, 1.0, 1.0 ]
+            [ [0.0, 0.0], [1.0, 1.0] ]
             )
 
         # setup our scene

@@ -10,6 +10,7 @@ import random
 
 from pyglet.gl import *
 import pyglet
+import numpy
 
 import renderer.idle
 import renderer.window
@@ -20,6 +21,7 @@ from scene.camera_node import CameraNode
 from scene.render_callback_node import RenderCallbackNode
 from mesh.obj_mesh import OBJ_Mesh
 import maths.quaternion
+import maths.rect
 from input.keyboard import Keyboard
 from input.mouse import Mouse
 import common.list
@@ -46,7 +48,10 @@ class Application( object ):
 
         # create a viewport
         self.viewport = Viewport(
-            [ 0.0, 0.0, 1.0, 1.0 ]
+            numpy.array(
+                [ [0.0, 0.0], [1.0, 1.0] ],
+                dtype = numpy.float
+                )
             )
 
         # over-ride the viewports setup method
@@ -170,37 +175,42 @@ class Application( object ):
         # just clear it to stop overflows
         self.mouse.clear_delta()
 
-        # get the mouse's position relative to the viewport
-        relative_mouse_point = self.viewport.window_to_viewport_point(
-            self.window,
-            self.mouse.absolute_position
-            )
-
         # see if the mouse moved
+        mouse_pos = self.mouse.absolute_position
         mouse_moved = common.list.not_equivalent(
-            relative_mouse_point,
+            mouse_pos,
             self.last_mouse_point
             )
 
-        if True == mouse_moved:
-            # the mouse has moved
-            # update our mouse pos
-            self.last_mouse_point = relative_mouse_point
+        if False == mouse_moved:
+            return
 
-            # check if the mouse is within the viewport
-            if self.viewport.is_viewport_point_within_viewport(
-                self.window,
-                relative_mouse_point
-                ):
-                # cast a ray from the mouse's current position
-                mouse_ray = self.viewport.viewport_point_to_ray(
-                    self.window,
-                    relative_mouse_point
-                    )
+        # the mouse has moved
+        # update our mouse pos
+        self.last_mouse_point = mouse_pos
 
-                # render the md2 at the current ray position
-                # use the far_clip value
-                self.mesh_node.inertial_translation = mouse_ray[ 1 ]
+        # check if the mouse is within the viewport
+        if False == self.viewport.is_point_within_viewport(
+            self.window,
+            mouse_pos
+            ):
+            return
+
+        # make the point relative to the viewport
+        relative_point = self.viewport.point_relative_to_viewport(
+            self.window,
+            mouse_pos
+            )
+
+        # cast a ray from the mouse's current position
+        mouse_ray = self.viewport.relative_point_to_ray(
+            self.window,
+            relative_point
+            )
+
+        # render the md2 at the current ray position
+        # use the far_clip value
+        self.mesh_node.inertial_translation = mouse_ray[ 1 ]
     
     def step( self, dt ):
         # move the mesh to the mouse position

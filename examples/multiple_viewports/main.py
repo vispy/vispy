@@ -44,12 +44,12 @@ class Application( object ):
         # create a viewport that spans
         # the entire screen
         self.viewport = Viewport(
-            [ 0.0, 0.0, 1.0, 1.0 ]
+            [ [0.0, 0.0], [1.0, 1.0] ]
             )
         # make the viewport slightly off the edge
         # to avoid seams showing through
         self.viewport_2 = Viewport(
-            [ 0.7, -0.01, 0.31, 0.3]
+            [ [0.7, -0.01], [0.31, 0.3] ]
             )
 
         # setup our scene

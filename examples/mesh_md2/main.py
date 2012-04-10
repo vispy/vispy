@@ -50,7 +50,7 @@ class Application( object ):
 
         # create a viewport
         self.viewport = Viewport(
-            [ 0.0, 0.0, 1.0, 1.0 ]
+            [ [0.0, 0.0], [1.0, 1.0] ]
             )
 
         # over-ride the viewports setup method
