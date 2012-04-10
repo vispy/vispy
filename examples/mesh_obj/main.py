@@ -134,6 +134,9 @@ class Application( object ):
         # normalise any normals for us
         glEnable( GL_RESCALE_NORMAL )
 
+        # enable us to clear viewports independently
+        glEnable( GL_SCISSOR_TEST )
+
         # enable smooth shading
         # instead of flat shading
         glShadeModel( GL_SMOOTH )

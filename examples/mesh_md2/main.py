@@ -151,6 +151,9 @@ class Application( object ):
         # normalise any normals for us
         glEnable( GL_RESCALE_NORMAL )
 
+        # enable us to clear viewports independently
+        glEnable( GL_SCISSOR_TEST )
+
         # enable texturing
         glEnable( self.texture.target )
         glBindTexture( self.texture.target, self.texture.id )
