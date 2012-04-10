@@ -78,6 +78,11 @@ class Application( object ):
         self.mesh_node = SceneNode( '/mesh' )
         self.scene_node.add_child( self.mesh_node )
 
+        # create a mesh object
+        self.mesh = MD2_Mesh(
+            'examples/data/md2/sydney.md2'
+            )
+
         # create our render node
         # this is seperate to the mesh node because
         # we need to rotate it about it's X axis
@@ -115,27 +120,6 @@ class Application( object ):
         # use a variable for accumulating time
         # for animating the mesh
         self.animation_time = 0.0
-        
-    def setup_viewport( self ):
-        # use the z-buffer when drawing
-        glEnable( GL_DEPTH_TEST )
-
-        # enable texturing
-        glEnable( self.texture.target )
-        glBindTexture( self.texture.target, self.texture.id )
-
-        # enable smooth shading
-        # instead of flat shading
-        glShadeModel( GL_SMOOTH )
-            
-        # setup lighting for our viewport
-        #glEnable( GL_LIGHTING )
-
-        # set our ambient lighting
-        glAmbient = glLightModelfv(
-            GL_LIGHT_MODEL_AMBIENT,
-            (GLfloat * 4)( *[ 0.8, 0.8, 0.8, 1.0 ] )
-            )
 
         # create a light
         glEnable( GL_LIGHT0 )
@@ -155,10 +139,32 @@ class Application( object ):
             (GLfloat * 4)( *[1.0, 1.0, 1.0, 1.0] )
             )
 
-    def initialise_mesh( self ):
-        self.mesh = MD2_Mesh(
-            'examples/data/md2/sydney.md2'
+        
+    def setup_viewport( self ):
+        # use the z-buffer when drawing
+        glEnable( GL_DEPTH_TEST )
+
+        # normalise any normals for us
+        glEnable( GL_RESCALE_NORMAL )
+
+        # enable texturing
+        glEnable( self.texture.target )
+        glBindTexture( self.texture.target, self.texture.id )
+
+        # enable smooth shading
+        # instead of flat shading
+        glShadeModel( GL_SMOOTH )
+            
+        # setup lighting for our viewport
+        #glEnable( GL_LIGHTING )
+
+        # set our ambient lighting
+        glAmbient = glLightModelfv(
+            GL_LIGHT_MODEL_AMBIENT,
+            (GLfloat * 4)( *[ 0.8, 0.8, 0.8, 1.0 ] )
             )
+
+    def initialise_mesh( self ):
         # load the mesh
         self.mesh.load()
 
@@ -216,7 +222,8 @@ class Application( object ):
         viewports = [ self.viewport ]
         renderer.window.render( self.window, viewports )
 
-        # reset the matrix
+        # reset the texture matrix because of what we did
+        # otherwise any textures following this will be incorrect
         glMatrixMode( GL_TEXTURE )
         glLoadIdentity()
         glMatrixMode( GL_MODELVIEW )
