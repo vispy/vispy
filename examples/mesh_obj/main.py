@@ -75,13 +75,11 @@ class Application( object ):
         # create a scene
         self.scene_node = SceneNode( '/root' )
 
-        #self.mesh = OBJ_Mesh( 'examples/data/obj/humanoid_tri.obj' )
-        #self.mesh = OBJ_Mesh( 'examples/data/obj/humanoid_quad.obj' )
+        # create a mesh object
         self.mesh = OBJ_Mesh( 'examples/data/obj/cessna.obj' )
-        #self.mesh = OBJ_Mesh( 'examples/data/obj/cube.obj' )
-        #self.mesh = OBJ_Mesh( 'examples/data/obj/cube_offsets.obj' )
 
-        # add a grid so we can see wtf we're doing
+        # create our render node with callbacks to
+        # render our mesh
         self.mesh_node = RenderCallbackNode(
             '/obj/rendernode',
             self.initialise_mesh,
@@ -134,7 +132,7 @@ class Application( object ):
         glEnable( GL_DEPTH_TEST )
 
         # normalise any normals for us
-        glEnable( GL_NORMALIZE )
+        glEnable( GL_RESCALE_NORMAL )
 
         # enable smooth shading
         # instead of flat shading
