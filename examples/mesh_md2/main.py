@@ -24,6 +24,10 @@ from scene.render_callback_node import RenderCallbackNode
 from mesh.md2_mesh import MD2_Mesh
 import maths.quaternion
 
+# MD2 frame interpolation is incredibly slow
+# set this to True if you want to see it
+USE_FRAME_INTERPOLATION = False
+
 
 class Application( object ):
     
@@ -185,13 +189,23 @@ class Application( object ):
     
     def step( self, dt ):
         # add the current time to the animation
-        self.animation_time += dt
+        self.animation_time += dt * 10.0
 
         # check if we should move to the next frame
         # 10 fps
-        self.mesh.frame += dt * 10.0
-        if self.mesh.frame > float(len(self.mesh.frames) - 1):
-            self.mesh.frame = 0.0
+        fnum_frames = float( len(self.mesh.frames) )
+        self.mesh.frame = math.fmod(
+            self.animation_time,
+            fnum_frames - 1.0
+            )
+
+        # frame interpolation is sucking up MASSIVE amounts of
+        # cpu, so I've put this check on
+        # if frame interpolation is disabled, frame times
+        # will always be X.00
+        # ie, have nothing past the decimal place.
+        if False == USE_FRAME_INTERPOLATION:
+            ignored, self.mesh.frame = math.modf( self.mesh.frame )
 
         # rotate the mesh about it's own vertical axis
         self.mesh_node.rotate_object_y( dt )
