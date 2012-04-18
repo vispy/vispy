@@ -15,19 +15,16 @@ from pyglet.gl import *
 import pyglet
 import numpy
 
-import maths.vector
-import maths.quaternion
-import maths.matrix33
-import renderer.idle
-import renderer.window
-from renderer.viewport import Viewport
-from renderer.projection_view_matrix import ProjectionViewMatrix
-from scene.scene_node import SceneNode
-from scene.camera_node import CameraNode
-from scene.render_callback_node import RenderCallbackNode
-from scene.fps_controller import FPS_Controller
-from input.keyboard import Keyboard
-from input.mouse import Mouse
+import pygly.renderer.idle
+import pygly.renderer.window
+from pygly.renderer.viewport import Viewport
+from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
+from pygly.scene.scene_node import SceneNode
+from pygly.scene.camera_node import CameraNode
+from pygly.scene.render_callback_node import RenderCallbackNode
+from pygly.scene.fps_controller import FPS_Controller
+from pygly.input.keyboard import Keyboard
+from pygly.input.mouse import Mouse
 
 from examples.render_callbacks import grid
 
@@ -209,7 +206,7 @@ class Application( object ):
         
         # render the scene
         viewports = [ self.viewport ]
-        renderer.window.render( self.window, viewports )
+        pygly.renderer.window.render( self.window, viewports )
 
         # render the fps
         self.fps_display.draw()

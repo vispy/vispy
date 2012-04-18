@@ -12,19 +12,17 @@ from pyglet.gl import *
 import pyglet
 import numpy
 
-import renderer.idle
-import renderer.window
-from renderer.viewport import Viewport
-from renderer.projection_view_matrix import ProjectionViewMatrix
-from scene.scene_node import SceneNode
-from scene.camera_node import CameraNode
-from scene.render_callback_node import RenderCallbackNode
-from mesh.obj_mesh import OBJ_Mesh
-import maths.quaternion
-import maths.rect
-from input.keyboard import Keyboard
-from input.mouse import Mouse
-import common.list
+import pygly.renderer.idle
+import pygly.renderer.window
+from pygly.renderer.viewport import Viewport
+from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
+from pygly.scene.scene_node import SceneNode
+from pygly.scene.camera_node import CameraNode
+from pygly.scene.render_callback_node import RenderCallbackNode
+from pygly.mesh.obj_mesh import OBJ_Mesh
+from pygly.input.keyboard import Keyboard
+from pygly.input.mouse import Mouse
+import pygly.common.list
 
 
 class Application( object ):
@@ -147,6 +145,9 @@ class Application( object ):
         # normalise any normals for us
         glEnable( GL_RESCALE_NORMAL )
 
+        # enable us to clear viewports independently
+        glEnable( GL_SCISSOR_TEST )
+
         # enable smooth shading
         # instead of flat shading
         glShadeModel( GL_SMOOTH )
@@ -177,7 +178,7 @@ class Application( object ):
 
         # see if the mouse moved
         mouse_pos = self.mouse.absolute_position
-        mouse_moved = common.list.not_equivalent(
+        mouse_moved = pygly.common.list.not_equivalent(
             mouse_pos,
             self.last_mouse_point
             )
@@ -224,7 +225,7 @@ class Application( object ):
         
         # render the scene
         viewports = [ self.viewport ]
-        renderer.window.render( self.window, viewports )
+        pygly.renderer.window.render( self.window, viewports )
 
         # render the fps
         self.fps_display.draw()

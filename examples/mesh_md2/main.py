@@ -14,15 +14,14 @@ import random
 from pyglet.gl import *
 import pyglet
 
-import renderer.idle
-import renderer.window
-from renderer.viewport import Viewport
-from renderer.projection_view_matrix import ProjectionViewMatrix
-from scene.scene_node import SceneNode
-from scene.camera_node import CameraNode
-from scene.render_callback_node import RenderCallbackNode
-from mesh.md2_mesh import MD2_Mesh
-import maths.quaternion
+import pygly.renderer.idle
+import pygly.renderer.window
+from pygly.renderer.viewport import Viewport
+from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
+from pygly.scene.scene_node import SceneNode
+from pygly.scene.camera_node import CameraNode
+from pygly.scene.render_callback_node import RenderCallbackNode
+from pygly.mesh.md2_mesh import MD2_Mesh
 
 # MD2 frame interpolation is incredibly slow
 # set this to True if you want to see it
@@ -237,7 +236,7 @@ class Application( object ):
         
         # render the scene
         viewports = [ self.viewport ]
-        renderer.window.render( self.window, viewports )
+        pygly.renderer.window.render( self.window, viewports )
 
         # reset the texture matrix because of what we did
         # otherwise any textures following this will be incorrect

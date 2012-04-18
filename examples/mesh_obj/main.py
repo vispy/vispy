@@ -14,15 +14,14 @@ import random
 from pyglet.gl import *
 import pyglet
 
-import renderer.idle
-import renderer.window
-from renderer.viewport import Viewport
-from renderer.projection_view_matrix import ProjectionViewMatrix
-from scene.scene_node import SceneNode
-from scene.camera_node import CameraNode
-from scene.render_callback_node import RenderCallbackNode
-from mesh.obj_mesh import OBJ_Mesh
-import maths.quaternion
+import pygly.renderer.idle
+import pygly.renderer.window
+from pygly.renderer.viewport import Viewport
+from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
+from pygly.scene.scene_node import SceneNode
+from pygly.scene.camera_node import CameraNode
+from pygly.scene.render_callback_node import RenderCallbackNode
+from pygly.mesh.obj_mesh import OBJ_Mesh
 
 
 class Application( object ):
@@ -162,7 +161,7 @@ class Application( object ):
 
         # render the scene
         viewports = [ self.viewport ]
-        renderer.window.render( self.window, viewports )
+        pygly.renderer.window.render( self.window, viewports )
 
         # render the fps
         self.fps_display.draw()

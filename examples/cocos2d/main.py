@@ -4,13 +4,12 @@
 
 import math
 
-from renderer.viewport import Viewport
-from renderer.projection_view_matrix import ProjectionViewMatrix
-from scene.scene_node import SceneNode
-from scene.render_callback_node import RenderCallbackNode
-from scene.camera_node import CameraNode
-from cocos2d.layer import Layer as PyGLyLayer
-import maths.quaternion
+from pygly.renderer.viewport import Viewport
+from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
+from pygly.scene.scene_node import SceneNode
+from pygly.scene.render_callback_node import RenderCallbackNode
+from pygly.scene.camera_node import CameraNode
+from pygly.cocos2d.layer import Layer as PyGLyLayer
 
 import examples.render_callbacks.grid as grid
 
@@ -127,5 +126,27 @@ if __name__ == "__main__":
         y = i * 20
         sc.add( Square(colour, x, y) )
 
+    #from cocos.actions.interval_actions import MoveBy
+    #pygly_layer.do( MoveBy( (50,0), duration=8) )
+    #sc.do( MoveBy( (50,0),duration=8) )
+    #from cocos.actions.interval_actions import RotateBy
+    #sc.do( RotateBy( 360,duration=8) )
+    #pygly_layer.anchor_x = 320
+    #pygly_layer.anchor_y = 320
+    from cocos.actions.interval_actions import ScaleBy
+    #pygly_layer.do( ScaleBy( 2,duration=2) )
+    #pygly_layer.anchor_x = 0
+    #pygly_layer.anchor_y = 0
+    #pygly_layer.anchor_x = 320
+    #pygly_layer.anchor_y = 240
+    #pygly_layer.anchor_x = 640
+    #pygly_layer.anchor_y = 480
+    #sc.anchor_x = 0
+    #sc.anchor_y = 0
+    #sc.anchor_x = 320
+    #sc.anchor_y = 240
+    #sc.anchor_x = 640
+    #sc.anchor_y = 480
+    sc.do( ScaleBy( 2,duration=2) )
     director.run( sc )
 
