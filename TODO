@@ -1,16 +1,14 @@
+Generate docs
+push into github wiki?
+
 Render Module
 Picking: render a 1x1 viewport, assign unique colours to each mesh, pull value out of render buffer.
+Clipping: add clipping to the view frustrum, important when rendering points / lines with thickness.
+http://www.opengl.org/archives/resources/features/KilgardTechniques/oglpitfall/
 
 Mesh Module
-MD2: re-write md2 parser. Make sure each vertice can have multiple TCs due to insane mesh format. yay!
-MD2: re-write to just use trilist. This will let us use pyglet batches =).
-MD2: Check if numpy usage in MD2.py is actually slowing loading down.
-MD2: Optimise the list -> opengl code. Pushing into opengl is very slow.
-MD2: read vertices directly into opengl instead of via numpy
-http://www.pyglet.org/doc/programming_guide/using_opengl.html
-MD2: Convert to Pyglet vertex lists
-http://www.pyglet.org/doc/programming_guide/vertex_lists.html
-http://www.pyglet.org/doc/api/pyglet.graphics-module.html#vertex_list_indexed
+MD2: optimise interopolation code, perhaps bake N frames between each before hand
+MD2: split mesh data from file / frame data, put current frame into the callbacks
 OBJ: implement as much of the Wavefront OBJ spec was possible
 http://www.martinreddy.net/gfx/3d/OBJ.spec
 OBJ: perhaps convert trifans to triangles and draw using pyglet vertexlist
@@ -18,10 +16,12 @@ OAI: Clean up OAI partially implemented code
 UV_Generators: Add some more commenting, these can be complex.
 UV_Generators: Split planar uv_generator into 2 classes, one that uses vertex position, another that uses vertex normals.
 Misc: use resource locations - http://www.pyglet.org/doc/programming_guide/loading_resources.html
+Provide MipMap wrappers: http://www.opengl.org/archives/resources/features/KilgardTechniques/oglpitfall/
 
 Scene Module
 RenderCallbackNode: Call a new callback when context is lost. This will prevent multiple initialisations for shared
 callbacks.
+SceneNode: make scale inherit across nodes
 SceneNode: implement 'set_world_translation' / etc.
 SceneNode: implement 'rotate_matrix'.
 SceneNode: implement 'rotate_eulers'.
@@ -38,8 +38,25 @@ Lights: add light nodes
 Textures: implement mipmaps
 Text: Implement text label nodes
 Text: Implement billboard and sprite text labels (fixed rotation, facing)
+Debug: make debug cube render single sided faces only. Then re-enable on camera_node.
+Animation: add animation functionality. Rotate( axis, radians, time )
+
+Maths Module
+array_index: make this take an N long array and calculate the index dynamically.
+
+UI Module
+Use Cocos2d for ui?
+
+Cocos2d
+Add support for layer translations, orientation and scale
+use glDepthFunc(func) instead of disabling depth test
+
+Examples: Store the meshes in a dictionary, retrieve meshes via name
 
 Unspecified module
 Add shader support
 Add shadow projections
-Add support for using PyGLy as a Cocos2D layer
+Add shapes module: box, sphere, torus, cylinder, etc
+
+Voxel: look up kdtree for possible usage
+http://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.KDTree.html#scipy.spatial.KDTree
