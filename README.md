@@ -16,7 +16,7 @@ PyGLy's core values are the following:
    * PYTHON to the core.
    * SPEED in development. Provide convenience functions where it makes sense.
 
-If you want to experiement with OpenGL without having to worry about writing camera's, viewports and scene graphs. Then
+If you want to experiment with OpenGL without having to worry about writing camera's, viewports and scene graphs. Then
 PyGLy is perfect for you.
 
 
