@@ -211,7 +211,7 @@ class Application( object ):
 
         # render the md2 at the current ray position
         # use the far_clip value
-        self.mesh_node.inertial_translation = mouse_ray[ 1 ]
+        self.mesh_node.inertial_translation = mouse_ray[ 0 ] + mouse_ray[ 1 ] * 50.0
     
     def step( self, dt ):
         # move the mesh to the mouse position
