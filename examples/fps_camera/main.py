@@ -101,7 +101,9 @@ class Application( object ):
         self.node_controller.scene_node = self.test_node
         
         # create a camera and a view matrix
+        aspect_ratio = self.viewport.aspect_ratio( self.window )
         self.view_matrix = ProjectionViewMatrix(
+            aspect_ratio,
             fov = 60.0,
             near_clip = 1.0,
             far_clip = 200.0

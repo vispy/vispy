@@ -105,7 +105,9 @@ class Application( object ):
         self.mesh_node.rotate_object_x( math.pi / 4.0 )
         
         # create a camera and a view matrix
+        aspect_ratio = self.viewport.aspect_ratio( self.window )
         self.view_matrix = ProjectionViewMatrix(
+            aspect_ratio,
             fov = 60.0,
             near_clip = 1.0,
             far_clip = 200.0
@@ -211,7 +213,8 @@ class Application( object ):
 
         # render the md2 at the current ray position
         # use the far_clip value
-        self.mesh_node.inertial_translation = mouse_ray[ 0 ] + mouse_ray[ 1 ] * 50.0
+        distance = 50.0
+        self.mesh_node.inertial_translation = mouse_ray[ 0 ] + mouse_ray[ 1 ] * distance
     
     def step( self, dt ):
         # move the mesh to the mouse position

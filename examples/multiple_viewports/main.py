@@ -88,7 +88,9 @@ class Application( object ):
         self.grid_node.translate_inertial_z( -80.0 )
 
         # create a camera and a view matrix
+        aspect_ratio = self.viewport.aspect_ratio( self.window )
         self.view_matrix = ProjectionViewMatrix(
+            aspect_ratio,
             fov = 60.0,
             near_clip = 1.0,
             far_clip = 200.0
@@ -99,9 +101,29 @@ class Application( object ):
             )
         self.scene_node.add_child( self.camera )
 
+        # we need to make a second camera because the
+        # frustrum changes depending on the viewport
+        # geometry
+        # but for optimisation and convenience, the aspect
+        # ratio is tighly coupled to the frustrum.
+        # it is only designed to be updated at the start of
+        # the frame
+        aspect_ratio = self.viewport.aspect_ratio( self.window )
+        self.view_matrix2 = ProjectionViewMatrix(
+            aspect_ratio,
+            fov = 60.0,
+            near_clip = 1.0,
+            far_clip = 200.0
+            )
+        self.camera2 = CameraNode(
+            '/camera2',
+            self.view_matrix2
+            )
+        self.scene_node.add_child( self.camera2 )
+
         # set the viewports camera
         self.viewport.set_camera( self.scene_node, self.camera )
-        self.viewport_2.set_camera( self.scene_node, self.camera )
+        self.viewport_2.set_camera( self.scene_node, self.camera2 )
     
     def run( self ):
         pyglet.app.run()
