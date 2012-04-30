@@ -16,9 +16,11 @@ import pygly.renderer.idle
 import pygly.renderer.window
 from pygly.renderer.viewport import Viewport
 from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
+from pygly.renderer.orthogonal_view_matrix import OrthogonalViewMatrix
 from pygly.scene.scene_node import SceneNode
 from pygly.scene.camera_node import CameraNode
 from pygly.scene.render_callback_node import RenderCallbackNode
+from pygly.scene import debug_cube
 from pygly.mesh.obj_mesh import OBJ_Mesh
 from pygly.input.keyboard import Keyboard
 from pygly.input.mouse import Mouse
@@ -86,15 +88,12 @@ class Application( object ):
         # create a scene
         self.scene_node = SceneNode( '/root' )
 
-        # create a mesh object
-        self.mesh = OBJ_Mesh( 'examples/data/obj/cessna.obj' )
-
         # create our render node with callbacks to
         # render our mesh
-        self.mesh_node= RenderCallbackNode(
+        self.mesh_node = RenderCallbackNode(
             '/obj/rendernode',
-            self.initialise_mesh,
-            self.render_mesh
+            None,
+            debug_cube.render
             )
         self.scene_node.add_child( self.mesh_node )
 
@@ -109,6 +108,12 @@ class Application( object ):
         self.view_matrix = ProjectionViewMatrix(
             aspect_ratio,
             fov = 60.0,
+            near_clip = 1.0,
+            far_clip = 200.0
+            )
+        self.view_matrix = OrthogonalViewMatrix(
+            aspect_ratio,
+            scale = [ 20.0, 20.0 ],
             near_clip = 1.0,
             far_clip = 200.0
             )
@@ -192,22 +197,30 @@ class Application( object ):
         # update our mouse pos
         self.last_mouse_point = mouse_pos
 
-        # check if the mouse is within the viewport
-        if False == self.viewport.is_point_within_viewport(
+        # even though the mouse moved, we can't be
+        # guaranteed that it is within the window.
+        # we sometimes get events that include mouse
+        # values that are outside the window.
+        # so we need to check against this.
+        viewports = [ self.viewport ]
+        viewport = pygly.renderer.window.find_viewport_for_point(
             self.window,
+            viewports,
             mouse_pos
-            ):
+            )
+
+        if viewport == None:
             return
 
         # make the point relative to the viewport
-        relative_point = self.viewport.point_relative_to_viewport(
+        relative_point = pygly.renderer.window.window_point_to_viewport_point(
             self.window,
+            viewport,
             mouse_pos
             )
 
         # cast a ray from the mouse's current position
-        mouse_ray = self.viewport.relative_point_to_ray(
-            self.window,
+        mouse_ray = self.viewport.viewport_point_to_ray(
             relative_point
             )
 
