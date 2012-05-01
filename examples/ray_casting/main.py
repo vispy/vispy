@@ -15,7 +15,7 @@ import numpy
 import pygly.renderer.idle
 import pygly.renderer.window
 from pygly.renderer.viewport import Viewport
-from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
+#from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
 from pygly.renderer.orthogonal_view_matrix import OrthogonalViewMatrix
 from pygly.scene.scene_node import SceneNode
 from pygly.scene.camera_node import CameraNode
@@ -48,9 +48,8 @@ class Application( object ):
 
         # create a viewport
         self.viewport = Viewport(
-            numpy.array(
-                [ [0.0, 0.0], [1.0, 1.0] ],
-                dtype = numpy.float
+            pygly.renderer.window.window_size_as_rect(
+                self.window
                 )
             )
 
@@ -104,15 +103,17 @@ class Application( object ):
         self.mesh_node.rotate_object_x( math.pi / 4.0 )
         
         # create a camera and a view matrix
-        aspect_ratio = self.viewport.aspect_ratio( self.window )
+        """
         self.view_matrix = ProjectionViewMatrix(
+            self.viewport.aspect_ratio,
             aspect_ratio,
             fov = 60.0,
             near_clip = 1.0,
             far_clip = 200.0
             )
+        """
         self.view_matrix = OrthogonalViewMatrix(
-            aspect_ratio,
+            self.viewport.aspect_ratio,
             scale = [ 20.0, 20.0 ],
             near_clip = 1.0,
             far_clip = 200.0

@@ -42,11 +42,8 @@ def setup_pygly_scene():
     grid_node.translate_inertial_z( -80.0 )
 
     # create a camera and a view matrix
-    aspect_ratio = pygly_layer.pygly_viewport.aspect_ratio(
-        director.window
-        )
     view_matrix = ProjectionViewMatrix(
-        aspect_ratio,
+        pygly_layer.pygly_viewport.aspect_ratio,
         fov = 60.0,
         near_clip = 1.0,
         far_clip = 200.0

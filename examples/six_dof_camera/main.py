@@ -48,7 +48,9 @@ class Application( object ):
 
         # create a viewport
         self.viewport = Viewport(
-            [ [0.0, 0.0], [1.0, 1.0] ]
+            pygly.renderer.window.window_size_as_rect(
+                self.window
+                )
             )
 
         # create our input devices
@@ -89,9 +91,8 @@ class Application( object ):
         self.grid_node.translate_inertial_z( -80.0 )
         
         # create a camera and a view matrix
-        aspect_ratio = self.viewport.aspect_ratio( self.window )
         self.view_matrix = ProjectionViewMatrix(
-            aspect_ratio,
+            self.viewport.aspect_ratio,
             fov = 60.0,
             near_clip = 1.0,
             far_clip = 200.0
@@ -102,6 +103,9 @@ class Application( object ):
             self.view_matrix
             )
         self.scene_node.add_child( self.camera )
+
+        # move the camera up so it starts above the grid
+        self.camera.translate_inertial_y( 20.0 )
         
         # assign a camera controller
         # we'll use the 6 degrees of freedom

@@ -49,7 +49,9 @@ class Application( object ):
 
         # create a viewport
         self.viewport = Viewport(
-            [ [0.0, 0.0], [1.0, 1.0] ]
+            pygly.renderer.window.window_size_as_rect(
+                self.window
+                )
             )
 
         # over-ride the viewports setup method
@@ -105,9 +107,8 @@ class Application( object ):
         self.mesh_node.translate_inertial_z( -40.0 )
         
         # create a camera and a view matrix
-        aspect_ratio = self.viewport.aspect_ratio( self.window )
         self.view_matrix = ProjectionViewMatrix(
-            aspect_ratio,
+            self.viewport.aspect_ratio,
             fov = 60.0,
             near_clip = 1.0,
             far_clip = 200.0
