@@ -6,6 +6,7 @@ Created on 03/03/2012
 
 import math
 
+import numpy
 from pyglet.gl import *
 import pyglet
 
@@ -17,6 +18,7 @@ from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene.scene_node import SceneNode
 from pygly.scene.render_callback_node import RenderCallbackNode
 from pygly.scene.camera_node import CameraNode
+from pygly.maths import rectangle
 
 from examples.render_callbacks import grid
 
@@ -43,12 +45,20 @@ class Application( object ):
         # create a viewport that spans
         # the entire screen
         self.viewport = Viewport(
-            [ [0.0, 0.0], [1.0, 1.0] ]
+            pygly.renderer.window.window_size_as_rect(
+                self.window
+                )
             )
-        # make the viewport slightly off the edge
-        # to avoid seams showing through
-        self.viewport_2 = Viewport(
-            [ [0.7, -0.01], [0.31, 0.3] ]
+
+        # make a second viewport
+        # this viewport will be 1/10th the size
+        self.viewport_rect = pygly.renderer.window.window_size_as_rect(
+            self.window
+            )
+        self.viewport_rect[ 1 ] /= [10,10]
+
+        self.floating_viewport = Viewport(
+            self.viewport_rect
             )
 
         # setup our scene
@@ -88,9 +98,8 @@ class Application( object ):
         self.grid_node.translate_inertial_z( -80.0 )
 
         # create a camera and a view matrix
-        aspect_ratio = self.viewport.aspect_ratio( self.window )
         self.view_matrix = ProjectionViewMatrix(
-            aspect_ratio,
+            self.viewport.aspect_ratio,
             fov = 60.0,
             near_clip = 1.0,
             far_clip = 200.0
@@ -108,9 +117,8 @@ class Application( object ):
         # ratio is tighly coupled to the frustrum.
         # it is only designed to be updated at the start of
         # the frame
-        aspect_ratio = self.viewport.aspect_ratio( self.window )
         self.view_matrix2 = ProjectionViewMatrix(
-            aspect_ratio,
+            self.floating_viewport.aspect_ratio,
             fov = 60.0,
             near_clip = 1.0,
             far_clip = 200.0
@@ -123,12 +131,41 @@ class Application( object ):
 
         # set the viewports camera
         self.viewport.set_camera( self.scene_node, self.camera )
-        self.viewport_2.set_camera( self.scene_node, self.camera2 )
+        self.floating_viewport.set_camera(
+            self.scene_node,
+            self.camera2
+            )
+
+        # we will use this as a vector to move the viewport
+        # around the window
+        self.velocity = numpy.array(
+            [ 5, 5 ],
+            dtype = numpy.int
+            )
     
     def run( self ):
         pyglet.app.run()
     
     def step( self, dt ):
+        # move the viewport around the screen
+        rect = self.floating_viewport.rect
+        rect[ 0 ] += self.velocity
+        self.floating_viewport.rect = rect
+
+        # see if we've gone over the window's bounds
+        if self.floating_viewport.left < 0:
+            if self.velocity[ 0 ] < 0:
+                self.velocity[ 0 ] = -self.velocity[ 0 ]
+        if self.floating_viewport.right > self.window.width:
+            if self.velocity[ 0 ] > 0:
+                self.velocity[ 0 ] = -self.velocity[ 0 ]
+        if self.floating_viewport.bottom < 0:
+            if self.velocity[ 1 ] < 0:
+                self.velocity[ 1 ] = -self.velocity[ 1 ]
+        if self.floating_viewport.top > self.window.height:
+            if self.velocity[ 1 ] > 0:
+                self.velocity[ 1 ] = -self.velocity[ 1 ]
+
         # rotate the mesh about it's own vertical axis
         self.grid_node.rotate_object_y( dt )
 
@@ -136,9 +173,11 @@ class Application( object ):
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
 
         # render the scene
+        # render the large viewport first then the smaller
+        # viewport ontop of it
         viewports = [
             self.viewport,
-            self.viewport_2
+            self.floating_viewport
             ]
         pygly.renderer.window.render( self.window, viewports )
 
