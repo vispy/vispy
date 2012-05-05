@@ -43,6 +43,16 @@ PyGLy requires the following software:
    * Pyglet
    * NumPy
 
+You can install dependencies easily by using the command:
+For Mac OS-X users:
+```
+pip install -r requirements_osx.txt
+```
+For everyone else
+```
+pip install -r requirements.txt
+```
+
 
 Usage
 -----------------------
