@@ -59,3 +59,4 @@ def draw_grid( cell_size, num_cells ):
 
         glVertex3f( -half_size[ 1 ], 0.0, z_pos )
         glVertex3f( +half_size[ 1 ], 0.0, z_pos )
+
