@@ -1,2 +1,5 @@
 numpy
+cython
+pil
 pyglet
+pyrr
