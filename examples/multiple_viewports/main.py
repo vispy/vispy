@@ -10,6 +10,8 @@ import numpy
 from pyglet.gl import *
 import pyglet
 
+from pyrr import rectangle
+
 # over-ride the default pyglet idle loop
 import pygly.renderer.idle
 import pygly.renderer.window
@@ -18,7 +20,6 @@ from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene.scene_node import SceneNode
 from pygly.scene.render_callback_node import RenderCallbackNode
 from pygly.scene.camera_node import CameraNode
-from pygly.maths import rectangle
 
 from examples.render_callbacks import grid
 
