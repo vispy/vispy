@@ -1,10 +1,14 @@
+Make test module.
+Move existing tests into test module.
+Use unit test instead of dodgy tests.
+
 General
 Generate docs
 -push into github wiki?
-Use unit test instead of dodgy tests.
 Use logger instead of print
 
 Render Module
+Viewport: Move some scissor, etc functions into opengl module
 ViewMatrix: convert_to_planes - creates 6 planes to do collion detection against.
 http://www.flipcode.com/archives/Frustum_Culling.shtml
 Window: remove the GL_COLOR_BUFFER_BIT clearing, this should be user controlled.
@@ -27,6 +31,12 @@ Misc: use resource locations - http://www.pyglet.org/doc/programming_guide/loadi
 Provide MipMap wrappers: http://www.opengl.org/archives/resources/features/KilgardTechniques/oglpitfall/
 
 Scene Module
+Camera: create orbit_controller
+-free orbit (can keep pitching > 90 degrees)
+-locked orbit (can pitch up and down 90 degrees)
+SceneNode: add 'has_parent' which takes a node, returns True if node is a parent somewhere
+SceneNode: add 'root' which returns the root node of the scene graph
+Camera: when setting viewport camera, assert the scene is a parent of the camera
 Ray: cast ray from scene space into viewport space
 Ray: use viewport ray position as ui position (instead of casting from mouse to scene)
 Ray: scale scene node bounding sphere / AABB / AOBB into scene space
@@ -69,33 +79,6 @@ http://dip.sun.ac.za/~henri/advgfx.html
 http://www.alsprogrammingresource.com/portals_tutorial.html
 
 
-Maths Module
-array_index: make this take an N long array and calculate the index dynamically.
-collision: complete collision detection algs
-sphere / plane
-point / frustrum
-sphere / box
-sphere / sphere
-sphere / triangle
-sphere / N triangles
-box / plane
-box / frustrum
-box / box
-box / triangle
-box / N triangles
-point / sphere
-point / box
-point / plane
-point / frustrum
-point / point
-point / triangle
-point / N triangles
-triangle / triangle
-triangle / plane
-triangle / frustrum
-triangle / N triangles
-
-
 Cocos2d
 Add support for layer translations, orientation and scale
 use glDepthFunc(func) instead of disabling depth test
@@ -122,3 +105,6 @@ Add shapes module: box, sphere, torus, cylinder, etc
 
 Voxel: look up kdtree for possible usage
 http://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.KDTree.html#scipy.spatial.KDTree
+implement hilbert curve with RLE encoding
+implement SVO
+implement nearest neighbour octree
