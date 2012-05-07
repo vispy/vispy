@@ -96,7 +96,8 @@ class Application( object ):
 
         # create a node that we'll move around
         self.test_node = SceneNode( '/test' )
-        self.scene_node.add_child( self.test_node )
+        self.grid_node.add_child( self.test_node )
+        self.test_node.translate_object_y( 20.0 )
 
         # create a fps controller for the node
         self.node_controller = FPS_Controller()
