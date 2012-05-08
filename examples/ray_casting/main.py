@@ -214,14 +214,14 @@ class Application( object ):
             return
 
         # make the point relative to the viewport
-        relative_point = pygly.window.window_point_to_viewport_point(
+        relative_point = pygly.window.create_viewport_point_from_window_point(
             self.window,
             viewport,
             mouse_pos
             )
 
         # cast a ray from the mouse's current position
-        mouse_ray = self.viewport.viewport_point_to_ray(
+        mouse_ray = self.viewport.create_ray_from_viewport_point(
             relative_point
             )
 
