@@ -8,8 +8,8 @@ from pyglet.gl import *
 import pyglet
 
 # over-ride the default pyglet idle loop
-import pygly.renderer.idle
-import pygly.renderer.window
+import pygly.idle
+import pygly.window
 
 
 class Application( object ):
@@ -58,7 +58,7 @@ class Application( object ):
 
         # render the scene
         viewports = []
-        pygly.renderer.window.render( self.window, viewports )
+        pygly.window.render( self.window, viewports )
 
         # render the fps
         self.fps_display.draw()

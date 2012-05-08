@@ -4,11 +4,11 @@
 
 import math
 
-from pygly.renderer.viewport import Viewport
-from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
-from pygly.scene.scene_node import SceneNode
-from pygly.scene.render_callback_node import RenderCallbackNode
-from pygly.scene.camera_node import CameraNode
+from pygly.viewport import Viewport
+from pygly.projection_view_matrix import ProjectionViewMatrix
+from pygly.scene_node import SceneNode
+from pygly.render_callback_node import RenderCallbackNode
+from pygly.camera_node import CameraNode
 from pygly.cocos2d.layer import Layer as PyGLyLayer
 
 import examples.render_callbacks.grid as grid

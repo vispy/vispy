@@ -12,19 +12,19 @@ from pyglet.gl import *
 import pyglet
 import numpy
 
-import pygly.renderer.idle
-import pygly.renderer.window
-from pygly.renderer.viewport import Viewport
-#from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
-from pygly.renderer.orthogonal_view_matrix import OrthogonalViewMatrix
-from pygly.scene.scene_node import SceneNode
-from pygly.scene.camera_node import CameraNode
-from pygly.scene.render_callback_node import RenderCallbackNode
-from pygly.scene import debug_cube
+import pygly.idle
+import pygly.window
+from pygly.viewport import Viewport
+#from pygly.projection_view_matrix import ProjectionViewMatrix
+from pygly.orthogonal_view_matrix import OrthogonalViewMatrix
+from pygly.scene_node import SceneNode
+from pygly.camera_node import CameraNode
+from pygly.render_callback_node import RenderCallbackNode
+from pygly import debug_cube
 from pygly.mesh.obj_mesh import OBJ_Mesh
 from pygly.input.keyboard import Keyboard
 from pygly.input.mouse import Mouse
-import pygly.common.list
+import pygly.list
 
 
 class Application( object ):
@@ -48,7 +48,7 @@ class Application( object ):
 
         # create a viewport
         self.viewport = Viewport(
-            pygly.renderer.window.window_size_as_rect(
+            pygly.window.window_size_as_rect(
                 self.window
                 )
             )
@@ -186,7 +186,7 @@ class Application( object ):
 
         # see if the mouse moved
         mouse_pos = self.mouse.absolute_position
-        mouse_moved = pygly.common.list.not_equivalent(
+        mouse_moved = pygly.list.not_equivalent(
             mouse_pos,
             self.last_mouse_point
             )
@@ -204,7 +204,7 @@ class Application( object ):
         # values that are outside the window.
         # so we need to check against this.
         viewports = [ self.viewport ]
-        viewport = pygly.renderer.window.find_viewport_for_point(
+        viewport = pygly.window.find_viewport_for_point(
             self.window,
             viewports,
             mouse_pos
@@ -214,7 +214,7 @@ class Application( object ):
             return
 
         # make the point relative to the viewport
-        relative_point = pygly.renderer.window.window_point_to_viewport_point(
+        relative_point = pygly.window.window_point_to_viewport_point(
             self.window,
             viewport,
             mouse_pos
@@ -242,7 +242,7 @@ class Application( object ):
         
         # render the scene
         viewports = [ self.viewport ]
-        pygly.renderer.window.render( self.window, viewports )
+        pygly.window.render( self.window, viewports )
 
         # render the fps
         self.fps_display.draw()

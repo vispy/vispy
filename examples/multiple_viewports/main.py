@@ -13,13 +13,13 @@ import pyglet
 from pyrr import rectangle
 
 # over-ride the default pyglet idle loop
-import pygly.renderer.idle
-import pygly.renderer.window
-from pygly.renderer.viewport import Viewport
-from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
-from pygly.scene.scene_node import SceneNode
-from pygly.scene.render_callback_node import RenderCallbackNode
-from pygly.scene.camera_node import CameraNode
+import pygly.idle
+import pygly.window
+from pygly.viewport import Viewport
+from pygly.projection_view_matrix import ProjectionViewMatrix
+from pygly.scene_node import SceneNode
+from pygly.render_callback_node import RenderCallbackNode
+from pygly.camera_node import CameraNode
 
 from examples.render_callbacks import grid
 
@@ -46,14 +46,14 @@ class Application( object ):
         # create a viewport that spans
         # the entire screen
         self.viewport = Viewport(
-            pygly.renderer.window.window_size_as_rect(
+            pygly.window.window_size_as_rect(
                 self.window
                 )
             )
 
         # make a second viewport
         # this viewport will be 1/10th the size
-        self.viewport_rect = pygly.renderer.window.window_size_as_rect(
+        self.viewport_rect = pygly.window.window_size_as_rect(
             self.window
             )
         self.viewport_rect[ 1 ] /= [10,10]
@@ -180,7 +180,7 @@ class Application( object ):
             self.viewport,
             self.floating_viewport
             ]
-        pygly.renderer.window.render( self.window, viewports )
+        pygly.window.render( self.window, viewports )
 
         # render the fps
         self.fps_display.draw()

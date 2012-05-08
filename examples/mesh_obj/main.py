@@ -14,13 +14,13 @@ import random
 from pyglet.gl import *
 import pyglet
 
-import pygly.renderer.idle
-import pygly.renderer.window
-from pygly.renderer.viewport import Viewport
-from pygly.renderer.projection_view_matrix import ProjectionViewMatrix
-from pygly.scene.scene_node import SceneNode
-from pygly.scene.camera_node import CameraNode
-from pygly.scene.render_callback_node import RenderCallbackNode
+import pygly.idle
+import pygly.window
+from pygly.viewport import Viewport
+from pygly.projection_view_matrix import ProjectionViewMatrix
+from pygly.scene_node import SceneNode
+from pygly.camera_node import CameraNode
+from pygly.render_callback_node import RenderCallbackNode
 from pygly.mesh.obj_mesh import OBJ_Mesh
 
 
@@ -45,7 +45,7 @@ class Application( object ):
 
         # create a viewport
         self.viewport = Viewport(
-            pygly.renderer.window.window_size_as_rect(
+            pygly.window.window_size_as_rect(
                 self.window
                 )
             )
@@ -164,7 +164,7 @@ class Application( object ):
 
         # render the scene
         viewports = [ self.viewport ]
-        pygly.renderer.window.render( self.window, viewports )
+        pygly.window.render( self.window, viewports )
 
         # render the fps
         self.fps_display.draw()
