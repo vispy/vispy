@@ -14,16 +14,13 @@ setup(
     author_email = 'adam.lw.griffiths@gmail.com',
     url = 'https://github.com/adamlwgriffiths/PyGLy',
     platforms = [ 'any' ],
+    test_suite = "pygly.test",
     packages = [
         'pygly',
         'pygly.cocos2d',
-        'pygly.common',
-        'pygly.helpers',
         'pygly.input',
         'pygly.mesh',
-        'pygly.mesh.uv_generators',
-        'pygly.renderer'
-        'pygly.scene',
+        'pygly.uv_generators',
         ],
     classifiers = [
         'Intended Audience :: Developers',
