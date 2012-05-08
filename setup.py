@@ -9,7 +9,7 @@ setup(
     long_description = """An OpenGL framework designed for flexbility
         and power. PyGLy provides a number of tools to let you
         do what you want, how you want.""",
-    license = 'MIT',
+    license = 'BSD',
     author = 'Adam Griffiths',
     author_email = 'adam.lw.griffiths@gmail.com',
     url = 'https://github.com/adamlwgriffiths/PyGLy',
