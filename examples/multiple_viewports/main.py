@@ -140,7 +140,7 @@ class Application( object ):
         # we will use this as a vector to move the viewport
         # around the window
         self.velocity = numpy.array(
-            [ 5, 5 ],
+            [ 500, 500 ],
             dtype = numpy.int
             )
     
@@ -150,7 +150,8 @@ class Application( object ):
     def step( self, dt ):
         # move the viewport around the screen
         rect = self.floating_viewport.rect
-        rect[ 0 ] += self.velocity
+        frame_velocity = self.velocity * dt
+        rect[ 0 ] += frame_velocity
         self.floating_viewport.rect = rect
 
         # see if we've gone over the window's bounds
