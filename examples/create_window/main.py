@@ -7,9 +7,11 @@ Created on 15/06/2011
 from pyglet.gl import *
 import pyglet
 
-# over-ride the default pyglet idle loop
-import pygly.idle
 import pygly.window
+
+# over-ride the default pyglet idle loop
+import pygly.monkey_patch
+pygly.monkey_patch.patch_idle_loop()
 
 
 class Application( object ):

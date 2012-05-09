@@ -9,14 +9,16 @@ import math
 from pyglet.gl import *
 import pyglet
 
-# over-ride the default pyglet idle loop
-import pygly.idle
 import pygly.window
 from pygly.viewport import Viewport
 from pygly.orthogonal_view_matrix import OrthogonalViewMatrix
 from pygly.scene_node import SceneNode
 from pygly.render_callback_node import RenderCallbackNode
 from pygly.camera_node import CameraNode
+
+# over-ride the default pyglet idle loop
+import pygly.monkey_patch
+pygly.monkey_patch.patch_idle_loop()
 
 
 class Application( object ):

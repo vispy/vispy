@@ -15,7 +15,6 @@ from pyglet.gl import *
 import pyglet
 import numpy
 
-import pygly.idle
 import pygly.window
 from pygly.viewport import Viewport
 from pygly.projection_view_matrix import ProjectionViewMatrix
@@ -27,6 +26,11 @@ from pygly.input.keyboard import Keyboard
 from pygly.input.mouse import Mouse
 
 from examples.render_callbacks import grid
+
+# over-ride the default pyglet idle loop
+import pygly.monkey_patch
+pygly.monkey_patch.patch_idle_loop()
+
 
 class Application( object ):
     

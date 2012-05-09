@@ -14,7 +14,6 @@ import random
 import pyglet
 from pyglet.gl import *
 
-import pygly.idle
 import pygly.window
 from pygly.viewport import Viewport
 from pygly.projection_view_matrix import ProjectionViewMatrix
@@ -22,6 +21,10 @@ from pygly.scene_node import SceneNode
 from pygly.camera_node import CameraNode
 from pygly.render_callback_node import RenderCallbackNode
 from pygly.mesh.md2_mesh import MD2_Mesh
+
+# over-ride the default pyglet idle loop
+import pygly.monkey_patch
+pygly.monkey_patch.patch_idle_loop()
 
 # MD2 frame interpolation is incredibly slow
 # set this to True if you want to see it

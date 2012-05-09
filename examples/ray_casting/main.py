@@ -12,7 +12,6 @@ from pyglet.gl import *
 import pyglet
 import numpy
 
-import pygly.idle
 import pygly.window
 from pygly.viewport import Viewport
 #from pygly.projection_view_matrix import ProjectionViewMatrix
@@ -25,6 +24,10 @@ from pygly.mesh.obj_mesh import OBJ_Mesh
 from pygly.input.keyboard import Keyboard
 from pygly.input.mouse import Mouse
 import pygly.list
+
+# over-ride the default pyglet idle loop
+import pygly.monkey_patch
+pygly.monkey_patch.patch_idle_loop()
 
 
 class Application( object ):
