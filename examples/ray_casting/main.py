@@ -51,7 +51,7 @@ class Application( object ):
 
         # create a viewport
         self.viewport = Viewport(
-            pygly.window.window_size_as_rect(
+            pygly.window.create_rectangle(
                 self.window
                 )
             )
@@ -217,9 +217,7 @@ class Application( object ):
             return
 
         # make the point relative to the viewport
-        relative_point = pygly.window.create_viewport_point_from_window_point(
-            self.window,
-            viewport,
+        relative_point = self.viewport.create_viewport_point_from_window_point(
             mouse_pos
             )
 

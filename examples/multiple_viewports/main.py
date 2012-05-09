@@ -48,14 +48,14 @@ class Application( object ):
         # create a viewport that spans
         # the entire screen
         self.viewport = Viewport(
-            pygly.window.window_size_as_rect(
+            pygly.window.create_rectangle(
                 self.window
                 )
             )
 
         # make a second viewport
         # this viewport will be 1/10th the size
-        self.viewport_rect = pygly.window.window_size_as_rect(
+        self.viewport_rect = pygly.window.create_rectangle(
             self.window
             )
         self.viewport_rect[ 1 ] /= [10,10]

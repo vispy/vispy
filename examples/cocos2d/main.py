@@ -4,7 +4,6 @@
 
 import math
 
-from pygly.viewport import Viewport
 from pygly.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene_node import SceneNode
 from pygly.render_callback_node import RenderCallbackNode

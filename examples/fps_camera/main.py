@@ -53,7 +53,7 @@ class Application( object ):
 
         # create a viewport
         self.viewport = Viewport(
-            pygly.window.window_size_as_rect(
+            pygly.window.create_rectangle(
                 self.window
                 )
             )
