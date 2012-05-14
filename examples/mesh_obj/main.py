@@ -77,19 +77,19 @@ class Application( object ):
 
     def setup_scene( self ):
         # create a scene
-        self.scene_node = SceneNode( '/root' )
+        self.scene_node = SceneNode( 'root' )
 
-        # create a mesh object
+        self.mesh_node = SceneNode( 'obj' )
+        self.scene_node.add_child( self.mesh_node )
+
+        # create a mesh object and render node
         self.mesh = OBJ_Mesh( 'examples/data/obj/cessna.obj' )
-
-        # create our render node with callbacks to
-        # render our mesh
-        self.mesh_node = RenderCallbackNode(
-            '/obj/rendernode',
+        self.mesh_render_node = RenderCallbackNode(
+            'mesh',
             self.initialise_mesh,
             self.render_mesh
             )
-        self.scene_node.add_child( self.mesh_node )
+        self.mesh_node.add_child( self.mesh_render_node )
 
         # move the mesh so we can see it
         self.mesh_node.translate_object_z( -30.0 )
@@ -106,7 +106,7 @@ class Application( object ):
             )
         # create a camera
         self.camera = CameraNode(
-            '/camera',
+            'camera',
             self.view_matrix
             )
         self.scene_node.add_child( self.camera )

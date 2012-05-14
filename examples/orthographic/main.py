@@ -71,11 +71,11 @@ class Application( object ):
         SceneNode.debug = True
 
         # create a scene
-        self.scene_node = SceneNode( '/root' )
+        self.scene_node = SceneNode( 'root' )
 
-        self.sn1 = SceneNode( '/sn1' )
-        self.sn2 = SceneNode( '/sn2' )
-        self.sn3 = SceneNode( '/sn3' )
+        self.sn1 = SceneNode( 'sn1' )
+        self.sn2 = SceneNode( 'sn2' )
+        self.sn3 = SceneNode( 'sn3' )
         self.scene_node.add_child( self.sn1 )
         self.sn1.add_child( self.sn2 )
         self.sn2.add_child( self.sn3 )
@@ -106,7 +106,7 @@ class Application( object ):
             far_clip = 200.0
             )
         self.camera = CameraNode(
-            '/camera',
+            'camera',
             self.view_matrix
             )
         self.scene_node.add_child( self.camera )

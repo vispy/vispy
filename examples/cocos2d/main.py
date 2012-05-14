@@ -13,7 +13,7 @@ from pygly.cocos2d.layer import Layer as PyGLyLayer
 import examples.render_callbacks.grid as grid
 
 pygly_layer = None
-pygly_node = SceneNode( '/root' )
+pygly_node = SceneNode( 'root' )
 pygly_camera = None
 
 def setup_pygly_scene():
@@ -27,12 +27,15 @@ def setup_pygly_scene():
     # won't have been created
     pygly_layer = PyGLyLayer()
 
-    grid_node = RenderCallbackNode(
-        '/grid',
+    grid_node = SceneNode( 'grid' )
+    pygly_node.add_child( grid_node )
+
+    grid_render_node = RenderCallbackNode(
+        'mesh',
         grid.initialise_grid,
         grid.render_grid
         )
-    pygly_node.add_child( grid_node )
+    grid_node.add_child( grid_render_node )
 
     # rotate the mesh so it is tilting forward
     grid_node.rotate_object_x( math.pi / 4.0 )
@@ -48,7 +51,7 @@ def setup_pygly_scene():
         far_clip = 200.0
         )
     pygly_camera = CameraNode(
-        '/camera',
+        'camera',
         view_matrix
         )
     pygly_node.add_child( pygly_camera )

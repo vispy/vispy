@@ -81,30 +81,27 @@ class Application( object ):
 
     def setup_scene( self ):
         # create a scene
-        self.scene_node = SceneNode( '/root' )
+        self.scene_node = SceneNode( 'root' )
 
-        self.mesh_node = SceneNode( '/mesh' )
+        self.mesh_node = SceneNode( 'mesh' )
         self.scene_node.add_child( self.mesh_node )
-
-        # create a mesh object
-        self.mesh = MD2_Mesh(
-            'examples/data/md2/sydney.md2'
-            )
-
-        # create our render node
-        # this is seperate to the mesh node because
-        # we need to rotate it about it's X axis
-        # due to the model being on its side
-        self.render_node = RenderCallbackNode(
-            '/md2/rendernode',
-            self.initialise_mesh,
-            self.render_mesh
-            )
-        self.mesh_node.add_child( self.render_node )
 
         # the md2 is oriented at 90 degrees about X
         # re-orient the mesh
-        self.render_node.rotate_object_x( -math.pi / 2.0 )
+        self.md2_rotator_node = SceneNode( 'md2_rotate' )
+        self.mesh_node.add_child( self.md2_rotator_node )
+        self.md2_rotator_node.rotate_object_x( -math.pi / 2.0 )
+
+        # create a mesh and render node
+        self.mesh = MD2_Mesh(
+            'examples/data/md2/sydney.md2'
+            )
+        self.render_node = RenderCallbackNode(
+            'mesh',
+            self.initialise_mesh,
+            self.render_mesh
+            )
+        self.md2_rotator_node.add_child( self.render_node )
 
         # move the mesh so we can see it
         self.mesh_node.translate_inertial_z( -40.0 )
@@ -118,7 +115,7 @@ class Application( object ):
             )
         # create a camera
         self.camera = CameraNode(
-            '/camera',
+            'camera',
             self.view_matrix
             )
         self.scene_node.add_child( self.camera )

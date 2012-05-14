@@ -84,15 +84,18 @@ class Application( object ):
 
     def setup_scene( self ):
         # create a scene
-        self.scene_node = SceneNode( '/root' )
+        self.scene_node = SceneNode( 'root' )
+
+        self.grid_node = SceneNode( 'grid' )
+        self.scene_node.add_child( self.grid_node )
 
         # create a grid to render
-        self.grid_node = RenderCallbackNode(
-            '/grid',
+        self.grid_render_node = RenderCallbackNode(
+            'mesh',
             grid.initialise_grid,
             grid.render_grid
             )
-        self.scene_node.add_child( self.grid_node )
+        self.grid_node.add_child( self.grid_render_node )
 
         # rotate the mesh so it is tilting forward
         self.grid_node.rotate_object_x( math.pi / 4.0 )
@@ -108,7 +111,7 @@ class Application( object ):
             far_clip = 200.0
             )
         self.camera = CameraNode(
-            '/camera',
+            'camera',
             self.view_matrix
             )
         self.scene_node.add_child( self.camera )
@@ -127,7 +130,7 @@ class Application( object ):
             far_clip = 200.0
             )
         self.camera2 = CameraNode(
-            '/camera2',
+            'camera2',
             self.view_matrix2
             )
         self.scene_node.add_child( self.camera2 )

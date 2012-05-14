@@ -85,14 +85,17 @@ class Application( object ):
         SceneNode.debug = True
 
         # create a scene
-        self.scene_node = SceneNode( '/root' )
+        self.scene_node = SceneNode( 'root' )
 
-        self.grid_node = RenderCallbackNode(
-            '/grid',
+        self.grid_node = SceneNode( 'grid' )
+        self.scene_node.add_child( self.grid_node )
+
+        self.grid_render_node = RenderCallbackNode(
+            'mesh',
             grid.initialise_grid,
             grid.render_grid
             )
-        self.scene_node.add_child( self.grid_node )
+        self.grid_node.add_child( self.grid_render_node )
 
         # move the grid backward so we can see it
         # and move it down so we start above it
@@ -116,7 +119,7 @@ class Application( object ):
             )
         # create a camera
         self.camera = CameraNode(
-            '/camera',
+            'camera',
             self.view_matrix
             )
         self.scene_node.add_child( self.camera )
