@@ -26,10 +26,6 @@ from pygly.mesh.md2_mesh import MD2_Mesh
 import pygly.monkey_patch
 pygly.monkey_patch.patch_idle_loop()
 
-# MD2 frame interpolation is incredibly slow
-# set this to True if you want to see it
-USE_FRAME_INTERPOLATION = False
-
 
 class Application( object ):
     
@@ -94,7 +90,8 @@ class Application( object ):
 
         # create a mesh and render node
         self.mesh = MD2_Mesh(
-            'examples/data/md2/sydney.md2'
+            'examples/data/md2/sydney.md2',
+            interpolate = 1
             )
         self.render_node = RenderCallbackNode(
             'mesh',
@@ -203,14 +200,6 @@ class Application( object ):
             self.animation_time,
             fnum_frames - 1.0
             )
-
-        # frame interpolation is sucking up MASSIVE amounts of
-        # cpu, so I've put this check on
-        # if frame interpolation is disabled, frame times
-        # will always be X.00
-        # ie, have nothing past the decimal place.
-        if False == USE_FRAME_INTERPOLATION:
-            ignored, self.mesh.frame = math.modf( self.mesh.frame )
 
         # rotate the mesh about it's own vertical axis
         self.mesh_node.rotate_object_y( dt )
