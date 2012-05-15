@@ -29,8 +29,6 @@ Input:
 mouse: handle on_mouse_drag which is mutually exclusive with on_mouse_motion
 
 Mesh Module
-MD2: optimise interopolation code, perhaps bake N frames between each before hand
-MD2: split mesh data from file / frame data, put current frame into the callbacks
 OBJ: implement as much of the Wavefront OBJ spec was possible
 http://www.martinreddy.net/gfx/3d/OBJ.spec
 OBJ: perhaps convert trifans to triangles and draw using pyglet vertexlist
