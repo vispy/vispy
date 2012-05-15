@@ -11,6 +11,7 @@ import math
 import time
 import random
 
+import numpy
 import pyglet
 from pyglet.gl import *
 
@@ -80,38 +81,68 @@ class Application( object ):
         # create a scene
         self.scene_node = SceneNode( 'root' )
 
-        self.mesh_node = SceneNode( 'mesh' )
-        self.scene_node.add_child( self.mesh_node )
-
-        # the md2 is oriented at 90 degrees about X
-        # re-orient the mesh
-        self.md2_rotator_node = SceneNode( 'md2_rotate' )
-        self.mesh_node.add_child( self.md2_rotator_node )
-        self.md2_rotator_node.rotate_object_x( -math.pi / 2.0 )
-
-        # create a mesh and render node
-        self.mesh = MD2_Mesh(
-            MD2_Renderer(
-                'examples/data/md2/sydney.md2',
-                interpolate = 1
-                )
+        # load the md2 and create a renderer object
+        # for it
+        self.md2_renderer = MD2_Renderer(
+            'examples/data/md2/sydney.md2',
+            interpolate = 0
             )
-        self.render_node = RenderCallbackNode(
-            'mesh',
-            self.initialise_mesh,
-            self.render_mesh
-            )
-        self.md2_rotator_node.add_child( self.render_node )
+        self.image = None
+        self.texture = None
 
-        # move the mesh so we can see it
-        self.mesh_node.translate_inertial_z( -40.0 )
+        self.meshes = []
+        distance = 50.0
+        num_meshes = 5
+        offset = distance * (float(num_meshes - 1.0) / 2.0)
+
+        values = numpy.arange( num_meshes )
+        for x in values:
+            for z in values:
+                # create a scene node
+                # so we can control the location and
+                # orientation of the mesh
+                mesh_node = SceneNode( 'mesh' )
+                self.scene_node.add_child( mesh_node )
+
+                # the md2 is oriented at 90 degrees about X
+                # re-orient the mesh
+                md2_rotator_node = SceneNode( 'md2_rotate' )
+                mesh_node.add_child( md2_rotator_node )
+                md2_rotator_node.rotate_object_x( -math.pi / 2.0 )
+
+                # create a mesh
+                mesh = MD2_Mesh(
+                    self.md2_renderer
+                    )
+                # set the frame to a random value
+                mesh.frame = random.random() * float(mesh.num_frames)
+
+                # create a render node for the mesh
+                render_node = RenderCallbackNode(
+                    'mesh',
+                    self.initialise_mesh,
+                    mesh.render
+                    )
+                md2_rotator_node.add_child( render_node )
+
+                # move the mesh so we can see it
+                mesh_node.translate_inertial(
+                    [
+                        (x * distance) - offset,
+                        0.0,
+                        (z * distance) + offset
+                        ]
+                    )
+
+                # add to our list
+                self.meshes.append( (mesh, mesh_node) )
         
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
             self.viewport.aspect_ratio,
             fov = 60.0,
             near_clip = 1.0,
-            far_clip = 200.0
+            far_clip = 500.0
             )
         # create a camera
         self.camera = CameraNode(
@@ -119,6 +150,11 @@ class Application( object ):
             self.view_matrix
             )
         self.scene_node.add_child( self.camera )
+
+        self.camera.translate_object(
+            [ 0.0, 75.0, 350.0 ]
+            )
+        self.camera.rotate_object_x( -math.pi / 4.0 )
         
         # set the viewports camera
         self.viewport.set_camera( self.scene_node, self.camera )
@@ -175,16 +211,19 @@ class Application( object ):
 
     def initialise_mesh( self ):
         # load the mesh
-        self.mesh.load()
+        if self.md2_renderer.num_frames == 0:
+            self.md2_renderer.load()
 
-        # load our texture
-        # use the PIL decoder as the pyglet one is broken
-        # and loads most images as greyscale
-        self.image = pyglet.image.load(
-            'examples/data/md2/sydney_h.bmp',
-            decoder=pyglet.image.codecs.pil.PILImageDecoder()
-            )
-        self.texture = self.image.get_texture( rectangle = True )
+        if self.image == None:
+            # load our texture
+            # use the PIL decoder as the pyglet one is broken
+            # and loads most images as greyscale
+            self.image = pyglet.image.load(
+                'examples/data/md2/sydney_h.bmp',
+                decoder=pyglet.image.codecs.pil.PILImageDecoder()
+                )
+        if self.texture == None:
+            self.texture = self.image.get_texture( rectangle = True )
 
     def render_mesh( self ):
         self.mesh.render()
@@ -196,16 +235,17 @@ class Application( object ):
         # add the current time to the animation
         self.animation_time += dt * 10.0
 
-        # check if we should move to the next frame
-        # 10 fps
-        fnum_frames = float( self.mesh.num_frames )
-        self.mesh.frame = math.fmod(
-            self.animation_time,
-            fnum_frames - 1.0
-            )
+        for mesh, mesh_node in self.meshes:
+            # check if we should move to the next frame
+            # 10 fps
+            fnum_frames = float( mesh.num_frames )
+            mesh.frame = math.fmod(
+                mesh.frame + dt * 10.0,
+                fnum_frames - 1.0
+                )
 
-        # rotate the mesh about it's own vertical axis
-        self.mesh_node.rotate_object_y( dt )
+            # rotate the mesh about it's own vertical axis
+            mesh_node.rotate_object_y( dt )
 
         # pyglet has issues with rectangular textures
         # it scales them up to be square powers of 2
@@ -244,7 +284,7 @@ class Application( object ):
         self.texture.blit( 0.0, texture_y_offset )
 
         # render the tc's ontop of the texture
-        self.mesh.render_tcs(
+        self.meshes[ 0 ][ 0 ].render_tcs(
             (0.0, texture_y_offset),
             (self.texture.width, self.texture.height)
             )
