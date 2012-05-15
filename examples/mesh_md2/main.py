@@ -198,7 +198,7 @@ class Application( object ):
 
         # check if we should move to the next frame
         # 10 fps
-        fnum_frames = float( len(self.mesh.frames) )
+        fnum_frames = float( len(self.mesh.md2.frames) )
         self.mesh.frame = math.fmod(
             self.animation_time,
             fnum_frames - 1.0
