@@ -21,6 +21,7 @@ from pygly.scene_node import SceneNode
 from pygly.camera_node import CameraNode
 from pygly.render_callback_node import RenderCallbackNode
 from pygly.mesh.md2_mesh import MD2_Mesh
+from pygly.mesh.md2_renderer import MD2_Renderer
 
 # over-ride the default pyglet idle loop
 import pygly.monkey_patch
@@ -90,8 +91,10 @@ class Application( object ):
 
         # create a mesh and render node
         self.mesh = MD2_Mesh(
-            'examples/data/md2/sydney.md2',
-            interpolate = 1
+            MD2_Renderer(
+                'examples/data/md2/sydney.md2',
+                interpolate = 1
+                )
             )
         self.render_node = RenderCallbackNode(
             'mesh',
@@ -195,7 +198,7 @@ class Application( object ):
 
         # check if we should move to the next frame
         # 10 fps
-        fnum_frames = float( len(self.mesh.md2.frames) )
+        fnum_frames = float( self.mesh.num_frames )
         self.mesh.frame = math.fmod(
             self.animation_time,
             fnum_frames - 1.0
