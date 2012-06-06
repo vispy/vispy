@@ -4,6 +4,9 @@
 
 import math
 
+from pyglet.gl import *
+
+import pygly.window
 from pygly.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene_node import SceneNode
 from pygly.render_callback_node import RenderCallbackNode
@@ -12,55 +15,139 @@ from pygly.cocos2d.layer import Layer as PyGLyLayer
 
 import examples.render_callbacks.grid as grid
 
-pygly_layer = None
-pygly_node = SceneNode( 'root' )
-pygly_camera = None
 
-def setup_pygly_scene():
-    global pygly_node
-    global pygly_camera
-    global pygly_layer
+class PyglyScene( object ):
 
-    # this must be done after the
-    # director is initialised or the
-    # program will crash since the window
-    # won't have been created
-    pygly_layer = PyGLyLayer()
+    def __init__( self ):
+        super( PyglyScene, self ).__init__()
 
-    grid_node = SceneNode( 'grid' )
-    pygly_node.add_child( grid_node )
+        # store a list of renderables
+        self.renderables = []
 
-    grid_render_node = RenderCallbackNode(
-        'mesh',
-        grid.initialise_grid,
-        grid.render_grid
-        )
-    grid_node.add_child( grid_render_node )
+        # create a scene
+        self.scene_node = SceneNode( 'root' )
 
-    # rotate the mesh so it is tilting forward
-    grid_node.rotate_object_x( math.pi / 4.0 )
+        # create a node for the grid
+        self.grid_node = SceneNode( 'grid' )
+        self.scene_node.add_child( self.grid_node )
 
-    # move the grid backward so we can see it
-    grid_node.translate_inertial_z( -80.0 )
+        # create a render node for the grid
+        self.grid_render_node = RenderCallbackNode(
+            'mesh',
+            grid.initialise_grid,
+            grid.render_grid
+            )
+        self.grid_node.add_child( self.grid_render_node )
 
-    # create a camera and a view matrix
-    view_matrix = ProjectionViewMatrix(
-        pygly_layer.pygly_viewport.aspect_ratio,
-        fov = 60.0,
-        near_clip = 1.0,
-        far_clip = 200.0
-        )
-    pygly_camera = CameraNode(
-        'camera',
-        view_matrix
-        )
-    pygly_node.add_child( pygly_camera )
+        # add to our list of renderables
+        self.renderables.append( self.grid_render_node )
 
-    # set the viewports camera
-    pygly_layer.pygly_viewport.set_camera(
-        pygly_node,
-        pygly_camera
-        )
+        # create a camera and a view matrix
+        # set a temporary aspect ratio as we haven't created
+        # the viewport yet
+        self.view_matrix = ProjectionViewMatrix(
+            aspect_ratio = 4.0 / 3.0,
+            fov = 45.0,
+            near_clip = 1.0,
+            far_clip = 200.0
+            )
+        self.camera = CameraNode(
+            'camera',
+            self.view_matrix
+            )
+        self.scene_node.add_child( self.camera )
+
+        # move the camera
+        self.camera.translate_object(
+            [ 0.0, 20.0, 40.0 ]
+            )
+
+        # rotate the camera so it is tilting forward
+        self.camera.rotate_object_x( -math.pi / 4.0 )
+
+        # this must be done after the
+        # director is initialised or the
+        # program will crash since the window
+        # won't have been created
+        self.layer = PyGLyLayer(
+            camera = self.camera,
+            render_callback = self.render_layer
+            )
+
+        # update the aspect ratio
+        self.camera.view_matrix.aspect_ratio = pygly.window.aspect_ratio(
+            self.layer.pygly_viewport
+            )
+
+        # register our on_resize handler
+        director.window.push_handlers(
+            on_resize = self.on_resize
+            )
+
+    def on_resize( self, width, height ):
+        # update the viewport size
+        self.layer.pygly_viewport = pygly.window.create_rectangle(
+            director.window
+            )
+
+        # update the view matrix aspect ratio
+        self.camera.view_matrix.aspect_ratio = pygly.window.aspect_ratio(
+            self.layer.pygly_viewport
+            )
+
+    def render_layer( self, layer ):
+        #
+        # setup
+        #
+
+        # activate our viewport
+        pygly.gl.set_viewport( layer.pygly_viewport )
+        # scissor to our viewport
+        pygly.gl.set_scissor( layer.pygly_viewport )
+
+        # setup our viewport properties
+        glPushAttrib( GL_ALL_ATTRIB_BITS )
+
+        glShadeModel( GL_SMOOTH )
+        glEnable( GL_DEPTH_TEST )
+        glEnable( GL_RESCALE_NORMAL )
+
+        # apply our view matrix and camera transform
+        layer.pygly_camera.view_matrix.push_view_matrix()
+        layer.pygly_camera.push_model_view()
+
+        #
+        # render
+        #
+
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
+
+        self.scene_node.render_debug()
+
+        for renderable in self.renderables:
+            renderable.render()
+
+        #
+        # tear down
+        #
+
+        # pop our view matrix and camera transform
+        layer.pygly_camera.pop_model_view()
+        layer.pygly_camera.view_matrix.pop_view_matrix()
+
+        # reset our gl state
+        glPopAttrib()
+
+        # reset the viewport state
+        pygly.gl.set_viewport(
+            pygly.window.create_rectangle( director.window )
+            )
+        pygly.gl.set_scissor(
+            pygly.window.create_rectangle( director.window )
+            )
+
+        # ensure the matrix mode is set back to GL_MODELVIEW
+        glMatrixMode( GL_MODELVIEW )
 
 
 #
@@ -119,8 +206,8 @@ if __name__ == "__main__":
         sc.add( Square(colour, x, y) )
 
     # add our pygly scene as a layer
-    setup_pygly_scene()
-    sc.add( pygly_layer, name="pygly" )
+    pygly_scene = PyglyScene()
+    sc.add( pygly_scene.layer, name = "pygly" )
 
     # add some layers ontop of our pygly scene
     for i in range(15,20):

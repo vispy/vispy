@@ -12,8 +12,11 @@ from pyglet.gl import *
 import pyglet
 import numpy
 
+from pyrr import geometric_tests
+
 import pygly.window
-from pygly.viewport import Viewport
+import pygly.gl
+from pygly.ratio_viewport import RatioViewport
 #from pygly.projection_view_matrix import ProjectionViewMatrix
 from pygly.orthogonal_view_matrix import OrthogonalViewMatrix
 from pygly.scene_node import SceneNode
@@ -23,7 +26,6 @@ from pygly import debug_cube
 from pygly.mesh.obj_mesh import OBJ_Mesh
 from pygly.input.keyboard import Keyboard
 from pygly.input.mouse import Mouse
-import pygly.list
 
 # over-ride the default pyglet idle loop
 import pygly.monkey_patch
@@ -50,15 +52,10 @@ class Application( object ):
             )
 
         # create a viewport
-        self.viewport = Viewport(
-            pygly.window.create_rectangle(
-                self.window
-                )
+        self.viewport = RatioViewport(
+            self.window,
+            [ [0.0, 0.0], [1.0, 1.0] ]
             )
-
-        # over-ride the viewports setup method
-        # so we can set some opengl states
-        self.viewport.setup_viewport = self.setup_viewport
 
         # create our input devices
         self.keyboard = Keyboard( self.window )
@@ -87,6 +84,9 @@ class Application( object ):
         print "Rendering at %iHz" % int(frequency)
 
     def setup_scene( self ):
+        # create a list of renderables
+        self.renderables = []
+
         # create a scene
         self.scene_node = SceneNode( 'root' )
 
@@ -102,8 +102,8 @@ class Application( object ):
             )
         self.mesh_node.add_child( self.mesh_render_node )
 
-        # move the mesh so we can see it
-        self.mesh_node.translate_inertial_z( -30.0 )
+        # add to our list of renderables
+        self.renderables.append( self.mesh_render_node )
 
         # rotate the mesh so we can see it
         self.mesh_node.rotate_object_x( math.pi / 4.0 )
@@ -130,29 +130,84 @@ class Application( object ):
             self.view_matrix
             )
         self.scene_node.add_child( self.camera )
+
+        # move the camera so we can see the mesh
+        self.mesh_node.translate_inertial(
+            [ 0.0, 0.0, 30.0 ]
+            )
+
+    def initialise_mesh( self ):
+        # load the mesh
+        self.mesh.load()
+
+    def render_mesh( self ):
+        self.mesh.render()
+
+    def run( self ):
+        pyglet.app.run()
+
+    def move_mesh( self ):
+        # we don't need the delta
+        # just clear it to stop overflows
+        self.mouse.clear_delta()
+
+        # see if the mouse moved
+        mouse_pos = self.mouse.absolute_position
+        if True == numpy.array_equal(
+            mouse_pos,
+            self.last_mouse_point
+            ):
+            return
+
+        # the mouse has moved
+        # update our mouse pos
+        self.last_mouse_point = mouse_pos
+
+        # even though the mouse moved, we can't be
+        # guaranteed that it is within the window.
+        # we sometimes get events that include mouse
+        # values that are outside the window.
+        # so we need to check against this.
+        if False == geometric_tests.point_intersect_rectangle(
+            mouse_pos,
+            self.viewport.rect
+            ):
+            return
+
+        # make the point relative to the viewport
+        # and make it into a percentage value of the size
+        relative_point = numpy.array(
+            mouse_pos - self.viewport.position,
+            dtype = numpy.float
+            )
+        relative_point /= self.viewport.size
+
+        # cast a ray from the mouse's current position
+        mouse_ray = self.camera.create_ray_from_ratio_point(
+            relative_point
+            )
+
+        # render the mesh somewhere along the ray
+        distance = 50.0
+        self.mesh_node.inertial_translation = mouse_ray[ 0 ] + (mouse_ray[ 1 ] * distance)
+    
+    def step( self, dt ):
+        # move the mesh to the mouse position
+        self.move_mesh()
+
+        # rotate the mesh about it's own vertical axis
+        self.mesh_node.rotate_object_y( dt )
+
+        # render the scene
+        self.render()
+
+        # render the fps
+        self.fps_display.draw()
         
-        # set the viewports camera
-        self.viewport.set_camera( self.scene_node, self.camera )
+        # display the frame buffer
+        self.window.flip()
 
-        # create a light
-        glEnable( GL_LIGHT0 )
-        glLightfv(
-            GL_LIGHT0,
-            GL_POSITION,
-            (GLfloat * 4)( *[-10.0, 0.0, 0.0, 1.0] )
-            )
-        glLightfv(
-            GL_LIGHT0,
-            GL_AMBIENT,
-            (GLfloat * 4)( *[0.5, 0.5, 0.5, 1.0] )
-            )
-        glLightfv(
-            GL_LIGHT0,
-            GL_DIFFUSE,
-            (GLfloat * 4)( *[1.0, 1.0, 1.0, 1.0] )
-            )
-
-    def setup_viewport( self ):
+    def set_gl_state( self ):
         # use the z-buffer when drawing
         glEnable( GL_DEPTH_TEST )
 
@@ -175,84 +230,81 @@ class Application( object ):
             (GLfloat * 4)( *[ 0.8, 0.8, 0.8, 1.0 ] )
             )
 
-    def initialise_mesh( self ):
-        # load the mesh
-        self.mesh.load()
-
-    def render_mesh( self ):
-        self.mesh.render()
-
-    def run( self ):
-        pyglet.app.run()
-
-    def move_mesh( self ):
-        # we don't need the delta
-        # just clear it to stop overflows
-        self.mouse.clear_delta()
-
-        # see if the mouse moved
-        mouse_pos = self.mouse.absolute_position
-        mouse_moved = pygly.list.not_equivalent(
-            mouse_pos,
-            self.last_mouse_point
+        # create a light
+        glEnable( GL_LIGHT0 )
+        glLightfv(
+            GL_LIGHT0,
+            GL_POSITION,
+            (GLfloat * 4)( *[-10.0, 0.0, 0.0, 1.0] )
+            )
+        glLightfv(
+            GL_LIGHT0,
+            GL_AMBIENT,
+            (GLfloat * 4)( *[0.5, 0.5, 0.5, 1.0] )
+            )
+        glLightfv(
+            GL_LIGHT0,
+            GL_DIFFUSE,
+            (GLfloat * 4)( *[1.0, 1.0, 1.0, 1.0] )
             )
 
-        if False == mouse_moved:
-            return
+    def render( self ):
+        #
+        # setup
+        #
 
-        # the mouse has moved
-        # update our mouse pos
-        self.last_mouse_point = mouse_pos
+        # activate the window
+        self.window.switch_to()
 
-        # even though the mouse moved, we can't be
-        # guaranteed that it is within the window.
-        # we sometimes get events that include mouse
-        # values that are outside the window.
-        # so we need to check against this.
-        viewports = [ self.viewport ]
-        viewport = pygly.window.find_viewport_for_point(
-            self.window,
-            viewports,
-            mouse_pos
-            )
+        # activate our viewport
+        self.viewport.switch_to()
 
-        if viewport == None:
-            return
+        # scissor to our viewport
+        self.viewport.scissor_to_viewport()
 
-        # make the point relative to the viewport
-        relative_point = self.viewport.create_viewport_point_from_window_point(
-            mouse_pos
-            )
+        # setup our viewport properties
+        self.viewport.push_viewport_attributes()
 
-        # cast a ray from the mouse's current position
-        mouse_ray = self.viewport.create_ray_from_viewport_point(
-            relative_point
-            )
+        # update the view matrix aspect ratio
+        self.camera.view_matrix.aspect_ratio = self.viewport.aspect_ratio
 
-        # render the md2 at the current ray position
-        # use the far_clip value
-        distance = 50.0
-        self.mesh_node.inertial_translation = mouse_ray[ 0 ] + mouse_ray[ 1 ] * distance
-    
-    def step( self, dt ):
-        # move the mesh to the mouse position
-        self.move_mesh()
+        # apply our view matrix and camera translation
+        self.camera.view_matrix.push_view_matrix()
+        self.camera.push_model_view()
 
-        # rotate the mesh about it's own vertical axis
-        self.mesh_node.rotate_object_y( dt )
+        #
+        # render
+        #
 
         # clear our frame buffer and depth buffer
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
-        
-        # render the scene
-        viewports = [ self.viewport ]
-        pygly.window.render( self.window, viewports )
 
-        # render the fps
-        self.fps_display.draw()
-        
-        # display the frame buffer
-        self.window.flip()
+        for renderable in self.renderables:
+            renderable.render()
+
+        #
+        # tear down
+        #
+
+        # pop our view matrix and camera translation
+        self.camera.pop_model_view()
+        self.camera.view_matrix.pop_view_matrix()
+
+        # reset our gl state
+        self.viewport.pop_viewport_attributes()
+
+        #
+        # reset state
+        #
+
+        # set our viewport to the entire window
+        pygly.gl.set_scissor(
+            pygly.window.create_rectangle( self.window )
+            )
+        pygly.gl.set_viewport(
+            pygly.window.create_rectangle( self.window )
+            )
+
 
 
 def main():

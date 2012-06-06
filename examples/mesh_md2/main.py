@@ -16,7 +16,8 @@ import pyglet
 from pyglet.gl import *
 
 import pygly.window
-from pygly.viewport import Viewport
+import pygly.gl
+from pygly.ratio_viewport import RatioViewport
 from pygly.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene_node import SceneNode
 from pygly.camera_node import CameraNode
@@ -45,20 +46,16 @@ class Application( object ):
             fullscreen = False,
             width = 1024,
             height = 768,
+            resizable = True,
             config = config
             )
 
         # create a viewport
-        self.viewport = Viewport(
-            pygly.window.create_rectangle(
-                self.window
-                )
+        self.viewport = RatioViewport(
+            self.window,
+            [ [0.0, 0.0], [1.0, 1.0] ]
             )
 
-        # over-ride the viewports setup method
-        # so we can set some opengl states
-        self.viewport.setup_viewport = self.setup_viewport
-        
         # setup our scene
         self.setup_scene()
         
@@ -78,11 +75,12 @@ class Application( object ):
         print "Rendering at %iHz" % int(frequency)
 
     def setup_scene( self ):
+        self.renderables = []
+
         # create a scene
         self.scene_node = SceneNode( 'root' )
 
         # load the md2 and create a renderer object
-        # for it
         self.md2_renderer = MD2_Renderer(
             'examples/data/md2/sydney.md2',
             interpolate = 0
@@ -136,11 +134,14 @@ class Application( object ):
 
                 # add to our list
                 self.meshes.append( (mesh, mesh_node) )
+
+                # add to our list of renderables
+                self.renderables.append( render_node )
         
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
             self.viewport.aspect_ratio,
-            fov = 60.0,
+            fov = 45.0,
             near_clip = 1.0,
             far_clip = 500.0
             )
@@ -151,63 +152,15 @@ class Application( object ):
             )
         self.scene_node.add_child( self.camera )
 
+        # move the camera so we can see the models
         self.camera.translate_object(
             [ 0.0, 75.0, 350.0 ]
             )
         self.camera.rotate_object_x( -math.pi / 4.0 )
-        
-        # set the viewports camera
-        self.viewport.set_camera( self.scene_node, self.camera )
 
         # use a variable for accumulating time
         # for animating the mesh
         self.animation_time = 0.0
-
-        # create a light
-        glEnable( GL_LIGHT0 )
-        glLightfv(
-            GL_LIGHT0,
-            GL_POSITION,
-            (GLfloat * 4)( *[-10.0, 0.0, 0.0, 1.0] )
-            )
-        glLightfv(
-            GL_LIGHT0,
-            GL_AMBIENT,
-            (GLfloat * 4)( *[0.5, 0.5, 0.5, 1.0] )
-            )
-        glLightfv(
-            GL_LIGHT0,
-            GL_DIFFUSE,
-            (GLfloat * 4)( *[1.0, 1.0, 1.0, 1.0] )
-            )
-
-        
-    def setup_viewport( self ):
-        # use the z-buffer when drawing
-        glEnable( GL_DEPTH_TEST )
-
-        # normalise any normals for us
-        glEnable( GL_RESCALE_NORMAL )
-
-        # enable us to clear viewports independently
-        glEnable( GL_SCISSOR_TEST )
-
-        # enable texturing
-        glEnable( self.texture.target )
-        glBindTexture( self.texture.target, self.texture.id )
-
-        # enable smooth shading
-        # instead of flat shading
-        glShadeModel( GL_SMOOTH )
-            
-        # setup lighting for our viewport
-        #glEnable( GL_LIGHTING )
-
-        # set our ambient lighting
-        glAmbient = glLightModelfv(
-            GL_LIGHT_MODEL_AMBIENT,
-            (GLfloat * 4)( *[ 0.8, 0.8, 0.8, 1.0 ] )
-            )
 
     def initialise_mesh( self ):
         # load the mesh
@@ -247,6 +200,64 @@ class Application( object ):
             # rotate the mesh about it's own vertical axis
             mesh_node.rotate_object_y( dt )
 
+        self.render()
+        
+        # render the fps
+        self.fps_display.draw()
+        
+        # display the frame buffer
+        self.window.flip()
+            
+    def set_gl_state( self ):
+        # use the z-buffer when drawing
+        glEnable( GL_DEPTH_TEST )
+
+        # normalise any normals for us
+        glEnable( GL_RESCALE_NORMAL )
+
+        # enable us to clear viewports independently
+        glEnable( GL_SCISSOR_TEST )
+
+        # enable texturing
+        glEnable( self.texture.target )
+        glBindTexture( self.texture.target, self.texture.id )
+
+        # enable smooth shading
+        # instead of flat shading
+        glShadeModel( GL_SMOOTH )
+            
+    def render( self ):
+        #
+        # setup
+        #
+
+        # set our window
+        self.window.switch_to()
+
+        # activate our viewport
+        self.viewport.switch_to()
+
+        # scissor to our viewport
+        self.viewport.scissor_to_viewport()
+
+        # setup our viewport properties
+        glPushAttrib( GL_ALL_ATTRIB_BITS )
+        self.set_gl_state()
+
+        # update the view matrix aspect ratio
+        self.camera.view_matrix.aspect_ratio = self.viewport.aspect_ratio
+
+        # apply our view matrix and camera translation
+        self.camera.view_matrix.push_view_matrix()
+        self.camera.push_model_view()
+
+        #
+        # render
+        #
+
+        # clear our frame buffer and depth buffer
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
+
         # pyglet has issues with rectangular textures
         # it scales them up to be square powers of 2
         # but it doesn't change the texture coordinates and
@@ -256,9 +267,11 @@ class Application( object ):
         # instead of being from 0->1, the texture is now from
         # 0->original width
         glMatrixMode( GL_TEXTURE )
-        glLoadIdentity()
+        glPushMatrix()
+
         # texture coords are printed as X,Y,Z triples
-        # in the order of, bottom left, bottom right, top right, top left
+        # in the order of:
+        # bottom left, bottom right, top right, top left
         glScalef(
             self.texture.tex_coords[ 3 ],
             self.texture.tex_coords[ 7 ],
@@ -270,13 +283,13 @@ class Application( object ):
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
         
         # render the scene
-        viewports = [ self.viewport ]
-        pygly.window.render( self.window, viewports )
+        for renderable in self.renderables:
+            renderable.render()
 
         # reset the texture matrix because of what we did
         # otherwise any textures following this will be incorrect
         glMatrixMode( GL_TEXTURE )
-        glLoadIdentity()
+        glPopMatrix()
         glMatrixMode( GL_MODELVIEW )
 
         # render the texture on the screen
@@ -288,12 +301,29 @@ class Application( object ):
             (0.0, texture_y_offset),
             (self.texture.width, self.texture.height)
             )
-        
-        # render the fps
-        self.fps_display.draw()
-        
-        # display the frame buffer
-        self.window.flip()
+
+        #
+        # tear down
+        #
+
+        # pop our view matrix and camera translation
+        self.camera.pop_model_view()
+        self.camera.view_matrix.pop_view_matrix()
+
+        # pop our viewport attributes
+        glPopAttrib()
+
+        #
+        # reset state
+        #
+
+        # set our viewport to the entire window
+        pygly.gl.set_scissor(
+            pygly.window.create_rectangle( self.window )
+            )
+        pygly.gl.set_viewport(
+            pygly.window.create_rectangle( self.window )
+            )
 
 
 def main():

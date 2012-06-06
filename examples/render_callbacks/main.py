@@ -10,7 +10,7 @@ from pyglet.gl import *
 import pyglet
 
 import pygly.window
-from pygly.viewport import Viewport
+from pygly.ratio_viewport import RatioViewport
 from pygly.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene_node import SceneNode
 from pygly.render_callback_node import RenderCallbackNode
@@ -39,15 +39,15 @@ class Application( object ):
             fullscreen = False,
             width = 1024,
             height = 768,
+            resizable = True,
             config = config
             )
 
         # create a viewport that spans
         # the entire screen
-        self.viewport = Viewport(
-            pygly.window.create_rectangle(
-                self.window
-                )
+        self.viewport = RatioViewport(
+            self.window,
+            [ [0.0, 0.0], [1.0, 1.0] ]
             )
 
         # setup our scene
@@ -69,6 +69,9 @@ class Application( object ):
         print "Rendering at %iHz" % int(frequency)
 
     def setup_scene( self ):
+        # store a list of renderables
+        self.renderables = []
+
         # create a scene
         self.scene_node = SceneNode( 'root' )
 
@@ -83,16 +86,13 @@ class Application( object ):
             )
         self.grid_node.add_child( self.grid_render_node )
 
-        # rotate the mesh so it is tilting forward
-        self.grid_node.rotate_object_x( math.pi / 4.0 )
-
-        # move the grid backward so we can see it
-        self.grid_node.translate_inertial_z( -80.0 )
+        # add to our list of renderables
+        self.renderables.append( self.grid_render_node )
 
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
             self.viewport.aspect_ratio,
-            fov = 60.0,
+            fov = 45.0,
             near_clip = 1.0,
             far_clip = 200.0
             )
@@ -102,8 +102,39 @@ class Application( object ):
             )
         self.scene_node.add_child( self.camera )
 
-        # set the viewports camera
-        self.viewport.set_camera( self.scene_node, self.camera )
+        # move the camera backward so we can see it
+        self.camera.translate_inertial(
+            [ 0.0, 20.0, 40.0]
+            )
+
+        # rotate the camera so it is tilting forward
+        self.camera.rotate_object_x( -math.pi / 4.0 )
+
+        # listen for viewport resize events
+        self.viewport.push_handlers(
+            on_change_aspect_ratio = self.view_matrix.on_change_aspect_ratio
+            )
+
+    def setup_viewport( self ):
+        # enable some default options
+        # use the z-buffer when drawing
+        glEnable( GL_DEPTH_TEST )
+
+        # enable smooth shading
+        glShadeModel( GL_SMOOTH )
+
+        # because we use glScale for scene graph
+        # scaling, normals will get affected too.
+        # GL_RESCALE_NORMAL applies the inverse
+        # value of the current matrice's scale
+        # this is new in OGL1.2 and SHOULD be
+        # faster than glEnable( GL_NORMALIZE )
+        # http://www.opengl.org/archives/resources/features/KilgardTechniques/oglpitfall/
+        glEnable( GL_RESCALE_NORMAL )
+
+        # enable GL_SCISSOR_TEST so we can selectively
+        # clear areas of the window
+        glEnable( GL_SCISSOR_TEST )
     
     def run( self ):
         pyglet.app.run()
@@ -112,18 +143,69 @@ class Application( object ):
         # rotate the mesh about it's own vertical axis
         self.grid_node.rotate_object_y( dt )
 
-        # clear our frame buffer and depth buffer
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
-
-        # render the scene
-        viewports = [ self.viewport ]
-        pygly.window.render( self.window, viewports )
+        self.render()
 
         # render the fps
         self.fps_display.draw()
 
         # display the frame buffer
         self.window.flip()
+
+    def render( self ):
+        #
+        # setup
+        #
+
+        # set our window
+        self.window.switch_to()
+        # set our viewport
+        self.viewport.switch_to()
+        self.viewport.scissor_to_viewport()
+
+        # apply our viewport settings
+        self.viewport.push_viewport_attributes()
+
+        # update the view matrix aspect ratio
+        self.camera.view_matrix.aspect_ratio = self.viewport.aspect_ratio
+
+        # apply our camera
+        self.camera.view_matrix.push_view_matrix()
+        self.camera.push_model_view()
+
+        #
+        # render
+        #
+
+        # clear our frame buffer and depth buffer
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
+
+        # render the scene graph for debugging
+        self.scene_node.render_debug()
+
+        # render the scene
+        for renderable in self.renderables:
+            renderable.render()
+
+        #
+        # tear down
+        #
+
+        # pop our view matrix and camera transforms
+        self.camera.pop_model_view()
+        self.camera.view_matrix.pop_view_matrix()
+
+        self.viewport.pop_viewport_attributes()
+
+        pygly.gl.set_scissor(
+            pygly.window.create_rectangle( self.window )
+            )
+        pygly.gl.set_viewport(
+            pygly.window.create_rectangle( self.window )
+            )
+
+        # ensure the matrix mode was last set to
+        # GL_MODELVIEW
+        glMatrixMode( GL_MODELVIEW )
     
 
 def main():

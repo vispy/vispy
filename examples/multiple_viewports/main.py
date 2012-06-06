@@ -13,7 +13,8 @@ import pyglet
 from pyrr import rectangle
 
 import pygly.window
-from pygly.viewport import Viewport
+import pygly.gl
+from pygly.ratio_viewport import RatioViewport
 from pygly.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene_node import SceneNode
 from pygly.render_callback_node import RenderCallbackNode
@@ -42,26 +43,22 @@ class Application( object ):
             fullscreen = False,
             width = 1024,
             height = 768,
+            resizable = True,
             config = config
             )
 
         # create a viewport that spans
         # the entire screen
-        self.viewport = Viewport(
-            pygly.window.create_rectangle(
-                self.window
-                )
+        self.viewport = RatioViewport(
+            self.window,
+            [ [0.0, 0.0], [1.0, 1.0] ]
             )
 
         # make a second viewport
         # this viewport will be 1/10th the size
-        self.viewport_rect = pygly.window.create_rectangle(
-            self.window
-            )
-        self.viewport_rect[ 1 ] /= [10,10]
-
-        self.floating_viewport = Viewport(
-            self.viewport_rect
+        self.floating_viewport = RatioViewport(
+            self.window,
+            [ [0.0, 0.0], [0.1, 0.1] ]
             )
 
         # setup our scene
@@ -83,6 +80,9 @@ class Application( object ):
         print "Rendering at %iHz" % int(frequency)
 
     def setup_scene( self ):
+        # create a list of renderables
+        self.renderables = []
+
         # create a scene
         self.scene_node = SceneNode( 'root' )
 
@@ -97,16 +97,13 @@ class Application( object ):
             )
         self.grid_node.add_child( self.grid_render_node )
 
-        # rotate the mesh so it is tilting forward
-        self.grid_node.rotate_object_x( math.pi / 4.0 )
-
-        # move the grid backward so we can see it
-        self.grid_node.translate_inertial_z( -80.0 )
+        # add to our list of renderables
+        self.renderables.append( self.grid_render_node )
 
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
             self.viewport.aspect_ratio,
-            fov = 60.0,
+            fov = 45.0,
             near_clip = 1.0,
             far_clip = 200.0
             )
@@ -116,31 +113,19 @@ class Application( object ):
             )
         self.scene_node.add_child( self.camera )
 
-        # we need to make a second camera because the
-        # frustrum changes depending on the viewport
-        # geometry
-        # but for optimisation and convenience, the aspect
-        # ratio is tighly coupled to the frustrum.
-        # it is only designed to be updated at the start of
-        # the frame
-        self.view_matrix2 = ProjectionViewMatrix(
-            self.floating_viewport.aspect_ratio,
-            fov = 60.0,
-            near_clip = 1.0,
-            far_clip = 200.0
+        # move the camera backward so we can see the mesh
+        self.camera.translate_inertial(
+            [ 0.0, 20.0, 80.0 ]
             )
-        self.camera2 = CameraNode(
-            'camera2',
-            self.view_matrix2
-            )
-        self.scene_node.add_child( self.camera2 )
 
-        # set the viewports camera
-        self.viewport.set_camera( self.scene_node, self.camera )
-        self.floating_viewport.set_camera(
-            self.scene_node,
-            self.camera2
-            )
+        # rotate the camera so it is tilting downward
+        self.camera.rotate_object_x( -math.pi / 4.0 )
+
+        # create a list of viewports and cameras
+        self.viewports = [
+            (self.viewport, self.camera),
+            (self.floating_viewport, self.camera)
+            ]
 
         # we will use this as a vector to move the viewport
         # around the window
@@ -154,10 +139,8 @@ class Application( object ):
     
     def step( self, dt ):
         # move the viewport around the screen
-        rect = self.floating_viewport.rect
         frame_velocity = self.velocity * dt
-        rect[ 0 ] += frame_velocity
-        self.floating_viewport.rect = rect
+        self.floating_viewport.rect[ 0 ] += frame_velocity
 
         # see if we've gone over the window's bounds
         if self.floating_viewport.left < 0:
@@ -176,24 +159,82 @@ class Application( object ):
         # rotate the mesh about it's own vertical axis
         self.grid_node.rotate_object_y( dt )
 
-        # clear our frame buffer and depth buffer
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
-
         # render the scene
-        # render the large viewport first then the smaller
-        # viewport ontop of it
-        viewports = [
-            self.viewport,
-            self.floating_viewport
-            ]
-        pygly.window.render( self.window, viewports )
+        self.render()
 
         # render the fps
         self.fps_display.draw()
 
         # display the frame buffer
         self.window.flip()
+
+    def set_gl_state( self ):
+        glEnable( GL_DEPTH_TEST )
+        glShadeModel( GL_SMOOTH )
+        glEnable( GL_RESCALE_NORMAL )
+        glEnable( GL_SCISSOR_TEST )
+
+    def render( self ):
+        # set our window
+        self.window.switch_to()
+
+        # render the viewport
+        for viewport, camera in self.viewports:
+            self.render_viewport( viewport, camera )
+
+        # set our viewport to the entire
+        # window
+        pygly.gl.set_scissor(
+            pygly.window.create_rectangle( self.window )
+            )
+        pygly.gl.set_viewport(
+            pygly.window.create_rectangle( self.window )
+            )
+
+    def render_viewport( self, viewport, camera ):
+        #
+        # setup
+        #
     
+        # activate our viewport
+        viewport.switch_to()
+
+        # scissor to our viewport
+        viewport.scissor_to_viewport()
+
+        # setup our viewport properties
+        glPushAttrib( GL_ALL_ATTRIB_BITS )
+        self.set_gl_state()
+
+        # update the camera's view matrix for our
+        # viewports aspect ratio
+        camera.view_matrix.aspect_ratio = viewport.aspect_ratio
+
+        # apply our view matrix and camera translation
+        camera.view_matrix.push_view_matrix()
+        camera.push_model_view()
+
+        #
+        # render
+        #
+
+        # clear our frame buffer and depth buffer
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
+
+        for renderable in self.renderables:
+            renderable.render()
+
+        #
+        # tear down
+        #
+
+        # pop our view matrix and camera translation
+        camera.pop_model_view()
+        camera.view_matrix.pop_view_matrix()
+
+        # pop our viewport attributes
+        glPopAttrib()
+
 
 def main():
     # create app

@@ -16,7 +16,8 @@ import pyglet
 import numpy
 
 import pygly.window
-from pygly.viewport import Viewport
+import pygly.gl
+from pygly.ratio_viewport import RatioViewport
 from pygly.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene_node import SceneNode
 from pygly.camera_node import CameraNode
@@ -48,14 +49,14 @@ class Application( object ):
             fullscreen = False,
             width = 1024,
             height = 768,
+            resizable = True,
             config = config
             )
 
         # create a viewport
-        self.viewport = Viewport(
-            pygly.window.create_rectangle(
-                self.window
-                )
+        self.viewport = RatioViewport(
+            self.window,
+            [ [0.0, 0.0], [1.0, 1.0] ]
             )
 
         # create our input devices
@@ -81,12 +82,8 @@ class Application( object ):
         print "Rendering at %iHz" % int(frequency)
 
     def setup_scene( self ):
-        # enable debug so we can see the ndoes
-        SceneNode.debug = True
-
         # create a scene
-        self.scene_node = SceneNode( 'root' )
-
+        self.scene_node = SceneNode( 'root' ) 
         self.grid_node = SceneNode( 'grid' )
         self.scene_node.add_child( self.grid_node )
 
@@ -97,14 +94,12 @@ class Application( object ):
             )
         self.grid_node.add_child( self.grid_render_node )
 
-        # move the grid backward so we can see it
-        # and move it down so we start above it
-        self.grid_node.translate_object_z( -80.0 )
-
         # create a node that we'll move around
         self.test_node = SceneNode( '/test' )
         self.grid_node.add_child( self.test_node )
-        self.test_node.translate_object_y( 20.0 )
+        self.test_node.translate_object(
+            [ 0.0, 20.0, 0.0 ]
+            )
 
         # create a fps controller for the node
         self.node_controller = FPS_Controller()
@@ -113,7 +108,7 @@ class Application( object ):
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
             self.viewport.aspect_ratio,
-            fov = 60.0,
+            fov = 45.0,
             near_clip = 1.0,
             far_clip = 200.0
             )
@@ -124,16 +119,17 @@ class Application( object ):
             )
         self.scene_node.add_child( self.camera )
 
-        # move the camera up so it starts above the grid
-        self.camera.translate_inertial_y( 20.0 )
+        # move the camera so we can see the grid
+        self.camera.translate_inertial(
+            [ 0.0, 20.0, 80.0 ]
+            )
+        # rotate the camera so it is pointing down
+        self.camera.rotate_object_x( -math.pi / 4.0 )
         
         # assign a camera controller
         # we'll use the FPS camera for this one
         self.camera_controller = FPS_Controller()
         self.camera_controller.scene_node = self.camera
-        
-        # set the viewports camera
-        self.viewport.set_camera( self.scene_node, self.camera )
 
         self.pitch_time = 0.0
         self.pitch_change = math.pi / 4.0
@@ -143,6 +139,25 @@ class Application( object ):
         pyglet.app.run()
     
     def step( self, dt ):
+        self.move_camera( dt )
+
+        # move the test node
+        self.pitch_time += dt
+        if self.pitch_time > 5.0:
+            self.pitch_change *= -1.0
+            self.pitch_time = 0.0
+        self.node_controller.translate_forward( math.pi * dt )
+        self.node_controller.orient( self.pitch_change * dt, self.yaw_change * dt )
+
+        self.render()
+
+        # render the fps
+        self.fps_display.draw()
+        
+        # display the frame buffer
+        self.window.flip()
+
+    def move_camera( self, dt ):
         # update the Camera
         camera_speed = 40.0
         
@@ -207,27 +222,72 @@ class Application( object ):
         # or the delta will continue to accumulate
         self.mouse.clear_delta()
 
-        # move the test node
-        self.pitch_time += dt
-        if self.pitch_time > 5.0:
-            self.pitch_change *= -1.0
-            self.pitch_time = 0.0
-        self.node_controller.translate_forward( math.pi * dt )
-        self.node_controller.orient( self.pitch_change * dt, self.yaw_change * dt )
+    def set_gl_state( self ):
+        glEnable( GL_DEPTH_TEST )
+        glShadeModel( GL_SMOOTH )
+        glEnable( GL_RESCALE_NORMAL )
+        glEnable( GL_SCISSOR_TEST )
+
+    def render( self ):
+        #
+        # setup
+        #
+
+        # set our window
+        self.window.switch_to()
+
+        # activate our viewport
+        self.viewport.switch_to()
+
+        # scissor to our viewport
+        self.viewport.scissor_to_viewport()
+
+        # setup our viewport properties
+        glPushAttrib( GL_ALL_ATTRIB_BITS )
+        self.set_gl_state()
+
+        # update the view matrix aspect ratio
+        self.camera.view_matrix.aspect_ratio = self.viewport.aspect_ratio
+
+        # apply our view matrix and camera translation
+        self.camera.view_matrix.push_view_matrix()
+        self.camera.push_model_view()
+
+        #
+        # render
+        #
 
         # clear our frame buffer and depth buffer
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
-        
-        # render the scene
-        viewports = [ self.viewport ]
-        pygly.window.render( self.window, viewports )
 
-        # render the fps
-        self.fps_display.draw()
-        
-        # display the frame buffer
-        self.window.flip()
+        # render the scene node debug information
+        self.scene_node.render_debug()
 
+        # render our grid
+        self.grid_render_node.render()
+
+        #
+        # tear down
+        #
+
+        # pop our view matrix and camera translation
+        self.camera.pop_model_view()
+        self.camera.view_matrix.pop_view_matrix()
+
+        # pop our viewport attributes
+        glPopAttrib()
+
+        #
+        # reset state
+        #
+
+        # set our viewport to the entire window
+        pygly.gl.set_scissor(
+            pygly.window.create_rectangle( self.window )
+            )
+        pygly.gl.set_viewport(
+            pygly.window.create_rectangle( self.window )
+            )
 
 def main():
     # create app

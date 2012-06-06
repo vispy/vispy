@@ -30,6 +30,7 @@ class Application( object ):
             fullscreen = False,
             width = 1024,
             height = 768,
+            resizable = True,
             config = config
             )
         
@@ -57,10 +58,6 @@ class Application( object ):
     def step( self, dt ):
         # clear our frame buffer and depth buffer
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
-
-        # render the scene
-        viewports = []
-        pygly.window.render( self.window, viewports )
 
         # render the fps
         self.fps_display.draw()

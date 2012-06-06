@@ -15,7 +15,8 @@ from pyglet.gl import *
 import pyglet
 
 import pygly.window
-from pygly.viewport import Viewport
+import pygly.gl
+from pygly.ratio_viewport import RatioViewport
 from pygly.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene_node import SceneNode
 from pygly.camera_node import CameraNode
@@ -47,14 +48,14 @@ class Application( object ):
             fullscreen = False,
             width = 1024,
             height = 768,
+            resizable = True,
             config = config
             )
 
         # create a viewport
-        self.viewport = Viewport(
-            pygly.window.create_rectangle(
-                self.window
-                )
+        self.viewport = RatioViewport(
+            self.window,
+            [ [0.0, 0.0], [1.0, 1.0] ]
             )
 
         # create our input devices
@@ -80,6 +81,9 @@ class Application( object ):
         print "Rendering at %iHz" % int(frequency)
 
     def setup_scene( self ):
+        # create a list of renderables
+        self.renderables = []
+
         # create a scene
         self.scene_node = SceneNode( 'root' )
 
@@ -93,14 +97,19 @@ class Application( object ):
             )
         self.grid_node.add_child( self.grid_render_node )
 
+        # add to our list of renderables
+        self.renderables.append( self.grid_render_node )
+
         # move the grid backward so we can see it
         # and move it down so we start above it
-        self.grid_node.translate_inertial_z( -80.0 )
+        self.grid_node.translate_inertial(
+            [ 0.0, 0.0, -80.0 ]
+            )
         
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
             self.viewport.aspect_ratio,
-            fov = 60.0,
+            fov = 45.0,
             near_clip = 1.0,
             far_clip = 200.0
             )
@@ -112,16 +121,15 @@ class Application( object ):
         self.scene_node.add_child( self.camera )
 
         # move the camera up so it starts above the grid
-        self.camera.translate_inertial_y( 20.0 )
+        self.camera.translate_inertial(
+            [ 0.0, 20.0, 0.0 ]
+            )
         
         # assign a camera controller
         # we'll use the 6 degrees of freedom
         # camera for this one
         self.camera_controller = SixDOF_Controller()
         self.camera_controller.scene_node = self.camera
-        
-        # set the viewports camera
-        self.viewport.set_camera( self.scene_node, self.camera )
         
     def run( self ):
         pyglet.app.run()
@@ -185,18 +193,73 @@ class Application( object ):
         # or the delta will continue to accumulate
         self.mouse.clear_delta()
 
-        # clear our frame buffer and depth buffer
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
-        
         # render the scene
-        viewports = [ self.viewport ]
-        pygly.window.render( self.window, viewports )
+        self.render()
 
         # render the fps
         self.fps_display.draw()
         
         # display the frame buffer
         self.window.flip()
+
+    def set_gl_state( self ):
+        pass
+
+    def render( self ):
+        #
+        # setup
+        #
+
+        # activate the window
+        self.window.switch_to()
+
+        # activate our viewport
+        self.viewport.switch_to()
+
+        # setup our viewport properties
+        self.viewport.push_viewport_attributes()
+
+        # update the view matrix aspect ratio
+        self.camera.view_matrix.aspect_ratio = self.viewport.aspect_ratio
+
+        # apply our view matrix and camera translation
+        self.camera.view_matrix.push_view_matrix()
+        self.camera.push_model_view()
+
+        #
+        # render
+        #
+
+        # clear our frame buffer and depth buffer
+        pygly.gl.set_scissor( self.viewport.rect )
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
+
+        # render our grid
+        for renderable in self.renderables:
+            renderable.render()
+
+        #
+        # tear down
+        #
+
+        # pop our view matrix and camera translation
+        self.camera.pop_model_view()
+        self.camera.view_matrix.pop_view_matrix()
+
+        # reset our gl state
+        self.viewport.pop_viewport_attributes()
+
+        #
+        # reset state
+        #
+
+        # set our viewport to the entire window
+        pygly.gl.set_scissor(
+            pygly.window.create_rectangle( self.window )
+            )
+        pygly.gl.set_viewport(
+            pygly.window.create_rectangle( self.window )
+            )
 
 
 def main():
