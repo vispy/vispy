@@ -142,8 +142,8 @@ class Application( object ):
         self.colours = numpy.linspace( 0.0, 1.0, num_cubes )
         # repeat the values 3 times each
         self.colours = self.colours.repeat( 3 )
+        # reshape into colour vectors
         self.colours.shape = ( num_cubes, 3 )
-        print self.colours
 
     def run( self ):
         pyglet.app.run()
