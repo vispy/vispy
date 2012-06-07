@@ -202,9 +202,6 @@ class Application( object ):
         # display the frame buffer
         self.window.flip()
 
-    def set_gl_state( self ):
-        pass
-
     def render( self ):
         #
         # setup

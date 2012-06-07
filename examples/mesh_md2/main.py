@@ -209,23 +209,26 @@ class Application( object ):
         self.window.flip()
             
     def set_gl_state( self ):
-        # use the z-buffer when drawing
+        # enable z buffer
         glEnable( GL_DEPTH_TEST )
 
-        # normalise any normals for us
+        # enable smooth shading
+        glShadeModel( GL_SMOOTH )
+
+        # rescale only normals for lighting
         glEnable( GL_RESCALE_NORMAL )
 
-        # enable us to clear viewports independently
+        # enable scissoring for viewports
         glEnable( GL_SCISSOR_TEST )
+
+        # enable back face culling
+        glEnable( GL_CULL_FACE )
+        glCullFace( GL_BACK )
 
         # enable texturing
         glEnable( self.texture.target )
         glBindTexture( self.texture.target, self.texture.id )
 
-        # enable smooth shading
-        # instead of flat shading
-        glShadeModel( GL_SMOOTH )
-            
     def render( self ):
         #
         # setup

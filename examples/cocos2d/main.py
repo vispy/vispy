@@ -95,6 +95,23 @@ class PyglyScene( object ):
             self.layer.pygly_viewport
             )
 
+    def set_gl_state( self ):
+        # enable z buffer
+        glEnable( GL_DEPTH_TEST )
+
+        # enable smooth shading
+        glShadeModel( GL_SMOOTH )
+
+        # rescale only normals for lighting
+        glEnable( GL_RESCALE_NORMAL )
+
+        # enable scissoring for viewports
+        glEnable( GL_SCISSOR_TEST )
+
+        # enable back face culling
+        glEnable( GL_CULL_FACE )
+        glCullFace( GL_BACK )
+
     def render_layer( self, layer ):
         #
         # setup
@@ -107,10 +124,7 @@ class PyglyScene( object ):
 
         # setup our viewport properties
         glPushAttrib( GL_ALL_ATTRIB_BITS )
-
-        glShadeModel( GL_SMOOTH )
-        glEnable( GL_DEPTH_TEST )
-        glEnable( GL_RESCALE_NORMAL )
+        self.set_gl_state()
 
         # apply our view matrix and camera transform
         layer.pygly_camera.view_matrix.push_view_matrix()

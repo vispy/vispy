@@ -116,25 +116,27 @@ class Application( object ):
             )
 
     def setup_viewport( self ):
+        # enable z buffer
+        glEnable( GL_DEPTH_TEST )
+
+        # enable smooth shading
+        glShadeModel( GL_SMOOTH )
+
+        # rescale only normals for lighting
+        glEnable( GL_RESCALE_NORMAL )
+
+        # enable scissoring for viewports
+        glEnable( GL_SCISSOR_TEST )
+
+        # enable back face culling
+        glEnable( GL_CULL_FACE )
+        glCullFace( GL_BACK )
         # enable some default options
         # use the z-buffer when drawing
         glEnable( GL_DEPTH_TEST )
 
         # enable smooth shading
         glShadeModel( GL_SMOOTH )
-
-        # because we use glScale for scene graph
-        # scaling, normals will get affected too.
-        # GL_RESCALE_NORMAL applies the inverse
-        # value of the current matrice's scale
-        # this is new in OGL1.2 and SHOULD be
-        # faster than glEnable( GL_NORMALIZE )
-        # http://www.opengl.org/archives/resources/features/KilgardTechniques/oglpitfall/
-        glEnable( GL_RESCALE_NORMAL )
-
-        # enable GL_SCISSOR_TEST so we can selectively
-        # clear areas of the window
-        glEnable( GL_SCISSOR_TEST )
     
     def run( self ):
         pyglet.app.run()

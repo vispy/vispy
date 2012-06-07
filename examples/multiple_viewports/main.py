@@ -169,10 +169,21 @@ class Application( object ):
         self.window.flip()
 
     def set_gl_state( self ):
+        # enable z buffer
         glEnable( GL_DEPTH_TEST )
+
+        # enable smooth shading
         glShadeModel( GL_SMOOTH )
+
+        # rescale only normals for lighting
         glEnable( GL_RESCALE_NORMAL )
+
+        # enable scissoring for viewports
         glEnable( GL_SCISSOR_TEST )
+
+        # enable back face culling
+        glEnable( GL_CULL_FACE )
+        glCullFace( GL_BACK )
 
     def render( self ):
         # set our window
