@@ -1,28 +1,36 @@
-Make test module.
-Move existing tests into test module.
-Use unit test instead of dodgy tests.
+scene_node render_debug
+convert to visitor function that renders cubes
+and a second visitor that renders axis
+this allows for proper sorting of objects for rendering
+
+Material
+-push / pop material
+-is_opaque
+
+Dumb renderer
+-sort by material
+-render solid objects
+-render transparent objects with z write disabled
+-expects any alpha to be 'order independent' modes
+
+material sorter
+-extract materials with alpha
 
 General
 Generate docs
--push into github wiki?
+Use github pages to refer to docs url
 Use logger instead of print
 
 Render Module
 Window: manually send on_draw event
 Create a sorted list of viewports that respond to on_draw
 Viewport: hook into on_draw
-Viewport: listen for on_resize events
-Sorting: we need to render no transparent objects first
-then sort transparent objects back to front and render them.
-http://www.opengl.org/wiki/Transparency_Sorting#Alpha_blending_and_the_Z_buffer
-Viewport: Move some scissor, etc functions into opengl module
 ViewMatrix: convert_to_planes - creates 6 planes to do collion detection against.
 http://www.flipcode.com/archives/Frustum_Culling.shtml
 Window: remove the GL_COLOR_BUFFER_BIT clearing, this should be user controlled.
 Picking: render a 1x1 viewport, assign unique colours to each mesh, pull value out of render buffer.
 Clipping: add clipping to the view frustrum, important when rendering points / lines with thickness.
 http://www.opengl.org/archives/resources/features/KilgardTechniques/oglpitfall/
-ViewMatrix: change to use actual matrices rather than GL helpers so point to ray uses single function.
 ViewMatrix: enable drawing of view frustrum. Use ray casting to determine the frustrum extents.
 
 Input:
@@ -78,8 +86,6 @@ Algorithm: group scene, scene manager into a "sector"
 Algorithm: render a sector with a frustrum
 Algorithm: perform frustrum culling
 http://www.flipcode.com/archives/Frustum_Culling.shtml
-Algorithm: perform back to front sorting of objects
-Algorithm: optimise rendering (reduce overdraw) by rendering front to back
 Algorithm: create encompassing tree, i.e. parent node includes volume of children, easier to implement than octree?
 Portal: create a portal rendering "sector"
 http://www.flipcode.com/portal/
