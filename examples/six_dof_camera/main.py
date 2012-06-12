@@ -128,8 +128,9 @@ class Application( object ):
         # assign a camera controller
         # we'll use the 6 degrees of freedom
         # camera for this one
-        self.camera_controller = SixDOF_Controller()
-        self.camera_controller.scene_node = self.camera
+        self.camera_controller = SixDOF_Controller(
+            self.camera.transform
+            )
         
     def run( self ):
         pyglet.app.run()

@@ -117,8 +117,9 @@ class Application( object ):
         
         # assign a camera controller
         # we'll use the FPS camera for this one
-        self.camera_controller = FPS_Controller()
-        self.camera_controller.scene_node = self.camera
+        self.camera_controller = FPS_Controller(
+            self.camera.transform
+            )
 
         self.pitch_time = 0.0
         self.pitch_change = math.pi / 4.0
