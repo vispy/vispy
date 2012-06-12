@@ -104,11 +104,11 @@ class Application( object ):
         self.scene_node.add_child( self.camera )
 
         # move the camera so we can see the grid
-        self.camera.translate_inertial(
+        self.camera.transform.inertial.translate(
             [ 0.0, 0.0, 80.0 ]
             )
         # rotate the camera so it is pointing down
-        self.camera.rotate_object_x( -math.pi / 4.0 )
+        self.camera.transform.object.rotate_x( -math.pi / 4.0 )
         
         # assign a camera controller
         # we'll use the FPS camera for this one
@@ -132,7 +132,7 @@ class Application( object ):
                 cube.initialise,
                 cube.render
                 )
-            node.inertial_translation = position
+            node.transform.inertial.translation = position
             self.scene_node.add_child( node )
             self.renderables.append( node )
 
@@ -275,11 +275,11 @@ class Application( object ):
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
 
         # sort our renderables
-        positions = [ obj.world_translation for obj in self.renderables ]
+        positions = [ obj.world_transform.translation for obj in self.renderables ]
 
         sorted_renderables = pygly.sorter.sort_front_to_back(
-            self.camera.world_translation,
-            -(self.camera.object_z_axis),
+            self.camera.world_transform.translation,
+            -(self.camera.transform.object.z),
             self.renderables,
             positions
             )

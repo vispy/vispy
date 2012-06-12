@@ -106,7 +106,7 @@ class Application( object ):
                 # re-orient the mesh
                 md2_rotator_node = SceneNode( 'md2_rotate' )
                 mesh_node.add_child( md2_rotator_node )
-                md2_rotator_node.rotate_object_x( -math.pi / 2.0 )
+                md2_rotator_node.transform.object.rotate_x( -math.pi / 2.0 )
 
                 # create a mesh
                 mesh = MD2_Mesh(
@@ -124,7 +124,7 @@ class Application( object ):
                 md2_rotator_node.add_child( render_node )
 
                 # move the mesh so we can see it
-                mesh_node.translate_inertial(
+                mesh_node.transform.inertial.translate(
                     [
                         (x * distance) - offset,
                         0.0,
@@ -153,10 +153,10 @@ class Application( object ):
         self.scene_node.add_child( self.camera )
 
         # move the camera so we can see the models
-        self.camera.translate_object(
+        self.camera.transform.object.translate(
             [ 0.0, 75.0, 350.0 ]
             )
-        self.camera.rotate_object_x( -math.pi / 4.0 )
+        self.camera.transform.object.rotate_x( -math.pi / 4.0 )
 
         # use a variable for accumulating time
         # for animating the mesh
@@ -198,7 +198,7 @@ class Application( object ):
                 )
 
             # rotate the mesh about it's own vertical axis
-            mesh_node.rotate_object_y( dt )
+            mesh_node.transform.object.rotate_y( dt )
 
         self.render()
         

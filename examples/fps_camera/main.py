@@ -94,17 +94,6 @@ class Application( object ):
             )
         self.grid_node.add_child( self.grid_render_node )
 
-        # create a node that we'll move around
-        self.test_node = SceneNode( '/test' )
-        self.grid_node.add_child( self.test_node )
-        self.test_node.translate_object(
-            [ 0.0, 20.0, 0.0 ]
-            )
-
-        # create a fps controller for the node
-        self.node_controller = FPS_Controller()
-        self.node_controller.scene_node = self.test_node
-        
         # create a camera and a view matrix
         self.view_matrix = ProjectionViewMatrix(
             self.viewport.aspect_ratio,
@@ -120,11 +109,11 @@ class Application( object ):
         self.scene_node.add_child( self.camera )
 
         # move the camera so we can see the grid
-        self.camera.translate_inertial(
+        self.camera.transform.object.translate(
             [ 0.0, 20.0, 80.0 ]
             )
         # rotate the camera so it is pointing down
-        self.camera.rotate_object_x( -math.pi / 4.0 )
+        self.camera.transform.object.rotate_x( -math.pi / 4.0 )
         
         # assign a camera controller
         # we'll use the FPS camera for this one
@@ -140,14 +129,6 @@ class Application( object ):
     
     def step( self, dt ):
         self.move_camera( dt )
-
-        # move the test node
-        self.pitch_time += dt
-        if self.pitch_time > 5.0:
-            self.pitch_change *= -1.0
-            self.pitch_time = 0.0
-        self.node_controller.translate_forward( math.pi * dt )
-        self.node_controller.orient( self.pitch_change * dt, self.yaw_change * dt )
 
         self.render()
 

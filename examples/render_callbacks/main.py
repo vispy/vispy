@@ -103,12 +103,12 @@ class Application( object ):
         self.scene_node.add_child( self.camera )
 
         # move the camera backward so we can see it
-        self.camera.translate_inertial(
+        self.camera.transform.inertial.translate(
             [ 0.0, 20.0, 40.0]
             )
 
         # rotate the camera so it is tilting forward
-        self.camera.rotate_object_x( -math.pi / 4.0 )
+        self.camera.transform.object.rotate_x( -math.pi / 4.0 )
 
         # listen for viewport resize events
         self.viewport.push_handlers(
@@ -143,7 +143,7 @@ class Application( object ):
     
     def step( self, dt ):
         # rotate the mesh about it's own vertical axis
-        self.grid_node.rotate_object_y( dt )
+        self.grid_node.transform.object.rotate_y( dt )
 
         self.render()
 

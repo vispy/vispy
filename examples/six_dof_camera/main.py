@@ -102,7 +102,7 @@ class Application( object ):
 
         # move the grid backward so we can see it
         # and move it down so we start above it
-        self.grid_node.translate_inertial(
+        self.grid_node.transform.inertial.translate(
             [ 0.0, 0.0, -80.0 ]
             )
         
@@ -121,7 +121,7 @@ class Application( object ):
         self.scene_node.add_child( self.camera )
 
         # move the camera up so it starts above the grid
-        self.camera.translate_inertial(
+        self.camera.transform.inertial.translate(
             [ 0.0, 20.0, 0.0 ]
             )
         

@@ -114,12 +114,12 @@ class Application( object ):
         self.scene_node.add_child( self.camera )
 
         # move the camera backward so we can see the mesh
-        self.camera.translate_inertial(
+        self.camera.transform.inertial.translate(
             [ 0.0, 20.0, 80.0 ]
             )
 
         # rotate the camera so it is tilting downward
-        self.camera.rotate_object_x( -math.pi / 4.0 )
+        self.camera.transform.object.rotate_x( -math.pi / 4.0 )
 
         # create a list of viewports and cameras
         self.viewports = [
@@ -157,7 +157,7 @@ class Application( object ):
                 self.velocity[ 1 ] = -self.velocity[ 1 ]
 
         # rotate the mesh about it's own vertical axis
-        self.grid_node.rotate_object_y( dt )
+        self.grid_node.transform.object.rotate_y( dt )
 
         # render the scene
         self.render()

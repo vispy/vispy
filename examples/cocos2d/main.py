@@ -58,12 +58,12 @@ class PyglyScene( object ):
         self.scene_node.add_child( self.camera )
 
         # move the camera
-        self.camera.translate_object(
+        self.camera.transform.object.translate(
             [ 0.0, 20.0, 40.0 ]
             )
 
         # rotate the camera so it is tilting forward
-        self.camera.rotate_object_x( -math.pi / 4.0 )
+        self.camera.transform.object.rotate_x( -math.pi / 4.0 )
 
         # this must be done after the
         # director is initialised or the

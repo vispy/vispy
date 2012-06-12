@@ -109,19 +109,19 @@ class Application( object ):
         self.scene_node.add_child( self.camera )
 
         # move the camera so we can see the model
-        self.camera.translate_object(
+        self.camera.transform.object.translate(
             [ 0.0, 20.0, 30.0 ]
             )
 
         # rotate the camera so it is pointing down
-        self.camera.rotate_object_x( -math.pi / 4.0 )
+        self.camera.transform.object.rotate_x( -math.pi / 4.0 )
         
     def run( self ):
         pyglet.app.run()
 
     def step( self, dt ):
         # rotate the mesh about it's own vertical axis
-        self.mesh_node.rotate_object_y( dt )
+        self.mesh_node.transform.object.rotate_y( dt )
 
         # render the scene
         self.render()

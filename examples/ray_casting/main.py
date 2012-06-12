@@ -106,7 +106,7 @@ class Application( object ):
         self.renderables.append( self.mesh_render_node )
 
         # rotate the mesh so we can see it
-        self.mesh_node.rotate_object_x( math.pi / 4.0 )
+        self.mesh_node.transform.object.rotate_x( math.pi / 4.0 )
         
         # create a camera and a view matrix
         """
@@ -132,7 +132,7 @@ class Application( object ):
         self.scene_node.add_child( self.camera )
 
         # move the camera so we can see the mesh
-        self.mesh_node.translate_inertial(
+        self.mesh_node.transform.inertial.translate(
             [ 0.0, 0.0, 30.0 ]
             )
 
@@ -189,14 +189,14 @@ class Application( object ):
 
         # render the mesh somewhere along the ray
         distance = 50.0
-        self.mesh_node.inertial_translation = mouse_ray[ 0 ] + (mouse_ray[ 1 ] * distance)
+        self.mesh_node.transform.inertial.translation = mouse_ray[ 0 ] + (mouse_ray[ 1 ] * distance)
     
     def step( self, dt ):
         # move the mesh to the mouse position
         self.move_mesh()
 
         # rotate the mesh about it's own vertical axis
-        self.mesh_node.rotate_object_y( dt )
+        self.mesh_node.transform.object.rotate_y( dt )
 
         # render the scene
         self.render()
