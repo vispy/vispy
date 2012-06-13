@@ -102,12 +102,6 @@ class Application( object ):
                 mesh_node = SceneNode( 'mesh' )
                 self.scene_node.add_child( mesh_node )
 
-                # the md2 is oriented at 90 degrees about X
-                # re-orient the mesh
-                md2_rotator_node = SceneNode( 'md2_rotate' )
-                mesh_node.add_child( md2_rotator_node )
-                md2_rotator_node.transform.object.rotate_x( -math.pi / 2.0 )
-
                 # create a mesh
                 mesh = MD2_Mesh(
                     self.md2_renderer
@@ -121,7 +115,7 @@ class Application( object ):
                     self.initialise_mesh,
                     mesh.render
                     )
-                md2_rotator_node.add_child( render_node )
+                mesh_node.add_child( render_node )
 
                 # move the mesh so we can see it
                 mesh_node.transform.inertial.translate(
