@@ -64,8 +64,16 @@ class Application( object ):
         self.keyboard = Keyboard( self.window )
         self.mouse = Mouse( self.window )
 
+        # register for keypresses
+        self.keyboard.digital.push_handlers(
+            on_digital_input = self.on_key_event
+            )
+
         # setup our scene
         self.setup_scene()
+
+        # setup our text
+        self.setup_text()
         
         # setup our update loop the app
         # we'll render at 60 fps
@@ -83,6 +91,12 @@ class Application( object ):
         print "Rendering at %iHz" % int(frequency)
 
     def setup_scene( self ):
+        # set our gl clear colour
+        glClearColor( 0.5, 0.5, 0.5, 1.0 )
+
+        # start by sorting back to front
+        self.sort_front_to_back = False
+
         # create a list of renderables
         self.renderables = []
 
@@ -112,19 +126,25 @@ class Application( object ):
         
         # assign a camera controller
         # we'll use the FPS camera for this one
-        self.camera_controller = FPS_Controller()
-        self.camera_controller.scene_node = self.camera
+        self.camera_controller = FPS_Controller( self.camera.transform )
 
         # create a number of cubes
-        num_cubes = 20
-        cube_distance = 50
-        positions = numpy.random.rand( num_cubes, 3 )
+        x,z = numpy.mgrid[
+            -5:5:11j,
+            -5:5:11j
+            ]
+        x = x.flatten()
+        z = z.flatten()
 
-        # make all the cubes sit in the Y=0 plane
-        positions[ :, 1 ] = 0.0
+        positions = numpy.vstack(
+            (x, numpy.zeros( x.shape ), z )
+            )
+        positions = positions.T
 
         # set the distance of the cubes
-        positions *= cube_distance
+        # cube is -1 -> 1
+        # so distance is 2
+        positions *= 2.0
 
         for position in positions:
             node = RenderCallbackNode(
@@ -139,11 +159,58 @@ class Application( object ):
         # create a list of colours that we will use to
         # render each object
         # this will let us know the sort order
-        self.colours = numpy.linspace( 0.0, 1.0, num_cubes )
+        self.colours = numpy.linspace( 0.0, 1.0, len(positions) )
         # repeat the values 3 times each
-        self.colours = self.colours.repeat( 3 )
+        self.colours = self.colours.repeat( 4 )
         # reshape into colour vectors
-        self.colours.shape = ( num_cubes, 3 )
+        self.colours.shape = ( len(positions), 4 )
+
+        # add some colour to our cubes
+        self.colours[ :,2 ] = 0.5
+        # set our alpha values
+        self.colours[ :,3 ] = 0.5
+
+    def setup_text( self ):
+        self.help_label = pyglet.text.HTMLLabel(
+"""
+<b>Sorting demo</b>
+<ul>
+<li>W,A,S,D: move around</li>
+<li>Space: move up</li>
+<li>Shift: move down</li>
+</ul>
+<ul>
+<li>E: Switch rendering front to back</li>
+</ul>
+""",
+        multiline = True,
+        x = 0,
+        y = 50,
+        width = 500,
+        anchor_x = 'left',
+        anchor_y = 'bottom',
+        )
+        self.help_label.color = (255,255,255,255)
+
+    def setup_status_text( self ):
+        status_text = "Front to Back"
+
+        if self.sort_front_to_back == False:
+            status_text = "Back to Front"
+
+        self.status_label = pyglet.text.HTMLLabel(
+"""
+Rendering: %i transparent cubes<br>
+Rendering: %s<br>
+""" % (len(self.colours), status_text),
+        multiline = True,
+        x = 500,
+        y = 50,
+        width = 500,
+        anchor_x = 'left',
+        anchor_y = 'bottom',
+        )
+        self.status_label.color = (255,255,255,255)
 
     def run( self ):
         pyglet.app.run()
@@ -156,9 +223,23 @@ class Application( object ):
 
         # render the fps
         self.fps_display.draw()
+
+        # render our help text
+        self.help_label.draw()
+
+        # update our status text
+        self.setup_status_text()
+        # render it
+        self.status_label.draw()
         
         # display the frame buffer
         self.window.flip()
+
+    def on_key_event( self, digital, event, key ):
+        if event == Keyboard.up:
+            # check for switching of sorting
+            if key[ 0 ] == self.keyboard.keys.E:
+                self.sort_front_to_back = not self.sort_front_to_back
 
     def move_camera( self, dt ):
         # update the Camera
@@ -277,20 +358,29 @@ class Application( object ):
         # sort our renderables
         positions = [ obj.world_transform.translation for obj in self.renderables ]
 
-        sorted_renderables = pygly.sorter.sort_front_to_back(
+        sort_function = pygly.sorter.sort_front_to_back
+        if self.sort_front_to_back == False:
+            sort_function = pygly.sorter.sort_back_to_front
+
+        sorted_renderables = sort_function(
             self.camera.world_transform.translation,
             -(self.camera.transform.object.z),
             self.renderables,
             positions
             )
 
+        # enable alpha rendering
+        glEnable( GL_BLEND )
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
+
         # render each object
         for renderable, colour in zip(sorted_renderables, self.colours):
             # set our colour
-            glColor3f(
+            glColor4f(
                 colour[ 0 ],
                 colour[ 1 ],
                 colour[ 2 ],
+                colour[ 3 ],
                 )
             # render the object
             renderable.render()
