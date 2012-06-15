@@ -27,6 +27,8 @@ from pygly.fps_controller import FPS_Controller
 from pygly.input.keyboard import Keyboard
 from pygly.input.mouse import Mouse
 
+import pyrr
+
 import cube
 
 # over-ride the default pyglet idle loop
@@ -94,8 +96,8 @@ class Application( object ):
         # set our gl clear colour
         glClearColor( 0.2, 0.2, 0.2, 1.0 )
 
-        # start by sorting back to front
-        self.sort_mode = 1
+        # start by sorting back to front using radius
+        self.sort_mode = 2
 
         # create a list of renderables
         self.renderables = []
@@ -119,7 +121,7 @@ class Application( object ):
 
         # move the camera so we can see the grid
         self.camera.transform.inertial.translate(
-            [ 0.0, 0.0, 80.0 ]
+            [ 0.0, 5.0, 20.0 ]
             )
         # rotate the camera so it is pointing down
         self.camera.transform.object.rotate_x( -math.pi / 4.0 )
@@ -197,9 +199,13 @@ class Application( object ):
         status_text = "No sorting"
 
         if self.sort_mode == 1:
-            status_text = "Back to Front"
+            status_text = "Back to Front (Plane)"
         elif self.sort_mode == 2:
-            status_text = "Front to Back"
+            status_text = "Back to Front (Radius)"
+        elif self.sort_mode == 3:
+            status_text = "Front to Back (Plane)"
+        elif self.sort_mode == 4:
+            status_text = "Front to Back (Radius)"
 
         self.status_label = pyglet.text.HTMLLabel(
 """
@@ -243,7 +249,7 @@ Rendering: %s<br>
             # check for switching of sorting
             if key[ 0 ] == self.keyboard.keys.E:
                 self.sort_mode += 1
-                if self.sort_mode >= 3:
+                if self.sort_mode >= 5:
                     self.sort_mode = 0
 
     def move_camera( self, dt ):
@@ -363,13 +369,17 @@ Rendering: %s<br>
         # sort our renderables
         positions = [ obj.world_transform.translation for obj in self.renderables ]
 
-        sort_function = pygly.sorter.sort_front_to_back
         if self.sort_mode == 0:
             sorted_renderables = self.renderables
         else:
-            sort_function = pygly.sorter.sort_back_to_front
-            if self.sort_mode == 2:
-                sort_function = pygly.sorter.sort_front_to_back
+            if self.sort_mode == 1:
+                sort_function = pygly.sorter.sort_plane_back_to_front
+            elif self.sort_mode == 2:
+                sort_function = pygly.sorter.sort_radius_back_to_front
+            elif self.sort_mode == 3:
+                sort_function = pygly.sorter.sort_plane_front_to_back
+            elif self.sort_mode == 4:
+                sort_function = pygly.sorter.sort_radius_front_to_back
 
             sorted_renderables = sort_function(
                 self.camera.world_transform.translation,
