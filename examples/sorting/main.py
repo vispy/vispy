@@ -175,6 +175,7 @@ class Application( object ):
 """
 <b>Sorting demo</b>
 <ul>
+<li>Mouse: look around</li>
 <li>W,A,S,D: move around</li>
 <li>Space: move up</li>
 <li>Shift: move down</li>
