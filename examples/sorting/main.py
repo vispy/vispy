@@ -144,7 +144,7 @@ class Application( object ):
         # set the distance of the cubes
         # cube is -1 -> 1
         # so distance is 2
-        positions *= 2.0
+        positions *= 2.5
 
         for position in positions:
             node = RenderCallbackNode(
