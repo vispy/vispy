@@ -67,6 +67,9 @@ class Application( object ):
         
         # setup our scene
         self.setup_scene()
+
+        # setup our text
+        self.setup_text()
         
         # setup our update loop the app
         # we'll render at 60 fps
@@ -136,6 +139,24 @@ class Application( object ):
             [ 0.0, 0.0, 30.0 ]
             )
 
+    def setup_text( self ):
+        self.help_label = pyglet.text.HTMLLabel(
+"""
+<b>Ray Casting demo</b>
+<ul>
+<li>Mouse: cast ray into the scene</li>
+</ul>
+""",
+            multiline = True,
+            x = 0,
+            y = 50,
+            width = 500,
+            anchor_x = 'left',
+            anchor_y =
+            'bottom',
+            )
+        self.help_label.color = (255,255,255,255)
+
     def initialise_mesh( self ):
         # load the mesh
         self.mesh.load()
@@ -203,6 +224,9 @@ class Application( object ):
 
         # render the fps
         self.fps_display.draw()
+
+        # render our help text
+        self.help_label.draw()
         
         # display the frame buffer
         self.window.flip()

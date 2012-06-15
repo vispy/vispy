@@ -64,6 +64,9 @@ class Application( object ):
 
         # setup our scene
         self.setup_scene()
+
+        # setup our text
+        self.setup_text()
         
         # setup our update loop the app
         # we'll render at 60 fps
@@ -131,6 +134,26 @@ class Application( object ):
         self.camera_controller = SixDOF_Controller(
             self.camera.transform
             )
+
+    def setup_text( self ):
+        self.help_label = pyglet.text.HTMLLabel(
+"""
+<b>6-DOF Camera demo</b>
+<ul>
+<li>Mouse: look around</li>
+<li>W,A,S,D: move around</li>
+<li>Space: move up</li>
+<li>Shift: move down</li>
+</ul>
+""",
+            multiline = True,
+            x = 0,
+            y = 50,
+            width = 500,
+            anchor_x = 'left',
+            anchor_y = 'bottom',
+            )
+        self.help_label.color = (255,255,255,255)
         
     def run( self ):
         pyglet.app.run()
@@ -196,6 +219,9 @@ class Application( object ):
 
         # render the scene
         self.render()
+
+        # render our help text
+        self.help_label.draw()
 
         # render the fps
         self.fps_display.draw()
