@@ -172,6 +172,8 @@ class Application( object ):
         # set our alpha values
         self.colours[ :,3 ] = 0.5
 
+        self.render_colours = True
+
     def setup_text( self ):
         self.help_label = pyglet.text.HTMLLabel(
 """
@@ -184,6 +186,7 @@ class Application( object ):
 </ul>
 <ul>
 <li>E: Toggle sorting mode</li>
+<li>R: Toggle colours</li>
 </ul>
 """,
         multiline = True,
@@ -196,22 +199,27 @@ class Application( object ):
         self.help_label.color = (255,255,255,255)
 
     def setup_status_text( self ):
-        status_text = "No sorting"
+        sorting_text = "No sorting"
 
         if self.sort_mode == 1:
-            status_text = "Back to Front (Plane)"
+            sorting_text = "Back to Front (Plane)"
         elif self.sort_mode == 2:
-            status_text = "Back to Front (Radius)"
+            sorting_text = "Back to Front (Radius)"
         elif self.sort_mode == 3:
-            status_text = "Front to Back (Plane)"
+            sorting_text = "Front to Back (Plane)"
         elif self.sort_mode == 4:
-            status_text = "Front to Back (Radius)"
+            sorting_text = "Front to Back (Radius)"
+
+        colour_text = "Colours for sort order"
+        if self.render_colours == False:
+            colour_text = "No colours"
 
         self.status_label = pyglet.text.HTMLLabel(
 """
 Rendering: %i transparent cubes<br>
 Rendering: %s<br>
-""" % (len(self.colours), status_text),
+Colours: %s<br>
+""" % (len(self.colours), sorting_text, colour_text),
         multiline = True,
         x = 500,
         y = 50,
@@ -251,6 +259,8 @@ Rendering: %s<br>
                 self.sort_mode += 1
                 if self.sort_mode >= 5:
                     self.sort_mode = 0
+            elif key[ 0 ] == self.keyboard.keys.R:
+                self.render_colours = not self.render_colours
 
     def move_camera( self, dt ):
         # update the Camera
@@ -392,15 +402,21 @@ Rendering: %s<br>
         glEnable( GL_BLEND )
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
 
+        if self.render_colours == False:
+            glColor4f( 0.5, 0.5, 0.5, self.colours[ 0 ][ 3 ] )
+
         # render each object
         for renderable, colour in zip(sorted_renderables, self.colours):
-            # set our colour
-            glColor4f(
-                colour[ 0 ],
-                colour[ 1 ],
-                colour[ 2 ],
-                colour[ 3 ],
-                )
+
+            if self.render_colours:
+                # set our colour
+                glColor4f(
+                    colour[ 0 ],
+                    colour[ 1 ],
+                    colour[ 2 ],
+                    colour[ 3 ],
+                    )
+
             # render the object
             renderable.render()
 
