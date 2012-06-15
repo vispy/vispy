@@ -92,10 +92,10 @@ class Application( object ):
 
     def setup_scene( self ):
         # set our gl clear colour
-        glClearColor( 0.5, 0.5, 0.5, 1.0 )
+        glClearColor( 0.2, 0.2, 0.2, 1.0 )
 
         # start by sorting back to front
-        self.sort_front_to_back = False
+        self.sort_mode = 1
 
         # create a list of renderables
         self.renderables = []
@@ -181,7 +181,7 @@ class Application( object ):
 <li>Shift: move down</li>
 </ul>
 <ul>
-<li>E: Switch rendering front to back</li>
+<li>E: Toggle sorting mode</li>
 </ul>
 """,
         multiline = True,
@@ -194,10 +194,12 @@ class Application( object ):
         self.help_label.color = (255,255,255,255)
 
     def setup_status_text( self ):
-        status_text = "Front to Back"
+        status_text = "No sorting"
 
-        if self.sort_front_to_back == False:
+        if self.sort_mode == 1:
             status_text = "Back to Front"
+        elif self.sort_mode == 2:
+            status_text = "Front to Back"
 
         self.status_label = pyglet.text.HTMLLabel(
 """
@@ -240,7 +242,9 @@ Rendering: %s<br>
         if event == Keyboard.up:
             # check for switching of sorting
             if key[ 0 ] == self.keyboard.keys.E:
-                self.sort_front_to_back = not self.sort_front_to_back
+                self.sort_mode += 1
+                if self.sort_mode >= 3:
+                    self.sort_mode = 0
 
     def move_camera( self, dt ):
         # update the Camera
@@ -360,15 +364,19 @@ Rendering: %s<br>
         positions = [ obj.world_transform.translation for obj in self.renderables ]
 
         sort_function = pygly.sorter.sort_front_to_back
-        if self.sort_front_to_back == False:
+        if self.sort_mode == 0:
+            sorted_renderables = self.renderables
+        else:
             sort_function = pygly.sorter.sort_back_to_front
+            if self.sort_mode == 2:
+                sort_function = pygly.sorter.sort_front_to_back
 
-        sorted_renderables = sort_function(
-            self.camera.world_transform.translation,
-            -(self.camera.transform.object.z),
-            self.renderables,
-            positions
-            )
+            sorted_renderables = sort_function(
+                self.camera.world_transform.translation,
+                -(self.camera.transform.object.z),
+                self.renderables,
+                positions
+                )
 
         # enable alpha rendering
         glEnable( GL_BLEND )
