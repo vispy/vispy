@@ -23,9 +23,7 @@ from pygly.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene_node import SceneNode
 from pygly.camera_node import CameraNode
 from pygly.render_callback_node import RenderCallbackNode
-from pygly.fps_controller import FPS_Controller
 from pygly.input.keyboard import Keyboard
-from pygly.input.mouse import Mouse
 
 import pyrr
 
@@ -64,7 +62,6 @@ class Application( object ):
 
         # create our input devices
         self.keyboard = Keyboard( self.window )
-        self.mouse = Mouse( self.window )
 
         # register for keypresses
         self.keyboard.digital.push_handlers(
@@ -125,10 +122,11 @@ class Application( object ):
             )
         # rotate the camera so it is pointing down
         self.camera.transform.object.rotate_x( -math.pi / 4.0 )
-        
-        # assign a camera controller
-        # we'll use the FPS camera for this one
-        self.camera_controller = FPS_Controller( self.camera.transform )
+
+        # create a single node that is parent to all
+        # of our cubes
+        self.cube_root = SceneNode( 'cube_root' )
+        self.scene_node.add_child( self.cube_root )
 
         # create a number of cubes
         x,z = numpy.mgrid[
@@ -155,7 +153,7 @@ class Application( object ):
                 cube.render
                 )
             node.transform.inertial.translation = position
-            self.scene_node.add_child( node )
+            self.cube_root.add_child( node )
             self.renderables.append( node )
 
         # create a list of colours that we will use to
@@ -178,12 +176,6 @@ class Application( object ):
         self.help_label = pyglet.text.HTMLLabel(
 """
 <b>Sorting demo</b>
-<ul>
-<li>Mouse: look around</li>
-<li>W,A,S,D: move around</li>
-<li>Space: move up</li>
-<li>Shift: move down</li>
-</ul>
 <ul>
 <li>E: Toggle sorting mode</li>
 <li>R: Toggle colours</li>
@@ -233,7 +225,7 @@ Colours: %s<br>
         pyglet.app.run()
     
     def step( self, dt ):
-        self.move_camera( dt )
+        self.move_cubes( dt )
 
         # render the scene
         self.render()
@@ -262,70 +254,10 @@ Colours: %s<br>
             elif key[ 0 ] == self.keyboard.keys.R:
                 self.render_colours = not self.render_colours
 
-    def move_camera( self, dt ):
-        # update the Camera
-        camera_speed = 40.0
-        
-        # handle input
-        # this looks complex, but all we're doing
-        # is checking for WASD / Arrows
-        # and then sending forward, backward, etc
-        # to the camera controller with an amount that
-        # is scaled by the current time delta
-
-        # move forward
-        if self.keyboard[ self.keyboard.keys.W ] or self.keyboard[ self.keyboard.keys.UP ]:
-            self.camera_controller.translate_forward( camera_speed * dt )
-
-        # move backward
-        if self.keyboard[ self.keyboard.keys.S ] or self.keyboard[ self.keyboard.keys.DOWN ]:
-            self.camera_controller.translate_backward( camera_speed * dt )
-
-        # move right
-        if self.keyboard[ self.keyboard.keys.D ] or self.keyboard[ self.keyboard.keys.RIGHT ]:
-            self.camera_controller.translate_right( camera_speed * dt )
-
-        # move right
-        if self.keyboard[ self.keyboard.keys.A ] or self.keyboard[ self.keyboard.keys.LEFT ]:
-            self.camera_controller.translate_left( camera_speed * dt )
-
-        # move up
-        if self.keyboard[ self.keyboard.keys.SPACE ]:
-            self.camera_controller.translate_up( camera_speed * dt )
-
-        # move up
-        if self.keyboard[ self.keyboard.keys.LSHIFT ]:
-            self.camera_controller.translate_down( camera_speed * dt )
-        
-        # handle camera rotation
-        # get the relative movement of the mouse
-        # since the last frame
-        mouse_relative = self.mouse.relative_position
-
-        # the base movement speed we use for
-        # scaling with the mouse movements
-        # this value just feels about right
-        mouse_speed = 0.006
-        
-        # scale the mouse movement by the relative value
-        # DON'T multiply by the time delta here
-        # think about it, it's not what you want!
-        frame_pitch = math.pi * mouse_speed * mouse_relative[ 1 ]
-        frame_yaw = -math.pi * mouse_speed * mouse_relative[ 0 ]
-        
-        # check for mouse inverts, for us freaks...
-        # WE HAVE RIGHTS TOO!
-        invert_y = True
-        if invert_y == True:
-            frame_pitch = -frame_pitch
-        
-        # pass the mouse movement to the camera controller
-        self.camera_controller.orient( pitch = frame_pitch, yaw = frame_yaw )
-        
-        # reset our mouse relative position
-        # we should do this each time we take a reading
-        # or the delta will continue to accumulate
-        self.mouse.clear_delta()
+    def move_cubes( self, dt ):
+        # rotate our cubes
+        speed = math.pi / 2
+        self.cube_root.transform.object.rotate_y( speed * dt )
 
     def set_gl_state( self ):
         # enable z buffer
