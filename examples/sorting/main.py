@@ -118,7 +118,7 @@ class Application( object ):
 
         # move the camera so we can see the grid
         self.camera.transform.inertial.translate(
-            [ 0.0, 5.0, 20.0 ]
+            [ 0.0, 10.0, 20.0 ]
             )
         # rotate the camera so it is pointing down
         self.camera.transform.object.rotate_x( -math.pi / 4.0 )
