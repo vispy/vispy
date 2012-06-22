@@ -19,7 +19,7 @@ def initialise():
         GL_QUADS,
         None,
         (
-            'v3f',
+            'v3f/static',
             (
                  1.0, 1.0,-1.0,
                 -1.0, 1.0,-1.0,
