@@ -158,7 +158,7 @@ class Application( object ):
         # sort our renderables
         positions = [ obj.world_transform.translation for obj in self.renderables ]
 
-        renderables = pygly.sorter.sort_radius_back_to_front(
+        self.renderables = pygly.sorter.sort_radius_back_to_front(
             self.camera.world_transform.translation,
             -(self.camera.transform.object.z),
             self.renderables,
