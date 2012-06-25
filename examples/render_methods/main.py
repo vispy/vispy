@@ -208,8 +208,6 @@ Render method: %s<br>
         pyglet.app.run()
     
     def step( self, dt ):
-        self.move_cubes( dt )
-
         # render the scene
         self.render()
 
@@ -234,13 +232,6 @@ Render method: %s<br>
                 self.render_mode += 1
                 if self.render_mode >= 3:
                     self.render_mode = 0
-
-    def move_cubes( self, dt ):
-        return
-
-        # rotate our cubes
-        speed = math.pi / 2
-        self.cube_root.transform.object.rotate_y( speed * dt )
 
     def initialise_cube( self ):
         # initialise all render methods
