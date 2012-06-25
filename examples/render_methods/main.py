@@ -155,6 +155,16 @@ class Application( object ):
             self.cube_root.add_child( node )
             self.renderables.append( node )
 
+        # sort our renderables
+        positions = [ obj.world_transform.translation for obj in self.renderables ]
+
+        renderables = pygly.sorter.sort_radius_back_to_front(
+            self.camera.world_transform.translation,
+            -(self.camera.transform.object.z),
+            self.renderables,
+            positions
+            )
+
     def setup_text( self ):
         self.help_label = pyglet.text.HTMLLabel(
 """
@@ -226,6 +236,8 @@ Render method: %s<br>
                     self.render_mode = 0
 
     def move_cubes( self, dt ):
+        return
+
         # rotate our cubes
         speed = math.pi / 2
         self.cube_root.transform.object.rotate_y( speed * dt )
@@ -292,16 +304,6 @@ Render method: %s<br>
         # clear our frame buffer and depth buffer
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
 
-        # sort our renderables
-        positions = [ obj.world_transform.translation for obj in self.renderables ]
-
-        sorted_renderables = pygly.sorter.sort_radius_back_to_front(
-            self.camera.world_transform.translation,
-            -(self.camera.transform.object.z),
-            self.renderables,
-            positions
-            )
-
         # enable alpha rendering
         glEnable( GL_BLEND )
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
@@ -309,7 +311,7 @@ Render method: %s<br>
         glColor4f( 0.5, 0.5, 0.5, 0.5 )
 
         # render each object
-        for renderable in sorted_renderables:
+        for renderable in self.renderables:
             # render the object
             renderable.render()
 
