@@ -27,7 +27,7 @@ from pygly.input.keyboard import Keyboard
 
 import pyrr
 
-import cube
+import examples.render_methods.cube as cube
 
 # over-ride the default pyglet idle loop
 import pygly.monkey_patch
@@ -149,8 +149,8 @@ class Application( object ):
         for position in positions:
             node = RenderCallbackNode(
                 'cube',
-                cube.initialise,
-                cube.render
+                cube.initialise_display_list,
+                cube.render_display_list
                 )
             node.transform.inertial.translation = position
             self.cube_root.add_child( node )
@@ -375,6 +375,9 @@ Colours: %s<br>
             pygly.window.create_rectangle( self.window )
             )
 
+#import pygly.profile
+
+#@pygly.profile.profile
 def main():
     # create app
     app = Application()
