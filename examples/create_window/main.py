@@ -33,6 +33,14 @@ class Application( object ):
             resizable = True,
             config = config
             )
+
+        # display the current FPS
+        self.fps_display = pyglet.clock.ClockDisplay()
+
+        # listen for on_draw events
+        self.window.push_handlers(
+            on_draw = self.on_draw
+            )
         
         # setup our update loop the app
         # we don't need to do this to get the window
@@ -41,21 +49,22 @@ class Application( object ):
         # we'll render at 60 fps
         frequency = 60.0
         self.update_delta = 1.0 / frequency
+
         # use a pyglet callback for our render loop
         pyglet.clock.schedule_interval(
             self.step,
             self.update_delta
             )
-
-        # display the current FPS
-        self.fps_display = pyglet.clock.ClockDisplay()
-
-        print "Rendering at %iHz" % int(frequency)
     
     def run( self ):
         pyglet.app.run()
     
     def step( self, dt ):
+        # manually dispatch the on_draw event
+        # as we patched it out of the idle loop
+        self.window.dispatch_event( 'on_draw' )
+
+    def on_draw( self ):
         # clear our frame buffer and depth buffer
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
 

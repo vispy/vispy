@@ -68,23 +68,27 @@ class Application( object ):
 
         # setup our text
         self.setup_text()
+
+        # listen for on_draw events
+        self.window.push_handlers(
+            on_draw = self.on_draw
+            )
         
         # setup our update loop the app
         # we'll render at 60 fps
         frequency = 60.0
         self.update_delta = 1.0 / frequency
+
         # use a pyglet callback for our render loop
         pyglet.clock.schedule_interval(
             self.step,
             self.update_delta
             )
 
-        # display the current FPS
-        self.fps_display = pyglet.clock.ClockDisplay()
-        
-        print "Rendering at %iHz" % int(frequency)
-
     def setup_scene( self ):
+        # create an fps display
+        self.fps_display = pyglet.clock.ClockDisplay()
+
         # create a scene
         self.scene_node = SceneNode( 'root' ) 
         self.grid_node = SceneNode( 'grid' )
@@ -154,6 +158,12 @@ class Application( object ):
     def step( self, dt ):
         self.move_camera( dt )
 
+        # manually dispatch the on_draw event
+        # as we patched it out of the idle loop
+        self.window.dispatch_event( 'on_draw' )
+
+    def on_draw( self ):
+        # render our scene
         self.render()
 
         # render the fps

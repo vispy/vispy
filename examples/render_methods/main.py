@@ -72,23 +72,27 @@ class Application( object ):
 
         # setup our text
         self.setup_text()
+
+        # listen for on_draw events
+        self.window.push_handlers(
+            on_draw = self.on_draw
+            )
         
         # setup our update loop the app
         # we'll render at 60 fps
         frequency = 60.0
         self.update_delta = 1.0 / frequency
+
         # use a pyglet callback for our render loop
         pyglet.clock.schedule_interval(
             self.step,
-            self.update_delta
+            -1.0
             )
 
-        # display the current FPS
-        self.fps_display = pyglet.clock.ClockDisplay()
-        
-        print "Rendering at %iHz" % int(frequency)
-
     def setup_scene( self ):
+        # create an fps display
+        self.fps_display = pyglet.clock.ClockDisplay()
+
         # set our gl clear colour
         glClearColor( 0.2, 0.2, 0.2, 1.0 )
 
@@ -208,6 +212,14 @@ Render method: %s<br>
         pyglet.app.run()
     
     def step( self, dt ):
+        # update our status text
+        self.setup_status_text()
+
+        # manually dispatch the on_draw event
+        # as we patched it out of the idle loop
+        self.window.dispatch_event( 'on_draw' )
+
+    def on_draw( self ):
         # render the scene
         self.render()
 
@@ -217,9 +229,7 @@ Render method: %s<br>
         # render our help text
         self.help_label.draw()
 
-        # update our status text
-        self.setup_status_text()
-        # render it
+        # render our status text
         self.status_label.draw()
         
         # display the frame buffer
