@@ -201,15 +201,15 @@ class Application( object ):
         # manually dispatch the on_draw event
         # as we patched it out of the idle loop
         self.window.dispatch_event( 'on_draw' )
+        
+        # display the frame buffer
+        self.window.flip()
 
     def on_draw( self ):
         self.render()
         
         # render the fps
         self.fps_display.draw()
-        
-        # display the frame buffer
-        self.window.flip()
             
     def set_gl_state( self ):
         # enable z buffer

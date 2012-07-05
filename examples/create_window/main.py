@@ -64,15 +64,15 @@ class Application( object ):
         # as we patched it out of the idle loop
         self.window.dispatch_event( 'on_draw' )
 
+        # display the frame buffer
+        self.window.flip()
+
     def on_draw( self ):
         # clear our frame buffer and depth buffer
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
 
         # render the fps
         self.fps_display.draw()
-
-        # display the frame buffer
-        self.window.flip()
     
 
 def main():

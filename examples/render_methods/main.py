@@ -218,6 +218,9 @@ Render method: %s<br>
         # manually dispatch the on_draw event
         # as we patched it out of the idle loop
         self.window.dispatch_event( 'on_draw' )
+        
+        # display the frame buffer
+        self.window.flip()
 
     def on_draw( self ):
         # render the scene
@@ -231,9 +234,6 @@ Render method: %s<br>
 
         # render our status text
         self.status_label.draw()
-        
-        # display the frame buffer
-        self.window.flip()
 
     def on_key_event( self, digital, event, key ):
         if event == Keyboard.up:

@@ -224,6 +224,9 @@ class Application( object ):
         # manually dispatch the on_draw event
         # as we patched it out of the idle loop
         self.window.dispatch_event( 'on_draw' )
+        
+        # display the frame buffer
+        self.window.flip()
 
     def on_draw( self ):
         # render the scene
@@ -234,9 +237,6 @@ class Application( object ):
 
         # render the fps
         self.fps_display.draw()
-        
-        # display the frame buffer
-        self.window.flip()
 
     def render( self ):
         #

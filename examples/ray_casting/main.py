@@ -226,6 +226,9 @@ class Application( object ):
         # manually dispatch the on_draw event
         # as we patched it out of the idle loop
         self.window.dispatch_event( 'on_draw' )
+        
+        # display the frame buffer
+        self.window.flip()
 
     def on_draw( self ):
         # render the scene
@@ -236,9 +239,6 @@ class Application( object ):
 
         # render our help text
         self.help_label.draw()
-        
-        # display the frame buffer
-        self.window.flip()
 
     def set_gl_state( self ):
         # enable z buffer
