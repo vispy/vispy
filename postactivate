@@ -1,0 +1,6 @@
+#!/bin/bash
+# This hook is run after this virtualenv is activated.
+
+export PYTHONPATH=$WORKON_HOME/pygly/src/pygly
+export PYTHONPATH=$WORKON_HOME/pygly/src:$PYTHONPATH
+export PYTHONPATH=$WORKON_HOME/pygly/src/contrib/pyrr:$PYTHONPATH
