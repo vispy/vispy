@@ -1,6 +1,5 @@
 numpy
 cython
 pil
-hg+https://pyglet.googlecode.com/hg/
 pyobjc==2.2
-pyrr
+hg+https://pyglet.googlecode.com/hg/
