@@ -44,14 +44,15 @@ PyGLy requires the following software:
    * NumPy
    * Pyrr (https://github.com/adamlwgriffiths/Pyrr)
 
-You can install dependencies easily by using the command:
-For Mac OS-X users:
-```
-pip install -r requirements_osx.txt
-```
-For everyone else
+Install PyGLy depedencies:
 ```
 pip install -r requirements.txt
+```
+
+Windows users can stop there.
+Mac OS-X users need to continue to install more dependencies:
+```
+pip install -r requirements-osx.txt
 ```
 
 
