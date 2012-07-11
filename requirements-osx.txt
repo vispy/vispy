@@ -1,5 +1,1 @@
-numpy
-cython
-pil
 pyobjc==2.2
-hg+https://pyglet.googlecode.com/hg/
