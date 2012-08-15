@@ -69,9 +69,14 @@ Usage
 
 Check the 'examples' directory for for some example code.
 
+Development
+-----------------------
+
 <img src="http://twistedpairdevelopment.files.wordpress.com/2010/10/twisted_pair-0086.png">
 
 PyGLy is developed by [Twisted Pair Development](twistedpairdevelopment.wordpress.com).
+
+Contributions are welcome.
 
 License
 ---------------
