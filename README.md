@@ -52,8 +52,14 @@ PyGLy requires the following software:
 Source Installation
 -------------------
 
-Install Pyrr
+Install PyGLy
 ```
+git clone git@github.com:adamlwgriffiths/PyGLy.git
+```
+
+Install Pyrr (a submodule in PyGLy's /contrib directory)
+```
+cd PyGLy
 git submodule init
 git submodule update
 ```
