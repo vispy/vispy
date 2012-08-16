@@ -1,7 +1,7 @@
 PyGLy
 =====================
 
-.. image:: https://github.com/adamlwgriffiths/PyGLy/raw/master/logo/pygly-300x160.png
+<img src="https://github.com/adamlwgriffiths/PyGLy/raw/master/logo/pygly-300x160.png">
 
 PyGLy is a flexible OpenGL framework that sits ontop of Pyglet.
 
