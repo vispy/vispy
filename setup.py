@@ -3,14 +3,14 @@
 from distutils.core import setup
 import sys
 
-import pygly
+from pygly import __version__
 
 os_x_requires = ['pyglet(>=1.2)', 'pyobjc(==2.2)']
 other_requires = ['pyglet']
 
 setup(
     name = 'pygly',
-    version = pygly.__version__,
+    version = __version__,
     description = 'Pyglet based 3D Framework',
     long_description = """An OpenGL framework designed for flexbility
         and power. PyGLy provides a number of tools to let you
