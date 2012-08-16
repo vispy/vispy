@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
+import sys
 
 import pygly
 
+os_x_requires = ['pyglet(>=1.2)', 'pyobjc(==2.2)']
+other_requires = ['pyglet']
+
 setup(
-    name = 'PyGLy',
+    name = 'pygly',
     version = pygly.__version__,
     description = 'Pyglet based 3D Framework',
     long_description = """An OpenGL framework designed for flexbility
@@ -15,6 +19,15 @@ setup(
     author = 'Adam Griffiths',
     author_email = 'adam.lw.griffiths@gmail.com',
     url = 'https://github.com/adamlwgriffiths/PyGLy',
+    requires = [
+        'numpy',
+        'cython',
+        'pil',
+        'pyrr',
+        ]
+        + (
+            os_x_requires if 'darwin' in sys.platform else other_requires
+            ),
     platforms = [ 'any' ],
     test_suite = "pygly.test",
     packages = [
