@@ -37,6 +37,11 @@ Features
 Installation
 --------------
 
+PyGLy is in the PyPi database and can be installed via pip:
+```
+pip install pygly
+```
+
 PyGLy requires the following software:
 
    * Python 2(.6?)+
@@ -44,6 +49,8 @@ PyGLy requires the following software:
    * NumPy
    * Pyrr (https://github.com/adamlwgriffiths/Pyrr)
 
+Source Installation
+-------------------
 
 Install Pyrr
 ```
