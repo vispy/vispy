@@ -51,6 +51,7 @@ class Application( object ):
             width = 1024,
             height = 768,
             resizable = True,
+            vsync = False,
             config = config
             )
 
@@ -83,6 +84,9 @@ class Application( object ):
         # we'll render at 60 fps
         frequency = 60.0
         self.update_delta = 1.0 / frequency
+
+        # over-ride the frequency and render at full speed
+        self.update_delta = -1
 
         # use a pyglet callback for our render loop
         pyglet.clock.schedule_interval(
