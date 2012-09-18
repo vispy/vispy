@@ -71,13 +71,6 @@ Install PyGLy depedencies:
 pip install -r requirements.txt
 ```
 
-Windows users can stop there.
-
-Mac OS-X users need to continue to install more dependencies:
-```
-pip install -r requirements-osx.txt
-```
-
 
 Usage
 -----------------------
