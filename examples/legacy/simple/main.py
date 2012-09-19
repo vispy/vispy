@@ -256,7 +256,7 @@ class Application( object ):
 
     def render_viewport( self, viewport, projection, model_view ):
         # setup our viewport
-        with pygly.gl.attributes( GL_ALL_ATTRIB_BITS ):
+        with pygly.gl.legacy.attributes( GL_ALL_ATTRIB_BITS ):
             # activate our viewport
             pygly.gl.set_viewport( viewport )
             # scissor to our viewport
