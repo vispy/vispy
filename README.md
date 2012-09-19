@@ -21,17 +21,18 @@ PyGLy's core values are the following:
 Features
 -------------
 
+   * Support for OpenGL Legacy (<=2.1) and Core (>=3) profiles.
    * Cross-platform - actively developed on Windows and OS-X.
    * Easy to install - Written in pure python and making use of Pyglet for windowing.
    * Modular design - Take almost any part of PyGLy and use it on its own.
+   * Loose coupling - Don't want to use scene graphs? Don't! Most PyGLy functions take data, not objects.
    * Framework design, not an engine - Don't like an existing class? Don't use it!
+   * Duck-typing - Replace any class with your own.
    * Multiple Window and viewport support.
-   * Multiple parallel scene graphs.
+   * Flexible scene graphs.
    * Full control over rendering process.
-   * Maths helper classes - Quaternion, Matrix, Vectors, Rays.
-   * NumPy - Translate vectors and matrices en-masse.
-   * Mesh loading support - MD2, OBJ.
-   * Duck-typing - Replace any class with your own. Just meet the minimal inter-object contracts.
+   * Uses Pyrr for Maths - NumPy powered Quaternion, Matrix, Vectors, Rays.
+   * NumPy - Perform manipulation of data structures en masse.
    * Liberal BSD licensing - Do what you want!
    * Active development - Being developed for games.
 
