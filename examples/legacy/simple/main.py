@@ -86,6 +86,9 @@ class Application( object ):
         """Creates the scene to be rendered.
         Creates our camera, scene graph, 
         """
+        # create our cube renderable
+        examples.cube.create()
+
         # create an fps display
         self.fps_display = pyglet.clock.ClockDisplay()
 
