@@ -79,6 +79,9 @@ class Application( object ):
             self.update_delta
             )
 
+        # print some debug info
+        pygly.gl.print_gl_info()
+
     def setup_scene( self ):
         """Creates the scene to be rendered.
         Creates our camera, scene graph, 

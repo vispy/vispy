@@ -68,6 +68,9 @@ class Application( object ):
             self.step,
             self.update_delta
             )
+
+        # print some debug info
+        pygly.gl.print_gl_info()
     
     def run( self ):
         """Begins the Pyglet main loop.
