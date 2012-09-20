@@ -305,8 +305,8 @@ class Application( object ):
             world_matrix = node.world_transform.matrix
             # calculate a new model view
             current_mv = matrix44.multiply(
-                model_view,
-                world_matrix
+                world_matrix,
+                model_view
                 )
 
             # render a cube
