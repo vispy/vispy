@@ -310,7 +310,7 @@ class Application( object ):
                 )
 
             # render a cube
-            cube.draw( projection, model_view )
+            cube.draw( projection, current_mv )
     
 
 def main():
