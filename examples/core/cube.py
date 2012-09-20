@@ -21,9 +21,7 @@ out vec3 ex_colour;
 void main(void) 
 {
     gl_Position = projection * model_view * vec4(
-        in_position.x,
-        in_position.y,
-        in_position.z,
+        in_position,
         1.0
         );
 
@@ -43,7 +41,6 @@ out vec4 fragColor;
 void main(void) 
 {
     //Set colour of each fragment to WHITE
-    //fragColor = vec4( 1.0, 1.0, 1.0, 1.0 );
     fragColor = vec4( ex_colour, 1.0 );
 }
 """
@@ -187,8 +184,11 @@ def draw( projection, model_view ):
     shader.bind()
     shader.uniform_matrixf( 'model_view', model_view.flat )
     shader.uniform_matrixf( 'projection', projection.flat )
+
     glBindVertexArray( vao )
+
     glDrawArrays( GL_TRIANGLES, 0, vertices.size / 3 )
+
     glBindVertexArray( 0 )
     shader.unbind()
 
