@@ -20,7 +20,7 @@ from pygly.camera_node import CameraNode
 import pygly.monkey_patch
 pygly.monkey_patch.patch_idle_loop()
 
-import examples.cube
+import examples.legacy.cube as cube
 
 
 class Application( object ):
@@ -87,7 +87,7 @@ class Application( object ):
         Creates our camera, scene graph, 
         """
         # create our cube renderable
-        examples.cube.create()
+        cube.create()
 
         # create an fps display
         self.fps_display = pyglet.clock.ClockDisplay()
@@ -303,7 +303,7 @@ class Application( object ):
             # by the model's world matrix
             # then render a cube
             with legacy.multiply_matrix( model_matrix ):
-                examples.cube.draw()
+                cube.draw()
 
 
 def main():
