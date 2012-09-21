@@ -5,6 +5,7 @@ Viewport is provided without any high level
 wrappers and is entirely managed through events.
 """
 import math
+from time import time
 
 import pyglet
 
@@ -99,6 +100,10 @@ class Application( object ):
 
         # print some debug info
         pygly.gl.print_gl_info()
+
+        # set our start time
+        self.time = time()
+        self.frame_count = 0
 
     def setup_scene( self ):
         """Creates the scene to be rendered.
@@ -225,6 +230,16 @@ class Application( object ):
 
         # display the frame buffer
         self.window.flip()
+
+        # update our FPS
+        self.frame_count += 1
+        # get the latest time
+        new_time = time()
+        diff = new_time - self.time
+        if diff > 5.0:
+            print "FPS:",float(self.frame_count) / diff
+            self.time = new_time
+            self.frame_count = 0
 
     def on_draw( self ):
         """Triggered by the pyglet 'on_draw' event.
