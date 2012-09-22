@@ -18,23 +18,19 @@ from pyglet.gl import *
 
 import pygly.window
 import pygly.gl
-from pygly.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene_node import SceneNode
 from pygly.camera_node import CameraNode
 from pyrr import matrix44
-
-# over-ride the default pyglet idle loop
-import pygly.monkey_patch
-pygly.monkey_patch.patch_idle_loop()
 
 # patch pyglet's OpenGL legacy code out
 import pygly.gl.core
 pygly.gl.core.patch_window()
 
+from examples.application import Application
 import examples.core.cube as cube
 
 
-class Application( object ):
+class SimpleApplication( Application ):
     
     def __init__( self ):
         """Sets up the core functionality we need
@@ -43,8 +39,6 @@ class Application( object ):
         window, the viewport, the event handler
         and update loop registration.
         """
-        super( Application, self ).__init__()
-        
         # setup our opengl requirements
         # ensure we ask for at least OpenGL 3.2
         # OS-X only supports legacy and Core 3.2
@@ -56,50 +50,7 @@ class Application( object ):
             forward_compatible = True,
             )
 
-        # create our window
-        self.window = pyglet.window.Window(
-            fullscreen = False,
-            width = 1024,
-            height = 768,
-            resizable = True,
-            vsync = False,
-            config = config,
-            )
-
-        # create a viewport that spans
-        # the entire screen
-        self.viewport = pygly.window.create_rectangle(
-            self.window
-            )
-
-        # setup our scene
-        self.setup_scene()
-
-        # listen for on_draw events
-        self.window.push_handlers(
-            on_draw = self.on_draw,
-            on_resize = self.on_resize,
-            )
-        
-        # setup our update loop the app
-        # we don't need to do this to get the window
-        # up, but it's nice to show the basic application
-        # structure in such a simple app
-        # we'll render at 60 fps
-        frequency = 60.0
-        self.update_delta = 1.0 / frequency
-
-        # over-ride the frequency and render at full speed
-        self.update_delta = -1
-
-        # use a pyglet callback for our render loop
-        pyglet.clock.schedule_interval(
-            self.step,
-            self.update_delta
-            )
-
-        # print some debug info
-        pygly.gl.print_gl_info()
+        super( SimpleApplication, self ).__init__( config )
 
         # set our start time
         self.time = time()
@@ -109,14 +60,21 @@ class Application( object ):
         """Creates the scene to be rendered.
         Creates our camera, scene graph, 
         """
+        super( SimpleApplication, self ).setup_scene()
+
+        # setup our GL state
+        # enable z buffer
+        glEnable( GL_DEPTH_TEST )
+
+        # enable scissoring for viewports
+        glEnable( GL_SCISSOR_TEST )
+
+        # enable back face culling
+        glEnable( GL_CULL_FACE )
+        glCullFace( GL_BACK )
+
         # create our cube renderable
         cube.create()
-
-        # create a scene
-        # we'll create the scene as a tree
-        # to demonstrate the depth-first iteration
-        # technique we will use to render it
-        self.scene_node = SceneNode( 'root' )
 
         # the letter indicates the tier the node
         # is on, a = tier 1, b = tier 2, etc.
@@ -163,47 +121,17 @@ class Application( object ):
         self.b1.transform.object.rotate_x( math.pi / 4.0 )
         self.b2.transform.object.rotate_x( math.pi / 4.0 )
 
-        # create a camera and a view matrix
-        self.view_matrix = ProjectionViewMatrix(
-            pygly.window.aspect_ratio( self.viewport ),
-            fov = 45.0,
-            near_clip = 1.0,
-            far_clip = 200.0
-            )
-        self.camera = CameraNode('camera', self.view_matrix )
-        self.scene_node.add_child( self.camera )
+    def setup_camera( self ):
+        super( SimpleApplication, self ).setup_camera()
 
         # move the camera so we're not inside
         # the root scene node's debug cube
-        self.camera.transform.object.translate(
+        self.cameras[ 0 ].transform.object.translate(
             [ 0.0, 30.0, 35.0 ]
             )
 
         # tilt the camera downward
-        self.camera.transform.object.rotate_x(-math.pi / 4.0 )
-    
-    def run( self ):
-        """Begins the Pyglet main loop.
-        """
-        pyglet.app.run()
-
-    def on_resize( self, width, height ):
-        """Called when the window is resized.
-        Pyglet fires an on_resize event and this
-        is where we handle it.
-        We need to update our view matrix with respect
-        to our viewport size, or the content will become
-        skewed.
-        """
-        # update the viewport size
-        self.viewport = pygly.window.create_rectangle(
-            self.window
-            )
-
-        # update the view matrix aspect ratio
-        self.camera.view_matrix.aspect_ratio = pygly.window.aspect_ratio(
-            self.viewport
-            )
+        self.cameras[ 0 ].transform.object.rotate_x(-math.pi / 4.0 )
     
     def step( self, dt ):
         """Updates our scene and triggers the on_draw event.
@@ -224,12 +152,8 @@ class Application( object ):
         self.c2.transform.object.rotate_y( dt )
         self.c3.transform.object.rotate_y( dt )
 
-        # manually dispatch the on_draw event
-        # as we patched it out of the idle loop
-        self.window.dispatch_event( 'on_draw' )
-
-        # display the frame buffer
-        self.window.flip()
+        # this will trigger the draw event and buffer flip
+        super( SimpleApplication, self ).step( dt )
 
         # update our FPS
         self.frame_count += 1
@@ -241,60 +165,6 @@ class Application( object ):
             self.time = new_time
             self.frame_count = 0
 
-    def on_draw( self ):
-        """Triggered by the pyglet 'on_draw' event.
-        Causes the scene to be rendered.
-        """
-        self.render()
-
-    def set_gl_state( self ):
-        """Called during rendering to set our
-        viewports GL state.
-        This sets up things like depth testing,
-        smooth shading and back face culling.
-        """
-        # enable z buffer
-        glEnable( GL_DEPTH_TEST )
-
-        # enable scissoring for viewports
-        glEnable( GL_SCISSOR_TEST )
-
-        # enable back face culling
-        glEnable( GL_CULL_FACE )
-        glCullFace( GL_BACK )
-
-    def render( self ):
-        # set our window
-        self.window.switch_to()
-
-        # render the scene with our primary viewport
-        # pass in our camera's model view matrix
-        self.render_viewport(
-            self.viewport,
-            self.camera.view_matrix.matrix,
-            self.camera.model_view
-            )
-
-    def render_viewport( self, viewport, projection, model_view ):
-        # activate our viewport
-        pygly.gl.set_viewport( viewport )
-        # scissor to our viewport
-        pygly.gl.set_scissor( viewport )
-        # set our gl attributes
-        self.set_gl_state()
-
-        # clear our frame buffer and depth buffer
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
-
-        # bind our shader
-
-        # set our projection and model view matrices
-
-        # apply our view matrix
-        # we can't mix these or we will pop the wrong
-        # matrix
-        self.render_scene( projection, model_view )
-
     def render_scene( self, projection, model_view ):
         """Renders each renderable in the scene
         using the current projection and model
@@ -302,10 +172,6 @@ class Application( object ):
         The original GL state will be restored
         upon leaving this function.
         """
-        # bind our projection and model view matrices
-        # to the shader
-        # TODO:
-
         # begin iterating through our scene graph
         # as we iterate over each node, we will set
         # our model view matrix as the node's world
@@ -335,7 +201,7 @@ def main():
     Also ensures the window is closed at the end.
     """
     # create app
-    app = Application()
+    app = SimpleApplication()
     app.run()
     app.window.close()
 
