@@ -52,9 +52,6 @@ class SimpleApplication( LegacyApplication ):
         # rescale only normals for lighting
         glEnable( GL_RESCALE_NORMAL )
 
-        # enable scissoring for viewports
-        glEnable( GL_SCISSOR_TEST )
-
         # enable back face culling
         glEnable( GL_CULL_FACE )
         glCullFace( GL_BACK )

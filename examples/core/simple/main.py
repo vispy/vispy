@@ -62,9 +62,6 @@ class SimpleApplication( CoreApplication ):
         # enable z buffer
         glEnable( GL_DEPTH_TEST )
 
-        # enable scissoring for viewports
-        glEnable( GL_SCISSOR_TEST )
-
         # enable back face culling
         glEnable( GL_CULL_FACE )
         glCullFace( GL_BACK )
