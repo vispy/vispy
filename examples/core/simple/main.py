@@ -26,11 +26,11 @@ from pyrr import matrix44
 import pygly.gl.core
 pygly.gl.core.patch_window()
 
-from examples.application import Application
+from examples.core.application import CoreApplication
 import examples.core.cube as cube
 
 
-class SimpleApplication( Application ):
+class SimpleApplication( CoreApplication ):
     
     def __init__( self ):
         """Sets up the core functionality we need
@@ -51,10 +51,6 @@ class SimpleApplication( Application ):
             )
 
         super( SimpleApplication, self ).__init__( config )
-
-        # set our start time
-        self.time = time()
-        self.frame_count = 0
 
     def setup_scene( self ):
         """Creates the scene to be rendered.
@@ -154,16 +150,6 @@ class SimpleApplication( Application ):
 
         # this will trigger the draw event and buffer flip
         super( SimpleApplication, self ).step( dt )
-
-        # update our FPS
-        self.frame_count += 1
-        # get the latest time
-        new_time = time()
-        diff = new_time - self.time
-        if diff > 5.0:
-            print "FPS:",float(self.frame_count) / diff
-            self.time = new_time
-            self.frame_count = 0
 
     def render_scene( self, projection, model_view ):
         """Renders each renderable in the scene

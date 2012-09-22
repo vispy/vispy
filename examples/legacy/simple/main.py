@@ -16,11 +16,11 @@ from pygly.projection_view_matrix import ProjectionViewMatrix
 from pygly.scene_node import SceneNode
 from pygly.camera_node import CameraNode
 
-from examples.application import Application
+from examples.legacy.application import LegacyApplication
 import examples.legacy.cube as cube
 
 
-class SimpleApplication( Application ):
+class SimpleApplication( LegacyApplication ):
     
     def __init__( self ):
         """Sets up the core functionality we need
@@ -61,9 +61,6 @@ class SimpleApplication( Application ):
 
         # create our cube renderable
         cube.create()
-
-        # create an fps display
-        self.fps_display = pyglet.clock.ClockDisplay()
 
         # the letter indicates the tier the node
         # is on, a = tier 1, b = tier 2, etc.
@@ -143,15 +140,6 @@ class SimpleApplication( Application ):
 
         # this will trigger the draw event and buffer flip
         super( SimpleApplication, self ).step( dt )
-
-    def render( self ):
-        """Sets the active window and triggers
-        the rendering of the scene to the viewport.
-        """
-        super( SimpleApplication, self ).render()
-
-        # render the fps
-        self.fps_display.draw()
 
     def render_scene( self, projection, model_view ):
         """Renders each renderable in the scene
