@@ -85,11 +85,17 @@ class Application( object ):
                 self.window
                 )
             ]
+        self.colours = [
+            (0.0, 0.0, 0.0, 1.0)
+            ]
 
     def setup_scene( self ):
         """Creates the scene to be rendered.
         Creates our camera, scene graph, 
         """
+        # enable scissoring for viewports
+        glEnable( GL_SCISSOR_TEST )
+
         # create a scene
         # we'll create the scene as a tree
         # to demonstrate the depth-first iteration
@@ -159,28 +165,14 @@ class Application( object ):
         """
         self.render()
 
-    def set_gl_state( self ):
-        """Called during rendering to set our
-        viewports GL state.
-        This sets up things like depth testing,
-        smooth shading and back face culling.
-        """
-        # enable z buffer
-        glEnable( GL_DEPTH_TEST )
-
-        # enable scissoring for viewports
-        glEnable( GL_SCISSOR_TEST )
-
-        # enable back face culling
-        glEnable( GL_CULL_FACE )
-        glCullFace( GL_BACK )
-
     def render( self ):
         # set our window
         self.window.switch_to()
 
         # render each viewport
-        for viewport, camera in zip( self.viewports, self.cameras ):
+        for viewport, camera, colour in zip( self.viewports, self.cameras, self.colours ):
+            glClearColor( *colour )
+
             # update the camera's aspect ratio before
             # we render using it
             # we would normally do this in on_resize
@@ -197,6 +189,14 @@ class Application( object ):
                 camera.view_matrix.matrix,
                 camera.model_view
                 )
+
+        # undo our viewport and our scissor
+        pygly.gl.set_scissor(
+            pygly.window.create_rectangle( self.window )
+            )
+        pygly.gl.set_viewport(
+            pygly.window.create_rectangle( self.window )
+            )
 
     def render_viewport( self, viewport, projection, model_view ):
         # activate our viewport
