@@ -40,7 +40,7 @@ out vec4 fragColor;
 
 void main(void) 
 {
-    //Set colour of each fragment to WHITE
+    //Set colour of each fragment
     fragColor = vec4( ex_colour, 1.0 );
 }
 """
