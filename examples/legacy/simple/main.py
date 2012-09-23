@@ -158,9 +158,9 @@ class SimpleApplication( LegacyApplication ):
             with legacy.load_matrix( projection ):
                 with legacy.matrix_mode( GL_MODELVIEW ):
                     with legacy.load_matrix( model_view ):
-                        self.render_scene_graph()
+                        self.render_scene_graph( camera )
 
-    def render_scene_graph( self ):
+    def render_scene_graph( self, camera ):
         # begin iterating through our scene graph
         # as we iterate over each node, we will set
         # our model view matrix as the node's world
