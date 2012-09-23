@@ -173,21 +173,11 @@ class Application( object ):
         for viewport, camera, colour in zip( self.viewports, self.cameras, self.colours ):
             glClearColor( *colour )
 
-            # update the camera's aspect ratio before
-            # we render using it
-            # we would normally do this in on_resize
-            # but because 1 camera could be used to render
-            # to multiple viewports in our example, we
-            # will do it each frame
-            camera.view_matrix.aspect_ratio = pygly.window.aspect_ratio(
-                viewport
-                )
 
             # render the viewport
             self.render_viewport(
                 viewport,
-                camera.view_matrix.matrix,
-                camera.model_view
+                camera,
                 )
 
         # undo our viewport and our scissor
@@ -198,7 +188,7 @@ class Application( object ):
             pygly.window.create_rectangle( self.window )
             )
 
-    def render_viewport( self, viewport, projection, model_view ):
+    def render_viewport( self, viewport, camera ):
         # activate our viewport
         pygly.gl.set_viewport( viewport )
         # scissor to our viewport
@@ -207,16 +197,19 @@ class Application( object ):
         # clear our frame buffer and depth buffer
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
 
-        # bind our shader
+        # update the camera's aspect ratio before
+        # we render using it
+        # we would normally do this in on_resize
+        # but because 1 camera could be used to render
+        # to multiple viewports in our example, we
+        # will do it each frame
+        camera.view_matrix.aspect_ratio = pygly.window.aspect_ratio(
+            viewport
+            )
 
-        # set our projection and model view matrices
+        self.render_scene( camera )
 
-        # apply our view matrix
-        # we can't mix these or we will pop the wrong
-        # matrix
-        self.render_scene( projection, model_view )
-
-    def render_scene( self, projection, model_view ):
+    def render_scene( self, camera ):
         pass
     
 

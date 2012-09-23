@@ -148,13 +148,16 @@ class SimpleApplication( CoreApplication ):
         # this will trigger the draw event and buffer flip
         super( SimpleApplication, self ).step( dt )
 
-    def render_scene( self, projection, model_view ):
+    def render_scene( self, camera ):
         """Renders each renderable in the scene
         using the current projection and model
         view matrix.
         The original GL state will be restored
         upon leaving this function.
         """
+        projection = camera.view_matrix.matrix
+        model_view = camera.model_view
+
         # begin iterating through our scene graph
         # as we iterate over each node, we will set
         # our model view matrix as the node's world
