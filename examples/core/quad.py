@@ -42,9 +42,9 @@ uniform sampler2D texture0;
 void main(void) 
 {
     //Set colour of each fragment
-    fragColor = vec4( texture( texture0, ex_uv ).xyz, 1.0 );
-    //fragColor = vec4( 1.0, 1.0, 1.0, 1.0 );
-    //fragColor = vec4( ex_uv, 1.0, 1.0 );
+    fragColor = texture( texture0, ex_uv );
+    //float alpha = texture( texture0, ex_uv ).a;
+    //fragColor = vec4( alpha, alpha, alpha, 1.0 );
 }
 """
     }
