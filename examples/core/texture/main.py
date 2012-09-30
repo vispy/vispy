@@ -8,6 +8,7 @@ import os
 import math
 from time import time
 
+from PIL import Image
 import numpy
 import pyglet
 
@@ -23,7 +24,7 @@ import pygly.gl
 from pygly.scene_node import SceneNode
 from pygly.camera_node import CameraNode
 from pygly.orthogonal_view_matrix import OrthogonalViewMatrix
-from pygly.texture import Texture
+from pygly.texture import ArrayTexture, PIL_Texture, Texture
 from pyrr import matrix44
 
 # patch pyglet's OpenGL legacy code out
@@ -36,6 +37,12 @@ import examples.core.quad as quad
 
 
 class TextureApplication( SimpleApplication ):
+
+    def setup_viewports( self ):
+        super( TextureApplication, self ).setup_viewports()
+
+        # change our clear colour
+        self.colours[ 0 ] = ( 0.5, 0.5, 0.5, 1.0 )
 
     def setup_scene( self ):
         """Creates the scene to be rendered.
@@ -56,6 +63,14 @@ class TextureApplication( SimpleApplication ):
         glEnable( GL_CULL_FACE )
         glCullFace( GL_BACK )
 
+        # enable alpha blending
+        glEnable( GL_BLEND )
+        glEnable( GL_BLEND )
+        glBlendFunc(
+            GL_ONE,
+            GL_ONE_MINUS_SRC_ALPHA
+            )
+
         # create our cube renderable
         quad.create()
 
@@ -74,36 +89,100 @@ class TextureApplication( SimpleApplication ):
         self.print_texture_name()
 
     def load_textures( self, directory ):
-        extensions = [ '.png', '.jpg', '.jpeg', '.tiff', '.bmp' ]
+        print 'Loading images from', directory
+
+        extensions = [
+            '.png',
+            '.jpg',
+            '.jpeg',
+            '.tif',
+            '.bmp',
+            '.exr',
+            ]
 
         for filename in os.listdir( directory ):
             name, extension = os.path.splitext( filename )
             if extension not in extensions:
                 continue
 
-            print 'Loading texture:', filename
-            #texture = Texture()
+            try:
+                print filename
+                full_path = '%s/%s' % (directory, filename)
+
+                image = Image.open( full_path )
+                if image.verify() == False:
+                    print 'image damaged', filename
+                    continue
+
+                image = Image.open( full_path )
+                print image.format, image.mode, image.getbands()
+
+                pil_tex = PIL_Texture( image )
+                texture = pil_tex.create_texture_2d(
+                    target = GL_TEXTURE_2D,
+                    properties = [
+                        (
+                            glTexParameteri,
+                            GL_TEXTURE_MIN_FILTER,
+                            GL_NEAREST
+                            ),
+                        (
+                            glTexParameteri,
+                            GL_TEXTURE_MAG_FILTER,
+                            GL_NEAREST
+                            ),
+                        ],
+                    )
+
+                self.textures.append( (filename, texture) )
+            except IOError as e:
+                print 'Exception:', e
 
     def load_random_data( self ):
-        # load a random image
+        # create a random RGB texture
         data = numpy.random.random_integers( 120, 255, (32,32,3) )
-        texture = Texture()
-        texture.data( data.astype('uint8') )
-        texture.bind()
-        glTexParameteri(
-            texture.target,
-            GL_TEXTURE_MIN_FILTER,
-            #GL_LINEAR
-            GL_NEAREST
+        array_texture = ArrayTexture( data.astype('uint8') )
+        texture = array_texture.create_texture_2d(
+            target = GL_TEXTURE_2D,
+            properties = [
+                (
+                    glTexParameteri,
+                    GL_TEXTURE_MIN_FILTER,
+                    GL_NEAREST
+                    ),
+                (
+                    glTexParameteri,
+                    GL_TEXTURE_MAG_FILTER,
+                    GL_NEAREST
+                    ),
+                ],
             )
-        glTexParameteri(
-            texture.target,
-            GL_TEXTURE_MAG_FILTER,
-            #GL_LINEAR
-            GL_NEAREST
+        self.textures.append( ('Random RGB',texture) )
+
+        # create a random luminance texture
+        data = numpy.random.random_integers( 120, 255, (32,32) )
+        array_texture = ArrayTexture( data.astype('uint8') )
+        texture = array_texture.create_texture_2d(
+            target = GL_TEXTURE_2D,
+            properties = [
+                (
+                    glTexParameteri,
+                    GL_TEXTURE_MIN_FILTER,
+                    GL_NEAREST
+                    ),
+                (
+                    glTexParameteri,
+                    GL_TEXTURE_MAG_FILTER,
+                    GL_NEAREST
+                    ),
+                ],
+                format = GL_RED,
+                internal_format = GL_RGBA,
+                swizzle = (
+                    GL_RED, GL_RED, GL_RED, GL_ONE
+                    )
             )
-        texture.unbind()
-        self.textures.append( ('Random Data',texture) )
+        self.textures.append( ('Random Luminance',texture) )
 
     def setup_camera( self ):
         # over-ride SimpleApplication's camera
@@ -139,7 +218,7 @@ class TextureApplication( SimpleApplication ):
         # change textures
         if symbol == pyglet.window.key.LEFT:
             self.current_texture -= 1
-            if self.current_texture == 0:
+            if self.current_texture < 0:
                 self.current_texture = len(self.textures) - 1
             self.print_texture_name()
         elif symbol == pyglet.window.key.RIGHT:
