@@ -24,7 +24,7 @@ import pygly.gl
 from pygly.scene_node import SceneNode
 from pygly.camera_node import CameraNode
 from pygly.orthogonal_view_matrix import OrthogonalViewMatrix
-from pygly.texture import ArrayTexture, PIL_Texture, Texture
+from pygly.texture import RawImage, PIL_Image, Texture
 from pyrr import matrix44
 
 # patch pyglet's OpenGL legacy code out
@@ -117,7 +117,7 @@ class TextureApplication( SimpleApplication ):
                 image = Image.open( full_path )
                 print image.format, image.mode, image.getbands()
 
-                pil_tex = PIL_Texture( image )
+                pil_tex = PIL_Image( image )
                 texture = pil_tex.create_texture_2d(
                     target = GL_TEXTURE_2D,
                     properties = [
@@ -141,7 +141,7 @@ class TextureApplication( SimpleApplication ):
     def load_random_data( self ):
         # create a random RGB texture
         data = numpy.random.random_integers( 120, 255, (32,32,3) )
-        array_texture = ArrayTexture( data.astype('uint8') )
+        array_texture = RawImage( data.astype('uint8') )
         texture = array_texture.create_texture_2d(
             target = GL_TEXTURE_2D,
             properties = [
@@ -160,8 +160,8 @@ class TextureApplication( SimpleApplication ):
         self.textures.append( ('Random RGB',texture) )
 
         # create a random luminance texture
-        data = numpy.random.random_integers( 120, 255, (32,32) )
-        array_texture = ArrayTexture( data.astype('uint8') )
+        data = numpy.random.random_integers( 120, 255, (32,32,1) )
+        array_texture = RawImage( data.astype('uint8') )
         texture = array_texture.create_texture_2d(
             target = GL_TEXTURE_2D,
             properties = [
