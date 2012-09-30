@@ -106,7 +106,7 @@ class TextureApplication( SimpleApplication ):
                 continue
 
             try:
-                print filename
+                print filename,
                 full_path = '%s/%s' % (directory, filename)
 
                 image = Image.open( full_path )
