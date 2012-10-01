@@ -28,12 +28,16 @@ class SortingApplication( SimpleApplication ):
         LegacyApplication.setup_scene( self )
 
         # setup our GL state
-        # enable z buffer
-        glEnable( GL_DEPTH_TEST )
+        # disable z buffer
+        glDisable( GL_DEPTH_TEST )
 
         # enable back face culling
         glEnable( GL_CULL_FACE )
         glCullFace( GL_BACK )
+
+        # enable alpha testing
+        glEnable( GL_BLEND )
+        glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA )
 
         # create our cube renderable
         cube.create()
@@ -70,13 +74,26 @@ class SortingApplication( SimpleApplication ):
             self.grid_root.add_child( node )
             self.renderables.append( node )
 
-        # create a range of colours from 0.0 -> 1.0
-        self.colours = numpy.linspace( 0.0, 1.0, len(positions) )
+        # create a range of colours from 0.1 -> 0.5
+        self.cube_colours = numpy.linspace( 0.1, 0.5, len(positions) )
         # make them consistent for RGBA
-        self.colours = self.colours.repeat( 4 )
-        self.colours.shape = -1, 4
-        # replace A with 1.0
-        self.colours[:,3] = 1.0
+        self.cube_colours = self.cube_colours.repeat( 4 )
+        self.cube_colours.shape = -1, 4
+        # replace the alpha value
+        self.cube_colours[:,2] = 0.5
+        self.cube_colours[:,3] = 0.5
+
+    def setup_camera( self ):
+        LegacyApplication.setup_camera( self )
+
+        # move the camera so we're not inside
+        # the root scene node's debug cube
+        self.cameras[ 0 ].transform.object.translate(
+            [ 0.0, 10.0, 15.0 ]
+            )
+
+        # tilt the camera downward
+        self.cameras[ 0 ].transform.object.rotate_x(-math.pi / 4.0 )
 
     def step( self, dt ):
         """Updates our scene and triggers the on_draw event.
@@ -91,7 +108,7 @@ class SortingApplication( SimpleApplication ):
         # rotate the grid root node
         # we can't rotate the root scene node because
         # that will rotate the camera too
-        self.grid_root.transform.object.rotate_y( dt )
+        self.grid_root.transform.object.rotate_y( dt * 0.2 )
 
         # this will trigger the draw event and buffer flip
         super( SimpleApplication, self ).step( dt )
@@ -121,7 +138,7 @@ class SortingApplication( SimpleApplication ):
             positions
             )
 
-        for node, colour in zip(sorted, self.colours):
+        for node, colour in zip(sorted, self.cube_colours):
             model_matrix = node.world_transform.matrix
 
             # multiply the existing model view matrix

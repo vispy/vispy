@@ -30,17 +30,14 @@ void main(void)
 // Video card drivers require this next line to function properly
 precision highp float;
 
-uniform vec3 colour;
+uniform vec4 colour;
 
 out vec4 fragColor;
 
 void main(void) 
 {
     //Set colour of each fragment
-    fragColor = vec4(
-        colour,
-        1.0
-        );
+    fragColor = colour;
 }
 """
     }
@@ -101,12 +98,7 @@ def draw( projection, model_view, colour ):
     shader.bind()
     shader.uniform_matrixf( 'model_view', model_view.flat )
     shader.uniform_matrixf( 'projection', projection.flat )
-    shader.uniformf(
-        'colour',
-        colour[ 0 ],
-        colour[ 1 ],
-        colour[ 2 ]
-        )
+    shader.uniformf( 'colour', *colour )
 
     glBindVertexArray( vao )
 
