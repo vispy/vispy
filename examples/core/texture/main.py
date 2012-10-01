@@ -120,15 +120,9 @@ class TextureApplication( SimpleApplication ):
 
                 texture = Texture( GL_TEXTURE_2D )
                 texture.bind()
-                glTexParameteri(
-                    GL_TEXTURE_2D,
-                    GL_TEXTURE_MIN_FILTER,
-                    GL_NEAREST
-                    )
-                glTexParameteri(
-                    GL_TEXTURE_2D,
-                    GL_TEXTURE_MAG_FILTER,
-                    GL_NEAREST
+                texture.set_min_mag_filter(
+                    min = GL_NEAREST
+                    mag = GL_NEAREST
                     )
                 pygly.texture.set_pil_texture_2d( image )
                 texture.unbind()
@@ -142,18 +136,10 @@ class TextureApplication( SimpleApplication ):
         data = numpy.random.random_integers( 120, 255, (32,32,3) )
         texture = Texture( GL_TEXTURE_2D )
         texture.bind()
-        pygly.texture.set_raw_texture_2d(
-            data.astype('uint8')
-            )
-        glTexParameteri(
-            GL_TEXTURE_2D,
-            GL_TEXTURE_MIN_FILTER,
-            GL_NEAREST
-            )
-        glTexParameteri(
-            GL_TEXTURE_2D,
-            GL_TEXTURE_MAG_FILTER,
-            GL_NEAREST
+        pygly.texture.set_raw_texture_2d( data.astype('uint8') )
+        texture.set_min_mag_filter(
+            min = GL_NEAREST,
+            mag = GL_NEAREST
             )
         texture.unbind()
 
@@ -163,23 +149,15 @@ class TextureApplication( SimpleApplication ):
         data = numpy.random.random_integers( 120, 255, (32,32,1) )
         texture = Texture( GL_TEXTURE_2D )
         texture.bind()
+        texture.set_swizzle( (GL_RED, GL_RED, GL_RED, GL_ONE) )
         pygly.texture.set_raw_texture_2d(
             data.astype('uint8'),
             format = GL_RED,
             internal_format = GL_RGBA,
-            swizzle = (
-                GL_RED, GL_RED, GL_RED, GL_ONE
-                )
             )
-        glTexParameteri(
-            GL_TEXTURE_2D,
-            GL_TEXTURE_MIN_FILTER,
-            GL_NEAREST
-            )
-        glTexParameteri(
-            GL_TEXTURE_2D,
-            GL_TEXTURE_MAG_FILTER,
-            GL_NEAREST
+        texture.set_min_mag_filter(
+            min = GL_NEAREST,
+            mag = GL_NEAREST
             )
         texture.unbind()
 
