@@ -24,7 +24,8 @@ import pygly.gl
 from pygly.scene_node import SceneNode
 from pygly.camera_node import CameraNode
 from pygly.orthogonal_view_matrix import OrthogonalViewMatrix
-from pygly.texture import RawImage, PIL_Image, Texture
+import pygly.texture
+from pygly.texture import Texture
 from pyrr import matrix44
 
 # patch pyglet's OpenGL legacy code out
@@ -117,22 +118,20 @@ class TextureApplication( SimpleApplication ):
                 image = Image.open( full_path )
                 print image.format, image.mode, image.getbands()
 
-                pil_tex = PIL_Image( image )
-                texture = pil_tex.create_texture_2d(
-                    target = GL_TEXTURE_2D,
-                    properties = [
-                        (
-                            glTexParameteri,
-                            GL_TEXTURE_MIN_FILTER,
-                            GL_NEAREST
-                            ),
-                        (
-                            glTexParameteri,
-                            GL_TEXTURE_MAG_FILTER,
-                            GL_NEAREST
-                            ),
-                        ],
+                texture = Texture( GL_TEXTURE_2D )
+                texture.bind()
+                glTexParameteri(
+                    GL_TEXTURE_2D,
+                    GL_TEXTURE_MIN_FILTER,
+                    GL_NEAREST
                     )
+                glTexParameteri(
+                    GL_TEXTURE_2D,
+                    GL_TEXTURE_MAG_FILTER,
+                    GL_NEAREST
+                    )
+                pygly.texture.set_pil_texture_2d( image )
+                texture.unbind()
 
                 self.textures.append( (filename, texture) )
             except IOError as e:
@@ -141,47 +140,49 @@ class TextureApplication( SimpleApplication ):
     def load_random_data( self ):
         # create a random RGB texture
         data = numpy.random.random_integers( 120, 255, (32,32,3) )
-        array_texture = RawImage( data.astype('uint8') )
-        texture = array_texture.create_texture_2d(
-            target = GL_TEXTURE_2D,
-            properties = [
-                (
-                    glTexParameteri,
-                    GL_TEXTURE_MIN_FILTER,
-                    GL_NEAREST
-                    ),
-                (
-                    glTexParameteri,
-                    GL_TEXTURE_MAG_FILTER,
-                    GL_NEAREST
-                    ),
-                ],
+        texture = Texture( GL_TEXTURE_2D )
+        texture.bind()
+        pygly.texture.set_raw_texture_2d(
+            data.astype('uint8')
             )
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_MIN_FILTER,
+            GL_NEAREST
+            )
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_MAG_FILTER,
+            GL_NEAREST
+            )
+        texture.unbind()
+
         self.textures.append( ('Random RGB',texture) )
 
         # create a random luminance texture
         data = numpy.random.random_integers( 120, 255, (32,32,1) )
-        array_texture = RawImage( data.astype('uint8') )
-        texture = array_texture.create_texture_2d(
-            target = GL_TEXTURE_2D,
-            properties = [
-                (
-                    glTexParameteri,
-                    GL_TEXTURE_MIN_FILTER,
-                    GL_NEAREST
-                    ),
-                (
-                    glTexParameteri,
-                    GL_TEXTURE_MAG_FILTER,
-                    GL_NEAREST
-                    ),
-                ],
-                format = GL_RED,
-                internal_format = GL_RGBA,
-                swizzle = (
-                    GL_RED, GL_RED, GL_RED, GL_ONE
-                    )
+        texture = Texture( GL_TEXTURE_2D )
+        texture.bind()
+        pygly.texture.set_raw_texture_2d(
+            data.astype('uint8'),
+            format = GL_RED,
+            internal_format = GL_RGBA,
+            swizzle = (
+                GL_RED, GL_RED, GL_RED, GL_ONE
+                )
             )
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_MIN_FILTER,
+            GL_NEAREST
+            )
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_MAG_FILTER,
+            GL_NEAREST
+            )
+        texture.unbind()
+
         self.textures.append( ('Random Luminance',texture) )
 
     def setup_camera( self ):
