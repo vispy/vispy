@@ -120,7 +120,7 @@ class TextureApplication( SimpleApplication ):
                 texture = Texture( GL_TEXTURE_2D )
                 texture.bind()
                 texture.set_min_mag_filter(
-                    min = GL_NEAREST
+                    min = GL_NEAREST,
                     mag = GL_NEAREST
                     )
                 pygly.texture.set_pil_texture_2d( image )
