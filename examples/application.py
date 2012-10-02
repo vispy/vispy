@@ -56,13 +56,9 @@ class Application( object ):
         # this also requires vsync to be False or
         # the render loop will be stuck at the monitor
         # frequency
-        self.update_delta = -1
 
         # use a pyglet callback for our render loop
-        pyglet.clock.schedule_interval(
-            self.step,
-            self.update_delta
-            )
+        pyglet.clock.schedule( self.step )
 
         # print some debug info
         pygly.gl.print_gl_info()
