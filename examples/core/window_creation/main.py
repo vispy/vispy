@@ -60,18 +60,9 @@ class Application( object ):
         # we don't need to do this to get the window
         # up, but it's nice to show the basic application
         # structure in such a simple app
-        # we'll render at 60 fps
-        frequency = 60.0
-        self.update_delta = 1.0 / frequency
-
-        # over-ride the frequency and render at full speed
-        self.update_delta = -1
 
         # use a pyglet callback for our render loop
-        pyglet.clock.schedule_interval(
-            self.step,
-            self.update_delta
-            )
+        pyglet.clock.schedule( self.step )
 
         # print some debug info
         pygly.gl.print_gl_info()
