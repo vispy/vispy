@@ -81,7 +81,7 @@ python pygly/examples/legacy/simple/main.py
 Usage
 -----------------------
 
-Check the 'examples' directory for for some example code.
+Check the 'pygly/examples' directory for for some example code.
 
 Development
 -----------------------
