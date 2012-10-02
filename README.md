@@ -72,6 +72,11 @@ Install PyGLy depedencies:
 pip install -r requirements.txt
 ```
 
+Check that it worked!
+```
+python pygly/examples/legacy/simple/main.py
+```
+
 
 Usage
 -----------------------
