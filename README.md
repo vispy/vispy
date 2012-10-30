@@ -5,36 +5,49 @@ PyGLy
 
 PyGLy is a flexible OpenGL framework that sits ontop of Pyglet.
 
-PyGLy's core values are the following:
+Design
+-------------
+
+   * OpenGL agnostic - Use Legacy (<=2.1) or Core (>=3) profiles.
+   * Cross-platform - Actively developed on Windows, Linux and Mac OS-X.
+   * Easy to install - Written in pure python and making use of Pyglet for windowing.
+   * Modular design - Take almost any part of PyGLy and use it on its own.
+   * Loosely coupled framework, not an engine - Don't like an existing class? Don't use it! PyGLy doesn't force any programming method on you.
+   * Duck-typing - Replace any class with your own.
+   * Full control over rendering process.
+   * Uses Pyrr for Maths - NumPy powered Quaternion, Matrix, Vectors, Rays.
+   * Liberal BSD licensing - Do what you want!
+   * Active development - Being developed for games.
+
+Features
+-------------
+   * Windowing - Supports multiple windows as per Pyglet.
+   * Viewports - Multiple viewports using simple to use wrappers.
+   * Optional scene objects - Scene nodes, cameras, render nodes.
+   * 3D transform objects - Wraps 3D maths in intuitive objects.
+   * GLSL shader support - Helpful error parsing.
+   * Sorting - Sort scene to minimise over-draw and to support transparency.
+   * Texture - Easily create OpenGL textures using raw data or PIL.
+   * View Matrices - Simple wrappers that provide easy manipulation of the view matrix.
+   * GL functions - Python wrappers for common tasks.
+   * Input - Simple event handlers for digital and analgue events.
+   * Cocos2D - Support for rendering PyGLy as a Cocos2D layer (OpenGL Legacy only).
+
+Philosophy
+-------------
 
    * FRAMEWORK, not an engine. Program any way you want.
    * FLEXIBLE, don't force any one method upon the user
    * FULL CONTROL at all times. Full access to rendering, objects, data. No obfuscation. No 'awesome' tricks. Just good, simple code.
    * EASY INSTALLATION. No crazy C++ bindings and complex build procedures.
    * EXPOSE as much functionality as possible. Lower classes are always accessible or usable on their own.
-   * LOOSE COUPLING. Code designed to be reused in various situations.
+   * LOOSE COUPLING. Code designed with minimal coupling, allowing you to use only what you want.
    * OPTIONAL high level classes. Low level code is always usable. High level API is optional.
    * EXAMPLES of high quality.
    * PYTHON to the core.
-   * SPEED in development. Provide convenience functions where it makes sense.
-
-Features
--------------
-
-   * Support for OpenGL Legacy (<=2.1) and Core (>=3) profiles.
-   * Cross-platform - actively developed on Windows and OS-X.
-   * Easy to install - Written in pure python and making use of Pyglet for windowing.
-   * Modular design - Take almost any part of PyGLy and use it on its own.
-   * Loose coupling - Don't want to use scene graphs? Don't! Most PyGLy functions take data, not objects.
-   * Framework design, not an engine - Don't like an existing class? Don't use it!
-   * Duck-typing - Replace any class with your own.
-   * Multiple Window and viewport support.
-   * Flexible scene graphs.
-   * Full control over rendering process.
-   * Uses Pyrr for Maths - NumPy powered Quaternion, Matrix, Vectors, Rays.
-   * NumPy - Perform manipulation of data structures en masse.
-   * Liberal BSD licensing - Do what you want!
-   * Active development - Being developed for games.
+   * SPEED in development. Simple and Intuitive code provides convenience functions where it makes sense.
+   * DEFINED GOALS. PyGLy aims to provide a high quality, base. PyGLy will never become bloat-ware.
+   * PARTNER PROJECTS. PyGLy provides the core of our 3D stack.
 
 
 Installation
