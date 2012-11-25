@@ -37,8 +37,10 @@ setup(
         'pygly',
         'pygly.cocos2d',
         'pygly.input',
-        'pygly.mesh',
         'pygly.uv_generators',
+        'pygly.gl',
+        'pygly.gl.legacy',
+        'pygly.gl.core',
         ],
     classifiers = [
         'Natural Language :: English',
