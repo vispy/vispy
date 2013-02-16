@@ -62,6 +62,7 @@ PyGLy requires the following software:
 
    * Python 2(.6?)+
    * Pyglet
+   * PyOpenGL (PyOpenGL-accelerate optional)
    * NumPy
    * Pyrr (https://github.com/adamlwgriffiths/Pyrr)
 
