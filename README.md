@@ -26,6 +26,7 @@ Features
    * Optional scene objects - Scene nodes, cameras, render nodes.
    * 3D transform objects - Wraps 3D maths in intuitive objects.
    * GLSL shader support - Helpful error parsing.
+   * Vertex Arrays and Buffers - Basic and numpy enhanced versions. No more pointer maths.
    * Sorting - Sort scene to minimise over-draw and to support transparency.
    * Texture - Easily create OpenGL textures using raw data or PIL.
    * View Matrices - Simple wrappers that provide easy manipulation of the view matrix.
