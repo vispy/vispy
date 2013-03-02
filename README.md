@@ -31,7 +31,6 @@ Features
    * Texture - Easily create OpenGL textures using raw data or PIL.
    * View Matrices - Simple wrappers that provide easy manipulation of the view matrix.
    * GL functions - Python wrappers for common tasks.
-   * Input - Simple event handlers for digital and analgue events.
    * Cocos2D - Support for rendering PyGLy as a Cocos2D layer (OpenGL Legacy only).
 
 Philosophy
