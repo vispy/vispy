@@ -8,36 +8,27 @@ import sys
 # https://github.com/todddeluca/happybase/commit/63573cdaefe3a2b98ece87e19d9ceb18f00bc0d9
 execfile('pygly/version.py')
 
-os_x_requires = ['pyglet(>=1.2)', 'pyobjc(==2.2)']
-other_requires = ['pyglet']
-
 setup(
     name = 'pygly',
     version = __version__,
-    description = 'Pyglet based 3D Framework',
+    description = 'Pure Python OpenGL framework built on top of Pyglet',
     license = 'BSD',
     author = 'Adam Griffiths',
     author_email = 'adam.lw.griffiths@gmail.com',
     url = 'https://github.com/adamlwgriffiths/PyGLy',
     requires = [
+        'pyglet',
+        'pyopengl',
+        'pyopengl-accelerate',
         'numpy',
-        'cython',
-        'pil',
+        'pillow',
         'pyrr',
-        ]
-        + (
-            os_x_requires if 'darwin' in sys.platform else other_requires
-            ),
+        ],
     platforms = [ 'any' ],
     test_suite = "pygly.test",
     packages = [
         'pygly',
         'pygly.cocos2d',
-        'pygly.input',
-        'pygly.uv_generators',
-        'pygly.gl',
-        'pygly.gl.legacy',
-        'pygly.gl.core',
         ],
     classifiers = [
         'Natural Language :: English',
