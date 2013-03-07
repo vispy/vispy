@@ -105,6 +105,18 @@ export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy/contrib/pyrr
 export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy/contrib/pyglet
 ```
 
+### Install dependencies
+
+Note: A version of Pyglet with fixes applied is included in the PyGLy source and installed in the instructions above.
+
+Required:
+   * numpy
+   * PyOpenGL
+
+Optional:
+   * pillow
+   * PyOpenGL-accelerate
+
 
 ### Check that it worked!
 ```
