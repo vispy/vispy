@@ -91,7 +91,7 @@ Next, select to either:
 ```
 cd contrib/pyrr
 python setup.py install
-cd ../../pyglet
+cd ../../contrib/pyglet
 python setup.py install
 cd ../../
 python setup.py install
