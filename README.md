@@ -100,9 +100,9 @@ python setup.py install
 
 ### Adding to PYTHONPATH (Instead of Install)
 ```
-export PYTHONPATH=$PYTHONPATH:/path/to/pygly
-export PYTHONPATH=$PYTHONPATH:/path/to/pygly/contrib/pyrr
-export PYTHONPATH=$PYTHONPATH:/path/to/pygly/contrib/pyglet
+export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy
+export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy/contrib/pyrr
+export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy/contrib/pyglet
 ```
 
 
