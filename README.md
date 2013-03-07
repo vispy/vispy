@@ -73,6 +73,21 @@ PyGLy is available from the PyPy package repository under the name 'pygly'.
 **Source installation is the recommended method to use PyGLy.**
 
 
+### Install dependencies
+
+Install PyGLy's external dependencies.
+
+Note: A version of Pyglet with fixes applied is included in the PyGLy source and installed in the instructions above.
+
+Required:
+   * numpy
+   * PyOpenGL
+
+Optional:
+   * pillow
+   * PyOpenGL-accelerate
+
+
 ### Get PyGLy
 
 ```
@@ -104,21 +119,6 @@ export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy
 export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy/contrib/pyrr
 export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy/contrib/pyglet
 ```
-
-### Install dependencies
-
-Install PyGLy's external dependencies.
-
-Note: A version of Pyglet with fixes applied is included in the PyGLy source and installed in the instructions above.
-
-Required:
-   * numpy
-   * PyOpenGL
-
-Optional:
-   * pillow
-   * PyOpenGL-accelerate
-
 
 ### Check that it worked!
 ```
