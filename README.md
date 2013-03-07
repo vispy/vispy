@@ -6,7 +6,7 @@ PyGLy
 PyGLy is a flexible OpenGL framework that sits ontop of Pyglet.
 
 Design
--------------
+-----------------------
 
    * OpenGL agnostic - Use Legacy (<=2.1) or Core (>=3) profiles.
    * Cross-platform - Actively developed on Windows, Linux and Mac OS-X.
@@ -20,7 +20,7 @@ Design
    * Active development - Being developed for games.
 
 Features
--------------
+-----------------------
    * Windowing - Supports multiple windows as per Pyglet.
    * Viewports - Multiple viewports using simple to use wrappers.
    * Optional scene objects - Scene nodes, cameras, render nodes.
@@ -34,7 +34,7 @@ Features
    * Cocos2D - Support for rendering PyGLy as a Cocos2D layer (OpenGL Legacy only).
 
 Philosophy
--------------
+-----------------------
 
    * FRAMEWORK, not an engine. Program any way you want.
    * FLEXIBLE, don't force any one method upon the user
@@ -49,45 +49,64 @@ Philosophy
    * DEFINED GOALS. PyGLy aims to provide a high quality, base. PyGLy will never become bloat-ware.
    * PARTNER PROJECTS. PyGLy provides the core of our 3D stack.
 
+Dependencies
+-----------------------
 
-Installation
---------------
-
-PyGLy is in the PyPi database and can be installed via pip:
-```
-pip install pygly
-```
-
-PyGLy requires the following software:
-
+### Required Dependencies:
    * Python 2(.6?)+
-   * Pyglet
-   * PyOpenGL (PyOpenGL-accelerate optional)
+   * Pyglet (>= 1.2)
+   * PyOpenGL
    * NumPy
    * Pyrr (https://github.com/adamlwgriffiths/Pyrr)
-   * PIL / Pillow (Optional)
 
-Source Installation
--------------------
+### Optional dependencies:
 
-Install PyGLy
-```
-git clone git@github.com:adamlwgriffiths/PyGLy.git
-```
+   * PIL / Pillow (PIL texture loading)
+   * PyOpenGL-accelerate
 
-Install Pyrr (a submodule in PyGLy's /contrib directory)
+
+Installation
+-----------------------
+
+PyGLy is available from the PyPy package repository under the name 'pygly'.
+
+**Source installation is the recommended method to use PyGLy.**
+
+
+### Get PyGLy
+
 ```
+git clone git://github.com/adamlwgriffiths/PyGLy.git
 cd PyGLy
 git submodule init
 git submodule update
 ```
 
-Install PyGLy depedencies:
+Next, select to either:
+   * Install PyGLy and it's submodules.
+   * *OR* set the PYTHONPATH to enable each module.
+
+
+### Install (Instead of Adding to PYTHONPATH)
 ```
-pip install -r requirements.txt
+cd contrib/pyrr
+python setup.py install
+cd ../../pyglet
+python setup.py install
+cd ../../
+python setup.py install
 ```
 
-Check that it worked!
+
+### Adding to PYTHONPATH (Instead of Install)
+```
+export PYTHONPATH=$PYTHONPATH:/path/to/pygly
+export PYTHONPATH=$PYTHONPATH:/path/to/pygly/contrib/pyrr
+export PYTHONPATH=$PYTHONPATH:/path/to/pygly/contrib/pyglet
+```
+
+
+### Check that it worked!
 ```
 python pygly/examples/legacy/simple/main.py
 ```
@@ -97,6 +116,7 @@ Usage
 -----------------------
 
 Check the 'pygly/examples' directory for for some example code.
+
 
 Development
 -----------------------
@@ -108,7 +128,7 @@ PyGLy is developed by [Twisted Pair Development](http://twistedpairdevelopment.w
 Contributions are welcome.
 
 License
----------------
+-----------------------
 
 PyGLy is released under the BSD 2-clause license (a very relaxed licence), but it is encouraged that any modifications are submitted back to the master for inclusion.
 
