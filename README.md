@@ -107,6 +107,8 @@ export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy/contrib/pyglet
 
 ### Install dependencies
 
+Install PyGLy's external dependencies.
+
 Note: A version of Pyglet with fixes applied is included in the PyGLy source and installed in the instructions above.
 
 Required:
