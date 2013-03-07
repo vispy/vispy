@@ -17,11 +17,8 @@ setup(
     author_email = 'adam.lw.griffiths@gmail.com',
     url = 'https://github.com/adamlwgriffiths/PyGLy',
     requires = [
-        'pyglet',
         'pyopengl',
-        'pyopengl_accelerate',
         'numpy',
-        'pillow',
         'pyrr',
         ],
     platforms = [ 'any' ],
