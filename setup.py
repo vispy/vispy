@@ -19,7 +19,7 @@ setup(
     requires = [
         'pyglet',
         'pyopengl',
-        'pyopengl-accelerate',
+        'pyopengl_accelerate',
         'numpy',
         'pillow',
         'pyrr',
