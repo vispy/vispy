@@ -65,6 +65,7 @@ PyGLy requires the following software:
    * PyOpenGL (PyOpenGL-accelerate optional)
    * NumPy
    * Pyrr (https://github.com/adamlwgriffiths/Pyrr)
+   * PIL / Pillow (Optional)
 
 Source Installation
 -------------------
