@@ -49,6 +49,11 @@ Philosophy
    * DEFINED GOALS. PyGLy aims to provide a high quality, base. PyGLy will never become bloat-ware.
    * PARTNER PROJECTS. PyGLy provides the core of our 3D stack.
 
+Documentation
+-------------
+
+[View PyGLy's documentation online](https://pygly.readthedocs.org/en/latest/).
+
 Dependencies
 -----------------------
 
