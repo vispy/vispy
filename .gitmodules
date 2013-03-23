@@ -4,3 +4,6 @@
 [submodule "contrib/pyglet"]
 	path = contrib/pyglet
 	url = git://github.com/adamlwgriffiths/Pyglet.git
+[submodule "contrib/pyglfw"]
+	path = contrib/pyglfw
+	url = git://github.com/nightcracker/pyglfw.git

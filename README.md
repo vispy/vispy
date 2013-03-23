@@ -3,14 +3,17 @@ PyGLy
 
 <img src="https://github.com/adamlwgriffiths/PyGLy/raw/master/logo/pygly-300x160.png">
 
-PyGLy is a flexible OpenGL framework that sits ontop of Pyglet.
+PyGLy is a flexible OpenGL framework that works with any PyOpenGL supported Windowing system.
+
+PyGLy provides a set of common rendering classes, but doesn't force you to use any of them.
+
 
 Design
 -----------------------
 
    * OpenGL agnostic - Use Legacy (<=2.1) or Core (>=3) profiles.
    * Cross-platform - Actively developed on Windows, Linux and Mac OS-X.
-   * Easy to install - Written in pure python and making use of Pyglet for windowing.
+   * Easy to install - Written in pure python.
    * Modular design - Take almost any part of PyGLy and use it on its own.
    * Loosely coupled framework, not an engine - Don't like an existing class? Don't use it! PyGLy doesn't force any programming method on you.
    * Duck-typing - Replace any class with your own.
@@ -19,9 +22,10 @@ Design
    * Liberal BSD licensing - Do what you want!
    * Active development - Being developed for games.
 
+
 Features
 -----------------------
-   * Windowing - Supports multiple windows as per Pyglet.
+   * Platform - Windowing system agnostic.
    * Viewports - Multiple viewports using simple to use wrappers.
    * Optional scene objects - Scene nodes, cameras, render nodes.
    * 3D transform objects - Wraps 3D maths in intuitive objects.
@@ -32,6 +36,7 @@ Features
    * View Matrices - Simple wrappers that provide easy manipulation of the view matrix.
    * GL functions - Python wrappers for common tasks.
    * Cocos2D - Support for rendering PyGLy as a Cocos2D layer (OpenGL Legacy only).
+
 
 Philosophy
 -----------------------
@@ -49,18 +54,33 @@ Philosophy
    * DEFINED GOALS. PyGLy aims to provide a high quality, base. PyGLy will never become bloat-ware.
    * PARTNER PROJECTS. PyGLy provides the core of our 3D stack.
 
+
 Documentation
 -------------
 
 [View PyGLy's documentation online](https://pygly.readthedocs.org/en/latest/).
+
+
+BYO Windowing System
+--------------------
+PyGLy contains no platform / window specific code.
+
+PyGLy has been tested with the following windowing systems:
+
+   * [Pyglet](http://pyglet.org/)
+   * [PyGLFW](https://github.com/nightcracker/pyglfw)
+
+
+Note: When using Pyglet on Mac OS-X and the OpenGL core profile, you must use the Pyglet version supplied in the /contrib/pyglet directory.
+
 
 Dependencies
 -----------------------
 
 ### Required Dependencies:
    * Python 2(.6?)+
-   * Pyglet (>= 1.2)
    * PyOpenGL
+   * PyDispatch
    * NumPy
    * Pyrr (https://github.com/adamlwgriffiths/Pyrr)
 
@@ -82,11 +102,11 @@ PyGLy is available from the PyPy package repository under the name 'pygly'.
 
 Install PyGLy's external dependencies.
 
-Note: A version of Pyglet with fixes applied is included in the PyGLy source and installed in the instructions above.
 
 Required:
    * numpy
    * PyOpenGL
+   * PyDispatch
 
 Optional:
    * pillow
@@ -111,8 +131,6 @@ Next, select to either:
 ```
 cd contrib/pyrr
 python setup.py install
-cd ../../contrib/pyglet
-python setup.py install
 cd ../../
 python setup.py install
 ```
@@ -122,8 +140,8 @@ python setup.py install
 ```
 export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy
 export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy/contrib/pyrr
-export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy/contrib/pyglet
 ```
+
 
 ### Check that it worked!
 ```
