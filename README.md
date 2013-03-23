@@ -100,9 +100,6 @@ PyGLy is available from the PyPy package repository under the name 'pygly'.
 
 ### Install dependencies
 
-Install PyGLy's external dependencies.
-
-
 Required:
    * numpy
    * PyOpenGL
@@ -111,6 +108,8 @@ Required:
 Optional:
    * pillow
    * PyOpenGL-accelerate
+
+And a window system of your choice.
 
 
 ### Get PyGLy
@@ -122,12 +121,15 @@ git submodule init
 git submodule update
 ```
 
-Next, select to either:
-   * Install PyGLy and it's submodules.
-   * *OR* set the PYTHONPATH to enable each module.
+### Add to Python
+
+Select one of the following:
+   * A. Install PyGLy and it's submodules.
+   * *OR*
+   * B. set the PYTHONPATH to enable each module.
 
 
-### Install (Instead of Adding to PYTHONPATH)
+#### A. Install (Instead of B)
 ```
 cd contrib/pyrr
 python setup.py install
@@ -136,7 +138,7 @@ python setup.py install
 ```
 
 
-### Adding to PYTHONPATH (Instead of Install)
+#### B. Adding to PYTHONPATH (Instead of A)
 ```
 export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy
 export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy/contrib/pyrr
