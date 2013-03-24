@@ -148,7 +148,7 @@ export PYTHONPATH=$PYTHONPATH:/path/to/PyGLy/contrib/pyrr
 
 ### Check that it worked!
 ```
-python pygly/examples/legacy/simple/main.py
+python pygly/examples/run_demo.py -p glut -g legacy -d basic
 ```
 
 
