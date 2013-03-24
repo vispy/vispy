@@ -67,6 +67,7 @@ PyGLy contains no platform / window specific code.
 
 PyGLy has been tested with the following windowing systems:
 
+   * [GLUT](http://pyopengl.sourceforge.net/)
    * [Pyglet](http://pyglet.org/)
    * [PyGLFW](https://github.com/nightcracker/pyglfw)
 
