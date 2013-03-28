@@ -1,0 +1,2 @@
+The compound graphical components are usually made by subclassing or combining primitives, although 
+they have all the same low-level capabilities that primitives have.
