@@ -1,6 +1,9 @@
 [submodule "contrib/pyrr"]
 	path = contrib/pyrr
-	url = git@github.com:adamlwgriffiths/Pyrr.git
+	url = git://github.com/adamlwgriffiths/Pyrr.git
 [submodule "contrib/pyglet"]
 	path = contrib/pyglet
-	url = git@github.com:adamlwgriffiths/Pyglet.git
+	url = git://github.com/adamlwgriffiths/Pyglet.git
+[submodule "contrib/pyglfw"]
+	path = contrib/pyglfw
+	url = git://github.com/nightcracker/pyglfw.git

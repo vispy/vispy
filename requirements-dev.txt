@@ -1,1 +1,4 @@
+numpy
+PyOpenGL
+PyDispatch
 sphinx

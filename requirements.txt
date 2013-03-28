@@ -1,5 +1,3 @@
 numpy
-pillow
-hg+https://pyglet.googlecode.com/hg/
 PyOpenGL
-PyOpenGL_accelerate
+PyDispatch
