@@ -1,11 +1,12 @@
 import opengl
-from event import EventReceiver
+from event import EventHandler
 
 ## used for application-global settings.
 
-class Config(EventReceiver):
+class Config(object):
     def __init__(self):
-        EventReceiver.__init__(self)
+        self.events = EventHandler(source=self,
+                                   changed=None,)
         self._config = {}
     
     def __getitem__(self, item):
@@ -14,7 +15,7 @@ class Config(EventReceiver):
     def __setitem__(self, item, val):
         self._config[item] = val
         ## inform any listeners that a configuration option has changed
-        self.call_event('changed', item=item, value=val)
+        self.events.changed(item=item, value=val)
         
     def update(self, **kwds):
         for k,v in kwds.items():

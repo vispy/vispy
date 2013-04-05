@@ -9,18 +9,68 @@
 ##          or using event-connection decorator
 ##        - must be able to connect/disconnect functions 
 
+"""
+
+Example uses:
+
+
+class Visual(EventHandler):
+    
+    clicked = EventEmitter('click')
+    
+    def click_event(self, ev):
+        print "Visual was clicked at:", ev.pos
+        
+
+vis = Visual()
+
+def cb1(event):
+    print "cb1"
+vis.clicked.connect(cb1)
+
+@vis.clicked.connect
+def cb2(event):
+    print cb2
+
+def cb3(event):
+    print "cb3"
+vis.connect('click', cb3)
+
+vis.clicked.emit()  ## calls all four event handler functions
+
+
+
+Another possibility:
+
+class Visual(EventHandler):
+    def __init__(self):
+        EventHandler.__init__(self)
+        self.clicked = EventEmitter(connect=self.click_event)
+    
+    def click_event(self, ev):
+        print "Visual was clicked at:", ev.pos
+        
+
+Is it possible to do without the EventHandler class altogether? 
+
+
+
+
+
+
+
+"""
+
+
+
 class Event(object):
     """Class describing events that occur and can be reacted to with callbacks.
     For example, window and input events.
     
-    *type* may be any string. Subclasses of EventReceiver will define the
-    event types that they may receive.
-    
     Specific event types may implement extra attributes to fully describe
     the event.
     """
-    def __init__(self, type, **kwds):
-        self.type = type
+    def __init__(self, **kwds):
         self.accepted = False
         self.__dict__.update(kwds)
         
@@ -30,129 +80,143 @@ class Event(object):
         self.accepted = True
 
 
-class EventReceiver(object):
-    """Base class for objects that can receive and propagate event 
-    notifications."""
-    def __init__(self):
-        self._event_callbacks = {}  # {event_type: [list of callbacks], ...}
-        self._blocked_events = []
+class EventEmitter(object):
+    """Manages a list of event callbacks. 
     
-    def call_event(self, *args, **kwds):
-        """Deliver an event to the event handlers registered for event.type on 
-        this object. 
+    Each instance of EventEmitter is intended to represent a particular event. 
+    Callbacks may be registered with the EventEmitter to receive notifications
+    whenever the event occurs. 
+    
+    To inform the EventEmitter that the event has occurred (and thus it should
+    invoke all of its callbacks), it is called directly with either an Event 
+    instance as an argument or a set of arguments used to construct an Event.
+    
+    Callbacks may be specified either as a callable object or symbolically,
+    as (object, attribute_name). In the latter case, the attribute is retrieved
+    from object and called every time the event is emitted. 
+    """
+    def __init__(self, callback=None):
+        """May be initialized with or without a callback.
+        """
+        self.callbacks = []
+        self.blocked = 0
+        self.defaults = {}
+        if callback is not None:
+            self.connect(callback)
         
-        If the first argument is an Event instance, then that Event is sent and
-        all other arguments are ignored. Otherwise, a new Event will be 
-        constructed as Event(*args, **kwds).
+    def connect(self, callback):
+        """Connect this emitter to a new callback. 
         
-        If the object has a method named event.type+"_event", it will be called
-        after all other registered handlers.
+        *callback* may be either a callable object or a tuple 
+        (object, attr_name) where object.attr_name will point to a callable
+        object.
         
-        Returns the event.
+        If the callback is already connected, then the request is ignored.
+        """
+        if callback in self.callbacks:
+            return
+        self.callbacks.insert(0, callback)
+        return callback  ## allows connect to be used as a decorator
+            
+    def disconnect(self, callback=None):
+        """Disconnect a callback from this emitter.
+        
+        If no callback is specified, then _all_ callbacks are removed.
+        If the callback was not already connected, then the call does nothing.
+        """
+        if callback is None:
+            self.callbacks = []
+        else:
+            try:
+                self.callbacks.remove(callback)
+            except ValueError:
+                pass
+            
+    def __call__(self, *args, **kwds):
+        """Invoke all callbacks for this emitter.
+        
+        This may be called either with an Event instance as the first argument
+        or with any other set of arguments used to construct an Event.
+        
+        All events emitted will have extra attributes set corresponding to
+        self.defaults, unless the Event already has those attributes.
         """
         if len(args) > 0 and isinstance(args[0], Event):
             event = args[0]
         else:
             event = Event(*args, **kwds)
+            
+        ## Copy default attributes onto this event (unless they are already 
+        ## specified)
+        for k,v in self.defaults.items():
+            if not hasattr(event, k):
+                setattr(event, k, v)
         
-        if 'all' in self._blocked_events or event.type in self._blocked_events:
+        if self.blocked > 0:
             return event
         
-        ## run externally registered callbackes
-        for cb in self._event_callbacks.get(event.type, []):
+        for cb in self.callbacks:
+            if isinstance(cb, tuple):
+                cb = getattr(cb[0], cb[1], None)
+                if cb is None:
+                    continue
+                
             cb(event)
             if event.accepted is True:
                 break
 
-        ## run local method callback, if it is defined.
-        if hasattr(self, event.type+'_event'):
-            getattr(self, event.type+'_event')(event)
-        
         return event
+            
+    def block(self):
+        self.blocked += 1
+        
+    def unblock(self):
+        self.blocked = max(0, self.blocked-1)
+
+    def blocker(self):
+        return EventBlocker(self)
+
+
+class EventHandler(object):
+    """Class that manages a group of related events.
     
-    def connect(self, event_type, callback=None, append=False):
-        """Register a new callback to be invoked when events are received with 
-        type == event_type. 
-        
-        By default, callbacks are added to the beginning of
-        the callback list (when an event arrives, the last callback registered
-        is the first one invoked). If *append* == True, then the callback will 
-        be added to the end of the callback list. If the callback was already
-        connected, it will be removed and re-added in the new position. 
-        
-        If callback is None, then this function returns a function allowing it
-        to be used as a decorator::
-        
-            @window.connect('resize')
-            def resize_handler(event):
-               ...
-        """
-        if callback is None:
-            return self._make_decorator(event_type, append)
+    Intended to be used as the 'events' attribute for objects that need to
+    manage a large number of event emitters.
+    """
+    def __init__(self, source, **kwds):
+        self._emitters = {}
+        for name,cb in kwds.items():
+            em = EventEmitter(cb)
+            em.defaults = {'event_name': name, 'source': source}
+            setattr(self, name, em)
+            self._emitters[name] = em
+            
+    def __getitem__(self, item):
+        return self._emitters[item]
+            
+    @property
+    def emitters(self):
+        return self._emitters
+            
+    def block(self):
+        for em in self._emitters.values():
+            em.block()
+            
+    def unblock(self):
+        for em in self._emitters.values():
+            em.unblock()
+            
+    def blocker(self):
+        return EventBlocker(self)
 
-        if event_type not in self._event_callbacks:
-            self._event_callbacks[event_type] = []
             
-        cb_list = self._event_callbacks[event_type]
-        if callback in cb_list:
-            cb_list.remove(callback)
+class EventBlocker(object):
+    def __init__(self, target):
+        self.target = target
         
-        if append:
-            cb_list.append(callback)
-        else:
-            cb_list.insert(0, callback)
+    def __enter__(self):
+        self.target.block()
         
-    def disconnect(self, event_type=None, callback=None):
-        """Disconnect events from their registered callbacks. 
-        
-        If *event_type* is None, then the *callback* is disconnected from 
-        any event types it is connected to. If *callback* is None, then 
-        all callbacks are disconnected from *event_type*. If both arguments
-        are None, then all event callbacks are disconnected.
-        
-        Note that this has no effect on callbacks that are implemented as 
-        methods of the event receiver.
-        """
-        if event_type is None:
-            event_type = [self._event_callbacks.keys()]
-        else:
-            event_type = [event_type]
-            
-        if callback is None:
-            for type in event_type:
-                self._event_callbacks.pop(type, None)
-        else:
-            for type in event_type:
-                self._event_callbacks.remove(callback)
-            
-    def is_connected(self, event_type, callback):
-        """Return True if *callback* is registered to receive events of
-        *event_type* from this object."""
-        return callback in self._event_callbacks.get(event_type, [])
-        
-    def block_events(self, event_type):
-        """Temporarily block execution of events until unblock_events is called.
-        
-        *event_type* specifies the type of events to block. If block_events is 
-        called more than once with a specific event type, that type must be 
-        unblocked the same number of times before it will be delivered again.
-        
-        If *event_type* is 'all', then all events will be blocked until 
-        unblock_events('all') is called."""
-        self._blocked_events.append(event_type)
-        
-        
-    def unblock_events(self, event_type):
-        """Restore execution of events blocked with block_events.
-        
-        *event_type* specifies the type of events to unblock. By default, all
-        event types are unblocked."""
-        self._blocked_events.remove(event_type)
-
-    def _make_decorator(self, event_type, append):
-        ## see connect(callback=None)
-        def connect(fn):
-            self.connect(event_type, fn, append)
-            return fn
-        return connect
+    def __exit__(self, *args):
+        self.target.unblock()
 
