@@ -28,6 +28,11 @@ class Event(object):
         """Inform the event dispatcher that this event has been handled and 
         should not be delivered to any more callbacks."""
         self.accepted = True
+    
+    def ignore(self):
+        """Inform the event dispatcher that this event has not been handled and 
+        should be delivered to another callback."""
+        self.accepted = False
 
 
 class EventReceiver(object):
@@ -55,13 +60,18 @@ class EventReceiver(object):
         else:
             event = Event(*args, **kwds)
         
+        # Make this object the owner of the event: the object to which
+        # the event applies. todo: This should probably be a weak ref.
+        event.owner = self
+        
         if 'all' in self._blocked_events or event.type in self._blocked_events:
             return event
         
         ## run externally registered callbackes
         for cb in self._event_callbacks.get(event.type, []):
+            # todo: or not?: event.accepted = True
             cb(event)
-            if event.accepted is True:
+            if event.accepted:
                 break
 
         ## run local method callback, if it is defined.
