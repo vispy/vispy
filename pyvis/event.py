@@ -78,6 +78,11 @@ class Event(object):
         """Inform the event dispatcher that this event has been handled and 
         should not be delivered to any more callbacks."""
         self.accepted = True
+    
+    def ignore(self):
+        """Inform the event dispatcher that this event has not been handled and 
+        should be delivered to another callback."""
+        self.accepted = False
 
 
 class EventEmitter(object):
@@ -162,9 +167,13 @@ class EventEmitter(object):
                     continue
                 
             cb(event)
-            if event.accepted is True:
+            if event.accepted:
                 break
 
+        ## run local method callback, if it is defined.
+        if hasattr(self, event.type+'_event') and not event.accepted:
+            getattr(self, event.type+'_event')(event)
+        
         return event
             
     def block(self):
