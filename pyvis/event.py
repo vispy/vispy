@@ -62,6 +62,8 @@ Is it possible to do without the EventHandler class altogether?
 """
 
 
+# todo: we want Events to be light and fast, so that performance  is not degraded too much with move events.
+# todo: use __slots__ (at least on the event classes where it matters)
 
 class Event(object):
     """Class describing events that occur and can be reacted to with callbacks.
