@@ -169,10 +169,6 @@ class EventEmitter(object):
             cb(event)
             if event.accepted:
                 break
-
-        ## run local method callback, if it is defined.
-        if hasattr(self, event.type+'_event') and not event.accepted:
-            getattr(self, event.type+'_event')(event)
         
         return event
             
