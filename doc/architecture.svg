@@ -24,9 +24,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.98994949"
-     inkscape:cx="413.92483"
-     inkscape:cy="667.4026"
+     inkscape:zoom="1.979899"
+     inkscape:cx="427.61449"
+     inkscape:cy="861.96923"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -59,12 +59,12 @@
        id="rect10341"
        width="386.21841"
        height="207.19621"
-       x="222.30661"
+       x="212.30661"
        y="178.5072"
        ry="7.7275972" />
     <path
        style="fill:none;stroke:#000000;stroke-width:1.74317658;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       d="M 420.19775,269.35767 440.34836,258.1912"
+       d="M 409.23262,269.34117 429.23195,258.1912"
        id="path10339"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -74,7 +74,7 @@
        inkscape:connection-end-point="d4" />
     <path
        style="fill:none;stroke:#000000;stroke-width:5.81058836;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       d="m 215.68005,138.53493 91.8547,130.79425"
+       d="M 205.22535,139.04001 296.9516,269.32918"
        id="path10327"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -84,7 +84,7 @@
        inkscape:connection-end-point="d4" />
     <g
        id="g10213"
-       transform="matrix(0.58105886,0,0,0.58105886,330.89385,257.28555)"
+       transform="matrix(0.58105886,0,0,0.58105886,319.8837,257.28555)"
        inkscape:connector-avoid="true">
       <rect
          ry="16.162441"
@@ -107,7 +107,7 @@
            sodipodi:role="line">PyOpenGL</tspan></text>
     </g>
     <g
-       transform="matrix(0.58105886,0,0,0.58105886,332.06777,215.02457)"
+       transform="matrix(0.58105886,0,0,0.58105886,321.05762,215.02457)"
        id="g10218"
        inkscape:connector-avoid="true">
       <rect
@@ -132,7 +132,7 @@
     </g>
     <g
        id="g10226"
-       transform="matrix(0.88592237,0,0,0.88592237,203.46501,71.798389)"
+       transform="matrix(0.88592237,0,0,0.88592237,191.94978,71.798389)"
        inkscape:connector-avoid="true">
       <rect
          ry="26.979406"
@@ -183,7 +183,7 @@
            id="tspan4080">them to be recombined</tspan></text>
     </g>
     <g
-       transform="matrix(0.98667942,0,0,0.98667942,1.7294275,151.55707)"
+       transform="matrix(0.98667942,0,0,0.98667942,-8.775649,151.55707)"
        id="g10234"
        inkscape:connector-avoid="true">
       <rect
@@ -208,7 +208,7 @@
     </g>
     <path
        style="fill:none;stroke:#000000;stroke-width:1.74317658;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       d="M 318.73662,55.713804 261.84998,80.514182"
+       d="M 307.29281,54.703654 249.03023,81.019258"
        id="path10319"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -218,7 +218,7 @@
        inkscape:connection-end-point="d4" />
     <g
        id="g10242"
-       transform="matrix(1.1721962,0,0,1.1721962,-205.5103,-95.662171)"
+       transform="matrix(1.1721962,0,0,1.1721962,-216.01538,-95.157095)"
        inkscape:connector-avoid="true">
       <rect
          ry="16.162441"
@@ -242,7 +242,7 @@
     </g>
     <path
        style="fill:none;stroke:#000000;stroke-width:1.16211772;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       d="m 416.34389,55.713804 44.8401,17.149952"
+       d="m 401.01109,54.703654 34.01988,13.614415"
        id="path10323"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -252,7 +252,7 @@
        inkscape:connection-end-point="d4" />
     <path
        style="fill:none;stroke:#000000;stroke-width:1.74317658;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       d="m 382.21902,55.713804 59.20105,65.884716"
+       d="m 367.76498,54.703654 47.58869,57.546036 10.45218,9.8539"
        id="path10321"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -261,7 +261,7 @@
        inkscape:connection-end="#g10252"
        inkscape:connection-end-point="d4" />
     <g
-       transform="matrix(0.84349205,0,0,0.84349205,175.71251,-5.1749309)"
+       transform="matrix(0.84349205,0,0,0.84349205,164.19728,-4.6698546)"
        id="g10252"
        inkscape:connector-avoid="true">
       <rect
@@ -303,9 +303,14 @@
            y="203.63678"
            id="tspan4961">stacking, </tspan></text>
     </g>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 483.86307,47.007869 96.21703,13.384521 0,32.324881"
+       id="path3089"
+       inkscape:connector-curvature="0" />
     <g
        id="g10260"
-       transform="matrix(0.67118742,0,0,0.67118742,288.92339,-28.013001)"
+       transform="matrix(0.67118742,0,0,0.67118742,260.23557,-32.558688)"
        inkscape:connector-avoid="true">
       <rect
          ry="21.302401"
@@ -343,58 +348,76 @@
            id="tspan4094">and input events.</tspan></text>
     </g>
     <g
-       transform="matrix(0.58105886,0,0,0.58105886,465.89421,-9.1934309)"
+       transform="matrix(0.58105886,0,0,0.58105886,461.45006,-18.78988)"
        id="g10268"
        inkscape:connector-avoid="true">
       <rect
          style="fill:#b0b0b0;fill-opacity:1;stroke:#000000;stroke-width:0.2;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
          id="rect10270"
-         width="221.2234"
-         height="96.97464"
+         width="251.64659"
+         height="168.25185"
          x="231.32494"
          y="150.29596"
          ry="31.66519" />
       <text
          xml:space="preserve"
          style="font-size:16px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-         x="341.19055"
-         y="171.31813"
+         x="369.87527"
+         y="174.79507"
          id="text10272"
          sodipodi:linespacing="125%"><tspan
            sodipodi:role="line"
            id="tspan10274"
-           x="341.19055"
-           y="171.31813">Backends</tspan></text>
+           x="369.87527"
+           y="174.79507">Backends</tspan></text>
       <text
          xml:space="preserve"
          style="font-size:12px;font-style:normal;font-weight:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-         x="248.49754"
-         y="188.76297"
+         x="288.09787"
+         y="196.58607"
          id="text4082"
          sodipodi:linespacing="125%"><tspan
            sodipodi:role="line"
            id="tspan4084"
-           x="248.49754"
-           y="188.76297">Qt, gtk, tkinter, . . . </tspan><tspan
+           x="288.09787"
+           y="196.58607">Qt, gtk, tkinter, pyglet, . . . </tspan><tspan
            sodipodi:role="line"
-           x="248.49754"
-           y="203.76297"
+           x="288.09787"
+           y="211.58607"
            id="tspan4086">Each provides GL context,</tspan><tspan
            sodipodi:role="line"
-           x="248.49754"
-           y="218.76297"
+           x="288.09787"
+           y="226.58607"
            id="tspan4088">window handles, resize events,</tspan><tspan
            sodipodi:role="line"
-           x="248.49754"
-           y="233.76297"
+           x="288.09787"
+           y="241.58607"
            id="tspan4098">input events. . . </tspan><tspan
            sodipodi:role="line"
-           x="248.49754"
-           y="248.76297"
+           x="288.09787"
+           y="256.58606"
            id="tspan4096" /></text>
+      <path
+         style="fill:#909090;fill-opacity:1;stroke:#000000;stroke-width:0.11621177;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+         d="m 655.5625,78.125 c -10.19323,0 -18.375,8.213016 -18.375,18.40625 l 0,60.96875 c 0,10.19323 8.18177,18.40625 18.375,18.40625 l 9.125,0 0,-97.78125 -9.125,0 z"
+         transform="matrix(1.720996,0,0,1.720996,-865.2562,15.821858)"
+         id="rect3857"
+         inkscape:connector-curvature="0" />
+      <text
+         xml:space="preserve"
+         style="font-size:17.20996094px;font-style:normal;font-weight:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         x="-302.3027"
+         y="261.94058"
+         id="text3853"
+         sodipodi:linespacing="125%"
+         transform="matrix(0,-1,1,0,0,0)"><tspan
+           sodipodi:role="line"
+           id="tspan3855"
+           x="-302.3027"
+           y="261.94058">CanvasBackend</tspan></text>
     </g>
     <g
-       transform="matrix(0.58105886,0,0,0.58105886,-71.172428,157.50267)"
+       transform="matrix(0.58105886,0,0,0.58105886,-82.182581,157.50267)"
        id="g10276"
        inkscape:connector-avoid="true">
       <rect
@@ -419,7 +442,7 @@
     </g>
     <g
        id="g10284"
-       transform="matrix(0.58105886,0,0,0.58105886,-119.30299,86.480739)"
+       transform="matrix(0.58105886,0,0,0.58105886,-130.31314,86.480739)"
        inkscape:connector-avoid="true">
       <rect
          ry="16.162441"
@@ -442,7 +465,7 @@
            sodipodi:role="line">WebGL Visuals</tspan></text>
     </g>
     <g
-       transform="matrix(0.80351061,0,0,0.80351061,158.59256,-104.82234)"
+       transform="matrix(0.80351061,0,0,0.80351061,145.5621,-105.83249)"
        id="g10292"
        inkscape:connector-avoid="true">
       <rect
@@ -466,18 +489,8 @@
            y="180.32828">Functional interafce (mlab/gg-like)</tspan></text>
     </g>
     <path
-       style="fill:none;stroke:#000000;stroke-width:0.58105886px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 592.66814,100.62648 7.63947,0.60393"
-       id="path10325"
-       inkscape:connector-type="polyline"
-       inkscape:connector-curvature="0"
-       inkscape:connection-start="#g10260"
-       inkscape:connection-start-point="d4"
-       inkscape:connection-end="#g10268"
-       inkscape:connection-end-point="d4" />
-    <path
        style="fill:none;stroke:#000000;stroke-width:0.58105886;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:1.74317657, 1.74317657;stroke-dashoffset:0;display:inline"
-       d="m 274.66899,138.53493 103.87807,37.97188 38.82786,13.69253"
+       d="m 263.72641,139.04001 103.30542,37.97187 38.52484,13.43348"
        id="path10329"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -487,7 +500,7 @@
        inkscape:connection-start-point="d4" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.58105886;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:1.74317657, 1.74317657;stroke-dashoffset:0"
-       d="m 238.17643,138.53493 172.88692,116.99386 9.56189,6.43634 12.06823,4.01801 70.27501,36.37223"
+       d="m 227.61875,139.04001 171.92937,116.48878 9.56189,6.43634 13.07838,4.01801 69.91305,36.37223"
        id="path10331"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -497,7 +510,7 @@
        inkscape:connection-end-point="d4" />
     <path
        style="fill:none;stroke:#000000;stroke-width:1.74317658;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       d="m 530.35362,331.11632 -0.375,13.50003"
+       d="m 519.34347,331.11632 -0.375,13.50003"
        id="path10333"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -507,7 +520,7 @@
        inkscape:connection-end-point="d4" />
     <path
        style="fill:none;stroke:#000000;stroke-width:1.74317658;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       d="m 448.24956,315.68366 18.23161,0.23251"
+       d="m 437.74448,315.68733 17.72654,0.22667"
        id="path10337"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -518,18 +531,18 @@
     <text
        xml:space="preserve"
        style="font-size:9.29694176px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="298.0242"
+       x="288.0242"
        y="375.7251"
        id="text11111"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan11113"
-         x="298.0242"
+         x="288.0242"
          y="375.7251"
          style="font-size:12.78329468px">OpenGL Visualization</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.58105886px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 527.0714,302.35537 515.7645,258.1912"
+       d="M 515.98491,302.35537 504.44356,258.1912"
        id="path11115"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -539,7 +552,7 @@
        inkscape:connection-end-point="d4" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.58105886px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 182.16786,138.53493 134.02574,244.83347"
+       d="M 171.52008,139.04001 123.08632,244.83347"
        id="path11117"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -549,7 +562,7 @@
        inkscape:connection-end-point="d4" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.58105886px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 152.55689,138.53493 -51.98353,35.27661"
+       d="M 141.58811,139.04001 89.793068,173.81154"
        id="path11119"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -559,7 +572,7 @@
        inkscape:connection-end-point="d4" />
     <path
        style="fill:none;stroke:#000000;stroke-width:1.74317658;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       d="m 323.33551,127.31324 48.0124,6.67097"
+       d="m 312.8022,127.88148 47.04254,6.56086"
        id="path11121"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -569,7 +582,7 @@
        inkscape:connection-end-point="d4" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.58105886px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 490.46576,121.59852 5.15389,-4.94743"
+       d="m 469.03124,122.10359 6.49199,-9.99819"
        id="path11123"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -579,7 +592,7 @@
        inkscape:connection-end-point="d4" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.58105886;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:1.74317657, 1.74317657;stroke-dashoffset:0"
-       d="m 182.73648,273.58833 49.83463,12.97166"
+       d="m 171.83998,273.58361 50.19941,13.0355"
        id="path11125"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -589,7 +602,7 @@
        inkscape:connection-end-point="d4" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.58105886;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:1.74317657, 1.74317657;stroke-dashoffset:0"
-       d="m 109.69123,202.57248 78.72102,37.35027 62.2234,30.70686"
+       d="m 98.681078,202.57248 78.721022,37.35027 62.54688,30.7634"
        id="path11127"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
@@ -600,33 +613,77 @@
     <text
        xml:space="preserve"
        style="font-size:6.97270632px;font-style:normal;font-weight:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="251.06754"
+       x="241.06754"
        y="297.07275"
        id="text11129"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan11131"
-         x="251.06754"
+         x="241.06754"
          y="297.07275">Lines, triangles, images, particles, volumes</tspan><tspan
          sodipodi:role="line"
-         x="251.06754"
+         x="241.06754"
          y="305.78864"
          id="tspan11133" /><tspan
          sodipodi:role="line"
-         x="251.06754"
+         x="241.06754"
          y="314.50452"
          id="tspan11135">Each visual can work with multiple shaders</tspan><tspan
          sodipodi:role="line"
-         x="251.06754"
+         x="241.06754"
          y="323.2204"
          id="tspan11137" /><tspan
          sodipodi:role="line"
-         x="251.06754"
+         x="241.06754"
          y="331.93628"
          id="tspan11139">Some visuals can 'stack' together to render with </tspan><tspan
          sodipodi:role="line"
-         x="251.06754"
+         x="241.06754"
          y="340.65216"
          id="tspan11141">fewer passes.</tspan></text>
+    <g
+       inkscape:connector-avoid="true"
+       transform="matrix(0,-0.67118742,0.67118742,0,468.23652,284.6125)"
+       id="g3862">
+      <rect
+         style="fill:#b0b0b0;fill-opacity:1;stroke:#000000;stroke-width:0.17314355;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+         id="rect3864"
+         width="90.2864"
+         height="34.385628"
+         x="231.32494"
+         y="150.29596"
+         ry="16.064047" />
+      <text
+         xml:space="preserve"
+         style="font-size:16px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         x="275.60004"
+         y="173.82709"
+         id="text3866"
+         sodipodi:linespacing="125%"><tspan
+           sodipodi:role="line"
+           id="tspan3868"
+           x="275.60004"
+           y="173.82709">Canvas</tspan></text>
+    </g>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 563.98032,97.429623 5.13296,0.499037"
+       id="path3876"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g10260"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#g3862"
+       inkscape:connection-end-point="d4" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 592.19248,101.45051 1.39251,0.28961"
+       id="path3878"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0"
+       inkscape:connection-start="#g3862"
+       inkscape:connection-start-point="d4"
+       inkscape:connection-end="#g10268"
+       inkscape:connection-end-point="d4" />
   </g>
 </svg>
