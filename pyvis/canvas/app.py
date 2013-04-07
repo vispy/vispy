@@ -47,6 +47,11 @@ class App(object):
         """
         return self._backend._pyvis_run()
     
+    def quit(self):
+        """ Quit the native GUI event loop.
+        """
+        return self._backend._pyvis_quit()
+    
     @property
     def native_app(self):
         """ The native GUI application instance.
@@ -90,6 +95,9 @@ class AppBackend(object):
         raise NotImplementedError()
     
     def _pyvis_run(self):
+        raise NotImplementedError()
+    
+    def _pyvis_quit(self):
         raise NotImplementedError()
     
     def _pyvis_get_native_app(self):
