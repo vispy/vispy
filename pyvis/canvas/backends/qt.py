@@ -1,5 +1,5 @@
 from pyvis.event import Event
-from pyvis.canvas import CanvasBackend
+from pyvis.canvas import CanvasBackend, AppBackend
 
 import pyvis
 qt_lib = pyvis.config['qt_lib']
@@ -14,19 +14,49 @@ elif qt_lib == 'pyside':
     from PySide import QtGui, QtCore
 else:
     raise Exception("Do not recognize Qt library '%s'. Options are 'pyqt', 'pyside', or 'any'." % str(qt_lib))
+
+
+
+class QtAppBackend(AppBackend):
     
+    def __init__(self):
+        AppBackend.__init__(self)
+    
+    def _pyvis_get_backend_name(self):
+        return 'Qt' #todo: pyside or PyQt?
+    
+    def _pyvis_process_events(self):
+        app = self._pyvis_get_native_app()
+        app.flush()
+        app.processEvents()
+    
+    def _pyvis_run(self):
+        app = self._pyvis_get_native_app()
+        if hasattr(app, '_in_event_loop') and app._in_event_loop:
+            pass # Already in event loop
+        else:
+            return app.exec_()
+    
+    def _pyvis_get_native_app(self):
+        # Get native app in save way. Taken from guisupport.py
+        app = QtGui.QApplication.instance()
+        if app is None:
+            app = QtGui.QApplication([''])
+        # Store so it won't be deleted, but not on a visvis object,
+        # or an application may produce error when closed
+        QtGui._qApp = app
+        # Return
+        return app
+
+
 
 class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
     """Qt backend for Canvas abstract class."""
     
-    ## Note: In this case, the backend is split into two classes since the 
-    ## name 'geometry' would otherwise conflict with QWidget.geometry.
-    
     def __init__(self, parent=None):
-        ## before creating widget, make sure we have a QApplication
-        if QtGui.QApplication.instance() is None:
-            global QAPP
-            QAPP = QtGui.QApplication([])
+        # before creating widget, make sure we have a QApplication
+        pyvis.canvas.app.native_app
+        
         CanvasBackend.__init__(self)
         QtOpenGL.QGLWidget.__init__(self, parent)
 
@@ -44,10 +74,7 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
         
     def _pyvis_update(self):
         self.update()
-        
-    def _pyvis_run(self):
-        return QtGui.QApplication.exec_()
-
+    
     def initializeGL(self):
         if self._pyvis_canvas is None:
             return

@@ -13,8 +13,12 @@ separately before use. These are:
 
 __version__ = '0.0.dev'
 
+import pyvis.util
+
 #from pyvis import opengl Needs explicit import
 from pyvis.event import EventHandler
+
+
 
 
 ## used for application-global settings.

@@ -13,8 +13,8 @@ class Canvas(object):
     initialize, resize, paint, mouse, key, stylus, touch, close
     """
     
-    def __init__(self, backend=None, **kwds):
-        """Create a Canvas with the specified backend. 
+    def __init__(self, *args, **kwds):
+        """Create a Canvas with the specified backend.
         
         *backend* may be a string indicating the type of backend to use
         ('qt', 'gtk', 'pyglet', ...) or None, in which case 
@@ -35,13 +35,20 @@ class Canvas(object):
                         close=(self, 'close_event'),
                         )
         
-        if backend is None:
-            backend = pyvis.config['default_backend']
+#         if backend is None:
+#             backend = pyvis.config['default_backend']
+#         
+#         if isinstance(backend, basestring):
+#             backend = CanvasBackend._pyvis_create(backend, self, **kwds)
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+#         self.backend = backend
+#         self.backend._pyvis_set_canvas(self)
+
+        # Ensure that there is a selected backend and a valid app object
+        pyvis.canvas.app.use()
         
-        if isinstance(backend, basestring):
-            backend = CanvasBackend._pyvis_create(backend, self, **kwds)
-        
-        self.backend = backend
+        # Instantiate the backed with the right class
+        self.backend = pyvis.canvas.app._CanvasBackend(*args, **kwds)
         self.backend._pyvis_set_canvas(self)
         
     
@@ -70,6 +77,7 @@ class Canvas(object):
     def run(self):
         """Execute the event loop for this Canvas's backend.
         """
+        # todo: remove this
         return self.backend._pyvis_run()
     
     def mouse_event(self, event):
@@ -122,32 +130,30 @@ class Canvas(object):
             event.region  (x,y,w,h) region of Canvas requiring repaint
         """
     
-    
-    
-        
+
 class CanvasBackend(object):
     """Abstract class that provides an interface between backends and Canvas.
     Each backend must implement a subclass of CanvasBackend.
     """
     
-    @classmethod
-    def _pyvis_create(cls, backend, canvas, *args, **kwds):
-        """Create a new CanvasBackend instance from the named backend.
-        (options are 'qt', 'pyglet', 'gtk', ...)
-        
-        This is equivalent to::
-        
-            import pyvis.opengl.backends.backend as B
-            return B.BackendCanvas(*args, **kwds)
-        """
-        mod_name = 'pyvis.canvas.backends.' + backend
-        __import__(mod_name)
-        mod = getattr(pyvis.canvas.backends, backend)
-        return getattr(mod, backend.capitalize()+"CanvasBackend")(*args, **kwds)
+#     @classmethod
+#     def _pyvis_create(cls, backend, canvas, *args, **kwds):
+#         """Create a new CanvasBackend instance from the named backend.
+#         (options are 'qt', 'pyglet', 'gtk', ...)
+#         
+#         This is equivalent to::
+#         
+#             import pyvis.opengl.backends.backend as B
+#             return B.BackendCanvas(*args, **kwds)
+#         """
+#         mod_name = 'pyvis.canvas.backends.' + backend
+#         __import__(mod_name)
+#         mod = getattr(pyvis.canvas.backends, backend)
+#         return getattr(mod, backend.capitalize()+"CanvasBackend")(*args, **kwds)
     
     def __init__(self):
-        ## Initially the backend starts out with no canvas.
-        ## Canvas takes care of setting this for us.
+        # Initially the backend starts out with no canvas.
+        # Canvas takes care of setting this for us.
         self._pyvis_canvas = None  
 
     def _pyvis_set_canvas(self, canvas):
@@ -168,8 +174,5 @@ class CanvasBackend(object):
         raise Exception("Method must be reimplemented in subclass.")
 
     def _pyvis_update(self):        
-        raise Exception("Method must be reimplemented in subclass.")
-
-    def _pyvis_run(self):        
         raise Exception("Method must be reimplemented in subclass.")
     
