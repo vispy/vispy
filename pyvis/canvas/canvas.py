@@ -64,10 +64,15 @@ class Canvas(object):
         """Inform the backend that the Canvas needs to be repainted."""
         return self.backend._pyvis_update()
     
-    def run(self):
+    def run_event_loop(self):
         """Execute the event loop for this Canvas's backend.
         """
         return self.backend._pyvis_run()
+    
+    def quit_event_loop(self):
+        """Exit the event loop for this Canvas's backend.
+        """
+        return self.backend._pyvis_quit()
     
     def mouse_event(self, event):
         """Called when a mouse input event has occurred (the mouse has moved,
