@@ -1,5 +1,21 @@
-import opengl
-from event import EventHandler
+# -*- coding: utf-8 -*-
+from __future__ import print_function, division, absolute_import
+
+"""
+Pyvis - https://github.com/pyvis
+
+The pyvis consists of multiple subpackages that need to be imported
+separately before use. These are:
+
+  * ... todo
+
+"""
+
+__version__ = '0.0.dev'
+
+#from pyvis import opengl Needs explicit import
+from pyvis.event import EventHandler
+
 
 ## used for application-global settings.
 
