@@ -1,5 +1,5 @@
 from pyvis.event import Event
-from pyvis.opengl.canvas import CanvasBackend
+from pyvis.canvas import CanvasBackend
 
 import pyvis
 qt_lib = pyvis.config['qt_lib']
