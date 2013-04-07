@@ -1,5 +1,6 @@
 from pyvis.event import Event
 from pyvis.canvas import CanvasBackend, AppBackend
+from pyvis.timer import TimerBackend
 
 import pyvis
 qt_lib = pyvis.config['qt_lib']
@@ -13,7 +14,7 @@ elif qt_lib == 'pyqt':
 elif qt_lib == 'pyside':
     from PySide import QtGui, QtCore
 else:
-    raise Exception("Do not recognize Qt library '%s'. Options are 'pyqt', 'pyside', or 'any'." % str(qt_lib))
+    raise Exception("Do not recognize Qt library '%s'. Options are 'pyqt', 'pyside', or 'any' (see pyvis.config['qt_lib'])." % str(qt_lib))
 
 
 
@@ -37,6 +38,9 @@ class QtAppBackend(AppBackend):
         else:
             return app.exec_()
     
+    def _pyvis_quit(self):
+        return self._pyvis_get_native_app().quit()
+    
     def _pyvis_get_native_app(self):
         # Get native app in save way. Taken from guisupport.py
         app = QtGui.QApplication.instance()
@@ -47,6 +51,7 @@ class QtAppBackend(AppBackend):
         QtGui._qApp = app
         # Return
         return app
+
 
 
 
@@ -96,7 +101,7 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
         if self._pyvis_canvas is None:
             return
         ev2 = QtMouseEvent(
-            name='press', 
+            action='press', 
             qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=int(ev.button()),
@@ -107,7 +112,7 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
         if self._pyvis_canvas is None:
             return
         ev2 = QtMouseEvent(
-            name='release', 
+            action='release', 
             qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=int(ev.button()),
@@ -118,7 +123,7 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
         if self._pyvis_canvas is None:
             return
         ev2 = QtMouseEvent(
-            name='move', 
+            action='move', 
             qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             )
@@ -128,7 +133,7 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
         if self._pyvis_canvas is None:
             return
         ev2 = Event( 
-            name='wheel', 
+            action='wheel', 
             qt_event=ev,
             delta=ev.delta(),
             pos=(ev.pos().x(), ev.pos().y()),
@@ -184,3 +189,30 @@ KEYMAP = {}
 #             QtCore.Qt.Key_Escape: constants.KEY_ESCAPE,
 #             QtCore.Qt.Key_Delete: constants.KEY_DELETE
 #             }
+
+
+class QtTimerBackend(TimerBackend, QtCore.QTimer):
+    def __init__(self, timer):
+        if QtGui.QApplication.instance() is None:
+            global QAPP
+            QAPP = QtGui.QApplication([])
+        TimerBackend.__init__(self, timer)
+        QtCore.QTimer.__init__(self)
+        self.timeout.connect(self._pyvis_timeout)
+        
+    def _pyvis_start(self, interval):
+        self.start(interval*1000.)
+        
+    def _pyvis_stop(self):
+        self.stop()
+        
+    def _pyvis_timeout(self):
+        self._pyvis_timer._timeout()
+    
+    def _pyvis_run(self):
+        return QtGui.QApplication.exec_()
+
+    def _pyvis_quit(self):
+        return QtGui.QApplication.quit()
+
+
