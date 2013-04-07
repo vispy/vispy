@@ -134,9 +134,53 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
             pos=(ev.pos().x(), ev.pos().y()),
             )
         self._pyvis_canvas.events.mouse(ev2)
+    
+    
+    def keyPressEvent(self, event):      
+        key = self._processKey(event)
+        text = str(event.text())
+        #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
+        # todo: modifiers
+        self._pyvis_canvas.events.key(name='press', key=key, text=text)
+    
+    def keyReleaseEvent(self, event):
+        if event.isAutoRepeat():
+            return # Skip release auto repeat events
+        key = self._processKey(event)
+        text = str(event.text())
+        self._pyvis_canvas.events.key(name='release', key=key, text=text)
+    
+    def _processKey(self,event):
+        """ evaluates the keycode of qt, and transform to visvis key.
+        """
+        key = event.key()
+        # special cases for shift control and alt -> map to 17 18 19
+        if key in KEYMAP:
+            return KEYMAP[key]
+        else:
+            return key 
+
 
 class QtMouseEvent(Event):
     ## special subclass of Event for propagating acceptance info back to Qt.
     def accept(self):
         Event.accept(self)
         self.qt_event.accept()
+
+
+# todo: define constants for pyvis
+KEYMAP = {}
+#             {  QtCore.Qt.Key_Shift: constants.KEY_SHIFT, 
+#             QtCore.Qt.Key_Alt: constants.KEY_ALT,
+#             QtCore.Qt.Key_Control: constants.KEY_CONTROL,
+#             QtCore.Qt.Key_Left: constants.KEY_LEFT,
+#             QtCore.Qt.Key_Up: constants.KEY_UP,
+#             QtCore.Qt.Key_Right: constants.KEY_RIGHT,
+#             QtCore.Qt.Key_Down: constants.KEY_DOWN,
+#             QtCore.Qt.Key_PageUp: constants.KEY_PAGEUP,
+#             QtCore.Qt.Key_PageDown: constants.KEY_PAGEDOWN,
+#             QtCore.Qt.Key_Enter: constants.KEY_ENTER,
+#             QtCore.Qt.Key_Return: constants.KEY_ENTER,
+#             QtCore.Qt.Key_Escape: constants.KEY_ESCAPE,
+#             QtCore.Qt.Key_Delete: constants.KEY_DELETE
+#             }
