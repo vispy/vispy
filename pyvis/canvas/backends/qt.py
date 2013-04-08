@@ -147,14 +147,14 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
         text = str(event.text())
         #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._pyvis_canvas.events.key(name='press', key=key, text=text)
+        self._pyvis_canvas.events.key(action='press', key=key, text=text)
     
     def keyReleaseEvent(self, event):
         if event.isAutoRepeat():
             return # Skip release auto repeat events
         key = self._processKey(event)
         text = str(event.text())
-        self._pyvis_canvas.events.key(name='release', key=key, text=text)
+        self._pyvis_canvas.events.key(action='release', key=key, text=text)
     
     def _processKey(self,event):
         """ evaluates the keycode of qt, and transform to visvis key.

@@ -47,6 +47,10 @@ class Canvas(object):
         # Ensure that there is a selected backend and a valid app object
         pyvis.canvas.app.use()
         
+        # todo: allow multiple Apps, each Canvas should have a reference
+        # to the App it uses.
+        self.app = pyvis.canvas.app
+        
         # Instantiate the backed with the right class
         self.backend = pyvis.canvas.app._CanvasBackend(*args, **kwds)
         self.backend._pyvis_set_canvas(self)
@@ -73,17 +77,6 @@ class Canvas(object):
     def update(self):
         """Inform the backend that the Canvas needs to be repainted."""
         return self.backend._pyvis_update()
-    
-    def run_event_loop(self):
-        """Execute the event loop for this Canvas's backend.
-        """
-        # todo: remove this
-        return self.backend._pyvis_run()
-    
-    def quit_event_loop(self):
-        """Exit the event loop for this Canvas's backend.
-        """
-        return self.backend._pyvis_quit()
     
     def mouse_event(self, event):
         """Called when a mouse input event has occurred (the mouse has moved,
