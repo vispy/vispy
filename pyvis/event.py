@@ -55,14 +55,28 @@ class EventEmitter(object):
     as (object, attribute_name). In the latter case, the attribute is retrieved
     from object and called every time the event is emitted. 
     """
-    def __init__(self, callback=None):
-        """May be initialized with or without a callback.
+    def __init__(self, callback=None, event_class=None, **kwds):
+        """Initialize an event emitter. 
+        
+        Arguments: 
+        
+        * callback - optional callback to connect immediately
+        * event_class - default class for generating events
+        * extra keyword arguments are added to self.defaults
         """
         self.callbacks = []
         self.blocked = 0
         self.defaults = {}
+            
+        if event_class is None:
+            event_class = Event
+        self.event_class = event_class
+        
+        self.defaults.update(**kwds)
+        
         if callback is not None:
             self.connect(callback)
+        
         
     def connect(self, callback):
         """Connect this emitter to a new callback. 
@@ -104,7 +118,7 @@ class EventEmitter(object):
         if len(args) > 0 and isinstance(args[0], Event):
             event = args[0]
         else:
-            event = Event(*args, **kwds)
+            event = self.event_class(*args, **kwds)
             
         ## Copy default attributes onto this event (unless they are already 
         ## specified)
@@ -128,12 +142,24 @@ class EventEmitter(object):
         return event
             
     def block(self):
+        """Block this emitter. Any attempts to emit an event while blocked
+        will be silently ignored. 
+        
+        Calls to block are cumulative; the emitter must be unblocked the same
+        number of times as it is blocked. 
+        """
         self.blocked += 1
         
     def unblock(self):
         self.blocked = max(0, self.blocked-1)
 
     def blocker(self):
+        """Return an EventBlocker to be used in 'with' statements:
+        
+            with emitter.blocker():
+                ..do stuff; no events will be emitted..
+        
+        """
         return EventBlocker(self)
 
 
@@ -228,7 +254,7 @@ class EmitterGroup(EventEmitter):
             auto_connect = self.auto_connect
         if emitter is None:
             emitter = EventEmitter()
-        emitter.defaults['event_name'] = name
+        emitter.defaults['name'] = name
         emitter.defaults['source'] = self.source
         
         self.__dict__[name] = emitter
@@ -262,6 +288,10 @@ class EmitterGroup(EventEmitter):
     def unblock_all(self):
         for em in self._emitters.values():
             em.unblock()
+    
+    def disconnect_all(self, callback=None):
+        for em in self._emitters.values():
+            em.disconnect(callback)
     
     #def blocker(self):
         #return EventBlocker(self)
