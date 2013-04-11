@@ -66,9 +66,12 @@ class App(object):
         import pyvis.canvas
         
         # Check if already selected
-        if backend_name and self._backend is not None:
-            raise RuntimeError('Can only select a backend once.')
+        if self._backend is not None:
+            if backend_name and backend_name != self.backend_name.lower():
+                raise RuntimeError('Can only select a backend once.')
+            return
         
+        # Set default
         if backend_name is None:
             backend_name = pyvis.config['default_backend']
         
@@ -78,9 +81,15 @@ class App(object):
         self._backendModule = getattr(pyvis.canvas.backends, backend_name)
         
         # Store classes for app backend and canvas backend 
-        # todo: this only works for Qt now
-        self._CanvasBackend = self._backendModule.QtCanvasBackend
-        self._AppBackend = self._backendModule.QtAppBackend
+        # todo: make this more dynamic
+        if backend_name == 'qt':
+            self._CanvasBackend = self._backendModule.QtCanvasBackend
+            self._AppBackend = self._backendModule.QtAppBackend
+        elif backend_name == 'pyglet':
+            self._CanvasBackend = self._backendModule.PygletCanvasBackend
+            self._AppBackend = self._backendModule.PygletAppBackend
+        else:
+            raise RuntimeError('Oops, I dont know that backend.')
         self._backend = self._AppBackend()
 
 

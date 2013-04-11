@@ -10,6 +10,7 @@ import pyvis
 
 import pyglet.window
 import pyglet.app
+import pyglet.clock
 
 
 # From pygly
@@ -183,22 +184,19 @@ class PygletCanvasBackend(pyglet.window.Window, CanvasBackend):
 KEYMAP = {}
 
 
-import pyglet.clock
-
-class PyGletTimerBackend(TimerBackend, pyglet.clock.Clock):
+class PyGletTimerBackend(TimerBackend:
     def __init__(self, timer):
         TimerBackend.__init__(self, timer)
-        pyglet.clock.Clock.__init__(self)
     
     def _pyvis_start(self, interval):
         interval = self._pyvis_timer._interval
         if self._pyvis_timer.max_iterations == 1:
-            self.schedule_once(self._pyvis_timer._timeout, interval)
+            pyglet.clock.schedule_once(self._pyvis_timer._timeout, interval)
         else:
-            self.schedule_interval(self._pyvis_timer._timeout, interval)
+            pyglet.clock.schedule_interval(self._pyvis_timer._timeout, interval)
     
     def _pyvis_stop(self):
-        self.unschedule(self._pyvis_timer._timeout)
+        pyglet.clock.unschedule(self._pyvis_timer._timeout)
     
     def _pyvis_timeout(self):
         self._pyvis_timer._timeout()
