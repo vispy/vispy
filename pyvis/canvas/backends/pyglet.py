@@ -119,7 +119,7 @@ class PygletCanvasBackend(pyglet.window.Window, CanvasBackend):
             button=button,
             )
         # todo: capture mouse when pressed down
-        self._pyvis_canvas.events.mouse(ev2)
+        self._pyvis_canvas.events.mouse_press(ev2)
     
     def on_mouse_release(self, x, y, button, modifiers):
         if self._pyvis_canvas is None:
@@ -129,7 +129,7 @@ class PygletCanvasBackend(pyglet.window.Window, CanvasBackend):
             pos=(x, y),
             button=button,
             )
-        self._pyvis_canvas.events.mouse(ev2)
+        self._pyvis_canvas.events.mouse_release(ev2)
     
     def on_mouse_motion(self, x, y, dx, dy):
         if self._pyvis_canvas is None:
@@ -138,7 +138,7 @@ class PygletCanvasBackend(pyglet.window.Window, CanvasBackend):
             action='move', 
             pos=(x, y),
             )
-        self._pyvis_canvas.events.mouse(ev2)
+        self._pyvis_canvas.events.mouse_move(ev2)
     
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self._pyvis_canvas is None:
@@ -148,7 +148,7 @@ class PygletCanvasBackend(pyglet.window.Window, CanvasBackend):
             delta=scroll_y,
             pos=(x, y),
             )
-        self._pyvis_canvas.events.mouse(ev2)
+        self._pyvis_canvas.events.mouse_wheel(ev2)
     
     
     def on_key_press(self, key, modifiers):      
@@ -159,7 +159,7 @@ class PygletCanvasBackend(pyglet.window.Window, CanvasBackend):
             text = ''
         #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._pyvis_canvas.events.key(action='press', key=key, text=text)
+        self._pyvis_canvas.events.key_press(action='press', key=key, text=text)
     
     def on_key_release(self, key, modifiers):
         key = self._processKey(key)
@@ -169,7 +169,7 @@ class PygletCanvasBackend(pyglet.window.Window, CanvasBackend):
             text = ''
         #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._pyvis_canvas.events.key(action='release', key=key, text=text)
+        self._pyvis_canvas.events.key_release(action='release', key=key, text=text)
     
     def _processKey(self, key):
         # special cases for shift control and alt -> map to 17 18 19
@@ -184,7 +184,7 @@ class PygletCanvasBackend(pyglet.window.Window, CanvasBackend):
 KEYMAP = {}
 
 
-class PyGletTimerBackend(TimerBackend:
+class PyGletTimerBackend(TimerBackend):
     def __init__(self, timer):
         TimerBackend.__init__(self, timer)
     
