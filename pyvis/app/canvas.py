@@ -13,7 +13,7 @@ class Canvas(object):
     initialize, resize, paint, mouse, key, stylus, touch, close
     """
     
-    def __init__(self, *args, **kwds):
+    def __init__(self, *args, **kwargs):
         """Create a Canvas with the specified backend.
         
         *backend* may be a string indicating the type of backend to use
@@ -29,25 +29,17 @@ class Canvas(object):
                         'mouse_press', 'mouse_release', 'mouse_move', 
                         'mouse_wheel',
                         'key_press', 'key_release', 'stylus', 'touch', 'close'])
-        
-#         if backend is None:
-#             backend = pyvis.config['default_backend']
-#         
-#         if isinstance(backend, basestring):
-#             backend = CanvasBackend._pyvis_create(backend, self, **kwds)
-#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-#         self.backend = backend
-#         self.backend._pyvis_set_canvas(self)
 
-        # Ensure that there is a selected backend and a valid app object
-        pyvis.canvas.app.use()
+        # Get app instance and make sure that it has an associated backend 
+        app = kwargs.pop('app', pyvis.app.default_app)
+        app.use()
         
-        # todo: allow multiple Apps, each Canvas should have a reference
-        # to the App it uses.
-        self.app = pyvis.canvas.app
+        # Store app instance
+        # todo: should this be private, and do we need it at all?
+        self.app = app
         
         # Instantiate the backed with the right class
-        self.backend = pyvis.canvas.app._CanvasBackend(*args, **kwds)
+        self.backend = app.backend_module.CanvasBackend(*args, **kwargs)
         self.backend._pyvis_set_canvas(self)
         
     
@@ -139,9 +131,9 @@ class CanvasBackend(object):
 #             import pyvis.opengl.backends.backend as B
 #             return B.BackendCanvas(*args, **kwds)
 #         """
-#         mod_name = 'pyvis.canvas.backends.' + backend
+#         mod_name = 'pyvis.app.backends.' + backend
 #         __import__(mod_name)
-#         mod = getattr(pyvis.canvas.backends, backend)
+#         mod = getattr(pyvis.app.backends, backend)
 #         return getattr(mod, backend.capitalize()+"CanvasBackend")(*args, **kwds)
     
     def __init__(self):

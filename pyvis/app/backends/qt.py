@@ -1,6 +1,6 @@
 from pyvis.event import Event
-from pyvis.canvas import CanvasBackend, AppBackend
-from pyvis.timer import TimerBackend
+from pyvis import app
+
 
 import pyvis
 qt_lib = pyvis.config['qt_lib']
@@ -19,10 +19,10 @@ else:
 
 
 
-class QtAppBackend(AppBackend):
+class ApplicationBackend(app.ApplicationBackend):
     
     def __init__(self):
-        AppBackend.__init__(self)
+        app.ApplicationBackend.__init__(self)
     
     def _pyvis_get_backend_name(self):
         return 'Qt' #todo: pyside or PyQt?
@@ -56,14 +56,14 @@ class QtAppBackend(AppBackend):
 
 
 
-class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
+class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     """Qt backend for Canvas abstract class."""
     
     def __init__(self, parent=None):
         # before creating widget, make sure we have a QApplication
-        pyvis.canvas.app.native_app
+        pyvis.app.default_app.native
         
-        CanvasBackend.__init__(self)
+        app.CanvasBackend.__init__(self)
         QtOpenGL.QGLWidget.__init__(self, parent)
 
         
@@ -192,12 +192,12 @@ KEYMAP = {}
 #             }
 
 
-class QtTimerBackend(TimerBackend, QtCore.QTimer):
+class TimerBackend(app.TimerBackend, QtCore.QTimer):
     def __init__(self, timer):
         if QtGui.QApplication.instance() is None:
             global QAPP
             QAPP = QtGui.QApplication([])
-        TimerBackend.__init__(self, timer)
+        app.TimerBackend.__init__(self, timer)
         QtCore.QTimer.__init__(self)
         self.timeout.connect(self._pyvis_timeout)
         

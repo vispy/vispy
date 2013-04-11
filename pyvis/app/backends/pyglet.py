@@ -3,8 +3,7 @@ Pyvis backend for pyglet.
 """
 
 from pyvis.event import Event
-from pyvis.canvas import CanvasBackend, AppBackend
-from pyvis.timer import TimerBackend
+from pyvis import app
 
 import pyvis
 
@@ -40,10 +39,10 @@ def patch_idle_loop():
 patch_idle_loop()
 
 
-class PygletAppBackend(AppBackend):
+class ApplicationBackend(app.ApplicationBackend):
     
     def __init__(self):
-        AppBackend.__init__(self)
+        app.ApplicationBackend.__init__(self)
     
     def _pyvis_get_backend_name(self):
         return 'Pyglet'
@@ -62,14 +61,16 @@ class PygletAppBackend(AppBackend):
 
 
 
-class PygletCanvasBackend(pyglet.window.Window, CanvasBackend):
+class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     """ Pyglet backend for Canvas abstract class."""
     
     def __init__(self, parent=None):
         # before creating widget, make sure we have an app
-        pyvis.canvas.app.native_app
+        pyvis.app.default_app.native
+        # todo: it would be more correct to do this on the app instance 
+        # associated with the Canvas (but we dont have a reference to it yet)
         
-        CanvasBackend.__init__(self)
+        app.CanvasBackend.__init__(self)
         pyglet.window.Window.__init__(self, parent)
         
     
@@ -184,9 +185,9 @@ class PygletCanvasBackend(pyglet.window.Window, CanvasBackend):
 KEYMAP = {}
 
 
-class PyGletTimerBackend(TimerBackend):
+class TimerBackend(app.TimerBackend):
     def __init__(self, timer):
-        TimerBackend.__init__(self, timer)
+        app.TimerBackend.__init__(self, timer)
     
     def _pyvis_start(self, interval):
         interval = self._pyvis_timer._interval

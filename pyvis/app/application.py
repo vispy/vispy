@@ -10,13 +10,14 @@ import pyvis
 
 
 
-class App(object):
+class Application(object):
     """ Representation of the pyvis application. There is always exactly
     one pyvis app object, and it wraps a native GUI application
     instance.
     """
     
     def __init__(self):
+        self._backend_module = None
         self._backend = None
     
     def __repr__(self):
@@ -34,6 +35,12 @@ class App(object):
             return self._backend._pyvis_get_backend_name()
         else:
             return ''
+    
+    @property
+    def backend_module(self):
+        """ The module object that defines the backend.
+        """
+        return self._backend_module
     
     def process_events(self):
         """ Process all pending GUI events. If the mainloop is not
@@ -53,7 +60,7 @@ class App(object):
         return self._backend._pyvis_quit()
     
     @property
-    def native_app(self):
+    def native(self):
         """ The native GUI application instance.
         """
         return self._backend._pyvis_get_native_app()
@@ -63,7 +70,7 @@ class App(object):
         """ Select a backend by name. If the backend name is omitted,
         will chose a suitable backend automatically.
         """
-        import pyvis.canvas
+        import pyvis.app
         
         # Check if already selected
         if self._backend is not None:
@@ -76,24 +83,15 @@ class App(object):
             backend_name = pyvis.config['default_backend']
         
         # Get backend module
-        mod_name = 'pyvis.canvas.backends.' + backend_name
+        mod_name = 'pyvis.app.backends.' + backend_name
         __import__(mod_name)
-        self._backendModule = getattr(pyvis.canvas.backends, backend_name)
+        self._backend_module = getattr(pyvis.app.backends, backend_name)
         
         # Store classes for app backend and canvas backend 
-        # todo: make this more dynamic
-        if backend_name == 'qt':
-            self._CanvasBackend = self._backendModule.QtCanvasBackend
-            self._AppBackend = self._backendModule.QtAppBackend
-        elif backend_name == 'pyglet':
-            self._CanvasBackend = self._backendModule.PygletCanvasBackend
-            self._AppBackend = self._backendModule.PygletAppBackend
-        else:
-            raise RuntimeError('Oops, I dont know that backend.')
-        self._backend = self._AppBackend()
+        self._backend = self.backend_module.ApplicationBackend()
 
 
-class AppBackend(object):
+class ApplicationBackend(object):
     """ Backends should implement this.
     """
     

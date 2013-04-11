@@ -1,9 +1,17 @@
 import pyvis
 
+from .application import Application, ApplicationBackend
 from .canvas import Canvas, CanvasBackend
-from .app import App, AppBackend
+from .timer import Timer, TimerBackend
 
-# todo: bad idea to obscure module name like this?
-app = App()
+# Create default application instance
+default_app = Application()
 
-# todo: dont we want the app instance to be in pyvis.app?
+
+def use(backend_name):
+    return default_app.use(backend_name)
+
+
+def run():
+    return default_app.run()
+
