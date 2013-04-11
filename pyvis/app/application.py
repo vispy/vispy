@@ -68,7 +68,8 @@ class Application(object):
     
     def use(self, backend_name=None):
         """ Select a backend by name. If the backend name is omitted,
-        will chose a suitable backend automatically.
+        will chose a suitable backend automatically. It is an error to
+        try to select a particular backend if one is already selected.
         """
         import pyvis.app
         
