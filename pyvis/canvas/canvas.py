@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from pyvis.event import EventHandler
+from pyvis.event import EmitterGroup
 import pyvis
 
 
@@ -24,16 +24,11 @@ class Canvas(object):
         Alternatively, a pre-constructed backend instance may be supplied
         instead.
         """
-        self.events = EventHandler(source=self,
-                        initialize=(self, 'initialize_event'),
-                        resize=(self,'resize_event'), 
-                        paint=(self, 'paint_event'), 
-                        mouse=(self, 'mouse_event'), 
-                        key=(self, 'key_event'), 
-                        stylus=(self, 'stylus_event'), 
-                        touch=(self, 'touch_event'), 
-                        close=(self, 'close_event'),
-                        )
+        self.events = EmitterGroup(source=self, 
+                        event_names=['initialize', 'resize', 'paint',
+                        'mouse_press', 'mouse_release', 'mouse_move', 
+                        'mouse_wheel',
+                        'key_press', 'key_release', 'stylus', 'touch', 'close'])
         
 #         if backend is None:
 #             backend = pyvis.config['default_backend']

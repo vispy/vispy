@@ -107,7 +107,7 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
             pos=(ev.pos().x(), ev.pos().y()),
             button=int(ev.button()),
             )
-        self._pyvis_canvas.events.mouse(ev2)
+        self._pyvis_canvas.events.mouse_press(ev2)
             
     def mouseReleaseEvent(self, ev):
         if self._pyvis_canvas is None:
@@ -118,7 +118,7 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
             pos=(ev.pos().x(), ev.pos().y()),
             button=int(ev.button()),
             )
-        self._pyvis_canvas.events.mouse(ev2)
+        self._pyvis_canvas.events.mouse_release(ev2)
 
     def mouseMoveEvent(self, ev):
         if self._pyvis_canvas is None:
@@ -128,7 +128,7 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
             qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             )
-        self._pyvis_canvas.events.mouse(ev2)
+        self._pyvis_canvas.events.mouse_move(ev2)
         
     def wheelEvent(self, ev):
         if self._pyvis_canvas is None:
@@ -139,7 +139,7 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
             delta=ev.delta(),
             pos=(ev.pos().x(), ev.pos().y()),
             )
-        self._pyvis_canvas.events.mouse(ev2)
+        self._pyvis_canvas.events.mouse_wheel(ev2)
     
     
     def keyPressEvent(self, event):      
@@ -147,14 +147,14 @@ class QtCanvasBackend(QtOpenGL.QGLWidget, CanvasBackend):
         text = str(event.text())
         #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._pyvis_canvas.events.key(action='press', key=key, text=text)
+        self._pyvis_canvas.events.key_press(action='press', key=key, text=text)
     
     def keyReleaseEvent(self, event):
         if event.isAutoRepeat():
             return # Skip release auto repeat events
         key = self._processKey(event)
         text = str(event.text())
-        self._pyvis_canvas.events.key(action='release', key=key, text=text)
+        self._pyvis_canvas.events.key_release(action='release', key=key, text=text)
     
     def _processKey(self,event):
         """ evaluates the keycode of qt, and transform to visvis key.

@@ -15,8 +15,7 @@ __version__ = '0.0.dev'
 
 import pyvis.util
 
-#from pyvis import opengl Needs explicit import
-from pyvis.event import EventHandler
+from pyvis.event import EmitterGroup
 
 
 
@@ -25,7 +24,7 @@ from pyvis.event import EventHandler
 
 class Config(object):
     def __init__(self):
-        self.events = EventHandler(source=self,
+        self.events = EmitterGroup(source=self,
                                    changed=None,)
         self._config = {}
     
