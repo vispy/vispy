@@ -1,4 +1,6 @@
 numpy
 PyOpenGL
 PyDispatch
+pillow
+PyOpenGL-accelerate
 sphinx
