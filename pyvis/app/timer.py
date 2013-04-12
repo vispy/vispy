@@ -1,16 +1,22 @@
 import pyvis.event
 import pyvis
 
+
+
 class Timer(object):
     """Timer used to schedule events in the future or on a repeating schedule.
     """
-    def __init__(self, backend=None, interval=0.0, connect=None, iterations=-1, start=False):
+    def __init__(self, interval=0.0, connect=None, iterations=-1, start=False, app=None):
         self.timeout = pyvis.event.EventEmitter()
         self.timeout.defaults['source'] = self
         
-        if backend is None:
-            backend = pyvis.config['default_backend']
-        self._timer = TimerBackend._pyvis_create(backend, self)
+        # Get app instance and make sure that it has an associated backend 
+        app = pyvis.app.default_app if app is None else app
+        app.use()
+        
+        # Instantiate the backed with the right class
+        self._timer = app.backend_module.TimerBackend(self)
+        
         self._interval = interval
         self._running = False
         self.iter_count = 0
@@ -71,8 +77,8 @@ class Timer(object):
         return self._timer._pyvis_quit()
         
         
-    def _timeout(self):
-        ## called when the backend timer has triggered.
+    def _timeout(self, *args):
+        # called when the backend timer has triggered.
         if not self.running:
             return
         if self.max_iterations >= 0 and self.iter_count >= self.max_iterations:
@@ -80,22 +86,10 @@ class Timer(object):
             return
         self.timeout(iteration=self.iter_count)
         self.iter_count += 1
-        
+
+
+
 class TimerBackend(object):
-    @classmethod
-    def _pyvis_create(cls, backend, timer):
-        """Create a new TimerBackend instance from the named backend.
-        (options are 'qt', 'pyglet', 'gtk', ...)
-        
-        This is equivalent to::
-        
-            import pyvis.opengl.backends.<backend> as B
-            return B.<Backend>Timer(timer)
-        """
-        mod_name = 'pyvis.canvas.backends.' + backend
-        __import__(mod_name)
-        mod = getattr(pyvis.canvas.backends, backend)
-        return getattr(mod, backend.capitalize()+"TimerBackend")(timer)
         
     def __init__(self, timer):
         self._pyvis_timer = timer
