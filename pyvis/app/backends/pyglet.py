@@ -2,6 +2,9 @@
 Pyvis backend for pyglet.
 """
 
+# absolute import is important here, since this module is called pyglet :)
+from __future__ import print_function, division, absolute_import
+
 from pyvis.event import Event
 from pyvis import app
 
@@ -133,6 +136,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         self._pyvis_canvas.events.mouse_release(ev2)
     
     def on_mouse_motion(self, x, y, dx, dy):
+        # todo: Qt only sends motion if the mouse is pressed down. Which approach do we want?
         if self._pyvis_canvas is None:
             return
         ev2 = Event(
@@ -146,7 +150,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             return
         ev2 = Event( 
             action='wheel', 
-            delta=scroll_y,
+            delta=scroll_y*120, # Follow Qt stepsize
             pos=(x, y),
             )
         self._pyvis_canvas.events.mouse_wheel(ev2)
@@ -199,8 +203,8 @@ class TimerBackend(app.TimerBackend):
     def _pyvis_stop(self):
         pyglet.clock.unschedule(self._pyvis_timer._timeout)
     
-    def _pyvis_timeout(self):
-        self._pyvis_timer._timeout()
+#     def _pyvis_timeout(self):
+#         self._pyvis_timer._timeout()
     
 #     def _pyvis_run(self):
 #         return QtGui.QApplication.exec_()
