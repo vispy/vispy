@@ -1,14 +1,14 @@
 """
-Pyvis backend for pyglet.
+vispy backend for pyglet.
 """
 
 # absolute import is important here, since this module is called pyglet :)
 from __future__ import print_function, division, absolute_import
 
-from pyvis.event import Event
-from pyvis import app
+from vispy.event import Event
+from vispy import app
 
-import pyvis
+import vispy
 
 import pyglet.window
 import pyglet.app
@@ -47,19 +47,19 @@ class ApplicationBackend(app.ApplicationBackend):
     def __init__(self):
         app.ApplicationBackend.__init__(self)
     
-    def _pyvis_get_backend_name(self):
+    def _vispy_get_backend_name(self):
         return 'Pyglet'
     
-    def _pyvis_process_events(self):
+    def _vispy_process_events(self):
         return pyglet.app.platform_event_loop.step(0.0)
     
-    def _pyvis_run(self):
+    def _vispy_run(self):
         return pyglet.app.run()
     
-    def _pyvis_quit(self):
+    def _vispy_quit(self):
         return pyglet.app.exit()
     
-    def _pyvis_get_native_app(self):
+    def _vispy_get_native_app(self):
         return pyglet.app
 
 
@@ -69,7 +69,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     
     def __init__(self, parent=None):
         # before creating widget, make sure we have an app
-        pyvis.app.default_app.native
+        vispy.app.default_app.native
         # todo: it would be more correct to do this on the app instance 
         # associated with the Canvas (but we dont have a reference to it yet)
         
@@ -82,35 +82,35 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         self._draw_ok = False  # whether it is ok to draw yet
     
     @property
-    def _pyvis_geometry(self):
+    def _vispy_geometry(self):
         xy = self.get_location()
         wh = self.get_size()
         return xy + wh
     
-    def _pyvis_resize(self, w, h):
+    def _vispy_resize(self, w, h):
         self.set_size(w, h)
         
-    def _pyvis_show(self):
+    def _vispy_show(self):
         self.set_visible(True)
         
-    def _pyvis_update(self):
+    def _vispy_update(self):
         pyglet.clock.schedule_once(self.on_draw, 0.0)
     
     def swapBuffers(self):
-        # todo: should probably be _pyvis_swap_buffers
+        # todo: should probably be _vispy_swap_buffers
         self.flip()
     
     def on_show(self):
-        if self._pyvis_canvas is None:
+        if self._vispy_canvas is None:
             return
-        self._pyvis_canvas.events.initialize()
+        self._vispy_canvas.events.initialize()
         pyglet.clock.schedule_once(self.on_draw, 0.0)
     
     def on_resize(self, w, h):
-        if self._pyvis_canvas is None:
+        if self._vispy_canvas is None:
             return
         ev = Event(size=(w,h))
-        self._pyvis_canvas.events.resize(ev)
+        self._vispy_canvas.events.resize(ev)
         
         # might need to send a paint event as well
         if self._draw_ok:
@@ -118,13 +118,13 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
 
     def on_draw(self, dummy=None):
         self._draw_ok = True
-        if self._pyvis_canvas is None:
+        if self._vispy_canvas is None:
             return
         ev = Event(region=(0, 0, self.width, self.height))
-        self._pyvis_canvas.events.paint(ev)
+        self._vispy_canvas.events.paint(ev)
     
     def on_mouse_press(self, x, y, button, modifiers):
-        if self._pyvis_canvas is None:
+        if self._vispy_canvas is None:
             return
         ev2 = Event(
             action='press', 
@@ -132,12 +132,12 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             button=button,
             )
         self._buttons_pressed |= button
-        self._pyvis_canvas.events.mouse_press(ev2)
+        self._vispy_canvas.events.mouse_press(ev2)
         if ev2.accepted:
             self._buttons_accepted |= button
     
     def on_mouse_release(self, x, y, button, modifiers):
-        if self._pyvis_canvas is None:
+        if self._vispy_canvas is None:
             return
         ev2 = Event(
             action='release', 
@@ -146,11 +146,11 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             )
         self._buttons_pressed &= ~button
         if (button & self._buttons_accepted) > 0:
-            self._pyvis_canvas.events.mouse_release(ev2)
+            self._vispy_canvas.events.mouse_release(ev2)
             self._buttons_accepted &= ~button
     
     def on_mouse_motion(self, x, y, dx, dy):
-        if self._pyvis_canvas is None:
+        if self._vispy_canvas is None:
             return
         ev2 = Event(
             action='move', 
@@ -160,10 +160,10 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             )
         self._mouse_pos = (x, y)
         # todo: re-enable with flag
-        #self._pyvis_canvas.events.mouse_move(ev2)
+        #self._vispy_canvas.events.mouse_move(ev2)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        if self._pyvis_canvas is None:
+        if self._vispy_canvas is None:
             return
         ev2 = Event(
             action='move', 
@@ -173,18 +173,18 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             )
         self._mouse_pos = (x, y)
         if self._buttons_accepted > 0:
-            self._pyvis_canvas.events.mouse_move(ev2)
+            self._vispy_canvas.events.mouse_move(ev2)
         
     
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        if self._pyvis_canvas is None:
+        if self._vispy_canvas is None:
             return
         ev2 = Event( 
             action='wheel', 
             delta=scroll_y*120, # Follow Qt stepsize
             pos=(x, y),
             )
-        self._pyvis_canvas.events.mouse_wheel(ev2)
+        self._vispy_canvas.events.mouse_wheel(ev2)
     
     
     def on_key_press(self, key, modifiers):      
@@ -195,7 +195,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             text = ''
         #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._pyvis_canvas.events.key_press(action='press', key=key, text=text)
+        self._vispy_canvas.events.key_press(action='press', key=key, text=text)
     
     def on_key_release(self, key, modifiers):
         key = self._processKey(key)
@@ -205,7 +205,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             text = ''
         #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._pyvis_canvas.events.key_release(action='release', key=key, text=text)
+        self._vispy_canvas.events.key_release(action='release', key=key, text=text)
     
     def _processKey(self, key):
         # special cases for shift control and alt -> map to 17 18 19
@@ -216,7 +216,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     
     
 
-# todo: map pyglet keys to pyvis constants
+# todo: map pyglet keys to vispy constants
 KEYMAP = {}
 
 
@@ -224,21 +224,21 @@ class TimerBackend(app.TimerBackend):
     def __init__(self, timer):
         app.TimerBackend.__init__(self, timer)
     
-    def _pyvis_start(self, interval):
-        interval = self._pyvis_timer._interval
-        if self._pyvis_timer.max_iterations == 1:
-            pyglet.clock.schedule_once(self._pyvis_timer._timeout, interval)
+    def _vispy_start(self, interval):
+        interval = self._vispy_timer._interval
+        if self._vispy_timer.max_iterations == 1:
+            pyglet.clock.schedule_once(self._vispy_timer._timeout, interval)
         else:
-            pyglet.clock.schedule_interval(self._pyvis_timer._timeout, interval)
+            pyglet.clock.schedule_interval(self._vispy_timer._timeout, interval)
     
-    def _pyvis_stop(self):
-        pyglet.clock.unschedule(self._pyvis_timer._timeout)
+    def _vispy_stop(self):
+        pyglet.clock.unschedule(self._vispy_timer._timeout)
     
-#     def _pyvis_timeout(self):
-#         self._pyvis_timer._timeout()
+#     def _vispy_timeout(self):
+#         self._vispy_timer._timeout()
     
-#     def _pyvis_run(self):
+#     def _vispy_run(self):
 #         return QtGui.QApplication.exec_()
 # 
-#     def _pyvis_quit(self):
+#     def _vispy_quit(self):
 #         return QtGui.QApplication.quit()

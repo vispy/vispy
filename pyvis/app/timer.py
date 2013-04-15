@@ -1,5 +1,5 @@
-import pyvis.event
-import pyvis
+import vispy.event
+import vispy
 
 
 
@@ -7,11 +7,11 @@ class Timer(object):
     """Timer used to schedule events in the future or on a repeating schedule.
     """
     def __init__(self, interval=0.0, connect=None, iterations=-1, start=False, app=None):
-        self.timeout = pyvis.event.EventEmitter()
+        self.timeout = vispy.event.EventEmitter()
         self.timeout.defaults['source'] = self
         
         # Get app instance and make sure that it has an associated backend 
-        app = pyvis.app.default_app if app is None else app
+        app = vispy.app.default_app if app is None else app
         app.use()
         
         # Instantiate the backed with the right class
@@ -57,24 +57,24 @@ class Timer(object):
             self.interval = interval
         if iterations is not None:
             self.max_iterations = iterations
-        self._timer._pyvis_start(self.interval)
+        self._timer._vispy_start(self.interval)
         self._running = True
         
         
     def stop(self):
         """Stop the timer."""
-        self._timer._pyvis_stop()
+        self._timer._vispy_stop()
         self._running = False
         
     def run_event_loop(self):
         """Execute the event loop for this Timer's backend.
         """
-        return self._timer._pyvis_run()
+        return self._timer._vispy_run()
         
     def quit_event_loop(self):
         """Exit the event loop for this Timer's backend.
         """
-        return self._timer._pyvis_quit()
+        return self._timer._vispy_quit()
         
         
     def _timeout(self, *args):
@@ -92,18 +92,18 @@ class Timer(object):
 class TimerBackend(object):
         
     def __init__(self, timer):
-        self._pyvis_timer = timer
+        self._vispy_timer = timer
 
-    def _pyvis_start(self, interval):
+    def _vispy_start(self, interval):
         raise Exception("Method must be reimplemented in subclass.")
         
-    def _pyvis_stop(self):
+    def _vispy_stop(self):
         raise Exception("Method must be reimplemented in subclass.")
 
-    def _pyvis_run(self):
+    def _vispy_run(self):
         raise Exception("Method must be reimplemented in subclass.")
         
-    def _pyvis_quit(self):
+    def _vispy_quit(self):
         raise Exception("Method must be reimplemented in subclass.")
 
 

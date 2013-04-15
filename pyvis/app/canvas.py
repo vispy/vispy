@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from pyvis.event import EmitterGroup
-import pyvis
+from vispy.event import EmitterGroup
+import vispy
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -20,7 +20,7 @@ class Canvas(object):
         
         *backend* may be a string indicating the type of backend to use
         ('qt', 'gtk', 'pyglet', ...) or None, in which case 
-        pyvis.config['default_backend'] will be used. The backend constructor 
+        vispy.config['default_backend'] will be used. The backend constructor 
         will be passed **kwds.
         
         Alternatively, a pre-constructed backend instance may be supplied
@@ -33,7 +33,7 @@ class Canvas(object):
                         'key_press', 'key_release', 'stylus', 'touch', 'close'])
 
         # Get app instance and make sure that it has an associated backend 
-        app = kwargs.pop('app', pyvis.app.default_app)
+        app = kwargs.pop('app', vispy.app.default_app)
         app.use()
         
         # Store app instance
@@ -42,30 +42,30 @@ class Canvas(object):
         
         # Instantiate the backed with the right class
         self.backend = app.backend_module.CanvasBackend(*args, **kwargs)
-        self.backend._pyvis_set_canvas(self)
+        self.backend._vispy_set_canvas(self)
         
     
     @property
     def geometry(self):
         """Return the position and size of the Canvas in window coordinates
         (x, y, width, height)."""
-        return self.backend._pyvis_geometry
+        return self.backend._vispy_geometry
     
     @property
     def context(self):
         """Return the OpenGL context handle in use for this Canvas."""
-        return self.backend._pyvis_context
+        return self.backend._vispy_context
 
     def resize(self, w, h):
         """Resize the canvas to w x h pixels."""
-        return self.backend._pyvis_resize(w, h)
+        return self.backend._vispy_resize(w, h)
     
     def show(self):
-        return self.backend._pyvis_show()
+        return self.backend._vispy_show()
     
     def update(self):
         """Inform the backend that the Canvas needs to be repainted."""
-        return self.backend._pyvis_update()
+        return self.backend._vispy_update()
     
     def mouse_event(self, event):
         """Called when a mouse input event has occurred (the mouse has moved,
@@ -124,42 +124,42 @@ class CanvasBackend(object):
     """
     
 #     @classmethod
-#     def _pyvis_create(cls, backend, canvas, *args, **kwds):
+#     def _vispy_create(cls, backend, canvas, *args, **kwds):
 #         """Create a new CanvasBackend instance from the named backend.
 #         (options are 'qt', 'pyglet', 'gtk', ...)
 #         
 #         This is equivalent to::
 #         
-#             import pyvis.opengl.backends.backend as B
+#             import vispy.opengl.backends.backend as B
 #             return B.BackendCanvas(*args, **kwds)
 #         """
-#         mod_name = 'pyvis.app.backends.' + backend
+#         mod_name = 'vispy.app.backends.' + backend
 #         __import__(mod_name)
-#         mod = getattr(pyvis.app.backends, backend)
+#         mod = getattr(vispy.app.backends, backend)
 #         return getattr(mod, backend.capitalize()+"CanvasBackend")(*args, **kwds)
     
     def __init__(self):
         # Initially the backend starts out with no canvas.
         # Canvas takes care of setting this for us.
-        self._pyvis_canvas = None  
+        self._vispy_canvas = None  
 
-    def _pyvis_set_canvas(self, canvas):
-        self._pyvis_canvas = canvas
+    def _vispy_set_canvas(self, canvas):
+        self._vispy_canvas = canvas
         
     @property 
-    def _pyvis_geometry(self):
+    def _vispy_geometry(self):
         raise Exception("Method must be reimplemented in subclass.")
 
     @property
-    def _pyvis_context(self):
+    def _vispy_context(self):
         raise Exception("Method must be reimplemented in subclass.")
     
-    def _pyvis_resize(self, w, h):
+    def _vispy_resize(self, w, h):
         raise Exception("Method must be reimplemented in subclass.")
         
-    def _pyvis_show(self):
+    def _vispy_show(self):
         raise Exception("Method must be reimplemented in subclass.")
 
-    def _pyvis_update(self):        
+    def _vispy_update(self):        
         raise Exception("Method must be reimplemented in subclass.")
     

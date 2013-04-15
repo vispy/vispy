@@ -6,13 +6,13 @@ Implements the global singleton app object.
 
 from __future__ import print_function, division, absolute_import
 
-import pyvis
+import vispy
 
 
 
 class Application(object):
-    """ Representation of the pyvis application. There is always exactly
-    one pyvis app object, and it wraps a native GUI application
+    """ Representation of the vispy application. There is always exactly
+    one vispy app object, and it wraps a native GUI application
     instance.
     """
     
@@ -23,16 +23,16 @@ class Application(object):
     def __repr__(self):
         name = self.backend_name
         if not name:
-            return '<The pyvis app with no backend>'
+            return '<The vispy app with no backend>'
         else:
-            return '<The pyvis app, wrapping the %s GUI toolkit>' % name
+            return '<The vispy app, wrapping the %s GUI toolkit>' % name
     
     @property
     def backend_name(self):
         """ The name of the GUI backend that this app wraps.
         """
         if self._backend is not None:
-            return self._backend._pyvis_get_backend_name()
+            return self._backend._vispy_get_backend_name()
         else:
             return ''
     
@@ -47,23 +47,23 @@ class Application(object):
         running, this should be done regularly to keep the visualization
         interactive and to keep the event system going.
         """
-        return self._backend._pyvis_process_events()
+        return self._backend._vispy_process_events()
     
     def run(self):
         """ Enter the native GUI event loop. 
         """
-        return self._backend._pyvis_run()
+        return self._backend._vispy_run()
     
     def quit(self):
         """ Quit the native GUI event loop.
         """
-        return self._backend._pyvis_quit()
+        return self._backend._vispy_quit()
     
     @property
     def native(self):
         """ The native GUI application instance.
         """
-        return self._backend._pyvis_get_native_app()
+        return self._backend._vispy_get_native_app()
 
     
     def use(self, backend_name=None):
@@ -71,7 +71,7 @@ class Application(object):
         will chose a suitable backend automatically. It is an error to
         try to select a particular backend if one is already selected.
         """
-        import pyvis.app
+        import vispy.app
         
         # Check if already selected
         if self._backend is not None:
@@ -81,12 +81,12 @@ class Application(object):
         
         # Set default
         if backend_name is None:
-            backend_name = pyvis.config['default_backend']
+            backend_name = vispy.config['default_backend']
         
         # Get backend module
-        mod_name = 'pyvis.app.backends.' + backend_name
+        mod_name = 'vispy.app.backends.' + backend_name
         __import__(mod_name)
-        self._backend_module = getattr(pyvis.app.backends, backend_name)
+        self._backend_module = getattr(vispy.app.backends, backend_name)
         
         # Store classes for app backend and canvas backend 
         self._backend = self.backend_module.ApplicationBackend()
@@ -96,19 +96,19 @@ class ApplicationBackend(object):
     """ Backends should implement this.
     """
     
-    def _pyvis_get_backend_name(self):
+    def _vispy_get_backend_name(self):
         raise NotImplementedError()
     
-    def _pyvis_process_events(self):
+    def _vispy_process_events(self):
         raise NotImplementedError()
     
-    def _pyvis_run(self):
+    def _vispy_run(self):
         raise NotImplementedError()
     
-    def _pyvis_quit(self):
+    def _vispy_quit(self):
         raise NotImplementedError()
     
-    def _pyvis_get_native_app(self):
+    def _vispy_get_native_app(self):
         raise NotImplementedError()
     
     

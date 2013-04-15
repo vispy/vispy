@@ -1,4 +1,4 @@
-import pyvis
+import vispy
 
 from .application import Application, ApplicationBackend
 from .canvas import Canvas, CanvasBackend

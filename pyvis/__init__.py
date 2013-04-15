@@ -2,9 +2,9 @@
 from __future__ import print_function, division, absolute_import
 
 """
-Pyvis - https://github.com/pyvis
+Vispy - http://vispy.org
 
-The pyvis consists of multiple subpackages that need to be imported
+The vispy consists of multiple subpackages that need to be imported
 separately before use. These are:
 
   * ... todo
@@ -13,9 +13,9 @@ separately before use. These are:
 
 __version__ = '0.0.dev'
 
-import pyvis.util
+import vispy.util
 
-from pyvis.event import EmitterGroup
+from vispy.event import EmitterGroup
 
 
 
