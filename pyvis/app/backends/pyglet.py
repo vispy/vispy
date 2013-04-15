@@ -76,6 +76,10 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         app.CanvasBackend.__init__(self)
         pyglet.window.Window.__init__(self, parent)
         
+        self._buttons_pressed = 0
+        self._buttons_accepted = 0
+        self._mouse_pos = None
+        self._draw_ok = False  # whether it is ok to draw yet
     
     @property
     def _pyvis_geometry(self):
@@ -107,8 +111,13 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             return
         ev = Event(size=(w,h))
         self._pyvis_canvas.events.resize(ev)
+        
+        # might need to send a paint event as well
+        if self._draw_ok:
+            self.on_draw()
 
     def on_draw(self, dummy=None):
+        self._draw_ok = True
         if self._pyvis_canvas is None:
             return
         ev = Event(region=(0, 0, self.width, self.height))
@@ -119,31 +128,53 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             return
         ev2 = Event(
             action='press', 
-            pos=(x, y),
+            pos=(x, self.get_size()[1] - y),
             button=button,
             )
-        # todo: capture mouse when pressed down
+        self._buttons_pressed |= button
         self._pyvis_canvas.events.mouse_press(ev2)
+        if ev2.accepted:
+            self._buttons_accepted |= button
     
     def on_mouse_release(self, x, y, button, modifiers):
         if self._pyvis_canvas is None:
             return
         ev2 = Event(
             action='release', 
-            pos=(x, y),
+            pos=(x, self.get_size()[1] - y),
             button=button,
             )
-        self._pyvis_canvas.events.mouse_release(ev2)
+        self._buttons_pressed &= ~button
+        if (button & self._buttons_accepted) > 0:
+            self._pyvis_canvas.events.mouse_release(ev2)
+            self._buttons_accepted &= ~button
     
     def on_mouse_motion(self, x, y, dx, dy):
-        # todo: Qt only sends motion if the mouse is pressed down. Which approach do we want?
         if self._pyvis_canvas is None:
             return
         ev2 = Event(
             action='move', 
-            pos=(x, y),
+            pos=(x, self.get_size()[1] - y),
+            buttons=self._buttons_pressed,
+            modifiers=None
             )
-        self._pyvis_canvas.events.mouse_move(ev2)
+        self._mouse_pos = (x, y)
+        # todo: re-enable with flag
+        #self._pyvis_canvas.events.mouse_move(ev2)
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if self._pyvis_canvas is None:
+            return
+        ev2 = Event(
+            action='move', 
+            pos=(x, self.get_size()[1] - y),
+            buttons=buttons,
+            modifiers=modifiers
+            )
+        self._mouse_pos = (x, y)
+        if self._buttons_accepted > 0:
+            self._pyvis_canvas.events.mouse_move(ev2)
+        
     
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self._pyvis_canvas is None:
