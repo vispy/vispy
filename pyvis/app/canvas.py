@@ -4,6 +4,8 @@ from __future__ import print_function, division, absolute_import
 from pyvis.event import EmitterGroup
 import pyvis
 
+# todo: add functions for asking about current mouse/keyboard state
+# todo: add hover enter/exit events
 
 class Canvas(object):
     """Base class for a GUI element that can be rendered to by an OpenGL 
