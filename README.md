@@ -4,4 +4,4 @@ Vispy is a collaborative project that has the goal to allow more sharing of code
 
 View the wiki for more information about this project.
 
-Our mailing list is at: https://groups.google.com/forum/?fromgroups#!forum/pyvis3d
+Our mailing list is at: https://groups.google.com/d/forum/vispy
