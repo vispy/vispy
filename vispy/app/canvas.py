@@ -72,9 +72,25 @@ class Canvas(object):
     
     @property
     def geometry(self):
-        """Return the location and size of the Canvas in window coordinates
-        (x, y, width, height)."""
+        """ Get or set the location and size of the Canvas in window
+        coordinates (x, y, width, height). When setting, width and
+        height may be omitted. Similarly, specifying None for x and y
+        will prevent the widget from being moved.
+        """
         return self.backend._vispy_get_geometry()
+    
+    @geometry.setter
+    def geometry(self, args):
+        if len(args) == 2:
+            self.backend._vispy_set_location(*args)
+        elif len(args) == 4:
+            cur = self.backend._vispy_get_geometry()
+            if args[:2] != cur[:2] and not None in args[:2]:
+                self.backend._vispy_set_location(args[0], args[1])
+            if args[2:] != cur[2:] and not None in args[2:]:
+                self.backend._vispy_set_size(args[2], args[3])
+        else:
+            raise ValueError('Setting geometry requires 2 or 4 values.')
     
 #     @property
 #     def context(self):
@@ -96,14 +112,14 @@ class Canvas(object):
         self.backend._vispy_set_title(title)
     
     
-    def resize(self, w, h):
-        """Resize the canvas to w x h pixels."""
-        return self.backend._vispy_set_size(w, h)
-    
-    def move(self, x, y):
-        """ Move the widget or window to the given location.
-        """ 
-        self.backend._vispy_set_location(x,y)
+#     def resize(self, w, h):
+#         """Resize the canvas to w x h pixels."""
+#         return self.backend._vispy_set_size(w, h)
+#     
+#     def move(self, x, y):
+#         """ Move the widget or window to the given location.
+#         """ 
+#         self.backend._vispy_set_location(x,y)
     
     def show(self, visible=True):
         """ Show (or hide) the canvas.

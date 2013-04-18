@@ -92,6 +92,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     def _vispy_set_size(self, w, h):
         # Set size of the widget or window
         self.set_size(w, h)
+        # todo: when done before shown, get some strange offset in the graphics
     
     def _vispy_set_location(self, x, y):
         # Set location of the widget or window. May have no effect for widgets
