@@ -55,31 +55,55 @@ class ApplicationBackend(app.ApplicationBackend):
 
 
 
-
 class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     """Qt backend for Canvas abstract class."""
     
-    def __init__(self, parent=None):
-        # before creating widget, make sure we have a QApplication
-        vispy.app.default_app.native
-        
-        app.CanvasBackend.__init__(self)
-        QtOpenGL.QGLWidget.__init__(self, parent)
-
-        
-    @property
-    def _vispy_geometry(self):
+    def __init__(self, vispy_canvas, *args, **kwargs):
+        QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
+        app.CanvasBackend.__init__(self, vispy_canvas)
+    
+    
+    def _vispy_set_current(self):  
+        # Make this the current context
+        self.makeCurrent()
+    
+    def _vispy_swap_buffers(self):  
+        # Swap front and back buffer
+        self.swapBuffers()
+    
+    def _vispy_set_title(self, title):  
+        # Set the window title. Has no effect for widgets
+        self.setWindowTitle(title)
+    
+    def _vispy_set_size(self, w, h):
+        # Set size of the widget or window
+        self.resize(w, h)
+    
+    def _vispy_set_location(self, x, y):
+        # Set location of the widget or window. May have no effect for widgets
+        self.move(x, y)
+    
+    def _vispy_set_visible(self, visible):
+        # Show or hide the window or widget
+        if visible:
+            self.show()
+        else:
+            self.hide()
+    
+    def _vispy_update(self):
+        # Invoke a redraw
+        self.update()
+    
+    def _vispy_close(self):
+        # Force the window or widget to shut down
+        self.close()
+    
+    def _vispy_get_geometry(self):
+        # Should return widget (x, y, w, h)
         g = self.geometry()
         return (g.x(), g.y(), g.width(), g.height())
     
-    def _vispy_resize(self, w, h):
-        self.resize(w, h)
-        
-    def _vispy_show(self):
-        self.show()
-        
-    def _vispy_update(self):
-        self.update()
+    
     
     def initializeGL(self):
         if self._vispy_canvas is None:

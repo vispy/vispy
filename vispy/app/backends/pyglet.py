@@ -67,38 +67,55 @@ class ApplicationBackend(app.ApplicationBackend):
 class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     """ Pyglet backend for Canvas abstract class."""
     
-    def __init__(self, parent=None):
-        # before creating widget, make sure we have an app
-        vispy.app.default_app.native
-        # todo: it would be more correct to do this on the app instance 
-        # associated with the Canvas (but we dont have a reference to it yet)
-        
-        app.CanvasBackend.__init__(self)
-        pyglet.window.Window.__init__(self, parent)
+    def __init__(self, vispy_canvas, *args, **kwargs):
+        pyglet.window.Window.__init__(self, *args, **kwargs)
+        app.CanvasBackend.__init__(self, vispy_canvas)
         
         self._buttons_pressed = 0
         self._buttons_accepted = 0
         self._mouse_pos = None
         self._draw_ok = False  # whether it is ok to draw yet
     
-    @property
-    def _vispy_geometry(self):
+    
+    def _vispy_set_current(self):  
+        # Make this the current context
+        self.switch_to()
+    
+    def _vispy_swap_buffers(self):  
+        # Swap front and back buffer
+        self.flip()
+    
+    def _vispy_set_title(self, title):  
+        # Set the window title. Has no effect for widgets
+        self.set_caption(title)
+    
+    def _vispy_set_size(self, w, h):
+        # Set size of the widget or window
+        self.set_size(w, h)
+    
+    def _vispy_set_location(self, x, y):
+        # Set location of the widget or window. May have no effect for widgets
+        self.set_location(x, y)
+    
+    def _vispy_set_visible(self, visible):
+        # Show or hide the window or widget
+        self.set_visible(visible)
+    
+    def _vispy_update(self):
+        # Invoke a redraw
+        pyglet.clock.schedule_once(self.on_draw, 0.0)
+    
+    def _vispy_close(self):
+        # Force the window or widget to shut down
+        self.close()
+    
+    def _vispy_get_geometry(self):
+        # Should return widget (x, y, w, h)
         xy = self.get_location()
         wh = self.get_size()
         return xy + wh
     
-    def _vispy_resize(self, w, h):
-        self.set_size(w, h)
-        
-    def _vispy_show(self):
-        self.set_visible(True)
-        
-    def _vispy_update(self):
-        pyglet.clock.schedule_once(self.on_draw, 0.0)
     
-    def swapBuffers(self):
-        # todo: should probably be _vispy_swap_buffers
-        self.flip()
     
     def on_show(self):
         if self._vispy_canvas is None:

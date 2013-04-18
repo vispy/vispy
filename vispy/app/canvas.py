@@ -8,64 +8,117 @@ import vispy
 # todo: add hover enter/exit events
 
 class Canvas(object):
-    """Base class for a GUI element that can be rendered to by an OpenGL 
-    context.
+    """ Canvas(*args, **kwargs)
+    
+    Representation of a GUI element that can be rendered to by an OpenGL
+    context. The args and kwargs are used to instantiate the native widget.
+    
+    Further, there are two special keyword arguments:
+      * app: an vispy Application instance (vispy.app is used by default)
+      * create_widget: a bool that indicates whether to create the
+        widget immediately (default True)
     
     Receives the following events:
     initialize, resize, paint, mouse, key, stylus, touch, close
     """
     
     def __init__(self, *args, **kwargs):
-        """Create a Canvas with the specified backend.
-        
-        *backend* may be a string indicating the type of backend to use
-        ('qt', 'gtk', 'pyglet', ...) or None, in which case 
-        vispy.config['default_backend'] will be used. The backend constructor 
-        will be passed **kwds.
-        
-        Alternatively, a pre-constructed backend instance may be supplied
-        instead.
-        """
         self.events = EmitterGroup(source=self, 
                         event_names=['initialize', 'resize', 'paint',
                         'mouse_press', 'mouse_release', 'mouse_move', 
                         'mouse_wheel',
                         'key_press', 'key_release', 'stylus', 'touch', 'close'])
-
-        # Get app instance and make sure that it has an associated backend 
-        app = kwargs.pop('app', vispy.app.default_app)
-        app.use()
         
-        # Store app instance
-        # todo: should this be private, and do we need it at all?
-        self.app = app
+        # Store input and initialize backend attribute
+        self._args = args
+        self._kwargs = kwargs
+        self.backend = None
         
-        # Instantiate the backed with the right class
-        self.backend = app.backend_module.CanvasBackend(*args, **kwargs)
-        self.backend._vispy_set_canvas(self)
+        # todo: make backend available via a property?
+        # todo: rename backend to 'native' or 'widget' or keep 'backend'?
         
+        # Initialise some values
+        self._title = ''
+        
+        # Get app instance 
+        self._app = kwargs.pop('app', vispy.app.default_app)
+        
+        # Create widget now
+        if kwargs.pop('create_widget', True):
+            self.create_widget()
+    
+    
+    def create_widget(self):
+        # todo: perhaps rename this to 'create_native'?
+        """ Create the native widget if not already done so. If the widget
+        is already created, this function does nothing.
+        """
+        if self.backend is None:
+            # Make sure that the app is active
+            self._app.use()
+            # Instantiate the backed with the right class
+            self.backend = self._app.backend_module.CanvasBackend(self, *self._args, **self._kwargs)
+            # Clean up
+            del self._args 
+            del self._kwargs
+    
+    
+    @property
+    def app(self):
+        """ The vispy Application instance on which this Canvas is based.
+        """
+        return self._app
+    
     
     @property
     def geometry(self):
-        """Return the position and size of the Canvas in window coordinates
+        """Return the location and size of the Canvas in window coordinates
         (x, y, width, height)."""
-        return self.backend._vispy_geometry
+        return self.backend._vispy_get_geometry()
+    
+#     @property
+#     def context(self):
+#         """Return the OpenGL context handle in use for this Canvas."""
+#         return self.backend._vispy_context
+    
+    # todo: do we need swap_buffers or make_current?
     
     @property
-    def context(self):
-        """Return the OpenGL context handle in use for this Canvas."""
-        return self.backend._vispy_context
-
+    def title(self):
+        """ The title of the canvas. If the canvas represents a window, the
+        title is shown in its title bar.
+        """
+        return self._title
+    
+    @title.setter
+    def title(self, title):
+        self._title = title
+        self.backend._vispy_set_title(title)
+    
+    
     def resize(self, w, h):
         """Resize the canvas to w x h pixels."""
-        return self.backend._vispy_resize(w, h)
+        return self.backend._vispy_set_size(w, h)
     
-    def show(self):
-        return self.backend._vispy_show()
+    def move(self, x, y):
+        """ Move the widget or window to the given location.
+        """ 
+        self.backend._vispy_set_location(x,y)
+    
+    def show(self, visible=True):
+        """ Show (or hide) the canvas.
+        """
+        return self.backend._vispy_set_visible(visible)
     
     def update(self):
         """Inform the backend that the Canvas needs to be repainted."""
         return self.backend._vispy_update()
+    
+    def close(self):
+        """ Close the canvas.
+        """
+        self.backend._vispy_close()
+    
     
     def mouse_event(self, event):
         """Called when a mouse input event has occurred (the mouse has moved,
@@ -118,48 +171,49 @@ class Canvas(object):
         """
     
 
+
 class CanvasBackend(object):
     """Abstract class that provides an interface between backends and Canvas.
     Each backend must implement a subclass of CanvasBackend.
     """
     
-#     @classmethod
-#     def _vispy_create(cls, backend, canvas, *args, **kwds):
-#         """Create a new CanvasBackend instance from the named backend.
-#         (options are 'qt', 'pyglet', 'gtk', ...)
-#         
-#         This is equivalent to::
-#         
-#             import vispy.opengl.backends.backend as B
-#             return B.BackendCanvas(*args, **kwds)
-#         """
-#         mod_name = 'vispy.app.backends.' + backend
-#         __import__(mod_name)
-#         mod = getattr(vispy.app.backends, backend)
-#         return getattr(mod, backend.capitalize()+"CanvasBackend")(*args, **kwds)
-    
-    def __init__(self):
+    def __init__(self, vispy_canvas, *args, **kwargs):
         # Initially the backend starts out with no canvas.
         # Canvas takes care of setting this for us.
-        self._vispy_canvas = None  
-
-    def _vispy_set_canvas(self, canvas):
-        self._vispy_canvas = canvas
-        
-    @property 
-    def _vispy_geometry(self):
-        raise Exception("Method must be reimplemented in subclass.")
-
-    @property
-    def _vispy_context(self):
-        raise Exception("Method must be reimplemented in subclass.")
+        self._vispy_canvas = vispy_canvas  
     
-    def _vispy_resize(self, w, h):
-        raise Exception("Method must be reimplemented in subclass.")
-        
-    def _vispy_show(self):
-        raise Exception("Method must be reimplemented in subclass.")
-
-    def _vispy_update(self):        
-        raise Exception("Method must be reimplemented in subclass.")
+    def _vispy_set_current(self):  
+        # Make this the current context
+        raise NotImplementedError()
     
+    def _vispy_swap_buffers(self):  
+        # Swap front and back buffer
+        raise NotImplementedError()
+    
+    def _vispy_set_title(self, title):  
+        # Set the window title. Has no effect for widgets
+        raise NotImplementedError()
+    
+    def _vispy_set_size(self, w, h):
+        # Set size of the widget or window
+        raise NotImplementedError()
+    
+    def _vispy_set_location(self, x, y):
+        # Set location of the widget or window. May have no effect for widgets
+        raise NotImplementedError()
+    
+    def _vispy_set_visible(self, visible):
+        # Show or hide the window or widget
+        raise NotImplementedError()
+    
+    def _vispy_update(self):
+        # Invoke a redraw
+        raise NotImplementedError()
+    
+    def _vispy_close(self):
+        # Force the window or widget to shut down
+        raise NotImplementedError()
+    
+    def _vispy_get_geometry(self):
+        # Should return widget (x, y, w, h)
+        raise NotImplementedError()
