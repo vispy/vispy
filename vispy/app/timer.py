@@ -15,7 +15,7 @@ class Timer(object):
         app.use()
         
         # Instantiate the backed with the right class
-        self._timer = app.backend_module.TimerBackend(self)
+        self._backend = app.backend_module.TimerBackend(self)
         
         self._interval = interval
         self._running = False
@@ -57,26 +57,31 @@ class Timer(object):
             self.interval = interval
         if iterations is not None:
             self.max_iterations = iterations
-        self._timer._vispy_start(self.interval)
+        self._backend._vispy_start(self.interval)
         self._running = True
         
         
     def stop(self):
         """Stop the timer."""
-        self._timer._vispy_stop()
+        self._backend._vispy_stop()
         self._running = False
         
     def run_event_loop(self):
         """Execute the event loop for this Timer's backend.
         """
-        return self._timer._vispy_run()
+        return self._backend._vispy_run()
         
     def quit_event_loop(self):
         """Exit the event loop for this Timer's backend.
         """
-        return self._timer._vispy_quit()
-        
-        
+        return self._backend._vispy_quit()
+    
+    @property
+    def native(self):
+        """ The native timer on which this Timer is based.
+        """
+        return self._backend._vispy_get_native_timer()
+    
     def _timeout(self, *args):
         # called when the backend timer has triggered.
         if not self.running:
@@ -86,7 +91,8 @@ class Timer(object):
             return
         self.timeout(iteration=self.iter_count)
         self.iter_count += 1
-
+    
+    
 
 
 class TimerBackend(object):

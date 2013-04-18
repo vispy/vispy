@@ -255,5 +255,5 @@ class TimerBackend(app.TimerBackend):
     def _vispy_stop(self):
         pass
     
-     def _vispy_get_native_timer(self):
+    def _vispy_get_native_timer(self):
         return glut # or self?

@@ -32,10 +32,7 @@ class Canvas(object):
         # Store input and initialize backend attribute
         self._args = args
         self._kwargs = kwargs
-        self.backend = None
-        
-        # todo: make backend available via a property?
-        # todo: rename backend to 'native' or 'widget' or keep 'backend'?
+        self._backend = None
         
         # Initialise some values
         self._title = ''
@@ -53,12 +50,12 @@ class Canvas(object):
         """ Create the native widget if not already done so. If the widget
         is already created, this function does nothing.
         """
-        if self.backend is None:
+        if self._backend is None:
             # Make sure that the app is active
             self._app.use()
             self._app.native
             # Instantiate the backed with the right class
-            self.backend = self._app.backend_module.CanvasBackend(self, *self._args, **self._kwargs)
+            self._backend = self._app.backend_module.CanvasBackend(self, *self._args, **self._kwargs)
             # Clean up
             del self._args 
             del self._kwargs
@@ -72,31 +69,38 @@ class Canvas(object):
     
     
     @property
+    def native(self):
+        """ The native widget object on which this Canvas is based.
+        """
+        return self._backend._vispy_get_native_canvas()
+    
+    
+    @property
     def geometry(self):
         """ Get or set the location and size of the Canvas in window
         coordinates (x, y, width, height). When setting, width and
         height may be omitted. Similarly, specifying None for x and y
         will prevent the widget from being moved.
         """
-        return self.backend._vispy_get_geometry()
+        return self._backend._vispy_get_geometry()
     
     @geometry.setter
     def geometry(self, args):
         if len(args) == 2:
-            self.backend._vispy_set_location(*args)
+            self._backend._vispy_set_location(*args)
         elif len(args) == 4:
-            cur = self.backend._vispy_get_geometry()
+            cur = self._backend._vispy_get_geometry()
             if args[:2] != cur[:2] and not None in args[:2]:
-                self.backend._vispy_set_location(args[0], args[1])
+                self._backend._vispy_set_location(args[0], args[1])
             if args[2:] != cur[2:] and not None in args[2:]:
-                self.backend._vispy_set_size(args[2], args[3])
+                self._backend._vispy_set_size(args[2], args[3])
         else:
             raise ValueError('Setting geometry requires 2 or 4 values.')
     
 #     @property
 #     def context(self):
 #         """Return the OpenGL context handle in use for this Canvas."""
-#         return self.backend._vispy_context
+#         return self._backend._vispy_context
     
     # todo: do we need swap_buffers or make_current?
     
@@ -110,31 +114,31 @@ class Canvas(object):
     @title.setter
     def title(self, title):
         self._title = title
-        self.backend._vispy_set_title(title)
+        self._backend._vispy_set_title(title)
     
     
 #     def resize(self, w, h):
 #         """Resize the canvas to w x h pixels."""
-#         return self.backend._vispy_set_size(w, h)
+#         return self._backend._vispy_set_size(w, h)
 #     
 #     def move(self, x, y):
 #         """ Move the widget or window to the given location.
 #         """ 
-#         self.backend._vispy_set_location(x,y)
+#         self._backend._vispy_set_location(x,y)
     
     def show(self, visible=True):
         """ Show (or hide) the canvas.
         """
-        return self.backend._vispy_set_visible(visible)
+        return self._backend._vispy_set_visible(visible)
     
     def update(self):
         """Inform the backend that the Canvas needs to be repainted."""
-        return self.backend._vispy_update()
+        return self._backend._vispy_update()
     
     def close(self):
         """ Close the canvas.
         """
-        self.backend._vispy_close()
+        self._backend._vispy_close()
     
     
     def mouse_event(self, event):
