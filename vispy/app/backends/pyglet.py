@@ -239,8 +239,6 @@ KEYMAP = {}
 
 
 class TimerBackend(app.TimerBackend):
-    def __init__(self, timer):
-        app.TimerBackend.__init__(self, timer)
     
     def _vispy_start(self, interval):
         interval = self._vispy_timer._interval
@@ -252,11 +250,5 @@ class TimerBackend(app.TimerBackend):
     def _vispy_stop(self):
         pyglet.clock.unschedule(self._vispy_timer._timeout)
     
-#     def _vispy_timeout(self):
-#         self._vispy_timer._timeout()
-    
-#     def _vispy_run(self):
-#         return QtGui.QApplication.exec_()
-# 
-#     def _vispy_quit(self):
-#         return QtGui.QApplication.quit()
+     def _vispy_get_native_timer(self):
+        return pyglet.clock

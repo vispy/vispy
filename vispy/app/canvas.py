@@ -193,7 +193,6 @@ class CanvasBackend(object):
     """ CanvasBackend(vispy_canvas, *args, **kwargs)
     
     Abstract class that provides an interface between backends and Canvas.
-    
     Each backend must implement a subclass of CanvasBackend, and
     implement all its _vispy_xxx methods. Also, also a backend must
     make sure to generate the following events: 'initialize', 'resize',
@@ -238,6 +237,12 @@ class CanvasBackend(object):
         # Force the window or widget to shut down
         raise NotImplementedError()
     
+    
     def _vispy_get_geometry(self):
         # Should return widget (x, y, w, h)
         raise NotImplementedError()
+    
+    def _vispy_get_native_canvas(self):
+        # Should return the native widget object
+        # Most backends would not need to implement this
+        return self

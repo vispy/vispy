@@ -93,7 +93,11 @@ class Application(object):
 
 
 class ApplicationBackend(object):
-    """ Backends should implement this.
+    """ ApplicationBackend()
+    
+    Abstract class that provides an interface between backends and Application.
+    Each backend must implement a subclass of ApplicationBackend, and
+    implement all its _vispy_xxx methods.
     """
     
     def _vispy_get_backend_name(self):
@@ -109,6 +113,6 @@ class ApplicationBackend(object):
         raise NotImplementedError()
     
     def _vispy_get_native_app(self):
-        raise NotImplementedError()
-    
-    
+        # Should return the native application object
+        return self
+

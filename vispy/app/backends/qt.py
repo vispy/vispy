@@ -217,11 +217,11 @@ KEYMAP = {}
 
 
 class TimerBackend(app.TimerBackend, QtCore.QTimer):
-    def __init__(self, timer):
+    def __init__(self, vispy_timer):
         if QtGui.QApplication.instance() is None:
             global QAPP
             QAPP = QtGui.QApplication([])
-        app.TimerBackend.__init__(self, timer)
+        app.TimerBackend.__init__(self, vispy_timer)
         QtCore.QTimer.__init__(self)
         self.timeout.connect(self._vispy_timeout)
         
@@ -234,10 +234,5 @@ class TimerBackend(app.TimerBackend, QtCore.QTimer):
     def _vispy_timeout(self):
         self._vispy_timer._timeout()
     
-    def _vispy_run(self):
-        return QtGui.QApplication.exec_()
-
-    def _vispy_quit(self):
-        return QtGui.QApplication.quit()
 
 

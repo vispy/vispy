@@ -90,21 +90,22 @@ class Timer(object):
 
 
 class TimerBackend(object):
-        
-    def __init__(self, timer):
-        self._vispy_timer = timer
+    """ TimerBackend(vispy_timer)
+    
+    Abstract class that provides an interface between backends and Timer.
+    Each backend must implement a subclass of TimerBackend, and
+    implement all its _vispy_xxx methods.
+    """
+    def __init__(self, vispy_timer):
+        self._vispy_timer = vispy_timer
 
     def _vispy_start(self, interval):
         raise Exception("Method must be reimplemented in subclass.")
-        
+    
     def _vispy_stop(self):
         raise Exception("Method must be reimplemented in subclass.")
-
-    def _vispy_run(self):
-        raise Exception("Method must be reimplemented in subclass.")
-        
-    def _vispy_quit(self):
-        raise Exception("Method must be reimplemented in subclass.")
-
-
-        
+    
+    def _vispy_get_native_timer(self):
+        # Should return the native timer object
+        # Most backends would not need to implement this
+        return self

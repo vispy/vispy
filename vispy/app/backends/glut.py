@@ -224,8 +224,8 @@ class TimerBackend(app.TimerBackend):
     _counter = 0
     _timers = {}
     
-    def __init__(self, timer):
-        app.TimerBackend.__init__(self, timer)
+    def __init__(self, vispy_timer):
+        app.TimerBackend.__init__(self, vispy_timer)
         # Give this timer a unique id
         TimerBackend._counter += 1
         self._id = TimerBackend._counter
@@ -255,11 +255,5 @@ class TimerBackend(app.TimerBackend):
     def _vispy_stop(self):
         pass
     
-#     def _vispy_timeout(self):
-#         self._vispy_timer._timeout()
-    
-#     def _vispy_run(self):
-#         return QtGui.QApplication.exec_()
-# 
-#     def _vispy_quit(self):
-#         return QtGui.QApplication.quit()
+     def _vispy_get_native_timer(self):
+        return glut # or self?
