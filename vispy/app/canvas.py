@@ -190,8 +190,15 @@ class Canvas(object):
 
 
 class CanvasBackend(object):
-    """Abstract class that provides an interface between backends and Canvas.
-    Each backend must implement a subclass of CanvasBackend.
+    """ CanvasBackend(vispy_canvas, *args, **kwargs)
+    
+    Abstract class that provides an interface between backends and Canvas.
+    
+    Each backend must implement a subclass of CanvasBackend, and
+    implement all its _vispy_xxx methods. Also, also a backend must
+    make sure to generate the following events: 'initialize', 'resize',
+    'paint', 'mouse_press', 'mouse_release', 'mouse_move',
+    'mouse_wheel', 'key_press', 'key_release', 'close'.
     """
     
     def __init__(self, vispy_canvas, *args, **kwargs):
