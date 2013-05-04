@@ -7,10 +7,10 @@ import vispy
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
 
+# todo: can we leave away the xxx_event methods? They "pollute" the API, and it might be enough to mention them in the class's docstring.
+
 class Canvas(object):
-    """ Canvas(*args, **kwargs)
-    
-    Representation of a GUI element that can be rendered to by an OpenGL
+    """ Representation of a GUI element that can be rendered to by an OpenGL
     context. The args and kwargs are used to instantiate the native widget.
     
     Further, there are two special keyword arguments:

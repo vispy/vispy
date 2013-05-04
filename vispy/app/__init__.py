@@ -1,3 +1,9 @@
+""" 
+The app module defines three classes: Application, Canvas, and Timer. 
+On loading, vispy creates a default Application instance which can be used
+via functions in the module's namespace.
+"""
+
 import vispy
 
 from .application import Application, ApplicationBackend

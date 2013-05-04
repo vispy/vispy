@@ -1,3 +1,10 @@
+""" 
+The event modules implements the classes that make up the event system.
+The Event class and its subclasses are used to represent "stuff that happen".
+The EventEmitter class provides an interface to connect to events and
+to emit events. The EmitterGroup groups EventEmitter objects.
+"""
+
 ## Event system:
 ##    - Canvas subclasses abstract basic windowing and input events
 ##    - High-level canvas will automatically forward events to scenegraph
@@ -39,6 +46,7 @@ class Event(object):
         attrs = " ".join(["%s=%s" % pair for pair in self.__dict__.items()])
         return "<%s %s>" % (self.__class__.__name__, attrs)
 
+# todo: Derive classes from Event!
 
 class EventEmitter(object):
     """Manages a list of event callbacks. 
@@ -151,6 +159,8 @@ class EventEmitter(object):
         self.blocked += 1
         
     def unblock(self):
+        """ Unblock this emitter.
+        """
         self.blocked = max(0, self.blocked-1)
 
     def blocker(self):
@@ -248,6 +258,8 @@ class EmitterGroup(EventEmitter):
         self.add(name, emitter)
         
     def add(self, name, emitter=None, auto_connect=None):
+        """ Add an EventEmitter instance to this emitter group.
+        """
         if name in self._emitters:
             raise ValueError("EmitterGroup already has an emitter named '%s'" % name)
         if auto_connect is None:
@@ -272,6 +284,8 @@ class EmitterGroup(EventEmitter):
 
     @property
     def emitters(self):
+        """ List of current emitters in this group.
+        """
         return self._emitters
     
     def __iter__(self):
@@ -282,14 +296,20 @@ class EmitterGroup(EventEmitter):
             yield k
     
     def block_all(self):
+        """ Block all emitters in this group.
+        """
         for em in self._emitters.values():
             em.block()
     
     def unblock_all(self):
+        """ Unblock all emitters in this group.
+        """
         for em in self._emitters.values():
             em.unblock()
     
     def disconnect_all(self, callback=None):
+        """ Disconnect the given callback from all event emitters in this group.
+        """
         for em in self._emitters.values():
             em.disconnect(callback)
     
@@ -297,10 +317,14 @@ class EmitterGroup(EventEmitter):
         #return EventBlocker(self)
 
     def connect(self, *args, **kwds):
+        """ Connect a callback to all emitters in this group.
+        """
         self._connect_emitters(True)
         return EventEmitter.connect(self, *args, **kwds)
 
     def disconnect(self, *args, **kwds):
+        """ Disconnect  ... euh, what? I dont get this one (compared to disconnect_all)
+        """
         ret = EventEmitter.disconnect(self, *args, **kwds)
         if len(self.connections) == 0:
             self._connect_emitters(False)
@@ -321,6 +345,9 @@ class EmitterGroup(EventEmitter):
         
             
 class EventBlocker(object):
+    """ Represents a block for an EventEmitter to be used in a context
+    manager (i.e. with statement).
+    """
     def __init__(self, target):
         self.target = target
         
