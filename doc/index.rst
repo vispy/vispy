@@ -6,6 +6,9 @@
 Welcome to vispy's documentation!
 =================================
 
+This is the auto-generated API documentation for the vispy library. 
+See http://vispy.org for more information on the vispy project.
+
 Contents:
 
 .. toctree::
