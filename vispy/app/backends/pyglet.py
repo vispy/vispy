@@ -151,7 +151,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             )
         self._buttons_pressed |= button
         self._vispy_canvas.events.mouse_press(ev2)
-        if ev2.accepted:
+        if ev2.handled:
             self._buttons_accepted |= button
     
     def on_mouse_release(self, x, y, button, modifiers):
@@ -250,5 +250,5 @@ class TimerBackend(app.TimerBackend):
     def _vispy_stop(self):
         pyglet.clock.unschedule(self._vispy_timer._timeout)
     
-     def _vispy_get_native_timer(self):
+    def _vispy_get_native_timer(self):
         return pyglet.clock

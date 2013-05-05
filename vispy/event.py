@@ -5,16 +5,6 @@ The EventEmitter class provides an interface to connect to events and
 to emit events. The EmitterGroup groups EventEmitter objects.
 """
 
-## Event system:
-##    - Canvas subclasses abstract basic windowing and input events
-##    - High-level canvas will automatically forward events to scenegraph
-##      and implement basic paint callback
-##    - All events may trigger a list of callbacks which can be customized
-
-##    - Must be possible to 
-##        - respond to events by setting method attribute, overriding method,
-##          or using event-connection decorator
-##        - must be able to connect/disconnect functions 
 
 import collections
 
@@ -23,25 +13,50 @@ import collections
 
 class Event(object):
     """Class describing events that occur and can be reacted to with callbacks.
-    For example, window and input events.
+    Each event instance contains information about a single event that has
+    occurred such as a key press, mouse motion, timer activation, etc.
     
-    Specific event types may implement extra attributes to fully describe
-    the event.
+    Subclasses: :class:`KeyEvent`, :class:`MouseEvent`, :class:`TouchEvent`, 
+    :class:`StylusEvent`
+    
+    Events are sent to callback functions using :class:`EventEmitter` instances.
+    
     """
     def __init__(self, **kwds):
-        self.accepted = False
+        """Initialize an Event instance. all keyword arguments will become
+        attributes of the Event.
+        """
+        self._handled = False
+        self._blocked = False
         self.__dict__.update(kwds)
         
-    def accept(self):
-        """Inform the event dispatcher that this event has been handled and 
-        should not be delivered to any more callbacks."""
-        self.accepted = True
+    @property
+    def handled(self):
+        """This boolean property indicates whether the event has already been 
+        acted on by an event handler. Since many handlers may have access to the 
+        same events, it is recommended that each check whether the event has 
+        already been handled as well as set handled=True if it decides to 
+        act on the event. 
+        """
+        return self._handled
     
-    def ignore(self):
-        """Inform the event dispatcher that this event has not been handled and 
-        should be delivered to another callback."""
-        self.accepted = False
+    @handled.setter
+    def handled(self, val):
+        self._handled = val
         
+    @property
+    def blocked(self):
+        """This boolean property indicates whether the event will be delivered
+        to event callbacks. If it is set to True, then no further callbacks
+        will receive the event. When possible, it is recommended to use
+        Event.handled rather than Event.blocked.
+        """
+        return self._blocked
+    
+    @blocked.setter
+    def blocked(self, val):
+        self._blocked = blocked
+    
     def __repr__(self):
         attrs = " ".join(["%s=%s" % pair for pair in self.__dict__.items()])
         return "<%s %s>" % (self.__class__.__name__, attrs)
@@ -49,19 +64,31 @@ class Event(object):
 # todo: Derive classes from Event!
 
 class EventEmitter(object):
-    """Manages a list of event callbacks. 
+    """Encapsulates a list of event callbacks. 
     
-    Each instance of EventEmitter is intended to represent a particular event. 
-    Callbacks may be registered with the EventEmitter to receive notifications
-    whenever the event occurs. 
+    Each instance of EventEmitter represents the source of a stream of similar
+    events, such as mouse click events or timer activation events. For
+    example, the following diagram shows the propagation of a mouse click
+    event to the list of callbacks that are registered to listen for that event::
     
-    To inform the EventEmitter that the event has occurred (and thus it should
-    invoke all of its callbacks), it is called directly with either an Event 
-    instance as an argument or a set of arguments used to construct an Event.
+    
+       user 
+       clicks  --> create MouseEvent --> mouse_click_emitter(event) --> callback1(event)
+       mouse                                                        --> callback2(event)
+                                                                    --> callback3(event)
+    
+    Callback functions may be added or removed from an EventEmitter using 
+    :func:`connect() <vispy.event.EventEmitter.connect>` or 
+    :func:`disconnect() <vispy.event.EventEmitter.disconnect>`. 
+    
+    Calling an instance of EventEmitter will cause each of its callbacks 
+    to be invoked in sequence. All callbacks are invoked with a single
+    argument which will be an instance of :class:`Event <vispy.event.Event>`. 
     
     Callbacks may be specified either as a callable object or symbolically,
     as (object, attribute_name). In the latter case, the attribute is retrieved
-    from object and called every time the event is emitted. 
+    from object and called every time the event is emitted. If the attribute
+    does not exist, then it is silently ignored.
     """
     def __init__(self, callback=None, event_class=None, **kwds):
         """Initialize an event emitter. 
@@ -74,7 +101,7 @@ class EventEmitter(object):
         """
         self.callbacks = []
         self.blocked = 0
-        self.defaults = {}
+        self._defaults = {}
             
         if event_class is None:
             event_class = Event
@@ -85,6 +112,12 @@ class EventEmitter(object):
         if callback is not None:
             self.connect(callback)
         
+    @property
+    def defaults(self):
+        """Dictionary containing default attributes to apply to all Events that
+        are sent through this emitter."""
+        return self._defaults
+        
         
     def connect(self, callback):
         """Connect this emitter to a new callback. 
@@ -94,6 +127,10 @@ class EventEmitter(object):
         object.
         
         If the callback is already connected, then the request is ignored.
+        
+        The new callback will be added to the beginning of the callback list; 
+        thus the callback that is connected _last_ will be the _first_ to 
+        receive events from the emitter.
         """
         if callback in self.callbacks:
             return
@@ -122,6 +159,11 @@ class EventEmitter(object):
         
         All events emitted will have extra attributes set corresponding to
         self.defaults, unless the Event already has those attributes.
+        
+        Note that the same Event instance is sent to all callbacks. This allows
+        some level of communication between the callbacks (notably, via 
+        Event.handled) but also requires that callbacks be careful not
+        to inadvertently modify the Event.
         """
         if len(args) > 0 and isinstance(args[0], Event):
             event = args[0]
@@ -144,7 +186,7 @@ class EventEmitter(object):
                     continue
                 
             cb(event)
-            if event.accepted:
+            if event.blocked:
                 break
         
         return event
@@ -159,15 +201,15 @@ class EventEmitter(object):
         self.blocked += 1
         
     def unblock(self):
-        """ Unblock this emitter.
+        """ Unblock this emitter. See :func:`event.EventEmitter.block`.
         """
         self.blocked = max(0, self.blocked-1)
 
     def blocker(self):
-        """Return an EventBlocker to be used in 'with' statements:
+        """Return an EventBlocker to be used in 'with' statements::
         
-            with emitter.blocker():
-                ..do stuff; no events will be emitted..
+               with emitter.blocker():
+                   ..do stuff; no events will be emitted..
         
         """
         return EventBlocker(self)
@@ -175,14 +217,23 @@ class EventEmitter(object):
 
 class EmitterGroup(EventEmitter):
     """EmitterGroup is a convenience class that manages a set of related 
-    EventEmitters. Its primary purpose is to provide organization for objects
+    :class:`EventEmitters <vispy.event.EventEmitter>`. 
+    Its primary purpose is to provide organization for objects
     that make use of multiple emitters and to reduce the boilerplate code needed
     to initialize those emitters with default connections.
     
-    EmitterGroup instances are commonly stored as an 'events' attribute on 
-    objects that use multiple emitters.
+    EmitterGroup instances are usually stored as an 'events' attribute on 
+    objects that use multiple emitters. For example::
+                     
+         EmitterGroup  EventEmitter
+                 |       |
+        Canvas.events.mouse_press
+        Canvas.events.resized
+        Canvas.events.key_press
     
-    EmitterGroup is also a subclass of EventEmitter, allowing it to emit its own
+    EmitterGroup is also a subclass of 
+    :class:`EventEmitters <vispy.event.EventEmitter>`, 
+    allowing it to emit its own
     events. Any callback that connects directly to the EmitterGroup will 
     receive _all_ of the events generated by the group's emitters.
     """
@@ -200,10 +251,13 @@ class EmitterGroup(EventEmitter):
         
         Keyword arguments are also used to initialize emitters, but additionally
         provide a mechanism for specifying pre-built EventEmitter instances.
-        Each Keyword argument generates one call to `self.add(name, emitter)`.
+        Each Keyword argument generates one call to 
+        :func:`self.add(name, emitter) <vispy.event.EmitterGroup.add>`.
         
         If *auto_connect* is True, then one connection will be made for each
-        emitter that looks like `emitter.connect((source, 'on_'+event_name))`.
+        emitter that looks like 
+        :func:`emitter.connect((source, 'on_'+event_name)) 
+        <vispy.event.EventEmitter.connect>`.
         This provides a simple mechanism for automatically connecting a large
         group of emitters to default callbacks.
         
@@ -219,9 +273,12 @@ class EmitterGroup(EventEmitter):
         The example above does the following:
         
             #. Create an EmitterGroup instance
-            #. Attach four EventEmitters to the handler with the names 'mouse',
-               'key', 'wheel', and 'stylus'.
-            #. The first three emitters are all instances of EventEmitter,
+            #. Add four 
+               :class:`EventEmitters <vispy.event.EventEmitter>`
+               to the group with the names 'mouse', 'key', 'wheel', 
+               and 'stylus'.
+            #. The first three emitters are all instances of 
+               :class:`EventEmitter <vispy.event.EventEmitter>`,
                whereas the last is an instance of MyStylusEmitter.
             #. The four emitters are automatically connected to default 
                callbacks: source.on_mouse, source.on_key, source.on_wheel, and
@@ -307,23 +364,31 @@ class EmitterGroup(EventEmitter):
         for em in self._emitters.values():
             em.unblock()
     
-    def disconnect_all(self, callback=None):
-        """ Disconnect the given callback from all event emitters in this group.
-        """
-        for em in self._emitters.values():
-            em.disconnect(callback)
+    ## don't think this is needed anymore.
+    #def disconnect_all(self, callback=None):
+        #""" Disconnect the given callback from all event emitters in this group.
+        #"""
+        #for em in self._emitters.values():
+            #em.disconnect(callback)
     
     #def blocker(self):
         #return EventBlocker(self)
 
     def connect(self, *args, **kwds):
-        """ Connect a callback to all emitters in this group.
+        """ Connect the callback to the event group. The callback will receive
+        events from _all_ of the emitters in the group.
+        
+        See :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>` for
+        arguments.
         """
         self._connect_emitters(True)
         return EventEmitter.connect(self, *args, **kwds)
 
     def disconnect(self, *args, **kwds):
-        """ Disconnect  ... euh, what? I dont get this one (compared to disconnect_all)
+        """ Disconnect the callback from this group. See 
+        :func:`connect() <vispy.event.EmitterGroup.connect>` and 
+        :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>` for
+        more information.
         """
         ret = EventEmitter.disconnect(self, *args, **kwds)
         if len(self.connections) == 0:

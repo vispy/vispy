@@ -193,9 +193,13 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
 
 class QtMouseEvent(Event):
     ## special subclass of Event for propagating acceptance info back to Qt.
-    def accept(self):
-        Event.accept(self)
-        self.qt_event.accept()
+    @Event.handled.setter
+    def handled(self, val):
+        self._handled = val
+        if val:
+            self.qt_event.accept()
+        else:
+            self.qt_event.ignore()
 
 
 # todo: define constants for vispy
