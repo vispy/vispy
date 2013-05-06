@@ -1,4 +1,4 @@
-from vispy.event import Event
+from vispy.event import MouseEvent
 from vispy import app
 
 
@@ -113,57 +113,52 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        ev = Event(size=(w,h))
-        self._vispy_canvas.events.resize(ev)
+        self._vispy_canvas.events.resize(size=(w,h))
 
     def paintGL(self):
         if self._vispy_canvas is None:
             return
-        ev = Event(region=(0, 0, self.width(), self.height()))
-        self._vispy_canvas.events.paint(ev)
+        self._vispy_canvas.events.paint(
+            region=(0, 0, self.width(), self.height()))
         
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        ev2 = QtMouseEvent(
+        self._vispy_canvas.events.mouse_press(
             action='press', 
             qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=int(ev.button()),
             )
-        self._vispy_canvas.events.mouse_press(ev2)
             
     def mouseReleaseEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        ev2 = QtMouseEvent(
+        self._vispy_canvas.events.mouse_release(
             action='release', 
             qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=int(ev.button()),
             )
-        self._vispy_canvas.events.mouse_release(ev2)
 
     def mouseMoveEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        ev2 = QtMouseEvent(
+        self._vispy_canvas.events.mouse_move(
             action='move', 
             qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             )
-        self._vispy_canvas.events.mouse_move(ev2)
         
     def wheelEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        ev2 = Event( 
+        self._vispy_canvas.events.mouse_wheel(
             action='wheel', 
             qt_event=ev,
             delta=ev.delta(),
             pos=(ev.pos().x(), ev.pos().y()),
             )
-        self._vispy_canvas.events.mouse_wheel(ev2)
     
     
     def keyPressEvent(self, event):      
@@ -191,9 +186,9 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             return key 
 
 
-class QtMouseEvent(Event):
-    ## special subclass of Event for propagating acceptance info back to Qt.
-    @Event.handled.setter
+class QtMouseEvent(MouseEvent):
+    ## special subclass of MouseEvent for propagating acceptance info back to Qt.
+    @MouseEvent.handled.setter
     def handled(self, val):
         self._handled = val
         if val:

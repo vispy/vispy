@@ -127,8 +127,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     def on_resize(self, w, h):
         if self._vispy_canvas is None:
             return
-        ev = Event(size=(w,h))
-        self._vispy_canvas.events.resize(ev)
+        self._vispy_canvas.events.resize(size=(w,h))
         
         # might need to send a paint event as well
         if self._draw_ok:
@@ -138,71 +137,65 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         self._draw_ok = True
         if self._vispy_canvas is None:
             return
-        ev = Event(region=(0, 0, self.width, self.height))
-        self._vispy_canvas.events.paint(ev)
+        self._vispy_canvas.events.paint(region=(0, 0, self.width, self.height))
     
     def on_mouse_press(self, x, y, button, modifiers):
         if self._vispy_canvas is None:
             return
-        ev2 = Event(
+        self._buttons_pressed |= button
+        ev2 = self._vispy_canvas.events.mouse_press(
             action='press', 
             pos=(x, self.get_size()[1] - y),
             button=button,
             )
-        self._buttons_pressed |= button
-        self._vispy_canvas.events.mouse_press(ev2)
         if ev2.handled:
             self._buttons_accepted |= button
     
     def on_mouse_release(self, x, y, button, modifiers):
         if self._vispy_canvas is None:
             return
-        ev2 = Event(
-            action='release', 
-            pos=(x, self.get_size()[1] - y),
-            button=button,
-            )
         self._buttons_pressed &= ~button
         if (button & self._buttons_accepted) > 0:
-            self._vispy_canvas.events.mouse_release(ev2)
+            self._vispy_canvas.events.mouse_release(
+                action='release', 
+                pos=(x, self.get_size()[1] - y),
+                button=button,
+                )
             self._buttons_accepted &= ~button
     
     def on_mouse_motion(self, x, y, dx, dy):
         if self._vispy_canvas is None:
             return
-        ev2 = Event(
-            action='move', 
-            pos=(x, self.get_size()[1] - y),
-            buttons=self._buttons_pressed,
-            modifiers=None
-            )
         self._mouse_pos = (x, y)
         # todo: re-enable with flag
-        #self._vispy_canvas.events.mouse_move(ev2)
+        #self._vispy_canvas.events.mouse_move(
+            #action='move', 
+            #pos=(x, self.get_size()[1] - y),
+            #buttons=self._buttons_pressed,
+            #modifiers=None
+            #)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if self._vispy_canvas is None:
             return
-        ev2 = Event(
-            action='move', 
-            pos=(x, self.get_size()[1] - y),
-            buttons=buttons,
-            modifiers=modifiers
-            )
         self._mouse_pos = (x, y)
         if self._buttons_accepted > 0:
-            self._vispy_canvas.events.mouse_move(ev2)
+            self._vispy_canvas.events.mouse_move(
+                action='move', 
+                pos=(x, self.get_size()[1] - y),
+                buttons=buttons,
+                modifiers=modifiers
+                )
         
     
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self._vispy_canvas is None:
             return
-        ev2 = Event( 
+        self._vispy_canvas.events.mouse_wheel(
             action='wheel', 
             delta=scroll_y*120, # Follow Qt stepsize
             pos=(x, y),
             )
-        self._vispy_canvas.events.mouse_wheel(ev2)
     
     
     def on_key_press(self, key, modifiers):      

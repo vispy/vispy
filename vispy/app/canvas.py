@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from vispy.event import EmitterGroup
+from vispy.event import EmitterGroup, Event, MouseEvent, KeyEvent, PaintEvent
 import vispy
 
 # todo: add functions for asking about current mouse/keyboard state
@@ -24,10 +24,19 @@ class Canvas(object):
     
     def __init__(self, *args, **kwargs):
         self.events = EmitterGroup(source=self, 
-                        event_names=['initialize', 'resize', 'paint',
-                        'mouse_press', 'mouse_release', 'mouse_move', 
-                        'mouse_wheel',
-                        'key_press', 'key_release', 'stylus', 'touch', 'close'])
+                        initialize=Event, 
+                        resize=Event,
+                        paint=PaintEvent,
+                        mouse_press=MouseEvent,
+                        mouse_release=MouseEvent,
+                        mouse_move=MouseEvent, 
+                        mouse_wheel=MouseEvent,
+                        key_press=KeyEvent,
+                        key_release=KeyEvent,
+                        stylus=Event,
+                        touch=Event,
+                        close=Event,
+                        )
         
         # Store input and initialize backend attribute
         self._args = args
