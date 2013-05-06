@@ -1,8 +1,11 @@
 """ 
 The event modules implements the classes that make up the event system.
-The Event class and its subclasses are used to represent "stuff that happen".
+The Event class and its subclasses are used to represent "stuff that happens".
 The EventEmitter class provides an interface to connect to events and
 to emit events. The EmitterGroup groups EventEmitter objects.
+
+For more information see http://github.com/vispy/vispy/wiki/API_Events
+
 """
 
 
@@ -42,7 +45,7 @@ class Event(object):
     
     @handled.setter
     def handled(self, val):
-        self._handled = val
+        self._handled = bool(val)
         
     @property
     def blocked(self):
@@ -55,13 +58,31 @@ class Event(object):
     
     @blocked.setter
     def blocked(self, val):
-        self._blocked = blocked
+        self._blocked = bool(val)
     
     def __repr__(self):
         attrs = " ".join(["%s=%s" % pair for pair in self.__dict__.items()])
         return "<%s %s>" % (self.__class__.__name__, attrs)
 
-# todo: Derive classes from Event!
+
+
+class MouseEvent(Event):
+    """ A mouse event always has `x`, `y`, `button`, and `modifiers`
+    attributes. `x` and `y` are in screen coordinates. 
+    """
+    def __init__(self, x, y, button, modifiers):
+        Event.__init__(self, x=x, y=y, button=button, modifiers=modifiers)
+
+
+
+class KeyEvent(Event):
+    """ A key event always has `key`, `text`, and `modifiers` attributes.
+    """
+    def __init__(self, key, text, modifiers):
+        Event.__init__(self, key=key, text=text, modifiers=modifiers)
+
+
+
 
 class EventEmitter(object):
     """Encapsulates a list of event callbacks. 
