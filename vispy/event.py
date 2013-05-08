@@ -25,23 +25,33 @@ class Event(object):
     Events are sent to callback functions using :class:`EventEmitter` instances.
     
     """
-    def __init__(self, source, name='unnamed_event', **kwds):
-        """Initialize an Event instance. all keyword arguments will become
+    def __init__(self, source, type, **kwds):
+        """Initialize an Event instance. 
+        The *source* and *type* arguments are required. 
+        All extra keyword arguments will become
         attributes of the Event.
         """
-        self._source = source
-        self._name = name
+        # stack of all sources this event has been emitted through
+        self._sources = [source] 
+        # string indicating the event type (mouse_press, key_release, etc.)
+        self._type = type
         self._handled = False
         self._blocked = False
         self.__dict__.update(kwds)
         
     @property
     def source(self):
-        return self._source
+        return self._sources[-1]
+    
+    def _push_source(self, source):
+        self._sources.append(source)
+        
+    def _pop_source(self):
+        return self._sources.pop()
         
     @property
-    def name(self):
-        return self._name
+    def type(self):
+        return self._type
         
     @property
     def handled(self):
