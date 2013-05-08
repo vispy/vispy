@@ -113,20 +113,19 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.resize(size=(w,h))
+        self._vispy_canvas.events.resize(size=(w,h)) # todo: new event?
 
     def paintGL(self):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.paint(
-            region=(0, 0, self.width(), self.height()))
+        self._vispy_canvas.events.paint()
+            #region=(0, 0, self.width(), self.height()))
         
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.mouse_press(
-            action='press', 
-            qt_event=ev,
+            #qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=int(ev.button()),
             )
@@ -135,8 +134,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.mouse_release(
-            action='release', 
-            qt_event=ev,
+            #qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=int(ev.button()),
             )
@@ -145,8 +143,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.mouse_move(
-            action='move', 
-            qt_event=ev,
+            #qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             )
         
@@ -154,8 +151,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.mouse_wheel(
-            action='wheel', 
-            qt_event=ev,
+            #qt_event=ev,
             delta=ev.delta(),
             pos=(ev.pos().x(), ev.pos().y()),
             )
@@ -166,14 +162,14 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         text = str(event.text())
         #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._vispy_canvas.events.key_press(action='press', key=key, text=text)
+        self._vispy_canvas.events.key_press(key=key, text=text)
     
     def keyReleaseEvent(self, event):
         if event.isAutoRepeat():
             return # Skip release auto repeat events
         key = self._processKey(event)
         text = str(event.text())
-        self._vispy_canvas.events.key_release(action='release', key=key, text=text)
+        self._vispy_canvas.events.key_release(key=key, text=text)
     
     def _processKey(self,event):
         """ evaluates the keycode of qt, and transform to visvis key.

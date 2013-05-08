@@ -7,8 +7,9 @@ class Timer(object):
     """Timer used to schedule events in the future or on a repeating schedule.
     """
     def __init__(self, interval=0.0, connect=None, iterations=-1, start=False, app=None):
-        self.timeout = vispy.event.EventEmitter()
-        self.timeout.defaults['source'] = self
+        # todo: put this in emittergroup?
+        self.timeout = vispy.event.EventEmitter(self, 'timeout')
+        #self.timeout.defaults['source'] = self
         
         # Get app instance and make sure that it has an associated backend 
         app = vispy.app.default_app if app is None else app

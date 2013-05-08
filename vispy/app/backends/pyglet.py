@@ -144,7 +144,6 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             return
         self._buttons_pressed |= button
         ev2 = self._vispy_canvas.events.mouse_press(
-            action='press', 
             pos=(x, self.get_size()[1] - y),
             button=button,
             )
@@ -157,7 +156,6 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         self._buttons_pressed &= ~button
         if (button & self._buttons_accepted) > 0:
             self._vispy_canvas.events.mouse_release(
-                action='release', 
                 pos=(x, self.get_size()[1] - y),
                 button=button,
                 )
@@ -181,7 +179,6 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         self._mouse_pos = (x, y)
         if self._buttons_accepted > 0:
             self._vispy_canvas.events.mouse_move(
-                action='move', 
                 pos=(x, self.get_size()[1] - y),
                 buttons=buttons,
                 modifiers=modifiers
@@ -192,7 +189,6 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.mouse_wheel(
-            action='wheel', 
             delta=scroll_y*120, # Follow Qt stepsize
             pos=(x, y),
             )
@@ -206,7 +202,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             text = ''
         #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._vispy_canvas.events.key_press(action='press', key=key, text=text)
+        self._vispy_canvas.events.key_press(key=key, text=text)
     
     def on_key_release(self, key, modifiers):
         key = self._processKey(key)
@@ -216,7 +212,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             text = ''
         #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._vispy_canvas.events.key_release(action='release', key=key, text=text)
+        self._vispy_canvas.events.key_release(key=key, text=text)
     
     def _processKey(self, key):
         # special cases for shift control and alt -> map to 17 18 19

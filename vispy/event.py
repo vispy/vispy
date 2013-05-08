@@ -24,15 +24,17 @@ class Event(object):
     
     Events are sent to callback functions using :class:`EventEmitter` instances.
     
+    Input arguments
+    ---------------
+    type : str
+       string indicating the event type (e.g. mouse_press, key_release)
+    kwds : keyword arguments
+        Any additional keyword arguments are stored as attributes on the event.
+    
     """
-    def __init__(self, source, type, **kwds):
-        """Initialize an Event instance. 
-        The *source* and *type* arguments are required. 
-        All extra keyword arguments will become
-        attributes of the Event.
-        """
+    def __init__(self, type, **kwds):
         # stack of all sources this event has been emitted through
-        self._sources = [source] 
+        self._sources = [] 
         # string indicating the event type (mouse_press, key_release, etc.)
         self._type = type
         self._handled = False
@@ -41,7 +43,17 @@ class Event(object):
         
     @property
     def source(self):
-        return self._sources[-1]
+        """ The object that the event applies to (i.e. the source of the event).
+        """
+        return self._sources[-1] if self._sources else None
+    
+    @property
+    def sources(self):
+        """ List of objects that the event applies to (i.e. are or have
+        been a source of the event). Can contain multiple objects in case
+        the event traverses a hierarchy of objects.
+        """
+        return self._sources
     
     def _push_source(self, source):
         self._sources.append(source)
@@ -51,6 +63,8 @@ class Event(object):
         
     @property
     def type(self):
+        """ A string that specifies the type of the event.
+        """
         return self._type
         
     @property
@@ -85,24 +99,101 @@ class Event(object):
         return "<%s %s>" % (self.__class__.__name__, attrs)
 
 
-class PaintEvent(Event):
-    pass
-
 
 class MouseEvent(Event):
-    """ A mouse event always has `action`, `x`, `y`, `button`, and `modifiers`
-    attributes. `x` and `y` are in screen coordinates relative to the canvas. 
+    """ Class describing mouse events.
+    
+    Input arguments
+    ---------------
+    type : str
+        string indicating the event type (e.g. mouse_press, key_release)
+    pos : (x, y)
+        The position of the mouse (in screen coordinates).
+    button : int (optional)
+        The button that this event applies to.
+    modifiers : sequence of ints (optional)
+        Which modifier keys were pressed down at the time of the event
+        (shift, control, alt).
+    kwds : keyword arguments
+        Any additional keyword arguments are stored as attributes on the event.
+        
     """
-    def __init__(self, action, x, y, button, modifiers):
-        Event.__init__(self, x=x, y=y, button=button, modifiers=modifiers)
-
+    
+    def __init__(self, type, pos=None, button=None, modifiers=None, delta=0):
+        Event.__init__(self, type)
+        self._pos = (0,0) if (pos is None) else (pos[0], pos[1])
+        self._button = int(button) if (button is not None) else None
+        self._modifiers = tuple( modifiers or () )
+        self._delta = int(delta)
+    
+    @property
+    def pos(self):
+        """ Tuple with two integers representing the position of the
+        mouse (in screen coordinates).
+        """
+        return self._pos
+    
+    @property
+    def button(self):
+        """ The button that this event applies to (can be None).
+        Left=1, right=2, middle=3.
+        """
+        return self._button
+    
+    @property
+    def modifiers(self):
+        """ Tuple that specifies which modifier keys were pressed down at the
+        time of the event (shift, control, alt).
+        """
+        return self._modifiers
+    
+    @property
+    def delta(self):
+        """ Integer that represents the amount of scrolling.
+        """
+        return self._delta
 
 
 class KeyEvent(Event):
-    """ A key event always has `action`, `key`, `text`, and `modifiers` attributes.
+    """ Class describing mouse events.
+    
+    Input arguments
+    ---------------
+    type : str
+        string indicating the event type (e.g. mouse_press, key_release)
+    key : int
+        The id of the key in question.
+    text : str
+        The text representation of the key (can be an empty string).
+    modifiers : sequence of ints (optional)
+        Which modifier keys were pressed down at the time of the event
+        (shift, control, alt).
     """
-    def __init__(self, action, key, text, modifiers):
-        Event.__init__(self, action=action, key=key, text=text, modifiers=modifiers)
+    
+    def __init__(self, type, key=0, text='', modifiers=None):
+        Event.__init__(self, type)
+        self._key = int(key)
+        self._text = str(text) 
+        self._modifiers = tuple( modifiers or () )
+    
+    @property
+    def key(self):
+        """ Integer that represents the id of the key.
+        """
+        return self._key
+    
+    @property
+    def text(self):
+        """ The text representation of the key (can be an empty string).
+        """
+        return self._text
+    
+    @property
+    def modifiers(self):
+        """ Tuple that specifies which modifier keys were pressed down at the
+        time of the event (shift, control, alt).
+        """
+        return self._modifiers
 
 
 
@@ -130,32 +221,32 @@ class EventEmitter(object):
     to be invoked in sequence. All callbacks are invoked with a single
     argument which will be an instance of :class:`Event <vispy.event.Event>`. 
     
-    Callbacks may be specified either as a callable object or symbolically,
-    as (object, attribute_name). In the latter case, the attribute is retrieved
-    from object and called every time the event is emitted. If the attribute
-    does not exist, then it is silently ignored.
+    EventEmitters are generally created via an EmitterGroup. 
+    
+    Input arguments
+    ---------------
+    source : object
+        The object that the generated events apply to.
+    event_class : subclass of Event
+        The class of events that this emitter will generate.
+    
     """
-    def __init__(self, event_class=Event, **kwds):
-        """Initialize an event emitter. 
-        
-        Arguments: 
-        
-        * event_class - default class for generating events
-        * extra keyword arguments are added to self.defaults
-        """
+    def __init__(self, source, type, event_class=Event):
         self.callbacks = []
         self.blocked = 0
-        self._defaults = {}
-            
+        
+        self._source = source # todo: should probably be a weakref
+        self._type = type
         self.event_class = event_class
         
-        self.defaults.update(**kwds)
-        
-    @property
-    def defaults(self):
-        """Dictionary containing default attributes to apply to all Events that
-        are sent through this emitter."""
-        return self._defaults
+        #self._defaults = {}
+        #self.defaults.update(**kwds)
+    
+#     @property
+#     def defaults(self):
+#         """Dictionary containing default attributes to apply to all Events that
+#         are sent through this emitter."""
+#         return self._defaults
         
         
     def connect(self, callback):
@@ -175,7 +266,7 @@ class EventEmitter(object):
             return
         self.callbacks.insert(0, callback)
         return callback  ## allows connect to be used as a decorator
-            
+    
     def disconnect(self, callback=None):
         """Disconnect a callback from this emitter.
         
@@ -204,23 +295,30 @@ class EventEmitter(object):
         Event.handled) but also requires that callbacks be careful not
         to inadvertently modify the Event.
         """
-        if len(args) > 0 and isinstance(args[0], Event):
+        if len(args) == 1 and not kwds and isinstance(args[0], Event):
             event = args[0]
             
-            # todo: should there be a way to disable this check?
+            # Ensure that the given event matches what we want to emit
             assert isinstance(event, self.event_class)
             
-            ## Copy default attributes onto this event (unless they are already 
-            ## specified)
-            for k,v in self.defaults.items():
-                if not hasattr(event, k):
-                    setattr(event, k, v)
+#             # Copy default attributes onto this event (unless they are already 
+#             # specified)
+#             for k,v in self.defaults.items():
+#                 if not hasattr(event, k):
+#                     setattr(event, k, v)
+        elif not args:
+#             # merge keyword arguments with defaults before creating event instance
+#             kwds2 = self.defaults.copy()
+#             kwds2.update(kwds)
+#             event = self.event_class(*args, **kwds2)
+           
+            # todo: should the emitter know its type?
+            event = self.event_class(self._type, **kwds)
         else:
-            ## merge keyword arguments with defaults before creating event instance
-            kwds2 = self.defaults.copy()
-            kwds2.update(kwds)
-            event = self.event_class(*args, **kwds2)
-            
+            raise ValueError("Event emitters can be called with an Event instance or with keyword arguments only.")
+        
+        # Add our source to the event
+        event.sources.append(self._source)
         
         if self.blocked > 0:
             return event
@@ -282,33 +380,32 @@ class EmitterGroup(EventEmitter):
     allowing it to emit its own
     events. Any callback that connects directly to the EmitterGroup will 
     receive _all_ of the events generated by the group's emitters.
-    """
-    def __init__(self, source, auto_connect=True, **kwds):
-        """
-        Initialize the EmitterGroup, optionally attaching new EventEmitters.
-        
-        *source* must be specified and indicates the object to which emitters
-        will be automatically connected if *auto_connect* is True. All emitted
-        events will also be given a 'source' attribute with this value.
-        
-        Extra keyword arguments are used to automatically add new emitters
-        to the group. Each keyword name/value pair generates one call to 
-        :func:`self.add(name=value) <vispy.event.EmitterGroup.add>`. 
-        
-        If *auto_connect* is True, then one connection will be made for each
-        emitter that looks like 
+    
+    Input arguments
+    ---------------
+    source : object
+    auto_connect : bool
+        If *auto_connect* is True (default), then one connection will
+        be made for each emitter that looks like 
         :func:`emitter.connect((source, 'on_'+event_name)) 
         <vispy.event.EventEmitter.connect>`.
         This provides a simple mechanism for automatically connecting a large
         group of emitters to default callbacks.
-        
-        Example::
+    emitters : keyword arguments
+        The keyword arguments are used to automatically add new emitters
+        to the group. Each keyword name/value pair generates one call to 
+        :func:`self.add(name=value) <vispy.event.EmitterGroup.add>`.
+    
+    
+    Example
+    -------
+    ::
         
             source = SomeObject()
             source.events = EmitterGroup(source,
                                 event_names=['mouse', 'key'],
                                 wheel=None,
-                                stylus=MyStylusEmitter()
+                                stylus=MyStylusEmitter(source)
                                 )
                                 
         The example above does the following:
@@ -325,17 +422,19 @@ class EmitterGroup(EventEmitter):
                callbacks: source.on_mouse, source.on_key, source.on_wheel, and
                source.on_stylus. These connections are symbolic, so source
                is not required to have the callbacks implemented.
-        """
-        EventEmitter.__init__(self)
+    
+    """
+    def __init__(self, source=None, auto_connect=True, **emitters):
+        EventEmitter.__init__(self, source, '')
         
         self.source = source
         self.auto_connect = auto_connect
         self.auto_connect_format = "on_%s"
         self._emitters = collections.OrderedDict()
-        self._emitters_connected = False  ## whether the sub-emitters have 
-                                          ## been connected to the group
+        self._emitters_connected = False  # whether the sub-emitters have 
+                                          # been connected to the group
                                           
-        self.add(**kwds)
+        self.add(**emitters)
     
     def __getitem__(self, name):
         """
@@ -381,12 +480,12 @@ class EmitterGroup(EventEmitter):
                 emitter = Event
             
             if inspect.isclass(emitter) and issubclass(emitter, Event):
-                emitter = EventEmitter(emitter)
+                emitter = EventEmitter(self._source, name, emitter)
             elif not isinstance(emitter, EventEmitter):
                 raise Exception('Emitter must be specified as either an EventEmitter instance or Event subclass')
             
-            emitter.defaults['name'] = name
-            emitter.defaults['source'] = self.source
+#             emitter.defaults['name'] = name
+#             emitter.defaults['source'] = self.source
             
             setattr(self, name, emitter)
             self._emitters[name] = emitter
@@ -458,9 +557,9 @@ class EmitterGroup(EventEmitter):
         return ret
     
     def _connect_emitters(self, connect):
-        ## Connect/disconnect all sub-emitters from the group. This allows the
-        ## group to emit an event whenever _any_ of the sub-emitters emit, 
-        ## while simultaneously eliminating the overhead if nobody is listening.
+        # Connect/disconnect all sub-emitters from the group. This allows the
+        # group to emit an event whenever _any_ of the sub-emitters emit, 
+        # while simultaneously eliminating the overhead if nobody is listening.
         if connect:
             for emitter in self:
                 self[emitter].connect(self)
