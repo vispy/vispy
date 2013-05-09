@@ -22,7 +22,8 @@ class Event(object):
     Subclasses: :class:`KeyEvent`, :class:`MouseEvent`, :class:`TouchEvent`, 
     :class:`StylusEvent`
     
-    Events are sent to callback functions using :class:`EventEmitter` instances.
+    The creation of events and passing of events to the appropriate callback
+    functions in the responsibility of :class:`EventEmitter` instances.
     
     Input arguments
     ---------------
@@ -160,7 +161,7 @@ class KeyEvent(Event):
     Input arguments
     ---------------
     type : str
-        string indicating the event type (e.g. mouse_press, key_release)
+        String indicating the event type (e.g. mouse_press, key_release)
     key : int
         The id of the key in question.
     text : str
@@ -221,12 +222,14 @@ class EventEmitter(object):
     to be invoked in sequence. All callbacks are invoked with a single
     argument which will be an instance of :class:`Event <vispy.event.Event>`. 
     
-    EventEmitters are generally created via an EmitterGroup. 
+    EventEmitters are generally created by an EmitterGroup instance. 
     
     Input arguments
     ---------------
     source : object
         The object that the generated events apply to.
+    type : str
+        String indicating the event type (e.g. mouse_press, key_release)
     event_class : subclass of Event
         The class of events that this emitter will generate.
     
@@ -247,8 +250,7 @@ class EventEmitter(object):
 #         """Dictionary containing default attributes to apply to all Events that
 #         are sent through this emitter."""
 #         return self._defaults
-        
-        
+    
     def connect(self, callback):
         """Connect this emitter to a new callback. 
         
@@ -282,18 +284,22 @@ class EventEmitter(object):
                 pass
             
     def __call__(self, *args, **kwds):
-        """Invoke all callbacks for this emitter.
+        """ __call__(**kwds)
+        Invoke all callbacks for this emitter.
         
-        This may be called either with an Event instance as the first argument
-        or with any other set of arguments used to construct an Event.
+        Emit a new event object, created with the given keyword
+        arguments, which must match with the input arguments of the
+        corresponding event class. Note that the 'type' argument is
+        filled in by the emitter.
         
-        All events emitted will have extra attributes set corresponding to
-        self.defaults, unless the Event already has those attributes.
+        Alternatively, the emitter can also be called with an event
+        instance as only argument. This allows routing events from one
+        emitter to another.
         
-        Note that the same Event instance is sent to all callbacks. This allows
-        some level of communication between the callbacks (notably, via 
-        Event.handled) but also requires that callbacks be careful not
-        to inadvertently modify the Event.
+        Note that the same Event instance is sent to all callbacks.
+        This allows some level of communication between the callbacks
+        (notably, via Event.handled) but also requires that callbacks
+        be careful not to inadvertently modify the Event. 
         """
         if len(args) == 1 and not kwds and isinstance(args[0], Event):
             event = args[0]
@@ -307,13 +313,12 @@ class EventEmitter(object):
 #                 if not hasattr(event, k):
 #                     setattr(event, k, v)
         elif not args:
+            event = self.event_class(self._type, **kwds)
 #             # merge keyword arguments with defaults before creating event instance
 #             kwds2 = self.defaults.copy()
 #             kwds2.update(kwds)
 #             event = self.event_class(*args, **kwds2)
-           
-            # todo: should the emitter know its type?
-            event = self.event_class(self._type, **kwds)
+            
         else:
             raise ValueError("Event emitters can be called with an Event instance or with keyword arguments only.")
         
@@ -334,7 +339,7 @@ class EventEmitter(object):
                 break
         
         return event
-            
+    
     def block(self):
         """Block this emitter. Any attempts to emit an event while blocked
         will be silently ignored. 
@@ -360,7 +365,7 @@ class EventEmitter(object):
 
 
 class EmitterGroup(EventEmitter):
-    """EmitterGroup is a convenience class that manages a set of related 
+    """EmitterGroup instances manage a set of related 
     :class:`EventEmitters <vispy.event.EventEmitter>`. 
     Its primary purpose is to provide organization for objects
     that make use of multiple emitters and to reduce the boilerplate code needed
@@ -384,6 +389,7 @@ class EmitterGroup(EventEmitter):
     Input arguments
     ---------------
     source : object
+        The object that the generated events apply to.  
     auto_connect : bool
         If *auto_connect* is True (default), then one connection will
         be made for each emitter that looks like 
@@ -392,19 +398,19 @@ class EmitterGroup(EventEmitter):
         This provides a simple mechanism for automatically connecting a large
         group of emitters to default callbacks.
     emitters : keyword arguments
-        The keyword arguments are used to automatically add new emitters
-        to the group. Each keyword name/value pair generates one call to 
-        :func:`self.add(name=value) <vispy.event.EmitterGroup.add>`.
+        See the :func:`add <vispy.event.EmitterGroup.add>` method.
     
+    """
     
+    # todo: with emitters being so simple, I think we can remove the docs below
+    """
     Example
     -------
     ::
         
             source = SomeObject()
             source.events = EmitterGroup(source,
-                                event_names=['mouse', 'key'],
-                                wheel=None,
+                                wheel=Evene,
                                 stylus=MyStylusEmitter(source)
                                 )
                                 
@@ -449,7 +455,8 @@ class EmitterGroup(EventEmitter):
         Alias for EmitterGroup.add(name=emitter)
         """
         self.add(**{name: emitter})
-        
+    
+    # todo: disallow passing EventEmitter instances? The use case for which they were allowed can be solved in other ways.
     def add(self, auto_connect=None, **kwds):
         """ Add one or more EventEmitter instances to this emitter group.
         Each keyword argument may be specified as either an EventEmitter 
@@ -461,8 +468,8 @@ class EmitterGroup(EventEmitter):
                       mouse_release=MouseEvent)
             
             # ..is equivalent to this statement:
-            group.add(mouse_press=EventEmitter(MouseEvent), 
-                      mouse_releaseEventEmitter(MouseEvent))
+            group.add(mouse_press=EventEmitter(source, 'mouse_press', MouseEvent), 
+                      mouse_release=EventEmitter(source, 'mouse_press', MouseEvent))
         """
         if auto_connect is None:
             auto_connect = self.auto_connect
