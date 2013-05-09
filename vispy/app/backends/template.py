@@ -5,6 +5,28 @@ should be emitted.
 
 import vispy
 from vispy import app
+from vispy import keys
+
+# Map native keys to vispy keys
+KEYMAP = {
+    -1: keys.SHIFT,
+    -1: keys.CONTROL,
+    -1: keys.ALT,
+    
+    -1: keys.LEFT,
+    -1: keys.UP,
+    -1: keys.RIGHT,
+    -1: keys.DOWN,
+    -1: keys.PAGEUP,
+    -1: keys.PAGEDOWN,
+    -1: keys.ESCAPE,
+    -1: keys.DELETE,
+    -1: keys.BACKSPACE,
+    
+    -1: keys.SPACE,
+    -1: keys.ENTER,
+}
+
 
 
 class ApplicationBackend(app.ApplicationBackend):

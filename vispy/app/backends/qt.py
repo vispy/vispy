@@ -1,6 +1,6 @@
 from vispy.event import MouseEvent
 from vispy import app
-
+from vispy import keys
 
 import vispy
 qt_lib = vispy.config['qt_lib']
@@ -17,6 +17,28 @@ else:
     raise Exception("Do not recognize Qt library '%s'. Options are 'pyqt', 'pyside', or 'any' (see vispy.config['qt_lib'])." % str(qt_lib))
 
 
+KEYMAP = {
+    QtCore.Qt.Key_Shift: keys.SHIFT,
+    QtCore.Qt.Key_Control: keys.CONTROL,
+    QtCore.Qt.Key_Alt: keys.ALT,
+    QtCore.Qt.ShiftModifier: keys.SHIFT,
+    QtCore.Qt.ControlModifier: keys.CONTROL,
+    QtCore.Qt.AltModifier: keys.ALT,
+    
+    QtCore.Qt.Key_Left: keys.LEFT,
+    QtCore.Qt.Key_Up: keys.UP,
+    QtCore.Qt.Key_Right: keys.RIGHT,
+    QtCore.Qt.Key_Down: keys.DOWN,
+    QtCore.Qt.Key_PageUp: keys.PAGEUP,
+    QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
+    QtCore.Qt.Key_Escape: keys.ESCAPE,
+    QtCore.Qt.Key_Delete: keys.DELETE,
+    QtCore.Qt.Key_Backspace: keys.BACKSPACE,
+    
+    QtCore.Qt.Key_Space: keys.SPACE,
+    QtCore.Qt.Key_Enter: keys.ENTER,
+    QtCore.Qt.Key_Return: keys.ENTER,
+}
 
 
 class ApplicationBackend(app.ApplicationBackend):
@@ -128,6 +150,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             #qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=int(ev.button()),
+            modifiers = self._modifiers(event),
             )
             
     def mouseReleaseEvent(self, ev):
@@ -137,6 +160,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             #qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=int(ev.button()),
+            modifiers = self._modifiers(event),
             )
 
     def mouseMoveEvent(self, ev):
@@ -145,6 +169,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         self._vispy_canvas.events.mouse_move(
             #qt_event=ev,
             pos=(ev.pos().x(), ev.pos().y()),
+            modifiers = self._modifiers(event),
             )
         
     def wheelEvent(self, ev):
@@ -154,32 +179,43 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             #qt_event=ev,
             delta=ev.delta(),
             pos=(ev.pos().x(), ev.pos().y()),
+            modifiers = self._modifiers(ev),
             )
     
     
-    def keyPressEvent(self, event):      
-        key = self._processKey(event)
-        text = str(event.text())
-        #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
-        # todo: modifiers
-        self._vispy_canvas.events.key_press(key=key, text=text)
+    def keyPressEvent(self, ev):
+        self._vispy_canvas.events.key_press(
+            key = self._processKey(ev), 
+            text = str(ev.text()),
+            modifiers = self._modifiers(ev),
+            )
     
-    def keyReleaseEvent(self, event):
-        if event.isAutoRepeat():
+    def keyReleaseEvent(self, ev):
+        if ev.isAutoRepeat():
             return # Skip release auto repeat events
-        key = self._processKey(event)
-        text = str(event.text())
-        self._vispy_canvas.events.key_release(key=key, text=text)
+        self._vispy_canvas.events.key_release(
+            key = self._processKey(ev), 
+            text = str(ev.text()),
+            modifiers = self._modifiers(ev),
+            )
     
-    def _processKey(self,event):
-        """ evaluates the keycode of qt, and transform to visvis key.
-        """
+    def _processKey(self, event):
+        # evaluates the keycode of qt, and transform to vispy key.
         key = event.key()
-        # special cases for shift control and alt -> map to 17 18 19
-        if key in KEYMAP:
-            return KEYMAP[key]
-        else:
-            return key 
+        return KEYMAP.get(key, key)
+    
+    def _modifiers(self, event):
+        # Convert the QT modifier state into a tuple of active modifier keys.
+        mod = ()
+        qtmod = event.modifiers()
+        if QtCore.Qt.ShiftModifier & qtmod:
+            mod += keys.SHIFT,
+        if QtCore.Qt.ControlModifier & qtmod:
+            mod += keys.CONTROL,
+        if QtCore.Qt.AltModifier & qtmod:
+            mod += keys.ALT,
+        return mod
+
 
 
 class QtMouseEvent(MouseEvent):
@@ -191,24 +227,6 @@ class QtMouseEvent(MouseEvent):
             self.qt_event.accept()
         else:
             self.qt_event.ignore()
-
-
-# todo: define constants for vispy
-KEYMAP = {}
-#             {  QtCore.Qt.Key_Shift: constants.KEY_SHIFT, 
-#             QtCore.Qt.Key_Alt: constants.KEY_ALT,
-#             QtCore.Qt.Key_Control: constants.KEY_CONTROL,
-#             QtCore.Qt.Key_Left: constants.KEY_LEFT,
-#             QtCore.Qt.Key_Up: constants.KEY_UP,
-#             QtCore.Qt.Key_Right: constants.KEY_RIGHT,
-#             QtCore.Qt.Key_Down: constants.KEY_DOWN,
-#             QtCore.Qt.Key_PageUp: constants.KEY_PAGEUP,
-#             QtCore.Qt.Key_PageDown: constants.KEY_PAGEDOWN,
-#             QtCore.Qt.Key_Enter: constants.KEY_ENTER,
-#             QtCore.Qt.Key_Return: constants.KEY_ENTER,
-#             QtCore.Qt.Key_Escape: constants.KEY_ESCAPE,
-#             QtCore.Qt.Key_Delete: constants.KEY_DELETE
-#             }
 
 
 class TimerBackend(app.TimerBackend, QtCore.QTimer):
