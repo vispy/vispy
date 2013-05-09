@@ -173,15 +173,15 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             #modifiers=None
             #)
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+    def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
         if self._vispy_canvas is None:
             return
         self._mouse_pos = (x, y)
         if self._buttons_accepted > 0:
             self._vispy_canvas.events.mouse_move(
                 pos=(x, self.get_size()[1] - y),
-                buttons=buttons,
-                modifiers=modifiers
+                button=button,
+                #modifiers=modifiers  pyglet modifiers is an int
                 )
         
     
