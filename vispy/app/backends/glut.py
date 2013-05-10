@@ -113,8 +113,7 @@ class CanvasBackend(app.CanvasBackend):
     def on_resize(self, w, h):
         if self._vispy_canvas is None:
             return
-        ev = Event(size=(w,h))
-        self._vispy_canvas.events.resize(ev)
+        self._vispy_canvas.events.resize(size=(w,h))
         
 
     def on_draw(self, dummy=None):
@@ -127,8 +126,7 @@ class CanvasBackend(app.CanvasBackend):
         
         w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
         h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
-        ev = Event(region=(0, 0, w, h))
-        self._vispy_canvas.events.paint(ev)
+        self._vispy_canvas.events.paint(region=(0, 0, w, h))
     
     def on_mouse_action(self, button, state, x, y):
         if self._vispy_canvas is None:
@@ -138,65 +136,48 @@ class CanvasBackend(app.CanvasBackend):
         if button < 3:
             # Mouse click event
             button = {glut.GLUT_LEFT_BUTTON:0, glut.GLUT_RIGHT_BUTTON:1}.get(button, button)
-            ev2 = Event(
-                action=action, 
-                pos=(x, y),
-                button=button,
-                )
             if action == 'press':
-                self._vispy_canvas.events.mouse_press(ev2)
+                self._vispy_canvas.events.mouse_press(pos=(x,y), button=button)
             else:
-                self._vispy_canvas.events.mouse_release(ev2)
+                self._vispy_canvas.events.mouse_release(pos=(x,y), button=button)
         
         elif button in (3, 4):
             # Wheel event
-            ev2 = Event( 
-            action='wheel', 
-            delta=(120 if button==3 else -120) , # Follow Qt stepsize
-            pos=(x, y),
-            )
-            self._vispy_canvas.events.mouse_wheel(ev2)
+            self._vispy_canvas.events.mouse_wheel(
+                pos=(x, y),
+                delta=(120 if button==3 else -120),  # Follow Qt stepsize
+                )
     
     
     def on_mouse_motion(self, x, y):
         if self._vispy_canvas is None:
             return
-        ev2 = Event(
-            action='move', 
+        self._vispy_canvas.events.mouse_move(
             pos=(x, y),
-            buttons=None,  # todo: self._buttons_pressed,
+            button=None,  # todo: self._buttons_pressed,
             modifiers=None # todo: modifiers
             )
-        self._vispy_canvas.events.mouse_move(ev2)
     
     
-    def on_key_press(self, key, x, y):      
-        key = self._processKey(key)
+    def on_key_press(self, key, x, y):
+        key = ord(key)
+        key = KEYMAP.get(key, key)
         try:
             text = chr(key)
         except Exception:
             text = ''
-        #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._vispy_canvas.events.key_press(action='press', key=key, text=text)
+        self._vispy_canvas.events.key_press(key=key, text=text)
     
     def on_key_release(self, key, x, y):
-        key = self._processKey(key)
+        key = ord(key)
+        key = KEYMAP.get(key, key)
         try:
             text = chr(key)
         except Exception:
             text = ''
-        #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._vispy_canvas.events.key_release(action='release', key=key, text=text)
-    
-    def _processKey(self, key):
-        # special cases for shift control and alt -> map to 17 18 19
-        if key in KEYMAP:
-            return KEYMAP[key]
-        else:
-            return key 
-    
+        self._vispy_canvas.events.key_release(key=key, text=text)
     
 
 # todo: map pyglet keys to vispy constants
