@@ -16,7 +16,7 @@ __version__ = '0.0.dev'
 import vispy.util
 from vispy.util import keys
 
-from vispy.event import EmitterGroup
+from vispy.event import EmitterGroup, Event
 
 
 
@@ -26,7 +26,7 @@ from vispy.event import EmitterGroup
 class Config(object):
     def __init__(self):
         self.events = EmitterGroup(source=self,
-                                   changed=None,)
+                                   changed=Event,)
         self._config = {}
     
     def __getitem__(self, item):
@@ -35,7 +35,7 @@ class Config(object):
     def __setitem__(self, item, val):
         self._config[item] = val
         ## inform any listeners that a configuration option has changed
-        self.events.changed(item=item, value=val)
+        self.events.changed(type='config_change', item=item, value=val)
         
     def update(self, **kwds):
         for k,v in kwds.items():

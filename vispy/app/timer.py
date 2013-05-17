@@ -1,5 +1,5 @@
-import vispy.event
 import vispy
+from vispy.event import Event, EmitterGroup
 
 
 
@@ -7,9 +7,10 @@ class Timer(object):
     """Timer used to schedule events in the future or on a repeating schedule.
     """
     def __init__(self, interval=0.0, connect=None, iterations=-1, start=False, app=None):
-        # todo: put this in emittergroup?
-        self.timeout = vispy.event.EventEmitter(self, 'timeout')
-        #self.timeout.defaults['source'] = self
+        self.events = EmitterGroup(source=self, 
+                        start=Event, 
+                        stop=Event,
+                        timeout=Event)
         
         # Get app instance and make sure that it has an associated backend 
         app = vispy.app.default_app if app is None else app
@@ -23,7 +24,7 @@ class Timer(object):
         self.iter_count = 0
         self.max_iterations = iterations
         if connect is not None:
-            self.timeout.connect(connect)
+            self.connect(connect)
         if start:
             self.start()
 
@@ -60,12 +61,14 @@ class Timer(object):
             self.max_iterations = iterations
         self._backend._vispy_start(self.interval)
         self._running = True
+        self.events.start(type='timer_start')
         
         
     def stop(self):
         """Stop the timer."""
         self._backend._vispy_stop()
         self._running = False
+        self.events.stop(type='timer_stop')
         
     def run_event_loop(self):
         """Execute the event loop for this Timer's backend.
@@ -90,10 +93,16 @@ class Timer(object):
         if self.max_iterations >= 0 and self.iter_count >= self.max_iterations:
             self.stop()
             return
-        self.timeout(iteration=self.iter_count)
+        self.events.timeout(type='timer_timeout', iteration=self.iter_count)
         self.iter_count += 1
     
-    
+    def connect(self, callback):
+        """ Alias for self.events.timeout.connect() """
+        return self.events.timeout.connect(callback)
+
+    def disconnect(self, callback=None):
+        """ Alias for self.events.timeout.disconnect() """
+        return self.events.timeout.disconnect(callback)
 
 
 class TimerBackend(object):
