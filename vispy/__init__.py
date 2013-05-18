@@ -16,17 +16,30 @@ __version__ = '0.0.dev'
 import vispy.util
 from vispy.util import keys
 
-from vispy.event import EmitterGroup, Event
+from vispy.event import EmitterGroup, EventEmitter, Event
 
 
-
-
-## used for application-global settings.
-
+class ConfigEvent(Event):
+    """ Event indicating a configuration change. 
+    
+    This class has a 'changes' attribute which is a dict of all name:value 
+    pairs that have changed in the configuration.
+    """
+    def __init__(self, changes):
+        Event.__init__(self, type='config_change')
+        self.changes = changes
+        
+        
 class Config(object):
+    """ Container for global settings used application-wide in vispy.
+    
+    Events:
+    -------
+    Config.events.changed - Emits ConfigEvent whenever the configuration changes.
+    """
     def __init__(self):
-        self.events = EmitterGroup(source=self,
-                                   changed=Event,)
+        self.events = EmitterGroup(source=self)
+        self.events['changed'] = EventEmitter(event_class=ConfigEvent, source=self)
         self._config = {}
     
     def __getitem__(self, item):
@@ -35,15 +48,16 @@ class Config(object):
     def __setitem__(self, item, val):
         self._config[item] = val
         ## inform any listeners that a configuration option has changed
-        self.events.changed(type='config_change', item=item, value=val)
+        self.events.changed(changes={item:val})
         
     def update(self, **kwds):
-        for k,v in kwds.items():
-            self[k] = v
+        self._config.update(kwds)
+        self.events.changed(changes=kwds)
 
 
 config = Config()
-config['default_backend'] = 'qt'
-config['qt_lib'] = 'any'  # options are 'pyqt', 'pyside', or 'any'
-
+config.update(
+    default_backend='qt',
+    qt_lib= 'any',  # options are 'pyqt', 'pyside', or 'any'
+)
 
