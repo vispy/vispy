@@ -8,7 +8,16 @@ The event module
 
 .. autoclass:: vispy.event.Event
     :members:
-    
+
+.. autoclass:: vispy.event.MouseEvent
+    :members:
+
+.. autoclass:: vispy.event.KeyEvent
+    :members:
+
+.. autoclass:: vispy.event.ResizeEvent
+    :members:
+
 
 ----
 
