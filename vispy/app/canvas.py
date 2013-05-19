@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from vispy.event import EmitterGroup, Event, MouseEvent, KeyEvent
+from vispy.event import EmitterGroup, Event, MouseEvent, KeyEvent, ResizeEvent, PaintEvent
 import vispy
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
-
-# todo: can we leave away the xxx_event methods? They "pollute" the API, and it might be enough to mention them in the class's docstring.
+# todo: add focus events
 
 class Canvas(object):
     """ Representation of a GUI element that can be rendered to by an OpenGL
@@ -19,14 +18,17 @@ class Canvas(object):
         widget immediately (default True)
     
     Receives the following events:
-    initialize, resize, paint, mouse, key, stylus, touch, close
+    initialize, resize, paint, 
+    mouse_press, mouse_release, mouse_move, mouse_wheel,
+    key_press, key_release,
+    stylus, touch, close
     """
     
     def __init__(self, *args, **kwargs):
         self.events = EmitterGroup(source=self, 
                         initialize=Event, 
-                        resize=Event,
-                        paint=Event,
+                        resize=ResizeEvent,
+                        paint=PaintEvent,
                         mouse_press=MouseEvent,
                         mouse_release=MouseEvent,
                         mouse_move=MouseEvent, 
@@ -150,55 +152,55 @@ class Canvas(object):
         self._backend._vispy_close()
     
     
-    def mouse_event(self, event):
-        """Called when a mouse input event has occurred (the mouse has moved,
-        a button was pressed/released, or the wheel has moved)."""
+    #def mouse_event(self, event):
+        #"""Called when a mouse input event has occurred (the mouse has moved,
+        #a button was pressed/released, or the wheel has moved)."""
         
-    def key_event(self, event):
-        """Called when a keyboard event has occurred (a key was pressed or 
-        released while the canvas has focus)."""
+    #def key_event(self, event):
+        #"""Called when a keyboard event has occurred (a key was pressed or 
+        #released while the canvas has focus)."""
         
-    def touch_event(self, event):
-        """Called when the user touches the screen over a Canvas.
+    #def touch_event(self, event):
+        #"""Called when the user touches the screen over a Canvas.
         
-        Event properties:
+        #Event properties:
         
-            event.touches
-                [ (x,y,pressure), ... ]
-        """
+            #event.touches
+                #[ (x,y,pressure), ... ]
+        #"""
         
-    def stylus_event(self, event):
-        """Called when a stylus has been used to interact with the Canvas.
+    #def stylus_event(self, event):
+        #"""Called when a stylus has been used to interact with the Canvas.
         
-        Event properties:
+        #Event properties:
         
-            event.device
-            event.pos  (x,y)
-            event.pressure
-            event.angle
+            #event.device
+            #event.pos  (x,y)
+            #event.pressure
+            #event.angle
             
-        """
+        #"""
         
 
-    def initialize_event(self, event):
-        """Called when the OpenGL context is initialy made available for this 
-        Canvas."""
+    #def initialize_event(self, event):
+        #"""Called when the OpenGL context is initialy made available for this 
+        #Canvas."""
         
-    def resize_event(self, event):
-        """Called when the Canvas is resized.
+    #def resize_event(self, event):
+        #"""Called when the Canvas is resized.
         
-        Event properties:
+        #Event properties:
         
-            event.size  (w,h)
-        """
+            #event.size  (w,h)
+        #"""
         
-    def paint_event(self, event):
-        """Called when all or part of the Canvas needs to be repainted.
+    #def paint_event(self, event):
+        #"""Called when all or part of the Canvas needs to be repainted.
         
-        Event properties:
+        #Event properties:
         
-            event.region  (x,y,w,h) region of Canvas requiring repaint
-        """
+            #event.region  (x,y,w,h) region of Canvas requiring repaint
+        #"""
     
 
 

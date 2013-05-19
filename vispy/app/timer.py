@@ -11,13 +11,15 @@ class Timer(object):
                         start=Event, 
                         stop=Event,
                         timeout=Event)
+        #self.connect = self.events.timeout.connect
+        #self.disconnect = self.events.timeout.disconnect
         
         # Get app instance and make sure that it has an associated backend 
-        app = vispy.app.default_app if app is None else app
-        app.use()
+        self._app = vispy.app.default_app if app is None else app
+        self._app.use()
         
         # Instantiate the backed with the right class
-        self._backend = app.backend_module.TimerBackend(self)
+        self._backend = self._app.backend_module.TimerBackend(self)
         
         self._interval = interval
         self._running = False
@@ -27,6 +29,14 @@ class Timer(object):
             self.connect(connect)
         if start:
             self.start()
+            
+        
+    @property
+    def app(self):
+        """ The vispy Application instance on which this Timer is based.
+        """
+        return self._app
+    
 
     @property
     def interval(self):
@@ -70,15 +80,16 @@ class Timer(object):
         self._running = False
         self.events.stop(type='timer_stop')
         
-    def run_event_loop(self):
-        """Execute the event loop for this Timer's backend.
-        """
-        return self._backend._vispy_run()
+    # use timer.app.run() and .quit() instead.
+    #def run_event_loop(self):
+        #"""Execute the event loop for this Timer's backend.
+        #"""
+        #return self._backend._vispy_run()
         
-    def quit_event_loop(self):
-        """Exit the event loop for this Timer's backend.
-        """
-        return self._backend._vispy_quit()
+    #def quit_event_loop(self):
+        #"""Exit the event loop for this Timer's backend.
+        #"""
+        #return self._backend._vispy_quit()
     
     @property
     def native(self):

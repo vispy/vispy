@@ -202,7 +202,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             text = ''
         #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._vispy_canvas.events.key_press(key=key, text=text)
+        self._vispy_canvas.events.key_press(key_id=key, text=text)
     
     def on_key_release(self, key, modifiers):
         key = self._processKey(key)
@@ -212,9 +212,11 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             text = ''
         #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._vispy_canvas.events.key_release(key=key, text=text)
+        self._vispy_canvas.events.key_release(key_id=key, text=text)
     
     def _processKey(self, key):
+        if 97 <= key <= 122:
+            key -= 32
         # special cases for shift control and alt -> map to 17 18 19
         if key in KEYMAP:
             return KEYMAP[key]

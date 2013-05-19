@@ -160,24 +160,25 @@ class CanvasBackend(app.CanvasBackend):
     
     
     def on_key_press(self, key, x, y):
-        key = ord(key)
-        key = KEYMAP.get(key, key)
-        try:
-            text = chr(key)
-        except Exception:
-            text = ''
+        key_id, text = self._process_key(key)
         # todo: modifiers
-        self._vispy_canvas.events.key_press(key=key, text=text)
+        self._vispy_canvas.events.key_press(key_id=key_id, text=text)
     
     def on_key_release(self, key, x, y):
-        key = ord(key)
-        key = KEYMAP.get(key, key)
+        key_id, text = self._process_key(key)
+        # todo: modifiers
+        self._vispy_canvas.events.key_release(key_id=key_id, text=text)
+
+    def _process_key(self, key):
+        key_id = ord(key.upper())
+        if 97 <= key_id <= 122:
+            key_id -= 32
+        key_id = KEYMAP.get(key_id, key_id)
         try:
-            text = chr(key)
+            text = chr(ord(key))
         except Exception:
             text = ''
-        # todo: modifiers
-        self._vispy_canvas.events.key_release(key=key, text=text)
+        return key_id, text
     
 
 # todo: map pyglet keys to vispy constants

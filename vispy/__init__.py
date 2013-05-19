@@ -14,7 +14,7 @@ separately before use. These are:
 __version__ = '0.0.dev'
 
 import vispy.util
-from vispy.util import keys
+from vispy.util.keys import keys
 
 from vispy.event import EmitterGroup, EventEmitter, Event
 

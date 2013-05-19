@@ -11,9 +11,8 @@ import vispy
 
 
 class Application(object):
-    """ Representation of the vispy application. There is always exactly
-    one vispy app object, and it wraps a native GUI application
-    instance.
+    """ Representation of the vispy application. This wraps a native 
+    GUI application instance.
     """
     
     def __init__(self):
