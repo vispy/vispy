@@ -27,24 +27,30 @@ class Event(object):
     The creation of events and passing of events to the appropriate callback
     functions in the responsibility of :class:`EventEmitter` instances.
     
+    Note that each event object has an attribute for each of the input
+    arguments listed below.
+    
     Input arguments
     ---------------
     type : str
-       string indicating the event type (e.g. mouse_press, key_release)
-    kwds : keyword arguments
-        Any additional keyword arguments are stored as attributes on the event.
+       String indicating the event type (e.g. mouse_press, key_release)
+    native : object (optional)
+       The native GUI event object
+    **kwds : keyword arguments
+        All extra keyword arguments become attributes of the event object.
     
     """
-    def __init__(self, type, **kwds):
+    def __init__(self, type, native=None, **kwds):
         # stack of all sources this event has been emitted through
         self._sources = [] 
-        # string indicating the event type (mouse_press, key_release, etc.)
-        self._type = type
         self._handled = False
         self._blocked = False
+        # Store args
+        self._type = type
+        self._native = native
         for k,v in kwds.items():
             setattr(self, k, v)
-        
+    
     @property
     def source(self):
         """ The object that the event applies to (i.e. the source of the event).
@@ -71,10 +77,14 @@ class Event(object):
         
     @property
     def type(self):
-        """ A string that specifies the type of the event.
-        """
+        # No docstring; documeted in class docstring
         return self._type
-        
+    
+    @property
+    def native(self):
+        # No docstring; documeted in class docstring
+        return self._native
+    
     @property
     def handled(self):
         """This boolean property indicates whether the event has already been 
