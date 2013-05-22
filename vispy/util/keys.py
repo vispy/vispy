@@ -1,5 +1,13 @@
 """ Define constants for keys.
-In vispy, each "key" is defined as a string. For ASCI
+
+Each key constant is defined as a Key object, which allows comparison with
+strings (e.g. 'A', 'Escape', 'Shift'). This enables handling of key events
+without using the key constants explicitly (e.g. ``if ev.key == 'Left':``).
+
+In addition, key objects that represent characters can be matched to
+the integer ordinal (e.g. 32 for space, 65 for A). This behavior is mainly
+intended as a compatibility measure.
+
 """
 
 import sys
