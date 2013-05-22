@@ -66,8 +66,12 @@ RIGHT = Key('Right')
 PAGEUP = Key('PageUp')
 PAGEDOWN = Key('PageDown')
 
-ESCAPE = Key('Escape')
+INSERT = Key('Insert')
 DELETE = Key('Delete')
+HOME = Key('Home')
+END = Key('End')
+
+ESCAPE = Key('Escape')
 BACKSPACE = Key('Backspace')
 
 F1 = Key('F1')

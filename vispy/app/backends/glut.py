@@ -12,12 +12,17 @@ import vispy
 import OpenGL.GLUT as glut
 
 
+# glut.GLUT_ACTIVE_SHIFT: keys.SHIFT,
+# glut.GLUT_ACTIVE_CTRL: keys.CONTROL,
+# glut.GLUT_ACTIVE_ALT: keys.ALT,
+# -1: keys.META,
+    
 # Map native keys to vispy keys
 KEYMAP = {
-    glut.GLUT_ACTIVE_SHIFT: keys.SHIFT,
-    glut.GLUT_ACTIVE_CTRL: keys.CONTROL,
-    glut.GLUT_ACTIVE_ALT: keys.ALT,
-    -1: keys.META,
+    -1: keys.SHIFT,
+    -2: keys.CONTROL,
+    -3: keys.ALT,
+    -4: keys.META,
     
     glut.GLUT_KEY_LEFT: keys.LEFT,
     glut.GLUT_KEY_UP: keys.UP,
@@ -26,15 +31,33 @@ KEYMAP = {
     glut.GLUT_KEY_PAGE_UP: keys.PAGEUP,
     glut.GLUT_KEY_PAGE_DOWN: keys.PAGEDOWN,
     
-    chr(27): keys.ESCAPE,
+    glut.GLUT_KEY_INSERT: keys.INSERT,
     chr(127): keys.DELETE,
+    glut.GLUT_KEY_HOME: keys.HOME,
+    glut.GLUT_KEY_END: keys.END,
+    
+    chr(27): keys.ESCAPE,
     chr(8): keys.BACKSPACE,
+    
+    glut.GLUT_KEY_F1: keys.F1,
+    glut.GLUT_KEY_F2: keys.F2,
+    glut.GLUT_KEY_F3: keys.F3,
+    glut.GLUT_KEY_F4: keys.F4,
+    glut.GLUT_KEY_F5: keys.F5,
+    glut.GLUT_KEY_F6: keys.F6,
+    glut.GLUT_KEY_F7: keys.F7,
+    glut.GLUT_KEY_F8: keys.F8,
+    glut.GLUT_KEY_F9: keys.F9,
+    glut.GLUT_KEY_F10: keys.F10,
+    glut.GLUT_KEY_F11: keys.F11,
+    glut.GLUT_KEY_F12: keys.F12,
     
     ' ': keys.SPACE,
     '\r': keys.ENTER,
     '\n': keys.ENTER,
     '\t': keys.TAB,
 }
+
 
 
 class ApplicationBackend(app.ApplicationBackend):

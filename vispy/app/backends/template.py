@@ -21,13 +21,30 @@ KEYMAP = {
     -1: keys.PAGEUP,
     -1: keys.PAGEDOWN,
     
-    -1: keys.ESCAPE,
+    -1: keys.INSERT,
     -1: keys.DELETE,
+    -1: keys.HOME,
+    -1: keys.END,
+    
+    -1: keys.ESCAPE,
     -1: keys.BACKSPACE,
     
     -1: keys.SPACE,
     -1: keys.ENTER,
     -1: keys.TAB,
+    
+    -1: keys.F1,
+    -1: keys.F2,
+    -1: keys.F3,
+    -1: keys.F4,
+    -1: keys.F5,
+    -1: keys.F6,
+    -1: keys.F7,
+    -1: keys.F8,
+    -1: keys.F9,
+    -1: keys.F10,
+    -1: keys.F11,
+    -1: keys.F12,
 }
 
 

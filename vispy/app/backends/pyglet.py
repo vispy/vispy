@@ -63,9 +63,26 @@ KEYMAP = {
     pyglet.window.key.PAGEUP: keys.PAGEUP,
     pyglet.window.key.PAGEDOWN: keys.PAGEDOWN,
     
-    pyglet.window.key.ESCAPE: keys.ESCAPE,
+    pyglet.window.key.INSERT: keys.INSERT,
     pyglet.window.key.DELETE: keys.DELETE,
+    pyglet.window.key.HOME: keys.HOME,
+    pyglet.window.key.END: keys.END,
+    
+    pyglet.window.key.ESCAPE: keys.ESCAPE,
     pyglet.window.key.BACKSPACE: keys.BACKSPACE,
+    
+    pyglet.window.key.F1: keys.F1,
+    pyglet.window.key.F2: keys.F2,
+    pyglet.window.key.F3: keys.F3,
+    pyglet.window.key.F4: keys.F4,
+    pyglet.window.key.F5: keys.F5,
+    pyglet.window.key.F6: keys.F6,
+    pyglet.window.key.F7: keys.F7,
+    pyglet.window.key.F8: keys.F8,
+    pyglet.window.key.F9: keys.F9,
+    pyglet.window.key.F10: keys.F10,
+    pyglet.window.key.F11: keys.F11,
+    pyglet.window.key.F12: keys.F12,
     
     pyglet.window.key.SPACE: keys.SPACE,
     pyglet.window.key.ENTER: keys.ENTER,

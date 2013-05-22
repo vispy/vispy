@@ -35,9 +35,26 @@ KEYMAP = {
     QtCore.Qt.Key_PageUp: keys.PAGEUP,
     QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
     
-    QtCore.Qt.Key_Escape: keys.ESCAPE,
+    QtCore.Qt.Key_Insert: keys.INSERT,
     QtCore.Qt.Key_Delete: keys.DELETE,
+    QtCore.Qt.Key_Home: keys.HOME,
+    QtCore.Qt.Key_End: keys.END,
+    
+    QtCore.Qt.Key_Escape: keys.ESCAPE,
     QtCore.Qt.Key_Backspace: keys.BACKSPACE,
+    
+    QtCore.Qt.Key_F1: keys.F1,
+    QtCore.Qt.Key_F2: keys.F2,
+    QtCore.Qt.Key_F3: keys.F3,
+    QtCore.Qt.Key_F4: keys.F4,
+    QtCore.Qt.Key_F5: keys.F5,
+    QtCore.Qt.Key_F6: keys.F6,
+    QtCore.Qt.Key_F7: keys.F7,
+    QtCore.Qt.Key_F8: keys.F8,
+    QtCore.Qt.Key_F9: keys.F9,
+    QtCore.Qt.Key_F10: keys.F10,
+    QtCore.Qt.Key_F11: keys.F11,
+    QtCore.Qt.Key_F12: keys.F12,
     
     QtCore.Qt.Key_Space: keys.SPACE,
     QtCore.Qt.Key_Enter: keys.ENTER,
