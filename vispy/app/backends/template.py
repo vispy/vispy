@@ -12,6 +12,7 @@ KEYMAP = {
     -1: keys.SHIFT,
     -1: keys.CONTROL,
     -1: keys.ALT,
+    -1: keys.META,
     
     -1: keys.LEFT,
     -1: keys.UP,
@@ -19,12 +20,14 @@ KEYMAP = {
     -1: keys.DOWN,
     -1: keys.PAGEUP,
     -1: keys.PAGEDOWN,
+    
     -1: keys.ESCAPE,
     -1: keys.DELETE,
     -1: keys.BACKSPACE,
     
     -1: keys.SPACE,
     -1: keys.ENTER,
+    -1: keys.TAB,
 }
 
 

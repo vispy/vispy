@@ -1,464 +1,80 @@
 """ Define constants for keys.
-These are taken from Qt, but this is arbitrary and should not be relied on.
+In vispy, each "key" is defined as a string. For ASCI
 """
 
-## Keys that are also modifiers
-## Note that Qt and PyGlet use separate constants for shift-as-a-key and
-## shift-as-a-modifier. Is this useful?
-#SHIFT = 16777248
-#CONTROL = 16777249  # Command key on Mac
-#ALT = 16777251
-
-## Common keys
-#LEFT = 16777234
-#UP = 16777235
-#RIGHT = 16777236
-#DOWN = 16777237
-#PAGEUP = 16777238
-#PAGEDOWN = 16777239
-#ESCAPE = 16777216
-#DELETE = 16777223
-#BACKSPACE = 16777219
-
-## todo: Function keys
-## F1 =
-## F2 = 
-## etc.
-
-## A few easy ones for convenience
-#SPACE = ord(' ')
-#ENTER = ord('\n')  # Note that Qt has diffent constants for Enter and Return
+import sys
+if sys.version_info > (3,):
+    basestring = str
 
 
+# class Key(str):
+#     """ A string that can only be compared to another string. 
+#     More strict that a simple string to avoid bugs trying to compare to int.
+#     """
+#     def __new__(cls, s, *alternatives):
+#         if not isinstance(s, basestring):
+#             raise ValueError('KeyConsant must be a string')
+#         s = str.__new__(cls, s)
+#         s._alternatives = alternatives
+#         return s
+#     def __eq__(self, other):
+#         if not isinstance(other, basestring):
+#             raise ValueError('Key constants can only be compared to strings.')
+#         return basestring.__eq__(self, other) or other in self._alternatives
 
-
-# Keycodes copied from Qt; generated with the following code:
-# keys = [(n[4:],getattr(QtCore.Qt, n)) for n in dir(QtCore.Qt) if n.startswith('Key_')]
-# keys.sort(key=lambda x: x[1])
-# for k in keys:
-#     print "('%s', 0x%08x),"%k
-
-keys = [
-    ('Any', 0x00000020),
-    ('Space', 0x00000020),
-    ('Exclam', 0x00000021),
-    ('QuoteDbl', 0x00000022),
-    ('NumberSign', 0x00000023),
-    ('Dollar', 0x00000024),
-    ('Percent', 0x00000025),
-    ('Ampersand', 0x00000026),
-    ('Apostrophe', 0x00000027),
-    ('ParenLeft', 0x00000028),
-    ('ParenRight', 0x00000029),
-    ('Asterisk', 0x0000002a),
-    ('Plus', 0x0000002b),
-    ('Comma', 0x0000002c),
-    ('Minus', 0x0000002d),
-    ('Period', 0x0000002e),
-    ('Slash', 0x0000002f),
-    ('0', 0x00000030),
-    ('1', 0x00000031),
-    ('2', 0x00000032),
-    ('3', 0x00000033),
-    ('4', 0x00000034),
-    ('5', 0x00000035),
-    ('6', 0x00000036),
-    ('7', 0x00000037),
-    ('8', 0x00000038),
-    ('9', 0x00000039),
-    ('Colon', 0x0000003a),
-    ('Semicolon', 0x0000003b),
-    ('Less', 0x0000003c),
-    ('Equal', 0x0000003d),
-    ('Greater', 0x0000003e),
-    ('Question', 0x0000003f),
-    ('At', 0x00000040),
-    ('A', 0x00000041),
-    ('B', 0x00000042),
-    ('C', 0x00000043),
-    ('D', 0x00000044),
-    ('E', 0x00000045),
-    ('F', 0x00000046),
-    ('G', 0x00000047),
-    ('H', 0x00000048),
-    ('I', 0x00000049),
-    ('J', 0x0000004a),
-    ('K', 0x0000004b),
-    ('L', 0x0000004c),
-    ('M', 0x0000004d),
-    ('N', 0x0000004e),
-    ('O', 0x0000004f),
-    ('P', 0x00000050),
-    ('Q', 0x00000051),
-    ('R', 0x00000052),
-    ('S', 0x00000053),
-    ('T', 0x00000054),
-    ('U', 0x00000055),
-    ('V', 0x00000056),
-    ('W', 0x00000057),
-    ('X', 0x00000058),
-    ('Y', 0x00000059),
-    ('Z', 0x0000005a),
-    ('BracketLeft', 0x0000005b),
-    ('Backslash', 0x0000005c),
-    ('BracketRight', 0x0000005d),
-    ('AsciiCircum', 0x0000005e),
-    ('Underscore', 0x0000005f),
-    ('QuoteLeft', 0x00000060),
-    ('BraceLeft', 0x0000007b),
-    ('Bar', 0x0000007c),
-    ('BraceRight', 0x0000007d),
-    ('AsciiTilde', 0x0000007e),
-    ('nobreakspace', 0x000000a0),
-    ('exclamdown', 0x000000a1),
-    ('cent', 0x000000a2),
-    ('sterling', 0x000000a3),
-    ('currency', 0x000000a4),
-    ('yen', 0x000000a5),
-    ('brokenbar', 0x000000a6),
-    ('section', 0x000000a7),
-    ('diaeresis', 0x000000a8),
-    ('copyright', 0x000000a9),
-    ('ordfeminine', 0x000000aa),
-    ('guillemotleft', 0x000000ab),
-    ('notsign', 0x000000ac),
-    ('hyphen', 0x000000ad),
-    ('registered', 0x000000ae),
-    ('macron', 0x000000af),
-    ('degree', 0x000000b0),
-    ('plusminus', 0x000000b1),
-    ('twosuperior', 0x000000b2),
-    ('threesuperior', 0x000000b3),
-    ('acute', 0x000000b4),
-    ('mu', 0x000000b5),
-    ('paragraph', 0x000000b6),
-    ('periodcentered', 0x000000b7),
-    ('cedilla', 0x000000b8),
-    ('onesuperior', 0x000000b9),
-    ('masculine', 0x000000ba),
-    ('guillemotright', 0x000000bb),
-    ('onequarter', 0x000000bc),
-    ('onehalf', 0x000000bd),
-    ('threequarters', 0x000000be),
-    ('questiondown', 0x000000bf),
-    ('Agrave', 0x000000c0),
-    ('Aacute', 0x000000c1),
-    ('Acircumflex', 0x000000c2),
-    ('Atilde', 0x000000c3),
-    ('Adiaeresis', 0x000000c4),
-    ('Aring', 0x000000c5),
-    ('AE', 0x000000c6),
-    ('Ccedilla', 0x000000c7),
-    ('Egrave', 0x000000c8),
-    ('Eacute', 0x000000c9),
-    ('Ecircumflex', 0x000000ca),
-    ('Ediaeresis', 0x000000cb),
-    ('Igrave', 0x000000cc),
-    ('Iacute', 0x000000cd),
-    ('Icircumflex', 0x000000ce),
-    ('Idiaeresis', 0x000000cf),
-    ('ETH', 0x000000d0),
-    ('Ntilde', 0x000000d1),
-    ('Ograve', 0x000000d2),
-    ('Oacute', 0x000000d3),
-    ('Ocircumflex', 0x000000d4),
-    ('Otilde', 0x000000d5),
-    ('Odiaeresis', 0x000000d6),
-    ('multiply', 0x000000d7),
-    ('Ooblique', 0x000000d8),
-    ('Ugrave', 0x000000d9),
-    ('Uacute', 0x000000da),
-    ('Ucircumflex', 0x000000db),
-    ('Udiaeresis', 0x000000dc),
-    ('Yacute', 0x000000dd),
-    ('THORN', 0x000000de),
-    ('ssharp', 0x000000df),
-    ('division', 0x000000f7),
-    ('ydiaeresis', 0x000000ff),
-    ('Escape', 0x01000000),
-    ('Tab', 0x01000001),
-    ('Backtab', 0x01000002),
-    ('Backspace', 0x01000003),
-    ('Return', 0x01000004),
-    ('Enter', 0x01000005),
-    ('Insert', 0x01000006),
-    ('Delete', 0x01000007),
-    ('Pause', 0x01000008),
-    ('Print', 0x01000009),
-    ('SysReq', 0x0100000a),
-    ('Clear', 0x0100000b),
-    ('Home', 0x01000010),
-    ('End', 0x01000011),
-    ('Left', 0x01000012),
-    ('Up', 0x01000013),
-    ('Right', 0x01000014),
-    ('Down', 0x01000015),
-    ('PageUp', 0x01000016),
-    ('PageDown', 0x01000017),
-    ('Shift', 0x01000020),
-    ('Control', 0x01000021),
-    ('Meta', 0x01000022),
-    ('Alt', 0x01000023),
-    ('CapsLock', 0x01000024),
-    ('NumLock', 0x01000025),
-    ('ScrollLock', 0x01000026),
-    ('F1', 0x01000030),
-    ('F2', 0x01000031),
-    ('F3', 0x01000032),
-    ('F4', 0x01000033),
-    ('F5', 0x01000034),
-    ('F6', 0x01000035),
-    ('F7', 0x01000036),
-    ('F8', 0x01000037),
-    ('F9', 0x01000038),
-    ('F10', 0x01000039),
-    ('F11', 0x0100003a),
-    ('F12', 0x0100003b),
-    ('F13', 0x0100003c),
-    ('F14', 0x0100003d),
-    ('F15', 0x0100003e),
-    ('F16', 0x0100003f),
-    ('F17', 0x01000040),
-    ('F18', 0x01000041),
-    ('F19', 0x01000042),
-    ('F20', 0x01000043),
-    ('F21', 0x01000044),
-    ('F22', 0x01000045),
-    ('F23', 0x01000046),
-    ('F24', 0x01000047),
-    ('F25', 0x01000048),
-    ('F26', 0x01000049),
-    ('F27', 0x0100004a),
-    ('F28', 0x0100004b),
-    ('F29', 0x0100004c),
-    ('F30', 0x0100004d),
-    ('F31', 0x0100004e),
-    ('F32', 0x0100004f),
-    ('F33', 0x01000050),
-    ('F34', 0x01000051),
-    ('F35', 0x01000052),
-    ('Super_L', 0x01000053),
-    ('Super_R', 0x01000054),
-    ('Menu', 0x01000055),
-    ('Hyper_L', 0x01000056),
-    ('Hyper_R', 0x01000057),
-    ('Help', 0x01000058),
-    ('Direction_L', 0x01000059),
-    ('Direction_R', 0x01000060),
-    ('Back', 0x01000061),
-    ('Forward', 0x01000062),
-    ('Stop', 0x01000063),
-    ('Refresh', 0x01000064),
-    ('VolumeDown', 0x01000070),
-    ('VolumeMute', 0x01000071),
-    ('VolumeUp', 0x01000072),
-    ('BassBoost', 0x01000073),
-    ('BassUp', 0x01000074),
-    ('BassDown', 0x01000075),
-    ('TrebleUp', 0x01000076),
-    ('TrebleDown', 0x01000077),
-    ('MediaPlay', 0x01000080),
-    ('MediaStop', 0x01000081),
-    ('MediaPrevious', 0x01000082),
-    ('MediaNext', 0x01000083),
-    ('MediaRecord', 0x01000084),
-    ('MediaPause', 0x01000085),
-    ('MediaTogglePlayPause', 0x01000086),
-    ('HomePage', 0x01000090),
-    ('Favorites', 0x01000091),
-    ('Search', 0x01000092),
-    ('Standby', 0x01000093),
-    ('OpenUrl', 0x01000094),
-    ('LaunchMail', 0x010000a0),
-    ('LaunchMedia', 0x010000a1),
-    ('Launch0', 0x010000a2),
-    ('Launch1', 0x010000a3),
-    ('Launch2', 0x010000a4),
-    ('Launch3', 0x010000a5),
-    ('Launch4', 0x010000a6),
-    ('Launch5', 0x010000a7),
-    ('Launch6', 0x010000a8),
-    ('Launch7', 0x010000a9),
-    ('Launch8', 0x010000aa),
-    ('Launch9', 0x010000ab),
-    ('LaunchA', 0x010000ac),
-    ('LaunchB', 0x010000ad),
-    ('LaunchC', 0x010000ae),
-    ('LaunchD', 0x010000af),
-    ('LaunchE', 0x010000b0),
-    ('LaunchF', 0x010000b1),
-    ('MonBrightnessUp', 0x010000b2),
-    ('MonBrightnessDown', 0x010000b3),
-    ('KeyboardLightOnOff', 0x010000b4),
-    ('KeyboardBrightnessUp', 0x010000b5),
-    ('KeyboardBrightnessDown', 0x010000b6),
-    ('PowerOff', 0x010000b7),
-    ('WakeUp', 0x010000b8),
-    ('Eject', 0x010000b9),
-    ('ScreenSaver', 0x010000ba),
-    ('WWW', 0x010000bb),
-    ('Memo', 0x010000bc),
-    ('LightBulb', 0x010000bd),
-    ('Shop', 0x010000be),
-    ('History', 0x010000bf),
-    ('AddFavorite', 0x010000c0),
-    ('HotLinks', 0x010000c1),
-    ('BrightnessAdjust', 0x010000c2),
-    ('Finance', 0x010000c3),
-    ('Community', 0x010000c4),
-    ('AudioRewind', 0x010000c5),
-    ('BackForward', 0x010000c6),
-    ('ApplicationLeft', 0x010000c7),
-    ('ApplicationRight', 0x010000c8),
-    ('Book', 0x010000c9),
-    ('CD', 0x010000ca),
-    ('Calculator', 0x010000cb),
-    ('ToDoList', 0x010000cc),
-    ('ClearGrab', 0x010000cd),
-    ('Close', 0x010000ce),
-    ('Copy', 0x010000cf),
-    ('Cut', 0x010000d0),
-    ('Display', 0x010000d1),
-    ('DOS', 0x010000d2),
-    ('Documents', 0x010000d3),
-    ('Excel', 0x010000d4),
-    ('Explorer', 0x010000d5),
-    ('Game', 0x010000d6),
-    ('Go', 0x010000d7),
-    ('iTouch', 0x010000d8),
-    ('LogOff', 0x010000d9),
-    ('Market', 0x010000da),
-    ('Meeting', 0x010000db),
-    ('MenuKB', 0x010000dc),
-    ('MenuPB', 0x010000dd),
-    ('MySites', 0x010000de),
-    ('News', 0x010000df),
-    ('OfficeHome', 0x010000e0),
-    ('Option', 0x010000e1),
-    ('Paste', 0x010000e2),
-    ('Phone', 0x010000e3),
-    ('Calendar', 0x010000e4),
-    ('Reply', 0x010000e5),
-    ('Reload', 0x010000e6),
-    ('RotateWindows', 0x010000e7),
-    ('RotationPB', 0x010000e8),
-    ('RotationKB', 0x010000e9),
-    ('Save', 0x010000ea),
-    ('Send', 0x010000eb),
-    ('Spell', 0x010000ec),
-    ('SplitScreen', 0x010000ed),
-    ('Support', 0x010000ee),
-    ('TaskPane', 0x010000ef),
-    ('Terminal', 0x010000f0),
-    ('Tools', 0x010000f1),
-    ('Travel', 0x010000f2),
-    ('Video', 0x010000f3),
-    ('Word', 0x010000f4),
-    ('Xfer', 0x010000f5),
-    ('ZoomIn', 0x010000f6),
-    ('ZoomOut', 0x010000f7),
-    ('Away', 0x010000f8),
-    ('Messenger', 0x010000f9),
-    ('WebCam', 0x010000fa),
-    ('MailForward', 0x010000fb),
-    ('Pictures', 0x010000fc),
-    ('Music', 0x010000fd),
-    ('Battery', 0x010000fe),
-    ('Bluetooth', 0x010000ff),
-    ('WLAN', 0x01000100),
-    ('UWB', 0x01000101),
-    ('AudioForward', 0x01000102),
-    ('AudioRepeat', 0x01000103),
-    ('AudioRandomPlay', 0x01000104),
-    ('Subtitle', 0x01000105),
-    ('AudioCycleTrack', 0x01000106),
-    ('Time', 0x01000107),
-    ('Hibernate', 0x01000108),
-    ('View', 0x01000109),
-    ('TopMenu', 0x0100010a),
-    ('PowerDown', 0x0100010b),
-    ('Suspend', 0x0100010c),
-    ('ContrastAdjust', 0x0100010d),
-    ('LaunchG', 0x0100010e),
-    ('LaunchH', 0x0100010f),
-    ('AltGr', 0x01001103),
-    ('Multi_key', 0x01001120),
-    ('Kanji', 0x01001121),
-    ('Muhenkan', 0x01001122),
-    ('Henkan', 0x01001123),
-    ('Romaji', 0x01001124),
-    ('Hiragana', 0x01001125),
-    ('Katakana', 0x01001126),
-    ('Hiragana_Katakana', 0x01001127),
-    ('Zenkaku', 0x01001128),
-    ('Hankaku', 0x01001129),
-    ('Zenkaku_Hankaku', 0x0100112a),
-    ('Touroku', 0x0100112b),
-    ('Massyo', 0x0100112c),
-    ('Kana_Lock', 0x0100112d),
-    ('Kana_Shift', 0x0100112e),
-    ('Eisu_Shift', 0x0100112f),
-    ('Eisu_toggle', 0x01001130),
-    ('Hangul', 0x01001131),
-    ('Hangul_Start', 0x01001132),
-    ('Hangul_End', 0x01001133),
-    ('Hangul_Hanja', 0x01001134),
-    ('Hangul_Jamo', 0x01001135),
-    ('Hangul_Romaja', 0x01001136),
-    ('Codeinput', 0x01001137),
-    ('Hangul_Jeonja', 0x01001138),
-    ('Hangul_Banja', 0x01001139),
-    ('Hangul_PreHanja', 0x0100113a),
-    ('Hangul_PostHanja', 0x0100113b),
-    ('SingleCandidate', 0x0100113c),
-    ('MultipleCandidate', 0x0100113d),
-    ('PreviousCandidate', 0x0100113e),
-    ('Hangul_Special', 0x0100113f),
-    ('Mode_switch', 0x0100117e),
-    ('Dead_Grave', 0x01001250),
-    ('Dead_Acute', 0x01001251),
-    ('Dead_Circumflex', 0x01001252),
-    ('Dead_Tilde', 0x01001253),
-    ('Dead_Macron', 0x01001254),
-    ('Dead_Breve', 0x01001255),
-    ('Dead_Abovedot', 0x01001256),
-    ('Dead_Diaeresis', 0x01001257),
-    ('Dead_Abovering', 0x01001258),
-    ('Dead_Doubleacute', 0x01001259),
-    ('Dead_Caron', 0x0100125a),
-    ('Dead_Cedilla', 0x0100125b),
-    ('Dead_Ogonek', 0x0100125c),
-    ('Dead_Iota', 0x0100125d),
-    ('Dead_Voiced_Sound', 0x0100125e),
-    ('Dead_Semivoiced_Sound', 0x0100125f),
-    ('Dead_Belowdot', 0x01001260),
-    ('Dead_Hook', 0x01001261),
-    ('Dead_Horn', 0x01001262),
-    ('MediaLast', 0x0100ffff),
-    ('Select', 0x01010000),
-    ('Yes', 0x01010001),
-    ('No', 0x01010002),
-    ('Cancel', 0x01020001),
-    ('Printer', 0x01020002),
-    ('Execute', 0x01020003),
-    ('Sleep', 0x01020004),
-    ('Play', 0x01020005),
-    ('Zoom', 0x01020006),
-    ('Context1', 0x01100000),
-    ('Context2', 0x01100001),
-    ('Context3', 0x01100002),
-    ('Context4', 0x01100003),
-    ('Call', 0x01100004),
-    ('Hangup', 0x01100005),
-    ('Flip', 0x01100006),
-    ('ToggleCallHangup', 0x01100007),
-    ('VoiceDial', 0x01100008),
-    ('LastNumberRedial', 0x01100009),
-    ('Camera', 0x01100020),
-    ('CameraFocus', 0x01100021),
-    ('unknown', 0x01ffffff),
-    ]
+class Key:
+    """ A Key object represents the identity of a certain key. It
+    represents one or more names that the key in question is known by.
     
-key_names = dict([(k[1], k[0]) for k in keys])
-keys = dict(keys)
-keys.update(key_names)
+    A Key object can be compared to one of its string names (case
+    insensitive), to the integer ordinal of the key (only for keys that
+    represent characters), and to another Key instance.
+    """
+    def __init__(self, *names):
+        self._names = names
+        self._names_upper = tuple([v.upper() for v in names])
+    def __repr__(self):        
+        return "<Key %s>" % ', '.join([repr(v) for v in self._names])
+    def __eq__(self, other):
+        if isinstance(other, basestring):
+            return other.upper() in self._names_upper
+        elif isinstance(other, Key):
+            return self._names[0] == other
+        elif isinstance(other, int):
+            return other in [ord(v) for v in self._names_upper if len(v)==1]
+        else:
+            raise ValueError('Key constants can only be compared to str, int and Key.')
+
+
+SHIFT = Key('Shift')
+CONTROL = Key('Control')
+ALT = Key('Alt')
+META = Key('Meta')  # That Mac thingy
+
+UP = Key('Up')
+DOWN = Key('Down')
+LEFT = Key('Left')
+RIGHT = Key('Right')
+PAGEUP = Key('PageUp')
+PAGEDOWN = Key('PageDown')
+
+ESCAPE = Key('Escape')
+DELETE = Key('Delete')
+BACKSPACE = Key('Backspace')
+
+F1 = Key('F1')
+F2 = Key('F2')
+F3 = Key('F3')
+F4 = Key('F4')
+F5 = Key('F5')
+F6 = Key('F6')
+F7 = Key('F7')
+F8 = Key('F8')
+F9 = Key('F9')
+F10 = Key('F10')
+F11 = Key('F11')
+F12 = Key('F12')
+
+SPACE = Key('Space', ' ')
+ENTER = Key('Enter', 'Return', '\n')
+TAB = Key('Tab', '\t')

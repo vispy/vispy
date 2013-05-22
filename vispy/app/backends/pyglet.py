@@ -7,7 +7,7 @@ from __future__ import print_function, division, absolute_import
 
 from vispy.event import Event
 from vispy import app
-
+from vispy import keys
 import vispy
 
 import pyglet.window
@@ -40,6 +40,37 @@ def patch_idle_loop():
         pyglet.app.EventLoop.idle = idle
 
 patch_idle_loop()
+# todo: this does not seem enough. Perhaps use the framerate limiter from plot_lines?
+
+# Map native keys to vispy keys
+KEYMAP = {
+    pyglet.window.key.LSHIFT: keys.SHIFT,
+    pyglet.window.key.RSHIFT: keys.SHIFT,
+    pyglet.window.key.MOD_SHIFT: keys.SHIFT,
+    pyglet.window.key.LCTRL: keys.CONTROL,
+    pyglet.window.key.RCTRL: keys.CONTROL,
+    pyglet.window.key.MOD_CTRL: keys.CONTROL,
+    pyglet.window.key.LALT: keys.ALT,
+    pyglet.window.key.RALT: keys.ALT,
+    pyglet.window.key.MOD_ALT: keys.ALT,
+    pyglet.window.key.LMETA: keys.META,
+    pyglet.window.key.RMETA: keys.META,
+    
+    pyglet.window.key.LEFT: keys.LEFT,
+    pyglet.window.key.UP: keys.UP,
+    pyglet.window.key.RIGHT: keys.RIGHT,
+    pyglet.window.key.DOWN: keys.DOWN,
+    pyglet.window.key.PAGEUP: keys.PAGEUP,
+    pyglet.window.key.PAGEDOWN: keys.PAGEDOWN,
+    
+    pyglet.window.key.ESCAPE: keys.ESCAPE,
+    pyglet.window.key.DELETE: keys.DELETE,
+    pyglet.window.key.BACKSPACE: keys.BACKSPACE,
+    
+    pyglet.window.key.SPACE: keys.SPACE,
+    pyglet.window.key.ENTER: keys.ENTER,
+    pyglet.window.key.TAB: keys.TAB,
+}
 
 
 class ApplicationBackend(app.ApplicationBackend):
@@ -195,38 +226,37 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     
     
     def on_key_press(self, key, modifiers):      
-        key = self._processKey(key)
         try:
             text = chr(key)
         except Exception:
             text = ''
-        #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._vispy_canvas.events.key_press(key_id=key, text=text)
+        self._vispy_canvas.events.key_press(
+                key=self._processKey(key), 
+                text=text,
+            )
     
     def on_key_release(self, key, modifiers):
-        key = self._processKey(key)
         try:
             text = chr(key)
         except Exception:
             text = ''
-        #self.figure._GenerateKeyEvent('keydown', key, text, modifiers(event))
         # todo: modifiers
-        self._vispy_canvas.events.key_release(key_id=key, text=text)
+        self._vispy_canvas.events.key_release(
+                key= self._processKey(key), 
+                text=text,
+            )
     
     def _processKey(self, key):
         if 97 <= key <= 122:
             key -= 32
-        # special cases for shift control and alt -> map to 17 18 19
         if key in KEYMAP:
             return KEYMAP[key]
+        elif key>=32 and key <= 127:
+            return keys.Key(chr(key))
         else:
-            return key 
-    
-    
+            return None 
 
-# todo: map pyglet keys to vispy constants
-KEYMAP = {}
 
 
 class TimerBackend(app.TimerBackend):

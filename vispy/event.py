@@ -160,13 +160,6 @@ class MouseEvent(Event):
         return self._modifiers
     
     @property
-    def modifier_names(self):
-        """ Tuple that specifies the names of modifier keys pressed down at the
-        time of the event (shift, control, alt).
-        """
-        return [vispy.keys[kid] for kid in self._modifiers]
-    
-    @property
     def delta(self):
         """ Integer that represents the amount of scrolling.
         """
@@ -195,9 +188,9 @@ class KeyEvent(Event):
         All extra keyword arguments become attributes of the KeyEvent.
     """
     
-    def __init__(self, type, key_id, text='', modifiers=None, auto_repeat=False, native=None, **kwds):
+    def __init__(self, type, key, text='', modifiers=None, auto_repeat=False, native=None, **kwds):
         Event.__init__(self, type, **kwds)
-        self._key_id = int(key_id)
+        self._key = key
         self._text = str(text) 
         self._modifiers = tuple( modifiers or () )
         self.auto_repeat = auto_repeat
@@ -205,15 +198,9 @@ class KeyEvent(Event):
     
     @property
     def key(self):
-        """ String name of the key.
+        """ The name of the key.
         """
-        return vispy.keys.get(self.key_id, '<unknown key %d>'%self.key_id)
-    
-    @property
-    def key_id(self):
-        """ Integer identifier of the key.
-        """
-        return self._key_id
+        return self._key
     
     @property
     def text(self):
@@ -228,12 +215,6 @@ class KeyEvent(Event):
         """
         return self._modifiers
 
-    @property
-    def modifier_names(self):
-        """ Tuple that specifies the names of modifier keys pressed down at the
-        time of the event (shift, control, alt).
-        """
-        return [vispy.keys.get(kid, '<unknown key %d>'%self.key_id) for kid in self._modifiers]
 
 
 class ResizeEvent(Event):

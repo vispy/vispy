@@ -6,10 +6,35 @@ from __future__ import print_function, division, absolute_import
 
 from vispy.event import Event
 from vispy import app
-
+from vispy import keys
 import vispy
 
 import OpenGL.GLUT as glut
+
+
+# Map native keys to vispy keys
+KEYMAP = {
+    glut.GLUT_ACTIVE_SHIFT: keys.SHIFT,
+    glut.GLUT_ACTIVE_CTRL: keys.CONTROL,
+    glut.GLUT_ACTIVE_ALT: keys.ALT,
+    -1: keys.META,
+    
+    glut.GLUT_KEY_LEFT: keys.LEFT,
+    glut.GLUT_KEY_UP: keys.UP,
+    glut.GLUT_KEY_RIGHT: keys.RIGHT,
+    glut.GLUT_KEY_DOWN: keys.DOWN,
+    glut.GLUT_KEY_PAGE_UP: keys.PAGEUP,
+    glut.GLUT_KEY_PAGE_DOWN: keys.PAGEDOWN,
+    
+    chr(27): keys.ESCAPE,
+    chr(127): keys.DELETE,
+    chr(8): keys.BACKSPACE,
+    
+    ' ': keys.SPACE,
+    '\r': keys.ENTER,
+    '\n': keys.ENTER,
+    '\t': keys.TAB,
+}
 
 
 class ApplicationBackend(app.ApplicationBackend):
@@ -51,6 +76,7 @@ class CanvasBackend(app.CanvasBackend):
         glut.glutReshapeFunc(self.on_resize)
         #glut.glutVisibilityFunc(self.on_show)
         glut.glutKeyboardFunc(self.on_key_press)
+        glut.glutSpecialFunc(self.on_key_press)
         glut.glutKeyboardUpFunc(self.on_key_release)
         glut.glutMouseFunc(self.on_mouse_action)
         glut.glutMotionFunc(self.on_mouse_motion)
@@ -160,29 +186,27 @@ class CanvasBackend(app.CanvasBackend):
     
     
     def on_key_press(self, key, x, y):
-        key_id, text = self._process_key(key)
+        key, text = self._process_key(key)
         # todo: modifiers
-        self._vispy_canvas.events.key_press(key_id=key_id, text=text)
+        self._vispy_canvas.events.key_press(key=key, text=text)
     
     def on_key_release(self, key, x, y):
-        key_id, text = self._process_key(key)
+        key, text = self._process_key(key)
         # todo: modifiers
-        self._vispy_canvas.events.key_release(key_id=key_id, text=text)
+        self._vispy_canvas.events.key_release(key=key, text=text)
 
     def _process_key(self, key):
-        key_id = ord(key.upper())
-        if 97 <= key_id <= 122:
-            key_id -= 32
-        key_id = KEYMAP.get(key_id, key_id)
-        try:
-            text = chr(ord(key))
-        except Exception:
-            text = ''
-        return key_id, text
-    
+        if key in KEYMAP:
+            if isinstance(key, int):
+                return KEYMAP[key], ''
+            else:
+                return KEYMAP[key], key
+        elif isinstance(key, int):
+            return None, '' # unsupported special char
+        else:
+            return keys.Key(key.upper()), key
 
-# todo: map pyglet keys to vispy constants
-KEYMAP = {}
+
 
 import weakref
 

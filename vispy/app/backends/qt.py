@@ -17,28 +17,33 @@ else:
     raise Exception("Do not recognize Qt library '%s'. Options are 'pyqt', 'pyside', or 'any' (see vispy.config['qt_lib'])." % str(qt_lib))
 
 
-#KEYMAP = {
-    #QtCore.Qt.Key_Shift: keys.SHIFT,
-    #QtCore.Qt.Key_Control: keys.CONTROL,
-    #QtCore.Qt.Key_Alt: keys.ALT,
-    #QtCore.Qt.ShiftModifier: keys.SHIFT,
-    #QtCore.Qt.ControlModifier: keys.CONTROL,
-    #QtCore.Qt.AltModifier: keys.ALT,
+KEYMAP = {
+    QtCore.Qt.Key_Shift: keys.SHIFT,
+    QtCore.Qt.Key_Control: keys.CONTROL,
+    QtCore.Qt.Key_Alt: keys.ALT,
+    QtCore.Qt.Key_AltGr: keys.ALT,
+    QtCore.Qt.Key_Meta: keys.META,
+    QtCore.Qt.ShiftModifier: keys.SHIFT,
+    QtCore.Qt.ControlModifier: keys.CONTROL,
+    QtCore.Qt.AltModifier: keys.ALT,
+    QtCore.Qt.MetaModifier: keys.META,
     
-    #QtCore.Qt.Key_Left: keys.LEFT,
-    #QtCore.Qt.Key_Up: keys.UP,
-    #QtCore.Qt.Key_Right: keys.RIGHT,
-    #QtCore.Qt.Key_Down: keys.DOWN,
-    #QtCore.Qt.Key_PageUp: keys.PAGEUP,
-    #QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
-    #QtCore.Qt.Key_Escape: keys.ESCAPE,
-    #QtCore.Qt.Key_Delete: keys.DELETE,
-    #QtCore.Qt.Key_Backspace: keys.BACKSPACE,
+    QtCore.Qt.Key_Left: keys.LEFT,
+    QtCore.Qt.Key_Up: keys.UP,
+    QtCore.Qt.Key_Right: keys.RIGHT,
+    QtCore.Qt.Key_Down: keys.DOWN,
+    QtCore.Qt.Key_PageUp: keys.PAGEUP,
+    QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
     
-    #QtCore.Qt.Key_Space: keys.SPACE,
-    #QtCore.Qt.Key_Enter: keys.ENTER,
-    #QtCore.Qt.Key_Return: keys.ENTER,
-#}
+    QtCore.Qt.Key_Escape: keys.ESCAPE,
+    QtCore.Qt.Key_Delete: keys.DELETE,
+    QtCore.Qt.Key_Backspace: keys.BACKSPACE,
+    
+    QtCore.Qt.Key_Space: keys.SPACE,
+    QtCore.Qt.Key_Enter: keys.ENTER,
+    QtCore.Qt.Key_Return: keys.ENTER,
+    QtCore.Qt.Key_Tab: keys.TAB,
+}
 
 
 class ApplicationBackend(app.ApplicationBackend):
@@ -185,7 +190,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     
     def keyPressEvent(self, ev):
         self._vispy_canvas.events.key_press(
-            key_id = ev.key(), #self._processKey(ev), 
+            key = self._processKey(ev), 
             text = str(ev.text()),
             modifiers = self._modifiers(ev),
             auto_repeat=ev.isAutoRepeat(),
@@ -195,27 +200,32 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         #if ev.isAutoRepeat():
             #return # Skip release auto repeat events
         self._vispy_canvas.events.key_release(
-            key_id = ev.key(), #self._processKey(ev), 
+            key = self._processKey(ev), 
             text = str(ev.text()),
             modifiers = self._modifiers(ev),
             auto_repeat=ev.isAutoRepeat(),
             )
     
-    #def _processKey(self, event):
-        ## evaluates the keycode of qt, and transform to vispy key.
-        #key = event.key()
-        #return KEYMAP.get(key, key)
+    def _processKey(self, event):
+        # evaluates the keycode of qt, and transform to vispy key.
+        key = int(event.key())
+        if key in KEYMAP:
+            return KEYMAP[key]
+        elif key>=32 and key <= 127:
+            return keys.Key(chr(key))
+        else:
+            return None
     
     def _modifiers(self, event):
         # Convert the QT modifier state into a tuple of active modifier keys.
         mod = ()
         qtmod = event.modifiers()
         if QtCore.Qt.ShiftModifier & qtmod:
-            mod += keys['Shift'],
+            mod += keys.SHIFT,
         if QtCore.Qt.ControlModifier & qtmod:
-            mod += keys['Control'],
+            mod += keys.CONTROL,
         if QtCore.Qt.AltModifier & qtmod:
-            mod += keys['Alt'],
+            mod += keys.ALT,
         return mod
 
 
