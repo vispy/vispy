@@ -9,13 +9,16 @@ The event module
 .. autoclass:: vispy.event.Event
     :members:
 
-.. autoclass:: vispy.event.MouseEvent
+.. autoclass:: vispy.app.canvas.MouseEvent
     :members:
 
-.. autoclass:: vispy.event.KeyEvent
+.. autoclass:: vispy.app.canvas.KeyEvent
     :members:
 
-.. autoclass:: vispy.event.ResizeEvent
+.. autoclass:: vispy.app.canvas.ResizeEvent
+    :members:
+
+.. autoclass:: vispy.app.canvas.PaintEvent
     :members:
 
 
