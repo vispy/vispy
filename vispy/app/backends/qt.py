@@ -1,4 +1,3 @@
-from vispy.event import MouseEvent
 from vispy import app
 from vispy import keys
 
@@ -23,10 +22,6 @@ KEYMAP = {
     QtCore.Qt.Key_Alt: keys.ALT,
     QtCore.Qt.Key_AltGr: keys.ALT,
     QtCore.Qt.Key_Meta: keys.META,
-    QtCore.Qt.ShiftModifier: keys.SHIFT,
-    QtCore.Qt.ControlModifier: keys.CONTROL,
-    QtCore.Qt.AltModifier: keys.ALT,
-    QtCore.Qt.MetaModifier: keys.META,
     
     QtCore.Qt.Key_Left: keys.LEFT,
     QtCore.Qt.Key_Up: keys.UP,
@@ -157,13 +152,12 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.resize(size=(w,h)) # todo: new event?
+        self._vispy_canvas.events.resize(size=(w,h))
 
     def paintGL(self):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.paint()
-            #region=(0, 0, self.width(), self.height()))
+        self._vispy_canvas.events.paint(region=None)#(0, 0, self.width(), self.height()))
         
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
@@ -190,6 +184,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             return
         self._vispy_canvas.events.mouse_move(
             native=ev,
+            button=int(ev.button()),
             pos=(ev.pos().x(), ev.pos().y()),
             modifiers = self._modifiers(ev),
             )
@@ -207,20 +202,20 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     
     def keyPressEvent(self, ev):
         self._vispy_canvas.events.key_press(
+            native = ev,
             key = self._processKey(ev), 
             text = str(ev.text()),
             modifiers = self._modifiers(ev),
-            auto_repeat=ev.isAutoRepeat(),
             )
     
     def keyReleaseEvent(self, ev):
         #if ev.isAutoRepeat():
             #return # Skip release auto repeat events
         self._vispy_canvas.events.key_release(
+            native = ev,
             key = self._processKey(ev), 
             text = str(ev.text()),
             modifiers = self._modifiers(ev),
-            auto_repeat=ev.isAutoRepeat(),
             )
     
     def _processKey(self, event):
@@ -243,19 +238,21 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             mod += keys.CONTROL,
         if QtCore.Qt.AltModifier & qtmod:
             mod += keys.ALT,
+        if QtCore.Qt.MetaModifier & qtmod:
+            mod += keys.META,
         return mod
 
 
 
-class QtMouseEvent(MouseEvent):
-    ## special subclass of MouseEvent for propagating acceptance info back to Qt.
-    @MouseEvent.handled.setter
-    def handled(self, val):
-        self._handled = val
-        if val:
-            self.qt_event.accept()
-        else:
-            self.qt_event.ignore()
+# class QtMouseEvent(MouseEvent):
+#     # special subclass of MouseEvent for propagating acceptance info back to Qt.
+#     @MouseEvent.handled.setter
+#     def handled(self, val):
+#         self._handled = val
+#         if val:
+#             self.qt_event.accept()
+#         else:
+#             self.qt_event.ignore()
 
 
 class TimerBackend(app.TimerBackend, QtCore.QTimer):
@@ -275,6 +272,4 @@ class TimerBackend(app.TimerBackend, QtCore.QTimer):
         
     def _vispy_timeout(self):
         self._vispy_timer._timeout()
-    
-
 

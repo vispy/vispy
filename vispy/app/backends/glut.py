@@ -175,28 +175,29 @@ class CanvasBackend(app.CanvasBackend):
         
         w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
         h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
-        self._vispy_canvas.events.paint(region=(0, 0, w, h))
+        self._vispy_canvas.events.paint(region=None)  #(0, 0, w, h))
     
     def on_mouse_action(self, button, state, x, y):
         if self._vispy_canvas is None:
             return
         action = {glut.GLUT_UP:'release', glut.GLUT_DOWN:'press'}[state]
+        mod = self._modifiers()
         
         if button < 3:
             # Mouse click event
             button = {glut.GLUT_LEFT_BUTTON:0, glut.GLUT_RIGHT_BUTTON:1}.get(button, button)
             if action == 'press':
-                self._vispy_canvas.events.mouse_press(pos=(x,y), button=button)
+                self._vispy_canvas.events.mouse_press(pos=(x,y), button=button, modifiers=mod)
             else:
-                self._vispy_canvas.events.mouse_release(pos=(x,y), button=button)
+                self._vispy_canvas.events.mouse_release(pos=(x,y), button=button, modifiers=mod)
         
         elif button in (3, 4):
             # Wheel event
             self._vispy_canvas.events.mouse_wheel(
                 pos=(x, y),
                 delta=(120 if button==3 else -120),  # Follow Qt stepsize
+                modifiers=mod,
                 )
-    
     
     def on_mouse_motion(self, x, y):
         if self._vispy_canvas is None:
@@ -204,19 +205,25 @@ class CanvasBackend(app.CanvasBackend):
         self._vispy_canvas.events.mouse_move(
             pos=(x, y),
             button=None,  # todo: self._buttons_pressed,
-            modifiers=None # todo: modifiers
+            modifiers=self._modifiers(),
             )
     
     
     def on_key_press(self, key, x, y):
         key, text = self._process_key(key)
-        # todo: modifiers
-        self._vispy_canvas.events.key_press(key=key, text=text)
+        self._vispy_canvas.events.key_press(
+                key=key, 
+                text=text,
+                modifiers=self._modifiers(),
+            )
     
     def on_key_release(self, key, x, y):
         key, text = self._process_key(key)
-        # todo: modifiers
-        self._vispy_canvas.events.key_release(key=key, text=text)
+        self._vispy_canvas.events.key_release(
+                key=key, 
+                text=text,
+                modifiers=self._modifiers()
+            )
 
     def _process_key(self, key):
         if key in KEYMAP:
@@ -228,7 +235,17 @@ class CanvasBackend(app.CanvasBackend):
             return None, '' # unsupported special char
         else:
             return keys.Key(key.upper()), key
-
+    
+    def _modifiers(self):
+        glutmod = glut.glutGetModifiers()
+        mod = ()
+        if glut.GLUT_ACTIVE_SHIFT & glutmod:
+            mod += keys.SHIFT,
+        if glut.GLUT_ACTIVE_CTRL & glutmod:
+            mod += keys.CONTROL,
+        if glut.GLUT_ACTIVE_ALT & glutmod:
+            mod += keys.ALT,
+        return mod
 
 
 import weakref

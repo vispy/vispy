@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
-from vispy.event import EmitterGroup, Event, MouseEvent, KeyEvent, ResizeEvent, PaintEvent
+from vispy.event import EmitterGroup, Event
 import vispy
 
 # todo: add functions for asking about current mouse/keyboard state
@@ -14,7 +14,7 @@ class Canvas(object):
     
     Further, there are two special keyword arguments:
       * app: an vispy Application instance (vispy.app is used by default)
-      * create_widget: a bool that indicates whether to create the
+      * create_native: a bool that indicates whether to create the
         widget immediately (default True)
     
     Receives the following events:
@@ -52,12 +52,11 @@ class Canvas(object):
         self._app = kwargs.pop('app', vispy.app.default_app)
         
         # Create widget now
-        if kwargs.pop('create_widget', True):
-            self.create_widget()
+        if kwargs.pop('create_native', True):
+            self.create_native()
     
     
-    def create_widget(self):
-        # todo: perhaps rename this to 'create_native'?
+    def create_native(self):
         """ Create the native widget if not already done so. If the widget
         is already created, this function does nothing.
         """
@@ -265,7 +264,6 @@ class CanvasBackend(object):
 
 ## Event subclasses specific to the Canvas
 
-from vispy.event import Event
 
 class MouseEvent(Event):
     """ Class describing mouse events.
@@ -346,8 +344,6 @@ class KeyEvent(Event):
         self._key = key
         self._text = str(text) 
         self._modifiers = tuple( modifiers or () )
-        self.auto_repeat = auto_repeat
-        self.native = native
     
     @property
     def key(self):

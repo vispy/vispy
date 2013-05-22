@@ -46,13 +46,10 @@ patch_idle_loop()
 KEYMAP = {
     pyglet.window.key.LSHIFT: keys.SHIFT,
     pyglet.window.key.RSHIFT: keys.SHIFT,
-    pyglet.window.key.MOD_SHIFT: keys.SHIFT,
     pyglet.window.key.LCTRL: keys.CONTROL,
     pyglet.window.key.RCTRL: keys.CONTROL,
-    pyglet.window.key.MOD_CTRL: keys.CONTROL,
     pyglet.window.key.LALT: keys.ALT,
     pyglet.window.key.RALT: keys.ALT,
-    pyglet.window.key.MOD_ALT: keys.ALT,
     pyglet.window.key.LMETA: keys.META,
     pyglet.window.key.RMETA: keys.META,
     
@@ -85,7 +82,8 @@ KEYMAP = {
     pyglet.window.key.F12: keys.F12,
     
     pyglet.window.key.SPACE: keys.SPACE,
-    pyglet.window.key.ENTER: keys.ENTER,
+    pyglet.window.key.ENTER: keys.ENTER, # == pyglet.window.key.RETURN
+    pyglet.window.key.NUM_ENTER: keys.ENTER,
     pyglet.window.key.TAB: keys.TAB,
 }
 
@@ -185,7 +183,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         self._draw_ok = True
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.paint(region=(0, 0, self.width, self.height))
+        self._vispy_canvas.events.paint(region=None)#(0, 0, self.width, self.height))
     
     def on_mouse_press(self, x, y, button, modifiers):
         if self._vispy_canvas is None:
@@ -194,6 +192,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         ev2 = self._vispy_canvas.events.mouse_press(
             pos=(x, self.get_size()[1] - y),
             button=button,
+            modifiers=self._modifiers(modifiers)
             )
         if ev2.handled:
             self._buttons_accepted |= button
@@ -206,6 +205,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             self._vispy_canvas.events.mouse_release(
                 pos=(x, self.get_size()[1] - y),
                 button=button,
+                modifiers=self._modifiers(modifiers)
                 )
             self._buttons_accepted &= ~button
     
@@ -229,7 +229,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             self._vispy_canvas.events.mouse_move(
                 pos=(x, self.get_size()[1] - y),
                 button=button,
-                #modifiers=modifiers  pyglet modifiers is an int
+                modifiers=self._modifiers(modifiers)
                 )
         
     
@@ -247,10 +247,11 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             text = chr(key)
         except Exception:
             text = ''
-        # todo: modifiers
+        print(key)
         self._vispy_canvas.events.key_press(
                 key=self._processKey(key), 
                 text=text,
+                modifiers=self._modifiers(modifiers)
             )
     
     def on_key_release(self, key, modifiers):
@@ -258,10 +259,10 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             text = chr(key)
         except Exception:
             text = ''
-        # todo: modifiers
         self._vispy_canvas.events.key_release(
                 key= self._processKey(key), 
                 text=text,
+                modifiers=self._modifiers(modifiers)
             )
     
     def _processKey(self, key):
@@ -273,6 +274,16 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             return keys.Key(chr(key))
         else:
             return None 
+    
+    def _modifiers(self, pygletmod):
+        mod = ()
+        if pygletmod & pyglet.window.key.MOD_SHIFT:
+            mod += keys.SHIFT,
+        if pygletmod & pyglet.window.key.MOD_CTRL:
+            mod += keys.CONTROL,
+        if pygletmod & pyglet.window.key.MOD_ALT:
+            mod += keys.ALT,
+        return mod
 
 
 
