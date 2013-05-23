@@ -15,7 +15,11 @@ elif qt_lib == 'pyside':
 else:
     raise Exception("Do not recognize Qt library '%s'. Options are 'pyqt', 'pyside', or 'any' (see vispy.config['qt_lib'])." % str(qt_lib))
 
-
+# todo: add support for distinguishing left and right shift/ctrl/alt keys.
+# Linux scan codes:  (left, right)
+#   Shift  50, 62
+#   Ctrl   37, 105
+#   Alt    64, 108
 KEYMAP = {
     QtCore.Qt.Key_Shift: keys.SHIFT,
     QtCore.Qt.Key_Control: keys.CONTROL,
