@@ -106,6 +106,11 @@ class Canvas(object):
                 self._backend._vispy_set_size(args[2], args[3])
         else:
             raise ValueError('Setting geometry requires 2 or 4 values.')
+        
+    def swap_buffers(self):
+        """ Swap GL buffers such that the offscreen buffer becomes visible.
+        """
+        self._backend._vispy_swap_buffers()
     
 #     @property
 #     def context(self):
