@@ -93,6 +93,7 @@ class CanvasBackend(app.CanvasBackend):
     def __init__(self, vispy_canvas, name='glut window', *args, **kwargs):
         app.CanvasBackend.__init__(self, vispy_canvas)
         self._id = glut.glutCreateWindow(name)
+        glut.glutHideWindow()  # Start hidden, like the other backends
         
         # Register callbacks
         glut.glutDisplayFunc(self.on_draw)
@@ -173,8 +174,8 @@ class CanvasBackend(app.CanvasBackend):
             self._initialized = True
             self._vispy_canvas.events.initialize()
         
-        w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
-        h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
+        #w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
+        #h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
         self._vispy_canvas.events.paint(region=None)  #(0, 0, w, h))
     
     def on_mouse_action(self, button, state, x, y):

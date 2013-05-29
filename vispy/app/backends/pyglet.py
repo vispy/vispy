@@ -114,15 +114,18 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     """ Pyglet backend for Canvas abstract class."""
     
     def __init__(self, vispy_canvas, *args, **kwargs):
-        pyglet.window.Window.__init__(self, *args, **kwargs)
         app.CanvasBackend.__init__(self, vispy_canvas)
+        # Initialize native widget, but default hidden and resizable
+        kwargs['visible'] = kwargs.get('visible', False)
+        kwargs['resizable'] = kwargs.get('resizable', True) 
+        pyglet.window.Window.__init__(self, *args, **kwargs)
         
         self._buttons_pressed = 0
         self._buttons_accepted = 0
         self._mouse_pos = None
         self._draw_ok = False  # whether it is ok to draw yet
-    
-    
+        self._pending_location = None
+        
     def _vispy_set_current(self):  
         # Make this the current context
         self.switch_to()
@@ -138,11 +141,13 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     def _vispy_set_size(self, w, h):
         # Set size of the widget or window
         self.set_size(w, h)
-        # todo: when done before shown, get some strange offset in the graphics
     
     def _vispy_set_location(self, x, y):
         # Set location of the widget or window. May have no effect for widgets
-        self.set_location(x, y)
+        if self._draw_ok:
+            self.set_location(x, y)
+        else:
+            self._pending_location = x, y
     
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
@@ -163,12 +168,18 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         return xy + wh
     
     
-    
     def on_show(self):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.initialize()
         pyglet.clock.schedule_once(self.on_draw, 0.0)
+        
+        # Set location now if we must. For some reason we get weird 
+        # offsets in viewport if set_location is called before the
+        # widget is shown.
+        if self._pending_location:
+            xy, self._pending_location = self._pending_location, None
+            self.set_location(*xy)
     
     def on_resize(self, w, h):
         if self._vispy_canvas is None:
@@ -184,7 +195,9 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.paint(region=None)#(0, 0, self.width, self.height))
-    
+        
+        
+            
     def on_mouse_press(self, x, y, button, modifiers):
         if self._vispy_canvas is None:
             return

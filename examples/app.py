@@ -14,8 +14,8 @@ from vispy import app
 # 2) it should be possible to specify a default backend in a config file
 
 # app.use('qt')
-app.use('glut')
-# app.use('pyglet')  # AK: Seems to have an offset in drawing? WTF?
+# app.use('glut')
+app.use('pyglet')
 
 # We'll use pyopengl for the drawing for now
 import OpenGL.GL as gl
@@ -26,12 +26,15 @@ class MyCanvas(app.Canvas):
     
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
-        # Note that args args kwargs are used to initialize the native GUI window
         
+        # Note that args args kwargs are used to initialize the native GUI window
         self.title = 'App demo'
-        self.geometry = 20, 20, 300, 300
+        self.geometry = 50, 50, 300, 300
         
         self._color = 1, 0, 0
+        
+        self.show()
+        
     
     def on_paint(self, event):
         # 
@@ -68,7 +71,6 @@ class MyCanvas(app.Canvas):
 
 if __name__ == '__main__':
     canvas = MyCanvas()
-    canvas.show()
     
     # Setup a timer
     timer = app.Timer(1.0)
