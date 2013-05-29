@@ -162,7 +162,12 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.paint(region=None)#(0, 0, self.width(), self.height()))
-        
+    
+    def closeEvent(self, ev):
+        if self._vispy_canvas is None:
+            return
+        self._vispy_canvas.events.close()
+    
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return

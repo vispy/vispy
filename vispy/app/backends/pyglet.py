@@ -181,6 +181,12 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
             xy, self._pending_location = self._pending_location, None
             self.set_location(*xy)
     
+    def on_close(self):
+        if self._vispy_canvas is None:
+            return
+        self._vispy_canvas.events.close()
+        self.close() # Or the window wont close
+    
     def on_resize(self, w, h):
         if self._vispy_canvas is None:
             return

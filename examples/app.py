@@ -13,9 +13,9 @@ from vispy import app
 # 1) if one of the backend is already imported, it should use that
 # 2) it should be possible to specify a default backend in a config file
 
-# app.use('qt')
+app.use('qt')
 # app.use('glut')
-app.use('pyglet')
+# app.use('pyglet')
 
 # We'll use pyopengl for the drawing for now
 import OpenGL.GL as gl
@@ -35,6 +35,8 @@ class MyCanvas(app.Canvas):
         
         self.show()
         
+    def on_close(self, event):
+        print('closing!')
     
     def on_paint(self, event):
         # 

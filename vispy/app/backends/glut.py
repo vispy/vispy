@@ -104,6 +104,7 @@ class CanvasBackend(app.CanvasBackend):
         glut.glutKeyboardUpFunc(self.on_key_release)
         glut.glutMouseFunc(self.on_mouse_action)
         glut.glutMotionFunc(self.on_mouse_motion)
+        glut.glutCloseFunc(self.on_close)
         #glut.glutFunc(self.on_)
         
         self._initialized = False
@@ -164,8 +165,12 @@ class CanvasBackend(app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.resize(size=(w,h))
-        
-
+    
+    def on_close(self):
+        if self._vispy_canvas is None:
+            return
+        self._vispy_canvas.events.close()
+    
     def on_draw(self, dummy=None):
         if self._vispy_canvas is None:
             return

@@ -64,7 +64,7 @@ class ModuleTest:
         """
         # Get text
         fname = self._module.__file__.strip('c')
-        text = open(fname, 'rt', encoding='utf-8').read()
+        text = open(fname, 'rb').read().decode('utf-8')
         
         canvas = vispy.app.Canvas(create_native=False)
         eventNames = set(canvas.events._emitters.keys())
