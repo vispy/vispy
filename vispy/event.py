@@ -13,8 +13,7 @@ import collections, inspect
 import weakref
 import vispy
 
-# todo: we want Events to be light and fast, so that performance  is not degraded too much with move events.
-# todo: use __slots__ (at least on the event classes where it matters)
+
 
 class Event(object):
     """Class describing events that occur and can be reacted to with callbacks.
@@ -353,7 +352,7 @@ class EmitterGroup(EventEmitter):
         """
         self.add(**{name: emitter})
     
-    # todo: disallow passing EventEmitter instances? The use case for which they were allowed can be solved in other ways.
+    
     def add(self, auto_connect=None, **kwds):
         """ Add one or more EventEmitter instances to this emitter group.
         Each keyword argument may be specified as either an EventEmitter 
