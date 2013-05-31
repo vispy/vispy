@@ -10,41 +10,41 @@ from vispy import keys
 # Map native keys to vispy keys
 KEYMAP = {
     -1: keys.SHIFT,
-    -1: keys.CONTROL,
-    -1: keys.ALT,
-    -1: keys.META,
+    -2: keys.CONTROL,
+    -3: keys.ALT,
+    -4: keys.META,
     
-    -1: keys.LEFT,
-    -1: keys.UP,
-    -1: keys.RIGHT,
-    -1: keys.DOWN,
-    -1: keys.PAGEUP,
-    -1: keys.PAGEDOWN,
+    -5: keys.LEFT,
+    -6: keys.UP,
+    -7: keys.RIGHT,
+    -8: keys.DOWN,
+    -9: keys.PAGEUP,
+    -10: keys.PAGEDOWN,
     
-    -1: keys.INSERT,
-    -1: keys.DELETE,
-    -1: keys.HOME,
-    -1: keys.END,
+    -11: keys.INSERT,
+    -12: keys.DELETE,
+    -13: keys.HOME,
+    -14: keys.END,
     
-    -1: keys.ESCAPE,
-    -1: keys.BACKSPACE,
+    -15: keys.ESCAPE,
+    -16: keys.BACKSPACE,
     
-    -1: keys.SPACE,
-    -1: keys.ENTER,
-    -1: keys.TAB,
+    -17: keys.SPACE,
+    -18: keys.ENTER,
+    -19: keys.TAB,
     
-    -1: keys.F1,
-    -1: keys.F2,
-    -1: keys.F3,
-    -1: keys.F4,
-    -1: keys.F5,
-    -1: keys.F6,
-    -1: keys.F7,
-    -1: keys.F8,
-    -1: keys.F9,
-    -1: keys.F10,
-    -1: keys.F11,
-    -1: keys.F12,
+    -20: keys.F1,
+    -21: keys.F2,
+    -22: keys.F3,
+    -23: keys.F4,
+    -24: keys.F5,
+    -25: keys.F6,
+    -26: keys.F7,
+    -27: keys.F8,
+    -28: keys.F9,
+    -29: keys.F10,
+    -30: keys.F11,
+    -31: keys.F12,
 }
 
 
@@ -127,8 +127,9 @@ class CanvasBackend(app.CanvasBackend):  # You can mix this class with the nativ
             return
         
         self._vispy_canvas.events.initialize()
-        self._vispy_canvas.events.resize(size=(w,h)) # todo: new event?
-        self._vispy_canvas.events.paint()  # todo: has region attribute?
+        self._vispy_canvas.events.resize(size=(w,h)) 
+        self._vispy_canvas.events.paint() 
+        self._vispy_canvas.events.close()  
         
         self._vispy_canvas.events.mouse_press(pos=(x, y), button=1, modifiers=())
         self._vispy_canvas.events.mouse_release(pos=(x, y), button=1, modifiers=())

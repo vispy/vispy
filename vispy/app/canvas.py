@@ -66,6 +66,8 @@ class Canvas(object):
             self._app.native
             # Instantiate the backed with the right class
             self._backend = self._app.backend_module.CanvasBackend(self, *self._args, **self._kwargs)
+            # Set initial size. Let OS determine location
+            self.geometry = None, None, 560, 420 
             # Clean up
             del self._args 
             del self._kwargs

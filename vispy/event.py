@@ -13,8 +13,7 @@ import collections, inspect
 import weakref
 import vispy
 
-# todo: we want Events to be light and fast, so that performance  is not degraded too much with move events.
-# todo: use __slots__ (at least on the event classes where it matters)
+
 
 class Event(object):
     """Class describing events that occur and can be reacted to with callbacks.
@@ -57,10 +56,6 @@ class Event(object):
         """
         return self._sources[-1] if self._sources else None
 
-    @source.setter
-    def source(self, s):
-        self._source = s
-    
     @property
     def sources(self):
         """ List of objects that the event applies to (i.e. are or have
@@ -153,11 +148,23 @@ class EventEmitter(object):
         String indicating the event type (e.g. mouse_press, key_release)
     event_class : subclass of Event
         The class of events that this emitter will generate.
+        
+        
+    Attributes
+    ----------
+    
+    ignore_callback_errors : bool
+        If True, exceptions raised while invoking callbacks will be caught by
+        the emitter, allowing it to continue invoking other callbacks.
+    print_callback_errors : bool
+        If True, the emitter prints a message and stack trace whenever a 
+        callback raises an exception. (assumes ignore_callback_errors=True)
+        
     """
     def __init__(self, source=None, type=None, event_class=Event):
         self.callbacks = []
         self.blocked = 0
-        
+        self._emitting = False  # used to detect emitter loops
         self.source = source
         self.default_args = {}
         if type is not None:
@@ -165,6 +172,9 @@ class EventEmitter(object):
             
         assert inspect.isclass(event_class)
         self.event_class = event_class
+        
+        self.ignore_callback_errors = True
+        self.print_callback_errors = True
         
     @property
     def source(self):
@@ -231,19 +241,15 @@ class EventEmitter(object):
         (notably, via Event.handled) but also requires that callbacks
         be careful not to inadvertently modify the Event. 
         """
-        if len(args) == 1 and not kwds and isinstance(args[0], Event):
-            event = args[0]
-            # Ensure that the given event matches what we want to emit
-            assert isinstance(event, self.event_class)
-        elif not args:
-            args = self.default_args.copy()
-            args.update(kwds)
-            event = self.event_class(**args)
-        else:
-            raise ValueError("Event emitters can be called with an Event instance or with keyword arguments only.")
+        if self._emitting:
+            raise RuntimeError('EventEmitter loop detected!')
+        
+        # create / massage event as needed
+        event = self._prepare_event(*args, **kwds)
         
         # Add our source to the event; remove it after all callbacks have been invoked.
         event._push_source(self.source)
+        self._emitting = True
         try:
             if self.blocked > 0:
                 return event
@@ -257,14 +263,36 @@ class EventEmitter(object):
                 try:
                     cb(event)
                 except:
-                    sys.excepthook(*sys.exc_info())
-                    print("Error invoking callback for event: %s" % str(event))
+                    if self.ignore_callback_errors:
+                        if self.print_callback_errors:
+                            sys.excepthook(*sys.exc_info())
+                            print("Error invoking callback for event: %s" % str(event))
+                    else:
+                        raise
                 
                 if event.blocked:
                     break
         finally:
-            event._pop_source()
+            self._emitting = False
+            if event._pop_source() != self.source:
+                raise RuntimeError("Event source-stack mismatch.")
             
+        return event
+    
+    def _prepare_event(self, *args, **kwds):
+        ## When emitting, this method is called to create or otherwise alter
+        ## an event before it is sent to callbacks. Subclasses may extend
+        ## this method to make custom modifications to the event.
+        if len(args) == 1 and not kwds and isinstance(args[0], Event):
+            event = args[0]
+            # Ensure that the given event matches what we want to emit
+            assert isinstance(event, self.event_class)
+        elif not args:
+            args = self.default_args.copy()
+            args.update(kwds)
+            event = self.event_class(**args)
+        else:
+            raise ValueError("Event emitters can be called with an Event instance or with keyword arguments only.")
         return event
     
     def block(self):
@@ -353,7 +381,7 @@ class EmitterGroup(EventEmitter):
         """
         self.add(**{name: emitter})
     
-    # todo: disallow passing EventEmitter instances? The use case for which they were allowed can be solved in other ways.
+    
     def add(self, auto_connect=None, **kwds):
         """ Add one or more EventEmitter instances to this emitter group.
         Each keyword argument may be specified as either an EventEmitter 
@@ -384,7 +412,7 @@ class EmitterGroup(EventEmitter):
                 emitter = Event
             
             if inspect.isclass(emitter) and issubclass(emitter, Event):
-                emitter = EventEmitter(self.source, type=name, event_class=emitter)
+                emitter = EventEmitter(source=self.source, type=name, event_class=emitter)
             elif not isinstance(emitter, EventEmitter):
                 raise Exception('Emitter must be specified as either an EventEmitter instance or Event subclass')
             
@@ -393,7 +421,7 @@ class EmitterGroup(EventEmitter):
             setattr(self, name, emitter)
             self._emitters[name] = emitter
             
-            if auto_connect:
+            if auto_connect and self.source is not None:
                 emitter.connect((self.source, self.auto_connect_format % name))
                 
             # If emitters are connected to the group already, then this one should
@@ -418,12 +446,14 @@ class EmitterGroup(EventEmitter):
     def block_all(self):
         """ Block all emitters in this group.
         """
+        self.block()
         for em in self._emitters.values():
             em.block()
     
     def unblock_all(self):
         """ Unblock all emitters in this group.
         """
+        self.unblock()
         for em in self._emitters.values():
             em.unblock()
     
@@ -437,14 +467,14 @@ class EmitterGroup(EventEmitter):
         self._connect_emitters(True)
         return EventEmitter.connect(self, callback)
 
-    def disconnect(self, callback):
+    def disconnect(self, callback=None):
         """ Disconnect the callback from this group. See 
         :func:`connect() <vispy.event.EmitterGroup.connect>` and 
         :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>` for
         more information.
         """
         ret = EventEmitter.disconnect(self, callback)
-        if len(self.connections) == 0:
+        if len(self.callbacks) == 0:
             self._connect_emitters(False)
         return ret
     
