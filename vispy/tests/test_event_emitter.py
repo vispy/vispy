@@ -365,13 +365,18 @@ class TestEmitters(unittest.TestCase):
         attrs = {}
         for name in names:
             val = getattr(ev,name)
-            try:
-                attrs[name] = copy.deepcopy(val)
-            except:
+            if name == 'source':
+                attrs[name] = val
+            elif name == 'sources':
+                attrs[name] = val[:]
+            else:
                 try:
-                    attrs[name] = copy.copy(val)
+                    attrs[name] = copy.deepcopy(val)
                 except:
-                    attrs[name] = val
+                    try:
+                        attrs[name] = copy.copy(val)
+                    except:
+                        attrs[name] = val
         if key is None:
             self.result = ev, attrs
         else:

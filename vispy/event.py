@@ -412,7 +412,7 @@ class EmitterGroup(EventEmitter):
                 emitter = Event
             
             if inspect.isclass(emitter) and issubclass(emitter, Event):
-                emitter = EventEmitter(self.source, type=name, event_class=emitter)
+                emitter = EventEmitter(source=self.source, type=name, event_class=emitter)
             elif not isinstance(emitter, EventEmitter):
                 raise Exception('Emitter must be specified as either an EventEmitter instance or Event subclass')
             
@@ -421,7 +421,7 @@ class EmitterGroup(EventEmitter):
             setattr(self, name, emitter)
             self._emitters[name] = emitter
             
-            if auto_connect:
+            if auto_connect and self.source is not None:
                 emitter.connect((self.source, self.auto_connect_format % name))
                 
             # If emitters are connected to the group already, then this one should
@@ -446,12 +446,14 @@ class EmitterGroup(EventEmitter):
     def block_all(self):
         """ Block all emitters in this group.
         """
+        self.block()
         for em in self._emitters.values():
             em.block()
     
     def unblock_all(self):
         """ Unblock all emitters in this group.
         """
+        self.unblock()
         for em in self._emitters.values():
             em.unblock()
     
@@ -465,14 +467,14 @@ class EmitterGroup(EventEmitter):
         self._connect_emitters(True)
         return EventEmitter.connect(self, callback)
 
-    def disconnect(self, callback):
+    def disconnect(self, callback=None):
         """ Disconnect the callback from this group. See 
         :func:`connect() <vispy.event.EmitterGroup.connect>` and 
         :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>` for
         more information.
         """
         ret = EventEmitter.disconnect(self, callback)
-        if len(self.connections) == 0:
+        if len(self.callbacks) == 0:
             self._connect_emitters(False)
         return ret
     
