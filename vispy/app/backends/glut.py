@@ -7,6 +7,7 @@ from __future__ import print_function, division, absolute_import
 from vispy.event import Event
 from vispy import app
 from vispy import keys
+import vispy.util.ptime as ptime
 import vispy
 
 import OpenGL.GLUT as glut
@@ -61,10 +62,11 @@ KEYMAP = {
 
 
 class ApplicationBackend(app.ApplicationBackend):
-    
     def __init__(self):
         app.ApplicationBackend.__init__(self)
         self._inizialized = False
+        self._windows = []
+        
     
     def _vispy_get_backend_name(self):
         return 'Glut'
@@ -77,6 +79,8 @@ class ApplicationBackend(app.ApplicationBackend):
         return glut.glutMainLoop()
     
     def _vispy_quit(self):
+        for win in self._windows:
+            glut.glutDestroyWindow(win)
         pass # not possible?
     
     def _vispy_get_native_app(self):
@@ -88,12 +92,16 @@ class ApplicationBackend(app.ApplicationBackend):
 
 
 class CanvasBackend(app.CanvasBackend):
-    """ Pyglet backend for Canvas abstract class."""
+    """ GLUT backend for Canvas abstract class."""
     
     def __init__(self, vispy_canvas, name='glut window', *args, **kwargs):
         app.CanvasBackend.__init__(self, vispy_canvas)
         self._id = glut.glutCreateWindow(name)
-        glut.glutHideWindow()  # Start hidden, like the other backends
+        vispy_canvas.app._backend._windows.append(self._id)
+        
+        # Note: this seems to cause the canvas to ignore calls to show()
+        # about half of the time. 
+        #glut.glutHideWindow()  # Start hidden, like the other backends
         
         # Register callbacks
         glut.glutDisplayFunc(self.on_draw)
@@ -109,7 +117,13 @@ class CanvasBackend(app.CanvasBackend):
         
         self._initialized = False
         
-    
+        # LC: I think initializing here makes it more consistent with other backends
+        glut.glutTimerFunc(0, self._emit_initialize, None)
+        
+    def _emit_initialize(self, _):
+        self._initialized = True
+        self._vispy_canvas.events.initialize()
+        
     def _vispy_set_current(self):  
         # Make this the current context
         glut.glutSetWindow(self._id)
@@ -174,10 +188,12 @@ class CanvasBackend(app.CanvasBackend):
     def on_draw(self, dummy=None):
         if self._vispy_canvas is None:
             return
-        # Initialize?
         if not self._initialized:
-            self._initialized = True
-            self._vispy_canvas.events.initialize()
+            raise Exception('this should not happen')
+        # Initialize?
+        #if not self._initialized:
+            #self._initialized = True
+            #self._vispy_canvas.events.initialize()
         
         #w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
         #h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
@@ -272,40 +288,85 @@ def _glut_callback(id):
         glut.glutTimerFunc(ms, _glut_callback, timer._id)
 
 
+#class TimerBackend(app.TimerBackend):
+    #_counter = 0
+    #_timers = {}
+    
+    #def __init__(self, vispy_timer):
+        #app.TimerBackend.__init__(self, vispy_timer)
+        ## Give this timer a unique id
+        #TimerBackend._counter += 1
+        #self._id = TimerBackend._counter
+        ## Store this timer (using a weak ref)
+        #self._timers[self._id] = weakref.ref(self)
+    
+    #@classmethod
+    #def _glut_callback(cls, id):
+        ## Get weakref wrapper for timer
+        #timer = cls._timers.get(id, None)
+        #if timer is None:
+            #return
+        ## Get timer object
+        #timer = timer()
+        #if timer is None:
+            #return
+        ## Kick it!
+        #if timer._vispy_timer._running:
+            #timer._vispy_timer._timeout()
+            #ms = int(timer._vispy_timer._interval*1000)
+            #glut.glutTimerFunc(ms, TimerBackend._glut_callback, timer._id)
+    
+    #def _vispy_start(self, interval):
+        ##glut.glutTimerFunc(int(interval*1000), TimerBackend._glut_callback, self._id)
+        #glut.glutTimerFunc(int(interval*1000), _glut_callback, self._id)
+    
+    #def _vispy_stop(self):
+        #pass
+    
+    #def _vispy_get_native_timer(self):
+        #return glut # or self?
+
+# Note: we could also build a timer using glutTimerFunc, but this causes trouble
+# because timer callbacks appear to take precedence over all others. Thus,
+# a fast timer can block new display events.
 class TimerBackend(app.TimerBackend):
-    _counter = 0
-    _timers = {}
+    _initialized = False
+    _schedule = []
     
     def __init__(self, vispy_timer):
         app.TimerBackend.__init__(self, vispy_timer)
-        # Give this timer a unique id
-        TimerBackend._counter += 1
-        self._id = TimerBackend._counter
-        # Store this timer (using a weak ref)
-        self._timers[self._id] = weakref.ref(self)
+        self._init_class()
+
+    @classmethod
+    def _init_class(cls):
+        if cls._initialized:
+            return
+        glut.glutIdleFunc(cls._idle_callback)
+        cls._initialized = True
     
     @classmethod
-    def _glut_callback(cls, id):
-        # Get weakref wrapper for timer
-        timer = cls._timers.get(id, None)
-        if timer is None:
-            return
-        # Get timer object
-        timer = timer()
-        if timer is None:
-            return
-        # Kick it!
-        if timer._vispy_timer._running:
+    def _idle_callback(cls):
+        now = ptime.time()
+        new_schedule = []
+        
+        ## see whether there are any timers ready
+        while len(cls._schedule) > 0 and cls._schedule[0][0] <= now:
+            timer = cls._schedule.pop(0)[1]
             timer._vispy_timer._timeout()
-            ms = int(timer._vispy_timer._interval*1000)
-            glut.glutTimerFunc(ms, TimerBackend._glut_callback, timer._id)
-    
+            if timer._vispy_timer.running:
+                new_schedule.append((now+timer._vispy_timer.interval, timer))
+                
+        ## schedule next round of timeouts
+        if len(new_schedule) > 0:
+            cls._schedule.extend(new_schedule)    
+            cls._schedule.sort()
+                
     def _vispy_start(self, interval):
-        #glut.glutTimerFunc(int(interval*1000), TimerBackend._glut_callback, self._id)
-        glut.glutTimerFunc(int(interval*1000), _glut_callback, self._id)
+        now = ptime.time()
+        self._schedule.append((now + interval, self))
     
     def _vispy_stop(self):
         pass
     
     def _vispy_get_native_timer(self):
-        return glut # or self?
+        return None  # glut has no native timer objects.

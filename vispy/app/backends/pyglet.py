@@ -313,6 +313,9 @@ class TimerBackend(app.TimerBackend):
         if self._vispy_timer.max_iterations == 1:
             pyglet.clock.schedule_once(self._vispy_timer._timeout, interval)
         else:
+            # seems pyglet does not give the expected behavior when interval==0
+            if interval == 0:
+                interval = 1e-9
             pyglet.clock.schedule_interval(self._vispy_timer._timeout, interval)
     
     def _vispy_stop(self):
