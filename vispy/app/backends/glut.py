@@ -113,7 +113,10 @@ class CanvasBackend(app.CanvasBackend):
         glut.glutKeyboardUpFunc(self.on_key_release)
         glut.glutMouseFunc(self.on_mouse_action)
         glut.glutMotionFunc(self.on_mouse_motion)
-        glut.glutCloseFunc(self.on_close)
+        if bool(glut.glutWMCloseFunc): # OSX specific test
+            glut.glutWMCloseFunc(self.on_close)
+        else:
+            glut.glutCloseFunc(self.on_close)
         #glut.glutFunc(self.on_)
         
         self._initialized = False
