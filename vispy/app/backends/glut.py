@@ -59,6 +59,13 @@ KEYMAP = {
     '\t': keys.TAB,
 }
 
+
+BUTTONMAP = {   glut.GLUT_LEFT_BUTTON:1, 
+                glut.GLUT_RIGHT_BUTTON:2, 
+                glut.GLUT_MIDDLE_BUTTON:3
+            }
+
+
 ALL_WINDOWS = []
 
 class ApplicationBackend(app.ApplicationBackend):
@@ -113,6 +120,7 @@ class CanvasBackend(app.CanvasBackend):
         glut.glutKeyboardUpFunc(self.on_key_release)
         glut.glutMouseFunc(self.on_mouse_action)
         glut.glutMotionFunc(self.on_mouse_motion)
+        glut.glutPassiveMotionFunc(self.on_mouse_motion)
         if bool(glut.glutWMCloseFunc): # OSX specific test
             glut.glutWMCloseFunc(self.on_close)
         else:
@@ -211,7 +219,7 @@ class CanvasBackend(app.CanvasBackend):
         
         if button < 3:
             # Mouse click event
-            button = {glut.GLUT_LEFT_BUTTON:0, glut.GLUT_RIGHT_BUTTON:1}.get(button, button)
+            button = BUTTONMAP.get(button, 0)
             if action == 'press':
                 self._vispy_canvas.events.mouse_press(pos=(x,y), button=button, modifiers=mod)
             else:

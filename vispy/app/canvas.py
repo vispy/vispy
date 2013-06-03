@@ -308,7 +308,7 @@ class MouseEvent(Event):
     def __init__(self, type, pos=None, button=None, modifiers=None, delta=0, **kwds):
         Event.__init__(self, type, **kwds)
         self._pos = (0,0) if (pos is None) else (pos[0], pos[1])
-        self._button = int(button) if (button is not None) else None
+        self._button = int(button) if (button is not None) else 0
         self._modifiers = tuple( modifiers or () )
         self._delta = int(delta)
     

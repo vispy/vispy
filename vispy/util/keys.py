@@ -41,8 +41,16 @@ class Key:
     def __init__(self, *names):
         self._names = names
         self._names_upper = tuple([v.upper() for v in names])
+    
+    @property
+    def name(self):
+        """ The name of the key.
+        """
+        return self._names[0]
+    
     def __repr__(self):        
         return "<Key %s>" % ', '.join([repr(v) for v in self._names])
+    
     def __eq__(self, other):
         if isinstance(other, basestring):
             return other.upper() in self._names_upper

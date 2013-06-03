@@ -62,6 +62,8 @@ KEYMAP = {
     QtCore.Qt.Key_Tab: keys.TAB,
 }
 
+BUTTONMAP = {0:0, 1:1, 2:2, 4:3, 8:4, 16:5}
+
 
 class ApplicationBackend(app.ApplicationBackend):
     
@@ -106,6 +108,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         app.CanvasBackend.__init__(self)
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
         self.setAutoBufferSwap(False) # to make consistent with other backends
+        self.setMouseTracking(True)
     
     def _vispy_set_canvas(self, canvas):
         self._vispy_canvas = canvas
@@ -178,7 +181,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         self._vispy_canvas.events.mouse_press(
             native=ev,
             pos=(ev.pos().x(), ev.pos().y()),
-            button=int(ev.button()),
+            button=BUTTONMAP.get(ev.button(), 0),
             modifiers = self._modifiers(ev),
             )
             
@@ -188,7 +191,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         self._vispy_canvas.events.mouse_release(
             native=ev,
             pos=(ev.pos().x(), ev.pos().y()),
-            button=int(ev.button()),
+            button=BUTTONMAP[ev.button()],
             modifiers = self._modifiers(ev),
             )
 
@@ -197,9 +200,8 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             return
         self._vispy_canvas.events.mouse_move(
             native=ev,
-            button=int(ev.button()),
             pos=(ev.pos().x(), ev.pos().y()),
-            modifiers = self._modifiers(ev),
+            modifiers=self._modifiers(ev),
             )
         
     def wheelEvent(self, ev):
@@ -209,7 +211,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             native=ev,
             delta=ev.delta(),
             pos=(ev.pos().x(), ev.pos().y()),
-            modifiers = self._modifiers(ev),
+            modifiers=self._modifiers(ev),
             )
     
     

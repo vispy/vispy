@@ -8,16 +8,13 @@ import random
 import vispy
 from vispy import app
 
-app.use('qt')
+# app.use('qt')
 # app.use('glut')
-# app.use('pyglet')
+app.use('pyglet')
 
 # We'll use pyopengl for the drawing for now
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
-
-
-# todo: do we want key repeat or not?
 
 
 class MyCanvas(app.Canvas):
@@ -39,8 +36,15 @@ class MyCanvas(app.Canvas):
     def on_close(self, event):
         print('closing!')
     
+    def on_resize(self, event):
+        print('Resize %r' % (event.size, ))
+    
+    
     def on_key_press(self, event):
+        if event.key == 'space':
+            self.update()
         # Should repeat if held down
+        # Note that on GLUT the modifier keys cannot be detected
         modifiers = [key.name for key in event.modifiers]
         print('Key pressed - text: %r, key: %s, modifiers: %r' % (
                 event.text, event.key.name, modifiers))
@@ -50,35 +54,35 @@ class MyCanvas(app.Canvas):
         print('Key released - text: %r, key: %s, modifiers: %r' % (
                 event.text, event.key.name, modifiers))
     
-    def on_mouse_move(self, event):
-        # Should *always* fire (not only with mouse down)
-        self.print_mouse_event(event, 'Mouse move')
-    
     def on_mouse_press(self, event):
-        # Should have right button
-        # Should have right modifiers
-        # Shpuld have right location
+        # Should have button: 1: left, 2: right, 3: middle, 4:?
+        # Should have pos and modifiers
+        # Delta should be 0
         self.print_mouse_event(event, 'Mouse press')
     
     def on_mouse_release(self, event):
+        # See mouse press
         self.print_mouse_event(event, 'Mouse release')
     
+    def on_mouse_move(self, event):
+        # Should print position when over the red square
+        # Should always fire, with mouse down and also without
+        # Should have pos and modifiers
+        # Button and delta should be 0
+        if (    event.pos[0] < self.geometry[2]*0.5 
+            and event.pos[1] < self.geometry[3]*0.5):
+            self.print_mouse_event(event, 'Mouse move')
+    
     def on_mouse_wheel(self, event):
-        # Should right have location
+        # Should have nonzero delta: What values???
+        # Should have pos and modifiers
+        # Button should be 0 
         self.print_mouse_event(event, 'Mouse wheel')
     
     def print_mouse_event(self, event, what):
-        # Should print text when over the red square
-        # Should always fire, not only when mouse pressed down
-        if (    event.pos[0] < self.geometry[2]*0.5 
-            and event.pos[1] < self.geometry[3]*0.5):
-            
-            modifiers = [key.name for key in event.modifiers]
-            print('%s - pos: %r, button: %i, modifiers: %r, delta: %i' % (
-                    what, event.pos, event.button, modifiers, event.delta))
-    
-    def on_resize(self, event):
-        print('Resize %r' % (event.size, ))
+        modifiers = ', '.join([key.name for key in event.modifiers])
+        print('%s - pos: %r, button: %i, modifiers: %s, delta: %i' % (
+                what, event.pos, event.button, modifiers, event.delta))
     
     
     def on_paint(self, event):
