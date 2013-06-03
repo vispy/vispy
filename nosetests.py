@@ -1,14 +1,6 @@
 """ Run tests using nose.
-
+For when nosetests is not on your PATH.
 """
 
-import os
-import sys
 import nose
-
-os.rename('__init__.py', '__init__.py.disabled')
-
-try:
-    result = nose.run()
-finally:
-    os.rename('__init__.py.disabled', '__init__.py')
+result = nose.run()
