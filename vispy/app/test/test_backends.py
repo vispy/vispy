@@ -1,11 +1,18 @@
 """ Tests to quickly see if the backends look good.
+This tests only to see if all the necessary methods are implemented,
+whether all the right events are mentioned, and whether the keymap 
+contains all keys that should be supported.
+
+This test basically checks whether nothing was forgotton, not that the
+implementation is corect.
+ 
 """
 
 import vispy
 from vispy import keys
 
-class ModuleTest:
-    def __init__(self, module):
+class BaseTestmodule:
+    def __init__(self, module=None):
         self._module = module
     
     def test_keymap(self):
@@ -72,7 +79,29 @@ class ModuleTest:
         
         for name in eventNames:
             assert 'events.%s'%name in text
-        
+
+
+
+class Test_TemplateBackend(BaseTestmodule):
+    def __init__(self):
+        from vispy.app.backends import template
+        self._module = template
+
+class Test_QtBackend(BaseTestmodule):
+    def __init__(self):
+        from vispy.app.backends import qt
+        self._module = qt
+
+class Test_PygletBackend(BaseTestmodule):
+    def __init__(self):
+        from vispy.app.backends import pyglet
+        self._module = pyglet
+
+class Test_GlutBackend(BaseTestmodule):
+    def __init__(self):
+        from vispy.app.backends import glut
+        self._module = glut
+
 
 
 if __name__ == '__main__':
@@ -80,7 +109,7 @@ if __name__ == '__main__':
     from vispy.app.backends import template, qt, pyglet, glut
     
     for mod in [template, qt, pyglet, glut]:
-        test = ModuleTest(mod)
+        test = BaseTestmodule(mod)
         test.test_keymap()
         test.test_methods()
         test.test_events()

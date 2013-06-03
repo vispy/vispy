@@ -1,7 +1,11 @@
-from PyQt4 import QtCore, QtGui, uic
+# Import PyQt4, vispy will see this and use that as a backend
+# Also import QtOpenGL, because vispy needs it.
+from PyQt4 import QtCore, QtGui, QtOpenGL, uic
+
 import OpenGL.GL as gl
 from vispy.app import Canvas
 import os
+
 
 path = os.path.dirname(__file__)
 WindowTemplate, TemplateBaseClass = uic.loadUiType(os.path.join(path, 'qt-designer.ui'))

@@ -3,15 +3,16 @@ from vispy import keys
 
 import vispy
 qt_lib = vispy.config['qt_lib']
+
 if qt_lib == 'any':
     try: 
         from PyQt4 import QtGui, QtCore, QtOpenGL
     except ImportError:
         from PySide import QtGui, QtCore, QtOpenGL
 elif qt_lib == 'pyqt':
-    from PyQt4 import QtGui, QtCore
+    from PyQt4 import QtGui, QtCore, QtOpenGL
 elif qt_lib == 'pyside':
-    from PySide import QtGui, QtCore
+    from PySide import QtGui, QtCore, QtOpenGL
 else:
     raise Exception("Do not recognize Qt library '%s'. Options are 'pyqt', 'pyside', or 'any' (see vispy.config['qt_lib'])." % str(qt_lib))
 

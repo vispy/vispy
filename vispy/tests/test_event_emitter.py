@@ -207,7 +207,7 @@ class TestEmitters(unittest.TestCase):
             em()
             assert False, "Emission should have raised exception"
         except Exception as err:
-            if err.message != 'test':
+            if str(err) != 'test':
                 raise
         
     def test_emission_order(self):
@@ -273,7 +273,7 @@ class TestEmitters(unittest.TestCase):
         try:
             em()
         except RuntimeError as err:
-            if err.message != 'Event source-stack mismatch.':
+            if str(err) != 'Event source-stack mismatch.':
                 raise
             
         em.disconnect()
@@ -300,7 +300,7 @@ class TestEmitters(unittest.TestCase):
         try:
             em1()
         except RuntimeError as err:
-            if err.message != 'EventEmitter loop detected!':
+            if str(err) != 'EventEmitter loop detected!':
                 raise err
             
     def test_emitter_block(self):
