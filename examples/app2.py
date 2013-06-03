@@ -112,8 +112,10 @@ class MyCanvas(app.Canvas):
         gl.glEnd()
         
         self._backend._vispy_swap_buffers()
+        
+        self.change_color()
     
-    def change_color(self, event):
+    def change_color(self, event=None):
         self._color = random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)
         #self.update()  # Force redraw
 
@@ -121,10 +123,10 @@ class MyCanvas(app.Canvas):
 if __name__ == '__main__':
     canvas = MyCanvas()
     
-    # Setup a timer
-    timer = app.Timer(1.0)
-    timer.connect(canvas.change_color)
-    timer.start()
+#     # Setup a timer
+#     timer = app.Timer(1.0)
+#     timer.connect(canvas.change_color)
+#     timer.start()
     
     # Enter the mainloop
     app.run()

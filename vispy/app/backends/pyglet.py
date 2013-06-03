@@ -15,33 +15,6 @@ import pyglet.app
 import pyglet.clock
 
 
-# From pygly
-def idle( self ):
-    """An alternate idle loop than Pyglet's default.
- 
-    By default, pyglet calls on_draw after EVERY batch of events
-    which without hooking into, causes ghosting
-    and if we do hook into it, it means we render after every event
-    which is REALLY REALLY BAD
- 
-http://www.pyglet.org/doc/programming_guide/the_application_event_loop.html
- 
-    """
-    pyglet.clock.tick( poll = True )
-    # don't call on_draw
-    return pyglet.clock.get_sleep_time( sleep_idle = True )
- 
-def patch_idle_loop():
-    """Replaces the default Pyglet idle look with the :py:func:`idle` function in this module.
-    """
-    # check that the event loop has been over-ridden
-    if pyglet.app.EventLoop.idle != idle:
-        # over-ride the default event loop
-        pyglet.app.EventLoop.idle = idle
-
-patch_idle_loop()
-# todo: this does not seem enough. Perhaps use the framerate limiter from plot_lines?
-
 # Map native keys to vispy keys
 KEYMAP = {
     pyglet.window.key.LSHIFT: keys.SHIFT,
@@ -131,14 +104,28 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         #self._buttons_accepted = 0
         self._draw_ok = False  # whether it is ok to draw yet
         self._pending_location = None
-        
+    
+    # Override these ...  
+    def flip(self):
+        # Is called by event loop after each draw
+        pass  
+    def on_draw(self):
+        # Is called by event loop after each event, whatever event ... really
+        if not self._draw_ok:
+            self._draw_ok = True
+            self.our_paint_func()
+    def draw_mouse_cursor(self):
+        # Prevent legacy OpenGL
+        pass 
+    
+    
     def _vispy_set_current(self):  
         # Make this the current context
         self.switch_to()
     
     def _vispy_swap_buffers(self):  
         # Swap front and back buffer
-        self.flip()
+        pyglet.window.Window.flip(self)
     
     def _vispy_set_title(self, title):  
         # Set the window title. Has no effect for widgets
@@ -161,7 +148,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     
     def _vispy_update(self):
         # Invoke a redraw
-        pyglet.clock.schedule_once(self.on_draw, 0.0)
+        pyglet.clock.schedule_once(self.our_paint_func, 0.0)
     
     def _vispy_close(self):
         # Force the window or widget to shut down
@@ -178,14 +165,14 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.initialize()
-        pyglet.clock.schedule_once(self.on_draw, 0.0)
-        
         # Set location now if we must. For some reason we get weird 
         # offsets in viewport if set_location is called before the
         # widget is shown.
         if self._pending_location:
             xy, self._pending_location = self._pending_location, None
             self.set_location(*xy)
+        # Redraw
+        self._vispy_update()
     
     def on_close(self):
         if self._vispy_canvas is None:
@@ -197,16 +184,10 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.resize(size=(w,h))
-        
-        # might need to send a paint event as well
-        # todo: this is not sufficient!
-        if self._draw_ok:
-            pyglet.clock.schedule_once(self.on_draw, 0.0)
-           #self.on_draw()
-
-    def on_draw(self, dummy=None):
-        self._draw_ok = True
-        if self._vispy_canvas is None:
+        self._vispy_update()
+    
+    def our_paint_func(self, dummy=None):
+        if not self._draw_ok or self._vispy_canvas is None:
             return
         self._vispy_canvas.events.paint(region=None)#(0, 0, self.width, self.height))
     
