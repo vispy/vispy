@@ -52,9 +52,11 @@ class Canvas(object):
         self._app = kwargs.pop('app', vispy.app.default_app)
         
         # Create widget now
-        if kwargs.pop('create_native', True):
+        if 'native' in kwargs:
+            self._set_backend(kwargs.pop('native'))
+        else:
             self.create_native()
-    
+        
     
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
@@ -65,13 +67,17 @@ class Canvas(object):
             self._app.use()
             self._app.native
             # Instantiate the backed with the right class
-            self._backend = self._app.backend_module.CanvasBackend(self, *self._args, **self._kwargs)
+            self._set_backend(self._app.backend_module.CanvasBackend(*self._args, **self._kwargs))
             # Set initial size. Let OS determine location
             self.geometry = None, None, 560, 420 
             # Clean up
             del self._args 
             del self._kwargs
     
+    def _set_backend(self, backend):
+        self._backend = backend
+        if backend is not None:
+            backend._vispy_canvas = self
     
     @property
     def app(self):
@@ -221,10 +227,10 @@ class CanvasBackend(object):
     'mouse_wheel', 'key_press', 'key_release', 'close'.
     """
     
-    def __init__(self, vispy_canvas, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         # Initially the backend starts out with no canvas.
         # Canvas takes care of setting this for us.
-        self._vispy_canvas = vispy_canvas  
+        self._vispy_canvas = None
     
     def _vispy_set_current(self):  
         # Make this the current context

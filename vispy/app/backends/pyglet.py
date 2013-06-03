@@ -113,8 +113,8 @@ class ApplicationBackend(app.ApplicationBackend):
 class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     """ Pyglet backend for Canvas abstract class."""
     
-    def __init__(self, vispy_canvas, *args, **kwargs):
-        app.CanvasBackend.__init__(self, vispy_canvas)
+    def __init__(self, *args, **kwargs):
+        app.CanvasBackend.__init__(self)
         # Initialize native widget, but default hidden and resizable
         kwargs['visible'] = kwargs.get('visible', False)
         kwargs['resizable'] = kwargs.get('resizable', True) 

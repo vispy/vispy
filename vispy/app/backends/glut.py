@@ -59,7 +59,7 @@ KEYMAP = {
     '\t': keys.TAB,
 }
 
-
+ALL_WINDOWS = []
 
 class ApplicationBackend(app.ApplicationBackend):
     def __init__(self):
@@ -79,9 +79,9 @@ class ApplicationBackend(app.ApplicationBackend):
         return glut.glutMainLoop()
     
     def _vispy_quit(self):
-        for win in self._windows:
-            glut.glutDestroyWindow(win)
-        pass # not possible?
+        global ALL_WINDOWS
+        for win in ALL_WINDOWS:
+            win._vispy_close()
     
     def _vispy_get_native_app(self):
         if not self._inizialized:
@@ -94,10 +94,11 @@ class ApplicationBackend(app.ApplicationBackend):
 class CanvasBackend(app.CanvasBackend):
     """ GLUT backend for Canvas abstract class."""
     
-    def __init__(self, vispy_canvas, name='glut window', *args, **kwargs):
-        app.CanvasBackend.__init__(self, vispy_canvas)
+    def __init__(self, name='glut window', *args, **kwargs):
+        app.CanvasBackend.__init__(self)
         self._id = glut.glutCreateWindow(name)
-        vispy_canvas.app._backend._windows.append(self._id)
+        global ALL_WINDOWS
+        ALL_WINDOWS.append(self)
         
         # Note: this seems to cause the canvas to ignore calls to show()
         # about half of the time. 
@@ -112,10 +113,7 @@ class CanvasBackend(app.CanvasBackend):
         glut.glutKeyboardUpFunc(self.on_key_release)
         glut.glutMouseFunc(self.on_mouse_action)
         glut.glutMotionFunc(self.on_mouse_motion)
-        if bool(glut.glutWMCloseFunc): # OSX specific test
-            glut.glutWMCloseFunc(self.on_close)
-        else:
-            glut.glutCloseFunc(self.on_close)
+        glut.glutCloseFunc(self.on_close)
         #glut.glutFunc(self.on_)
         
         self._initialized = False

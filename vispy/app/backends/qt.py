@@ -101,10 +101,13 @@ class ApplicationBackend(app.ApplicationBackend):
 class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     """Qt backend for Canvas abstract class."""
     
-    def __init__(self, vispy_canvas, *args, **kwargs):
-        app.CanvasBackend.__init__(self, vispy_canvas)
+    def __init__(self, *args, **kwargs):
+        app.CanvasBackend.__init__(self)
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
         self.setAutoBufferSwap(False) # to make consistent with other backends
+    
+    def _vispy_set_canvas(self, canvas):
+        self._vispy_canvas = canvas
     
     def _vispy_set_current(self):  
         # Make this the current context
