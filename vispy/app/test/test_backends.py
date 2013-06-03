@@ -66,7 +66,7 @@ class ModuleTest:
         fname = self._module.__file__.strip('c')
         text = open(fname, 'rb').read().decode('utf-8')
         
-        canvas = vispy.app.Canvas(create_native=False)
+        canvas = vispy.app.Canvas(native=None)
         eventNames = set(canvas.events._emitters.keys())
         eventNames.discard('stylus'); eventNames.discard('touch') # Leave this for now
         
