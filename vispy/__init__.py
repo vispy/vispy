@@ -60,4 +60,4 @@ config.update(
     default_backend='qt',
     qt_lib= 'any',  # options are 'pyqt', 'pyside', or 'any'
 )
-
+# todo: qt_lib is now not used anymore, because app.use accepts 'qt', 'pyside' and 'pyqt4'

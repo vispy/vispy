@@ -229,7 +229,7 @@ class CanvasBackend(app.CanvasBackend):
             # Wheel event
             self._vispy_canvas.events.mouse_wheel(
                 pos=(x, y),
-                delta=(120 if button==3 else -120),  # Follow Qt stepsize
+                delta=(1.0 if button==3 else -1.0),
                 modifiers=mod,
                 )
     
@@ -238,7 +238,6 @@ class CanvasBackend(app.CanvasBackend):
             return
         self._vispy_canvas.events.mouse_move(
             pos=(x, y),
-            button=None,  # todo: self._buttons_pressed,
             modifiers=self._modifiers(),
             )
     

@@ -14,10 +14,21 @@ from .timer import Timer, TimerBackend
 default_app = Application()
 
 
-def use(backend_name):
-    """ Select a backend by name. If the backend name is omitted,
-    will chose a suitable backend automatically. It is an error to
-    try to select a particular backend if one is already selected.
+def use(backend_name=None):
+    """ Select a backend by name. If the backend name is omitted, will
+    chose a suitable backend automatically. It is an error to try to
+    select a particular backend if one is already selected. Available
+    backends: 'PySide', 'PyQt4', 'Glut', 'Pyglet', 'qt'. The latter
+    will use PySide or PyQt4, whichever works.
+    
+    If a backend name is provided, and that backend could not be loaded,
+    an error is raised.
+    
+    If no backend name is provided, this function will first check if
+    the GUI toolkit corresponding to each backend is already imported,
+    and try that backend first. If this is unsuccessful, it will try
+    the 'default_backend' provided in the vispy config. If still not
+    succesful, it will try each backend in a predetermined order.
     """
     return default_app.use(backend_name)
 

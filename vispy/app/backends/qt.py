@@ -1,20 +1,22 @@
+import vispy
 from vispy import app
 from vispy import keys
+from vispy.app.backends import ATTEMPTED_BACKENDS
 
-import vispy
-qt_lib = vispy.config['qt_lib']
+#qt_lib = vispy.config['qt_lib']
+qt_lib = ATTEMPTED_BACKENDS[-1].lower()
 
-if qt_lib == 'any':
+if qt_lib in ('any', 'qt'):
     try: 
         from PyQt4 import QtGui, QtCore, QtOpenGL
     except ImportError:
         from PySide import QtGui, QtCore, QtOpenGL
-elif qt_lib == 'pyqt':
+elif qt_lib in ('pyqt', 'pyqt4'):
     from PyQt4 import QtGui, QtCore, QtOpenGL
 elif qt_lib == 'pyside':
     from PySide import QtGui, QtCore, QtOpenGL
 else:
-    raise Exception("Do not recognize Qt library '%s'. Options are 'pyqt', 'pyside', or 'any' (see vispy.config['qt_lib'])." % str(qt_lib))
+    raise Exception("Do not recognize Qt library '%s'. Options are 'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
 
 # todo: add support for distinguishing left and right shift/ctrl/alt keys.
 # Linux scan codes:  (left, right)
@@ -71,7 +73,10 @@ class ApplicationBackend(app.ApplicationBackend):
         app.ApplicationBackend.__init__(self)
     
     def _vispy_get_backend_name(self):
-        return 'qt' #todo: pyside or PyQt? (must support both; see vispy.config['qt_lib'])
+        if 'pyside' in QtCore.__name__.lower():
+            return 'PySide (qt)'
+        else:
+            return 'PyQt4 (qt)'
     
     def _vispy_process_events(self):
         app = self._vispy_get_native_app()
@@ -109,9 +114,6 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
         self.setAutoBufferSwap(False) # to make consistent with other backends
         self.setMouseTracking(True)
-    
-    def _vispy_set_canvas(self, canvas):
-        self._vispy_canvas = canvas
     
     def _vispy_set_current(self):  
         # Make this the current context
@@ -209,7 +211,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             return
         self._vispy_canvas.events.mouse_wheel(
             native=ev,
-            delta=ev.delta(),
+            delta=ev.delta()/120.0,
             pos=(ev.pos().x(), ev.pos().y()),
             modifiers=self._modifiers(ev),
             )
