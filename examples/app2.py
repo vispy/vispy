@@ -8,14 +8,15 @@ import random
 import vispy
 from vispy import app
 
-# app.use('qt')
+app.use('qt')
 # app.use('glut')
-app.use('pyglet')
+# app.use('pyglet')
 
 # We'll use pyopengl for the drawing for now
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
 
+#todo: give mouse events a "buttons" attribute?
 
 class MyCanvas(app.Canvas):
     
@@ -74,14 +75,14 @@ class MyCanvas(app.Canvas):
             self.print_mouse_event(event, 'Mouse move')
     
     def on_mouse_wheel(self, event):
-        # Should have nonzero delta: What values???
+        # Should have nonzero delta: -1.0 when scrolling down (as in a browser)
         # Should have pos and modifiers
         # Button should be 0 
         self.print_mouse_event(event, 'Mouse wheel')
     
     def print_mouse_event(self, event, what):
         modifiers = ', '.join([key.name for key in event.modifiers])
-        print('%s - pos: %r, button: %i, modifiers: %s, delta: %i' % (
+        print('%s - pos: %r, button: %i, modifiers: %s, delta: %1.1f' % (
                 what, event.pos, event.button, modifiers, event.delta))
     
     

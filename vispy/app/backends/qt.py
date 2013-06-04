@@ -209,7 +209,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             return
         self._vispy_canvas.events.mouse_wheel(
             native=ev,
-            delta=ev.delta(),
+            delta=ev.delta()/120.0,
             pos=(ev.pos().x(), ev.pos().y()),
             modifiers=self._modifiers(ev),
             )

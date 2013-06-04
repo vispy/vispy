@@ -229,7 +229,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.mouse_wheel(
-            delta=scroll_y*120, # Follow Qt stepsize
+            delta=float(scroll_y),
             pos=(x, y),
             modifiers=self._modifiers(),
             )
