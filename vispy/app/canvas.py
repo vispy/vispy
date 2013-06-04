@@ -125,8 +125,6 @@ class Canvas(object):
 #         """Return the OpenGL context handle in use for this Canvas."""
 #         return self._backend._vispy_context
     
-    # todo: do we need swap_buffers or make_current?
-    
     @property
     def title(self):
         """ The title of the canvas. If the canvas represents a window, the
@@ -233,6 +231,8 @@ class CanvasBackend(object):
         self._vispy_canvas = None
     
     def _vispy_set_current(self):  
+        # todo: this is currently not used internally
+        # --> I think the backends should call this themselves before emitting the paint event
         # Make this the current context
         raise NotImplementedError()
     
@@ -305,12 +305,12 @@ class MouseEvent(Event):
     
     """
     
-    def __init__(self, type, pos=None, button=None, modifiers=None, delta=0, **kwds):
+    def __init__(self, type, pos=None, button=None, modifiers=None, delta=0.0, **kwds):
         Event.__init__(self, type, **kwds)
         self._pos = (0,0) if (pos is None) else (pos[0], pos[1])
         self._button = int(button) if (button is not None) else 0
         self._modifiers = tuple( modifiers or () )
-        self._delta = int(delta)
+        self._delta = float(delta)
     
     @property
     def pos(self):
