@@ -8,9 +8,8 @@ import random
 import vispy
 from vispy import app
 
-app.use('qt')
-# app.use('glut')
-# app.use('pyglet')
+# Select a backend. Not necessary; Canvas will call app.use() too
+# app.use()  # None for auto-select. 'qt', 'PySide', 'PyQt4', 'Glut', 'Pyglet' 
 
 # We'll use pyopengl for the drawing for now
 import OpenGL.GL as gl
