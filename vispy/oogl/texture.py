@@ -463,7 +463,7 @@ class Texture3D(Texture):
     See Texture docs for details.
     
     """
-    def __init__(self, allow_downsampling=False):
+    def __init__(self, *args, **kwargs):
         Texture.__init__(self, gl.GL_TEXTURE_3D, *args, **kwargs)
 
 
