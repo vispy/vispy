@@ -117,7 +117,7 @@ class _RawTexture(GLObject_mixin):
         gl.glDisable(self._target)
     
     
-    def _test_upload(self, data, internalformat, format, level=0, border=0):
+    def _test_upload(self, data, internalformat, format, level=0):
         """ Test whether we can create a texture of the given shape.
         Returns True if we can, False if we can't.
         """
@@ -129,7 +129,7 @@ class _RawTexture(GLObject_mixin):
         
         # Build args list
         size, gltype = self._get_size_and_type(data, ndim)
-        args = [target, level, internalformat] + size + [border, format, gltype, None]
+        args = [target, level, internalformat] + size + [0, format, gltype, None]
         
         # Do fake upload
         uploadFun(*tuple(args))
@@ -139,7 +139,7 @@ class _RawTexture(GLObject_mixin):
         return bool(ok)
     
     
-    def _upload(self, data, internalformat, format, level=0, border=0):
+    def _upload(self, data, internalformat, format, level=0):
         """ Upload a texture to the current texture object. 
         It should have been verified that the texture will fit.
         """
@@ -157,7 +157,7 @@ class _RawTexture(GLObject_mixin):
         
         # Build args list
         size, gltype = self._get_size_and_type(data, ndim)
-        args = [target, level, internalformat] + size + [border, format, gltype, data]
+        args = [target, level, internalformat] + size + [0, format, gltype, data]
         
         # Check the alignment of the texture
         alignment = texture_alignment(data.shape[-1])
@@ -274,8 +274,7 @@ class Texture(_RawTexture):
         self._texture_params[param] = value
     
     
-    def set_data(self, data, offset=None, level=0, border=0,
-            internal_format=None, format=None):
+    def set_data(self, data, offset=None, level=0, internal_format=None, format=None):
         """ Set the data for this texture. This method can be called at any
         time (even if there is no context yet).
         
@@ -290,8 +289,6 @@ class Texture(_RawTexture):
             The offset for each dimension, to update part of the texture.
         level : int
             The mipmap level. Default 0.
-        border : int
-            The width of the border. Default 0.
         internal_format : OpenGL enum
             The internal format representation. If not given, it is
             decuced from the given data.
@@ -322,7 +319,7 @@ class Texture(_RawTexture):
             offset = [0 for i in self._shape[:ndim]]
         
         # Set pending data ...
-        self._pendingData = data, offset, level, border, internal_format, format
+        self._pendingData = data, offset, level, internal_format, format
         self._shape = data.shape
     
     
@@ -372,13 +369,10 @@ class Texture(_RawTexture):
         # Need to update any parameters?
         while self._pending_params:
             param, value = self._pending_params.popitem()
-            if param == gl.GL_TEXTURE_BORDER_COLOR:
-                gl.glTexParameterfv(self._target, param, value)
-            else:
-                gl.glTexParameter(self._target, param, value)
+            gl.glTexParameter(self._target, param, value)
     
     
-    def _process_pending_data(self, data, offset, level, border, internal_format, format):
+    def _process_pending_data(self, data, offset, level, internal_format, format):
         """ Process the pending data. Uploading the data (i.e. create
         a new texture) or updating it (a subsection).
         """
@@ -419,7 +413,7 @@ class Texture(_RawTexture):
             _RawTexture._enable(self)
             # Test whether it fits, downsample if necessary (and allowed)
             for count in range(0,9):
-                ok = self._test_upload(data, internal_format, format, level, border)
+                ok = self._test_upload(data, internal_format, format, level)
                 if ok or not self._allow_downsampling:
                     break
                 data = downsample(data, self._target)
@@ -430,7 +424,7 @@ class Texture(_RawTexture):
             elif count:
                 print("Warning: data was downscaled %i times." % count)
             # Upload!
-            self._upload(data, internal_format, format, level, border)
+            self._upload(data, internal_format, format, level)
             # Set all parameters that the user set
             for param, value in self._texture_params.items():
                gl.glTexParameter(self._target, param, value)
