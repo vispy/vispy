@@ -8,6 +8,10 @@ import numpy as np
 #from OpenGL.raw.GL.ARB.half_float_vertex import *
 #from OpenGL.raw.GL.ARB.depth_buffer_float import *
 
+import sys
+if sys.version_info > (3,):
+    basestring = str
+    
 def getOpenGlCapable(version, description):
     return True # todo: we need something like this
 
@@ -42,8 +46,9 @@ class GLObject_mixin(object):
 
 
 class _RawTexture(GLObject_mixin):
-    """ This class demonstrates the minimal encapsulation
-    of an OpenGl texture. The rest is mostly sugar.
+    """ This class demonstrates the minimal encapsulation of an OpenGl
+    texture. The rest is mostly sugar and stuff to support deferred
+    loading and settings.
     """
     
     def __init__(self, target):
@@ -174,7 +179,7 @@ class _RawTexture(GLObject_mixin):
         D = {   gl.GL_TEXTURE_1D: (gl.glTexSubImage1D, gl.GL_TEXTURE_1D, 1),
                 gl.GL_TEXTURE_2D: (gl.glTexSubImage2D, gl.GL_TEXTURE_2D, 2),
                 gl.GL_TEXTURE_3D: (gl.glTexSubImage3D, gl.GL_TEXTURE_3D, 3)}
-        uploadFun, target, ndim = D[self_target]
+        uploadFun, target, ndim = D[self._target]
         
         # Build argument list
         size, gltype = self._get_size_and_type(data, ndim)
@@ -196,15 +201,6 @@ class _RawTexture(GLObject_mixin):
         gltype = DTYPES[thetype]
         # Done
         return size, gltype
-    
-    
-    def set_min_mag_filter(self, min, mag):
-        MAP = {   'linear': gl.GL_LINEAR, 'nearest': gl.GL_NEAREST, 
-                   True: gl.GL_LINEAR, False: gl.GL_NEAREST}
-        min = MAP.get(min, min); mag = MAP.get(mag, mag) 
-        with self:
-            gl.glTexParameteri(self._target, gl.GL_TEXTURE_MIN_FILTER, min)
-            gl.glTexParameteri(self._target, gl.GL_TEXTURE_MAG_FILTER, mag)
     
 
 
@@ -238,12 +234,44 @@ class Texture(_RawTexture):
         # be self._pendingData.shape; the data might be downsampled.
         self._shape = None
         
+        # The parameters that apply to this texture. One variable to 
+        # keep track of pending parameters, the other for resetting
+        # parameters if its re-uploaded.
+        self._texture_params = {}
+        self._pending_params = {}
+        
+        # Set default parameters for min and mag filter, otherwise an
+        # image is not shown by default, since the default min_filter
+        # is GL_NEAREST_MIPMAP_LINEAR
+        self.set_parameter('MIN_FILTER', gl.GL_LINEAR)
+        self.set_parameter('MAG_FILTER', gl.GL_LINEAR)
+        
         # Allow modifying the data? This is mainly to allow images to
         # be displayed (more or less) correctly on older systems. On
         # newer systems, padding and downsampling would generally never
         # be used. 
         self._allow_downsampling = allow_downsampling
         self._allow_padding = allow_padding
+    
+    
+    def set_parameter(self, param, value):
+        """ Set texture parameter. The param can be an OpenGL constant 
+        or a string that corresponds to such a constant:
+        
+        GL_DEPTH_STENCIL_TEXTURE_MODE, BASE_LEVEL, BORDER_COLOR,
+        COMPARE_FUNC, COMPARE_MODE, LOD_BIAS, MIN_FILTER, MAG_FILTER,
+        MIN_LOD, MAX_LOD, MAX_LEVEL, SWIZZLE_R, SWIZZLE_G, SWIZZLE_B,
+        SWIZZLE_A, SWIZZLE_RGBA, WRAP_S, WRAP_T, WRAP_R.
+        """
+        # Allow strings
+        if isinstance(param, basestring):
+            param = param.upper()
+            if not param.startswith('GL'):
+                param = 'GL_TEXTURE_' + param
+            param = getattr(gl, param)
+        # Set 
+        self._pending_params[param] = value
+        self._texture_params[param] = value
     
     
     def set_data(self, data, offset=None, level=0, border=0,
@@ -340,6 +368,14 @@ class Texture(_RawTexture):
         
         # Enable
         _RawTexture._enable(self, 0) # todo: unit
+        
+        # Need to update any parameters?
+        while self._pending_params:
+            param, value = self._pending_params.popitem()
+            if param == gl.GL_TEXTURE_BORDER_COLOR:
+                gl.glTexParameterfv(self._target, param, value)
+            else:
+                gl.glTexParameter(self._target, param, value)
     
     
     def _process_pending_data(self, data, offset, level, border, internal_format, format):
@@ -395,8 +431,10 @@ class Texture(_RawTexture):
                 print("Warning: data was downscaled %i times." % count)
             # Upload!
             self._upload(data, internal_format, format, level, border)
-            # Set default values for min mag filter, otherwise image not shown
-            self.set_min_mag_filter(True, True)
+            # Set all parameters that the user set
+            for param, value in self._texture_params.items():
+               gl.glTexParameter(self._target, param, value)
+            self._pending_params = {} # We just applied all 
             # If all is well, the _handle, should now be a valid texture
 
 
