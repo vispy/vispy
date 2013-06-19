@@ -1,0 +1,4 @@
+vispy
+PyOpenGL>=3.0.2
+numpy>=1.6
+
