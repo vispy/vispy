@@ -15,7 +15,7 @@ from . import GLObject
 if sys.version_info > (3,):
     basestring = str
     
-def getOpenGlCapable(version, description):
+def getOpenGlCapable(version, description=None):
     return True # todo: we need something like this
 
 
@@ -71,24 +71,27 @@ class _RawTexture(GLObject):
         self.delete()
     
     
-    def _enable(self, unit=None):
+    def _enable(self):
+        """ To be called by context handler. Never call this yourself.
+        """
         # Enable things that we need, and prepare ...
         gl.glEnable(self._target)
         gl.glColor3f(1.0, 1.0, 1.0)
         
-        # Store texture-unit-id, and activate.
-        if unit is not None:
-            self._useUnit = unit
+        # Set active texture unit
+        if self._unit >= 0:
             if self._useUnit is None:
                 self._useUnit = getOpenGlCapable('1.3')        
             if self._useUnit:
-                gl.glActiveTexture(gl.GL_TEXTURE0 + unit)  # Opengl v1.3
+                gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)  # Opengl v1.3
         
         # Bind
         gl.glBindTexture(self._target, self._handle)
     
     
     def _disable(self):
+        """ To be called by context handler. Never call this yourself.
+        """
         # Select active texture if we can
         if self._unit >= 0 and self._useUnit:
             gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
@@ -198,6 +201,9 @@ class Texture(_RawTexture):
     as a context manager. In these cases the caller needs to make sure 
     that the right OpenGL context is current.
     
+    An object of this class can be called with one (integer) argument
+    to set the texture unit.
+    
     Parameters
     ----------
     target : gl_enum
@@ -239,6 +245,13 @@ class Texture(_RawTexture):
         # be used. 
         self._allow_downsampling = allow_downsampling
         self._allow_padding = allow_padding
+    
+    
+    def __call__(self, unit):
+        """ Calling a texture sets the texture unit.
+        """
+        self._unit = int(unit)
+        return self
     
     
     def set_parameter(self, param, value):
@@ -352,7 +365,7 @@ class Texture(_RawTexture):
             raise RuntimeError('This should not happen (texture is invalid)')
         
         # Enable
-        _RawTexture._enable(self, 0) # todo: unit
+        _RawTexture._enable(self)
         
         # Need to update any parameters?
         while self._pending_params:
