@@ -1,17 +1,17 @@
 """
 Object oriented interface to OpenGL.
 
-This module implements classes for most things that are "objecs" in OpenGL,
+This module implements classes for most things that are "objetcs" in OpenGL,
 such as textures, FBO's, VBO's and shaders. Further, some convenience classes
 are implemented (like the collection class).
 
 Most classes should be used (during drawing) as context handlers. The
 context handler will call glPushAttrib, so that the object can configure
-OpenGL as they need, without needing to undo these effects.
+OpenGL as they need, without needing to undo these effects to prevent
+the state from "leaking" into other parts of the visualization.
 
-Example
--------
-{{{
+Example::
+
     # Context with one object
     with texture:
         draw_vertices()
@@ -20,10 +20,9 @@ Example
     with enable(texture(0), texture(1), shader):
         draw_vertices()
     
-    # Context with multiple objects, alternative 2
+    # Or maybe like this? (No need to import the ambiguous enable function)
     with texture(0) & texture(1) & shader:
         draw_vertices()
-}}}
 
 """
 

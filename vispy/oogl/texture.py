@@ -201,8 +201,9 @@ class Texture(_RawTexture):
     as a context manager. In these cases the caller needs to make sure 
     that the right OpenGL context is current.
     
-    An object of this class can be called with one (integer) argument
-    to set the texture unit.
+    To bind/enable the texture, use it as a context manager. An object
+    of this class can be called with one (integer) argument to set the
+    texture unit. This can be combined in ``with tex(0): ...``.
     
     Parameters
     ----------
