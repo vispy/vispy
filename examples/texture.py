@@ -32,19 +32,28 @@ class Canvas(app.Canvas):
         gl.glClearColor(1,1,1,1);
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
+
         # Set color
-        gl.glColor(1.0, 1.0, 1.0)
+        gl.glColor(0.2, 0.0, 0.0)
+        self.draw_shape(0,0)
+        
         with self._texture:
-            # Draw simple shape
-            gl.glBegin(gl.GL_QUADS)
-            gl.glTexCoord(0,0); gl.glVertex(0,0); 
-            gl.glTexCoord(0.1,0.8); gl.glVertex(0.2,0.7); 
-            gl.glTexCoord(0.6,1); gl.glVertex(0.8,1); 
-            gl.glTexCoord(1,0.1); gl.glVertex(1,0.2); 
-            gl.glEnd()
+            self.draw_shape(0.5, 0.0)
+        
+        self.draw_shape(0.5,0.5)
         
         self._backend._vispy_swap_buffers()
-
+        
+        self._backend._vispy_swap_buffers()
+    
+    def draw_shape(self, x, y):
+        # Draw simple shape
+        gl.glBegin(gl.GL_QUADS)
+        gl.glTexCoord(0,0); gl.glVertex(x+0,y+0); 
+        gl.glTexCoord(0.1,0.8); gl.glVertex(x+0.1,y+0.3); 
+        gl.glTexCoord(0.6,1); gl.glVertex(x+0.4,y+0.5); 
+        gl.glTexCoord(1,0.1); gl.glVertex(x+0.5,y+0.2); 
+        gl.glEnd()
 c = Canvas()
 c.show()
 

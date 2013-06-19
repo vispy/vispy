@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
 
+import sys
+
 import OpenGL.GL as gl
 import numpy as np
 
@@ -8,16 +10,13 @@ import numpy as np
 #from OpenGL.raw.GL.ARB.half_float_vertex import *
 #from OpenGL.raw.GL.ARB.depth_buffer_float import *
 
-import sys
+from . import GLObject
+
 if sys.version_info > (3,):
     basestring = str
     
 def getOpenGlCapable(version, description):
     return True # todo: we need something like this
-
-
-# todo: rename _enable/_disable to _bind/_unbind
-
 
 
 # Dict that maps numpy datatypes to openGL data types
@@ -28,24 +27,8 @@ DTYPES = {  'uint8':gl.GL_UNSIGNED_BYTE,    'int8':gl.GL_BYTE,
             # todo: GL_DOUBLE available from what version?
 
 
-class GLObject_mixin(object):
-    
-    def __enter__(self):
-        self._enable()
-        return self
-    
-    def __exit__(self, type, value, traceback):
-        self._disable()
-    
-    @property
-    def handle(self):
-        """ The handle (i.e. 'name') to the underlying OpenGL object.
-        """
-        return self._handle
 
-
-
-class _RawTexture(GLObject_mixin):
+class _RawTexture(GLObject):
     """ This class demonstrates the minimal encapsulation of an OpenGl
     texture. The rest is mostly sugar and stuff to support deferred
     loading and settings.
@@ -89,10 +72,12 @@ class _RawTexture(GLObject_mixin):
     
     
     def _enable(self, unit=None):
-        gl.glEnable(self._target) # todo ... push on some stack? like glPushAttrib
+        # Enable things that we need, and prepare ...
+        gl.glEnable(self._target)
+        gl.glColor3f(1.0, 1.0, 1.0)
         
+        # Store texture-unit-id, and activate.
         if unit is not None:
-            # Store texture-unit-id, and activate.
             self._useUnit = unit
             if self._useUnit is None:
                 self._useUnit = getOpenGlCapable('1.3')        
@@ -114,7 +99,7 @@ class _RawTexture(GLObject_mixin):
         if self._useUnit:
             gl.glActiveTexture(gl.GL_TEXTURE0)
         
-        gl.glDisable(self._target)
+        # gl.glDisable(self._target)  # Done by popAttribute
     
     
     def _test_upload(self, data, internalformat, format, level=0):
@@ -205,7 +190,13 @@ class _RawTexture(GLObject_mixin):
 
 
 class Texture(_RawTexture):
-    """ The base texture class. 
+    """ Representation of an OpenGL texture. This class is designed to
+    allow setting data and parameters at any time; the actual uploading
+    of data and applying of parameters is deferred until the texture
+    is enabled (which will in general be right before it is used during
+    drawing). The exceptions are the delete method and using this class
+    as a context manager. In these cases the caller needs to make sure 
+    that the right OpenGL context is current.
     
     Parameters
     ----------
@@ -226,13 +217,9 @@ class Texture(_RawTexture):
         _RawTexture.__init__(self, target)
         
         # A reference (not a weak one) to be able to process defereed
-        # (i.e. lazy) loading.
-        self._pendingData = None
-        
-        # The shape of the data as uploaded to OpenGl. Is None if no
-        # data was uploaded. Note that the self._shape does not have to 
-        # be self._pendingData.shape; the data might be downsampled.
-        self._shape = None
+        # (i.e. lazy) loading. Also store the shape.
+        self._pending_data = None
+        self._texture_shape = None
         
         # The parameters that apply to this texture. One variable to 
         # keep track of pending parameters, the other for resetting
@@ -255,8 +242,9 @@ class Texture(_RawTexture):
     
     
     def set_parameter(self, param, value):
-        """ Set texture parameter. The param can be an OpenGL constant 
-        or a string that corresponds to such a constant:
+        """ Set texture parameter, can be called at any time. The param
+        can be an OpenGL constant or a string that corresponds to such
+        a constant:
         
         GL_DEPTH_STENCIL_TEXTURE_MODE, BASE_LEVEL, BORDER_COLOR,
         COMPARE_FUNC, COMPARE_MODE, LOD_BIAS, MIN_FILTER, MAG_FILTER,
@@ -306,7 +294,7 @@ class Texture(_RawTexture):
         # Reset if there was an error earlier
         if self._handle < 0:
             self._handle = 0
-            self._shape = None
+            self._texture_shape = None
         
         # Check offset
         MAP = {gl.GL_TEXTURE_1D:1, gl.GL_TEXTURE_2D:2, gl.GL_TEXTURE_3D:3}
@@ -314,13 +302,13 @@ class Texture(_RawTexture):
         if offset is not None:
             offset = [int(i) for i in offset]
             assert len(offset) == len(data.shape[:ndim])
-        elif data.shape == self._shape:
+        elif data.shape == self._texture_shape:
             # If data is of same shape as current texture, update is much faster
-            offset = [0 for i in self._shape[:ndim]]
+            offset = [0 for i in self._texture_shape[:ndim]]
         
         # Set pending data ...
-        self._pendingData = data, offset, level, internal_format, format
-        self._shape = data.shape
+        self._pending_data = data, offset, level, internal_format, format
+        self._texture_shape = data.shape
     
     
     def _enable(self):
@@ -341,8 +329,8 @@ class Texture(_RawTexture):
             return
         
         # Need to update data?
-        if self._pendingData:
-            pendingData, self._pendingData = self._pendingData, None
+        if self._pending_data:
+            pendingData, self._pending_data = self._pending_data, None
             # Process pending data
             self._process_pending_data(*pendingData)
             # If not ok, try padding (if allowed)
@@ -398,7 +386,7 @@ class Texture(_RawTexture):
         
         if offset:
             # Update: fast!
-            _RawTexture._enable(self)
+            gl.glBindTexture(self._target, self._handle)
             if self._handle <= 0 or not gl.glIsTexture(self._handle):
                 raise ValueError('Cannot update texture if there is no texture.')
             self._update(data, offset, internal_format, format, level)
@@ -410,7 +398,7 @@ class Texture(_RawTexture):
             # memory leaks otherwise.
             self.delete() 
             self._create()
-            _RawTexture._enable(self)
+            gl.glBindTexture(self._target, self._handle)
             # Test whether it fits, downsample if necessary (and allowed)
             for count in range(0,9):
                 ok = self._test_upload(data, internal_format, format, level)
@@ -436,15 +424,7 @@ class Texture(_RawTexture):
 class Texture1D(Texture):
     """ Representation of a 1D texture.
     
-    Parameters
-    ----------
-    allow_downsampling : bool
-        Whether to allow downsamling of data if it does not fit in OpenGl
-        memory. Intended for compatibility with older systems. Default False.
-    allow_padding : bool
-        Whether to allow the data to be padded to a factor of 2.
-        Intended for compatibility with older systems (OpenGL<2.0, and
-        some ATI drivers). Default False.
+    See Texture docs for details.
     
     """
     def __init__(self):
@@ -455,15 +435,7 @@ class Texture1D(Texture):
 class Texture2D(Texture):
     """ Representation of a 2D texture.
     
-    Parameters
-    ----------
-    allow_downsampling : bool
-        Whether to allow downsamling of data if it does not fit in OpenGl
-        memory. Intended for compatibility with older systems. Default False.
-    allow_padding : bool
-        Whether to allow the data to be padded to a factor of 2.
-        Intended for compatibility with older systems (OpenGL<2.0, and
-        some ATI drivers). Default False.
+    See Texture docs for details.
     
     """
     def __init__(self, *args, **kwargs):
@@ -474,22 +446,14 @@ class Texture2D(Texture):
 class Texture3D(Texture):
     """ Representation of a 3D texture.
     
-    Parameters
-    ----------
-    allow_downsampling : bool
-        Whether to allow downsamling of data if it does not fit in OpenGl
-        memory. Intended for compatibility with older systems. Default False.
-    allow_padding : bool
-        Whether to allow the data to be padded to a factor of 2.
-        Intended for compatibility with older systems (OpenGL<2.0, and
-        some ATI drivers). Default False.
+    See Texture docs for details.
     
     """
     def __init__(self, allow_downsampling=False):
         Texture.__init__(self, gl.GL_TEXTURE_3D, *args, **kwargs)
 
 
-## Utilities
+## Utility functions
 
 
 def get_format(shape, target):
