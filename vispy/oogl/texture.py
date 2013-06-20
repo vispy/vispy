@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+""" Definition of Texture class.
+
+This code is inspired by similar classes from Visvis and Pygly.
+
+"""
+
+# todo: allow setting empty texture (shape, but without data)
+# todo: implement proper version of getOpenGlCapable (and rename it pep8)
+# todo: GL_DOUBLE available from what version of OpenGL?
+# todo: functionality to control scale and bias of pixel values.
+ 
+
 from __future__ import print_function, division, absolute_import
 
 import sys
@@ -16,7 +28,7 @@ if sys.version_info > (3,):
     basestring = str
     
 def getOpenGlCapable(version, description=None):
-    return True # todo: we need something like this
+    return True 
 
 
 # Dict that maps numpy datatypes to openGL data types
@@ -24,8 +36,7 @@ DTYPES = {  'uint8':gl.GL_UNSIGNED_BYTE,    'int8':gl.GL_BYTE,
             'uint16':gl.GL_UNSIGNED_SHORT,  'int16':gl.GL_SHORT, 
             'uint32':gl.GL_UNSIGNED_INT,    'int32':gl.GL_INT, 
             'float32':gl.GL_FLOAT }
-            # todo: GL_DOUBLE available from what version?
-
+            # gl.GL_DOUBLE?
 
 
 class _RawTexture(GLObject):
@@ -49,7 +60,7 @@ class _RawTexture(GLObject):
         
         # To store the used texture unit so we can disable it properly.
         self._unit = -1
-        self._useUnit = None # todo: set to True if OpenGl version high enough
+        self._useUnit = None # is set to True if OpenGl version high enough
     
     
     def _create(self):
@@ -299,7 +310,6 @@ class Texture(_RawTexture):
             decuced from the given data.
         
         """
-        # todo: allow setting shape, but without data
         
         # Check data
         if not isinstance(data, np.ndarray):
