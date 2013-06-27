@@ -13,6 +13,10 @@ separately before use. These are:
 
 __version__ = '0.0.dev'
 
+# Create API object for OpenGL ES 2.0
+import vispy.glapi
+gl = vispy.glapi.GLApi()
+
 import vispy.util
 from vispy.util import keys
 
