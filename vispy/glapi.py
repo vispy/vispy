@@ -13,10 +13,29 @@ class _GL_ENUM(int):
         return self.name
 
 
-
-
 class GLApi(object):
-    """ API for OpenGL ES 2.0
+    """ Abstract base class for OpenGL API's.
+    """
+    
+    def __init__(self):
+        for funcname in self._glfunctions:
+            try:
+                func = getattr(_GL, funcname)
+            except AttributeError:
+                func = self._glFuncNotAvailable
+                print('warning: %s not available' % funcname )
+            setattr(self, funcname, func)
+    
+    def _glFuncNotAvailable(self, *args, **kwargs):
+        pass
+        # todo: also mention what function was called
+        #print('Warning: gl function not available.')
+
+
+
+
+class GLApi_es2(GLApi):
+    """ API for OpenGL ES 2.0.
     """
     
     GL_ES_VERSION_2_0 = _GL_ENUM('GL_ES_VERSION_2_0', 1)
@@ -322,146 +341,259 @@ class GLApi(object):
     GL_MAX_RENDERBUFFER_SIZE = _GL_ENUM('GL_MAX_RENDERBUFFER_SIZE', 34024)
     GL_INVALID_FRAMEBUFFER_OPERATION = _GL_ENUM('GL_INVALID_FRAMEBUFFER_OPERATION', 1286)
     
-    glActiveTexture = _GL.glActiveTexture
-    glAttachShader = _GL.glAttachShader
-    glBindAttribLocation = _GL.glBindAttribLocation
-    glBindBuffer = _GL.glBindBuffer
-    glBindFramebuffer = _GL.glBindFramebuffer
-    glBindRenderbuffer = _GL.glBindRenderbuffer
-    glBindTexture = _GL.glBindTexture
-    glBlendColor = _GL.glBlendColor
-    glBlendEquation = _GL.glBlendEquation
-    glBlendEquationSeparate = _GL.glBlendEquationSeparate
-    glBlendFunc = _GL.glBlendFunc
-    glBlendFuncSeparate = _GL.glBlendFuncSeparate
-    glBufferData = _GL.glBufferData
-    glBufferSubData = _GL.glBufferSubData
-    glCheckFramebufferStatus = _GL.glCheckFramebufferStatus
-    glClear = _GL.glClear
-    glClearColor = _GL.glClearColor
-    glClearDepthf = _GL.glClearDepthf
-    glClearStencil = _GL.glClearStencil
-    glColorMask = _GL.glColorMask
-    glCompileShader = _GL.glCompileShader
-    glCompressedTexImage2D = _GL.glCompressedTexImage2D
-    glCompressedTexSubImage2D = _GL.glCompressedTexSubImage2D
-    glCopyTexImage2D = _GL.glCopyTexImage2D
-    glCopyTexSubImage2D = _GL.glCopyTexSubImage2D
-    glCreateProgram = _GL.glCreateProgram
-    glCreateShader = _GL.glCreateShader
-    glCullFace = _GL.glCullFace
-    glDeleteBuffers = _GL.glDeleteBuffers
-    glDeleteFramebuffers = _GL.glDeleteFramebuffers
-    glDeleteProgram = _GL.glDeleteProgram
-    glDeleteRenderbuffers = _GL.glDeleteRenderbuffers
-    glDeleteShader = _GL.glDeleteShader
-    glDeleteTextures = _GL.glDeleteTextures
-    glDepthFunc = _GL.glDepthFunc
-    glDepthMask = _GL.glDepthMask
-    glDepthRangef = _GL.glDepthRangef
-    glDetachShader = _GL.glDetachShader
-    glDisable = _GL.glDisable
-    glDisableVertexAttribArray = _GL.glDisableVertexAttribArray
-    glDrawArrays = _GL.glDrawArrays
-    glDrawElements = _GL.glDrawElements
-    glEnable = _GL.glEnable
-    glEnableVertexAttribArray = _GL.glEnableVertexAttribArray
-    glFinish = _GL.glFinish
-    glFlush = _GL.glFlush
-    glFramebufferRenderbuffer = _GL.glFramebufferRenderbuffer
-    glFramebufferTexture2D = _GL.glFramebufferTexture2D
-    glFrontFace = _GL.glFrontFace
-    glGenBuffers = _GL.glGenBuffers
-    glGenFramebuffers = _GL.glGenFramebuffers
-    glGenRenderbuffers = _GL.glGenRenderbuffers
-    glGenTextures = _GL.glGenTextures
-    glGenerateMipmap = _GL.glGenerateMipmap
-    glGetActiveAttrib = _GL.glGetActiveAttrib
-    glGetActiveUniform = _GL.glGetActiveUniform
-    glGetAttachedShaders = _GL.glGetAttachedShaders
-    glGetAttribLocation = _GL.glGetAttribLocation
-    glGetBooleanv = _GL.glGetBooleanv
-    glGetBufferParameteriv = _GL.glGetBufferParameteriv
-    glGetError = _GL.glGetError
-    glGetFloatv = _GL.glGetFloatv
-    glGetFramebufferAttachmentParameteriv = _GL.glGetFramebufferAttachmentParameteriv
-    glGetIntegerv = _GL.glGetIntegerv
-    glGetProgramInfoLog = _GL.glGetProgramInfoLog
-    glGetProgramiv = _GL.glGetProgramiv
-    glGetRenderbufferParameteriv = _GL.glGetRenderbufferParameteriv
-    glGetShaderInfoLog = _GL.glGetShaderInfoLog
-    glGetShaderPrecisionFormat = _GL.glGetShaderPrecisionFormat
-    glGetShaderSource = _GL.glGetShaderSource
-    glGetShaderiv = _GL.glGetShaderiv
-    glGetString = _GL.glGetString
-    glGetTexParameterfv = _GL.glGetTexParameterfv
-    glGetTexParameteriv = _GL.glGetTexParameteriv
-    glGetUniformLocation = _GL.glGetUniformLocation
-    glGetUniformfv = _GL.glGetUniformfv
-    glGetUniformiv = _GL.glGetUniformiv
-    glGetVertexAttribPointerv = _GL.glGetVertexAttribPointerv
-    glGetVertexAttribfv = _GL.glGetVertexAttribfv
-    glGetVertexAttribiv = _GL.glGetVertexAttribiv
-    glHint = _GL.glHint
-    glIsBuffer = _GL.glIsBuffer
-    glIsEnabled = _GL.glIsEnabled
-    glIsFramebuffer = _GL.glIsFramebuffer
-    glIsProgram = _GL.glIsProgram
-    glIsRenderbuffer = _GL.glIsRenderbuffer
-    glIsShader = _GL.glIsShader
-    glIsTexture = _GL.glIsTexture
-    glLineWidth = _GL.glLineWidth
-    glLinkProgram = _GL.glLinkProgram
-    glPixelStorei = _GL.glPixelStorei
-    glPolygonOffset = _GL.glPolygonOffset
-    glReadPixels = _GL.glReadPixels
-    glReleaseShaderCompiler = _GL.glReleaseShaderCompiler
-    glRenderbufferStorage = _GL.glRenderbufferStorage
-    glSampleCoverage = _GL.glSampleCoverage
-    glScissor = _GL.glScissor
-    glShaderBinary = _GL.glShaderBinary
-    glShaderSource = _GL.glShaderSource
-    glStencilFunc = _GL.glStencilFunc
-    glStencilFuncSeparate = _GL.glStencilFuncSeparate
-    glStencilMask = _GL.glStencilMask
-    glStencilMaskSeparate = _GL.glStencilMaskSeparate
-    glStencilOp = _GL.glStencilOp
-    glStencilOpSeparate = _GL.glStencilOpSeparate
-    glTexImage2D = _GL.glTexImage2D
-    glTexParameterf = _GL.glTexParameterf
-    glTexParameterfv = _GL.glTexParameterfv
-    glTexParameteri = _GL.glTexParameteri
-    glTexParameteriv = _GL.glTexParameteriv
-    glTexSubImage2D = _GL.glTexSubImage2D
-    glUniform1f = _GL.glUniform1f
-    glUniform1fv = _GL.glUniform1fv
-    glUniform1i = _GL.glUniform1i
-    glUniform1iv = _GL.glUniform1iv
-    glUniform2f = _GL.glUniform2f
-    glUniform2fv = _GL.glUniform2fv
-    glUniform2i = _GL.glUniform2i
-    glUniform2iv = _GL.glUniform2iv
-    glUniform3f = _GL.glUniform3f
-    glUniform3fv = _GL.glUniform3fv
-    glUniform3i = _GL.glUniform3i
-    glUniform3iv = _GL.glUniform3iv
-    glUniform4f = _GL.glUniform4f
-    glUniform4fv = _GL.glUniform4fv
-    glUniform4i = _GL.glUniform4i
-    glUniform4iv = _GL.glUniform4iv
-    glUniformMatrix2fv = _GL.glUniformMatrix2fv
-    glUniformMatrix3fv = _GL.glUniformMatrix3fv
-    glUniformMatrix4fv = _GL.glUniformMatrix4fv
-    glUseProgram = _GL.glUseProgram
-    glValidateProgram = _GL.glValidateProgram
-    glVertexAttrib1f = _GL.glVertexAttrib1f
-    glVertexAttrib1fv = _GL.glVertexAttrib1fv
-    glVertexAttrib2f = _GL.glVertexAttrib2f
-    glVertexAttrib2fv = _GL.glVertexAttrib2fv
-    glVertexAttrib3f = _GL.glVertexAttrib3f
-    glVertexAttrib3fv = _GL.glVertexAttrib3fv
-    glVertexAttrib4f = _GL.glVertexAttrib4f
-    glVertexAttrib4fv = _GL.glVertexAttrib4fv
-    glVertexAttribPointer = _GL.glVertexAttribPointer
-    glViewport = _GL.glViewport
+    _glfunctions = [
+        "glActiveTexture",
+        "glAttachShader",
+        "glBindAttribLocation",
+        "glBindBuffer",
+        "glBindFramebuffer",
+        "glBindRenderbuffer",
+        "glBindTexture",
+        "glBlendColor",
+        "glBlendEquation",
+        "glBlendEquationSeparate",
+        "glBlendFunc",
+        "glBlendFuncSeparate",
+        "glBufferData",
+        "glBufferSubData",
+        "glCheckFramebufferStatus",
+        "glClear",
+        "glClearColor",
+        "glClearDepthf",
+        "glClearStencil",
+        "glColorMask",
+        "glCompileShader",
+        "glCompressedTexImage2D",
+        "glCompressedTexSubImage2D",
+        "glCopyTexImage2D",
+        "glCopyTexSubImage2D",
+        "glCreateProgram",
+        "glCreateShader",
+        "glCullFace",
+        "glDeleteBuffers",
+        "glDeleteFramebuffers",
+        "glDeleteProgram",
+        "glDeleteRenderbuffers",
+        "glDeleteShader",
+        "glDeleteTextures",
+        "glDepthFunc",
+        "glDepthMask",
+        "glDepthRangef",
+        "glDetachShader",
+        "glDisable",
+        "glDisableVertexAttribArray",
+        "glDrawArrays",
+        "glDrawElements",
+        "glEnable",
+        "glEnableVertexAttribArray",
+        "glFinish",
+        "glFlush",
+        "glFramebufferRenderbuffer",
+        "glFramebufferTexture2D",
+        "glFrontFace",
+        "glGenBuffers",
+        "glGenFramebuffers",
+        "glGenRenderbuffers",
+        "glGenTextures",
+        "glGenerateMipmap",
+        "glGetActiveAttrib",
+        "glGetActiveUniform",
+        "glGetAttachedShaders",
+        "glGetAttribLocation",
+        "glGetBooleanv",
+        "glGetBufferParameteriv",
+        "glGetError",
+        "glGetFloatv",
+        "glGetFramebufferAttachmentParameteriv",
+        "glGetIntegerv",
+        "glGetProgramInfoLog",
+        "glGetProgramiv",
+        "glGetRenderbufferParameteriv",
+        "glGetShaderInfoLog",
+        "glGetShaderPrecisionFormat",
+        "glGetShaderSource",
+        "glGetShaderiv",
+        "glGetString",
+        "glGetTexParameterfv",
+        "glGetTexParameteriv",
+        "glGetUniformLocation",
+        "glGetUniformfv",
+        "glGetUniformiv",
+        "glGetVertexAttribPointerv",
+        "glGetVertexAttribfv",
+        "glGetVertexAttribiv",
+        "glHint",
+        "glIsBuffer",
+        "glIsEnabled",
+        "glIsFramebuffer",
+        "glIsProgram",
+        "glIsRenderbuffer",
+        "glIsShader",
+        "glIsTexture",
+        "glLineWidth",
+        "glLinkProgram",
+        "glPixelStorei",
+        "glPolygonOffset",
+        "glReadPixels",
+        "glReleaseShaderCompiler",
+        "glRenderbufferStorage",
+        "glSampleCoverage",
+        "glScissor",
+        "glShaderBinary",
+        "glShaderSource",
+        "glStencilFunc",
+        "glStencilFuncSeparate",
+        "glStencilMask",
+        "glStencilMaskSeparate",
+        "glStencilOp",
+        "glStencilOpSeparate",
+        "glTexImage2D",
+        "glTexParameterf",
+        "glTexParameterfv",
+        "glTexParameteri",
+        "glTexParameteriv",
+        "glTexSubImage2D",
+        "glUniform1f",
+        "glUniform1fv",
+        "glUniform1i",
+        "glUniform1iv",
+        "glUniform2f",
+        "glUniform2fv",
+        "glUniform2i",
+        "glUniform2iv",
+        "glUniform3f",
+        "glUniform3fv",
+        "glUniform3i",
+        "glUniform3iv",
+        "glUniform4f",
+        "glUniform4fv",
+        "glUniform4i",
+        "glUniform4iv",
+        "glUniformMatrix2fv",
+        "glUniformMatrix3fv",
+        "glUniformMatrix4fv",
+        "glUseProgram",
+        "glValidateProgram",
+        "glVertexAttrib1f",
+        "glVertexAttrib1fv",
+        "glVertexAttrib2f",
+        "glVertexAttrib2fv",
+        "glVertexAttrib3f",
+        "glVertexAttrib3fv",
+        "glVertexAttrib4f",
+        "glVertexAttrib4fv",
+        "glVertexAttribPointer",
+        "glViewport",
+        ]
     
+
+
+class GLApi_es2_ext(GLApi):
+    """ API for OpenGL ES 2.0 extentions.
+    """
+    
+    GL_ETC1_RGB8 = _GL_ENUM('GL_ETC1_RGB8', 36196)
+    GL_PALETTE4_RGB8 = _GL_ENUM('GL_PALETTE4_RGB8', 35728)
+    GL_PALETTE4_RGBA8 = _GL_ENUM('GL_PALETTE4_RGBA8', 35729)
+    GL_PALETTE4_R5_G6_B5 = _GL_ENUM('GL_PALETTE4_R5_G6_B5', 35730)
+    GL_PALETTE4_RGBA4 = _GL_ENUM('GL_PALETTE4_RGBA4', 35731)
+    GL_PALETTE4_RGB5_A1 = _GL_ENUM('GL_PALETTE4_RGB5_A1', 35732)
+    GL_PALETTE8_RGB8 = _GL_ENUM('GL_PALETTE8_RGB8', 35733)
+    GL_PALETTE8_RGBA8 = _GL_ENUM('GL_PALETTE8_RGBA8', 35734)
+    GL_PALETTE8_R5_G6_B5 = _GL_ENUM('GL_PALETTE8_R5_G6_B5', 35735)
+    GL_PALETTE8_RGBA4 = _GL_ENUM('GL_PALETTE8_RGBA4', 35736)
+    GL_PALETTE8_RGB5_A1 = _GL_ENUM('GL_PALETTE8_RGB5_A1', 35737)
+    GL_DEPTH_COMPONENT24 = _GL_ENUM('GL_DEPTH_COMPONENT24', 33190)
+    GL_DEPTH_COMPONENT32 = _GL_ENUM('GL_DEPTH_COMPONENT32', 33191)
+    GL_TEXTURE_EXTERNAL = _GL_ENUM('GL_TEXTURE_EXTERNAL', 36197)
+    GL_SAMPLER_EXTERNAL = _GL_ENUM('GL_SAMPLER_EXTERNAL', 36198)
+    GL_TEXTURE_BINDING_EXTERNAL = _GL_ENUM('GL_TEXTURE_BINDING_EXTERNAL', 36199)
+    GL_REQUIRED_TEXTURE_IMAGE_UNITS = _GL_ENUM('GL_REQUIRED_TEXTURE_IMAGE_UNITS', 36200)
+    GL_PROGRAM_BINARY_LENGTH = _GL_ENUM('GL_PROGRAM_BINARY_LENGTH', 34625)
+    GL_NUM_PROGRAM_BINARY_FORMATS = _GL_ENUM('GL_NUM_PROGRAM_BINARY_FORMATS', 34814)
+    GL_PROGRAM_BINARY_FORMATS = _GL_ENUM('GL_PROGRAM_BINARY_FORMATS', 34815)
+    GL_WRITE_ONLY = _GL_ENUM('GL_WRITE_ONLY', 35001)
+    GL_BUFFER_ACCESS = _GL_ENUM('GL_BUFFER_ACCESS', 35003)
+    GL_BUFFER_MAPPED = _GL_ENUM('GL_BUFFER_MAPPED', 35004)
+    GL_BUFFER_MAP_POINTER = _GL_ENUM('GL_BUFFER_MAP_POINTER', 35005)
+    GL_DEPTH_STENCIL = _GL_ENUM('GL_DEPTH_STENCIL', 34041)
+    GL_UNSIGNED_INT_24_8 = _GL_ENUM('GL_UNSIGNED_INT_24_8', 34042)
+    GL_DEPTH24_STENCIL8 = _GL_ENUM('GL_DEPTH24_STENCIL8', 35056)
+    GL_ALPHA8 = _GL_ENUM('GL_ALPHA8', 32828)
+    GL_DEPTH_COMPONENT16 = _GL_ENUM('GL_DEPTH_COMPONENT16', 33189)
+    GL_LUMINANCE4_ALPHA4 = _GL_ENUM('GL_LUMINANCE4_ALPHA4', 32835)
+    GL_LUMINANCE8_ALPHA8 = _GL_ENUM('GL_LUMINANCE8_ALPHA8', 32837)
+    GL_LUMINANCE8 = _GL_ENUM('GL_LUMINANCE8', 32832)
+    GL_RGBA4 = _GL_ENUM('GL_RGBA4', 32854)
+    GL_RGB5_A1 = _GL_ENUM('GL_RGB5_A1', 32855)
+    GL_RGB565 = _GL_ENUM('GL_RGB565', 36194)
+    GL_RGB8 = _GL_ENUM('GL_RGB8', 32849)
+    GL_RGBA8 = _GL_ENUM('GL_RGBA8', 32856)
+    GL_FRAGMENT_SHADER_DERIVATIVE_HINT = _GL_ENUM('GL_FRAGMENT_SHADER_DERIVATIVE_HINT', 35723)
+    GL_STENCIL_INDEX1 = _GL_ENUM('GL_STENCIL_INDEX1', 36166)
+    GL_STENCIL_INDEX4 = _GL_ENUM('GL_STENCIL_INDEX4', 36167)
+    GL_FRAMEBUFFER_UNDEFINED = _GL_ENUM('GL_FRAMEBUFFER_UNDEFINED', 33305)
+    GL_TEXTURE_WRAP_R = _GL_ENUM('GL_TEXTURE_WRAP_R', 32882)
+    GL_TEXTURE_3D = _GL_ENUM('GL_TEXTURE_3D', 32879)
+    GL_TEXTURE_BINDING_3D = _GL_ENUM('GL_TEXTURE_BINDING_3D', 32874)
+    GL_MAX_3D_TEXTURE_SIZE = _GL_ENUM('GL_MAX_3D_TEXTURE_SIZE', 32883)
+    GL_SAMPLER_3D = _GL_ENUM('GL_SAMPLER_3D', 35679)
+    GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_3D_ZOFFSET = _GL_ENUM('GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_3D_ZOFFSET', 36052)
+    GL_HALF_FLOAT = _GL_ENUM('GL_HALF_FLOAT', 36193)
+    GL_VERTEX_ARRAY_BINDING = _GL_ENUM('GL_VERTEX_ARRAY_BINDING', 34229)
+    GL_UNSIGNED_INT_10_10_10_2 = _GL_ENUM('GL_UNSIGNED_INT_10_10_10_2', 36342)
+    GL_INT_10_10_10_2 = _GL_ENUM('GL_INT_10_10_10_2', 36343)
+    GL_DEPTH_STENCIL = _GL_ENUM('GL_DEPTH_STENCIL', 34041)
+    GL_UNSIGNED_INT_24_8 = _GL_ENUM('GL_UNSIGNED_INT_24_8', 34042)
+    GL_DEPTH_COMPONENT32 = _GL_ENUM('GL_DEPTH_COMPONENT32', 33191)
+    GL_DEPTH24_STENCIL8 = _GL_ENUM('GL_DEPTH24_STENCIL8', 35056)
+    GL_compressed_ETC1_RGB8_texture = _GL_ENUM('GL_compressed_ETC1_RGB8_texture', 1)
+    GL_compressed_paletted_texture = _GL_ENUM('GL_compressed_paletted_texture', 1)
+    GL_depth24 = _GL_ENUM('GL_depth24', 1)
+    GL_depth32 = _GL_ENUM('GL_depth32', 1)
+    GL_depth_texture = _GL_ENUM('GL_depth_texture', 1)
+    GL_EGL_image = _GL_ENUM('GL_EGL_image', 1)
+    GL_EGL_image_external = _GL_ENUM('GL_EGL_image_external', 1)
+    GL_element_index_uint = _GL_ENUM('GL_element_index_uint', 1)
+    GL_fbo_render_mipmap = _GL_ENUM('GL_fbo_render_mipmap', 1)
+    GL_fragment_precision_high = _GL_ENUM('GL_fragment_precision_high', 1)
+    GL_get_program_binary = _GL_ENUM('GL_get_program_binary', 1)
+    GL_mapbuffer = _GL_ENUM('GL_mapbuffer', 1)
+    GL_packed_depth_stencil = _GL_ENUM('GL_packed_depth_stencil', 1)
+    GL_required_internalformat = _GL_ENUM('GL_required_internalformat', 1)
+    GL_rgb8_rgba8 = _GL_ENUM('GL_rgb8_rgba8', 1)
+    GL_standard_derivatives = _GL_ENUM('GL_standard_derivatives', 1)
+    GL_stencil1 = _GL_ENUM('GL_stencil1', 1)
+    GL_stencil4 = _GL_ENUM('GL_stencil4', 1)
+    GL_surfaceless_context = _GL_ENUM('GL_surfaceless_context', 1)
+    GL_texture_3D = _GL_ENUM('GL_texture_3D', 1)
+    GL_texture_float = _GL_ENUM('GL_texture_float', 1)
+    GL_texture_float_linear = _GL_ENUM('GL_texture_float_linear', 1)
+    GL_texture_half_float = _GL_ENUM('GL_texture_half_float', 1)
+    GL_texture_half_float_linear = _GL_ENUM('GL_texture_half_float_linear', 1)
+    GL_texture_npot = _GL_ENUM('GL_texture_npot', 1)
+    GL_vertex_array_object = _GL_ENUM('GL_vertex_array_object', 1)
+    GL_vertex_half_float = _GL_ENUM('GL_vertex_half_float', 1)
+    GL_vertex_type_10_10_10_2 = _GL_ENUM('GL_vertex_type_10_10_10_2', 1)
+    
+    _glfunctions = [
+        "glBindVertexArray",
+        "glCompressedTexImage3D",
+        "glCompressedTexSubImage3D",
+        "glCopyTexSubImage3D",
+        "glDeleteVertexArrays",
+        "glEGLImageTargetRenderbufferStorage",
+        "glEGLImageTargetTexture2D",
+        "glFramebufferTexture3D",
+        "glGenVertexArrays",
+        "glGetBufferPointerv",
+        "glGetProgramBinary",
+        "glIsVertexArray",
+        "glMapBuffer",
+        "glProgramBinary",
+        "glTexImage3D",
+        "glTexSubImage3D",
+        "glUnmapBuffer",
+        ]
+    
+

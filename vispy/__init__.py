@@ -15,7 +15,8 @@ __version__ = '0.0.dev'
 
 # Create API object for OpenGL ES 2.0
 import vispy.glapi
-gl = vispy.glapi.GLApi()
+gl = vispy.glapi.GLApi_es2()
+gl.ext = vispy.glapi.GLApi_es2_ext()
 
 import vispy.util
 from vispy.util import keys

@@ -194,7 +194,7 @@ class ConstantDefinition(Definition):
             self.isvalid = bool(self.cname)
             # Set value
             if val.startswith('0x'):
-                self.value = int(val[2:], 16)
+                self.value = int(val[2:].rstrip('ul'), 16)
             elif val[0] in '0123456789':
                 self.value = int(val)
             elif val.startswith("'"):
