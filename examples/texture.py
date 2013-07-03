@@ -32,13 +32,19 @@ class Canvas(app.Canvas):
         gl.glClearColor(1,1,1,1);
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
-        # Set color and draw shape in that color
-        gl.glColor(0.2, 0.0, 0.0)
+        # Draw shape is a color
+        gl.glColor(0.7, 0.0, 0.0)
         self.draw_shape(0,0)
-        # Draw shape with texture, the above color should not affect the texture
+        
+        # Draw shape with texture, nested context
+        gl.glColor(1.0, 1.0, 1.0)
         with self._texture(0):
             self.draw_shape(0.5, 0.0)
-        # Draw shape again, in that above color
+            with self._texture(0):
+                self.draw_shape(0.0, 0.5)
+            
+        # Draw shape again, the texture should not be shown
+        gl.glColor(0.0, 0.4, 0.0)
         self.draw_shape(0.5,0.5)
         
         self._backend._vispy_swap_buffers()

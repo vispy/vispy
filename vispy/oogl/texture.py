@@ -5,30 +5,23 @@ This code is inspired by similar classes from Visvis and Pygly.
 
 """
 
+# todo: implement ext_available
 # todo: allow setting empty texture (shape, but without data)
-# todo: implement proper version of getOpenGlCapable (and rename it pep8)
-# todo: GL_DOUBLE available from what version of OpenGL?
 # todo: functionality to control scale and bias of pixel values.
+# todo: make a Texture1D that makes a nicer interface to a 2D texture
+# todo: same for Texture3D?
  
 
 from __future__ import print_function, division, absolute_import
 
 import sys
-
-import OpenGL.GL as gl
 import numpy as np
 
-#from OpenGL.GL.ARB.texture_rg import *
-#from OpenGL.raw.GL.ARB.half_float_vertex import *
-#from OpenGL.raw.GL.ARB.depth_buffer_float import *
-
-from . import GLObject
+from vispy import gl
+from . import GLObject, push_enable, pop_enable, ext_available
 
 if sys.version_info > (3,):
     basestring = str
-    
-def getOpenGlCapable(version, description=None):
-    return True 
 
 
 # Dict that maps numpy datatypes to openGL data types
@@ -48,9 +41,7 @@ class _RawTexture(GLObject):
     def __init__(self, target):
         
         # Store target (i.e. the texture type)
-        aliases = {1:gl.GL_TEXTURE_1D, 2:gl.GL_TEXTURE_2D, 3:gl.GL_TEXTURE_3D}
-        target = aliases.get(target, target)
-        if target not in [gl.GL_TEXTURE_1D, gl.GL_TEXTURE_2D, gl.GL_TEXTURE_3D]:
+        if target not in [gl.GL_TEXTURE_2D, gl.ext.GL_TEXTURE_3D]:
             raise ValueError('Unsupported target "%r"' % target)
         self._target = target
         
@@ -60,7 +51,6 @@ class _RawTexture(GLObject):
         
         # To store the used texture unit so we can disable it properly.
         self._unit = -1
-        self._useUnit = None # is set to True if OpenGl version high enough
     
     
     def _create(self):
@@ -85,17 +75,11 @@ class _RawTexture(GLObject):
     def _enable(self):
         """ To be called by context handler. Never call this yourself.
         """
-        # Enable things that we need, and prepare ...
-        gl.glEnable(self._target)
-        gl.glColor3f(1.0, 1.0, 1.0)
-        
+        # Enable things that we need
+        push_enable(self._target)
         # Set active texture unit
         if self._unit >= 0:
-            if self._useUnit is None:
-                self._useUnit = getOpenGlCapable('1.3')        
-            if self._useUnit:
-                gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)  # Opengl v1.3
-        
+            gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
         # Bind
         gl.glBindTexture(self._target, self._handle)
     
@@ -104,38 +88,15 @@ class _RawTexture(GLObject):
         """ To be called by context handler. Never call this yourself.
         """
         # Select active texture if we can
-        if self._unit >= 0 and self._useUnit:
+        if self._unit >= 0:
             gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
             self._unit = -1
         # Unbind and disable
         gl.glBindTexture(self._target, 0)
         # Set active texture unit to default (0)
-        if self._useUnit:
-            gl.glActiveTexture(gl.GL_TEXTURE0)
-        
-        # gl.glDisable(self._target)  # Done by popAttribute
-    
-    
-    def _test_upload(self, data, internalformat, format, level=0):
-        """ Test whether we can create a texture of the given shape.
-        Returns True if we can, False if we can't.
-        """
-        # Determine function and proxy-target from self._target
-        D = {   gl.GL_TEXTURE_1D: (gl.glTexImage1D, gl.GL_PROXY_TEXTURE_1D, 1),
-                gl.GL_TEXTURE_2D: (gl.glTexImage2D, gl.GL_PROXY_TEXTURE_2D, 2),
-                gl.GL_TEXTURE_3D: (gl.glTexImage3D, gl.GL_PROXY_TEXTURE_3D, 3)}
-        uploadFun, target, ndim = D[self._target]
-        
-        # Build args list
-        size, gltype = self._get_size_and_type(data, ndim)
-        args = [target, level, internalformat] + size + [0, format, gltype, None]
-        
-        # Do fake upload
-        uploadFun(*tuple(args))
-        
-        # Test and return
-        ok = gl.glGetTexLevelParameteriv(target, 0, gl.GL_TEXTURE_WIDTH)
-        return bool(ok)
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        # No need for texturing anymore
+        pop_enable(self._target)
     
     
     def _upload(self, data, internalformat, format, level=0):
@@ -143,10 +104,10 @@ class _RawTexture(GLObject):
         It should have been verified that the texture will fit.
         """
         # Determine function and target from texType
-        D = {   gl.GL_TEXTURE_1D: (gl.glTexImage1D, gl.GL_TEXTURE_1D, 1),
-                gl.GL_TEXTURE_2D: (gl.glTexImage2D, gl.GL_TEXTURE_2D, 2),
-                gl.GL_TEXTURE_3D: (gl.glTexImage3D, gl.GL_TEXTURE_3D, 3)}
-        uploadFun, target, ndim = D[self._target]
+        D = {   #gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),
+                gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
+                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)}
+        uploadFun, ndim = D[self._target]
         
         # Determine type
         thetype = data.dtype.name
@@ -156,10 +117,10 @@ class _RawTexture(GLObject):
         
         # Build args list
         size, gltype = self._get_size_and_type(data, ndim)
-        args = [target, level, internalformat] + size + [0, format, gltype, data]
+        args = [self._target, level, internalformat] + size + [0, format, gltype, data]
         
         # Check the alignment of the texture
-        alignment = texture_alignment(data.shape[-1])
+        alignment = self._get_alignment(data.shape[-1])
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
         
@@ -175,16 +136,16 @@ class _RawTexture(GLObject):
         """ Update an existing texture object.
         """
         # Determine function and target from texType
-        D = {   gl.GL_TEXTURE_1D: (gl.glTexSubImage1D, gl.GL_TEXTURE_1D, 1),
-                gl.GL_TEXTURE_2D: (gl.glTexSubImage2D, gl.GL_TEXTURE_2D, 2),
-                gl.GL_TEXTURE_3D: (gl.glTexSubImage3D, gl.GL_TEXTURE_3D, 3)}
-        uploadFun, target, ndim = D[self._target]
+        D = {   #gl.GL_TEXTURE_1D: (gl.glTexSubImage1D, 1),
+                gl.GL_TEXTURE_2D: (gl.glTexSubImage2D, 2),
+                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexSubImage3D, 3)}
+        uploadFun, ndim = D[self._target]
         
         # Build argument list
         size, gltype = self._get_size_and_type(data, ndim)
         offset = [i for i in offset]
         assert len(offset) == len(size)
-        args = [target, level] + offset + size + [format, gltype, data]
+        args = [self._target, level] + offset + size + [format, gltype, data]
         
         # Upload!
         uploadFun(*tuple(args))
@@ -201,6 +162,27 @@ class _RawTexture(GLObject):
         # Done
         return size, gltype
     
+    # from pylgy
+    def _get_alignment(self, width):
+        """Determines a textures byte alignment.
+    
+        If the width isn't a power of 2
+        we need to adjust the byte alignment of the image.
+        The image height is unimportant
+    
+        http://www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
+        """
+        
+        # we know the alignment is appropriate
+        # if we can divide the width by the
+        # alignment cleanly
+        # valid alignments are 1,2,4 and 8
+        # put 4 first, since it's the default
+        alignments = [4,8,2,1]
+        for alignment in alignments:
+            if width % alignment == 0:
+                return alignment
+
 
 
 class Texture(_RawTexture):
@@ -219,22 +201,16 @@ class Texture(_RawTexture):
     Parameters
     ----------
     target : gl_enum
-        The target of the texture, currently supported are
-        GL_TEXTURE_1D, GL_TEXTURE_2D, and GL_TEXTURE_3D.
-    allow_downsampling : bool
-        Whether to allow downsamling of data if it does not fit in OpenGl
-        memory. Intended for compatibility with older systems.
-    allow_padding : bool
-        Whether to allow the data to be padded to a factor of 2. Intended
-        for compatibility with older systems (OpenGL<2.0, and some ATI drivers).
+        The target of the texture, OpenGL ES 2.0 allows 
+        GL_TEXTURE_2D and GL_TEXTURE_3D (needs extension).
     
     """
     # Builds on the raw texture class by implementing convenience and lazy loading
     
-    def __init__(self, target, allow_downsampling=False, allow_padding=False):
+    def __init__(self, target):
         _RawTexture.__init__(self, target)
         
-        # A reference (not a weak one) to be able to process defereed
+        # A reference (not a weak one) to be able to process deferred
         # (i.e. lazy) loading. Also store the shape.
         self._pending_data = None
         self._texture_shape = None
@@ -248,15 +224,8 @@ class Texture(_RawTexture):
         # Set default parameters for min and mag filter, otherwise an
         # image is not shown by default, since the default min_filter
         # is GL_NEAREST_MIPMAP_LINEAR
-        self.set_parameter('MIN_FILTER', gl.GL_LINEAR)
-        self.set_parameter('MAG_FILTER', gl.GL_LINEAR)
-        
-        # Allow modifying the data? This is mainly to allow images to
-        # be displayed (more or less) correctly on older systems. On
-        # newer systems, padding and downsampling would generally never
-        # be used. 
-        self._allow_downsampling = allow_downsampling
-        self._allow_padding = allow_padding
+        self.set_parameter(gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+        self.set_parameter(gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
     
     
     def __call__(self, unit):
@@ -269,12 +238,9 @@ class Texture(_RawTexture):
     def set_parameter(self, param, value):
         """ Set texture parameter, can be called at any time. The param
         can be an OpenGL constant or a string that corresponds to such
-        a constant:
-        
-        GL_DEPTH_STENCIL_TEXTURE_MODE, BASE_LEVEL, BORDER_COLOR,
-        COMPARE_FUNC, COMPARE_MODE, LOD_BIAS, MIN_FILTER, MAG_FILTER,
-        MIN_LOD, MAX_LOD, MAX_LEVEL, SWIZZLE_R, SWIZZLE_G, SWIZZLE_B,
-        SWIZZLE_A, SWIZZLE_RGBA, WRAP_S, WRAP_T, WRAP_R.
+        a constant. OpenGL ES 2.0 allows the following parameters:
+        GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_WRAP_S,
+        TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R (with extension).
         """
         # Allow strings
         if isinstance(param, basestring):
@@ -321,7 +287,7 @@ class Texture(_RawTexture):
             self._texture_shape = None
         
         # Check offset
-        MAP = {gl.GL_TEXTURE_1D:1, gl.GL_TEXTURE_2D:2, gl.GL_TEXTURE_3D:3}
+        MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
         ndim = MAP.get(self._target, 0)
         if offset is not None:
             offset = [int(i) for i in offset]
@@ -346,23 +312,17 @@ class Texture(_RawTexture):
         if self._handle < 0:
             return
         
-        # Older OpenGl versions do not know about 3D textures
-        # Check is in _enable, because we need an opengl context
-        if self._target == gl.GL_TEXTURE_3D and not getOpenGlCapable('1.2','3D textures'):
-            self._handle = -1
-            return
+        # If we use a 3D texture, we need an extension
+        if self._target == gl.ext.GL_TEXTURE_3D:
+            if not ext_available('GL_texture_3D'):
+                self._handle = -1
+                return
         
         # Need to update data?
         if self._pending_data:
             pendingData, self._pending_data = self._pending_data, None
             # Process pending data
             self._process_pending_data(*pendingData)
-            # If not ok, try padding (if allowed)
-            if self._allow_padding and not gl.glIsTexture(self._handle):
-                data = make_power_of_two(pendingData[0])
-                if data is not pendingData[0]:
-                    print("Warning: the data was padded to make it a power of two.")
-                self._process_pending_data(data, *pendingData[1:])
             # If not ok, warn (one time)
             if not gl.glIsTexture(self._handle):
                 self._handle = -1
@@ -423,18 +383,6 @@ class Texture(_RawTexture):
             self.delete() 
             self._create()
             gl.glBindTexture(self._target, self._handle)
-            # Test whether it fits, downsample if necessary (and allowed)
-            for count in range(0,9):
-                ok = self._test_upload(data, internal_format, format, level)
-                if ok or not self._allow_downsampling:
-                    break
-                data = downsample(data, self._target)
-            if not ok:   
-                msg = "Could not upload texture to OpenGL"  
-                msg += bool(count) * ("even after %i times downsampling." % count)
-                raise MemoryError(msg)
-            elif count:
-                print("Warning: data was downscaled %i times." % count)
             # Upload!
             self._upload(data, internal_format, format, level)
             # Set all parameters that the user set
@@ -445,36 +393,20 @@ class Texture(_RawTexture):
 
 
 
-class Texture1D(Texture):
-    """ Representation of a 1D texture.
-    
-    See Texture docs for details.
-    
-    """
-    def __init__(self):
-        Texture.__init__(self, gl.GL_TEXTURE_1D, *args, **kwargs)
-
-
-
 class Texture2D(Texture):
     """ Representation of a 2D texture.
-    
-    See Texture docs for details.
-    
     """
-    def __init__(self, *args, **kwargs):
-        Texture.__init__(self, gl.GL_TEXTURE_2D, *args, **kwargs)
+    def __init__(self):
+        Texture.__init__(self, gl.GL_TEXTURE_2D)
 
 
 
 class Texture3D(Texture):
-    """ Representation of a 3D texture.
-    
-    See Texture docs for details.
-    
+    """ Representation of a 3D texture. Note that for this the
+    GL_texture_3D extension needs to be available.
     """
-    def __init__(self, *args, **kwargs):
-        Texture.__init__(self, gl.GL_TEXTURE_3D, *args, **kwargs)
+    def __init__(self):
+        Texture.__init__(self, gl.ext.GL_TEXTURE_3D)
 
 
 ## Utility functions
@@ -486,11 +418,11 @@ def get_format(shape, target):
     type, an exception is raised.
     """
     
-    if target == gl.GL_TEXTURE_1D:
+    if target == 'dummy, just so we can leave the code here':
         if len(shape)==1:
-            iformat, format = gl.GL_LUMINANCE8, gl.GL_LUMINANCE
+            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE
         elif len(shape)==2 and shape[1] == 1:
-            iformat, format = gl.GL_LUMINANCE8, gl.GL_LUMINANCE
+            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE
         elif len(shape)==2 and shape[1] == 3:
             iformat, format = gl.GL_RGB, gl.GL_RGB
         elif len(shape)==2 and shape[1] == 4:
@@ -500,9 +432,9 @@ def get_format(shape, target):
     
     elif target == gl.GL_TEXTURE_2D:
         if len(shape)==2:
-            iformat, format = gl.GL_LUMINANCE8, gl.GL_LUMINANCE                
+            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE                
         elif len(shape)==3 and shape[2]==1:
-            iformat, format = gl.GL_LUMINANCE8, gl.GL_LUMINANCE
+            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE
         elif len(shape)==3 and shape[2]==3:
             iformat, format = gl.GL_RGB, gl.GL_RGB
         elif len(shape)==3 and shape[2]==4:
@@ -510,11 +442,11 @@ def get_format(shape, target):
         else:
             raise ValueError("Cannot determine format: data of invalid shape.")
     
-    elif target == gl.GL_TEXTURE_3D:
+    elif target == gl.ext.GL_TEXTURE_3D:
         if len(shape)==3:
-            iformat, format = gl.GL_LUMINANCE8, gl.GL_LUMINANCE
+            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE
         elif len(shape)==4 and shape[3]==1:
-            iformat, format = gl.GL_LUMINANCE8, gl.GL_LUMINANCE
+            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE
         elif len(shape)==4 and shape[3]==3:
             iformat, format = gl.GL_RGB, gl.GL_RGB
         elif len(shape)==4 and shape[3]==4:
@@ -527,111 +459,3 @@ def get_format(shape, target):
     
     return iformat, format
 
-
-def make_power_of_two(data, ndim):
-    """ If necessary, pad the data with zeros, to make the shape 
-    a power of two. If it already is shaped ok, the original data
-    is returned.
-    
-    Use this function for systems with OpenGl < 2.0. 
-    
-    Note: In theory, getOpenGlCapable('2.0') should be enough to
-    determine if padding is required. However, bloody ATI drivers
-    sometimes need 2**n textures even if OpenGl > 2.0. (I've 
-    encountered this with someones PC and verified that an approach similar
-    to the one in this module (from visvis) produces correct results.)
-    """
-    def nearestN(n1):
-        n2 = 2
-        while n2 < n1:
-            n2*=2
-        return n2
-    
-    # get old and new shape
-    s1 = [n for n in data.shape]
-    s2 = [nearestN(n) for n in data.shape]
-    s2[ndim:] = s1[ndim:] # for color images    
-    
-    # if not required return original
-    if s1 == s2:
-        return data
-    
-    # create empty image
-    data2 = np.zeros(s2,dtype=data.dtype)
-    
-    # fill in the original data
-    if ndim==1:
-        data2[:s1[0]] = data
-    elif ndim==2:
-        data2[:s1[0],:s1[1]] = data
-    elif ndim==3:
-        data2[:s1[0],:s1[1],:s1[2]] = data
-    else:
-        raise ValueError("Cannot pad data of this dimension.")
-    return data2
-
-
-def downsample(data, target):
-    """ Downsample the data. Peforming a simple form of smoothing to prevent
-    aliasing. 
-    
-    """
-    
-    if target==gl.GL_TEXTURE_1D:
-        # Decimate
-        data2 = data[::2] * 0.4
-        # Average in x
-        tmp = data[1::2] * 0.3
-        data2[:tmp.shape[0]] += tmp
-        data2[1:] += tmp[:data2.shape[0]-1]
-    elif target==gl.GL_TEXTURE_2D:
-        # Decimate
-        data2 = data[::2,::2] * 0.4
-        # Average in y
-        tmp = data[1::2,::2] * 0.15
-        data2[:tmp.shape[0],:] += tmp
-        data2[1:,:] += tmp[:data2.shape[0]-1,:]
-        # Average in x
-        tmp = data[::2,1::2] * 0.15
-        data2[:,:tmp.shape[1]] += tmp
-        data2[:,1:] += tmp[:,:data2.shape[1]-1]
-    elif target==gl.GL_TEXTURE_3D:
-        # Decimate
-        data2 = data[::2,::2,::2] * 0.4
-        # Average in z
-        tmp = data[1::2,::2,::2] * 0.1
-        data2[:tmp.shape[0],:,:] += tmp
-        data2[1:,:,:] += tmp[:data2.shape[0]-1,:,:]
-        # Average in y
-        tmp = data[::2,1::2,::2] * 0.1
-        data2[:,:tmp.shape[1],:] += tmp
-        data2[:,1:,:] += tmp[:,:data2.shape[1]-1,:]
-        # Average in x
-        tmp = data[::2,::2,1::2] * 0.1
-        data2[:,:,:tmp.shape[2]] += tmp
-        data2[:,:,1:] += tmp[:,:,:data2.shape[2]-1]
-    else:
-        raise ValueError("Cannot downsample data of this dimension.")
-    return data2
-
-
-# from pylgy
-def texture_alignment(width):
-    """Determines a textures byte alignment.
-
-    If the width isn't a power of 2
-    we need to adjust the byte alignment of the image.
-    The image height is unimportant
-
-    http://www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
-    """
-    
-    # we know the alignment is appropriate
-    # if we can divide the width by the
-    # alignment cleanly
-    # valid alignments are 1,2,4 and 8
-    # put 4 first, since it's the default
-    alignments = [4,8,2,1]
-    for alignment in alignments:
-        if width % alignment == 0:
-            return alignment

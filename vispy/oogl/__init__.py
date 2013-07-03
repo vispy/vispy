@@ -17,47 +17,58 @@ Example::
         draw_vertices()
     
     # Context with multiple objects
-    with enable(texture(0), texture(1), shader):
-        draw_vertices()
-    
-    # Or maybe like this? (No need to import the ambiguous enable function)
-    with texture(0) & texture(1) & shader:
+    with texture(0), texture(1), shader:
         draw_vertices()
 
 """
 
 from __future__ import print_function, division, absolute_import
 
-import OpenGL.GL as gl
+from vispy import gl
 
-# ALL_ATTRIBUTES = (gl.GL_ACCUM_BUFFER_BIT | gl.GL_COLOR_BUFFER_BIT |
-#     gl.GL_CURRENT_BIT | gl.GL_DEPTH_BUFFER_BIT | gl.GL_ENABLE_BIT |
-#     gl.GL_EVAL_BIT | gl.GL_FOG_BIT | gl.GL_HINT_BIT | gl.GL_LIGHTING_BIT |
-#     gl.GL_LINE_BIT | gl.GL_LIST_BIT | gl.GL_MULTISAMPLE_BIT |
-#     gl.GL_PIXEL_MODE_BIT | gl.GL_POINT_BIT | gl.GL_POLYGON_BIT |
-#     gl.GL_POLYGON_STIPPLE_BIT | gl.GL_SCISSOR_BIT | gl.GL_STENCIL_BUFFER_BIT |
-#     gl.GL_TEXTURE_BIT | gl.GL_TRANSFORM_BIT | gl.GL_VIEWPORT_BIT
-#     )  # but we also have gl.GL_ALL_ATTRIB_BITS
+
+## Replacement for glPushAttrib (which is deprecated)
+
+ENABLE_QUEUE = {}
+
+def push_enable(enum):
+    """ Like glEnable, but keeps track of how often it is called
+    and really enables/disables if necessary. Only works as it should
+    if the application does not make glEnable/glDisable calls by itself.
+    """
+    cur = ENABLE_QUEUE.get(enum, 0)
+    if cur == 0:
+        gl.glEnable(enum)
+    ENABLE_QUEUE[enum] = cur + 1
+    
+
+def pop_enable(enum):
+    """ Like glDisable, but keeps track of how often it is called
+    and really enables/disables if necessary. Only works as it should
+    if the application does not make glEnable/glDisable calls by itself.
+    """
+    cur = ENABLE_QUEUE.get(enum, 0)
+    if cur == 1:
+        gl.glDisable(enum)
+    ENABLE_QUEUE[enum] = max(0, cur-1)
+
+
+##
+
+def ext_available(extension_name):
+    return True # for now
 
 
 class GLObject(object):
     """ This class implements a context manager and the `handle` property.
     """
-     
+    
     def __enter__(self):
-        gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
-        try:
-            self._enable()
-        except Exception:
-            gl.glPopAttrib()
-            raise
+        self._enable()
         return self
     
     def __exit__(self, type, value, traceback):
-        try:
-            self._disable()
-        finally:
-            gl.glPopAttrib()
+        self._disable()
     
     @property
     def handle(self):
@@ -66,24 +77,4 @@ class GLObject(object):
         return self._handle
 
 
-class _GLObjectWrapper(GLObject):
-    """ Class that acts as a context manager for multiple GLObjects.
-    """
-    def __init__(self, *children):
-        self._children = children
-    def _enable(self):
-        for child in self._children:
-            child._enable()
-    def _disable(self):
-        for child in self._children:
-            child._disable()
-
-
-# todo: what about using the & operator to combine multiple objects?
-def enable(*args):
-    """ Enable multiple GLObjects at once in a snngle context.
-    """ 
-    return _GLObjectWrapper(*args)
-
-
-from .texture import Texture, Texture1D, Texture2D, Texture3D
+from .texture import Texture, Texture2D, Texture3D
