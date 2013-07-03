@@ -1,4 +1,6 @@
-""" API for OpenGL ES 2.0
+""" Classes that represent an OpenGL API. The idea is that each
+class represents one opengl header file. In vispy we focus on OpenGL ES 2.0.
+
 This code is auto-generated. Do not edit.
 """
 
@@ -16,6 +18,7 @@ class _GL_ENUM(int):
 class GLApi(object):
     """ Abstract base class for OpenGL API's.
     """
+    _APINAME = 'abstract'
     
     def __init__(self):
         for funcname in self._glfunctions:
@@ -30,14 +33,19 @@ class GLApi(object):
         pass
         # todo: also mention what function was called
         #print('Warning: gl function not available.')
+    
+    def __repr__(self):
+        return "<API for OpenGL %s>" % self._APINAME
 
 
 
 
-class GLApi_es2(GLApi):
-    """ API for OpenGL ES 2.0.
+class GLES2(GLApi):
+    """ API for OpenGL ES 2.0
     """
     
+    _APINAME = "ES 2.0"
+
     GL_ES_VERSION_2_0 = _GL_ENUM('GL_ES_VERSION_2_0', 1)
     GL_DEPTH_BUFFER_BIT = _GL_ENUM('GL_DEPTH_BUFFER_BIT', 256)
     GL_STENCIL_BUFFER_BIT = _GL_ENUM('GL_STENCIL_BUFFER_BIT', 1024)
@@ -448,6 +456,7 @@ class GLApi_es2(GLApi):
         "glStencilOp",
         "glStencilOpSeparate",
         "glTexImage2D",
+        "glTexParameter",
         "glTexParameterf",
         "glTexParameterfv",
         "glTexParameteri",
@@ -488,10 +497,12 @@ class GLApi_es2(GLApi):
     
 
 
-class GLApi_es2_ext(GLApi):
-    """ API for OpenGL ES 2.0 extentions.
+class GLES2ext(GLApi):
+    """ API for OpenGL ES 2.0 extensions
     """
     
+    _APINAME = "ES 2.0 extensions"
+
     GL_ETC1_RGB8 = _GL_ENUM('GL_ETC1_RGB8', 36196)
     GL_PALETTE4_RGB8 = _GL_ENUM('GL_PALETTE4_RGB8', 35728)
     GL_PALETTE4_RGBA8 = _GL_ENUM('GL_PALETTE4_RGBA8', 35729)
@@ -582,8 +593,6 @@ class GLApi_es2_ext(GLApi):
         "glCompressedTexSubImage3D",
         "glCopyTexSubImage3D",
         "glDeleteVertexArrays",
-        "glEGLImageTargetRenderbufferStorage",
-        "glEGLImageTargetTexture2D",
         "glFramebufferTexture3D",
         "glGenVertexArrays",
         "glGetBufferPointerv",

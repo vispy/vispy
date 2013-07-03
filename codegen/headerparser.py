@@ -17,6 +17,9 @@ def getwords(line):
     return [w for w in line.split(' ') if w]
 
 
+# Keep track of all constants in case they are "reused" in a header file
+CONSTANTS = {}
+
 
 class Parser:
     """ Class to parse header files.
@@ -183,6 +186,7 @@ class ConstantDefinition(Definition):
     def parse_line(self, line):
         """ Set cname and value attributes.
         """
+        self.value = None
         line = line.split('/*',1)[0]
         _, *args = getwords(line)
         self.isvalid = False
@@ -199,10 +203,15 @@ class ConstantDefinition(Definition):
                 self.value = int(val)
             elif val.startswith("'"):
                 self.value = val
+            elif val in CONSTANTS:
+                self.value = CONSTANTS[val]
             else:
                 print('Warning: Dont know what to do with "%s"' % line)
         else:
             print('Dont know what to do with "%s"' % line)
+        
+        if self.value is not None:
+            CONSTANTS[self.cname] = self.value
     
     def process(self):
         pass  # We did all that we needed to do

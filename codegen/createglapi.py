@@ -13,6 +13,8 @@ or that pipe the OpenGL commands to elsewhere, such as a WebGL instance.
 import os 
 import sys
 
+from OpenGL import GL
+
 THISDIR = os.path.abspath(os.path.dirname(__file__))
 
 # We need header parser
@@ -21,7 +23,9 @@ sys.path.insert(0, THISDIR)
 # Load parser
 from headerparser import Parser
 
-PREAMBLE = '''""" API for OpenGL ES 2.0
+PREAMBLE = '''""" Classes that represent an OpenGL API. The idea is that each
+class represents one opengl header file. In vispy we focus on OpenGL ES 2.0.
+
 This code is auto-generated. Do not edit.
 """
 
@@ -39,6 +43,7 @@ class _GL_ENUM(int):
 class GLApi(object):
     """ Abstract base class for OpenGL API's.
     """
+    _APINAME = 'abstract'
     
     def __init__(self):
         for funcname in self._glfunctions:
@@ -53,6 +58,9 @@ class GLApi(object):
         pass
         # todo: also mention what function was called
         #print('Warning: gl function not available.')
+    
+    def __repr__(self):
+        return "<API for OpenGL %s>" % self._APINAME
 
 '''
 
@@ -64,35 +72,15 @@ lines.append(PREAMBLE)
 lines.append('\n')
 
 
-CLASS_PREAMBLE = '''class %s(object):
-    """ %s
-    """
-    
-    def __init__(self):
-        for funcname in self._glfunctions:
-            try:
-                func = getattr(_GL, funcname)
-            except AttributeError:
-                func = self._glFuncNotAvailable
-                print('warning: %%s not available' %% funcname )
-            setattr(self, funcname, func)
-    
-    def _glFuncNotAvailable(self, *args, **kwargs):
-        pass
-        # todo: also mention what function was called
-        #print('Warning: gl function not available.')
-    
-'''
-
-
-def create_class_from_header(classname, headerfile, docstring, extension=False):
+def create_class_from_header(classname, apiname, headerfile, extension=False):
     
     # Create class that 
     parser = Parser(os.path.join(THISDIR, 'headers', headerfile))
     
     # Initialize class
     lines.append("class %s(GLApi):" % classname)
-    lines.append('    """ %s\n    """\n    ' % docstring)
+    lines.append('    """ API for OpenGL %s\n    """\n    ' % apiname)
+    lines.append('    _APINAME = "%s"\n' % apiname)
     
     # Insert constants
     for c in parser.constantDefs:
@@ -118,8 +106,15 @@ def create_class_from_header(classname, headerfile, docstring, extension=False):
                 f.cname = f.cname.replace('OES', '')
             else:
                 continue
+        # Add "super-function" if this is a group of functions
+        if isinstance(f.group, list):
+            if hasattr(GL, f.keyname):
+                lines.append('        "%s",' % f.keyname)
         # Add line
-        lines.append('        "%s",' % f.cname)
+        if hasattr(GL, f.cname):
+            lines.append('        "%s",' % f.cname)
+        else:
+            print('WARNING: %s seems not available in PyOpenGL' % f.cname)
     lines.append('        ]')
     lines.append('    ')
     
@@ -127,9 +122,9 @@ def create_class_from_header(classname, headerfile, docstring, extension=False):
     lines.append('')
     lines.append('')
     
-create_class_from_header('GLApi_es2', 'gl2.h', 'API for OpenGL ES 2.0.')
-create_class_from_header('GLApi_es2_ext', 'gl2ext.h', 'API for OpenGL ES 2.0 extentions.', True)
-# create_class_from_header('GLApi_1', 'gl-1.1.h', 'API for OpenGL 1.1.')
+create_class_from_header('GLES2', 'ES 2.0', 'gl2.h')
+create_class_from_header('GLES2ext', 'ES 2.0 extensions', 'gl2ext.h', True)
+#create_class_from_header('GL1', '1.1 (Windows)', 'gl-1.1.h')
 
 # Write to file
 with open(os.path.join(THISDIR, '..', 'vispy', 'glapi.py'), 'wb') as f:
