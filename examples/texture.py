@@ -1,4 +1,4 @@
-from vispy.oogl import Texture2D
+from vispy.oogl import Texture2D, VertexShader, FragmentShader, ShaderProgram
 from vispy import app
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
@@ -9,6 +9,35 @@ im[:50,:,0] = 1.0
 im[:,:50,1] = 1.0
 im[50:,50:,2] = 1.0
 
+VERT_SHADER = """
+void main (void) {
+    // Get position
+    vec4 vertex = vec4(gl_Vertex);
+    
+    // Calculate vertex in eye coordinates
+    //vertex = vec3(gl_ModelViewMatrix * vertex);
+    
+    // Calculate projected position
+    gl_Position = gl_ModelViewProjectionMatrix * vertex;
+}
+"""
+
+FRAG_SHADER1 = """
+void main()
+{    
+    gl_FragColor = get_color();
+}
+
+"""
+
+FRAG_SHADER2 = """
+vec4 get_color()
+{    
+    return vec4(0.0, 1.0, 0.0, 1.0);
+}
+"""
+
+
 class Canvas(app.Canvas):
     
     def __init__(self):
@@ -16,8 +45,12 @@ class Canvas(app.Canvas):
         
         self._texture = Texture2D()
         self._texture.set_data(im)
-        
-        
+        self._program = ShaderProgram(
+                VertexShader(VERT_SHADER), 
+                FragmentShader(FRAG_SHADER1),
+                #FragmentShader(FRAG_SHADER2)
+                )
+    
     def on_paint(self, event):
         # 
         # Set viewport and transformations
@@ -38,7 +71,7 @@ class Canvas(app.Canvas):
         
         # Draw shape with texture, nested context
         gl.glColor(1.0, 1.0, 1.0)
-        with self._texture(0):
+        with self._texture(0), self._program:
             self.draw_shape(0.5, 0.0)
             with self._texture(0):
                 self.draw_shape(0.0, 0.5)

@@ -78,3 +78,4 @@ class GLObject(object):
 
 
 from .texture import Texture, Texture2D, Texture3D
+from .shader import VertexShader, FragmentShader, ShaderProgram
