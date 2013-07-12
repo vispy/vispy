@@ -31,8 +31,8 @@ class BaseShader(GLObject):
         self._type = type
         
         self._handle = 0
-        self._source = source
         self._compiled = 0  # 0: not compiled, 1: compile tried, 2: compile success 
+        self.set_source(source)
     
     
     # todo: move delete method to GLObject?
@@ -55,9 +55,11 @@ class BaseShader(GLObject):
     def set_source(self, source):
         """ Set the source of the shader.
         """
-        self. source = source
+        self._source = source
         self._compiled = 0  # force recompile 
-    
+        # Try to get description from first line
+        # EXPERIMENTAL
+        self._desciption = self._source.split('\n',1)[0].strip(' \t/*')
     
     def add_source(self, source):
         """ Templating, for later.
@@ -116,7 +118,10 @@ class VertexShader(BaseShader):
         BaseShader.__init__(self, gl.GL_VERTEX_SHADER, source)
     
     def __repr__(self):
-        return "<VertexShader at %s>" % hex(id(self)) 
+        if self._desciption:
+            return "<VertexShader '%s'>" % self._desciption 
+        else:
+            return "<VertexShader at %s>" % hex(id(self)) 
 
 
 class FragmentShader(BaseShader):
@@ -126,7 +131,10 @@ class FragmentShader(BaseShader):
         BaseShader.__init__(self, gl.GL_FRAGMENT_SHADER, source)
     
     def __repr__(self):
-        return "<FragmentShader at %s>" % hex(id(self)) 
+        if self._desciption:
+            return "<FragmentShader '%s'>" % self._desciption 
+        else:
+            return "<FragmentShader at %s>" % hex(id(self)) 
 
 
 class ShaderProgram(GLObject):

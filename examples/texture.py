@@ -22,7 +22,9 @@ void main (void) {
 }
 """
 
-FRAG_SHADER1 = """
+FRAG_SHADER1 = """ // simples shader ever!
+vec4 get_color();
+
 void main()
 {    
     gl_FragColor = get_color();
@@ -48,7 +50,7 @@ class Canvas(app.Canvas):
         self._program = ShaderProgram(
                 VertexShader(VERT_SHADER), 
                 FragmentShader(FRAG_SHADER1),
-                #FragmentShader(FRAG_SHADER2)
+                FragmentShader(FRAG_SHADER2)
                 )
     
     def on_paint(self, event):
