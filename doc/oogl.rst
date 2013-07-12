@@ -8,7 +8,6 @@ The object oriented OpenGL API (oogl)
 
 ----
 
-.. autoclass:: vispy.oogl.Texture1D
 
 .. autoclass:: vispy.oogl.Texture2D
 
@@ -19,3 +18,19 @@ The object oriented OpenGL API (oogl)
     :members:
     
     .. automethod:: __call__
+
+----
+
+.. autoclass:: vispy.oogl.FragmentShader
+    :inherited-members:
+    :members:
+
+
+.. autoclass:: vispy.oogl.VertexShader
+    :inherited-members:
+    :members:
+
+
+.. autoclass:: vispy.oogl.ShaderProgram
+    :members:
+        
