@@ -21,17 +21,18 @@ The object oriented OpenGL API (oogl)
 
 ----
 
-.. autoclass:: vispy.oogl.BaseShader
+.. autoclass:: vispy.oogl.shader.BaseShader
     :inherited-members:
     :members:
 
 
 .. autoclass:: vispy.oogl.VertexShader
-    :members
+    :members:
 
 .. autoclass:: vispy.oogl.FragmentShader
-    :members
+    :members:
 
 .. autoclass:: vispy.oogl.ShaderProgram
+    :inherited-members:
     :members:
         
