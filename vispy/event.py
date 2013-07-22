@@ -263,9 +263,16 @@ class EventEmitter(object):
                 try:
                     cb(event)
                 except:
+                    # get traceback and store (so we can do postmortem debugging)
+                    type, value, tb = sys.exc_info()
+                    tb = tb.tb_next # Skip *this* frame
+                    sys.last_type = type
+                    sys.last_value = value
+                    sys.last_traceback = tb
+                    # Handle
                     if self.ignore_callback_errors:
                         if self.print_callback_errors:
-                            sys.excepthook(*sys.exc_info())
+                            sys.excepthook(type, value, tb)
                             print("Error invoking callback for event: %s" % str(event))
                     else:
                         raise
