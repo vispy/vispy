@@ -253,7 +253,11 @@ class ShaderProgram(GLObject):
         2x2 numpy array should be given.)
         """
         
-        if isinstance(value, (tuple, int)):
+        if isinstance(value, float):
+            value = np.array(value, np.float32)  # Make numpy array
+        elif isinstance(value, int):
+            value = np.array(value, np.int32)  # Make numpy array
+        elif isinstance(value, (tuple, list)):
             # Make numpy array
             if isinstance(value[0], float):
                 value = np.array(value, np.float32)
