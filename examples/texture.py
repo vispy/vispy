@@ -4,12 +4,15 @@ import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import numpy as np
 
-im = np.zeros((100,100,3), 'float64')
-im[:50,:,0] = 1.0
-im[:,:50,1] = 1.0
-im[50:,50:,2] = 1.0
+im0 = np.zeros((100,100,3), 'float64')
+im0[:50,:,0] = 1.0
 
-VERT_SHADER = """
+im1 = np.zeros((100,100,3), 'float64')
+im1[:50,:,0] = 1.0
+im1[:,:50,1] = 1.0
+im1[50:,50:,2] = 1.0
+
+VERT_SHADER = """ // simple vertex shader
 void main (void) {
     // Get position
     vec4 vertex = vec4(gl_Vertex);
@@ -17,25 +20,33 @@ void main (void) {
     // Calculate vertex in eye coordinates
     //vertex = vec3(gl_ModelViewMatrix * vertex);
     
+    // Pass tex coords
+    gl_TexCoord[0] = gl_MultiTexCoord0;
+    
     // Calculate projected position
     gl_Position = gl_ModelViewProjectionMatrix * vertex;
 }
 """
 
-FRAG_SHADER1 = """ // simples shader ever!
+FRAG_SHADER1 = """ // simples fragment shader
+uniform sampler2D texture1;
 vec4 get_color();
 
 void main()
 {    
-    gl_FragColor = get_color();
+    gl_FragColor = get_color() * texture2D(texture1, gl_TexCoord[0].st);
 }
 
 """
 
 FRAG_SHADER2 = """
+
+uniform vec3 color;
+
 vec4 get_color()
 {    
-    return vec4(0.0, 1.0, 0.0, 1.0);
+    return vec4 (color.r, color.g, color.b, 1.0);
+    //return vec4(0.0, 1.0, 0.0, 1.0);
 }
 """
 
@@ -45,13 +56,25 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self)
         
-        self._texture = Texture2D()
-        self._texture.set_data(im)
+        # Create texture 0 (not used)
+        self._texture0 = Texture2D()
+        self._texture0.set_data(im0)
+        
+        # Create texture 1
+        self._texture1 = Texture2D()
+        self._texture1.set_data(im1)
+        
+        # Create program
         self._program = ShaderProgram(
                 VertexShader(VERT_SHADER), 
                 FragmentShader(FRAG_SHADER1),
                 FragmentShader(FRAG_SHADER2)
                 )
+        
+        # Set uniforms and samplers
+        self._program.set_uniform('color', (0.5, 1.0, 0.5))
+        self._program.set_uniform('texture1', self._texture1)
+    
     
     def on_paint(self, event):
         # 
@@ -73,10 +96,9 @@ class Canvas(app.Canvas):
         
         # Draw shape with texture, nested context
         gl.glColor(1.0, 1.0, 1.0)
-        with self._texture(0), self._program:
+        with self._texture0(0), self._texture1(1), self._program:
             self.draw_shape(0.5, 0.0)
-            with self._texture(0):
-                self.draw_shape(0.0, 0.5)
+            self.draw_shape(0.0, 0.5)
             
         # Draw shape again, the texture should not be shown
         gl.glColor(0.0, 0.4, 0.0)

@@ -8,14 +8,19 @@ This code is inspired by similar classes from Pygly.
 from __future__ import print_function, division, absolute_import
 
 import sys
+import weakref
+
 import numpy as np
 
 from vispy import gl
 from . import GLObject, push_enable, pop_enable, ext_available
-
+from . import Texture
 
 if sys.version_info > (3,):
     basestring = str
+
+
+# todo: support uniform arrays of vectors/matrices
 
 
 
@@ -137,15 +142,28 @@ class FragmentShader(BaseShader):
             return "<FragmentShader at %s>" % hex(id(self)) 
 
 
+
 class ShaderProgram(GLObject):
+    """ Representation of a shader program. It combines (links) one 
+    or more vertex and fragment shaders to compose a complete program.
+    Objects of this class are also used to set the uniforms and 
+    attributes that are used by the shaders.
+    
+    """
     
     def __init__(self, *shaders):
         self._handle = 0
+        # Shaders
         self._shaders = []
         self._shaders_to_add = []
         self._shaders_to_remove = []
         for shader in shaders:
             self.add_shader(shader)
+        # Uniforms
+        self._uniforms = {}
+        self._uniforms_samplers = {}
+        self._uniform_handles = {}
+        
     
     
     def delete(self):
@@ -222,8 +240,116 @@ class ShaderProgram(GLObject):
             return None
     
     
-    def set_uniform(self, *arg):
-        pass # Deal with lazy as well as direct mode.
+    def set_uniform(self, name, value):
+        """ Set uniform value. The value can be a tuple of floats/ints,
+        or a single numpy array. Uniform vectors can be 1,2,3,4 elements.
+        Matrices can be 4, 9 or 16 elements. (To pass a 2x2 matrix, a
+        2x2 numpy array should be given.)
+        """
+        
+        if isinstance(value, (tuple, int)):
+            # Make numpy array
+            if isinstance(value[0], float):
+                value = np.array(value, np.float32)
+            else:
+                value = np.array(value, np.int32)
+        elif isinstance(value, np.ndarray):
+            # Force float32 or int32
+            if value.dtype == np.float32:
+                pass
+            elif value.dtype == np.float64:
+                value = value.astype(np.float32)
+            else:
+                value = value.astype(np.int32)
+        elif isinstance(value, Texture):
+            # A Texture, i.e. sampler
+            self._uniforms_samplers[name] = weakref.ref(value)
+            return
+        else:
+            raise ValueError("Invalid attribute value.")
+        
+        # Check size 
+        if value.size not in (1,2,3,4, 9, 16):
+            raise ValueError("Invalid number of values for uniform")
+        
+        # Store
+        self._uniforms[name] = value
+    
+    
+    def _set_sampler(self, name, value):
+        """ Used internally to set the uniform-sampler from a cached value.
+        """
+        
+        # Get value from weakref
+        value = value()
+        if value is None:
+            return
+        
+        # Get uniform location
+        try:
+            loc = self._uniform_handles[name]
+        except KeyError:
+            loc = gl.glGetUniformLocation(self.handle, name.encode('utf-8'))
+            self._uniform_handles[name] = loc
+        
+        # Our uniform may have been optimized out
+        if loc < 0:
+            return 
+        
+        # Apply 
+        # NOTE: we are using a private attribute of Texture here ...
+        gl.glUniform1i(loc, value._unit)
+    
+    
+    def _set_uniform(self, name, value):
+        """ Used internally to set the uniform from a cached value.
+        """
+        
+        # Get uniform location
+        try:
+            loc = self._uniform_handles[name]
+        except KeyError:
+            loc = gl.glGetUniformLocation(self.handle, name.encode('utf-8'))
+            self._uniform_handles[name] = loc
+        
+        # Our uniform may have been optimized out
+        if loc < 0:
+            return 
+        
+        # Get properties
+        count = value.size
+        isfloat = value.dtype == np.float32
+        transpose = False
+        ismatrix = False
+        if count > 4 or value.shape == (2,2):
+            ismatrix = True
+            if not isfloat:
+                value = value.astype(np.float32)
+        
+        # Apply
+        if ismatrix:
+            try:
+                {   4 : gl.glUniformMatrix2fv,
+                    9 : gl.glUniformMatrix3fv,
+                    16 : gl.glUniformMatrix4fv}[count](loc, 1, transpose, value)
+            except KeyError:
+                raise RuntimeError("Unknown uniform matrix format")
+        elif isfloat:
+            try:
+                {   1 : gl.glUniform1fv,
+                    2 : gl.glUniform2fv,
+                    3 : gl.glUniform3fv,
+                    4 : gl.glUniform4fv}[count](loc, 1, value)
+            except KeyError:
+                raise RuntimeError("Unknown uniform float format")
+        else:
+            try:
+                {   1 : gl.glUniform1iv,
+                    2 : gl.glUniform2iv,
+                    3 : gl.glUniform3iv,
+                    4 : gl.glUniform4iv}[count](loc, 1, value)
+            except KeyError:
+                raise RuntimeError("Unknown uniform int format")
     
     
     def set_attribute(self, *args):
@@ -231,10 +357,48 @@ class ShaderProgram(GLObject):
         
         
     def _enable(self):
-        if self._handle <= 0:
+        if self._handle <= 0:# or not gl.glIsProgram(self._handle):
             self._handle = gl.glCreateProgram()
         
-        # Remove shaders
+        # Remove/add shaders and compile them
+        self._enable_shaders()
+        
+        # Only proceed if all shaders compiled ok
+        oks = [shader._compiled==2 for shader in self._shaders]
+        if not (oks and all(oks)):
+            return
+        
+        # Link the program?
+        if not gl.glGetProgramiv(self.handle, gl.GL_LINK_STATUS):
+            # Force re-locating uniforms
+            self._uniform_handles = {}  
+            # Link!
+            try:
+                gl.glLinkProgram(self._handle)
+            except Exception as e:
+                print( "Error linking shader:" )
+                parse_shader_errors(e.description)
+                raise
+            # Retrieve the link status
+            if not gl.glGetProgramiv(self.handle, gl.GL_LINK_STATUS):
+                print( "Error linking shader:" )
+                errors = gl.glGetProgramInfoLog(self._handle)
+                parse_shader_errors(errors)
+                raise RuntimeError(errors)
+        
+        # Use this program!
+        gl.glUseProgram(self._handle)
+        
+        # Apply all uniforms
+        for name, value in self._uniforms.items():
+            self._set_uniform(name, value)
+        for name, value in self._uniforms_samplers.items():
+            self._set_sampler(name, value)
+    
+    
+    def _enable_shaders(self):
+        
+        # Remove shaders if we must
         while self._shaders_to_remove:
             shader = self._shaders_to_remove.pop(0)
             # Make OpenGL detach it
@@ -264,29 +428,6 @@ class ShaderProgram(GLObject):
         # Check/compile all shaders
         for shader in self._shaders:
             shader._enable()
-        
-        # Only proceed if all shaders compiled ok
-        oks = [shader._compiled==2 for shader in self._shaders]
-        if not (oks and all(oks)):
-            return
-        
-        # Link the program
-        try:
-            gl.glLinkProgram(self._handle)
-        except Exception as e:
-            print( "Error linking shader:" )
-            parse_shader_errors(e.description)
-            raise
-
-        # Retrieve the link status
-        if not gl.glGetProgramiv(self.handle, gl.GL_LINK_STATUS):
-            print( "Error linking shader:" )
-            errors = gl.glGetProgramInfoLog(self._handle)
-            parse_shader_errors(errors)
-            raise RuntimeError(errors)
-        
-        # Use this program!
-        gl.glUseProgram(self._handle)
     
     
     def _disable(self):
@@ -295,6 +436,7 @@ class ShaderProgram(GLObject):
 
 
 ## Convenience funcsions used in this module
+
 
 def parse_shader_error(error):
     """Parses a single GLSL error and extracts the line number
