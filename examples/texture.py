@@ -1,6 +1,6 @@
 from vispy.oogl import Texture2D, VertexShader, FragmentShader, ShaderProgram
 from vispy import app
-import OpenGL.GL as gl
+from vispy import gl
 import OpenGL.GLU as glu
 import numpy as np
 
@@ -13,18 +13,24 @@ im1[:,:50,1] = 1.0
 im1[50:,50:,2] = 1.0
 
 VERT_SHADER = """ // simple vertex shader
+
+attribute vec3 vPosition;
+attribute vec2 vTexcoord;
+
 void main (void) {
     // Get position
-    vec4 vertex = vec4(gl_Vertex);
+    //vec4 vertex = vec4(gl_Vertex);
+    vec4 vertex = vec4(vPosition.x, vPosition.y, vPosition.z, 1.0);
     
     // Calculate vertex in eye coordinates
     //vertex = vec3(gl_ModelViewMatrix * vertex);
     
     // Pass tex coords
-    gl_TexCoord[0] = gl_MultiTexCoord0;
+    //gl_TexCoord[0] = gl_MultiTexCoord0;
+    gl_TexCoord[0] = vec4(vTexcoord.x, vTexcoord.y, 0.0, 0.0);
     
     // Calculate projected position
-    gl_Position = gl_ModelViewProjectionMatrix * vertex;
+    gl_Position = vertex;//gl_ModelViewProjectionMatrix * vertex;
 }
 """
 
@@ -74,46 +80,75 @@ class Canvas(app.Canvas):
         # Set uniforms and samplers
         self._program.set_uniform('color', (0.5, 1.0, 0.5))
         self._program.set_uniform('texture1', self._texture1)
+        
+        # todo: Experimental, would be nice if not clashes with attributes
+        # What I do not like about it is that is a program is a container
+        # it is a container of shaders, not of uniforms (I think).
+        #self._program['color'] = 0.5, 1.0, 0.5
+        #self._program['texture1'] = self._texture1
+        # or:
+        #self._program.uniforms['color'] = 0.5, 1.0, 0.5
+        #self._program.uniforms['texture1'] = self._texture1
     
     
     def on_paint(self, event):
         # 
         # Set viewport and transformations
         gl.glViewport(0, 0, *self.geometry[2:])
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        glu.gluOrtho2D(0.0, 1.0, 0.0, 1.0)
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glLoadIdentity()
         
         # Clear
         gl.glClearColor(1,1,1,1);
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
-        # Draw shape is a color
-        gl.glColor(0.7, 0.0, 0.0)
-        self.draw_shape(0,0)
-        
         # Draw shape with texture, nested context
-        gl.glColor(1.0, 1.0, 1.0)
         with self._texture0(0), self._texture1(1), self._program:
-            self.draw_shape(0.5, 0.0)
-            self.draw_shape(0.0, 0.5)
-            
-        # Draw shape again, the texture should not be shown
-        gl.glColor(0.0, 0.4, 0.0)
-        self.draw_shape(0.5,0.5)
+            self.draw_shape(-0.5, -0.5)
+            self.draw_shape(+0.5, -0.5)
+            self.draw_shape(-0.5, +0.5)
+            self.draw_shape(+0.5, +0.5)
         
         self._backend._vispy_swap_buffers()
     
     def draw_shape(self, x, y):
         # Draw simple shape
-        gl.glBegin(gl.GL_QUADS)
-        gl.glTexCoord(0,0); gl.glVertex(x+0,y+0); 
-        gl.glTexCoord(0.1,0.8); gl.glVertex(x+0.1,y+0.3); 
-        gl.glTexCoord(0.6,1); gl.glVertex(x+0.4,y+0.5); 
-        gl.glTexCoord(1,0.1); gl.glVertex(x+0.5,y+0.2); 
-        gl.glEnd()
+        vPosition = np.array([   x-0.4,y-0.4,0.0,  x+0.3,y-0.3,0.0,  
+                                 x-0.3,y+0.3,0.0,  x+0.4,y+0.4,0.0,], np.float32)
+        vTexcoords = np.array([  0.0,0.0,  0.0,1.0, 1.0,0.0,  1.0,1.0], np.float32)
+        vPosition.shape = -1,3
+        vTexcoords.shape = -1,2
+        
+        # Get coords
+        L1 = self._program.get_attribute_location('vPosition')
+        L2 = self._program.get_attribute_location('vTexcoord')
+        
+        if L1 >= 0:
+            gl.glVertexAttribPointer(L1, vPosition.shape[1], 
+                                    gl.GL_FLOAT, gl.GL_FALSE, 0, vPosition)
+            gl.glEnableVertexAttribArray(L1)
+            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, len(vPosition))
+        if L2 >= 0:
+            gl.glVertexAttribPointer(L2, vTexcoords.shape[1],
+                                    gl.GL_FLOAT, gl.GL_FALSE, 0, vTexcoords)
+            gl.glEnableVertexAttribArray(L2)
+            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, len(vTexcoords))
+        
+        #if L2 >= 0:
+        #    gl.glVertexAttribPointer(L2, texcoords.size//2, gl.GL_FLOAT, gl.GL_FALSE, 0, texcoords)
+        
+        
+        
+        #gl.glEnableVertexAttribArray(1)
+        # Triangle fan gets you same as quads.
+        #gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, texcoords.size//2)
+        
+        
+#         gl.glBegin(gl.GL_QUADS)
+#         gl.glTexCoord(0,0); gl.glVertex(x+0,y+0); 
+#         gl.glTexCoord(0.1,0.8); gl.glVertex(x+0.1,y+0.3); 
+#         gl.glTexCoord(0.6,1); gl.glVertex(x+0.4,y+0.5); 
+#         gl.glTexCoord(1,0.1); gl.glVertex(x+0.5,y+0.2); 
+#         gl.glEnd()
+    
 c = Canvas()
 c.show()
 

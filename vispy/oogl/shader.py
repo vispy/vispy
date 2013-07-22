@@ -21,7 +21,7 @@ if sys.version_info > (3,):
 
 
 # todo: support uniform arrays of vectors/matrices
-
+# todo: use glGetActiveUniform to query all uniforms in use?
 
 
 class BaseShader(GLObject):
@@ -163,7 +163,8 @@ class ShaderProgram(GLObject):
         self._uniforms = {}
         self._uniforms_samplers = {}
         self._uniform_handles = {}
-        
+        # Attributes
+        self._attribute_handles = {}
     
     
     def delete(self):
@@ -180,6 +181,11 @@ class ShaderProgram(GLObject):
     
     def __del__(self):
         self.delete()
+    
+    
+    # todo: Experimental use __setitem__ for uniforms
+    def __setitem__(self, name, value):
+        return self.set_uniform(name, value)
     
     
     def add_shader(self, shader):
@@ -352,8 +358,29 @@ class ShaderProgram(GLObject):
                 raise RuntimeError("Unknown uniform int format")
     
     
-    def set_attribute(self, *args):
-        pass # vertex attributes. Deal with lazy as well as direct mode.
+    def set_attribute(self, name, index):
+        self._attributes[name, index]
+        
+        #gl.glGetAttribLocation(self._handle, name)
+        #gl.glBindAttribLocation(self._handle, index, name)
+        
+    
+    def get_attribute_location(self, name):
+        """ Only use when "enabled".
+        """
+        # Try cached
+        try:
+            return self._attribute_handles[name]
+        except KeyError:
+            pass
+        # Ask opengl for the location
+        loc = gl.glGetAttribLocation(self._handle, name.encode('utf-8'))
+        self._attribute_handles[name] = loc
+        return loc
+    
+    #def _set_attribute(self, name, index):
+        
+        
         
         
     def _enable(self):
