@@ -100,7 +100,7 @@ class BaseShader(GLObject):
 
 
 class VertexShader(BaseShader):
-    """ Representation of a vertex shader object.
+    """ Representation of a vertex shader object. Inherits BaseShader.
     """
     def __init__(self, source=None):
         BaseShader.__init__(self, gl.GL_VERTEX_SHADER, source)
@@ -114,7 +114,7 @@ class VertexShader(BaseShader):
 
 
 class FragmentShader(BaseShader):
-    """ Representation of a fragment shader object.
+    """ Representation of a fragment shader object. Inherits BaseShader.
     """
     def __init__(self, source=None):
         BaseShader.__init__(self, gl.GL_FRAGMENT_SHADER, source)

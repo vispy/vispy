@@ -30,8 +30,11 @@ if sys.version_info > (3,):
 class ShaderProgram(GLObject):
     """ Representation of a shader program. It combines (links) one 
     or more vertex and fragment shaders to compose a complete program.
-    Objects of this class are also used to set the uniforms and 
-    attributes that are used by the shaders.
+    
+    Objects of this class are also used to set the uniforms and
+    attributes that are used by the shaders. To do so, simply add
+    attributes to the `uniforms` and `attributes` members. The names
+    of the added attributes should match with those used in the shaders.
     """
     
     def __init__(self, *shaders):

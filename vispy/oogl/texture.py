@@ -370,7 +370,7 @@ class Texture(_RawTexture):
 
 
 class Texture2D(Texture):
-    """ Representation of a 2D texture.
+    """ Representation of a 2D texture. Inherits Texture.
     """
     def __init__(self, data=None):
         Texture.__init__(self, gl.GL_TEXTURE_2D, data)
@@ -379,7 +379,7 @@ class Texture2D(Texture):
 
 class Texture3D(Texture):
     """ Representation of a 3D texture. Note that for this the
-    GL_texture_3D extension needs to be available.
+    GL_texture_3D extension needs to be available. Inherits Texture.
     """
     def __init__(self, data=None):
         Texture.__init__(self, gl.ext.GL_TEXTURE_3D, data)

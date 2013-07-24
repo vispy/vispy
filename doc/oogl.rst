@@ -9,6 +9,7 @@ The object oriented OpenGL API (oogl)
 ----
 
 .. autoclass:: vispy.oogl.GLObject
+    :members:
 
 ----
 

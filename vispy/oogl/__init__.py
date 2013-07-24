@@ -1,24 +1,23 @@
 """
 Object oriented interface to OpenGL.
 
-This module implements classes for most things that are "objetcs" in OpenGL,
-such as textures, FBO's, VBO's and shaders. Further, some convenience classes
-are implemented (like the collection class).
+This module implements classes for most things that are "objetcs" in
+OpenGL, such as textures, FBO's, VBO's and shaders. Further, some
+convenience classes are implemented (like the collection class?).
 
-Most classes should be used (during drawing) as context handlers. The
-context handler will call glPushAttrib, so that the object can configure
-OpenGL as they need, without needing to undo these effects to prevent
-the state from "leaking" into other parts of the visualization.
+Central to each visualization is the ShaderProgram. To enable it, it
+should be used as a context manager. Other objects, such as Texture2D
+and VertexBuffer should be set as uniforms and attributes of the
+ShaderProgram object. Some objects, like the IndexBuffer, must be
+enabled explicitly too. This can be done best via
+ShaderProgram.enable_object.
 
 Example::
 
     # Context with one object
-    with texture:
-        draw_vertices()
-    
-    # Context with multiple objects
-    with texture(0), texture(1), shader:
-        draw_vertices()
+    with program:
+        program.uniforms.color = 0.0, 1.0, 0.0
+        gl.glDrawArrays(...)
 
 """
 

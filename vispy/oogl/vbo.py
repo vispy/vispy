@@ -151,6 +151,7 @@ class BaseVertexBuffer(GLObject):
 class VertexBuffer(BaseVertexBuffer):
     """ Representation of vertex buffer object of type GL_ARRAY_BUFFER,
     which can be used to store vertex data. 
+    Inherits BaseVertexShader.
     
     To use a VertexBuffer, set it as a member of
     a_shader_program.attributes.
@@ -162,7 +163,8 @@ class VertexBuffer(BaseVertexBuffer):
 
 class IndexBuffer(BaseVertexBuffer):
     """ Representation of vertex buffer object of type GL_ELEMENT_ARRAY_BUFFER,
-    which can be used to store indices to vertex data.
+    which can be used to store indices to vertex data. 
+    Inherits BaseVertexShader.
     
     To yse an IndexBuffer, enable it before drawing.
     When enabled, the indices pointer in glDrawElements becomes a byte offset.
