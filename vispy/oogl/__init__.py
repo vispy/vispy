@@ -60,7 +60,19 @@ def ext_available(extension_name):
 
 
 class GLObject(object):
-    """ This class implements a context manager and the `handle` property.
+    """ Base class for classes that wrap an OpenGL object.
+    All GLObject's can be used as a context manager to enable them,
+    although some are better used by setting them as a uniform or
+    attribute of a ShaderProgram.
+    
+    All GLObject's apply deferred (a.k.a. lazy) loading, which means
+    that the objects can be created and data can be set even if no
+    OpenGL context is available yet. 
+    
+    There are a few exceptions, most notably when enabling an object
+    by using it as a context manager or via ShaderProgram.enable_object(), 
+    and the delete method. In these cases, the called should ensure
+    that the proper OpenGL context is current.
     """
     
     def __enter__(self):

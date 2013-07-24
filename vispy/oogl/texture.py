@@ -174,23 +174,7 @@ class _RawTexture(GLObject):
 
 
 class Texture(_RawTexture):
-    """ Representation of an OpenGL texture. This class is designed to
-    allow setting data and parameters at any time; the actual uploading
-    of data and applying of parameters is deferred until the texture
-    is enabled (which will in general be right before it is used during
-    drawing). The exceptions are the delete method and using this class
-    as a context manager. In these cases the caller needs to make sure 
-    that the right OpenGL context is current.
-    
-    To bind/enable the texture, use it as a context manager. An object
-    of this class can be called with one (integer) argument to set the
-    texture unit. This can be combined in ``with tex(0): ...``.
-    
-    Parameters
-    ----------
-    target : gl_enum
-        The target of the texture, OpenGL ES 2.0 allows 
-        GL_TEXTURE_2D and GL_TEXTURE_3D (needs extension).
+    """ Representation of an OpenGL texture. 
     
     """
     # Builds on the raw texture class by implementing convenience and lazy loading

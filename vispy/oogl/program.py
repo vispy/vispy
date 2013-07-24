@@ -32,7 +32,6 @@ class ShaderProgram(GLObject):
     or more vertex and fragment shaders to compose a complete program.
     Objects of this class are also used to set the uniforms and 
     attributes that are used by the shaders.
-    
     """
     
     def __init__(self, *shaders):
