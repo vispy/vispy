@@ -13,11 +13,27 @@ enabled explicitly too. This can be done best via
 ShaderProgram.enable_object.
 
 Example::
-
-    # Context with one object
+    # Init
+    program = ShaderProgram(...)
+    progra.attributes.position = VertexBuffer(my_positions_array)
+    
+    ...
+    
+    # Paint event handler
     with program:
         program.uniforms.color = 0.0, 1.0, 0.0
         gl.glDrawArrays(...)
+
+
+The oogl classes:
+    
+  * :class:`ShaderProgram`
+  * :class:`FragmentShader`
+  * :class:`VertexShader`
+  * :class:`VertexBuffer`
+  * :class:`ElementBuffer`
+  * :class:`Texture2D`
+  * :class:`Texture3D`
 
 """
 
