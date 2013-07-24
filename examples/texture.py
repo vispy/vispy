@@ -1,4 +1,5 @@
-from vispy.oogl import Texture2D, VertexShader, FragmentShader, ShaderProgram
+from vispy.oogl import Texture2D, VertexBuffer, IndexBuffer
+from vispy.oogl import VertexShader, FragmentShader, ShaderProgram
 from vispy import app
 from vispy import gl
 import OpenGL.GLU as glu
@@ -11,6 +12,14 @@ im1 = np.zeros((100,100,3), 'float64')
 im1[:50,:,0] = 1.0
 im1[:,:50,1] = 1.0
 im1[50:,50:,2] = 1.0
+
+# Draw simple shape
+# vPosition = np.array([   x-0.4,y-0.4,0.0,  x+0.3,y-0.3,0.0,  
+#                             x-0.3,y+0.3,0.0,  x+0.4,y+0.4,0.0,], np.float32)
+vTexcoords = np.array([  0.0,0.0,  0.0,1.0, 1.0,0.0,  1.0,1.0], np.float32)
+# vPosition.shape = -1,3
+vTexcoords.shape = -1,2
+
 
 VERT_SHADER = """ // simple vertex shader
 
@@ -70,6 +79,10 @@ class Canvas(app.Canvas):
         self._texture1 = Texture2D()
         self._texture1.set_data(im1)
         
+        # Create VBO
+        self._vbo = VertexBuffer()
+        self._vbo.set_data(vTexcoords)
+        
         # Create program
         self._program = ShaderProgram(
                 VertexShader(VERT_SHADER), 
@@ -110,13 +123,10 @@ class Canvas(app.Canvas):
         self._backend._vispy_swap_buffers()
     
     def draw_shape(self, x, y):
-        # Draw simple shape
         vPosition = np.array([   x-0.4,y-0.4,0.0,  x+0.3,y-0.3,0.0,  
-                                 x-0.3,y+0.3,0.0,  x+0.4,y+0.4,0.0,], np.float32)
-        vTexcoords = np.array([  0.0,0.0,  0.0,1.0, 1.0,0.0,  1.0,1.0], np.float32)
+                            x-0.3,y+0.3,0.0,  x+0.4,y+0.4,0.0,], np.float32)
         vPosition.shape = -1,3
-        vTexcoords.shape = -1,2
-        
+
         # Get coords
         L1 = self._program.get_attribute_location('vPosition')
         L2 = self._program.get_attribute_location('vTexcoord')

@@ -77,5 +77,6 @@ class GLObject(object):
         return self._handle
 
 
+from .vbo import VertexBuffer, IndexBuffer
 from .texture import Texture, Texture2D, Texture3D
 from .shader import VertexShader, FragmentShader, ShaderProgram
