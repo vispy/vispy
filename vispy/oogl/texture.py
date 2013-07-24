@@ -56,20 +56,8 @@ class _RawTexture(GLObject):
     def _create(self):
         self._handle = gl.glGenTextures(1)
     
-    def delete(self):
-        """ Delete the texture from OpenGl memory.
-        Note that the right context should be active when this method is 
-        called.
-        """
-        try:
-            if self._handle > 0:
-                gl.glDeleteTextures([self._handle])
-        except Exception:
-            pass
-        self._handle = 0
-    
-    def __del__(self):
-        self.delete()
+    def _delete(self):
+        gl.glDeleteTextures([self._handle])
     
     
     def _enable(self):

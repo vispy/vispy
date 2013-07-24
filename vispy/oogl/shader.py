@@ -40,21 +40,8 @@ class BaseShader(GLObject):
         self.set_source(source)
     
     
-    # todo: move delete method to GLObject?
-    def delete(self):
-        """ Delete the shader from OpenGl memory.
-        Note that the right context should be active when this method is 
-        called.
-        """
-        try:
-            if self._handle > 0:
-                gl.glDeleteShader(self._handle)
-        except Exception:
-            pass
-        self._handle = 0
-    
-    def __del__(self):
-        self.delete()
+    def _delete(self):
+        gl.glDeleteShader(self._handle)
     
     
     def set_source(self, source):
@@ -65,6 +52,7 @@ class BaseShader(GLObject):
         # Try to get description from first line
         # EXPERIMENTAL
         self._desciption = self._source.split('\n',1)[0].strip(' \t/*')
+    
     
     def add_source(self, source):
         """ Templating, for later.
@@ -167,20 +155,8 @@ class ShaderProgram(GLObject):
         self._attribute_handles = {}
     
     
-    def delete(self):
-        """ Delete the shader program from OpenGl memory.
-        Note that the right context should be active when this method is 
-        called.
-        """
-        try:
-            if self._handle > 0:
-                gl.glDeleteProgram(self._handle)
-        except Exception:
-            pass
-        self._handle = 0
-    
-    def __del__(self):
-        self.delete()
+    def _delete(self):
+        gl.glDeleteProgram(self._handle)
     
     
     # todo: Experimental use __setitem__ for uniforms

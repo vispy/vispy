@@ -43,18 +43,9 @@ class BaseVertexBuffer(GLObject):
     def _create(self):
         self._handle = gl.glGenBuffers(1)
     
+    def _delete(self):
+       gl.glDeleteBuffers([self._handle])
     
-    def delete(self):
-        """ Delete the buffer from OpenGl memory.
-        Note that the right context should be active when this method is 
-        called.
-        """
-        try:
-            if self._handle > 0:
-                gl.glDeleteBuffers([self._handle])
-        except Exception:
-            pass
-        self._handle = 0
     
     def __del__(self):
         self.delete()

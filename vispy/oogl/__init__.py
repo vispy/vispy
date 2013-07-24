@@ -70,11 +70,36 @@ class GLObject(object):
     def __exit__(self, type, value, traceback):
         self._disable()
     
+    def __del__(self):
+        self.delete()
+    
+    def delete(self):
+        """ Delete the object from OpenGl memory. Note that the right
+        context should be active when this method is called.
+        """
+        try:
+            if self._handle > 0:
+                self._delete()
+        except Exception:
+            pass  # At least we tried
+        self._handle = 0
+    
     @property
     def handle(self):
-        """ The handle (i.e. 'name') to the underlying OpenGL object.
+        """  The handle (i.e. id or name) of the underlying OpenGL object.
         """
         return self._handle
+    
+    
+    def _enable(self):
+        raise NotImplementedError()
+    
+    def _disable(self):
+        raise NotImplementedError()
+    
+    def _delete(self):
+        raise NotImplementedError()
+
 
 
 from .vbo import VertexBuffer, IndexBuffer
