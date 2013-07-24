@@ -195,7 +195,7 @@ class Texture(_RawTexture):
     """
     # Builds on the raw texture class by implementing convenience and lazy loading
     
-    def __init__(self, target):
+    def __init__(self, target, data=None):
         _RawTexture.__init__(self, target)
         
         # A reference (not a weak one) to be able to process deferred
@@ -214,6 +214,10 @@ class Texture(_RawTexture):
         # is GL_NEAREST_MIPMAP_LINEAR
         self.set_parameter(gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
         self.set_parameter(gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+        
+        # Set data?
+        if data is not None:
+            self.set_data(data)
     
     
     def __call__(self, unit):
@@ -384,8 +388,8 @@ class Texture(_RawTexture):
 class Texture2D(Texture):
     """ Representation of a 2D texture.
     """
-    def __init__(self):
-        Texture.__init__(self, gl.GL_TEXTURE_2D)
+    def __init__(self, data=None):
+        Texture.__init__(self, gl.GL_TEXTURE_2D, data)
 
 
 
@@ -393,8 +397,8 @@ class Texture3D(Texture):
     """ Representation of a 3D texture. Note that for this the
     GL_texture_3D extension needs to be available.
     """
-    def __init__(self):
-        Texture.__init__(self, gl.ext.GL_TEXTURE_3D)
+    def __init__(self, data=None):
+        Texture.__init__(self, gl.ext.GL_TEXTURE_3D, data)
 
 
 ## Utility functions

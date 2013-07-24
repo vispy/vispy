@@ -14,14 +14,17 @@ import numpy as np
 
 from vispy import gl
 from . import GLObject, push_enable, pop_enable, ext_available
-from . import Texture, VertexShader, FragmentShader
+from . import VertexShader, FragmentShader
+from .program_inputs import UniformInputs, AttributeInputs
 
+ 
 if sys.version_info > (3,):
     basestring = str
 
 
 # todo: support uniform arrays of vectors/matrices
 # todo: use glGetActiveUniform to query all uniforms in use?
+# todo: allow setting of uniforms and attributes on the program object? u_color, a_pos
 
 
 class ShaderProgram(GLObject):
@@ -34,27 +37,49 @@ class ShaderProgram(GLObject):
     
     def __init__(self, *shaders):
         self._handle = 0
+        self._enabled = False
         # Shaders
         self._shaders = []
         self._shaders_to_add = []
         self._shaders_to_remove = []
         for shader in shaders:
             self.add_shader(shader)
-        # Uniforms
-        self._uniforms = {}
-        self._uniforms_samplers = {}
-        self._uniform_handles = {}
-        # Attributes
-        self._attribute_handles = {}
+        
+        # Inputs
+        self._uniform_inputs = UniformInputs(self)
+        self._attribute_inputs = AttributeInputs(self)
+        self._inputs = (self._uniform_inputs, self._attribute_inputs,)
+        
+        # List of objects being enabled
+        self._enabled_objects = []
     
     
     def _delete(self):
         gl.glDeleteProgram(self._handle)
     
     
-    # todo: Experimental use __setitem__ for uniforms
-    def __setitem__(self, name, value):
-        return self.set_uniform(name, value)
+    @property
+    def uniforms(self):
+        """ A namespace for the uniform inputs to this shader program.
+        For example: ``program.uniforms.color = 0.0, 1.0, 0.0``. 
+        
+        Uniforms can be a tuple/array of 1 to 4 elements to specify a vector,
+        a numpy array of 4, 9 or 16 elements to specify a matrix, or
+        a Texture object to specify a sampler.
+        """
+        return self._uniform_inputs
+    
+    
+    @property
+    def attributes(self):
+        """ A namespace for the attribute inputs to this shader program.
+        For example: ``program.attributes.positions = my_positions_array``. 
+        
+        Attributes can be a tuple of 1 to 4 elements (global attributes),
+        a numpy array of per vertex attributes, or a VertexBuffer object
+        (recommended over the numpy array).
+        """
+        return self._attribute_inputs
     
     
     def add_shader(self, shader):
@@ -114,147 +139,6 @@ class ShaderProgram(GLObject):
         else:
             return None
     
-    
-    def set_uniform(self, name, value):
-        """ Set uniform value. The value can be a tuple of floats/ints,
-        or a single numpy array. Uniform vectors can be 1,2,3,4 elements.
-        Matrices can be 4, 9 or 16 elements. (To pass a 2x2 matrix, a
-        2x2 numpy array should be given.)
-        """
-        
-        if isinstance(value, float):
-            value = np.array(value, np.float32)  # Make numpy array
-        elif isinstance(value, int):
-            value = np.array(value, np.int32)  # Make numpy array
-        elif isinstance(value, (tuple, list)):
-            # Make numpy array
-            if isinstance(value[0], float):
-                value = np.array(value, np.float32)
-            else:
-                value = np.array(value, np.int32)
-        elif isinstance(value, np.ndarray):
-            # Force float32 or int32
-            if value.dtype == np.float32:
-                pass
-            elif value.dtype == np.float64:
-                value = value.astype(np.float32)
-            else:
-                value = value.astype(np.int32)
-        elif isinstance(value, Texture):
-            # A Texture, i.e. sampler
-            self._uniforms_samplers[name] = weakref.ref(value)
-            return
-        else:
-            raise ValueError("Invalid attribute value.")
-        
-        # Check size 
-        if value.size not in (1,2,3,4, 9, 16):
-            raise ValueError("Invalid number of values for uniform")
-        
-        # Store
-        self._uniforms[name] = value
-    
-    
-    def _set_sampler(self, name, value):
-        """ Used internally to set the uniform-sampler from a cached value.
-        """
-        
-        # Get value from weakref
-        value = value()
-        if value is None:
-            return
-        
-        # Get uniform location
-        try:
-            loc = self._uniform_handles[name]
-        except KeyError:
-            loc = gl.glGetUniformLocation(self.handle, name.encode('utf-8'))
-            self._uniform_handles[name] = loc
-        
-        # Our uniform may have been optimized out
-        if loc < 0:
-            return 
-        
-        # Apply 
-        # NOTE: we are using a private attribute of Texture here ...
-        gl.glUniform1i(loc, value._unit)
-    
-    
-    def _set_uniform(self, name, value):
-        """ Used internally to set the uniform from a cached value.
-        """
-        
-        # Get uniform location
-        try:
-            loc = self._uniform_handles[name]
-        except KeyError:
-            loc = gl.glGetUniformLocation(self.handle, name.encode('utf-8'))
-            self._uniform_handles[name] = loc
-        
-        # Our uniform may have been optimized out
-        if loc < 0:
-            return 
-        
-        # Get properties
-        count = value.size
-        isfloat = value.dtype == np.float32
-        transpose = False
-        ismatrix = False
-        if count > 4 or value.shape == (2,2):
-            ismatrix = True
-            if not isfloat:
-                value = value.astype(np.float32)
-        
-        # Apply
-        if ismatrix:
-            try:
-                {   4 : gl.glUniformMatrix2fv,
-                    9 : gl.glUniformMatrix3fv,
-                    16 : gl.glUniformMatrix4fv}[count](loc, 1, transpose, value)
-            except KeyError:
-                raise RuntimeError("Unknown uniform matrix format")
-        elif isfloat:
-            try:
-                {   1 : gl.glUniform1fv,
-                    2 : gl.glUniform2fv,
-                    3 : gl.glUniform3fv,
-                    4 : gl.glUniform4fv}[count](loc, 1, value)
-            except KeyError:
-                raise RuntimeError("Unknown uniform float format")
-        else:
-            try:
-                {   1 : gl.glUniform1iv,
-                    2 : gl.glUniform2iv,
-                    3 : gl.glUniform3iv,
-                    4 : gl.glUniform4iv}[count](loc, 1, value)
-            except KeyError:
-                raise RuntimeError("Unknown uniform int format")
-    
-    
-    def set_attribute(self, name, index):
-        self._attributes[name, index]
-        
-        #gl.glGetAttribLocation(self._handle, name)
-        #gl.glBindAttribLocation(self._handle, index, name)
-        
-    
-    def get_attribute_location(self, name):
-        """ Only use when "enabled".
-        """
-        # Try cached
-        try:
-            return self._attribute_handles[name]
-        except KeyError:
-            pass
-        # Ask opengl for the location
-        loc = gl.glGetAttribLocation(self._handle, name.encode('utf-8'))
-        self._attribute_handles[name] = loc
-        return loc
-    
-    #def _set_attribute(self, name, index):
-        
-        
-        
         
     def _enable(self):
         if self._handle <= 0:# or not gl.glIsProgram(self._handle):
@@ -271,7 +155,8 @@ class ShaderProgram(GLObject):
         # Link the program?
         if not gl.glGetProgramiv(self.handle, gl.GL_LINK_STATUS):
             # Force re-locating uniforms
-            self._uniform_handles = {}  
+            for input in self._inputs:
+                input._clear_cache()
             # Link!
             try:
                 gl.glLinkProgram(self._handle)
@@ -289,11 +174,13 @@ class ShaderProgram(GLObject):
         # Use this program!
         gl.glUseProgram(self._handle)
         
-        # Apply all uniforms
-        for name, value in self._uniforms.items():
-            self._set_uniform(name, value)
-        for name, value in self._uniforms_samplers.items():
-            self._set_sampler(name, value)
+        # Mark as enabled, prepare to enable other objects
+        self._enabled = True
+        self._enabled_objects = []
+        
+        # Apply all uniforms, samplers and attributes
+        for input in self._inputs:
+            input._apply_static()
     
     
     def _enable_shaders(self):
@@ -330,8 +217,22 @@ class ShaderProgram(GLObject):
             shader._enable()
     
     
+    def enable_object(self, object):
+        """ Enable an object, e.g. a texture. The program
+        will make sure that the object is disabled again.
+        Can only be called while being used in a context.
+        """
+        if not self._enabled:
+            raise RuntimeError("Program cannot enable an object if not self being enabled.")
+        object._enable()
+        self._enabled_objects.append(object)
+    
+    
     def _disable(self):
+        for ob in reversed(self._enabled_objects):
+            ob._disable()
         gl.glUseProgram(0)
+        self._enabled = False
     
 
 

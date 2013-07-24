@@ -42,8 +42,10 @@ class Canvas(app.Canvas):
         self._program = ShaderProgram(
                 VertexShader(VERT_SHADER), FragmentShader(FRAG_SHADER) )
         
-        # Set uniforms
-        self._program.set_uniform('color', (0.2, 1.0, 0.4, 1.0))
+        # Set uniform and attribute
+        self._program.uniforms.color = 0.2, 1.0, 0.4, 1.0
+        self._program.attributes.vPosition = vPosition
+    
     
     def on_paint(self, event):
         
@@ -54,15 +56,9 @@ class Canvas(app.Canvas):
         gl.glClearColor(1,1,1,1);
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
+        # Draw
         with self._program:
-            
-            # Set vertices
-            L1 = self._program.get_attribute_location('vPosition')
-            if L1 >= 0:
-                gl.glVertexAttribPointer(L1, vPosition.shape[1], 
-                                        gl.GL_FLOAT, gl.GL_FALSE, 0, vPosition)
-                gl.glEnableVertexAttribArray(L1)
-                gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, len(vPosition))
+            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, len(vPosition))
         
         self._backend._vispy_swap_buffers()
     

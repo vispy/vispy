@@ -2,11 +2,14 @@
 with Texture2D and VertexBuffer.
 """
 
+import time
+import numpy as np
+
 from vispy.oogl import Texture2D, VertexBuffer, IndexBuffer
 from vispy.oogl import VertexShader, FragmentShader, ShaderProgram
 from vispy import app
 from vispy import gl
-import numpy as np
+
 
 # Create a texture
 im1 = np.zeros((100,100,3), 'float64')
@@ -27,6 +30,7 @@ VERT_SHADER = """ // simple vertex shader
 attribute vec3 vPosition;
 attribute vec2 vTexcoord;
 uniform float sizeFactor;
+//attribute float sizeFactor;
 
 void main (void) {
     // Pass tex coords
@@ -53,24 +57,14 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self)
         
-        # Create texture 1
-        self._texture1 = Texture2D()
-        self._texture1.set_data(im1)
-        
-        # Create VBO's
-        # Note that putting all data in one VBO is more efficient
-        self._vertexBuffer = VertexBuffer()
-        self._vertexBuffer.set_data(vPosition)
-        self._texcoordBuffer = VertexBuffer()
-        self._texcoordBuffer.set_data(vTexcoords)
-        
         # Create program
         self._program = ShaderProgram(
                 VertexShader(VERT_SHADER), FragmentShader(FRAG_SHADER) )
         
-        # Set uniforms
-        self._program.set_uniform('texture1', self._texture1)
-        self._program.set_uniform('sizeFactor', 0.6)
+        # Set uniforms, samplers, attributes
+        self._program.uniforms.texture1 = Texture2D(im1)
+        self._program.attributes.vPosition = VertexBuffer(vPosition)
+        self._program.attributes.vTexcoord = VertexBuffer(vTexcoords)
     
     def on_paint(self, event):
         
@@ -81,28 +75,18 @@ class Canvas(app.Canvas):
         gl.glClearColor(1,1,1,1);
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
-        with self._texture1(0), self._program, self._vertexBuffer, self._texcoordBuffer:
+        # Draw
+        with self._program as prog:
+            # You can set uniforms/attributes here too
+            prog.uniforms.sizeFactor = 0.5 + np.sin(time.time()*3)*0.2
+            #prog.attributes.sizeFactor = 0.5 + np.sin(time.time()*3)*0.2
+           
+            # Draw
+            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, len(vTexcoords))
             
-            # Set vertices
-            L1 = self._program.get_attribute_location('vPosition')
-            if L1 >= 0:
-                gl.glEnableVertexAttribArray(L1)
-                self._vertexBuffer._enable() # Arg!
-                gl.glVertexAttribPointer(L1, vPosition.shape[1], 
-                                        gl.GL_FLOAT, gl.GL_FALSE, 0, None)
-                gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, len(vPosition))
-                
-            # Set texture coords
-            L2 = self._program.get_attribute_location('vTexcoord')
-            if L2 >= 0:
-                gl.glEnableVertexAttribArray(L2)
-                self._texcoordBuffer._enable() # Arg!
-                gl.glVertexAttribPointer(L2, vTexcoords.shape[1],
-                                        gl.GL_FLOAT, gl.GL_FALSE, 0, None)
-                gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, len(vTexcoords))
-        
         self._backend._vispy_swap_buffers()
-    
+        self.update()
+
 
 if __name__ == '__main__':
     c = Canvas()

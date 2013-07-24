@@ -25,7 +25,15 @@ class BaseVertexBuffer(GLObject):
     VertexBuffer or IndexBuffer.
     """
     
-    def __init__(self, target):
+    # Data types that OpenGL ES 2.0 can understand
+    _TYPEMAP =  {   'uint8':gl.GL_UNSIGNED_BYTE,    'int8':gl.GL_BYTE,
+                    'uint16':gl.GL_UNSIGNED_SHORT,  'int16':gl.GL_SHORT, 
+                    'float32':gl.GL_FLOAT, 
+                    'float16': gl.ext.GL_HALF_FLOAT }
+                    # GL_FIXED?
+    
+    
+    def __init__(self, target, data=None):
         
         # Store target (i.e. array buffer of index buffer)
         if target not in [gl.GL_ARRAY_BUFFER, gl.GL_ELEMENT_ARRAY_BUFFER]:
@@ -38,6 +46,10 @@ class BaseVertexBuffer(GLObject):
         
         # Keep track of buffer size
         self._buffer_size = 0
+        
+        # Set data?
+        if data is not None:
+            self.set_data(data)
     
     
     def _create(self):
@@ -69,6 +81,10 @@ class BaseVertexBuffer(GLObject):
         # Check data
         if not isinstance(data, np.ndarray):
             raise ValueError("Data should be a numpy array.")
+        assert data.ndim == 2
+        assert data.shape[1] in (1,2,3,4)
+        if not data.dtype.name in self._TYPEMAP:
+            data = data.astype(np.float32)
         
         # Reset if there was an error earlier
         if self._handle < 0:
@@ -84,7 +100,11 @@ class BaseVertexBuffer(GLObject):
         
         # Set pending data
         self._pending_data = data, offset
+        
+        # Also store some properties of the data
         self._buffer_size = data.nbytes
+        self._buffer_type = data.dtype.name
+        self._buffer_shape = data.shape
     
     
     def _upload(self, data):
@@ -132,14 +152,16 @@ class VertexBuffer(BaseVertexBuffer):
     """ Representation of vertex buffer object of type GL_ARRAY_BUFFER,
     which can be used to store vertex data.
     """
-    def __init__(self):
-        BaseVertexBuffer.__init__(self, gl.GL_ARRAY_BUFFER)
+    # When enabled,  pointer in gl.glVertexAttribPointer becomes an offset
+    def __init__(self, data=None):
+        BaseVertexBuffer.__init__(self, gl.GL_ARRAY_BUFFER, data)
 
 
 class IndexBuffer(BaseVertexBuffer):
     """ Representation of vertex buffer object of type GL_ELEMENT_ARRAY_BUFFER,
     which can be used to store indices to vertex data.
+    When enabled, the indices pointer in glDrawElements becomes a byte offset.
     """
-    def __init__(self):
-        BaseVertexBuffer.__init__(self, gl.GL_ELEMENT_ARRAY_BUFFER)
+    def __init__(self, data=None):
+        BaseVertexBuffer.__init__(self, gl.GL_ELEMENT_ARRAY_BUFFER, data)
 
