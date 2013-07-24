@@ -5,7 +5,7 @@ with Texture2D and VertexBuffer.
 import time
 import numpy as np
 
-from vispy.oogl import Texture2D, VertexBuffer, IndexBuffer
+from vispy.oogl import Texture2D, VertexBuffer, ElementBuffer
 from vispy.oogl import VertexShader, FragmentShader, ShaderProgram
 from vispy import app
 from vispy import gl

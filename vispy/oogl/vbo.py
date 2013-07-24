@@ -22,7 +22,7 @@ _m.long = int
 class BaseVertexBuffer(GLObject):
     """ The Vertexbuffer (a.k.a VBO or simply "buffer") is used to
     store vertex data. It is recommended to use one of the subclasses:
-    VertexBuffer or IndexBuffer.
+    VertexBuffer or ElementBuffer.
     """
     
     # Data types that OpenGL ES 2.0 can understand
@@ -161,12 +161,12 @@ class VertexBuffer(BaseVertexBuffer):
         BaseVertexBuffer.__init__(self, gl.GL_ARRAY_BUFFER, data)
 
 
-class IndexBuffer(BaseVertexBuffer):
+class ElementBuffer(BaseVertexBuffer):
     """ Representation of vertex buffer object of type GL_ELEMENT_ARRAY_BUFFER,
     which can be used to store indices to vertex data. 
     Inherits BaseVertexShader.
     
-    To yse an IndexBuffer, enable it before drawing.
+    To use an ElementBuffer, enable it before drawing.
     When enabled, the indices pointer in glDrawElements becomes a byte offset.
     """
     def __init__(self, data=None):

@@ -8,7 +8,7 @@ convenience classes are implemented (like the collection class?).
 Central to each visualization is the ShaderProgram. To enable it, it
 should be used as a context manager. Other objects, such as Texture2D
 and VertexBuffer should be set as uniforms and attributes of the
-ShaderProgram object. Some objects, like the IndexBuffer, must be
+ShaderProgram object. Some objects, like the ElementBuffer, must be
 enabled explicitly too. This can be done best via
 ShaderProgram.enable_object.
 
@@ -113,7 +113,7 @@ class GLObject(object):
 
 
 
-from .vbo import VertexBuffer, IndexBuffer
+from .vbo import VertexBuffer, ElementBuffer
 from .texture import Texture, Texture2D, Texture3D
 from .shader import VertexShader, FragmentShader
 from .program import ShaderProgram
