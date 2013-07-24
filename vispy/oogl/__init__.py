@@ -13,6 +13,7 @@ enabled explicitly too. This can be done best via
 ShaderProgram.enable_object.
 
 Example::
+    
     # Init
     program = ShaderProgram(...)
     progra.attributes.position = VertexBuffer(my_positions_array)

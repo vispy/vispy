@@ -7,6 +7,8 @@ The object oriented OpenGL API (oogl)
 .. automodule:: vispy.oogl
 
 
+----
+
 .. autoclass:: vispy.oogl.GLObject
     :members:
 
@@ -48,4 +50,6 @@ The object oriented OpenGL API (oogl)
 
 .. autoclass:: vispy.oogl.Texture
     :members:
+    
     .. automethod:: __call__
+
