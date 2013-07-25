@@ -22,6 +22,8 @@ if sys.version_info > (3,):
     basestring = str
 
 
+# Note: the ShaderProgram is a friend: it calls private methods of this class.
+
 class BaseInputs(object):
     """ Base proxy class for uniforms, samplers and attributes.
     """

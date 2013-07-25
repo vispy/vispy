@@ -35,10 +35,12 @@ The object oriented OpenGL API (oogl)
 
 
 .. autoclass:: vispy.oogl.VertexBuffer
+    :members:
 
 .. autoclass:: vispy.oogl.ElementBuffer
+    :members:
 
-.. autoclass:: vispy.oogl.vbo.BaseVertexBuffer
+.. autoclass:: vispy.oogl.vbo.Buffer
     :members:
 
 

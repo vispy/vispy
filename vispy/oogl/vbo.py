@@ -202,6 +202,15 @@ class VertexBuffer(GLObject):
         matches the current size of the buffer, the data is updated
         faster.
         
+        The data can be (and is recommended to be) a numpy array with
+        dtype fields, one for each vertex attribute. In that way, the
+        buffer represents an "array of structures" topology wich is
+        good for performance. 
+        
+        New VertexBuffer instances can be created that are associated 
+        with the same undelying Buffer. This can be done by slicing 
+        or by indexing using the appropriate field name.
+        
         Parameters
         ----------
         data : numpy array
