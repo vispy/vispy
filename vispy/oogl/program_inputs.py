@@ -15,7 +15,7 @@ import numpy as np
 
 from vispy import gl
 from . import ext_available
-from . import Texture, VertexBuffer, vbo
+from . import Texture, VertexBuffer
 
 
 if sys.version_info > (3,):
@@ -201,6 +201,27 @@ class AttributeInputs(BaseInputs):
     ShaderProgram. To use, simply assign values as if it were a dictionary.
     """
     
+    def _apply_static(self):
+        # Reset counter
+        self._vertex_count = None
+        BaseInputs._apply_static(self)
+    
+    
+    def _update_vertex_counter(self, count):
+        if count:
+            if self._vertex_count is None:
+                self._vertex_count = count
+            else:
+                self._vertex_count = min(self._vertex_count, count)
+    
+    
+    @property
+    def vertex_count(self):
+        """ The number of vertices to draw.
+        """ 
+        return self._vertex_count
+    
+    
     def _prepare(self, name, value):
         """ value can be either a VBO, a clien-array (numpy) or a tuple
         that represents the same value for all vertices.
@@ -215,7 +236,7 @@ class AttributeInputs(BaseInputs):
             assert value.ndim == 2
             assert value.shape[1] in (1,2,3,4)
             # Ensure it is a type that OpenGL can understand
-            if not value.dtype.name in vbo.DTYPES:
+            if not value.dtype.name in VertexBuffer.DTYPES:
                 value = value.astype(np.float32)
             # Return
             return name, weakref.ref(value)
@@ -249,6 +270,7 @@ class AttributeInputs(BaseInputs):
         
         if isinstance(value, tuple):
             # Global vertex value
+            size = 0
             
             # Tell OpenGL to use this value and not the array
             gl.glDisableVertexAttribArray(loc)
@@ -262,9 +284,11 @@ class AttributeInputs(BaseInputs):
         elif isinstance(value, np.ndarray):
             # Vertex array (local (non-gpu memory)
             
+            self._update_vertex_counter(value.shape[0])
+            
             # Prepare
             size = value.shape[1]
-            gltype = vbo.DTYPES[value.dtype.name]
+            gltype = VertexBuffer.DTYPES[value.dtype.name]
             stride = 0
             
             # Tell OpenGL to use the array and not the glVertexAttrib* value
@@ -277,9 +301,11 @@ class AttributeInputs(BaseInputs):
         else:
             # Vertex Buffer Object
             
+            self._update_vertex_counter(value.shape[0])
+            
             # Prepare
             size = value.shape[1]
-            gltype = vbo.DTYPES[value.type]
+            gltype = VertexBuffer.DTYPES[value.type]
             offset, stride = value.view_params
             # Make offset a pointer, or it will be interpreted as a small array
             offset = ctypes.c_voidp(offset)
@@ -290,3 +316,5 @@ class AttributeInputs(BaseInputs):
             # Apply (enable VBO to associate it with the pointer)
             program.enable_object(value)
             gl.glVertexAttribPointer(loc, size, gltype, False, stride, offset)
+        
+    

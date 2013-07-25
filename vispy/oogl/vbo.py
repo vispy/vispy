@@ -19,14 +19,6 @@ _m = sys.modules[gl.glBufferSubData.wrapperFunction.__module__]
 _m.long = int
 
 
- # Data types that OpenGL ES 2.0 can understand
-DTYPES =  {   'uint8':gl.GL_UNSIGNED_BYTE,    'int8':gl.GL_BYTE,
-                'uint16':gl.GL_UNSIGNED_SHORT,  'int16':gl.GL_SHORT, 
-                'float32':gl.GL_FLOAT, 
-                'float16': gl.ext.GL_HALF_FLOAT }
-                # GL_FIXED?
-
-
 
 class Buffer(GLObject):
     """ The buffer is used to store vertex data. It is recommended to
@@ -154,6 +146,14 @@ class VertexBuffer(GLObject):
     """
     # When enabled,  pointer in gl.glVertexAttribPointer becomes an offset
     
+    # Data types that OpenGL ES 2.0 can understand
+    DTYPES =  { 'uint8':gl.GL_UNSIGNED_BYTE,    'int8':gl.GL_BYTE,
+                'uint16':gl.GL_UNSIGNED_SHORT,  'int16':gl.GL_SHORT, 
+                'float32':gl.GL_FLOAT, 
+                'float16': gl.ext.GL_HALF_FLOAT }
+                # GL_FIXED?
+    
+    
     def __init__(self, data=None, buffer=None):
         
         # Whether this VertexBuffer is a view derived from another VertexBuffer
@@ -232,7 +232,7 @@ class VertexBuffer(GLObject):
             # Data with multiple fields
             fields = unravel_dtype_fields(data.dtype)
             for name, fieldinfo in fields.items():
-                assert fieldinfo[0] in DTYPES
+                assert fieldinfo[0] in self.DTYPES
                 assert fieldinfo[1] in (1,2,3,4)
             # Set type and shape
             self._type = fields
@@ -246,7 +246,7 @@ class VertexBuffer(GLObject):
                 assert data.shape[1] in (1,2,3,4)
                 tuple_count = data.shape[1]
             # Convert if necessary
-            if not data.dtype.name in DTYPES:
+            if not data.dtype.name in self.DTYPES:
                 data = data.astype(np.float32)  
             # Set type and shape
             self._type = data.dtype.name
@@ -345,6 +345,12 @@ class ElementBuffer(GLObject):
     When enabled, the indices pointer in glDrawElements becomes a byte offset.
     """
     
+    # Data types that OpenGL ES 2.0 can understand
+    DTYPES =  { 'uint8': gl.GL_UNSIGNED_BYTE, 
+                'uint16': gl.GL_UNSIGNED_SHORT,
+                'uint32': gl.GL_UNSIGNED_INT, # Needs extension
+            }
+    
     def __init__(self, data=None, buffer=None):
         
         # Set buffer
@@ -404,15 +410,34 @@ class ElementBuffer(GLObject):
         if data.ndim == 2:
             assert data.shape[1] in (1,2,3,4)
             tuple_count = data.shape[1]
-        # Convert if necessary
-        if not data.dtype.name in DTYPES:
-            data = data.astype(np.float32)  
+        # Check type
+        gltype = self.DTYPES.get(data.dtype.name, None)
+        if gltype is None:
+            raise ValueError('Unsupported data type for ElementBuffer.')
+        elif gltype == gl.GL_UNSIGNED_INT and not ext_available('element_index_uint'):
+            raise ValueError('element_index_uint extension needed for uint32 ElementBuffer.')
+        
         # Set type and shape
         self._type = data.dtype.name
         self._shape = data.shape[0], tuple_count
         
         # Set data in buffer
         self._buffer.set_data(data, offset)
+    
+    
+    @property
+    def type(self):
+        """ The name of the dtype of the data. If the data is a numpy array
+        with fields, this yields a list of field specifiers.
+        """
+        return self._type
+    
+    
+    @property
+    def count(self):
+        """ The (integer) size of the data that this ElementBuffer represents.
+        """
+        return self._shape[0] * self._shape[1]
 
 
 

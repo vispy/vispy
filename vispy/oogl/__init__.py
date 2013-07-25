@@ -16,14 +16,14 @@ Example::
     
     # Init
     program = ShaderProgram(...)
-    progra.attributes.position = VertexBuffer(my_positions_array)
+    program.attributes.position = VertexBuffer(my_positions_array)
     
     ...
     
     # Paint event handler
     with program:
         program.uniforms.color = 0.0, 1.0, 0.0
-        gl.glDrawArrays(...)
+        program.draw_arrays(gl.GL_TRIANGLES)
 
 
 The oogl classes:

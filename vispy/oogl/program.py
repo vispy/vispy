@@ -14,7 +14,7 @@ import numpy as np
 
 from vispy import gl
 from . import GLObject, push_enable, pop_enable, ext_available
-from . import VertexShader, FragmentShader
+from . import VertexShader, FragmentShader, VertexBuffer, ElementBuffer
 from .program_inputs import UniformInputs, AttributeInputs
 
  
@@ -236,6 +236,72 @@ class ShaderProgram(GLObject):
         gl.glUseProgram(0)
         self._enabled = False
     
+    
+    def draw_arrays(self, mode, first=None, count=None):
+        """ Draw the attribute arrays in the specified mode.
+        Only call when the program is enabled.
+        
+        Parameters
+        ----------
+        mode : GL_ENUM
+            GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP, 
+            GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
+        first : int
+            The starting vertex index in the vertex array. Default 0.
+        count : int
+            The number of vertices to draw. Default all.
+        """
+        if not self._enabled:
+            raise RuntimeError('draw_arrays require the ShaderProgram to be enabled.')
+        
+        if first is None:
+            first = 0
+        if count is None:
+            count = self.attributes.vertex_count
+        
+        gl.glDrawArrays(mode, first, count)
+    
+    
+    def draw_elements(self, mode, indices):
+        """ Draw the attribute arrays using a specified set of vertices,
+        in the specified mode.
+        Only call when the program is enabled.
+        
+        Parameters
+        ----------
+        mode : GL_ENUM
+            GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP, 
+            GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
+        indices : numpy_array or ElementBuffer
+            The indices to the vertices in the vertex arrays to draw.
+            For performance, ElementBuffer objects are recommended over
+            numpy arrays. If an ElementBuffer is provided, this method
+            takes care of enabling it.
+        """
+        if not self._enabled:
+            raise RuntimeError('draw_elements require the ShaderProgram to be enabled.')
+        
+        if isinstance(indices, ElementBuffer):
+            # Enable
+            self.enable_object(indices)
+            # Prepare
+            offset = None  # todo: allow the use of offset
+            gltype = VertexBuffer.DTYPES[indices.type]
+            # Draw
+            gl.glDrawElements(mode, indices.count, gltype, offset) 
+        
+        elif isinstance(indices, np.ndarray):
+            # Get type
+            gltype = ElementBuffer.DTYPES.get(indices.dtype.name, None)
+            if gltype is None:
+                raise ValueError('Unsupported data type for ElementBuffer.')
+            elif gltype == gl.GL_UNSIGNED_INT and not ext_available('element_index_uint'):
+                raise ValueError('element_index_uint extension needed for uint32 ElementBuffer.')
+            # Draw
+            gl.glDrawElements(mode, indices.size, gltype, indices) 
+            
+        else:
+            raise ValueError("draw_elements requires an ElementBuffer or a numpy array.")
 
 
 ## Convenience funcsions used in this module

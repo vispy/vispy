@@ -24,6 +24,10 @@ vertex_data['pos'] = np.array([ [-0.8, -0.8, 0.0], [+0.7, -0.7, 0.0],
 vertex_data['texcoord'] = np.array([    [0.0, 0.0], [0.0, 1.0], 
                                         [1.0, 0.0], [1.0, 1.0] ])
 
+# Create indices and an ElementBuffer for it
+indices = np.array([0,1,2, 1,2,3], np.uint16)
+indices_buffer = ElementBuffer(indices)
+
 
 VERT_SHADER = """ // simple vertex shader
 
@@ -84,9 +88,12 @@ class Canvas(app.Canvas):
             prog.uniforms.sizeFactor = 0.5 + np.sin(time.time()*3)*0.2
             #prog.attributes.sizeFactor = 0.5 + np.sin(time.time()*3)*0.2
            
-            # Draw
-            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
-            
+            # Draw (pick one!)
+            #prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
+            prog.draw_elements(gl.GL_TRIANGLES, indices_buffer)
+            #prog.draw_elements(gl.GL_TRIANGLES, indices)  # Not recommended
+        
+        # Swap buffers and invoke a new draw
         self._backend._vispy_swap_buffers()
         self.update()
 

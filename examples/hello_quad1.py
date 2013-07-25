@@ -7,16 +7,13 @@ from vispy import app
 from vispy import gl
 import numpy as np
 
-# Create vetices and texture coords
-vPosition = np.array([  -0.8,-0.8,0.0,  +0.7,-0.7,0.0,  
-                        -0.7,+0.7,0.0,  +0.8,+0.8,0.0,], np.float32)
-vPosition.shape = -1,3
+# Create vetices 
+vPosition = np.array([  [-0.8, -0.8, 0.0],  [+0.7, -0.7, 0.0],  
+                        [-0.7, +0.7, 0.0],  [+0.8, +0.8, 0.0,] ], np.float32)
 
 
 VERT_SHADER = """ // simple vertex shader
-
 attribute vec3 vPosition;
-
 void main (void) {
     gl_Position = vec4(vPosition, 1.0);
 }
@@ -24,12 +21,10 @@ void main (void) {
 
 FRAG_SHADER = """ // simple fragment shader
 uniform vec4 color;
-
 void main()
 {    
     gl_FragColor = color;
 }
-
 """
 
 
@@ -57,9 +52,10 @@ class Canvas(app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
         # Draw
-        with self._program:
-            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, len(vPosition))
+        with self._program as prog:
+            prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
         
+        # Swap buffers
         self._backend._vispy_swap_buffers()
     
 
