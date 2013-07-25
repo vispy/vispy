@@ -9,12 +9,14 @@ from __future__ import print_function, division, absolute_import
 
 import sys
 import weakref
+import ctypes
 
 import numpy as np
 
 from vispy import gl
 from . import ext_available
-from . import Texture, VertexBuffer
+from . import Texture, VertexBuffer, vbo
+
 
 if sys.version_info > (3,):
     basestring = str
@@ -211,7 +213,7 @@ class AttributeInputs(BaseInputs):
             assert value.ndim == 2
             assert value.shape[1] in (1,2,3,4)
             # Ensure it is a type that OpenGL can understand
-            if not value.dtype.name in VertexBuffer._TYPEMAP:
+            if not value.dtype.name in vbo.DTYPES:
                 value = value.astype(np.float32)
             # Return
             return name, weakref.ref(value)
@@ -260,7 +262,7 @@ class AttributeInputs(BaseInputs):
             
             # Prepare
             size = value.shape[1]
-            gltype = VertexBuffer._TYPEMAP[value.dtype.name]
+            gltype = vbo.DTYPES[value.dtype.name]
             stride = 0
             
             # Tell OpenGL to use the array and not the glVertexAttrib* value
@@ -273,14 +275,12 @@ class AttributeInputs(BaseInputs):
         else:
             # Vertex Buffer Object
             
-            # todo: how to let the user set  stride and offset?
-            # Perhaps a sort of view on a vertexbuffer?
-            
             # Prepare
-            size = value._buffer_shape[1]
-            gltype = VertexBuffer._TYPEMAP[value._buffer_type]
-            stride = 0
-            offset = None # ctypes.voidptr(0) or something
+            size = value.shape[1]
+            gltype = vbo.DTYPES[value.type]
+            offset, stride = value.view_params
+            # Make offset a pointer, or it will be interpreted as a small array
+            offset = ctypes.c_voidp(offset)
             
             # Tell OpenGL to use the array and not the glVertexAttrib* value
             gl.glEnableVertexAttribArray(loc)
