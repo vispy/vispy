@@ -16,6 +16,7 @@ import numpy as np
 from vispy import gl
 from . import ext_available
 from . import Texture, VertexBuffer
+from .vbo import VertexBufferView
 
 
 if sys.version_info > (3,):
@@ -240,7 +241,7 @@ class AttributeInputs(BaseInputs):
                 value = value.astype(np.float32)
             # Return
             return name, weakref.ref(value)
-        elif isinstance(value, VertexBuffer):
+        elif isinstance(value, (VertexBuffer, VertexBufferView)):
             return name, weakref.ref(value)
         else:
             raise ValueError("Vertex attribute must be VertexBuffer or numpy array.")
@@ -306,7 +307,7 @@ class AttributeInputs(BaseInputs):
             # Prepare
             size = value.shape[1]
             gltype = VertexBuffer.DTYPES[value.type]
-            offset, stride = value.view_params
+            offset, stride = value._offset, value._stride  # view_params not on VertexBuffer
             # Make offset a pointer, or it will be interpreted as a small array
             offset = ctypes.c_voidp(offset)
             
@@ -314,7 +315,10 @@ class AttributeInputs(BaseInputs):
             gl.glEnableVertexAttribArray(loc)
             
             # Apply (enable VBO to associate it with the pointer)
-            program.enable_object(value)
+            if isinstance(value, VertexBufferView):
+                program.enable_object(value.buffer)
+            else:
+                program.enable_object(value)
             gl.glVertexAttribPointer(loc, size, gltype, False, stride, offset)
         
     

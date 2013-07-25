@@ -137,154 +137,7 @@ class Buffer(GLObject):
 
 
 
-class VertexBuffer(GLObject):
-    """ Representation of vertex buffer object of type GL_ARRAY_BUFFER,
-    which can be used to store vertex data. 
-    
-    To use a VertexBuffer, set it as a member of
-    a_shader_program.attributes.
-    """
-    # When enabled,  pointer in gl.glVertexAttribPointer becomes an offset
-    
-    # Data types that OpenGL ES 2.0 can understand
-    DTYPES =  { 'uint8':gl.GL_UNSIGNED_BYTE,    'int8':gl.GL_BYTE,
-                'uint16':gl.GL_UNSIGNED_SHORT,  'int16':gl.GL_SHORT, 
-                'float32':gl.GL_FLOAT, 
-                'float16': gl.ext.GL_HALF_FLOAT }
-                # GL_FIXED?
-    
-    
-    def __init__(self, data=None, buffer=None):
-        
-        # Whether this VertexBuffer is a view derived from another VertexBuffer
-        self._isview = False
-        
-        # Set buffer
-        if buffer is None:
-            self._buffer = Buffer(gl.GL_ARRAY_BUFFER)
-        elif isinstance(buffer, Buffer):
-            self._buffer = buffer
-        else:
-            raise ValueError("Invalid buffer argument for VertexBuffer")
-        
-        # View parameters, in bytes. 
-        self._offset = 0
-        self._stride = 0
-        
-        # Data parameters
-        self._shape = None
-        self._type = None
-        
-        # Set data?
-        if data is not None:
-            self.set_data(data)
-    
-    
-    def _enable(self):
-        if self._buffer is not None:
-            self._buffer._enable()
-    
-    def _disable(self):
-        if self._buffer is not None:
-            self._buffer._disable()
-    
-    
-    @property
-    def buffer(self):
-        """ The underlying Buffer object. Note that multiple VertexBuffers
-        can share one buffer object.
-        """
-        return self._buffer
-    
-    
-    def set_data(self, data, offset=None):
-        """ Set vertex attribute data, or a part of it. If the data
-        matches the current size of the buffer, the data is updated
-        faster.
-        
-        The data can be (and is recommended to be) a numpy array with
-        dtype fields, one for each vertex attribute. In that way, the
-        buffer represents an "array of structures" topology wich is
-        good for performance. 
-        
-        New VertexBuffer instances can be created that are associated 
-        with the same undelying Buffer. This can be done by slicing 
-        or by indexing using the appropriate field name.
-        
-        Parameters
-        ----------
-        data : numpy array
-            The data to set. 
-        offset : int
-            The offset, to update part of the buffer. Optional.
-        
-        """
-        
-        # Can we update the data at all from this VertexBuffer?
-        if self._isview:
-            raise RuntimeError("Cannot set data from a view-VertexBuffer.")
-        
-        # Check data
-        if not isinstance(data, np.ndarray):
-            raise ValueError("Data should be a numpy array.")
-        
-        if data.dtype.fields:
-            # Data with multiple fields
-            fields = unravel_dtype_fields(data.dtype)
-            for name, fieldinfo in fields.items():
-                assert fieldinfo[0] in self.DTYPES
-                assert fieldinfo[1] in (1,2,3,4)
-            # Set type and shape
-            self._type = fields
-            self._shape = data.size, 1
-        
-        else:
-            # Plain data
-            tuple_count = 1
-            assert data.ndim in (1,2)
-            if data.ndim == 2:
-                assert data.shape[1] in (1,2,3,4)
-                tuple_count = data.shape[1]
-            # Convert if necessary
-            if not data.dtype.name in self.DTYPES:
-                data = data.astype(np.float32)  
-            # Set type and shape
-            self._type = data.dtype.name
-            self._shape = data.shape[0], tuple_count
-        
-        # Check offset
-        if self._offset:
-            offset = (offset or 0) + self._offset
-        
-        # Set data in buffer
-        self._stride = data.dtype.itemsize * self._shape[1]
-        self._buffer.set_data(data, offset)
-    
-    
-    @property
-    def view_params(self):
-        """ A tuple with (offset, stride), specifying the slice in
-        the Buffer object, in bytes.
-        """
-        return self._offset, self._stride
-    
-    
-    @property
-    def type(self):
-        """ The name of the dtype of the data. If the data is a numpy array
-        with fields, this yields a list of field specifiers.
-        """
-        return self._type
-    
-    
-    @property
-    def shape(self):
-        """ The shape of the data that this VertexBuffer represents. This 
-        is always a 2-element tuple (size, vector_size).
-        """
-        return self._shape
-    
-    
+class IndexableVertexBufferMixin(object):
     def __getitem__(self, index):
         
         if isinstance(index, basestring):
@@ -320,26 +173,186 @@ class VertexBuffer(GLObject):
         else:
             raise ValueError('Invalid parameter for getting a view on a VertexBuffer.')
         
-        # Create new VertexBuffer based on our own buffer
-        newbuffer = VertexBuffer(buffer=self._buffer)
-        newbuffer._isview = True
+        # Get buffer that new view will be based on: us, or our buffer
+        if isinstance(self, VertexBufferView):
+            buffer = self._buffer
+        else:
+            buffer = self
         
-        # Set view parameters
-        newbuffer._offset = new_offset
-        newbuffer._stride = new_stride
+        # Create new VertexBufferView based on our own buffer
+        return VertexBufferView(buffer, 
+                (new_shape0, new_shape1), new_type, new_offset, new_stride)
+
+
+class VertexBuffer(Buffer, IndexableVertexBufferMixin):
+    """ Representation of vertex buffer object of type GL_ARRAY_BUFFER,
+    which can be used to store vertex data. Inherits from Buffer.
+    
+    To use a VertexBuffer, set it as a member of
+    a_shader_program.attributes.
+    """
+    # When enabled,  pointer in gl.glVertexAttribPointer becomes an offset
+    
+    # Data types that OpenGL ES 2.0 can understand
+    DTYPES =  { 'uint8':gl.GL_UNSIGNED_BYTE,    'int8':gl.GL_BYTE,
+                'uint16':gl.GL_UNSIGNED_SHORT,  'int16':gl.GL_SHORT, 
+                'float32':gl.GL_FLOAT, 
+                'float16': gl.ext.GL_HALF_FLOAT }
+                # GL_FIXED?
+    
+    
+    def __init__(self, data=None, buffer=None):
+        Buffer.__init__(self, gl.GL_ARRAY_BUFFER)
         
-        # Other parameters
-        newbuffer._shape = new_shape0, new_shape1
-        newbuffer._type = new_type
+        # View parameters, in bytes. 
+        # Stride is set corresponding to element size in set_data/
+        self._offset = 0
+        self._stride = 0
         
-        # Done
-        return newbuffer
+        # Data parameters
+        self._shape = None
+        self._type = None
+        
+        # Set data?
+        if data is not None:
+            self.set_data(data)
+    
+    
+    def set_data(self, data, offset=None):
+        """ Set vertex attribute data, or a part of it. If the data
+        matches the current size of the buffer, the data is updated
+        faster.
+        
+        The data can be (and is recommended to be) a numpy array with
+        dtype fields, one for each vertex attribute. In that way, the
+        buffer represents an "array of structures" topology wich is
+        good for performance. 
+        
+        VertexBufferView instances can be created that are associated 
+        with the same undelying Buffer. This can be done by slicing 
+        or by indexing using the appropriate field name. VertexBufferView
+        instances can themselves be sliced/indexed as well.
+        
+        Parameters
+        ----------
+        data : numpy array
+            The data to set. 
+        offset : int
+            The offset, to update part of the buffer. Optional.
+        
+        """
+        
+        # Check data
+        if not isinstance(data, np.ndarray):
+            raise ValueError("Data should be a numpy array.")
+        
+        if data.dtype.fields:
+            # Data with multiple fields
+            fields = unravel_dtype_fields(data.dtype)
+            for name, fieldinfo in fields.items():
+                assert fieldinfo[0] in self.DTYPES
+                assert fieldinfo[1] in (1,2,3,4)
+            # Set type and shape
+            self._type = fields
+            self._shape = data.size, 1
+        
+        else:
+            # Plain data
+            tuple_count = 1
+            assert data.ndim in (1,2)
+            if data.ndim == 2:
+                assert data.shape[1] in (1,2,3,4)
+                tuple_count = data.shape[1]
+            # Convert if necessary
+            if not data.dtype.name in self.DTYPES:
+                data = data.astype(np.float32)  
+            # Set type and shape
+            self._type = data.dtype.name
+            self._shape = data.shape[0], tuple_count
+        
+        # Check offset
+        if self._offset:
+            offset = (offset or 0) + self._offset
+        
+        # Set data in buffer
+        self._stride = data.dtype.itemsize * self._shape[1]
+        Buffer.set_data(self, data, offset)
+    
+    
+    @property
+    def type(self):
+        """ The name of the dtype of the data. If the data is a numpy array
+        with fields, this yields a list of field specifiers.
+        """
+        return self._type
+    
+    
+    @property
+    def shape(self):
+        """ The shape of the data that this VertexBuffer represents. This 
+        is always a 2-element tuple (size, vector_size).
+        """
+        return self._shape
     
 
 
-class ElementBuffer(GLObject):
+class VertexBufferView(IndexableVertexBufferMixin):
+    """ A view on a VertexBuffer. This allows having multiple
+    attributes on the same VBO. Each with their own offset,
+    strides, type and shape.
+    
+    Do not use this class directly, but index a VertexBuffer to create one.
+    """
+    
+    def __init__(self, buffer, shape, type, offset, stride):
+        # Set buffer
+        assert isinstance(buffer, VertexBuffer)
+        self._buffer = buffer
+        
+        # Data parameters
+        self._shape = shape
+        self._type = type
+        
+        # View parameters, in bytes. 
+        self._offset = offset
+        self._stride = stride
+    
+    
+    @property
+    def buffer(self):
+        """ The VertexBuffer that this object is a view of.
+        """
+        return self._buffer
+    
+    
+    @property
+    def type(self):
+        """ The name of the dtype of the data. If the data is a numpy array
+        with fields, this yields a list of field specifiers.
+        """
+        return self._type
+    
+    
+    @property
+    def shape(self):
+        """ The shape of the data that this VertexBuffer represents. This 
+        is always a 2-element tuple (size, vector_size).
+        """
+        return self._shape
+    
+    
+    @property
+    def view_params(self):
+        """ A tuple with (offset, stride), specifying the slice in
+        the Buffer object, in bytes.
+        """
+        return self._offset, self._stride
+
+
+
+class ElementBuffer(Buffer):
     """ Representation of vertex buffer object of type GL_ELEMENT_ARRAY_BUFFER,
-    which can be used to store indices to vertex data. 
+    which can be used to store indices to vertex data. Inherits from Buffer.
     
     To use an ElementBuffer, enable it before drawing.
     When enabled, the indices pointer in glDrawElements becomes a byte offset.
@@ -351,15 +364,9 @@ class ElementBuffer(GLObject):
                 'uint32': gl.GL_UNSIGNED_INT, # Needs extension
             }
     
-    def __init__(self, data=None, buffer=None):
-        
-        # Set buffer
-        if buffer is None:
-            self._buffer = Buffer(gl.GL_ELEMENT_ARRAY_BUFFER)
-        elif isinstance(buffer, Buffer):
-            self._buffer = buffer
-        else:
-            raise ValueError("Invalid buffer argument for ElementBuffer")
+    
+    def __init__(self, data=None):
+        Buffer.__init__(self, gl.GL_ELEMENT_ARRAY_BUFFER)
         
         # Data parameters
         self._shape = None
@@ -368,22 +375,6 @@ class ElementBuffer(GLObject):
         # Set data?
         if data is not None:
             self.set_data(data)
-    
-    
-    def _enable(self):
-        if self._buffer is not None:
-            self._buffer._enable()
-    
-    def _disable(self):
-        if self._buffer is not None:
-            self._buffer._disable()
-    
-    
-    @property
-    def buffer(self):
-        """ The underlying Buffer object.
-        """
-        return self._buffer
     
     
     def set_data(self, data, offset=None):
@@ -422,7 +413,7 @@ class ElementBuffer(GLObject):
         self._shape = data.shape[0], tuple_count
         
         # Set data in buffer
-        self._buffer.set_data(data, offset)
+        Buffer.set_data(self, data, offset)
     
     
     @property
@@ -435,7 +426,7 @@ class ElementBuffer(GLObject):
     
     @property
     def count(self):
-        """ The (integer) size of the data that this ElementBuffer represents.
+        """ The number of indices that this ElementBuffer represents.
         """
         return self._shape[0] * self._shape[1]
 
