@@ -14,9 +14,9 @@ import numpy as np
 
 from vispy import gl
 from . import GLObject, push_enable, pop_enable, ext_available
-from . import VertexShader, FragmentShader, VertexBuffer, ElementBuffer
+from . import VertexBuffer, ElementBuffer
 from .program_inputs import UniformInputs, AttributeInputs
-
+from .shader import parse_shader_errors, VertexShader, FragmentShader
  
 if sys.version_info > (3,):
     basestring = str
@@ -303,87 +303,3 @@ class ShaderProgram(GLObject):
         else:
             raise ValueError("draw_elements requires an ElementBuffer or a numpy array.")
 
-
-## Convenience funcsions used in this module
-
-
-def parse_shader_error(error):
-    """Parses a single GLSL error and extracts the line number
-    and error description.
-
-    Line number and description are returned as a tuple.
-
-    GLSL errors are not defined by the standard, as such,
-    each driver provider prints their own error format.
-
-    Nvidia print using the following format::
-
-        0(7): error C1008: undefined variable "MV"
-
-    Nouveau Linux driver using the following format::
-
-        0:28(16): error: syntax error, unexpected ')', expecting '('
-
-    ATi and Intel print using the following format::
-
-        ERROR: 0:131: '{' : syntax error parse error
-    """
-    import re
-
-    # Nvidia
-    # 0(7): error C1008: undefined variable "MV"
-    match = re.match( r'(\d+)\((\d+)\)\s*:\s(.*)', error )
-    if match:
-        return (
-            int(match.group( 2 )),   # line number
-            match.group( 3 )    # description
-            )
-
-    # ATI
-    # Intel
-    # ERROR: 0:131: '{' : syntax error parse error
-    match = re.match( r'ERROR:\s(\d+):(\d+):\s(.*)', error )
-    if match:
-        return (
-            int(match.group( 2 )),   # line number
-            match.group( 3 )    # description
-            )
-
-    # Nouveau
-    # 0:28(16): error: syntax error, unexpected ')', expecting '('
-    match = re.match( r'(\d+):(\d+)\((\d+)\):\s(.*)', error )
-    if match:
-        return (
-            int(match.group( 2 )),   # line number
-            match.group( 4 )    # description
-            )
-    
-    return None, error
-
-
-def parse_shader_errors(errors, source=None):
-    """Parses a GLSL error buffer and prints a list of
-    errors, trying to show the line of code where the error 
-    ocrrured.
-    """
-    # Init
-    if not isinstance(errors, basestring):
-        errors = errors.decode('utf-8', 'replace')
-    results = []
-    lines = None
-    if source is not None:
-        lines = [line.strip() for line in source.split('\n')]
-    
-    for error in errors.split('\n'):
-        # Strip; skip empy lines
-        error = error.strip()
-        if not error:
-            continue
-        # Separate line number from description (if we can)
-        linenr, error = parse_shader_error(error)
-        if None in (linenr, lines):
-            print('    %s' % error)
-        else:
-            print('    on line %i: %s' % (linenr, error))
-            if linenr>0 and linenr < len(lines):
-                print('        %s' % lines[linenr-1])

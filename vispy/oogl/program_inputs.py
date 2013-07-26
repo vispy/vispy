@@ -63,6 +63,7 @@ class BaseInputs(object):
         """ Apply static attributes now. Called by the ShaderProgram in the
         _enable method.
         """
+        self._prepare_for_drawing()  # Allow subclasses to prepare
         for name, value in self._static.items():
             self._apply(name, value)
     
@@ -84,6 +85,11 @@ class UniformInputs(BaseInputs):
     """ Proxy to assign uniform values to a ShaderProgram.
     To use, simply assign values as if it were a dictionary.
     """
+    
+    def _prepare_for_drawing(self):
+        # Reset sampler counter
+        self._sampler_count = 0
+    
     
     def _prepare(self, name, value):
         """ Set uniform value. The value can be a tuple of floats/ints,
@@ -151,8 +157,9 @@ class UniformInputs(BaseInputs):
     
     
     def _apply_sampler(self, loc, value):
-        # Determine unit id from number of known samplers
-        unit = len(self._handles)-1
+        # Determine unit id 
+        unit = self._sampler_count
+        self._sampler_count += 1
         # Enable the texture, apply the unit, and bind it to the uniform
         self._program.enable_object(value(unit))
         #gl.glActiveTexture(gl.GL_TEXTURE0 + unit)  # Done in Texture._enable()
@@ -202,10 +209,9 @@ class AttributeInputs(BaseInputs):
     ShaderProgram. To use, simply assign values as if it were a dictionary.
     """
     
-    def _apply_static(self):
+    def _prepare_for_drawing(self):
         # Reset counter
         self._vertex_count = None
-        BaseInputs._apply_static(self)
     
     
     def _update_vertex_counter(self, count):
