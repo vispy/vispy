@@ -1,3 +1,7 @@
+# #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# This code of this example should be considered public domain.
+
 """ More complete example for the app module.
 This file also serves as a test for the behavior of the backends.
 """

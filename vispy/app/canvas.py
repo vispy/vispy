@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2013, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 from __future__ import print_function, division, absolute_import
 
 from vispy.event import EmitterGroup, Event

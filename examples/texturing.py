@@ -1,3 +1,7 @@
+# #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# This code of this example should be considered public domain.
+
 """ Example demonstrating the use of textures in vispy.oogl
 Three textures are created and combined in the fragment shader.
 The code for this example is in the public domain.

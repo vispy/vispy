@@ -1,3 +1,7 @@
+# #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# This code of this example should be considered public domain.
+
 """ Example demonstrating the use of the vispy.app module. 
 More specifically, this demo shows how to select a backend, and
 how to use the Canvas, and Timer classes. 

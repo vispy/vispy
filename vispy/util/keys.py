@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2013, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+
 """ Define constants for keys.
 
 Each key constant is defined as a Key object, which allows comparison with
@@ -9,6 +14,8 @@ the integer ordinal (e.g. 32 for space, 65 for A). This behavior is mainly
 intended as a compatibility measure.
 
 """
+
+from __future__ import print_function, division, absolute_import
 
 import sys
 if sys.version_info > (3,):

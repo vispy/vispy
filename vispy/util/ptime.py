@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2013, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 """
 ptime.py -  Precision time function made os-independent (should have been taken care of by python)
 """
 
+from __future__ import print_function, division, absolute_import
 
 import sys
 import time as systime

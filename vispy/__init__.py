@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import
+# Copyright (c) 2013, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
 Vispy - http://vispy.org
@@ -10,6 +11,8 @@ separately before use. These are:
   * ... todo
 
 """
+
+from __future__ import print_function, division, absolute_import
 
 __version__ = '0.0.dev'
 
