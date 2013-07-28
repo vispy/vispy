@@ -38,7 +38,7 @@ class Canvas(app.Canvas):
                 VertexShader(VERT_SHADER), FragmentShader(FRAG_SHADER) )
         
         # Set uniform and attribute
-        self._program.uniforms.color = 0.2, 1.0, 0.4, 1.0
+        self._program.uniforms.color = 0.2, 1.0, 0.4, 1
         self._program.attributes.vPosition = vPosition
     
     

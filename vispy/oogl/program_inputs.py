@@ -86,6 +86,27 @@ class UniformInputs(BaseInputs):
     To use, simply assign values as if it were a dictionary.
     """
     
+    _TYPES = { 
+        gl.GL_FLOAT:        (gl.glUniform1fv, 1),
+        gl.GL_FLOAT_VEC2:   (gl.glUniform2fv, 2),
+        gl.GL_FLOAT_VEC3:   (gl.glUniform3fv, 3),
+        gl.GL_FLOAT_VEC4:   (gl.glUniform4fv, 4),
+        gl.GL_INT:          (gl.glUniform1iv, 1),
+        gl.GL_INT_VEC2:     (gl.glUniform2iv, 2),
+        gl.GL_INT_VEC3:     (gl.glUniform3iv, 3),
+        gl.GL_INT_VEC4:     (gl.glUniform4iv, 4),
+        gl.GL_BOOL:         (gl.glUniform1iv, 1),
+        gl.GL_BOOL_VEC2:    (gl.glUniform2iv, 2),
+        gl.GL_BOOL_VEC3:    (gl.glUniform3iv, 3),
+        gl.GL_BOOL_VEC4:    (gl.glUniform4iv, 4),
+        gl.GL_FLOAT_MAT2:   (gl.glUniformMatrix2fv, 4),
+        gl.GL_FLOAT_MAT3:   (gl.glUniformMatrix3fv, 9),
+        gl.GL_FLOAT_MAT4:   (gl.glUniformMatrix4fv, 16),
+        gl.GL_SAMPLER_2D:   (gl.glUniform1i, 1),
+        gl.GL_SAMPLER_CUBE: (gl.glUniform1i, 1),
+        }
+
+    
     def _prepare_for_drawing(self):
         # Reset sampler counter
         self._sampler_count = 0
@@ -94,32 +115,16 @@ class UniformInputs(BaseInputs):
     def _prepare(self, name, value):
         """ Set uniform value. The value can be a tuple of floats/ints,
         or a single numpy array. Uniform vectors can be 1,2,3,4 elements.
-        Matrices can be 4, 9 or 16 elements. (To pass a 2x2 matrix, a
-        2x2 numpy array should be given.)
+        Matrices can be 4, 9 or 16 elements.
         """
         
-        if isinstance(value, float):
-            value = np.array(value, np.float32)  # Make numpy array
-        elif isinstance(value, int):
-            value = np.array(value, np.int32)  # Make numpy array
-        elif isinstance(value, (tuple, list)):
-            # Make numpy array
-            if isinstance(value[0], float):
-                value = np.array(value, np.float32)
-            else:
-                value = np.array(value, np.int32)
-        elif isinstance(value, np.ndarray):
-            # Force float32 or int32
-            if value.dtype == np.float32:
-                pass
-            elif value.dtype == np.float64:
-                value = value.astype(np.float32)
-            else:
-                value = value.astype(np.int32)
-        elif isinstance(value, Texture):
+        if isinstance(value, Texture):
             return name, weakref.ref(value)
+        elif isinstance(value, np.ndarray):
+            pass
         else:
-            raise ValueError("Invalid uniform value.")
+            # Let numpy make it a nice array, and determine the dtype
+            value = np.array(value)
         
         # Check size 
         if value.size not in (1,2,3,4, 9, 16):
@@ -134,10 +139,16 @@ class UniformInputs(BaseInputs):
         
         # Get uniform location
         try:
-            loc = self._handles[name]
+            loc, type, fun, n = self._handles[name]
         except KeyError:
+            # Get location
             loc = gl.glGetUniformLocation(self._program.handle, name.encode('utf-8'))
-            self._handles[name] = loc
+            # Get type, convert to function + numel
+            type, fun, n = 0, None, 0
+            if loc >= 0:
+                _name, length, type = gl.glGetActiveUniform(self._program.handle, loc)
+                fun, n = self._TYPES[type]
+            self._handles[name] = loc, type, fun, n
         
         # Our uniform may have been optimized out
         if loc < 0:
@@ -149,11 +160,23 @@ class UniformInputs(BaseInputs):
             if value is None:
                 return
         
-        # Apply
+        
         if isinstance(value, Texture):
+            # Check if it also a sampler in GLSL
+            if type not in (gl.GL_SAMPLER_2D, gl.GL_SAMPLER_CUBE):
+                raise RuntimeError('Uniform %s is not a sampler.' % name)
+            # Apply
             self._apply_sampler(loc, value)
         else:
-            self._apply_uniform(loc, value)
+            # Check if size matches with that in GLSL
+            if value.size != n:
+                raise RuntimeError('Uniform %s has %i elements, not %i.' % (name, n, value.size))
+            # Apply
+            if type in (gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT4):
+                transpose = False 
+                fun(loc, 1, transpose, value)
+            else:
+                fun(loc, 1, value)
     
     
     def _apply_sampler(self, loc, value):
@@ -164,43 +187,6 @@ class UniformInputs(BaseInputs):
         self._program.enable_object(value(unit))
         #gl.glActiveTexture(gl.GL_TEXTURE0 + unit)  # Done in Texture._enable()
         gl.glUniform1i(loc, unit)
-    
-    
-    def _apply_uniform(self, loc, value):
-        # Get properties
-        count = value.size
-        isfloat = value.dtype == np.float32
-        transpose = False
-        ismatrix = False
-        if count > 4 or value.shape == (2,2):
-            ismatrix = True
-            if not isfloat:
-                value = value.astype(np.float32)
-        
-        # Apply
-        if ismatrix:
-            try:
-                {   4 : gl.glUniformMatrix2fv,
-                    9 : gl.glUniformMatrix3fv,
-                    16 : gl.glUniformMatrix4fv}[count](loc, 1, transpose, value)
-            except KeyError:
-                raise RuntimeError("Unknown uniform matrix format")
-        elif isfloat:
-            try:
-                {   1 : gl.glUniform1fv,
-                    2 : gl.glUniform2fv,
-                    3 : gl.glUniform3fv,
-                    4 : gl.glUniform4fv}[count](loc, 1, value)
-            except KeyError:
-                raise RuntimeError("Unknown uniform float format")
-        else:
-            try:
-                {   1 : gl.glUniform1iv,
-                    2 : gl.glUniform2iv,
-                    3 : gl.glUniform3iv,
-                    4 : gl.glUniform4iv}[count](loc, 1, value)
-            except KeyError:
-                raise RuntimeError("Unknown uniform int format")
 
 
 
@@ -257,6 +243,7 @@ class AttributeInputs(BaseInputs):
         
         program = self._program
         
+        # todo: like uniforms, we should probably query the type here ...
         # Get attribute location
         try:
             loc = self._handles[name]
