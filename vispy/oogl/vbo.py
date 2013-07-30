@@ -16,10 +16,10 @@ from . import GLObject, push_enable, pop_enable, ext_available
 
 if sys.version_info > (3,):
     basestring = str
-
-# Monkey-patch pyopengl to fix a bug in glBufferSubData
-_m = sys.modules[gl.glBufferSubData.wrapperFunction.__module__]
-_m.long = int
+    
+    # Monkey-patch pyopengl to fix a bug in glBufferSubData
+    _m = sys.modules[gl.glBufferSubData.wrapperFunction.__module__]
+    _m.long = int
 
 
 
@@ -44,6 +44,7 @@ class Buffer(GLObject):
         self._buffer_size = -1
         
         # Set data?
+        self._pending_data = None
         if data is not None:
             self.set_data(data)
     
@@ -53,10 +54,6 @@ class Buffer(GLObject):
     
     def _delete(self):
        gl.glDeleteBuffers([self._handle])
-    
-    
-    def __del__(self):
-        self.delete()
     
     
     @property
@@ -114,6 +111,8 @@ class Buffer(GLObject):
         # Error last time?
         if self._handle < 0:
             return
+        
+        # todo: check creation and reset pending_data
         
         # Need to update data?
         if self._pending_data:

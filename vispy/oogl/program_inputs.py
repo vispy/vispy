@@ -176,7 +176,7 @@ class UniformInputs(BaseInputs):
                 raise RuntimeError('Uniform %s has %i elements, not %i.' % (name, n, value.size))
             # Apply
             if type in (gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT4):
-                transpose = False 
+                transpose = False   # OpenGL ES 2.0 does not support transpose
                 fun(loc, 1, transpose, value)
             else:
                 fun(loc, 1, value)
