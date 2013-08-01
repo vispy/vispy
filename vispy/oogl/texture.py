@@ -9,11 +9,9 @@ This code is inspired by similar classes from Visvis and Pygly.
 """
 
 # todo: implement ext_available
-# todo: allow setting empty texture (shape, but without data)
-# todo: functionality to control scale and bias of pixel values.
 # todo: make a Texture1D that makes a nicer interface to a 2D texture
 # todo: same for Texture3D?
- 
+# todo: Cubemap texture
 
 from __future__ import print_function, division, absolute_import
 
@@ -27,12 +25,11 @@ if sys.version_info > (3,):
     basestring = str
 
 
-# Dict that maps numpy datatypes to openGL data types
-DTYPES = {  'uint8':gl.GL_UNSIGNED_BYTE,    'int8':gl.GL_BYTE,
-            'uint16':gl.GL_UNSIGNED_SHORT,  'int16':gl.GL_SHORT, 
-            'uint32':gl.GL_UNSIGNED_INT,    'int32':gl.GL_INT, 
-            'float32':gl.GL_FLOAT }
-            # gl.GL_DOUBLE?
+# Dict that maps numpy datatypes to openGL ES 2.0 data types
+DTYPES = {  'uint8': gl.GL_UNSIGNED_BYTE,
+            'float16': gl.ext.GL_HALF_FLOAT, # Needs GL_OES_texture_half_float
+            'float32': gl.GL_FLOAT,  # Needs GL_OES_texture_float
+        }
 
 
 class _RawTexture(GLObject):
@@ -90,7 +87,7 @@ class _RawTexture(GLObject):
         pop_enable(self._target)
     
     
-    def _upload(self, data, internalformat, format, level=0):
+    def _upload(self, data, format, level=0):
         """ Upload a texture to the current texture object. 
         It should have been verified that the texture will fit.
         """
@@ -103,12 +100,12 @@ class _RawTexture(GLObject):
         # Determine type
         thetype = data.dtype.name
         if not thetype in DTYPES: # Note that we convert if necessary in Texture
-            raise ValueError("Cannot convert datatype %s." % thetype)
+            raise ValueError("Cannot translate datatype %s to GL." % thetype)
         gltype = DTYPES[thetype]
         
         # Build args list
         size, gltype = self._get_size_and_type(data, ndim)
-        args = [self._target, level, internalformat] + size + [0, format, gltype, data]
+        args = [self._target, level, format] + size + [0, format, gltype, data]
         
         # Check the alignment of the texture
         alignment = self._get_alignment(data.shape[-1])
@@ -123,7 +120,7 @@ class _RawTexture(GLObject):
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
     
     
-    def _update(self, data, offset, internalformat, format, level=0):
+    def _update(self, data, offset, format, level=0):
         """ Update an existing texture object.
         """
         # Determine function and target from texType
@@ -148,7 +145,7 @@ class _RawTexture(GLObject):
         # Determine type
         thetype = data.dtype.name
         if not thetype in DTYPES: # Note that we convert if necessary in Texture
-            raise ValueError("Cannot convert datatype %s." % thetype)
+            raise ValueError("Cannot translate datatype %s to GL." % thetype)
         gltype = DTYPES[thetype]
         # Done
         return size, gltype
@@ -232,7 +229,7 @@ class Texture(_RawTexture):
         self._texture_params[param] = value
     
     
-    def set_data(self, data, offset=None, level=0, internal_format=None, format=None):
+    def set_data(self, data, offset=None, level=0, format=None, clim=None):
         """ Set the data for this texture. This method can be called at any
         time (even if there is no context yet).
         
@@ -247,18 +244,27 @@ class Texture(_RawTexture):
             The offset for each dimension, to update part of the texture.
         level : int
             The mipmap level. Default 0.
-        internal_format : OpenGL enum
-            The internal format representation. If not given, it is
-            decuced from the given data.
         format : OpenGL enum
-            The format representation of the data. If not given, it is
-            decuced from the given data.
+            The format representation of the data. If not given or None,
+            it is decuced from the given data. Can be GL_RGB, GL_RGBA,
+            GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA.
+        clim : (min, max)
+            Contrast limits for the data. If specified, min will end
+            up being 0.0 (black) and max will end up as 1.0 (white).
+            If not given or None, clim is determined automatically. For
+            floats they become (0.0, 1.0). For integers the are mapped to
+            the full range of the type. 
         
         """
         
         # Check data
         if not isinstance(data, np.ndarray):
             raise ValueError("Data should be a numpy array.")
+        shape = data.shape
+        MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
+        ndim = MAP.get(self._target, 0)
+        assert isinstance(shape, tuple)
+        assert len(shape) in (ndim, ndim+1)
         
         # Reset if there was an error earlier
         if self._handle < 0:
@@ -275,9 +281,49 @@ class Texture(_RawTexture):
             # If data is of same shape as current texture, update is much faster
             offset = [0 for i in self._texture_shape[:ndim]]
         
+        # Check level, format, clim
+        assert isinstance(level, int) and level >= 0
+        assert format in (None, gl.GL_RGB, gl.GL_RGBA, gl.GL_LUMINANCE, 
+                            gl.GL_LUMINANCE_ALPHA, gl.GL_ALPHA)
+        assert clim is None or (isinstance(clim, tuple) and len(clim)==2)
+        
         # Set pending data ...
-        self._pending_data = data, offset, level, internal_format, format
+        self._pending_data = data, offset, level, format, clim
         self._texture_shape = data.shape
+    
+    
+    def set_storage(self, shape, level=0, format=None):
+        """ Allocate storage for this texture. This is useful if the texture
+        is used as a render target for an FBO.
+        
+        Parameters
+        ----------
+        shape : tuple
+            The shape of the "virtual" data. By specifying e.g. (20,20,3) for
+            a Texture2D, one implicitly sets the format to GL_RGB.
+        level : int
+            The mipmap level. Default 0.
+        format : OpenGL enum
+            The format representation of the data. If not given or None,
+            it is decuced from the given data. Can be GL_RGB, GL_RGBA,
+            GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA.
+        
+        """
+        # Check shape
+        MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
+        ndim = MAP.get(self._target, 0)
+        assert isinstance(shape, tuple)
+        assert len(shape) in (ndim, ndim+1)
+        
+        # Reset if there was an error earlier
+        if self._handle < 0:
+            self._handle = 0
+            self._texture_shape = None
+        
+        # Set pending data, only if necessary.
+        if data.shape != self._texture_shape:
+            self._pending_data = None, None, level, format, None
+            self._texture_shape = shape
     
     
     def _enable(self):
@@ -323,36 +369,31 @@ class Texture(_RawTexture):
             gl.glTexParameter(self._target, param, value)
     
     
-    def _process_pending_data(self, data, offset, level, internal_format, format):
+    def _process_pending_data(self, data, offset, level, format, clim):
         """ Process the pending data. Uploading the data (i.e. create
         a new texture) or updating it (a subsection).
         """
         
-        # Convert data type to one supported by OpenGL
-        if data.dtype.name not in DTYPES:
-            # Long integers become floats; int32 would not have enough range
-            if data.dtype in (np.int64, np.uint64):
-                data = data.astype(np.float32)
-            # Bools become bytes
-            elif data.dtype == np.bool:
-                data = data.astype(np.uint8)
-            else:
-                # Make singles in all other cases (e.g. np.float64, np.float128)
-                # We cannot explicitly use float128, since its not always defined
-                data = data.astype(np.float32)
+        # Get shape
+        if data is not None:
+            shape = data.shape
+        else:
+            shape = self._texture_shape
         
-        # Determine format and internalformat (both can be None)
-        if None in (internal_format, format):
-            internal_format_, format_ = get_format(data.shape, self._target)
-            internal_format = internal_format or internal_format_
-            format = format or format_
+        # Convert data type to one supported by OpenGL
+        if data is not None:
+            data = convert_data(data, clim)
+        
+        # Determine format (== internalformat) 
+        if format is None:
+            format = get_format(shape, self._target)
         
         if offset:
             # Update: fast!
             gl.glBindTexture(self._target, self._handle)
             if self._handle <= 0 or not gl.glIsTexture(self._handle):
                 raise ValueError('Cannot update texture if there is no texture.')
-            self._update(data, offset, internal_format, format, level)
+            self._update(data, offset, format, level)
             
         else:
             # (re)upload: slower
@@ -363,7 +404,7 @@ class Texture(_RawTexture):
             self._create()
             gl.glBindTexture(self._target, self._handle)
             # Upload!
-            self._upload(data, internal_format, format, level)
+            self._upload(data, format, level)
             # Set all parameters that the user set
             for param, value in self._texture_params.items():
                gl.glTexParameter(self._target, param, value)
@@ -392,49 +433,127 @@ class Texture3D(Texture):
 
 
 def get_format(shape, target):
-    """ Get internalformat and format, based on the target
-    and the shape. If the shape does not match with the texture
-    type, an exception is raised.
+    """ Get format, based on the target and the shape. If the shape
+    does not match with the texture type, an exception is raised.
+    The only format that cannot be deduced from the shape is GL_ALPHA
     """
     
-    if target == 'dummy, just so we can leave the code here':
-        if len(shape)==1:
-            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE
-        elif len(shape)==2 and shape[1] == 1:
-            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE
-        elif len(shape)==2 and shape[1] == 3:
-            iformat, format = gl.GL_RGB, gl.GL_RGB
-        elif len(shape)==2 and shape[1] == 4:
-            iformat, format = gl.GL_RGBA, gl.GL_RGBA
-        else:
-            raise ValueError("Cannot determine format: data of invalid shape.")
-    
-    elif target == gl.GL_TEXTURE_2D:
+    if target == gl.GL_TEXTURE_2D:
         if len(shape)==2:
-            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE                
+            format = gl.GL_LUMINANCE              
         elif len(shape)==3 and shape[2]==1:
-            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE
+            format = gl.GL_LUMINANCE
+        elif len(shape)==3 and shape[2]==2:
+            format = gl.GL_LUMINANCE_ALPHA
         elif len(shape)==3 and shape[2]==3:
-            iformat, format = gl.GL_RGB, gl.GL_RGB
+            format = gl.GL_RGB
         elif len(shape)==3 and shape[2]==4:
-            iformat, format = gl.GL_RGBA, gl.GL_RGBA
+            format = gl.GL_RGBA
         else:
             raise ValueError("Cannot determine format: data of invalid shape.")
     
     elif target == gl.ext.GL_TEXTURE_3D:
         if len(shape)==3:
-            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE
+            format = gl.GL_LUMINANCE
         elif len(shape)==4 and shape[3]==1:
-            iformat, format = gl.GL_LUMINANCE, gl.GL_LUMINANCE
+            format = gl.GL_LUMINANCE
+        elif len(shape)==4 and shape[3]==2:
+            format = gl.GL_LUMINANCE_ALPHA
         elif len(shape)==4 and shape[3]==3:
-            iformat, format = gl.GL_RGB, gl.GL_RGB
+            format = gl.GL_RGB
         elif len(shape)==4 and shape[3]==4:
-            iformat, format = gl.GL_RGBA, gl.GL_RGBA
+            format = gl.GL_RGBA
         else:
             raise ValueError("Cannot determine format: data of invalid shape.")
     
     else:
         raise ValueError("Cannot determine format with these dimensions.")
     
-    return iformat, format
+    return format
 
+
+def convert_data(data, clim=None):
+    """ Convert data to a type that OpenGL can deal with.
+    Also applies contrast limits if given.
+    """
+    
+    # Prepare
+    FLOAT32_SUPPORT = ext_available('texture_float')
+    FLOAT16_SUPPORT = ext_available('texture_half_float')
+    CONVERTING = False
+    
+    # Determine clim if not given, copy or make float32 if necessary.
+    # Copies may be necessary because following operations are in-place.
+    if data.dtype.name == 'bool':
+        # Bools are ... unsigned ints
+        data = data.astype(np.uint8)
+        clim = None
+    elif data.dtype.name == 'uint8':
+        # Uint8 is what we need! If clim is None, no action required
+        if clim is not None:
+            data = data.astype(np.float32)
+    elif data.dtype.name == 'float16':
+        # Float16 may be allowed. If clim is None, no action is required
+        if clim is not None:
+            data = data.copy()
+        elif not FLOAT16_SUPPORT:
+            CONVERTING = True
+            data = data.copy()
+    elif data.dtype.name == 'float32':
+        # Float32 may be allowed. If clim is None, no action is required
+        if clim is not None:
+            data = data.copy()
+        elif not FLOAT32_SUPPORT:
+            CONVERTING = True
+            data = data.copy()
+    elif 'float' in data.dtype.name:
+        # All other floats are converted with relative ease
+        CONVERTING = True
+        data = data.astype(np.float32)
+    elif data.dtype.name.startswith('int'):
+        # Integers, we need to parse the dtype
+        CONVERTING = True
+        if clim is None:
+            max = 2**int(data.dtype.name[3:])
+            clim = -max//2, max//2-1
+        data = data.astype(np.float32)
+    elif data.dtype.name.startswith('uint'):
+        # Unsigned integers, we need to parse the dtype
+        CONVERTING = True
+        if clim is None:
+            max = 2**int(data.dtype.name[4:])
+            clim = 0, max//2
+        data = data.astype(np.float32)
+    else:
+        raise RuntimeError('Could not convert data type %s.' % data.dtype.name)
+    
+    # Apply limits if necessary
+    if clim is not None:
+        assert isinstance(clim, tuple)
+        assert len(clim) == 2
+        if clim[0] != 0.0:
+            data -= clim[0]
+        if clim[1]-clim[0] != 1.0:
+            data *= 1.0 / (clim[1]-clim[0])
+    
+    #if CONVERTING:
+    #    print('Warning, converting data.')
+    
+    # Convert if necessary
+    if data.dtype == np.uint8:
+        pass  # Always possible
+    elif data.dtype == np.float16 and FLOAT16_SUPPORT:
+        pass  # Yeah
+    elif data.dtype == np.float32 and FLOAT32_SUPPORT:
+        pass  # Yeah
+    elif data.dtype in (np.float16, np.float32):
+        # Arg, convert. Don't forget to clip
+        data *= 256.0
+        data[data<0.0] = 0.0
+        data[data>256.0] = 256.0
+        data = data.astype(np.uint8)
+    else:
+        raise RuntimeError('Error converting data type. This should not happen.')
+    
+    # Done
+    return data
