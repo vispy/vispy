@@ -17,17 +17,17 @@ vPosition = np.array([  [-0.8, -0.8, 0.0],  [+0.7, -0.7, 0.0],
 
 
 VERT_SHADER = """ // simple vertex shader
-attribute vec3 vPosition;
+attribute vec3 a_position;
 void main (void) {
-    gl_Position = vec4(vPosition, 1.0);
+    gl_Position = vec4(a_position, 1.0);
 }
 """
 
 FRAG_SHADER = """ // simple fragment shader
-uniform vec4 color;
+uniform vec4 u_color;
 void main()
 {    
-    gl_FragColor = color;
+    gl_FragColor = u_color;
 }
 """
 
@@ -42,8 +42,8 @@ class Canvas(app.Canvas):
                 VertexShader(VERT_SHADER), FragmentShader(FRAG_SHADER) )
         
         # Set uniform and attribute
-        self._program.uniforms.color = 0.2, 1.0, 0.4, 1
-        self._program.attributes.vPosition = vPosition
+        self._program.uniforms.u_color = 0.2, 1.0, 0.4, 1
+        self._program.attributes.a_position = vPosition
     
     
     def on_paint(self, event):

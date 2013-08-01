@@ -35,16 +35,16 @@ indices_buffer = ElementBuffer(indices)
 
 VERT_SHADER = """ // simple vertex shader
 
-attribute vec3 vPosition;
-attribute vec2 vTexcoord;
+attribute vec3 a_position;
+attribute vec2 a_texcoord;
 uniform float sizeFactor;
 //attribute float sizeFactor;
 
 void main (void) {
     // Pass tex coords
-    gl_TexCoord[0] = vec4(vTexcoord.x, vTexcoord.y, 0.0, 0.0);
+    gl_TexCoord[0] = vec4(a_texcoord.x, a_texcoord.y, 0.0, 0.0);
     // Calculate position
-    gl_Position = sizeFactor*vec4(vPosition.x, vPosition.y, vPosition.z,
+    gl_Position = sizeFactor*vec4(a_position.x, a_position.y, a_position.z,
                                                         1.0/sizeFactor);
 }
 """
@@ -74,8 +74,8 @@ class Canvas(app.Canvas):
         # and create two views from it for the attributes.
         self._program.uniforms.texture1 = Texture2D(im1)
         self._vbo = VertexBuffer(vertex_data)
-        self._program.attributes.vPosition = self._vbo['pos']
-        self._program.attributes.vTexcoord = self._vbo['texcoord']
+        self._program.attributes.a_position = self._vbo['pos']
+        self._program.attributes.a_texcoord = self._vbo['texcoord']
     
     def on_paint(self, event):
         
