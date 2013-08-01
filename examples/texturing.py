@@ -15,7 +15,7 @@ from vispy import gl
 import numpy as np
 
 # Texture with four quadrants in different colors
-im1 = np.zeros((100,100,3), 'float32')
+im1 = np.zeros((100,100,3), 'uint8') # Note the use of clim later
 im1[:50,:,0] = 1.0
 im1[:,:50,1] = 1.0
 im1[50:,50:,2] = 1.0
@@ -88,7 +88,7 @@ class Canvas(app.Canvas):
         self._program.attributes.a_position = VertexBuffer(positions)
         self._program.attributes.a_texcoord = VertexBuffer(texcoords)
         #
-        self._program.uniforms.u_texture1 = Texture2D(im1)
+        self._program.uniforms.u_texture1 = Texture2D(im1, clim=(0,1))
         self._program.uniforms.u_texture2 = Texture2D(im2)
         self._program.uniforms.u_texture3 = Texture2D(im3)
     

@@ -19,6 +19,7 @@ if sys.version_info > (3,):
     basestring = str
 
 
+# todo: make API for Program and FrameBuffer more similar
 # todo: we need a way to keep track of who uses a RenderBuffer,
 # so that it can be deleted when the last object stops using it.
 # Same for Shader class.
@@ -39,7 +40,7 @@ class RenderBuffer(GLObject):
                 (gl.ext.GL_DEPTH24_STENCIL8,) )
     
     
-    def __init__(self, internalformat=None, width=None, height=None):
+    def __init__(self, shape=None, format=None):
         
         # ID (by which OpenGl identifies the texture)
         # 0 means uninitialized, <0 means error.
@@ -48,12 +49,12 @@ class RenderBuffer(GLObject):
         # Init data
         self._pending_data = None
         
+        # Init suggestion
+        self._format_suggestion = None
+        
         # Set storage now?
-        info = internalformat, width, height
-        if [i for i in info if i is not None]:
-            if None in info:
-                raise ValueError('Specify all or none arguments to RenderBuffer.')
-            self.set_storage(*info)
+        if shape is not None:
+            self.set_storage(shape, format=format)
     
     
     def _create(self):
@@ -63,18 +64,48 @@ class RenderBuffer(GLObject):
     def _delete(self):
        gl.glDeleteRenderbuffers([self._handle])
     
-    # todo: User should in general not have to care about internalformat
-    # source for errors!
-    def set_storage(self, internalformat, width, height):
+    
+    def set_storage(self, shape, format=None):
+        """ Allocate storage for this render buffer.
+        
+        A call that only uses the shape argument does not result in an
+        action if the call would not change the shape.
+        
+        Parameters
+        ----------
+        shape : tuple
+            The shape of the "virtual" data. 
+        format : OpenGL enum
+            The format representation of the data. If not given or None,
+            it is determined automatically depending on the shape and
+            the kind of atatchement. Can be GL_RGB565, GL_RGBA4,
+            GL_RGB5_A1, GL_RGB8, GL_RGBA8, GL_DEPTH_COMPONENT16,
+            GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32,
+            GL_STENCIL_INDEX8, GL_STENCIL_INDEX1, GL_STENCIL_INDEX4.
+        
+        """
+        # Set ndim
+        ndim = 2
+        
+        # Is this already my shape?
+        if (format is None) and (self._pending_data is not None):
+            if self._pending_data[0][:ndim] == shape[:ndim]:
+                return
+                
+        # Check shape
+        assert isinstance(shape, tuple)
+        assert len(shape) in (ndim, ndim+1)
+        shape = int(shape[0]), int(shape[1])
+        assert shape[0] > 0 and shape[1] > 0
+        
         # Check format
-        if internalformat not in self._FORMATS:
+        if format is None:
+            pass  # We chose it later
+        elif format not in self._FORMATS:
             raise ValueError('Given format not supported for RenderBuffer storage.')
-        # Check dimensions
-        width, height = int(width), int(height)
-        assert width > 0
-        assert height > 0
+        
         # Set pending data
-        self._pending_data = internalformat, width, height
+        self._pending_data = shape, format
     
     
     def _enable(self):
@@ -92,14 +123,19 @@ class RenderBuffer(GLObject):
         # Set storage?
         if self._pending_data is not None:
             # Get data
-            internalformat, width, height =  self._pending_data
+            shape, format =  self._pending_data
+            # Get and check format
+            if format is None:
+                format = self._format_suggestion
+            if format is None:
+                return
             self._pending_data = None
             # Check size
             MAX = gl.glGetIntegerv(gl.GL_MAX_RENDERBUFFER_SIZE)
-            if width > MAX or height > MAX:
-                raise RuntimeError('Cannot create a render buffer of %ix%i (max is %i).' % (width, height, MAX))
+            if shape[0] > MAX or shape[1] > MAX:
+                raise RuntimeError('Cannot create a render buffer of %ix%i (max is %i).' % (shape[0], shape[1], MAX))
             # Set 
-            gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, internalformat, width, height)
+            gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, format, shape[1], shape[0])
     
     
     def _disable(self):
@@ -119,11 +155,11 @@ class FrameBuffer(GLObject):
         # 0 means uninitialized, <0 means error.
         self._handle = 0
         
-        # Init pending attachements
-        self._pending_attachements = []
-        self._attachement_color = None
-        self._attachement_depth = None
-        self._attachement_stencil = None
+        # Init pending attachments
+        self._pending_attachments = []
+        self._attachment_color = None
+        self._attachment_depth = None
+        self._attachment_stencil = None
     
     
     def _create(self):
@@ -134,12 +170,10 @@ class FrameBuffer(GLObject):
        gl.glDeleteFramebuffers([self._handle])
     
     
-    # todo: auto-create RenderBuffer?
-    # todo: make API for Program and FrameBuffer more similar
     def attach_color(self, object, level=0):
         """ Attach a RenderBuffer of Texture instance to collect
         color output for this FrameBuffer. Pass None for object
-        to detach the attachement. If a texture is given,
+        to detach the attachment. If a texture is given,
         level specifies the mipmap level (default 0).
         """
         attachment = gl.GL_COLOR_ATTACHMENT0
@@ -147,16 +181,17 @@ class FrameBuffer(GLObject):
         
         if object is None or object == 0:
             # Detach
-            self._attachement_color = None
-            self._pending_attachements.append( (attachment, 0, None) )
+            self._attachment_color = None
+            self._pending_attachments.append( (attachment, 0, None) )
         elif isinstance(object, RenderBuffer):
             # Render buffer
-            self._attachement_color = object
-            self._pending_attachements.append( (attachment, object, None) )
+            self._attachment_color = object
+            object._format_suggestion = gl.GL_RGB565  # GL_RGB565 or GL_RGBA4
+            self._pending_attachments.append( (attachment, object, None) )
         elif isinstance(object, Texture2D):
             # Texture
-            self._attachement_color = object
-            self._pending_attachements.append( (attachment, object, level) )
+            self._attachment_color = object
+            self._pending_attachments.append( (attachment, object, level) )
         else:
             raise ValueError('Can only attach a RenderBuffer of Texture to a FrameBuffer.')
     
@@ -164,7 +199,7 @@ class FrameBuffer(GLObject):
     def attach_depth(self, object, level=0):
         """ Attach a RenderBuffer of Texture instance to collect
         depth output for this FrameBuffer. Pass None for object
-        to detach the attachement. If a texture is given,
+        to detach the attachment. If a texture is given,
         level specifies the mipmap level (default 0).
         """
         attachment = gl.GL_DEPTH_ATTACHMENT
@@ -172,17 +207,18 @@ class FrameBuffer(GLObject):
         
         if object is None or object == 0:
             # Detach
-            self._attachement_depth = None
-            self._pending_attachements.append( (attachment, 0, None) )
+            self._attachment_depth = None
+            self._pending_attachments.append( (attachment, 0, None) )
         elif isinstance(object, RenderBuffer):
             # Render buffer
-            self._attachement_depth = object
-            self._pending_attachements.append( (attachment, object, None) )
+            object._format_suggestion = gl.GL_DEPTH_COMPONENT16
+            self._attachment_depth = object
+            self._pending_attachments.append( (attachment, object, None) )
         elif isinstance(object, Texture2D):
             # Texture
-            self._attachement_depth = object
-            self._attachement_depth = object
-            self._pending_attachements.append( (attachment, object, level) )
+            self._attachment_depth = object
+            self._attachment_depth = object
+            self._pending_attachments.append( (attachment, object, level) )
         else:
             raise ValueError('Can only attach a RenderBuffer of Texture to a FrameBuffer.')
     
@@ -190,19 +226,32 @@ class FrameBuffer(GLObject):
     def attach_stencil(self, object):
         """ Attach a RenderBuffer instance to collect stencil output for
         this FrameBuffer. Pass None for object to detach the
-        attachement.
+        attachment.
         """
         attachment = gl.GL_STENCIL_ATTACHMENT
         if object is None or object == 0:
             # Detach
-            self._attachement_stencil = None
-            self._pending_attachements.append( (attachment, 0, None) )
+            self._attachment_stencil = None
+            self._pending_attachments.append( (attachment, 0, None) )
         elif isinstance(object, RenderBuffer):
+            object._format_suggestion = gl.GL_STENCIL_INDEX8
             # Detach
-            self._attachement_stencil = object
-            self._pending_attachements.append( (attachment, object, None) )
+            self._attachment_stencil = object
+            self._pending_attachments.append( (attachment, object, None) )
         else:
             raise ValueError('For stencil data, can only attach a RenderBuffer to a FrameBuffer.')
+    
+    
+    def set_shape(self, shape):
+        """ Convenience function to set the size of all attachments in use.
+        """
+        for attachment in ( self._attachment_color, 
+                            self._attachment_depth,
+                            self._attachment_stencil):
+            if isinstance(attachment, Texture2D):
+                attachment.set_storage(shape)
+            elif isinstance(attachment, RenderBuffer):
+                attachment.set_storage(shape)
     
     
     def _enable(self):
@@ -224,9 +273,9 @@ class FrameBuffer(GLObject):
         # Note that we only enable the object briefly to attach it.
         # After that, the object does not need to be bound.
         # todo: 3D texture (need extension)
-        while self._pending_attachements:
+        while self._pending_attachments:
             something_changed = True
-            attachment, object, level = self._pending_attachements.pop(0)
+            attachment, object, level = self._pending_attachments.pop(0)
             if object == 0:
                 gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, attachment,
                                             gl.GL_RENDERBUFFER, 0)
@@ -240,7 +289,7 @@ class FrameBuffer(GLObject):
                     gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, attachment,
                                     object._target, object.handle, level)
             else:
-                raise RuntimeError('Invalid attachement. This should not happen.')
+                raise RuntimeError('Invalid attachment. This should not happen.')
         
         # Check
         if something_changed:
@@ -250,15 +299,15 @@ class FrameBuffer(GLObject):
             elif res == 0:
                 raise RuntimeError('Target not equal to GL_FRAMEBUFFER')
             elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-                raise RuntimeError('FrameBuffer attachements are incomplete.')
+                raise RuntimeError('FrameBuffer attachments are incomplete.')
             elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-                raise RuntimeError('No valid attachements in the FrameBuffer.')
+                raise RuntimeError('No valid attachments in the FrameBuffer.')
             elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
-                raise RuntimeError('Attachements do not have the same width and height.')   
+                raise RuntimeError('attachments do not have the same width and height.')   
             #elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS:  # Not in our namespace?
-            #    raise RuntimeError('Internal format of attachement is not renderable.')
+            #    raise RuntimeError('Internal format of attachment is not renderable.')
             elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
-                raise RuntimeError('Combination of internal formats used by attachements is not supported.')
+                raise RuntimeError('Combination of internal formats used by attachments is not supported.')
     
     
     def _disable(self):

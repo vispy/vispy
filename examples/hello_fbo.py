@@ -66,12 +66,12 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create texture to render to
-        self._rendertex = oogl.Texture2D(np.zeros((SIZE,SIZE,3)))
+        self._rendertex = oogl.Texture2D()
         
         # Create FBO, attach the color buffer and depth buffer
         self._fbo = oogl.FrameBuffer()
         self._fbo.attach_color(self._rendertex)
-        self._fbo.attach_depth(oogl.RenderBuffer(gl.GL_DEPTH_COMPONENT16, SIZE, SIZE))
+        self._fbo.attach_depth(oogl.RenderBuffer())
         
         # Create program to render a shape
         self._program1 = oogl.ShaderProgram(
@@ -89,10 +89,14 @@ class Canvas(app.Canvas):
     
     def on_paint(self, event):
         
+        # Set shape of fbo to match screen
+        shape = self.geometry[2:] + (3,)  # todo: x/y swap
+        self._fbo.set_shape(shape)
+        
         with self._program1 as prog:
             with self._fbo:
                 # Set viewport and transformations
-                gl.glViewport(0, 0, SIZE, SIZE)
+                gl.glViewport(0, 0, *shape[:2])
                 gl.glClearColor(0,0.0,0.5,1);
                 gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
                 # Draw

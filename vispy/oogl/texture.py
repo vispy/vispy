@@ -13,6 +13,7 @@ This code is inspired by similar classes from Visvis and Pygly.
 # todo: same for Texture3D?
 # todo: Cubemap texture
 
+
 from __future__ import print_function, division, absolute_import
 
 import sys
@@ -85,6 +86,27 @@ class _RawTexture(GLObject):
         gl.glActiveTexture(gl.GL_TEXTURE0)
         # No need for texturing anymore
         pop_enable(self._target)
+    
+    
+    def _allocate(self, shape, format, level=0):
+        """ Allocate space for the current texture object. 
+        It should have been verified that the texture will fit.
+        """
+        # Determine function and target from texType
+        D = {   #gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),
+                gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
+                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)}
+        uploadFun, ndim = D[self._target]
+        
+        # Determine type
+        gltype = gl.GL_UNSIGNED_BYTE
+        
+        # Build args list
+        size = size = [i for i in reversed( shape[:ndim] )]
+        args = [self._target, level, format] + size + [0, format, gltype, None]
+        
+        # Call
+        uploadFun(*tuple(args))
     
     
     def _upload(self, data, format, level=0):
@@ -179,7 +201,7 @@ class Texture(_RawTexture):
     """
     # Builds on the raw texture class by implementing convenience and lazy loading
     
-    def __init__(self, target, data=None):
+    def __init__(self, target, data=None, format=None, clim=None):
         _RawTexture.__init__(self, target)
         
         # A reference (not a weak one) to be able to process deferred
@@ -200,8 +222,14 @@ class Texture(_RawTexture):
         self.set_parameter(gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
         
         # Set data?
-        if data is not None:
-            self.set_data(data)
+        if data is None:
+            pass
+        elif isinstance(data, np.ndarray):
+            self.set_data(data, format=format, clim=clim)
+        elif isinstance(data, tuple):
+            self.set_storage(data, format=format)
+        else:
+            raise ValueError('Invalid value to initialize Texture with.')
     
     
     def __call__(self, unit):
@@ -257,19 +285,21 @@ class Texture(_RawTexture):
         
         """
         
-        # Check data
-        if not isinstance(data, np.ndarray):
-            raise ValueError("Data should be a numpy array.")
-        shape = data.shape
-        MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
-        ndim = MAP.get(self._target, 0)
-        assert isinstance(shape, tuple)
-        assert len(shape) in (ndim, ndim+1)
-        
         # Reset if there was an error earlier
         if self._handle < 0:
             self._handle = 0
             self._texture_shape = None
+        
+        # Get ndim
+        MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
+        ndim = MAP.get(self._target, 0)
+        
+        # Check data
+        if not isinstance(data, np.ndarray):
+            raise ValueError("Data should be a numpy array.")
+        shape = data.shape
+        assert isinstance(shape, tuple)
+        assert len(shape) in (ndim, ndim+1)
         
         # Check offset
         MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
@@ -277,7 +307,7 @@ class Texture(_RawTexture):
         if offset is not None:
             offset = [int(i) for i in offset]
             assert len(offset) == len(data.shape[:ndim])
-        elif data.shape == self._texture_shape:
+        elif data.shape == self._texture_shape and self._handle > 0:
             # If data is of same shape as current texture, update is much faster
             offset = [0 for i in self._texture_shape[:ndim]]
         
@@ -294,7 +324,10 @@ class Texture(_RawTexture):
     
     def set_storage(self, shape, level=0, format=None):
         """ Allocate storage for this texture. This is useful if the texture
-        is used as a render target for an FBO.
+        is used as a render target for an FBO. 
+        
+        A call that only uses the shape argument does not result in an
+        action if the call would not change the shape.
         
         Parameters
         ----------
@@ -307,23 +340,37 @@ class Texture(_RawTexture):
             The format representation of the data. If not given or None,
             it is decuced from the given data. Can be GL_RGB, GL_RGBA,
             GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA.
-        
         """
-        # Check shape
-        MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
-        ndim = MAP.get(self._target, 0)
-        assert isinstance(shape, tuple)
-        assert len(shape) in (ndim, ndim+1)
         
         # Reset if there was an error earlier
         if self._handle < 0:
             self._handle = 0
             self._texture_shape = None
         
-        # Set pending data, only if necessary.
-        if data.shape != self._texture_shape:
-            self._pending_data = None, None, level, format, None
-            self._texture_shape = shape
+        # Get ndim
+        MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
+        ndim = MAP.get(self._target, 0)
+        
+        # Is this already my shape?
+        if format is None and level==0 and self._texture_shape is not None:
+            if self._texture_shape[:ndim] == shape[:ndim]:
+                return
+        
+        # Check shape
+        assert isinstance(shape, tuple)
+        assert len(shape) in (ndim, ndim+1)
+        shape = tuple([int(i) for i in shape])
+        assert all([i>0 for i in shape])
+        
+        # Check level, format, clim
+        assert isinstance(level, int) and level >= 0
+        assert format in (None, gl.GL_RGB, gl.GL_RGBA, gl.GL_LUMINANCE, 
+                            gl.GL_LUMINANCE_ALPHA, gl.GL_ALPHA)
+        
+        
+        # Set pending data ...
+        self._pending_data = None, None, level, format, None
+        self._texture_shape = shape
     
     
     def _enable(self):
@@ -374,15 +421,15 @@ class Texture(_RawTexture):
         a new texture) or updating it (a subsection).
         """
         
+        # Convert data type to one supported by OpenGL
+        if data is not None:
+            data = convert_data(data, clim)
+        
         # Get shape
         if data is not None:
             shape = data.shape
         else:
             shape = self._texture_shape
-        
-        # Convert data type to one supported by OpenGL
-        if data is not None:
-            data = convert_data(data, clim)
         
         # Determine format (== internalformat) 
         if format is None:
@@ -404,7 +451,10 @@ class Texture(_RawTexture):
             self._create()
             gl.glBindTexture(self._target, self._handle)
             # Upload!
-            self._upload(data, format, level)
+            if data is None:
+                self._allocate(shape, format, level)
+            else:
+                self._upload(data, format, level)
             # Set all parameters that the user set
             for param, value in self._texture_params.items():
                gl.glTexParameter(self._target, param, value)
@@ -416,8 +466,8 @@ class Texture(_RawTexture):
 class Texture2D(Texture):
     """ Representation of a 2D texture. Inherits Texture.
     """
-    def __init__(self, data=None):
-        Texture.__init__(self, gl.GL_TEXTURE_2D, data)
+    def __init__(self, *args, **kwargs):
+        Texture.__init__(self, gl.GL_TEXTURE_2D, *args, **kwargs)
 
 
 
@@ -425,8 +475,8 @@ class Texture3D(Texture):
     """ Representation of a 3D texture. Note that for this the
     GL_texture_3D extension needs to be available. Inherits Texture.
     """
-    def __init__(self, data=None):
-        Texture.__init__(self, gl.ext.GL_TEXTURE_3D, data)
+    def __init__(self, *args, **kwargs):
+        Texture.__init__(self, gl.ext.GL_TEXTURE_3D, *args, **kwargs)
 
 
 ## Utility functions
