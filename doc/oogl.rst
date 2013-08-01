@@ -55,3 +55,12 @@ The object oriented OpenGL API (oogl)
     
     .. automethod:: __call__
 
+
+----
+
+.. autoclass:: vispy.oogl.FrameBuffer
+    :members:
+
+.. autoclass:: vispy.oogl.RenderBuffer
+    :members:
+

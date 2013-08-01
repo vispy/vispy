@@ -12,9 +12,7 @@ convenience classes are implemented (like the collection class?).
 Central to each visualization is the ShaderProgram. To enable it, it
 should be used as a context manager. Other objects, such as Texture2D
 and VertexBuffer should be set as uniforms and attributes of the
-ShaderProgram object. Some objects, like the ElementBuffer, must be
-enabled explicitly too. This can be done best via
-ShaderProgram.enable_object.
+ShaderProgram object. 
 
 Example::
     
@@ -39,6 +37,8 @@ The oogl classes:
   * :class:`ElementBuffer`
   * :class:`Texture2D`
   * :class:`Texture3D`
+  * :class:`FrameBuffer`
+  * :class:`RenderBuffer`
 
 """
 

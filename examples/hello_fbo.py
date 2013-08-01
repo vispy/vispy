@@ -69,9 +69,7 @@ class Canvas(app.Canvas):
         self._rendertex = oogl.Texture2D()
         
         # Create FBO, attach the color buffer and depth buffer
-        self._fbo = oogl.FrameBuffer()
-        self._fbo.attach_color(self._rendertex)
-        self._fbo.attach_depth(oogl.RenderBuffer())
+        self._fbo = oogl.FrameBuffer(self._rendertex, oogl.RenderBuffer())
         self._fbo.set_size(50, 50)
         
         # Create program to render a shape
