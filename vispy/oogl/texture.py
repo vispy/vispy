@@ -333,7 +333,8 @@ class Texture(_RawTexture):
         ----------
         shape : tuple
             The shape of the "virtual" data. By specifying e.g. (20,20,3) for
-            a Texture2D, one implicitly sets the format to GL_RGB.
+            a Texture2D, one implicitly sets the format to GL_RGB. Note
+            that shape[0] is height.
         level : int
             The mipmap level. Default 0.
         format : OpenGL enum
@@ -366,7 +367,6 @@ class Texture(_RawTexture):
         assert isinstance(level, int) and level >= 0
         assert format in (None, gl.GL_RGB, gl.GL_RGBA, gl.GL_LUMINANCE, 
                             gl.GL_LUMINANCE_ALPHA, gl.GL_ALPHA)
-        
         
         # Set pending data ...
         self._pending_data = None, None, level, format, None

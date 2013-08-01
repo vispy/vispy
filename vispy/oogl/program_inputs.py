@@ -28,19 +28,24 @@ if sys.version_info > (3,):
 
 # Note: the ShaderProgram is a friend: it calls private methods of this class.
 
+#class BaseInputs(dict):
 class BaseInputs(object):
     """ Base proxy class for uniforms, samplers and attributes.
     """
     
     def __init__(self, program):
+        object.__init__(self)
+        #dict.__init__(self)
         self._program_ref = weakref.ref(program)
         self._handles = {}  # Cache of known handles
         self._static = {}  # Static values (set while program not enabled)
     
     
     def __setattr__(self, name, value):
+    #def __setitem__(self, name, value):
         # Act normal
         object.__setattr__(self, name, value)
+        #dict.__setitem__(self, name, value)
         
         # Public attributes are considered  attribute, sampler, sttribute
         if not name.startswith('_'):

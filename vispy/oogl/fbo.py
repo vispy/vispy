@@ -26,7 +26,7 @@ if sys.version_info > (3,):
 
 class RenderBuffer(GLObject):
     """ Representation of a render buffer, to be attached to a
-    FrameBuffer.
+    FrameBuffer object.
     """
     
     _COLOR_FORMATS = (gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1,
@@ -46,11 +46,12 @@ class RenderBuffer(GLObject):
         # 0 means uninitialized, <0 means error.
         self._handle = 0
         
-        # Init data
-        self._pending_data = None
+        # Parameters
+        self._shape = None
+        self._format = None
         
-        # Init suggestion
-        self._format_suggestion = None
+        # Need update
+        self._dirty = True
         
         # Set storage now?
         if shape is not None:
@@ -68,17 +69,20 @@ class RenderBuffer(GLObject):
     def set_storage(self, shape, format=None):
         """ Allocate storage for this render buffer.
         
-        A call that only uses the shape argument does not result in an
-        action if the call would not change the shape.
+        This function can be repeatedly called without much cost if
+        the shape is not changed.
+        
+        In general, it's easier to just call FrameBuffer.set_size()
+        to allocate space for all attachements.
         
         Parameters
         ----------
         shape : tuple
-            The shape of the "virtual" data. 
+            The shape of the "virtual" data. Note that shape[0] is height.
         format : OpenGL enum
             The format representation of the data. If not given or None,
             it is determined automatically depending on the shape and
-            the kind of atatchement. Can be GL_RGB565, GL_RGBA4,
+            the kind of atatchment. Can be GL_RGB565, GL_RGBA4,
             GL_RGB5_A1, GL_RGB8, GL_RGBA8, GL_DEPTH_COMPONENT16,
             GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32,
             GL_STENCIL_INDEX8, GL_STENCIL_INDEX1, GL_STENCIL_INDEX4.
@@ -88,24 +92,27 @@ class RenderBuffer(GLObject):
         ndim = 2
         
         # Is this already my shape?
-        if (format is None) and (self._pending_data is not None):
-            if self._pending_data[0][:ndim] == shape[:ndim]:
-                return
-                
+        if format is None or format is self._format:
+            if self._shape is not None:
+                if self._shape[:ndim] == shape[:ndim]:
+                    return
+        
         # Check shape
         assert isinstance(shape, tuple)
         assert len(shape) in (ndim, ndim+1)
-        shape = int(shape[0]), int(shape[1])
-        assert shape[0] > 0 and shape[1] > 0
+        shape = tuple([int(i) for i in shape])
+        assert all([i>0 for i in shape])
         
         # Check format
         if format is None:
-            pass  # We chose it later
+            pass  # Set later by FBO
         elif format not in self._FORMATS:
             raise ValueError('Given format not supported for RenderBuffer storage.')
         
         # Set pending data
-        self._pending_data = shape, format
+        self._shape = shape
+        self._format = format or self._format
+        self._dirty = True
     
     
     def _enable(self):
@@ -121,19 +128,17 @@ class RenderBuffer(GLObject):
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._handle)
         
         # Set storage?
-        if self._pending_data is not None:
+        if self._dirty:
             # Get data
-            shape, format =  self._pending_data
-            # Get and check format
-            if format is None:
-                format = self._format_suggestion
-            if format is None:
+            shape, format =  self._shape, self._format
+            if shape is None or format is None:
                 return
-            self._pending_data = None
+            else:
+                self._dirty = False # Only if we got here
             # Check size
             MAX = gl.glGetIntegerv(gl.GL_MAX_RENDERBUFFER_SIZE)
             if shape[0] > MAX or shape[1] > MAX:
-                raise RuntimeError('Cannot create a render buffer of %ix%i (max is %i).' % (shape[0], shape[1], MAX))
+                raise RuntimeError('Cannot create a render buffer of %ix%i (max is %i).' % (shape[1], shape[0], MAX))
             # Set 
             gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, format, shape[1], shape[0])
     
@@ -149,7 +154,7 @@ class FrameBuffer(GLObject):
     This is for instance used for special effects and post-processing.
     """
     
-    def __init__(self):
+    def __init__(self, color=None, depth=None, stencil=None):
         
         # ID (by which OpenGl identifies the object)
         # 0 means uninitialized, <0 means error.
@@ -160,7 +165,14 @@ class FrameBuffer(GLObject):
         self._attachment_color = None
         self._attachment_depth = None
         self._attachment_stencil = None
-    
+        
+        # Set given attachments
+        if color is not None:
+            self.attach_color(color)
+        elif depth is not None:
+            self.attach_depth(depth)
+        elif stencil is not None:
+            self.attach_stencil(stencil)
     
     def _create(self):
         self._handle = gl.glGenFramebuffers(1)
@@ -168,6 +180,27 @@ class FrameBuffer(GLObject):
     
     def _delete(self):
        gl.glDeleteFramebuffers([self._handle])
+    
+    
+    @property
+    def color_attachment(self):
+        """ Get the color attachement.
+        """
+        return self._attachment_color
+    
+    
+    @property
+    def depth_attachment(self):
+        """ Get the depth attachement.
+        """
+        return self._attachment_depth
+    
+    
+    @property
+    def stencil_attachment(self):
+        """ Get the stencil attachement.
+        """
+        return self._attachment_stencil
     
     
     def attach_color(self, object, level=0):
@@ -186,7 +219,7 @@ class FrameBuffer(GLObject):
         elif isinstance(object, RenderBuffer):
             # Render buffer
             self._attachment_color = object
-            object._format_suggestion = gl.GL_RGB565  # GL_RGB565 or GL_RGBA4
+            object._format = object._format or gl.GL_RGB565  # GL_RGB565 or GL_RGBA4
             self._pending_attachments.append( (attachment, object, None) )
         elif isinstance(object, Texture2D):
             # Texture
@@ -211,7 +244,7 @@ class FrameBuffer(GLObject):
             self._pending_attachments.append( (attachment, 0, None) )
         elif isinstance(object, RenderBuffer):
             # Render buffer
-            object._format_suggestion = gl.GL_DEPTH_COMPONENT16
+            object._format = object._format or gl.GL_DEPTH_COMPONENT16
             self._attachment_depth = object
             self._pending_attachments.append( (attachment, object, None) )
         elif isinstance(object, Texture2D):
@@ -234,7 +267,7 @@ class FrameBuffer(GLObject):
             self._attachment_stencil = None
             self._pending_attachments.append( (attachment, 0, None) )
         elif isinstance(object, RenderBuffer):
-            object._format_suggestion = gl.GL_STENCIL_INDEX8
+            object._format = object._format or gl.GL_STENCIL_INDEX8
             # Detach
             self._attachment_stencil = object
             self._pending_attachments.append( (attachment, object, None) )
@@ -242,9 +275,11 @@ class FrameBuffer(GLObject):
             raise ValueError('For stencil data, can only attach a RenderBuffer to a FrameBuffer.')
     
     
-    def set_shape(self, shape):
-        """ Convenience function to set the size of all attachments in use.
+    def set_size(self, width, height):
+        """ Convenience function to set the space allocated for all
+        attachments in use.
         """
+        shape = height, width, 3
         for attachment in ( self._attachment_color, 
                             self._attachment_depth,
                             self._attachment_stencil):

@@ -72,12 +72,15 @@ class Canvas(app.Canvas):
         self._fbo = oogl.FrameBuffer()
         self._fbo.attach_color(self._rendertex)
         self._fbo.attach_depth(oogl.RenderBuffer())
+        self._fbo.set_size(50, 50)
         
         # Create program to render a shape
         self._program1 = oogl.ShaderProgram(
                 oogl.VertexShader(VERT_SHADER1), oogl.FragmentShader(FRAG_SHADER1) )
         self._program1.uniforms.u_color = 0.9, 1.0, 0.4, 1
         self._program1.attributes.a_position = vPosition
+#         self._program1.uniforms['u_color'] = 0.9, 1.0, 0.4, 1
+#         self._program1.attributes['a_position'] = vPosition
         
         # Create program to render FBO result
         self._program2 = oogl.ShaderProgram(
@@ -85,22 +88,23 @@ class Canvas(app.Canvas):
         self._program2.attributes.a_position = vPosition
         self._program2.attributes.a_texcoord = vTexcoord
         self._program2.uniforms.u_texture1 = self._rendertex
+#         self._program2.attributes['a_position'] = vPosition
+#         self._program2.attributes['a_texcoord'] = vTexcoord
+#         self._program2.uniforms['u_texture1'] = self._rendertex
     
     
     def on_paint(self, event):
         
-        # Set shape of fbo to match screen
-        shape = self.geometry[2:] + (3,)  # todo: x/y swap
-        self._fbo.set_shape(shape)
         
         with self._program1 as prog:
-            with self._fbo:
-                # Set viewport and transformations
-                gl.glViewport(0, 0, *shape[:2])
-                gl.glClearColor(0,0.0,0.5,1);
-                gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-                # Draw
-                prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
+            prog.enable_object(self._fbo)
+            
+            # Set viewport and transformations
+            gl.glViewport(0, 0, SIZE, SIZE)
+            gl.glClearColor(0,0.0,0.5,1);
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+            # Draw
+            prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
         
         with self._program2 as prog:
             # Set viewport and transformations
