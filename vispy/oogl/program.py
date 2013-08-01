@@ -48,7 +48,7 @@ class ShaderProgram(GLObject):
         self._shaders_to_add = []
         self._shaders_to_remove = []
         for shader in shaders:
-            self.add_shader(shader)
+            self.attach_shader(shader)
         
         # Inputs
         self._uniform_inputs = UniformInputs(self)
@@ -87,17 +87,18 @@ class ShaderProgram(GLObject):
         return self._attribute_inputs
     
     
-    def add_shader(self, shader):
-        """ Add the given vertex or fragment shader to this shader program.
+    def attach_shader(self, shader):
+        """ Attach the given vertex or fragment shader to this shader program.
+        Multiple shaders can be attached (also e.g. multiple FragmentShaders).
         """
         if isinstance(shader, (VertexShader, FragmentShader)):
             self._shaders_to_add.append(shader)
         else:
-            raise ValueError('add_shader required VertexShader of FragmentShader.')
+            raise ValueError('attach_shader required VertexShader of FragmentShader.')
     
     
-    def remove_shader(self, shader):
-        """ Remove the given shader from this shader program. 
+    def detach_shader(self, shader):
+        """ Detach the given shader from this shader program. 
         """
         if shader in self._shaders_to_add:
             self._shaders_to_add.remove(shader)
@@ -119,32 +120,32 @@ class ShaderProgram(GLObject):
         return shaders
     
     
-    def get_vertex_shader(self, index=0):
-        """ Get the ith vertex shader for this shader program. Default first.
-        """
-        count = -1
-        for shader in self.shaders:
-            if isinstance(shader, VertexShader):
-                count += 1
-                if count == index:
-                    return shader
-        else:
-            return None
+#     def get_vertex_shader(self, index=0):
+#         """ Get the ith vertex shader for this shader program. Default first.
+#         """
+#         count = -1
+#         for shader in self.shaders:
+#             if isinstance(shader, VertexShader):
+#                 count += 1
+#                 if count == index:
+#                     return shader
+#         else:
+#             return None
+#     
+# 
+#     def get_fragment_shader(self, index=0):
+#         """ Get the ith fragment shader for this shader program. Default first.
+#         """
+#         count = -1
+#         for shader in self.shaders:
+#             if isinstance(shader, FragmentShader):
+#                 count += 1
+#                 if count == index:
+#                     return shader
+#         else:
+#             return None
     
-
-    def get_fragment_shader(self, index=0):
-        """ Get the ith fragment shader for this shader program. Default first.
-        """
-        count = -1
-        for shader in self.shaders:
-            if isinstance(shader, FragmentShader):
-                count += 1
-                if count == index:
-                    return shader
-        else:
-            return None
     
-        
     def _enable(self):
         if self._handle <= 0:# or not gl.glIsProgram(self._handle):
             self._handle = gl.glCreateProgram()
