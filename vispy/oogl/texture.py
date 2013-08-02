@@ -12,6 +12,8 @@ This code is inspired by similar classes from Visvis and Pygly.
 # todo: make a Texture1D that makes a nicer interface to a 2D texture
 # todo: same for Texture3D?
 # todo: Cubemap texture
+# todo: mipmapping, allow creating mipmaps
+# todo: compressed textures?
 
 
 from __future__ import print_function, division, absolute_import
@@ -49,9 +51,6 @@ class _RawTexture(GLObject):
         # Texture ID (by which OpenGl identifies the texture)
         # 0 means uninitialized, <0 means error.
         self._handle = 0
-        
-        # To store the used texture unit so we can disable it properly.
-        self._unit = -1
     
     
     def _create(self):
@@ -64,11 +63,9 @@ class _RawTexture(GLObject):
     def _enable(self):
         """ To be called by context handler. Never call this yourself.
         """
-        # Enable things that we need
-        push_enable(self._target)
-        # Set active texture unit
-        if self._unit >= 0:
-            gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
+        # glEnale(GL_TEXTURE_2D) not needed in modern opengl, right?
+#         # Enable things that we need
+#         push_enable(self._target)
         # Bind
         gl.glBindTexture(self._target, self._handle)
     
@@ -76,16 +73,10 @@ class _RawTexture(GLObject):
     def _disable(self):
         """ To be called by context handler. Never call this yourself.
         """
-        # Select active texture if we can
-        if self._unit >= 0:
-            gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
-            self._unit = -1
         # Unbind and disable
         gl.glBindTexture(self._target, 0)
-        # Set active texture unit to default (0)
-        gl.glActiveTexture(gl.GL_TEXTURE0)
-        # No need for texturing anymore
-        pop_enable(self._target)
+#         # No need for texturing anymore
+#         pop_enable(self._target)
     
     
     def _allocate(self, shape, format, level=0):
@@ -218,8 +209,20 @@ class Texture(_RawTexture):
         # Set default parameters for min and mag filter, otherwise an
         # image is not shown by default, since the default min_filter
         # is GL_NEAREST_MIPMAP_LINEAR
-        self.set_parameter(gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
-        self.set_parameter(gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+        # Note that mipmapping is not allowed unless the texture_npot
+        # extension is available.
+        self.set_filter(gl.GL_LINEAR, gl.GL_LINEAR)
+        
+        # Set default parameter for clamping. CLAMP_TO_EDGE since that
+        # is required if a texture is used as a render target.
+        # Also, in OpenGL ES 2.0, wrapping must be CLAMP_TO_EDGE if 
+        # textures are not a power of two, unless the texture_npot extension
+        # is available.
+        if self._target == gl.ext.GL_TEXTURE_3D:
+            self.set_wrapping(gl.GL_CLAMP_TO_EDGE, gl.GL_CLAMP_TO_EDGE,
+                                            gl.GL_CLAMP_TO_EDGE)
+        else:
+            self.set_wrapping(gl.GL_CLAMP_TO_EDGE, gl.GL_CLAMP_TO_EDGE)
         
         # Set data?
         if data is None:
@@ -232,29 +235,85 @@ class Texture(_RawTexture):
             raise ValueError('Invalid value to initialize Texture with.')
     
     
-    def __call__(self, unit):
-        """ Calling a texture sets the texture unit.
-        """
-        self._unit = int(unit)
-        return self
-    
-    
-    def set_parameter(self, param, value):
-        """ Set texture parameter, can be called at any time. The param
-        can be an OpenGL constant or a string that corresponds to such
-        a constant. OpenGL ES 2.0 allows the following parameters:
-        GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_WRAP_S,
-        TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R (with extension).
+    def set_filter(self, mag_filter, min_filter):
+        """ Set interpolation filters. EIther parameter can be None to 
+        not (re)set it.
+        
+        Parameters
+        ----------
+        mag_filter : GL_ENUM or string
+            The magnification filter (when texels are larger than screen
+            pixels). Can be GL_NEAREST, GL_LINEAR. 
+        min_filter : GL_ENUM or string
+            The minification filter (when texels are smaller than screen 
+            pixels). For this filter, mipmapping can be applied to perform
+            antialiasing (if mipmaps are available for this texture).
+            Can be GL_NEAREST, GL_LINEAR, GL_NEAREST_MIPMAP_NEAREST,
+            GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST,
+            GL_LINEAR_MIPMAP_LINEAR.
         """
         # Allow strings
+        mag_filter = self._string_to_enum(mag_filter)
+        min_filter = self._string_to_enum(min_filter)
+        # Check
+        assert mag_filter in (None, gl.GL_NEAREST, gl.GL_LINEAR)
+        assert min_filter in (None, gl.GL_NEAREST, gl.GL_LINEAR, 
+                    gl.GL_NEAREST_MIPMAP_NEAREST, gl.GL_NEAREST_MIPMAP_LINEAR,
+                    gl.GL_LINEAR_MIPMAP_NEAREST, gl.GL_LINEAR_MIPMAP_LINEAR)
+        
+        # Set 
+        if mag_filter is not None:
+            self._pending_params[gl.GL_TEXTURE_MAG_FILTER] = mag_filter
+            self._texture_params[gl.GL_TEXTURE_MAG_FILTER] = mag_filter
+        if min_filter is not None:
+            self._pending_params[gl.GL_TEXTURE_MIN_FILTER] = min_filter
+            self._texture_params[gl.GL_TEXTURE_MIN_FILTER] = min_filter
+    
+    
+    def set_wrapping(self, wrapx, wrapy, wrapz=None):
+        """ Set texture coordinate wrapping. 
+        
+        Parameters
+        ----------
+        wrapx : GL_ENUM or string
+            The wrapping mode in the x-direction. Can be GL_REPEAT,
+            GL_CLAMP_TO_EDGE, GL_MIRRORED_REPEAT.
+        wrapy : GL_ENUM or string
+            Dito for y.
+        wrap z : GL_ENUM or string
+            Dito for z. Only makes sense for 3D textures, and requires
+            the texture_3d extension. Optional.
+        """
+        # Allow strings
+        wrapx = self._string_to_enum(wrapx)
+        wrapy = self._string_to_enum(wrapy)
+        wrapz = self._string_to_enum(wrapz)
+        # Check
+        assert wrapx in (None, gl.GL_REPEAT, gl.GL_CLAMP_TO_EDGE, gl.GL_MIRRORED_REPEAT)
+        assert wrapy in (None, gl.GL_REPEAT, gl.GL_CLAMP_TO_EDGE, gl.GL_MIRRORED_REPEAT)
+        assert wrapz in (None, gl.GL_REPEAT, gl.GL_CLAMP_TO_EDGE, gl.GL_MIRRORED_REPEAT)
+        
+        # Set 
+        if wrapx is not None:
+            self._pending_params[gl.GL_TEXTURE_WRAP_S] = wrapx
+            self._texture_params[gl.GL_TEXTURE_WRAP_S] = wrapx
+        if wrapy is not None:
+            self._pending_params[gl.GL_TEXTURE_WRAP_T] = wrapy
+            self._texture_params[gl.GL_TEXTURE_WRAP_T] = wrapy
+        if wrapz is not None:
+            self._pending_params[gl.ext.GL_TEXTURE_WRAP_R] = wrapz
+            self._texture_params[gl.ext.GL_TEXTURE_WRAP_R] = wrapz
+    
+    
+    def _string_to_enum(self, param):
+        """ Convert a string to a GL enum.
+        """
         if isinstance(param, basestring):
             param = param.upper()
             if not param.startswith('GL'):
-                param = 'GL_TEXTURE_' + param
+                param = 'GL__' + param
             param = getattr(gl, param)
-        # Set 
-        self._pending_params[param] = value
-        self._texture_params[param] = value
+        return param
     
     
     def set_data(self, data, offset=None, level=0, format=None, clim=None):

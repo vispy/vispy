@@ -191,9 +191,10 @@ class UniformInputs(BaseInputs):
         # Determine unit id 
         unit = self._sampler_count
         self._sampler_count += 1
-        # Enable the texture, apply the unit, and bind it to the uniform
-        self._program.enable_object(value(unit))
-        #gl.glActiveTexture(gl.GL_TEXTURE0 + unit)  # Done in Texture._enable()
+        # Enable the texture, activating it on unit, and bind it to the uniform
+        #self._program.enable_object(value(unit))
+        gl.glActiveTexture(gl.GL_TEXTURE0 + unit)  # Do this before glBindTexture
+        self._program.enable_object(value)  # Does glBindTexture
         gl.glUniform1i(loc, unit)
 
 
