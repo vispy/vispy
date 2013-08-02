@@ -28,34 +28,72 @@ if sys.version_info > (3,):
 
 # Note: the ShaderProgram is a friend: it calls private methods of this class.
 
-#class BaseInputs(dict):
-class BaseInputs(object):
+class BaseInputs(dict):
     """ Base proxy class for uniforms, samplers and attributes.
     """
     
     def __init__(self, program):
-        object.__init__(self)
-        #dict.__init__(self)
+        dict.__init__(self)
         self._program_ref = weakref.ref(program)
         self._handles = {}  # Cache of known handles
-        self._static = {}  # Static values (set while program not enabled)
+        self._static = set()
     
     
-    def __setattr__(self, name, value):
-    #def __setitem__(self, name, value):
-        # Act normal
-        object.__setattr__(self, name, value)
-        #dict.__setitem__(self, name, value)
-        
-        # Public attributes are considered  attribute, sampler, sttribute
-        if not name.startswith('_'):
-            # Get prepared values
-            name, value = self._prepare(name, value)
-            # Apply or store as static?
-            if self._program._enabled:
-                self._apply(name, value)
+    def __setitem__(self, k, v):
+        self._set(k, v)
+    
+    
+    def update(self, E=None, **F):
+        # Special case, numpy array?
+        if isinstance(E, np.ndarray):
+            if E.dtype.fields:
+                for k in E.dtype.fields:
+                    self._set(k, E[k])
             else:
-                self._static[name] = value
+                raise ValueError('Can only update uniforms/attributes with a structured array.')
+        
+        # Special case, VertexBuffer with mutliple fields
+        elif isinstance(E, VertexBuffer):
+            if isinstance(E.type, dict):
+                for k in E.type:
+                    self._set(k, E[k])
+            else:
+                raise ValueError('Can only update uniforms/attributes with a structured VertexBuffer.')
+        
+        # Proceed as normal ...
+        
+        # Update with E
+        elif E is not None:
+            if hasattr(E, 'keys'): 
+                for k in E:
+                    self._set(k, E[k])
+            else:
+                for (k, v) in E:
+                    self._set(k, v)
+        # Update with F
+        for k in F:
+            self._set(k, F[k])
+    
+    
+    def setdefault(self, k, d=None):
+        try:
+            return self[k]
+        except KeyError:
+            self._set(k, d)
+            return d
+    
+    
+    def _set(self, name, value):
+        assert isinstance(name, basestring)
+        # Get prepared values
+        name, value = self._prepare(name, value)
+        # Store now as a normal dict
+        dict.__setitem__(self, name, value)
+        # Apply or store as static?
+        if self._program._enabled:
+            self._apply(name, value)
+        else:
+            self._static.add(name)
     
     
     @property
@@ -72,8 +110,12 @@ class BaseInputs(object):
         _enable method.
         """
         self._prepare_for_drawing()  # Allow subclasses to prepare
-        for name, value in self._static.items():
-            self._apply(name, value)
+        for name in self._static:
+            value = self.get(name, None)
+            if value is None:
+                self._static.discard(name)
+            else:
+                self._apply(name, value)
     
     
     def _clear_cache(self):
@@ -126,7 +168,7 @@ class UniformInputs(BaseInputs):
         """
         
         if isinstance(value, Texture):
-            return name, weakref.ref(value)
+            return name, value #weakref.ref(value)
         elif isinstance(value, np.ndarray):
             pass
         else:
@@ -240,9 +282,9 @@ class AttributeInputs(BaseInputs):
             if not value.dtype.name in VertexBuffer.DTYPES:
                 value = value.astype(np.float32)
             # Return
-            return name, weakref.ref(value)
+            return name, value #weakref.ref(value)
         elif isinstance(value, (VertexBuffer, VertexBufferView)):
-            return name, weakref.ref(value)
+            return name, value #weakref.ref(value)
         else:
             raise ValueError("Vertex attribute must be VertexBuffer or numpy array.")
     

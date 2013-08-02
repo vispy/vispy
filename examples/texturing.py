@@ -85,12 +85,12 @@ class Canvas(app.Canvas):
                 )
         
         # Set uniforms and samplers
-        self._program.attributes.a_position = VertexBuffer(positions)
-        self._program.attributes.a_texcoord = VertexBuffer(texcoords)
+        self._program.attributes['a_position'] = VertexBuffer(positions)
+        self._program.attributes['a_texcoord'] = VertexBuffer(texcoords)
         #
-        self._program.uniforms.u_texture1 = Texture2D(im1, clim=(0,1))
-        self._program.uniforms.u_texture2 = Texture2D(im2)
-        self._program.uniforms.u_texture3 = Texture2D(im3)
+        self._program.uniforms['u_texture1'] = Texture2D(im1, clim=(0,1))
+        self._program.uniforms['u_texture2'] = Texture2D(im2)
+        self._program.uniforms['u_texture3'] = Texture2D(im3)
     
     
     def on_paint(self, event):

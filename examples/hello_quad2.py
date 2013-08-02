@@ -3,14 +3,14 @@
 # This code of this example should be considered public domain.
 
 """ Example demonstrating showing a quad. Like hello_quad1.py, but now
-with Texture2D and VertexBuffer.
+with Texture2D and VertexBuffer, and optionally using an ElementBuffer to
+draw the vertices.
 """
 
 import time
 import numpy as np
 
-from vispy.oogl import Texture2D, VertexBuffer, ElementBuffer
-from vispy.oogl import VertexShader, FragmentShader, ShaderProgram
+from vispy import oogl
 from vispy import app
 from vispy import gl
 
@@ -22,15 +22,16 @@ im1[:,:50,1] = 1.0
 im1[50:,50:,2] = 1.0
 
 # Create vetices and texture coords, combined in one array for high performance
-vertex_data = np.zeros(4, dtype=[('pos', np.float32, 3), ('texcoord', np.float32, 2) ])
-vertex_data['pos'] = np.array([ [-0.8, -0.8, 0.0], [+0.7, -0.7, 0.0],  
-                                [-0.7, +0.7, 0.0], [+0.8, +0.8, 0.0,] ])
-vertex_data['texcoord'] = np.array([    [0.0, 0.0], [0.0, 1.0], 
-                                        [1.0, 0.0], [1.0, 1.0] ])
+vertex_data = np.zeros(4, dtype=[   ('a_position', np.float32, 3), 
+                                    ('a_texcoord', np.float32, 2) ])
+vertex_data['a_position'] = np.array([ [-0.8, -0.8, 0.0], [+0.7, -0.7, 0.0],  
+                                       [-0.7, +0.7, 0.0], [+0.8, +0.8, 0.0,] ])
+vertex_data['a_texcoord'] = np.array([    [0.0, 0.0], [0.0, 1.0], 
+                                          [1.0, 0.0], [1.0, 1.0] ])
 
 # Create indices and an ElementBuffer for it
 indices = np.array([0,1,2, 1,2,3], np.uint16)
-indices_buffer = ElementBuffer(indices)
+indices_buffer = oogl.ElementBuffer(indices)
 
 
 VERT_SHADER = """ // simple vertex shader
@@ -66,16 +67,20 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create program
-        self._program = ShaderProgram(
-                VertexShader(VERT_SHADER), FragmentShader(FRAG_SHADER) )
+        self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
+                                            oogl.FragmentShader(FRAG_SHADER) )
+        
+        # Create vertex buffer
+        self._vbo = oogl.VertexBuffer(vertex_data)
         
         # Set uniforms, samplers, attributes
         # We create one VBO with all vertex data (array of structures)
         # and create two views from it for the attributes.
-        self._program.uniforms.texture1 = Texture2D(im1)
-        self._vbo = VertexBuffer(vertex_data)
-        self._program.attributes.a_position = self._vbo['pos']
-        self._program.attributes.a_texcoord = self._vbo['texcoord']
+        self._program.uniforms['texture1'] = oogl.Texture2D(im1)
+        self._program.attributes.update(self._vbo)  # This does: 
+        #self._program.attributes['a_position'] = self._vbo['a_position']
+        #self._program.attributes['a_texcoords'] = self._vbo['a_texcoords']
+        
     
     def on_paint(self, event):
         
@@ -89,8 +94,8 @@ class Canvas(app.Canvas):
         # Draw
         with self._program as prog:
             # You can set uniforms/attributes here too
-            prog.uniforms.sizeFactor = 0.5 + np.sin(time.time()*3)*0.2
-            #prog.attributes.sizeFactor = 0.5 + np.sin(time.time()*3)*0.2
+            prog.uniforms['sizeFactor'] = 0.5 + np.sin(time.time()*3)*0.2
+            #prog.attributes['sizeFactor'] = 0.5 + np.sin(time.time()*3)*0.2
            
             # Draw (pick one!)
             #prog.draw_arrays(gl.GL_TRIANGLE_STRIP)

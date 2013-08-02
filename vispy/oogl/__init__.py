@@ -18,13 +18,13 @@ Example::
     
     # Init
     program = ShaderProgram(...)
-    program.attributes.position = VertexBuffer(my_positions_array)
+    program.attributes['a_position'] = VertexBuffer(my_positions_array)
     
     ...
     
     # Paint event handler
     with program:
-        program.uniforms.color = 0.0, 1.0, 0.0
+        program.uniforms['u_color'] = 0.0, 1.0, 0.0
         program.draw_arrays(gl.GL_TRIANGLES)
 
 

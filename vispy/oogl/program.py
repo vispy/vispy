@@ -64,24 +64,28 @@ class ShaderProgram(GLObject):
     
     @property
     def uniforms(self):
-        """ A namespace for the uniform inputs to this shader program.
-        For example: ``program.uniforms.color = 0.0, 1.0, 0.0``. 
+        """ A dictionary for the uniform inputs to this shader program.
+        For example: ``program.uniforms['u_color'] = 0.0, 1.0, 0.0``. 
         
-        Uniforms can be a tuple/array of 1 to 4 elements to specify a vector,
-        a numpy array of 4, 9 or 16 elements to specify a matrix, or
-        a Texture object to specify a sampler.
+        Uniforms can be a tuple/array of 1 to 4 elements to specify a
+        vector, 4, 9 or 16 elements to specify a matrix, or a Texture
+        object to specify a sampler.
         """
         return self._uniform_inputs
     
     
     @property
     def attributes(self):
-        """ A namespace for the attribute inputs to this shader program.
-        For example: ``program.attributes.positions = my_positions_array``. 
+        """ A dictionary for the attribute inputs to this shader program.
+        For example: ``program.attributes['a_position'] = my_positions_array``. 
         
         Attributes can be a tuple of 1 to 4 elements (global attributes),
         a numpy array of per vertex attributes, or a VertexBuffer object
         (recommended over the numpy array).
+        
+        Note that one can use ``prog.attributes.update(my_stuctured_array)``
+        or ``prog.attributes.update(my_stuctured_vbo)`` to map field names
+        to attribute names automatically.
         """
         return self._attribute_inputs
     

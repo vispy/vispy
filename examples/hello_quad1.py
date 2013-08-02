@@ -6,7 +6,7 @@
 oogl objects that this example demonstrates: ShaderProgram.
 """
 
-from vispy.oogl import VertexShader, FragmentShader, ShaderProgram
+from vispy import oogl
 from vispy import app
 from vispy import gl
 import numpy as np
@@ -38,12 +38,12 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create program
-        self._program = ShaderProgram(
-                VertexShader(VERT_SHADER), FragmentShader(FRAG_SHADER) )
+        self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
+                                            oogl.FragmentShader(FRAG_SHADER) )
         
         # Set uniform and attribute
-        self._program.uniforms.u_color = 0.2, 1.0, 0.4, 1
-        self._program.attributes.a_position = vPosition
+        self._program.uniforms['u_color'] = 0.2, 1.0, 0.4, 1
+        self._program.attributes['a_position'] = vPosition
     
     
     def on_paint(self, event):
