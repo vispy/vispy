@@ -17,6 +17,7 @@ Contents:
    event
    app
    oogl
+   examples
 
 
 Indices and tables
