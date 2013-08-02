@@ -112,7 +112,7 @@ class Buffer(GLObject):
         if self._handle < 0:
             return
         
-        # todo: check creation and reset pending_data
+        # todo: check creation and resetting pending_data
         
         # Need to update data?
         if self._pending_data:

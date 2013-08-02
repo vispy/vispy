@@ -19,11 +19,12 @@ if sys.version_info > (3,):
     basestring = str
 
 
-# todo: make API for Program and FrameBuffer more similar
 # todo: we need a way to keep track of who uses a RenderBuffer,
 # so that it can be deleted when the last object stops using it.
 # Same for Shader class.
-
+# todo: support for 3D texture (need extension)
+# todo: support Cubemap
+        
 class RenderBuffer(GLObject):
     """ Representation of a render buffer, to be attached to a
     FrameBuffer object.
@@ -307,7 +308,6 @@ class FrameBuffer(GLObject):
         # Attach any RenderBuffers or Textures
         # Note that we only enable the object briefly to attach it.
         # After that, the object does not need to be bound.
-        # todo: 3D texture (need extension)
         while self._pending_attachments:
             something_changed = True
             attachment, object, level = self._pending_attachments.pop(0)

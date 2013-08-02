@@ -25,9 +25,8 @@ if sys.version_info > (3,):
     basestring = str
 
 
-# todo: support uniform arrays of vectors/matrices
-# todo: use glGetActiveUniform to query all uniforms in use?
-# todo: allow setting of uniforms and attributes on the program object? u_color, a_pos
+# todo: support uniform arrays of vectors/matrices?
+# todo: more introspection into uniforms/attributes?
 
 
 class ShaderProgram(GLObject):

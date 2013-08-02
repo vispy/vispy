@@ -87,7 +87,6 @@ class BaseInputs(object):
         raise NotImplementedError()
 
 
-# todo: tuple means vector, numpy array means matrix?
 
 class UniformInputs(BaseInputs):
     """ Proxy to assign uniform values to a ShaderProgram.
