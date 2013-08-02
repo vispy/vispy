@@ -50,6 +50,8 @@ The object oriented OpenGL API (oogl)
 
 .. autoclass:: vispy.oogl.Texture3D
 
+.. autoclass:: vispy.oogl.TextureCubeMap
+
 .. autoclass:: vispy.oogl.Texture
     :members:
 

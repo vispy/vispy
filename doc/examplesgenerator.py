@@ -1,3 +1,6 @@
+""" Called from conf.py to generate the examples for the docs from the 
+example Python files.
+"""
 
 import os
 import sys

@@ -23,6 +23,11 @@ sys.path.insert(0, os.path.abspath('.'))
 import examplesgenerator
 examplesgenerator.main()
 
+
+# Generate the GL API
+import glapigenerator
+glapigenerator.main()
+
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
