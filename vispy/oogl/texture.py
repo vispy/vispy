@@ -479,6 +479,20 @@ class Texture3D(Texture):
         Texture.__init__(self, gl.ext.GL_TEXTURE_3D, *args, **kwargs)
 
 
+
+class TextureCubeMap(Texture):
+    """ Representation of a cube map, to store texture data for the
+    6 sided of a cube. Used for instance to create environment mappings.
+    
+    This class is not yet implemented.
+    """
+    # Note that width and height for these textures should be equal
+    def __init__(self, *args, **kwargs):
+        raise NotImplementedError()
+        Texture.__init__(self, gl.GL_TEXTURE_CUBE_MAP, *args, **kwargs)
+
+
+
 ## Utility functions
 
 

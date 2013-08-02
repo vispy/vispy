@@ -31,12 +31,9 @@ Example::
 The oogl classes:
     
   * :class:`ShaderProgram`
-  * :class:`FragmentShader`
-  * :class:`VertexShader`
-  * :class:`VertexBuffer`
-  * :class:`ElementBuffer`
-  * :class:`Texture2D`
-  * :class:`Texture3D`
+  * :class:`FragmentShader` and :class:`VertexShader`
+  * :class:`VertexBuffer` and :class:`ElementBuffer`
+  * :class:`Texture2D`, :class:`Texture3D`, :class:`TextureCubeMap`
   * :class:`FrameBuffer`
   * :class:`RenderBuffer`
 
@@ -135,7 +132,7 @@ class GLObject(object):
 
 
 from .vbo import VertexBuffer, ElementBuffer
-from .texture import Texture, Texture2D, Texture3D
+from .texture import Texture, Texture2D, Texture3D, TextureCubeMap
 from .shader import VertexShader, FragmentShader
 from .fbo import FrameBuffer, RenderBuffer
 from .program import ShaderProgram

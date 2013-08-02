@@ -3,6 +3,7 @@
 # This code of this example should be considered public domain.
 
 """ Minimal example demonstrating the use of frame buffer objects (VBO).
+This example blurs the output image.
 """
 
 
@@ -14,6 +15,8 @@ import numpy as np
 # Create vetices 
 vPosition = np.array([  [-0.8, -0.8, 0.0],  [+0.7, -0.7, 0.0],  
                         [-0.7, +0.7, 0.0],  [+0.8, +0.8, 0.0,] ], np.float32)
+vPosition_full = np.array([  [-1.0, -1.0, 0.0],  [+1.0, -1.0, 0.0],  
+                             [-1.0, +1.0, 0.0],  [+1.0, +1.0, 0.0,] ], np.float32)
 vTexcoord = np.array([  [0.0, 0.0], [0.0, 1.0], 
                         [1.0, 0.0], [1.0, 1.0] ], np.float32)
 
@@ -50,11 +53,20 @@ void main (void) {
 FRAG_SHADER2 = """ // textured fragment shader
 uniform sampler2D u_texture1;
 varying vec2 v_texcoord;
+const float c_zero = 0.0;
+const float c_sze = 5.0;
 void main()
 {    
-    gl_FragColor = texture2D(u_texture1, v_texcoord.st);
+    float scalefactor = 1.0 / (c_sze * c_sze * 4 + 1);
+    gl_FragColor = vec4(c_zero, c_zero, c_zero, 1.0);
+    for (int y=-c_sze; y<=c_sze; y++) {
+        for (int x=-c_sze; x<=c_sze; x++) { 
+            vec2 step = vec2(x,y) * 0.01;
+            vec3 color = texture2D(u_texture1, v_texcoord.st+step).rgb;
+            gl_FragColor.rgb += color * scalefactor;
+        }
+    }
 }
-
 """
 
 
@@ -70,7 +82,6 @@ class Canvas(app.Canvas):
         
         # Create FBO, attach the color buffer and depth buffer
         self._fbo = oogl.FrameBuffer(self._rendertex, oogl.RenderBuffer())
-        self._fbo.set_size(50, 50)
         
         # Create program to render a shape
         self._program1 = oogl.ShaderProgram(
@@ -83,7 +94,7 @@ class Canvas(app.Canvas):
         # Create program to render FBO result
         self._program2 = oogl.ShaderProgram(
                 oogl.VertexShader(VERT_SHADER2), oogl.FragmentShader(FRAG_SHADER2) )
-        self._program2.attributes.a_position = vPosition
+        self._program2.attributes.a_position = vPosition_full
         self._program2.attributes.a_texcoord = vTexcoord
         self._program2.uniforms.u_texture1 = self._rendertex
 #         self._program2.attributes['a_position'] = vPosition
@@ -93,17 +104,21 @@ class Canvas(app.Canvas):
     
     def on_paint(self, event):
         
+        # Set geometry (is no-op if the size does not change)
+        self._fbo.set_size(*self.geometry[2:])
         
+        # Draw the same scenas as in hello_quad.py, but draw it to the FBO
         with self._program1 as prog:
             prog.enable_object(self._fbo)
             
             # Set viewport and transformations
-            gl.glViewport(0, 0, SIZE, SIZE)
+            gl.glViewport(0, 0, *self.geometry[2:])
             gl.glClearColor(0,0.0,0.5,1);
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             # Draw
             prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
         
+        # Now draw result to a full-screen quad
         with self._program2 as prog:
             # Set viewport and transformations
             gl.glViewport(0, 0, *self.geometry[2:])
