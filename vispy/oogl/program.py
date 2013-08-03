@@ -29,6 +29,29 @@ if sys.version_info > (3,):
 # todo: more introspection into uniforms/attributes?
 
 
+# Patch glGetActiveAttrib if necessary
+if hasattr(gl.glGetActiveAttrib, 'restype'):
+    # We have the raw function in the DLL
+    import ctypes
+    old_glGetActiveAttrib = gl.glGetActiveAttrib
+    def new_glGetActiveAttrib(program, index):
+        # Prepare
+        bufsize = 32
+        length = ctypes.c_int()
+        size = ctypes.c_int()
+        type = ctypes.c_int()
+        name = ctypes.create_string_buffer(bufsize)
+        # Call
+        old_glGetActiveAttrib(program, index, 
+                bufsize, ctypes.byref(length), ctypes.byref(size), 
+                ctypes.byref(type), name)
+        # Return Python objects
+        #return name.value.decode('utf-8'), size.value, type.value
+        return name.value, size.value, type.value
+    gl.glGetActiveAttrib = new_glGetActiveAttrib
+
+
+
 class ShaderProgram(GLObject):
     """ Representation of a shader program. It combines (links) one 
     or more vertex and fragment shaders to compose a complete program.
@@ -53,6 +76,10 @@ class ShaderProgram(GLObject):
         self._uniform_inputs = UniformInputs(self)
         self._attribute_inputs = AttributeInputs(self)
         self._inputs = (self._uniform_inputs, self._attribute_inputs,)
+        
+        # List of names that we ask from OpenGL right after linking.
+        self._uniform_names = []
+        self._attribute_names = []
         
         # List of objects being enabled
         self._enabled_objects = []
@@ -179,6 +206,17 @@ class ShaderProgram(GLObject):
                 errors = gl.glGetProgramInfoLog(self._handle)
                 parse_shader_errors(errors)
                 raise RuntimeError(errors)
+            # Get list of uniforms and attributes, for diagnosis
+            self._uniform_names = []
+            self._attribute_names = []
+            count = gl.glGetProgramiv(self._handle, gl.GL_ACTIVE_UNIFORMS)
+            for i in range(count):
+                info = gl.glGetActiveUniform(self._handle, i)
+                self._uniform_names.append(info[0].decode('utf-8'))
+            count = gl.glGetProgramiv(self._handle, gl.GL_ACTIVE_ATTRIBUTES)
+            for i in range(count):
+                info = gl.glGetActiveAttrib(self._handle, i)
+                self._attribute_names.append(info[0].decode('utf-8'))
         
         # Use this program!
         gl.glUseProgram(self._handle)
@@ -244,6 +282,24 @@ class ShaderProgram(GLObject):
         self._enabled = False
     
     
+    def _check_uniforms_and_attributes(self):
+        """ Check if the uniform names and attributes names that we 
+        obtain from OpenGL after linking are actually set in the
+        uniforms and attributes dicst.
+        """
+        # Check uniforms and attributes. Check only once after each linking
+        if self._uniform_names:
+            for name in self._uniform_names:
+                if name not in self._uniform_inputs:
+                    print('Warning, uniform %s has not been set.' % name)
+            self._uniform_names = []
+        if self._attribute_names:
+            for name in self._attribute_names:
+                if name not in self._attribute_inputs:
+                    print('Warning, attribute %s has not been set.' % name)
+            self._attribute_names = []
+    
+    
     def draw_arrays(self, mode, first=None, count=None):
         """ Draw the attribute arrays in the specified mode.
         Only call when the program is enabled.
@@ -258,14 +314,18 @@ class ShaderProgram(GLObject):
         count : int
             The number of vertices to draw. Default all.
         """
+        # Check
         if not self._enabled:
             raise RuntimeError('draw_arrays require the ShaderProgram to be enabled.')
+        self._check_uniforms_and_attributes()
         
+        # Prepare
         if first is None:
             first = 0
         if count is None:
             count = self.attributes.vertex_count
         
+        # Draw
         gl.glDrawArrays(mode, first, count)
     
     
@@ -285,9 +345,12 @@ class ShaderProgram(GLObject):
             numpy arrays. If an ElementBuffer is provided, this method
             takes care of enabling it.
         """
+        # Check
         if not self._enabled:
             raise RuntimeError('draw_elements require the ShaderProgram to be enabled.')
-        
+        self._check_uniforms_and_attributes()
+     
+        # Prepare and draw
         if isinstance(indices, ElementBuffer):
             # Enable
             self.enable_object(indices)

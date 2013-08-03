@@ -95,7 +95,6 @@ class Canvas(app.Canvas):
         with self._program as prog:
             # You can set uniforms/attributes here too
             prog.uniforms['sizeFactor'] = 0.5 + np.sin(time.time()*3)*0.2
-            #prog.attributes['sizeFactor'] = 0.5 + np.sin(time.time()*3)*0.2
            
             # Draw (pick one!)
             #prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
