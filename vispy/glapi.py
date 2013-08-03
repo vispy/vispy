@@ -5,6 +5,7 @@ This code is auto-generated. Do not edit.
 """
 
 from OpenGL import GL as _GL
+import vispy
 
 class _GL_ENUM(int):
     def __new__(cls, name, value):
@@ -26,7 +27,8 @@ class GLApi(object):
                 func = getattr(_GL, funcname)
             except AttributeError:
                 func = self._glFuncNotAvailable
-                print('warning: %s not available' % funcname )
+                if vispy.config['show_warnings']:
+                    print('warning: %s not available' % funcname )
             setattr(self, funcname, func)
     
     def _glFuncNotAvailable(self, *args, **kwargs):
