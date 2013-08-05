@@ -34,7 +34,7 @@ predator = np.zeros(3)
 
 
 VERT_SHADER = """ // simple vertex shader
-
+#version 120
 attribute vec3 position;
 attribute vec3 a_color;
 attribute float a_size;
@@ -48,6 +48,7 @@ void main (void) {
 """
 
 FRAG_SHADER = """ // simple fragment shader
+#version 120
 varying vec3 v_color;
 void main()
 {    

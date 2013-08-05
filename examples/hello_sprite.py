@@ -26,7 +26,7 @@ a_position = np.random.uniform(-1.0, 1.0, (200,2))
 
 
 VERT_SHADER = """ // sprite vertex shader
-
+#version 120
 attribute vec3 a_position;
 attribute float a_size;
 void main (void) {
@@ -37,6 +37,7 @@ void main (void) {
 """
 
 FRAG_SHADER = """ // sprite fragment shader
+#version 120
 uniform sampler2D u_texture;
 void main()
 {   
