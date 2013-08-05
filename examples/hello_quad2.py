@@ -1,12 +1,16 @@
+# #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# This code of this example should be considered public domain.
+
 """ Example demonstrating showing a quad. Like hello_quad1.py, but now
-with Texture2D and VertexBuffer.
+with Texture2D and VertexBuffer, and optionally using an ElementBuffer to
+draw the vertices.
 """
 
 import time
 import numpy as np
 
-from vispy.oogl import Texture2D, VertexBuffer, ElementBuffer
-from vispy.oogl import VertexShader, FragmentShader, ShaderProgram
+from vispy import oogl
 from vispy import app
 from vispy import gl
 
@@ -17,26 +21,31 @@ im1[:50,:,0] = 1.0
 im1[:,:50,1] = 1.0
 im1[50:,50:,2] = 1.0
 
-# Create vetices and texture coords
-vPosition = np.array([  -0.8,-0.8,0.0,  +0.7,-0.7,0.0,  
-                        -0.7,+0.7,0.0,  +0.8,+0.8,0.0,], np.float32)
-vTexcoords = np.array([  0.0,0.0,  0.0,1.0, 1.0,0.0,  1.0,1.0], np.float32)
-vPosition.shape = -1,3
-vTexcoords.shape = -1,2
+# Create vetices and texture coords, combined in one array for high performance
+vertex_data = np.zeros(4, dtype=[   ('a_position', np.float32, 3), 
+                                    ('a_texcoord', np.float32, 2) ])
+vertex_data['a_position'] = np.array([ [-0.8, -0.8, 0.0], [+0.7, -0.7, 0.0],  
+                                       [-0.7, +0.7, 0.0], [+0.8, +0.8, 0.0,] ])
+vertex_data['a_texcoord'] = np.array([    [0.0, 0.0], [0.0, 1.0], 
+                                          [1.0, 0.0], [1.0, 1.0] ])
+
+# Create indices and an ElementBuffer for it
+indices = np.array([0,1,2, 1,2,3], np.uint16)
+indices_buffer = oogl.ElementBuffer(indices)
 
 
 VERT_SHADER = """ // simple vertex shader
 
-attribute vec3 vPosition;
-attribute vec2 vTexcoord;
+attribute vec3 a_position;
+attribute vec2 a_texcoord;
 uniform float sizeFactor;
 //attribute float sizeFactor;
 
 void main (void) {
     // Pass tex coords
-    gl_TexCoord[0] = vec4(vTexcoord.x, vTexcoord.y, 0.0, 0.0);
+    gl_TexCoord[0] = vec4(a_texcoord.x, a_texcoord.y, 0.0, 0.0);
     // Calculate position
-    gl_Position = sizeFactor*vec4(vPosition.x, vPosition.y, vPosition.z,
+    gl_Position = sizeFactor*vec4(a_position.x, a_position.y, a_position.z,
                                                         1.0/sizeFactor);
 }
 """
@@ -58,13 +67,20 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create program
-        self._program = ShaderProgram(
-                VertexShader(VERT_SHADER), FragmentShader(FRAG_SHADER) )
+        self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
+                                            oogl.FragmentShader(FRAG_SHADER) )
+        
+        # Create vertex buffer
+        self._vbo = oogl.VertexBuffer(vertex_data)
         
         # Set uniforms, samplers, attributes
-        self._program.uniforms.texture1 = Texture2D(im1)
-        self._program.attributes.vPosition = VertexBuffer(vPosition)
-        self._program.attributes.vTexcoord = VertexBuffer(vTexcoords)
+        # We create one VBO with all vertex data (array of structures)
+        # and create two views from it for the attributes.
+        self._program.uniforms['texture1'] = oogl.Texture2D(im1)
+        self._program.attributes.update(self._vbo)  # This does: 
+        #self._program.attributes['a_position'] = self._vbo['a_position']
+        #self._program.attributes['a_texcoords'] = self._vbo['a_texcoords']
+        
     
     def on_paint(self, event):
         
@@ -78,12 +94,14 @@ class Canvas(app.Canvas):
         # Draw
         with self._program as prog:
             # You can set uniforms/attributes here too
-            prog.uniforms.sizeFactor = 0.5 + np.sin(time.time()*3)*0.2
-            #prog.attributes.sizeFactor = 0.5 + np.sin(time.time()*3)*0.2
+            prog.uniforms['sizeFactor'] = 0.5 + np.sin(time.time()*3)*0.2
            
-            # Draw
-            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, len(vTexcoords))
-            
+            # Draw (pick one!)
+            #prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
+            prog.draw_elements(gl.GL_TRIANGLES, indices_buffer)
+            #prog.draw_elements(gl.GL_TRIANGLES, indices)  # Not recommended
+        
+        # Swap buffers and invoke a new draw
         self._backend._vispy_swap_buffers()
         self.update()
 

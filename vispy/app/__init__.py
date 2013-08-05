@@ -1,8 +1,14 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2013, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 """ 
 The app module defines three classes: Application, Canvas, and Timer. 
 On loading, vispy creates a default Application instance which can be used
 via functions in the module's namespace.
 """
+
+from __future__ import print_function, division, absolute_import
 
 import vispy
 

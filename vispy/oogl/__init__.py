@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2013, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 """
 Object oriented interface to OpenGL.
 
@@ -8,33 +12,30 @@ convenience classes are implemented (like the collection class?).
 Central to each visualization is the ShaderProgram. To enable it, it
 should be used as a context manager. Other objects, such as Texture2D
 and VertexBuffer should be set as uniforms and attributes of the
-ShaderProgram object. Some objects, like the ElementBuffer, must be
-enabled explicitly too. This can be done best via
-ShaderProgram.enable_object.
+ShaderProgram object. 
 
 Example::
     
     # Init
     program = ShaderProgram(...)
-    progra.attributes.position = VertexBuffer(my_positions_array)
+    program.attributes['a_position'] = VertexBuffer(my_positions_array)
     
     ...
     
     # Paint event handler
     with program:
-        program.uniforms.color = 0.0, 1.0, 0.0
-        gl.glDrawArrays(...)
+        program.uniforms['u_color'] = 0.0, 1.0, 0.0
+        program.draw_arrays(gl.GL_TRIANGLES)
 
 
 The oogl classes:
     
   * :class:`ShaderProgram`
-  * :class:`FragmentShader`
-  * :class:`VertexShader`
-  * :class:`VertexBuffer`
-  * :class:`ElementBuffer`
-  * :class:`Texture2D`
-  * :class:`Texture3D`
+  * :class:`FragmentShader` and :class:`VertexShader`
+  * :class:`VertexBuffer` and :class:`ElementBuffer`
+  * :class:`Texture2D`, :class:`Texture3D`, :class:`TextureCubeMap`
+  * :class:`FrameBuffer`
+  * :class:`RenderBuffer`
 
 """
 
@@ -131,6 +132,7 @@ class GLObject(object):
 
 
 from .vbo import VertexBuffer, ElementBuffer
-from .texture import Texture, Texture2D, Texture3D
+from .texture import Texture, Texture2D, Texture3D, TextureCubeMap
 from .shader import VertexShader, FragmentShader
+from .fbo import FrameBuffer, RenderBuffer
 from .program import ShaderProgram

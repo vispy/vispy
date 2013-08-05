@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2013, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 """ Script to create an OpenGL ES 2.0 API
 
 The header file for the OpenGL ES standard is parsed to obtain a list
@@ -26,10 +30,11 @@ from headerparser import Parser
 PREAMBLE = '''""" Classes that represent an OpenGL API. The idea is that each
 class represents one opengl header file. In vispy we focus on OpenGL ES 2.0.
 
-This code is auto-generated. Do not edit.
+THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 """
 
 from OpenGL import GL as _GL
+import vispy
 
 class _GL_ENUM(int):
     def __new__(cls, name, value):
@@ -51,7 +56,8 @@ class GLApi(object):
                 func = getattr(_GL, funcname)
             except AttributeError:
                 func = self._glFuncNotAvailable
-                print('warning: %s not available' % funcname )
+                if vispy.config['show_warnings']:  
+                    print('warning: %s not available' % funcname )
             setattr(self, funcname, func)
     
     def _glFuncNotAvailable(self, *args, **kwargs):

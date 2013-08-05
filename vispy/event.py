@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2013, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 """ 
 The event modules implements the classes that make up the event system.
 The Event class and its subclasses are used to represent "stuff that happens".
@@ -7,6 +11,8 @@ to emit events. The EmitterGroup groups EventEmitter objects.
 For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
+
+from __future__ import print_function, division, absolute_import
 
 import sys
 import collections, inspect

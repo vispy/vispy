@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division, absolute_import
+# Copyright (c) 2013, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
 Vispy - http://vispy.org
@@ -11,18 +12,12 @@ separately before use. These are:
 
 """
 
+from __future__ import print_function, division, absolute_import
+
 __version__ = '0.0.dev'
 
-# Create API object for OpenGL ES 2.0
-import vispy.glapi
-gl = vispy.glapi.GLES2()
-gl.ext = vispy.glapi.GLES2ext()
-
-import vispy.util
-from vispy.util import keys
 
 from vispy.event import EmitterGroup, EventEmitter, Event
-
 
 class ConfigEvent(Event):
     """ Event indicating a configuration change. 
@@ -64,5 +59,20 @@ config = Config()
 config.update(
     default_backend='qt',
     qt_lib= 'any',  # options are 'pyqt', 'pyside', or 'any'
+    show_warnings=False,
 )
 # todo: qt_lib is now not used anymore, because app.use accepts 'qt', 'pyside' and 'pyqt4'
+# LC: I think qt_lib needs to stay so that the end-user can determine whether 
+# pyqt/pyside is used. app.use('qt') should check config['qt_lib'].
+
+
+# Create API object for OpenGL ES 2.0
+# todo: I don't think this belongs here, since in principle vispy might grow non-opengl backends.
+#       maybe it goes in oogl.__init__?
+import vispy.glapi
+gl = vispy.glapi.GLES2()
+gl.ext = vispy.glapi.GLES2ext()
+
+import vispy.util
+from vispy.util import keys
+

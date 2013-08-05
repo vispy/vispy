@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2013, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 """ Definition of shader program.
 
 This code is inspired by similar classes from Pygly.
@@ -14,17 +17,39 @@ import numpy as np
 
 from vispy import gl
 from . import GLObject, push_enable, pop_enable, ext_available
-from . import VertexShader, FragmentShader
+from . import VertexBuffer, ElementBuffer
 from .program_inputs import UniformInputs, AttributeInputs
-
+from .shader import parse_shader_errors, VertexShader, FragmentShader
  
 if sys.version_info > (3,):
     basestring = str
 
 
-# todo: support uniform arrays of vectors/matrices
-# todo: use glGetActiveUniform to query all uniforms in use?
-# todo: allow setting of uniforms and attributes on the program object? u_color, a_pos
+# todo: support uniform arrays of vectors/matrices?
+# todo: more introspection into uniforms/attributes?
+
+
+# Patch glGetActiveAttrib if necessary
+if hasattr(gl.glGetActiveAttrib, 'restype'):
+    # We have the raw function in the DLL
+    import ctypes
+    old_glGetActiveAttrib = gl.glGetActiveAttrib
+    def new_glGetActiveAttrib(program, index):
+        # Prepare
+        bufsize = 32
+        length = ctypes.c_int()
+        size = ctypes.c_int()
+        type = ctypes.c_int()
+        name = ctypes.create_string_buffer(bufsize)
+        # Call
+        old_glGetActiveAttrib(program, index, 
+                bufsize, ctypes.byref(length), ctypes.byref(size), 
+                ctypes.byref(type), name)
+        # Return Python objects
+        #return name.value.decode('utf-8'), size.value, type.value
+        return name.value, size.value, type.value
+    gl.glGetActiveAttrib = new_glGetActiveAttrib
+
 
 
 class ShaderProgram(GLObject):
@@ -45,12 +70,16 @@ class ShaderProgram(GLObject):
         self._shaders_to_add = []
         self._shaders_to_remove = []
         for shader in shaders:
-            self.add_shader(shader)
+            self.attach_shader(shader)
         
         # Inputs
         self._uniform_inputs = UniformInputs(self)
         self._attribute_inputs = AttributeInputs(self)
         self._inputs = (self._uniform_inputs, self._attribute_inputs,)
+        
+        # List of names that we ask from OpenGL right after linking.
+        self._uniform_names = []
+        self._attribute_names = []
         
         # List of objects being enabled
         self._enabled_objects = []
@@ -62,39 +91,44 @@ class ShaderProgram(GLObject):
     
     @property
     def uniforms(self):
-        """ A namespace for the uniform inputs to this shader program.
-        For example: ``program.uniforms.color = 0.0, 1.0, 0.0``. 
+        """ A dictionary for the uniform inputs to this shader program.
+        For example: ``program.uniforms['u_color'] = 0.0, 1.0, 0.0``. 
         
-        Uniforms can be a tuple/array of 1 to 4 elements to specify a vector,
-        a numpy array of 4, 9 or 16 elements to specify a matrix, or
-        a Texture object to specify a sampler.
+        Uniforms can be a tuple/array of 1 to 4 elements to specify a
+        vector, 4, 9 or 16 elements to specify a matrix, or a Texture
+        object to specify a sampler.
         """
         return self._uniform_inputs
     
     
     @property
     def attributes(self):
-        """ A namespace for the attribute inputs to this shader program.
-        For example: ``program.attributes.positions = my_positions_array``. 
+        """ A dictionary for the attribute inputs to this shader program.
+        For example: ``program.attributes['a_position'] = my_positions_array``. 
         
         Attributes can be a tuple of 1 to 4 elements (global attributes),
         a numpy array of per vertex attributes, or a VertexBuffer object
         (recommended over the numpy array).
+        
+        Note that one can use ``prog.attributes.update(my_stuctured_array)``
+        or ``prog.attributes.update(my_stuctured_vbo)`` to map field names
+        to attribute names automatically.
         """
         return self._attribute_inputs
     
     
-    def add_shader(self, shader):
-        """ Add the given vertex or fragment shader to this shader program.
+    def attach_shader(self, shader):
+        """ Attach the given vertex or fragment shader to this shader program.
+        Multiple shaders can be attached (also e.g. multiple FragmentShaders).
         """
         if isinstance(shader, (VertexShader, FragmentShader)):
             self._shaders_to_add.append(shader)
         else:
-            raise ValueError('add_shader required VertexShader of FragmentShader.')
+            raise ValueError('attach_shader required VertexShader of FragmentShader.')
     
     
-    def remove_shader(self, shader):
-        """ Remove the given shader from this shader program. 
+    def detach_shader(self, shader):
+        """ Detach the given shader from this shader program. 
         """
         if shader in self._shaders_to_add:
             self._shaders_to_add.remove(shader)
@@ -116,32 +150,32 @@ class ShaderProgram(GLObject):
         return shaders
     
     
-    def get_vertex_shader(self, index=0):
-        """ Get the ith vertex shader for this shader program. Default first.
-        """
-        count = -1
-        for shader in self.shaders:
-            if isinstance(shader, VertexShader):
-                count += 1
-                if count == index:
-                    return shader
-        else:
-            return None
+#     def get_vertex_shader(self, index=0):
+#         """ Get the ith vertex shader for this shader program. Default first.
+#         """
+#         count = -1
+#         for shader in self.shaders:
+#             if isinstance(shader, VertexShader):
+#                 count += 1
+#                 if count == index:
+#                     return shader
+#         else:
+#             return None
+#     
+# 
+#     def get_fragment_shader(self, index=0):
+#         """ Get the ith fragment shader for this shader program. Default first.
+#         """
+#         count = -1
+#         for shader in self.shaders:
+#             if isinstance(shader, FragmentShader):
+#                 count += 1
+#                 if count == index:
+#                     return shader
+#         else:
+#             return None
     
-
-    def get_fragment_shader(self, index=0):
-        """ Get the ith fragment shader for this shader program. Default first.
-        """
-        count = -1
-        for shader in self.shaders:
-            if isinstance(shader, FragmentShader):
-                count += 1
-                if count == index:
-                    return shader
-        else:
-            return None
     
-        
     def _enable(self):
         if self._handle <= 0:# or not gl.glIsProgram(self._handle):
             self._handle = gl.glCreateProgram()
@@ -172,6 +206,17 @@ class ShaderProgram(GLObject):
                 errors = gl.glGetProgramInfoLog(self._handle)
                 parse_shader_errors(errors)
                 raise RuntimeError(errors)
+            # Get list of uniforms and attributes, for diagnosis
+            self._uniform_names = []
+            self._attribute_names = []
+            count = gl.glGetProgramiv(self._handle, gl.GL_ACTIVE_UNIFORMS)
+            for i in range(count):
+                info = gl.glGetActiveUniform(self._handle, i)
+                self._uniform_names.append(info[0].decode('utf-8'))
+            count = gl.glGetProgramiv(self._handle, gl.GL_ACTIVE_ATTRIBUTES)
+            for i in range(count):
+                info = gl.glGetActiveAttrib(self._handle, i)
+                self._attribute_names.append(info[0].decode('utf-8'))
         
         # Use this program!
         gl.glUseProgram(self._handle)
@@ -236,88 +281,95 @@ class ShaderProgram(GLObject):
         gl.glUseProgram(0)
         self._enabled = False
     
-
-
-## Convenience funcsions used in this module
-
-
-def parse_shader_error(error):
-    """Parses a single GLSL error and extracts the line number
-    and error description.
-
-    Line number and description are returned as a tuple.
-
-    GLSL errors are not defined by the standard, as such,
-    each driver provider prints their own error format.
-
-    Nvidia print using the following format::
-
-        0(7): error C1008: undefined variable "MV"
-
-    Nouveau Linux driver using the following format::
-
-        0:28(16): error: syntax error, unexpected ')', expecting '('
-
-    ATi and Intel print using the following format::
-
-        ERROR: 0:131: '{' : syntax error parse error
-    """
-    import re
-
-    # Nvidia
-    # 0(7): error C1008: undefined variable "MV"
-    match = re.match( r'(\d+)\((\d+)\)\s*:\s(.*)', error )
-    if match:
-        return (
-            int(match.group( 2 )),   # line number
-            match.group( 3 )    # description
-            )
-
-    # ATI
-    # Intel
-    # ERROR: 0:131: '{' : syntax error parse error
-    match = re.match( r'ERROR:\s(\d+):(\d+):\s(.*)', error )
-    if match:
-        return (
-            int(match.group( 2 )),   # line number
-            match.group( 3 )    # description
-            )
-
-    # Nouveau
-    # 0:28(16): error: syntax error, unexpected ')', expecting '('
-    match = re.match( r'(\d+):(\d+)\((\d+)\):\s(.*)', error )
-    if match:
-        return (
-            int(match.group( 2 )),   # line number
-            match.group( 4 )    # description
-            )
     
-    return None, error
-
-
-def parse_shader_errors(errors, source=None):
-    """Parses a GLSL error buffer and prints a list of
-    errors, trying to show the line of code where the error 
-    ocrrured.
-    """
-    # Init
-    if not isinstance(errors, basestring):
-        errors = errors.decode('utf-8', 'replace')
-    results = []
-    lines = None
-    if source is not None:
-        lines = [line.strip() for line in source.split('\n')]
+    def _check_uniforms_and_attributes(self):
+        """ Check if the uniform names and attributes names that we 
+        obtain from OpenGL after linking are actually set in the
+        uniforms and attributes dicst.
+        """
+        # Check uniforms and attributes. Check only once after each linking
+        if self._uniform_names:
+            for name in self._uniform_names:
+                if name not in self._uniform_inputs:
+                    print('Warning, uniform %s has not been set.' % name)
+            self._uniform_names = []
+        if self._attribute_names:
+            for name in self._attribute_names:
+                if name not in self._attribute_inputs:
+                    print('Warning, attribute %s has not been set.' % name)
+            self._attribute_names = []
     
-    for error in errors.split('\n'):
-        # Strip; skip empy lines
-        error = error.strip()
-        if not error:
-            continue
-        # Separate line number from description (if we can)
-        linenr, error = parse_shader_error(error)
-        if None in (linenr, lines):
-            print('    %s' % error)
+    
+    def draw_arrays(self, mode, first=None, count=None):
+        """ Draw the attribute arrays in the specified mode.
+        Only call when the program is enabled.
+        
+        Parameters
+        ----------
+        mode : GL_ENUM
+            GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP, 
+            GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
+        first : int
+            The starting vertex index in the vertex array. Default 0.
+        count : int
+            The number of vertices to draw. Default all.
+        """
+        # Check
+        if not self._enabled:
+            raise RuntimeError('draw_arrays require the ShaderProgram to be enabled.')
+        self._check_uniforms_and_attributes()
+        
+        # Prepare
+        if first is None:
+            first = 0
+        if count is None:
+            count = self.attributes.vertex_count
+        
+        # Draw
+        gl.glDrawArrays(mode, first, count)
+    
+    
+    def draw_elements(self, mode, indices):
+        """ Draw the attribute arrays using a specified set of vertices,
+        in the specified mode.
+        Only call when the program is enabled.
+        
+        Parameters
+        ----------
+        mode : GL_ENUM
+            GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP, 
+            GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
+        indices : numpy_array or ElementBuffer
+            The indices to the vertices in the vertex arrays to draw.
+            For performance, ElementBuffer objects are recommended over
+            numpy arrays. If an ElementBuffer is provided, this method
+            takes care of enabling it.
+        """
+        # Check
+        if not self._enabled:
+            raise RuntimeError('draw_elements require the ShaderProgram to be enabled.')
+        self._check_uniforms_and_attributes()
+     
+        # Prepare and draw
+        if isinstance(indices, ElementBuffer):
+            # Enable
+            self.enable_object(indices)
+            # Prepare
+            offset = None  # todo: allow the use of offset
+            gltype = VertexBuffer.DTYPES[indices.type]
+            # Draw
+            gl.glDrawElements(mode, indices.count, gltype, offset) 
+        
+        elif isinstance(indices, np.ndarray):
+            # Get type
+            gltype = ElementBuffer.DTYPES.get(indices.dtype.name, None)
+            if gltype is None:
+                raise ValueError('Unsupported data type for ElementBuffer.')
+            elif gltype == gl.GL_UNSIGNED_INT and not ext_available('element_index_uint'):
+                raise ValueError('element_index_uint extension needed for uint32 ElementBuffer.')
+            # Draw
+            gl.glDrawElements(mode, indices.size, gltype, indices) 
+            
         else:
-            print('    on line %i: %s' % (linenr, error))
-            if linenr>0 and linenr < len(lines):
-                print('        %s' % lines[linenr-1])
+            raise ValueError("draw_elements requires an ElementBuffer or a numpy array.")
+

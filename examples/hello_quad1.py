@@ -1,35 +1,34 @@
+# #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# This code of this example should be considered public domain.
+
 """ Simple example demonstrating showing a quad.
 oogl objects that this example demonstrates: ShaderProgram.
 """
 
-from vispy.oogl import VertexShader, FragmentShader, ShaderProgram
+from vispy import oogl
 from vispy import app
 from vispy import gl
 import numpy as np
 
-# Create vetices and texture coords
-vPosition = np.array([  -0.8,-0.8,0.0,  +0.7,-0.7,0.0,  
-                        -0.7,+0.7,0.0,  +0.8,+0.8,0.0,], np.float32)
-vPosition.shape = -1,3
+# Create vetices 
+vPosition = np.array([  [-0.8, -0.8, 0.0],  [+0.7, -0.7, 0.0],  
+                        [-0.7, +0.7, 0.0],  [+0.8, +0.8, 0.0,] ], np.float32)
 
 
 VERT_SHADER = """ // simple vertex shader
-
-attribute vec3 vPosition;
-
+attribute vec3 a_position;
 void main (void) {
-    gl_Position = vec4(vPosition, 1.0);
+    gl_Position = vec4(a_position, 1.0);
 }
 """
 
 FRAG_SHADER = """ // simple fragment shader
-uniform vec4 color;
-
+uniform vec4 u_color;
 void main()
 {    
-    gl_FragColor = color;
+    gl_FragColor = u_color;
 }
-
 """
 
 
@@ -39,12 +38,12 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create program
-        self._program = ShaderProgram(
-                VertexShader(VERT_SHADER), FragmentShader(FRAG_SHADER) )
+        self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
+                                            oogl.FragmentShader(FRAG_SHADER) )
         
         # Set uniform and attribute
-        self._program.uniforms.color = 0.2, 1.0, 0.4, 1.0
-        self._program.attributes.vPosition = vPosition
+        self._program.uniforms['u_color'] = 0.2, 1.0, 0.4, 1
+        self._program.attributes['a_position'] = vPosition
     
     
     def on_paint(self, event):
@@ -57,9 +56,10 @@ class Canvas(app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
         # Draw
-        with self._program:
-            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, len(vPosition))
+        with self._program as prog:
+            prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
         
+        # Swap buffers
         self._backend._vispy_swap_buffers()
     
 

@@ -1,7 +1,13 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2013, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 """ This module provides an template for creating backends for vispy.
 It clearly indicates what methods should be implemented and what events
 should be emitted.
 """
+
+from __future__ import print_function, division, absolute_import
 
 import vispy
 from vispy import app
