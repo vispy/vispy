@@ -22,7 +22,7 @@ import sys
 import numpy as np
 
 from vispy import gl
-from . import GLObject, push_enable, pop_enable, ext_available
+from . import GLObject, ext_available
 
 if sys.version_info > (3,):
     basestring = str
@@ -63,9 +63,6 @@ class _RawTexture(GLObject):
     def _enable(self):
         """ To be called by context handler. Never call this yourself.
         """
-        # glEnale(GL_TEXTURE_2D) not needed in modern opengl, right?
-#         # Enable things that we need
-#         push_enable(self._target)
         # Bind
         gl.glBindTexture(self._target, self._handle)
     
@@ -75,8 +72,6 @@ class _RawTexture(GLObject):
         """
         # Unbind and disable
         gl.glBindTexture(self._target, 0)
-#         # No need for texturing anymore
-#         pop_enable(self._target)
     
     
     def _allocate(self, shape, format, level=0):

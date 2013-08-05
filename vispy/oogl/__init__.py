@@ -63,34 +63,6 @@ from __future__ import print_function, division, absolute_import
 from vispy import gl
 
 
-## Replacement for glPushAttrib (which is deprecated)
-
-ENABLE_QUEUE = {}
-
-def push_enable(enum):
-    """ Like glEnable, but keeps track of how often it is called
-    and really enables/disables if necessary. Only works as it should
-    if the application does not make glEnable/glDisable calls by itself.
-    """
-    cur = ENABLE_QUEUE.get(enum, 0)
-    if cur == 0:
-        gl.glEnable(enum)
-    ENABLE_QUEUE[enum] = cur + 1
-    
-
-def pop_enable(enum):
-    """ Like glDisable, but keeps track of how often it is called
-    and really enables/disables if necessary. Only works as it should
-    if the application does not make glEnable/glDisable calls by itself.
-    """
-    cur = ENABLE_QUEUE.get(enum, 0)
-    if cur == 1:
-        gl.glDisable(enum)
-    ENABLE_QUEUE[enum] = max(0, cur-1)
-
-
-##
-
 def ext_available(extension_name):
     return True # for now
 
