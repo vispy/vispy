@@ -28,7 +28,7 @@ a_position = np.random.uniform(-1.0, 1.0, (200,2))
 VERT_SHADER = """ // sprite vertex shader
 #version 120
 attribute vec3 a_position;
-attribute float a_size;
+uniform float a_size;
 void main (void) {
     // Calculate position
     gl_Position = vec4(a_position.x, a_position.y, a_position.z, 1.0);
@@ -41,7 +41,7 @@ FRAG_SHADER = """ // sprite fragment shader
 uniform sampler2D u_texture;
 void main()
 {   
-    gl_FragColor = texture2D(u_texture, gl_PointCoord.st);
+    gl_FragColor = texture2D(u_texture, gl_PointCoord.xy);
 }
 
 """
@@ -58,7 +58,7 @@ class Canvas(app.Canvas):
         
         # Set uniforms and attributes
         self._program.uniforms['u_texture'] = oogl.Texture2D(im1)
-        self._program.attributes['a_size'] = 12.0
+        self._program.uniforms['a_size'] = 12.0
         self._program.attributes['a_position'] = a_position
     
     
@@ -76,7 +76,8 @@ class Canvas(app.Canvas):
         gl.glEnable(GL.GL_PROGRAM_POINT_SIZE)
         gl.glEnable(GL.GL_POINT_SPRITE)
         GL.glTexEnvi(GL.GL_POINT_SPRITE, GL.GL_COORD_REPLACE, GL.GL_TRUE);
-        
+        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
+
         # Draw
         with self._program as prog:
             prog.draw_arrays(gl.GL_POINTS)
