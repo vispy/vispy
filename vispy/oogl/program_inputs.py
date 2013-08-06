@@ -223,6 +223,7 @@ class UniformInputs(BaseInputs):
             # Apply
             if type in (gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT4):
                 transpose = False   # OpenGL ES 2.0 does not support transpose
+                assert value.dtype == np.float32
                 fun(loc, 1, transpose, value)
             else:
                 fun(loc, 1, value)

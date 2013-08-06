@@ -9,16 +9,26 @@ THISDIR = os.path.dirname(os.path.abspath(__file__))
 EXAMPLESDIR = os.path.join(THISDIR, '..', 'examples')
 OUTPUTDIR = os.path.join(THISDIR, 'examples')
 
+
+def clean():
+    # Clear examples dir
+    if os.path.isdir(OUTPUTDIR):
+        for fname in os.listdir(OUTPUTDIR):
+            if fname.endswith('.rst'):
+                os.remove(os.path.join(OUTPUTDIR, fname))
+        os.rmdir(OUTPUTDIR)
+    # Clean examples file
+    fname = os.path.join(THISDIR, 'examples.rst')
+    if os.path.isfile(fname):
+        os.remove(fname)
+
+
 def main():
-        
+    
+    clean()
+    
     if not os.path.isdir(OUTPUTDIR):
         os.mkdir(OUTPUTDIR)
-    
-    # Clear examples dir
-    for fname in os.listdir(OUTPUTDIR):
-        if fname.endswith('.rst'):
-            os.remove(os.path.join(OUTPUTDIR, fname))
-    
     
     example_names = []
     

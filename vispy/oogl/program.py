@@ -16,7 +16,7 @@ import weakref
 import numpy as np
 
 from vispy import gl
-from . import GLObject, push_enable, pop_enable, ext_available
+from . import GLObject, ext_available
 from . import VertexBuffer, ElementBuffer
 from .program_inputs import UniformInputs, AttributeInputs
 from .shader import parse_shader_errors, VertexShader, FragmentShader
