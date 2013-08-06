@@ -252,8 +252,10 @@ class VertexBuffer(Buffer, IndexableVertexBufferMixin):
             # Data with multiple fields
             fields = unravel_dtype_fields(data.dtype)
             for name, fieldinfo in fields.items():
-                assert fieldinfo[0] in self.DTYPES
-                assert fieldinfo[1] in (1,2,3,4)
+                if fieldinfo[0] not in self.DTYPES:
+                    raise TypeError("Field %s type %s not supported by VertexBuffer." % (name, fieldinfo[0]))
+                if fieldinfo[1] not in (1,2,3,4):
+                    raise TypeError("Field %s size=%d; not supported by VertexBuffer." % (name, fieldinfo[1]))
             # Set type and shape
             self._type = fields
             self._shape = data.size, 1
