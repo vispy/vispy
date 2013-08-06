@@ -7,18 +7,32 @@ from vispy import gl
 
 THISDIR = os.path.dirname(os.path.abspath(__file__))
 
-def main():
+
+def clean():
+    fname = os.path.join(THISDIR, 'gl.rst')
+    if os.path.isfile(fname):
+        os.remove(fname)
+
     
+def parse_api(ob):
     # Parse the namespace
     const_names = []
     func_names = []
-    for name in dir(gl):
+    for name in dir(ob):
         if name.startswith('GL_'):
             const_names.append(name)
         elif name.startswith('gl'):
             func_names.append(name)
+    return const_names, func_names
+    
+
+def main():
     
     lines = []
+    
+    # Get info
+    gl_const_names, gl_func_names = parse_api(gl)
+    glext_const_names, glext_func_names = parse_api(gl.ext)
     
     # Write title
     lines.append('OpenGL ES 2.0 API')
@@ -27,24 +41,30 @@ def main():
     
     # Some info
     lines.append('The ``vispy.gl`` namespace provides the OpenGL ES 2.0 API,')
-    lines.append('Consisting of %i constants and %i functions.' %
-                        (len(const_names), len(func_names)) )
+    lines.append('Consisting of %i constants and %i functions ' %
+                        (len(gl_const_names), len(gl_func_names)) )
+    lines.append('(with %i and %i more in the extensions) ' %
+                        (len(glext_const_names), len(glext_func_names)) )
+            
     lines.append('At this moment, the functions are taken from OpenGL.GL (provided by the PyOpenGL package).')
     lines.append('')
     
     # Write class header
     lines.append('**vispy.gl**\n')
     
-    # Write docstring
-    for line in gl.__doc__.splitlines():
-        line = line.strip()
-        lines.append('    '+line)
-    lines.append('')
+    # Write constants and functions
+    for name in sorted(gl_const_names):
+        lines.append('  * %s' % name)
+    for name in sorted(gl_func_names): 
+        lines.append('  * %s()' % name)
+    
+    # Write class header
+    lines.append('**vispy.gl.ext**\n')
     
     # Write constants and functions
-    for name in sorted(const_names):
+    for name in sorted(glext_const_names):
         lines.append('  * %s' % name)
-    for name in sorted(func_names): 
+    for name in sorted(glext_func_names): 
         lines.append('  * %s()' % name)
     
     # Write file

@@ -12,7 +12,7 @@ import sys
 import numpy as np
 
 from vispy import gl
-from . import GLObject, push_enable, pop_enable, ext_available
+from . import GLObject, ext_available
 
 if sys.version_info > (3,):
     basestring = str

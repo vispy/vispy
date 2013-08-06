@@ -19,14 +19,6 @@ import sys, os
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('.'))
 
-# Generate the examples
-import examplesgenerator
-examplesgenerator.main()
-
-
-# Generate the GL API
-import glapigenerator
-glapigenerator.main()
 
 # -- General configuration -----------------------------------------------------
 
@@ -35,7 +27,8 @@ glapigenerator.main()
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.intersphinx']
+extensions = ['vispy_ext', 'sphinx.ext.autodoc', 
+                'sphinx.ext.doctest', 'sphinx.ext.intersphinx']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

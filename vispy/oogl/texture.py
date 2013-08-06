@@ -22,7 +22,7 @@ import sys
 import numpy as np
 
 from vispy import gl
-from . import GLObject, push_enable, pop_enable, ext_available
+from . import GLObject, ext_available
 
 if sys.version_info > (3,):
     basestring = str
@@ -63,9 +63,6 @@ class _RawTexture(GLObject):
     def _enable(self):
         """ To be called by context handler. Never call this yourself.
         """
-        # glEnale(GL_TEXTURE_2D) not needed in modern opengl, right?
-#         # Enable things that we need
-#         push_enable(self._target)
         # Bind
         gl.glBindTexture(self._target, self._handle)
     
@@ -75,8 +72,6 @@ class _RawTexture(GLObject):
         """
         # Unbind and disable
         gl.glBindTexture(self._target, 0)
-#         # No need for texturing anymore
-#         pop_enable(self._target)
     
     
     def _allocate(self, shape, format, level=0):
@@ -200,6 +195,9 @@ class Texture(_RawTexture):
         self._pending_data = None
         self._texture_shape = None
         
+        # Each subdata that is set gets processed
+        self._pending_subdata = []
+        
         # The parameters that apply to this texture. One variable to 
         # keep track of pending parameters, the other for resetting
         # parameters if its re-uploaded.
@@ -316,19 +314,77 @@ class Texture(_RawTexture):
         return param
     
     
-    def set_data(self, data, offset=None, level=0, format=None, clim=None):
+    def set_subdata(self, offset, data, level=0, format=None, clim=None):
+        """ Set a region of data for this texture. This method can be
+        called at any time (even if there is no context yet). 
+        
+        In contrast to set_data(), each call to this method results in
+        an OpenGL api call.
+        
+        Parameters
+        ----------
+        offset : tuple
+            The offset for each dimension, to update part of the texture.
+        data : numpy array
+            The texture data to set. The data (with offset) cannot exceed
+            the boundaries of the current texture.
+        level : int
+            The mipmap level. Default 0.
+        format : OpenGL enum
+            The format representation of the data. If not given or None,
+            it is decuced from the given data. Can be GL_RGB, GL_RGBA,
+            GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA.
+        clim : (min, max)
+            Contrast limits for the data. If specified, min will end
+            up being 0.0 (black) and max will end up as 1.0 (white).
+            If not given or None, clim is determined automatically. For
+            floats they become (0.0, 1.0). For integers the are mapped to
+            the full range of the type. 
+        
+        """
+        
+        # Is there data?
+        if self._texture_shape is None:
+            raise RuntimeError('Cannot set subdata if there is not data or storage yet.')
+        
+        # Get ndim
+        MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
+        ndim = MAP.get(self._target, 0)
+        
+        # Check data
+        if not isinstance(data, np.ndarray):
+            raise ValueError("Data should be a numpy array.")
+        shape = data.shape
+        assert isinstance(shape, tuple)
+        assert len(shape) in (ndim, ndim+1)
+        
+        # Check offset
+        offset = [int(i) for i in offset]
+        assert len(offset) == ndim
+        
+        # Check level, format, clim
+        assert isinstance(level, int) and level >= 0
+        assert format in (None, gl.GL_RGB, gl.GL_RGBA, gl.GL_LUMINANCE, 
+                            gl.GL_LUMINANCE_ALPHA, gl.GL_ALPHA)
+        assert clim is None or (isinstance(clim, tuple) and len(clim)==2)
+        
+        # Set pending data ...
+        self._pending_subdata.append((data, offset, level, format, clim))
+    
+    
+    def set_data(self, data, level=0, format=None, clim=None):
         """ Set the data for this texture. This method can be called at any
         time (even if there is no context yet).
         
-        If the shape of the given data matches the shape of the current
-        texture, the data is updated in a fast manner.
+        It is relatively cheap to call this function multiple times,
+        only the last data is set right before drawing. If the shape
+        of the given data matches the shape of the current texture, the
+        data is updated in a fast manner.
         
         Parameters
         ----------
         data : numpy array
             The texture data to set.
-        offset : tuple
-            The offset for each dimension, to update part of the texture.
         level : int
             The mipmap level. Default 0.
         format : OpenGL enum
@@ -360,24 +416,17 @@ class Texture(_RawTexture):
         assert isinstance(shape, tuple)
         assert len(shape) in (ndim, ndim+1)
         
-        # Check offset
-        MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
-        ndim = MAP.get(self._target, 0)
-        if offset is not None:
-            offset = [int(i) for i in offset]
-            assert len(offset) == len(data.shape[:ndim])
-        elif data.shape == self._texture_shape and self._handle > 0:
-            # If data is of same shape as current texture, update is much faster
-            offset = [0 for i in self._texture_shape[:ndim]]
-        
         # Check level, format, clim
         assert isinstance(level, int) and level >= 0
         assert format in (None, gl.GL_RGB, gl.GL_RGBA, gl.GL_LUMINANCE, 
                             gl.GL_LUMINANCE_ALPHA, gl.GL_ALPHA)
         assert clim is None or (isinstance(clim, tuple) and len(clim)==2)
         
+        # Clear subdata
+        self._pending_subdata = []
+        
         # Set pending data ...
-        self._pending_data = data, offset, level, format, clim
+        self._pending_data = data, None, level, format, clim
         self._texture_shape = data.shape
     
     
@@ -428,7 +477,7 @@ class Texture(_RawTexture):
                             gl.GL_LUMINANCE_ALPHA, gl.GL_ALPHA)
         
         # Set pending data ...
-        self._pending_data = None, None, level, format, None
+        self._pending_data = shape, None, level, format, None
         self._texture_shape = shape
     
     
@@ -460,6 +509,12 @@ class Texture(_RawTexture):
                 print('Warning enabling texture, the texture is not valid.')
                 return
         
+        # Need to update some regions?
+        while self._pending_subdata:
+            pendingData = self._pending_subdata.pop(0)
+            # Process pending data
+            self._process_pending_data(*pendingData)
+        
         # Is the texture valid? It may simply not have been given data yet
         if self._handle == 0:
             return
@@ -480,15 +535,24 @@ class Texture(_RawTexture):
         a new texture) or updating it (a subsection).
         """
         
-        # Convert data type to one supported by OpenGL
-        if data is not None:
+        if isinstance(data, np.ndarray):
+            # Convert data type to one supported by OpenGL
             data = convert_data(data, clim)
-        
-        # Get shape
-        if data is not None:
+            # Set shape
             shape = data.shape
+            
+            # If data is of same shape as current texture, update is much faster
+            if not offset:
+                MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
+                ndim = MAP.get(self._target, 0)
+                if data.shape == self._texture_shape and self._handle > 0:
+                    offset = [0 for i in self._texture_shape[:ndim]]
+        
+        elif isinstance(data, tuple):
+            # Set shape
+            shape = data
         else:
-            shape = self._texture_shape
+            raise RuntimeError('data is not a valid type, should not happen!')
         
         # Determine format (== internalformat) 
         if format is None:
@@ -510,7 +574,7 @@ class Texture(_RawTexture):
             self._create()
             gl.glBindTexture(self._target, self._handle)
             # Upload!
-            if data is None:
+            if isinstance(data, tuple):
                 self._allocate(shape, format, level)
             else:
                 self._upload(data, format, level)
