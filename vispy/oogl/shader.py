@@ -48,13 +48,7 @@ class BaseShader(GLObject):
         """
         self._source = source
         self._compiled = 0  # force recompile 
-        # Try to get description from first line
-        # EXPERIMENTAL
-        if source is None:
-            self._description = None
-        else:
-            self._description = self._source.split('\n',1)[0].strip(' \t/*')
-            
+        self._description = None
     
     
     def add_source(self, source):
@@ -106,10 +100,23 @@ class BaseShader(GLObject):
         pass
 
     def __repr__(self):
-        if self._description:
-            return "<%s '%s'>" % (self.__class__.__name__, self._description)
-        else:
-            return "<%s at %s>" % (self.__class__.__name__, hex(id(self)))
+        if self._description is None:
+            # Try to get description from first line
+            if self._source is None:
+                self._description = hex(id(self))
+            else:
+                for line in self._source.split('\n'):
+                    line = line.strip(' \t')
+                    if line == '':
+                        continue
+                    if line.startswith('/'):
+                        self._description = line.strip(' \t/*')
+                        break
+                    else:
+                        self._description = hex(id(self))
+                        break
+            
+        return "<%s '%s'>" % (self.__class__.__name__, self._description)
 
 
 class VertexShader(BaseShader):
