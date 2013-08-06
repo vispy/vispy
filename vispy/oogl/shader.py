@@ -35,6 +35,7 @@ class BaseShader(GLObject):
         
         self._handle = 0
         self._compiled = 0  # 0: not compiled, 1: compile tried, 2: compile success 
+        self._description = None
         self.set_source(source)
     
     
@@ -49,7 +50,11 @@ class BaseShader(GLObject):
         self._compiled = 0  # force recompile 
         # Try to get description from first line
         # EXPERIMENTAL
-        self._desciption = self._source.split('\n',1)[0].strip(' \t/*')
+        if source is None:
+            self._description = None
+        else:
+            self._description = self._source.split('\n',1)[0].strip(' \t/*')
+            
     
     
     def add_source(self, source):
@@ -100,6 +105,11 @@ class BaseShader(GLObject):
     def _disable(self):
         pass
 
+    def __repr__(self):
+        if self._description:
+            return "<%s '%s'>" % (self.__class__.__name__, self._description)
+        else:
+            return "<%s at %s>" % (self.__class__.__name__, hex(id(self)))
 
 
 class VertexShader(BaseShader):
@@ -107,12 +117,6 @@ class VertexShader(BaseShader):
     """
     def __init__(self, source=None):
         BaseShader.__init__(self, gl.GL_VERTEX_SHADER, source)
-    
-    def __repr__(self):
-        if self._desciption:
-            return "<VertexShader '%s'>" % self._desciption 
-        else:
-            return "<VertexShader at %s>" % hex(id(self)) 
 
 
 
@@ -121,12 +125,7 @@ class FragmentShader(BaseShader):
     """
     def __init__(self, source=None):
         BaseShader.__init__(self, gl.GL_FRAGMENT_SHADER, source)
-    
-    def __repr__(self):
-        if self._desciption:
-            return "<FragmentShader '%s'>" % self._desciption 
-        else:
-            return "<FragmentShader at %s>" % hex(id(self)) 
+
 
 
 def parse_shader_error(error):
