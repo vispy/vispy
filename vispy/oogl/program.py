@@ -190,9 +190,6 @@ class ShaderProgram(GLObject):
         
         # Link the program?
         if not gl.glGetProgramiv(self.handle, gl.GL_LINK_STATUS):
-            # Force re-locating uniforms
-            for input in self._inputs:
-                input._clear_cache()
             # Link!
             try:
                 gl.glLinkProgram(self._handle)
@@ -207,16 +204,8 @@ class ShaderProgram(GLObject):
                 parse_shader_errors(errors)
                 raise RuntimeError(errors)
             # Get list of uniforms and attributes, for diagnosis
-            self._uniform_names = []
-            self._attribute_names = []
-            count = gl.glGetProgramiv(self._handle, gl.GL_ACTIVE_UNIFORMS)
-            for i in range(count):
-                info = gl.glGetActiveUniform(self._handle, i)
-                self._uniform_names.append(info[0].decode('utf-8'))
-            count = gl.glGetProgramiv(self._handle, gl.GL_ACTIVE_ATTRIBUTES)
-            for i in range(count):
-                info = gl.glGetActiveAttrib(self._handle, i)
-                self._attribute_names.append(info[0].decode('utf-8'))
+            for input in self._inputs:
+                input._on_linking()
         
         # Use this program!
         gl.glUseProgram(self._handle)
@@ -227,7 +216,7 @@ class ShaderProgram(GLObject):
         
         # Apply all uniforms, samplers and attributes
         for input in self._inputs:
-            input._apply_static()
+            input._on_enabling()
     
     
     def _enable_shaders(self):
@@ -282,24 +271,6 @@ class ShaderProgram(GLObject):
         self._enabled = False
     
     
-    def _check_uniforms_and_attributes(self):
-        """ Check if the uniform names and attributes names that we 
-        obtain from OpenGL after linking are actually set in the
-        uniforms and attributes dicst.
-        """
-        # Check uniforms and attributes. Check only once after each linking
-        if self._uniform_names:
-            for name in self._uniform_names:
-                if name not in self._uniform_inputs:
-                    print('Warning, uniform %s has not been set.' % name)
-            self._uniform_names = []
-        if self._attribute_names:
-            for name in self._attribute_names:
-                if name not in self._attribute_inputs:
-                    print('Warning, attribute %s has not been set.' % name)
-            self._attribute_names = []
-    
-    
     def draw_arrays(self, mode, first=None, count=None):
         """ Draw the attribute arrays in the specified mode.
         Only call when the program is enabled.
@@ -317,7 +288,8 @@ class ShaderProgram(GLObject):
         # Check
         if not self._enabled:
             raise RuntimeError('draw_arrays require the ShaderProgram to be enabled.')
-        self._check_uniforms_and_attributes()
+        for input in self._inputs: 
+            input._on_drawing()
         
         # Prepare
         if first is None:
@@ -348,7 +320,8 @@ class ShaderProgram(GLObject):
         # Check
         if not self._enabled:
             raise RuntimeError('draw_elements require the ShaderProgram to be enabled.')
-        self._check_uniforms_and_attributes()
+        for input in self._inputs: 
+            input._on_drawing()
      
         # Prepare and draw
         if isinstance(indices, ElementBuffer):
