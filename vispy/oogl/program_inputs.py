@@ -317,6 +317,11 @@ class AttributeInputs(BaseInputs):
             # Global vertex value
             size = 0
             
+            # Make value a numpy array of type float32
+            # Prevent error, see issue #9
+            value = np.array(value, np.float32)
+            value.shape = value.size,
+            
             # Tell OpenGL to use this value and not the array
             gl.glDisableVertexAttribArray(loc)
             
