@@ -11,18 +11,16 @@ from vispy.oogl import Texture2D, VertexBuffer, ElementBuffer
 from vispy.oogl import VertexShader, FragmentShader, ShaderProgram
 from vispy import app
 from vispy import gl
+from vispy.io import lena
 
 import numpy as np
 
-# Texture with four quadrants in different colors
-im1 = np.zeros((100,100,3), 'uint8') # Note the use of clim later
-im1[:50,:,0] = 1.0
-im1[:,:50,1] = 1.0
-im1[50:,50:,2] = 1.0
+# Texture 1
+im1 = lena()
 
 # Texture with bumbs (to muliply with im1)
 im2 = np.ones((20,20), 'float32')
-im2[::3,::3] = 0.7
+im2[::3,::3] = 0.5
 
 # Texture with a plus sign (to subtract from im1)
 im3 = np.zeros((30,30), 'float32')
@@ -35,8 +33,8 @@ im3[:,10] = 1.0
 # results in better performance.
 positions = np.array([  [-0.8, -0.8, 0.0], [+0.7, -0.7, 0.0],  
                         [-0.7, +0.7, 0.0], [+0.8, +0.8, 0.0,] ])
-texcoords = np.array([  [0.0, 0.0], [0.0, 1.0], 
-                        [1.0, 0.0], [1.0, 1.0] ])
+texcoords = np.array([  [1.0, 1.0], [0.0, 1.0], 
+                        [1.0, 0.0], [0.0, 0.0]], np.float32)
 
 
 VERT_SHADER = """ // texture vertex shader
@@ -88,7 +86,7 @@ class Canvas(app.Canvas):
         self._program.attributes['a_position'] = VertexBuffer(positions)
         self._program.attributes['a_texcoord'] = VertexBuffer(texcoords)
         #
-        self._program.uniforms['u_texture1'] = Texture2D(im1, clim=(0,1))
+        self._program.uniforms['u_texture1'] = Texture2D(im1)
         self._program.uniforms['u_texture2'] = Texture2D(im2)
         self._program.uniforms['u_texture3'] = Texture2D(im3)
     
