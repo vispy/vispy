@@ -45,6 +45,7 @@ class Buffer(GLObject):
         
         # Set data?
         self._pending_data = None
+        self._pending_subdata = []
         if data is not None:
             self.set_data(data)
     
@@ -79,21 +80,21 @@ class Buffer(GLObject):
         if not isinstance(data, np.ndarray):
             raise ValueError("Data should be a numpy array.")
         
-        # Reset if there was an error earlier
-        if self._handle < 0:
-            self._handle = 0
-            self._buffer_size = 0
+        if offset is None:
+            # Reset if there was an error earlier
+            if self._handle < 0:
+                self._handle = 0
+                self._buffer_size = 0
+            # Set pending data, and number of bytes
+            self._pending_data = data, None
+            self._buffer_size = data.nbytes
         
-        # Check offset
-        if offset is not None:
+        else:
+            # Check offset
+            assert isinstance(offset, int)
             assert (offset + data.nbytes) <= self._buffer_size
-        elif data.nbytes == self._buffer_size:
-            # If data is of same size, we can use glBufferSubData
-            offset = 0
-        
-        # Set pending data, and number of bytes
-        self._pending_data = data, offset
-        self._buffer_size = data.nbytes
+            # Set pending data
+            self._pending_subdata.append((data, offset))
     
     
     def _upload(self, data):
@@ -116,12 +117,12 @@ class Buffer(GLObject):
         
         # Need to update data?
         if self._pending_data:
-            data, offset = self._pending_data
+            data, _ = self._pending_data
             self._pending_data = None
-            if offset is not None:
+            if self._handle > 0 and data.nbytes == self._buffer_size:
                 # Fast update
                 gl.glBindBuffer(self._target, self._handle)
-                self._update(data, offset)
+                self._update(data, 0)
             else:
                 # Recreate buffer object, just in case
                 self.delete()
@@ -132,6 +133,11 @@ class Buffer(GLObject):
         
         # Bind
         gl.glBindBuffer(self._target, self._handle)
+        
+        # Need to update subdata?
+        while self._pending_subdata:
+            data, offset = self._pending_subdata.pop(0)
+            self._update(data, offset)
     
     
     def _disable(self):
@@ -279,6 +285,7 @@ class VertexBuffer(Buffer, IndexableVertexBufferMixin):
         # Set data in buffer
         self._stride = data.dtype.itemsize * self._shape[1]
         Buffer.set_data(self, data, offset)
+    
     
     
     @property
