@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" Definition of inputs (uniforms and attributes( for a shader program.
+""" Definition of inputs (uniforms and attributes) for a shader program.
 
 This code is inspired by similar classes from Pygly.
 
@@ -30,14 +30,20 @@ if sys.version_info > (3,):
 
 class BaseInputs(dict):
     """ Base proxy class for uniforms, samplers and attributes.
+    The ShaderProgram has three hooks that call a method in this
+    class: on_linking, on_enabling, on_drawing. Note that the latter
+    is only called if the user calls prog.draw_arrays or prog.draw_elements,
+    and should therefore only be used for diagnostics.
     """
     
     def __init__(self, program):
         dict.__init__(self)
         self._program_ref = weakref.ref(program)
         self._handles = {}  # Cache of known handles
+        self._check_names = True 
         self._static = set()
     
+    ## Behave like a dict, but install a hook when values are set
     
     def __setitem__(self, k, v):
         self._set(k, v)
@@ -83,7 +89,12 @@ class BaseInputs(dict):
             return d
     
     
+    # This would be the hook
     def _set(self, name, value):
+        """ This is to override normal dictionary assignment. It calls
+        _prepare on the value. Then it either calls _apply (if program
+        is enabled) or stores it as a static value.
+        """
         assert isinstance(name, basestring)
         # Get prepared values
         name, value = self._prepare(name, value)
@@ -95,6 +106,7 @@ class BaseInputs(dict):
         else:
             self._static.add(name)
     
+    ## Other functionality
     
     @property
     def _program(self):
@@ -105,11 +117,10 @@ class BaseInputs(dict):
             raise RuntimeError('Reference to program lost.')
     
     
-    def _apply_static(self):
+    def _on_enabling(self):
         """ Apply static attributes now. Called by the ShaderProgram in the
         _enable method.
         """
-        self._prepare_for_drawing()  # Allow subclasses to prepare
         for name in self._static:
             value = self.get(name, None)
             if value is None:
@@ -117,16 +128,14 @@ class BaseInputs(dict):
             else:
                 self._apply(name, value)
     
-    
-    def _clear_cache(self):
-        self._handles = {}
-    
-    
     def _prepare(self, name, value):
         raise NotImplementedError()
     
     def _apply(self, name, value, enabled):
         raise NotImplementedError()
+    
+    def _on_linking(self):
+        pass
 
 
 
@@ -156,9 +165,44 @@ class UniformInputs(BaseInputs):
         }
 
     
-    def _prepare_for_drawing(self):
+    def _on_linking(self):
+        """ Get a list of uniforms and their types.
+        """
+        # Clear
+        self._handles = {}
+        self._check_names = True
+        
+        proghandle = self._program.handle
+        count = gl.glGetProgramiv(proghandle, gl.GL_ACTIVE_UNIFORMS)
+        for i in range(count):
+            # Get name, length, type
+            name, length, type = gl.glGetActiveUniform(proghandle, i)
+            if not isinstance(name, basestring):
+                name = name.decode('utf-8')
+            # From that, determine OpenGL function and n
+            fun, n = self._TYPES[type]
+            # Finally, get location
+            loc = gl.glGetUniformLocation(proghandle, name.encode('utf-8'))
+            # Store the lot
+            self._handles[name] = loc, type, fun, n
+    
+    
+    def _on_drawing(self):
+        """ Check if the uniform names and attributes names that we 
+        obtain from OpenGL after linking are actually set in this dict.
+        """
+        # Check uniforms and attributes. Check only once after each linking
+        if self._check_names:
+            for name in self._handles:
+                if name not in self:
+                    print('Warning, uniform %s has not been set.' % name)
+            self._check_names = False
+    
+    
+    def _on_enabling(self):
         # Reset sampler counter
         self._sampler_count = 0
+        BaseInputs._on_enabling(self)
     
     
     def _prepare(self, name, value):
@@ -186,22 +230,12 @@ class UniformInputs(BaseInputs):
         """ Used internally to set the uniform from a cached value.
         """
         
-        # Get uniform location
+        # Get uniform location and more info
         try:
             loc, type, fun, n = self._handles[name]
         except KeyError:
-            # Get location
-            loc = gl.glGetUniformLocation(self._program.handle, name.encode('utf-8'))
-            # Get type, convert to function + numel
-            type, fun, n = 0, None, 0
-            if loc >= 0:
-                _name, length, type = gl.glGetActiveUniform(self._program.handle, loc)
-                fun, n = self._TYPES[type]
-            self._handles[name] = loc, type, fun, n
-        
-        # Our uniform may have been optimized out
-        if loc < 0:
-            return 
+            # Not a known uniform, it may have been optimized out
+            return
         
         # Get value if it's a weakref
         if isinstance(value, weakref.ReferenceType):
@@ -246,9 +280,42 @@ class AttributeInputs(BaseInputs):
     ShaderProgram. To use, simply assign values as if it were a dictionary.
     """
     
-    def _prepare_for_drawing(self):
+    def _on_linking(self):
+        """ Get a list of attributes and their types.
+        """
+        # Clear
+        self._handles = {}
+        self._check_names = True
+        
+        proghandle = self._program.handle
+        count = gl.glGetProgramiv(proghandle, gl.GL_ACTIVE_ATTRIBUTES)
+        for i in range(count):
+            # Get name, length and type about attribute
+            name, length, type = gl.glGetActiveAttrib(proghandle, i)
+            if not isinstance(name, basestring):
+                name = name.decode('utf-8')
+            # Get location
+            loc = gl.glGetAttribLocation(proghandle, name.encode('utf-8'))
+            # Store the lot
+            self._handles[name] = loc, length, type
+    
+    
+    def _on_drawing(self):
+        """ Check if the uniform names and attributes names that we 
+        obtain from OpenGL after linking are actually set in this dict.
+        """
+        # Check uniforms and attributes. Check only once after each linking
+        if self._check_names:
+            for name in self._handles:
+                if name not in self:
+                    print('Warning, attribute %s has not been set.' % name)
+            self._check_names = False
+    
+    
+    def _on_enabling(self):
         # Reset counter
         self._vertex_count = None
+        BaseInputs._on_enabling(self)
     
     
     def _update_vertex_counter(self, count):
@@ -294,17 +361,13 @@ class AttributeInputs(BaseInputs):
         
         program = self._program
         
-        # todo: like uniforms, we should probably query the type here ...
+        # todo: like uniforms, we should probably use the type here ...
         # Get attribute location
         try:
-            loc = self._handles[name]
+            loc, length, type = self._handles[name]
         except KeyError:
-            loc = gl.glGetAttribLocation(program.handle, name.encode('utf-8'))
-            self._handles[name] = loc
-        
-        # Our attribute may have been optimized out
-        if loc < 0:
-            return 
+            # Not a known attribute, it may have been optimized out
+            return
         
         # Get value if it's a weakref
         if isinstance(value, weakref.ReferenceType):
