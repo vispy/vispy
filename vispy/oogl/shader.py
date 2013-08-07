@@ -16,7 +16,6 @@ import numpy as np
 
 from vispy import gl
 from . import GLObject, ext_available
-from .program_inputs import UniformInputs, AttributeInputs
 
 if sys.version_info > (3,):
     basestring = str
