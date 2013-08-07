@@ -54,7 +54,7 @@ FRAG_SHADER2 = """ // textured fragment shader
 uniform sampler2D u_texture1;
 varying vec2 v_texcoord;
 const float c_zero = 0.0;
-const float c_sze = 5.0;
+const int c_sze = 5;
 void main()
 {    
     float scalefactor = 1.0 / (c_sze * c_sze * 4 + 1);
