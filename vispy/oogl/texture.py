@@ -309,7 +309,7 @@ class Texture(_RawTexture):
         if isinstance(param, basestring):
             param = param.upper()
             if not param.startswith('GL'):
-                param = 'GL__' + param
+                param = 'GL_' + param
             param = getattr(gl, param)
         return param
     
@@ -517,6 +517,7 @@ class Texture(_RawTexture):
         
         # Is the texture valid? It may simply not have been given data yet
         if self._handle == 0:
+            print('Warning, no data has been set or allicated for texture.')
             return
         if not gl.glIsTexture(self._handle): 
             raise RuntimeError('This should not happen (texture is invalid)')

@@ -36,14 +36,14 @@ predator = np.zeros(3)
 VERT_SHADER = """ // simple vertex shader
 #version 120
 attribute vec3 position;
-attribute vec3 a_color;
-attribute float a_size;
+uniform vec3 u_color;
+uniform float u_size;
 varying vec3 v_color;
 void main (void) {
     // Calculate position
     gl_Position = vec4(position.x, position.y, position.z, 1.0);
-    v_color = a_color;
-    gl_PointSize = a_size;
+    v_color = u_color;
+    gl_PointSize = u_size;
 }
 """
 
@@ -52,8 +52,8 @@ FRAG_SHADER = """ // simple fragment shader
 varying vec3 v_color;
 void main()
 {    
-    float x = 2.0*gl_PointCoord.s - 1.0;
-    float y = 2.0*gl_PointCoord.t - 1.0;
+    float x = 2.0*gl_PointCoord.x - 1.0;
+    float y = 2.0*gl_PointCoord.y - 1.0;
     float a = 1.0 - (x*x + y*y);
     gl_FragColor = vec4(v_color, a);
 }
@@ -89,8 +89,8 @@ class Canvas(app.Canvas):
             return
         w, h = self.geometry[2:]
         x, y = event.pos
-        sx = 2*x/w -1.0
-        sy = - (2*y/h -1.0)
+        sx = 2*x/float(w) -1.0
+        sy = - (2*y/float(h) -1.0)
         
         if self._button == 1:
             target[0], target[1] = sx, sy
@@ -109,26 +109,25 @@ class Canvas(app.Canvas):
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
         
-#         gl.glEnable(gl.GL_TEXTURE_2D)
+        # todo: normal GL requires these lines, ES 2.0 does not
         from OpenGL import GL
-        gl.glEnable(GL.GL_PROGRAM_POINT_SIZE)
+        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
         gl.glEnable(GL.GL_POINT_SPRITE)
-        GL.glTexEnvi(GL.GL_POINT_SPRITE, GL.GL_COORD_REPLACE, GL.GL_TRUE);
-        
+        #GL.glTexEnvi(GL.GL_POINT_SPRITE, GL.GL_COORD_REPLACE, GL.GL_TRUE);
+
         # Draw
         with self._program as prog:
-            gl.glEnable(gl.GL_BLEND)
-            prog.attributes['a_size'] = 4.0
-            prog.attributes['a_color'] = 0.0, 1.0, 1.0
+            prog.uniforms['u_size'] = 4.0
+            prog.uniforms['u_color'] = 0.0, 1.0, 1.0
             prog.attributes['position'] = boids['position']
             prog.draw_arrays(gl.GL_POINTS)
             #
-            prog.attributes['a_size'] = 16.0
-            prog.attributes['a_color'] = 0.0, 1.0, 0.0
+            prog.uniforms['u_size'] = 16.0
+            prog.uniforms['u_color'] = 0.0, 1.0, 0.0
             prog.attributes['position'] = target.reshape((1,3))
             prog.draw_arrays(gl.GL_POINTS)
             #
-            prog.attributes['a_color'] = 1.0, 0.0, 0.0
+            prog.uniforms['u_color'] = 1.0, 0.0, 0.0
             prog.attributes['position'] = predator.reshape((1,3))
             prog.draw_arrays(gl.GL_POINTS)
         

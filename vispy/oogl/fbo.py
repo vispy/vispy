@@ -254,7 +254,7 @@ class FrameBuffer(GLObject):
             self._attachment_depth = object
             self._pending_attachments.append( (attachment, object, level) )
         else:
-            raise ValueError('Can only attach a RenderBuffer of Texture to a FrameBuffer.')
+            raise ValueError('Can only attach a RenderBuffer or Texture to a FrameBuffer.')
     
     
     def attach_stencil(self, object):
