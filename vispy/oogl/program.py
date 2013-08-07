@@ -217,6 +217,9 @@ class ShaderProgram(GLObject):
         # Apply all uniforms, samplers and attributes
         for input in self._inputs:
             input._on_enabling()
+            
+        for shader in self._shaders:
+            shader._on_enabling(self)
     
     
     def _enable_shaders(self):
@@ -269,6 +272,8 @@ class ShaderProgram(GLObject):
             ob._disable()
         gl.glUseProgram(0)
         self._enabled = False
+        for shader in self._shaders:
+            shader._on_disabling()
     
     
     def draw_arrays(self, mode, first=None, count=None):

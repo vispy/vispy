@@ -16,6 +16,7 @@ import numpy as np
 
 from vispy import gl
 from . import GLObject, ext_available
+from .program_inputs import UniformInputs, AttributeInputs
 
 if sys.version_info > (3,):
     basestring = str
@@ -36,6 +37,7 @@ class BaseShader(GLObject):
         self._handle = 0
         self._compiled = 0  # 0: not compiled, 1: compile tried, 2: compile success 
         self._description = None
+        self._program = None  # pointer to the *currently enabled* program that includes this shader
         self.set_source(source)
     
     
@@ -101,7 +103,7 @@ class BaseShader(GLObject):
 
     def __repr__(self):
         if self._description is None:
-            # Try to get description from first line
+            # Try to get description from beginning of source
             if self._source is None:
                 self._description = hex(id(self))
             else:
@@ -117,6 +119,12 @@ class BaseShader(GLObject):
                         break
             
         return "<%s '%s'>" % (self.__class__.__name__, self._description)
+    
+    def _on_enabling(self, program):
+        self._program = program
+
+    def _on_disabling(self):
+        self._program = None
 
 
 class VertexShader(BaseShader):
