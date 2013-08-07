@@ -78,6 +78,7 @@ setup(
                 'vispy.app', 'vispy.app.backends',
                 'vispy.oogl', 
                 'vispy.util', 
+                'vispy.io',
                ],
     package_dir = {'vispy': 'vispy'},
     package_data = {'vispy': ['resources/*']},
