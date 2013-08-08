@@ -74,6 +74,7 @@ config.update(
     default_backend='qt',
     qt_lib= 'any',  # options are 'pyqt', 'pyside', or 'any'
     show_warnings=False,
+    gl_debug=False,
 )
 
 import getopt,sys
