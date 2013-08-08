@@ -21,25 +21,58 @@ class GLApi(object):
     """
     _APINAME = 'abstract'
     
-    def __init__(self):
+    def __init__(self, debug=False):
         for funcname in self._glfunctions:
             try:
                 func = getattr(_GL, funcname)
+                if debug:
+                    func = self._mkDebugWrapper(funcname, func)
             except AttributeError:
                 func = self._glFuncNotAvailable
                 if vispy.config['show_warnings']:  
                     print('warning: %s not available' % funcname )
             setattr(self, funcname, func)
+            
+        # Patch glGetActiveAttrib if necessary
+        if hasattr(self, 'glGetActiveAttrib') and hasattr(_GL.glGetActiveAttrib, 'restype'):
+            # We have the raw function in the DLL
+            import ctypes
+            def new_glGetActiveAttrib(program, index):
+                # Prepare
+                bufsize = 32
+                length = ctypes.c_int()
+                size = ctypes.c_int()
+                type = ctypes.c_int()
+                name = ctypes.create_string_buffer(bufsize)
+                # Call
+                _GL.glGetActiveAttrib(program, index, 
+                        bufsize, ctypes.byref(length), ctypes.byref(size), 
+                        ctypes.byref(type), name)
+                # Return Python objects
+                #return name.value.decode('utf-8'), size.value, type.value
+                return name.value, size.value, type.value
+            if debug:
+                self.glGetActiveAttrib = self._mkDebugWrapper('glGetActiveAttrib', new_glGetActiveAttrib)
+            else:
+                self.glGetActiveAttrib = new_glGetActiveAttrib
     
     def _glFuncNotAvailable(self, *args, **kwargs):
         pass
         # todo: also mention what function was called
         #print('Warning: gl function not available.')
     
+    def _mkDebugWrapper(self, funcname, func):
+        def cb(*args, **kwds):
+            argstr = ', '.join(list(map(repr,args)) + ['%s=%s' % item for item in kwds.items()])
+            print("%s(%s)" % (funcname, argstr))
+            print(func)
+            ret = func(*args, **kwds)
+            print( " <= %s" % repr(ret))
+            return ret
+        return cb
+    
     def __repr__(self):
         return "<API for OpenGL %s>" % self._APINAME
-
-
 
 
 class GLES2(GLApi):

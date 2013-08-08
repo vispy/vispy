@@ -66,21 +66,40 @@ class Config(object):
         self._config.update(kwds)
         self.events.changed(changes=kwds)
 
+    def __repr__(self):
+        return repr(self._config)
 
 config = Config()
 config.update(
     default_backend='qt',
     qt_lib= 'any',  # options are 'pyqt', 'pyside', or 'any'
     show_warnings=False,
+    gl_debug=False,
 )
+
+import getopt,sys
+try:
+    opts, args = getopt.getopt(sys.argv[1:], '', ['vispy-backend=', 'vispy-gl-debug'])
+except getopt.GetoptError, err:
+    pass
+
+for o, a in opts:
+    if o.startswith('--vispy'):
+        if o == '--vispy-backend':
+            config['default_backend'] = a
+            print('backend', a)
+        elif o == '--vispy-gl-debug':
+            config['gl_debug'] = True
+        else:
+            print("Unsupported vispy flag: %s" % o)
 
 
 # Create API object for OpenGL ES 2.0
 # todo: I don't think this belongs here, since in principle vispy might grow non-opengl backends.
 #       maybe it goes in oogl.__init__?
 import vispy.glapi
-gl = vispy.glapi.GLES2()
-gl.ext = vispy.glapi.GLES2ext()
+gl = vispy.glapi.GLES2(debug=config['gl_debug'])
+gl.ext = vispy.glapi.GLES2ext(debug=config['gl_debug'])
 
 import vispy.util
 from vispy.util import keys
