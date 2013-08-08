@@ -28,30 +28,6 @@ if sys.version_info > (3,):
 # todo: support uniform arrays of vectors/matrices?
 # todo: more introspection into uniforms/attributes?
 
-
-# Patch glGetActiveAttrib if necessary
-if hasattr(gl.glGetActiveAttrib, 'restype'):
-    # We have the raw function in the DLL
-    import ctypes
-    old_glGetActiveAttrib = gl.glGetActiveAttrib
-    def new_glGetActiveAttrib(program, index):
-        # Prepare
-        bufsize = 32
-        length = ctypes.c_int()
-        size = ctypes.c_int()
-        type = ctypes.c_int()
-        name = ctypes.create_string_buffer(bufsize)
-        # Call
-        old_glGetActiveAttrib(program, index, 
-                bufsize, ctypes.byref(length), ctypes.byref(size), 
-                ctypes.byref(type), name)
-        # Return Python objects
-        #return name.value.decode('utf-8'), size.value, type.value
-        return name.value, size.value, type.value
-    gl.glGetActiveAttrib = new_glGetActiveAttrib
-
-
-
 class ShaderProgram(GLObject):
     """ Representation of a shader program. It combines (links) one 
     or more vertex and fragment shaders to compose a complete program.
