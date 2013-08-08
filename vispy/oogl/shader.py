@@ -47,6 +47,8 @@ class BaseShader(GLObject):
     def set_source(self, source):
         """ Set the source of the shader.
         """
+        if not (isinstance(source, basestring) or source is None):
+            raise TypeError('source argument must be string or None (%s)' % type(source))
         self._source = source
         self._compiled = 0  # force recompile 
         self._description = None
@@ -125,6 +127,8 @@ class BaseShader(GLObject):
     def _on_disabling(self):
         self._program = None
 
+    def _on_attach(self, program):
+        pass
 
 class VertexShader(BaseShader):
     """ Representation of a vertex shader object. Inherits BaseShader.

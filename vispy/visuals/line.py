@@ -168,7 +168,8 @@ class LineVisual(Visual):
             
         self._program = ShaderProgram(
             VertexShader(vertex_shader), 
-            self._Visual__transform,
+            #self._Visual__transform,
+            self.transform_chain(),
             FragmentShader(fragment_shader),
             posShader,
             colorShader,

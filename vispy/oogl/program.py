@@ -123,6 +123,7 @@ class ShaderProgram(GLObject):
         """
         if isinstance(shader, (VertexShader, FragmentShader)):
             self._shaders_to_add.append(shader)
+            shader._on_attach(self)
         else:
             raise ValueError('attach_shader required VertexShader of FragmentShader.')
     

@@ -43,18 +43,21 @@ class Visual(object):
     
     """
     def __init__(self):
-        self.__transform = transforms.NullTransform()
+        self.__transforms = []
         self.__gl_opts = {}
         
     @property
-    def transform(self):
-        return self.__transform
-        self.update()
+    def transforms(self):
+        return self.__transforms[:]
     
-    @transform.setter
-    def transform(self, tr):
-        self.__transform = tr
+    @transforms.setter
+    def transforms(self, tr):
+        assert isinstance(tr, list)
+        self.__transforms = tr
         self.update()
+        
+    def transform_chain(self):
+        return transforms.TransformChain(self.transforms, function='global_transform')
         
     def draw(self):
         """ Draw this item.
