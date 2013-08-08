@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # This code of this example should be considered public domain.
 
-""" Minimal example demonstrating the use of frame buffer objects (VBO).
+""" Minimal example demonstrating the use of frame buffer objects (FBO).
 This example blurs the output image.
 """
 

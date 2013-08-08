@@ -3,17 +3,29 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Vispy - http://vispy.org
+Vispy is a collaborative project that has the goal to allow more sharing
+of code between visualization projects based on OpenGL. It does this
+by providing powerful interfaces to OpenGL, at different levels of
+abstraction and generality.
 
-The vispy consists of multiple subpackages that need to be imported
-separately before use. These are:
+These layers are:
+  * vispy.gl: raw OpenGL ES 2.0 API
+  * vispy.oogl: Object oriented GL API
+  * vispy.visuals: Higher level visualization objects (work in progress)
+  * ... more to come
 
-  * ... todo
+Further, vispy comes with a powerful event system and a small
+application framework that works on multiple backends. This allows easy
+creation of figures, and enables integrating visualizations in a GUI
+application.
+
+For more information see http://vispy.org.
 
 """
 
 from __future__ import print_function, division, absolute_import
 
+# Definition of the version number
 __version__ = '0.0.dev'
 
 
