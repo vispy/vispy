@@ -14,6 +14,7 @@ from vispy import keys
 import vispy.util.ptime as ptime
 import vispy
 
+import OpenGL.error
 import OpenGL.GLUT as glut
 
 
@@ -126,7 +127,11 @@ class CanvasBackend(app.CanvasBackend):
         glut.glutMotionFunc(self.on_mouse_motion)
         glut.glutPassiveMotionFunc(self.on_mouse_motion)
         if bool(glut.glutWMCloseFunc): # OSX specific test
-            glut.glutWMCloseFunc(self.on_close)
+            # We tested, but still can get an eror (see issue #10)
+            try:
+                glut.glutWMCloseFunc(self.on_close)
+            except OpenGL.error.NullFunctionError:
+                glut.glutCloseFunc(self.on_close)
         else:
             glut.glutCloseFunc(self.on_close)
         #glut.glutFunc(self.on_)
@@ -137,8 +142,9 @@ class CanvasBackend(app.CanvasBackend):
         glut.glutTimerFunc(0, self._emit_initialize, None)
         
     def _emit_initialize(self, _):
-        self._initialized = True
-        self._vispy_canvas.events.initialize()
+        if not self._initialized:
+            self._initialized = True
+            self._vispy_canvas.events.initialize()
         
     def _vispy_set_current(self):  
         # Make this the current context
@@ -205,11 +211,8 @@ class CanvasBackend(app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         if not self._initialized:
-            raise Exception('this should not happen')
-        # Initialize?
-        #if not self._initialized:
-            #self._initialized = True
-            #self._vispy_canvas.events.initialize()
+            # The timer that we set may not have fired just yet
+            self._emit_initialize()
         
         #w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
         #h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)

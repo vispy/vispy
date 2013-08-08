@@ -3,6 +3,7 @@
 
 from vispy import app
 app.use('glut')
+from vispy import gl
 
 class Canvas(app.Canvas):
     def __init__(self, *args, **kwargs):
@@ -40,6 +41,9 @@ class Canvas(app.Canvas):
         
     def on_paint(self, event):
         print('on_paint')
+        gl.glClearColor(0,1,1,1);
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        self.swap_buffers()
 
     def on_timer(self, event):
         print('tick !')
