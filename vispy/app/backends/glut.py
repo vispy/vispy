@@ -129,14 +129,23 @@ class CanvasBackend(app.CanvasBackend):
         glut.glutMouseFunc(self.on_mouse_action)
         glut.glutMotionFunc(self.on_mouse_motion)
         glut.glutPassiveMotionFunc(self.on_mouse_motion)
+        
+        # Set close function. See issue #10. For some reason, the function
+        # can still not exist even if we checked its boolean status.
+        closeFuncSet = False
         if bool(glut.glutWMCloseFunc): # OSX specific test
-            # We tested, but still can get an eror (see issue #10)
             try:
                 glut.glutWMCloseFunc(self.on_close)
+                closeFuncSet = True
             except OpenGL.error.NullFunctionError:
+                pass
+        if not closeFuncSet:
+            try:
                 glut.glutCloseFunc(self.on_close)
-        else:
-            glut.glutCloseFunc(self.on_close)
+                closeFuncSet = True
+            except OpenGL.error.NullFunctionError:
+                pass
+        
         #glut.glutFunc(self.on_)
         
         self._initialized = False
