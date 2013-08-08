@@ -6,7 +6,7 @@ import numpy as np
 from vispy import app, gl, oogl
 from transforms import perspective, translate, rotate
 
-app.use('pyglet')
+#app.use('qt')
 
 
 vert = """
@@ -109,9 +109,9 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
-        timer = app.Timer(1.0/60)
-        timer.connect(self.on_timer)
-        timer.start()
+        self._timer = app.Timer(1.0/60)
+        self._timer.connect(self.on_timer)
+        self._timer.start()
 
     # ---------------------------------
     def on_initialize(self, event):
