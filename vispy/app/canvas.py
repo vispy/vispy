@@ -358,7 +358,7 @@ class KeyEvent(Event):
     def __init__(self, type, key=None, text='', modifiers=None, **kwds):
         Event.__init__(self, type, **kwds)
         self._key = key
-        self._text = str(text) 
+        self._text = text
         self._modifiers = tuple( modifiers or () )
     
     @property
