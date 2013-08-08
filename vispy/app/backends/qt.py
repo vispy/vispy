@@ -12,6 +12,7 @@ import vispy
 from vispy import app
 from vispy import keys
 from vispy.app.backends import ATTEMPTED_BACKENDS
+from vispy.util.six import text_type
 
 #qt_lib = vispy.config['qt_lib']
 qt_lib = ATTEMPTED_BACKENDS[-1].lower()
@@ -231,7 +232,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         self._vispy_canvas.events.key_press(
             native = ev,
             key = self._processKey(ev), 
-            text = str(ev.text()),
+            text = text_type(ev.text()),
             modifiers = self._modifiers(ev),
             )
     
@@ -241,7 +242,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         self._vispy_canvas.events.key_release(
             native = ev,
             key = self._processKey(ev), 
-            text = str(ev.text()),
+            text = text_type(ev.text()),
             modifiers = self._modifiers(ev),
             )
     
