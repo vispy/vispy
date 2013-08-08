@@ -6,8 +6,6 @@ import numpy as np
 from vispy import app, gl, oogl
 from transforms import perspective, translate, rotate
 
-#app.use('qt')
-
 
 vert = """
 // Uniforms
@@ -104,6 +102,7 @@ class Canvas(app.Canvas):
         self.projection = np.eye(4,dtype=np.float32)
 
         translate(self.view, 0,0,-5)
+        self.program.uniforms['u_model'] = self.model
         self.program.uniforms['u_view'] = self.view
 
         self.theta = 0
@@ -161,7 +160,7 @@ class Canvas(app.Canvas):
             gl.glDepthMask( gl.GL_TRUE )        
 
         # Swap buffers
-        self._backend._vispy_swap_buffers()
+        self.swap_buffers()
     
 
 if __name__ == '__main__':
