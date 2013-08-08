@@ -101,6 +101,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         # Initialize native widget, but default hidden and resizable
         kwargs['visible'] = kwargs.get('visible', False)
         kwargs['resizable'] = kwargs.get('resizable', True) 
+        kwargs['vsync'] = kwargs.get('vsync', 0) 
         pyglet.window.Window.__init__(self, *args, **kwargs)
         
         # We keep track of modifier keys so we can pass them to mouse_motion
