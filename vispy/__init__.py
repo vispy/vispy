@@ -66,6 +66,8 @@ class Config(object):
         self._config.update(kwds)
         self.events.changed(changes=kwds)
 
+    def __repr__(self):
+        return repr(self._config)
 
 config = Config()
 config.update(
@@ -76,6 +78,22 @@ config.update(
 # todo: qt_lib is now not used anymore, because app.use accepts 'qt', 'pyside' and 'pyqt4'
 # LC: I think qt_lib needs to stay so that the end-user can determine whether 
 # pyqt/pyside is used. app.use('qt') should check config['qt_lib'].
+
+import getopt,sys
+try:
+    opts, args = getopt.getopt(sys.argv[1:], '', ['vispy-backend=', 'vispy-gl-debug'])
+except getopt.GetoptError, err:
+    pass
+
+for o, a in opts:
+    if o.startswith('--vispy'):
+        if o == '--vispy-backend':
+            config['default_backend'] = a
+            print('backend', a)
+        elif o == '--vispy-gl-debug':
+            config['gl_debug'] = True
+        else:
+            print("Unsupported vispy flag: %s" % o)
 
 
 # Create API object for OpenGL ES 2.0
