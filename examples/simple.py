@@ -1,10 +1,10 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# This is a very minimal example that open a window and makes the background
+# This is a very minimal example that opens a window and makes the background
 # color to change from black to white to black ...
 #
-# The backend ('qt', 'glut', 'pyglet') should be chosen automatically depending
+# The backend (one of 'qt', 'glut', 'pyglet') is chosen automatically depending
 # on what is available on your machine.
 # -----------------------------------------------------------------------------
 import math
