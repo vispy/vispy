@@ -9,7 +9,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, *args, **kwargs)
         timer = app.Timer(1.0)
         timer.connect(self.on_timer)
-        #timer.start()
+        timer.start()
 
     def on_initialize(self, event):
         print('on_initialize')
