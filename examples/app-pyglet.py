@@ -7,6 +7,9 @@ app.use('pyglet')
 class Canvas(app.Canvas):
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
+        timer = app.Timer(1.0)
+        timer.connect(self.on_timer)
+        timer.start()
 
     def on_initialize(self, event):
         print('on_initialize')
@@ -37,6 +40,9 @@ class Canvas(app.Canvas):
         
     def on_paint(self, event):
         print('on_paint')
+
+    def on_timer(self, event):
+        print('tick !')
     
 if __name__ == '__main__':
     canvas = Canvas()
