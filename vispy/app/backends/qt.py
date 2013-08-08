@@ -14,9 +14,12 @@ from vispy import keys
 from vispy.app.backends import ATTEMPTED_BACKENDS
 from vispy.util.six import text_type
 
-#qt_lib = vispy.config['qt_lib']
+# Get what qt lib to try
 qt_lib = ATTEMPTED_BACKENDS[-1].lower()
+if qt_lib.lower() == 'qt':
+    qt_lib = vispy.config['qt_lib'].lower()
 
+# Import PySide or PyQt4
 if qt_lib in ('any', 'qt'):
     try: 
         from PyQt4 import QtGui, QtCore, QtOpenGL

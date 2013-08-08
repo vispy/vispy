@@ -73,9 +73,6 @@ config.update(
     qt_lib= 'any',  # options are 'pyqt', 'pyside', or 'any'
     show_warnings=False,
 )
-# todo: qt_lib is now not used anymore, because app.use accepts 'qt', 'pyside' and 'pyqt4'
-# LC: I think qt_lib needs to stay so that the end-user can determine whether 
-# pyqt/pyside is used. app.use('qt') should check config['qt_lib'].
 
 
 # Create API object for OpenGL ES 2.0
