@@ -24,7 +24,7 @@ init_gun = [1,5, 2,5, 1,6, 2,6,
         35,3, 35,4, 36,3, 36,4]
 
 # Create texture to initialize the game
-im1 = np.zeros((100,120), 'uint8')
+im1 = np.zeros((100,120,3), 'uint8')
 X, Y = np.array(init_gun[::2]), (im1.shape[0]-1)-np.array(init_gun[1::2])
 im1[Y,X] = 255
 
