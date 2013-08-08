@@ -14,7 +14,7 @@ class Canvas(app.Canvas):
         timer.start()
 
     def on_initialize(self, event):
-        gl.glClearColor(0,1,1,1);
+        gl.glClearColor(0.2,0.2,0.2,1)
         print('on_initialize')
 
     def on_close(self, event):
