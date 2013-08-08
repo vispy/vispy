@@ -112,6 +112,9 @@ class CanvasBackend(app.CanvasBackend):
         global ALL_WINDOWS
         ALL_WINDOWS.append(self)
         
+        # Cache of modifiers so we can send modifiers along with mouse motion
+        self._modifiers_cache = ()
+        
         # Note: this seems to cause the canvas to ignore calls to show()
         # about half of the time. 
         #glut.glutHideWindow()  # Start hidden, like the other backends
@@ -222,7 +225,7 @@ class CanvasBackend(app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         action = {glut.GLUT_UP:'release', glut.GLUT_DOWN:'press'}[state]
-        mod = self._modifiers()
+        mod = self._modifiers(False)
         
         if button < 3:
             # Mouse click event
@@ -245,7 +248,7 @@ class CanvasBackend(app.CanvasBackend):
             return
         self._vispy_canvas.events.mouse_move(
             pos=(x, y),
-            modifiers=self._modifiers(),
+            modifiers=self._modifiers(False),
             )
     
     
@@ -276,16 +279,18 @@ class CanvasBackend(app.CanvasBackend):
         else:
             return keys.Key(key.upper()), key
     
-    def _modifiers(self):
-        glutmod = glut.glutGetModifiers()
-        mod = ()
-        if glut.GLUT_ACTIVE_SHIFT & glutmod:
-            mod += keys.SHIFT,
-        if glut.GLUT_ACTIVE_CTRL & glutmod:
-            mod += keys.CONTROL,
-        if glut.GLUT_ACTIVE_ALT & glutmod:
-            mod += keys.ALT,
-        return mod
+    def _modifiers(self, query_now=True):
+        if query_now:
+            glutmod = glut.glutGetModifiers()
+            mod = ()
+            if glut.GLUT_ACTIVE_SHIFT & glutmod:
+                mod += keys.SHIFT,
+            if glut.GLUT_ACTIVE_CTRL & glutmod:
+                mod += keys.CONTROL,
+            if glut.GLUT_ACTIVE_ALT & glutmod:
+                mod += keys.ALT,
+            self._modifiers_cache = mod
+        return self._modifiers_cache
 
 
 import weakref

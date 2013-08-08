@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from vispy import app
-app.use('glut')
 from vispy import gl
+app.use('glut')
+
 
 class Canvas(app.Canvas):
     def __init__(self, *args, **kwargs):
