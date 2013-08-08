@@ -21,10 +21,13 @@ class GLApi(object):
     """
     _APINAME = 'abstract'
     
-    def __init__(self):
+    def __init__(self, debug=False):
         for funcname in self._glfunctions:
             try:
-                func = getattr(_GL, funcname)
+                if debug:
+                    func = self._mkDebugWrapper(funcname)
+                else:
+                    func = getattr(_GL, funcname)
             except AttributeError:
                 func = self._glFuncNotAvailable
                 if vispy.config['show_warnings']:  
@@ -36,10 +39,16 @@ class GLApi(object):
         # todo: also mention what function was called
         #print('Warning: gl function not available.')
     
+    def _mkDebugWrapper(self, funcname):
+        func = getattr(_GL, funcname)
+        def cb(*args, **kwds):
+            argstr = ', '.join(list(map(repr,args)) + ['%s=%s' % item for item in kwds.items()])
+            print("%s(%s)" % (funcname, argstr))
+            return func(*args, **kwds)
+        return cb
+    
     def __repr__(self):
         return "<API for OpenGL %s>" % self._APINAME
-
-
 
 
 class GLES2(GLApi):
