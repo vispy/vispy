@@ -14,6 +14,7 @@ class Canvas(app.Canvas):
         timer.start()
 
     def on_initialize(self, event):
+        gl.glClearColor(0,1,1,1)
         print('on_initialize')
 
     def on_close(self, event):
@@ -42,7 +43,6 @@ class Canvas(app.Canvas):
         
     def on_paint(self, event):
         print('on_paint')
-        gl.glClearColor(0,1,1,1);
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         self.swap_buffers()
 
