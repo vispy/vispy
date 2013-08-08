@@ -153,7 +153,7 @@ class CanvasBackend(app.CanvasBackend):
         # LC: I think initializing here makes it more consistent with other backends
         glut.glutTimerFunc(0, self._emit_initialize, None)
         
-    def _emit_initialize(self, _):
+    def _emit_initialize(self, _=None):
         if not self._initialized:
             self._initialized = True
             self._vispy_canvas.events.initialize()
