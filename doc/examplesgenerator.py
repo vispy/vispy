@@ -56,6 +56,9 @@ def main():
                 if not doclines:
                     if line.startswith('"""'):
                         doclines.append(line.lstrip('" '))
+                        sourcelines = []
+                    else:
+                        sourcelines.append('    ' + line)
                 elif not sourcelines:
                     if '"""' in line:
                         sourcelines.append('    ' + line.partition('"""')[0])
