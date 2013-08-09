@@ -33,7 +33,7 @@ def main():
     example_names = []
     
     # Create doc file for each example
-    for fname in os.listdir(EXAMPLESDIR):
+    for fname in sorted(os.listdir(EXAMPLESDIR)):
         if not fname.endswith('.py'):
             continue
             
