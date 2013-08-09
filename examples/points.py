@@ -34,7 +34,7 @@ void main (void) {
     v_radius = a_size;
     v_linewidth = 1.0;
     v_antialias = 1.0;
-    v_fg_color  = vec4(0.0,0.0,0.0,1.0);
+    v_fg_color  = vec4(0.0,0.0,0.0,0.5);
     v_bg_color  = vec4(a_color,    1.0);
 
     gl_Position = vec4(a_position, 1.0);
