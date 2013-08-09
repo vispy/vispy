@@ -59,7 +59,7 @@ class Config(object):
     
     def __setitem__(self, item, val):
         self._config[item] = val
-        ## inform any listeners that a configuration option has changed
+        # inform any listeners that a configuration option has changed
         self.events.changed(changes={item:val})
         
     def update(self, **kwds):
@@ -77,21 +77,29 @@ config.update(
     gl_debug=False,
 )
 
-import getopt,sys
-try:
-    opts, args = getopt.getopt(sys.argv[1:], '', ['vispy-backend=', 'vispy-gl-debug'])
-except getopt.GetoptError, err:
-    pass
 
-for o, a in opts:
-    if o.startswith('--vispy'):
-        if o == '--vispy-backend':
-            config['default_backend'] = a
-            print('backend', a)
-        elif o == '--vispy-gl-debug':
-            config['gl_debug'] = True
-        else:
-            print("Unsupported vispy flag: %s" % o)
+def parse_command_line_arguments():
+    """ Transform vispy specific command line args to vispy config.
+    Put into a function so that any variables dont leak in the vispy namespace.
+    """
+    import getopt, sys
+    # Get command line args for vispy
+    argnames = ['vispy-backend', 'vispy-gl-debug']
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], '', argnames)
+    except getopt.GetoptError:
+        opts = []
+    # Use them to set the config values
+    for o, a in opts:
+        if o.startswith('--vispy'):
+            if o == '--vispy-backend':
+                config['default_backend'] = a
+                print('backend', a)
+            elif o == '--vispy-gl-debug':
+                config['gl_debug'] = True
+            else:
+                print("Unsupported vispy flag: %s" % o)
+parse_command_line_arguments()
 
 
 # Create API object for OpenGL ES 2.0
