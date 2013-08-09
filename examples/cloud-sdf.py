@@ -5,11 +5,15 @@
 """ Simple example plotting 2D points.
 """
 
+import os
+
 from vispy import oogl
 from vispy import app
 from vispy import gl
 from OpenGL import GL
 import numpy as np
+
+from transforms import perspective, translate, rotate
 
 # Create vetices 
 n = 10000
@@ -17,8 +21,14 @@ v_position = 0.5 * np.random.randn(n, 3).astype(np.float32)
 v_color = np.random.uniform(0.50,1.00,(n,3)).astype(np.float32)
 v_size  = np.random.uniform(10,20,(n,1)).astype(np.float32)
 
+# Define marker image
+marker_image = 'star-sdf.png'
+# marker_image = 'clober-sdf.png'
+# marker_image = 'cross-sdf.png'
 
-from transforms import perspective, translate, rotate
+# Get marker filename
+THISDIR = os.path.dirname(os.path.abspath(__file__))
+marker_filename = os.path.join(THISDIR, 'data', marker_image)
 
 
 VERT_SHADER = """
@@ -127,12 +137,10 @@ class Canvas(app.Canvas):
         self.program.uniforms['u_texture'] = oogl.Texture2D(data=D, format=gl.GL_ALPHA)
 
         from PIL import Image
-        im = Image.open('./examples/data/star-sdf.png')
-        # im = Image.open('./examples/data/clober-sdf.png')
-        # im = Image.open('./examples/data/cross-sdf.png')
+        im = Image.open(marker_filename)
         D = np.asarray(im)[:,:]
         D = (D/256.0 - 0.5).astype(np.float32)
-        print D.shape, D.min(), D.max()
+        print(D.shape, D.min(), D.max())
         self.program.uniforms['u_texture'] = oogl.Texture2D(data=D, format=gl.GL_ALPHA)
 
         self.theta = 0
