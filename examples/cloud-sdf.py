@@ -19,11 +19,11 @@ from transforms import perspective, translate, rotate
 n = 10000
 v_position = 0.5 * np.random.randn(n, 3).astype(np.float32)
 v_color = np.random.uniform(0.50,1.00,(n,3)).astype(np.float32)
-v_size  = np.random.uniform(10,20,(n,1)).astype(np.float32)
+v_size  = np.random.uniform(10,15,(n,1)).astype(np.float32)
 
 # Define marker image
-marker_image = 'star-sdf.png'
-# marker_image = 'clober-sdf.png'
+# marker_image = 'star-sdf.png'
+marker_image = 'clober-sdf.png'
 # marker_image = 'cross-sdf.png'
 
 # Get marker filename
@@ -57,7 +57,7 @@ varying float v_antialias;
 
 void main (void) {
     v_linewidth = 1.5;
-    v_antialias = 1.0;
+    v_antialias = 1.25;
     v_size = a_size;
     v_fg_color  = vec4(0.0,0.0,0.0,0.5);
     v_bg_color  = vec4(a_color,    1.0);
@@ -82,23 +82,22 @@ varying float v_antialias;
 varying float v_size;
 void main()
 {    
-    float size = v_size; // - v_linewidth - 1.5*v_antialias);
+    float size = v_size; // - v_linewidth - 1.5*v_antialias;
     float t = v_linewidth/2.0-v_antialias;
-
-    // SDF circle
     float r = size*texture2D(u_texture, gl_PointCoord.xy).a;
     float d = abs(r) - t;
 
     if( r > (v_linewidth/2.0+v_antialias))
         discard;
-
-    if( d < 0.0 )
+    if( r < -(v_linewidth/2.0+v_antialias) )
+        gl_FragColor = v_bg_color;
+    else if( abs(r) < v_linewidth/2.0-v_antialias )
         gl_FragColor = v_fg_color;
-    else
+    else if (r < (v_linewidth/2.0+v_antialias))
     {
         float alpha = d/v_antialias;
         alpha = exp(-alpha*alpha);
-        if (r >= 0.0)
+        if (r > 0.0)
             gl_FragColor = vec4(v_fg_color.rgb, alpha*v_fg_color.a);
         else
             gl_FragColor = mix(v_bg_color, v_fg_color, alpha);
