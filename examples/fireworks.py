@@ -50,6 +50,7 @@ void main () {
     {
         gl_Position.xyz = a_startPosition + (u_time * a_endPosition);
         gl_Position.xyz += u_centerPosition;
+        gl_Position.y -= 3. * u_time * u_time;
         gl_Position.w = 1.0;
     }
     else
@@ -128,7 +129,7 @@ class Canvas(app.Canvas):
         self.update()
         
         # New explosion?
-        if time.time() - self._starttime > 1.0:
+        if time.time() - self._starttime > 1.5:
             self._new_explosion()
     
     
@@ -145,7 +146,7 @@ class Canvas(app.Canvas):
         self._program.uniforms['u_color'] = tuple(color)+ (alpha,)
         
         # Create new vertex data
-        vertex_data['a_lifetime'] = np.random.normal(1.0, 0.5, (N,))
+        vertex_data['a_lifetime'] = np.random.normal(2.0, 0.5, (N,))
         vertex_data['a_startPosition'] = np.random.normal(0.0, 0.2, (N,3))
         vertex_data['a_endPosition'] = np.random.normal(0.0, 1.2, (N,3))
        
