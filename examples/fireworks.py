@@ -36,9 +36,7 @@ vertex_data = np.zeros((N,), dtype=[('a_lifetime', np.float32, 1),
 
 
 VERT_SHADER = """ // explosion vertex shader
-#ifndef GL_ES
 #version 120
-#endif
 
 uniform float u_time;
 uniform vec3 u_centerPosition;
@@ -64,9 +62,7 @@ void main () {
 """
 
 FRAG_SHADER = """ // explostion fragment shader
-#ifndef GL_ES
 #version 120
-#endif
 
 uniform sampler2D texture1;
 uniform vec4 u_color;
