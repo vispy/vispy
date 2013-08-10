@@ -15,7 +15,7 @@ import numpy as np
 n = 100000
 v_position = 0.5 * np.random.randn(n, 3).astype(np.float32)
 v_color = 1,1,1 # np.random.uniform(0,1,(n,3)).astype(np.float32)
-v_size  = np.random.uniform(2,5,(n,1)).astype(np.float32)
+v_size  = 2*np.random.uniform(5,10,(n,1)).astype(np.float32)
 
 
 from transforms import perspective, translate, rotate
@@ -37,66 +37,99 @@ attribute vec3  a_position;
 attribute vec3  a_color;
 attribute float a_size;
 
-// Varying
+// Varyings
 // ------------------------------------
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
-varying float v_radius;
+varying float v_size;
 varying float v_linewidth;
 varying float v_antialias;
 
 void main (void) {
-    v_radius = a_size;
+    v_size = a_size;
     v_linewidth = 1.0;
     v_antialias = 1.0;
-    v_fg_color  = vec4(0.0,0.0,0.0,1.0);
+    v_fg_color  = vec4(0.0,0.0,0.0,0.5);
     v_bg_color  = vec4(a_color,    1.0);
     gl_Position = u_projection * u_view * u_model * vec4(a_position,1.0);
-    gl_PointSize = 2.0*(v_radius + v_linewidth + 1.5*v_antialias);
+    gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
 }
 """
 
 FRAG_SHADER = """
 #version 120
 
+// Constants
+// ------------------------------------
+const float PI = 3.14159265358979323846264;
+const float t1 = -PI/2;
+const vec2  c1 = 0.2*vec2(cos(t1),sin(t1));
+const float t2 = t1+2*PI/3;
+const vec2  c2 = 0.2*vec2(cos(t2),sin(t2));
+const float t3 = t2+2*PI/3;
+const vec2  c3 = 0.2*vec2(cos(t3),sin(t3));
+
+
+// Varyings
+// ------------------------------------
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
-varying float v_radius;
+varying float v_size;
 varying float v_linewidth;
 varying float v_antialias;
 void main()
 {    
-    float size = 2*(v_radius + v_linewidth + 1.5*v_antialias);
+    float size = v_size +2*(v_linewidth + 1.5*v_antialias);
     float t = v_linewidth/2.0-v_antialias;
 
     // Circle
     float r = length((gl_PointCoord.xy - vec2(0.5,0.5))*size);
+    r -= v_size/2;
+
+    // Ring
+    // float r1 = length((gl_PointCoord.xy - vec2(0.5,0.5))*size) - v_size/2;
+    // float r2 = length((gl_PointCoord.xy - vec2(0.5,0.5))*size) - v_size/4;
+    // float r = max(r1,-r2);
+
+    // Clober
+    // float r1 = length((gl_PointCoord.xy- vec2(0.5,0.5) - c1)*size);
+    // r1 -= v_size/3;
+    // float r2 = length((gl_PointCoord.xy- vec2(0.5,0.5) - c2)*size);
+    // r2 -= v_size/3;
+    // float r3 = length((gl_PointCoord.xy- vec2(0.5,0.5) - c3)*size);
+    // r3 -= v_size/3;
+    // float r = min(min(r1,r2),r3);
 
     // Square
-    // float r = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
+    // float r = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size);
+    // r -= v_size/2;
 
     // Diamond
     // float r = abs(gl_PointCoord.x -.5)*size + abs(gl_PointCoord.y -.5)*size; 
+    // r -= v_size/2;
 
     // Vertical bar
-    // float r1 = max(abs(gl_PointCoord.x -.75)*size, abs(gl_PointCoord.x -.25)*size); 
-    // float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
-    // float r = max(r1,r3);
+    //float r1 = max(abs(gl_PointCoord.x -.75)*size, abs(gl_PointCoord.x -.25)*size); 
+    //float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
+    //float r = max(r1,r3);
+    //r -= v_size/2;
 
     // Horizontal bar
     // float r2 = max(abs(gl_PointCoord.y -.75)*size, abs(gl_PointCoord.y -.25)*size); 
     // float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
     // float r = max(r2,r3);
+    // r -= v_size/2;
 
     // Cross
     // float r1 = max(abs(gl_PointCoord.x -.75)*size, abs(gl_PointCoord.x -.25)*size); 
     // float r2 = max(abs(gl_PointCoord.y -.75)*size, abs(gl_PointCoord.y -.25)*size); 
     // float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
     // float r = max(min(r1,r2),r3);
+    // r -= v_size/2;
 
-    float d = abs(r - v_radius) - t;
+    float d = abs(r) - t;
 
-    if( r > (v_radius+v_linewidth/2.0+v_antialias))
+    if( r > (v_linewidth/2.0+v_antialias))
         discard;
 
     if( d < 0.0 )
@@ -107,7 +140,7 @@ void main()
     {
         float alpha = d/v_antialias;
         alpha = exp(-alpha*alpha);
-        if (r > v_radius)
+        if (r > v_size/2)
             gl_FragColor = vec4(v_fg_color.rgb, alpha*v_fg_color.a);
         else
             gl_FragColor = mix(v_bg_color, v_fg_color, alpha);
@@ -142,9 +175,9 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
-        self._timer = app.Timer(1.0/60)
-        self._timer.connect(self.on_timer)
-        self._timer.start()
+        self.timer = app.Timer(1.0/60)
+        self.timer.connect(self.on_timer)
+        #self.timer.start()
 
 
     # ---------------------------------
@@ -152,6 +185,14 @@ class Canvas(app.Canvas):
         gl.glClearColor(1,1,1,1)
         gl.glEnable(gl.GL_DEPTH_TEST)
 
+
+    # ---------------------------------
+    def on_key_press(self,event):
+        if event.text == ' ':
+            if self.timer.running:
+                self.timer.stop()
+            else:
+                self.timer.start()
 
     # ---------------------------------
     def on_timer(self,event):
