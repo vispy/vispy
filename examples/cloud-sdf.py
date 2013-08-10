@@ -16,14 +16,14 @@ import numpy as np
 from transforms import perspective, translate, rotate
 
 # Create vetices 
-n = 10000
+n = 25000
 v_position = 0.5 * np.random.randn(n, 3).astype(np.float32)
 v_color = np.random.uniform(0.50,1.00,(n,3)).astype(np.float32)
-v_size  = np.random.uniform(10,15,(n,1)).astype(np.float32)
+v_size  = np.random.uniform(5,10,(n,1)).astype(np.float32)
 
 # Define marker image
-# marker_image = 'star-sdf.png'
-marker_image = 'clober-sdf.png'
+marker_image = 'star-sdf.png'
+# marker_image = 'clober-sdf.png'
 # marker_image = 'cross-sdf.png'
 
 # Get marker filename
@@ -57,9 +57,9 @@ varying float v_antialias;
 
 void main (void) {
     v_linewidth = 1.5;
-    v_antialias = 1.25;
+    v_antialias = 1.0;
     v_size = a_size;
-    v_fg_color  = vec4(0.0,0.0,0.0,0.5);
+    v_fg_color  = vec4(0.0,0.0,0.0,1.0);
     v_bg_color  = vec4(a_color,    1.0);
     gl_Position = u_projection * u_view * u_model * vec4(a_position,1.0);
     gl_PointSize = 2.0*(a_size + v_linewidth + 1.5*v_antialias);
@@ -89,11 +89,9 @@ void main()
 
     if( r > (v_linewidth/2.0+v_antialias))
         discard;
-    if( r < -(v_linewidth/2.0+v_antialias) )
-        gl_FragColor = v_bg_color;
-    else if( abs(r) < v_linewidth/2.0-v_antialias )
-        gl_FragColor = v_fg_color;
-    else if (r < (v_linewidth/2.0+v_antialias))
+    else if( d < 0.0 )
+       gl_FragColor = v_fg_color;
+    else
     {
         float alpha = d/v_antialias;
         alpha = exp(-alpha*alpha);
@@ -139,7 +137,6 @@ class Canvas(app.Canvas):
         im = Image.open(marker_filename)
         D = np.asarray(im)[:,:]
         D = (D/256.0 - 0.5).astype(np.float32)
-        print(D.shape, D.min(), D.max())
         self.program.uniforms['u_texture'] = oogl.Texture2D(data=D, format=gl.GL_ALPHA)
 
         self.theta = 0
