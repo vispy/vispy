@@ -49,7 +49,7 @@ void main (void) {
     v_radius = a_size;
     v_linewidth = 1.0;
     v_antialias = 1.0;
-    v_fg_color  = vec4(0.0,0.0,0.0,0.5);
+    v_fg_color  = vec4(0.0,0.0,0.0,1.0);
     v_bg_color  = vec4(a_color,    1.0);
     gl_Position = u_projection * u_view * u_model * vec4(a_position,1.0);
     gl_PointSize = 2.0*(v_radius + v_linewidth + 1.5*v_antialias);
@@ -70,13 +70,29 @@ void main()
     float t = v_linewidth/2.0-v_antialias;
 
     // Circle
-    // float r = length((gl_PointCoord.xy - vec2(0.5,0.5))*size);
+    float r = length((gl_PointCoord.xy - vec2(0.5,0.5))*size);
 
     // Square
-    // float r = max( abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
+    // float r = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
 
     // Diamond
-    float r = abs(gl_PointCoord.x -.5)*size + abs(gl_PointCoord.y -.5)*size; 
+    // float r = abs(gl_PointCoord.x -.5)*size + abs(gl_PointCoord.y -.5)*size; 
+
+    // Vertical bar
+    // float r1 = max(abs(gl_PointCoord.x -.75)*size, abs(gl_PointCoord.x -.25)*size); 
+    // float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
+    // float r = max(r1,r3);
+
+    // Horizontal bar
+    // float r2 = max(abs(gl_PointCoord.y -.75)*size, abs(gl_PointCoord.y -.25)*size); 
+    // float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
+    // float r = max(r2,r3);
+
+    // Cross
+    // float r1 = max(abs(gl_PointCoord.x -.75)*size, abs(gl_PointCoord.x -.25)*size); 
+    // float r2 = max(abs(gl_PointCoord.y -.75)*size, abs(gl_PointCoord.y -.25)*size); 
+    // float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
+    // float r = max(min(r1,r2),r3);
 
     float d = abs(r - v_radius) - t;
 
@@ -84,7 +100,9 @@ void main()
         discard;
 
     if( d < 0.0 )
-        gl_FragColor = v_bg_color;
+    {
+       gl_FragColor = v_fg_color;
+    }
     else
     {
         float alpha = d/v_antialias;
