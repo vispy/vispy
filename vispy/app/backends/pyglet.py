@@ -254,9 +254,20 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         # Emit
         self._vispy_canvas.events.key_press(
                 key=self._processKey(key), 
-                text=text,
+                text='',  # Handlers that trigger on text wont see this event
                 modifiers=self._modifiers(modifiers),
             )
+    
+    
+    def on_text(self, text):
+        # Typically this is called after on_key_press and before 
+        # on_key_release
+        self._vispy_canvas.events.key_press(
+                key=None, # Handlers that trigger on key wont see this event
+                text=text,
+                modifiers=self._modifiers(),
+            )
+    
     
     def on_key_release(self, key, modifiers):
         # Process modifiers
