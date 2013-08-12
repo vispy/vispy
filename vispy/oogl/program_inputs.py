@@ -17,13 +17,10 @@ import ctypes
 import numpy as np
 
 from vispy import gl
+from vispy.util.six import string_types
 from . import ext_available
 from . import Texture, VertexBuffer
 from .vbo import VertexBufferView
-
-
-if sys.version_info > (3,):
-    basestring = str
 
 
 # Note: the ShaderProgram is a friend: it calls private methods of this class.
@@ -95,7 +92,7 @@ class BaseInputs(dict):
         _prepare on the value. Then it either calls _apply (if program
         is enabled) or stores it as a static value.
         """
-        assert isinstance(name, basestring)
+        assert isinstance(name, string_types)
         # Get prepared values
         name, value = self._prepare(name, value)
         # Store now as a normal dict
@@ -177,7 +174,7 @@ class UniformInputs(BaseInputs):
         for i in range(count):
             # Get name, length, type
             name, length, type = gl.glGetActiveUniform(proghandle, i)
-            if not isinstance(name, basestring):
+            if not isinstance(name, string_types):
                 name = name.decode('utf-8')
             # From that, determine OpenGL function and n
             fun, n = self._TYPES[type]
@@ -292,7 +289,7 @@ class AttributeInputs(BaseInputs):
         for i in range(count):
             # Get name, length and type about attribute
             name, length, type = gl.glGetActiveAttrib(proghandle, i)
-            if not isinstance(name, basestring):
+            if not isinstance(name, string_types):
                 name = name.decode('utf-8')
             # Get location
             loc = gl.glGetAttribLocation(proghandle, name.encode('utf-8'))

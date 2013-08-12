@@ -1,6 +1,7 @@
 from vispy.oogl import ShaderProgram, VertexShader, FragmentShader, VertexBuffer
 import OpenGL.GL as gl
 import vispy.shaders.transforms as transforms
+from vispy.util.six import string_types
 import numpy as np
     
 
@@ -112,7 +113,7 @@ class Visual(object):
             
         
         """
-        if isinstance(opts, basestring):
+        if isinstance(opts, string_types):
             opts = GLOptions[opts]
         self.__gl_opts = opts.copy()
         self.update()
@@ -137,7 +138,7 @@ class Visual(object):
         for k,v in self.__gl_opts.items():
             if v is None:
                 continue
-            if isinstance(k, basestring):
+            if isinstance(k, string_types):
                 func = getattr(gl, k)
                 func(*v)
             else:
