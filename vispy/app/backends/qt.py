@@ -223,9 +223,16 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     def wheelEvent(self, ev):
         if self._vispy_canvas is None:
             return
+        # Get scrolling
+        deltax, deltay = 0.0, 0.0
+        if ev.orientation == QtCore.Qt.Horizontal:
+            deltax = ev.delta()/120.0
+        else:
+            deltay = ev.delta()/120.0
+        # Emit event
         self._vispy_canvas.events.mouse_wheel(
             native=ev,
-            delta=ev.delta()/120.0,
+            delta=(deltax, deltay),
             pos=(ev.pos().x(), ev.pos().y()),
             modifiers=self._modifiers(ev),
             )
