@@ -134,4 +134,3 @@ if __name__ == '__main__':
     
     # Enter the mainloop
     app.run()
-        
