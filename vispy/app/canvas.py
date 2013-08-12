@@ -301,19 +301,20 @@ class MouseEvent(Event):
     modifiers : tuple of Key instances
         Tuple that specifies which modifier keys were pressed down at the
         time of the event (shift, control, alt, meta).
-    delta : int
-        Integer that represents the amount of scrolling.
+    delta : (float, float)
+        The amount of scrolling in horizontal and vertical direction. One 
+        "tick" corresponds to a delta of 1.0.
     **kwds : keyword arguments
         All extra keyword arguments become attributes of the event object.
     
     """
     
-    def __init__(self, type, pos=None, button=None, modifiers=None, delta=0.0, **kwds):
+    def __init__(self, type, pos=None, button=None, modifiers=None, delta=None, **kwds):
         Event.__init__(self, type, **kwds)
         self._pos = (0,0) if (pos is None) else (pos[0], pos[1])
         self._button = int(button) if (button is not None) else 0
         self._modifiers = tuple( modifiers or () )
-        self._delta = float(delta)
+        self._delta = (0.0,0.0) if (delta is None) else (delta[0], delta[1])
     
     @property
     def pos(self):

@@ -140,7 +140,7 @@ class CanvasBackend(app.CanvasBackend):  # You can mix this class with the nativ
         self._vispy_canvas.events.mouse_press(pos=(x, y), button=1, modifiers=())
         self._vispy_canvas.events.mouse_release(pos=(x, y), button=1, modifiers=())
         self._vispy_canvas.events.mouse_move(pos=(x, y), modifiers=())
-        self._vispy_canvas.events.mouse_wheel(pos=(x, y), delta=1, modifiers=())
+        self._vispy_canvas.events.mouse_wheel(pos=(x, y), delta=(0,0), modifiers=())
         
         self._vispy_canvas.events.key_press(key=key, text=text, modifiers=())
         self._vispy_canvas.events.key_release(key=key, text=text, modifiers=())

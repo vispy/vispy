@@ -15,10 +15,8 @@ import sys
 import numpy as np
 
 from vispy import gl
+from vispy.util.six import string_types
 from . import GLObject, ext_available
-
-if sys.version_info > (3,):
-    basestring = str
 
 
 
@@ -47,7 +45,7 @@ class BaseShader(GLObject):
     def set_source(self, source):
         """ Set the source of the shader.
         """
-        if not (isinstance(source, basestring) or source is None):
+        if not (isinstance(source, string_types) or source is None):
             raise TypeError('source argument must be string or None (%s)' % type(source))
         self._source = source
         self._compiled = 0  # force recompile 
@@ -206,7 +204,7 @@ def parse_shader_errors(errors, source=None):
     ocrrured.
     """
     # Init
-    if not isinstance(errors, basestring):
+    if not isinstance(errors, string_types):
         errors = errors.decode('utf-8', 'replace')
     results = []
     lines = None

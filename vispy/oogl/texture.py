@@ -22,10 +22,9 @@ import sys
 import numpy as np
 
 from vispy import gl
+from vispy.util.six import string_types
 from . import GLObject, ext_available
 
-if sys.version_info > (3,):
-    basestring = str
 
 
 # Dict that maps numpy datatypes to openGL ES 2.0 data types
@@ -306,7 +305,7 @@ class Texture(_RawTexture):
     def _string_to_enum(self, param):
         """ Convert a string to a GL enum.
         """
-        if isinstance(param, basestring):
+        if isinstance(param, string_types):
             param = param.upper()
             if not param.startswith('GL'):
                 param = 'GL_' + param

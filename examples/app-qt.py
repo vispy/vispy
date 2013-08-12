@@ -39,7 +39,7 @@ class Canvas(app.Canvas):
         print('on_mouse_move (%dx%d)' % event.pos)
 
     def on_mouse_wheel(self, event):
-        print('on_mouse_wheel: %f' % event.delta)
+        print('on_mouse_wheel: %r' % (event.delta,))
         
     def on_paint(self, event):
         print('on_paint')

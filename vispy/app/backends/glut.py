@@ -262,9 +262,10 @@ class CanvasBackend(app.CanvasBackend):
         
         elif button in (3, 4):
             # Wheel event
+            deltay = 1.0 if button==3 else -1.0
             self._vispy_canvas.events.mouse_wheel(
                 pos=(x, y),
-                delta=(1.0 if button==3 else -1.0),
+                delta=(0.0, deltay),
                 modifiers=mod,
                 )
     
