@@ -33,7 +33,13 @@ def get_gl_functions_from_pyopengl(NS, funcnames):
             try:
                 func = getattr(FBO, funcname)
             except AttributeError:
-                pass  # more options?
+                # Some functions are known by a slightly different name
+                # e.g. glDepthRangef, glDepthRangef
+                if funcname.endswith('f'):
+                    try:
+                        func = getattr(_GL, funcname[:-1])
+                    except AttributeError:
+                        pass
         
         # Set dummy function if we could not find it
         if func is None:
