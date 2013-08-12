@@ -59,6 +59,9 @@ class ShaderProgram(GLObject):
         
         # List of objects being enabled
         self._enabled_objects = []
+        
+        # List of varying names to use for feedback
+        self._feedback_vars = []
     
     
     def _delete(self):
@@ -164,6 +167,17 @@ class ShaderProgram(GLObject):
         oks = [shader._compiled==2 for shader in self._shaders]
         if not (oks and all(oks)):
             return
+        
+        #for s in self._shaders:
+            #print(s._source)
+        
+        # enable transform feedback
+        if len(self._feedback_vars) > 0:
+            import ctypes
+            arr = (ctypes.POINTER(ctypes.c_char)*len(self._feedback_vars))()
+            for i,v in enumerate(self._feedback_vars):
+                arr[i] = ctypes.create_string_buffer(v)
+            gl.glTransformFeedbackVaryings(self.handle, len(self._feedback_vars), arr, gl.GL_INTERLEAVED_ATTRIBS)
         
         # Link the program?
         if not gl.glGetProgramiv(self.handle, gl.GL_LINK_STATUS):
@@ -278,12 +292,39 @@ class ShaderProgram(GLObject):
             first = 0
         if count is None:
             count = self.attributes.vertex_count
+        if count is None:
+            raise Exception("Could not determine element count for draw.")
         
         # Draw
         gl.glDrawArrays(mode, first, count)
+
+    def feedback_arrays(self, buf, mode, first=None, count=None):
+        vbuf = VertexBuffer(data=buf)
+        gl.glBindBufferBase(gl.GL_TRANSFORM_FEEDBACK_BUFFER, 0, vbuf._handle)
+        fbmode = {
+            gl.GL_POINTS: gl.GL_POINTS,
+            gl.GL_LINES: gl.GL_LINES,
+            gl.GL_LINE_STRIP: gl.GL_LINES,
+            gl.GL_LINE_LOOP: gl.GL_LINES,
+            gl.GL_TRIANGLES: gl.GL_TRIANGLES,
+            gl.GL_TRIANGLE_STRIP: gl.GL_TRIANGLES,
+            gl.GL_TRIANGLE_FAN: gl.GL_TRIANGLES,
+            }[mode]
+        gl.glBeginTransformFeedback(fbmode)
+        try:
+            self.draw_arrays(mode, first, count)
+        finally:
+            r = glEndTransformFeedback()
+            print(r)
+        return vbuf
+
+
+        
+
+        
+        
     
-    
-    def draw_elements(self, mode, indices):
+    def draw_elements(self, mode, first=None, count=None):
         """ Draw the attribute arrays using a specified set of vertices,
         in the specified mode.
         Only call when the program is enabled.

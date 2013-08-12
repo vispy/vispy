@@ -16,6 +16,7 @@ import ctypes
 
 import numpy as np
 
+import vispy
 from vispy import gl
 from . import ext_available
 from . import Texture, VertexBuffer
@@ -235,6 +236,8 @@ class UniformInputs(BaseInputs):
             loc, type, fun, n = self._handles[name]
         except KeyError:
             # Not a known uniform, it may have been optimized out
+            if vispy.config['gl_debug']:
+                print("Warning: ignoring uniform %s; not present in shader program." % name)
             return
         
         # Get value if it's a weakref
@@ -367,6 +370,8 @@ class AttributeInputs(BaseInputs):
             loc, length, type = self._handles[name]
         except KeyError:
             # Not a known attribute, it may have been optimized out
+            if vispy.config['gl_debug']:
+                print("Warning: ignoring attribute %s; not present in shader program." % name)
             return
         
         # Get value if it's a weakref
