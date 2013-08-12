@@ -30,6 +30,8 @@ __version__ = '0.0.dev'
 
 
 from vispy.event import EmitterGroup, EventEmitter, Event
+from vispy.util import keys
+
 
 class ConfigEvent(Event):
     """ Event indicating a configuration change. 
@@ -100,15 +102,3 @@ def parse_command_line_arguments():
             else:
                 print("Unsupported vispy flag: %s" % o)
 parse_command_line_arguments()
-
-
-# Create API object for OpenGL ES 2.0
-# todo: I don't think this belongs here, since in principle vispy might grow non-opengl backends.
-#       maybe it goes in oogl.__init__?
-import vispy.glapi
-gl = vispy.glapi.GLES2(debug=config['gl_debug'])
-gl.ext = vispy.glapi.GLES2ext(debug=config['gl_debug'])
-
-import vispy.util
-from vispy.util import keys
-

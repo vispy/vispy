@@ -20,6 +20,8 @@ import sys
 from OpenGL import GL
 
 THISDIR = os.path.abspath(os.path.dirname(__file__))
+GLDIR = os.path.join(THISDIR, '..', 'vispy', 'gl')
+
 
 # We need header parser
 sys.path.insert(0, THISDIR)
@@ -27,66 +29,30 @@ sys.path.insert(0, THISDIR)
 # Load parser
 from headerparser import Parser
 
-PREAMBLE = '''""" Classes that represent an OpenGL API. The idea is that each
-class represents one opengl header file. In vispy we focus on OpenGL ES 2.0.
+PREAMBLE = '''""" 
 
 THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
+
+%s
+
 """
-
-from OpenGL import GL as _GL
-import vispy
-
-class _GL_ENUM(int):
-    def __new__(cls, name, value):
-        base = int.__new__(cls, value)
-        base.name = name
-        return base
-    def __repr__( self ):
-        return self.name
-
-
-class GLApi(object):
-    """ Abstract base class for OpenGL API's.
-    """
-    _APINAME = 'abstract'
-    
-    def __init__(self):
-        for funcname in self._glfunctions:
-            try:
-                func = getattr(_GL, funcname)
-            except AttributeError:
-                func = self._glFuncNotAvailable
-                if vispy.config['show_warnings']:  
-                    print('warning: %s not available' % funcname )
-            setattr(self, funcname, func)
-    
-    def _glFuncNotAvailable(self, *args, **kwargs):
-        pass
-        # todo: also mention what function was called
-        #print('Warning: gl function not available.')
-    
-    def __repr__(self):
-        return "<API for OpenGL %s>" % self._APINAME
-
 '''
 
-# Initialize lines of code
-lines = []
-lines.append(PREAMBLE)
 
-# Imports
-lines.append('\n')
-
-
-def create_class_from_header(classname, apiname, headerfile, extension=False):
+def create_constants_module(parser, extension=False):
     
-    # Create class that 
-    parser = Parser(os.path.join(THISDIR, 'headers', headerfile))
+    # Initialize 
+    lines = []
+    lines.append(PREAMBLE % 'Constants for OpenGL ES 2.0.')
     
-    # Initialize class
-    lines.append("class %s(GLApi):" % classname)
-    lines.append('    """ API for OpenGL %s\n    """\n    ' % apiname)
-    lines.append('    _APINAME = "%s"\n' % apiname)
+    # Import enum
+    lines.append('from vispy.gl import _GL_ENUM')
+    
+    # Import ext
+    if not extension:
+         lines.append('from vispy.gl import _constants_ext as ext')
+    
+    lines.append('\n')
     
     # Insert constants
     for c in parser.constantDefs:
@@ -98,13 +64,38 @@ def create_class_from_header(classname, apiname, headerfile, extension=False):
                 continue
         # Write constant
         if isinstance(c.value, int):
-            lines.append('    %s = _GL_ENUM(%r, %r)' % (c.cname, c.cname, c.value))
+            lines.append('%s = _GL_ENUM(%r, %r)' % (c.cname, c.cname, c.value))
         else:
-            lines.append('    %s = %r' % (c.cname, c.value))
-    lines.append('    ')
+            lines.append('%s = %r' % (c.cname, c.value))
+    lines.append('')
+    
+    # Write the file
+    fname = '_constants_ext.py' if extension else '_constants.py'
+    with open(os.path.join(GLDIR, fname), 'w') as f:
+        f.write('\n'.join(lines))
+    print('wrote %s' % fname)
+
+
+def create_gl_module(parser, extension=False):
+    
+    # Initialize
+    lines = []
+    doc = 'OpenGL ES 2.0 API based on normal OpenGL library (via pyOpenGL).'
+    lines.append(PREAMBLE % doc)
+    
+    # Import constants and ext
+    if extension:
+        lines.append('from vispy.gl._constants_ext import *')
+        lines.append('from vispy.gl import glhelper as _glhelper')
+    else:
+        lines.append('from vispy.gl._constants import *')
+        lines.append('from vispy.gl import _gl_ext as ext')
+        lines.append('from vispy.gl import glhelper as _glhelper')
+    
+    lines.append('\n')
     
     # Insert functions
-    lines.append('    _glfunctions = [')
+    lines.append('_glfunctions = [')
     for f in parser.functionDefs:
         # For extensions, we only take the OES ones, and remove the OES
         if extension:
@@ -115,23 +106,41 @@ def create_class_from_header(classname, apiname, headerfile, extension=False):
         # Add "super-function" if this is a group of functions
         if isinstance(f.group, list):
             if hasattr(GL, f.keyname):
-                lines.append('        "%s",' % f.keyname)
+                lines.append('    "%s",' % f.keyname)
         # Add line
         if hasattr(GL, f.cname):
-            lines.append('        "%s",' % f.cname)
+            lines.append('    "%s",' % f.cname)
         else:
             print('WARNING: %s seems not available in PyOpenGL' % f.cname)
-    lines.append('        ]')
-    lines.append('    ')
+    lines.append('    ]')
     
-    # Some extra empty lines
+    # A bit of space
     lines.append('')
     lines.append('')
     
-create_class_from_header('GLES2', 'ES 2.0', 'gl2.h')
-create_class_from_header('GLES2ext', 'ES 2.0 extensions', 'gl2ext.h', True)
-#create_class_from_header('GL1', '1.1 (Windows)', 'gl-1.1.h')
+    # Create the functions
+    lines.append('_glhelper.get_gl_functions_from_pyopengl(globals(), _glfunctions)')
+    
+    # Apply fixes
+    if not extension:
+        lines.append('_glhelper.fix(globals())')
+    
+    lines.append('')
+    
+    # Write the file
+    fname = '_gl_ext.py' if extension else '_gl.py'
+    with open(os.path.join(GLDIR, fname), 'w') as f:
+        f.write('\n'.join(lines))
+    print('wrote %s' % fname)
 
-# Write to file
-with open(os.path.join(THISDIR, '..', 'vispy', 'glapi.py'), 'wb') as f:
-    f.write( '\n'.join(lines).encode('utf-8') )
+
+if __name__ == '__main__':
+    # Create code  for normal ES 2.0
+    parser = Parser(os.path.join(THISDIR, 'headers', 'gl2.h'))
+    create_constants_module(parser)
+    create_gl_module(parser)
+    
+    # Create code for extensions
+    parser = Parser(os.path.join(THISDIR, 'headers', 'gl2ext.h'))
+    create_constants_module(parser, True)
+    create_gl_module(parser, True)

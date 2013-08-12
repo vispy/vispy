@@ -15,12 +15,6 @@ from vispy import gl
 from vispy.util.six import string_types
 from . import GLObject, ext_available
 
-if sys.version_info > (3,):
-    # todo: this should go in the vispy.gl package
-    # Monkey-patch pyopengl to fix a bug in glBufferSubData
-    _m = sys.modules[gl.glBufferSubData.wrapperFunction.__module__]
-    _m.long = int
-
 
 
 class Buffer(GLObject):
