@@ -21,15 +21,26 @@ def get_gl_functions_from_pyopengl(NS, funcnames):
     """ Get GL functions from pyopengl.
     """
     show_warnings = vispy.config['show_warnings']
+    import OpenGL.GL.framebufferobjects as FBO
     
     for funcname in funcnames:
-        # Get function 
+        func = None
+        # Get function from GL
         try:
             func = getattr(_GL, funcname)
         except AttributeError:
+            # Get function from FBO
+            try:
+                func = getattr(FBO, funcname)
+            except AttributeError:
+                pass  # more options?
+        
+        # Set dummy function if we could not find it
+        if func is None:
             func = _make_unavailable_func(funcname)
             if True or show_warnings:  
                 print('warning: %s not available' % funcname )
+        # Set
         NS[funcname] = func
 
 
