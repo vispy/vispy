@@ -1,4 +1,4 @@
-# #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # This code of this example should be considered public domain.
 
@@ -19,19 +19,24 @@ from transforms import perspective, translate, rotate
 app.use('qt')
 
 def make_arm(n,angle):
-    R = np.linspace(10,500,n)          + 50*np.random.normal(0,2,n) * np.linspace(1,.1,n)
-    T = angle+np.linspace(0,2*np.pi,n) + np.pi/6*np.random.normal(0,.5,n)
-    S = 5+3*np.abs(np.random.normal(0,1,n))
-    S *= np.linspace(.5,1.,n)
+    R = np.linspace(10,450+50*np.random.uniform(.5,1.),n)
+    R += 50*np.random.normal(0,2.,n) * np.linspace(1,.1,n)
+    T = angle+np.linspace(0,2.5*np.pi,n) + np.pi/6*np.random.normal(0,.5,n)
+    S = 15+2*np.abs(np.random.normal(0,1,n))
+    S *= np.linspace(1,.85,n)
     X = R*np.cos(T)
-    Y = R*np.sin(T)
+    Y = R*np.sin(T)*1.1
     D = np.sqrt(X*X+Y*Y)
     Z = 8*np.random.normal(0, 2-D/512., n)
-    D = np.maximum(0,D+25*np.random.normal(0,1,n))
+#    D = np.maximum(0,D+25*np.random.normal(0,1,n))
+
+    X += (D*np.random.uniform(0,1,n) > 250)*(.05*D*np.random.uniform(-1,1,n))
+    Y += (D*np.random.uniform(0,1,n) > 250)*(.05*D*np.random.uniform(-1,1,n))
+    Z += (D*np.random.uniform(0,1,n) > 250)*(.05*D*np.random.uniform(-1,1,n))
 
     return X/256,Y/256,Z/256,S/2,D
 
-p = 250000
+p = 25000
 n = 3*p
 a_position = np.zeros((n,3),np.float32)
 a_size     = np.random.uniform(.5,1,(n,1)).astype(np.float32)
@@ -50,6 +55,8 @@ for i in range(3):
 spectrum = 'spectrum.png'
 THISDIR = os.path.dirname(os.path.abspath(__file__))
 spectrum_filename = os.path.join(THISDIR, 'data', spectrum)
+particle = 'particle.bmp'
+particle_filename = os.path.join(THISDIR, 'data', particle)
 
 VERT_SHADER = """
 #version 120
@@ -59,7 +66,6 @@ VERT_SHADER = """
 uniform mat4      u_model;
 uniform mat4      u_view;
 uniform mat4      u_projection;
-uniform sampler2D u_texture;
 
 
 // Attributes
@@ -76,7 +82,7 @@ varying float v_dist;
 void main (void) {
     v_size  = a_size;
     v_dist  = a_dist/512.0;
-    v_dist  = .15+.4*v_dist;
+    v_dist  = .1+.5*v_dist;
     gl_Position = u_projection * u_view * u_model * vec4(a_position,1.0);
     gl_PointSize = v_size;
 }
@@ -87,7 +93,8 @@ FRAG_SHADER = """
 
 // Uniforms
 // ------------------------------------
-uniform sampler2D u_texture;
+uniform sampler2D u_texture1;
+uniform sampler2D u_texture2;
 
 // Varyings
 // ------------------------------------
@@ -99,8 +106,10 @@ varying float v_dist;
 void main()
 {    
     float a = 2*(length(gl_PointCoord.xy - vec2(0.5,0.5)) / sqrt(2));
-    vec3 color = texture2D(u_texture, vec2(v_dist,.5)).rgb;
-    gl_FragColor = vec4(color, (1-a)/v_size);
+
+    a = texture2D(u_texture2, gl_PointCoord.xy).r;
+    vec3 color = texture2D(u_texture1, vec2(v_dist,.5)).rgb;
+    gl_FragColor = vec4(color, a*.25); //(1-a)/v_size);
 }
 """
 
@@ -120,8 +129,13 @@ class Canvas(app.Canvas):
         self.program.attributes['a_size']     = a_size
 
         from PIL import Image
-        im = Image.open(spectrum_filename)
-        self.program.uniforms['u_texture'] = oogl.Texture2D(np.asarray(im))
+        im1 = Image.open(spectrum_filename)
+
+        from PIL import Image
+        im2 = Image.open(particle_filename)
+
+        self.program.uniforms['u_texture1'] = oogl.Texture2D(np.asarray(im1))
+        self.program.uniforms['u_texture2'] = oogl.Texture2D(np.asarray(im2))
 
         self.view       = np.eye(4,dtype=np.float32)
         self.model      = np.eye(4,dtype=np.float32)
@@ -144,7 +158,7 @@ class Canvas(app.Canvas):
         gl.glClearColor(0,0,0,1)
         gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE) #_MINUS_SRC_ALPHA)
         gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
         gl.glEnable(GL.GL_POINT_SPRITE)
 
