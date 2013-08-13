@@ -1,10 +1,15 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+# -----------------------------------------------------------------------------
+# This example shows how to actively select and test the qt backend.
+#
+# You should see a black window and any mouse or keyboard event should be
+# detected. A timer is also ran every second and it should print "tick !"
+# every second.
+# -----------------------------------------------------------------------------
 from vispy import app
 from vispy import gl
 app.use('qt')
-
 
 class Canvas(app.Canvas):
     def __init__(self, *args, **kwargs):
@@ -14,7 +19,7 @@ class Canvas(app.Canvas):
         timer.start()
 
     def on_initialize(self, event):
-        gl.glClearColor(0.2,0.2,0.2,1)
+        gl.glClearColor(0,0,0,1)
         print('on_initialize')
 
     def on_close(self, event):
@@ -49,6 +54,7 @@ class Canvas(app.Canvas):
     def on_timer(self, event):
         print('tick !')
     
+# -----------------------------------------------------------------------------
 if __name__ == '__main__':
     canvas = Canvas()
     canvas.show()

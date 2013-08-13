@@ -1,8 +1,8 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # This code of this example should be considered public domain.
-
-""" Simple example plotting 2D points.
+"""
+Plotting markers usig signed distance field
 """
 
 import os
@@ -16,19 +16,19 @@ import numpy as np
 from transforms import perspective, translate, rotate
 
 # Create vetices 
-n = 25000
-v_position = 0.5 * np.random.randn(n, 3).astype(np.float32)
-v_color = np.random.uniform(0.50,1.00,(n,3)).astype(np.float32)
-v_size  = np.random.uniform(5,10,(n,1)).astype(np.float32)
+n = 1
+v_position = 0 * np.random.randn(n, 3).astype(np.float32)
+v_color = np.random.uniform(.75,1,(n,3)).astype(np.float32)
+v_size  = np.random.uniform(500,500,(n,1)).astype(np.float32)
 
-# Define marker image
-marker_image = 'star-sdf.png'
-# marker_image = 'clober-sdf.png'
-# marker_image = 'cross-sdf.png'
+# Define marker array
+marker = 'star-sdf.npy'
+# marker = 'disc-sdf.npy'
+# marker = 'cross-sdf.npy'
 
 # Get marker filename
 THISDIR = os.path.dirname(os.path.abspath(__file__))
-marker_filename = os.path.join(THISDIR, 'data', marker_image)
+marker_filename = os.path.join(THISDIR, 'data', marker)
 
 
 VERT_SHADER = """
@@ -56,13 +56,13 @@ varying float v_linewidth;
 varying float v_antialias;
 
 void main (void) {
-    v_linewidth = 1.5;
-    v_antialias = 1.0;
+    v_linewidth = 1.;
+    v_antialias = 1.5;
     v_size = a_size;
     v_fg_color  = vec4(0.0,0.0,0.0,1.0);
     v_bg_color  = vec4(a_color,    1.0);
     gl_Position = u_projection * u_view * u_model * vec4(a_position,1.0);
-    gl_PointSize = 2.0*(a_size + v_linewidth + 1.5*v_antialias);
+    gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
 }
 """
 
@@ -82,14 +82,16 @@ varying float v_antialias;
 varying float v_size;
 void main()
 {    
-    float size = v_size; // - v_linewidth - 1.5*v_antialias;
+    float size = v_size +2*(v_linewidth + 1.5*v_antialias);
     float t = v_linewidth/2.0-v_antialias;
-    float r = size*texture2D(u_texture, gl_PointCoord.xy).a;
+    float r = v_size*texture2D(u_texture, gl_PointCoord.xy).a;
+
     float d = abs(r) - t;
 
     if( r > (v_linewidth/2.0+v_antialias))
         discard;
-    else if( d < 0.0 )
+
+    if( d < 0.0 )
        gl_FragColor = v_fg_color;
     else
     {
@@ -100,6 +102,7 @@ void main()
         else
             gl_FragColor = mix(v_bg_color, v_fg_color, alpha);
     }
+
 }
 """
 
@@ -127,16 +130,14 @@ class Canvas(app.Canvas):
         self.program.uniforms['u_model'] = self.model
         self.program.uniforms['u_view'] = self.view
 
-        n = 256
-        X,Y = np.meshgrid(np.linspace(-0.5,+0.5,n,endpoint=True),
-                          np.linspace(-0.5,+0.5,n,endpoint=True))
-        D = (np.sqrt(X*X+Y*Y) - 0.45).astype(np.float32)
-        self.program.uniforms['u_texture'] = oogl.Texture2D(data=D, format=gl.GL_ALPHA)
+        # Useful to test SDF
+        #n = 256
+        #X,Y = np.meshgrid(np.linspace(-0.5,+0.5,n,endpoint=True),
+        #                  np.linspace(-0.5,+0.5,n,endpoint=True))
+        #D = (np.sqrt(X*X+Y*Y) - 0.45).astype(np.float32)
+        #self.program.uniforms['u_texture'] = oogl.Texture2D(data=D, format=gl.GL_ALPHA)
 
-        from PIL import Image
-        im = Image.open(marker_filename)
-        D = np.asarray(im)[:,:]
-        D = (D/256.0 - 0.5).astype(np.float32)
+        D = np.load(marker_filename)
         self.program.uniforms['u_texture'] = oogl.Texture2D(data=D, format=gl.GL_ALPHA)
 
         self.theta = 0

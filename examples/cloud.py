@@ -236,7 +236,8 @@ class Canvas(app.Canvas):
         self.model      = np.eye(4,dtype=np.float32)
         self.projection = np.eye(4,dtype=np.float32)
 
-        translate(self.view, 0,0,-5)
+        self.translate = 5
+        translate(self.view, 0,0, -self.translate)
         self.program.uniforms['u_model'] = self.model
         self.program.uniforms['u_view'] = self.view
 
@@ -252,6 +253,10 @@ class Canvas(app.Canvas):
     def on_initialize(self, event):
         gl.glClearColor(1,1,1,1)
         gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
+        gl.glEnable(GL.GL_POINT_SPRITE)
 
 
     # ---------------------------------
@@ -261,6 +266,7 @@ class Canvas(app.Canvas):
                 self.timer.stop()
             else:
                 self.timer.start()
+
 
     # ---------------------------------
     def on_timer(self,event):
@@ -272,30 +278,31 @@ class Canvas(app.Canvas):
         self.program.uniforms['u_model'] = self.model
         self.update()
 
+
     # ---------------------------------
     def on_resize(self, event):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
-        self.projection = perspective( 45.0, width/float(height), 2.0, 10.0 )
+        self.projection = perspective( 45.0, width/float(height), 1.0, 1000.0 )
         self.program.uniforms['u_projection'] = self.projection
+
+
+    # ---------------------------------
+    def on_mouse_wheel(self, event):
+        self.translate +=event.delta[1]
+        self.translate = max(2,self.translate)
+        self.view       = np.eye(4,dtype=np.float32)
+        translate(self.view, 0,0, -self.translate)
+        self.program.uniforms['u_view'] = self.view
+        self.program.attributes['a_size'] = a_size*5/self.translate
+        self.update()
+
 
     # ---------------------------------
     def on_paint(self, event):
-        # Clear
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        # Enable transparency
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        # Enable point sprites (allow to change the size of the points with
-        # gl_PointSize in the vertex shader)
-        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL.GL_POINT_SPRITE)
-
-        # Draw
         with self.program as prog:
             prog.draw_arrays(gl.GL_POINTS)
-
-        # Swap buffers
         self.swap_buffers()
 
 if __name__ == '__main__':

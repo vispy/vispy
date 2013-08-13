@@ -1,7 +1,10 @@
-# #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# This code of this example should be considered public domain.
-
+# -----------------------------------------------------------------------------
+# This example shows how to display 3D objects.
+#
+# You should see a colored outlined spinning cube.
+# -----------------------------------------------------------------------------
 import numpy as np
 from vispy import app, gl, oogl
 from transforms import perspective, translate, rotate
@@ -161,8 +164,9 @@ class Canvas(app.Canvas):
 
         # Swap buffers
         self.swap_buffers()
-    
 
+    
+# -----------------------------------------------------------------------------
 if __name__ == '__main__':
     c = Canvas()
     c.show()
