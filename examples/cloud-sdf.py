@@ -16,10 +16,10 @@ import numpy as np
 from transforms import perspective, translate, rotate
 
 # Create vetices 
-n = 1
-v_position = 0 * np.random.randn(n, 3).astype(np.float32)
+n = 100000
+v_position = 0.45 * np.random.randn(n, 3).astype(np.float32) 
 v_color = np.random.uniform(.75,1,(n,3)).astype(np.float32)
-v_size  = np.random.uniform(500,500,(n,1)).astype(np.float32)
+v_size  = np.random.uniform(5,15,(n,1)).astype(np.float32) 
 
 # Define marker array
 marker = 'star-sdf.npy'
@@ -84,7 +84,7 @@ void main()
 {    
     float size = v_size +2*(v_linewidth + 1.5*v_antialias);
     float t = v_linewidth/2.0-v_antialias;
-    float r = v_size*texture2D(u_texture, gl_PointCoord.xy).a;
+    float r = v_size*(texture2D(u_texture, gl_PointCoord.xy).a-0.5);
 
     float d = abs(r) - t;
 
@@ -138,7 +138,7 @@ class Canvas(app.Canvas):
         #self.program.uniforms['u_texture'] = oogl.Texture2D(data=D, format=gl.GL_ALPHA)
 
         D = np.load(marker_filename)
-        self.program.uniforms['u_texture'] = oogl.Texture2D(data=D, format=gl.GL_ALPHA)
+        self.program.uniforms['u_texture'] = oogl.Texture2D(data=D+0.5, format=gl.GL_ALPHA)
 
         self.theta = 0
         self.phi = 0
