@@ -18,8 +18,7 @@ intended as a compatibility measure.
 from __future__ import print_function, division, absolute_import
 
 import sys
-if sys.version_info > (3,):
-    basestring = str
+from vispy.util.six import string_types
 
 
 # class Key(str):
@@ -27,15 +26,15 @@ if sys.version_info > (3,):
 #     More strict that a simple string to avoid bugs trying to compare to int.
 #     """
 #     def __new__(cls, s, *alternatives):
-#         if not isinstance(s, basestring):
+#         if not isinstance(s, string_types):
 #             raise ValueError('KeyConsant must be a string')
 #         s = str.__new__(cls, s)
 #         s._alternatives = alternatives
 #         return s
 #     def __eq__(self, other):
-#         if not isinstance(other, basestring):
+#         if not isinstance(other, string_types):
 #             raise ValueError('Key constants can only be compared to strings.')
-#         return basestring.__eq__(self, other) or other in self._alternatives
+#         return XX.__eq__(self, other) or other in self._alternatives
 
 class Key:
     """ A Key object represents the identity of a certain key. It
@@ -59,7 +58,7 @@ class Key:
         return "<Key %s>" % ', '.join([repr(v) for v in self._names])
     
     def __eq__(self, other):
-        if isinstance(other, basestring):
+        if isinstance(other, string_types):
             return other.upper() in self._names_upper
         elif isinstance(other, Key):
             return self._names[0] == other

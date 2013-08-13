@@ -61,7 +61,7 @@ class MyCanvas(app.Canvas):
     def on_mouse_press(self, event):
         # Should have button: 1: left, 2: right, 3: middle, 4:?
         # Should have pos and modifiers
-        # Delta should be 0
+        # Delta should be (0.0,0.0)
         self.print_mouse_event(event, 'Mouse press')
     
     def on_mouse_release(self, event):
@@ -72,20 +72,21 @@ class MyCanvas(app.Canvas):
         # Should print position when over the red square
         # Should always fire, with mouse down and also without
         # Should have pos and modifiers
-        # Button and delta should be 0
+        # Button and delta should be (0.0,0.0)
         if (    event.pos[0] < self.geometry[2]*0.5 
             and event.pos[1] < self.geometry[3]*0.5):
             self.print_mouse_event(event, 'Mouse move')
     
     def on_mouse_wheel(self, event):
-        # Should have nonzero delta: -1.0 when scrolling down (as in a browser)
+        # Should have nonzero delta: (0.0,-1.0) when scrolling down 
+        # (as in a browser)
         # Should have pos and modifiers
         # Button should be 0 
         self.print_mouse_event(event, 'Mouse wheel')
     
     def print_mouse_event(self, event, what):
         modifiers = ', '.join([key.name for key in event.modifiers])
-        print('%s - pos: %r, button: %i, modifiers: %s, delta: %1.1f' % (
+        print('%s - pos: %r, button: %i, modifiers: %s, delta: %r' % (
                 what, event.pos, event.button, modifiers, event.delta))
     
     
@@ -134,4 +135,3 @@ if __name__ == '__main__':
     
     # Enter the mainloop
     app.run()
-        

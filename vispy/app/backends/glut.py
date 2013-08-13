@@ -96,6 +96,22 @@ class ApplicationBackend(app.ApplicationBackend):
             win._vispy_close()
     
     def _vispy_get_native_app(self):
+        import sys, ctypes
+        from OpenGL import platform
+
+        # HiDPI support for retina display
+        # This requires glut from http://iihm.imag.fr/blanch/software/glut-macosx/
+        if sys.platform == 'darwin':
+            try:
+                glutInitDisplayString = platform.createBaseFunction( 
+                    'glutInitDisplayString', dll=platform.GLUT, resultType=None, 
+                    argTypes=[ctypes.c_char_p],
+                    doc='glutInitDisplayString(  ) -> None', 
+                argNames=() )
+                text = ctypes.c_char_p("rgba stencil double samples=8 hidpi")
+                glutInitDisplayString(text)
+            except:
+                pass
         if not self._inizialized:
             glut.glutInit() # todo: maybe allow user to give args?
             self._inizialized = True
@@ -246,9 +262,10 @@ class CanvasBackend(app.CanvasBackend):
         
         elif button in (3, 4):
             # Wheel event
+            deltay = 1.0 if button==3 else -1.0
             self._vispy_canvas.events.mouse_wheel(
                 pos=(x, y),
-                delta=(1.0 if button==3 else -1.0),
+                delta=(0.0, deltay),
                 modifiers=mod,
                 )
     

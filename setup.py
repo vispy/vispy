@@ -76,6 +76,7 @@ setup(
     
     packages = ['vispy', 
                 'vispy.app', 'vispy.app.backends',
+                'vispy.gl',
                 'vispy.oogl', 
                 'vispy.util', 
                 'vispy.io',

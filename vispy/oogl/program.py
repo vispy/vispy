@@ -20,9 +20,6 @@ from . import GLObject, ext_available
 from . import VertexBuffer, ElementBuffer
 from .program_inputs import UniformInputs, AttributeInputs
 from .shader import parse_shader_errors, VertexShader, FragmentShader
- 
-if sys.version_info > (3,):
-    basestring = str
 
 
 # todo: support uniform arrays of vectors/matrices?

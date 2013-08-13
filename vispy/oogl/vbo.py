@@ -12,14 +12,8 @@ import sys
 import numpy as np
 
 from vispy import gl
+from vispy.util.six import string_types
 from . import GLObject, ext_available
-
-if sys.version_info > (3,):
-    basestring = str
-    
-    # Monkey-patch pyopengl to fix a bug in glBufferSubData
-    _m = sys.modules[gl.glBufferSubData.wrapperFunction.__module__]
-    _m.long = int
 
 
 
@@ -148,7 +142,7 @@ class Buffer(GLObject):
 class IndexableVertexBufferMixin(object):
     def __getitem__(self, index):
         
-        if isinstance(index, basestring):
+        if isinstance(index, string_types):
             # Try to get field info
             if not isinstance(self._type, dict):
                 raise RuntimeError('Cannot index by name in this VertexBuffer.')

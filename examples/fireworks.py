@@ -13,7 +13,7 @@ are calculated, so each explostion is unique.
 
 import time
 import numpy as np
-
+import vispy
 from vispy import oogl
 from vispy import app
 from vispy import gl
