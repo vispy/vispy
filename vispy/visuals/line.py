@@ -328,7 +328,7 @@ class LineVisual(Visual):
             NullColorFragmentShader,
             )
             
-        self._program._feedback_vars = ['position']
+        #self._program._feedback_vars = ['position']
             
         
     def draw(self):

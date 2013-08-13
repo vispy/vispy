@@ -30,7 +30,6 @@ def _make_debug_wrapper(funcname, func):
     def cb(*args, **kwds):
         argstr = ', '.join(list(map(repr,args)) + ['%s=%s' % item for item in kwds.items()])
         print("%s(%s)" % (funcname, argstr))
-        print(func)
         ret = func(*args, **kwds)
         print( " <= %s" % repr(ret))
         return ret
