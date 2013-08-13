@@ -1,16 +1,14 @@
-# #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# This code of this example should be considered public domain.
-
-""" Example demonstrating simulating fireworks using point sprites.
-This example was taken from the gold book. 
-
-It demonstrates a series of explosions that each last 1 second. The
-visualization during the explostion is highly optimized, e.g. using a
-VBO. After each explosion, the vertex data for the next explosion 
-are calculated, so each explostion is unique.
-"""
-
+# -----------------------------------------------------------------------------
+# Example demonstrating simulation of fireworks using point sprites.
+#  (adapted from the "OpenGL ES 2.0 Programming Guide")
+#
+# This example demonstrates a series of explosions that last one second. The
+# visualization during the explosion is highly optimized using a Vertex Buffer
+# Objects (VBO). After each explosion, vertex data for the next explosion are
+# calculated, such that each explostion is unique.
+# -----------------------------------------------------------------------------
 import time
 import numpy as np
 import vispy
@@ -21,6 +19,7 @@ from vispy import gl
 # Create a texture
 radius = 32
 im1 = np.random.normal(0.8, 0.3, (radius*2+1, radius*2+1))
+
 # Mask it with a disk
 L = np.linspace(-radius, radius, 2 * radius + 1)
 (X, Y) = np.meshgrid(L, L)
@@ -35,7 +34,8 @@ vertex_data = np.zeros((N,), dtype=[('a_lifetime', np.float32, 1),
                                     ('a_endPosition', np.float32, 3)])
 
 
-VERT_SHADER = """ // explosion vertex shader
+VERT_SHADER = """
+// explosion vertex shader
 #version 120
 
 uniform float u_time;
@@ -62,7 +62,8 @@ void main () {
 }
 """
 
-FRAG_SHADER = """ // explostion fragment shader
+FRAG_SHADER = """
+// explostion fragment shader
 #version 120
 
 uniform sampler2D texture1;
@@ -84,7 +85,9 @@ class Canvas(app.Canvas):
     
     def __init__(self):
         app.Canvas.__init__(self)
-        
+
+        self.geometry = 0,0,800,800
+
         # Create program
         self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
                                             oogl.FragmentShader(FRAG_SHADER) )
@@ -125,7 +128,7 @@ class Canvas(app.Canvas):
             prog.draw_arrays(gl.GL_POINTS)
         
         # Swap buffers and invoke a new draw
-        self._backend._vispy_swap_buffers()
+        self.swap_buffers()
         self.update()
         
         # New explosion?

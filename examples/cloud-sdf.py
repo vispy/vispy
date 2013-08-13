@@ -16,10 +16,10 @@ import numpy as np
 from transforms import perspective, translate, rotate
 
 # Create vetices 
-n = 100000
-v_position = 0.45 * np.random.randn(n, 3).astype(np.float32)
+n = 1
+v_position = 0 * np.random.randn(n, 3).astype(np.float32)
 v_color = np.random.uniform(.75,1,(n,3)).astype(np.float32)
-v_size  = np.random.uniform(5,15,(n,1)).astype(np.float32)
+v_size  = np.random.uniform(500,500,(n,1)).astype(np.float32)
 
 # Define marker array
 marker = 'star-sdf.npy'
