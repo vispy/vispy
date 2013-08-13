@@ -98,7 +98,7 @@ varying float v_dist;
 // ------------------------------------
 void main()
 {    
-    float a = 2*(length(gl_PointCoord.xy - vec2(0.5,0.5)) / sqrt(2));
+    float a = 2*(length(gl_PointCoord.xy - vec2(0.5,0.5)) / sqrt(2.0));
     vec3 color = texture2D(u_texture, vec2(v_dist,.5)).rgb;
     gl_FragColor = vec4(color, (1-a)/v_size);
 }
