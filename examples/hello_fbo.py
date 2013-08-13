@@ -22,6 +22,8 @@ vTexcoord = np.array([  [0.0, 0.0], [0.0, 1.0],
 
 # For initial quad
 VERT_SHADER1 = """ // simple vertex shader
+#version 120
+
 attribute vec3 a_position;
 void main (void) {
     gl_Position = vec4(a_position, 1.0);
@@ -29,6 +31,8 @@ void main (void) {
 """
 
 FRAG_SHADER1 = """ // simple fragment shader
+#version 120
+
 uniform vec4 u_color;
 void main()
 {    
@@ -38,6 +42,7 @@ void main()
 
 # To render the result of the FBO
 VERT_SHADER2 = """ // textured vertex shader
+#version 120
 
 attribute vec3 a_position;
 attribute vec2 a_texcoord;
@@ -51,6 +56,8 @@ void main (void) {
 """
 
 FRAG_SHADER2 = """ // textured fragment shader
+#version 120
+
 uniform sampler2D u_texture1;
 varying vec2 v_texcoord;
 const float c_zero = 0.0;
