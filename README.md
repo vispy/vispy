@@ -7,3 +7,4 @@ Links:
   * Have a look at the code at http://github.com/vispy/vispy
   * Our mailing list is at: https://groups.google.com/d/forum/vispy
   * API documentation (in progress) is at http://vispy.readthedocs.org
+  * Examples: http://api.vispy.org/en/latest/examples.html
