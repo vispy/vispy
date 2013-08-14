@@ -26,7 +26,7 @@ For more information see http://vispy.org.
 from __future__ import print_function, division, absolute_import
 
 # Definition of the version number
-__version__ = '0.0.dev'
+__version__ = '0.1.0dev'
 
 
 from vispy.event import EmitterGroup, EventEmitter, Event

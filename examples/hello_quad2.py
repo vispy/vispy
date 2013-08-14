@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # This code of this example should be considered public domain.
 
-""" Example demonstrating showing a quad. Like hello_quad1.py, but now
+""" 
+Example demonstrating showing a quad. Like hello_quad1.py, but now
 with Texture2D and VertexBuffer, and optionally using an ElementBuffer to
 draw the vertices.
 """

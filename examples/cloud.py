@@ -1,10 +1,9 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-#
-#
-#
-# -----------------------------------------------------------------------------
+"""
+Demonstrating a cloud of points.
+"""
+
 from vispy import oogl
 from vispy import app
 from vispy import gl

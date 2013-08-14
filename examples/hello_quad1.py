@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # This code of this example should be considered public domain.
 
-""" Simple example demonstrating showing a quad.
+""" 
+Simple example demonstrating showing a quad.
 oogl objects that this example demonstrates: ShaderProgram.
 """
 

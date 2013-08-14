@@ -105,7 +105,7 @@ varying float v_dist;
 // ------------------------------------
 void main()
 {    
-    float a = 2*(length(gl_PointCoord.xy - vec2(0.5,0.5)) / sqrt(2));
+    float a = 2*(length(gl_PointCoord.xy - vec2(0.5,0.5)) / sqrt(2.0));
 
     a = texture2D(u_texture2, gl_PointCoord.xy).r;
     vec3 color = texture2D(u_texture1, vec2(v_dist,.5)).rgb;

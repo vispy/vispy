@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # This code of this example should be considered public domain.
 
-""" Example demonstrating the Game of Life in shaders.
+""" 
+Example demonstrating the Game of Life in shaders.
 See http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
 This examples uses textures and FBO's.
 """

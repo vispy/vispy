@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# Example demonstrating simulation of fireworks using point sprites.
-#  (adapted from the "OpenGL ES 2.0 Programming Guide")
-#
-# This example demonstrates a series of explosions that last one second. The
-# visualization during the explosion is highly optimized using a Vertex Buffer
-# Objects (VBO). After each explosion, vertex data for the next explosion are
-# calculated, such that each explostion is unique.
-# -----------------------------------------------------------------------------
+"""
+Example demonstrating simulation of fireworks using point sprites.
+(adapted from the "OpenGL ES 2.0 Programming Guide")
+
+This example demonstrates a series of explosions that last one second. The
+visualization during the explosion is highly optimized using a Vertex Buffer
+Object (VBO). After each explosion, vertex data for the next explosion are
+calculated, such that each explostion is unique.
+"""
+
 import time
 import numpy as np
 import vispy
@@ -50,7 +51,7 @@ void main () {
     {
         gl_Position.xyz = a_startPosition + (u_time * a_endPosition);
         gl_Position.xyz += u_centerPosition;
-        gl_Position.y -= 3. * u_time * u_time;
+        gl_Position.y -= 1.0 * u_time * u_time;
         gl_Position.w = 1.0;
     }
     else

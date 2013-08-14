@@ -1,10 +1,10 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# This example shows how retrieve event information from callback
-#
-# You should see information displayed for any event you triggered.
-# -----------------------------------------------------------------------------
+"""
+This example shows how to retrieve event information from a callback.
+You should see information displayed for any event you triggered.
+"""
+
 import vispy.gl as gl
 import vispy.app as app
 

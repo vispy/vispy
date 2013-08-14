@@ -294,7 +294,9 @@ class ShaderProgram(GLObject):
         
         # Draw
         gl.glDrawArrays(mode, first, count)
-
+    
+    
+    # todo: what does this do?
     def feedback_arrays(self, buf, mode, first=None, count=None):
         vbuf = VertexBuffer(data=buf)
         gl.glBindBufferBase(gl.GL_TRANSFORM_FEEDBACK_BUFFER, 0, vbuf._handle)
@@ -314,14 +316,9 @@ class ShaderProgram(GLObject):
             r = glEndTransformFeedback()
             print(r)
         return vbuf
-
-
-        
-
-        
-        
     
-    def draw_elements(self, mode, first=None, count=None):
+    
+    def draw_elements(self, mode, indices):
         """ Draw the attribute arrays using a specified set of vertices,
         in the specified mode.
         Only call when the program is enabled.
