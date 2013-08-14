@@ -51,7 +51,7 @@ void main () {
     {
         gl_Position.xyz = a_startPosition + (u_time * a_endPosition);
         gl_Position.xyz += u_centerPosition;
-        gl_Position.y -= 3. * u_time * u_time;
+        gl_Position.y -= 1.0 * u_time * u_time;
         gl_Position.w = 1.0;
     }
     else
