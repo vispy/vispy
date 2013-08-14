@@ -1,12 +1,13 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# This example shows how to actively select and test the qt backend.
-#
-# You should see a black window and any mouse or keyboard event should be
-# detected. A timer is also ran every second and it should print "tick !"
-# every second.
-# -----------------------------------------------------------------------------
+"""
+This example shows how to actively select and test the qt backend.
+
+You should see a black window and any mouse or keyboard event should be
+detected. A timer is also ran every second and it should print "tick !"
+every second.
+"""
+
 from vispy import app
 from vispy import gl
 app.use('qt')

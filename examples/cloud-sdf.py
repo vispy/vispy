@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # This code of this example should be considered public domain.
 """
-Plotting markers usig signed distance field
+Plotting markers usig signed distance field.
 """
 
 import os

@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# Very simple transformation library that is needed for some examples.
-# -----------------------------------------------------------------------------
+"""
+Very simple transformation library that is needed for some examples.
+"""
+
 import math
 import numpy
 import numpy as np

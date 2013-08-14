@@ -1,18 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# This example shows how to actively select and test the qt backend.
-#
-# You should see a black window and any mouse or keyboard event should be
-# detected. A timer is also ran every second and it should print "tick !"
-# every second.
-#
-# Note:
-# ====
-# Depending on on your glut implementation (native or freeglut), the mouse wheel
-# event may or may not be detected. Furthermore, glut has not utf-8 support and
-# non ascii-key will most likely produces garbage.
-# -----------------------------------------------------------------------------
+"""
+This example shows how to actively select and test the glut backend.
+
+You should see a black window and any mouse or keyboard event should be
+detected. A timer is also ran every second and it should print "tick !"
+every second.
+
+Note:
+====
+Depending on on your glut implementation (native or freeglut), the mouse wheel
+event may or may not be detected. Furthermore, glut has no utf-8 support and
+non ascii-key will most likely produces garbage.
+"""
+
 from vispy import app
 from vispy import gl
 app.use('glut')

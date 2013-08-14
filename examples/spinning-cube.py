@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# This example shows how to display 3D objects.
-#
-# You should see a colored outlined spinning cube.
-# -----------------------------------------------------------------------------
+"""
+This example shows how to display 3D objects.
+You should see a colored outlined spinning cube.
+"""
+
 import numpy as np
 from vispy import app, gl, oogl
 from transforms import perspective, translate, rotate

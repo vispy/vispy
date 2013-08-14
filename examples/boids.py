@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # This code of this example should be considered public domain.
 
-""" Demonstration of boids simulation. Boids is an artificial life
+""" 
+Demonstration of boids simulation. Boids is an artificial life
 program, developed by Craig Reynolds in 1986, which simulates the
 flocking behaviour of birds.
 Based on code from glumpy by Nicolas Rougier.
