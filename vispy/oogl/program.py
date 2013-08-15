@@ -346,7 +346,7 @@ class ShaderProgram(GLObject):
             self.enable_object(indices)
             # Prepare
             offset = None  # todo: allow the use of offset
-            gltype = VertexBuffer.DTYPES[indices.type]
+            gltype = ElementBuffer.DTYPES[indices.type]
             # Draw
             gl.glDrawElements(mode, indices.count, gltype, offset) 
         
