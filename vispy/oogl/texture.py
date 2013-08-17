@@ -41,15 +41,12 @@ class _RawTexture(GLObject):
     """
     
     def __init__(self, target):
+        GLObject.__init__(self)
         
         # Store target (i.e. the texture type)
         if target not in [gl.GL_TEXTURE_2D, gl.ext.GL_TEXTURE_3D]:
             raise ValueError('Unsupported target "%r"' % target)
         self._target = target
-        
-        # Texture ID (by which OpenGl identifies the texture)
-        # 0 means uninitialized, <0 means error.
-        self._handle = 0
     
     
     def _create(self):
@@ -399,11 +396,6 @@ class Texture(_RawTexture):
         
         """
         
-        # Reset if there was an error earlier
-        if self._handle < 0:
-            self._handle = 0
-            self._texture_shape = None
-        
         # Get ndim
         MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
         ndim = MAP.get(self._target, 0)
@@ -450,11 +442,6 @@ class Texture(_RawTexture):
             GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA.
         """
         
-        # Reset if there was an error earlier
-        if self._handle < 0:
-            self._handle = 0
-            self._texture_shape = None
-        
         # Get ndim
         MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
         ndim = MAP.get(self._target, 0)
@@ -482,20 +469,15 @@ class Texture(_RawTexture):
     
     def _enable(self):
         """ Overloaded _enable method to handle deferred uploading and
-        preparing the texture. Does nothing is texture is invalid
-        (self._handle < 0).
+        preparing the texture. 
           * Upload pending data
           * Bind the texture.
         """
-        # Error last time
-        if self._handle < 0:
-            return
         
         # If we use a 3D texture, we need an extension
         if self._target == gl.ext.GL_TEXTURE_3D:
             if not ext_available('GL_texture_3D'):
-                self._handle = -1
-                return
+                raise RuntimeError('3D Texture not available.')
         
         # Need to update data?
         if self._pending_data:
@@ -504,7 +486,7 @@ class Texture(_RawTexture):
             self._process_pending_data(*pendingData)
             # If not ok, warn (one time)
             if not gl.glIsTexture(self._handle):
-                self._handle = -1
+                self._handle = 0
                 print('Warning enabling texture, the texture is not valid.')
                 return
         

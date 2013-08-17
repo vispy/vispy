@@ -38,10 +38,7 @@ class RenderBuffer(GLObject):
     
     
     def __init__(self, shape=None, format=None):
-        
-        # ID (by which OpenGl identifies the texture)
-        # 0 means uninitialized, <0 means error.
-        self._handle = 0
+        GLObject.__init__(self)
         
         # Parameters
         self._shape = None
@@ -113,12 +110,9 @@ class RenderBuffer(GLObject):
     
     
     def _enable(self):
-        # Error last time?
-        if self._handle < 0:
-            return
-        
+       
         # Create?
-        if self._handle == 0:
+        if self._handle <= 0:
             self._create()
         
         # Enable
@@ -152,10 +146,7 @@ class FrameBuffer(GLObject):
     """
     
     def __init__(self, color=None, depth=None, stencil=None):
-        
-        # ID (by which OpenGl identifies the object)
-        # 0 means uninitialized, <0 means error.
-        self._handle = 0
+        GLObject.__init__(self)
         
         # Init pending attachments
         self._pending_attachments = []
@@ -288,13 +279,9 @@ class FrameBuffer(GLObject):
     
     def _enable(self):
         
-        # Error last time?
-        if self._handle < 0:
-            return
-        
         # Create?
         something_changed = False
-        if self._handle == 0:
+        if self._handle <= 0:
             self._create()
             something_changed = True
         

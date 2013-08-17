@@ -83,11 +83,33 @@ class GLObject(object):
     that the proper OpenGL context is current.
     """
     
+    def __init__(self):
+        self._handle = 0
+        self._error_enter = 0  # Track error on __enter__
+        self._error_exit = 0  # track errors on __exit__
+    
     def __enter__(self):
-        self._enable()
+        try:
+            # Try to enable, reset error state on success
+            self._enable()
+            self._error_enter = 0
+        except Exception:
+            # Error: increase error state. If this is the first error, raise
+            self._error_enter += 1
+            if self._error_enter == 1:
+                raise
+        
         return self
     
     def __exit__(self, type, value, traceback):
+        if value is None:
+            # Reset error state on success
+            self._error_exit = 0
+        else:
+            # Error: increase error state. If not the first error, suppress
+            self._error_exit += 1
+            if self._error_exit > 1: 
+                return True  # Suppress error
         self._disable()
     
     def __del__(self):

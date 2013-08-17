@@ -25,13 +25,13 @@ class BaseShader(GLObject):
     """
     
     def __init__(self, type, source=None):
+        GLObject.__init__(self)
         
         # Check and store type
         if type not in [gl.GL_VERTEX_SHADER, gl.GL_FRAGMENT_SHADER]:
             raise ValueError('Type must be vertex or fragment shader.')
         self._type = type
         
-        self._handle = 0
         self._compiled = 0  # 0: not compiled, 1: compile tried, 2: compile success 
         self._description = None
         self._program = None  # pointer to the *currently enabled* program that includes this shader
@@ -63,10 +63,9 @@ class BaseShader(GLObject):
         if self._handle <= 0:
             self._handle = gl.glCreateShader(self._type)
         
-        # todo: what should happen if no source is given?
+        # Check if we have source code
         if not self._source:
-            self._compiled = 2
-            return
+            raise RuntimeError('No source code given for shader.')
         
         # If shader is compiled, we're done now
         if self._compiled:

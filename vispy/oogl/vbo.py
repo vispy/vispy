@@ -24,15 +24,12 @@ class Buffer(GLObject):
     
     
     def __init__(self, target, data=None):
+        GLObject.__init__(self)
         
         # Store target (i.e. array buffer of index buffer)
         if target not in [gl.GL_ARRAY_BUFFER, gl.GL_ELEMENT_ARRAY_BUFFER]:
             raise ValueError("Invalid target for vertex buffer object.")
         self._target = target
-        
-        # Buffer ID (by which OpenGl identifies the texture)
-        # 0 means uninitialized, <0 means error.
-        self._handle = 0
         
         # Keep track of number of bytes in the buffer
         self._buffer_size = -1
@@ -75,10 +72,6 @@ class Buffer(GLObject):
             raise ValueError("Data should be a numpy array.")
         
         if offset is None:
-            # Reset if there was an error earlier
-            if self._handle < 0:
-                self._handle = 0
-                self._buffer_size = 0
             # Set pending data, and number of bytes
             self._pending_data = data, None
             self._buffer_size = data.nbytes
@@ -102,10 +95,6 @@ class Buffer(GLObject):
     
     
     def _enable(self):
-        
-        # Error last time?
-        if self._handle < 0:
-            return
         
         # todo: check creation and resetting pending_data
         
