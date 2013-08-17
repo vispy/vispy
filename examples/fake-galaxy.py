@@ -20,9 +20,9 @@ app.use('qt')
 
 def make_arm(n,angle):
     R = np.linspace(10,450+50*np.random.uniform(.5,1.),n)
-    R += 50*np.random.normal(0,2.,n) * np.linspace(1,.1,n)
+    R += 40*np.random.normal(0,2.,n) * np.linspace(1,.1,n)
     T = angle+np.linspace(0,2.5*np.pi,n) + np.pi/6*np.random.normal(0,.5,n)
-    S = 15+2*np.abs(np.random.normal(0,1,n))
+    S = 8+2*np.abs(np.random.normal(0,1,n))
     S *= np.linspace(1,.85,n)
     X = R*np.cos(T)
     Y = R*np.sin(T)*1.1
@@ -36,7 +36,7 @@ def make_arm(n,angle):
 
     return X/256,Y/256,Z/256,S/2,D
 
-p = 25000
+p = 50000
 n = 3*p
 a_position = np.zeros((n,3),np.float32)
 a_size     = np.random.uniform(.5,1,(n,1)).astype(np.float32)
@@ -109,7 +109,7 @@ void main()
 
     a = texture2D(u_texture2, gl_PointCoord.xy).r;
     vec3 color = texture2D(u_texture1, vec2(v_dist,.5)).rgb;
-    gl_FragColor = vec4(color, a*.25); //(1-a)/v_size);
+    gl_FragColor = vec4(color, a*.5); //(1-a)/v_size);
 }
 """
 
