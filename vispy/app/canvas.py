@@ -15,16 +15,27 @@ class Canvas(object):
     """ Representation of a GUI element that can be rendered to by an OpenGL
     context. The args and kwargs are used to instantiate the native widget.
     
-    Further, there are two special keyword arguments:
-      * app: an vispy Application instance (vispy.app is used by default)
-      * create_native: a bool that indicates whether to create the
-        widget immediately (default True)
-    
     Receives the following events:
     initialize, resize, paint, 
     mouse_press, mouse_release, mouse_move, mouse_wheel,
     key_press, key_release,
     stylus, touch, close
+    
+    Keyword arguments
+    -----------------
+    title :: str
+        The widget title
+    app :: Application
+        Give vispy Application instance to use as a backend.
+        (vispy.app is used by default.)
+    create_native :: bool
+        Whether to create the widget immediately. Default True.
+    show :: bool
+        Whether to show the widget immediately. Default False.
+    autoswap :: bool
+        Whether to swap the buffers automatically after a paint event.
+        Default True.
+    
     """
     
     def __init__(self, *args, **kwargs):
@@ -48,6 +59,13 @@ class Canvas(object):
         self._kwargs = kwargs
         self._backend = None
         
+        # Extract kwargs that are for us
+        # Most are used in _set_backend
+        self._our_kwargs = {}
+        self._our_kwargs['title'] = kwargs.pop('title', 'Vispy canvas')
+        self._our_kwargs['show'] = kwargs.pop('show', False)
+        self._our_kwargs['autoswap'] = kwargs.pop('autoswap', True)
+        
         # Initialise some values
         self._title = ''
         
@@ -59,7 +77,7 @@ class Canvas(object):
             self._set_backend(kwargs.pop('native'))
         else:
             self.create_native()
-        
+    
     
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
@@ -81,6 +99,17 @@ class Canvas(object):
         self._backend = backend
         if backend is not None:
             backend._vispy_canvas = self
+        else:
+            return
+        
+        # Initialize it
+        self.title = self._our_kwargs['title']
+        if self._our_kwargs['autoswap']:
+            fun = lambda x:self._backend._vispy_swap_buffers()
+            self.events.paint.callbacks.append(fun)  # Append callback to end
+        if self._our_kwargs['show']:
+            self.show()
+        
     
     @property
     def app(self):
@@ -142,6 +171,7 @@ class Canvas(object):
     def swap_buffers(self):
         """ Swap GL buffers such that the offscreen buffer becomes visible.
         """
+        #if not self._our_kwargs['autoswap']:
         self._backend._vispy_swap_buffers()
     
 #     @property
