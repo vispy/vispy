@@ -96,6 +96,27 @@ class Canvas(object):
         return self._backend._vispy_get_native_canvas()
     
     
+    def connect(self, fun):
+        """ Connect a function to an event. The name of the function
+        should be on_X, with X the name of the event (e.g. 'on_paint').
+        
+        This method is typically used as a decorater on a function
+        definition for an event handler.
+        """
+        # Get and check name
+        name = fun.__name__
+        if not name.startswith('on_'):
+            raise ValueError('When connecting a function based on its name, the name should start with "on_"')
+        eventname = name[3:]
+        # Get emitter
+        try:
+            emitter = self.events[eventname]
+        except KeyError:
+            raise ValueError('Event "%s" not available on this canvas.' % eventname)
+        # Connect
+        emitter.connect(fun)
+    
+    
     @property
     def geometry(self):
         """ Get or set the location and size of the Canvas in window
