@@ -24,6 +24,23 @@ def lena():
     return a
 
 
+def cat():
+    """ Return an image of a cat (256x256 RGB).
+    """
+    with open(os.path.join(RESOURCE_DIR, 'cat.bz2'), 'rb') as f:
+        bb = f.read()
+    a = np.frombuffer(bz2.decompress(bb), np.uint8)
+    a.shape = 256, 256, 3
+    return a
+
+
+# def _write_image_blob(im, fname):
+#     bb = bz2.compress(im.tostring())
+#     with open(os.path.join(RESOURCE_DIR, fname), 'wb') as f:
+#         f.write(bb) 
+    
+
+
 def read_mesh(fname, format=None):
     """ Read mesh data from file.
     returns (vertices, faces, normals, texcoords)
