@@ -36,7 +36,8 @@ class ShaderProgram(GLObject):
     """
     
     def __init__(self, *shaders):
-        self._handle = 0
+        GLObject.__init__(self)
+        
         self._enabled = False
         # Shaders
         self._shaders = []
@@ -163,7 +164,7 @@ class ShaderProgram(GLObject):
         # Only proceed if all shaders compiled ok
         oks = [shader._compiled==2 for shader in self._shaders]
         if not (oks and all(oks)):
-            return
+            raise ValueError('Shaders did not compile.')
         
         #for s in self._shaders:
             #print(s._source)
