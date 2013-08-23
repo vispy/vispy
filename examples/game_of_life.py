@@ -148,8 +148,7 @@ class Canvas(app.Canvas):
         # Prepare for next round
         self._tex1, self._tex2 = self._tex2, self._tex1
         
-        # Swap buffers and force redraw
-        self._backend._vispy_swap_buffers()
+        # Force redraw
         self.update()
 
 

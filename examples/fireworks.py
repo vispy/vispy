@@ -129,7 +129,6 @@ class Canvas(app.Canvas):
             prog.draw_arrays(gl.GL_POINTS)
         
         # Swap buffers and invoke a new draw
-        self.swap_buffers()
         self.update()
         
         # New explosion?

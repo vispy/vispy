@@ -102,8 +102,6 @@ class Canvas(app.Canvas):
         with self.program as prog:
             prog.draw_arrays(gl.GL_POINTS)
 
-        # Swap buffers
-        self.swap_buffers()
 
 if __name__ == '__main__':
     c = Canvas()

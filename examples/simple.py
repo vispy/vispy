@@ -22,7 +22,6 @@ class Canvas(app.Canvas):
         
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-        self.swap_buffers()
         
     def on_timer(self, event):
         self.tick += 1/60.0

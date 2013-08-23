@@ -162,8 +162,6 @@ class Canvas(app.Canvas):
             prog.draw_elements(gl.GL_LINES, self.outline)
             gl.glDepthMask( gl.GL_TRUE )        
 
-        # Swap buffers
-        self.swap_buffers()
 
     
 # -----------------------------------------------------------------------------

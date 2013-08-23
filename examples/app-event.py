@@ -54,7 +54,6 @@ class Canvas(app.Canvas):
     
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        self.swap_buffers()
 
 
 if __name__ == '__main__':

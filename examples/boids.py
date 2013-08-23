@@ -132,8 +132,6 @@ class Canvas(app.Canvas):
             prog.attributes['position'] = predator.reshape((1,3))
             prog.draw_arrays(gl.GL_POINTS)
         
-        # Swap buffers
-        self._backend._vispy_swap_buffers()
         # Next iteration
         self._t = self.iteration(time.time() - self._t)
         # Invoke a new draw
