@@ -127,11 +127,17 @@ class Canvas(app.Canvas):
         self.program.attributes['a_position'] = a_position
         self.program.attributes['a_dist']     = a_dist
         self.program.attributes['a_size']     = a_size
-
-        # Use Matplotlib to load the images.
-        from matplotlib.pyplot import imread
-        im1 = imread(spectrum_filename)
-        im2 = imread(particle_filename)
+    
+        try:
+            # Try Matplotlib to load the images.
+            from matplotlib.pyplot import imread
+            im1 = imread(spectrum_filename)
+            im2 = imread(particle_filename)
+        except ImportError:
+            # Pill, maybe then?
+            from PIL import Image 
+            im1 = Image.open(spectrum_filename) 
+            im2 = Image.open(particle_filename)
 
         self.program.uniforms['u_texture1'] = oogl.Texture2D(np.asarray(im1))
         self.program.uniforms['u_texture2'] = oogl.Texture2D(np.asarray(im2))
@@ -204,6 +210,8 @@ class Canvas(app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         with self.program as prog:
             prog.draw_arrays(gl.GL_POINTS)
+        
+        self.swap_buffers()  # Remove this if you version > 0.1.0
 
 if __name__ == '__main__':
     c = Canvas()
