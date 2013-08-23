@@ -14,20 +14,10 @@ RESOURCE_DIR = os.path.join(os.path.dirname(THISDIR), 'resources')
 
 
 # So we can demo image data without needing an image reading library
-def lena():
-    """ Return the lena image (512x512 RGB).
+def crate():
+    """ Return an image of a crate (256x256 RGB).
     """
-    with open(os.path.join(RESOURCE_DIR, 'lena.bz2'), 'rb') as f:
-        bb = f.read()
-    a = np.frombuffer(bz2.decompress(bb), np.uint8)
-    a.shape = 512, 512, 3
-    return a
-
-
-def cat():
-    """ Return an image of a cat (256x256 RGB).
-    """
-    with open(os.path.join(RESOURCE_DIR, 'cat.bz2'), 'rb') as f:
+    with open(os.path.join(RESOURCE_DIR, 'crate.bz2'), 'rb') as f:
         bb = f.read()
     a = np.frombuffer(bz2.decompress(bb), np.uint8)
     a.shape = 256, 256, 3
