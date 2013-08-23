@@ -41,14 +41,6 @@ class Buffer(GLObject):
             self.set_data(data)
     
     
-    def _create(self):
-        self._handle = gl.glGenBuffers(1)
-    
-    
-    def _delete(self):
-       gl.glDeleteBuffers([self._handle])
-    
-    
     @property
     def nbytes(self):
         """ The number of bytes that the buffer uses.
@@ -87,12 +79,12 @@ class Buffer(GLObject):
         self._need_update = True
     
     
-    def _upload(self, data, offset=None):
-        # todo: allow user to control usage (DYNAMIC_DRAW, STATIC_DRAW)
-        if offset is None:
-            gl.glBufferData(self._target, data.nbytes, data, gl.GL_DYNAMIC_DRAW)
-        else:
-            gl.glBufferSubData(self._target, offset, data.nbytes, data)
+    def _create(self):
+        self._handle = gl.glGenBuffers(1)
+    
+    
+    def _delete(self):
+       gl.glDeleteBuffers([self._handle])
     
     
     def _activate(self):
@@ -133,6 +125,13 @@ class Buffer(GLObject):
             data, offset = self._pending_subdata.pop(0)
             self._upload(data, offset)
     
+    
+    def _upload(self, data, offset=None):
+        # todo: allow user to control usage (DYNAMIC_DRAW, STATIC_DRAW)
+        if offset is None:
+            gl.glBufferData(self._target, data.nbytes, data, gl.GL_DYNAMIC_DRAW)
+        else:
+            gl.glBufferSubData(self._target, offset, data.nbytes, data)
     
    
 

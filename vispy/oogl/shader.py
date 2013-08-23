@@ -47,6 +47,31 @@ class BaseShader(GLObject):
         self._description = None
     
     
+    def add_source(self, source):
+        """ Templating, for later.
+        """
+        raise NotImplemented()
+    
+    
+    def __repr__(self):
+        if self._description is None:
+            # Try to get description from beginning of source
+            if self._source is None:
+                self._description = hex(id(self))
+            else:
+                for line in self._source.split('\n'):
+                    line = line.strip(' \t')
+                    if line == '':
+                        continue
+                    if line.startswith('/'):
+                        self._description = line.strip(' \t/*')
+                        break
+                    else:
+                        self._description = hex(id(self))
+                        break
+            
+        return "<%s '%s'>" % (self.__class__.__name__, self._description)
+    
     
     def _create(self):
         self._handle = gl.glCreateShader(self._target)
@@ -54,12 +79,6 @@ class BaseShader(GLObject):
     
     def _delete(self):
         gl.glDeleteShader(self._handle)
-    
-    
-    def add_source(self, source):
-        """ Templating, for later.
-        """
-        raise NotImplemented()
     
     
     def _activate(self):
@@ -95,24 +114,6 @@ class BaseShader(GLObject):
             raise RuntimeError(errors)
     
     
-    def __repr__(self):
-        if self._description is None:
-            # Try to get description from beginning of source
-            if self._source is None:
-                self._description = hex(id(self))
-            else:
-                for line in self._source.split('\n'):
-                    line = line.strip(' \t')
-                    if line == '':
-                        continue
-                    if line.startswith('/'):
-                        self._description = line.strip(' \t/*')
-                        break
-                    else:
-                        self._description = hex(id(self))
-                        break
-            
-        return "<%s '%s'>" % (self.__class__.__name__, self._description)
     
     
     # todo: what does this do?

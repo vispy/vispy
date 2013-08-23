@@ -49,14 +49,6 @@ class RenderBuffer(GLObject):
             self.set_storage(shape, format=format)
     
     
-    def _create(self):
-        self._handle = gl.glGenRenderbuffers(1)
-    
-    
-    def _delete(self):
-       gl.glDeleteRenderbuffers([self._handle])
-    
-    
     def set_storage(self, shape, format=None):
         """ Allocate storage for this render buffer.
         
@@ -104,6 +96,14 @@ class RenderBuffer(GLObject):
         self._shape = shape
         self._format = format or self._format
         self._need_update = True
+    
+    
+    def _create(self):
+        self._handle = gl.glGenRenderbuffers(1)
+    
+    
+    def _delete(self):
+       gl.glDeleteRenderbuffers([self._handle])
     
     
     def _activate(self):
@@ -155,14 +155,6 @@ class FrameBuffer(GLObject):
             self.attach_depth(depth)
         elif stencil is not None:
             self.attach_stencil(stencil)
-    
-    
-    def _create(self):
-        self._handle = gl.glGenFramebuffers(1)
-    
-    
-    def _delete(self):
-       gl.glDeleteFramebuffers([self._handle])
     
     
     @property
@@ -274,7 +266,15 @@ class FrameBuffer(GLObject):
             elif isinstance(attachment, RenderBuffer):
                 attachment.set_storage(shape)
     
-        
+    
+    def _create(self):
+        self._handle = gl.glGenFramebuffers(1)
+    
+    
+    def _delete(self):
+       gl.glDeleteFramebuffers([self._handle])
+    
+    
     def _activate(self):
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
     
