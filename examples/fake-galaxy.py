@@ -1,23 +1,51 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# This code of this example should be considered public domain.
-
+# -----------------------------------------------------------------------------
+# VisPy - Copyright (c) 2013, Vispy Development Team
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# * Neither the name of Vispy Development Team nor the names of its
+#   contributors may be used to endorse or promote products
+#   derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# -----------------------------------------------------------------------------
 """
 Just a very fake galaxy.
 Astronomers and cosmologists will kill me !
 """
 
 import os
+import numpy as np
+
 from vispy import oogl
 from vispy import app
 from vispy import gl
 from OpenGL import GL
-import numpy as np
 from transforms import perspective, translate, rotate
 
 #app.use('glut')
 app.use('qt')
 
+
+# Manual galaxy creation
+# (did you really expect a simulation in less than 250 pylon lines ?)
 def make_arm(n,angle):
     R = np.linspace(10,450+50*np.random.uniform(.5,1.),n)
     R += 40*np.random.normal(0,2.,n) * np.linspace(1,.1,n)
@@ -28,20 +56,15 @@ def make_arm(n,angle):
     Y = R*np.sin(T)*1.1
     D = np.sqrt(X*X+Y*Y)
     Z = 8*np.random.normal(0, 2-D/512., n)
-#    D = np.maximum(0,D+25*np.random.normal(0,1,n))
-
     X += (D*np.random.uniform(0,1,n) > 250)*(.05*D*np.random.uniform(-1,1,n))
     Y += (D*np.random.uniform(0,1,n) > 250)*(.05*D*np.random.uniform(-1,1,n))
     Z += (D*np.random.uniform(0,1,n) > 250)*(.05*D*np.random.uniform(-1,1,n))
-
     return X/256,Y/256,Z/256,S/2,D
-
 p = 50000
 n = 3*p
 a_position = np.zeros((n,3),np.float32)
 a_size     = np.random.uniform(.5,1,(n,1)).astype(np.float32)
 a_dist     = np.ones((n,1))
-
 for i in range(3):
     X,Y,Z,S,D = make_arm(p, i * 2*np.pi/3)
     a_dist[(i+0)*p:(i+1)*p,0] = D 
@@ -49,14 +72,35 @@ for i in range(3):
     a_position[(i+0)*p:(i+1)*p,1] = Y
     a_position[(i+0)*p:(i+1)*p,2] = Z
     a_size[(i+0)*p:(i+1)*p,0] = S
+a_dist = (a_dist-a_dist.min())/(a_dist.max()-a_dist.min())
 
 
-# Define marker array
-spectrum = 'spectrum.png'
-THISDIR = os.path.dirname(os.path.abspath(__file__))
-spectrum_filename = os.path.join(THISDIR, 'data', spectrum)
-particle = 'particle.bmp'
-particle_filename = os.path.join(THISDIR, 'data', particle)
+# Very simple colormap
+cmap = np.array([[255, 124,   0],
+                 [255, 163,  76],
+                 [255, 192, 130],
+                 [255, 214, 173],
+                 [255, 232, 212],
+                 [246, 238, 237],
+                 [237, 240, 253],
+                 [217, 228, 255],
+                 [202, 219, 255],
+                 [191, 212, 255],
+                 [182, 206, 255],
+                 [174, 202, 255],
+                 [168, 198, 255],
+                 [162, 195, 255],
+                 [158, 192, 255],
+                 [155, 189, 255],
+                 [151, 187, 255],
+                 [148, 185, 255],
+                 [145, 183, 255],
+                 [143, 182, 255],
+                 [141, 181, 255],
+                 [140, 179, 255],
+                 [139, 179, 255],
+                 [137, 177, 255]], dtype=np.uint8).reshape(1,24,3)
+
 
 VERT_SHADER = """
 #version 120
@@ -80,9 +124,8 @@ varying float v_size;
 varying float v_dist;
 
 void main (void) {
-    v_size  = a_size;
-    v_dist  = a_dist/512.0;
-    v_dist  = .1+.5*v_dist;
+    v_size  = a_size*.75;
+    v_dist  = a_dist;
     gl_Position = u_projection * u_view * u_model * vec4(a_position,1.0);
     gl_PointSize = v_size;
 }
@@ -93,8 +136,7 @@ FRAG_SHADER = """
 
 // Uniforms
 // ------------------------------------
-uniform sampler2D u_texture1;
-uniform sampler2D u_texture2;
+uniform sampler2D u_colormap;
 
 // Varyings
 // ------------------------------------
@@ -106,10 +148,8 @@ varying float v_dist;
 void main()
 {    
     float a = 2*(length(gl_PointCoord.xy - vec2(0.5,0.5)) / sqrt(2.0));
-
-    a = texture2D(u_texture2, gl_PointCoord.xy).r;
-    vec3 color = texture2D(u_texture1, vec2(v_dist,.5)).rgb;
-    gl_FragColor = vec4(color, a*.5); //(1-a)/v_size);
+    vec3 color = texture2D(u_colormap, vec2(v_dist,.5)).rgb;
+    gl_FragColor = vec4(color,(1-a)*.25);
 }
 """
 
@@ -119,7 +159,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self)
         self.geometry = (0,0,1024,1024)
-        self.title = "A very fake galaxy"
+        self.title = "A very fake galaxy [mouse scroll to zoom]"
 
         self.program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
                                            oogl.FragmentShader(FRAG_SHADER) )
@@ -127,20 +167,7 @@ class Canvas(app.Canvas):
         self.program.attributes['a_position'] = a_position
         self.program.attributes['a_dist']     = a_dist
         self.program.attributes['a_size']     = a_size
-    
-        try:
-            # Try Matplotlib to load the images.
-            from matplotlib.pyplot import imread
-            im1 = imread(spectrum_filename)
-            im2 = imread(particle_filename)
-        except ImportError:
-            # Pill, maybe then?
-            from PIL import Image 
-            im1 = Image.open(spectrum_filename) 
-            im2 = Image.open(particle_filename)
-
-        self.program.uniforms['u_texture1'] = oogl.Texture2D(np.asarray(im1))
-        self.program.uniforms['u_texture2'] = oogl.Texture2D(np.asarray(im2))
+        self.program.uniforms['u_colormap'] = oogl.Texture2D(cmap)
 
         self.view       = np.eye(4,dtype=np.float32)
         self.model      = np.eye(4,dtype=np.float32)
@@ -210,8 +237,6 @@ class Canvas(app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         with self.program as prog:
             prog.draw_arrays(gl.GL_POINTS)
-        
-        self.swap_buffers()  # Remove this if you version > 0.1.0
 
 if __name__ == '__main__':
     c = Canvas()
