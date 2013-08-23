@@ -2,6 +2,7 @@
 # Copyright (c) 2013, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+# todo: this should probably go to event.py or app module
 
 """ Define constants for keys.
 
