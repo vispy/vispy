@@ -34,161 +34,21 @@ DTYPES = {  'uint8': gl.GL_UNSIGNED_BYTE,
         }
 
 
-class _RawTexture(GLObject):
-    """ This class demonstrates the minimal encapsulation of an OpenGl
-    texture. The rest is mostly sugar and stuff to support deferred
-    loading and settings.
+
+class Texture(GLObject):
+    """ Representation of an OpenGL texture. 
+    
     """
     
-    def __init__(self, target):
+    def __init__(self, target, data=None, format=None, clim=None):
         GLObject.__init__(self)
         
         # Store target (i.e. the texture type)
         if target not in [gl.GL_TEXTURE_2D, gl.ext.GL_TEXTURE_3D]:
             raise ValueError('Unsupported target "%r"' % target)
         self._target = target
-    
-    
-    def _create(self):
-        self._handle = gl.glGenTextures(1)
-    
-    
-    def _delete(self):
-        gl.glDeleteTextures([self._handle])
-    
-    
-    def _activate(self):
-        """ To be called by context handler. Never call this yourself.
-        """
-        # Bind
-        gl.glBindTexture(self._target, self._handle)
-    
-    
-    def _deactivate(self):
-        """ To be called by context handler. Never call this yourself.
-        """
-        # Unbind and disable
-        gl.glBindTexture(self._target, 0)
-    
-    
-    def _allocate(self, shape, format, level=0):
-        """ Allocate space for the current texture object. 
-        It should have been verified that the texture will fit.
-        """
-        # Determine function and target from texType
-        D = {   #gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),
-                gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
-                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)}
-        uploadFun, ndim = D[self._target]
         
-        # Determine type
-        gltype = gl.GL_UNSIGNED_BYTE
-        
-        # Build args list
-        size = size = [i for i in reversed( shape[:ndim] )]
-        args = [self._target, level, format] + size + [0, format, gltype, None]
-        
-        # Call
-        uploadFun(*tuple(args))
-    
-    
-    def _upload(self, data, format, level=0):
-        """ Upload a texture to the current texture object. 
-        It should have been verified that the texture will fit.
-        """
-        # Determine function and target from texType
-        D = {   #gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),
-                gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
-                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)}
-        uploadFun, ndim = D[self._target]
-        
-        # Determine type
-        thetype = data.dtype.name
-        if not thetype in DTYPES: # Note that we convert if necessary in Texture
-            raise ValueError("Cannot translate datatype %s to GL." % thetype)
-        gltype = DTYPES[thetype]
-        
-        # Build args list
-        size, gltype = self._get_size_and_type(data, ndim)
-        args = [self._target, level, format] + size + [0, format, gltype, data]
-        
-        # Check the alignment of the texture
-        alignment = self._get_alignment(data.shape[-1])
-        if alignment != 4:
-            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
-        
-        # Call
-        uploadFun(*tuple(args))
-        
-        # Check if we need to reset our pixel store state
-        if alignment != 4:
-            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
-    
-    
-    def _upload_sub(self, data, offset, format, level=0):
-        """ Update an existing texture object.
-        """
-        # Determine function and target from texType
-        D = {   #gl.GL_TEXTURE_1D: (gl.glTexSubImage1D, 1),
-                gl.GL_TEXTURE_2D: (gl.glTexSubImage2D, 2),
-                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexSubImage3D, 3)}
-        uploadFun, ndim = D[self._target]
-        
-        # Build argument list
-        size, gltype = self._get_size_and_type(data, ndim)
-        offset = [i for i in offset]
-        assert len(offset) == len(size)
-        args = [self._target, level] + offset + size + [format, gltype, data]
-        
-        # Upload!
-        uploadFun(*tuple(args))
-    
-    
-    def _get_size_and_type(self, data, ndim):
-        # Determine size
-        size = [i for i in reversed( data.shape[:ndim] )]
-        # Determine type
-        thetype = data.dtype.name
-        if not thetype in DTYPES: # Note that we convert if necessary in Texture
-            raise ValueError("Cannot translate datatype %s to GL." % thetype)
-        gltype = DTYPES[thetype]
-        # Done
-        return size, gltype
-    
-    # from pylgy
-    def _get_alignment(self, width):
-        """Determines a textures byte alignment.
-    
-        If the width isn't a power of 2
-        we need to adjust the byte alignment of the image.
-        The image height is unimportant
-    
-        http://www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
-        """
-        
-        # we know the alignment is appropriate
-        # if we can divide the width by the
-        # alignment cleanly
-        # valid alignments are 1,2,4 and 8
-        # put 4 first, since it's the default
-        alignments = [4,8,2,1]
-        for alignment in alignments:
-            if width % alignment == 0:
-                return alignment
-
-
-
-class Texture(_RawTexture):
-    """ Representation of an OpenGL texture. 
-    
-    """
-    # Builds on the raw texture class by implementing convenience and lazy loading
-    
-    def __init__(self, target, data=None, format=None, clim=None):
-        _RawTexture.__init__(self, target)
-        
-        # A reference (not a weak one) to be able to process deferred
-        # (i.e. lazy) loading. Also store the shape.
+        # A reference to pending data to set
         self._pending_data = None
         self._texture_shape = None
         
@@ -475,12 +335,23 @@ class Texture(_RawTexture):
         self._need_update = True
     
     
+    def _create(self):
+        self._handle = gl.glGenTextures(1)
+    
+    
+    def _delete(self):
+        gl.glDeleteTextures([self._handle])
+    
+    
+    def _activate(self):
+        gl.glBindTexture(self._target, self._handle)
+    
+    
+    def _deactivate(self):
+        gl.glBindTexture(self._target, 0)
+    
+    
     def _update(self):
-        """ Overloaded _enable method to handle deferred uploading and
-        preparing the texture. 
-          * Upload pending data
-          * Bind the texture.
-        """
         
         # If we use a 3D texture, we need an extension
         if self._target == gl.ext.GL_TEXTURE_3D:
@@ -504,17 +375,12 @@ class Texture(_RawTexture):
             # Process pending data
             self._process_pending_data(*pendingData)
         
-        # Is the texture valid? It may simply not have been given data yet
-        if self._handle == 0:
-            print('Warning, no data has been set or allocated for texture.')
-            return
+        # Check
         if not gl.glIsTexture(self._handle): 
             raise RuntimeError('This should not happen (texture is invalid)')
         
-        # Enable before updating params
-        _RawTexture._activate(self)
-        
         # Need to update any parameters?
+        self._activate(self)
         while self._pending_params:
             param, value = self._pending_params.popitem()
             gl.glTexParameter(self._target, param, value)
@@ -553,7 +419,7 @@ class Texture(_RawTexture):
             gl.glBindTexture(self._target, self._handle)
             if self._handle <= 0 or not gl.glIsTexture(self._handle):
                 raise ValueError('Cannot update texture if there is no texture.')
-            self._upload_sub(data, offset, format, level)
+            self._upload_subdata(data, offset, format, level)
             
         else:
             # (re)upload: slower
@@ -566,14 +432,121 @@ class Texture(_RawTexture):
             # Upload!
             self._activate()
             if isinstance(data, tuple):
-                self._allocate(shape, format, level)
+                self._allocate_storage(shape, format, level)
             else:
-                self._upload(data, format, level)
+                self._upload_data(data, format, level)
             # Set all parameters that the user set
             for param, value in self._texture_params.items():
                gl.glTexParameter(self._target, param, value)
             self._pending_params = {} # We just applied all 
-
+    
+    
+    def _allocate_storage(self, shape, format, level=0):
+        """ Allocate space for the current texture object. 
+        It should have been verified that the texture will fit.
+        """
+        # Determine function and target from texType
+        D = {   #gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),
+                gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
+                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)}
+        uploadFun, ndim = D[self._target]
+        
+        # Determine type
+        gltype = gl.GL_UNSIGNED_BYTE
+        
+        # Build args list
+        size = size = [i for i in reversed( shape[:ndim] )]
+        args = [self._target, level, format] + size + [0, format, gltype, None]
+        
+        # Call
+        uploadFun(*tuple(args))
+    
+    
+    def _upload_data(self, data, format, level=0):
+        """ Upload a texture to the current texture object. 
+        It should have been verified that the texture will fit.
+        """
+        # Determine function and target from texType
+        D = {   #gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),
+                gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
+                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)}
+        uploadFun, ndim = D[self._target]
+        
+        # Determine type
+        thetype = data.dtype.name
+        if not thetype in DTYPES: # Note that we convert if necessary in Texture
+            raise ValueError("Cannot translate datatype %s to GL." % thetype)
+        gltype = DTYPES[thetype]
+        
+        # Build args list
+        size, gltype = self._get_size_and_type(data, ndim)
+        args = [self._target, level, format] + size + [0, format, gltype, data]
+        
+        # Check the alignment of the texture
+        alignment = self._get_alignment(data.shape[-1])
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+        
+        # Call
+        uploadFun(*tuple(args))
+        
+        # Check if we need to reset our pixel store state
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+    
+    
+    def _upload_subdata(self, data, offset, format, level=0):
+        """ Update an existing texture object.
+        """
+        # Determine function and target from texType
+        D = {   #gl.GL_TEXTURE_1D: (gl.glTexSubImage1D, 1),
+                gl.GL_TEXTURE_2D: (gl.glTexSubImage2D, 2),
+                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexSubImage3D, 3)}
+        uploadFun, ndim = D[self._target]
+        
+        # Build argument list
+        size, gltype = self._get_size_and_type(data, ndim)
+        offset = [i for i in offset]
+        assert len(offset) == len(size)
+        args = [self._target, level] + offset + size + [format, gltype, data]
+        
+        # Upload!
+        uploadFun(*tuple(args))
+    
+    
+    def _get_size_and_type(self, data, ndim):
+        # Determine size
+        size = [i for i in reversed( data.shape[:ndim] )]
+        # Determine type
+        thetype = data.dtype.name
+        if not thetype in DTYPES: # Note that we convert if necessary in Texture
+            raise ValueError("Cannot translate datatype %s to GL." % thetype)
+        gltype = DTYPES[thetype]
+        # Done
+        return size, gltype
+    
+    
+    # from pylgy
+    def _get_alignment(self, width):
+        """Determines a textures byte alignment.
+    
+        If the width isn't a power of 2
+        we need to adjust the byte alignment of the image.
+        The image height is unimportant
+    
+        http://www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
+        """
+        
+        # we know the alignment is appropriate
+        # if we can divide the width by the
+        # alignment cleanly
+        # valid alignments are 1,2,4 and 8
+        # put 4 first, since it's the default
+        alignments = [4,8,2,1]
+        for alignment in alignments:
+            if width % alignment == 0:
+                return alignment
+        
 
 
 class Texture2D(Texture):
