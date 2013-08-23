@@ -380,7 +380,7 @@ class Texture(GLObject):
             raise RuntimeError('This should not happen (texture is invalid)')
         
         # Need to update any parameters?
-        self._activate(self)
+        self._activate()
         while self._pending_params:
             param, value = self._pending_params.popitem()
             gl.glTexParameter(self._target, param, value)

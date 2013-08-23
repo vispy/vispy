@@ -285,6 +285,9 @@ class FrameBuffer(GLObject):
     
     def _update(self):
         
+        # We need to activate before we can add attachements
+        self._activate()
+        
         # Attach any RenderBuffers or Textures
         # Note that we only enable the object briefly to attach it.
         # After that, the object does not need to be bound.
