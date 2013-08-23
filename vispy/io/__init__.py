@@ -10,14 +10,14 @@ import bz2
 import numpy as np
 
 THISDIR = os.path.dirname(os.path.abspath(__file__))
-RESOURCE_DIR = os.path.join(os.path.dirname(THISDIR), 'resources')
+DATA_DIR = os.path.join(os.path.dirname(THISDIR), 'data')
 
 
 # So we can demo image data without needing an image reading library
 def crate():
     """ Return an image of a crate (256x256 RGB).
     """
-    with open(os.path.join(RESOURCE_DIR, 'crate.bz2'), 'rb') as f:
+    with open(os.path.join(DATA_DIR, 'crate.bz2'), 'rb') as f:
         bb = f.read()
     a = np.frombuffer(bz2.decompress(bb), np.uint8)
     a.shape = 256, 256, 3
@@ -26,7 +26,7 @@ def crate():
 
 # def _write_image_blob(im, fname):
 #     bb = bz2.compress(im.tostring())
-#     with open(os.path.join(RESOURCE_DIR, fname), 'wb') as f:
+#     with open(os.path.join(DATA_DIR, fname), 'wb') as f:
 #         f.write(bb) 
     
 
@@ -41,7 +41,7 @@ def read_mesh(fname, format=None):
     # Check file
     if not os.path.isfile(fname):
         # Maybe we have it?
-        fname_ = os.path.join(RESOURCE_DIR, fname)
+        fname_ = os.path.join(DATA_DIR, fname)
         if os.path.isfile(fname_):
             fname = fname_
         else:
