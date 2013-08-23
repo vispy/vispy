@@ -105,17 +105,20 @@ class Canvas(app.Canvas):
         self._program2.uniforms['u_texture1'] = self._rendertex
     
     
+    def on_resize(self, event):
+        width, height = event.size
+        gl.glViewport(0, 0, width, height)
+    
+    
     def on_paint(self, event):
         
         # Set geometry (is no-op if the size does not change)
         self._fbo.set_size(*self.geometry[2:])
         
-        # Draw the same scenas as in hello_quad.py, but draw it to the FBO
+        # Draw the same scene as as in hello_quad.py, but draw it to the FBO
         with self._program1 as prog:
             prog.enable_object(self._fbo)
-            
-            # Set viewport and transformations
-            gl.glViewport(0, 0, *self.geometry[2:])
+            # Init
             gl.glClearColor(0,0.0,0.5,1);
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             # Draw
@@ -123,15 +126,11 @@ class Canvas(app.Canvas):
         
         # Now draw result to a full-screen quad
         with self._program2 as prog:
-            # Set viewport and transformations
-            gl.glViewport(0, 0, *self.geometry[2:])
+            # Init
             gl.glClearColor(1,1,1,1);
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             # Draw
             prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
-        
-        # Swap buffers
-        self._backend._vispy_swap_buffers()
     
 
 if __name__ == '__main__':

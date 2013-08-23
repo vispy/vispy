@@ -83,21 +83,29 @@ class Canvas(app.Canvas):
         self.program.attributes['a_color']    = v_color
         self.program.attributes['a_position'] = v_position
         self.program.attributes['a_size']     = v_size
-
-    def on_paint(self, event):
-        # Set viewport and transformations
-        gl.glViewport(0, 0, *self.geometry[2:])
-        # Clear
-        gl.glClearColor(1, 1, 1, 1);
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        # Enable transparency
+    
+    
+    def on_initialize(self, event):
+        gl.glClearColor(1,1,1,1)
+        
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        
         # Enable point sprites (allow to change the size of the points with
         # gl_PointSize in the vertex shader)
+        # NOTE: this should not be necessary in futere versions of vispy
         gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
         gl.glEnable(GL.GL_POINT_SPRITE)
-
+    
+    
+    def on_resize(self, event):
+        width, height = event.size
+        gl.glViewport(0, 0, width, height)
+    
+    
+    def on_paint(self, event):
+        # Clear
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         # Draw
         with self.program as prog:
             prog.draw_arrays(gl.GL_POINTS)

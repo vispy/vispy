@@ -116,7 +116,10 @@ class Canvas(app.Canvas):
         # Set uniforms and attributes
         self._program.attributes.update(self._vbo)
         self._program.uniforms['u_texsize'] = im1.shape[1], im1.shape[0]
-        
+    
+    
+    def on_initialize(self, event):
+        gl.glClearColor(0,0,0,1)
     
     
     def on_paint(self, event):
@@ -126,13 +129,11 @@ class Canvas(app.Canvas):
         self._fbo.attach_color(self._tex2)
         
         with self._fbo:
-            # Init
-            gl.glViewport(0, 0, im1.shape[1], im1.shape[0])
-            gl.glClearColor(0,0,0,1);
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-            
-            # Draw
             with self._program as prog:
+                # Init
+                gl.glViewport(0, 0, im1.shape[1], im1.shape[0])
+                gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+                # Draw
                 prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
         
         # Draw to the normal color buffer (i.e. the screen)
@@ -140,9 +141,8 @@ class Canvas(app.Canvas):
         with self._program as prog:
             # Init
             gl.glViewport(0, 0, *self.geometry[2:])
-            gl.glClearColor(0,0,0,1);
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-            
+            # Draw
             prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
         
         # Prepare for next round

@@ -83,13 +83,18 @@ class Canvas(app.Canvas):
         #self._program.attributes['a_texcoords'] = self._vbo['a_texcoords']
         
     
+    def on_initialize(self, event):
+        gl.glClearColor(1,1,1,1)
+    
+    
+    def on_resize(self, event):
+        width, height = event.size
+        gl.glViewport(0, 0, width, height)
+    
+    
     def on_paint(self, event):
         
-        # Set viewport and transformations
-        gl.glViewport(0, 0, *self.geometry[2:])
-        
         # Clear
-        gl.glClearColor(1,1,1,1);
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
         # Draw
@@ -102,8 +107,6 @@ class Canvas(app.Canvas):
             prog.draw_elements(gl.GL_TRIANGLES, indices_buffer)
             #prog.draw_elements(gl.GL_TRIANGLES, indices)  # Not recommended
         
-        # Swap buffers and invoke a new draw
-        self._backend._vispy_swap_buffers()
         self.update()
 
 

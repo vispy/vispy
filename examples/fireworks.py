@@ -117,10 +117,14 @@ class Canvas(app.Canvas):
         gl.glEnable(GL.GL_POINT_SPRITE)
     
     
+    def on_resize(self, event):
+        width, height = event.size
+        gl.glViewport(0, 0, width, height)
+    
+    
     def on_paint(self, event):
         
-        # Set viewport and clear buffer
-        gl.glViewport(0, 0, *self.geometry[2:])
+        # Clear
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
         # Draw
@@ -128,7 +132,7 @@ class Canvas(app.Canvas):
             prog.uniforms['u_time'] = time.time() - self._starttime
             prog.draw_arrays(gl.GL_POINTS)
         
-        # Swap buffers and invoke a new draw
+        # Invoke a new draw
         self.update()
         
         # New explosion?

@@ -9,14 +9,13 @@ Three textures are created and combined in the fragment shader.
 
 from vispy.oogl import Texture2D, VertexBuffer, ElementBuffer
 from vispy.oogl import VertexShader, FragmentShader, ShaderProgram
-from vispy import app
-from vispy import gl
-from vispy.io import lena
+from vispy import app, gl, io
+
 
 import numpy as np
 
 # Texture 1
-im1 = lena()
+im1 = io.crate()
 
 # Texture with bumbs (to muliply with im1)
 im2 = np.ones((20,20), 'float32')
@@ -91,21 +90,24 @@ class Canvas(app.Canvas):
         self._program.uniforms['u_texture3'] = Texture2D(im3)
     
     
+    def on_initialize(self, event):
+        gl.glClearColor(1,1,1,1)
+    
+    
+    def on_resize(self, event):
+        width, height = event.size
+        gl.glViewport(0, 0, width, height)
+    
+    
     def on_paint(self, event):
         
-        # Set viewport and transformations
-        gl.glViewport(0, 0, *self.geometry[2:])
-        
         # Clear
-        gl.glClearColor(1,1,1,1);
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
         # Draw shape with texture, nested context
         with self._program as prog:
             prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
         
-        # Swap buffers
-        self._backend._vispy_swap_buffers()
 
 
 if __name__ == '__main__':

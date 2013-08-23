@@ -76,7 +76,20 @@ class Canvas(app.Canvas):
         self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
                                             oogl.FragmentShader(FRAG_SHADER) )
     
+    def on_initialize(self, event):
+        gl.glClearColor(0,0,0,1);
+        
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+        
+        # todo: normal GL requires these lines, ES 2.0 does not
+        from OpenGL import GL
+        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
+        gl.glEnable(GL.GL_POINT_SPRITE)
     
+    def on_resize(self, event):
+        gl.glViewport(0, 0, *self.geometry[2:])
+        
     def on_mouse_press(self, event):
         self._button = event.button
         self.on_mouse_move(event)
@@ -101,21 +114,9 @@ class Canvas(app.Canvas):
     
     def on_paint(self, event):
         
-        # Set viewport and transformations
-        gl.glViewport(0, 0, *self.geometry[2:])
-       
-        # Clear
-        gl.glClearColor(0,0,0,1);
+        # Init
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
         
-        # todo: normal GL requires these lines, ES 2.0 does not
-        from OpenGL import GL
-        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL.GL_POINT_SPRITE)
-        #GL.glTexEnvi(GL.GL_POINT_SPRITE, GL.GL_COORD_REPLACE, GL.GL_TRUE);
-
         # Draw
         with self._program as prog:
             prog.uniforms['u_size'] = 4.0

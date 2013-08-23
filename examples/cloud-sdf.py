@@ -182,7 +182,6 @@ class Canvas(app.Canvas):
         gl.glEnable(GL.GL_POINT_SPRITE)
         with self.program as prog:
             prog.draw_arrays(gl.GL_POINTS)
-        self.swap_buffers()
 
 if __name__ == '__main__':
     c = Canvas()

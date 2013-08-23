@@ -62,13 +62,18 @@ class Canvas(app.Canvas):
         self._program.attributes['a_position'] = a_position
     
     
+    def on_initialize(self, event):
+        gl.glClearColor(1,1,1,1)
+    
+    
+    def on_resize(self, event):
+        width, height = event.size
+        gl.glViewport(0, 0, width, height)
+    
+    
     def on_paint(self, event):
         
-        # Set viewport and transformations
-        gl.glViewport(0, 0, *self.geometry[2:])
-       
         # Clear
-        gl.glClearColor(0,0,0,1);
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
         # todo: normal GL requires these lines, ES 2.0 does not
@@ -81,9 +86,6 @@ class Canvas(app.Canvas):
         with self._program as prog:
             prog.draw_arrays(gl.GL_POINTS)
         
-        # Swap buffers
-        self._backend._vispy_swap_buffers()
-
 
 if __name__ == '__main__':
     c = Canvas()
