@@ -44,9 +44,6 @@ class RenderBuffer(GLObject):
         self._shape = None
         self._format = None
         
-        # Need update
-        self._dirty = True
-        
         # Set storage now?
         if shape is not None:
             self.set_storage(shape, format=format)
@@ -106,36 +103,33 @@ class RenderBuffer(GLObject):
         # Set pending data
         self._shape = shape
         self._format = format or self._format
-        self._dirty = True
+        self._need_update = True
     
     
-    def _enable(self):
-       
-        # Create?
-        if self._handle <= 0:
-            self._create()
-        
-        # Enable
+    def _activate(self):
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._handle)
-        
-        # Set storage?
-        if self._dirty:
-            # Get data
-            shape, format =  self._shape, self._format
-            if shape is None or format is None:
-                return
-            else:
-                self._dirty = False # Only if we got here
-            # Check size
-            MAX = gl.glGetIntegerv(gl.GL_MAX_RENDERBUFFER_SIZE)
-            if shape[0] > MAX or shape[1] > MAX:
-                raise RuntimeError('Cannot create a render buffer of %ix%i (max is %i).' % (shape[1], shape[0], MAX))
-            # Set 
-            gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, format, shape[1], shape[0])
     
     
-    def _disable(self):
+    def _deactivate(self):
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
+    
+    
+    def _update(self):
+        
+        # Enable now
+        self._activate()
+        
+        # Get data
+        shape, format =  self._shape, self._format
+        if shape is None or format is None:
+            return
+        # Check size
+        MAX = gl.glGetIntegerv(gl.GL_MAX_RENDERBUFFER_SIZE)
+        if shape[0] > MAX or shape[1] > MAX:
+            raise RuntimeError('Cannot create a render buffer of %ix%i (max is %i).' % (shape[1], shape[0], MAX))
+        # Set 
+        gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, format, shape[1], shape[0])
+    
 
 
 
@@ -161,6 +155,7 @@ class FrameBuffer(GLObject):
             self.attach_depth(depth)
         elif stencil is not None:
             self.attach_stencil(stencil)
+    
     
     def _create(self):
         self._handle = gl.glGenFramebuffers(1)
@@ -215,6 +210,7 @@ class FrameBuffer(GLObject):
             self._pending_attachments.append( (attachment, object, level) )
         else:
             raise ValueError('Can only attach a RenderBuffer of Texture to a FrameBuffer.')
+        self._need_update = True
     
     
     def attach_depth(self, object, level=0):
@@ -242,6 +238,7 @@ class FrameBuffer(GLObject):
             self._pending_attachments.append( (attachment, object, level) )
         else:
             raise ValueError('Can only attach a RenderBuffer or Texture to a FrameBuffer.')
+        self._need_update = True
     
     
     def attach_stencil(self, object):
@@ -261,6 +258,7 @@ class FrameBuffer(GLObject):
             self._pending_attachments.append( (attachment, object, None) )
         else:
             raise ValueError('For stencil data, can only attach a RenderBuffer to a FrameBuffer.')
+        self._need_update = True
     
     
     def set_size(self, width, height):
@@ -276,23 +274,21 @@ class FrameBuffer(GLObject):
             elif isinstance(attachment, RenderBuffer):
                 attachment.set_storage(shape)
     
-    
-    def _enable(self):
         
-        # Create?
-        something_changed = False
-        if self._handle <= 0:
-            self._create()
-            something_changed = True
-        
-        # Enable
+    def _activate(self):
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
+    
+    
+    def _deactivate(self):
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+    
+    
+    def _update(self):
         
         # Attach any RenderBuffers or Textures
         # Note that we only enable the object briefly to attach it.
         # After that, the object does not need to be bound.
         while self._pending_attachments:
-            something_changed = True
             attachment, object, level = self._pending_attachments.pop(0)
             if object == 0:
                 gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, attachment,
@@ -310,7 +306,7 @@ class FrameBuffer(GLObject):
                 raise RuntimeError('Invalid attachment. This should not happen.')
         
         # Check
-        if something_changed:
+        if True:
             res = gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER)
             if res == gl.GL_FRAMEBUFFER_COMPLETE:
                 pass
@@ -327,7 +323,4 @@ class FrameBuffer(GLObject):
             elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
                 raise RuntimeError('Combination of internal formats used by attachments is not supported.')
     
-    
-    def _disable(self):
-        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
 

@@ -52,18 +52,19 @@ class _RawTexture(GLObject):
     def _create(self):
         self._handle = gl.glGenTextures(1)
     
+    
     def _delete(self):
         gl.glDeleteTextures([self._handle])
     
     
-    def _enable(self):
+    def _activate(self):
         """ To be called by context handler. Never call this yourself.
         """
         # Bind
         gl.glBindTexture(self._target, self._handle)
     
     
-    def _disable(self):
+    def _deactivate(self):
         """ To be called by context handler. Never call this yourself.
         """
         # Unbind and disable
@@ -124,7 +125,7 @@ class _RawTexture(GLObject):
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
     
     
-    def _update(self, data, offset, format, level=0):
+    def _upload_sub(self, data, offset, format, level=0):
         """ Update an existing texture object.
         """
         # Determine function and target from texType
@@ -262,6 +263,8 @@ class Texture(_RawTexture):
         if min_filter is not None:
             self._pending_params[gl.GL_TEXTURE_MIN_FILTER] = min_filter
             self._texture_params[gl.GL_TEXTURE_MIN_FILTER] = min_filter
+        
+        self._need_update = True
     
     
     def set_wrapping(self, wrapx, wrapy, wrapz=None):
@@ -297,6 +300,8 @@ class Texture(_RawTexture):
         if wrapz is not None:
             self._pending_params[gl.ext.GL_TEXTURE_WRAP_R] = wrapz
             self._texture_params[gl.ext.GL_TEXTURE_WRAP_R] = wrapz
+        
+        self._need_update = True
     
     
     def _string_to_enum(self, param):
@@ -366,6 +371,7 @@ class Texture(_RawTexture):
         
         # Set pending data ...
         self._pending_subdata.append((data, offset, level, format, clim))
+        self._need_update = True
     
     
     def set_data(self, data, level=0, format=None, clim=None):
@@ -419,6 +425,7 @@ class Texture(_RawTexture):
         # Set pending data ...
         self._pending_data = data, None, level, format, clim
         self._texture_shape = data.shape
+        self._need_update = True
     
     
     def set_storage(self, shape, level=0, format=None):
@@ -465,9 +472,10 @@ class Texture(_RawTexture):
         # Set pending data ...
         self._pending_data = shape, None, level, format, None
         self._texture_shape = shape
+        self._need_update = True
     
     
-    def _enable(self):
+    def _update(self):
         """ Overloaded _enable method to handle deferred uploading and
         preparing the texture. 
           * Upload pending data
@@ -498,13 +506,13 @@ class Texture(_RawTexture):
         
         # Is the texture valid? It may simply not have been given data yet
         if self._handle == 0:
-            print('Warning, no data has been set or allicated for texture.')
+            print('Warning, no data has been set or allocated for texture.')
             return
         if not gl.glIsTexture(self._handle): 
             raise RuntimeError('This should not happen (texture is invalid)')
         
-        # Enable
-        _RawTexture._enable(self)
+        # Enable before updating params
+        _RawTexture._activate(self)
         
         # Need to update any parameters?
         while self._pending_params:
@@ -527,7 +535,7 @@ class Texture(_RawTexture):
             if not offset:
                 MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
                 ndim = MAP.get(self._target, 0)
-                if data.shape == self._texture_shape and self._handle > 0:
+                if data.shape == self._texture_shape and self._is_valid:
                     offset = [0 for i in self._texture_shape[:ndim]]
         
         elif isinstance(data, tuple):
@@ -545,17 +553,18 @@ class Texture(_RawTexture):
             gl.glBindTexture(self._target, self._handle)
             if self._handle <= 0 or not gl.glIsTexture(self._handle):
                 raise ValueError('Cannot update texture if there is no texture.')
-            self._update(data, offset, format, level)
+            self._upload_sub(data, offset, format, level)
             
         else:
             # (re)upload: slower
-            # We delete the existing texture first. In theory this
-            # should not be necessary, but some implementations cause
-            # memory leaks otherwise.
-            self.delete() 
-            self._create()
-            gl.glBindTexture(self._target, self._handle)
+            if self._is_valid:
+                # We delete the existing texture first. In theory this
+                # should not be necessary, but some implementations cause
+                # memory leaks otherwise.
+                self.delete() 
+                self._create()
             # Upload!
+            self._activate()
             if isinstance(data, tuple):
                 self._allocate(shape, format, level)
             else:
@@ -564,7 +573,6 @@ class Texture(_RawTexture):
             for param, value in self._texture_params.items():
                gl.glTexParameter(self._target, param, value)
             self._pending_params = {} # We just applied all 
-            # If all is well, the _handle, should now be a valid texture
 
 
 

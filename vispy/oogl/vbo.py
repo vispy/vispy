@@ -44,6 +44,7 @@ class Buffer(GLObject):
     def _create(self):
         self._handle = gl.glGenBuffers(1)
     
+    
     def _delete(self):
        gl.glDeleteBuffers([self._handle])
     
@@ -82,19 +83,27 @@ class Buffer(GLObject):
             assert (offset + data.nbytes) <= self._buffer_size
             # Set pending data
             self._pending_subdata.append((data, offset))
+        
+        self._need_update = True
     
     
-    def _upload(self, data):
+    def _upload(self, data, offset=None):
         # todo: allow user to control usage (DYNAMIC_DRAW, STATIC_DRAW)
-        gl.glBufferData(self._target, data.nbytes, data, gl.GL_DYNAMIC_DRAW)
+        if offset is None:
+            gl.glBufferData(self._target, data.nbytes, data, gl.GL_DYNAMIC_DRAW)
+        else:
+            gl.glBufferSubData(self._target, offset, data.nbytes, data)
     
     
-    def _update(self, data, offset):
-        # Probably faster than upload
-        gl.glBufferSubData(self._target, offset, data.nbytes, data)
+    def _activate(self):
+        gl.glBindBuffer(self._target, self._handle)
     
     
-    def _enable(self):
+    def _deactivate(self):
+        gl.glBindBuffer(self._target, 0)
+    
+    
+    def _update(self):
         
         # todo: check creation and resetting pending_data
         
@@ -102,14 +111,16 @@ class Buffer(GLObject):
         if self._pending_data:
             data, _ = self._pending_data
             self._pending_data = None
-            if self._handle > 0 and data.nbytes == self._buffer_size:
+            if self._is_valid and data.nbytes == self._buffer_size:
                 # Fast update
                 gl.glBindBuffer(self._target, self._handle)
-                self._update(data, 0)
+                self._upload(data, 0)
             else:
-                # Recreate buffer object, just in case
-                self.delete()
-                self._create()
+                if self._is_valid:
+                    # Recreate buffer object, some inplementations can cause
+                    # memory leaks otherwise
+                    self.delete()
+                    self._create()
                 # Upload data
                 gl.glBindBuffer(self._target, self._handle)
                 self._upload(data)
@@ -120,11 +131,10 @@ class Buffer(GLObject):
         # Need to update subdata?
         while self._pending_subdata:
             data, offset = self._pending_subdata.pop(0)
-            self._update(data, offset)
+            self._upload(data, offset)
     
     
-    def _disable(self):
-        gl.glBindBuffer(self._target, 0)
+   
 
 
 

@@ -24,22 +24,17 @@ class BaseShader(GLObject):
     """ Abstract shader class.
     """
     
-    def __init__(self, type, source=None):
+    def __init__(self, target, source=None):
         GLObject.__init__(self)
         
-        # Check and store type
-        if type not in [gl.GL_VERTEX_SHADER, gl.GL_FRAGMENT_SHADER]:
-            raise ValueError('Type must be vertex or fragment shader.')
-        self._type = type
+        # Check and store target
+        if target not in [gl.GL_VERTEX_SHADER, gl.GL_FRAGMENT_SHADER]:
+            raise ValueError('Target must be vertex or fragment shader.')
+        self._target = target
         
-        self._compiled = 0  # 0: not compiled, 1: compile tried, 2: compile success 
         self._description = None
         self._program = None  # pointer to the *currently enabled* program that includes this shader
         self.set_source(source)
-    
-    
-    def _delete(self):
-        gl.glDeleteShader(self._handle)
     
     
     def set_source(self, source):
@@ -48,8 +43,17 @@ class BaseShader(GLObject):
         if not (isinstance(source, string_types) or source is None):
             raise TypeError('source argument must be string or None (%s)' % type(source))
         self._source = source
-        self._compiled = 0  # force recompile 
+        self._need_update = True  # Make _update be called
         self._description = None
+    
+    
+    
+    def _create(self):
+        self._handle = gl.glCreateShader(self._target)
+    
+    
+    def _delete(self):
+        gl.glDeleteShader(self._handle)
     
     
     def add_source(self, source):
@@ -58,21 +62,19 @@ class BaseShader(GLObject):
         raise NotImplemented()
     
     
-    def _enable(self):
-        
-        if self._handle <= 0:
-            self._handle = gl.glCreateShader(self._type)
+    def _activate(self):
+        pass
+    
+    
+    def _dactivate(self):
+        pass
+    
+    
+    def _update(self):
         
         # Check if we have source code
         if not self._source:
             raise RuntimeError('No source code given for shader.')
-        
-        # If shader is compiled, we're done now
-        if self._compiled:
-            return 
-        
-        # Set compiled flag. It means that we tried to compile
-        self._compiled = 1
         
         # Set source
         gl.glShaderSource(self._handle, self._source)
@@ -91,14 +93,8 @@ class BaseShader(GLObject):
             errors = gl.glGetShaderInfoLog(self._handle)
             parse_shader_errors(errors, self._source)
             raise RuntimeError(errors)
-        
-        # If we get here, compile is succesful
-        self._compiled = 2
     
     
-    def _disable(self):
-        pass
-
     def __repr__(self):
         if self._description is None:
             # Try to get description from beginning of source
@@ -118,6 +114,8 @@ class BaseShader(GLObject):
             
         return "<%s '%s'>" % (self.__class__.__name__, self._description)
     
+    
+    # todo: what does this do?
     def _on_enabling(self, program):
         self._program = program
 
@@ -126,6 +124,7 @@ class BaseShader(GLObject):
 
     def _on_attach(self, program):
         pass
+
 
 class VertexShader(BaseShader):
     """ Representation of a vertex shader object. Inherits BaseShader.

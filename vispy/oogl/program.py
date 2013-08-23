@@ -62,10 +62,6 @@ class ShaderProgram(GLObject):
         self._feedback_vars = []
     
     
-    def _delete(self):
-        gl.glDeleteProgram(self._handle)
-    
-    
     @property
     def uniforms(self):
         """ A dictionary for the uniform inputs to this shader program.
@@ -103,6 +99,7 @@ class ShaderProgram(GLObject):
             shader._on_attach(self)
         else:
             raise ValueError('attach_shader required VertexShader of FragmentShader.')
+        self._need_update = True
     
     
     def detach_shader(self, shader):
@@ -113,6 +110,8 @@ class ShaderProgram(GLObject):
         if shader in self._shaders:
             if shader not in self._shaders_to_remove:
                 self._shaders_to_remove.append(shader)    
+        self._need_update = True
+    
     
     @property
     def shaders(self):
@@ -154,15 +153,46 @@ class ShaderProgram(GLObject):
 #             return None
     
     
-    def _enable(self):
-        if self._handle <= 0:# or not gl.glIsProgram(self._handle):
-            self._handle = gl.glCreateProgram()
+    def _create(self):
+        self._handle = gl.glCreateProgram()
+    
+    
+    def _delete(self):
+        gl.glDeleteProgram(self._handle)
+    
+    
+    def _activate(self):
+        # Use this program!
+        gl.glUseProgram(self._handle)
         
+        # Mark as enabled, prepare to enable other objects
+        self._enabled = True
+        self._enabled_objects = []
+        
+        # Apply all uniforms, samplers and attributes
+        for input in self._inputs:
+            input._on_enabling()
+        for shader in self._shaders:
+            shader._on_enabling(self)
+    
+    
+    def _deactivate(self):
+        for ob in reversed(self._enabled_objects):
+            ob.deactivate()
+        gl.glUseProgram(0)
+        self._enabled = False
+        for shader in self._shaders:
+            shader._on_disabling()
+    
+    
+    def _update(self):
+       
+        # todo: we probably want to know when a shader changes its source as well
         # Remove/add shaders and compile them
         self._enable_shaders()
         
         # Only proceed if all shaders compiled ok
-        oks = [shader._compiled==2 for shader in self._shaders]
+        oks = [shader._is_valid for shader in self._shaders]
         if not (oks and all(oks)):
             raise ValueError('Shaders did not compile.')
         
@@ -195,20 +225,6 @@ class ShaderProgram(GLObject):
             # Get list of uniforms and attributes, for diagnosis
             for input in self._inputs:
                 input._on_linking()
-        
-        # Use this program!
-        gl.glUseProgram(self._handle)
-        
-        # Mark as enabled, prepare to enable other objects
-        self._enabled = True
-        self._enabled_objects = []
-        
-        # Apply all uniforms, samplers and attributes
-        for input in self._inputs:
-            input._on_enabling()
-            
-        for shader in self._shaders:
-            shader._on_enabling(self)
     
     
     def _enable_shaders(self):
@@ -232,7 +248,7 @@ class ShaderProgram(GLObject):
             # Add to our list
             self._shaders.append(shader)
             # Make OpenGL attach it
-            shader._enable()
+            shader.activate()
             try:
                 gl.glAttachShader(self._handle, shader._handle)
             except Exception as e:
@@ -242,7 +258,7 @@ class ShaderProgram(GLObject):
         
         # Check/compile all shaders
         for shader in self._shaders:
-            shader._enable()
+            shader.activate()
     
     
     def enable_object(self, object):
@@ -252,17 +268,9 @@ class ShaderProgram(GLObject):
         """
         if not self._enabled:
             raise RuntimeError("Program cannot enable an object if not self being enabled.")
-        object._enable()
+        object.activate()
         self._enabled_objects.append(object)
     
-    
-    def _disable(self):
-        for ob in reversed(self._enabled_objects):
-            ob._disable()
-        gl.glUseProgram(0)
-        self._enabled = False
-        for shader in self._shaders:
-            shader._on_disabling()
     
     
     def draw_arrays(self, mode, first=None, count=None):
