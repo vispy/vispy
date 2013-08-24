@@ -6,10 +6,10 @@ import sys
 from vispy import gl
 
 THISDIR = os.path.dirname(os.path.abspath(__file__))
-
+DOCSDIR = os.path.join(THISDIR, '..')
 
 def clean():
-    fname = os.path.join(THISDIR, 'gl.rst')
+    fname = os.path.join(DOCSDIR, 'gl.rst')
     if os.path.isfile(fname):
         os.remove(fname)
 
@@ -68,7 +68,7 @@ def main():
         lines.append('  * %s()' % name)
     
     # Write file
-    with open(os.path.join(THISDIR, 'gl.rst'), 'w') as f:
+    with open(os.path.join(DOCSDIR, 'gl.rst'), 'w') as f:
         f.write('\n'.join(lines))
     
 

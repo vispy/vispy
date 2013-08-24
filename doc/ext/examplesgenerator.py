@@ -6,8 +6,9 @@ import os
 import sys
 
 THISDIR = os.path.dirname(os.path.abspath(__file__))
-EXAMPLESDIR = os.path.join(THISDIR, '..', 'examples')
-OUTPUTDIR = os.path.join(THISDIR, 'examples')
+DOCSDIR = os.path.join(THISDIR, '..')
+EXAMPLESDIR = os.path.join(DOCSDIR, '..', 'examples')
+OUTPUTDIR = os.path.join(DOCSDIR, 'examples')
 
 
 def clean():
@@ -18,7 +19,7 @@ def clean():
                 os.remove(os.path.join(OUTPUTDIR, fname))
         os.rmdir(OUTPUTDIR)
     # Clean examples file
-    fname = os.path.join(THISDIR, 'examples.rst')
+    fname = os.path.join(DOCSDIR, 'examples.rst')
     if os.path.isfile(fname):
         os.remove(fname)
 
@@ -89,7 +90,7 @@ def main():
         lines.append('  * :doc:`examples/%s`' % name)
     
     # Write file
-    with open(os.path.join(THISDIR, 'examples.rst'), 'w') as f:
+    with open(os.path.join(DOCSDIR, 'examples.rst'), 'w') as f:
         f.write('\n'.join(lines))
 
 
