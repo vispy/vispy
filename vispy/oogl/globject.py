@@ -23,7 +23,7 @@ class GLObject(object):
     """
     
     # Internal id counter to keep track of created objects
-    _idcount = 0
+    _idcount = 1
     
     def __init__(self):
         
@@ -49,7 +49,7 @@ class GLObject(object):
         self._error_exit = 0  # track errors on __exit__
         
         # Object internal id (for e.g. debugging)
-        self._id = GLObject._idcount+1
+        self._id = GLObject._idcount
         GLObject._idcount += 1
     
     
@@ -80,66 +80,55 @@ class GLObject(object):
     
     
     def __del__(self):
+        """ Delete the object from OpenGl memory. """
+
         self.delete()
     
     
     def delete(self):
-        """ Delete the object from OpenGl memory. Note that the right
-        context should be active when this method is called.
-        """
-        try:
-            if self._handle > 0:
-                self._delete()
-        except Exception:
-            pass  # At least we tried
+        """ Delete the object from OpenGl memory. """
+
+        # Only delete object if it was created on GPU
+        if self._handle:
+            self._delete()
         self._handle = 0
         self._is_valid = False
     
     
     def activate(self):
-        # Create if necessart
-        if self._handle <= 0:
-            self._is_valid = False
+        """ Activate the object (a GL context must be available) """
+
+        if not self._handle:
             self._create()
-        # Update if necessary
-        if self._need_update:
-            self._need_update = False
-            self._update()
-            self._is_valid = True  # If update ok, we assume we are valid
-        # Activate the object
-        return self._activate()
+        self._update()
+        self._activate()
     
     
     def deactivate(self):
+        """ Dectivate the object """
+
         return self._deactivate()
     
     
     @property
     def handle(self):
-        """  The handle (name in OpenGL) of the underlying OpenGL object (int).
-        """
+        """ Name of this object in GPU """
+
         return self._handle
     
     
-    @property
-    def id(self):
-        # todo: should this be part of the public API?
-        """ Internal object id. """
-        return self._id
-    
-    
     # Subclasses need to implement the methods below
-    
+
     def _create(self):
-        # Create object in OpenGL memory and save the name in self._handle
+        # Create object on GPU
         raise NotImplementedError()
     
     def _delete(self):
-        # Remove self._object from OpenGL memory
+        # Remove object from GPU
         raise NotImplementedError()
     
     def _update(self):
-        # Update data, compile, whatever, raise an error if needed
+        # Update GPU object (if relevant)
         raise NotImplementedError()
     
     def _activate(self):
