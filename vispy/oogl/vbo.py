@@ -103,12 +103,12 @@ class Buffer(GLObject):
         if self._pending_data:
             data, _ = self._pending_data
             self._pending_data = None
-            if self._is_valid and data.nbytes == self._buffer_size:
+            if self._valid and data.nbytes == self._buffer_size:
                 # Fast update
                 gl.glBindBuffer(self._target, self._handle)
                 self._upload(data, 0)
             else:
-                if self._is_valid:
+                if self._valid:
                     # Recreate buffer object, some inplementations can cause
                     # memory leaks otherwise
                     self.delete()

@@ -192,7 +192,7 @@ class ShaderProgram(GLObject):
         self._enable_shaders()
         
         # Only proceed if all shaders compiled ok
-        oks = [shader._is_valid for shader in self._shaders]
+        oks = [shader._valid for shader in self._shaders]
         if not (oks and all(oks)):
             raise ValueError('Shaders did not compile.')
         

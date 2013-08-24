@@ -41,7 +41,7 @@ class GLObject(object):
         
         # Whether the object is in a state that it can be used
         # Is set to True if _update() returns without errors
-        self._is_valid = False
+        self._valid = False
         
         
         # Error counters (only used here)
@@ -63,7 +63,6 @@ class GLObject(object):
             self._error_enter += 1
             if self._error_enter == 1:
                 raise
-        
         return self
     
     
@@ -81,7 +80,6 @@ class GLObject(object):
     
     def __del__(self):
         """ Delete the object from OpenGl memory. """
-
         self.delete()
     
     
@@ -91,16 +89,22 @@ class GLObject(object):
         # Only delete object if it was created on GPU
         if self._handle:
             self._delete()
+        # Reset
         self._handle = 0
-        self._is_valid = False
+        self._valid = False
     
     
     def activate(self):
         """ Activate the object (a GL context must be available) """
-
+        # Ensure that the GPU equivalent of this object exists 
         if not self._handle:
             self._create()
-        self._update()
+        # Perform an update if necessary
+        if self._need_update:
+            self._update()  # If it does not rais an error, assume valid
+            self._need_update = False
+            self._valid = True
+        # Activate
         self._activate()
     
     
@@ -129,6 +133,7 @@ class GLObject(object):
     
     def _update(self):
         # Update GPU object (if relevant)
+        # This method should raise an error if it cannot create a valid object
         raise NotImplementedError()
     
     def _activate(self):

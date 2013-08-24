@@ -401,7 +401,7 @@ class Texture(GLObject):
             if not offset:
                 MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
                 ndim = MAP.get(self._target, 0)
-                if data.shape == self._texture_shape and self._is_valid:
+                if data.shape == self._texture_shape and self._valid:
                     offset = [0 for i in self._texture_shape[:ndim]]
         
         elif isinstance(data, tuple):
@@ -423,7 +423,7 @@ class Texture(GLObject):
             
         else:
             # (re)upload: slower
-            if self._is_valid:
+            if self._valid:
                 # We delete the existing texture first. In theory this
                 # should not be necessary, but some implementations cause
                 # memory leaks otherwise.
