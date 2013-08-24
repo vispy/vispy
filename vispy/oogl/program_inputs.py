@@ -160,6 +160,7 @@ class UniformInputs(BaseInputs):
         gl.GL_FLOAT_MAT4:   (gl.glUniformMatrix4fv, 16),
         gl.GL_SAMPLER_2D:   (gl.glUniform1i, 1),
         gl.GL_SAMPLER_CUBE: (gl.glUniform1i, 1),
+        gl.ext.GL_SAMPLER_3D: (gl.glUniform1i, 1),
         }
 
     
