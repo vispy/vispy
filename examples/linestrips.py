@@ -42,7 +42,7 @@ void main()
 {
     float f = fract(v_id);
     // The second useless test is needed on OSX 10.8 (fuck)
-    if( (f > 0.001) && (f < .999) )
+    if( (f > 0.0001) && (f < .9999f) )
         discard;
     else
         gl_FragColor = vec4(0,0,0,1);
@@ -85,7 +85,6 @@ class Canvas(app.Canvas):
     # ---------------------------------
     def on_initialize(self, event):
         gl.glClearColor(1,1,1,1)
-        gl.glLineWidth(10.0);
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
