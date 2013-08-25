@@ -54,6 +54,8 @@ class GLObject(object):
     
     
     def __enter__(self):
+        """ Entering context  """
+
         try:
             # Try to enable, reset error state on success
             self.activate()
@@ -67,6 +69,8 @@ class GLObject(object):
     
     
     def __exit__(self, type, value, traceback):
+        """ Leaving context  """
+
         if value is None:
             # Reset error state on success
             self._error_exit = 0
@@ -80,6 +84,7 @@ class GLObject(object):
     
     def __del__(self):
         """ Delete the object from OpenGl memory. """
+
         self.delete()
     
     
@@ -96,6 +101,7 @@ class GLObject(object):
     
     def activate(self):
         """ Activate the object (a GL context must be available) """
+
         # Ensure that the GPU equivalent of this object exists 
         if not self._handle:
             self._create()
