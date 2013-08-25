@@ -3,22 +3,19 @@
 """
 """
 
+import numpy as np
+from OpenGL import GL
 from vispy import oogl
 from vispy import app
 from vispy import gl
-from OpenGL import GL
-import numpy as np
+from transforms import perspective, translate, rotate
 
 # Create vetices 
-n = 100
-a_position = np.random.uniform(-1,1,(n,2))
-a_id = np.random.randint(0,20,(n,1))
+n = 10
+a_position = np.random.uniform(-1,1,(n,3))
+a_id = np.random.randint(0,3,(n,1))
 a_id = np.sort(a_id,axis=0)
 
-print a_id
-
-
-from transforms import perspective, translate, rotate
 
 
 VERT_SHADER = """
@@ -27,12 +24,9 @@ VERT_SHADER = """
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
-
-attribute vec3  a_position;
+attribute vec3 a_position;
 attribute float a_id;
-
 varying float v_id;
-
 void main (void) {
     v_id = a_id;
     gl_Position = u_projection * u_view * u_model * vec4(a_position,1.0);
@@ -44,9 +38,8 @@ FRAG_SHADER = """
 varying float v_id;
 void main()
 {    
-    if((v_id - floor(v_id) > 0))
+    if (v_id - int(v_id) > .9)
         discard;
-
     gl_FragColor = vec4(0,0,0,1);
 }
 """
@@ -128,7 +121,6 @@ class Canvas(app.Canvas):
         self.view       = np.eye(4,dtype=np.float32)
         translate(self.view, 0,0, -self.translate)
         self.program.uniforms['u_view'] = self.view
-        self.program.attributes['a_size'] = a_size*5/self.translate
         self.update()
 
 
