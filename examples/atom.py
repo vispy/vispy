@@ -121,6 +121,8 @@ class Canvas(app.Canvas):
     # ---------------------------------
     def __init__(self):
         app.Canvas.__init__(self)
+        self.title = "Atom [zoom with mouse scroll]"
+
         self.geometry = (0,0,800,800)
         self.program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
                                            oogl.FragmentShader(FRAG_SHADER) )
