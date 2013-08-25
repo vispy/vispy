@@ -10,12 +10,13 @@ from vispy import app
 from vispy import gl
 from transforms import perspective, translate, rotate
 
-# Create vetices 
-n = 10
-a_position = np.random.uniform(-1,1,(n,3))
-a_id = np.random.randint(0,3,(n,1))
-a_id = np.sort(a_id,axis=0)
+#app.use('glut')
 
+# Create vetices 
+n = 100
+a_position = np.random.uniform(-1,1,(n,3))
+a_id = np.random.randint(0,30,(n,1))
+a_id = np.sort(a_id,axis=0).astype(np.float32)
 
 
 VERT_SHADER = """
@@ -35,12 +36,16 @@ void main (void) {
 
 FRAG_SHADER = """
 #version 120
+
 varying float v_id;
 void main()
-{    
-    if (v_id - int(v_id) > .9)
+{
+    float f = fract(v_id);
+    // The second useless test is needed on OSX 10.8 (fuck)
+    if( (f > 0.001) && (f < .999) )
         discard;
-    gl_FragColor = vec4(0,0,0,1);
+    else
+        gl_FragColor = vec4(0,0,0,1);
 }
 """
 
@@ -76,9 +81,11 @@ class Canvas(app.Canvas):
         #self.timer.start()
 
 
+
     # ---------------------------------
     def on_initialize(self, event):
         gl.glClearColor(1,1,1,1)
+        gl.glLineWidth(10.0);
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
