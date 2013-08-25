@@ -506,7 +506,7 @@ class Texture(GLObject):
         
         # Build argument list
         size, gltype = self._get_size_and_type(data, ndim)
-        offset = [i for i in offset]
+        offset = offset[::-1] #[i for i in offset]
         assert len(offset) == len(size)
         args = [self._target, level] + offset + size + [format, gltype, data]
         
@@ -516,6 +516,7 @@ class Texture(GLObject):
     
     def _get_size_and_type(self, data, ndim):
         # Determine size
+        #size = [i for i in reversed( data.shape[:ndim] )]
         size = [i for i in reversed( data.shape[:ndim] )]
         # Determine type
         thetype = data.dtype.name
