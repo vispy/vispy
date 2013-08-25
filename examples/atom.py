@@ -16,15 +16,16 @@ from vispy import gl
 from transforms import perspective, translate, rotate
 
 
-n = 200
+n = 250
 p = 50
 T = np.random.uniform(0,2*np.pi,n)
+dT = np.random.uniform(50,100,n)/3000
 a_position = np.zeros((n,2),dtype=np.float32)
 a_position[:,0] = np.cos(T)
 a_position[:,1] = np.sin(T)
-a_rot = np.random.uniform(0,2*np.pi,(n,2)).astype(np.float32)
+a_rot = np.random.uniform(0,2*np.pi,(n,3)).astype(np.float32)
 a_color = np.ones((n,4),dtype=np.float32) * (1,1,1,1)
-u_size = 3
+u_size = 2
 u_linewidth = 1.0
 u_antialias = 1.0
 
@@ -48,7 +49,7 @@ uniform float u_size;
 // Attributes
 // ------------------------------------
 attribute vec2  a_position;
-attribute vec2  a_rot;
+attribute vec3  a_rot;
 attribute vec4  a_color;
 attribute mat4  a_model;
 
@@ -88,7 +89,8 @@ void main (void) {
 
     mat4 X = rotation(vec3(1,0,0), a_rot.x);
     mat4 Y = rotation(vec3(0,1,0), a_rot.y);
-    gl_Position = u_projection * u_view * u_model * Y * X * vec4(a_position, 0.0, 1.0);
+    mat4 Z = rotation(vec3(0,0,1), a_rot.z);
+    gl_Position = u_projection * u_view * u_model * Z * Y * X * vec4(a_position, 0.0, 1.0);
     gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
 }
 """
@@ -202,14 +204,14 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_paint(self, event):
-        global T,p,n
+        global T,dT,p,n
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         self.index = (self.index+1)%p
-        T += np.pi/200
+        T += dT #np.pi/200
         a_position[self.index::p,0] = np.cos(T)
-        a_position[self.index::p,1] = np.sin(T)
+        a_position[self.index::p,1] = .5*np.sin(T)
         a_color[:,3] -= 1.0/p
         a_color[self.index::p,3] = 1
         with self.program as prog:
