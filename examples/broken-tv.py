@@ -18,10 +18,9 @@ from vispy import gl
 
 data = np.zeros(4, dtype=[   ('a_position', np.float32, 3), 
                              ('a_texcoord', np.float32, 2) ])
-data['a_position'] = np.array([ [-1, -1,0], [1, -1, 0],  
-                                [-1, 1, 0], [1,  1, 0] ])
-data['a_texcoord'] = np.array([ [0, 0], [0, 1], 
-                                [1, 0], [1, 1] ])
+data['a_position'] = np.array([ [-1, -1, 0], [1, -1, 0],  
+                                [-1,  1, 0], [1,  1, 0] ])
+data['a_texcoord'] = np.array([ [0, 0], [0, 1], [1, 0], [1, 1] ])
 
 
 VERT_SHADER = """
@@ -40,6 +39,7 @@ varying vec2 v_texcoord;
 void main()
 {    
     gl_FragColor = texture2D(u_texture, v_texcoord);
+    gl_FragColor.a = 1.0;
 }
 
 """
@@ -53,8 +53,10 @@ class Canvas(app.Canvas):
         self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
                                             oogl.FragmentShader(FRAG_SHADER) )
         self._vbo = oogl.VertexBuffer(data)
-        im = np.random.randint(0,1,(256,256)).astype(np.float32)
+
+        im = np.random.uniform(0,1,(256,256)).astype(np.float32)
         self._texture = oogl.Texture2D(im)
+
         self._program.uniforms['u_texture'] = self._texture
         self._program.attributes['a_position'] = self._vbo['a_position']
         self._program.attributes['a_texcoord'] = self._vbo['a_texcoord']
@@ -72,7 +74,7 @@ class Canvas(app.Canvas):
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         with self._program as prog:
-            im = np.random.randint(0,1,(256,256)).astype('float32')
+            im = np.random.uniform(0,1,(256,256)).astype('float32')
             self._texture.set_data(im)
             prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
         self.update()
