@@ -63,7 +63,7 @@ class Canvas(object):
         # Most are used in _set_backend
         self._our_kwargs = {}
         self._our_kwargs['title'] = kwargs.pop('title', 'Vispy canvas')
-        self._our_kwargs['show'] = kwargs.pop('show', False)
+        self._our_kwargs['show'] = kwargs.pop('show', True)
         self._our_kwargs['autoswap'] = kwargs.pop('autoswap', True)
         
         # Initialise some values
