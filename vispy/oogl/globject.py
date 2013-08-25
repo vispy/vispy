@@ -23,7 +23,7 @@ class GLObject(object):
     """
     
     # Internal id counter to keep track of created objects
-    _idcount = 1
+    _idcount = 0
     
     def __init__(self):
         
@@ -49,8 +49,8 @@ class GLObject(object):
         self._error_exit = 0  # track errors on __exit__
         
         # Object internal id (for e.g. debugging)
-        self._id = GLObject._idcount
         GLObject._idcount += 1
+        self._id = GLObject._idcount
     
     
     def __enter__(self):
