@@ -30,7 +30,7 @@ __version__ = '0.2.0dev'
 
 
 from vispy.core.event import EmitterGroup, EventEmitter, Event
-from vispy.util import keys
+from vispy.core import keys
 
 
 class ConfigEvent(Event):
