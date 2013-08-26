@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# VisPy - Copyright (c) 2013, Vispy Development Team
-# All rights reserved.
+# VisPy - Copyright (c) 2013, Vispy Development Team All rights reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
 Particles orbiting around a central point (with traces)
