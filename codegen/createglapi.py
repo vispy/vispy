@@ -54,15 +54,18 @@ def create_constants_module(parser, extension=False):
     
     lines.append('\n')
     
-    # Insert constants
-    for c in parser.constantDefs:
-        # For extensions, we only take the OES ones, and remove the OES
-        if extension:
+    # For extensions, we only take the OES ones, and remove the OES
+    if extension:
+        constantDefs = []
+        for c in parser.constantDefs:
             if 'OES' in c.cname:
                 c.cname = c.cname.replace('OES', '').replace('__', '_').strip('_')
-            else:
-                continue
-        # Write constant
+                constantDefs.append(c)
+    else:
+        constantDefs = parser.constantDefs
+    
+    # Insert constants
+    for c in sorted(constantDefs, key=lambda x:x.cname):
         if isinstance(c.value, int):
             lines.append('%s = _GL_ENUM(%r, %r)' % (c.cname, c.cname, c.value))
         else:
@@ -94,15 +97,19 @@ def create_gl_module(parser, extension=False):
     
     lines.append('\n')
     
-    # Insert functions
-    lines.append('_glfunctions = [')
-    for f in parser.functionDefs:
-        # For extensions, we only take the OES ones, and remove the OES
-        if extension:
+    # For extensions, we only take the OES ones, and remove the OES
+    if extension:
+        functionDefs = []
+        for f in parser.functionDefs:
             if 'OES' in f.cname:
                 f.cname = f.cname.replace('OES', '')
-            else:
-                continue
+                functionDefs.append(f)
+    else:
+        functionDefs = parser.functionDefs
+    
+    # Insert functions
+    lines.append('_glfunctions = [')
+    for f in sorted(functionDefs, key=lambda x:x.cname):
         # Add "super-function" if this is a group of functions
         if isinstance(f.group, list):
             if hasattr(GL, f.keyname):
