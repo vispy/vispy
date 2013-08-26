@@ -4,7 +4,7 @@
 
 from __future__ import print_function, division, absolute_import
 
-from vispy.event import EmitterGroup, Event
+from vispy.core.event import EmitterGroup, Event
 import vispy
 
 # todo: add functions for asking about current mouse/keyboard state

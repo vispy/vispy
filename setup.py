@@ -75,8 +75,10 @@ setup(
     install_requires = ['numpy', 'pyOpenGl'],
     
     packages = ['vispy', 
-                'vispy.app', 'vispy.app.backends',
+                'vispy.app',
+                'vispy.app.backends',
                 'vispy.gl',
+                'vispy.core',
                 'vispy.oogl', 
                 'vispy.util', 
                 'vispy.io',
