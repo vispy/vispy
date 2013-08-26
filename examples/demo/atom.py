@@ -23,7 +23,7 @@ dT = np.random.uniform(50,100,n)/3000
 a_position = np.zeros((n,2),dtype=np.float32)
 a_position[:,0] = np.cos(T)
 a_position[:,1] = np.sin(T)
-a_rot = np.random.uniform(0,2*np.pi,(n,3)).astype(np.float32)
+a_rot = np.random.uniform(0,2*np.pi,(n,4)).astype(np.float32)
 a_color = np.ones((n,4),dtype=np.float32) * (1,1,1,1)
 u_size = 2
 u_linewidth = 1.0
@@ -38,7 +38,7 @@ VERT_SHADER = """
 #version 120
 
 // Uniforms
-// ------------------------------------
+// --------
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
@@ -47,21 +47,20 @@ uniform float u_antialias;
 uniform float u_size;
 
 // Attributes
-// ------------------------------------
+// ----------
 attribute vec2  a_position;
-attribute vec3  a_rot;
+attribute vec4  a_rot;
 attribute vec4  a_color;
 attribute mat4  a_model;
 
 // Varyings
-// ------------------------------------
+// --------
 varying vec4 v_color;
 varying float v_size;
 varying float v_linewidth;
 varying float v_antialias;
 
-mat4 rotation(vec3 axis, float angle)
-{
+mat4 rotation(vec3 axis, float angle) {
     axis = normalize(axis);
     float s = sin(angle);
     float c = cos(angle);
@@ -87,10 +86,8 @@ void main (void) {
     v_antialias = u_antialias;
     v_color = a_color;
 
-    mat4 X = rotation(vec3(1,0,0), a_rot.x);
-    mat4 Y = rotation(vec3(0,1,0), a_rot.y);
-    mat4 Z = rotation(vec3(0,0,1), a_rot.z);
-    gl_Position = u_projection * u_view * u_model * Z * Y * X * vec4(a_position, 0.0, 1.0);
+    mat4 R = rotation(a_rot.xyz, a_rot.w);
+    gl_Position = u_projection * u_view * u_model * R * vec4(a_position, 0.0, 1.0);
     gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
 }
 """
@@ -110,7 +107,7 @@ varying float v_antialias;
 // ------------------------------------
 void main()
 {    
-    float d = 2*(length(gl_PointCoord.xy - vec2(0.5,0.5))); // (2*sqrt(2.0)));
+    float d = 2*(length(gl_PointCoord.xy - vec2(0.5,0.5)));
     gl_FragColor = vec4(v_color.rgb, v_color.a*(1-d));
 }
 """
