@@ -77,7 +77,7 @@ class GLObject(object):
         else:
             # Error: increase error state. If not the first error, suppress
             self._error_exit += 1
-            if self._error_exit > 1: 
+            if self._error_enter or self._error_exit > 1: 
                 return True  # Suppress error
         self.deactivate()
     

@@ -72,4 +72,4 @@ from .vbo import VertexBuffer, ElementBuffer
 from .texture import Texture, Texture2D, Texture3D, TextureCubeMap
 from .shader import VertexShader, FragmentShader
 from .fbo import FrameBuffer, RenderBuffer
-from .program import ShaderProgram
+from .program import Program

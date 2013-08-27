@@ -10,6 +10,7 @@ This code is inspired by similar classes from Pygly.
 
 from __future__ import print_function, division, absolute_import
 
+import re
 import sys
 import weakref
 
@@ -18,140 +19,395 @@ import numpy as np
 from vispy import gl
 from . import GLObject, ext_available
 from . import VertexBuffer, ElementBuffer
-from .program_inputs import UniformInputs, AttributeInputs
+#from .program_inputs import UniformInputs, AttributeInputs
+from .variable import Attribute, Uniform
 from .shader import parse_shader_errors, VertexShader, FragmentShader
+from vispy.util.six import string_types
 
 
-# todo: support uniform arrays of vectors/matrices?
-# todo: more introspection into uniforms/attributes?
 
-class ShaderProgram(GLObject):
-    """ Representation of a shader program. It combines (links) one 
-    or more vertex and fragment shaders to compose a complete program.
+class ProgramException(Exception):
+    pass
+
+
+
+class Program(GLObject):
+    """ Representation of a shader program. It combines (links) a 
+    vertex and a fragment shaders to compose a complete program.
+    On (normal, non-ES 2.0) implementations, multiple shaders of 
+    each type are allowed).
     
     Objects of this class are also used to set the uniforms and
     attributes that are used by the shaders. To do so, simply add
     attributes to the `uniforms` and `attributes` members. The names
     of the added attributes should match with those used in the shaders.
+    
+    Parameters
+    ----------
+    vert : Shader object or string
+        The VertexShader for this program. The string can be a file name
+        or the source of the shading code. It can also be a list of 
+        shaders, but this is not supported on genuine OpenGL ES 2.0.
+    frag : Shader object or string
+        The FragmentShader for this program. The string can be a file name
+        or the source of the shading code. It can also be a list of 
+        shaders, but this is not supported on genuine OpenGL ES 2.0.
+    
     """
     
-    def __init__(self, *shaders):
+    def __init__(self, vert=None, frag=None):
         GLObject.__init__(self)
         
+        # Manage enabled state (i.e. activated)
         self._enabled = False
-        # Shaders
-        self._shaders = []
-        self._shaders_to_add = []
-        self._shaders_to_remove = []
-        for shader in shaders:
-            self.attach_shader(shader)
-        
-        # Inputs
-        self._uniform_inputs = UniformInputs(self)
-        self._attribute_inputs = AttributeInputs(self)
-        self._inputs = (self._uniform_inputs, self._attribute_inputs,)
-        
-        # List of names that we ask from OpenGL right after linking.
-        self._uniform_names = []
-        self._attribute_names = []
-        
-        # List of objects being enabled
         self._enabled_objects = []
         
         # List of varying names to use for feedback
         self._feedback_vars = []
-    
-    
-    @property
-    def uniforms(self):
-        """ A dictionary for the uniform inputs to this shader program.
-        For example: ``program.uniforms['u_color'] = 0.0, 1.0, 0.0``. 
         
-        Uniforms can be a tuple/array of 1 to 4 elements to specify a
-        vector, 4, 9 or 16 elements to specify a matrix, or a Texture
-        object to specify a sampler.
-        """
-        return self._uniform_inputs
-    
-    
-    @property
-    def attributes(self):
-        """ A dictionary for the attribute inputs to this shader program.
-        For example: ``program.attributes['a_position'] = my_positions_array``. 
+        # Inis lists of shaders
+        self._verts = []
+        self._frags = []
         
-        Attributes can be a tuple of 1 to 4 elements (global attributes),
-        a numpy array of per vertex attributes, or a VertexBuffer object
-        (recommended over the numpy array).
+        # Containers for uniforms and attributes. 
+        # name -> Variable
+        self._attributes = {}
+        self._uniforms = {}
         
-        Note that one can use ``prog.attributes.update(my_stuctured_array)``
-        or ``prog.attributes.update(my_stuctured_vbo)`` to map field names
-        to attribute names automatically.
-        """
-        return self._attribute_inputs
-    
-    
-    def attach_shader(self, shader):
-        """ Attach the given vertex or fragment shader to this shader program.
-        Multiple shaders can be attached (also e.g. multiple FragmentShaders).
-        """
-        if isinstance(shader, (VertexShader, FragmentShader)):
-            self._shaders_to_add.append(shader)
-            shader._on_attach(self)
+        # Keep track of which names are active (queried after linking)
+        # name -> location
+        self._active_attributes = {}
+        self._active_uniforms = {}
+        
+        
+        shaders = []
+        
+        # Get all vertex shaders
+        if vert is None:
+            pass
+        elif isinstance(vert, VertexShader):
+            shaders.append(vert)
+        elif isinstance(vert, string_types):
+            shaders.append(VertexShader(vert))
+        elif isinstance(vert, (list, tuple)):
+            for shader in vert:
+                if isinstance(shader, string_types):
+                    shader = VertexShader(shader)
+                shaders.append(shader)
         else:
-            raise ValueError('attach_shader required VertexShader of FragmentShader.')
-        self._need_update = True
+            raise ValueError('Invalid value for VertexShader "%r"' % vert)
+        
+        # Get all fragment shaders
+        if frag is None:
+            pass
+        elif isinstance(frag, FragmentShader):
+            shaders.append(frag)
+        elif isinstance(frag, string_types):
+            shaders.append(FragmentShader(frag))
+        elif isinstance(frag, (list, tuple)):
+            for shader in frag:
+                if isinstance(shader, string_types):
+                    shader = FragmentShader(shader)
+                shaders.append(shader)
+        else:
+            raise ValueError('Invalid value for FragmentShader "%r"' % frag)
+        
+        # Attach shaders now
+        if shaders:
+            self.attach(*shaders)
     
     
-    def detach_shader(self, shader):
-        """ Detach the given shader from this shader program. 
+    def attach(self, *shaders):
+        """ Attach one or more vertex/fragment shaders to the program. 
+        
+        Paramaters
+        ----------
+        *shaders : Shader objects
+            The VertexShader or FragmentShader to attach.
+        
         """
-        if shader in self._shaders_to_add:
-            self._shaders_to_add.remove(shader)
-        if shader in self._shaders:
-            if shader not in self._shaders_to_remove:
-                self._shaders_to_remove.append(shader)    
+        # Tuple or list given?
+        if len(shaders)==1 and isinstance(shaders[0], (list,tuple)):
+            shaders = shaders[0]
+        
+        # Process each shader
+        for shader in shaders:
+            if isinstance(shader, VertexShader):
+                self._verts.append(shader)
+            elif isinstance(shader, FragmentShader):
+                self._frags.append(shader)
+            else:
+                ValueError('Invalid value for shader "%r"' % shader)
+        
+        # Ensure uniqueness of shaders
+        self._verts = list(set(self._verts))
+        self._frags = list(set(self._frags))
+
+        # Update dirty flag to induce a new build when necessary
         self._need_update = True
+
+        # Build uniforms and attributes
+        self._build_uniforms()
+        self._build_attributes()
+
+    
+    def detach(self, *shaders):
+        """ Detach one or several vertex/fragment shaders from the program.
+        
+        Paramaters
+        ----------
+        *shaders : Shader objects
+            The VertexShader or FragmentShader to detach.
+        
+        """
+        # Tuple or list given?
+        if len(shaders)==1 and isinstance(shaders[0], (list,tuple)):
+            shaders = shaders[0]
+        
+        # Process each shader
+        for shader in shaders:
+            if isinstance(shader, VertexShader):
+                if shader in self._verts:
+                    self._verts.remove(shader)
+                else:
+                    raise ShaderException("Shader is not attached to the program")
+            elif isinstance(shader, FragmentShader):
+                if shader in self._frags:
+                    self._frags.remove(shader)
+                else:
+                    raise ShaderException("Shader is not attached to the program")
+            else:
+                ValueError('Invalid value for shader "%r"' % shader)
+        
+        # Update dirty flag to induce a new build when necessary
+        self._need_update = True
+        
+        # Build uniforms and attributes
+        self._build_uniforms()
+        self._build_attributes()
     
     
     @property
     def shaders(self):
         """ List of shaders associated with this shading program.
         """
-        # Compile list
-        shaders = list(self._shaders)
-        for shader in self._shaders_to_remove:
-            while shader in shaders:
-                shaders.remove(shader)
-        for shader in self._shaders_to_add:
-            shaders.append(shader)
-        return shaders
+        return self._verts + self._frags
     
     
-#     def get_vertex_shader(self, index=0):
-#         """ Get the ith vertex shader for this shader program. Default first.
-#         """
-#         count = -1
-#         for shader in self.shaders:
-#             if isinstance(shader, VertexShader):
-#                 count += 1
-#                 if count == index:
-#                     return shader
-#         else:
-#             return None
-#     
-# 
-#     def get_fragment_shader(self, index=0):
-#         """ Get the ith fragment shader for this shader program. Default first.
-#         """
-#         count = -1
-#         for shader in self.shaders:
-#             if isinstance(shader, FragmentShader):
-#                 count += 1
-#                 if count == index:
-#                     return shader
-#         else:
-#             return None
+    def __setitem__(self, name, data):
+        """ Behave a bit like a dict to assign attributes and uniforms.
+        """
+        assert isinstance(name, str)
+        if name in self._uniforms.keys():
+            # Auto-make Texture from numpy array, but warn if it replaces a previous
+            texClass = self._uniforms[name]._textureClass
+            if isinstance(data, np.ndarray) and texClass:
+                data = texClass(data)
+                if self._uniforms[name]._data is not None:
+                    print("Warning: uniform '%s' is replaced with a new Texture. Better update the texture." % name)
+            # Set data
+            self._uniforms[name].set_data(data)
+            # If program is currently in use, we upload immediately the data
+            if self._enabled and name in self._active_uniforms:
+               self._uniforms[name].upload(self)
+        
+        elif name in self._attributes.keys():
+            # Auto-make VBO from numpy array, but warn if it replaces a previous
+            if isinstance(data, np.ndarray):
+                data = VertexBuffer(data)
+                if self._attributes[name]._data is not None:
+                    print("Warning: attribute '%s' is replaced with a new VertexBuffer. Better update the VertexBuffer or use Program.set_var()." % name)
+            # Set data
+            self._attributes[name].set_data(data)
+            # If program is currently in use, we upload immediately the data
+            if self._enabled and name in self._active_attributes:
+               self._attributes[name].upload(self)
+        else:
+            raise ValueError("Unknown uniform or attribute: %s" % name)
     
+    
+    def set_var(self, *structured_vars, **keyword_vars):
+        """ Set attribute data. This method accepts dictionary-like
+        arguments (like numpy structured arrays), for which each element
+        will be applied.
+        
+        Other than with ``Program['name'] = value``, a numpy array is
+        not automatically converted to a VertexBuffer or Texture. Note
+        that attributes can be numpy arrays, but this is generally
+        discouraged.
+        """
+        D = {}
+        
+        # Process kwargs
+        D.update(keyword_vars)
+        
+        # Process structured data
+        for data in structured_vars:
+            
+            if isinstance(data, np.ndarray):
+                # Structured array
+                if data.dtype.fields:
+                    print("Warning: attribute data given as a structured array, you probably want to use a VertexBuffer.")
+                    for k in data.dtype.fields:
+                        D[k] = data[k]
+                else:
+                    raise ValueError("Program.set_attr accepts a structured array, but normal arrays must be given as keyword args.")
+            
+            elif isinstance(data, VertexBuffer):
+                # Vertex buffer
+                if isinstance(data.type, dict):
+                    for k in data.type:
+                        D[k] = data[k]
+                else:
+                    raise ValueError('Can only set attributes with a structured VertexBuffer.')
+            
+            elif isinstance(data, dict):
+                # Dict
+                D.update(data)
+            else:
+                raise ValueError("Don't know how to use attribute of type %r" % type(data))
+        
+        # Apply each
+        for name, data in D.items():
+            #self[name] = data
+            if name in self._uniforms.keys():
+                self._uniforms[name].set_data(data)
+                if self._enabled and name in self._active_uniforms:
+                    self._uniforms[name].upload(self)
+            elif name in self._attributes.keys():
+                self._attributes[name].set_data(data)
+                if self._enabled and name in self._active_attributes:
+                    self._attributes[name].upload(self)
+            else:
+                raise ValueError("Unknown uniform or attribute: %s" % name)
+    
+    
+    @property
+    def attributes(self):
+        """ A list of all Attribute objects associated with this program.
+        """
+        return list(self._attributes.values())
+    
+    
+    @property
+    def uniforms(self):
+        """ A list of all Uniform objects associated with this program.
+        """
+        return list(self._uniforms.values())
+    
+    
+    def _build_attributes(self):
+        """ Build the attribute objects 
+        Called when shader is atatched/detached.
+        """
+        # Get all attributes (There are no attribute in fragment shaders)
+        v_attributes, f_attributes = [], []
+        for shader in self._verts:
+            v_attributes.extend(shader._get_attributes())
+        attributes = list(set(v_attributes + f_attributes))
+        
+        # Create Attribute objects for each one
+        self._attributes = {}
+        for (name, gtype) in attributes:
+            attribute = Attribute(name, gtype)
+            self._attributes[name] = attribute
+    
+    
+    def _build_uniforms(self):
+        """ Build the uniform objects 
+        Called when shader is atatched/detached.
+        """
+        # Get al; uniformes
+        v_uniforms, f_uniforms = [], []
+        for shader in self._verts:
+            v_uniforms.extend(shader._get_uniforms())
+        for shader in self._frags:
+            f_uniforms.extend(shader._get_uniforms())
+        uniforms = list(set(v_uniforms + f_uniforms))
+        
+        # Create Uniform ojects for each one
+        self._uniforms = {}
+        for (name, gtype) in uniforms:
+            uniform = Uniform(name, gtype)
+            self._uniforms[name] = uniform
+        
+    
+    def _mark_active_attributes(self):
+        """ Mark which attributes are active and get the location.
+        Called after linking. 
+        """
+
+        count = gl.glGetProgramiv(self.handle, gl.GL_ACTIVE_ATTRIBUTES)
+        
+        # This match a name of the form "name[size]" (= array)
+        regex = re.compile("""(?P<name>\w+)\s*(\[(?P<size>\d+)\])""")
+        
+        # Find active attributes
+        self._active_attributes = {}
+        for i in range(count):
+            name, size, gtype = gl.glGetActiveAttrib(self.handle, i)
+            loc = gl.glGetAttribLocation(self._handle, name)
+            name = name.decode('utf-8')
+            # This checks if the attribute is an array
+            # Name will be something like xxx[0] instead of xxx
+            m = regex.match(name)
+            # When attribute is an array, size corresponds to the highest used index
+            if m:
+                name = m.group('name')
+                if size >= 1:
+                    for i in range(size):
+                        name = '%s[%d]' % (m.group('name'),i)
+                        self._active_attributes[name] = loc
+            else:
+                self._active_attributes[name] = loc
+        
+        # Mark these as active (loc non-None means active)
+        for attribute in self._attributes.values():
+            attribute._loc = self._active_attributes.get(attribute.name, None)
+    
+    
+    def _mark_active_uniforms(self):
+        """ Mark which uniforms are actve, set the location, 
+        for textures also set texture unit.
+        Called after linking. 
+        """
+
+        count = gl.glGetProgramiv(self.handle, gl.GL_ACTIVE_UNIFORMS)
+        
+        # This match a name of the form "name[size]" (= array)
+        regex = re.compile("""(?P<name>\w+)\s*(\[(?P<size>\d+)\])\s*""")
+        
+        # Find active uniforms
+        self._active_uniforms = {}
+        for i in range(count):
+            name, size, gtype = gl.glGetActiveUniform(self.handle, i)
+            loc = gl.glGetUniformLocation(self._handle, name)
+            name = name.decode('utf-8')
+            # This checks if the uniform is an array
+            # Name will be something like xxx[0] instead of xxx
+            m = regex.match(name)
+            # When uniform is an array, size corresponds to the highest used index
+            if m:
+                name = m.group('name')
+                if size >= 1:
+                    for i in range(size):
+                        name = '%s[%d]' % (m.group('name'),i)
+                        self._active_uniforms[name] = loc
+            else:
+                self._active_uniforms[name] = loc
+        
+        # Mark these as active (loc non-None means active)
+        texture_count = 0
+        for uniform in self._uniforms.values():
+            uniform._loc = self._active_uniforms.get(uniform.name, None)
+            if uniform._loc is not None:
+                if uniform._textureClass:
+                    uniform._texture_unit = texture_count
+                    texture_count += 1
+    
+    
+    
+    ## Behaver like a GLObject
     
     def _create(self):
         self._handle = gl.glCreateProgram()
@@ -169,11 +425,10 @@ class ShaderProgram(GLObject):
         self._enabled = True
         self._enabled_objects = []
         
-        # Apply all uniforms, samplers and attributes
-        for input in self._inputs:
-            input._on_enabling()
-        for shader in self._shaders:
-            shader._on_enabling(self)
+        # Upload any attributes and uniforms if necessary
+        for variable in (self.attributes + self.uniforms):
+            if variable.active:
+                variable.upload(self)
     
     
     def _deactivate(self):
@@ -181,93 +436,55 @@ class ShaderProgram(GLObject):
             ob.deactivate()
         gl.glUseProgram(0)
         self._enabled = False
-        for shader in self._shaders:
-            shader._on_disabling()
     
     
     def _update(self):
-       
-        # todo: we probably want to know when a shader changes its source as well
-        # Remove/add shaders and compile them
-        self._enable_shaders()
+        
+        # Check if we have something to link
+        if not self._verts:
+            raise ProgramException("No vertex shader has been given")
+        if not self._frags:
+            raise ProgramException("No fragment shader has been given")
+        
+        # Detach any attached shaders
+        attached = gl.glGetAttachedShaders(self._handle)
+        for handle in attached:
+            gl.glDetachShader(self._handle, handle)
+        
+        # Attach and activate vertex and fragment shaders
+        for shader in self.shaders:
+            shader.activate()
+            gl.glAttachShader(self._handle, shader.handle)
         
         # Only proceed if all shaders compiled ok
-        oks = [shader._valid for shader in self._shaders]
+        oks = [shader._valid for shader in self.shaders]
         if not (oks and all(oks)):
-            raise ValueError('Shaders did not compile.')
+            raise ProgramExceptionr('Shaders did not compile.')
         
-        #for s in self._shaders:
-            #print(s._source)
+        # Link the program
+        # todo: should there be a try-except around this?
+        gl.glLinkProgram(self._handle)
+        if not gl.glGetProgramiv(self._handle, gl.GL_LINK_STATUS):
+            errors = gl.glGetProgramInfoLog(self._handle)
+            print(errors)
+            #parse_shader_errors(errors)
+            raise ProgramException('Linking error')
         
-        # enable transform feedback
-        if len(self._feedback_vars) > 0:
-            import ctypes
-            arr = (ctypes.POINTER(ctypes.c_char)*len(self._feedback_vars))()
-            for i,v in enumerate(self._feedback_vars):
-                arr[i] = ctypes.create_string_buffer(v)
-            gl.glTransformFeedbackVaryings(self.handle, len(self._feedback_vars), arr, gl.GL_INTERLEAVED_ATTRIBS)
-        
-        # Link the program?
-        if not gl.glGetProgramiv(self.handle, gl.GL_LINK_STATUS):
-            # Link!
-            try:
-                gl.glLinkProgram(self._handle)
-            except Exception as e:
-                print( "Error linking shader:" )
-                parse_shader_errors(e.description)
-                raise
-            # Retrieve the link status
-            if not gl.glGetProgramiv(self.handle, gl.GL_LINK_STATUS):
-                print( "Error linking shader:" )
-                errors = gl.glGetProgramInfoLog(self._handle)
-                parse_shader_errors(errors)
-                raise RuntimeError(errors)
-            # Get list of uniforms and attributes, for diagnosis
-            for input in self._inputs:
-                input._on_linking()
+        # Mark all active attributes and uniforms
+        self._mark_active_attributes()
+        self._mark_active_uniforms()
     
     
-    def _enable_shaders(self):
-        
-        # Remove shaders if we must
-        while self._shaders_to_remove:
-            shader = self._shaders_to_remove.pop(0)
-            # Make OpenGL detach it
-            if shader._handle > 0:
-                try:
-                    gl.glDetachShader(self._handle, shader._handle)
-                except Exception:
-                    pass
-            # Remove from our list
-            while shader in self._shaders:
-                self._shaders.remove(shader)
-        
-        # Attach pending shaders
-        while self._shaders_to_add:
-            shader = self._shaders_to_add.pop(0)
-            # Add to our list
-            self._shaders.append(shader)
-            # Make OpenGL attach it
-            shader.activate()
-            try:
-                gl.glAttachShader(self._handle, shader._handle)
-            except Exception as e:
-                print("Error attaching shader %r" % shader)
-                print("\tException: %s" % str(e))
-                raise
-        
-        # Check/compile all shaders
-        for shader in self._shaders:
-            shader.activate()
+    ## Drawing and enabling
     
-    
+    # todo: rename to activate_object, maybe make private
     def enable_object(self, object):
         """ Enable an object, e.g. a texture. The program
         will make sure that the object is disabled again.
-        Can only be called while being used in a context.
+        Can only be called while Program is active.
         """
         if not self._enabled:
-            raise RuntimeError("Program cannot enable an object if not self being enabled.")
+            raise ProgramException("Program cannot enable an object if not self being enabled.")
         object.activate()
         self._enabled_objects.append(object)
     
@@ -290,14 +507,28 @@ class ShaderProgram(GLObject):
         # Check
         if not self._enabled:
             raise RuntimeError('draw_arrays require the ShaderProgram to be enabled.')
-        for input in self._inputs: 
-            input._on_drawing()
         
         # Prepare
         if first is None:
             first = 0
         if count is None:
-            count = self.attributes.vertex_count
+            count = None
+            for attribute in self.attributes:
+                # Check if valid count 
+                if attribute.count is None:
+                    continue
+                # Update count
+                if count is None:
+                    count = attribute.count
+                elif attribute.count == count:
+                    pass # OK
+                elif attribute.count < count:
+                    count = attribute.count
+                    print('Warning: attributes have unequal number of vertices.')
+                else:
+                    print('Warning: attributes have unequal number of vertices.')
+        
+        # Check if we know count
         if count is None:
             raise Exception("Could not determine element count for draw.")
         
@@ -346,9 +577,7 @@ class ShaderProgram(GLObject):
         # Check
         if not self._enabled:
             raise RuntimeError('draw_elements require the ShaderProgram to be enabled.')
-        for input in self._inputs: 
-            input._on_drawing()
-     
+        
         # Prepare and draw
         if isinstance(indices, ElementBuffer):
             # Enable

@@ -15,6 +15,8 @@ from vispy import gl
 from . import GLObject, ext_available
 from . import Texture2D
 
+# todo: check and test all _delete methods
+
 # todo: we need a way to keep track of who uses a RenderBuffer,
 # so that it can be deleted when the last object stops using it.
 # Same for Shader class.

@@ -84,7 +84,7 @@ class Buffer(GLObject):
     
     
     def _delete(self):
-       gl.glDeleteBuffers([self._handle])
+       gl.glDeleteBuffers(1, [self._handle])
     
     
     def _activate(self):
@@ -182,7 +182,11 @@ class IndexableVertexBufferMixin(object):
         # Create new VertexBufferView based on our own buffer
         return VertexBufferView(buffer, 
                 (new_shape0, new_shape1), new_type, new_offset, new_stride)
-
+    
+    
+    def __len__(self):
+        return self.shape[0]
+    
 
 class VertexBuffer(Buffer, IndexableVertexBufferMixin):
     """ Representation of vertex buffer object of type GL_ARRAY_BUFFER,
