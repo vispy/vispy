@@ -79,6 +79,8 @@ class Program(GLObject):
         self._active_attributes = {}
         self._active_uniforms = {}
         
+        # Keep track of number of vertices
+        self._vertex_count = None
         
         shaders = []
         
@@ -210,7 +212,8 @@ class Program(GLObject):
             # If program is currently in use, we upload immediately the data
             if self._enabled and name in self._active_uniforms:
                self._uniforms[name].upload(self)
-        
+            # Invalidate vertex count
+            self._vertex_count = None
         elif name in self._attributes.keys():
             # Auto-make VBO from numpy array, but warn if it replaces a previous
             if isinstance(data, np.ndarray):
@@ -278,6 +281,8 @@ class Program(GLObject):
                 self._attributes[name].set_data(data)
                 if self._enabled and name in self._active_attributes:
                     self._attributes[name].upload(self)
+                # Invalidate vertex count
+                self._vertex_count = None
             else:
                 raise ValueError("Unknown uniform or attribute: %s" % name)
     
@@ -296,6 +301,31 @@ class Program(GLObject):
         (sorted by name).
         """
         return list( sorted(self._uniforms.values(), key=lambda x:x.name ) )
+    
+    
+    def _get_vertex_count(self):
+        """ Get count of the number of vertices.
+        """
+        if self._vertex_count is None:
+            count = None
+            for attribute in self.attributes:
+                # Check if valid count 
+                if attribute.count is None:
+                    continue
+                # Update count
+                if count is None:
+                    count = attribute.count
+                elif attribute.count == count:
+                    pass # OK
+                elif attribute.count < count:
+                    count = attribute.count
+                    #print('Warning: attributes have unequal number of vertices.')
+                else:
+                    pass#print('Warning: attributes have unequal number of vertices.')
+            self._vertex_count = count
+        
+        # Return
+        return self._vertex_count
     
     
     def _build_attributes(self):
@@ -492,7 +522,7 @@ class Program(GLObject):
     
     
     
-    def draw_arrays(self, mode, first=None, count=None):
+    def draw_arrays(self, mode, first=0, count=None):
         """ Draw the attribute arrays in the specified mode.
         Only call when the program is enabled.
         
@@ -511,25 +541,8 @@ class Program(GLObject):
             raise RuntimeError('draw_arrays require the ShaderProgram to be enabled.')
         
         # Prepare
-        if first is None:
-            first = 0
         if count is None:
-            count = None
-            for attribute in self.attributes:
-                # Check if valid count 
-                if attribute.count is None:
-                    continue
-                # Update count
-                if count is None:
-                    count = attribute.count
-                elif attribute.count == count:
-                    pass # OK
-                elif attribute.count < count:
-                    count = attribute.count
-                    print('Warning: attributes have unequal number of vertices.')
-                else:
-                    print('Warning: attributes have unequal number of vertices.')
-        
+            count = self._get_vertex_count()
         # Check if we know count
         if count is None:
             raise Exception("Could not determine element count for draw.")
