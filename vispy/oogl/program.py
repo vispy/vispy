@@ -315,13 +315,10 @@ class Program(GLObject):
                 # Update count
                 if count is None:
                     count = attribute.count
-                elif attribute.count == count:
-                    pass # OK
-                elif attribute.count < count:
-                    count = attribute.count
-                    #print('Warning: attributes have unequal number of vertices.')
                 else:
-                    pass#print('Warning: attributes have unequal number of vertices.')
+                    #if count != attribute.count:
+                    #    print('Warning: attributes have unequal number of vertices.')
+                    count = min(count, attribute.count)
             self._vertex_count = count
         
         # Return
