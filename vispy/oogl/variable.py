@@ -76,7 +76,7 @@ class Variable(object):
         
         # GL type and size (i.e. size of the vector)
         self._gtype = gtype
-        self._size = None
+        self._size, _, dtype = gl_typeinfo[self._gtype]
         
         # CPU data
         self._data = None
@@ -86,6 +86,9 @@ class Variable(object):
         
         # Whether an upload is required
         self._dirty = False
+        
+        # To suppress warnings
+        self._show_warning_notset = True
     
     
     @property
@@ -155,12 +158,8 @@ class Uniform(Variable):
     def __init__(self, name, gtype):
         Variable.__init__(self, name, gtype)
         
-        # Get size,. dtype and ufunc
-        self._size, _, dtype = gl_typeinfo[self._gtype]
+        # Get ufunc
         self._ufunction, self._numel = Uniform._ufunctions[self._gtype]
-        
-        # Init data
-        self._data = np.zeros(self._size, dtype)
         
         # For textures:
         self._texture_unit = -1  # Set by Program
@@ -187,6 +186,9 @@ class Uniform(Variable):
                 raise ValueError('Expected a Texture for uniform %s.' % self.name)
         else:
             # Try to put it inside the array
+            if self._data is None:
+                size, _, dtype = gl_typeinfo[self._gtype]
+                self._data = np.zeros(size, dtype)
             try:
                 if isinstance(data, np.ndarray):
                     self._data[...] = data.ravel()  # Prevent one data copy
@@ -201,7 +203,14 @@ class Uniform(Variable):
     
     def upload(self, program):
         """ Actual upload of data to GPU memory """
-
+        
+        # If there is not data, there is no point in uploading
+        if self._data is None:
+            if self._show_warning_notset:
+                print("Value for uniform '%s' is not set." % self.name)
+                self._show_warning_notset = False
+            return
+        
         # Check active status (mandatory)
         if self._loc is None:
             raise VariableException("Uniform is not active")
@@ -267,9 +276,6 @@ class Attribute(Variable):
     def __init__(self, name, gtype):
         Variable.__init__(self, name, gtype)
         
-        # Get size
-        self._size, gtype, dtype = gl_typeinfo[self._gtype]
-        
         # Count number of vertices
         self._count = 0
         
@@ -323,8 +329,11 @@ class Attribute(Variable):
     def upload(self, program):
         """ Actual upload of data to GPU memory  """
         
-        # If there is not data, there is no point in point in uploading
+        # If there is not data, there is no point in uploading
         if self._data is None:
+            if self._show_warning_notset:
+                print("Value for attribute '%s' is not set." % self.name)
+                self._show_warning_notset = False
             return
         
         # Check active status (mandatory)
