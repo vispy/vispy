@@ -3,8 +3,9 @@
 # All rights reserved.
 # -----------------------------------------------------------------------------
 import unittest
-from vispy import gl
+import numpy as np
 
+from vispy import gl
 from vispy.oogl.program import Program
 from vispy.oogl.shader import VertexShader
 from vispy.oogl.shader import FragmentShader
@@ -98,6 +99,50 @@ class ProgramTest(unittest.TestCase):
         with self.assertRaises(NameError):
             program["A"] = 1
 
+    def test_set_uniform_vec4(self):
+        vert = VertexShader("uniform vec4 color;")
+        frag = FragmentShader("")
+
+        program = Program(vert,frag)
+        program["color"] = 1,1,1,1
+
+    def test_set_attribute_float(self):
+
+        vert = VertexShader("attribute float f;")
+        frag = FragmentShader("")
+
+        program = Program(vert,frag)
+        program["f"] = np.array(100, dtype=np.float32)
+        assert program._attributes["f"].count == 100
+
+        program = Program(vert,frag)
+        program["f"] = np.array((100,1,1), dtype=np.float32)
+        assert program._attributes["f"].count == 100
+
+
+    def test_set_attribute_vec4(self):
+        vert = VertexShader("attribute vec4 color;")
+        frag = FragmentShader("")
+
+        program = Program(vert,frag)
+        with self.assertRaises(ValueError):
+            program["color"] = np.array(3, dtype=np.float32)
+
+        program = Program(vert,frag)
+        with self.assertRaises(ValueError):
+            program["color"] = np.array((100,5), dtype=np.float32)
+
+        program = Program(vert,frag)
+        program["color"] = np.array((100,4), dtype=np.float32)
+        assert program._attributes["f"].count == 100
+
+        program = Program(vert,frag)
+        program["color"] = np.array((100,1,4), dtype=np.float32)
+        assert program._attributes["f"].count == 100
+
+        program = Program(vert,frag)
+        program["color"] = np.array(100, dtype=(np.float32,4))
+        assert program._attributes["f"].count == 100
 
 
 if __name__ == "__main__":
