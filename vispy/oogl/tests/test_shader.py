@@ -57,26 +57,31 @@ class ShaderTest(unittest.TestCase):
         shader = VertexShader()
         shader.delete()
 
-#     def test_uniform_float(self):
-#         shader = VertexShader("uniform float color;")
-#         assert shader.uniforms == [ ("color", gl.GL_FLOAT) ]
-# 
-#     def test_uniform_vec4(self):
-#         shader = VertexShader("uniform vec4 color;")
-#         assert shader.uniforms == [ ("color", gl.GL_FLOAT_VEC4) ]
-# 
-#     def test_uniform_array(self):
-#         shader = VertexShader("uniform float color[2];")
-#         assert shader.uniforms == [ ("color[0]", gl.GL_FLOAT),
-#                                     ("color[1]", gl.GL_FLOAT)  ]
-# 
-#     def test_attribute_float(self):
-#         shader = VertexShader("attribute float color;")
-#         assert shader.attributes == [ ("color", gl.GL_FLOAT) ]
-# 
-#     def test_attribute_vec4(self):
-#         shader = VertexShader("attribute vec4 color;")
-#         assert shader.attributes == [ ("color", gl.GL_FLOAT_VEC4) ]
+    def test_uniform_float(self):
+        shader = VertexShader("uniform float color;")
+        uniforms = shader._get_uniforms()
+        assert uniforms == [ ("color", gl.GL_FLOAT) ]
+ 
+    def test_uniform_vec4(self):
+        shader = VertexShader("uniform vec4 color;")
+        uniforms = shader._get_uniforms()
+        assert uniforms == [ ("color", gl.GL_FLOAT_VEC4) ]
+ 
+    def test_uniform_array(self):
+        shader = VertexShader("uniform float color[2];")
+        uniforms=shader._get_uniforms()
+        assert uniforms == [ ("color[0]", gl.GL_FLOAT),
+                             ("color[1]", gl.GL_FLOAT)  ]
+ 
+    def test_attribute_float(self):
+        shader = VertexShader("attribute float color;")
+        attributes = shader._get_attributes()
+        assert attributes == [ ("color", gl.GL_FLOAT) ]
+ 
+    def test_attribute_vec4(self):
+        shader = VertexShader("attribute vec4 color;")
+        attributes = shader._get_attributes()
+        assert attributes == [ ("color", gl.GL_FLOAT_VEC4) ]
 
 if __name__ == "__main__":
     unittest.main()
