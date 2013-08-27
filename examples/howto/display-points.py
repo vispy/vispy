@@ -77,12 +77,12 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         self.geometry = (0,0,1000,1000)
 
-        self.program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
-                                           oogl.FragmentShader(FRAG_SHADER) )
+        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
+        
         # Set uniform and attribute
-        self.program.attributes['a_color']    = v_color
-        self.program.attributes['a_position'] = v_position
-        self.program.attributes['a_size']     = v_size
+        self.program['a_color']    = v_color
+        self.program['a_position'] = v_position
+        self.program['a_size']     = v_size
     
     
     def on_initialize(self, event):

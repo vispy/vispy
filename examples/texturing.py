@@ -7,8 +7,7 @@ Example demonstrating the use of textures in vispy.oogl.
 Three textures are created and combined in the fragment shader.
 """
 
-from vispy.oogl import Texture2D, VertexBuffer, ElementBuffer
-from vispy.oogl import VertexShader, FragmentShader, ShaderProgram
+from vispy.oogl import Program, Texture2D, VertexBuffer, ElementBuffer
 from vispy import app, gl, io
 
 
@@ -76,18 +75,15 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create program
-        self._program = ShaderProgram(
-                VertexShader(VERT_SHADER), 
-                FragmentShader(FRAG_SHADER),
-                )
+        self._program = Program(VERT_SHADER, FRAG_SHADER)
         
         # Set uniforms and samplers
-        self._program.attributes['a_position'] = VertexBuffer(positions)
-        self._program.attributes['a_texcoord'] = VertexBuffer(texcoords)
+        self._program['a_position'] = VertexBuffer(positions)
+        self._program['a_texcoord'] = VertexBuffer(texcoords)
         #
-        self._program.uniforms['u_texture1'] = Texture2D(im1)
-        self._program.uniforms['u_texture2'] = Texture2D(im2)
-        self._program.uniforms['u_texture3'] = Texture2D(im3)
+        self._program['u_texture1'] = Texture2D(im1)
+        self._program['u_texture2'] = Texture2D(im2)
+        self._program['u_texture3'] = Texture2D(im3)
     
     
     def on_initialize(self, event):

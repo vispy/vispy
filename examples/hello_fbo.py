@@ -92,17 +92,17 @@ class Canvas(app.Canvas):
         self._fbo = oogl.FrameBuffer(self._rendertex, oogl.RenderBuffer())
         
         # Create program to render a shape
-        self._program1 = oogl.ShaderProgram(oogl.VertexShader(VERT_SHADER1), 
-                                            oogl.FragmentShader(FRAG_SHADER1) )
-        self._program1.uniforms['u_color'] = 0.9, 1.0, 0.4, 1
-        self._program1.attributes['a_position'] = vPosition
+        self._program1 = oogl.Program(  oogl.VertexShader(VERT_SHADER1), 
+                                        oogl.FragmentShader(FRAG_SHADER1) )
+        self._program1['u_color'] = 0.9, 1.0, 0.4, 1
+        self._program1['a_position'] = vPosition
         
         # Create program to render FBO result
-        self._program2 = oogl.ShaderProgram(oogl.VertexShader(VERT_SHADER2), 
-                                            oogl.FragmentShader(FRAG_SHADER2) )
-        self._program2.attributes['a_position'] = vPosition
-        self._program2.attributes['a_texcoord'] = vTexcoord
-        self._program2.uniforms['u_texture1'] = self._rendertex
+        self._program2 = oogl.Program(  oogl.VertexShader(VERT_SHADER2), 
+                                        oogl.FragmentShader(FRAG_SHADER2) )
+        self._program2['a_position'] = vPosition
+        self._program2['a_texcoord'] = vTexcoord
+        self._program2['u_texture1'] = self._rendertex
     
     
     def on_resize(self, event):
