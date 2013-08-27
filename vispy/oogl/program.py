@@ -541,8 +541,13 @@ class Program(GLObject):
             raise RuntimeError('draw_arrays require the ShaderProgram to be enabled.')
         
         # Prepare
+        refcount = self._get_vertex_count()
         if count is None:
-            count = self._get_vertex_count()
+            count = refcount
+        elif refcount:
+            if count > refcount:
+                raise ValueError('Count is larger than known number of vertices.')
+        
         # Check if we know count
         if count is None:
             raise Exception("Could not determine element count for draw.")
