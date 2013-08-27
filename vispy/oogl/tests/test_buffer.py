@@ -4,12 +4,12 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
-import OpenGL.GL as gl
+from vispy import gl
 
 from vispy.oogl.buffer import Buffer
 from vispy.oogl.buffer import VertexBuffer
 from vispy.oogl.buffer import VertexBufferView
-from vispy.oogl.buffer import IndexBuffer
+from vispy.oogl.buffer import ElementBuffer
 
 
 
@@ -19,8 +19,8 @@ class BufferTest(unittest.TestCase):
     def test_init(self):
         buffer = Buffer()
         assert buffer._handle == 0
-        assert buffer.dirty   == True
-        assert buffer.status  == False
+        assert buffer._need_update == False
+        assert buffer._valid  == False
         assert buffer.data    == None
         assert buffer.size    == 0
         assert buffer.stride  == 0

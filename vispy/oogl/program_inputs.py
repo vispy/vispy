@@ -21,7 +21,7 @@ from vispy import gl
 from vispy.util.six import string_types
 from . import ext_available
 from . import Texture, VertexBuffer
-from .vbo import VertexBufferView
+from .buffer import VertexBufferView
 
 
 # Note: the ShaderProgram is a friend: it calls private methods of this class.

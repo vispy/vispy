@@ -223,7 +223,7 @@ class Program(GLObject):
             if self._enabled and name in self._active_attributes:
                self._attributes[name].upload(self)
         else:
-            raise ValueError("Unknown uniform or attribute: %s" % name)
+            raise NameError("Unknown uniform or attribute: %s" % name)
     
     
     def set_var(self, *structured_vars, **keyword_vars):
@@ -284,16 +284,18 @@ class Program(GLObject):
     
     @property
     def attributes(self):
-        """ A list of all Attribute objects associated with this program.
+        """ A list of all Attribute objects associated with this program
+        (sorted by name).
         """
-        return list(self._attributes.values())
+        return list( sorted(self._attributes.values(), key=lambda x:x.name ) )
     
     
     @property
     def uniforms(self):
-        """ A list of all Uniform objects associated with this program.
+        """ A list of all Uniform objects associated with this program
+        (sorted by name).
         """
-        return list(self._uniforms.values())
+        return list( sorted(self._uniforms.values(), key=lambda x:x.name ) )
     
     
     def _build_attributes(self):

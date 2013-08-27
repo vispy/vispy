@@ -79,16 +79,24 @@ class Shader(GLObject):
                 self._source = os.path.basename(code)
         else:
             self._code   = code
-            self._source = text_type(source) or '<string>'
+            self._source = text_type(source) if (source is not None) else '<string>'
         # Set flags
         self._need_update = True  # Make _update be called
         self._description = None
     
     
-    # todo: do we actyally need this?
-#     @property
-#     def code(self):
-#         return self._code
+    @property
+    def code(self):
+        """ The code for this Shader.
+        """
+        return self._code
+    
+    
+    @property
+    def source(self):
+        """ The source of the code for this shader (not the source code).
+        """
+        return self._source
     
     
     def add_source(self, source):

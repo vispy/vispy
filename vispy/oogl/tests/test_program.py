@@ -3,7 +3,7 @@
 # All rights reserved.
 # -----------------------------------------------------------------------------
 import unittest
-import OpenGL.GL as gl
+from vispy import gl
 
 from vispy.oogl.program import Program
 from vispy.oogl.shader import VertexShader
@@ -19,8 +19,8 @@ class ProgramTest(unittest.TestCase):
     def test_init(self):
         program = Program()
         assert program._handle == 0
-        assert program.dirty   == True
-        assert program.status  == False
+        assert program._need_update == False
+        assert program._valid  == False
         assert program.shaders == []
 
     def test_delete_no_context(self):
@@ -49,15 +49,18 @@ class ProgramTest(unittest.TestCase):
         vert = VertexShader("uniform float A;")
         frag = FragmentShader("uniform float A; uniform vec4 B;")
         program = Program(vert,frag)
-        assert program.all_uniforms == [ ("A", gl.GL_FLOAT),
-                                         ("B", gl.GL_FLOAT_VEC4) ]
+        assert program.uniforms[0].name == 'A'
+        assert program.uniforms[0].gtype == gl.GL_FLOAT
+        assert program.uniforms[1].name == 'B'
+        assert program.uniforms[1].gtype == gl.GL_FLOAT_VEC4
 
     def test_attributes(self):
         vert = VertexShader("attribute float A;")
         frag = FragmentShader("")
         program = Program(vert,frag)
-        assert program.all_attributes == [ ("A", gl.GL_FLOAT) ]
-
+        assert program.attributes[0].name == 'A'
+        assert program.attributes[0].gtype == gl.GL_FLOAT
+    
     def test_attach(self):
         vert = VertexShader("A")
         frag = FragmentShader("B")
@@ -79,20 +82,20 @@ class ProgramTest(unittest.TestCase):
         vert = VertexShader("A")
         frag = FragmentShader("B")
 
-        program = Program(verts = vert)
-        with self.assertRaises(ProgramException):
-            program.build()
+        program = Program(vert = vert)
+        with self.assertRaises(RuntimeError):
+            program.activate()
 
-        program = Program(frags = frag)
-        with self.assertRaises(ProgramException):
-            program.build()
+        program = Program(frag = frag)
+        with self.assertRaises(RuntimeError):
+            program.activate()
 
     def test_setitem(self):
         vert = VertexShader("")
         frag = FragmentShader("")
 
         program = Program(vert,frag)
-        with self.assertRaises(ProgramException):
+        with self.assertRaises(NameError):
             program["A"] = 1
 
 

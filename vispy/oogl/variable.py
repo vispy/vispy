@@ -16,7 +16,7 @@ import numpy as np
 
 from vispy import gl
 from .globject import GLObject
-from .vbo import VertexBuffer, VertexBufferView
+from .buffer import VertexBuffer, VertexBufferView
 from .texture import Texture, Texture2D, TextureCubeMap, Texture3D
 from vispy.util.six import string_types
 
@@ -74,8 +74,9 @@ class Variable(object):
         # Name of this variable in the program
         self._name = name
         
-        # GL type
+        # GL type and size (i.e. size of the vector)
         self._gtype = gtype
+        self._size = None
         
         # CPU data
         self._data = None
@@ -95,9 +96,15 @@ class Variable(object):
     
     @property
     def gtype(self):
-        """ The type of th eunderlying veriable (as a GL constant).
+        """ The type of the underlying variable (as a GL constant).
         """
         return self._gtype
+    
+    @property
+    def size(self):
+        """ The size of the variable (i.e. size of the vector in GLSL).
+        """
+        return self._size
     
     @property
     def active(self):
@@ -149,11 +156,11 @@ class Uniform(Variable):
         Variable.__init__(self, name, gtype)
         
         # Get size,. dtype and ufunc
-        size, _, dtype = gl_typeinfo[self._gtype]
+        self._size, _, dtype = gl_typeinfo[self._gtype]
         self._ufunction, self._numel = Uniform._ufunctions[self._gtype]
         
         # Init data
-        self._data = np.zeros(size, dtype)
+        self._data = np.zeros(self._size, dtype)
         
         # For textures:
         self._texture_unit = -1  # Set by Program
@@ -259,6 +266,9 @@ class Attribute(Variable):
     # ---------------------------------
     def __init__(self, name, gtype):
         Variable.__init__(self, name, gtype)
+        
+        # Get size
+        self._size, gtype, dtype = gl_typeinfo[self._gtype]
         
         # Count number of vertices
         self._count = 0

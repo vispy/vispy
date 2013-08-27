@@ -104,7 +104,10 @@ class GLObject(object):
 
         # Ensure that the GPU equivalent of this object exists 
         if not self._handle:
-            self._create()
+            try:
+                self._create()
+            except Exception:
+                raise RuntimeError('Could not create %r, perhaps there is no OpenGL context?' % self)
         # Perform an update if necessary
         if self._need_update:
             self._update()  # If it does not rais an error, assume valid
