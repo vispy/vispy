@@ -90,15 +90,14 @@ class Canvas(app.Canvas):
         self.geometry = 0,0,800,800
 
         # Create program
-        self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
-                                            oogl.FragmentShader(FRAG_SHADER) )
+        self._program = oogl.Program( VERT_SHADER, FRAG_SHADER)
         
         # Create vbo
         self._vbo = oogl.VertexBuffer(vertex_data)
         
         # Set uniforms, samplers, attributes
-        self._program.attributes.update(self._vbo)
-        self._program.uniforms['s_texture'] = oogl.Texture2D(im1)
+        self._program.set_var(self._vbo)
+        self._program['s_texture'] = oogl.Texture2D(im1)
         
         # Create first explosion
         self._new_explosion()
@@ -129,7 +128,7 @@ class Canvas(app.Canvas):
         
         # Draw
         with self._program as prog:
-            prog.uniforms['u_time'] = time.time() - self._starttime
+            prog['u_time'] = time.time() - self._starttime
             prog.draw_arrays(gl.GL_POINTS)
         
         # Invoke a new draw
@@ -144,13 +143,13 @@ class Canvas(app.Canvas):
         
         # New centerpos
         centerpos = np.random.uniform(-0.5, 0.5, (3,))
-        self._program.uniforms['u_centerPosition'] = centerpos
+        self._program['u_centerPosition'] = centerpos
         
         # New color, scale alpha with N
         alpha = 1.0 / N**0.08
         color = np.random.uniform(0.1, 0.9, (3,))
         
-        self._program.uniforms['u_color'] = tuple(color)+ (alpha,)
+        self._program['u_color'] = tuple(color)+ (alpha,)
         
         # Create new vertex data
         vertex_data['a_lifetime'] = np.random.normal(2.0, 0.5, (N,))

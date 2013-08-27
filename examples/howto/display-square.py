@@ -39,12 +39,11 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create program
-        self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
-                                            oogl.FragmentShader(FRAG_SHADER) )
+        self._program = oogl.Program(VERT_SHADER, FRAG_SHADER)
         
         # Set uniform and attribute
-        self._program.uniforms['u_color'] = 0.2, 1.0, 0.4, 1
-        self._program.attributes['a_position'] = vPosition
+        self._program['u_color'] = 0.2, 1.0, 0.4, 1
+        self._program['a_position'] = vPosition
     
     
     def on_initialize(self, event):

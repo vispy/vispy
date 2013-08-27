@@ -96,8 +96,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create program
-        self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
-                                            oogl.FragmentShader(FRAG_SHADER) )
+        self._program = oogl.Program( VERT_SHADER, FRAG_SHADER)
         
         # Creat FBO
         self._fbo = oogl.FrameBuffer()
@@ -114,8 +113,8 @@ class Canvas(app.Canvas):
         
         
         # Set uniforms and attributes
-        self._program.attributes.update(self._vbo)
-        self._program.uniforms['u_texsize'] = im1.shape[1], im1.shape[0]
+        self._program.set_var(self._vbo)
+        self._program['u_texsize'] = im1.shape[1], im1.shape[0]
     
     
     def on_initialize(self, event):
@@ -125,7 +124,7 @@ class Canvas(app.Canvas):
     def on_paint(self, event):
         
         # Set framebuffer input output
-        self._program.uniforms['u_texture'] = self._tex1
+        self._program['u_texture'] = self._tex1
         self._fbo.attach_color(self._tex2)
         
         with self._fbo:
@@ -137,7 +136,7 @@ class Canvas(app.Canvas):
                 prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
         
         # Draw to the normal color buffer (i.e. the screen)
-        self._program.uniforms['u_texture'] = self._tex2
+        self._program['u_texture'] = self._tex2
         with self._program as prog:
             # Init
             gl.glViewport(0, 0, *self.geometry[2:])

@@ -73,8 +73,7 @@ class Canvas(app.Canvas):
         self._button = None
         
         # Create program
-        self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
-                                            oogl.FragmentShader(FRAG_SHADER) )
+        self._program = oogl.Program(VERT_SHADER, FRAG_SHADER)
     
     def on_initialize(self, event):
         gl.glClearColor(0,0,0,1);
@@ -119,18 +118,18 @@ class Canvas(app.Canvas):
         
         # Draw
         with self._program as prog:
-            prog.uniforms['u_size'] = 4.0
-            prog.uniforms['u_color'] = 0.0, 1.0, 1.0
-            prog.attributes['position'] = boids['position']
+            prog['u_size'] = 4.0
+            prog['u_color'] = 0.0, 1.0, 1.0
+            prog['position'] = boids['position']
             prog.draw_arrays(gl.GL_POINTS)
             #
-            prog.uniforms['u_size'] = 16.0
-            prog.uniforms['u_color'] = 0.0, 1.0, 0.0
-            prog.attributes['position'] = target.reshape((1,3))
+            prog['u_size'] = 16.0
+            prog['u_color'] = 0.0, 1.0, 0.0
+            prog['position'] = target.reshape((1,3))
             prog.draw_arrays(gl.GL_POINTS)
             #
-            prog.uniforms['u_color'] = 1.0, 0.0, 0.0
-            prog.attributes['position'] = predator.reshape((1,3))
+            prog['u_color'] = 1.0, 0.0, 0.0
+            prog['position'] = predator.reshape((1,3))
             prog.draw_arrays(gl.GL_POINTS)
         
         # Next iteration

@@ -68,8 +68,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create program
-        self._program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
-                                            oogl.FragmentShader(FRAG_SHADER) )
+        self._program = oogl.Program( VERT_SHADER, FRAG_SHADER)
         
         # Create vertex buffer
         self._vbo = oogl.VertexBuffer(vertex_data)
@@ -77,10 +76,10 @@ class Canvas(app.Canvas):
         # Set uniforms, samplers, attributes
         # We create one VBO with all vertex data (array of structures)
         # and create two views from it for the attributes.
-        self._program.uniforms['texture1'] = oogl.Texture2D(im1)
-        self._program.attributes.update(self._vbo)  # This does: 
-        #self._program.attributes['a_position'] = self._vbo['a_position']
-        #self._program.attributes['a_texcoords'] = self._vbo['a_texcoords']
+        self._program['texture1'] = oogl.Texture2D(im1)
+        self._program.set_var(self._vbo)  # This does: 
+        #self._program['a_position'] = self._vbo['a_position']
+        #self._program['a_texcoords'] = self._vbo['a_texcoords']
         
     
     def on_initialize(self, event):
@@ -100,7 +99,7 @@ class Canvas(app.Canvas):
         # Draw
         with self._program as prog:
             # You can set uniforms/attributes here too
-            prog.uniforms['sizeFactor'] = 0.5 + np.sin(time.time()*3)*0.2
+            prog['sizeFactor'] = 0.5 + np.sin(time.time()*3)*0.2
            
             # Draw (pick one!)
             #prog.draw_arrays(gl.GL_TRIANGLE_STRIP)

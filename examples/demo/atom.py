@@ -123,15 +123,15 @@ class Canvas(app.Canvas):
         self.title = "Atom [zoom with mouse scroll]"
 
         self.geometry = (0,0,800,800)
-        self.program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
-                                           oogl.FragmentShader(FRAG_SHADER) )
+        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
+        
         # Set uniform and attribute
-        self.program.attributes['a_color'] = a_color
-        self.program.attributes['a_position'] = a_position
-        self.program.attributes['a_rot']      = a_rot
-        self.program.uniforms['u_linewidth']  = u_linewidth
-        self.program.uniforms['u_antialias']  = u_antialias
-        self.program.uniforms['u_size']       = u_size
+        self.program['a_color'] = a_color
+        self.program['a_position'] = a_position
+        self.program['a_rot']      = a_rot
+        self.program['u_linewidth']  = u_linewidth
+        self.program['u_antialias']  = u_antialias
+        self.program['u_size']       = u_size
 
         self.view       = np.eye(4,dtype=np.float32)
         self.model      = np.eye(4,dtype=np.float32)
@@ -139,8 +139,8 @@ class Canvas(app.Canvas):
 
         self.translate = 3
         translate(self.view, 0,0, -self.translate)
-        self.program.uniforms['u_model'] = self.model
-        self.program.uniforms['u_view'] = self.view
+        self.program['u_model'] = self.model
+        self.program['u_view'] = self.view
 
         self.theta = 0
         self.phi = 0
@@ -175,7 +175,7 @@ class Canvas(app.Canvas):
         self.model = np.eye(4, dtype=np.float32)
         rotate(self.model, self.theta, 0,0,1)
         rotate(self.model, self.phi,   0,1,0)
-        self.program.uniforms['u_model'] = self.model
+        self.program['u_model'] = self.model
         self.update()
 
 
@@ -184,7 +184,7 @@ class Canvas(app.Canvas):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
         self.projection = perspective( 45.0, width/float(height), 1.0, 1000.0 )
-        self.program.uniforms['u_projection'] = self.projection
+        self.program['u_projection'] = self.projection
 
 
     # ---------------------------------
@@ -195,7 +195,7 @@ class Canvas(app.Canvas):
         self.translate = max(2,self.translate)
         self.view       = np.eye(4,dtype=np.float32)
         translate(self.view, 0,0, -self.translate)
-        self.program.uniforms['u_view'] = self.view
+        self.program['u_view'] = self.view
         self.update()
 
 
@@ -212,8 +212,8 @@ class Canvas(app.Canvas):
         a_color[:,3] -= 1.0/p
         a_color[self.index::p,3] = 1
         with self.program as prog:
-            self.program.attributes['a_position'] = a_position
-            self.program.attributes['a_color'] = a_color
+            self.program['a_position'] = a_position
+            self.program['a_color'] = a_color
             prog.draw_arrays(gl.GL_POINTS)
 
 
