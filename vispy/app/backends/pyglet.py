@@ -108,7 +108,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         self._current_modifiers = set()
         #self._buttons_accepted = 0
         self._draw_ok = False  # whether it is ok to draw yet
-        self._pending_location = None
+        self._pending_position = None
     
     # Override these ...  
     def flip(self):
@@ -140,12 +140,12 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         # Set size of the widget or window
         self.set_size(w, h)
     
-    def _vispy_set_location(self, x, y):
-        # Set location of the widget or window. May have no effect for widgets
+    def _vispy_set_position(self, x, y):
+        # Set positionof the widget or window. May have no effect for widgets
         if self._draw_ok:
             self.set_location(x, y)
         else:
-            self._pending_location = x, y
+            self._pending_position = x, y
     
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
@@ -164,6 +164,14 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         xy = self.get_location()
         wh = self.get_size()
         return xy + wh
+
+    def _vispy_get_size(self):
+        x,y = self.get_size()
+        return x,y
+
+    def _vispy_get_position(self):
+        w,h = self.get_location()
+        return w,h
     
     
     def on_show(self):
@@ -173,9 +181,10 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         # Set location now if we must. For some reason we get weird 
         # offsets in viewport if set_location is called before the
         # widget is shown.
-        if self._pending_location:
-            xy, self._pending_location = self._pending_location, None
-            self.set_location(*xy)
+        if self._pending_position:
+            x,y = self._pending_position
+            self._pending_position = None
+            self.set_location(x,y)
         # Redraw
         self._vispy_update()
     

@@ -193,8 +193,8 @@ class CanvasBackend(app.CanvasBackend):
         glut.glutSetWindow(self._id)
         glut.glutReshapeWindow(w, h)
     
-    def _vispy_set_location(self, x, y):
-        # Set location of the widget or window. May have no effect for widgets
+    def _vispy_set_position(self, x, y):
+        # Set position of the widget or window. May have no effect for widgets
         glut.glutSetWindow(self._id)
         glut.glutPositionWindow(x, y)
     
@@ -223,7 +223,18 @@ class CanvasBackend(app.CanvasBackend):
         w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
         h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
         return x, y, w, h
-    
+
+    def _vispy_get_size(self):
+        glut.glutSetWindow(self._id)
+        w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
+        h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
+        return w, h
+
+    def _vispy_get_position(self):
+        glut.glutSetWindow(self._id)
+        x = glut.glutGet(glut.GLUT_WINDOW_X)
+        y = glut.glutGet(glut.GLUT_WINDOW_Y)
+        return x, y
     
     def on_resize(self, w, h):
         if self._vispy_canvas is None:

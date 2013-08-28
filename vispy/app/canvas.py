@@ -89,8 +89,11 @@ class Canvas(object):
             self._app.native
             # Instantiate the backed with the right class
             self._set_backend(self._app.backend_module.CanvasBackend(*self._args, **self._kwargs))
+
             # Set initial size. Let OS determine location
-            self.geometry = None, None, 560, 420 
+            # self.geometry = None, None, 560, 420 
+            self.size = 800, 600
+
             # Clean up
             del self._args 
             del self._kwargs
@@ -146,27 +149,63 @@ class Canvas(object):
         emitter.connect(fun)
     
     
-    @property
-    def geometry(self):
-        """ Get or set the location and size of the Canvas in window
-        coordinates (x, y, width, height). When setting, width and
-        height may be omitted. Similarly, specifying None for x and y
-        will prevent the widget from being moved.
-        """
-        return self._backend._vispy_get_geometry()
+    # @property
+    # def geometry(self):
+    #     """ Get or set the location and size of the Canvas in window
+    #     coordinates (x, y, width, height). When setting, width and
+    #     height may be omitted. Similarly, specifying None for x and y
+    #     will prevent the widget from being moved.
+    #     """
+    #     return self._backend._vispy_get_geometry()
     
-    @geometry.setter
-    def geometry(self, args):
-        if len(args) == 2:
-            self._backend._vispy_set_location(*args)
-        elif len(args) == 4:
-            cur = self._backend._vispy_get_geometry()
-            if args[:2] != cur[:2] and not None in args[:2]:
-                self._backend._vispy_set_location(args[0], args[1])
-            if args[2:] != cur[2:] and not None in args[2:]:
-                self._backend._vispy_set_size(args[2], args[3])
-        else:
-            raise ValueError('Setting geometry requires 2 or 4 values.')
+    # @geometry.setter
+    # def geometry(self, args):
+    #     if len(args) == 2:
+    #         self._backend._vispy_set_location(*args)
+    #     elif len(args) == 4:
+    #         cur = self._backend._vispy_get_geometry()
+    #         if args[:2] != cur[:2] and not None in args[:2]:
+    #             self._backend._vispy_set_location(args[0], args[1])
+    #         if args[2:] != cur[2:] and not None in args[2:]:
+    #             self._backend._vispy_set_size(args[2], args[3])
+    #     else:
+    #         raise ValueError('Setting geometry requires 2 or 4 values.')
+
+
+    # ---------------------------------
+    def _get_size(self):
+        """ Get size of canvas/window """
+        return self._backend._vispy_get_size()
+    def _set_size(self, size):
+        """ Set size of canvas/window """
+        return self._backend._vispy_set_size(size[0],size[1])
+    size = property(_get_size, _set_size,
+                    "Size of the canvas/window")
+
+    # ---------------------------------
+    def _get_position(self):
+        """ Get position of canvas/window relative to screen """
+        return self._backend._vispy_get_position()
+    def _set_position(self, position):
+        """ Set size of canvas/window realtive to screen """
+        return self._backend._vispy_set_position(position[0],position[1])
+    position = property(_get_position, _set_position,
+                        "Position of the canvas/window")
+    
+    # @geometry.setter
+    # def geometry(self, args):
+    #     if len(args) == 2:
+    #         self._backend._vispy_set_location(*args)
+    #     elif len(args) == 4:
+    #         cur = self._backend._vispy_get_geometry()
+    #         if args[:2] != cur[:2] and not None in args[:2]:
+    #             self._backend._vispy_set_location(args[0], args[1])
+    #         if args[2:] != cur[2:] and not None in args[2:]:
+    #             self._backend._vispy_set_size(args[2], args[3])
+    #     else:
+    #         raise ValueError('Setting geometry requires 2 or 4 values.')
+
+
         
     def swap_buffers(self):
         """ Swap GL buffers such that the offscreen buffer becomes visible.
@@ -302,7 +341,7 @@ class CanvasBackend(object):
         # Set size of the widget or window
         raise NotImplementedError()
     
-    def _vispy_set_location(self, x, y):
+    def _vispy_set_position(self, x, y):
         # Set location of the widget or window. May have no effect for widgets
         raise NotImplementedError()
     
@@ -318,8 +357,15 @@ class CanvasBackend(object):
         # Force the window or widget to shut down
         raise NotImplementedError()
     
-    
-    def _vispy_get_geometry(self):
+    # def _vispy_get_geometry(self):
+    #     # Should return widget (x, y, w, h)
+    #     raise NotImplementedError()
+
+    def _vispy_get_size(self):
+        # Should return widget (x, y, w, h)
+        raise NotImplementedError()
+
+    def _vispy_get_position(self):
         # Should return widget (x, y, w, h)
         raise NotImplementedError()
     

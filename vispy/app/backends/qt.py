@@ -145,7 +145,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         # Set size of the widget or window
         self.resize(w, h)
     
-    def _vispy_set_location(self, x, y):
+    def _vispy_set_position(self, x, y):
         # Set location of the widget or window. May have no effect for widgets
         self.move(x, y)
     
@@ -168,8 +168,14 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         # Should return widget (x, y, w, h)
         g = self.geometry()
         return (g.x(), g.y(), g.width(), g.height())
-    
-    
+
+    def _vispy_get_position(self):
+        g = self.geometry()
+        return g.x(), g.y()
+
+    def _vispy_get_size(self):
+        g = self.geometry()
+        return g.width(), g.height()
     
     def initializeGL(self):
         if self._vispy_canvas is None:

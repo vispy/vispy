@@ -139,7 +139,7 @@ class Canvas(app.Canvas):
         self._program['u_texture'] = self._tex2
         with self._program as prog:
             # Init
-            gl.glViewport(0, 0, *self.geometry[2:])
+            gl.glViewport(0, 0, self.size[0], self.size[1])
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             # Draw
             prog.draw_arrays(gl.GL_TRIANGLE_STRIP)

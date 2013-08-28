@@ -87,7 +87,8 @@ class Canvas(app.Canvas):
         gl.glEnable(GL.GL_POINT_SPRITE)
     
     def on_resize(self, event):
-        gl.glViewport(0, 0, *self.geometry[2:])
+        width, height = event.size
+        gl.glViewport(0, 0, width, height)
         
     def on_mouse_press(self, event):
         self._button = event.button
@@ -100,7 +101,7 @@ class Canvas(app.Canvas):
     def on_mouse_move(self, event):
         if not self._button:
             return
-        w, h = self.geometry[2:]
+        w, h = self.size
         x, y = event.pos
         sx = 2*x/float(w) -1.0
         sy = - (2*y/float(h) -1.0)

@@ -56,7 +56,7 @@ class Canvas(app.Canvas):
     # ---------------------------------
     def __init__(self):
         app.Canvas.__init__(self)
-        self.geometry = (0,0,1000,1000)
+        self.size = 1000,1000
 
         self.program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
                                            oogl.FragmentShader(FRAG_SHADER) )
