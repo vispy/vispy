@@ -20,14 +20,14 @@ ShaderProgram object.
 Example::
     
     # Init
-    program = ShaderProgram(...)
-    program.attributes['a_position'] = VertexBuffer(my_positions_array)
+    program = oogl.Program(...)
+    program['a_position'] = oogl.VertexBuffer(my_positions_array)
     
     ...
     
     # Paint event handler
     with program:
-        program.uniforms['u_color'] = 0.0, 1.0, 0.0
+        program['u_color'] = 0.0, 1.0, 0.0
         program.draw_arrays(gl.GL_TRIANGLES)
 
 
@@ -35,7 +35,7 @@ The oogl classes:
     
   * :class:`ShaderProgram`
   * :class:`FragmentShader` and :class:`VertexShader`
-  * :class:`VertexBuffer` and :class:`ElementBuffer`
+  * :class:`ClientArray`, :class:`VertexBuffer` and :class:`ElementBuffer`
   * :class:`Texture2D`, :class:`Texture3D`, :class:`TextureCubeMap`
   * :class:`FrameBuffer`
   * :class:`RenderBuffer`
@@ -47,11 +47,9 @@ The oogl classes:
     progress and there are yet a few known limitations. Most notably:
     
       * TextureCubeMap is not yet implemented
-      * FBO's can only to 2D textures (not 3D textures or cube maps)
+      * FBO's can only do 2D textures (not 3D textures or cube maps)
       * Sharing of Shaders and RenderBuffers (between multiple ShaderProgram and
         FrameBuffers, respecitively) is not well supported.
-      * We're having some problems with point sprites due to incompatibilities
-        between OpenGL ES 2.0 and normal OpenGL.
       * There is no support for texture mipmapping yet
       * No support for compressed textures.
       * Besides the above, there might be the occasional bug, please report!

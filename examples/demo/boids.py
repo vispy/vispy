@@ -74,11 +74,6 @@ class Canvas(app.Canvas):
         
         # Create program
         self._program = oogl.Program(VERT_SHADER, FRAG_SHADER)
-        
-        # Init variables to prevent warning message
-        self._program['u_size'] = 4.0
-        self._program['u_color'] = 0.0, 1.0, 1.0
-        self._program['position'] = oogl.ClientArray(boids['position'])
     
     def on_initialize(self, event):
         gl.glClearColor(0,0,0,1);

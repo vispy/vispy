@@ -21,8 +21,6 @@ from .texture import Texture, Texture2D, TextureCubeMap, Texture3D
 from vispy.util.six import string_types
 
 # todo: support arrays of uniforms
-# todo: is the association of attributes and uniforms ok now?
-
 
 gl_typeinfo = {
     gl.GL_FLOAT        : ( 1, gl.GL_FLOAT,        np.float32),      
