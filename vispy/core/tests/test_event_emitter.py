@@ -1,4 +1,4 @@
-from vispy.event import Event, EventEmitter
+from vispy.core.event import Event, EventEmitter
 import unittest
 import copy
 import functools
