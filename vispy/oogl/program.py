@@ -26,7 +26,10 @@ from vispy.util.six import string_types
 
 
 
-class ProgramException(Exception):
+class ProgramError(RuntimeError):
+    """ Raised when something goes wrong that depens on state that was set 
+    earlier (due to deferred loading).
+    """
     pass
 
 
@@ -467,9 +470,9 @@ class Program(GLObject):
         
         # Check if we have something to link
         if not self._verts:
-            raise ProgramException("No vertex shader has been given")
+            raise ProgramError("No vertex shader has been given")
         if not self._frags:
-            raise ProgramException("No fragment shader has been given")
+            raise ProgramError("No fragment shader has been given")
         
         # Detach any attached shaders
         attached = gl.glGetAttachedShaders(self._handle)
@@ -484,7 +487,7 @@ class Program(GLObject):
         # Only proceed if all shaders compiled ok
         oks = [shader._valid for shader in self.shaders]
         if not (oks and all(oks)):
-            raise ProgramExceptionr('Shaders did not compile.')
+            raise ProgramErrorr('Shaders did not compile.')
         
         # Link the program
         # todo: should there be a try-except around this?
@@ -493,7 +496,7 @@ class Program(GLObject):
             errors = gl.glGetProgramInfoLog(self._handle)
             print(errors)
             #parse_shader_errors(errors)
-            raise ProgramException('Linking error')
+            raise ProgramError('Linking error')
         
         # Mark all active attributes and uniforms
         self._mark_active_attributes()
@@ -509,7 +512,7 @@ class Program(GLObject):
         Can only be called while Program is active.
         """
         if not self._active:
-            raise ProgramException("Program cannot enable an object if not self being enabled.")
+            raise ProgramError("Program cannot enable an object if not self being enabled.")
         object.activate()
         self._activated_objects.append(object)
     
@@ -531,7 +534,7 @@ class Program(GLObject):
         """
         # Check
         if not self._active:
-            raise ProgramException('ShaderProgram must be active when drawing.')
+            raise ProgramError('ShaderProgram must be active when drawing.')
         
         # Prepare
         refcount = self._get_vertex_count()
@@ -543,7 +546,7 @@ class Program(GLObject):
         
         # Check if we know count
         if count is None:
-            raise ProgramException("Could not determine element count for draw.")
+            raise ProgramError("Could not determine element count for draw.")
         
         # Draw
         gl.glDrawArrays(mode, first, count)
@@ -589,7 +592,7 @@ class Program(GLObject):
         """
         # Check
         if not self._active:
-            raise ProgramException('Program must be active for drawing.')
+            raise ProgramError('Program must be active for drawing.')
         
         # Prepare and draw
         if isinstance(indices, ElementBuffer):

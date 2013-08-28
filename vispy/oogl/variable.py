@@ -45,7 +45,10 @@ gl_typeinfo = {
     gl.GL_SAMPLER_CUBE : ( 1, gl.GL_UNSIGNED_INT, np.uint32), }
 
 
-class VariableException(Exception):
+class VariableError(RuntimeError):
+    """ Raised when something goes wrong that depens on state that was set 
+    earlier (due to deferred loading).
+    """
     pass
 
 
@@ -215,7 +218,7 @@ class Uniform(Variable):
         
         # Check active status (mandatory)
         if self._loc is None:
-            raise VariableException("Uniform is not active")
+            raise VariableError("Uniform is not active")
         
         # todo: WARNING : Uniform are supposed to keep their value between program
         #           activation/deactivation (from the GL documentation). It has
@@ -343,7 +346,7 @@ class Attribute(Variable):
         
         # Check active status (mandatory)
         if self._loc is None:
-            raise VariableException("Attribute is not active")
+            raise VariableError("Attribute is not active")
         
         
         # Generic vertex attribute (all vertices receive the same value)

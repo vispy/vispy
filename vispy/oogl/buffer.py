@@ -14,6 +14,12 @@ from vispy.oogl import GLObject
 from vispy.oogl import ext_available
 
 
+class BufferError(RuntimeError):
+    """ Raised when something goes wrong that depens on state that was set 
+    earlier (due to deferred loading).
+    """
+    pass
+
 
 # ------------------------------------------------------------ Buffer class ---
 class Buffer(GLObject):

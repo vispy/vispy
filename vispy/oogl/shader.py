@@ -21,7 +21,10 @@ from vispy.util.six import string_types, text_type
 from . import GLObject, ext_available
 
 
-class ShaderException(Exception):
+class ShaderError(RuntimeError):
+    """ Raised when something goes wrong that depens on state that was set 
+    earlier (due to deferred loading).
+    """
     pass
 
 
@@ -206,7 +209,7 @@ class Shader(GLObject):
             print( "Error compiling shader %r" % self )
             errors = gl.glGetShaderInfoLog(self._handle)
             parse_shader_errors(errors, self._code)
-            raise ShaderException("Shader compilation error")
+            raise ShaderError("Shader compilation error")
 
 
 

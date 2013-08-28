@@ -34,6 +34,12 @@ DTYPES = {  'uint8': gl.GL_UNSIGNED_BYTE,
         }
 
 
+class TextureError(RuntimeError):
+    """ Raised when something goes wrong that depens on state that was set 
+    earlier (due to deferred loading).
+    """
+    pass
+
 
 class Texture(GLObject):
     """ Representation of an OpenGL texture. 
@@ -356,7 +362,7 @@ class Texture(GLObject):
         # If we use a 3D texture, we need an extension
         if self._target == gl.ext.GL_TEXTURE_3D:
             if not ext_available('GL_texture_3D'):
-                raise RuntimeError('3D Texture not available.')
+                raise TextureError('3D Texture not available.')
         
         # Need to update data?
         if self._pending_data:
@@ -377,7 +383,7 @@ class Texture(GLObject):
         
         # Check
         if not gl.glIsTexture(self._handle): 
-            raise RuntimeError('This should not happen (texture is invalid)')
+            raise TextureError('This should not happen (texture is invalid)')
         
         # Need to update any parameters?
         self._activate()
@@ -408,7 +414,7 @@ class Texture(GLObject):
             # Set shape
             shape = data
         else:
-            raise RuntimeError('data is not a valid type, should not happen!')
+            raise TextureError('data is not a valid type, should not happen!')
         
         # Determine format (== internalformat) 
         if format is None:
@@ -418,7 +424,7 @@ class Texture(GLObject):
             # Update: fast!
             gl.glBindTexture(self._target, self._handle)
             if self._handle <= 0 or not gl.glIsTexture(self._handle):
-                raise ValueError('Cannot update texture if there is no texture.')
+                raise TextureError('Cannot update texture if there is no texture.')
             self._upload_subdata(data, offset, format, level)
             
         else:
@@ -475,7 +481,7 @@ class Texture(GLObject):
         # Determine type
         thetype = data.dtype.name
         if not thetype in DTYPES: # Note that we convert if necessary in Texture
-            raise ValueError("Cannot translate datatype %s to GL." % thetype)
+            raise TextureError("Cannot translate datatype %s to GL." % thetype)
         gltype = DTYPES[thetype]
         
         # Build args list
@@ -521,7 +527,7 @@ class Texture(GLObject):
         # Determine type
         thetype = data.dtype.name
         if not thetype in DTYPES: # Note that we convert if necessary in Texture
-            raise ValueError("Cannot translate datatype %s to GL." % thetype)
+            raise TextureError("Cannot translate datatype %s to GL." % thetype)
         gltype = DTYPES[thetype]
         # Done
         return size, gltype
@@ -601,7 +607,7 @@ def get_format(shape, target):
         elif len(shape)==3 and shape[2]==4:
             format = gl.GL_RGBA
         else:
-            raise ValueError("Cannot determine format: data of invalid shape.")
+            raise TextureError("Cannot determine format: data of invalid shape.")
     
     elif target == gl.ext.GL_TEXTURE_3D:
         if len(shape)==3:
@@ -615,10 +621,10 @@ def get_format(shape, target):
         elif len(shape)==4 and shape[3]==4:
             format = gl.GL_RGBA
         else:
-            raise ValueError("Cannot determine format: data of invalid shape.")
+            raise TextureError("Cannot determine format: data of invalid shape.")
     
     else:
-        raise ValueError("Cannot determine format with these dimensions.")
+        raise TextureError("Cannot determine format with these dimensions.")
     
     return format
 
@@ -676,7 +682,7 @@ def convert_data(data, clim=None):
             clim = 0, max//2
         data = data.astype(np.float32)
     else:
-        raise RuntimeError('Could not convert data type %s.' % data.dtype.name)
+        raise TextureError('Could not convert data type %s.' % data.dtype.name)
     
     # Apply limits if necessary
     if clim is not None:
@@ -704,7 +710,7 @@ def convert_data(data, clim=None):
         data[data>256.0] = 256.0
         data = data.astype(np.uint8)
     else:
-        raise RuntimeError('Error converting data type. This should not happen.')
+        raise TextureError('Error converting data type. This should not happen.')
     
     # Done
     return data

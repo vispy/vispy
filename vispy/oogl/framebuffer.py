@@ -22,7 +22,16 @@ from . import Texture2D
 # Same for Shader class.
 # todo: support for 3D texture (need extension)
 # todo: support Cubemap
-        
+
+
+class FrameBufferError(RuntimeError):
+    """ Raised when something goes wrong that depens on state that was set 
+    earlier (due to deferred loading).
+    """
+    pass
+
+
+
 class RenderBuffer(GLObject):
     """ Representation of a render buffer, to be attached to a
     FrameBuffer object.
@@ -128,7 +137,7 @@ class RenderBuffer(GLObject):
         # Check size
         MAX = gl.glGetIntegerv(gl.GL_MAX_RENDERBUFFER_SIZE)
         if shape[0] > MAX or shape[1] > MAX:
-            raise RuntimeError('Cannot create a render buffer of %ix%i (max is %i).' % (shape[1], shape[0], MAX))
+            raise FrameBufferError('Cannot create a render buffer of %ix%i (max is %i).' % (shape[1], shape[0], MAX))
         # Set 
         gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, format, shape[1], shape[0])
     
@@ -308,7 +317,7 @@ class FrameBuffer(GLObject):
                     gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, attachment,
                                     object._target, object.handle, level)
             else:
-                raise RuntimeError('Invalid attachment. This should not happen.')
+                raise FrameBufferError('Invalid attachment. This should not happen.')
         
         # Check
         if True:
@@ -316,16 +325,16 @@ class FrameBuffer(GLObject):
             if res == gl.GL_FRAMEBUFFER_COMPLETE:
                 pass
             elif res == 0:
-                raise RuntimeError('Target not equal to GL_FRAMEBUFFER')
+                raise FrameBufferError('Target not equal to GL_FRAMEBUFFER')
             elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-                raise RuntimeError('FrameBuffer attachments are incomplete.')
+                raise FrameBufferError('FrameBuffer attachments are incomplete.')
             elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-                raise RuntimeError('No valid attachments in the FrameBuffer.')
+                raise FrameBufferError('No valid attachments in the FrameBuffer.')
             elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
-                raise RuntimeError('attachments do not have the same width and height.')   
+                raise FrameBufferError('attachments do not have the same width and height.')   
             #elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS:  # Not in our namespace?
-            #    raise RuntimeError('Internal format of attachment is not renderable.')
+            #    raise FrameBufferError('Internal format of attachment is not renderable.')
             elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
-                raise RuntimeError('Combination of internal formats used by attachments is not supported.')
+                raise FrameBufferError('Combination of internal formats used by attachments is not supported.')
     
 
