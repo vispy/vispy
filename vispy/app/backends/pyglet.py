@@ -9,7 +9,7 @@ vispy backend for pyglet.
 # absolute import is important here, since this module is called pyglet :)
 from __future__ import print_function, division, absolute_import
 
-from vispy.event import Event
+from vispy.core.event import Event
 from vispy import app
 from vispy import keys
 import vispy
@@ -198,7 +198,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.resize(size=(w,h))
-        self._vispy_update()
+        #self._vispy_update()
     
     def our_paint_func(self, dummy=None):
         if not self._draw_ok or self._vispy_canvas is None:

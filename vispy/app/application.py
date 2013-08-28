@@ -148,6 +148,7 @@ class Application(object):
             # Get backend module name
             mod_name = 'vispy.app.backends.' + module_name
             # Try to import it ...
+
             try:
                 ATTEMPTED_BACKENDS.append(name)
                 __import__(mod_name)

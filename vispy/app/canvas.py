@@ -11,6 +11,8 @@ import vispy
 # todo: add hover enter/exit events
 # todo: add focus events
 
+
+
 class Canvas(object):
     """ Representation of a GUI element that can be rendered to by an OpenGL
     context. The args and kwargs are used to instantiate the native widget.
@@ -148,31 +150,9 @@ class Canvas(object):
         # Connect
         emitter.connect(fun)
     
-    
-    # @property
-    # def geometry(self):
-    #     """ Get or set the location and size of the Canvas in window
-    #     coordinates (x, y, width, height). When setting, width and
-    #     height may be omitted. Similarly, specifying None for x and y
-    #     will prevent the widget from being moved.
-    #     """
-    #     return self._backend._vispy_get_geometry()
-    
-    # @geometry.setter
-    # def geometry(self, args):
-    #     if len(args) == 2:
-    #         self._backend._vispy_set_location(*args)
-    #     elif len(args) == 4:
-    #         cur = self._backend._vispy_get_geometry()
-    #         if args[:2] != cur[:2] and not None in args[:2]:
-    #             self._backend._vispy_set_location(args[0], args[1])
-    #         if args[2:] != cur[2:] and not None in args[2:]:
-    #             self._backend._vispy_set_size(args[2], args[3])
-    #     else:
-    #         raise ValueError('Setting geometry requires 2 or 4 values.')
 
 
-    # ---------------------------------
+    # ---------------------------------------------------------------- size ---
     def _get_size(self):
         """ Get size of canvas/window """
         return self._backend._vispy_get_size()
@@ -182,7 +162,7 @@ class Canvas(object):
     size = property(_get_size, _set_size,
                     "Size of the canvas/window")
 
-    # ---------------------------------
+    # ------------------------------------------------------------ position ---
     def _get_position(self):
         """ Get position of canvas/window relative to screen """
         return self._backend._vispy_get_position()
@@ -191,67 +171,53 @@ class Canvas(object):
         return self._backend._vispy_set_position(position[0],position[1])
     position = property(_get_position, _set_position,
                         "Position of the canvas/window")
+
+    # --------------------------------------------------------------- title ---
+    def _get_title(self):
+        """ Get title of canvas/window """
+        return self._title
+    def _set_title(self, title):
+        """ Set title of canvas/window """
+        self._title = title
+        self._backend._vispy_set_title(title)
+    title = property(_get_title, _set_title,
+                        "Title of the canvas/window")
     
-    # @geometry.setter
-    # def geometry(self, args):
-    #     if len(args) == 2:
-    #         self._backend._vispy_set_location(*args)
-    #     elif len(args) == 4:
-    #         cur = self._backend._vispy_get_geometry()
-    #         if args[:2] != cur[:2] and not None in args[:2]:
-    #             self._backend._vispy_set_location(args[0], args[1])
-    #         if args[2:] != cur[2:] and not None in args[2:]:
-    #             self._backend._vispy_set_size(args[2], args[3])
-    #     else:
-    #         raise ValueError('Setting geometry requires 2 or 4 values.')
 
-
-        
     def swap_buffers(self):
         """ Swap GL buffers such that the offscreen buffer becomes visible.
         """
         #if not self._our_kwargs['autoswap']:
         self._backend._vispy_swap_buffers()
     
-#     @property
-#     def context(self):
-#         """Return the OpenGL context handle in use for this Canvas."""
-#         return self._backend._vispy_context
     
-    @property
-    def title(self):
-        """ The title of the canvas. If the canvas represents a window, the
-        title is shown in its title bar.
-        """
-        return self._title
-    
-    @title.setter
-    def title(self, title):
-        self._title = title
-        self._backend._vispy_set_title(title)
-    
-    
-#     def resize(self, w, h):
-#         """Resize the canvas to w x h pixels."""
-#         return self._backend._vispy_set_size(w, h)
-#     
-#     def move(self, x, y):
-#         """ Move the widget or window to the given location.
-#         """ 
-#         self._backend._vispy_set_location(x,y)
+    def resize(self, w, h):
+        """ Resize the canvas givan size """
+
+        return self._backend._vispy_set_size(w, h)
+
+     
+    def move(self, x, y):
+        """ Move the widget or window to the given position """ 
+
+        self._backend._vispy_set_position(x,y)
+
     
     def show(self, visible=True):
-        """ Show (or hide) the canvas.
-        """
+        """ Show (or hide) the canvas """
+
         return self._backend._vispy_set_visible(visible)
     
+
     def update(self):
-        """Inform the backend that the Canvas needs to be repainted."""
+        """ Inform the backend that the Canvas needs to be repainted """
+
         return self._backend._vispy_update()
+
     
     def close(self):
-        """ Close the canvas.
-        """
+        """ Close the canvas """
+
         self._backend._vispy_close()
     
     
@@ -357,22 +323,19 @@ class CanvasBackend(object):
         # Force the window or widget to shut down
         raise NotImplementedError()
     
-    # def _vispy_get_geometry(self):
-    #     # Should return widget (x, y, w, h)
-    #     raise NotImplementedError()
-
     def _vispy_get_size(self):
-        # Should return widget (x, y, w, h)
+        # Should return widget size
         raise NotImplementedError()
 
     def _vispy_get_position(self):
-        # Should return widget (x, y, w, h)
+        # Should return widget position
         raise NotImplementedError()
     
     def _vispy_get_native_canvas(self):
         # Should return the native widget object
         # Most backends would not need to implement this
         return self
+
 
 
 ## Event subclasses specific to the Canvas
