@@ -9,7 +9,7 @@ from __future__ import print_function, division, absolute_import
 import sys
 import numpy as np
 from vispy import gl
-from vispy.util import is_string
+from vispy.util.six import is_string
 from vispy.oogl import GLObject
 from vispy.oogl import ext_available
 
@@ -204,22 +204,34 @@ class VertexBuffer(Buffer):
     # ---------------------------------
     def __setitem__(self, key, data):
         """ """
+        # todo: you probably want to cast the data to the same internal dtype
 
         # Is this buffer a view on another ?
         if self._base is not None:
             raise ValueError("Can set data on buffer views.")
-
+        
+        # Deal with slices that have None or negatives in them
+        if isinstance(key, slice):
+            start = key.start or 0
+            if start < 0:
+                start = self._itemsize + start
+            step = key.step or 1
+            assert step > 0
+            stop = key.stop or self._itemsize
+            if stop < 0:
+                stop = self._itemsize + stop
+        
         # Check ellipsis (... notation)
         if key == Ellipsis:
             offset = 0
             count  = data.nbytes
         # If key is not a slice
-        elif not isinstance(key, slice) or key.step > 1:
+        elif not isinstance(key, slice) or step > 1:
             raise ValueError("Can only set contiguous block of data.")
         # Else we're happy
         else:
-            offset = key.start * self._itemsize
-            count  = (key.stop - key.start) * self._itemsize
+            offset = start * self._itemsize
+            count  = (stop - start) * self._itemsize
 
         # Check we have the right amount of data
         if data.nbytes < count:

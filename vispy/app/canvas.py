@@ -32,6 +32,10 @@ class Canvas(object):
         (vispy.app is used by default.)
     create_native :: bool
         Whether to create the widget immediately. Default True.
+    size :: (width, height)
+        The size of the window.
+    position :: (x, y)
+        The position of the window in screen coordinates.
     show :: bool
         Whether to show the widget immediately. Default False.
     autoswap :: bool
@@ -67,6 +71,8 @@ class Canvas(object):
         self._our_kwargs['title'] = kwargs.pop('title', 'Vispy canvas')
         self._our_kwargs['show'] = kwargs.pop('show', False)
         self._our_kwargs['autoswap'] = kwargs.pop('autoswap', True)
+        self._our_kwargs['size'] = kwargs.pop('size', (800,600))
+        self._our_kwargs['position'] = kwargs.pop('position', None)
         
         # Initialise some values
         self._title = ''
@@ -92,10 +98,6 @@ class Canvas(object):
             # Instantiate the backed with the right class
             self._set_backend(self._app.backend_module.CanvasBackend(*self._args, **self._kwargs))
 
-            # Set initial size. Let OS determine location
-            # self.geometry = None, None, 560, 420 
-            self.size = 800, 600
-
             # Clean up
             del self._args 
             del self._kwargs
@@ -109,6 +111,9 @@ class Canvas(object):
         
         # Initialize it
         self.title = self._our_kwargs['title']
+        self.size = self._our_kwargs['size']
+        if self._our_kwargs['position']:
+            self.position = self._our_kwargs['position']
         if self._our_kwargs['autoswap']:
             fun = lambda x:self._backend._vispy_swap_buffers()
             self.events.paint.callbacks.append(fun)  # Append callback to end
@@ -170,7 +175,7 @@ class Canvas(object):
         return self._backend._vispy_get_position()
         
     @position.setter
-    def position(self):
+    def position(self, position):
         return self._backend._vispy_set_position(position[0],position[1])
 
     # --------------------------------------------------------------- title ---

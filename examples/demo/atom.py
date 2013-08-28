@@ -118,11 +118,8 @@ void main()
 class Canvas(app.Canvas):
 
     # ---------------------------------
-    def __init__(self):
-        app.Canvas.__init__(self)
-        self.title = "Atom [zoom with mouse scroll]"
-        self.size = 800,800
-
+    def __init__(self, **kwargs):
+        
         self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
         
         # Set uniform and attribute
@@ -149,6 +146,9 @@ class Canvas(app.Canvas):
         self.timer = app.Timer(1.0/400)
         self.timer.connect(self.on_timer)
         self.timer.start()
+        
+        # Initialize for real
+        app.Canvas.__init__(self, **kwargs)
 
     # ---------------------------------
     def on_initialize(self, event):
@@ -218,6 +218,6 @@ class Canvas(app.Canvas):
 
 
 if __name__ == '__main__':
-    c = Canvas()
-    c.show()
+    c = Canvas(show=True, size=(600,600), title="Atom [zoom with mouse scroll]")
+    #c.show()
     app.run()
