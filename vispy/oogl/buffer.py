@@ -10,8 +10,8 @@ import sys
 import numpy as np
 from vispy import gl
 from vispy.util.six import string_types
-from vispy.oogl import GLObject
-from vispy.oogl import ext_available
+from . import GLObject
+from . import ext_available
 
 
 class BufferError(RuntimeError):
@@ -105,36 +105,24 @@ class Buffer(GLObject):
         self._pending_data.append( (data, count, offset) )
         self._need_update = True
 
-    
-    # ---------------------------------    
+   
     def _create(self):
-        """ Create buffzr on GPU """
-        if not self._handle:
-            self._handle = gl.glGenBuffers(1)
-            self._valid = True
-
-
-    # ---------------------------------
+        """ Create buffer on GPU """
+        self._handle = gl.glGenBuffers(1)
+    
+    
     def _delete(self):
         """ Delete buffer from GPU """
-
-        if self._handle:
-            gl.glDeleteBuffers(1 , [self._handle])
-            self._handle = 0
-            self._valid = False
+        gl.glDeleteBuffers(1 , [self._handle])
+        
     
-    
-    # ---------------------------------
     def _activate(self):
         """ Bind the buffer to some target """
-
         gl.glBindBuffer(self._target, self._handle)
     
-
-    # ---------------------------------
+    
     def _deactivate(self):
         """ UnBind the buffer to some target """
-
         gl.glBindBuffer(self._target, 0)
 
     
@@ -235,6 +223,8 @@ class ClientArray(object):
     
     @property
     def data(self):
+        """ The underlying numpy array.
+        """
         return self._data
     
     def __len__(self):
@@ -438,6 +428,7 @@ class ElementBuffer(Buffer):
         
         # Set data?
         if data is not None:
+            self.set_size(data.nbytes)
             self.set_data(data)
     
     
