@@ -204,19 +204,12 @@ class Program(GLObject):
         This is the preferred way for the user to set uniforms and attributes.
         """
         if name in self._uniforms.keys():
-            # Set data
+            # Set data and invalidate vertex count
             self._uniforms[name].set_data(data)
-            # If program is currently in use, we upload immediately the data
-            if self._active and name in self._active_uniforms:
-               self._uniforms[name].upload(self)
-            # Invalidate vertex count
             self._vertex_count = None
         elif name in self._attributes.keys():
             # Set data
             self._attributes[name].set_data(data)
-            # If program is currently in use, we upload immediately the data
-            if self._active and name in self._active_attributes:
-               self._attributes[name].upload(self)
         else:
             raise NameError("Unknown uniform or attribute: %s" % name)
     
@@ -442,15 +435,6 @@ class Program(GLObject):
         # Mark as enabled, prepare to enable other objects
         self._active = True
         self._activated_objects = []
-        
-        # todo: perhaps we should just move this to the draw method.
-        # because if we reset attribute/uniforms inside the with
-        # statement (i.e. when Program is actiavted) we do some stuff twice
-        
-        # Upload any attributes and uniforms if necessary
-        for variable in (self.attributes + self.uniforms):
-            if variable.active:
-                variable.upload(self)
     
     
     def _deactivate(self):
@@ -536,6 +520,11 @@ class Program(GLObject):
         if not self._active:
             raise ProgramError('ShaderProgram must be active when drawing.')
         
+        # Upload any attributes and uniforms if necessary
+        for variable in (self.attributes + self.uniforms):
+            if variable.active:
+                variable.upload(self)
+        
         # Prepare
         refcount = self._get_vertex_count()
         if count is None:
@@ -593,6 +582,11 @@ class Program(GLObject):
         # Check
         if not self._active:
             raise ProgramError('Program must be active for drawing.')
+        
+        # Upload any attributes and uniforms if necessary
+        for variable in (self.attributes + self.uniforms):
+            if variable.active:
+                variable.upload(self)
         
         # Prepare and draw
         if isinstance(indices, ElementBuffer):
