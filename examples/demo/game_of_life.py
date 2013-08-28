@@ -113,7 +113,7 @@ class Canvas(app.Canvas):
         
         
         # Set uniforms and attributes
-        self._program.set_var(self._vbo)
+        self._program.set_vars(self._vbo)
         self._program['u_texsize'] = im1.shape[1], im1.shape[0]
     
     

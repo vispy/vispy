@@ -77,7 +77,7 @@ class Canvas(app.Canvas):
         # We create one VBO with all vertex data (array of structures)
         # and create two views from it for the attributes.
         self._program['texture1'] = oogl.Texture2D(im1)
-        self._program.set_var(self._vbo)  # This does: 
+        self._program.set_vars(self._vbo)  # This does: 
         #self._program['a_position'] = self._vbo['a_position']
         #self._program['a_texcoords'] = self._vbo['a_texcoords']
         

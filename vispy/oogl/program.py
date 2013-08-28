@@ -218,10 +218,11 @@ class Program(GLObject):
             raise NameError("Unknown uniform or attribute: %s" % name)
     
     
-    def set_var(self, *structured_vars, **keyword_vars):
-        """ Set attribute data. This method accepts dictionary-like
-        arguments (like numpy structured arrays), for which each element
-        will be applied.
+    def set_vars(self, vars=None, **keyword_vars):
+        """ Set variables from a dict-like object. vars can be a dict
+        or a structured numpy array. This is a convenience function
+        that is more or less equivalent to:
+        ``for name in vars: program[name] = vars[name]``
         
         """
         D = {}
@@ -229,35 +230,35 @@ class Program(GLObject):
         # Process kwargs
         D.update(keyword_vars)
         
-        # Process structured data
-        for data in structured_vars:
-            
-            if isinstance(data, np.ndarray):
-                # Structured array
-                if data.dtype.fields:
-                    print("Warning: attribute data given as a structured " +
-                          "array, you probably want to use a VertexBuffer.")
-                    for k in data.dtype.fields:
-                        D[k] = data[k]
-                else:
-                    raise ValueError("Program.set_attr accepts a structured " +
-                        "array, but normal arrays must be given as keyword args.")
-            
-            elif isinstance(data, VertexBuffer):
-                # Vertex buffer
-                if isinstance(data.type, dict):
-                    for k in data.type:
-                        D[k] = data[k]
-                else:
-                    raise ValueError('Can only set attributes with a ' + 
-                                        'structured VertexBuffer.')
-            
-            elif isinstance(data, dict):
-                # Dict
-                D.update(data)
+        # Process vars
+        if vars is None:
+            pass
+        elif isinstance(vars, np.ndarray):
+            # Structured array
+            if vars.dtype.fields:
+                print("Warning: attribute data given as a structured " +
+                        "array, you probably want to use a VertexBuffer.")
+                for k in vars.dtype.fields:
+                    D[k] = vars[k]
             else:
-                raise ValueError("Don't know how to use attribute of type %r" %
-                                        type(data))
+                raise ValueError("Program.set_attr accepts a structured " +
+                    "array, but normal arrays must be given as keyword args.")
+        
+        elif isinstance(vars, VertexBuffer):
+            # Vertex buffer
+            if isinstance(vars.type, dict):
+                for k in vars.type:
+                    D[k] = vars[k]
+            else:
+                raise ValueError('Can only set attributes with a ' + 
+                                    'structured VertexBuffer.')
+        
+        elif isinstance(vars, dict):
+            # Dict
+            D.update(vars)
+        else:
+            raise ValueError("Don't know how to use attribute of type %r" %
+                                        type(vars))
         
         # Apply each
         for name, data in D.items():
