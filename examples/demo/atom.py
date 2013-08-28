@@ -13,7 +13,7 @@ from OpenGL import GL
 from vispy import oogl
 from vispy import app
 from vispy import gl
-from transforms import perspective, translate, rotate
+from vispy.util.transforms import perspective, translate, rotate
 
 
 n = 250

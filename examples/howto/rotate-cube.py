@@ -7,7 +7,7 @@ You should see a colored outlined spinning cube.
 
 import numpy as np
 from vispy import app, gl, oogl
-from transforms import perspective, translate, rotate
+from vispy.util.transforms import perspective, translate, rotate
 
 
 vert = """
@@ -95,18 +95,16 @@ class Canvas(app.Canvas):
         
         self.vertices, self.filled, self.outline = cube()
 
-        self.program = oogl.ShaderProgram(oogl.VertexShader(vert), 
-                                          oogl.FragmentShader(frag) )
-        self.program.attributes['a_color']    = self.vertices['a_color']
-        self.program.attributes['a_position'] = self.vertices['a_position']
+        self.program = oogl.Program(vert, frag)
+        self.program.set_vars(oogl.VertexBuffer(self.vertices))
 
         self.view       = np.eye(4,dtype=np.float32)
         self.model      = np.eye(4,dtype=np.float32)
         self.projection = np.eye(4,dtype=np.float32)
 
         translate(self.view, 0,0,-5)
-        self.program.uniforms['u_model'] = self.model
-        self.program.uniforms['u_view'] = self.view
+        self.program['u_model'] = self.model
+        self.program['u_view'] = self.view
 
         self.theta = 0
         self.phi = 0
@@ -130,7 +128,7 @@ class Canvas(app.Canvas):
         self.model = np.eye(4, dtype=np.float32)
         rotate(self.model, self.theta, 0,0,1)
         rotate(self.model, self.phi,   0,1,0)
-        self.program.uniforms['u_model'] = self.model
+        self.program['u_model'] = self.model
         self.update()
 
 
@@ -139,7 +137,7 @@ class Canvas(app.Canvas):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
         self.projection = perspective( 45.0, width/float(height), 2.0, 10.0 )
-        self.program.uniforms['u_projection'] = self.projection
+        self.program['u_projection'] = self.projection
 
     # ---------------------------------
     def on_paint(self, event):
@@ -150,7 +148,7 @@ class Canvas(app.Canvas):
             gl.glDisable( gl.GL_BLEND )
             gl.glEnable( gl.GL_DEPTH_TEST )
             gl.glEnable( gl.GL_POLYGON_OFFSET_FILL )
-            prog.uniforms['u_color'] = 1,1,1,1
+            prog['u_color'] = 1,1,1,1
             prog.draw_elements(gl.GL_TRIANGLES, self.filled)
 
         # Outline
@@ -158,7 +156,7 @@ class Canvas(app.Canvas):
             gl.glDisable( gl.GL_POLYGON_OFFSET_FILL )
             gl.glEnable( gl.GL_BLEND )
             gl.glDepthMask( gl.GL_FALSE )
-            prog.uniforms['u_color'] = 0,0,0,1
+            prog['u_color'] = 0,0,0,1
             prog.draw_elements(gl.GL_LINES, self.outline)
             gl.glDepthMask( gl.GL_TRUE )        
 

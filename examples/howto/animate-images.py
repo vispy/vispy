@@ -11,7 +11,7 @@ Example demonstrating showing a, image with a fixed ratio.
 import time
 import numpy as np
 
-from transforms import ortho
+from vispy.util.transforms import ortho
 from vispy import oogl
 from vispy import app
 from vispy import gl
@@ -68,23 +68,21 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         self.size = W*5,H*5
 
-        self.program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
-                                            oogl.FragmentShader(FRAG_SHADER) )
+        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
         self.texture = oogl.Texture2D(I)
         self.texture.set_filter(gl.GL_NEAREST, gl.GL_NEAREST)
         
-        self.program.uniforms['u_texture'] = self.texture
-        self.program.attributes['a_position'] = data['a_position']
-        self.program.attributes['a_texcoord'] = data['a_texcoord']
+        self.program['u_texture'] = self.texture
+        self.program.set_vars(oogl.VertexBuffer(data))
 
         self.view = np.eye(4,dtype=np.float32)
         self.model = np.eye(4,dtype=np.float32)
         self.projection = np.eye(4,dtype=np.float32)
 
-        self.program.uniforms['u_model'] = self.model
-        self.program.uniforms['u_view'] = self.view
+        self.program['u_model'] = self.model
+        self.program['u_view'] = self.view
         self.projection = ortho(0, W, 0, H, -1, 1)
-        self.program.uniforms['u_projection'] = self.projection
+        self.program['u_projection'] = self.projection
     
     def on_initialize(self, event):
         gl.glClearColor(1,1,1,1)
@@ -93,7 +91,7 @@ class Canvas(app.Canvas):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
         self.projection = ortho( 0, width, 0, height, -100, 100 )
-        self.program.uniforms['u_projection'] = self.projection
+        self.program['u_projection'] = self.projection
 
         # Compute thje new size of the quad 
         r = width/float(height)
@@ -105,7 +103,7 @@ class Canvas(app.Canvas):
             w,h = height*R, height
             x,y = int((width-w)/2), 0
         data['a_position'] = np.array([[x, y], [x+w, y], [x, y+h], [x+w, y+h]])
-        self.program.attributes['a_position'] = data['a_position']
+        self.program.set_vars(oogl.VertexBuffer(data))
 
     
     def on_paint(self, event):

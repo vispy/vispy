@@ -20,7 +20,7 @@ a_size  = np.random.uniform(5,10,(n,1)).astype(np.float32)
 u_linewidth = 1.0
 u_antialias = 1.0
 
-from transforms import perspective, translate, rotate
+from vispy.util.transforms import perspective, translate, rotate
 
 
 VERT_SHADER = """

@@ -8,7 +8,7 @@ from OpenGL import GL
 from vispy import oogl
 from vispy import app
 from vispy import gl
-from transforms import perspective, translate, rotate
+from vispy.util.transforms import perspective, translate, rotate
 
 #app.use('glut')
 
@@ -58,11 +58,11 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         self.size = 1000,1000
 
-        self.program = oogl.ShaderProgram( oogl.VertexShader(VERT_SHADER), 
-                                           oogl.FragmentShader(FRAG_SHADER) )
+        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
+        
         # Set uniform and attribute
-        self.program.attributes['a_id'] = a_id
-        self.program.attributes['a_position'] = a_position
+        self.program['a_id'] = oogl.VertexBuffer(a_id)
+        self.program['a_position'] = oogl.VertexBuffer(a_position)
 
         self.view       = np.eye(4,dtype=np.float32)
         self.model      = np.eye(4,dtype=np.float32)
@@ -70,8 +70,8 @@ class Canvas(app.Canvas):
 
         self.translate = 5
         translate(self.view, 0,0, -self.translate)
-        self.program.uniforms['u_model'] = self.model
-        self.program.uniforms['u_view'] = self.view
+        self.program['u_model'] = self.model
+        self.program['u_view'] = self.view
 
         self.theta = 0
         self.phi = 0
@@ -108,7 +108,7 @@ class Canvas(app.Canvas):
         self.model = np.eye(4, dtype=np.float32)
         rotate(self.model, self.theta, 0,0,1)
         rotate(self.model, self.phi,   0,1,0)
-        self.program.uniforms['u_model'] = self.model
+        self.program['u_model'] = self.model
         self.update()
 
 
@@ -117,7 +117,7 @@ class Canvas(app.Canvas):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
         self.projection = perspective( 45.0, width/float(height), 1.0, 1000.0 )
-        self.program.uniforms['u_projection'] = self.projection
+        self.program['u_projection'] = self.projection
 
 
     # ---------------------------------
@@ -126,7 +126,7 @@ class Canvas(app.Canvas):
         self.translate = max(2,self.translate)
         self.view       = np.eye(4,dtype=np.float32)
         translate(self.view, 0,0, -self.translate)
-        self.program.uniforms['u_view'] = self.view
+        self.program['u_view'] = self.view
         self.update()
 
 

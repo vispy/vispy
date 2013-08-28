@@ -84,6 +84,7 @@ class Canvas(app.Canvas):
     
     def __init__(self):
         app.Canvas.__init__(self)
+        #self.size = 500, 500
         
         # Create texture to render to
         self._rendertex = oogl.Texture2D()

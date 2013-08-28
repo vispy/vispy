@@ -6,7 +6,7 @@ Show spinning cube using VBO's, and transforms, and texturing.
 
 import numpy as np
 from vispy import app, gl, oogl, io
-from transforms import perspective, translate, rotate
+from vispy.util.transforms import perspective, translate, rotate
 
 
 VERT_CODE = """
@@ -55,14 +55,13 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, **kwargs)
         self.geometry = 0, 0, 400, 400
         
-        self.program = oogl.ShaderProgram(  oogl.VertexShader(VERT_CODE),
-                                            oogl.FragmentShader(FRAG_CODE) )
+        self.program = oogl.Program(VERT_CODE, FRAG_CODE)
         
         # Set attributes
-        self.program.attributes['a_position'] = oogl.VertexBuffer(positions)
-        self.program.attributes['a_texcoord'] = oogl.VertexBuffer(texcoords)
+        self.program['a_position'] = oogl.VertexBuffer(positions)
+        self.program['a_texcoord'] = oogl.VertexBuffer(texcoords)
         
-        self.program.uniforms['u_texture'] = oogl.Texture2D(io.crate())
+        self.program['u_texture'] = oogl.Texture2D(io.crate())
         
         # Handle transformations
         self.init_transforms()
@@ -81,7 +80,7 @@ class Canvas(app.Canvas):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
         self.projection = perspective( 45.0, width/float(height), 2.0, 10.0 )
-        self.program.uniforms['u_projection'] = self.projection
+        self.program['u_projection'] = self.projection
     
     
     def on_paint(self, event):
@@ -101,8 +100,8 @@ class Canvas(app.Canvas):
         self.phi = 0
         
         translate(self.view, 0,0,-5)
-        self.program.uniforms['u_model'] = self.model
-        self.program.uniforms['u_view'] = self.view
+        self.program['u_model'] = self.model
+        self.program['u_view'] = self.view
     
     
     def update_transforms(self,event):
@@ -111,7 +110,7 @@ class Canvas(app.Canvas):
         self.model = np.eye(4, dtype=np.float32)
         rotate(self.model, self.theta, 0,0,1)
         rotate(self.model, self.phi,   0,1,0)
-        self.program.uniforms['u_model'] = self.model
+        self.program['u_model'] = self.model
         self.update()
 
 
