@@ -84,7 +84,7 @@ class Canvas(app.Canvas):
     
     def __init__(self):
         app.Canvas.__init__(self)
-        #self.size = 500, 500
+        self.size = 560, 420
         
         # Create texture to render to
         self._rendertex = oogl.Texture2D()
@@ -118,7 +118,7 @@ class Canvas(app.Canvas):
         
         # Draw the same scene as as in hello_quad.py, but draw it to the FBO
         with self._program1 as prog:
-            prog.enable_object(self._fbo)
+            prog.activate_object(self._fbo)
             # Init
             gl.glClearColor(0,0.0,0.5,1);
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
