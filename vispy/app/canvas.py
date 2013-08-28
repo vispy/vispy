@@ -153,35 +153,36 @@ class Canvas(object):
 
 
     # ---------------------------------------------------------------- size ---
-    def _get_size(self):
-        """ Get size of canvas/window """
+    @property
+    def size(self):
+        """ The size of canvas/window """
         return self._backend._vispy_get_size()
-    def _set_size(self, size):
-        """ Set size of canvas/window """
+    
+    @size.setter
+    def size(self, size):
         return self._backend._vispy_set_size(size[0],size[1])
-    size = property(_get_size, _set_size,
-                    "Size of the canvas/window")
-
+    
+    
     # ------------------------------------------------------------ position ---
-    def _get_position(self):
-        """ Get position of canvas/window relative to screen """
+    @property
+    def position(self):
+        """ The position of canvas/window relative to screen """
         return self._backend._vispy_get_position()
-    def _set_position(self, position):
-        """ Set size of canvas/window realtive to screen """
+        
+    @position.setter
+    def position(self):
         return self._backend._vispy_set_position(position[0],position[1])
-    position = property(_get_position, _set_position,
-                        "Position of the canvas/window")
 
     # --------------------------------------------------------------- title ---
-    def _get_title(self):
-        """ Get title of canvas/window """
+    @property
+    def title(self):
+        """ The title of canvas/window """
         return self._title
-    def _set_title(self, title):
-        """ Set title of canvas/window """
+    
+    @title.setter
+    def title(self, title):
         self._title = title
         self._backend._vispy_set_title(title)
-    title = property(_get_title, _set_title,
-                        "Title of the canvas/window")
     
 
     def swap_buffers(self):

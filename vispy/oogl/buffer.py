@@ -56,14 +56,10 @@ class Buffer(GLObject):
 
     
     # ---------------------------------
-    def _get_size(self):
-        """ Get buffer bytesize """
-
+    @property
+    def size(self):
+        """ The buffer bytesize. """
         return self._size
-
-    size = property(_get_size,
-                    doc = "Buffer byte size")
-
 
     # ---------------------------------
     def set_size(self, size):
