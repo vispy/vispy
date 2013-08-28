@@ -43,7 +43,7 @@ class Canvas(app.Canvas):
         
         # Set uniform and attribute
         self._program['u_color'] = 0.2, 1.0, 0.4, 1
-        self._program['a_position'] = vPosition
+        self._program['a_position'] = oogl.VertexBuffer(vPosition)
     
     
     def on_initialize(self, event):

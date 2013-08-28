@@ -164,9 +164,9 @@ class Canvas(app.Canvas):
         self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
         
         # Set uniform and attribute
-        self.program['a_position'] = a_position
-        self.program['a_dist']     = a_dist
-        self.program['a_size']     = a_size
+        self.program['a_position'] = oogl.ClientArray(a_position)
+        self.program['a_dist']     = oogl.ClientArray(a_dist)
+        self.program['a_size']     = oogl.ClientArray(a_size)
         self.program['u_colormap'] = oogl.Texture2D(cmap)
 
         self.view       = np.eye(4,dtype=np.float32)

@@ -95,13 +95,13 @@ class Canvas(app.Canvas):
         self._program1 = oogl.Program(  oogl.VertexShader(VERT_SHADER1), 
                                         oogl.FragmentShader(FRAG_SHADER1) )
         self._program1['u_color'] = 0.9, 1.0, 0.4, 1
-        self._program1['a_position'] = vPosition
+        self._program1['a_position'] = oogl.VertexBuffer(vPosition)
         
         # Create program to render FBO result
         self._program2 = oogl.Program(  oogl.VertexShader(VERT_SHADER2), 
                                         oogl.FragmentShader(FRAG_SHADER2) )
-        self._program2['a_position'] = vPosition
-        self._program2['a_texcoord'] = vTexcoord
+        self._program2['a_position'] = oogl.VertexBuffer(vPosition)
+        self._program2['a_texcoord'] =  oogl.VertexBuffer(vTexcoord)
         self._program2['u_texture1'] = self._rendertex
     
     
@@ -113,7 +113,7 @@ class Canvas(app.Canvas):
     def on_paint(self, event):
         
         # Set geometry (is no-op if the size does not change)
-        self._fbo.set_size(*self.geometry[2:])
+        self._fbo.set_size(*self.size)
         
         # Draw the same scene as as in hello_quad.py, but draw it to the FBO
         with self._program1 as prog:

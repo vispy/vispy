@@ -126,9 +126,9 @@ class Canvas(app.Canvas):
         self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
         
         # Set uniform and attribute
-        self.program['a_color'] = a_color
-        self.program['a_position'] = a_position
-        self.program['a_rot']      = a_rot
+        self.program['a_color'] = oogl.ClientArray(a_color)
+        self.program['a_position'] = oogl.ClientArray(a_position)
+        self.program['a_rot']      = oogl.ClientArray(a_rot)
         self.program['u_linewidth']  = u_linewidth
         self.program['u_antialias']  = u_antialias
         self.program['u_size']       = u_size
@@ -212,8 +212,8 @@ class Canvas(app.Canvas):
         a_color[:,3] -= 1.0/p
         a_color[self.index::p,3] = 1
         with self.program as prog:
-            self.program['a_position'] = a_position
-            self.program['a_color'] = a_color
+            self.program['a_position'] = oogl.ClientArray(a_position)
+            self.program['a_color'] = oogl.ClientArray(a_color)
             prog.draw_arrays(gl.GL_POINTS)
 
 

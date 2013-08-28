@@ -223,10 +223,10 @@ class Canvas(app.Canvas):
 
         self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
         # Set uniform and attribute
-        self.program['a_fg_color'] = a_fg_color
-        self.program['a_bg_color'] = a_bg_color
-        self.program['a_position'] = a_position
-        self.program['a_size']     = a_size
+        self.program['a_fg_color'] = a_fg_color  # Tuple
+        self.program['a_bg_color'] = oogl.VertexBuffer(a_bg_color)
+        self.program['a_position'] = oogl.VertexBuffer(a_position)
+        self.program['a_size']     = oogl.VertexBuffer(a_size)
         self.program['u_linewidth']  = u_linewidth
         self.program['u_antialias']  = u_antialias
 

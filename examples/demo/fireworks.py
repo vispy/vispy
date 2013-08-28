@@ -97,6 +97,7 @@ class Canvas(app.Canvas):
         # Set uniforms, samplers, attributes
         self._program.set_var(self._vbo)
         self._program['s_texture'] = oogl.Texture2D(im1)
+        self._program['u_time'] = 0.0
         
         # Create first explosion
         self._new_explosion()
