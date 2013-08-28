@@ -17,9 +17,9 @@ class GLObject(object):
     OpenGL context is available yet. 
     
     There are a few exceptions, most notably when enabling an object
-    by using it as a context manager or via ShaderProgram.enable_object(), 
-    and the delete method. In these cases, the called should ensure
-    that the proper OpenGL context is current.
+    by using it as a context manager, and the delete method. In these
+    cases, the called should ensure that the proper OpenGL context is
+    current.
     """
     
     # Internal id counter to keep track of created objects

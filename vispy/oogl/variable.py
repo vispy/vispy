@@ -176,7 +176,10 @@ class Uniform(Variable):
     
     
     def set_data(self, data):
-        """ Set data for this uniform. """
+        """ Set data for this uniform. Data can be anything that can be
+        conveted to a numpy array. If the uniform is a sampler, a Texture
+        object is required.
+        """
         
         if self._gtype in (gl.GL_SAMPLER_2D, gl.GL_SAMPLER_CUBE, gl.ext.GL_SAMPLER_3D):
             # Textures need special handling
@@ -190,10 +193,9 @@ class Uniform(Variable):
                 size, _, dtype = gl_typeinfo[self._gtype]
                 self._data = np.zeros(size, dtype)
             try:
-                if isinstance(data, np.ndarray):
-                    self._data[...] = data.ravel()  # Prevent one data copy
-                else:
-                    self._data[...] = np.array(data).ravel()
+                if not isinstance(data, np.ndarray):
+                    data = np.array(data)
+                self._data[...] = data.ravel() 
             except ValueError:
                 raise ValueError("Wrong data format for uniform %s" % self.name)
         
@@ -237,7 +239,7 @@ class Uniform(Variable):
             texture = self.data
             unit = self.texture_unit
             gl.glActiveTexture(gl.GL_TEXTURE0 + unit)
-            program.enable_object(texture)
+            program.activate_object(texture)
             # Upload uniform only of needed
             if not self._dirty:
                 return
@@ -384,9 +386,9 @@ class Attribute(Variable):
             
             # Always enable the VBO
             if isinstance(data, VertexBufferView):
-                program.enable_object(data.buffer)
+                program.activate_object(data.buffer)
             else:
-                program.enable_object(data)
+                program.activate_object(data)
             
             # Early exit
             if not self._dirty:

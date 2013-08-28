@@ -59,8 +59,8 @@ class Program(GLObject):
         GLObject.__init__(self)
         
         # Manage enabled state (i.e. activated)
-        self._enabled = False
-        self._enabled_objects = []
+        self._active = False
+        self._activated_objects = []
         
         # List of varying names to use for feedback
         self._feedback_vars = []
@@ -198,12 +198,13 @@ class Program(GLObject):
     
     def __setitem__(self, name, data):
         """ Behave a bit like a dict to assign attributes and uniforms.
+        This is the preferred way for the user to set uniforms and attributes.
         """
         if name in self._uniforms.keys():
             # Set data
             self._uniforms[name].set_data(data)
             # If program is currently in use, we upload immediately the data
-            if self._enabled and name in self._active_uniforms:
+            if self._active and name in self._active_uniforms:
                self._uniforms[name].upload(self)
             # Invalidate vertex count
             self._vertex_count = None
@@ -211,7 +212,7 @@ class Program(GLObject):
             # Set data
             self._attributes[name].set_data(data)
             # If program is currently in use, we upload immediately the data
-            if self._enabled and name in self._active_attributes:
+            if self._active and name in self._active_attributes:
                self._attributes[name].upload(self)
         else:
             raise NameError("Unknown uniform or attribute: %s" % name)
@@ -281,6 +282,8 @@ class Program(GLObject):
     
     def _get_vertex_count(self):
         """ Get count of the number of vertices.
+        The count will only be recalculated if necessary, so if the
+        attributes have not changed, this function call should be quick.
         """
         if self._vertex_count is None:
             count = None
@@ -302,7 +305,7 @@ class Program(GLObject):
     
     
     def _build_attributes(self):
-        """ Build the attribute objects 
+        """ Build the attribute objects.
         Called when shader is atatched/detached.
         """
         # Get all attributes (There are no attribute in fragment shaders)
@@ -319,7 +322,7 @@ class Program(GLObject):
     
     
     def _build_uniforms(self):
-        """ Build the uniform objects 
+        """ Build the uniform objects. 
         Called when shader is atatched/detached.
         """
         # Get al; uniformes
@@ -338,7 +341,7 @@ class Program(GLObject):
         
     
     def _mark_active_attributes(self):
-        """ Mark which attributes are active and get the location.
+        """ Mark which attributes are active and set the location.
         Called after linking. 
         """
 
@@ -372,7 +375,7 @@ class Program(GLObject):
     
     
     def _mark_active_uniforms(self):
-        """ Mark which uniforms are actve, set the location, 
+        """ Mark which uniforms are actve and set the location, 
         for textures also set texture unit.
         Called after linking. 
         """
@@ -423,12 +426,22 @@ class Program(GLObject):
     
     
     def _activate(self):
+        """
+          * Activate ourselves
+          * Prepare for activating other objects.
+          * Upload pending variables.
+        """
+        
         # Use this program!
         gl.glUseProgram(self._handle)
         
         # Mark as enabled, prepare to enable other objects
-        self._enabled = True
-        self._enabled_objects = []
+        self._active = True
+        self._activated_objects = []
+        
+        # todo: perhaps we should just move this to the draw method.
+        # because if we reset attribute/uniforms inside the with
+        # statement (i.e. when Program is actiavted) we do some stuff twice
         
         # Upload any attributes and uniforms if necessary
         for variable in (self.attributes + self.uniforms):
@@ -437,13 +450,19 @@ class Program(GLObject):
     
     
     def _deactivate(self):
-        for ob in reversed(self._enabled_objects):
+        """ Deactivate any objects that were activated on our behalf,
+        and then deactivate ourself.
+        """
+        for ob in reversed(self._activated_objects):
             ob.deactivate()
         gl.glUseProgram(0)
-        self._enabled = False
+        self._active = False
     
     
     def _update(self):
+        """ Called when the object is activated and the _need_update
+        flag is set
+        """
         
         # Check if we have something to link
         if not self._verts:
@@ -482,16 +501,16 @@ class Program(GLObject):
     
     ## Drawing and enabling
     
-    # todo: rename to activate_object, maybe make private
-    def enable_object(self, object):
-        """ Enable an object, e.g. a texture. The program
+    
+    def activate_object(self, object):
+        """ Activate an object, e.g. a texture. The program
         will make sure that the object is disabled again.
         Can only be called while Program is active.
         """
-        if not self._enabled:
+        if not self._active:
             raise ProgramException("Program cannot enable an object if not self being enabled.")
         object.activate()
-        self._enabled_objects.append(object)
+        self._activated_objects.append(object)
     
     
     
@@ -510,8 +529,8 @@ class Program(GLObject):
             The number of vertices to draw. Default all.
         """
         # Check
-        if not self._enabled:
-            raise RuntimeError('draw_arrays require the ShaderProgram to be enabled.')
+        if not self._active:
+            raise ProgramException('ShaderProgram must be active when drawing.')
         
         # Prepare
         refcount = self._get_vertex_count()
@@ -523,7 +542,7 @@ class Program(GLObject):
         
         # Check if we know count
         if count is None:
-            raise Exception("Could not determine element count for draw.")
+            raise ProgramException("Could not determine element count for draw.")
         
         # Draw
         gl.glDrawArrays(mode, first, count)
@@ -568,13 +587,13 @@ class Program(GLObject):
             takes care of enabling it.
         """
         # Check
-        if not self._enabled:
-            raise RuntimeError('draw_elements require the ShaderProgram to be enabled.')
+        if not self._active:
+            raise ProgramException('Program must be active for drawing.')
         
         # Prepare and draw
         if isinstance(indices, ElementBuffer):
-            # Enable
-            self.enable_object(indices)
+            # Activate
+            self.activate_object(indices)
             # Prepare
             offset = None  # todo: allow the use of offset
             gltype = ElementBuffer.DTYPES[indices.type]
