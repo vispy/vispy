@@ -199,14 +199,7 @@ class Program(GLObject):
     def __setitem__(self, name, data):
         """ Behave a bit like a dict to assign attributes and uniforms.
         """
-        assert isinstance(name, str)
         if name in self._uniforms.keys():
-            # Auto-make Texture from numpy array, but warn if it replaces a previous
-            texClass = self._uniforms[name]._textureClass
-            if isinstance(data, np.ndarray) and texClass:
-                data = texClass(data)
-                if self._uniforms[name]._data is not None:
-                    print("Warning: uniform '%s' is replaced with a new Texture. Better update the texture." % name)
             # Set data
             self._uniforms[name].set_data(data)
             # If program is currently in use, we upload immediately the data
@@ -215,11 +208,6 @@ class Program(GLObject):
             # Invalidate vertex count
             self._vertex_count = None
         elif name in self._attributes.keys():
-            # Auto-make VBO from numpy array, but warn if it replaces a previous
-            if isinstance(data, np.ndarray):
-                data = VertexBuffer(data)
-                if self._attributes[name]._data is not None:
-                    print("Warning: attribute '%s' is replaced with a new VertexBuffer. Better update the VertexBuffer or use Program.set_var()." % name)
             # Set data
             self._attributes[name].set_data(data)
             # If program is currently in use, we upload immediately the data
@@ -234,10 +222,6 @@ class Program(GLObject):
         arguments (like numpy structured arrays), for which each element
         will be applied.
         
-        Other than with ``Program['name'] = value``, a numpy array is
-        not automatically converted to a VertexBuffer or Texture. Note
-        that attributes can be numpy arrays, but this is generally
-        discouraged.
         """
         D = {}
         
@@ -250,11 +234,13 @@ class Program(GLObject):
             if isinstance(data, np.ndarray):
                 # Structured array
                 if data.dtype.fields:
-                    print("Warning: attribute data given as a structured array, you probably want to use a VertexBuffer.")
+                    print("Warning: attribute data given as a structured " +
+                          "array, you probably want to use a VertexBuffer.")
                     for k in data.dtype.fields:
                         D[k] = data[k]
                 else:
-                    raise ValueError("Program.set_attr accepts a structured array, but normal arrays must be given as keyword args.")
+                    raise ValueError("Program.set_attr accepts a structured " +
+                        "array, but normal arrays must be given as keyword args.")
             
             elif isinstance(data, VertexBuffer):
                 # Vertex buffer
@@ -262,29 +248,19 @@ class Program(GLObject):
                     for k in data.type:
                         D[k] = data[k]
                 else:
-                    raise ValueError('Can only set attributes with a structured VertexBuffer.')
+                    raise ValueError('Can only set attributes with a ' + 
+                                        'structured VertexBuffer.')
             
             elif isinstance(data, dict):
                 # Dict
                 D.update(data)
             else:
-                raise ValueError("Don't know how to use attribute of type %r" % type(data))
+                raise ValueError("Don't know how to use attribute of type %r" %
+                                        type(data))
         
         # Apply each
         for name, data in D.items():
-            #self[name] = data
-            if name in self._uniforms.keys():
-                self._uniforms[name].set_data(data)
-                if self._enabled and name in self._active_uniforms:
-                    self._uniforms[name].upload(self)
-            elif name in self._attributes.keys():
-                self._attributes[name].set_data(data)
-                if self._enabled and name in self._active_attributes:
-                    self._attributes[name].upload(self)
-                # Invalidate vertex count
-                self._vertex_count = None
-            else:
-                raise ValueError("Unknown uniform or attribute: %s" % name)
+            self[name] = data
     
     
     @property

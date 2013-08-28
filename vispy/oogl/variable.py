@@ -16,7 +16,7 @@ import numpy as np
 
 from vispy import gl
 from .globject import GLObject
-from .buffer import VertexBuffer, VertexBufferView
+from .buffer import ClientArray, VertexBuffer, VertexBufferView
 from .texture import Texture, Texture2D, TextureCubeMap, Texture3D
 from vispy.util.six import string_types
 
@@ -315,10 +315,13 @@ class Attribute(Variable):
             self._generic = True
             self._afunction = Attribute._afunctions[self._gtype]
         
-        elif isinstance(data, (VertexBuffer, VertexBufferView)):
+        elif isinstance(data, (ClientArray, VertexBuffer, VertexBufferView)):
             # Just store the Buffer
             self._data = data
             self._generic = False
+        elif isinstance(data, np.ndarray):
+            raise ValueError('Cannot set attribute data using numpy arrays: ' + 
+                            'use tuple, ClientArray or VertexBuffer instead. ')
         else:
             raise ValueError('Wrong data for attribute.')
         
@@ -351,10 +354,13 @@ class Attribute(Variable):
             self._afunction(self._loc, *self._data)
 
         # Client side array
-        elif isinstance(self._data, np.ndarray):
+        elif isinstance(self._data, ClientArray):
             # Early exit (pointer to CPU-data is still known by Program)
             if not self._dirty:
                 return
+            
+            # Get numpy array from its container
+            data = self._data.data
             
             # Get relevant information from gl_typeinfo
             size, gtype, dtype = gl_typeinfo[self._gtype]
@@ -365,9 +371,9 @@ class Attribute(Variable):
             
             # Apply (first disable any previous VertexBuffer)
             gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-            gl.glVertexAttribPointer(self._loc, size, gtype, False, stride, self.data)
+            gl.glVertexAttribPointer(self._loc, size, gtype, False, stride, data)
         
-        # Regular vertex buffer
+        # Regular vertex buffer or vertex buffer view
         else:
             
             data = self._data

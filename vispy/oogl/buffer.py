@@ -213,6 +213,28 @@ class IndexableVertexBufferMixin(object):
     
 
 
+class ClientArray(object):
+    """ Representation of attribute that that is stored on the client side,
+    i.e. in CPU memory. Note that in general a VertexBufferis is
+    recommended since it is more efficient. However, there may be corner
+    cases when one wants to directly use a numpy array. 
+    
+    This class is a very thin wrapper on a numpy array and primarily 
+    functions as signal mechanism.
+    """
+    
+    def __init__(self, data):
+        assert isinstance(data, np.ndarray)
+        self._data = data
+    
+    @property
+    def data(self):
+        return self._data
+    
+    def __len__(self):
+        return len(self._data)
+
+
 
 class VertexBuffer(Buffer, IndexableVertexBufferMixin):
     """ Representation of vertex buffer object of type GL_ARRAY_BUFFER,
