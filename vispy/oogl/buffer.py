@@ -1,142 +1,166 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013, Vispy Development Team.
+# Copyright (c) 2013, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-
-""" Definition of Vertex Buffer Object class.
-
-"""
+# -----------------------------------------------------------------------------
+""" Definition of Vertex Buffer Object class """
 
 from __future__ import print_function, division, absolute_import
 
 import sys
 import numpy as np
-
 from vispy import gl
 from vispy.util.six import string_types
-from . import GLObject, ext_available
+from vispy.oogl import GLObject
+from vispy.oogl import ext_available
 
 
 
+# ------------------------------------------------------------ Buffer class ---
 class Buffer(GLObject):
-    """ The buffer is used to store vertex data. It is recommended to
-    use one of the subclasses: VertexBuffer or ElementBuffer.
+    """The Buffer class is a raw interface to upload some data to the GPU.
+    It is data agnostic and doesn't check any data type.
+
+    Note that it is possible to only upload subdata to the GPU without ever
+    uploading the full buffer. In such case, you have to first set the size of
+    the buffer.
     """
-    
-    
+
+
+    # ---------------------------------
     def __init__(self, target, data=None):
+        """ Initialize buffer into default state. """
+
         GLObject.__init__(self)
         
-        # Store target (i.e. array buffer of index buffer)
-        if target not in [gl.GL_ARRAY_BUFFER, gl.GL_ELEMENT_ARRAY_BUFFER]:
-            raise ValueError("Invalid target for vertex buffer object.")
+        # Store and check target
+        if target not in (gl.GL_ARRAY_BUFFER, gl.GL_ELEMENT_ARRAY_BUFFER):
+            raise ValueError("Invalid target for buffer object.")
         self._target = target
         
-        # Keep track of number of bytes in the buffer
-        self._buffer_size = -1
+        # Bytesize of buffer in GPU memory
+        self._size = 0
+
+        # Buffer usage (one of GL_STATIC_DRAW, G_STREAM_DRAW or GL_DYNAMIC_DRAW)
+        self._usage = gl.GL_DYNAMIC_DRAW
         
-        # Set data?
-        self._pending_data = None
-        self._pending_subdata = []
+        # Set data
+        self._pending_data = []
         if data is not None:
             self.set_data(data)
+
     
+    # ---------------------------------
+    def _get_size(self):
+        """ Get buffer bytesize """
+
+        return self._size
+
+    size = property(_get_size,
+                    doc = "Buffer byte size")
+
+
+    # ---------------------------------
+    def set_size(self, size):
+        """ Set buffer bytesize (invalidates all pending operations) """
+
+        self._pending_data = []
+        self._size = size
     
-    @property
-    def nbytes(self):
-        """ The number of bytes that the buffer uses.
-        """
-        return self._buffer_size
-    
-    
-    def set_data(self, data, offset=None):
-        """ Set the data for this buffer. If the size of the given data
-        matches the current buffer size, the data is updated in a fast
-        manner.
-        
-        Users typically do not use this class directly. The buffer class
-        does not care about type of shape; it's just a collection of
-        bytes. The VertexBuffer and ElementBuffer wrap the Buffer class
-        to give meaning to the data.
-        
-        """
-        
-        # Check data
+
+    # ---------------------------------
+    def set_data(self, data, count=-1, offset=0):
+        """ Set data or subdata (deferred operations)  """
+
+        # Check some size has been allocated
+        if self.size == 0:
+            raise ValueError("Buffer size is null.")
+
+        # Check data is a numpy array
         if not isinstance(data, np.ndarray):
             raise ValueError("Data should be a numpy array.")
-        
-        if offset is None:
-            # Set pending data, and number of bytes
-            self._pending_data = data, None
-            self._buffer_size = data.nbytes
-        
-        else:
-            # Check offset
-            assert isinstance(offset, int)
-            assert (offset + data.nbytes) <= self._buffer_size
-            # Set pending data
-            self._pending_subdata.append((data, offset))
-        
-        self._need_update = True
-    
-    
-    def _create(self):
-        self._handle = gl.glGenBuffers(1)
-    
-    
-    def _delete(self):
-       gl.glDeleteBuffers(1, [self._handle])
-    
-    
-    def _activate(self):
-        gl.glBindBuffer(self._target, self._handle)
-    
-    
-    def _deactivate(self):
-        gl.glBindBuffer(self._target, 0)
-    
-    
-    def _update(self):
-        
-        # todo: check creation and resetting pending_data
-        
-        # Need to update data?
-        if self._pending_data:
-            data, _ = self._pending_data
-            self._pending_data = None
-            if self._valid and data.nbytes == self._buffer_size:
-                # Fast update
-                gl.glBindBuffer(self._target, self._handle)
-                self._upload(data, 0)
+
+        # If count is not specified, we assume the whole data is to be uploaded
+        if count == -1:
+            count = data.nbytes
+
+        # If the whole buffer is to be written, we clear any pending data
+        # operations since this will be overwritten anyway.
+        if count == data.nbytes:
+            if offset == 0:
+                self._pending_data = []
             else:
-                if self._valid:
-                    # Recreate buffer object, some inplementations can cause
-                    # memory leaks otherwise
-                    self.delete()
-                    self._create()
-                # Upload data
-                gl.glBindBuffer(self._target, self._handle)
-                self._upload(data)
-        
-        # Bind
+                raise ValueError("Data is too big for buffer.")
+
+        # Check if we have enough space
+        if (offset+count) > self.size:
+            raise ValueError("Offseted data is too big for buffer.")
+
+        # Ok, we should be safe now
+        self._pending_data.append( (data, count, offset) )
+        self._need_update = True
+
+    
+    # ---------------------------------    
+    def _create(self):
+        """ Create buffzr on GPU """
+        if not self._handle:
+            self._handle = gl.glGenBuffers(1)
+            self._valid = True
+
+
+    # ---------------------------------
+    def _delete(self):
+        """ Delete buffer from GPU """
+
+        if self._handle:
+            gl.glDeleteBuffers(1 , [self._handle])
+            self._handle = 0
+            self._valid = False
+    
+    
+    # ---------------------------------
+    def _activate(self):
+        """ Bind the buffer to some target """
+
         gl.glBindBuffer(self._target, self._handle)
+    
+
+    # ---------------------------------
+    def _deactivate(self):
+        """ UnBind the buffer to some target """
+
+        gl.glBindBuffer(self._target, 0)
+
+    
+    # ---------------------------------
+    def _update(self):
+        """ Upload all pending data to GPU. """
         
-        # Need to update subdata?
-        while self._pending_subdata:
-            data, offset = self._pending_subdata.pop(0)
-            self._upload(data, offset)
-    
-    
-    def _upload(self, data, offset=None):
-        # todo: allow user to control usage (DYNAMIC_DRAW, STATIC_DRAW)
-        if offset is None:
-            gl.glBufferData(self._target, data.nbytes, data, gl.GL_DYNAMIC_DRAW)
-        else:
-            gl.glBufferSubData(self._target, offset, data.nbytes, data)
+        # Has the buffer been already created ?
+        if not self._valid:
+            self._create()
+
+        # Bind buffer now 
+        gl.glBindBuffer(self._target, self._handle)
+
+        # Check if size has been changed and allocate new size if necessary
+        size = gl.glGetBufferParameteriv(self._target, gl.GL_BUFFER_SIZE)
+        if size != self._size:
+            # This will only allocate the buffer on GPU
+            gl.glBufferData(self._target, self._size, None, self._usage)
+
+        # Upload data
+        while self._pending_data:
+            data, count, offset = self._pending_data.pop(0)
+            gl.glBufferSubData(self._target, offset, count, data)
+
+        # Sanity measure    
+        gl.glBindBuffer(self._target, 0)
     
    
 
 
-
+# -----------------------------------------------------------------------------
 class IndexableVertexBufferMixin(object):
     def __getitem__(self, index):
         
@@ -188,6 +212,8 @@ class IndexableVertexBufferMixin(object):
         return self.shape[0]
     
 
+
+
 class VertexBuffer(Buffer, IndexableVertexBufferMixin):
     """ Representation of vertex buffer object of type GL_ARRAY_BUFFER,
     which can be used to store vertex data. Inherits from Buffer.
@@ -219,10 +245,13 @@ class VertexBuffer(Buffer, IndexableVertexBufferMixin):
         
         # Set data?
         if data is not None:
+            self.set_size(data.nbytes)
             self.set_data(data)
     
     
-    def set_data(self, data, offset=None):
+    # ---------------------------------
+    def set_data(self, data, count=-1, offset=0):
+
         """ Set vertex attribute data, or a part of it. If the data
         matches the current size of the buffer, the data is updated
         faster.
@@ -282,7 +311,7 @@ class VertexBuffer(Buffer, IndexableVertexBufferMixin):
         
         # Set data in buffer
         self._stride = data.dtype.itemsize * self._shape[1]
-        Buffer.set_data(self, data, offset)
+        Buffer.set_data(self, data, offset=offset)
     
     
     
@@ -384,7 +413,8 @@ class ElementBuffer(Buffer):
             self.set_data(data)
     
     
-    def set_data(self, data, offset=None):
+    # ---------------------------------
+    def set_data(self, data, count=-1, offset=0):
         """ Set vertex element data, or a part of it. If the data
         matches the current size of the buffer, the data is updated
         faster.
@@ -420,7 +450,7 @@ class ElementBuffer(Buffer):
         self._shape = data.shape[0], tuple_count
         
         # Set data in buffer
-        Buffer.set_data(self, data, offset)
+        Buffer.set_data(self, data, offset=offset)
     
     
     @property
