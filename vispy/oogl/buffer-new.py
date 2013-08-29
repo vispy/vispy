@@ -224,7 +224,6 @@ class DataBuffer(Buffer):
                     ('bool',2) : gl.GL_BOOL_VEC2,
                     ('bool',3) : gl.GL_BOOL_VEC3,
                     ('bool',4) : gl.GL_BOOL_VEC4 }
-
         cshape = self._dtype.shape
         if cshape not in ( (2,2), (3,3), (4,4) ):
             cshape = int(np.prod(cshape))
@@ -326,6 +325,16 @@ class DataBuffer(Buffer):
         dtype = self._dtype[key]
         offset = self._dtype.fields[key][1]
         return self.__class__(dtype=dtype, base=self, offset=offset)
+
+
+    def _get_gtype(self, dtype=None):
+        """ Get component type and number from a numpy dtype. """
+
+        if dtype is None:
+            dtype = self._dtype
+        bsize = int(np.prod(dtype.shape))
+        btype = dtype.base
+        return btype, bsize
 
 
 
