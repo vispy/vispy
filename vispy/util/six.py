@@ -64,10 +64,6 @@ else:
             del X
 
 
-def is_string(s):
-    return isinstance(s,string_types)
-
-
 def _add_doc(func, doc):
     """Add documentation to a function."""
     func.__doc__ = doc
