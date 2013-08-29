@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-""" Definition of Vertex Buffer class """
+""" Definition of VertexBuffer, ClientBuffer and ElemenBuffer classes """
 
 from __future__ import print_function, division, absolute_import
 
@@ -64,7 +64,6 @@ class Buffer(GLObject):
         if not isinstance(data, np.ndarray):
             raise ValueError("Data should be a numpy array.")
 
-
         count = data.nbytes
 
         # If the whole buffer is to be written, we clear any pending data
@@ -82,15 +81,14 @@ class Buffer(GLObject):
         # Ok, we should be safe now
         self._pending_data.append( (data, count, offset) )
         self._need_update = True
-    
-    
+
 
     def _set_bytesize(self, bytesize):
         """ Set buffer bytesize (invalidates all pending operations) """
 
         self._pending_data = []
         self._bytesize = bytesize
-
+        self._valid = False # This will force a reallocation
 
 
     def _create(self):
@@ -98,25 +96,33 @@ class Buffer(GLObject):
         if not self._handle:
             handle = gl.glGenBuffers(1)
             self._handle = handle
-            self._valid = True
 
+        # Check if size has been changed and allocate new size if necessary
+        gl.glBindBuffer(self._target, self._handle)
+        bytesize = gl.glGetBufferParameteriv(self._target, gl.GL_BUFFER_SIZE)
+        if bytesize != self._bytesize:
+            # This will only allocate the buffer on GPU
+            # WARNING: we should check of this operation is ok
+            gl.glBufferData(self._target, self._bytesize, None, self._usage)
+            # debug
+            print("Creating a new buffer of %d bytes" % self._bytesize)
+        gl.glBindBuffer(self._target, 0)
+        self._valid = True            
 
 
     def _delete(self):
         """ Delete buffer from GPU """
 
-        if self._handle:
+        if self._handle and gl:
             gl.glDeleteBuffers(1 , [self._handle])
             self._handle = 0
             self._valid = False
-    
     
 
     def _activate(self):
         """ Bind the buffer to some target """
 
         gl.glBindBuffer(self._target, self._handle)
-    
 
 
     def _deactivate(self):
@@ -124,32 +130,25 @@ class Buffer(GLObject):
 
         gl.glBindBuffer(self._target, 0)
 
-    
 
     def _update(self):
         """ Upload all pending data to GPU. """
         
-        # Has the buffer been already created ?
-        if not self._valid:
-            self._create()
-
         # Bind buffer now 
         gl.glBindBuffer(self._target, self._handle)
-
-        # Check if size has been changed and allocate new size if necessary
-        bytesize = gl.glGetBufferParameteriv(self._target, gl.GL_BUFFER_SIZE)
-        if bytesize != self._bytesize:
-            # This will only allocate the buffer on GPU
-            gl.glBufferData(self._target, self._bytesize, None, self._usage)
 
         # Upload data
         while self._pending_data:
             data, count, offset = self._pending_data.pop(0)
+
+            # debug
+            print("Uploading %d bytes at offset %d" % (count, offset))
+
             gl.glBufferSubData(self._target, offset, count, data)
 
         # Sanity measure    
         gl.glBindBuffer(self._target, 0)
-
+        self._need_update = False
 
 
 
@@ -164,7 +163,7 @@ class DataBuffer(Buffer):
 
         Buffer.__init__(self, target, data)
 
-        # Check if this buffer is a sub-buffer of another buffer
+        # Check if this buffer is a view of another buffer
         if base is not None:
             self._dtype     = dtype
             self._itemsize  = base._itemsize
@@ -172,7 +171,7 @@ class DataBuffer(Buffer):
             self._bytesize  = base._bytesize
             self._offset    = offset
 
-        # Check if dtype is a numpy dtype (after conversion by numpy)
+        # Check if dtype is a numpy dtype
         elif dtype is not None:
             dtype = np.dtype(dtype)
             if isinstance(dtype,np.dtype):
@@ -194,18 +193,55 @@ class DataBuffer(Buffer):
             self._itemcount = data.size
             self._offset    = 0
 
-        # We need at least one (data) or the others (dtype+size)
+        # We need at least one (data) or the others (dtype+count)
         else:
             raise ValueError("One of 'data' or 'dtype' must be specified.")
 
         # Pointer to the base buffer (if any)
         self._base = base
+        
+        # Compute gl type corresponding to dtype
+        gltypes = { ('int8',1)    : gl.GL_BYTE,
+                    ('uint8',1)   : gl.GL_UNSIGNED_BYTE,
+                    ('int16', 1)  : gl.GL_SHORT,
+                    ('uint16',1)  : gl.GL_UNSIGNED_SHORT,
+                    ('uint32',1)  : gl.GL_UNSIGNED_INT,
+                    ('float16',1) : gl.ext.GL_HALF_FLOAT,
+                    ('float32',1) : gl.GL_FLOAT,
+                    ('float32',2) : gl.GL_FLOAT_VEC2,
+                    ('float32',3) : gl.GL_FLOAT_VEC3,
+                    ('float32',4) : gl.GL_FLOAT_VEC4,
+                    ('float32',(2,2)) : gl.GL_FLOAT_MAT2,
+                    ('float32',9) : gl.GL_FLOAT_MAT3,
+                    ('float32',(3,3)) : gl.GL_FLOAT_MAT3,
+                    ('float32',16) : gl.GL_FLOAT_MAT4,
+                    ('float32',(4,4)) : gl.GL_FLOAT_MAT4,
+                    ('int32',1) : gl.GL_INT,
+                    ('int32',2) : gl.GL_INT_VEC2,
+                    ('int32',3) : gl.GL_INT_VEC3,
+                    ('int32',4) : gl.GL_INT_VEC4,
+                    ('bool',1) : gl.GL_BOOL,
+                    ('bool',2) : gl.GL_BOOL_VEC2,
+                    ('bool',3) : gl.GL_BOOL_VEC3,
+                    ('bool',4) : gl.GL_BOOL_VEC4 }
+
+        cshape = self._dtype.shape
+        if cshape not in ( (2,2), (3,3), (4,4) ):
+            cshape = int(np.prod(cshape))
+        ctype = self._dtype.base
+        self._gtype = gltypes.get((str(ctype), cshape), None)
 
 
     @property
     def dtype(self):
         """Buffer data type. """
         return self._dtype
+
+
+    @property
+    def gtype(self):
+        """Buffer gl data type. """
+        return self._gtype
 
 
     @property
@@ -277,6 +313,7 @@ class DataBuffer(Buffer):
         # Do we check data type here or do we cast the data to the same
         # internal dtype ? This would make a silent copy of the data which can
         # be problematic in some cases
+        # data = data.astype(self._dtype)
         self.set_data(data, offset=offset)
 
 
@@ -290,13 +327,6 @@ class DataBuffer(Buffer):
         offset = self._dtype.fields[key][1]
         return self.__class__(dtype=dtype, base=self, offset=offset)
 
-
-    def _get_gtype(self):
-        """ Get equivalent elementary data type. """
-
-        bsize = np.prod(self._dtype.shape)
-        btype = self._dtype.base
-        return btype, bsize
 
 
 
@@ -330,7 +360,29 @@ class VertexBuffer(DataBuffer):
         DataBuffer.__init__(self, data=data, dtype=dtype, count=count,
                             base=base, offset = offset, target = gl.GL_ARRAY_BUFFER)
 
+        # Check data type
+        #  (only when base is None, else, it has been already checked)
+        if base is not None:
+            return
 
+        if self._dtype.fields:
+            dtypes = [self._dtype[name] for name in self._dtype.names]
+        else:
+            dtypes = [self._dtype]
+
+        for dtype in dtypes:
+            btype, bsize = self._get_gtype(dtype)
+            # Check component type
+            if str(btype) not in ('uint8','uint16','int16', 'float32','float16'):
+                raise TypeError(
+                    """A vertex buffer element component type should """
+                    """be one of uint8, uint16, int16, float32 or float16.""")
+            # Check component count
+            if bsize > 4:
+                raise TypeError(
+                    "A vertex buffer element type should have at most 4 components. ")
+
+                        
 
 # ------------------------------------------------------ ElementBuffer class ---
 class ElementBuffer(DataBuffer):
@@ -356,23 +408,22 @@ class ElementBuffer(DataBuffer):
         
         btype,bsize = self._get_gtype()
 
-        # Check data type
+        # Check component type
         if str(btype) not in ('uint8', 'uint16', 'uint32'):
             raise TypeError("An element buffer data type should be one of " +
                             "uint8, uint16 or uint32. ")
-        # Check data shape
+        # Check component count
         if bsize > 1:
             raise TypeError("An element buffer data should be contiguous.")
 
 
 
-# ------------------------------------------------------ ImmediateBuffer class ---
+# ------------------------------------------------------ ClientBuffer class ---
 class ClientBuffer(DataBuffer):
     """
     A client buffer is a buffer that only exists (permanently) on the CPU. It
-    cannot be modified nor uploaded into a GPU buffer.
-    
-    It merely serves as rapidly passing data during a drawing operations.
+    cannot be modified nor uploaded into a GPU buffer. It merely serves as
+    rapidly passing data during a drawing operations.
 
     Note this kind of buffer is highly inefficient since data is uploaded at
     each drawing operations.
@@ -380,6 +431,8 @@ class ClientBuffer(DataBuffer):
 
     def __init__(self, data):
         """ Initialize the buffer. """
+
+        DataBuffer.__init__(self,data=data, target=gl.GL_ARRAY_BUFFER)
 
         self._value       = True
         self._need_update = True
@@ -391,56 +444,85 @@ class ClientBuffer(DataBuffer):
         self._bytesize  = data.size * data.dtype.itemsize
         self._offset    = 0
 
-    def _set_bytesize(self, bytesize):
-        raise TypeError("Operation no allowed this type of buffer")
 
-    def __getitem__(self, key):
-        raise TypeError("Operation no allowed this type of buffer")
+    @property
+    def data(self):
+        """Buffer data. """
+        return self._data
 
-    def __setitem__(self, key, data):
-        raise TypeError("Operation no allowed this type of buffer")
+    def __getitem__(self, key):        pass
+    def __setitem__(self, key, data):  pass
+    def _create(self):                 pass
+    def _delete(self):                 pass
+    def _activate(self):               pass
+    def _deactivate(self):             pass
+    def _update(self):                 pass
 
-    def _create(self):
-        raise TypeError("Operation no allowed this type of buffer")
-
-    def _delete(self):
-        raise TypeError("Operation no allowed this type of buffer")
-
-    def _activate(self):
-        raise TypeError("Operation no allowed this type of buffer")
-
-    def _deactivate(self):
-        raise TypeError("Operation no allowed this type of buffer")
-
-    def _update(self):
-        raise TypeError("Operation no allowed this type of buffer")
 
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    
+    import OpenGL.GLUT as glut
+
+
+    V = VertexBuffer(np.ones(100, np.float32))
+    print("Offset:",     V.offset)
+    print("Itemsize:",   V.itemsize)
+    print("Itemcount",   V.itemcount)
+    print("Data gtype %r" % V.gtype)
+    print()
+
+
     dtype = np.dtype( [ ('position', np.float32, 3),
                         ('texcoord', np.float32, 2),
                         ('color',    np.float32, 4) ] )
     data = np.zeros(100, dtype=dtype)
-    indices = np.zeros(100, dtype=np.uint8)
+    indices = np.zeros(100, dtype=np.uint16)
 
     V = VertexBuffer(data)
     V_position = V['position']
     V_texcoord = V['texcoord']
     V_color    = V['color']
 
-    I = ElementBuffer(indices)
-
     for P in (V_position, V_texcoord, V_color):
-        print("Offset:",   P.offset)
-        print("Itemsize:", P.itemsize)
-        print("Itemcount", P.itemcount)
-        print("Data type", P.dtype)
-        print("Data gtype", P._get_gtype())
+        print("Offset:",    P.offset)
+        print("Itemsize:",  P.itemsize)
+        print("Itemcount",  P.itemcount)
+        print("Data gtype %r" % P.gtype)
         print()
 
-    V[...] = data
     V[10:20] = data[10:20]
-    V[10:20] = data[10:19]
-    V[10:20] = data[10:21]
+    V[...] = data
+    print( len(V._pending_data))
+    #V[10:20] = data[10:19]
+    #V[10:20] = data[10:21]
+
+    I = ElementBuffer(indices)
+    print("Offset:",    I.offset)
+    print("Itemsize:",  I.itemsize)
+    print("Itemcount",  I.itemcount)
+    print("Data gtype %r" % I.gtype)
+    print()
+    
+
+
+    def display():
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        glut.glutSwapBuffers()
+
+    def reshape(width,height):
+        gl.glViewport(0, 0, width, height)
+
+    def keyboard( key, x, y ):
+        if key == '\033': sys.exit( )
+
+    glut.glutInit(sys.argv)
+    glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_DEPTH)
+    glut.glutCreateWindow('Shader test')
+    glut.glutReshapeWindow(512,512)
+    glut.glutDisplayFunc(display)
+    glut.glutReshapeFunc(reshape)
+    glut.glutKeyboardFunc(keyboard )
+
+    V.activate()
+    V.deactivate()
