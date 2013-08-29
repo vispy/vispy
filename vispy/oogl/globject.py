@@ -84,7 +84,7 @@ class GLObject(object):
     
     def __del__(self):
         """ Delete the object from OpenGl memory. """
-
+        
         self.delete()
     
     
@@ -110,7 +110,7 @@ class GLObject(object):
                 raise RuntimeError('Could not create %r, perhaps there is no OpenGL context?' % self)
         # Perform an update if necessary
         if self._need_update:
-            self._update()  # If it does not rais an error, assume valid
+            self._update()  # If it does not raise an error, assume valid
             self._need_update = False
             self._valid = True
         # Activate
