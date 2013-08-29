@@ -366,6 +366,54 @@ class ElementBuffer(DataBuffer):
 
 
 
+# ------------------------------------------------------ ImmediateBuffer class ---
+class ClientBuffer(DataBuffer):
+    """
+    A client buffer is a buffer that only exists (permanently) on the CPU. It
+    cannot be modified nor uploaded into a GPU buffer.
+    
+    It merely serves as rapidly passing data during a drawing operations.
+
+    Note this kind of buffer is highly inefficient since data is uploaded at
+    each drawing operations.
+    """
+
+    def __init__(self, data):
+        """ Initialize the buffer. """
+
+        self._value       = True
+        self._need_update = True
+        self._data        = data
+
+        self._dtype     = data.dtype
+        self._itemsize  = data.dtype.itemsize
+        self._itemcount = data.size
+        self._bytesize  = data.size * data.dtype.itemsize
+        self._offset    = 0
+
+    def _set_bytesize(self, bytesize):
+        raise TypeError("Operation no allowed this type of buffer")
+
+    def __getitem__(self, key):
+        raise TypeError("Operation no allowed this type of buffer")
+
+    def __setitem__(self, key, data):
+        raise TypeError("Operation no allowed this type of buffer")
+
+    def _create(self):
+        raise TypeError("Operation no allowed this type of buffer")
+
+    def _delete(self):
+        raise TypeError("Operation no allowed this type of buffer")
+
+    def _activate(self):
+        raise TypeError("Operation no allowed this type of buffer")
+
+    def _deactivate(self):
+        raise TypeError("Operation no allowed this type of buffer")
+
+    def _update(self):
+        raise TypeError("Operation no allowed this type of buffer")
 
 
 # -----------------------------------------------------------------------------
@@ -383,7 +431,6 @@ if __name__ == '__main__':
     V_color    = V['color']
 
     I = ElementBuffer(indices)
-
 
     for P in (V_position, V_texcoord, V_color):
         print("Offset:",   P.offset)
