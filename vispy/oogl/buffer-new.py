@@ -9,7 +9,7 @@ from __future__ import print_function, division, absolute_import
 import sys
 import numpy as np
 from vispy import gl
-from vispy.util.six import is_string
+from vispy.util import is_string
 from vispy.oogl import GLObject
 from vispy.oogl import ext_available
 
@@ -26,7 +26,7 @@ class Buffer(GLObject):
     end of the buffer. If you need more space, set a new size first.
     """
 
-    # ---------------------------------
+
     def __init__(self, target, data=None):
         """ Initialize buffer into default state. """
 
@@ -52,7 +52,7 @@ class Buffer(GLObject):
             self.set_data(data)
 
 
-    # ---------------------------------
+
     def set_data(self, data, offset=0):
         """ Set data or subdata (deferred operations)  """
 
@@ -84,7 +84,7 @@ class Buffer(GLObject):
         self._need_update = True
     
     
-    # ---------------------------------
+
     def _set_bytesize(self, bytesize):
         """ Set buffer bytesize (invalidates all pending operations) """
 
@@ -92,7 +92,7 @@ class Buffer(GLObject):
         self._bytesize = bytesize
 
 
-    # ---------------------------------    
+
     def _create(self):
         """ Create buffer on GPU """
         if not self._handle:
@@ -101,7 +101,7 @@ class Buffer(GLObject):
             self._valid = True
 
 
-    # ---------------------------------
+
     def _delete(self):
         """ Delete buffer from GPU """
 
@@ -111,21 +111,21 @@ class Buffer(GLObject):
             self._valid = False
     
     
-    # ---------------------------------
+
     def _activate(self):
         """ Bind the buffer to some target """
 
         gl.glBindBuffer(self._target, self._handle)
     
 
-    # ---------------------------------
+
     def _deactivate(self):
         """ Unbind the current bound buffer """
 
         gl.glBindBuffer(self._target, 0)
 
     
-    # ---------------------------------
+
     def _update(self):
         """ Upload all pending data to GPU. """
         
@@ -152,16 +152,17 @@ class Buffer(GLObject):
 
 
 
-# ------------------------------------------------------ VertexBuffer class ---
-class VertexBuffer(Buffer):
-    """
-    """
 
-    # ---------------------------------
-    def __init__(self, data=None, dtype=None, count=0, base=None, offset=0):
+
+# ------------------------------------------------------ DataBuffer class ---
+class DataBuffer(Buffer):
+    """Data buffer allows to manipulate typed data.  """
+
+
+    def __init__(self, data=None, dtype=None, count=0, base=None, offset=0, target=0):
         """ Initialize the buffer """
 
-        Buffer.__init__(self, gl.GL_ARRAY_BUFFER, data)
+        Buffer.__init__(self, target, data)
 
         # Check if this buffer is a sub-buffer of another buffer
         if base is not None:
@@ -201,14 +202,48 @@ class VertexBuffer(Buffer):
         self._base = base
 
 
-    # ---------------------------------
+    @property
+    def dtype(self):
+        """Buffer data type. """
+        return self._dtype
+
+
+    @property
+    def itemcount(self):
+        """Buffer element count. """
+        return self._itemcount
+
+
+    @property
+    def itemsize(self):
+        """Buffer element size (in bytes). """
+        return self._itemsize
+
+
+    @property
+    def bytesize(self):
+        """Buffer size (in bytes) """
+        return self._bytesize
+
+
+    @property
+    def offset(self):
+        """Buffer offset (in bytes) relative to base. """
+        return self._offset
+
+
+    @property
+    def base(self):
+        """Buffer base if this buffer is a view on another buffer. """
+        return self._dtype
+
+
     def __setitem__(self, key, data):
-        """ """
-        # todo: you probably want to cast the data to the same internal dtype
+        """Set data (deferred operation) """
 
         # Is this buffer a view on another ?
         if self._base is not None:
-            raise ValueError("Can set data on buffer views.")
+            raise ValueError("Cannot set data on buffer views.")
         
         # Deal with slices that have None or negatives in them
         if isinstance(key, slice):
@@ -239,46 +274,97 @@ class VertexBuffer(Buffer):
         elif data.nbytes > count:
             raise ValueError("Too much data.")
 
+        # Do we check data type here or do we cast the data to the same
+        # internal dtype ? This would make a silent copy of the data which can
+        # be problematic in some cases
         self.set_data(data, offset=offset)
 
 
-    # ---------------------------------
     def __getitem__(self, key):
-        """ """
+        """ Create a view on this buffer. """
 
         if not is_string(key):
             raise ValueError("Can only get access to a named field")
 
         dtype = self._dtype[key]
         offset = self._dtype.fields[key][1]
-        return VertexBuffer(dtype=dtype, base=self, offset=offset)
+        return self.__class__(dtype=dtype, base=self, offset=offset)
 
 
-    # ---------------------------------
     def _get_gtype(self):
-        """
-        """
+        """ Get equivalent elementary data type. """
 
         bsize = np.prod(self._dtype.shape)
         btype = self._dtype.base
-
-        if btype.fields:
-            raise TypeError("Incompatible buffer (structured buffer)")
-
-        if bsize > 4:
-            raise TypeError("Incompatible buffer (too many components)")
-
-        gltypes =  { 'np.uint8'   : gl.GL_UNSIGNED_BYTE,
-                     'np.int8'    : gl.GL_BYTE,
-                     'np.uint16'  : gl.GL_UNSIGNED_SHORT,
-                     'np.int16'   : gl.GL_SHORT, 
-                     'np.float32' : gl.GL_FLOAT, 
-                     'np.float16' : gl.ext.GL_HALF_FLOAT }
-        
-        if not str(btype) not in gltypes.keys():
-            raise TypeError("Incompatible type")
-
         return btype, bsize
+
+
+
+
+# ------------------------------------------------------ VertexBuffer class ---
+class VertexBuffer(DataBuffer):
+    """Vertex buffer allows to group set of vertices such they can be later used
+    in a shader program.
+
+    Example
+    -------
+
+    dtype = np.dtype( [ ('position', np.float32, 3),
+                        ('texcoord', np.float32, 2),
+                        ('color',    np.float32, 4) ] )
+    data = np.zeros(100, dtype=dtype)
+
+    buffer = VertexBuffer(data)
+    program = Program(...)
+
+    program['position'] = buffer['position']
+    program['texcoord'] = buffer['texcoord']
+    program['color'] = buffer['color']
+    ...
+    """
+
+
+    def __init__(self, data=None, dtype=None, count=0, base=None, offset=0):
+        """ Initialize the buffer """
+
+        DataBuffer.__init__(self, data=data, dtype=dtype, count=count,
+                            base=base, offset = offset, target = gl.GL_ARRAY_BUFFER)
+
+
+
+# ------------------------------------------------------ ElementBuffer class ---
+class ElementBuffer(DataBuffer):
+    """ElementBuffer allows to specify which element of a VertexBuffer are to be
+    used in a shader program.
+
+    Example
+    -------
+
+    indices = np.zeros(100, dtype=np.uint16)
+    buffer = ElementBuffer(indices)
+    program = Program(...)
+
+    program.draw(gl.GL_TRIANGLES, indices)
+    ...
+    """
+    
+    def __init__(self, data=None, dtype=None, count=0):
+        """ Initialize the buffer """
+
+        DataBuffer.__init__(self, data=data, dtype=dtype, count=count,
+                            target = gl.GL_ELEMENT_ARRAY_BUFFER)
+        
+        btype,bsize = self._get_gtype()
+
+        # Check data type
+        if str(btype) not in ('uint8', 'uint16', 'uint32'):
+            raise TypeError("An element buffer data type should be one of " +
+                            "uint8, uint16 or uint32. ")
+        # Check data shape
+        if bsize > 1:
+            raise TypeError("An element buffer data should be contiguous.")
+
+
 
 
 
@@ -288,22 +374,26 @@ if __name__ == '__main__':
     dtype = np.dtype( [ ('position', np.float32, 3),
                         ('texcoord', np.float32, 2),
                         ('color',    np.float32, 4) ] )
-    Z = np.zeros(100, dtype=dtype)
+    data = np.zeros(100, dtype=dtype)
+    indices = np.zeros(100, dtype=np.uint8)
 
-    V = VertexBuffer(Z)
+    V = VertexBuffer(data)
     V_position = V['position']
     V_texcoord = V['texcoord']
     V_color    = V['color']
 
+    I = ElementBuffer(indices)
+
+
     for P in (V_position, V_texcoord, V_color):
-        print("Offset:",   P._offset)
-        print("Itemsize:", P._itemsize)
-        print("Itemcount", P._itemcount)
-        print("Data type", P._dtype)
+        print("Offset:",   P.offset)
+        print("Itemsize:", P.itemsize)
+        print("Itemcount", P.itemcount)
+        print("Data type", P.dtype)
         print("Data gtype", P._get_gtype())
         print()
 
-    V[...] = Z
-    V[10:20] = Z[10:20]
-    V[10:20] = Z[10:19]
-    V[10:20] = Z[10:21]
+    V[...] = data
+    V[10:20] = data[10:20]
+    V[10:20] = data[10:19]
+    V[10:20] = data[10:21]
