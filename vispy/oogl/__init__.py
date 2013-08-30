@@ -35,7 +35,7 @@ The oogl classes:
     
   * :class:`ShaderProgram`
   * :class:`FragmentShader` and :class:`VertexShader`
-  * :class:`ClientArray`, :class:`VertexBuffer` and :class:`ElementBuffer`
+  * :class:`ClientBuffer`, :class:`VertexBuffer` and :class:`ElementBuffer`
   * :class:`Texture2D`, :class:`Texture3D`, :class:`TextureCubeMap`
   * :class:`FrameBuffer`
   * :class:`RenderBuffer`

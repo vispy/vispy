@@ -34,7 +34,7 @@ The object oriented OpenGL API (oogl)
 ----
 
 
-.. autoclass:: vispy.oogl.ClientArray
+.. autoclass:: vispy.oogl.ClientBuffer
     :members:
 
 .. autoclass:: vispy.oogl.VertexBuffer

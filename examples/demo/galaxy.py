@@ -212,7 +212,7 @@ class Canvas(app.Canvas):
         self.view       = np.eye(4,dtype=np.float32)
         translate(self.view, 0,0, -self.translate)
         self.program['u_view'] = self.view
-        self.program['u_size'] = 5/self.translate
+        #self.program['a_size'] = a_size*5/self.translate
         self.update()
 
 
