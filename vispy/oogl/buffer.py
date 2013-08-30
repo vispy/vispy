@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-""" Definition of VertexBuffer, ClientBuffer and ElemenBuffer classes """
+""" Definition of VertexBuffer, ClientBuffer and ElemenBuffer classes. """
 
 from __future__ import print_function, division, absolute_import
 
@@ -327,7 +327,7 @@ class DataBuffer(Buffer):
         elif data.nbytes > count:
             raise ValueError("Too much data.")
 
-        # WARNINR: Do we check data type here or do we cast the data to the
+        # WARNING: Do we check data type here or do we cast the data to the
         # same internal dtype ? This would make a silent copy of the data which
         # can be problematic in some cases.
         data = data.astype(self._dtype)
@@ -354,10 +354,10 @@ class DataBuffer(Buffer):
         if dtype.fields and len(dtype.fields) == 1:
             dtype = dtype[dtype.names[0]]
 
-        bsize = int(np.prod(dtype.shape))
-        btype = dtype.base
+        csize = int(np.prod(dtype.shape))
+        ctype = dtype.base
 
-        return btype, bsize
+        return ctype, csize
 
 
 
