@@ -52,27 +52,30 @@ def make_arm(n,angle):
     T = angle+np.linspace(0,2.5*np.pi,n) + np.pi/6*np.random.normal(0,.5,n)
     S = 8+2*np.abs(np.random.normal(0,1,n))
     S *= np.linspace(1,.85,n)
-    X = R*np.cos(T)
-    Y = R*np.sin(T)*1.1
+    P = np.zeros((n,3), dtype=np.float32)
+    X, Y, Z =  P[:,0],P[:,1],P[:,2]
+    X[...] = R*np.cos(T)
+    Y[...] = R*np.sin(T)*1.1
     D = np.sqrt(X*X+Y*Y)
-    Z = 8*np.random.normal(0, 2-D/512., n)
+    Z[...] = 8*np.random.normal(0, 2-D/512., n)
     X += (D*np.random.uniform(0,1,n) > 250)*(.05*D*np.random.uniform(-1,1,n))
     Y += (D*np.random.uniform(0,1,n) > 250)*(.05*D*np.random.uniform(-1,1,n))
     Z += (D*np.random.uniform(0,1,n) > 250)*(.05*D*np.random.uniform(-1,1,n))
-    return X/256,Y/256,Z/256,S/2,D
+    D = (D - D.min())/(D.max() - D.min())
+
+    return P/256,S/2,D
 p = 50000
 n = 3*p
-a_position = np.zeros((n,3),np.float32)
-a_size     = np.random.uniform(.5,1,(n,1)).astype(np.float32)
-a_dist     = np.ones((n,1))
+
+data = np.zeros(n, [('a_position', np.float32, 3),
+                    ('a_size',     np.float32, 1),
+                    ('a_dist',     np.float32, 1)])
 for i in range(3):
-    X,Y,Z,S,D = make_arm(p, i * 2*np.pi/3)
-    a_dist[(i+0)*p:(i+1)*p,0] = D 
-    a_position[(i+0)*p:(i+1)*p,0] = X
-    a_position[(i+0)*p:(i+1)*p,1] = Y
-    a_position[(i+0)*p:(i+1)*p,2] = Z
-    a_size[(i+0)*p:(i+1)*p,0] = S
-a_dist = (a_dist-a_dist.min())/(a_dist.max()-a_dist.min())
+    P,S,D = make_arm(p, i * 2*np.pi/3)
+    data['a_dist'][(i+0)*p:(i+1)*p] = D 
+    data['a_position'][(i+0)*p:(i+1)*p] = P
+    data['a_size'][(i+0)*p:(i+1)*p] = S
+
 
 
 # Very simple colormap
@@ -162,11 +165,12 @@ class Canvas(app.Canvas):
         self.title = "A very fake galaxy [mouse scroll to zoom]"
 
         self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
-        
+        self.buffer = oogl.VertexBuffer(data)
+
         # Set uniform and attribute
-        self.program['a_position'] = oogl.ClientArray(a_position)
-        self.program['a_dist']     = oogl.ClientArray(a_dist)
-        self.program['a_size']     = oogl.ClientArray(a_size)
+        self.program['a_position'] = self.buffer['a_position']
+        self.program['a_dist']     = self.buffer['a_dist']
+        self.program['a_size']     = self.buffer['a_size']
         self.program['u_colormap'] = oogl.Texture2D(cmap)
 
         self.view       = np.eye(4,dtype=np.float32)
