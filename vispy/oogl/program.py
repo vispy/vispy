@@ -210,8 +210,6 @@ class Program(GLObject):
         elif name in self._attributes.keys():
             # Set data
             self._attributes[name].set_data(data)
-        elif isinstance(name, string_types):
-            print('Warning: no uniform or attribute known by the name "%s"' % name)
         else:
             raise NameError("Unknown uniform or attribute: %s" % name)
     
