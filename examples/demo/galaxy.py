@@ -75,28 +75,17 @@ for i in range(3):
 
 
 # Very simple colormap
-cmap = np.array([[255, 124,   0],
-                 [255, 163,  76],
-                 [255, 192, 130],
-                 [255, 214, 173],
-                 [255, 232, 212],
-                 [246, 238, 237],
-                 [237, 240, 253],
-                 [217, 228, 255],
-                 [202, 219, 255],
-                 [191, 212, 255],
-                 [182, 206, 255],
-                 [174, 202, 255],
-                 [168, 198, 255],
-                 [162, 195, 255],
-                 [158, 192, 255],
-                 [155, 189, 255],
-                 [151, 187, 255],
-                 [148, 185, 255],
-                 [145, 183, 255],
-                 [143, 182, 255],
-                 [141, 181, 255],
-                 [140, 179, 255],
+cmap = np.array([[255, 124,   0], [255, 163,  76],
+                 [255, 192, 130], [255, 214, 173],
+                 [255, 232, 212], [246, 238, 237],
+                 [237, 240, 253], [217, 228, 255],
+                 [202, 219, 255], [191, 212, 255],
+                 [182, 206, 255], [174, 202, 255],
+                 [168, 198, 255], [162, 195, 255],
+                 [158, 192, 255], [155, 189, 255],
+                 [151, 187, 255], [148, 185, 255],
+                 [145, 183, 255], [143, 182, 255],
+                 [141, 181, 255], [140, 179, 255],
                  [139, 179, 255],
                  [137, 177, 255]], dtype=np.uint8).reshape(1,24,3)
 
@@ -156,6 +145,7 @@ void main()
 
 
 class Canvas(app.Canvas):
+
     def __init__(self):
         app.Canvas.__init__(self)
         self.size = 1024,1024
@@ -179,7 +169,7 @@ class Canvas(app.Canvas):
         self.timer = app.Timer(1.0/60)
         self.timer.connect(self.on_timer)
 
-    # ---------------------------------
+
     def on_initialize(self, event):
         gl.glClearColor(0,0,0,1)
         gl.glDisable(gl.GL_DEPTH_TEST)
@@ -190,7 +180,7 @@ class Canvas(app.Canvas):
         # Start the timer upon initialization.
         self.timer.start()
 
-    # ---------------------------------
+
     def on_key_press(self,event):
         if event.text == ' ':
             if self.timer.running:
@@ -198,7 +188,7 @@ class Canvas(app.Canvas):
             else:
                 self.timer.start()
 
-    # ---------------------------------
+
     def on_timer(self,event):
         self.theta += .11
         self.phi += .13
@@ -209,7 +199,6 @@ class Canvas(app.Canvas):
         self.update()
 
 
-    # ---------------------------------
     def on_resize(self, event):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
@@ -217,7 +206,6 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
 
 
-    # ---------------------------------
     def on_mouse_wheel(self, event):
         self.translate +=event.delta[1]
         self.translate = max(2,self.translate)
@@ -227,7 +215,7 @@ class Canvas(app.Canvas):
         self.program['u_size'] = 5/self.translate
         self.update()
 
-    # ---------------------------------
+
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         with self.program as prog:
