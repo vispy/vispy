@@ -40,6 +40,9 @@ class Buffer(GLObject):
         # Bytesize of buffer in GPU memory
         self._bytesize = 0
 
+        # Pointer to the base buffer (if any)
+        self._base = base
+
         # Buffer usage (GL_STATIC_DRAW, G_STREAM_DRAW or GL_DYNAMIC_DRAW)
         self._usage = gl.GL_DYNAMIC_DRAW
         
@@ -50,9 +53,6 @@ class Buffer(GLObject):
                 raise ValueError("Data should be a numpy array.")
             self._set_bytesize(data.nbytes)
             self.set_data(data)
-
-        # Pointer to the base buffer (if any)
-        self._base = base
 
 
     def set_data(self, data, offset=0):
@@ -80,8 +80,11 @@ class Buffer(GLObject):
         if (offset+count) > self._bytesize:
             raise ValueError("Offseted data is too big for buffer.")
 
+
         # Ok, we should be safe now
         self._pending_data.append( (data, count, offset) )
+        if self._base is not None:
+            self._base._need_update = True
         self._need_update = True
 
 
@@ -135,8 +138,10 @@ class Buffer(GLObject):
         """ Upload all pending data to GPU. """
         
         if self._base:
-            return self._base._update()
-            
+            self._base._update()
+            self._need_update = False
+            return
+
         # Bind buffer now 
         gl.glBindBuffer(self._target, self._handle)
        
@@ -149,7 +154,7 @@ class Buffer(GLObject):
             gl.glBufferData(self._target, self._bytesize, None, self._usage)
             # debug
             # print("Creating a new buffer (%d) of %d bytes"
-            #        % (self._handle,self._bytesize))
+            #         % (self._handle,self._bytesize))
         
         # Upload data
         while self._pending_data:
@@ -157,7 +162,7 @@ class Buffer(GLObject):
 
             # debug
             # print("Uploading %d bytes at offset %d to buffer (%d)"
-            #        % (count, offset, self._handle))
+            #       % (count, offset, self._handle))
 
             gl.glBufferSubData(self._target, offset, count, data)
 

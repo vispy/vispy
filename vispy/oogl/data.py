@@ -30,7 +30,6 @@ class Data(GLObject):
         """ Initialize Data into default state. """
 
         GLObject.__init__(self)
-
         self._data = {}
 
         for dtype in args:
@@ -42,6 +41,12 @@ class Data(GLObject):
             buffer = VertexBuffer(array)
             for name in dtype.names:
                 self._data[name] = array,buffer 
+
+    @property
+    def data(self):
+        """ Return a dictionnay of all vertex buffers """
+
+        return { name:buffer[name] for name,(array,buffer) in self._data.items()}
 
 
     def __setitem__(self, key, value):
@@ -58,28 +63,30 @@ class Data(GLObject):
 
 
     def __getitem__(self, key):
-        """ """
+        """ Return the underlying numpy array. """
+
         if key not in self._data.keys():
             raise AttributeError('Unknown attribute')
 
         array, buffer = self._data[key]
-
         # We mark the base buffer for a full update since we do not
-        # if control if the array will be changed afterwards
-        buffer[key].set_data(array)
-
+        # control whether the array will be changed afterwards
+        buffer.set_data(array)
         return array[key]
 
+
     def __call__(self, key):
-        """ """
+        """ Return the underlying vertex buffer. """
+
         if key not in self._data.keys():
             raise AttributeError('Unknown attribute')
 
         array, buffer = self._data[key]
         return buffer[key]
 
+
     def keys(self):
-        """ """
+        """ Return a list of known attributes. """
 
         return self._data.keys()
 
@@ -91,7 +98,7 @@ if __name__ == '__main__':
 
     data = Data(100, [ ('a_position', np.float32, 3),
                        ('a_color', np.float32, 4) ],
-                     [ ('a_rot',np.float32, 4) ] )
+                     [ ('a_rot', np.float32, 4) ] )
     data['a_position'] = np.ones((100,3))
     data['a_color'][::2] = 0,0,0,1
     data['a_rot'][::2] = 0,0,0,1
@@ -104,3 +111,5 @@ if __name__ == '__main__':
     
     # We could then use
     # program.attach(data)
+
+    print( data.data )

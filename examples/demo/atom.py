@@ -27,18 +27,12 @@ rot = np.random.uniform(0,2*np.pi,(n,4)).astype(np.float32)
 color = np.ones((n,4),dtype=np.float32) * (1,1,1,1)
 u_size = 6
 
-position = np.repeat(position, p, axis=0)
-color    = np.repeat(color,    p, axis=0)
-rot      = np.repeat(rot,      p, axis=0)
-
-data = np.zeros(n*p, [('a_position', np.float32, 2),
-                      ('a_color',    np.float32, 4),
-                      ('a_rot',      np.float32, 4)])
-data['a_position'] = position
-data['a_color'] = color
-data['a_rot'] = rot
-                      
-
+data = oogl.Data(n*p, [('a_position', np.float32, 2),
+                       ('a_color',    np.float32, 4),
+                       ('a_rot',      np.float32, 4)])
+data['a_position'] = np.repeat(position, p, axis=0)
+data['a_color'] = np.repeat(color, p, axis=0)
+data['a_rot'] = np.repeat(rot, p, axis=0)
 
 
 VERT_SHADER = """
@@ -119,22 +113,16 @@ class Canvas(app.Canvas):
     def __init__(self, **kwargs):
         
         self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
-        self.buffer = oogl.VertexBuffer(data)
-
-        # Set uniform and attribute
-        self.program['a_color'] = self.buffer['a_color']
-        self.program['a_position'] = self.buffer['a_position']
-        self.program['a_rot'] = self.buffer['a_rot']
-        self.program['u_size'] = u_size
-
         self.view       = np.eye(4,dtype=np.float32)
         self.model      = np.eye(4,dtype=np.float32)
         self.projection = np.eye(4,dtype=np.float32)
-
         self.translate = 3
         translate(self.view, 0,0, -self.translate)
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
+
+        self.program.set_vars(data.data,
+                              u_model = self.model,
+                              u_view = self.view,
+                              u_size = u_size)
 
         self.theta = 0
         self.phi = 0
@@ -202,13 +190,12 @@ class Canvas(app.Canvas):
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
+        T += dT
         self.index = (self.index+1)%p
-        T += dT #np.pi/200
         data['a_position'][self.index::p,0] = np.cos(T)
         data['a_position'][self.index::p,1] = .5*np.sin(T)
         data['a_color'][:,3] -= 1.0/p
         data['a_color'][self.index::p,3] = 1
-        self.buffer[...] = data
 
         with self.program as prog:
             prog.draw_arrays(gl.GL_POINTS)
