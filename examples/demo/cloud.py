@@ -220,9 +220,10 @@ void main()
 
 
 
+# ------------------------------------------------------------ Canvas class ---
 class Canvas(app.Canvas):
 
-    # ---------------------------------
+
     def __init__(self):
         app.Canvas.__init__(self)
         self.size = 1000,1000
@@ -245,10 +246,9 @@ class Canvas(app.Canvas):
 
         self.timer = app.Timer(1.0/60)
         self.timer.connect(self.on_timer)
-        #self.timer.start()
+        self.timer.start()
 
 
-    # ---------------------------------
     def on_initialize(self, event):
         gl.glClearColor(1,1,1,1)
         gl.glEnable(gl.GL_DEPTH_TEST)
@@ -258,7 +258,6 @@ class Canvas(app.Canvas):
         gl.glEnable(GL.GL_POINT_SPRITE)
 
 
-    # ---------------------------------
     def on_key_press(self,event):
         if event.text == ' ':
             if self.timer.running:
@@ -267,7 +266,6 @@ class Canvas(app.Canvas):
                 self.timer.start()
 
 
-    # ---------------------------------
     def on_timer(self,event):
         self.theta += .5
         self.phi += .5
@@ -278,7 +276,6 @@ class Canvas(app.Canvas):
         self.update()
 
 
-    # ---------------------------------
     def on_resize(self, event):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
@@ -286,22 +283,23 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
 
 
-    # ---------------------------------
     def on_mouse_wheel(self, event):
         self.translate +=event.delta[1]
         self.translate = max(2,self.translate)
         self.view       = np.eye(4,dtype=np.float32)
         translate(self.view, 0,0, -self.translate)
+
         self.program['u_view'] = self.view
         self.program['u_size'] = 5/self.translate
         self.update()
 
 
-    # ---------------------------------
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         with self.program as prog:
             prog.draw_arrays(gl.GL_POINTS)
+
+
 
 
 if __name__ == '__main__':
