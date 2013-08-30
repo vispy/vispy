@@ -40,12 +40,8 @@ from vispy import gl
 from OpenGL import GL
 from vispy.util.transforms import perspective, translate, rotate
 
-#app.use('glut')
-app.use('qt')
-
-
 # Manual galaxy creation
-# (did you really expect a simulation in less than 250 pylon lines ?)
+# (did you really expect a simulation in less than 250 python lines ?)
 def make_arm(n,angle):
     R = np.linspace(10,450+50*np.random.uniform(.5,1.),n)
     R += 40*np.random.normal(0,2.,n) * np.linspace(1,.1,n)
@@ -67,7 +63,7 @@ def make_arm(n,angle):
 p = 50000
 n = 3*p
 
-data = np.zeros(n, [('a_position', np.float32, 3),
+data = oogl.Data(n, [('a_position', np.float32, 3),
                     ('a_size',     np.float32, 1),
                     ('a_dist',     np.float32, 1)])
 for i in range(3):
@@ -79,28 +75,17 @@ for i in range(3):
 
 
 # Very simple colormap
-cmap = np.array([[255, 124,   0],
-                 [255, 163,  76],
-                 [255, 192, 130],
-                 [255, 214, 173],
-                 [255, 232, 212],
-                 [246, 238, 237],
-                 [237, 240, 253],
-                 [217, 228, 255],
-                 [202, 219, 255],
-                 [191, 212, 255],
-                 [182, 206, 255],
-                 [174, 202, 255],
-                 [168, 198, 255],
-                 [162, 195, 255],
-                 [158, 192, 255],
-                 [155, 189, 255],
-                 [151, 187, 255],
-                 [148, 185, 255],
-                 [145, 183, 255],
-                 [143, 182, 255],
-                 [141, 181, 255],
-                 [140, 179, 255],
+cmap = np.array([[255, 124,   0], [255, 163,  76],
+                 [255, 192, 130], [255, 214, 173],
+                 [255, 232, 212], [246, 238, 237],
+                 [237, 240, 253], [217, 228, 255],
+                 [202, 219, 255], [191, 212, 255],
+                 [182, 206, 255], [174, 202, 255],
+                 [168, 198, 255], [162, 195, 255],
+                 [158, 192, 255], [155, 189, 255],
+                 [151, 187, 255], [148, 185, 255],
+                 [145, 183, 255], [143, 182, 255],
+                 [141, 181, 255], [140, 179, 255],
                  [139, 179, 255],
                  [137, 177, 255]], dtype=np.uint8).reshape(1,24,3)
 
@@ -110,9 +95,10 @@ VERT_SHADER = """
 
 // Uniforms
 // ------------------------------------
-uniform mat4      u_model;
-uniform mat4      u_view;
-uniform mat4      u_projection;
+uniform mat4  u_model;
+uniform mat4  u_view;
+uniform mat4  u_projection;
+uniform float u_size;
 
 
 // Attributes
@@ -127,7 +113,7 @@ varying float v_size;
 varying float v_dist;
 
 void main (void) {
-    v_size  = a_size*.75;
+    v_size  = a_size*u_size*.75;
     v_dist  = a_dist;
     gl_Position = u_projection * u_view * u_model * vec4(a_position,1.0);
     gl_PointSize = v_size;
@@ -159,36 +145,31 @@ void main()
 
 
 class Canvas(app.Canvas):
+
     def __init__(self):
         app.Canvas.__init__(self)
         self.size = 1024,1024
         self.title = "A very fake galaxy [mouse scroll to zoom]"
 
         self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
-        self.buffer = oogl.VertexBuffer(data)
-
-        # Set uniform and attribute
-        self.program['a_position'] = self.buffer['a_position']
-        self.program['a_dist']     = self.buffer['a_dist']
-        self.program['a_size']     = self.buffer['a_size']
-        self.program['u_colormap'] = oogl.Texture2D(cmap)
-
-        self.view       = np.eye(4,dtype=np.float32)
-        self.model      = np.eye(4,dtype=np.float32)
+        self.view = np.eye(4,dtype=np.float32)
+        self.model = np.eye(4,dtype=np.float32)
         self.projection = np.eye(4,dtype=np.float32)
+        self.theta, self.phi = 0,0
 
         self.translate = 5
         translate(self.view, 0,0, -self.translate)
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
 
-        self.theta = 0
-        self.phi = 0
+        self.program.set_vars(data.data,
+                              u_colormap = oogl.Texture2D(cmap),
+                              u_size = 5./self.translate,
+                              u_model = self.model,
+                              u_view = self.view)
 
         self.timer = app.Timer(1.0/60)
         self.timer.connect(self.on_timer)
 
-    # ---------------------------------
+
     def on_initialize(self, event):
         gl.glClearColor(0,0,0,1)
         gl.glDisable(gl.GL_DEPTH_TEST)
@@ -199,7 +180,7 @@ class Canvas(app.Canvas):
         # Start the timer upon initialization.
         self.timer.start()
 
-    # ---------------------------------
+
     def on_key_press(self,event):
         if event.text == ' ':
             if self.timer.running:
@@ -207,7 +188,7 @@ class Canvas(app.Canvas):
             else:
                 self.timer.start()
 
-    # ---------------------------------
+
     def on_timer(self,event):
         self.theta += .11
         self.phi += .13
@@ -218,7 +199,6 @@ class Canvas(app.Canvas):
         self.update()
 
 
-    # ---------------------------------
     def on_resize(self, event):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
@@ -226,7 +206,6 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
 
 
-    # ---------------------------------
     def on_mouse_wheel(self, event):
         self.translate +=event.delta[1]
         self.translate = max(2,self.translate)
@@ -236,7 +215,7 @@ class Canvas(app.Canvas):
         #self.program['a_size'] = a_size*5/self.translate
         self.update()
 
-    # ---------------------------------
+
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         with self.program as prog:
