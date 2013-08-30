@@ -40,12 +40,8 @@ from vispy import gl
 from OpenGL import GL
 from vispy.util.transforms import perspective, translate, rotate
 
-#app.use('glut')
-app.use('qt')
-
-
 # Manual galaxy creation
-# (did you really expect a simulation in less than 250 pylon lines ?)
+# (did you really expect a simulation in less than 250 python lines ?)
 def make_arm(n,angle):
     R = np.linspace(10,450+50*np.random.uniform(.5,1.),n)
     R += 40*np.random.normal(0,2.,n) * np.linspace(1,.1,n)
