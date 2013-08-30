@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-""" Definition of VertexBuffer, ClientBuffer and ElemenBuffer classes """
+""" Definition of VertexBuffer, ClientBuffer and ElemenBuffer classes. """
 
 from __future__ import print_function, division, absolute_import
 
@@ -27,7 +27,7 @@ class Buffer(GLObject):
     """
 
 
-    def __init__(self, target, data=None):
+    def __init__(self, target, data=None, base=None):
         """ Initialize buffer into default state. """
 
         GLObject.__init__(self)
@@ -51,6 +51,8 @@ class Buffer(GLObject):
             self._set_bytesize(data.nbytes)
             self.set_data(data)
 
+        # Pointer to the base buffer (if any)
+        self._base = base
 
 
     def set_data(self, data, offset=0):
@@ -93,6 +95,11 @@ class Buffer(GLObject):
 
     def _create(self):
         """ Create buffer on GPU """
+
+        if self._base:
+            self._base._create()
+            return
+
         if not self._handle:
             handle = gl.glGenBuffers(1)
             self._handle = handle
@@ -105,7 +112,8 @@ class Buffer(GLObject):
             # WARNING: we should check of this operation is ok
             gl.glBufferData(self._target, self._bytesize, None, self._usage)
             # debug
-            print("Creating a new buffer of %d bytes" % self._bytesize)
+            # print("Creating a new buffer (%d) of %d bytes"
+            #        % (self._handle,self._bytesize))
         gl.glBindBuffer(self._target, 0)
         self._valid = True            
 
@@ -122,13 +130,19 @@ class Buffer(GLObject):
     def _activate(self):
         """ Bind the buffer to some target """
 
-        gl.glBindBuffer(self._target, self._handle)
+        if self._base:
+            self._base.activate()
+        else:
+            gl.glBindBuffer(self._target, self._handle)
 
 
     def _deactivate(self):
         """ Unbind the current bound buffer """
 
-        gl.glBindBuffer(self._target, 0)
+        if self._base:
+            self._base.deactivate()
+        else:
+            gl.glBindBuffer(self._target, 0)
 
 
     def _update(self):
@@ -142,7 +156,8 @@ class Buffer(GLObject):
             data, count, offset = self._pending_data.pop(0)
 
             # debug
-            print("Uploading %d bytes at offset %d" % (count, offset))
+            # print("Uploading %d bytes at offset %d to buffer (%d)"
+            #        % (count, offset, self._handle))
 
             gl.glBufferSubData(self._target, offset, count, data)
 
@@ -161,7 +176,7 @@ class DataBuffer(Buffer):
     def __init__(self, data=None, dtype=None, count=0, base=None, offset=0, target=0):
         """ Initialize the buffer """
 
-        Buffer.__init__(self, target, data)
+        Buffer.__init__(self, target, data, base=base)
 
         # Check if this buffer is a view of another buffer
         if base is not None:
@@ -197,9 +212,7 @@ class DataBuffer(Buffer):
         else:
             raise ValueError("One of 'data' or 'dtype' must be specified.")
 
-        # Pointer to the base buffer (if any)
-        self._base = base
-        
+
         # Compute gl type corresponding to dtype
         gltypes = { ('int8',1)    : gl.GL_BYTE,
                     ('uint8',1)   : gl.GL_UNSIGNED_BYTE,
@@ -224,11 +237,16 @@ class DataBuffer(Buffer):
                     ('bool',2) : gl.GL_BOOL_VEC2,
                     ('bool',3) : gl.GL_BOOL_VEC3,
                     ('bool',4) : gl.GL_BOOL_VEC4 }
-        cshape = self._dtype.shape
+
+        dtype = self._dtype
+        if dtype.fields and len(dtype.fields) == 1:
+            dtype = dtype[dtype.names[0]]
+        cshape = dtype.shape
         if cshape not in ( (2,2), (3,3), (4,4) ):
             cshape = int(np.prod(cshape))
-        ctype = self._dtype.base
+        ctype = dtype.base
         self._gtype = gltypes.get((str(ctype), cshape), None)
+
 
 
     @property
@@ -309,10 +327,10 @@ class DataBuffer(Buffer):
         elif data.nbytes > count:
             raise ValueError("Too much data.")
 
-        # Do we check data type here or do we cast the data to the same
-        # internal dtype ? This would make a silent copy of the data which can
-        # be problematic in some cases
-        # data = data.astype(self._dtype)
+        # WARNING: Do we check data type here or do we cast the data to the
+        # same internal dtype ? This would make a silent copy of the data which
+        # can be problematic in some cases.
+        data = data.astype(self._dtype)
         self.set_data(data, offset=offset)
 
 
@@ -332,9 +350,14 @@ class DataBuffer(Buffer):
 
         if dtype is None:
             dtype = self._dtype
-        bsize = int(np.prod(dtype.shape))
-        btype = dtype.base
-        return btype, bsize
+
+        if dtype.fields and len(dtype.fields) == 1:
+            dtype = dtype[dtype.names[0]]
+
+        csize = int(np.prod(dtype.shape))
+        ctype = dtype.base
+
+        return ctype, csize
 
 
 
@@ -432,8 +455,8 @@ class ClientBuffer(DataBuffer):
     """
     A client buffer is a buffer that only exists (permanently) on the CPU. It
     cannot be modified nor uploaded into a GPU buffer. It merely serves as
-    rapidly passing data during a drawing operations.
-
+    passing direct data during a drawing operations.
+    
     Note this kind of buffer is highly inefficient since data is uploaded at
     each drawing operations.
     """
