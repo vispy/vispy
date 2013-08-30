@@ -88,6 +88,17 @@ class Buffer(GLObject):
         self._need_update = True
 
 
+    @property
+    def handle(self):
+        """ Return a handle on the base buffer """
+
+        if self._base:
+            return self.base._handle
+        else:
+            return self._handle
+
+
+
     def _set_bytesize(self, bytesize):
         """ Set buffer bytesize (invalidates all pending operations) """
 
