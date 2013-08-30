@@ -90,46 +90,32 @@ class Buffer(GLObject):
 
         self._pending_data = []
         self._bytesize = bytesize
-        self._valid = False # This will force a reallocation
+        self._need_update = True  # This will force a call to _update
 
 
     def _create(self):
         """ Create buffer on GPU """
-
+        
         if self._base:
-            self._base._create()
-            return
-
-        if not self._handle:
-            handle = gl.glGenBuffers(1)
-            self._handle = handle
-
-        # Check if size has been changed and allocate new size if necessary
-        gl.glBindBuffer(self._target, self._handle)
-        bytesize = gl.glGetBufferParameteriv(self._target, gl.GL_BUFFER_SIZE)
-        if bytesize != self._bytesize:
-            # This will only allocate the buffer on GPU
-            # WARNING: we should check of this operation is ok
-            gl.glBufferData(self._target, self._bytesize, None, self._usage)
-            # debug
-            # print("Creating a new buffer (%d) of %d bytes"
-            #        % (self._handle,self._bytesize))
-        gl.glBindBuffer(self._target, 0)
-        self._valid = True            
-
-
+            if not self._base._handle:
+                self._base._create()
+            self._handle = self._base._handle  # Prevent create from being called
+        else:
+            self._handle = gl.glGenBuffers(1)
+    
+    
     def _delete(self):
         """ Delete buffer from GPU """
-
-        if self._handle and gl:
+        
+        if self._base:
+            self._base.delete()
+        else:
             gl.glDeleteBuffers(1 , [self._handle])
-            self._handle = 0
-            self._valid = False
     
-
+    
     def _activate(self):
         """ Bind the buffer to some target """
-
+        
         if self._base:
             self._base.activate()
         else:
@@ -148,9 +134,23 @@ class Buffer(GLObject):
     def _update(self):
         """ Upload all pending data to GPU. """
         
+        if self._base:
+            return self._base._update()
+            
         # Bind buffer now 
         gl.glBindBuffer(self._target, self._handle)
-
+       
+        # Check if size has been changed and allocate new size if necessary
+        # todo: keep track of GL_BUFFER_SIZE ourselves, this call is slow 
+        bytesize = gl.glGetBufferParameteriv(self._target, gl.GL_BUFFER_SIZE)
+        if bytesize != self._bytesize:
+            # This will only allocate the buffer on GPU
+            # WARNING: we should check if this operation is ok
+            gl.glBufferData(self._target, self._bytesize, None, self._usage)
+            # debug
+            # print("Creating a new buffer (%d) of %d bytes"
+            #        % (self._handle,self._bytesize))
+        
         # Upload data
         while self._pending_data:
             data, count, offset = self._pending_data.pop(0)
@@ -160,11 +160,6 @@ class Buffer(GLObject):
             #        % (count, offset, self._handle))
 
             gl.glBufferSubData(self._target, offset, count, data)
-
-        # Sanity measure    
-        gl.glBindBuffer(self._target, 0)
-        self._need_update = False
-
 
 
 
@@ -288,7 +283,7 @@ class DataBuffer(Buffer):
     @property
     def base(self):
         """Buffer base if this buffer is a view on another buffer. """
-        return self._dtype
+        return self._buffer
 
 
     def __setitem__(self, key, data):
@@ -330,7 +325,8 @@ class DataBuffer(Buffer):
         # WARNING: Do we check data type here or do we cast the data to the
         # same internal dtype ? This would make a silent copy of the data which
         # can be problematic in some cases.
-        data = data.astype(self._dtype)
+        if data.dtype != self._dtype:
+            data = data.astype(self._dtype)  # astype() always makes a copy
         self.set_data(data, offset=offset)
 
 
