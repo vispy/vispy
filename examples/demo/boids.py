@@ -121,16 +121,16 @@ class Canvas(app.Canvas):
         with self._program as prog:
             prog['u_size'] = 4.0
             prog['u_color'] = 0.0, 1.0, 1.0
-            prog['position'] = oogl.ClientArray(boids['position'])
+            prog['position'] = oogl.ClientBuffer(boids['position'])
             prog.draw_arrays(gl.GL_POINTS)
             #
             prog['u_size'] = 16.0
             prog['u_color'] = 0.0, 1.0, 0.0
-            prog['position'] = oogl.ClientArray(target.reshape((1,3)))
+            prog['position'] = oogl.ClientBuffer(target.reshape((1,3)))
             prog.draw_arrays(gl.GL_POINTS)
             #
             prog['u_color'] = 1.0, 0.0, 0.0
-            prog['position'] = oogl.ClientArray(predator.reshape((1,3)))
+            prog['position'] = oogl.ClientBuffer(predator.reshape((1,3)))
             prog.draw_arrays(gl.GL_POINTS)
         
         # Next iteration

@@ -133,7 +133,7 @@ class Buffer(GLObject):
 
     def _update(self):
         """ Upload all pending data to GPU. """
-        
+        print('asdasdasdasd')
         if self._base:
             return self._base._update()
             
@@ -197,6 +197,8 @@ class DataBuffer(Buffer):
 
         # Check if data is a numpy array
         elif isinstance(data,np.ndarray):
+            if data.dtype == np.float64:
+                data = data.astype('float32')
             self._dtype     = data.dtype
             self._bytesize  = data.nbytes
             self._itemsize  = self._dtype.itemsize
@@ -237,10 +239,14 @@ class DataBuffer(Buffer):
         if dtype.fields and len(dtype.fields) == 1:
             dtype = dtype[dtype.names[0]]
         cshape = dtype.shape
+        if not cshape and data is not None:
+            cshape = (data.shape[-1],)
         if cshape not in ( (2,2), (3,3), (4,4) ):
             cshape = int(np.prod(cshape))
         ctype = dtype.base
         self._gtype = gltypes.get((str(ctype), cshape), None)
+        if self._gtype is None:
+            pass # todo: raise error???
 
 
 
@@ -283,7 +289,7 @@ class DataBuffer(Buffer):
     @property
     def base(self):
         """Buffer base if this buffer is a view on another buffer. """
-        return self._buffer
+        return self._base
 
 
     def __setitem__(self, key, data):
@@ -343,13 +349,13 @@ class DataBuffer(Buffer):
 
     def _get_gtype(self, dtype=None):
         """ Get component type and number from a numpy dtype. """
-
+        
         if dtype is None:
             dtype = self._dtype
-
+        
         if dtype.fields and len(dtype.fields) == 1:
             dtype = dtype[dtype.names[0]]
-
+        
         csize = int(np.prod(dtype.shape))
         ctype = dtype.base
 

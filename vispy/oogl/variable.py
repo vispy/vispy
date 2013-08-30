@@ -347,15 +347,26 @@ class Attribute(Variable):
         
         # Generic vertex attribute (all vertices receive the same value)
         if self._generic:
+            
+            # Tell OpenGL to use the constant value
+            gl.glDisableVertexAttribArray(self._loc)
+            
             # Early exit
             if not self._dirty:
                 return
+            
             # Apply
-            gl.glDisableVertexAttribArray(self._loc)
             self._afunction(self._loc, *self._data)
 
         # Client side array
         elif isinstance(self._data, ClientBuffer):
+            
+            # Tell OpenGL to use the array and not the glVertexAttrib* value
+            gl.glEnableVertexAttribArray(self._loc)
+            
+            # Disable any VBO
+            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+            
             # Early exit (pointer to CPU-data is still known by Program)
             if not self._dirty:
                 return
@@ -370,11 +381,7 @@ class Attribute(Variable):
             offset = 0
             stride = self._data.itemsize
 
-            # Tell OpenGL to use the array and not the glVertexAttrib* value
-            gl.glEnableVertexAttribArray(self._loc)
-            
             # Apply (first disable any previous VertexBuffer)
-            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
             gl.glVertexAttribPointer(self._loc, size, gtype, False, stride, data)
         
         # Regular vertex buffer or vertex buffer view
@@ -386,10 +393,7 @@ class Attribute(Variable):
             # Tell OpenGL to use the array and not the glVertexAttrib* value
             gl.glEnableVertexAttribArray(self._loc)
             
-            # Always enable the VBO
-            #if isinstance(data, VertexBufferView):
-            #    program.activate_object(data.buffer)
-            #else:
+            # Enable the VBO
             program.activate_object(data)
             
             # Early exit

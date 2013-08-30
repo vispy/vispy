@@ -242,8 +242,8 @@ class Program(GLObject):
         
         elif isinstance(vars, VertexBuffer):
             # Vertex buffer
-            if isinstance(vars.type, dict):
-                for k in vars.type:
+            if vars.dtype.names:
+                for k in vars.dtype.names:
                     D[k] = vars[k]
             else:
                 raise ValueError('Can only set attributes with a ' + 
@@ -594,7 +594,7 @@ class Program(GLObject):
             self.activate_object(indices)
             # Prepare
             offset = None  # todo: allow the use of offset
-            gltype = ElementBuffer.DTYPES[indices.type]
+            gltype = ElementBuffer.DTYPES[indices.gtype]
             # Draw
             gl.glDrawElements(mode, indices.count, gltype, offset) 
         
