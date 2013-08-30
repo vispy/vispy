@@ -7,7 +7,6 @@ from vispy import gl
 
 from vispy.oogl.shader import VertexShader
 from vispy.oogl.shader import FragmentShader
-from vispy.oogl.shader import ShaderException
 
 
 

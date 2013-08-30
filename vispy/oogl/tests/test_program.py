@@ -9,7 +9,7 @@ from vispy import gl
 from vispy.oogl.program import Program
 from vispy.oogl.shader import VertexShader
 from vispy.oogl.shader import FragmentShader
-from vispy.oogl.program import ProgramException
+from vispy.oogl.buffer import VertexBuffer
 
 
 
@@ -112,7 +112,7 @@ class ProgramTest(unittest.TestCase):
         frag = FragmentShader("")
 
         program = Program(vert,frag)
-        program["f"] = np.array(100, dtype=np.float32)
+        program["f"] = VertexBuffer(np.array(100, dtype=np.float32))
         assert program._attributes["f"].count == 100
 
         program = Program(vert,frag)
@@ -133,16 +133,16 @@ class ProgramTest(unittest.TestCase):
             program["color"] = np.array((100,5), dtype=np.float32)
 
         program = Program(vert,frag)
-        program["color"] = np.array((100,4), dtype=np.float32)
-        assert program._attributes["f"].count == 100
+        program["color"] = VertexBuffer(np.array((100,4), dtype=np.float32))
+        assert program._attributes["color"].count == 400
 
         program = Program(vert,frag)
         program["color"] = np.array((100,1,4), dtype=np.float32)
-        assert program._attributes["f"].count == 100
+        assert program._attributes["color"].count == 400
 
         program = Program(vert,frag)
         program["color"] = np.array(100, dtype=(np.float32,4))
-        assert program._attributes["f"].count == 100
+        assert program._attributes["color"].count == 100
 
 
 if __name__ == "__main__":

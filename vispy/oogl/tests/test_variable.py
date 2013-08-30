@@ -9,8 +9,6 @@ from vispy import gl
 from vispy.oogl.variable import Uniform
 from vispy.oogl.variable import Variable
 from vispy.oogl.variable import Attribute
-from vispy.oogl.variable import VariableException
-
 
 
 # -----------------------------------------------------------------------------
