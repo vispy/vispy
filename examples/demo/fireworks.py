@@ -30,9 +30,9 @@ im1 *= np.array((X**2 + Y**2) <= radius * radius, dtype='float32')
 N = 10000
 
 # Create vertex data container
-vertex_data = np.zeros((N,), dtype=[('a_lifetime', np.float32, 1),
-                                    ('a_startPosition', np.float32, 3),
-                                    ('a_endPosition', np.float32, 3)])
+data = oogl.Data(N, [('a_lifetime', np.float32, 1),
+                     ('a_startPosition', np.float32, 3),
+                     ('a_endPosition', np.float32, 3)])
 
 
 VERT_SHADER = """
@@ -89,14 +89,9 @@ class Canvas(app.Canvas):
         self.size = 800,800
 
         # Create program
-        self._program = oogl.Program( VERT_SHADER, FRAG_SHADER)
-        
-        # Create vbo
-        self._vbo = oogl.VertexBuffer(vertex_data)
-        
-        # Set uniforms, samplers, attributes
-        self._program.set_vars(self._vbo)
-        self._program['s_texture'] = oogl.Texture2D(im1)
+        self._program = oogl.Program( VERT_SHADER, FRAG_SHADER)        
+        self._program.set_vars(data.data,
+                               s_texture = oogl.Texture2D(im1))
         
         # Create first explosion
         self._new_explosion()
@@ -151,12 +146,9 @@ class Canvas(app.Canvas):
         self._program['u_color'] = tuple(color)+ (alpha,)
         
         # Create new vertex data
-        vertex_data['a_lifetime'] = np.random.normal(2.0, 0.5, (N,))
-        vertex_data['a_startPosition'] = np.random.normal(0.0, 0.2, (N,3))
-        vertex_data['a_endPosition'] = np.random.normal(0.0, 1.2, (N,3))
-       
-        # Update VBO
-        self._vbo.set_data(vertex_data)
+        data['a_lifetime'] = np.random.normal(2.0, 0.5, (N,))
+        data['a_startPosition'] = np.random.normal(0.0, 0.2, (N,3))
+        data['a_endPosition'] = np.random.normal(0.0, 1.2, (N,3))
         
         # Set time to zero
         self._starttime = time.time()
