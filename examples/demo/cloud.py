@@ -4,26 +4,31 @@
 Demonstrating a cloud of points.
 """
 
+import numpy as np
+from OpenGL import GL
+
 from vispy import oogl
 from vispy import app
 from vispy import gl
-from OpenGL import GL
-import numpy as np
-
-# Create vetices 
-n = 1000000
-a_position = 0.45 * np.random.randn(n, 3).astype(np.float32)
-a_bg_color = np.random.uniform(0.85,1.00,(n,4)).astype(np.float32)
-a_bg_color[:,3] = 1
-a_fg_color = 0.,0.,0.,1.
-a_size  = np.random.uniform(5,10,(n,1)).astype(np.float32)
-u_linewidth = 1.0
-u_antialias = 1.0
-
 from vispy.util.transforms import perspective, translate, rotate
 
 
-VERT_SHADER = """
+# Create vertices 
+n = 1000000
+data = oogl.Data(n, [('a_position', np.float32, 3),
+                     ('a_bg_color', np.float32, 4),
+                     ('a_fg_color', np.float32, 4),
+                     ('a_size',     np.float32, 1)])
+data['a_position'] = 0.45 * np.random.randn(n,3)
+data['a_bg_color'] = np.random.uniform(0.85,1.00,(n,4))
+data['a_fg_color'] = 0,0,0,1
+data['a_size'] = np.random.uniform(5,10,n)
+u_linewidth = 1.0
+u_antialias = 1.0
+u_size = 1
+
+
+vert = """
 #version 120
 
 // Uniforms
@@ -33,6 +38,7 @@ uniform mat4 u_view;
 uniform mat4 u_projection;
 uniform float u_linewidth;
 uniform float u_antialias;
+uniform float u_size;
 
 // Attributes
 // ------------------------------------
@@ -50,7 +56,7 @@ varying float v_linewidth;
 varying float v_antialias;
 
 void main (void) {
-    v_size = a_size;
+    v_size = a_size * u_size;
     v_linewidth = u_linewidth;
     v_antialias = u_antialias;
     v_fg_color  = a_fg_color;
@@ -60,7 +66,7 @@ void main (void) {
 }
 """
 
-FRAG_SHADER = """
+frag = """
 #version 120
 
 // Constants
@@ -221,24 +227,19 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         self.size = 1000,1000
 
-        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
-        # Set uniform and attribute
-        self.program['a_fg_color'] = a_fg_color  # Tuple
-        self.program['a_bg_color'] = oogl.VertexBuffer(a_bg_color)
-        self.program['a_position'] = oogl.VertexBuffer(a_position)
-        self.program['a_size']     = oogl.VertexBuffer(a_size)
-        self.program['u_linewidth']  = u_linewidth
-        self.program['u_antialias']  = u_antialias
-
-        self.view       = np.eye(4,dtype=np.float32)
-        self.model      = np.eye(4,dtype=np.float32)
+        self.program = oogl.Program(vert,frag)
+        self.view = np.eye(4,dtype=np.float32)
+        self.model = np.eye(4,dtype=np.float32)
         self.projection = np.eye(4,dtype=np.float32)
-
         self.translate = 5
         translate(self.view, 0,0, -self.translate)
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
 
+        self.program.set_vars(data.data,
+                              u_linewidth = u_linewidth,
+                              u_antialias = u_antialias,
+                              u_model = self.model,
+                              u_view = self.view,
+                              u_size = 5/self.translate)
         self.theta = 0
         self.phi = 0
 
@@ -292,7 +293,7 @@ class Canvas(app.Canvas):
         self.view       = np.eye(4,dtype=np.float32)
         translate(self.view, 0,0, -self.translate)
         self.program['u_view'] = self.view
-        self.program['a_size'] = a_size*5/self.translate
+        self.program['u_size'] = 5/self.translate
         self.update()
 
 
