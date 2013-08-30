@@ -20,18 +20,25 @@ n = 250
 p = 50
 T = np.random.uniform(0,2*np.pi,n)
 dT = np.random.uniform(50,100,n)/3000
-a_position = np.zeros((n,2),dtype=np.float32)
-a_position[:,0] = np.cos(T)
-a_position[:,1] = np.sin(T)
-a_rot = np.random.uniform(0,2*np.pi,(n,4)).astype(np.float32)
-a_color = np.ones((n,4),dtype=np.float32) * (1,1,1,1)
-u_size = 2
-u_linewidth = 1.0
-u_antialias = 1.0
+position = np.zeros((n,2),dtype=np.float32)
+position[:,0] = np.cos(T)
+position[:,1] = np.sin(T)
+rot = np.random.uniform(0,2*np.pi,(n,4)).astype(np.float32)
+color = np.ones((n,4),dtype=np.float32) * (1,1,1,1)
+u_size = 6
 
-a_position = np.repeat(a_position, p, axis=0)
-a_color    = np.repeat(a_color,    p, axis=0)
-a_rot      = np.repeat(a_rot,      p, axis=0)
+position = np.repeat(position, p, axis=0)
+color    = np.repeat(color,    p, axis=0)
+rot      = np.repeat(rot,      p, axis=0)
+
+data = np.zeros(n*p, [('a_position', np.float32, 2),
+                      ('a_color',    np.float32, 4),
+                      ('a_rot',      np.float32, 4)])
+data['a_position'] = position
+data['a_color'] = color
+data['a_rot'] = rot
+                      
+
 
 
 VERT_SHADER = """
@@ -42,8 +49,6 @@ VERT_SHADER = """
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
-uniform float u_linewidth;
-uniform float u_antialias;
 uniform float u_size;
 
 // Attributes
@@ -57,8 +62,6 @@ attribute mat4  a_model;
 // --------
 varying vec4 v_color;
 varying float v_size;
-varying float v_linewidth;
-varying float v_antialias;
 
 mat4 rotation(vec3 axis, float angle) {
     axis = normalize(axis);
@@ -82,13 +85,11 @@ mat4 rotation(vec3 axis, float angle) {
 
 void main (void) {
     v_size = u_size;
-    v_linewidth = u_linewidth;
-    v_antialias = u_antialias;
     v_color = a_color;
 
     mat4 R = rotation(a_rot.xyz, a_rot.w);
     gl_Position = u_projection * u_view * u_model * R * vec4(a_position, 0.0, 1.0);
-    gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
+    gl_PointSize = v_size;
 }
 """
 
@@ -99,9 +100,6 @@ FRAG_SHADER = """
 // ------------------------------------
 varying vec4 v_color;
 varying float v_size;
-varying float v_linewidth;
-varying float v_antialias;
-
 
 // Main
 // ------------------------------------
@@ -121,14 +119,13 @@ class Canvas(app.Canvas):
     def __init__(self, **kwargs):
         
         self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
-        
+        self.buffer = oogl.VertexBuffer(data)
+
         # Set uniform and attribute
-        self.program['a_color'] = oogl.ClientArray(a_color)
-        self.program['a_position'] = oogl.ClientArray(a_position)
-        self.program['a_rot']      = oogl.ClientArray(a_rot)
-        self.program['u_linewidth']  = u_linewidth
-        self.program['u_antialias']  = u_antialias
-        self.program['u_size']       = u_size
+        self.program['a_color'] = self.buffer['a_color']
+        self.program['a_position'] = self.buffer['a_position']
+        self.program['a_rot'] = self.buffer['a_rot']
+        self.program['u_size'] = u_size
 
         self.view       = np.eye(4,dtype=np.float32)
         self.model      = np.eye(4,dtype=np.float32)
@@ -207,13 +204,13 @@ class Canvas(app.Canvas):
 
         self.index = (self.index+1)%p
         T += dT #np.pi/200
-        a_position[self.index::p,0] = np.cos(T)
-        a_position[self.index::p,1] = .5*np.sin(T)
-        a_color[:,3] -= 1.0/p
-        a_color[self.index::p,3] = 1
+        data['a_position'][self.index::p,0] = np.cos(T)
+        data['a_position'][self.index::p,1] = .5*np.sin(T)
+        data['a_color'][:,3] -= 1.0/p
+        data['a_color'][self.index::p,3] = 1
+        self.buffer[...] = data
+
         with self.program as prog:
-            self.program['a_position'] = oogl.ClientArray(a_position)
-            self.program['a_color'] = oogl.ClientArray(a_color)
             prog.draw_arrays(gl.GL_POINTS)
 
 

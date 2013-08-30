@@ -16,7 +16,7 @@ import numpy as np
 
 from vispy import gl
 from .globject import GLObject
-from .buffer import ClientArray, VertexBuffer, VertexBufferView
+from .buffer import ClientBuffer, VertexBuffer
 from .texture import Texture, Texture2D, TextureCubeMap, Texture3D
 from vispy.util.six import string_types
 
@@ -155,7 +155,6 @@ class Uniform(Variable):
         }
 
 
-    # ---------------------------------
     def __init__(self, name, gtype):
         Variable.__init__(self, name, gtype)
         
@@ -218,12 +217,11 @@ class Uniform(Variable):
         if self._loc is None:
             raise VariableError("Uniform is not active")
         
-        # todo: WARNING : Uniform are supposed to keep their value between program
+        #  WARNING : Uniform are supposed to keep their value between program
         #           activation/deactivation (from the GL documentation). It has
         #           been tested on some machines but if it is not the case on
         #           every machine, we can expect nasty bugs from these early
         #           returns
-        
             
         # Matrices (need a transpose argument)
         if self._gtype in (gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT4):
@@ -254,12 +252,12 @@ class Uniform(Variable):
         
         # Mark as uploaded
         self._dirty = False
-        #print('upload uniform %s' % self.name)
-        
-        
 
 
 
+
+
+# --------------------------------------------------------- Attribute class ---
 class Attribute(Variable):
     """
     An Attribute represents a program attribute variable.
@@ -275,7 +273,7 @@ class Attribute(Variable):
         gl.GL_FLOAT_VEC4:   gl.glVertexAttrib4f
     }
 
-    # ---------------------------------
+
     def __init__(self, name, gtype):
         Variable.__init__(self, name, gtype)
         
@@ -293,10 +291,10 @@ class Attribute(Variable):
         if self._generic or self._data is None:
             return None
         else:
-            return len(self._data)
+            return self._data.itemcount
     
     
-    # ---------------------------------
+
     def set_data(self, data):
         """ Set data for this attribute. """
         
@@ -318,13 +316,13 @@ class Attribute(Variable):
             self._generic = True
             self._afunction = Attribute._afunctions[self._gtype]
         
-        elif isinstance(data, (ClientArray, VertexBuffer, VertexBufferView)):
+        elif isinstance(data, (ClientBuffer, VertexBuffer)):
             # Just store the Buffer
             self._data = data
             self._generic = False
         elif isinstance(data, np.ndarray):
             raise ValueError('Cannot set attribute data using numpy arrays: ' + 
-                            'use tuple, ClientArray or VertexBuffer instead. ')
+                            'use tuple, ClientBuffer or VertexBuffer instead. ')
         else:
             raise ValueError('Wrong data for attribute.')
         
@@ -357,7 +355,7 @@ class Attribute(Variable):
             self._afunction(self._loc, *self._data)
 
         # Client side array
-        elif isinstance(self._data, ClientArray):
+        elif isinstance(self._data, ClientBuffer):
             # Early exit (pointer to CPU-data is still known by Program)
             if not self._dirty:
                 return
@@ -365,10 +363,13 @@ class Attribute(Variable):
             # Get numpy array from its container
             data = self._data.data
             
-            # Get relevant information from gl_typeinfo
-            size, gtype, dtype = gl_typeinfo[self._gtype]
-            stride = 0
-            
+            # Check attribute format against data format
+            size, gtype, _ = gl_typeinfo[self._gtype]
+            if self._gtype != self._data._gtype: 
+                raise ValueError("Data not compatible with attribute type")
+            offset = 0
+            stride = self._data.itemsize
+
             # Tell OpenGL to use the array and not the glVertexAttrib* value
             gl.glEnableVertexAttribArray(self._loc)
             
@@ -386,25 +387,30 @@ class Attribute(Variable):
             gl.glEnableVertexAttribArray(self._loc)
             
             # Always enable the VBO
-            if isinstance(data, VertexBufferView):
-                program.activate_object(data.buffer)
-            else:
-                program.activate_object(data)
+            #if isinstance(data, VertexBufferView):
+            #    program.activate_object(data.buffer)
+            #else:
+            program.activate_object(data)
             
             # Early exit
             if not self._dirty:
                 return
             
-            # Get relevant information from gl_typeinfo
-            size, gtype, dtype = gl_typeinfo[self._gtype]
-            offset, stride = data._offset, data._stride  # view_params not on VertexBuffer
+            # Check attribute format against data format
+            size, gtype, _ = gl_typeinfo[self._gtype]
+            if self._gtype != self._data._gtype: 
+                raise ValueError("Data not compatible with attribute type")
+            offset = self._data.offset
+            stride = self._data.itemsize
+
+            #size, gtype, dtype = gl_typeinfo[self._gtype]
+            #offset, stride = data._offset, data._stride  # view_params not on VertexBuffer
 
             # Make offset a pointer, or it will be interpreted as a small array
             offset = ctypes.c_void_p(offset)
                 
             # Apply
-            gl.glVertexAttribPointer(
-                self._loc, size, gtype,  False, stride, offset)
+            gl.glVertexAttribPointer(self._loc, size, gtype,  False, stride, offset)
         
         # Mark as uploaded
         self._dirty = False
