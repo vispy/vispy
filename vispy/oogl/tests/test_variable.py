@@ -49,43 +49,43 @@ class UniformTest(unittest.TestCase):
 
     def test_float(self):
         uniform = Uniform("A", gl.GL_FLOAT)
-        assert uniform.data.dtype == np.float32
-        assert uniform.data.size == 1
+        assert uniform.dtype == np.float32
+        assert uniform.size == 1
 
     def test_vec2(self):
         uniform = Uniform("A", gl.GL_FLOAT_VEC2)
-        assert uniform.data.dtype == np.float32
-        assert uniform.data.size == 2
+        assert uniform.dtype == np.float32
+        assert uniform.size == 2
 
     def test_vec3(self):
         uniform = Uniform("A", gl.GL_FLOAT_VEC2)
-        assert uniform.data.dtype == np.float32
-        assert uniform.data.size == 2
+        assert uniform.dtype == np.float32
+        assert uniform.size == 2
 
     def test_vec4(self):
         uniform = Uniform("A", gl.GL_FLOAT_VEC2)
-        assert uniform.data.dtype == np.float32
-        assert uniform.data.size == 2
+        assert uniform.dtype == np.float32
+        assert uniform.size == 2
 
     def test_int(self):
         uniform = Uniform("A", gl.GL_INT)
-        assert uniform.data.dtype == np.int32
-        assert uniform.data.size == 1
+        assert uniform.dtype == np.int32
+        assert uniform.size == 1
 
     def test_mat2(self):
         uniform = Uniform("A", gl.GL_FLOAT_MAT2)
-        assert uniform.data.dtype == np.float32
-        assert uniform.data.size == 4
+        assert uniform.dtype == np.float32
+        assert uniform.size == 4
 
     def test_mat3(self):
         uniform = Uniform("A", gl.GL_FLOAT_MAT3)
-        assert uniform.data.dtype == np.float32
-        assert uniform.data.size == 9
+        assert uniform.dtype == np.float32
+        assert uniform.size == 9
 
     def test_mat4(self):
         uniform = Uniform("A", gl.GL_FLOAT_MAT4)
-        assert uniform.data.dtype == np.float32
-        assert uniform.data.size == 16
+        assert uniform.dtype == np.float32
+        assert uniform.size == 16
 
     def test_set(self):
         uniform = Uniform("A", gl.GL_FLOAT_VEC4)

@@ -246,31 +246,52 @@ class DataBuffer(Buffer):
                 self._nbytes   = self._stride * self._size
                 self._offset   = 0
                 self._shape    = (size,1)
+
+                # Compute internal shape as (x,y) and base dtype
+                dtype = self._dtype
+                shape = [size,]
+                if dtype.fields:
+                    if len(dtype.fields) == 1:
+                        shape.extend( [np.prod(dtype[0].shape)] )
+                else:
+                    self._dtype = dtype.base
+                    shape.extend( dtype.shape)
+                if len(shape) == 1:
+                    shape = (shape[0],1)
+                elif len(shape) > 2:
+                    shape = (np.prod(shape[:-1]),shape[:-1])
+                self._shape = tuple(shape)
+
             else:
                 raise ValueError("Unknown data type.")
 
         # Check if data is a numpy array
         elif isinstance(data,np.ndarray):
-
-            # Makes sure we have a native typed array
-            dtype = data.dtype
-            shape = list(data.shape)
-            if dtype.fields and len(dtype.fields) == 1:
-                data = data[dtype.names[0]]
-                shape.extend( [np.prod(dtype[0].shape)] )
-
-            # Computes a two dimensional shape
-            if len(shape) == 1:
-                shape = (shape[0],1)
-            elif len(shape) > 2:
-                shape = (np.prod(shape[:-1]),shape[:-1])
-
-            # Data is a structured array
+            # If data is a structure array with a unique field
+            # we get this unique field as data
+            if data.dtype.fields and len(data.dtype.fields) == 1:
+                data = data[data.dtype.names[0]]
+                
             self._dtype   = data.dtype
             self._nbytes  = data.nbytes
             self._stride  = self._dtype.itemsize
             self._size    = data.size
             self._offset  = 0
+
+            # Compute internal shape as (x,y) and base dtype
+            dtype = data.dtype
+            shape = list(data.shape) or [1]
+
+            if dtype.fields:
+                if len(dtype.fields) == 1:
+                    shape.extend( [np.prod(dtype[0].shape)] )
+            else:
+                self._dtype = dtype.base
+                shape.extend( dtype.shape)
+            if len(shape) == 1:
+                shape = (shape[0],1)
+            elif len(shape) > 2:
+                shape = (np.prod(shape[:-1]),shape[:-1])
             self._shape = shape
 
             # Data is a view on a structured array (no contiguous data) We know
@@ -575,6 +596,21 @@ class ClientBuffer(DataBuffer):
 if __name__ == '__main__':
     import sys
     import OpenGL.GLUT as glut
+
+    VertexBuffer(np.array(100, dtype=np.float32))
+
+    data = np.zeros(100, [ ('a', np.float32, 1),
+                           ('b', np.float32, 2),
+                           ('c', np.float32, 3) ] )
+    buffer = VertexBuffer(data)
+    print( buffer['a']._shape )
+    print( buffer['a']._dtype )
+    print( buffer['b']._shape )
+    print( buffer['b']._dtype )
+    print( buffer['c']._shape )
+    print( buffer['c']._dtype )
+    sys.exit()
+
 
     data = np.zeros(100, [('index', np.uint32,2)])
     buffer = ElementBuffer(data=data)

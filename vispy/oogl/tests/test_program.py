@@ -10,6 +10,7 @@ from vispy.oogl.program import Program
 from vispy.oogl.shader import VertexShader
 from vispy.oogl.shader import FragmentShader
 from vispy.oogl.buffer import VertexBuffer
+from vispy.oogl.buffer import ClientBuffer
 
 
 
@@ -112,12 +113,17 @@ class ProgramTest(unittest.TestCase):
         frag = FragmentShader("")
 
         program = Program(vert,frag)
-        program["f"] = VertexBuffer(np.array(100, dtype=np.float32))
+        program["f"] = VertexBuffer(np.zeros(100, dtype=np.float32))
         assert program._attributes["f"].count == 100
 
         program = Program(vert,frag)
-        program["f"] = np.array((100,1,1), dtype=np.float32)
+        program["f"] = ClientBuffer(np.zeros((100,1,1), dtype=np.float32))
         assert program._attributes["f"].count == 100
+
+        program = Program(vert,frag)
+        with self.assertRaises(ValueError):
+            program["f"] = np.zeros((100,1,1), dtype=np.float32)
+
 
 
     def test_set_attribute_vec4(self):
@@ -133,15 +139,15 @@ class ProgramTest(unittest.TestCase):
             program["color"] = np.array((100,5), dtype=np.float32)
 
         program = Program(vert,frag)
-        program["color"] = VertexBuffer(np.array((100,4), dtype=np.float32))
-        assert program._attributes["color"].count == 400
+        program["color"] = ClientBuffer(np.zeros((100,4), dtype=np.float32))
+        assert program._attributes["color"].count == 100
 
         program = Program(vert,frag)
-        program["color"] = np.array((100,1,4), dtype=np.float32)
-        assert program._attributes["color"].count == 400
+        program["color"] = ClientBuffer(np.zeros((100,1,4), dtype=np.float32))
+        assert program._attributes["color"].count == 100
 
         program = Program(vert,frag)
-        program["color"] = np.array(100, dtype=(np.float32,4))
+        program["color"] = ClientBuffer(np.zeros(100, dtype=(np.float32,4)))
         assert program._attributes["color"].count == 100
 
 

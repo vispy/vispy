@@ -77,7 +77,7 @@ class Variable(object):
         
         # GL type and size (i.e. size of the vector)
         self._gtype = gtype
-        self._size, _, dtype = gl_typeinfo[self._gtype]
+        self._size, _, self._dtype = gl_typeinfo[self._gtype]
         
         # CPU data
         self._data = None
@@ -94,33 +94,33 @@ class Variable(object):
     
     @property
     def name(self):
-        """ The name of the variable.
-        """
+        """ The name of the variable. """
         return self._name
     
     @property
     def gtype(self):
-        """ The type of the underlying variable (as a GL constant).
-        """
+        """ The type of the underlying variable (as a GL constant). """
         return self._gtype
+
+    @property
+    def dtype(self):
+        """ The type of the underlying variable (as a np dtype). """
+        return self._dtype
     
     @property
     def size(self):
-        """ The size of the variable (i.e. size of the vector in GLSL).
-        """
+        """ The size of the variable (i.e. size of the vector in GLSL). """
         return self._size
     
     @property
     def active(self):
-        """ Whether this variable is active in the program.
-        """
+        """ Whether this variable is active in the program. """
         return self._loc is not None
 
     
     @property
     def data(self):
-        """ The data for this variable (ndarray, VertexBuffer or Texture).
-        """
+        """ The data for this variable (ndarray, VertexBuffer or Texture). """
         return self._data
 
 

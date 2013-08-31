@@ -76,24 +76,8 @@ class DataBufferTest(unittest.TestCase):
         assert buffer.size == 100
 
     def test_init_with_dtype(self):
-        data = np.zeros(100, np.float32)
-        buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
-        # assert buffer.gtype == gl.GL_FLOAT
-        assert buffer.size == 100
-
-        data = np.zeros((100,4), np.float32)
-        buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
-        # assert buffer.gtype == gl.GL_FLOAT
-        assert buffer.size == 100
-
-        data = np.zeros(100, [('a', np.float32, 1)])
-        buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
-        # assert buffer.gtype == gl.GL_FLOAT
-        assert buffer.size == 100
-
-        data = np.zeros(100, [('a', np.float32, 4)])
-        buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
-        # assert buffer.gtype == gl.GL_FLOAT_VEC4
+        buffer = DataBuffer(dtype=[('a',np.float32,4)],
+                            size=100, target=gl.GL_ARRAY_BUFFER)
         assert buffer.size == 100
 
 
@@ -129,6 +113,40 @@ class VertexBufferTest(unittest.TestCase):
         assert buffer['position'].offset == 0
         assert buffer['texcoord'].offset == 3*np.dtype(np.float32).itemsize
         assert buffer['color'].offset    == (3+2)*np.dtype(np.float32).itemsize
+
+
+    def test_shape(self):
+        data = np.zeros(100, [ ('a', np.float32, 1),
+                               ('b', np.float32, 2),
+                               ('c', np.float32, 3) ] )
+        buffer = VertexBuffer(data)
+
+        assert buffer['a']._shape == (100,1)
+        assert buffer['a']._dtype == np.float32
+
+        assert buffer['b']._shape == (100,2)
+        assert buffer['b']._dtype == np.float32
+
+        assert buffer['c']._shape == (100,3)
+        assert buffer['c']._dtype == np.float32
+
+
+    def test_stride(self):
+        dtype = np.dtype( [ ('position', np.float32, 3),
+                            ('texcoord', np.float32, 2),
+                            ('color',    np.float32, 4) ] )
+        data = np.zeros(100, dtype=dtype)
+        buffer = VertexBuffer(data)
+
+        assert buffer['position'].stride == 9*np.dtype(np.float32).itemsize
+        assert buffer['texcoord'].stride == 9*np.dtype(np.float32).itemsize
+        assert buffer['color'].stride    == 9*np.dtype(np.float32).itemsize
+
+
+        buffer = VertexBuffer(data['position'])
+        assert buffer.offset == 0
+        assert buffer.stride == 3*np.dtype(np.float32).itemsize
+
 
 
     def test_setitem(self):
