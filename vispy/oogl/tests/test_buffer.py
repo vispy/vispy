@@ -54,8 +54,13 @@ class DataBufferTest(unittest.TestCase):
         assert buffer._size   == 100
         assert buffer._dtype  == np.float32
 
-    def test_types(self):
+    def test_init_with_data(self):
         data = np.zeros(100, np.float32)
+        buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
+        # assert buffer.gtype == gl.GL_FLOAT
+        assert buffer.size == 100
+
+        data = np.zeros((100,4), np.float32)
         buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
         # assert buffer.gtype == gl.GL_FLOAT
         assert buffer.size == 100
@@ -70,9 +75,25 @@ class DataBufferTest(unittest.TestCase):
         # assert buffer.gtype == gl.GL_FLOAT_VEC4
         assert buffer.size == 100
 
-        data = np.zeros(100, [('a', np.float32, (4,4))])
+    def test_init_with_dtype(self):
+        data = np.zeros(100, np.float32)
         buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
-        # assert buffer.gtype == gl.GL_FLOAT_MAT4
+        # assert buffer.gtype == gl.GL_FLOAT
+        assert buffer.size == 100
+
+        data = np.zeros((100,4), np.float32)
+        buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
+        # assert buffer.gtype == gl.GL_FLOAT
+        assert buffer.size == 100
+
+        data = np.zeros(100, [('a', np.float32, 1)])
+        buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
+        # assert buffer.gtype == gl.GL_FLOAT
+        assert buffer.size == 100
+
+        data = np.zeros(100, [('a', np.float32, 4)])
+        buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
+        # assert buffer.gtype == gl.GL_FLOAT_VEC4
         assert buffer.size == 100
 
 

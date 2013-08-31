@@ -14,7 +14,8 @@ from vispy.oogl import GLObject
 from vispy.oogl import ext_available
 
 # WARNING:
-# We have a problem with VertexBuffer. Let's consider the following array:
+# We have to be very careful with VertexBuffer.
+# Let's consider the following array:
 #
 # P = np.zeros(100, [ ('position', 'f4', 3),
 #                      ('color',   'f4', 4),
@@ -26,9 +27,10 @@ from vispy.oogl import ext_available
 #
 # V = VertexBuffer(P['position'])
 #
-# The underlying data is not contiguous and we cannot use glBufferSubData
-# to update the data into GPU memory. This means we need a local copy of
-# the data to be able to upload it. We need also to find the proper stride.
+# The underlying data is not contiguous and we cannot use glBufferSubData to
+# update the data into GPU memory. This means we need a local copy of the data
+# to be able to upload it. We need also to find the stride of the copy when
+# creating the vertex buffer.
 
 
 # ------------------------------------------------------------ Buffer class ---
@@ -64,6 +66,8 @@ class Buffer(GLObject):
 
         # Indicate if a resize has been requested
         self._need_resize = True
+
+        self._base = self
 
         # Buffer usage (GL_STATIC_DRAW, G_STREAM_DRAW or GL_DYNAMIC_DRAW)
         self._usage = gl.GL_DYNAMIC_DRAW
@@ -110,7 +114,10 @@ class Buffer(GLObject):
                 raise ValueError("Data is too big for buffer.")
 
         # Ok, we should be safe now
-        self._pending_data.append( (data, nbytes, offset) )
+        if data.base is data or self._base is self:
+            self._pending_data.append( (data, nbytes, offset) )
+        else:
+            self._pending_data.append( (data.copy(), nbytes, offset) )
         self._need_update = True
 
 
@@ -241,12 +248,34 @@ class DataBuffer(Buffer):
 
         # Check if data is a numpy array
         elif isinstance(data,np.ndarray):
+
+            # Makes sure we have a native typed array
+            dtype = data.dtype
+            if dtype.fields and len(dtype.fields) == 1:
+                data = data[dtype.names[0]]
+
+            # Computes a two dimensional shape
+            shape = data.shape
+            if len(shape) == 1:
+                shape = (shape[0],1)
+            elif len(shape) > 2:
+                shape = (np.prod(shape[:-1]),shape[:-1])
+
+            # Data is a structured array
             self._dtype   = data.dtype
             self._nbytes  = data.nbytes
-            # self._stride  = self._dtype.itemsize
-            self._stride  = data.strides[0]
+            self._stride  = self._dtype.itemsize
             self._size    = data.size
             self._offset  = 0
+
+            # Data is a view on a structured array (no contiguous data)
+            # We know that when setting data we'll have to make a local copy
+            # so we need to compute the stride of the copy that will be made
+            # and not use the stride of the original array.
+            if data.base is not data:
+                self._stride  = self._dtype.itemsize * shape[-1]
+                self._size    = shape[0]
+
 
         # We need at least one (data) or the others (dtype+size)
         else:
@@ -548,7 +577,14 @@ class ClientBuffer(DataBuffer):
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
+    import sys
     import OpenGL.GLUT as glut
+
+
+    data = np.zeros(100, [('a', np.float32, (4,4))])
+    buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
+    print( buffer.size )
+    sys.exit()
 
     V = VertexBuffer(size=100, dtype=np.float32)
     print("Size",     V.size)

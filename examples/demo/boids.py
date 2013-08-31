@@ -87,10 +87,6 @@ class Canvas(app.Canvas):
         self.vbo_color = oogl.VertexBuffer(particles['color'])
         self.vbo_size = oogl.VertexBuffer(particles['size'])
 
-        print particles['position'].strides[0]
-        print self.vbo_position.stride
-
-
         # Bind vertex buffers
         self.program['color'] = self.vbo_color
         self.program['size'] = self.vbo_size
