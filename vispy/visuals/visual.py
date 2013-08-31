@@ -1,4 +1,3 @@
-from vispy.oogl import ShaderProgram, VertexShader, FragmentShader, VertexBuffer
 import OpenGL.GL as gl
 import vispy.shaders.transforms as transforms
 from vispy.util.six import string_types
