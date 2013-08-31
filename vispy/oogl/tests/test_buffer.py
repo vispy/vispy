@@ -21,7 +21,7 @@ class BufferTest(unittest.TestCase):
         assert buffer._handle      == 0
         assert buffer._need_update == False
         assert buffer._valid       == False
-        assert buffer._bytesize    == 0
+        assert buffer._nbytes      == 0
         assert buffer._usage       == gl.GL_DYNAMIC_DRAW
 
     def test_pending_data(self):
@@ -51,29 +51,29 @@ class DataBufferTest(unittest.TestCase):
     def test_init(self):
         data = np.zeros(100, np.float32)
         buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
-        assert buffer._itemcount   == 100
-        assert buffer._dtype       == np.float32
+        assert buffer._size   == 100
+        assert buffer._dtype  == np.float32
 
     def test_types(self):
         data = np.zeros(100, np.float32)
         buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
-        assert buffer.gtype == gl.GL_FLOAT
-        assert buffer.itemcount == 100
+        # assert buffer.gtype == gl.GL_FLOAT
+        assert buffer.size == 100
 
         data = np.zeros(100, [('a', np.float32, 1)])
         buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
-        assert buffer.gtype == gl.GL_FLOAT
-        assert buffer.itemcount == 100
+        # assert buffer.gtype == gl.GL_FLOAT
+        assert buffer.size == 100
 
         data = np.zeros(100, [('a', np.float32, 4)])
         buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
-        assert buffer.gtype == gl.GL_FLOAT_VEC4
-        assert buffer.itemcount == 100
+        # assert buffer.gtype == gl.GL_FLOAT_VEC4
+        assert buffer.size == 100
 
         data = np.zeros(100, [('a', np.float32, (4,4))])
         buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
-        assert buffer.gtype == gl.GL_FLOAT_MAT4
-        assert buffer.itemcount == 100
+        # assert buffer.gtype == gl.GL_FLOAT_MAT4
+        assert buffer.size == 100
 
 
 # -----------------------------------------------------------------------------
@@ -82,10 +82,22 @@ class VertexBufferTest(unittest.TestCase):
     def test_init(self):
         data = np.zeros(100, np.float32)
         buffer = VertexBuffer(data=data)
-        assert buffer._itemcount   == 100
-        assert buffer._dtype       == np.float32
+        assert buffer.size   == 100
+        assert buffer.dtype  == np.float32
 
-        
+    def test_resize(self):
+
+        # Resize allowed with set_data (and offset=0)
+        V = VertexBuffer(size=100, dtype=np.float32)
+        V.set_data(np.ones(200, np.float32))
+        assert V.size == 200
+
+        # Resize not allowed with set_subdata
+        with self.assertRaises(ValueError):
+            V.set_subdata(np.ones(300, np.float32))
+
+
+
     def test_offset(self):
         dtype = np.dtype( [ ('position', np.float32, 3),
                             ('texcoord', np.float32, 2),
@@ -142,8 +154,8 @@ class ElementBufferTest(unittest.TestCase):
     def test_init(self):
         data = np.zeros(100, np.uint32)
         buffer = ElementBuffer(data=data)
-        assert buffer._itemcount  == 100
-        assert buffer._dtype      == np.uint32
+        assert buffer._size  == 100
+        assert buffer._dtype == np.uint32
 
 
     def test_typechecking(self):

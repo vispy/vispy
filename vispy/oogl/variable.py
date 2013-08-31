@@ -16,7 +16,7 @@ import numpy as np
 
 from vispy import gl
 from .globject import GLObject
-from .buffer import ClientBuffer, VertexBuffer
+from .buffer import ClientBuffer, VertexBuffer, VertexBufferView
 from .texture import Texture, Texture2D, TextureCubeMap, Texture3D
 from vispy.util.six import string_types
 
@@ -291,7 +291,7 @@ class Attribute(Variable):
         if self._generic or self._data is None:
             return None
         else:
-            return self._data.itemcount
+            return self._data.size
     
     
 
@@ -376,10 +376,10 @@ class Attribute(Variable):
             
             # Check attribute format against data format
             size, gtype, _ = gl_typeinfo[self._gtype]
-            if self._gtype != self._data._gtype: 
-                raise ValueError("Data not compatible with attribute type")
+            #if self._gtype != self._data._gtype: 
+            #    raise ValueError("Data not compatible with attribute type")
             offset = 0
-            stride = self._data.itemsize
+            stride = self._data.stride
 
             # Apply (first disable any previous VertexBuffer)
             gl.glVertexAttribPointer(self._loc, size, gtype, False, stride, data)
@@ -402,10 +402,10 @@ class Attribute(Variable):
             
             # Check attribute format against data format
             size, gtype, _ = gl_typeinfo[self._gtype]
-            if self._gtype != self._data._gtype: 
-                raise ValueError("Data not compatible with attribute type")
+            #if self._gtype != self._data._gtype: 
+            #    raise ValueError("Data not compatible with attribute type")
             offset = self._data.offset
-            stride = self._data.itemsize
+            stride = self._data.stride
 
             #size, gtype, dtype = gl_typeinfo[self._gtype]
             #offset, stride = data._offset, data._stride  # view_params not on VertexBuffer

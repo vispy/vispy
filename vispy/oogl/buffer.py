@@ -27,7 +27,7 @@ class Buffer(GLObject):
     """
 
 
-    def __init__(self, target, data=None, base=None):
+    def __init__(self, target, data=None):
         """ Initialize buffer into default state. """
 
         GLObject.__init__(self)
@@ -36,146 +36,166 @@ class Buffer(GLObject):
         if target not in (gl.GL_ARRAY_BUFFER, gl.GL_ELEMENT_ARRAY_BUFFER):
             raise ValueError("Invalid target for buffer object.")
         self._target = target
-        
-        # Bytesize of buffer in GPU memory
-        self._bytesize = 0
 
-        # Pointer to the base buffer (if any)
-        self._base = base
+        # Number of elements in the buffer
+        self._size = 0
+
+        # Total bytes consumed by the elements of the buffer
+        self._nbytes = 0
+
+        # Byte number separating elements
+        self._stride = 1
+
+        # Indicate if a resize has been requested
+        self._need_resize = True
 
         # Buffer usage (GL_STATIC_DRAW, G_STREAM_DRAW or GL_DYNAMIC_DRAW)
         self._usage = gl.GL_DYNAMIC_DRAW
-        
+
         # Set data
         self._pending_data = []
         if data is not None:
             if not isinstance(data, np.ndarray):
                 raise ValueError("Data should be a numpy array.")
-            self._set_bytesize(data.nbytes)
+            self.set_size(data.size)
             self.set_data(data)
 
 
-    def set_data(self, data, offset=0):
+    def set_data(self, data, offset=0, allow_resize=True):
         """ Set data or subdata (deferred operations)  """
 
         # Check some size has been allocated
-        if self._bytesize == 0:
+        if self._nbytes == 0:
             raise ValueError("Buffer size is null.")
 
         # Check data is a numpy array
         if not isinstance(data, np.ndarray):
             raise ValueError("Data should be a numpy array.")
 
-        count = data.nbytes
+        nbytes = data.nbytes
 
         # If the whole buffer is to be written, we clear any pending data
         # operations since this will be overwritten anyway.
-        if count == self._bytesize:
+        if nbytes == self._nbytes:
             if offset == 0:
                 self._pending_data = []
             else:
                 raise ValueError("Data is too big for buffer.")
 
-        # Check if we have enough space
-        if (offset+count) > self._bytesize:
+        # Check if we have enough space when offset > 0
+        if offset and (offset+nbytes) > self._nbytes:
             raise ValueError("Offseted data is too big for buffer.")
-
+        
+        # Resize if data too big
+        elif nbytes > self._nbytes:
+            if allow_resize:
+                self.set_size(nbytes/self._stride)
+            else:
+                raise ValueError("Data is too big for buffer.")
 
         # Ok, we should be safe now
-        self._pending_data.append( (data, count, offset) )
-        if self._base is not None:
-            self._base._need_update = True
+        self._pending_data.append( (data, nbytes, offset) )
         self._need_update = True
 
+
+    def set_subdata(self, data, offset=0):
+        """ Set subdata (deferred operations, no resize allowed). """
+
+        self.set_data(data,offset,allow_resize=False)
+
+
+    def set_size(self, size):
+        """ Set buffer size (invalidates all pending operations). """
+
+        if size == self._size:
+            return
+
+        self._pending_data = []
+        self._size = int(size)
+        self._nbytes = int(size * self.stride)
+        # This indicate to allocate buffer on GPU when possible
+        self._need_resize = True
+
+
+    @property
+    def size(self):
+        """ Number of elements in the array. """
+        return self._size
+
+
+    @property
+    def stride(self):
+        """Buffer element size (in bytes). """
+        return self._stride
+
+
+    @property
+    def nbytes(self):
+        """Buffer size (in bytes). """
+        return self._nbytes
+
+
+    @property
+    def offset(self):
+        """Buffer offset (in bytes) relative to base. """
+        return self._offset
 
     @property
     def handle(self):
         """ Return a handle on the base buffer """
 
-        if self._base:
-            return self.base._handle
-        else:
-            return self._handle
-
-
-
-    def _set_bytesize(self, bytesize):
-        """ Set buffer bytesize (invalidates all pending operations) """
-
-        self._pending_data = []
-        self._bytesize = bytesize
-        self._need_update = True  # This will force a call to _update
+        return self._handle
 
 
     def _create(self):
         """ Create buffer on GPU """
         
-        if self._base:
-            if not self._base._handle:
-                self._base._create()
-            self._handle = self._base._handle  # Prevent create from being called
-        else:
+        if not self._handle:
             self._handle = gl.glGenBuffers(1)
-    
     
     def _delete(self):
         """ Delete buffer from GPU """
         
-        if self._base:
-            self._base.delete()
-        else:
-            gl.glDeleteBuffers(1 , [self._handle])
+        gl.glDeleteBuffers(1 , [self._handle])
     
     
     def _activate(self):
         """ Bind the buffer to some target """
         
-        if self._base:
-            self._base.activate()
-        else:
-            gl.glBindBuffer(self._target, self._handle)
+        gl.glBindBuffer(self._target, self._handle)
 
 
     def _deactivate(self):
         """ Unbind the current bound buffer """
 
-        if self._base:
-            self._base.deactivate()
-        else:
-            gl.glBindBuffer(self._target, 0)
+        gl.glBindBuffer(self._target, 0)
 
 
     def _update(self):
         """ Upload all pending data to GPU. """
-        print('asdasdasdasd')
-        if self._base:
-            self._base._update()
-            self._need_update = False
-            return
 
         # Bind buffer now 
         gl.glBindBuffer(self._target, self._handle)
        
-        # Check if size has been changed and allocate new size if necessary
-        # todo: keep track of GL_BUFFER_SIZE ourselves, this call is slow 
-        bytesize = gl.glGetBufferParameteriv(self._target, gl.GL_BUFFER_SIZE)
-        if bytesize != self._bytesize:
+        # Allocate new size if necessary
+        if self._need_resize:
             # This will only allocate the buffer on GPU
             # WARNING: we should check if this operation is ok
-            gl.glBufferData(self._target, self._bytesize, None, self._usage)
+            gl.glBufferData(self._target, self._nbytes, None, self._usage)
             # debug
-            # print("Creating a new buffer (%d) of %d bytes"
-            #         % (self._handle,self._bytesize))
-        
+            #print("Creating a new buffer (%d) of %d bytes"
+            #        % (self._handle,self._nbytes))
+            self._need_resize = False
+            
         # Upload data
         while self._pending_data:
-            data, count, offset = self._pending_data.pop(0)
-
+            data, size, offset = self._pending_data.pop(0)
             # debug
             # print("Uploading %d bytes at offset %d to buffer (%d)"
-            #       % (count, offset, self._handle))
+            #        % (size, offset, self._handle))
+            gl.glBufferSubData(self._target, offset, size, data)
 
-            gl.glBufferSubData(self._target, offset, count, data)
+
 
 
 
@@ -184,122 +204,46 @@ class DataBuffer(Buffer):
     """Data buffer allows to manipulate typed data.  """
 
 
-    def __init__(self, data=None, dtype=None, count=0, base=None, offset=0, target=0):
+    def __init__(self, data=None, dtype=None, size=0, offset=0, target=0):
         """ Initialize the buffer """
 
-        Buffer.__init__(self, target, data, base=base)
-
-        # Check if this buffer is a view of another buffer
-        if base is not None:
-            self._dtype     = dtype
-            self._itemsize  = base._itemsize
-            self._itemcount = base._itemcount
-            self._bytesize  = base._bytesize
-            self._offset    = offset
+        Buffer.__init__(self, target)
 
         # Check if dtype is a numpy dtype
-        elif dtype is not None:
+        if dtype is not None:
             dtype = np.dtype(dtype)
             if isinstance(dtype,np.dtype):
-                if count == 0:
-                    raise ValueError("Count error (cannot be 0).")
-                self._dtype     = dtype
-                self._itemsize  = self._dtype.itemsize
-                self._itemcount = count
-                self._bytesize  = self._itemsize * self._itemcount
-                self._offset    = 0
+                if size == 0:
+                    raise ValueError("Size error (cannot be 0).")
+                self._dtype    = dtype
+                self._stride   = self._dtype.itemsize
+                self._size     = size
+                self._nbytes   = self._stride * self._size
+                self._offset   = 0
             else:
                 raise ValueError("Unknown data type.")
 
         # Check if data is a numpy array
         elif isinstance(data,np.ndarray):
-            if data.dtype == np.float64:
-                data = data.astype('float32')
-            self._dtype     = data.dtype
-            self._bytesize  = data.nbytes
-            self._itemsize  = self._dtype.itemsize
-            self._itemcount = data.size
-            self._offset    = 0
+            self._dtype   = data.dtype
+            self._nbytes  = data.nbytes
+            self._stride  = self._dtype.itemsize
+            self._size    = data.size
+            self._offset  = 0
 
-        # We need at least one (data) or the others (dtype+count)
+        # We need at least one (data) or the others (dtype+size)
         else:
             raise ValueError("One of 'data' or 'dtype' must be specified.")
 
-
-        # Compute gl type corresponding to dtype
-        gltypes = { ('int8',1)    : gl.GL_BYTE,
-                    ('uint8',1)   : gl.GL_UNSIGNED_BYTE,
-                    ('int16', 1)  : gl.GL_SHORT,
-                    ('uint16',1)  : gl.GL_UNSIGNED_SHORT,
-                    ('uint32',1)  : gl.GL_UNSIGNED_INT,
-                    ('float16',1) : gl.ext.GL_HALF_FLOAT,
-                    ('float32',1) : gl.GL_FLOAT,
-                    ('float32',2) : gl.GL_FLOAT_VEC2,
-                    ('float32',3) : gl.GL_FLOAT_VEC3,
-                    ('float32',4) : gl.GL_FLOAT_VEC4,
-                    ('float32',(2,2)) : gl.GL_FLOAT_MAT2,
-                    ('float32',9) : gl.GL_FLOAT_MAT3,
-                    ('float32',(3,3)) : gl.GL_FLOAT_MAT3,
-                    ('float32',16) : gl.GL_FLOAT_MAT4,
-                    ('float32',(4,4)) : gl.GL_FLOAT_MAT4,
-                    ('int32',1) : gl.GL_INT,
-                    ('int32',2) : gl.GL_INT_VEC2,
-                    ('int32',3) : gl.GL_INT_VEC3,
-                    ('int32',4) : gl.GL_INT_VEC4,
-                    ('bool',1) : gl.GL_BOOL,
-                    ('bool',2) : gl.GL_BOOL_VEC2,
-                    ('bool',3) : gl.GL_BOOL_VEC3,
-                    ('bool',4) : gl.GL_BOOL_VEC4 }
-
-        dtype = self._dtype
-        if dtype.fields and len(dtype.fields) == 1:
-            dtype = dtype[dtype.names[0]]
-        cshape = dtype.shape
-        if not cshape and data is not None:
-            cshape = (data.shape[-1],)
-        if cshape not in ( (2,2), (3,3), (4,4) ):
-            cshape = int(np.prod(cshape))
-        ctype = dtype.base
-        self._gtype = gltypes.get((str(ctype), cshape), None)
-        if self._gtype is None:
-            pass # todo: raise error???
-
+        # Set data only once properly initialized
+        if data is not None:
+            self.set_data(data)
 
 
     @property
     def dtype(self):
         """Buffer data type. """
         return self._dtype
-
-
-    @property
-    def gtype(self):
-        """Buffer gl data type. """
-        return self._gtype
-
-
-    @property
-    def itemcount(self):
-        """Buffer element count. """
-        return self._itemcount
-
-
-    @property
-    def itemsize(self):
-        """Buffer element size (in bytes). """
-        return self._itemsize
-
-
-    @property
-    def bytesize(self):
-        """Buffer size (in bytes) """
-        return self._bytesize
-
-
-    @property
-    def offset(self):
-        """Buffer offset (in bytes) relative to base. """
-        return self._offset
 
 
     @property
@@ -311,37 +255,33 @@ class DataBuffer(Buffer):
     def __setitem__(self, key, data):
         """Set data (deferred operation) """
 
-        # Is this buffer a view on another ?
-        if self._base is not None:
-            raise ValueError("Cannot set data on buffer views.")
-        
         # Deal with slices that have None or negatives in them
         if isinstance(key, slice):
             start = key.start or 0
             if start < 0:
-                start = self._itemsize + start
+                start = self._stride + start
             step = key.step or 1
             assert step > 0
-            stop = key.stop or self._itemsize
+            stop = key.stop or self._stride
             if stop < 0:
-                stop = self._itemsize + stop
+                stop = self._stride + stop
         
         # Check ellipsis (... notation)
         if key == Ellipsis:
             offset = 0
-            count  = data.nbytes
+            nbytes = data.nbytes
         # If key is not a slice
         elif not isinstance(key, slice) or step > 1:
             raise ValueError("Can only set contiguous block of data.")
         # Else we're happy
         else:
-            offset = start * self._itemsize
-            count  = (stop - start) * self._itemsize
+            offset = start * self._stride
+            nbytes = (stop - start) * self._stride
 
         # Check we have the right amount of data
-        if data.nbytes < count:
+        if data.nbytes < nbytes:
             raise ValueError("Not enough data.")
-        elif data.nbytes > count:
+        elif data.nbytes > nbytes:
             raise ValueError("Too much data.")
 
         # WARNING: Do we check data type here or do we cast the data to the
@@ -359,23 +299,10 @@ class DataBuffer(Buffer):
             raise ValueError("Can only get access to a named field")
 
         dtype = self._dtype[key]
+        size = self._size 
         offset = self._dtype.fields[key][1]
-        return self.__class__(dtype=dtype, base=self, offset=offset)
 
-
-    def _get_gtype(self, dtype=None):
-        """ Get component type and number from a numpy dtype. """
-        
-        if dtype is None:
-            dtype = self._dtype
-        
-        if dtype.fields and len(dtype.fields) == 1:
-            dtype = dtype[dtype.names[0]]
-        
-        csize = int(np.prod(dtype.shape))
-        ctype = dtype.base
-
-        return ctype, csize
+        return VertexBufferView(dtype=dtype, size=size, base=self, offset=offset)
 
 
 
@@ -404,35 +331,118 @@ class VertexBuffer(DataBuffer):
     """
 
 
-    def __init__(self, data=None, dtype=None, count=0, base=None, offset=0):
+    def __init__(self, data=None, dtype=None, size=0, offset=0):
         """ Initialize the buffer """
 
-        DataBuffer.__init__(self, data=data, dtype=dtype, count=count,
-                            base=base, offset = offset, target = gl.GL_ARRAY_BUFFER)
+        DataBuffer.__init__(self, data=data, dtype=dtype, size=size,
+                            offset = offset, target = gl.GL_ARRAY_BUFFER)
 
-        # Check data type
-        #  (only when base is None, else, it has been already checked)
-        if base is not None:
+        # Check base type
+        # For structured dtype, we let view check individual dtypes
+        if self._dtype.fields and len(self._dtype.fields) > 1:
             return
 
+        
+        basetype = None
         if self._dtype.fields:
-            dtypes = [self._dtype[name] for name in self._dtype.names]
+            if len(self._dtype.fields) == 1:
+                basetype = self._dtype[0].base
         else:
-            dtypes = [self._dtype]
+            basetype = self._dtype.base
 
-        for dtype in dtypes:
-            btype, bsize = self._get_gtype(dtype)
-            # Check component type
-            if str(btype) not in ('uint8','uint16','int16', 'float32','float16'):
-                raise TypeError(
-                    """A vertex buffer element component type should """
-                    """be one of uint8, uint16, int16, float32 or float16.""")
-            # Check component count
-            if bsize > 4:
-                raise TypeError(
-                    "A vertex buffer element type should have at most 4 components. ")
+        if basetype not in (np.uint8,np.int8,np.uint16,
+                            np.int16,np.float32,np.float16):
+            raise TypeError("Data type not allowed for this buffer")
 
-                        
+
+
+
+# ------------------------------------------------------ VertexBuffer class ---
+class VertexBufferView(VertexBuffer):
+    """ A VertexBufferView is a view on another buffer
+
+    See VerteBuffer for usage.
+    """
+
+    def __init__(self, dtype=None, size=0, base=None, offset=0):
+        """ Initialize the view """
+        
+        VertexBuffer.__init__(self, dtype=dtype, size=size, offset=offset)
+        self._base = base
+        self._offset = offset
+        self._stride = base.stride
+
+
+    def set_size(self, size):
+        """ Set buffer base size (invalidates all pending operations) """
+        self._base.set_size(size)
+
+
+    @property
+    def handle(self):
+        """ Handle on base buffer. """
+        self._handle = self._base._handle
+        return self._handle
+
+
+    @property
+    def dtype(self):
+        """ Element type. """
+        return self._dtype
+
+
+    @property
+    def size(self):
+        """ Size in number of elements. """
+        return self._base.size
+
+
+    @property
+    def stride(self):
+        """ Byte number separating two elements. """
+        return self._base.stride
+
+
+    @property
+    def offset(self):
+        """ Byte offset relative to base. """
+        return self._offset
+
+
+    @property
+    def base(self):
+        """ Vertex buffer base of this view. """
+        return self._base
+
+
+    def _create(self):
+        """ Create buffer on GPU """
+        self._base._create()
+        self._handle = self._base._handle
+    
+    
+    def _delete(self):
+        """ Delete base buffer from GPU. """
+        self._base.delete()
+    
+    
+    def _activate(self):
+        """ Bind the base buffer to some target """
+        self._base.activate()
+
+
+    def _deactivate(self):
+        """ Unbind the base buffer """
+        self._base.deactivate()
+
+
+    def _update(self):
+        """ Update base buffer. """
+
+        self._base._update()
+        self._need_update = False
+
+
 
 # ------------------------------------------------------ ElementBuffer class ---
 class ElementBuffer(DataBuffer):
@@ -450,21 +460,28 @@ class ElementBuffer(DataBuffer):
     ...
     """
     
-    def __init__(self, data=None, dtype=None, count=0):
+    def __init__(self, data=None, dtype=None, size=0):
         """ Initialize the buffer """
 
-        DataBuffer.__init__(self, data=data, dtype=dtype, count=count,
+        DataBuffer.__init__(self, data=data, dtype=dtype, size=size,
                             target = gl.GL_ELEMENT_ARRAY_BUFFER)
-        
-        btype,bsize = self._get_gtype()
 
-        # Check component type
-        if str(btype) not in ('uint8', 'uint16', 'uint32'):
-            raise TypeError("An element buffer data type should be one of " +
-                            "uint8, uint16 or uint32. ")
-        # Check component count
-        if bsize > 1:
-            raise TypeError("An element buffer data should be contiguous.")
+        # Check base type
+        # 1. uint32              : ok
+        # 2. ('name', uint32, 1) : ok
+        # 3. ('name', uint32, 2) : no
+        # 4. np.float32          : no
+        basetype = None
+        if self._dtype.fields:
+            if len(self._dtype.fields) == 1:
+                if np.prod(self._dtype[0].shape) == 1:
+                    basetype = self._dtype[0].base
+        else:
+            basetype = self._dtype.base
+
+        if basetype not in (np.uint8,np.uint16,np.uint32):
+            raise TypeError("Data type not allowed for this buffer")
+
 
 
 
@@ -488,11 +505,11 @@ class ClientBuffer(DataBuffer):
         self._need_update = True
         self._data        = data
 
-        self._dtype     = data.dtype
-        self._itemsize  = data.dtype.itemsize
-        self._itemcount = data.size
-        self._bytesize  = data.size * data.dtype.itemsize
-        self._offset    = 0
+        self._dtype  = data.dtype
+        self._stride = data.dtype.stride
+        self._size   = data.size
+        self._nbytes = data.size * data.dtype.stride
+        self._offset = 0
 
 
     @property
@@ -510,18 +527,31 @@ class ClientBuffer(DataBuffer):
 
 
 
+
+
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
     import OpenGL.GLUT as glut
 
-
-    V = VertexBuffer(np.ones(100, np.float32))
-    print("Offset:",     V.offset)
-    print("Itemsize:",   V.itemsize)
-    print("Itemcount",   V.itemcount)
-    print("Data gtype %r" % V.gtype)
+    V = VertexBuffer(size=100, dtype=np.float32)
+    print("Size",     V.size)
+    print("Offset:",  V.offset)
+    print("Stride:",  V.stride)
     print()
 
+    V.set_data(np.ones(200, np.float32))
+    print("Size",     V.size)
+    print("Offset:",  V.offset)
+    print("Stride:",  V.stride)
+    print()
+
+
+
+    V = VertexBuffer(np.ones(100, np.float32))
+    print("Size",     V.size)
+    print("Offset:",  V.offset)
+    print("Stride:",  V.stride)
+    print()
 
     dtype = np.dtype( [ ('position', np.float32, 3),
                         ('texcoord', np.float32, 2),
@@ -535,10 +565,9 @@ if __name__ == '__main__':
     V_color    = V['color']
 
     for P in (V_position, V_texcoord, V_color):
-        print("Offset:",    P.offset)
-        print("Itemsize:",  P.itemsize)
-        print("Itemcount",  P.itemcount)
-        print("Data gtype %r" % P.gtype)
+        print("Size",     P.size)
+        print("Offset:",  P.offset)
+        print("Stride:",  P.stride)
         print()
 
     V[10:20] = data[10:20]
@@ -548,13 +577,9 @@ if __name__ == '__main__':
     #V[10:20] = data[10:21]
 
     I = ElementBuffer(indices)
-    print("Offset:",    I.offset)
-    print("Itemsize:",  I.itemsize)
-    print("Itemcount",  I.itemcount)
-    print("Data gtype %r" % I.gtype)
-    print()
-    
-
+    print("Size",     I.size)
+    print("Offset:",  I.offset)
+    print("Stride:",  I.stride)
 
     def display():
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -575,4 +600,6 @@ if __name__ == '__main__':
     glut.glutKeyboardFunc(keyboard )
 
     V.activate()
+    V['position'].activate()
+    V['position'].deactivate()
     V.deactivate()

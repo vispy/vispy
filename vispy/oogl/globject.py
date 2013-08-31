@@ -103,7 +103,7 @@ class GLObject(object):
         """ Activate the object (a GL context must be available) """
 
         # Ensure that the GPU equivalent of this object exists 
-        if not self._handle:
+        if not self.handle:
             try:
                 self._create()
             except Exception:
