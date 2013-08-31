@@ -29,9 +29,8 @@ from vispy.oogl import ext_available
 #
 # The underlying data is not contiguous and we cannot use glBufferSubData to
 # update the data into GPU memory. This means we need a local copy of the data
-# to be able to upload it. We need also to find the stride of the copy when
-# creating the vertex buffer.
-
+# to be able to upload it (PyOpenGL will handle that). We need also to find the
+# stride of the buffer into GPU memory, not on CPU memory.
 
 # ------------------------------------------------------------ Buffer class ---
 class Buffer(GLObject):
@@ -114,10 +113,10 @@ class Buffer(GLObject):
                 raise ValueError("Data is too big for buffer.")
 
         # Ok, we should be safe now
-        if data.base is data or self._base is self:
-            self._pending_data.append( (data, nbytes, offset) )
-        else:
-            self._pending_data.append( (data.copy(), nbytes, offset) )
+        #if data.base is data or self._base is self:
+        self._pending_data.append( (data, nbytes, offset) )
+        #else:
+        #self._pending_data.append( (data.copy(), nbytes, offset) )
         self._need_update = True
 
 
@@ -268,14 +267,13 @@ class DataBuffer(Buffer):
             self._size    = data.size
             self._offset  = 0
 
-            # Data is a view on a structured array (no contiguous data)
-            # We know that when setting data we'll have to make a local copy
-            # so we need to compute the stride of the copy that will be made
-            # and not use the stride of the original array.
+            # Data is a view on a structured array (no contiguous data) We know
+            # that when setting data we'll have to make a local copy so we need
+            # to compute the stride relative to GPU layout and not use the
+            # stride of the original array.
             if data.base is not data:
-                self._stride  = self._dtype.itemsize * shape[-1]
-                self._size    = shape[0]
-
+                self._stride = self._dtype.itemsize * shape[-1]
+                self._size   = shape[0]
 
         # We need at least one (data) or the others (dtype+size)
         else:
