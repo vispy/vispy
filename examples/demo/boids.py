@@ -18,45 +18,52 @@ from vispy import gl
 from vispy import oogl
 from vispy import app
 
-
-
 # Create boids
 n = 1000
-boids = np.zeros(n, [   ('position',   'f4', 3),
-                        ('position_1', 'f4', 3),
-                        ('position_2', 'f4', 3),
-                        ('velocity',   'f4', 3)] )
+particles = np.zeros(2+n, [ ('position',   'f4', 3),
+                            ('position_1', 'f4', 3),
+                            ('position_2', 'f4', 3),
+                            ('velocity',   'f4', 3),
+                            ('color',      'f4', 4),
+                            ('size',       'f4', 1)] )
+boids    = particles[2:]
+target   = particles[0]
+predator = particles[1]
+
 boids['position'] = np.random.uniform(-0.25, +0.25, (n,3))
 boids['velocity'] = np.random.uniform(-0.00, +0.00, (n,3))
+boids['size'] = 4
+boids['color'] = 1,1,1,1
 
-# Target and predator
-target   = np.zeros(3)
-predator = np.zeros(3)
+target['size'] = 16
+target['color'][:] = 1,1,0,1
+predator['size'] = 16
+predator['color'][:] = 1,0,0,1
 
 
-VERT_SHADER = """ // simple vertex shader
+VERT_SHADER = """
 #version 120
 attribute vec3 position;
-uniform vec3 u_color;
-uniform float u_size;
-varying vec3 v_color;
+attribute vec4 color;
+attribute float size;
+
+varying vec4 v_color;
 void main (void) {
-    // Calculate position
-    gl_Position = vec4(position.x, position.y, position.z, 1.0);
-    v_color = u_color;
-    gl_PointSize = u_size;
+    gl_Position = vec4(position, 1.0);
+    v_color = color;
+    gl_PointSize = size;
 }
 """
 
-FRAG_SHADER = """ // simple fragment shader
+FRAG_SHADER = """
 #version 120
-varying vec3 v_color;
+varying vec4 v_color;
 void main()
 {    
     float x = 2.0*gl_PointCoord.x - 1.0;
     float y = 2.0*gl_PointCoord.y - 1.0;
     float a = 1.0 - (x*x + y*y);
-    gl_FragColor = vec4(v_color, a);
+    gl_FragColor = vec4(v_color.rgb, a*v_color.a);
 }
 
 """
@@ -73,8 +80,23 @@ class Canvas(app.Canvas):
         self._button = None
         
         # Create program
-        self._program = oogl.Program(VERT_SHADER, FRAG_SHADER)
+        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
     
+        # Create vertex buffers
+        self.vbo_position = oogl.VertexBuffer(particles['position'])
+        self.vbo_color = oogl.VertexBuffer(particles['color'])
+        self.vbo_size = oogl.VertexBuffer(particles['size'])
+
+        print particles['position'].strides[0]
+        print self.vbo_position.stride
+
+
+        # Bind vertex buffers
+        self.program['color'] = self.vbo_color
+        self.program['size'] = self.vbo_size
+        self.program['position'] = self.vbo_position
+
+
     def on_initialize(self, event):
         gl.glClearColor(0,0,0,1);
         
@@ -107,34 +129,22 @@ class Canvas(app.Canvas):
         sy = - (2*y/float(h) -1.0)
         
         if self._button == 1:
-            target[0], target[1] = sx, sy
+            target['position'][:] = sx, sy, 0
         elif self._button  == 2:
-            predator[0], predator[1] = sx, sy
-   
+            predator['position'][:] = sx, sy, 0
+
     
     def on_paint(self, event):
-        
-        # Init
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
         # Draw
-        with self._program as prog:
-            prog['u_size'] = 4.0
-            prog['u_color'] = 0.0, 1.0, 1.0
-            prog['position'] = oogl.ClientBuffer(boids['position'])
-            prog.draw_arrays(gl.GL_POINTS)
-            #
-            prog['u_size'] = 16.0
-            prog['u_color'] = 0.0, 1.0, 0.0
-            prog['position'] = oogl.ClientBuffer(target.reshape((1,3)))
-            prog.draw_arrays(gl.GL_POINTS)
-            #
-            prog['u_color'] = 1.0, 0.0, 0.0
-            prog['position'] = oogl.ClientBuffer(predator.reshape((1,3)))
+        with self.program as prog:
+            prog['position'] = self.vbo_position
             prog.draw_arrays(gl.GL_POINTS)
         
         # Next iteration
         self._t = self.iteration(time.time() - self._t)
+
         # Invoke a new draw
         self.update()
     
@@ -167,10 +177,10 @@ class Canvas(app.Canvas):
         R = -((P[I]-Z)*M).sum(axis=1)
     
         # Target : Follow target
-        T = target - P
+        T = target['position'] - P
     
         # Predator : Move away from predator
-        dP = P - predator
+        dP = P - predator['position']
         D = np.maximum(0, 0.3 - np.sqrt(dP[:,0]**2 +dP[:,1]**2+dP[:,2]**2) )
         D = np.repeat(D,3,axis=0).reshape(n,3)
         dP *= D
@@ -179,6 +189,8 @@ class Canvas(app.Canvas):
         boids['velocity'] += 0.0005*C + 0.01*A + 0.01*R + 0.0005*T + 0.025*dP
         boids['position'] += boids['velocity']
         
+        self.vbo_position.set_data(particles['position'])
+
         return t
 
 
