@@ -13,6 +13,22 @@ from vispy.util import is_string
 from vispy.oogl import GLObject
 from vispy.oogl import ext_available
 
+# WARNING:
+# We have a problem with VertexBuffer. Let's consider the following array:
+#
+# P = np.zeros(100, [ ('position', 'f4', 3),
+#                      ('color',   'f4', 4),
+#                      ('size',    'f4', 1)] )
+#
+# P.dtype itemsize is (3+4+1)*4 (float32)
+#
+# Now, if we create a VertexBuffer on position only:
+#
+# V = VertexBuffer(P['position'])
+#
+# The underlying data is not contiguous and we cannot use glBufferSubData
+# to update the data into GPU memory. This means we need a local copy of
+# the data to be able to upload it. We need also to find the proper stride.
 
 
 # ------------------------------------------------------------ Buffer class ---
@@ -227,7 +243,8 @@ class DataBuffer(Buffer):
         elif isinstance(data,np.ndarray):
             self._dtype   = data.dtype
             self._nbytes  = data.nbytes
-            self._stride  = self._dtype.itemsize
+            # self._stride  = self._dtype.itemsize
+            self._stride  = data.strides[0]
             self._size    = data.size
             self._offset  = 0
 
@@ -506,9 +523,9 @@ class ClientBuffer(DataBuffer):
         self._data        = data
 
         self._dtype  = data.dtype
-        self._stride = data.dtype.stride
+        self._stride = data.dtype.itemsize
         self._size   = data.size
-        self._nbytes = data.size * data.dtype.stride
+        self._nbytes = data.size * data.dtype.itemsize
         self._offset = 0
 
 
