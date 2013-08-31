@@ -231,6 +231,9 @@ class DataBuffer(Buffer):
 
         Buffer.__init__(self, target)
 
+        # Computed shape (for simple buffer or view)
+        self._shape = None
+
         # Check if dtype is a numpy dtype
         if dtype is not None:
             dtype = np.dtype(dtype)
@@ -242,6 +245,7 @@ class DataBuffer(Buffer):
                 self._size     = size
                 self._nbytes   = self._stride * self._size
                 self._offset   = 0
+                self._shape    = (size,1)
             else:
                 raise ValueError("Unknown data type.")
 
@@ -250,11 +254,12 @@ class DataBuffer(Buffer):
 
             # Makes sure we have a native typed array
             dtype = data.dtype
+            shape = list(data.shape)
             if dtype.fields and len(dtype.fields) == 1:
                 data = data[dtype.names[0]]
+                shape.extend( [np.prod(dtype[0].shape)] )
 
             # Computes a two dimensional shape
-            shape = data.shape
             if len(shape) == 1:
                 shape = (shape[0],1)
             elif len(shape) > 2:
@@ -266,6 +271,7 @@ class DataBuffer(Buffer):
             self._stride  = self._dtype.itemsize
             self._size    = data.size
             self._offset  = 0
+            self._shape = shape
 
             # Data is a view on a structured array (no contiguous data) We know
             # that when setting data we'll have to make a local copy so we need
@@ -510,21 +516,13 @@ class ElementBuffer(DataBuffer):
         DataBuffer.__init__(self, data=data, dtype=dtype, size=size,
                             target = gl.GL_ELEMENT_ARRAY_BUFFER)
 
-        # Check base type
-        # 1. uint32              : ok
-        # 2. ('name', uint32, 1) : ok
-        # 3. ('name', uint32, 2) : no
-        # 4. np.float32          : no
-        basetype = None
-        if self._dtype.fields:
-            if len(self._dtype.fields) == 1:
-                if np.prod(self._dtype[0].shape) == 1:
-                    basetype = self._dtype[0].base
-        else:
-            basetype = self._dtype.base
+        # Check dtype and shape
 
-        if basetype not in (np.uint8,np.uint16,np.uint32):
+        if self._dtype not in (np.uint8,np.uint16,np.uint32):
             raise TypeError("Data type not allowed for this buffer")
+
+        if self._shape[1] != 1:
+            raise TypeError("Only contiguous data allowed for this buffer")
 
 
 
@@ -578,11 +576,11 @@ if __name__ == '__main__':
     import sys
     import OpenGL.GLUT as glut
 
-
-    data = np.zeros(100, [('a', np.float32, (4,4))])
-    buffer = DataBuffer(data=data, target=gl.GL_ARRAY_BUFFER)
-    print( buffer.size )
+    data = np.zeros(100, [('index', np.uint32,2)])
+    buffer = ElementBuffer(data=data)
+    print( buffer._shape )
     sys.exit()
+
 
     V = VertexBuffer(size=100, dtype=np.float32)
     print("Size",     V.size)
