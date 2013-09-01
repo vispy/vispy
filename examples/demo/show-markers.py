@@ -13,7 +13,7 @@ from transforms import ortho
 from vispy.oogl import Program
 from vispy.oogl import VertexBuffer
 import markers
-# app.use('glut')
+app.use('glut')
 
 
 n = 540
@@ -50,13 +50,13 @@ for i in range(40):
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self)
-        self.size = 512,512+32
+        self.size = 1024,1024+2*32
         self.title = "Markers demo [press space to change marker]"
 
         self.vbo = VertexBuffer(data)
         self.view = np.eye(4,dtype=np.float32)
         self.model = np.eye(4,dtype=np.float32)
-        self.projection = ortho(0, 512, 0, 512+32, -1, 1)
+        self.projection = ortho(0, self.size[0], 0, self.size[1], -1, 1)
         self.programs = [
             Program(markers.vert, markers.frag + markers.disc),
             Program(markers.vert, markers.frag + markers.diamond),
@@ -92,13 +92,17 @@ class Canvas(app.Canvas):
             self.index = (self.index+1) % (len(self.programs))
             self.program = self.programs[self.index]
             self.program['u_projection'] = self.projection
+            self.program['u_size'] = self.u_size
             self.update()
 
     def on_resize(self, event):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
         self.projection = ortho( 0, width, 0, height, -100, 100 )
+        self.u_size = width/512.0
         self.program['u_projection'] = self.projection
+        self.program['u_size'] = self.u_size
+
 
 
     def on_paint(self, event):
