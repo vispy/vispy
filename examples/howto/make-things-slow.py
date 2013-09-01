@@ -80,7 +80,8 @@ class Canvas(app.Canvas):
         
         # Create program
         self.program = Program(VERT_SHADER, FRAG_SHADER)
-    
+        self.program['color'] = ClientBuffer(particles['color'])
+        self.program['size'] = ClientBuffer(particles['size'])
 
     def on_initialize(self, event):
         gl.glClearColor(0,0,0,1);
@@ -121,9 +122,6 @@ class Canvas(app.Canvas):
         
         # Draw
         with self.program as prog:
-
-            self.program['color'] = ClientBuffer(particles['color'])
-            self.program['size'] = ClientBuffer(particles['size'])
             self.program['position'] = ClientBuffer(particles['position'])
             prog.draw_arrays(gl.GL_POINTS)
         
