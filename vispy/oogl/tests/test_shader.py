@@ -5,6 +5,7 @@
 import unittest
 from vispy import gl
 
+from vispy.oogl.shader import ShaderError
 from vispy.oogl.shader import VertexShader
 from vispy.oogl.shader import FragmentShader
 
@@ -49,7 +50,7 @@ class ShaderTest(unittest.TestCase):
 
     def test_empty_build(self):
         shader = VertexShader()
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ShaderError):
             shader.activate()
 
     def test_delete_no_context(self):

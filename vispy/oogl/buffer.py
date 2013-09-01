@@ -413,16 +413,8 @@ class VertexBuffer(DataBuffer):
         if self._dtype.fields and len(self._dtype.fields) > 1:
             return
 
-        
-        basetype = None
-        if self._dtype.fields:
-            if len(self._dtype.fields) == 1:
-                basetype = self._dtype[0].base
-        else:
-            basetype = self._dtype.base
-
-        if basetype not in (np.uint8,np.int8,np.uint16,
-                            np.int16,np.float32,np.float16):
+        if self._dtype not in (np.uint8,np.int8,np.uint16,
+                               np.int16,np.float32,np.float16):
             raise TypeError("Data type not allowed for this buffer")
 
 
@@ -564,14 +556,8 @@ class ClientBuffer(DataBuffer):
 
         DataBuffer.__init__(self,data=data, target=gl.GL_ARRAY_BUFFER)
 
-        self._value       = True
         self._need_update = True
         self._data        = data
-
-        self._dtype  = data.dtype
-        self._stride = data.dtype.itemsize
-        self._size   = data.size
-        self._nbytes = data.size * data.dtype.itemsize
         self._offset = 0
 
 
@@ -597,46 +583,6 @@ if __name__ == '__main__':
     import sys
     import OpenGL.GLUT as glut
 
-    VertexBuffer(np.array(100, dtype=np.float32))
-
-    data = np.zeros(100, [ ('a', np.float32, 1),
-                           ('b', np.float32, 2),
-                           ('c', np.float32, 3) ] )
-    buffer = VertexBuffer(data)
-    print( buffer['a']._shape )
-    print( buffer['a']._dtype )
-    print( buffer['b']._shape )
-    print( buffer['b']._dtype )
-    print( buffer['c']._shape )
-    print( buffer['c']._dtype )
-    sys.exit()
-
-
-    data = np.zeros(100, [('index', np.uint32,2)])
-    buffer = ElementBuffer(data=data)
-    print( buffer._shape )
-    sys.exit()
-
-
-    V = VertexBuffer(size=100, dtype=np.float32)
-    print("Size",     V.size)
-    print("Offset:",  V.offset)
-    print("Stride:",  V.stride)
-    print()
-
-    V.set_data(np.ones(200, np.float32))
-    print("Size",     V.size)
-    print("Offset:",  V.offset)
-    print("Stride:",  V.stride)
-    print()
-
-
-
-    V = VertexBuffer(np.ones(100, np.float32))
-    print("Size",     V.size)
-    print("Offset:",  V.offset)
-    print("Stride:",  V.stride)
-    print()
 
     dtype = np.dtype( [ ('position', np.float32, 3),
                         ('texcoord', np.float32, 2),

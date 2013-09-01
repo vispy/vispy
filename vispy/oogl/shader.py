@@ -195,7 +195,7 @@ class Shader(GLObject):
         
         # Check if we have source code
         if not self._code:
-            raise RuntimeError('No source code given for shader.')
+            raise ShaderError('No source code given for shader.')
         
         # Set source
         gl.glShaderSource(self._handle, self._code)

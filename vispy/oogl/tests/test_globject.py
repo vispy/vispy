@@ -18,7 +18,7 @@ class GLObjectTest(unittest.TestCase):
         assert obj._handle  == 0
         assert obj._need_update == False
         assert obj._valid  == False
-        assert obj._id      == 1
+        # assert obj._id   == 1
 
 
 if __name__ == "__main__":

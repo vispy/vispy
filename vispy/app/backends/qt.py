@@ -15,9 +15,12 @@ from vispy.app.backends import ATTEMPTED_BACKENDS
 from vispy.util.six import text_type
 
 # Get what qt lib to try
-qt_lib = ATTEMPTED_BACKENDS[-1].lower()
-if qt_lib.lower() == 'qt':
-    qt_lib = vispy.config['qt_lib'].lower()
+if len(ATTEMPTED_BACKENDS):
+    qt_lib = ATTEMPTED_BACKENDS[-1].lower()
+    if qt_lib.lower() == 'qt':
+        qt_lib = vispy.config['qt_lib'].lower()
+else:
+    qt_lib  = 'any'
 
 # Import PySide or PyQt4
 if qt_lib in ('any', 'qt'):
