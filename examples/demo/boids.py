@@ -135,7 +135,6 @@ class Canvas(app.Canvas):
         
         # Draw
         with self.program as prog:
-            prog['position'] = self.vbo_position
             prog.draw_arrays(gl.GL_POINTS)
         
         # Next iteration
