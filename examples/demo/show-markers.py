@@ -9,7 +9,7 @@ from vispy import gl
 from OpenGL import GL
 
 from vispy import app
-from transforms import ortho
+from vispy.util.transforms import ortho
 from vispy.oogl import Program
 from vispy.oogl import VertexBuffer
 import markers
