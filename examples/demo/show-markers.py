@@ -13,7 +13,6 @@ from vispy.util.transforms import ortho
 from vispy.oogl import Program
 from vispy.oogl import VertexBuffer
 import markers
-app.use('glut')
 
 
 n = 540
@@ -78,7 +77,6 @@ class Canvas(app.Canvas):
         self.index = 0
         self.program = self.programs[self.index]
 
-
     def on_initialize(self, event):
         gl.glClearColor(1,1,1,1)
         gl.glDisable(gl.GL_DEPTH_TEST)
@@ -103,14 +101,10 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
         self.program['u_size'] = self.u_size
 
-
-
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         with self.program as prog:
             prog.draw_arrays(gl.GL_POINTS)
-        self.swap_buffers()
-
 
 if __name__ == '__main__':
     canvas = Canvas()
