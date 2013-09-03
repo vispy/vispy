@@ -19,10 +19,9 @@ import numpy as np
 from vispy import gl
 from . import GLObject, ext_available
 from . import VertexBuffer, ElementBuffer
-#from .program_inputs import UniformInputs, AttributeInputs
 from .variable import Attribute, Uniform
-from .shader import parse_shader_errors, VertexShader, FragmentShader
-from vispy.util.six import string_types
+from .shader import VertexShader, FragmentShader
+from vispy.util import is_string
 
 
 
@@ -92,11 +91,11 @@ class Program(GLObject):
             pass
         elif isinstance(vert, VertexShader):
             shaders.append(vert)
-        elif isinstance(vert, string_types):
+        elif is_string(vert):
             shaders.append(VertexShader(vert))
         elif isinstance(vert, (list, tuple)):
             for shader in vert:
-                if isinstance(shader, string_types):
+                if is_string(shader):
                     shader = VertexShader(shader)
                 shaders.append(shader)
         else:
@@ -107,11 +106,11 @@ class Program(GLObject):
             pass
         elif isinstance(frag, FragmentShader):
             shaders.append(frag)
-        elif isinstance(frag, string_types):
+        elif is_string(frag):
             shaders.append(FragmentShader(frag))
         elif isinstance(frag, (list, tuple)):
             for shader in frag:
-                if isinstance(shader, string_types):
+                if is_string(shader):
                     shader = FragmentShader(shader)
                 shaders.append(shader)
         else:
