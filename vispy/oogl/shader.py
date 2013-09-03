@@ -30,6 +30,15 @@ from vispy.oogl.globject import GLObject
 
 
 
+# ------------------------------------------------------- class ShaderError ---
+class ShaderError(RuntimeError):
+    """ Shader error class """
+    pass
+
+
+
+
+
 # ------------------------------------------------------------ class Shader ---
 class Shader(GLObject):
     """
