@@ -118,7 +118,7 @@ class GLObject(object):
     
     
     def deactivate(self):
-        """ Dectivate the object """
+        """ Deactivate the object """
 
         return self._deactivate()
     
@@ -130,26 +130,11 @@ class GLObject(object):
         return self._handle
     
     
-    # Subclasses need to implement the methods below
+    # Subclasses may need to overload methods below
 
-    def _create(self):
-        # Create object on GPU
-        raise NotImplementedError()
-    
-    def _delete(self):
-        # Remove object from GPU
-        raise NotImplementedError()
-    
-    def _update(self):
-        # Update GPU object (if relevant)
-        # This method should raise an error if it cannot create a valid object
-        raise NotImplementedError()
-    
-    def _activate(self):
-        # Actvate / bind the object
-        raise NotImplementedError()
-    
-    def _deactivate(self):
-        # Deactivate / unbind the object
-        raise NotImplementedError()
+    def _create(self):     pass
+    def _delete(self):     pass
+    def _update(self):     pass
+    def _activate(self):   pass
+    def _deactivate(self): pass
 
