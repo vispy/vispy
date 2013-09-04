@@ -14,7 +14,7 @@ from scipy.spatial import cKDTree
 from OpenGL import GL
 from vispy import gl
 from vispy import app
-from vispy.oogl import Program, ClientBuffer
+from vispy.oogl import Program, ClientVertexBuffer, ClientElementBuffer
 
 
 # Create boids
@@ -80,8 +80,8 @@ class Canvas(app.Canvas):
         
         # Create program
         self.program = Program(VERT_SHADER, FRAG_SHADER)
-        self.program['color'] = ClientBuffer(particles['color'])
-        self.program['size'] = ClientBuffer(particles['size'])
+        self.program['color'] = ClientVertexBuffer(particles['color'])
+        self.program['size'] = ClientVertexBuffer(particles['size'])
 
     def on_initialize(self, event):
         gl.glClearColor(0,0,0,1);
@@ -122,7 +122,7 @@ class Canvas(app.Canvas):
         
         # Draw
         with self.program as prog:
-            self.program['position'] = ClientBuffer(particles['position'])
+            self.program['position'] = ClientVertexBuffer(particles['position'])
             prog.draw_arrays(gl.GL_POINTS)
         
         # Next iteration

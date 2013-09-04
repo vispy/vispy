@@ -59,7 +59,7 @@ class Data(GLObject):
         array[key][...] = value
 
         # We mark the base buffer for a full update
-        buffer[key].set_data(array)
+        buffer.set_data(array)
 
 
     def __getitem__(self, key):

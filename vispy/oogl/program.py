@@ -603,9 +603,10 @@ class Program(GLObject):
             self.activate_object(indices)
             # Prepare
             offset = None  # todo: allow the use of offset
-            gltype = ElementBuffer.DTYPE2GTYPE[indices.gtype]
+            gltype = ElementBuffer.DTYPE2GTYPE[indices.dtype.name]
             # Draw
-            gl.glDrawElements(mode, indices.count, gltype, offset) 
+            numel = int(np.prod(indices.shape))
+            gl.glDrawElements(mode, numel, gltype, offset) 
         
         elif isinstance(indices, np.ndarray):
             # Get type
@@ -615,7 +616,8 @@ class Program(GLObject):
             elif gltype == gl.GL_UNSIGNED_INT and not ext_available('element_index_uint'):
                 raise ValueError('element_index_uint extension needed for uint32 ElementBuffer.')
             # Draw
-            gl.glDrawElements(mode, indices.size, gltype, indices) 
+            numel = int(np.prod(indices.shape))
+            gl.glDrawElements(mode, numel, gltype, indices) 
             
         else:
             raise ValueError("draw_elements requires an ElementBuffer or a numpy array.")
