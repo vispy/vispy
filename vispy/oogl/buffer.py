@@ -400,6 +400,17 @@ class VertexBuffer(DataBuffer):
     program['color'] = buffer['color']
     ...
     """
+    
+    # Note that we do not actually use this, except the keys to test
+    # whether a data type is allowed; we parse the gtype from the
+    # attribute data.
+    DTYPE2GTYPE = { 'int8': gl.GL_BYTE,
+                    'uint8': gl.GL_UNSIGNED_BYTE,
+                    'uint16': gl.GL_UNSIGNED_SHORT,
+                    'int16': gl.GL_SHORT,
+                    'float32': gl.GL_FLOAT,
+                    'float16': gl.ext.GL_HALF_FLOAT,
+                    }
 
 
     def __init__(self, data=None, dtype=None, size=0, offset=0):
@@ -413,9 +424,9 @@ class VertexBuffer(DataBuffer):
         if self._dtype.fields and len(self._dtype.fields) > 1:
             return
 
-        if self._dtype not in (np.uint8,np.int8,np.uint16,
-                               np.int16,np.float32,np.float16):
-            raise TypeError("Data type not allowed for this buffer")
+        if self._dtype.name not in self.DTYPE2GTYPE:
+            raise TypeError("Data type not allowed for this buffer: %s" % 
+                                                self._dtype.name)
 
 
 
@@ -434,7 +445,7 @@ class VertexBufferView(VertexBuffer):
         self._base = base
         self._offset = offset
         self._stride = base.stride
-
+    
 
     def set_size(self, size):
         """ Set buffer base size (invalidates all pending operations) """
@@ -523,6 +534,12 @@ class ElementBuffer(DataBuffer):
     ...
     """
     
+    # We need a DTYPE->GL map for the element buffer. Used in program.draw()
+    DTYPE2GTYPE = { 'uint8': gl.GL_UNSIGNED_BYTE,
+                    'uint16': gl.GL_UNSIGNED_SHORT,
+                    'uint32': gl.GL_UNSIGNED_INT,
+                    }
+    
     def __init__(self, data=None, dtype=None, size=0):
         """ Initialize the buffer """
 
@@ -531,8 +548,9 @@ class ElementBuffer(DataBuffer):
 
         # Check dtype and shape
 
-        if self._dtype not in (np.uint8,np.uint16,np.uint32):
-            raise TypeError("Data type not allowed for this buffer")
+        if self._dtype.name not in self.DTYPE2GTYPE:
+            raise TypeError("Data type not allowed for this buffer: %s" % 
+                                                            self._dtype.name)
 
         if self._shape[1] != 1:
             raise TypeError("Only contiguous data allowed for this buffer")
