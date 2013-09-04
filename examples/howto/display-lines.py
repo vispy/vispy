@@ -14,7 +14,7 @@ from vispy.util.transforms import perspective, translate, rotate
 
 # Create vetices 
 n = 100
-a_position = np.random.uniform(-1,1,(n,3))
+a_position = np.random.uniform(-1,1,(n,3)).astype(np.float32)
 a_id = np.random.randint(0,30,(n,1))
 a_id = np.sort(a_id,axis=0).astype(np.float32)
 
@@ -56,7 +56,6 @@ class Canvas(app.Canvas):
     # ---------------------------------
     def __init__(self):
         app.Canvas.__init__(self)
-        self.size = 1000,1000
 
         self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
         

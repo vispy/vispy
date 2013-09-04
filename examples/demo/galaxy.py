@@ -148,7 +148,7 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         app.Canvas.__init__(self)
-        self.size = 1024,1024
+        self.size = 800, 600
         self.title = "A very fake galaxy [mouse scroll to zoom]"
 
         self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)

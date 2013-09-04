@@ -9,11 +9,10 @@ from vispy import gl
 from OpenGL import GL
 
 from vispy import app
-from transforms import ortho
+from vispy.util.transforms import ortho
 from vispy.oogl import Program
 from vispy.oogl import VertexBuffer
 import markers
-app.use('glut')
 
 
 n = 540
@@ -50,7 +49,7 @@ for i in range(40):
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self)
-        self.size = 1024,1024+2*32
+        self.size = 800,600+2*32
         self.title = "Markers demo [press space to change marker]"
 
         self.vbo = VertexBuffer(data)
