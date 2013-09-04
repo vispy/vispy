@@ -293,10 +293,17 @@ class DataBuffer(Buffer):
         return VertexBufferView(shape, dtype, base=self, offset=offset)
     
     
-    def set_shape(self, shape, dtype):
+    def set_shape(self, shape, dtype=None):
         """ Set the shape of the underlying data. This will allocate data
         and discard any pending subdata.
         """
+        
+        # Use dtype that is currently in use
+        if dtype is None:
+            dtype = self._dtype
+            if dtype is None:
+                raise ValueError('Cannot omit dtype in set_shape() if '
+                                                    'no dtype is set yet.')
         
         # Check
         dtype = np.dtype(dtype)
