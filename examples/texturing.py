@@ -30,7 +30,7 @@ im3[:,10] = 1.0
 # Note that combining both in one array (as in hello_quad2)
 # results in better performance.
 positions = np.array([  [-0.8, -0.8, 0.0], [+0.7, -0.7, 0.0],  
-                        [-0.7, +0.7, 0.0], [+0.8, +0.8, 0.0,] ])
+                        [-0.7, +0.7, 0.0], [+0.8, +0.8, 0.0,] ], np.float32)
 texcoords = np.array([  [1.0, 1.0], [0.0, 1.0], 
                         [1.0, 0.0], [0.0, 0.0]], np.float32)
 

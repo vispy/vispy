@@ -31,11 +31,11 @@ Example::
         program.draw_arrays(gl.GL_TRIANGLES)
 
 
-The oogl classes:
+Most common oogl classes:
     
   * :class:`ShaderProgram`
   * :class:`FragmentShader` and :class:`VertexShader`
-  * :class:`ClientBuffer`, :class:`VertexBuffer` and :class:`ElementBuffer`
+  * :class:`VertexBuffer` and :class:`ElementBuffer`
   * :class:`Texture2D`, :class:`Texture3D`, :class:`TextureCubeMap`
   * :class:`FrameBuffer`
   * :class:`RenderBuffer`
@@ -67,7 +67,8 @@ def ext_available(extension_name):
 
 from .globject import GLObject
 
-from .buffer import ClientBuffer, VertexBuffer, ElementBuffer
+from .buffer import VertexBuffer, ElementBuffer
+from .buffer import ClientVertexBuffer, ClientElementBuffer
 from .data import Data
 from .texture import Texture, Texture2D, Texture3D, TextureCubeMap
 from .shader import VertexShader, FragmentShader

@@ -243,14 +243,24 @@ class Program(GLObject):
             # Vertex buffer
             if vars.dtype.names:
                 for k in vars.dtype.names:
-                    D[k] = vars[k]
+                    if k not in self._attributes.keys():
+                        print('Dropping "%s" item; '
+                                'it is not a known attribute.' % k)
+                    else:
+                        D[k] = vars[k]
             else:
                 raise ValueError('Can only set attributes with a ' + 
                                     'structured VertexBuffer.')
         
         elif isinstance(vars, dict):
             # Dict
-            D.update(vars)
+            for k in vars:
+                if not (k in self._attributes.keys() or 
+                        k in self._uniforms.keys() ):
+                    print('Dropping "%s" item; '
+                            'it is not a known attribute/uniform.' % k)
+                else:
+                    D[k] = vars[k]
         else:
             raise ValueError("Don't know how to use attribute of type %r" %
                                         type(vars))
@@ -593,19 +603,21 @@ class Program(GLObject):
             self.activate_object(indices)
             # Prepare
             offset = None  # todo: allow the use of offset
-            gltype = ElementBuffer.DTYPES[indices.gtype]
+            gltype = ElementBuffer.DTYPE2GTYPE[indices.dtype.name]
             # Draw
-            gl.glDrawElements(mode, indices.count, gltype, offset) 
+            numel = int(np.prod(indices.shape))
+            gl.glDrawElements(mode, numel, gltype, offset) 
         
         elif isinstance(indices, np.ndarray):
             # Get type
-            gltype = ElementBuffer.DTYPES.get(indices.dtype.name, None)
+            gltype = ElementBuffer.DTYPE2GTYPE.get(indices.dtype.name, None)
             if gltype is None:
                 raise ValueError('Unsupported data type for ElementBuffer.')
             elif gltype == gl.GL_UNSIGNED_INT and not ext_available('element_index_uint'):
                 raise ValueError('element_index_uint extension needed for uint32 ElementBuffer.')
             # Draw
-            gl.glDrawElements(mode, indices.size, gltype, indices) 
+            numel = int(np.prod(indices.shape))
+            gl.glDrawElements(mode, numel, gltype, indices) 
             
         else:
             raise ValueError("draw_elements requires an ElementBuffer or a numpy array.")

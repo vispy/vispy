@@ -91,7 +91,7 @@ class Canvas(app.Canvas):
     
     def __init__(self):
         app.Canvas.__init__(self)
-        self.size = 800,800
+        self.size = 800, 600
         
         self.vertices, self.filled, self.outline = cube()
 
