@@ -40,13 +40,10 @@ from vispy.oogl import ext_available
 
 # ------------------------------------------------------------ Buffer class ---
 class Buffer(GLObject):
-    """The Buffer class is a raw interface to upload some data to the GPU.
-    It is data agnostic and doesn't check any data type.
-
-    Note that it is possible to only upload subdata to the GPU without ever
-    uploading the full buffer. In such case, you have to first set the size of
-    the buffer. Once the size is set, checks will be made as to not override the
-    end of the buffer. If you need more space, set a new size first.
+    """ Interface to upload buffer data to the GPU. This class is shape
+    and dtype agnostic and considers the arrays as byte data.
+    
+    In general, you will want to use the VertexBuffer or ElementBuffer.
     """
 
 
@@ -76,7 +73,7 @@ class Buffer(GLObject):
     
     
     def set_nbytes(self, nbytes):
-        """ Set how many bytes are available for the buffer. 
+        """ Set how many bytes should be available for the buffer. 
         """
         nbytes = int(nbytes)
         
@@ -90,8 +87,8 @@ class Buffer(GLObject):
     
     
     def set_data(self, data):
-        """ Set the bytes data. For now, this only accepts a numpy array.
-        But the data is not checked for dtype or shape.
+        """ Set the bytes data. This accepts a numpy array,
+        but the data is not checked for dtype or shape.
         """
         
         # Check data is a numpy array
@@ -108,7 +105,7 @@ class Buffer(GLObject):
     
     
     def set_subdata(self, offset, data):
-        """ Set subdata using an integer offset.
+        """ Set subdata using an integer offset (in bytes).
         """
         
         # Check some size has been allocated
@@ -195,7 +192,11 @@ class Buffer(GLObject):
 
 # ------------------------------------------------------ DataBuffer class ---
 class DataBuffer(Buffer):
-    """Data buffer allows to manipulate typed data.  """
+    """ Interface to upload buffer data to the GPU. This class is based
+    on Buffer, and adds awareness of shape, dtype and striding.
+    
+    In general, you will want to use the VertexBuffer or ElementBuffer.
+    """
 
 
     def __init__(self, data=None, dtype=None, target=None):
@@ -221,27 +222,25 @@ class DataBuffer(Buffer):
 
     @property
     def dtype(self):
-        """Buffer data type. """
+        """ Buffer data type. """
         return self._dtype
     
     
     @property
     def shape(self):
-        """ Get the shape of the underlying data. 
+        """ The shape of the underlying data. 
         """
         return self._shape
     
     
     @property
     def stride(self):
-        """ Get the stride of the data, i.e. the number of bytes to move
-        to the next element.
-        """
+        """ Byte number separating two elements. """
         return self._stride
     
     
     def __setitem__(self, key, data):
-        """Set data (deferred operation) """
+        """ Set data (deferred operation) """
         
         # Deal with slices that have None or negatives in them
         if isinstance(key, slice):
@@ -296,6 +295,16 @@ class DataBuffer(Buffer):
     def set_shape(self, shape, dtype=None):
         """ Set the shape of the underlying data. This will allocate data
         and discard any pending subdata.
+        
+        Parameters
+        ----------
+        shape :: tuple
+            The shape of the buffer, NxM, where N is the number of attributes
+            and M is the number of elements in each attribute vector.
+        dtype :: {str, np.dtype}
+            The type of the data that the buffer will hold. If not given, 
+            the current type is used.
+        
         """
         
         # Use dtype that is currently in use
@@ -374,6 +383,15 @@ class DataBuffer(Buffer):
     
     def set_data(self, data):
         """ Set the data. This discards any pending data.
+        
+        Note that if this buffer has views, this can break the views
+        if the shape and/or dtype is changed.
+        
+        Parameters
+        ----------
+        data :: np.ndarray
+            The data to upload.
+        
         """
         
         # Check data is a numpy array
@@ -434,7 +452,15 @@ class DataBuffer(Buffer):
     
     
     def set_subdata(self, offset, data):
-        """ Set subdata. The 
+        """ Set subdata. The type must with the current type, and the shape[1]
+        must match with the current shape.
+        
+        Parameters
+        ----------
+        offset :: int
+            The offset (in attribute indices) to set the data for.
+        data :: np.ndarray
+            The data to update.
         """
         
         # Check data is a numpy array
@@ -478,14 +504,10 @@ class VertexBuffer(DataBuffer):
                         ('texcoord', np.float32, 2),
                         ('color',    np.float32, 4) ] )
     data = np.zeros(100, dtype=dtype)
-
-    buffer = VertexBuffer(data)
+    
     program = Program(...)
 
-    program['position'] = buffer['position']
-    program['texcoord'] = buffer['texcoord']
-    program['color'] = buffer['color']
-    ...
+    program.set_vars(VertexBuffer(data))
     """
     
     # Note that we do not actually use this, except the keys to test
@@ -510,9 +532,10 @@ class NotARealBuffer:
 
 # ------------------------------------------------------ VertexBuffer class ---
 class VertexBufferView(VertexBuffer, NotARealBuffer):
-    """ A VertexBufferView is a view on another buffer
-
-    See VerteBuffer for usage.
+    """ A VertexBufferView is a view on a VertexBuffer. It cannot be
+    used to set shape or data. You generally do not use this class
+    directly, but create an instance of this class by indexing in a
+    structured VertexBuffer.
     """
 
     def __init__(self, data=None, dtype=None, base=None, offset=0):
@@ -531,7 +554,7 @@ class VertexBufferView(VertexBuffer, NotARealBuffer):
     
     @property
     def handle(self):
-        # Handle on base buffer. 
+        # Handle on base buffer. (avoid showing up in docs)
         self._handle = self._base._handle
         return self._handle
     
@@ -578,16 +601,14 @@ class VertexBufferView(VertexBuffer, NotARealBuffer):
 
     def _update(self):
         """ Update base buffer. """
-
-        self._base._update()
-        self._need_update = False
+        pass  # base._update is called from base.activate
 
 
 
 # ------------------------------------------------------ ElementBuffer class ---
 class ElementBuffer(DataBuffer):
-    """ElementBuffer allows to specify which element of a VertexBuffer are to be
-    used in a shader program.
+    """ The ElementBuffer allows to specify which element of a
+    VertexBuffer are to be used in a shader program.
 
     Example
     -------
@@ -624,7 +645,7 @@ class ClientVertexBuffer(VertexBuffer, NotARealBuffer):
     passing direct data during a drawing operations.
     
     Note this kind of buffer is highly inefficient since data is uploaded at
-    each drawing operations.
+    each draw.
     """
 
     def __init__(self, data):
@@ -647,6 +668,8 @@ class ClientVertexBuffer(VertexBuffer, NotARealBuffer):
     def _update(self):                 pass
 
 
+
+# ----------------------------------------------- ClientElementBuffer class ---
 class ClientElementBuffer(ElementBuffer, NotARealBuffer):
     """
     A client buffer is a buffer that only exists (permanently) on the CPU. It
@@ -654,7 +677,7 @@ class ClientElementBuffer(ElementBuffer, NotARealBuffer):
     passing direct data during a drawing operations.
     
     Note this kind of buffer is highly inefficient since data is uploaded at
-    each drawing operations.
+    each draw.
     """
 
     def __init__(self, data):
