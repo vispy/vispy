@@ -291,7 +291,7 @@ class Attribute(Variable):
         if self._generic or self._data is None:
             return None
         else:
-            return self._data.shape[0]
+            return self._data.count
     
 
     def set_data(self, data):
