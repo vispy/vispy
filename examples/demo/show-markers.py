@@ -57,6 +57,7 @@ class Canvas(app.Canvas):
         self.model = np.eye(4,dtype=np.float32)
         self.projection = ortho(0, self.size[0], 0, self.size[1], -1, 1)
         self.programs = [
+            Program(markers.vert, markers.frag + markers.tailed_arrow),
             Program(markers.vert, markers.frag + markers.disc),
             Program(markers.vert, markers.frag + markers.diamond),
             Program(markers.vert, markers.frag + markers.square),
