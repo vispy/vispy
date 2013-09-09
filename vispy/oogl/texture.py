@@ -27,13 +27,6 @@ from . import GLObject, ext_available
 
 
 
-# Dict that maps numpy datatypes to openGL ES 2.0 data types
-DTYPES = {  'uint8': gl.GL_UNSIGNED_BYTE,
-            'float16': gl.ext.GL_HALF_FLOAT, # Needs GL_OES_texture_half_float
-            'float32': gl.GL_FLOAT,  # Needs GL_OES_texture_float
-        }
-
-
 class TextureError(RuntimeError):
     """ Raised when something goes wrong that depens on state that was set 
     earlier (due to deferred loading).
@@ -45,6 +38,14 @@ class Texture(GLObject):
     """ Representation of an OpenGL texture. 
     
     """
+    
+    # Dict that maps numpy datatypes to openGL ES 2.0 data types
+    # We use strings to be more failsafe; e.g. np.float128 does not always exist
+    DTYPE2GTYPE = { 'uint8': gl.GL_UNSIGNED_BYTE,
+                    'float16': gl.ext.GL_HALF_FLOAT, # Needs GL_OES_texture_half_float
+                    'float32': gl.GL_FLOAT,  # Needs GL_OES_texture_float
+            }
+    
     
     def __init__(self, target, data=None, format=None, clim=None):
         GLObject.__init__(self)
@@ -480,9 +481,9 @@ class Texture(GLObject):
         
         # Determine type
         thetype = data.dtype.name
-        if not thetype in DTYPES: # Note that we convert if necessary in Texture
+        if not thetype in self.DTYPE2GTYPE: # Note that we convert if necessary in Texture
             raise TextureError("Cannot translate datatype %s to GL." % thetype)
-        gltype = DTYPES[thetype]
+        gltype = self.DTYPE2GTYPE[thetype]
         
         # Build args list
         size, gltype = self._get_size_and_type(data, ndim)
@@ -526,9 +527,9 @@ class Texture(GLObject):
         size = [i for i in reversed( data.shape[:ndim] )]
         # Determine type
         thetype = data.dtype.name
-        if not thetype in DTYPES: # Note that we convert if necessary in Texture
+        if not thetype in self.DTYPE2GTYPE: # Note that we convert if necessary in Texture
             raise TextureError("Cannot translate datatype %s to GL." % thetype)
-        gltype = DTYPES[thetype]
+        gltype = self.DTYPE2GTYPE[thetype]
         # Done
         return size, gltype
     

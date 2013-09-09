@@ -16,7 +16,7 @@ import numpy as np
 
 from vispy import gl
 from .globject import GLObject
-from .buffer import ClientBuffer, VertexBuffer, VertexBufferView
+from .buffer import ClientVertexBuffer, VertexBuffer, VertexBufferView
 from .texture import Texture, Texture2D, TextureCubeMap, Texture3D
 from vispy.util.six import string_types
 
@@ -291,8 +291,7 @@ class Attribute(Variable):
         if self._generic or self._data is None:
             return None
         else:
-            return self._data.size
-    
+            return self._data.count
     
 
     def set_data(self, data):
@@ -316,13 +315,13 @@ class Attribute(Variable):
             self._generic = True
             self._afunction = Attribute._afunctions[self._gtype]
         
-        elif isinstance(data, (ClientBuffer, VertexBuffer)):
+        elif isinstance(data, (ClientVertexBuffer, VertexBuffer)):
             # Just store the Buffer
             self._data = data
             self._generic = False
         elif isinstance(data, np.ndarray):
             raise ValueError('Cannot set attribute data using numpy arrays: ' + 
-                            'use tuple, ClientBuffer or VertexBuffer instead. ')
+                            'use tuple, ClientVertexBuffer or VertexBuffer instead. ')
         else:
             raise ValueError('Wrong data for attribute.')
         
@@ -359,7 +358,7 @@ class Attribute(Variable):
             self._afunction(self._loc, *self._data)
 
         # Client side array
-        elif isinstance(self._data, ClientBuffer):
+        elif isinstance(self._data, ClientVertexBuffer):
             
             # Tell OpenGL to use the array and not the glVertexAttrib* value
             gl.glEnableVertexAttribArray(self._loc)

@@ -226,8 +226,8 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         app.Canvas.__init__(self)
-        self.size = 1000,1000
-
+        self.size = 800, 600
+        
         self.program = oogl.Program(vert,frag)
         self.view = np.eye(4,dtype=np.float32)
         self.model = np.eye(4,dtype=np.float32)

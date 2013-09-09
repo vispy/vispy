@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-""" Definition of VertexBuffer, ClientBuffer and ElemenBuffer classes. """
+""" Definition of VertexBuffer, ElemenBuffer and client buffer classes. """
 
 from __future__ import print_function, division, absolute_import
 
@@ -12,6 +12,12 @@ from vispy import gl
 from vispy.util import is_string
 from vispy.oogl import GLObject
 from vispy.oogl import ext_available
+
+# Removed from Buffer:
+# - self._size
+# - self._stride
+# - self._base
+
 
 # WARNING:
 # We have to be very careful with VertexBuffer.
@@ -34,13 +40,10 @@ from vispy.oogl import ext_available
 
 # ------------------------------------------------------------ Buffer class ---
 class Buffer(GLObject):
-    """The Buffer class is a raw interface to upload some data to the GPU.
-    It is data agnostic and doesn't check any data type.
-
-    Note that it is possible to only upload subdata to the GPU without ever
-    uploading the full buffer. In such case, you have to first set the size of
-    the buffer. Once the size is set, checks will be made as to not override the
-    end of the buffer. If you need more space, set a new size first.
+    """ Interface to upload buffer data to the GPU. This class is shape
+    and dtype agnostic and considers the arrays as byte data.
+    
+    In general, you will want to use the VertexBuffer or ElementBuffer.
     """
 
 
@@ -53,149 +56,109 @@ class Buffer(GLObject):
         if target not in (gl.GL_ARRAY_BUFFER, gl.GL_ELEMENT_ARRAY_BUFFER):
             raise ValueError("Invalid target for buffer object.")
         self._target = target
-
-        # Number of elements in the buffer
-        self._size = 0
-
+        
         # Total bytes consumed by the elements of the buffer
         self._nbytes = 0
-
-        # Byte number separating elements
-        self._stride = 1
-
+        
         # Indicate if a resize has been requested
-        self._need_resize = True
-
-        self._base = self
-
+        self._need_resize = False
+        
         # Buffer usage (GL_STATIC_DRAW, G_STREAM_DRAW or GL_DYNAMIC_DRAW)
         self._usage = gl.GL_DYNAMIC_DRAW
 
         # Set data
         self._pending_data = []
         if data is not None:
-            if not isinstance(data, np.ndarray):
-                raise ValueError("Data should be a numpy array.")
-            self.set_size(data.size)
             self.set_data(data)
-
-
-    def set_data(self, data, offset=0, allow_resize=True):
-        """ Set data or subdata (deferred operations)  """
-
-        # Check some size has been allocated
-        if self._nbytes == 0:
-            raise ValueError("Buffer size is null.")
-
+    
+    
+    def set_nbytes(self, nbytes):
+        """ Set how many bytes should be available for the buffer. 
+        """
+        nbytes = int(nbytes)
+        
+        # Set new bytes
+        if self._nbytes != nbytes:
+            self._nbytes = int(nbytes)
+            self._need_resize = True
+        
+        # Clear pending subdata
+        self._pending_data = []
+    
+    
+    def set_data(self, data):
+        """ Set the bytes data. This accepts a numpy array,
+        but the data is not checked for dtype or shape.
+        """
+        
         # Check data is a numpy array
         if not isinstance(data, np.ndarray):
             raise ValueError("Data should be a numpy array.")
-
+        
+        # Set shape if necessary
+        self.set_nbytes(data.nbytes)
+        
+        # Set pending!
         nbytes = data.nbytes
-
-        # If the whole buffer is to be written, we clear any pending data
-        # operations since this will be overwritten anyway.
-        if nbytes == self._nbytes:
-            if offset == 0:
-                self._pending_data = []
-            else:
-                raise ValueError("Data is too big for buffer.")
-
-        # Check if we have enough space when offset > 0
-        if offset and (offset+nbytes) > self._nbytes:
+        self._pending_data.append( (data, nbytes, 0) )
+        self._need_update = True
+    
+    
+    def set_subdata(self, offset, data):
+        """ Set subdata using an integer offset (in bytes).
+        """
+        
+        # Check some size has been allocated
+        if not self._nbytes:
+            raise ValueError("Cannot set subdata if there is no space allocated.")
+            
+        # Check data is a numpy array
+        if not isinstance(data, np.ndarray):
+            raise ValueError("Data should be a numpy array.")
+        
+        # Get offset and nbytes
+        offset = int(offset)
+        nbytes = data.nbytes
+        
+        # Check
+        if (offset+nbytes) > self._nbytes:
             raise ValueError("Offseted data is too big for buffer.")
         
-        # Resize if data too big
-        elif nbytes > self._nbytes:
-            if allow_resize:
-                self.set_size(nbytes/self._stride)
-            else:
-                raise ValueError("Data is too big for buffer.")
-
-        # Ok, we should be safe now
-        #if data.base is data or self._base is self:
+        # Set pending!
         self._pending_data.append( (data, nbytes, offset) )
-        #else:
-        #self._pending_data.append( (data.copy(), nbytes, offset) )
         self._need_update = True
-
-
-    def set_subdata(self, data, offset=0):
-        """ Set subdata (deferred operations, no resize allowed). """
-
-        self.set_data(data,offset,allow_resize=False)
-
-
-    def set_size(self, size):
-        """ Set buffer size (invalidates all pending operations). """
-
-        if size == self._size:
-            return
-
-        self._pending_data = []
-        self._size = int(size)
-        self._nbytes = int(size * self.stride)
-        # This indicate to allocate buffer on GPU when possible
-        self._need_resize = True
-
-
-    @property
-    def size(self):
-        """ Number of elements in the array. """
-        return self._size
-
-
-    @property
-    def stride(self):
-        """Buffer element size (in bytes). """
-        return self._stride
-
-
+    
+    
     @property
     def nbytes(self):
         """Buffer size (in bytes). """
         return self._nbytes
 
-
-    @property
-    def offset(self):
-        """Buffer offset (in bytes) relative to base. """
-        return self._offset
-
-    @property
-    def handle(self):
-        """ Return a handle on the base buffer """
-
-        return self._handle
-
-
+    
     def _create(self):
         """ Create buffer on GPU """
-        
         if not self._handle:
             self._handle = gl.glGenBuffers(1)
     
+    
     def _delete(self):
         """ Delete buffer from GPU """
-        
         gl.glDeleteBuffers(1 , [self._handle])
     
     
     def _activate(self):
         """ Bind the buffer to some target """
-        
         gl.glBindBuffer(self._target, self._handle)
 
 
     def _deactivate(self):
         """ Unbind the current bound buffer """
-
         gl.glBindBuffer(self._target, 0)
 
 
     def _update(self):
         """ Upload all pending data to GPU. """
-
+        
         # Bind buffer now 
         gl.glBindBuffer(self._target, self._handle)
        
@@ -211,11 +174,11 @@ class Buffer(GLObject):
             
         # Upload data
         while self._pending_data:
-            data, size, offset = self._pending_data.pop(0)
+            data, nbytes, offset = self._pending_data.pop(0)
             # debug
             # print("Uploading %d bytes at offset %d to buffer (%d)"
             #        % (size, offset, self._handle))
-            gl.glBufferSubData(self._target, offset, size, data)
+            gl.glBufferSubData(self._target, offset, nbytes, data)
 
 
 
@@ -223,109 +186,109 @@ class Buffer(GLObject):
 
 # ------------------------------------------------------ DataBuffer class ---
 class DataBuffer(Buffer):
-    """Data buffer allows to manipulate typed data.  """
+    """ Interface to upload buffer data to the GPU. This class is based
+    on Buffer, and adds awareness of shape, dtype and striding.
+    
+    In general, you will want to use the VertexBuffer or ElementBuffer.
+    """
 
 
-    def __init__(self, data=None, dtype=None, size=0, offset=0, target=0):
+    def __init__(self, data, target):
         """ Initialize the buffer """
-
         Buffer.__init__(self, target)
-
-        # Computed shape (for simple buffer or view)
-        self._shape = None
-
-        # Check if dtype is a numpy dtype
-        if dtype is not None:
-            dtype = np.dtype(dtype)
-            if isinstance(dtype,np.dtype):
-                if size == 0:
-                    raise ValueError("Size error (cannot be 0).")
-                self._dtype    = dtype
-                self._stride   = self._dtype.itemsize
-                self._size     = size
-                self._nbytes   = self._stride * self._size
-                self._offset   = 0
-                self._shape    = (size,1)
-
-                # Compute internal shape as (x,y) and base dtype
-                dtype = self._dtype
-                shape = [size,]
-                if dtype.fields:
-                    if len(dtype.fields) == 1:
-                        shape.extend( [np.prod(dtype[0].shape)] )
-                else:
-                    self._dtype = dtype.base
-                    shape.extend( dtype.shape)
-                if len(shape) == 1:
-                    shape = (shape[0],1)
-                elif len(shape) > 2:
-                    shape = (np.prod(shape[:-1]),shape[:-1])
-                self._shape = tuple(shape)
-
-            else:
-                raise ValueError("Unknown data type.")
-
-        # Check if data is a numpy array
-        elif isinstance(data,np.ndarray):
-            # If data is a structure array with a unique field
-            # we get this unique field as data
-            if data.dtype.fields and len(data.dtype.fields) == 1:
-                data = data[data.dtype.names[0]]
-                
-            self._dtype   = data.dtype
-            self._nbytes  = data.nbytes
-            self._stride  = self._dtype.itemsize
-            self._size    = data.size
-            self._offset  = 0
-
-            # Compute internal shape as (x,y) and base dtype
-            dtype = data.dtype
-            shape = list(data.shape) or [1]
-
-            if dtype.fields:
-                if len(dtype.fields) == 1:
-                    shape.extend( [np.prod(dtype[0].shape)] )
-            else:
-                self._dtype = dtype.base
-                shape.extend( dtype.shape)
-            if len(shape) == 1:
-                shape = (shape[0],1)
-            elif len(shape) > 2:
-                shape = (np.prod(shape[:-1]),shape[:-1])
-            self._shape = shape
-
-            # Data is a view on a structured array (no contiguous data) We know
-            # that when setting data we'll have to make a local copy so we need
-            # to compute the stride relative to GPU layout and not use the
-            # stride of the original array.
-            if data.base is not data:
-                self._stride = self._dtype.itemsize * shape[-1]
-                self._size   = shape[0]
-
-        # We need at least one (data) or the others (dtype+size)
+        
+        # Default offset is 0, only really used for View
+        self._offset = 0
+        
+        # Allow initialization with a string or a tuple that described dtype
+        if is_string(data):
+            data = np.dtype(data)
+        elif isinstance(data, tuple):
+            data = np.dtype([data])
+        
+        # Initialize
+        if isinstance(data, np.ndarray):
+            # Fix dtype, vsize, stride. Initialize count
+            array_info = self._parse_array(data)
+            self._dtype, self._vsize, self._stride, self._count = array_info
+            # Set data now
+            self.set_data(data)  
+        elif isinstance(data, np.dtype):
+            # Fix dtype, vsize, stride. Initialize count
+            self._dtype, self._vsize, self._stride = self._parse_dtype(data)
+            self._count = 0
         else:
-            raise ValueError("One of 'data' or 'dtype' must be specified.")
-
-        # Set data only once properly initialized
-        if data is not None:
-            self.set_data(data)
-
-
+            raise ValueError("DataBuffer needs array of dtype to initialize.")
+        
+        # todo: assume vsize =1 if e.g. np.float32 is passed?
+#         # Check vsize (some dtypes do not specify vsize)
+#         if not self.vsize:
+#             raise ValueError('Could not determine vsize for %s.' %
+#                                                     self.__class__.__name__)
+        
+        # Check data type
+        if self.dtype.fields:
+            for name in self.dtype.names:
+                dtype = self.dtype[name].base
+                if dtype.name not in self.DTYPE2GTYPE:
+                    raise TypeError("Data type not allowed for %s: %s" % 
+                                    (self.__class__.__name__, dtype.name) )
+        else:
+            if self.dtype.name not in self.DTYPE2GTYPE:
+                    raise TypeError("Data type not allowed for %s: %s" % 
+                                (self.__class__.__name__, self.dtype.name) )
+        
+    
+    
+    def _parse_array(self, data):
+        """ Return (dtype, vsize, stride, count), given an array.
+        NEED OVERLOADING
+        """
+        raise NotImplementedError()
+    
+    
+    def _parse_dtype(self, dtype):
+        """ Return (dtype, vsize, stride), given a dtype.
+        NEED OVERLOADING
+        """
+        raise NotImplementedError()
+    
+    
     @property
     def dtype(self):
-        """Buffer data type. """
+        """ Buffer data type. """
         return self._dtype
-
-
+    
+    
     @property
-    def base(self):
-        """Buffer base if this buffer is a view on another buffer. """
-        return self._base
-
-
+    def vsize(self):
+        """ The vector size of each vertex in the buffer. This can be
+        1, 2, 3 or 4, corresponding with float, vec2, vec3, vec4. """
+        return self._vsize
+    
+    
+    @property
+    def stride(self):
+        """ Byte number separating two elements. """
+        return self._stride
+    
+    
+    @property
+    def count(self):
+        """ The number of vertices in the buffer. """
+        return self._count
+    
+    
+    @property
+    def offset(self):
+        """ Byte offset in the buffer. """
+        return self._offset
+    
+    
+    
     def __setitem__(self, key, data):
-        """Set data (deferred operation) """
-
+        """ Set data (deferred operation) """
+        
         # Deal with slices that have None or negatives in them
         if isinstance(key, slice):
             start = key.start or 0
@@ -339,43 +302,200 @@ class DataBuffer(Buffer):
         
         # Check ellipsis (... notation)
         if key == Ellipsis:
-            offset = 0
+            start = 0
             nbytes = data.nbytes
         # If key is not a slice
         elif not isinstance(key, slice) or step > 1:
             raise ValueError("Can only set contiguous block of data.")
         # Else we're happy
         else:
-            offset = start * self._stride
             nbytes = (stop - start) * self._stride
-
+        
         # Check we have the right amount of data
         if data.nbytes < nbytes:
             raise ValueError("Not enough data.")
         elif data.nbytes > nbytes:
             raise ValueError("Too much data.")
-
+        
         # WARNING: Do we check data type here or do we cast the data to the
         # same internal dtype ? This would make a silent copy of the data which
         # can be problematic in some cases.
-        if data.dtype != self._dtype:
-            data = data.astype(self._dtype)  # astype() always makes a copy
-        self.set_data(data, offset=offset)
-
-
+        if data.dtype != self.dtype:
+            data = data.astype(self.dtype)  # astype() always makes a copy
+        # Set
+        self.set_subdata(start, data)
+    
+    
     def __getitem__(self, key):
         """ Create a view on this buffer. """
-
+        
         if not is_string(key):
             raise ValueError("Can only get access to a named field")
-
-        dtype = self._dtype[key]
-        size = self._size 
+        
+        # Get dtype, e.g. ('x', '<f4', 2)  so it has the vsize!
+        dtype = self._dtype[key]  # not .base! 
         offset = self._dtype.fields[key][1]
+        
+        return VertexBufferView(dtype, base=self, offset=offset)
+    
+    
+    def set_count(self, count):
+        """ Set the number of vertices for this buffer. This will
+        allocate data and discard any pending subdata.
+        
+        Parameters
+        ----------
+        count : int
+            The new size of the buffer; the number of vertices.
+        
+        """
+        
+        # Set count
+        self._count = int(count)
+        
+        # Update bytes
+        nbytes = self._count * self._stride
+        self.set_nbytes(nbytes)
+    
+    
+    def set_data(self, data):
+        """ Set the data for this buffer. Any pending data is discarted.
+        The dtype and vsize of this buffer should be respected.
+        
+        Parameters
+        ----------
+        data :: np.ndarray
+            The data to upload.
+        
+        """
+        
+        # Check data is a numpy array
+        if not isinstance(data, np.ndarray):
+            raise ValueError("Data should be a numpy array.")
+        
+        # If data is a structure array with a unique field
+        # we get this unique field as data
+        while data.dtype.fields and len(data.dtype.fields) == 1:
+            data = data[data.dtype.names[0]]
+        
+        # Get props of the given data and check whether it's a match
+        dtype, vsize, stride, count = self._parse_array(data)
+        if dtype != self.dtype:
+            raise ValueError('Given data must match dtype of the buffer.')
+        elif vsize != self.vsize:
+            raise ValueError('Given data must match vsize of the buffer.')
+        elif stride != self.stride:
+            raise ValueError('Given data must match stride of the buffer.')
+        
+        # Update count
+        self.set_count(count)
+        
+        # Update data
+        Buffer.set_data(self, data)
+    
+    
+    def set_subdata(self, offset, data):
+        """ Set subdata. The dtype and vsize of this buffer should be
+        respected. And the data must fit in the current buffer.
+        
+        Parameters
+        ----------
+        offset : int
+            The offset (in vertex indices) to set the data for.
+        data : np.ndarray
+            The data to update.
+        """
+        
+        # If data is a structure array with a unique field
+        # we get this unique field as data
+        while data.dtype.fields and len(data.dtype.fields) == 1:
+            data = data[data.dtype.names[0]]
+        
+        # Get props of the given data and check whether it's a match
+        dtype, vsize, stride, count = self._parse_array(data)
+        if dtype != self.dtype:
+            raise ValueError('Given data must match dtype of the buffer.')
+        elif vsize != self.vsize:
+            raise ValueError('Given data must match vsize of the buffer.')
+        elif stride != self.stride:
+            raise ValueError('Given data must match stride of the buffer.')
+        
+        # Test whether it fits
+        if offset < 0:
+            raise ValueError('Offset in set_subdata should be >= 0.')
+        elif offset + count > self.count:
+            raise ValueError('Offset + data does not fit in this buffer.')
+        
+        # Turn attribute-offset into a byte offset
+        offset = int(offset)
+        byte_offset = offset * self._stride
+        
+        # Upload
+        Buffer.set_subdata(self, byte_offset, data)
 
-        return VertexBufferView(dtype=dtype, size=size, base=self, offset=offset)
 
 
+# ------------------------------------------------------ ElementBuffer class ---
+class ElementBuffer(DataBuffer):
+    """ The ElementBuffer allows to specify which element of a
+    VertexBuffer are to be used in a shader program.
+
+    Example
+    -------
+
+    indices = np.zeros(100, dtype=np.uint16)
+    buffer = ElementBuffer(indices)
+    program = Program(...)
+
+    program.draw(gl.GL_TRIANGLES, indices)
+    ...
+    """
+    
+    # We need a DTYPE->GL map for the element buffer. Used in program.draw()
+    DTYPE2GTYPE = { 'uint8': gl.GL_UNSIGNED_BYTE,
+                    'uint16': gl.GL_UNSIGNED_SHORT,
+                    'uint32': gl.GL_UNSIGNED_INT,
+                    }
+    
+    def __init__(self, data):
+        DataBuffer.__init__(self, data, target=gl.GL_ELEMENT_ARRAY_BUFFER)
+    
+    
+    def _parse_array(self, data):
+        """ Return (dtype, vsize, stride, count), given an array.
+        """
+        
+        # Check data
+        if data.dtype.fields:
+            raise ValueError('ElementBuffer does not support structured arrays.')
+        
+        # Set dtype, vsize and stride
+        dtype, vsize, stride = self._parse_dtype(data.dtype)
+        
+        # Count is simply the size
+        count = data.size
+        
+        return dtype, vsize, stride, count
+    
+    
+    def _parse_dtype(self, dtype):
+        """ Return (dtype, vsize, stride), given a dtype.
+        """
+        
+        # Check data
+        if dtype.fields:
+            raise ValueError('ElementBuffer does not support structured dtype.')
+        
+        # Get base dtype, this will turn ('x', '<f4', 3) into np.float32
+        dtype_ = dtype.base
+        
+        # vsize is one, the ElementBuffer contains indices, which are scalars
+        vsize = 1
+        
+        # Get stride
+        stride = dtype.itemsize
+        
+        return dtype_, vsize, stride 
 
 
 
@@ -391,86 +511,158 @@ class VertexBuffer(DataBuffer):
                         ('texcoord', np.float32, 2),
                         ('color',    np.float32, 4) ] )
     data = np.zeros(100, dtype=dtype)
-
-    buffer = VertexBuffer(data)
+    
     program = Program(...)
 
-    program['position'] = buffer['position']
-    program['texcoord'] = buffer['texcoord']
-    program['color'] = buffer['color']
-    ...
+    program.set_vars(VertexBuffer(data))
     """
+    
+    # Note that we do not actually use this, except the keys to test
+    # whether a data type is allowed; we parse the gtype from the
+    # attribute data.
+    DTYPE2GTYPE = { 'int8': gl.GL_BYTE,
+                    'uint8': gl.GL_UNSIGNED_BYTE,
+                    'uint16': gl.GL_UNSIGNED_SHORT,
+                    'int16': gl.GL_SHORT,
+                    'float32': gl.GL_FLOAT,
+                    'float16': gl.ext.GL_HALF_FLOAT,
+                    }
 
 
-    def __init__(self, data=None, dtype=None, size=0, offset=0):
-        """ Initialize the buffer """
-
-        DataBuffer.__init__(self, data=data, dtype=dtype, size=size,
-                            offset = offset, target = gl.GL_ARRAY_BUFFER)
-
-        # Check base type
-        # For structured dtype, we let view check individual dtypes
-        if self._dtype.fields and len(self._dtype.fields) > 1:
-            return
-
-        if self._dtype not in (np.uint8,np.int8,np.uint16,
-                               np.int16,np.float32,np.float16):
-            raise TypeError("Data type not allowed for this buffer")
-
+    def __init__(self, data):
+        DataBuffer.__init__(self, data, target=gl.GL_ARRAY_BUFFER)
+    
+    
+    def _parse_array(self, data):
+        """ Return (dtype, vsize, stride, count), given an array.
+        """
+        
+        # If data is a structure array with a unique field
+        # we get this unique field as data
+        while data.dtype.fields and len(data.dtype.fields) == 1:
+            data = data[data.dtype.names[0]]
+        
+        # Set dtype, vsize and stride
+        dtype, vsize, stride = self._parse_dtype(data.dtype)
+        
+        # Determine count and vsize
+        if dtype.fields:
+            # Structured array, vsize is already set
+            # Count is simply the number of elements in the base array 
+            count = data.size
+            
+        else:
+            # Normal array, we reset vsize using the data
+            
+            if data.ndim <= 1:
+                # We take it the vector size is 1
+                vsize = 1
+                # Count is simply the number of elements.
+                count = data.size
+            else:
+                # Vector size is last dimension
+                vsize = data.shape[-1]
+                # Count is product of all dimensions except last
+                count = int(np.prod(data.shape[:-1]))
+        
+        # todo: what about this?
+        # Data is a view on a structured array (no contiguous data) We know
+        # that when setting data we'll have to make a local copy so we need
+        # to compute the stride relative to GPU layout and not use the
+        # stride of the original array.
+        #
+        # AK: I dont really understand what this is doing, but if I
+        # turn this on, the show-markers and atom examples fail.
+        # If I turn it off, the boids and client-buffer examples fail.
+        if data.base is not data:
+            # todo: check this
+            stride = dtype.itemsize * vsize
+        
+        
+        # Done
+        return dtype, vsize, stride, count
+    
+    
+    def _parse_dtype(self, dtype):
+        """ Return (dtype, vsize, stride), given a dtype.
+        """
+        
+        # If dtype is a structure with a unique field
+        # we get this unique field as dtype
+        while dtype.fields and len(dtype.fields) == 1:
+            dtype = dtype[dtype.names[0]]
+        
+        # Get base dtype, this will turn ('x', '<f4', 3) into np.float32
+        dtype_ = dtype.base
+        
+        # Get stride
+        stride = dtype.itemsize
+        
+        # Determine count and vsize
+        if dtype.fields:
+#             # Structured array: Vector size is unspecified, since there
+#             # are multiple vertices. It is checked in VertexBufferView
+#             vsize = None
+            # Or ... We set the sun of all vsizes
+            shapes = [dtype[name].shape for name in dtype.names]
+            sizes = [int(np.prod(s)) for s in shapes]
+            vsize = sum(sizes)
+        
+        elif dtype.shape:
+            # e.g. ('x', '<f4', 3): 
+            # Vector size is simply the number of elements in the dtype
+            vsize = int(np.prod(dtype.shape))
+        
+        else:
+            # Plain dtype, assume scalar value
+            vsize = 1
+        
+        return dtype_, vsize, stride 
 
 
 
 # ------------------------------------------------------ VertexBuffer class ---
 class VertexBufferView(VertexBuffer):
-    """ A VertexBufferView is a view on another buffer
-
-    See VerteBuffer for usage.
+    """ A VertexBufferView is a view on a VertexBuffer. It cannot be
+    used to set shape or data. You generally do not use this class
+    directly, but create an instance of this class by indexing in a
+    structured VertexBuffer.
     """
 
-    def __init__(self, dtype=None, size=0, base=None, offset=0):
+    def __init__(self, dtype, base, offset):
         """ Initialize the view """
+        assert isinstance(dtype, np.dtype)
+        VertexBuffer.__init__(self, dtype)
         
-        VertexBuffer.__init__(self, dtype=dtype, size=size, offset=offset)
         self._base = base
-        self._offset = offset
-        self._stride = base.stride
-
-
-    def set_size(self, size):
-        """ Set buffer base size (invalidates all pending operations) """
-        self._base.set_size(size)
-
-
+        self._offset = int(offset)
+        self._stride = base.stride  # Override this
+    
+    def set_count(self):
+        raise RuntimeError('Cannot set count on a %s.' % self.__class__.__name__)
+    # todo: same for set_data  and set_subdata
+    
+    
     @property
     def handle(self):
-        """ Handle on base buffer. """
+        # Handle on base buffer. (avoid showing up in docs)
         self._handle = self._base._handle
         return self._handle
-
-
-    @property
-    def dtype(self):
-        """ Element type. """
-        return self._dtype
-
-
-    @property
-    def size(self):
-        """ Size in number of elements. """
-        return self._base.size
-
-
+    
+    
     @property
     def stride(self):
         """ Byte number separating two elements. """
-        return self._base.stride
-
-
+        self._stride = self._base.stride
+        return self._stride
+    
+    
     @property
-    def offset(self):
-        """ Byte offset relative to base. """
-        return self._offset
-
+    def count(self):
+        """ Number of vertices in the buffer. """
+        self._count = self._base.count
+        return self._count
+   
 
     @property
     def base(self):
@@ -501,71 +693,35 @@ class VertexBufferView(VertexBuffer):
 
     def _update(self):
         """ Update base buffer. """
-
-        self._base._update()
-        self._need_update = False
-
-
-
-# ------------------------------------------------------ ElementBuffer class ---
-class ElementBuffer(DataBuffer):
-    """ElementBuffer allows to specify which element of a VertexBuffer are to be
-    used in a shader program.
-
-    Example
-    -------
-
-    indices = np.zeros(100, dtype=np.uint16)
-    buffer = ElementBuffer(indices)
-    program = Program(...)
-
-    program.draw(gl.GL_TRIANGLES, indices)
-    ...
-    """
-    
-    def __init__(self, data=None, dtype=None, size=0):
-        """ Initialize the buffer """
-
-        DataBuffer.__init__(self, data=data, dtype=dtype, size=size,
-                            target = gl.GL_ELEMENT_ARRAY_BUFFER)
-
-        # Check dtype and shape
-
-        if self._dtype not in (np.uint8,np.uint16,np.uint32):
-            raise TypeError("Data type not allowed for this buffer")
-
-        if self._shape[1] != 1:
-            raise TypeError("Only contiguous data allowed for this buffer")
+        pass  # base._update is called from base.activate
 
 
 
 
-# ------------------------------------------------------ ClientBuffer class ---
-class ClientBuffer(DataBuffer):
+# ------------------------------------------------ ClientVertexBuffer class ---
+class ClientVertexBuffer(VertexBuffer):
     """
     A client buffer is a buffer that only exists (permanently) on the CPU. It
     cannot be modified nor uploaded into a GPU buffer. It merely serves as
     passing direct data during a drawing operations.
     
     Note this kind of buffer is highly inefficient since data is uploaded at
-    each drawing operations.
+    each draw.
     """
-
+    # todo: prohibit using set_data and friends
     def __init__(self, data):
         """ Initialize the buffer. """
-
-        DataBuffer.__init__(self,data=data, target=gl.GL_ARRAY_BUFFER)
-
-        self._need_update = True
-        self._data        = data
-        self._offset = 0
-
-
+        if not isinstance(data, np.ndarray):
+            raise ValueError('ClientVertexBuffer needs a numpy array.')
+        VertexBuffer.__init__(self, data)
+        self._data = data
+    
     @property
     def data(self):
-        """Buffer data. """
+        """ Buffer data. """
         return self._data
-
+    
+    
     def __getitem__(self, key):        pass
     def __setitem__(self, key, data):  pass
     def _create(self):                 pass
@@ -575,6 +731,38 @@ class ClientBuffer(DataBuffer):
     def _update(self):                 pass
 
 
+
+# ----------------------------------------------- ClientElementBuffer class ---
+class ClientElementBuffer(ElementBuffer):
+    """
+    A client buffer is a buffer that only exists (permanently) on the CPU. It
+    cannot be modified nor uploaded into a GPU buffer. It merely serves as
+    passing direct data during a drawing operations.
+    
+    Note this kind of buffer is highly inefficient since data is uploaded at
+    each draw.
+    """
+
+    def __init__(self, data):
+        """ Initialize the buffer. """
+        if not isinstance(data, np.ndarray):
+            raise ValueError('ClientElementBuffer needs a numpy array.')
+        ElementBuffer.__init__(self, data)
+        self._data = data
+    
+    @property
+    def data(self):
+        """ Buffer data. """
+        return self._data
+    
+    
+    def __getitem__(self, key):        pass
+    def __setitem__(self, key, data):  pass
+    def _create(self):                 pass
+    def _delete(self):                 pass
+    def _activate(self):               pass
+    def _deactivate(self):             pass
+    def _update(self):                 pass
 
 
 
@@ -596,7 +784,7 @@ if __name__ == '__main__':
     V_color    = V['color']
 
     for P in (V_position, V_texcoord, V_color):
-        print("Size",     P.size)
+        print("Shape",     P.shape)
         print("Offset:",  P.offset)
         print("Stride:",  P.stride)
         print()
@@ -608,7 +796,7 @@ if __name__ == '__main__':
     #V[10:20] = data[10:21]
 
     I = ElementBuffer(indices)
-    print("Size",     I.size)
+    print("Shape",     I.shape)
     print("Offset:",  I.offset)
     print("Stride:",  I.stride)
 
