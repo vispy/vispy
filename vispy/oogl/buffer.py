@@ -565,17 +565,12 @@ class VertexBuffer(DataBuffer):
                 # Count is product of all dimensions except last
                 count = int(np.prod(data.shape[:-1]))
         
-        # todo: what about this?
-        # Data is a view on a structured array (no contiguous data) We know
-        # that when setting data we'll have to make a local copy so we need
-        # to compute the stride relative to GPU layout and not use the
-        # stride of the original array.
-        #
-        # AK: I dont really understand what this is doing, but if I
-        # turn this on, the show-markers and atom examples fail.
-        # If I turn it off, the boids and client-buffer examples fail.
-        if data.base is not data:
-            # todo: check this
+        
+        if data.base is not None:
+            # Data is a view on a structured array (no contiguous data)
+            # We know that when setting data we'll have to make a local
+            # copy so we need to compute the stride relative to GPU
+            # layout and not use the stride of the original array.
             stride = dtype.itemsize * vsize
         
         

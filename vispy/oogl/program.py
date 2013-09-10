@@ -615,7 +615,7 @@ class Program(GLObject):
             elif gltype == gl.GL_UNSIGNED_INT and not ext_available('element_index_uint'):
                 raise ValueError('element_index_uint extension needed for uint32 ElementBuffer.')
             # Draw
-            gl.glDrawElements(mode, indices.count, gltype, indices) 
+            gl.glDrawElements(mode, indices.size, gltype, indices) 
             
         else:
             raise ValueError("draw_elements requires an ElementBuffer or a numpy array.")
