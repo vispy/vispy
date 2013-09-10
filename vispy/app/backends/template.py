@@ -99,7 +99,7 @@ class CanvasBackend(app.CanvasBackend):  # You can mix this class with the nativ
         # Set size of the widget or window
         raise NotImplementedError()
     
-    def _vispy_set_location(self, x, y):
+    def _vispy_set_position(self, x, y):
         # Set location of the widget or window. May have no effect for widgets
         raise NotImplementedError()
     
@@ -115,7 +115,11 @@ class CanvasBackend(app.CanvasBackend):  # You can mix this class with the nativ
         # Force the window or widget to shut down
         raise NotImplementedError()
     
-    def _vispy_get_geometry(self):
+    def _vispy_get_size(self):
+        # Should return widget size
+        raise NotImplementedError()
+    
+    def _vispy_get_position(self):
         # Should return widget (x, y, w, h)
         raise NotImplementedError()
     
