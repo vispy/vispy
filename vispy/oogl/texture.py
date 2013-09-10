@@ -86,6 +86,9 @@ class Texture(GLObject):
         else:
             self.set_wrapping(gl.GL_CLAMP_TO_EDGE, gl.GL_CLAMP_TO_EDGE)
         
+        # Reset status; set_filter and set_wrapping were called.
+        self._need_update = False  
+        
         # Set data?
         if data is None:
             pass
@@ -387,7 +390,7 @@ class Texture(GLObject):
             raise TextureError('This should not happen (texture is invalid)')
         
         # Need to update any parameters?
-        self._activate()
+        gl.glBindTexture(self._target, self._handle)  # self._activate()
         while self._pending_params:
             param, value = self._pending_params.popitem()
             gl.glTexParameter(self._target, param, value)
@@ -437,7 +440,7 @@ class Texture(GLObject):
                 self.delete() 
                 self._create()
             # Upload!
-            self._activate()
+            gl.glBindTexture(self._target, self._handle)  #self._activate()
             if isinstance(data, tuple):
                 self._allocate_storage(shape, format, level)
             else:
