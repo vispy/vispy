@@ -87,7 +87,7 @@ class Buffer(GLObject):
         
         # Check some size has been allocated
         if not self._nbytes:
-            raise ValueError("Cannot set subdata if there is no space allocated.")
+            raise RuntimeError("Cannot set subdata if there is no space allocated.")
             
         # Check data is a numpy array
         if not isinstance(data, np.ndarray):
@@ -98,6 +98,8 @@ class Buffer(GLObject):
         nbytes = data.nbytes
         
         # Check
+        if offset < 0:
+            raise ValueError("Offset must be > 0.")
         if (offset+nbytes) > self._nbytes:
             raise ValueError("Offseted data is too big for buffer.")
         
@@ -193,7 +195,8 @@ class DataBuffer(Buffer):
             array_info = self._parse_array(data)
             self._dtype, self._vsize, self._stride, self._count = array_info
             # Set data now
-            self.set_data(data)  
+            if not isinstance(self, (ClientVertexBuffer, ClientElementBuffer)):
+                self.set_data(data)  
         elif isinstance(data, np.dtype):
             # Fix dtype, vsize, stride. Initialize count
             self._dtype, self._vsize, self._stride = self._parse_dtype(data)
@@ -618,9 +621,15 @@ class VertexBufferView(VertexBuffer):
         self._offset = int(offset)
         self._stride = base.stride  # Override this
     
-    def set_count(self):
+    
+    def set_count(self, *args, **kwargs):
         raise RuntimeError('Cannot set count on a %s.' % self.__class__.__name__)
-    # todo: same for set_data  and set_subdata
+        
+    def set_data(self, *args, **kwargs):
+        raise RuntimeError('Cannot set data on a %s.' % self.__class__.__name__)
+    
+    def set_subdata(self, *args, **kwargs):
+        raise RuntimeError('Cannot set subdata on a %s.' % self.__class__.__name__)
     
     
     @property
@@ -688,7 +697,7 @@ class ClientVertexBuffer(VertexBuffer):
     Note this kind of buffer is highly inefficient since data is uploaded at
     each draw.
     """
-    # todo: prohibit using set_data and friends
+    
     def __init__(self, data):
         """ Initialize the buffer. """
         if not isinstance(data, np.ndarray):
@@ -696,10 +705,21 @@ class ClientVertexBuffer(VertexBuffer):
         VertexBuffer.__init__(self, data)
         self._data = data
     
+    
     @property
     def data(self):
         """ Buffer data. """
         return self._data
+    
+    
+    def set_count(self, *args, **kwargs):
+        raise RuntimeError('Cannot set count on a %s.' % self.__class__.__name__)
+        
+    def set_data(self, *args, **kwargs):
+        raise RuntimeError('Cannot set data on a %s.' % self.__class__.__name__)
+    
+    def set_subdata(self, *args, **kwargs):
+        raise RuntimeError('Cannot set subdata on a %s.' % self.__class__.__name__)
     
     
     def __getitem__(self, key):        pass
@@ -730,10 +750,21 @@ class ClientElementBuffer(ElementBuffer):
         ElementBuffer.__init__(self, data)
         self._data = data
     
+    
     @property
     def data(self):
         """ Buffer data. """
         return self._data
+    
+    
+    def set_count(self, *args, **kwargs):
+        raise RuntimeError('Cannot set count on a %s.' % self.__class__.__name__)
+        
+    def set_data(self, *args, **kwargs):
+        raise RuntimeError('Cannot set data on a %s.' % self.__class__.__name__)
+    
+    def set_subdata(self, *args, **kwargs):
+        raise RuntimeError('Cannot set subdata on a %s.' % self.__class__.__name__)
     
     
     def __getitem__(self, key):        pass
@@ -745,60 +776,3 @@ class ClientElementBuffer(ElementBuffer):
     def _update(self):                 pass
 
 
-
-# -----------------------------------------------------------------------------
-if __name__ == '__main__':
-    import sys
-    import OpenGL.GLUT as glut
-
-
-    dtype = np.dtype( [ ('position', np.float32, 3),
-                        ('texcoord', np.float32, 2),
-                        ('color',    np.float32, 4) ] )
-    data = np.zeros(100, dtype=dtype)
-    indices = np.zeros(100, dtype=np.uint16)
-
-    V = VertexBuffer(data)
-    V_position = V['position']
-    V_texcoord = V['texcoord']
-    V_color    = V['color']
-
-    for P in (V_position, V_texcoord, V_color):
-        print("Shape",     P.shape)
-        print("Offset:",  P.offset)
-        print("Stride:",  P.stride)
-        print()
-
-    V[10:20] = data[10:20]
-    V[...] = data
-    print( len(V._pending_data))
-    #V[10:20] = data[10:19]
-    #V[10:20] = data[10:21]
-
-    I = ElementBuffer(indices)
-    print("Shape",     I.shape)
-    print("Offset:",  I.offset)
-    print("Stride:",  I.stride)
-
-    def display():
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        glut.glutSwapBuffers()
-
-    def reshape(width,height):
-        gl.glViewport(0, 0, width, height)
-
-    def keyboard( key, x, y ):
-        if key == '\033': sys.exit( )
-
-    glut.glutInit(sys.argv)
-    glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_DEPTH)
-    glut.glutCreateWindow('Shader test')
-    glut.glutReshapeWindow(512,512)
-    glut.glutDisplayFunc(display)
-    glut.glutReshapeFunc(reshape)
-    glut.glutKeyboardFunc(keyboard )
-
-    V.activate()
-    V['position'].activate()
-    V['position'].deactivate()
-    V.deactivate()

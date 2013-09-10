@@ -7,9 +7,8 @@ import numpy as np
 from vispy import gl
 
 from vispy.oogl.buffer import Buffer
-from vispy.oogl.buffer import DataBuffer
-from vispy.oogl.buffer import VertexBuffer
-from vispy.oogl.buffer import ElementBuffer
+from vispy.oogl.buffer import VertexBuffer, ClientVertexBuffer
+from vispy.oogl.buffer import ElementBuffer, ClientElementBuffer
 
 
 
@@ -24,23 +23,102 @@ class BufferTest(unittest.TestCase):
         assert buffer._nbytes      == 0
         assert buffer._usage       == gl.GL_DYNAMIC_DRAW
 
+    
     def test_pending_data(self):
         data = np.zeros(100, np.float32)
 
         buffer = Buffer(target=gl.GL_ARRAY_BUFFER)
-        assert len(buffer._pending_data) == 0
+        self.assertEqual(len(buffer._pending_data), 0)
         
         buffer = Buffer(data=data, target=gl.GL_ARRAY_BUFFER)
-        assert len(buffer._pending_data) == 1
+        self.assertEqual(len(buffer._pending_data), 1)
 
         buffer.set_data(data)
-        assert len(buffer._pending_data) == 1
+        self.assertEqual(len(buffer._pending_data), 1)
 
         buffer.set_subdata(0, data[:50])
-        assert len(buffer._pending_data) == 2
+        self.assertEqual(len(buffer._pending_data), 2)
 
         buffer.set_data(data)
-        assert len(buffer._pending_data) == 1
+        self.assertEqual(len(buffer._pending_data), 1)
+    
+    
+    def test_setting_size(self):
+        data = np.zeros(100, np.float32)
+        buffer = Buffer(target=gl.GL_ARRAY_BUFFER)
+        
+        buffer.set_data(data)
+        self.assertEqual(buffer.nbytes, data.nbytes)
+        
+        buffer.set_data( np.zeros(200, np.float32))
+        self.assertEqual(buffer.nbytes, 200*4)
+        
+        buffer.set_nbytes(10)
+        self.assertEqual(buffer.nbytes, 10)
+        
+        buffer.set_nbytes(20)
+        self.assertEqual(buffer.nbytes, 20)
+    
+    
+    def test_setting_subdata(self):
+        
+        data = np.zeros(100, np.float32)
+        buffer = Buffer(target=gl.GL_ARRAY_BUFFER)
+        
+        # Set subdata when no data is set
+        with self.assertRaises(RuntimeError):
+            buffer.set_subdata(0, data)
+        
+        # Set nbytes and try again
+        buffer.set_nbytes(data.nbytes)
+        buffer.set_subdata(0, data)
+        
+        # Subpart
+        buffer.set_subdata(0, data[:50])
+        buffer.set_subdata(50, data[50:])
+        
+        # Too big
+        with self.assertRaises(ValueError):
+            buffer.set_subdata(1, data)
+        
+        # Weird
+        with self.assertRaises(ValueError):
+            buffer.set_subdata(-1, data)
+        
+        # Weirder
+        with self.assertRaises(ValueError):
+            buffer.set_subdata(1000000, data)
+    
+        
+    def test_wrong_data(self):
+        buffer = Buffer(target=gl.GL_ARRAY_BUFFER)
+        
+        # String
+        with self.assertRaises(ValueError):
+            buffer.set_data('foo')
+        
+        # Bytes
+        some_bytes = 'foo'.encode('utf-8')
+        with self.assertRaises(ValueError):
+            buffer.set_data(some_bytes)
+        
+        # Now with subdata
+        data = np.zeros(100, np.float32)
+        buffer.set_data(data)
+        
+        
+        # String
+        with self.assertRaises(ValueError):
+            buffer.set_subdata(0, 'foo')
+        with self.assertRaises(ValueError):
+            buffer.set_subdata('foo', data)
+        
+        # Bytes
+        some_bytes = 'foo'.encode('utf-8')
+        with self.assertRaises(ValueError):
+            buffer.set_subdata(0, some_bytes)
+        with self.assertRaises(ValueError):
+            buffer.set_subdata(some_bytes, data)
 
 
 
@@ -57,20 +135,25 @@ class VertexBufferTest(unittest.TestCase):
     
     def test_init_with_data(self):
         
-        data = np.zeros(100, np.float32)
-        buffer = VertexBuffer(data)
-        assert buffer.count == 100
-        assert buffer.vsize == 1
+        for dtype in (np.float32, np.uint8, np.int16):
         
-        data = np.zeros((100, 1), np.float32)
-        buffer = VertexBuffer(data)
-        assert buffer.count == 100
-        assert buffer.vsize == 1
-
-        data = np.zeros((100,4), np.float32)
-        buffer = VertexBuffer(data)
-        assert buffer.count == 100
-        assert buffer.vsize == 4
+            data = np.zeros(100, dtype)
+            buffer = VertexBuffer(data)
+            assert buffer.count == 100
+            assert buffer.vsize == 1
+            assert buffer.dtype == dtype
+            
+            data = np.zeros((100, 1), dtype)
+            buffer = VertexBuffer(data)
+            assert buffer.count == 100
+            assert buffer.vsize == 1
+            assert buffer.dtype == dtype
+    
+            data = np.zeros((100,4), dtype)
+            buffer = VertexBuffer(data)
+            assert buffer.count == 100
+            assert buffer.vsize == 4
+            assert buffer.dtype == dtype
     
     
     def test_init_with_structured_data(self):
@@ -177,9 +260,6 @@ class VertexBufferTest(unittest.TestCase):
         assert buffer['texcoord'].offset == 3*np.dtype(np.float32).itemsize
         assert buffer['color'].offset    == (3+2)*np.dtype(np.float32).itemsize
     
-    
-    
-
 
     def test_stride(self):
         dtype = np.dtype( [ ('position', np.float32, 3),
@@ -196,8 +276,7 @@ class VertexBufferTest(unittest.TestCase):
         buffer = VertexBuffer(data['position'])
         assert buffer.offset == 0
         assert buffer.stride == 3*np.dtype(np.float32).itemsize
-
-
+    
 
     def test_setitem(self):
         dtype = np.dtype( [ ('position', np.float32, 3),
@@ -224,7 +303,48 @@ class VertexBufferTest(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             buffer[10:20] = data[10:21]
+    
+    
+    def test_set_data_on_view(self):
+        
+        dtype = np.dtype( [ ('a', np.float32, 3),
+                            ('b', np.float32, 2),
+                            ('c',    np.float32, 4) ] )
+        data = np.zeros(100, dtype=dtype)
+        buffer = VertexBuffer(data)
+        
+        with self.assertRaises(RuntimeError):
+            buffer['a'].set_count(100)
+        
+        with self.assertRaises(RuntimeError):
+            buffer['a'].set_data(data['a'])
+        
+        with self.assertRaises(RuntimeError):
+            buffer['a'].set_subdata(data['a'])
 
+    
+    def test_client_buffer(self):
+        data = np.zeros((100, 3), dtype=np.float32)
+        buffer = ClientVertexBuffer(data)
+        self.assertIs(buffer.data, data)
+        
+        with self.assertRaises(RuntimeError):
+            buffer.set_data(data)
+        with self.assertRaises(RuntimeError):
+            buffer.set_subdata(data)
+    
+    
+    def test_typechecking(self):
+        
+        # VertexBuffer supports these
+        for dtype in (np.uint8, np.int8, np.uint16, np.int16,
+                      np.float32, np.float16):
+            buffer = VertexBuffer(dtype)
+        
+        # VertexBuffer does *not* support these
+        for dtype in (np.uint32, np.int32, np.float64, np.float128):
+            with self.assertRaises(TypeError):
+                buffer = VertexBuffer(dtype)
 
 
 # -----------------------------------------------------------------------------
@@ -261,6 +381,28 @@ class ElementBufferTest(unittest.TestCase):
         data = np.zeros(100, [('index', np.uint32,1)])
         with self.assertRaises(ValueError):
             buffer = ElementBuffer(data=data)
+        
+        # ElementBuffer supports these
+        for dtype in (np.uint8, np.uint16, np.uint32):
+            buffer = ElementBuffer(dtype)
+        
+        # ElementBuffer does *not* support these
+        for dtype in (np.int8, np.int16, np.int32, np.float32, np.float64):
+            with self.assertRaises(TypeError):
+                buffer = ElementBuffer(dtype)
+        
+    
+    
+    def test_client_buffer(self):
+        data = np.zeros((100, 3), dtype=np.uint32)
+        buffer = ClientElementBuffer(data)
+        self.assertIs(buffer.data, data)
+        
+        with self.assertRaises(RuntimeError):
+            buffer.set_data(data)
+        with self.assertRaises(RuntimeError):
+            buffer.set_subdata(data)
+
 
 
 if __name__ == "__main__":
