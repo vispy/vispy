@@ -210,3 +210,24 @@ float marker(vec2 P, float size)
 }
 """
 
+tailed_arrow= """
+float marker(vec2 P, float size)
+{
+
+   //arrow_right
+    float r1 = abs(P.x -.50)*size + abs(P.y -.5)*size - v_size/2; 
+    float r2 = abs(P.x -.25)*size + abs(P.y -.5)*size - v_size/2; 
+    float arrow = max(r1,-r2);
+
+    //hbar
+    float r3 = (abs(P.y-.5)*2+.3)*v_size-v_size/2;
+    float r4 = (P.x -.775)*size;
+    float r6 = abs(P.x -.5)*size-v_size/2;
+    float limit = (P.x -.5)*size + abs(P.y -.5)*size - v_size/2; 
+    float hbar = max(limit,max(max(r3,r4),r6));
+
+    return min(arrow,hbar);
+}
+"""
+
+
