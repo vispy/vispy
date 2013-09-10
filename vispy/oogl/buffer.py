@@ -177,11 +177,15 @@ class DataBuffer(Buffer):
         # Default offset is 0, only really used for View
         self._offset = 0
         
-        # Allow initialization with a string or a tuple that described dtype
+        # Allow smart initialziatin
         if is_string(data):
-            data = np.dtype(data)
+            data = np.dtype(data)  # with a string, e.g. "float32"
         elif isinstance(data, tuple):
-            data = np.dtype([data])
+            data = np.dtype([data])  # With a tuple, e.g. ('a', np.float32, 3)
+        elif isinstance(data, list):
+            data = np.dtype(data)  # With a list of the above tuples
+        elif isinstance(data, type) and issubclass(data, np.generic):
+            data = np.dtype(data)  # With e.g. np.float32
         
         # Initialize
         if isinstance(data, np.ndarray):
@@ -195,7 +199,7 @@ class DataBuffer(Buffer):
             self._dtype, self._vsize, self._stride = self._parse_dtype(data)
             self._count = 0
         else:
-            raise ValueError("DataBuffer needs array of dtype to initialize.")
+            raise ValueError("DataBuffer needs array or dtype to initialize.")
         
         # Check data type
         if self.dtype.fields:
@@ -572,13 +576,14 @@ class VertexBuffer(DataBuffer):
         
         # Determine count and vsize
         if dtype.fields:
-#             # Structured array: Vector size is unspecified, since there
-#             # are multiple vertices. It is checked in VertexBufferView
-#             vsize = None
+            # Structured array: Vector size is 1: one element of this 
+            # structured dtype per vertex
+            vsize = 1
             # Or ... We set the sun of all vsizes
-            shapes = [dtype[name].shape for name in dtype.names]
-            sizes = [int(np.prod(s)) for s in shapes]
-            vsize = sum(sizes)
+            # No! because "stride = data.itemsize * vsize" will then fail!
+            #shapes = [dtype[name].shape for name in dtype.names]
+            #sizes = [int(np.prod(s)) for s in shapes]
+            #vsize = sum(sizes)
         
         elif dtype.shape:
             # e.g. ('x', '<f4', 3): 
