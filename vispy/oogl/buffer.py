@@ -13,30 +13,7 @@ from vispy.util import is_string
 from vispy.oogl import GLObject
 from vispy.oogl import ext_available
 
-# Removed from Buffer:
-# - self._size
-# - self._stride
-# - self._base
 
-
-# WARNING:
-# We have to be very careful with VertexBuffer.
-# Let's consider the following array:
-#
-# P = np.zeros(100, [ ('position', 'f4', 3),
-#                      ('color',   'f4', 4),
-#                      ('size',    'f4', 1)] )
-#
-# P.dtype itemsize is (3+4+1)*4 (float32)
-#
-# Now, if we create a VertexBuffer on position only:
-#
-# V = VertexBuffer(P['position'])
-#
-# The underlying data is not contiguous and we cannot use glBufferSubData to
-# update the data into GPU memory. This means we need a local copy of the data
-# to be able to upload it (PyOpenGL will handle that). We need also to find the
-# stride of the buffer into GPU memory, not on CPU memory.
 
 # ------------------------------------------------------------ Buffer class ---
 class Buffer(GLObject):
@@ -220,12 +197,6 @@ class DataBuffer(Buffer):
         else:
             raise ValueError("DataBuffer needs array of dtype to initialize.")
         
-        # todo: assume vsize =1 if e.g. np.float32 is passed?
-#         # Check vsize (some dtypes do not specify vsize)
-#         if not self.vsize:
-#             raise ValueError('Could not determine vsize for %s.' %
-#                                                     self.__class__.__name__)
-        
         # Check data type
         if self.dtype.fields:
             for name in self.dtype.names:
@@ -378,17 +349,20 @@ class DataBuffer(Buffer):
         while data.dtype.fields and len(data.dtype.fields) == 1:
             data = data[data.dtype.names[0]]
         
-        # Get props of the given data and check whether it's a match
+        # Get props of the given data
         dtype, vsize, stride, count = self._parse_array(data)
+        
+        # Check dtype and vsize to see whether it is a match
         if dtype != self.dtype:
             raise ValueError('Given data must match dtype of the buffer.')
         elif vsize != self.vsize:
             raise ValueError('Given data must match vsize of the buffer.')
-        elif stride != self.stride:
-            raise ValueError('Given data must match stride of the buffer.')
         
         # Update count
         self.set_count(count)
+        
+        # Update stride for this newly given data
+        self._stride = stride
         
         # Update data
         Buffer.set_data(self, data)
@@ -493,7 +467,7 @@ class ElementBuffer(DataBuffer):
         vsize = 1
         
         # Get stride
-        stride = dtype.itemsize
+        stride = dtype.itemsize * vsize  # == dtype.itemsize
         
         return dtype_, vsize, stride 
 
@@ -565,14 +539,20 @@ class VertexBuffer(DataBuffer):
                 # Count is product of all dimensions except last
                 count = int(np.prod(data.shape[:-1]))
         
-        
-        if data.base is not None:
-            # Data is a view on a structured array (no contiguous data)
-            # We know that when setting data we'll have to make a local
-            # copy so we need to compute the stride relative to GPU
-            # layout and not use the stride of the original array.
+        # Set stride
+        if data.base is None:
+            # There is no base. PyOpenGL will upload our data as-is,
+            # so we use strides of the numpy array. This occurs in most
+            # situations, but also if we do VertexBuffer(data) where
+            # data is a structured array.
+            stride = data.strides[0]
+        else:
+            # There is a base, PyOpenGL will make a local copy before
+            # uploading the data. Therefore data.strides[0] will be
+            # incorrect; we need to calcualate the stride that the local
+            # copy will have. This can differ fron data.strides[0] when
+            # we do e.g. VertexBuffer( data['a_position'] ).
             stride = dtype.itemsize * vsize
-        
         
         # Done
         return dtype, vsize, stride, count
@@ -589,9 +569,6 @@ class VertexBuffer(DataBuffer):
         
         # Get base dtype, this will turn ('x', '<f4', 3) into np.float32
         dtype_ = dtype.base
-        
-        # Get stride
-        stride = dtype.itemsize
         
         # Determine count and vsize
         if dtype.fields:
@@ -611,6 +588,9 @@ class VertexBuffer(DataBuffer):
         else:
             # Plain dtype, assume scalar value
             vsize = 1
+        
+        # Get stride. Note that this will always be overriden by _parse_array
+        stride = dtype.itemsize * vsize
         
         return dtype_, vsize, stride 
 
