@@ -57,6 +57,7 @@ class Canvas(app.Canvas):
         self.model = np.eye(4,dtype=np.float32)
         self.projection = ortho(0, self.size[0], 0, self.size[1], -1, 1)
         self.programs = [
+            Program(markers.vert, markers.frag + markers.tailed_arrow),
             Program(markers.vert, markers.frag + markers.disc),
             Program(markers.vert, markers.frag + markers.diamond),
             Program(markers.vert, markers.frag + markers.square),
@@ -76,7 +77,6 @@ class Canvas(app.Canvas):
                              u_projection = self.projection)
         self.index = 0
         self.program = self.programs[self.index]
-
 
     def on_initialize(self, event):
         gl.glClearColor(1,1,1,1)
@@ -102,14 +102,10 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
         self.program['u_size'] = self.u_size
 
-
-
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         with self.program as prog:
             prog.draw_arrays(gl.GL_POINTS)
-        self.swap_buffers()
-
 
 if __name__ == '__main__':
     canvas = Canvas()
