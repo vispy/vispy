@@ -14,7 +14,6 @@ from vispy.oogl import Program
 from vispy.oogl import VertexBuffer
 import markers
 
-
 n = 540
 data = np.zeros(n, dtype = [ ('a_position', np.float32, 3),
                              ('a_fg_color', np.float32, 4),
@@ -49,7 +48,9 @@ for i in range(40):
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self)
-        self.size = 800,600+2*32
+
+        # This size is used for comparison with agg (via matplotlib)
+        self.size = 512,512+2*32
         self.title = "Markers demo [press space to change marker]"
 
         self.vbo = VertexBuffer(data)
