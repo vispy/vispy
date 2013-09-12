@@ -128,7 +128,7 @@ class RenderBuffer(GLObject):
     def _update(self):
         
         # Enable now
-        self._activate()
+        gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._handle)
         
         # Get data
         shape, format =  self._shape, self._format
@@ -297,7 +297,7 @@ class FrameBuffer(GLObject):
     def _update(self):
         
         # We need to activate before we can add attachements
-        self._activate()
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
         
         # Attach any RenderBuffers or Textures
         # Note that we only enable the object briefly to attach it.

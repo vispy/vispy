@@ -11,11 +11,20 @@ from vispy import gl
 from vispy import oogl
 
 
-def _dummy(self, *arg, **kwargs):
+def _dummy(*args, **kwargs):
     """ Dummy method to replace all GL calls with.
     Return 1 for glGenTextures etc.
     """
     return 1
+
+def _dummy_glGetProgramiv(handle, mode):
+    if mode in (gl.GL_ACTIVE_ATTRIBUTES, gl.GL_ACTIVE_UNIFORMS):
+        return 0
+    else:
+        return 1
+
+def _dummy_glGetAttachedShaders(*args, **kwargs):
+    return ()
 
 
 
@@ -26,6 +35,14 @@ class GLObjectTest(unittest.TestCase):
         for key in dir(gl):
             if key.startswith('gl'):
                 setattr(gl, key, _dummy)
+        #
+        for key in dir(gl.ext):
+            if key.startswith('gl'):
+                setattr(gl.ext, key, _dummy)
+        # 
+        gl.glGetProgramiv = _dummy_glGetProgramiv
+        gl.glGetAttachedShaders = _dummy_glGetAttachedShaders
+    
     
     def tearDown(self):
         gl.set_gl_target('gl')
@@ -75,7 +92,8 @@ class GLObjectTest(unittest.TestCase):
         data = np.zeros(100, np.uint16)
         im2 = np.zeros((50,50), np.uint16)
         im3 = np.zeros((20,20, 20), np.uint16)
-        
+        shaders = oogl.VertexShader("x"), oogl.FragmentShader("x")
+         
         items = [
             # Buffers
             (oogl.buffer.Buffer(target=gl.GL_ARRAY_BUFFER), 'set_data', data),
@@ -83,11 +101,19 @@ class GLObjectTest(unittest.TestCase):
             (oogl.buffer.ElementBuffer(np.uint16), 'set_data', data),
             # Textures
             (oogl.Texture2D(), 'set_data', im2),
-            #(oogl.Texture3D(), 'set_data', im3),
+            (oogl.Texture3D(), 'set_data', im3),
+            # FBO stuff
+            (oogl.RenderBuffer(), 'set_storage', (1,1)),
+            (oogl.FrameBuffer(), 'attach_color',  oogl.RenderBuffer((1,1)) ),
+            # Shader stuff
+            (oogl.VertexShader(), '_set_code', "x"),
+            (oogl.FragmentShader(), '_set_code', "x"),
+            (oogl.Program(), 'attach', shaders),
             ]
         
         for ob, funcname, value in items:
             self._fix_ob(ob)
+            #print('Testing GLObject compliance for %s' % ob.__class__.__name__)
             
             # Initially a clear state 
             self.assertEqual(ob._need_update, False)
@@ -102,7 +128,6 @@ class GLObjectTest(unittest.TestCase):
             # Activate the object
             ob.activate()
             # Now we should be activated
-            #print(ob._actions)
             self.assertEqual(len(ob._actions), 3)
             self.assertEqual(ob._actions[0], 'create')
             self.assertEqual(ob._actions.count('update'), 1)

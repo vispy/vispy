@@ -86,12 +86,19 @@ class Shader(GLObject):
             self.code = code
     
     
+    def _set_code(self, code, source=None):
+        # Otherwise we cannot proprly test this class
+        self.code = code
+        self._source = source
+    
+    # todo: mmm, this is I think the *only* settable property in oogl, turn into method?
+    
     @property
     def code(self):
         """
         The actual code of the shader.
         """
-
+        
         return self._code
     
     @code.setter
@@ -279,12 +286,12 @@ class VertexShader(Shader):
     Vertex shader class.
     """
 
-    def __init__(self, source=None):
+    def __init__(self, code=None):
         """
         Create the shader.
         """
 
-        Shader.__init__(self, gl.GL_VERTEX_SHADER, source)
+        Shader.__init__(self, gl.GL_VERTEX_SHADER, code)
 
 
     def __repr__(self):
@@ -304,12 +311,12 @@ class FragmentShader(Shader):
     Fragment shader class
     """
 
-    def __init__(self, source=None):
+    def __init__(self, code=None):
         """
         Create the shader.
         """
 
-        Shader.__init__(self, gl.GL_FRAGMENT_SHADER, source)
+        Shader.__init__(self, gl.GL_FRAGMENT_SHADER, code)
 
 
     def __repr__(self):
