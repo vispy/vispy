@@ -18,7 +18,7 @@ the Program object.
 
 Most common oogl classes:
     
-* :class:`ShaderProgram`
+* :class:`Program`
 * :class:`FragmentShader` and :class:`VertexShader`
 * :class:`VertexBuffer` and :class:`ElementBuffer`
 * :class:`Texture2D`, :class:`Texture3D`, :class:`TextureCubeMap`
@@ -48,7 +48,7 @@ progress and there are yet a few known limitations. Most notably:
 
 * TextureCubeMap is not yet implemented
 * FBO's can only do 2D textures (not 3D textures or cube maps)
-* Sharing of Shaders and RenderBuffers (between multiple ShaderProgram and
+* Sharing of Shaders and RenderBuffers (between multiple Program's  and
 FrameBuffers, respecitively) is not well supported.
 * No support for compressed textures.
 

@@ -527,7 +527,7 @@ class Program(GLObject):
         """
         # Check
         if not self._active:
-            raise ProgramError('ShaderProgram must be active when drawing.')
+            raise ProgramError('Program must be active when drawing.')
         
         # Upload any attributes and uniforms if necessary
         for variable in (self.attributes + self.uniforms):

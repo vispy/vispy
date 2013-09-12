@@ -4,7 +4,7 @@
 
 """ 
 Simple example demonstrating showing a quad.
-oogl objects that this example demonstrates: ShaderProgram.
+oogl objects that this example demonstrates: Program.
 """
 
 from vispy import oogl

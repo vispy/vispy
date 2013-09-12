@@ -19,7 +19,7 @@ Base class
 Classes related to shaders
 ==========================
 
-.. autoclass:: vispy.oogl.ShaderProgram
+.. autoclass:: vispy.oogl.Program
     :members:
 
 

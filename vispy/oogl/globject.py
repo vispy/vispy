@@ -10,7 +10,7 @@ class GLObject(object):
     """ Base class for classes that wrap an OpenGL object.
     All GLObject's can be used as a context manager to enable them,
     although some are better used by setting them as a uniform or
-    attribute of a ShaderProgram.
+    attribute of a Program.
     
     All GLObject's apply deferred (a.k.a. lazy) loading, which means
     that the objects can be created and data can be set even if no

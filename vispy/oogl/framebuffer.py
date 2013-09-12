@@ -57,10 +57,10 @@ class RenderBuffer(GLObject):
         
         # Set storage now?
         if shape is not None:
-            self.set_storage(shape, format=format)
+            self.set_shape(shape, format=format)
     
     
-    def set_storage(self, shape, format=None):
+    def set_shape(self, shape, format=None):
         """ Allocate storage for this render buffer.
         
         This function can be repeatedly called without much cost if
@@ -273,9 +273,9 @@ class FrameBuffer(GLObject):
                             self._attachment_depth,
                             self._attachment_stencil):
             if isinstance(attachment, Texture2D):
-                attachment.set_storage(shape)
+                attachment.set_shape(shape)
             elif isinstance(attachment, RenderBuffer):
-                attachment.set_storage(shape)
+                attachment.set_shape(shape)
     
     
     def _create(self):
