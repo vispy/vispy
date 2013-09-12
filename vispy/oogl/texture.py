@@ -562,7 +562,7 @@ class Texture(GLObject):
 
 
 class Texture2D(Texture):
-    """ Representation of a 2D texture. Inherits Texture.
+    """ Representation of a 2D texture. Inherits :class:`texture.Texture`.
     """
     def __init__(self, *args, **kwargs):
         Texture.__init__(self, gl.GL_TEXTURE_2D, *args, **kwargs)
@@ -571,7 +571,8 @@ class Texture2D(Texture):
 
 class Texture3D(Texture):
     """ Representation of a 3D texture. Note that for this the
-    GL_texture_3D extension needs to be available. Inherits Texture.
+    GL_texture_3D extension needs to be available. 
+    Inherits :class:`texture.Texture`.
     """
     def __init__(self, *args, **kwargs):
         Texture.__init__(self, gl.ext.GL_TEXTURE_3D, *args, **kwargs)
@@ -581,6 +582,7 @@ class Texture3D(Texture):
 class TextureCubeMap(Texture):
     """ Representation of a cube map, to store texture data for the
     6 sided of a cube. Used for instance to create environment mappings.
+    Inherits :class:`texture.Texture`.
     
     This class is not yet implemented.
     """

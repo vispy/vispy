@@ -21,6 +21,13 @@ class Buffer(GLObject):
     and dtype agnostic and considers the arrays as byte data.
     
     In general, you will want to use the VertexBuffer or ElementBuffer.
+    
+    Parameters
+    ----------
+    target : GLENUM
+        gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER
+    data : ndarray
+        The data to set. Optional.
     """
 
 
@@ -66,6 +73,11 @@ class Buffer(GLObject):
     def set_data(self, data):
         """ Set the bytes data. This accepts a numpy array,
         but the data is not checked for dtype or shape.
+        
+        Parameters
+        ----------
+        data : ndarray
+            The data to set.
         """
         
         # Check data is a numpy array
@@ -82,7 +94,15 @@ class Buffer(GLObject):
     
     
     def set_subdata(self, offset, data):
-        """ Set subdata using an integer offset (in bytes).
+        """ Update a region of the buffer.
+        
+        Parameters
+        ----------
+        offset : int
+            The offset (in bytes) at which to set the given data.
+        data : ndarray
+            The data to set.
+        
         """
         
         # Check some size has been allocated
@@ -110,7 +130,7 @@ class Buffer(GLObject):
     
     @property
     def nbytes(self):
-        """Buffer size (in bytes). """
+        """ The buffer size (in bytes). """
         return self._nbytes
 
     
@@ -166,13 +186,22 @@ class Buffer(GLObject):
 # ------------------------------------------------------ DataBuffer class ---
 class DataBuffer(Buffer):
     """ Interface to upload buffer data to the GPU. This class is based
-    on Buffer, and adds awareness of shape, dtype and striding.
+    on :class:`buffer.Buffer`, and adds awareness of shape, dtype and striding.
     
     In general, you will want to use the VertexBuffer or ElementBuffer.
+    
+    Parameters
+    ----------
+    target : GLENUM
+        gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER
+    data : ndarray or dtype
+        The data to set. See docs of VertexBuffer and ElementBuffer for
+        details.
+    
     """
 
 
-    def __init__(self, data, target):
+    def __init__(self, target, data):
         """ Initialize the buffer """
         Buffer.__init__(self, target)
         
@@ -234,7 +263,7 @@ class DataBuffer(Buffer):
     
     @property
     def dtype(self):
-        """ Buffer data type. """
+        """ The buffer data type. """
         return self._dtype
     
     
@@ -247,7 +276,7 @@ class DataBuffer(Buffer):
     
     @property
     def stride(self):
-        """ Byte number separating two elements. """
+        """ The number of bytes separating two elements. """
         return self._stride
     
     
@@ -259,7 +288,7 @@ class DataBuffer(Buffer):
     
     @property
     def offset(self):
-        """ Byte offset in the buffer. """
+        """ The byte offset in the buffer. """
         return self._offset
     
     
@@ -419,11 +448,26 @@ class DataBuffer(Buffer):
 # ------------------------------------------------------ ElementBuffer class ---
 class ElementBuffer(DataBuffer):
     """ The ElementBuffer allows to specify which element of a
-    VertexBuffer are to be used in a shader program.
-
+    VertexBuffer are to be used in a shader program. 
+    Inherits :class:`buffer.DataBuffer`.
+    
+    The given data must be of unsigned integer type. The shape of the
+    data is ignored; each element in the array is simply considered a
+    vertex index.
+    
+    Parameters
+    ----------
+    data : ndarray or dtype
+        Specify the data, or the type of the data. The dtype can also
+        be something that evaluates to a dtype, such as a 'uint32' or
+        np.uint8.
+    client : bool
+        Should be given as a keyword argument. If True, a
+        ClientElementBuffer is used instead, which is a lightweight
+        wrapper class for storing element data in CPU memory.
+    
     Example
     -------
-
     indices = np.zeros(100, dtype=np.uint16)
     buffer = ElementBuffer(indices)
     program = Program(...)
@@ -447,7 +491,7 @@ class ElementBuffer(DataBuffer):
     
     
     def __init__(self, data, client=False):
-        DataBuffer.__init__(self, data, target=gl.GL_ELEMENT_ARRAY_BUFFER)
+        DataBuffer.__init__(self, gl.GL_ELEMENT_ARRAY_BUFFER, data)
     
     
     def _parse_array(self, data):
@@ -490,12 +534,35 @@ class ElementBuffer(DataBuffer):
 
 # ------------------------------------------------------ VertexBuffer class ---
 class VertexBuffer(DataBuffer):
-    """Vertex buffer allows to group set of vertices such they can be later used
-    in a shader program.
-
+    """ The VertexBuffer represents any kind of vertex data, and can also
+    represent an array-of-structures approach. 
+    Inherits :class:`buffer.DataBuffer`.
+    
+    The shape of the given data is interpreted in the following way: 
+    If a normal array of one dimension is given, the vector-size (vsize)
+    is considered 1. Otherwise, data.shape[-1] is considered the vsize,
+    and the other dimensions are "collapsed" to get the vertex count.
+    If the data is a structured array, the number of elements in each
+    item is used as the vector-size (vsize). 
+    
+    Parameters
+    ----------
+    data : ndarray or dtype
+        Specify the data, or the type of the data. The dtype can also
+        be something that evaluates to a dtype, such as a 'uint32' or
+        np.uint8. If a structured array or dtype is given, and there
+        are more than 1 elements in the structure, this buffer is a
+        "structured" buffer. The corresponding items can be obtained
+        by indexing this buffer using their name. In most cases
+        one can use program.set_vars(structured_buffer) to map the
+        item names to their GLSL attribute names automatically.
+    client : bool
+        Should be given as a keyword argument. If True, a
+        ClientVertexBuffer is used instead, which is a lightweight
+        wrapper class for storing vertex data in CPU memory.
+    
     Example
     -------
-
     dtype = np.dtype( [ ('position', np.float32, 3),
                         ('texcoord', np.float32, 2),
                         ('color',    np.float32, 4) ] )
@@ -526,7 +593,7 @@ class VertexBuffer(DataBuffer):
     
         
     def __init__(self, data, client=False):
-        DataBuffer.__init__(self, data, target=gl.GL_ARRAY_BUFFER)
+        DataBuffer.__init__(self, gl.GL_ARRAY_BUFFER, data)
     
     
     def _parse_array(self, data):
@@ -709,8 +776,8 @@ class ClientVertexBuffer(VertexBuffer):
     cannot be modified nor uploaded into a GPU buffer. It merely serves as
     passing direct data during a drawing operations.
     
-    Note this kind of buffer is highly inefficient since data is uploaded at
-    each draw.
+    Note this kind of buffer is in general inefficient since data is
+    uploaded at each draw.
     """
     
     def __init__(self, data, client=True):
@@ -754,8 +821,8 @@ class ClientElementBuffer(ElementBuffer):
     cannot be modified nor uploaded into a GPU buffer. It merely serves as
     passing direct data during a drawing operations.
     
-    Note this kind of buffer is highly inefficient since data is uploaded at
-    each draw.
+    Note this kind of buffer is in general inefficient since data is
+    uploaded at each draw.
     """
     
     def __init__(self, data, client=True):

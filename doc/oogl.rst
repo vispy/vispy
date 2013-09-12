@@ -7,19 +7,21 @@ The object oriented OpenGL API (oogl)
 .. automodule:: vispy.oogl
 
 
-----
+Base class
+==========
+
 
 .. autoclass:: vispy.oogl.GLObject
     :members:
 
 
-----
+
+Classes related to shaders
+==========================
 
 .. autoclass:: vispy.oogl.ShaderProgram
     :members:
 
-
-----
 
 .. autoclass:: vispy.oogl.VertexShader
     :members:
@@ -27,15 +29,14 @@ The object oriented OpenGL API (oogl)
 .. autoclass:: vispy.oogl.FragmentShader
     :members:
 
-.. autoclass:: vispy.oogl.shader.BaseShader
+.. autoclass:: vispy.oogl.shader.Shader
     :members:
 
 
-----
 
+Buffer classes
+==============
 
-.. autoclass:: vispy.oogl.ClientBuffer
-    :members:
 
 .. autoclass:: vispy.oogl.VertexBuffer
     :members:
@@ -43,11 +44,15 @@ The object oriented OpenGL API (oogl)
 .. autoclass:: vispy.oogl.ElementBuffer
     :members:
 
-.. autoclass:: vispy.oogl.vbo.Buffer
+.. autoclass:: vispy.oogl.buffer.DataBuffer
+    :members:
+
+.. autoclass:: vispy.oogl.buffer.Buffer
     :members:
 
 
-----
+Texture classes
+===============
 
 .. autoclass:: vispy.oogl.Texture2D
 
@@ -55,11 +60,12 @@ The object oriented OpenGL API (oogl)
 
 .. autoclass:: vispy.oogl.TextureCubeMap
 
-.. autoclass:: vispy.oogl.Texture
+.. autoclass:: vispy.oogl.texture.Texture
     :members:
 
 
-----
+Classes related to FBO
+======================
 
 .. autoclass:: vispy.oogl.FrameBuffer
     :members:

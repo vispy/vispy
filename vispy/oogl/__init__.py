@@ -12,17 +12,26 @@ convenience classes are implemented (like the collection class?).
 This set of classes provides a friendly (Pythonic) interface
 to OpenGL, and is designed to provide OpenGL's full functionality.
 
-Central to each visualization is the ShaderProgram. To enable it, it
-should be used as a context manager. Other objects, such as Texture2D
-and VertexBuffer should be set as uniforms and attributes of the
-ShaderProgram object. 
+Central to each visualization is the Program. Other objects, such as
+Texture2D and VertexBuffer should be set as uniforms and attributes of
+the Program object.
+
+Most common oogl classes:
+    
+* :class:`ShaderProgram`
+* :class:`FragmentShader` and :class:`VertexShader`
+* :class:`VertexBuffer` and :class:`ElementBuffer`
+* :class:`Texture2D`, :class:`Texture3D`, :class:`TextureCubeMap`
+* :class:`FrameBuffer`
+* :class:`RenderBuffer`
+
 
 Example::
     
     # Init
-    program = oogl.Program(...)
+    program = oogl.Program(vertex_source, fragment_source)
     program['a_position'] = oogl.VertexBuffer(my_positions_array)
-    
+    program['s_texture'] = oogl.Texture2D(my_image)
     ...
     
     # Paint event handler
@@ -31,29 +40,18 @@ Example::
         program.draw_arrays(gl.GL_TRIANGLES)
 
 
-Most common oogl classes:
+Notes:
     
-  * :class:`ShaderProgram`
-  * :class:`FragmentShader` and :class:`VertexShader`
-  * :class:`VertexBuffer` and :class:`ElementBuffer`
-  * :class:`Texture2D`, :class:`Texture3D`, :class:`TextureCubeMap`
-  * :class:`FrameBuffer`
-  * :class:`RenderBuffer`
+With vispy.oogl we strive to offer a Python interface that provides
+the full functionality of OpenGL. However, this layer is a work in
+progress and there are yet a few known limitations. Most notably:
 
-.. Note::
-    
-    With vispy.oogl we strive to offer a Python interface that provides
-    the full functionality of OpenGL. However, this layer is a work in
-    progress and there are yet a few known limitations. Most notably:
-    
-      * TextureCubeMap is not yet implemented
-      * FBO's can only do 2D textures (not 3D textures or cube maps)
-      * Sharing of Shaders and RenderBuffers (between multiple ShaderProgram and
-        FrameBuffers, respecitively) is not well supported.
-      * There is no support for texture mipmapping yet
-      * No support for compressed textures.
-      * Besides the above, there might be the occasional bug, please report!
-    
+* TextureCubeMap is not yet implemented
+* FBO's can only do 2D textures (not 3D textures or cube maps)
+* Sharing of Shaders and RenderBuffers (between multiple ShaderProgram and
+FrameBuffers, respecitively) is not well supported.
+* No support for compressed textures.
+
 """
 
 from __future__ import print_function, division, absolute_import
@@ -70,7 +68,7 @@ from .globject import GLObject
 from .buffer import VertexBuffer, ElementBuffer
 #from .buffer import ClientVertexBuffer, ClientElementBuffer
 from .data import Data
-from .texture import Texture, Texture2D, Texture3D, TextureCubeMap
+from .texture import Texture2D, Texture3D, TextureCubeMap
 from .shader import VertexShader, FragmentShader
 from .framebuffer import FrameBuffer, RenderBuffer
 from .program import Program

@@ -283,7 +283,7 @@ class Shader(GLObject):
 # ------------------------------------------------------ class VertexShader ---
 class VertexShader(Shader):
     """
-    Vertex shader class.
+    Vertex shader class. Inherits :class:`shader.Shader`.
     """
 
     def __init__(self, code=None):
@@ -308,7 +308,7 @@ class VertexShader(Shader):
 # ---------------------------------------------------- class FragmentShader ---
 class FragmentShader(Shader):
     """
-    Fragment shader class
+    Fragment shader class. Inherits :class:`shader.Shader`.
     """
 
     def __init__(self, code=None):
