@@ -45,7 +45,7 @@ class ShaderTest(unittest.TestCase):
 
     def test_setcode(self):
         shader = VertexShader()
-        shader.code = ""
+        shader.set_code("")
         assert shader._need_update == True
 
     def test_empty_build(self):

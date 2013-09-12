@@ -121,7 +121,7 @@ class Texture(GLObject):
         elif isinstance(data, np.ndarray):
             self.set_data(data, format=format, clim=clim)
         elif isinstance(data, tuple):
-            self.set_storage(data, format=format)
+            self.set_shape(data, format=format)
         else:
             raise ValueError('Invalid value to initialize Texture with.')
     

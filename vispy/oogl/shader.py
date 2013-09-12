@@ -41,8 +41,7 @@ class ShaderError(RuntimeError):
 
 # ------------------------------------------------------------ class Shader ---
 class Shader(GLObject):
-    """
-    Abstract shader class.
+    """ Abstract shader class.
     """
 
     # Conversion of known uniform and attribute types to GL constants
@@ -83,51 +82,60 @@ class Shader(GLObject):
         self._code = None
         self._source = None
         if code is not None:
-            self.code = code
+            self.set_code(code)
     
     
-    def _set_code(self, code, source=None):
-        # Otherwise we cannot proprly test this class
-        self.code = code
-        self._source = source
+    def __repr__(self):
+        return "%s %d (%s)" % (self.__class__.__name__, self._id, self._source)
     
-    # todo: mmm, this is I think the *only* settable property in oogl, turn into method?
     
-    @property
-    def code(self):
-        """
-        The actual code of the shader.
+    def set_code(self, code, source=None):
+        """ Set the code for this shader.
+        
+        Parameters
+        ----------
+        code : str
+            The GLSL source code, or a filename that contains the code.
+        source : str
+            A specifier where the code came from. If not given, 
+            "<string>" is used, or the filename where the code is loaded
+            from. Optional.
         """
         
-        return self._code
-    
-    @code.setter
-    def code(self, code):
-        """
-        Set the code of the shader.
-        """
-
         if not is_string(code):
-            raise TypeError('code must be a string (%s)' % type(code))
+            raise TypeError('Code must be a string (%s)' % type(code))
+            
         # Set code and source
-        if os.path.exists(code):
-            with open(code) as file:
-                self._code   = file.read()
+        if os.path.isfile(code):
+            with open(code, 'rb') as file:
+                self._code   = file.read().decode('utf-8')
                 self._source = os.path.basename(code)
         else:
             self._code   = code
             self._source = '<string>'
-
+        
+        # Set given source?
+        if source is not None:
+            if not is_string(source):
+                raise TypeError('Source must be a string (%s)' % type(source))
+            self._source = source
+        
         # Set flags
         self._need_update = True
-
+    
+    
+    @property
+    def code(self):
+        """ The GLSL code of this shader.
+        """
+        return self._code
+    
     
     @property
     def source(self):
+        """ The source of the code for this shader 
+        (as in where it came from, not the source code).
         """
-        The source of the code for this shader (not the source code).
-        """
-
         return self._source
     
     
@@ -282,46 +290,38 @@ class Shader(GLObject):
 
 # ------------------------------------------------------ class VertexShader ---
 class VertexShader(Shader):
-    """
-    Vertex shader class. Inherits :class:`shader.Shader`.
+    """ Vertex shader class. Inherits :class:`shader.Shader`.
+    
+    Parameters
+    ----------
+    code : str
+        The GLSL source code, or a filename that contains the code.
+   
     """
 
     def __init__(self, code=None):
         """
         Create the shader.
         """
-
+        
         Shader.__init__(self, gl.GL_VERTEX_SHADER, code)
-
-
-    def __repr__(self):
-        """
-        x.__repr__() <==> repr(x)
-        """
-
-        return "Vertex Shader %d (%s)" % (self._id, self._source)
-
-
 
 
 
 # ---------------------------------------------------- class FragmentShader ---
 class FragmentShader(Shader):
-    """
-    Fragment shader class. Inherits :class:`shader.Shader`.
+    """ Fragment shader class. Inherits :class:`shader.Shader`.
+    
+    Parameters
+    ----------
+    code : str
+        The GLSL source code, or a filename that contains the code.
+    
     """
 
     def __init__(self, code=None):
         """
         Create the shader.
         """
-
+        
         Shader.__init__(self, gl.GL_FRAGMENT_SHADER, code)
-
-
-    def __repr__(self):
-        """
-        x.__repr__() <==> repr(x)
-        """
-
-        return "Vertex Shader %d (%s)" % (self._id, self._source)

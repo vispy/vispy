@@ -103,11 +103,11 @@ class GLObjectTest(unittest.TestCase):
             (oogl.Texture2D(), 'set_data', im2),
             (oogl.Texture3D(), 'set_data', im3),
             # FBO stuff
-            (oogl.RenderBuffer(), 'set_storage', (1,1)),
+            (oogl.RenderBuffer(), 'set_shape', (1,1)),
             (oogl.FrameBuffer(), 'attach_color',  oogl.RenderBuffer((1,1)) ),
             # Shader stuff
-            (oogl.VertexShader(), '_set_code', "x"),
-            (oogl.FragmentShader(), '_set_code', "x"),
+            (oogl.VertexShader(), 'set_code', "x"),
+            (oogl.FragmentShader(), 'set_code', "x"),
             (oogl.Program(), 'attach', shaders),
             ]
         
