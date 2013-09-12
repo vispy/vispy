@@ -34,6 +34,35 @@ class TextureError(RuntimeError):
     pass
 
 
+
+class TextureLevel(object):
+    """ Minimal class to hold together some values that together
+    represent one texture level.
+    """
+    def __init__(self, level):
+        self.level = level  # 0, 1, 2, etc.
+        self.format = None  # GL_RGB, GL_LUMINANCE etc.
+        self.shape = None  # Shape of a corresponding numpy array, zyx-order
+        self.need_resize = False  # Whether shape or format has changed
+        self.pending_data = []  # Data to upload
+    
+    
+    def set(self, shape, format):
+        """ Set shape and format. Return True if this requires a resize.
+        """
+        # Discart pending data
+        self.pending_data = []
+        # If nothing changed, early exit. Otherwise we need a resize
+        if (self.shape == shape) and (self.format == format):
+            return False
+        else:
+            self.shape = shape
+            self.format = format
+            self.need_resize = True
+            return True
+
+
+    
 class Texture(GLObject):
     """ Representation of an OpenGL texture. 
     
@@ -55,12 +84,9 @@ class Texture(GLObject):
             raise ValueError('Unsupported target "%r"' % target)
         self._target = target
         
-        # A reference to pending data to set
-        self._pending_data = None
-        self._texture_shape = None
-        
-        # Each subdata that is set gets processed
-        self._pending_subdata = []
+        # Keep track of levels: dict of TextureLevel instances
+        # Each texLevel stores shape, format, pending data, need_resize
+        self._levels = {}
         
         # The parameters that apply to this texture. One variable to 
         # keep track of pending parameters, the other for resetting
@@ -185,63 +211,52 @@ class Texture(GLObject):
         return param
     
     
-    def set_subdata(self, offset, data, level=0, format=None, clim=None):
-        """ Set a region of data for this texture. This method can be
-        called at any time (even if there is no context yet). 
+    def set_shape(self, shape, level=0, format=None):
+        """ Allocate storage for this texture. This is useful if the texture
+        is used as a render target for an FBO. 
         
-        In contrast to set_data(), each call to this method results in
-        an OpenGL api call.
+        A call that only uses the shape argument does not result in an
+        action if the call would not change the shape.
         
         Parameters
         ----------
-        offset : tuple
-            The offset for each dimension, to update part of the texture.
-        data : numpy array
-            The texture data to set. The data (with offset) cannot exceed
-            the boundaries of the current texture.
+        shape : tuple
+            The shape of the "virtual" data. By specifying e.g. (20,20,3) for
+            a Texture2D, one implicitly sets the format to GL_RGB. Note
+            that shape[0] is height.
         level : int
             The mipmap level. Default 0.
         format : OpenGL enum
             The format representation of the data. If not given or None,
             it is decuced from the given data. Can be GL_RGB, GL_RGBA,
             GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA.
-        clim : (min, max)
-            Contrast limits for the data. If specified, min will end
-            up being 0.0 (black) and max will end up as 1.0 (white).
-            If not given or None, clim is determined automatically. For
-            floats they become (0.0, 1.0). For integers the are mapped to
-            the full range of the type. 
-        
         """
         
-        # Is there data?
-        if self._texture_shape is None:
-            raise RuntimeError('Cannot set subdata if there is not data or storage yet.')
+        # Check level, get texLevel instance
+        assert isinstance(level, int) and level >= 0
+        texLevel = self._levels.get(level, None)
+        if texLevel is None:
+            texLevel = self._levels[level] = TextureLevel(level)
         
         # Get ndim
         MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
         ndim = MAP.get(self._target, 0)
         
-        # Check data
-        if not isinstance(data, np.ndarray):
-            raise ValueError("Data should be a numpy array.")
-        shape = data.shape
-        assert isinstance(shape, tuple)
-        assert len(shape) in (ndim, ndim+1)
+        # Check shape
+        shape = tuple([int(i) for i in shape])
+        if not len(shape) in (ndim, ndim+1):
+            raise ValueError('Shape must be ndim or ndim+1.')
+        if not all([i>0 for i in shape]):
+            raise ValueError('Shape cannot contain elements <= 0.')
         
-        # Check offset
-        offset = [int(i) for i in offset]
-        assert len(offset) == ndim
+        # Check format
+        if format is None:
+            format = get_formats(shape, self._target)[0]
+        elif format not in get_formats(shape, self._target):
+            raise ValueError('Given format does not match with shape.')
         
-        # Check level, format, clim
-        assert isinstance(level, int) and level >= 0
-        assert format in (None, gl.GL_RGB, gl.GL_RGBA, gl.GL_LUMINANCE, 
-                            gl.GL_LUMINANCE_ALPHA, gl.GL_ALPHA)
-        assert clim is None or (isinstance(clim, tuple) and len(clim)==2)
-        
-        # Set pending data ...
-        self._pending_subdata.append((data, offset, level, format, clim))
-        self._need_update = True
+        # Set new shape and format, force new update if necessary
+        self._need_update = texLevel.set(shape, format)
     
     
     def set_data(self, data, level=0, format=None, clim=None):
@@ -272,76 +287,114 @@ class Texture(GLObject):
         
         """
         
+        # Check level, get texLevel instance
+        assert isinstance(level, int) and level >= 0
+        texLevel = self._levels.get(level, None)
+        if texLevel is None:
+            texLevel = self._levels[level] = TextureLevel(level)
+        
         # Get ndim
         MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
         ndim = MAP.get(self._target, 0)
         
         # Check data
+        shape = data.shape
         if not isinstance(data, np.ndarray):
             raise ValueError("Data should be a numpy array.")
-        shape = data.shape
-        assert isinstance(shape, tuple)
-        assert len(shape) in (ndim, ndim+1)
+        if not data.ndim in (ndim, ndim+1):
+            raise ValueError('Data shape must be ndim or ndim+1.')
         
-        # Check level, format, clim
-        assert isinstance(level, int) and level >= 0
-        assert format in (None, gl.GL_RGB, gl.GL_RGBA, gl.GL_LUMINANCE, 
-                            gl.GL_LUMINANCE_ALPHA, gl.GL_ALPHA)
+        # Check format
+        if format is None:
+            format = get_formats(shape, self._target)[0]
+        elif format not in get_formats(shape, self._target):
+            raise ValueError('Given format does not match with shape.')
+        
+        # Check clim
         assert clim is None or (isinstance(clim, tuple) and len(clim)==2)
         
-        # Clear subdata
-        self._pending_subdata = []
+        # Get offset of all zeros
+        offset = [0 for i in data.shape[:ndim]]
         
-        # Set pending data ...
-        self._pending_data = data, None, level, format, clim
-        self._texture_shape = data.shape
+        # Set new shape and format, does not cause a resize if not necessary
+        texLevel.set(shape, format)
+        
+        # Set pending data
+        texLevel.pending_data.append( (data, clim, offset) )
         self._need_update = True
     
     
-    def set_storage(self, shape, level=0, format=None):
-        """ Allocate storage for this texture. This is useful if the texture
-        is used as a render target for an FBO. 
+    def set_subdata(self, offset, data, level=0, format=None, clim=None):
+        """ Set a region of data for this texture. This method can be
+        called at any time (even if there is no context yet). 
         
-        A call that only uses the shape argument does not result in an
-        action if the call would not change the shape.
+        In contrast to set_data(), each call to this method results in
+        an OpenGL api call.
         
         Parameters
         ----------
-        shape : tuple
-            The shape of the "virtual" data. By specifying e.g. (20,20,3) for
-            a Texture2D, one implicitly sets the format to GL_RGB. Note
-            that shape[0] is height.
+        offset : tuple
+            The offset for each dimension, to update part of the texture.
+        data : numpy array
+            The texture data to set. The data (with offset) cannot exceed
+            the boundaries of the current texture.
         level : int
             The mipmap level. Default 0.
         format : OpenGL enum
             The format representation of the data. If not given or None,
             it is decuced from the given data. Can be GL_RGB, GL_RGBA,
             GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA.
+        clim : (min, max)
+            Contrast limits for the data. If specified, min will end
+            up being 0.0 (black) and max will end up as 1.0 (white).
+            If not given or None, clim is determined automatically. For
+            floats they become (0.0, 1.0). For integers the are mapped to
+            the full range of the type. 
+        
         """
+        
+        # Check level, get texLevel instance
+        assert isinstance(level, int) and level >= 0
+        texLevel = self._levels.get(level, None)
+        
+        # Is there data?
+        if not texLevel or not texLevel.shape:
+            raise RuntimeError('Cannot set subdata if there is no '
+                                                    'texture allocated yet.')
         
         # Get ndim
         MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
         ndim = MAP.get(self._target, 0)
         
-        # Is this already my shape?
-        if format is None and level==0 and self._texture_shape is not None:
-            if self._texture_shape[:ndim] == shape[:ndim]:
-                return
+        # Check data
+        shape = data.shape
+        if not isinstance(data, np.ndarray):
+            raise ValueError("Data should be a numpy array.")
+        if not data.ndim in (ndim, ndim+1):
+            raise ValueError('Data shape must be ndim or ndim+1.')
+            
+        # Check offset
+        offset = tuple([int(i) for i in offset])
+        if not len(offset) == ndim:
+            raise ValueError('Offset must match with number of dimensions.')
+        if not all([i>=0 for i in offset]):
+            raise ValueError('Offset cannot contain elements < 0.')
+        fits = [(offset[i]+shape[i]<=texLevel.shape[i]) for i in range(ndim)]
+        if not all(fits):
+            raise ValueError("Given subdata does not fit in the existing texture.")
         
-        # Check shape
-        assert isinstance(shape, tuple)
-        assert len(shape) in (ndim, ndim+1)
-        shape = tuple([int(i) for i in shape])
-        assert all([i>0 for i in shape])
+        # Get format if not given
+        if format is None:
+            if texLevel.format not in get_formats(shape, self._target):
+                raise ValueError('Subdata shape does not match with current format.')
+        elif format != texLevel.format:
+            raise ValueError('Subdata must have the same format as the existing data.')
         
-        # Check level, format, clim
-        assert isinstance(level, int) and level >= 0
-        assert format in (None, gl.GL_RGB, gl.GL_RGBA, gl.GL_LUMINANCE, 
-                            gl.GL_LUMINANCE_ALPHA, gl.GL_ALPHA)
+        # Check clim
+        assert clim is None or (isinstance(clim, tuple) and len(clim)==2)
         
-        # Set pending data ...
-        self._pending_data = shape, None, level, format, None
-        self._texture_shape = shape
+        # Set pending data
+        texLevel.pending_data.append( (data, clim, offset) )
         self._need_update = True
     
     
@@ -368,26 +421,47 @@ class Texture(GLObject):
             if not ext_available('GL_texture_3D'):
                 raise TextureError('3D Texture not available.')
         
-        # Need to update data?
-        if self._pending_data:
-            pendingData, self._pending_data = self._pending_data, None
-            # Process pending data
-            self._process_pending_data(*pendingData)
-            # If not ok, warn (one time)
-            if not gl.glIsTexture(self._handle):
-                self._handle = 0
-                print('Warning enabling texture, the texture is not valid.')
-                return
         
-        # Need to update some regions?
-        while self._pending_subdata:
-            pendingData = self._pending_subdata.pop(0)
-            # Process pending data
-            self._process_pending_data(*pendingData)
+        # For each level ...
+        for texLevel in self._levels.values():
+            
+            # Need to resize?
+            if texLevel.need_resize:
+                texLevel.need_resize = False
+                new_texture_created = False
+                if self._valid and len(self._levels) == 1:
+                    # We delete the existing texture first. In theory this
+                    # should not be necessary, but some implementations cause
+                    # memory leaks otherwise.
+                    new_texture_created = True
+                    self.delete() 
+                    self._create()
+                # Allocate texture on GPU
+                gl.glBindTexture(self._target, self._handle)  #self._activate()
+                self._allocate_shape(texLevel)
+                # If not ok, warn (one time)
+                if not gl.glIsTexture(self._handle):
+                    self._handle = 0
+                    print('Warning enabling texture, the texture is not valid.')
+                    return
+                if new_texture_created:
+                    # We have a new texture: apply all parameters that were set
+                    for param, value in self._texture_params.items():
+                        gl.glTexParameter(self._target, param, value)
+                        self._pending_params = {} # We just applied all 
+            
+            # Need to update some data?
+            while texLevel.pending_data:
+                data, clim, offset = texLevel.pending_data.pop(0)
+                # Apply clim and convert data type to one supported by OpenGL
+                data = convert_data(data, clim)
+                # Upload
+                gl.glBindTexture(self._target, self._handle)  # self._activate()
+                self._upload_data(data, texLevel, offset)
         
         # Check
-        if not gl.glIsTexture(self._handle): 
-            raise TextureError('This should not happen (texture is invalid)')
+        #if not gl.glIsTexture(self._handle): 
+        #    raise TextureError('This should not happen (texture is invalid)')
         
         # Need to update any parameters?
         gl.glBindTexture(self._target, self._handle)  # self._activate()
@@ -396,104 +470,63 @@ class Texture(GLObject):
             gl.glTexParameter(self._target, param, value)
     
     
-    def _process_pending_data(self, data, offset, level, format, clim):
-        """ Process the pending data. Uploading the data (i.e. create
-        a new texture) or updating it (a subsection).
-        """
-        
-        if isinstance(data, np.ndarray):
-            # Convert data type to one supported by OpenGL
-            data = convert_data(data, clim)
-            # Set shape
-            shape = data.shape
-            
-            # If data is of same shape as current texture, update is much faster
-            if not offset:
-                MAP = {gl.GL_TEXTURE_2D:2, gl.ext.GL_TEXTURE_3D:3}
-                ndim = MAP.get(self._target, 0)
-                if data.shape == self._texture_shape and self._valid:
-                    offset = [0 for i in self._texture_shape[:ndim]]
-        
-        elif isinstance(data, tuple):
-            # Set shape
-            shape = data
-        else:
-            raise TextureError('data is not a valid type, should not happen!')
-        
-        # Determine format (== internalformat) 
-        if format is None:
-            format = get_format(shape, self._target)
-        
-        if offset:
-            # Update: fast!
-            gl.glBindTexture(self._target, self._handle)
-            if self._handle <= 0 or not gl.glIsTexture(self._handle):
-                raise TextureError('Cannot update texture if there is no texture.')
-            self._upload_subdata(data, offset, format, level)
-            
-        else:
-            # (re)upload: slower
-            if self._valid:
-                # We delete the existing texture first. In theory this
-                # should not be necessary, but some implementations cause
-                # memory leaks otherwise.
-                self.delete() 
-                self._create()
-            # Upload!
-            gl.glBindTexture(self._target, self._handle)  #self._activate()
-            if isinstance(data, tuple):
-                self._allocate_storage(shape, format, level)
-            else:
-                self._upload_data(data, format, level)
-            # Set all parameters that the user set
-            for param, value in self._texture_params.items():
-               gl.glTexParameter(self._target, param, value)
-            self._pending_params = {} # We just applied all 
-    
-    
-    def _allocate_storage(self, shape, format, level=0):
+    def _allocate_shape(self, texLevel):
         """ Allocate space for the current texture object. 
         It should have been verified that the texture will fit.
         """
+        
+        # Get parameters that we need
+        target = self._target
+        shape, format, level = texLevel.shape, texLevel.format, texLevel.level
+        
         # Determine function and target from texType
         D = {   #gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),
                 gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
                 gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)}
-        uploadFun, ndim = D[self._target]
+        uploadFun, ndim = D[target]
         
         # Determine type
         gltype = gl.GL_UNSIGNED_BYTE
         
         # Build args list
-        size = size = [i for i in reversed( shape[:ndim] )]
-        args = [self._target, level, format] + size + [0, format, gltype, None]
+        size = [i for i in reversed( shape[:ndim] )]
+        args = [target, level, format] + size + [0, format, gltype, None]
         
         # Call
         uploadFun(*tuple(args))
     
     
-    def _upload_data(self, data, format, level=0):
+    def _upload_data(self, data, texLevel, offset):
         """ Upload a texture to the current texture object. 
         It should have been verified that the texture will fit.
         """
+        
+        # Get parameters that we need
+        target = self._target
+        format, level = texLevel.format, texLevel.level
+        alignment = self._get_alignment(data.shape[-1])
+        
         # Determine function and target from texType
-        D = {   #gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),
-                gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
-                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)}
-        uploadFun, ndim = D[self._target]
+        D = {   #gl.GL_TEXTURE_1D: (gl.glTexSubImage1D, 1),
+                gl.GL_TEXTURE_2D: (gl.glTexSubImage2D, 2),
+                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexSubImage3D, 3)}
+        uploadFun, ndim = D[target]
+        
+        # Reverse and check offset
+        offset = offset[::-1] #[i for i in offset]
+        assert len(offset) == ndim
         
         # Determine type
         thetype = data.dtype.name
-        if not thetype in self.DTYPE2GTYPE: # Note that we convert if necessary in Texture
+        if thetype not in self.DTYPE2GTYPE:  # Note that we convert if necessary
             raise TextureError("Cannot translate datatype %s to GL." % thetype)
         gltype = self.DTYPE2GTYPE[thetype]
         
         # Build args list
-        size, gltype = self._get_size_and_type(data, ndim)
-        args = [self._target, level, format] + size + [0, format, gltype, data]
+        size = [i for i in reversed( data.shape[:ndim] )]
+        args = [target, level] + offset + size + [format, gltype, data]
         
         # Check the alignment of the texture
-        alignment = self._get_alignment(data.shape[-1])
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
         
@@ -503,38 +536,6 @@ class Texture(GLObject):
         # Check if we need to reset our pixel store state
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
-    
-    
-    def _upload_subdata(self, data, offset, format, level=0):
-        """ Update an existing texture object.
-        """
-        # Determine function and target from texType
-        D = {   #gl.GL_TEXTURE_1D: (gl.glTexSubImage1D, 1),
-                gl.GL_TEXTURE_2D: (gl.glTexSubImage2D, 2),
-                gl.ext.GL_TEXTURE_3D: (gl.ext.glTexSubImage3D, 3)}
-        uploadFun, ndim = D[self._target]
-        
-        # Build argument list
-        size, gltype = self._get_size_and_type(data, ndim)
-        offset = offset[::-1] #[i for i in offset]
-        assert len(offset) == len(size)
-        args = [self._target, level] + offset + size + [format, gltype, data]
-        
-        # Upload!
-        uploadFun(*tuple(args))
-    
-    
-    def _get_size_and_type(self, data, ndim):
-        # Determine size
-        #size = [i for i in reversed( data.shape[:ndim] )]
-        size = [i for i in reversed( data.shape[:ndim] )]
-        # Determine type
-        thetype = data.dtype.name
-        if not thetype in self.DTYPE2GTYPE: # Note that we convert if necessary in Texture
-            raise TextureError("Cannot translate datatype %s to GL." % thetype)
-        gltype = self.DTYPE2GTYPE[thetype]
-        # Done
-        return size, gltype
     
     
     # from pylgy
@@ -593,44 +594,47 @@ class TextureCubeMap(Texture):
 ## Utility functions
 
 
-def get_format(shape, target):
-    """ Get format, based on the target and the shape. If the shape
-    does not match with the texture type, an exception is raised.
-    The only format that cannot be deduced from the shape is GL_ALPHA
+def get_formats(shape, target):
+    """ Get formats for the texture, based on the target and the shape.
+    If the shape does not match with the texture type, an exception is
+    raised. 
     """
     
     if target == gl.GL_TEXTURE_2D:
         if len(shape)==2:
-            format = gl.GL_LUMINANCE              
+            return gl.GL_LUMINANCE, gl.GL_ALPHA
         elif len(shape)==3 and shape[2]==1:
-            format = gl.GL_LUMINANCE
+            return gl.GL_LUMINANCE, 
         elif len(shape)==3 and shape[2]==2:
-            format = gl.GL_LUMINANCE_ALPHA
+            return gl.GL_LUMINANCE_ALPHA,
         elif len(shape)==3 and shape[2]==3:
-            format = gl.GL_RGB
+            return gl.GL_RGB,
         elif len(shape)==3 and shape[2]==4:
-            format = gl.GL_RGBA
+            return gl.GL_RGBA,
         else:
-            raise TextureError("Cannot determine format: data of invalid shape.")
+            shapestr = 'x'.join([str(i) for i in shape])
+            raise ValueError("Cannot determine format for %s texture from shape %s." %
+                                                        ('2D', shapestr) )
     
     elif target == gl.ext.GL_TEXTURE_3D:
         if len(shape)==3:
-            format = gl.GL_LUMINANCE
+            return gl.GL_LUMINANCE, gl.GL_ALPHA
         elif len(shape)==4 and shape[3]==1:
-            format = gl.GL_LUMINANCE
+            return gl.GL_LUMINANCE,
         elif len(shape)==4 and shape[3]==2:
-            format = gl.GL_LUMINANCE_ALPHA
+            return gl.GL_LUMINANCE_ALPHA,
         elif len(shape)==4 and shape[3]==3:
-            format = gl.GL_RGB
+            return gl.GL_RGB,
         elif len(shape)==4 and shape[3]==4:
-            format = gl.GL_RGBA
+            return gl.GL_RGBA,
         else:
-            raise TextureError("Cannot determine format: data of invalid shape.")
+            shapestr = 'x'.join([str(i) for i in shape])
+            raise ValueError("Cannot determine format for %s texture from shape %s." %
+                                                        ('3D', shapestr) )
     
     else:
-        raise TextureError("Cannot determine format with these dimensions.")
+        raise ValueError("Cannot determine format with these dimensions.")
     
-    return format
 
 
 def convert_data(data, clim=None):
