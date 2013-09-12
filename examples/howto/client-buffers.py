@@ -3,15 +3,18 @@
 # This code of this example should be considered public domain.
 
 """ 
-This is the boids demo coded using ClientVertexBuffer. This means that
-the data is *not* stored on the GPU in a VertexBuffer, but instead send
-to the GPU on each draw. 
+This is the boids demo coded using a client buffer. This means that
+the data is *not* stored on the GPU in a vertex buffer object, but
+instead send to the GPU on each draw.
 
 Note that in general you should avoid client buffers and use
-VertexBuffers. This is example just demonstrates the technique.
+vertex buffers. This is example just demonstrates the technique.
 
 In this particular example the attribute data is updated on each draw,
 so the performance of both methods should be more or less similar.
+
+The main difference is that one should use the ``client=True`` keyword
+argument when creating a VertexBuffer or ElementBuffer.
 
 """
 
@@ -22,7 +25,7 @@ from scipy.spatial import cKDTree
 from OpenGL import GL
 from vispy import gl
 from vispy import app
-from vispy.oogl import Program, ClientVertexBuffer, ClientElementBuffer
+from vispy.oogl import Program, VertexBuffer, ElementBuffer
 
 
 # Create boids
@@ -88,8 +91,8 @@ class Canvas(app.Canvas):
         
         # Create program
         self.program = Program(VERT_SHADER, FRAG_SHADER)
-        self.program['color'] = ClientVertexBuffer(particles['color'])
-        self.program['size'] = ClientVertexBuffer(particles['size'])
+        self.program['color'] = VertexBuffer(particles['color'], client=True)
+        self.program['size'] = VertexBuffer(particles['size'], client=True)
 
     def on_initialize(self, event):
         gl.glClearColor(0,0,0,1);
@@ -130,7 +133,7 @@ class Canvas(app.Canvas):
         
         # Draw
         with self.program as prog:
-            self.program['position'] = ClientVertexBuffer(particles['position'])
+            self.program['position'] = VertexBuffer(particles['position'], client=True)
             prog.draw_arrays(gl.GL_POINTS)
         
         # Next iteration

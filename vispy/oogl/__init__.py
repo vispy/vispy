@@ -68,7 +68,7 @@ def ext_available(extension_name):
 from .globject import GLObject
 
 from .buffer import VertexBuffer, ElementBuffer
-from .buffer import ClientVertexBuffer, ClientElementBuffer
+#from .buffer import ClientVertexBuffer, ClientElementBuffer
 from .data import Data
 from .texture import Texture, Texture2D, Texture3D, TextureCubeMap
 from .shader import VertexShader, FragmentShader

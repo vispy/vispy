@@ -438,7 +438,15 @@ class ElementBuffer(DataBuffer):
                     'uint32': gl.GL_UNSIGNED_INT,
                     }
     
-    def __init__(self, data):
+    
+    def __new__(cls, *args, **kwargs):
+        if cls is ElementBuffer and kwargs.get('client', False):
+            return object.__new__(ClientElementBuffer)  # __init__ will be called
+        else:
+            return object.__new__(cls)  # __init__ will be called
+    
+    
+    def __init__(self, data, client=False):
         DataBuffer.__init__(self, data, target=gl.GL_ELEMENT_ARRAY_BUFFER)
     
     
@@ -509,8 +517,15 @@ class VertexBuffer(DataBuffer):
                     'float16': gl.ext.GL_HALF_FLOAT,
                     }
 
-
-    def __init__(self, data):
+    
+    def __new__(cls, *args, **kwargs):
+        if cls is VertexBuffer and kwargs.get('client', False):
+            return object.__new__(ClientVertexBuffer)  # __init__ will be called
+        else:
+            return object.__new__(cls)  # __init__ will be called
+    
+        
+    def __init__(self, data, client=False):
         DataBuffer.__init__(self, data, target=gl.GL_ARRAY_BUFFER)
     
     
@@ -611,7 +626,7 @@ class VertexBufferView(VertexBuffer):
     directly, but create an instance of this class by indexing in a
     structured VertexBuffer.
     """
-
+    
     def __init__(self, dtype, base, offset):
         """ Initialize the view """
         assert isinstance(dtype, np.dtype)
@@ -698,7 +713,7 @@ class ClientVertexBuffer(VertexBuffer):
     each draw.
     """
     
-    def __init__(self, data):
+    def __init__(self, data, client=True):
         """ Initialize the buffer. """
         if not isinstance(data, np.ndarray):
             raise ValueError('ClientVertexBuffer needs a numpy array.')
@@ -742,8 +757,8 @@ class ClientElementBuffer(ElementBuffer):
     Note this kind of buffer is highly inefficient since data is uploaded at
     each draw.
     """
-
-    def __init__(self, data):
+    
+    def __init__(self, data, client=True):
         """ Initialize the buffer. """
         if not isinstance(data, np.ndarray):
             raise ValueError('ClientElementBuffer needs a numpy array.')
