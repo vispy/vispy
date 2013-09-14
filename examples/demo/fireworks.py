@@ -121,9 +121,8 @@ class Canvas(app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
         # Draw
-        with self._program as prog:
-            prog['u_time'] = time.time() - self._starttime
-            prog.draw_arrays(gl.GL_POINTS)
+        self._program['u_time'] = time.time() - self._starttime
+        self._program.draw(gl.GL_POINTS)
         
         # Invoke a new draw
         self.update()

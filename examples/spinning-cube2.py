@@ -87,8 +87,7 @@ class Canvas(app.Canvas):
         
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
-        with self.program as prog:
-            prog.draw_elements(gl.GL_TRIANGLES, faces_buffer)
+        self.program.draw(gl.GL_TRIANGLES, faces_buffer)
     
     
     def init_transforms(self):

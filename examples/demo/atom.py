@@ -190,8 +190,7 @@ class Canvas(app.Canvas):
         data['a_color'][:,3] -= 1.0/p
         data['a_color'][self.index::p,3] = 1
 
-        with self.program as prog:
-            prog.draw_arrays(gl.GL_POINTS)
+        self.program.draw(gl.GL_POINTS)
 
 
 if __name__ == '__main__':

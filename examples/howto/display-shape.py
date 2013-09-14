@@ -57,8 +57,7 @@ class Canvas(app.Canvas):
     
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        with self._program as prog:
-            prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
+        self._program.draw(gl.GL_TRIANGLE_STRIP)
     
 
 if __name__ == '__main__':

@@ -33,6 +33,7 @@ vertex_data['a_texcoord'] = np.array([    [0.0, 0.0], [0.0, 1.0],
 # Create indices and an ElementBuffer for it
 indices = np.array([0,1,2, 1,2,3], np.uint16)
 indices_buffer = oogl.ElementBuffer(indices)
+client_indices_buffer = oogl.ElementBuffer(indices, client=True)
 
 
 VERT_SHADER = """ // simple vertex shader
@@ -97,14 +98,12 @@ class Canvas(app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
         # Draw
-        with self._program as prog:
-            # You can set uniforms/attributes here too
-            prog['sizeFactor'] = 0.5 + np.sin(time.time()*3)*0.2
-           
-            # Draw (pick one!)
-            #prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
-            prog.draw_elements(gl.GL_TRIANGLES, indices_buffer)
-            #prog.draw_elements(gl.GL_TRIANGLES, indices)  # Not recommended
+        self._program['sizeFactor'] = 0.5 + np.sin(time.time()*3)*0.2
+        
+        # Draw (pick one!)
+        #self._program.draw(gl.GL_TRIANGLE_STRIP)
+        self._program.draw(gl.GL_TRIANGLES, indices_buffer)
+        #self._program.draw(gl.GL_TRIANGLES, client_indices_buffer)  # Not recommended
         
         self.update()
 

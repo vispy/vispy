@@ -108,10 +108,9 @@ class Canvas(app.Canvas):
     
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        with self.program as prog:
-            I[...] = np.random.uniform(0,1,(W,H)).astype(np.float32)
-            self.texture.set_data(I)
-            prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
+        I[...] = np.random.uniform(0,1,(W,H)).astype(np.float32)
+        self.texture.set_data(I)
+        self.program.draw(gl.GL_TRIANGLE_STRIP)
         self.update()
 
 

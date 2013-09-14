@@ -128,21 +128,19 @@ class Canvas(app.Canvas):
         self._fbo.attach_color(self._tex2)
         
         with self._fbo:
-            with self._program as prog:
-                # Init
-                gl.glViewport(0, 0, im1.shape[1], im1.shape[0])
-                gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-                # Draw
-                prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
+            # Init
+            gl.glViewport(0, 0, im1.shape[1], im1.shape[0])
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+            # Draw
+            self._program.draw(gl.GL_TRIANGLE_STRIP)
         
         # Draw to the normal color buffer (i.e. the screen)
         self._program['u_texture'] = self._tex2
-        with self._program as prog:
-            # Init
-            gl.glViewport(0, 0, self.size[0], self.size[1])
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-            # Draw
-            prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
+        # Init
+        gl.glViewport(0, 0, self.size[0], self.size[1])
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        # Draw
+        self._program.draw(gl.GL_TRIANGLE_STRIP)
         
         # Prepare for next round
         self._tex1, self._tex2 = self._tex2, self._tex1

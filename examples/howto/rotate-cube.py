@@ -94,7 +94,9 @@ class Canvas(app.Canvas):
         self.size = 800, 600
         
         self.vertices, self.filled, self.outline = cube()
-
+        self.filled_buf = oogl.ElementBuffer(self.filled)
+        self.outline_buf = oogl.ElementBuffer(self.outline)
+        
         self.program = oogl.Program(vert, frag)
         self.program.set_vars(oogl.VertexBuffer(self.vertices))
 
@@ -143,21 +145,21 @@ class Canvas(app.Canvas):
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-        # Filled cube
+        
         with self.program as prog:
+            # Filled cube
             gl.glDisable( gl.GL_BLEND )
             gl.glEnable( gl.GL_DEPTH_TEST )
             gl.glEnable( gl.GL_POLYGON_OFFSET_FILL )
             prog['u_color'] = 1,1,1,1
-            prog.draw_elements(gl.GL_TRIANGLES, self.filled)
+            prog.draw(gl.GL_TRIANGLES, self.filled_buf)
 
-        # Outline
-        with self.program as prog:
+            # Outline
             gl.glDisable( gl.GL_POLYGON_OFFSET_FILL )
             gl.glEnable( gl.GL_BLEND )
             gl.glDepthMask( gl.GL_FALSE )
             prog['u_color'] = 0,0,0,1
-            prog.draw_elements(gl.GL_LINES, self.outline)
+            prog.draw(gl.GL_LINES, self.outline_buf)
             gl.glDepthMask( gl.GL_TRUE )        
 
 

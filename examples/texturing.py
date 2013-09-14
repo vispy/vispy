@@ -101,8 +101,7 @@ class Canvas(app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
         # Draw shape with texture, nested context
-        with self._program as prog:
-            prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
+        self._program.draw(gl.GL_TRIANGLE_STRIP)
         
 
 

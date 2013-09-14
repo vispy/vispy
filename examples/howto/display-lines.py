@@ -132,8 +132,7 @@ class Canvas(app.Canvas):
     # ---------------------------------
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        with self.program as prog:
-            prog.draw_arrays(gl.GL_LINE_STRIP)
+        self.program.draw(gl.GL_LINE_STRIP)
 
 
 if __name__ == '__main__':

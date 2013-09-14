@@ -117,21 +117,19 @@ class Canvas(app.Canvas):
         self._fbo.set_size(*self.size)
         
         # Draw the same scene as as in hello_quad.py, but draw it to the FBO
-        with self._program1 as prog:
-            prog.activate_object(self._fbo)
+        with self._fbo:
             # Init
             gl.glClearColor(0,0.0,0.5,1);
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             # Draw
-            prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
+            self._program1.draw(gl.GL_TRIANGLE_STRIP)
         
         # Now draw result to a full-screen quad
-        with self._program2 as prog:
-            # Init
-            gl.glClearColor(1,1,1,1);
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-            # Draw
-            prog.draw_arrays(gl.GL_TRIANGLE_STRIP)
+        # Init
+        gl.glClearColor(1,1,1,1);
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        # Draw
+        self._program2.draw(gl.GL_TRIANGLE_STRIP)
     
 
 if __name__ == '__main__':

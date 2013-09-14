@@ -19,6 +19,7 @@ import numpy as np
 from vispy import gl
 from . import GLObject, ext_available
 from . import VertexBuffer, ElementBuffer
+from .buffer import ClientElementBuffer
 from .variable import Attribute, Uniform
 from .shader import VertexShader, FragmentShader
 from vispy.util import is_string
@@ -511,112 +512,96 @@ class Program(GLObject):
     
     
     
-    def draw_arrays(self, mode, first=0, count=None):
-        """ Draw the attribute arrays in the specified mode.
-        Only call when the program is enabled.
+    def draw(self, mode, subset=None):
+        """ Draw the vertices in the specified mode.
+        
+        If the program is not active, it is activated to do the
+        drawing and then deactivated.
         
         Parameters
         ----------
-        mode : GL_ENUM
-            GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP, 
-            GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
-        first : int
-            The starting vertex index in the vertex array. Default 0.
-        count : int
-            The number of vertices to draw. Default all.
+        mode : {str, GL_ENUM} 
+            POINTS, LINES, LINE_STRIP, LINE_LOOP, 
+            TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN. Case insensitive.
+        subset : {ElementBuffer, tuple}
+            The subset of vertices to draw. This can be an ElementBuffer
+            that specifies the indices of the vertices to draw, or a
+            tuple that specifies the slice: (start, end). The second
+            element in this tuple can be None to specify the maximum
+            length. If the subset is not given or None, all vertices
+            are drawn.
         """
-        # Check
+        
+        # Check if active. If not, call recursively, but activated
         if not self._active:
-            raise ProgramError('Program must be active when drawing.')
+            with self:
+                return self.draw(mode, subset)
+        
+        # Check mode
+        if isinstance(mode, str):
+            mode = mode.upper()
+            if not mode.startswith('GL_'):
+                mode = 'GL_' + mode
+            try:
+                mode = getattr(gl, mode)
+            except AttributeError:
+                raise ValueError('Given mode is unknown: "%s"' % mode)
+        if mode not in [gl.GL_POINTS, gl.GL_LINES, gl.GL_LINE_STRIP, 
+                        gl.GL_LINE_LOOP, gl.GL_TRIANGLES, gl.GL_TRIANGLE_STRIP, 
+                        gl.GL_TRIANGLE_FAN]:
+            raise ValueError('Given mode is invalid: %r.' % mode)
+        
+        # Allow subset None
+        if subset is None:
+            subset = (0, None)
         
         # Upload any attributes and uniforms if necessary
         for variable in (self.attributes + self.uniforms):
             if variable.active:
                 variable.upload(self)
         
-        # Prepare
-        refcount = self._get_vertex_count()
-        if count is None:
-            count = refcount
-        elif refcount:
-            if count > refcount:
-                raise ValueError('Count is larger than known number of vertices.')
-        
-        # Check if we know count
-        if count is None:
-            raise ProgramError("Could not determine element count for draw.")
-        
-        # Draw
-        gl.glDrawArrays(mode, first, count)
-    
-    
-    # todo: what does this do?
-    def feedback_arrays(self, buf, mode, first=None, count=None):
-        vbuf = VertexBuffer(data=buf)
-        gl.glBindBufferBase(gl.GL_TRANSFORM_FEEDBACK_BUFFER, 0, vbuf._handle)
-        fbmode = {
-            gl.GL_POINTS: gl.GL_POINTS,
-            gl.GL_LINES: gl.GL_LINES,
-            gl.GL_LINE_STRIP: gl.GL_LINES,
-            gl.GL_LINE_LOOP: gl.GL_LINES,
-            gl.GL_TRIANGLES: gl.GL_TRIANGLES,
-            gl.GL_TRIANGLE_STRIP: gl.GL_TRIANGLES,
-            gl.GL_TRIANGLE_FAN: gl.GL_TRIANGLES,
-            }[mode]
-        gl.glBeginTransformFeedback(fbmode)
-        try:
-            self.draw_arrays(mode, first, count)
-        finally:
-            r = glEndTransformFeedback()
-            print(r)
-        return vbuf
-    
-    
-    def draw_elements(self, mode, indices):
-        """ Draw the attribute arrays using a specified set of vertices,
-        in the specified mode.
-        Only call when the program is enabled.
-        
-        Parameters
-        ----------
-        mode : GL_ENUM
-            GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP, 
-            GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
-        indices : numpy_array or ElementBuffer
-            The indices to the vertices in the vertex arrays to draw.
-            For performance, ElementBuffer objects are recommended over
-            numpy arrays. If an ElementBuffer is provided, this method
-            takes care of enabling it.
-        """
-        # Check
-        if not self._active:
-            raise ProgramError('Program must be active for drawing.')
-        
-        # Upload any attributes and uniforms if necessary
-        for variable in (self.attributes + self.uniforms):
-            if variable.active:
-                variable.upload(self)
-        
-        # Prepare and draw
-        if isinstance(indices, ElementBuffer):
+        if isinstance(subset, ElementBuffer):
+            # Draw elements
+            
+            # Prepare pointer or offset
+            if isinstance(subset, ClientElementBuffer):
+                ptr = subset.data
+            else:
+                ptr = None  # Note that this can also be a ctypes.pointer offset
+            
             # Activate
-            self.activate_object(indices)
+            self.activate_object(subset)
             # Prepare
-            offset = None  # todo: allow the use of offset
-            gltype = ElementBuffer.DTYPE2GTYPE[indices.dtype.name]
-            # Draw
-            gl.glDrawElements(mode, indices.count, gltype, offset) 
-        
-        elif isinstance(indices, np.ndarray):
-            # Get type
-            gltype = ElementBuffer.DTYPE2GTYPE.get(indices.dtype.name, None)
-            if gltype is None:
-                raise ValueError('Unsupported data type for ElementBuffer.')
-            elif gltype == gl.GL_UNSIGNED_INT and not ext_available('element_index_uint'):
+            gltype = ElementBuffer.DTYPE2GTYPE[subset.dtype.name]
+            if gltype == gl.GL_UNSIGNED_INT and not ext_available('element_index_uint'):
                 raise ValueError('element_index_uint extension needed for uint32 ElementBuffer.')
             # Draw
-            gl.glDrawElements(mode, indices.size, gltype, indices) 
+            gl.glDrawElements(mode, subset.count, gltype, ptr) 
+        
+        
+        elif isinstance(subset, tuple):
+            # Draw arrays
             
+            # Check tuple
+            ok = [isinstance(i, (int, type(None))) for i in subset]
+            if len(subset) != 2 or not all(ok):
+                raise ValueError('Subset must be a two-element tuple with '
+                                                    'interegers or None.')
+            # Get start, end, refcount
+            start, end = subset
+            start = start or 0
+            refcount = self._get_vertex_count()
+            # Determine count
+            if end is None:
+                count = refcount
+                if count is None:
+                    raise ProgramError("Could not determine element count for draw.")
+            else:
+                count = end - start
+                if refcount and count > refcount:
+                    raise ValueError('Count is larger than known number of vertices.')
+            # Draw
+            gl.glDrawArrays(mode, start, count)
+        
         else:
-            raise ValueError("draw_elements requires an ElementBuffer or a numpy array.")
-
+            raise ValueError('Given subset is of invalid type: %r.' % type(subset))
