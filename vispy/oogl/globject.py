@@ -100,7 +100,10 @@ class GLObject(object):
     
     
     def activate(self):
-        """ Activate the object (a GL context must be available) """
+        """ Activate the object (a GL context must be available).
+        Note that the object can also be activated (and automatically
+        deactivated) by using it as a context manager.
+        """
 
         # Ensure that the GPU equivalent of this object exists 
         if not self.handle:
@@ -118,14 +121,16 @@ class GLObject(object):
     
     
     def deactivate(self):
-        """ Deactivate the object """
+        """ Deactivate the object.
+        """
 
         return self._deactivate()
     
     
     @property
     def handle(self):
-        """ Name of this object in GPU """
+        """ Name of this object in GPU.
+        """
 
         return self._handle
     

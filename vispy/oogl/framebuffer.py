@@ -12,7 +12,7 @@ import sys
 import numpy as np
 
 from vispy import gl
-from . import GLObject, ext_available
+from . import GLObject, ext_available, convert_to_enum
 from . import Texture2D
 
 # todo: check and test all _delete methods
@@ -73,17 +73,20 @@ class RenderBuffer(GLObject):
         ----------
         shape : tuple
             The shape of the "virtual" data. Note that shape[0] is height.
-        format : OpenGL enum
+        format : str
             The format representation of the data. If not given or None,
             it is determined automatically depending on the shape and
-            the kind of atatchment. Can be GL_RGB565, GL_RGBA4,
-            GL_RGB5_A1, GL_RGB8, GL_RGBA8, GL_DEPTH_COMPONENT16,
-            GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32,
-            GL_STENCIL_INDEX8, GL_STENCIL_INDEX1, GL_STENCIL_INDEX4.
+            the kind of atatchment. Can be RGB565, RGBA4, RGB5_A1, RGB8, 
+            RGBA8, DEPTH_COMPONENT16, DEPTH_COMPONENT24, DEPTH_COMPONENT32,
+            STENCIL_INDEX8, STENCIL_INDEX1, STENCIL_INDEX4. The OpenGL enum 
+            can also be given.
         
         """
         # Set ndim
         ndim = 2
+        
+        # Convert format
+        format = convert_to_enum(format, True)
         
         # Is this already my shape?
         if format is None or format is self._format:

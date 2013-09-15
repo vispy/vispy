@@ -23,7 +23,7 @@ import numpy as np
 
 from vispy import gl
 from vispy.util.six import string_types
-from . import GLObject, ext_available
+from . import GLObject, ext_available, convert_to_enum
 
 
 
@@ -132,20 +132,20 @@ class Texture(GLObject):
         
         Parameters
         ----------
-        mag_filter : GL_ENUM or string
+        mag_filter : str
             The magnification filter (when texels are larger than screen
-            pixels). Can be GL_NEAREST, GL_LINEAR. 
-        min_filter : GL_ENUM or string
+            pixels). Can be NEAREST, LINEAR. The OpenGL enum can also be given.
+        min_filter : str
             The minification filter (when texels are smaller than screen 
             pixels). For this filter, mipmapping can be applied to perform
             antialiasing (if mipmaps are available for this texture).
-            Can be GL_NEAREST, GL_LINEAR, GL_NEAREST_MIPMAP_NEAREST,
-            GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST,
-            GL_LINEAR_MIPMAP_LINEAR.
+            Can be NEAREST, LINEAR, NEAREST_MIPMAP_NEAREST,
+            NEAREST_MIPMAP_LINEAR, LINEAR_MIPMAP_NEAREST,
+            LINEAR_MIPMAP_LINEAR. The OpenGL enum can also be given.
         """
         # Allow strings
-        mag_filter = self._string_to_enum(mag_filter)
-        min_filter = self._string_to_enum(min_filter)
+        mag_filter = convert_to_enum(mag_filter, True)
+        min_filter = convert_to_enum(min_filter, True)
         # Check
         assert mag_filter in (None, gl.GL_NEAREST, gl.GL_LINEAR)
         assert min_filter in (None, gl.GL_NEAREST, gl.GL_LINEAR, 
@@ -168,19 +168,20 @@ class Texture(GLObject):
         
         Parameters
         ----------
-        wrapx : GL_ENUM or string
+        wrapx : str
             The wrapping mode in the x-direction. Can be GL_REPEAT,
-            GL_CLAMP_TO_EDGE, GL_MIRRORED_REPEAT.
-        wrapy : GL_ENUM or string
+            GL_CLAMP_TO_EDGE, GL_MIRRORED_REPEAT. The OpenGL enum can also 
+            be given.
+        wrapy : str
             Dito for y.
-        wrap z : GL_ENUM or string
+        wrapz : str
             Dito for z. Only makes sense for 3D textures, and requires
             the texture_3d extension. Optional.
         """
         # Allow strings
-        wrapx = self._string_to_enum(wrapx)
-        wrapy = self._string_to_enum(wrapy)
-        wrapz = self._string_to_enum(wrapz)
+        wrapx = convert_to_enum(wrapx, True)
+        wrapy = convert_to_enum(wrapy, True)
+        wrapz = convert_to_enum(wrapz, True)
         # Check
         assert wrapx in (None, gl.GL_REPEAT, gl.GL_CLAMP_TO_EDGE, gl.GL_MIRRORED_REPEAT)
         assert wrapy in (None, gl.GL_REPEAT, gl.GL_CLAMP_TO_EDGE, gl.GL_MIRRORED_REPEAT)
@@ -200,17 +201,6 @@ class Texture(GLObject):
         self._need_update = True
     
     
-    def _string_to_enum(self, param):
-        """ Convert a string to a GL enum.
-        """
-        if isinstance(param, string_types):
-            param = param.upper()
-            if not param.startswith('GL'):
-                param = 'GL_' + param
-            param = getattr(gl, param)
-        return param
-    
-    
     def set_shape(self, shape, level=0, format=None):
         """ Allocate storage for this texture. This is useful if the texture
         is used as a render target for an FBO. 
@@ -226,10 +216,10 @@ class Texture(GLObject):
             that shape[0] is height.
         level : int
             The mipmap level. Default 0.
-        format : OpenGL enum
+        format : str
             The format representation of the data. If not given or None,
-            it is decuced from the given data. Can be GL_RGB, GL_RGBA,
-            GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA.
+            it is decuced from the given data. Can be RGB, RGBA, LUMINANCE, 
+            LUMINANCE_ALPHA, ALPHA. The OpenGL enum can also be given.
         """
         
         # Check level, get texLevel instance
@@ -252,8 +242,10 @@ class Texture(GLObject):
         # Check format
         if format is None:
             format = get_formats(shape, self._target)[0]
-        elif format not in get_formats(shape, self._target):
-            raise ValueError('Given format does not match with shape.')
+        else:
+            format = convert_to_enum(format)
+            if format not in get_formats(shape, self._target):
+                raise ValueError('Given format does not match with shape.')
         
         # Set new shape and format, force new update if necessary
         self._need_update = texLevel.set(shape, format)
@@ -274,10 +266,10 @@ class Texture(GLObject):
             The texture data to set.
         level : int
             The mipmap level. Default 0.
-        format : OpenGL enum
+        format : str
             The format representation of the data. If not given or None,
-            it is decuced from the given data. Can be GL_RGB, GL_RGBA,
-            GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA.
+            it is decuced from the given data. Can be RGB, RGBA, LUMINANCE, 
+            LUMINANCE_ALPHA, ALPHA. The OpenGL enum can also be given.
         clim : (min, max)
             Contrast limits for the data. If specified, min will end
             up being 0.0 (black) and max will end up as 1.0 (white).
@@ -307,8 +299,10 @@ class Texture(GLObject):
         # Check format
         if format is None:
             format = get_formats(shape, self._target)[0]
-        elif format not in get_formats(shape, self._target):
-            raise ValueError('Given format does not match with shape.')
+        else:
+            format = convert_to_enum(format)
+            if format not in get_formats(shape, self._target):
+                raise ValueError('Given format does not match with shape.')
         
         # Check clim
         assert clim is None or (isinstance(clim, tuple) and len(clim)==2)
@@ -342,8 +336,8 @@ class Texture(GLObject):
             The mipmap level. Default 0.
         format : OpenGL enum
             The format representation of the data. If not given or None,
-            it is decuced from the given data. Can be GL_RGB, GL_RGBA,
-            GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_ALPHA.
+            it is decuced from the given data. Can be RGB, RGBA, LUMINANCE, 
+            LUMINANCE_ALPHA, ALPHA. The OpenGL enum can also be given.
         clim : (min, max)
             Contrast limits for the data. If specified, min will end
             up being 0.0 (black) and max will end up as 1.0 (white).
@@ -387,8 +381,10 @@ class Texture(GLObject):
         if format is None:
             if texLevel.format not in get_formats(shape, self._target):
                 raise ValueError('Subdata shape does not match with current format.')
-        elif format != texLevel.format:
-            raise ValueError('Subdata must have the same format as the existing data.')
+        else:
+            format = convert_to_enum(format)
+            if format != texLevel.format:
+                raise ValueError('Subdata must have the same format as the existing data.')
         
         # Check clim
         assert clim is None or (isinstance(clim, tuple) and len(clim)==2)

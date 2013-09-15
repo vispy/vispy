@@ -46,11 +46,35 @@ Example::
 
 from __future__ import print_function, division, absolute_import
 
+from vispy.util.six import string_types
 from vispy import gl
 
 
 def ext_available(extension_name):
+    """ Get whether an extension is available. 
+    For now, this always returns True...
+    """
     return True # for now
+
+
+def convert_to_enum(param, allow_none=False):
+    """ Convert parameter (e.g. a string) to GL enum. 
+    """
+    if isinstance(param, string_types):
+        param = param.upper()
+        if not param.startswith('GL'):
+            param = 'GL_' + param
+        try:
+            param = getattr(gl, param)
+        except AttributeError:
+            raise ValueError('Unknown GL enum: "%s".' % param)
+    elif isinstance(param, int):
+        pass  # We assume this is a valid enum
+    elif param is None and allow_none:
+        pass
+    else:
+        raise ValueError('Invalid type for GL enum: %r.' % type(param))
+    return param
 
 
 from .globject import GLObject

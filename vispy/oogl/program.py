@@ -17,7 +17,7 @@ import weakref
 import numpy as np
 
 from vispy import gl
-from . import GLObject, ext_available
+from . import GLObject, ext_available, convert_to_enum
 from . import VertexBuffer, ElementBuffer
 from .buffer import ClientElementBuffer
 from .variable import Attribute, Uniform
@@ -520,9 +520,10 @@ class Program(GLObject):
         
         Parameters
         ----------
-        mode : {str, GL_ENUM} 
-            POINTS, LINES, LINE_STRIP, LINE_LOOP, 
-            TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN. Case insensitive.
+        mode : str
+            POINTS, LINES, LINE_STRIP, LINE_LOOP, TRIANGLES, TRIANGLE_STRIP, 
+            TRIANGLE_FAN. Case insensitive. Alternatively, the real GL enum
+            can also be given.
         subset : {ElementBuffer, tuple}
             The subset of vertices to draw. This can be an ElementBuffer
             that specifies the indices of the vertices to draw, or a
@@ -538,14 +539,7 @@ class Program(GLObject):
                 return self.draw(mode, subset)
         
         # Check mode
-        if isinstance(mode, str):
-            mode = mode.upper()
-            if not mode.startswith('GL_'):
-                mode = 'GL_' + mode
-            try:
-                mode = getattr(gl, mode)
-            except AttributeError:
-                raise ValueError('Given mode is unknown: "%s"' % mode)
+        mode = convert_to_enum(mode)
         if mode not in [gl.GL_POINTS, gl.GL_LINES, gl.GL_LINE_STRIP, 
                         gl.GL_LINE_LOOP, gl.GL_TRIANGLES, gl.GL_TRIANGLE_STRIP, 
                         gl.GL_TRIANGLE_FAN]:
