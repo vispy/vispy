@@ -1,4 +1,4 @@
-""" Called from conf.py to generate the GL API.
+""" Called from vispy_ext.py to generate the GL API.
 """
 
 import os

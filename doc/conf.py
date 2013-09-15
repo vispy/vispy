@@ -60,11 +60,6 @@ version = vispy.__version__[:3]
 # The full version, including alpha/beta/rc tags.
 release = vispy.__version__
 
-# Generate full oogl docs
-from vispy import oogl
-oogl.__doc__ += oogl._generate_overview_docs()
-
-
 
 # -- General configuration -----------------------------------------------------
 

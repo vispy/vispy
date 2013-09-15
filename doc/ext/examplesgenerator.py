@@ -1,4 +1,4 @@
-""" Called from conf.py to generate the examples for the docs from the 
+""" Called from vispy_conf.py to generate the examples for the docs from the 
 example Python files.
 """
 
