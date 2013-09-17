@@ -534,7 +534,7 @@ class Program(GLObject):
         """
         
         # Check if active. If not, call recursively, but activated
-        if not self._active:
+        if not self._active and not self._error_enter:
             with self:
                 return self.draw(mode, subset)
         
