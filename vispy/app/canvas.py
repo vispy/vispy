@@ -357,8 +357,6 @@ class MouseEvent(Event):
     ---------------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
-    native : object (optional)
-       The native GUI event object
     pos : (int, int)
         The position of the mouse (in screen coordinates).
     button : int
@@ -370,6 +368,8 @@ class MouseEvent(Event):
     delta : (float, float)
         The amount of scrolling in horizontal and vertical direction. One 
         "tick" corresponds to a delta of 1.0.
+    native : object (optional)
+       The native GUI event object
     **kwds : keyword arguments
         All extra keyword arguments become attributes of the event object.
     
@@ -409,8 +409,6 @@ class KeyEvent(Event):
     ---------------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
-    native : object (optional)
-       The native GUI event object
     key : vispy.keys.Key instance
         The Key object for this event. Can be compared to string names.
     text : str
@@ -418,6 +416,8 @@ class KeyEvent(Event):
     modifiers : tuple of Key instances
         Tuple that specifies which modifier keys were pressed down at the
         time of the event (shift, control, alt, meta).
+    native : object (optional)
+       The native GUI event object
     **kwds : keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
@@ -452,10 +452,10 @@ class ResizeEvent(Event):
     ---------------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
-    native : object (optional)
-       The native GUI event object
     size : (int, int)
         The new size of the Canvas.
+    native : object (optional)
+       The native GUI event object
     **kwds : extra keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
@@ -481,11 +481,11 @@ class PaintEvent(Event):
     ---------------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
-    native : object (optional)
-       The native GUI event object
     region : (int, int, int, int) or None
         The region of the canvas which needs to be repainted (x, y, w, h). 
         If None, the entire canvas must be repainted.
+    native : object (optional)
+       The native GUI event object
     **kwds : extra keyword arguments
         All extra keyword arguments become attributes of the event object.
     """
