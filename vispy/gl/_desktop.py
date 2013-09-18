@@ -7,8 +7,8 @@ OpenGL ES 2.0 API based on normal OpenGL library (via pyOpenGL).
 """
 
 from vispy.gl._constants import *
-from vispy.gl import _gl_ext as ext
-from vispy.gl import glhelper as _glhelper
+# from vispy.gl import _desktop_ext as ext
+# from vispy.gl import glhelper as _glhelper
 
 
 _glfunctions = [
@@ -158,5 +158,5 @@ _glfunctions = [
     ]
 
 
-_glhelper.get_gl_functions_from_pyopengl(globals(), _glfunctions)
-_glhelper.fix(globals())
+# _glhelper.get_gl_functions_from_pyopengl(globals(), _glfunctions)
+# _glhelper.fix(globals())

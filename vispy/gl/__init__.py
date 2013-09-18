@@ -37,15 +37,15 @@ def _make_debug_wrapper(funcname, func):
 
 
 
-def set_gl_target(target='gl'):
+def use(target='desktop'):
     """ Set vispy.gl to the target OpenGL ES 2.0 implementation.
+    Currently, only "desktop" is supported.
     """
     debug = vispy.config['gl_debug']
     
     # Select modules to import names from
-    if target == 'gl':
-        from . import _gl as mod
-        from . import _gl_ext as mod_ext
+    if target == 'desktop':
+        from . import desktop as mod
     else:
         raise ValueError('Invalid target to load OpenGL API from.')
     
@@ -60,9 +60,9 @@ def set_gl_target(target='gl'):
     
     # Import functions in ext
     NS = ext.__dict__
-    funcnames = [name for name in dir(mod_ext) if name.startswith('gl')]
+    funcnames = [name for name in dir(mod.ext) if name.startswith('gl')]
     for name in funcnames:
-        func = getattr(mod_ext, name)
+        func = getattr(mod.ext, name)
         if debug:
             func = _make_debug_wrapper(name, func)
         NS[name] = func
@@ -73,4 +73,4 @@ from . import ext
 from ._constants import *
 
 # Fill this namespace with functions
-set_gl_target()
+use()
