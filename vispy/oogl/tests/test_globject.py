@@ -45,7 +45,7 @@ class GLObjectTest(unittest.TestCase):
     
     
     def tearDown(self):
-        gl.set_gl_target('gl')
+        gl.use('desktop')
     
     
     def _fix_ob(self, ob):

@@ -7,7 +7,6 @@ Constants for OpenGL ES 2.0.
 """
 
 from vispy.gl import _GL_ENUM
-# from vispy.gl import _constants_ext as ext
 
 
 GL_ACTIVE_ATTRIBUTES = _GL_ENUM('GL_ACTIVE_ATTRIBUTES', 35721)

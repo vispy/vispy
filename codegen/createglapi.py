@@ -48,10 +48,6 @@ def create_constants_module(parser, extension=False):
     # Import enum
     lines.append('from vispy.gl import _GL_ENUM')
     
-    # Import ext
-    if not extension:
-         lines.append('from vispy.gl import _constants_ext as ext')
-    
     lines.append('\n')
     
     # For extensions, we only take the OES ones, and remove the OES
@@ -79,21 +75,18 @@ def create_constants_module(parser, extension=False):
     print('wrote %s' % fname)
 
 
-def create_gl_module(parser, extension=False):
+def create_desktop_module(parser, extension=False):
     
     # Initialize
     lines = []
-    doc = 'OpenGL ES 2.0 API based on normal OpenGL library (via pyOpenGL).'
+    doc = 'OpenGL ES 2.0 API based on desktop OpenGL (via pyOpenGL).'
     lines.append(PREAMBLE % doc)
     
     # Import constants and ext
     if extension:
         lines.append('from vispy.gl._constants_ext import *')
-        lines.append('from vispy.gl import glhelper as _glhelper')
     else:
         lines.append('from vispy.gl._constants import *')
-        lines.append('from vispy.gl import _gl_ext as ext')
-        lines.append('from vispy.gl import glhelper as _glhelper')
     
     lines.append('\n')
     
@@ -121,21 +114,10 @@ def create_gl_module(parser, extension=False):
             print('WARNING: %s seems not available in PyOpenGL' % f.cname)
     lines.append('    ]')
     
-    # A bit of space
-    lines.append('')
-    lines.append('')
-    
-    # Create the functions
-    lines.append('_glhelper.get_gl_functions_from_pyopengl(globals(), _glfunctions)')
-    
-    # Apply fixes
-    if not extension:
-        lines.append('_glhelper.fix(globals())')
-    
     lines.append('')
     
     # Write the file
-    fname = '_gl_ext.py' if extension else '_gl.py'
+    fname = '_desktop_ext.py' if extension else '_desktop.py'
     with open(os.path.join(GLDIR, fname), 'w') as f:
         f.write('\n'.join(lines))
     print('wrote %s' % fname)
@@ -145,9 +127,9 @@ if __name__ == '__main__':
     # Create code  for normal ES 2.0
     parser = Parser(os.path.join(THISDIR, 'headers', 'gl2.h'))
     create_constants_module(parser)
-    create_gl_module(parser)
+    create_desktop_module(parser)
     
     # Create code for extensions
     parser = Parser(os.path.join(THISDIR, 'headers', 'gl2ext.h'))
     create_constants_module(parser, True)
-    create_gl_module(parser, True)
+    create_desktop_module(parser, True)

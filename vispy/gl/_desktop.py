@@ -2,13 +2,11 @@
 
 THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 
-OpenGL ES 2.0 API based on normal OpenGL library (via pyOpenGL).
+OpenGL ES 2.0 API based on desktop OpenGL (via pyOpenGL).
 
 """
 
 from vispy.gl._constants import *
-# from vispy.gl import _desktop_ext as ext
-# from vispy.gl import glhelper as _glhelper
 
 
 _glfunctions = [
@@ -156,7 +154,3 @@ _glfunctions = [
     "glVertexAttribPointer",
     "glViewport",
     ]
-
-
-# _glhelper.get_gl_functions_from_pyopengl(globals(), _glfunctions)
-# _glhelper.fix(globals())
