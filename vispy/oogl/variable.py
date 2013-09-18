@@ -343,6 +343,13 @@ class Attribute(Variable):
         if self._loc is None:
             raise VariableError("Attribute is not active")
         
+        # Note: It has been seen (on my (AK) machine) that attributes
+        # are *not* local to the program object; the splitscreen example
+        # is broken if we use the early exits here.
+        
+        # todo: instead of setting dirty to true, remove early exits
+        # (leaving for now for testing on other machines)
+        self._dirty = True
         
         # Generic vertex attribute (all vertices receive the same value)
         if self._generic:
