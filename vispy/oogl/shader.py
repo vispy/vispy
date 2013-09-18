@@ -86,7 +86,7 @@ class Shader(GLObject):
     
     
     def __repr__(self):
-        return "%s %d (%s)" % (self.__class__.__name__, self._id, self._source)
+        return "<%s %d (%s)>" % (self.__class__.__name__, self._id, self._source)
     
     
     def set_code(self, code, source=None):

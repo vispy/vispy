@@ -122,6 +122,10 @@ class Program(GLObject):
             self.attach(*shaders)
     
     
+    def __repr__(self):
+        return "<%s %d>" % (self.__class__.__name__, self._id)
+    
+    
     def attach(self, *shaders):
         """ Attach one or more vertex/fragment shaders to the program. 
         
@@ -488,13 +492,26 @@ class Program(GLObject):
         gl.glLinkProgram(self._handle)
         if not gl.glGetProgramiv(self._handle, gl.GL_LINK_STATUS):
             errors = gl.glGetProgramInfoLog(self._handle)
-            print(errors)
+            errormsg = self._get_error(errors, 4)
             #parse_shader_errors(errors)
-            raise ProgramError('Linking error')
+            raise ProgramError('Error linking %r:\n'%self + errormsg)
         
         # Mark all active attributes and uniforms
         self._mark_active_attributes()
         self._mark_active_uniforms()
+    
+    
+    def  _get_error(self, errors, indentation=0):
+        """ Get linking error in a somewhat nicer format.
+        """
+        # Init
+        if not is_string(errors):
+            errors = errors.decode('utf-8', 'replace')
+        # Parse lines
+        results = [line for line in errors.splitlines() if line]
+        # Add indentation and return
+        results = [' '*indentation + r for r in results]
+        return '\n'.join(results)
     
     
     ## Drawing and enabling
