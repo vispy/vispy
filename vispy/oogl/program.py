@@ -449,6 +449,18 @@ class Program(GLObject):
         # Mark as enabled, prepare to enable other objects
         self._active = True
         self._activated_objects = []
+        
+        # Check if one of our shaders nees an updata.
+        # If so, we force ourselve to update, which will re-attach 
+        # and activate all shaders.
+        shaders_need_update = False
+        for shader in self.shaders:
+            shaders_need_update = shaders_need_update or shader._need_update
+        
+        # Update?
+        if shaders_need_update:
+            self._need_update = True
+            self.activate()  # Recursive
     
     
     def _deactivate(self):
@@ -485,7 +497,7 @@ class Program(GLObject):
         # Only proceed if all shaders compiled ok
         oks = [shader._valid for shader in self.shaders]
         if not (oks and all(oks)):
-            raise ProgramErrorr('Shaders did not compile.')
+            raise ProgramError('Shaders did not compile.')
         
         # Link the program
         # todo: should there be a try-except around this?
@@ -499,6 +511,12 @@ class Program(GLObject):
         # Mark all active attributes and uniforms
         self._mark_active_attributes()
         self._mark_active_uniforms()
+        
+        # Invalidate all uniforms and attributes
+        for var in self._uniforms.values():
+            var.invalidate()
+        for var in self._attributes.values():
+            var.invalidate()
     
     
     def  _get_error(self, errors, indentation=0):

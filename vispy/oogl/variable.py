@@ -92,6 +92,12 @@ class Variable(object):
         self._show_warning_notset = True
     
     
+    def invalidate(self):
+        """ Set dirty flag, to force setting the variable on the Program
+        object. """
+        self._dirty = True
+    
+    
     @property
     def name(self):
         """ The name of the variable. """
