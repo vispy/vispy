@@ -210,7 +210,8 @@ class Shader(GLObject):
             raise ShaderError('No source code given for shader.')
         
         # Set source
-        gl.glShaderSource(self._handle, self._code)
+        #gl.glShaderSource(self._handle, self._code)
+        gl.glShaderSource(self._handle, [self._code])  # Some implementations need this
         
         # Compile the shader
         # todo: can this raise exception?
