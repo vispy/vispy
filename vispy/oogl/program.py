@@ -569,7 +569,12 @@ class Program(GLObject):
         """
         
         # Check if active. If not, call recursively, but activated
-        if not self._active and not self._error_enter:
+        if not self._active:
+            if self._error_enter:
+                # An error message has already been shown, we stop here
+                # because if we would continue we would very likely
+                # just spew messages for spin-off errors.
+                return  
             with self:
                 return self.draw(mode, subset)
         
