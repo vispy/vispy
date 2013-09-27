@@ -171,8 +171,8 @@ class MainWindow(QtGui.QWidget):
     
     
     def on_compile(self):
-        vert_code = self.vertEdit.toPlainText()
-        frag_code = self.fragEdit.toPlainText()
+        vert_code = str(self.vertEdit.toPlainText())
+        frag_code = str(self.fragEdit.toPlainText())
         self.canvas.program.shaders[0].set_code(vert_code)
         self.canvas.program.shaders[1].set_code(frag_code)
     
