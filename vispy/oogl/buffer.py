@@ -168,17 +168,26 @@ class Buffer(GLObject):
             gl.glBufferData(self._target, self._nbytes, None, self._usage)
             # debug
             #print("Creating a new buffer (%d) of %d bytes"
-            #        % (self._handle,self._nbytes))
+            #        % (self._handle, self._nbytes))
             self._need_resize = False
-            
+        
         # Upload data
         while self._pending_data:
             data, nbytes, offset = self._pending_data.pop(0)
             # debug
             # print("Uploading %d bytes at offset %d to buffer (%d)"
-            #        % (size, offset, self._handle))
-            gl.glBufferSubData(self._target, offset, nbytes, data)
-
+            #        % (nbytes, offset, self._handle))
+            try:
+                gl.glBufferSubData(self._target, offset, nbytes, data)
+            except Exception as error:
+                # This might be due to a driver error (seen on ATI), issue #64.
+                # We try to detect this, and if we can use glBufferData instead
+                if (    hasattr(error, 'err') and 
+                        error.err == gl.GL_INVALID_VALUE and 
+                        offset == 0 and nbytes == self._nbytes ):
+                    gl.glBufferData(self._target, nbytes, data, self._usage)
+                else:
+                    raise
 
 
 
