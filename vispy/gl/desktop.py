@@ -106,7 +106,10 @@ def _fix():
     # Monkey-patch pyopengl to fix a bug in glBufferSubData
     import sys
     if sys.version_info > (3,):
-        _m = sys.modules[NS['glBufferSubData'].wrapperFunction.__module__]
+        buffersubdatafunc = NS['glBufferSubData']
+        if hasattr(buffersubdatafunc, 'wrapperFunction'):
+            buffersubdatafunc = buffersubdatafunc.wrapperFunction
+        _m = sys.modules[buffersubdatafunc.__module__]
         _m.long = int
 
 
