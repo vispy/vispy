@@ -5,6 +5,7 @@
 """ Definition of the base class for all oogl objects.
 """
 
+import vispy
 
 class GLObject(object):
     """ Base class for classes that wrap an OpenGL object.
@@ -84,8 +85,14 @@ class GLObject(object):
     
     def __del__(self):
         """ Delete the object from OpenGl memory. """
-        
-        self.delete()
+        # You never know when this is goint to happen. The window might
+        # already be closed and no OpenGL context might be available.
+        # So we try, but suppress errors unless the user explicity asks them
+        try:
+            self.delete()
+        except Exception as err:
+            if vispy.config['show_warnings']:
+                print('Error deleting %r: %s' % (self, err))
     
     
     def delete(self):
