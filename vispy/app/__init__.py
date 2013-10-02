@@ -45,13 +45,13 @@ def run():
     return default_app.run()
 
 
-def quit(self):
+def quit():
     """ Quit the native GUI event loop.
     """
     return default_app.quit()
 
 
-def process_events(self):
+def process_events():
     """ Process all pending GUI events. If the mainloop is not
     running, this should be done regularly to keep the visualization
     interactive and to keep the event system going.
