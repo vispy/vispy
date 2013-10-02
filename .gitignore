@@ -1,6 +1,8 @@
 *.pyc
 *.pyo
 doc/_build
+_website
+_gh-pages
 build
 dist
 MANIFEST
