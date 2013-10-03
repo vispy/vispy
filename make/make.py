@@ -128,8 +128,8 @@ class Maker:
             os.chdir(ROOT_DIR)
             sh("git clone %s %s" % (WEBSITE_REPO, WEBSITE_DIR))
         else:
+            print('Updating website repo')
             os.chdir(WEBSITE_DIR)
-            print('Pulling website from repo')
             sh('git pull')
         
         # Go
@@ -172,8 +172,8 @@ class Maker:
             os.chdir(ROOT_DIR)
             sh("git clone %s %s" % (IMAGES_REPO, IMAGES_DIR))
         else:
+            print('Updating images repo')
             os.chdir(IMAGES_DIR)
-            print('Pulling images from repo')
             sh('git pull')
         
         # Create subdirs if needed
@@ -202,64 +202,61 @@ class Maker:
         gallery_dir = os.path.join(IMAGES_DIR, 'gallery')
         
         # Process all files ...
-        for (dirpath, dirnames, filenames) in os.walk(examples_dir):
-            for fname in filenames:
-                if not fname.endswith('.py'): continue
-                filename = os.path.join(dirpath, fname)
-                imagefilename = os.path.join(gallery_dir, fname[:-3]+'.png')
-                
-                # Check if should make a screenshot
-                frames = []
-                lines = open(filename, 'rt').read().splitlines()
-                for line in lines[:10]:
-                    if line.startswith('# vispy:'):
-                        if 'gallery' in line:
-                            # Get what frames to grab
-                            frames = line.split('gallery')[1].strip()
-                            frames = frames or '0'
-                            frames = [int(i) for i in frames.split(':')]
-                            if not frames:
-                                frames = [0]
-                            if len(frames)>1:
-                                frames = list(range(*frames))
-                            break
-                else:
-                    continue  # gallery hint not found
-                
-                # Check if we need to take a sceenshot
-                if os.path.isfile(imagefilename):
-                    print('Screenshot for %s already present (skip).' % fname)
-                    continue
-                
-                # Import module and prepare
-                m = imp.load_source('vispy_example_'+fname[:-3], filename)
-                m.done = False
-                m.frame = -1
-                m.images = []
-                
-                # Create a canvas and grab a screenshot
-                def grabscreenshot(event):
-                    if m.done: return  # Grab only once
-                    m.frame += 1
-                    if m.frame in frames:
-                        frames.remove(m.frame)
-                        print('Grabbing a screenshot for', fname)
-                        im = _screenshot()
-                        m.images.append(im)
+        for filename, name in get_example_filenames(examples_dir):
+            name = name.replace('/', '__')  # We use flat names
+            imagefilename = os.path.join(gallery_dir, name+'.png')
+            
+            # Check if should make a screenshot
+            frames = []
+            lines = open(filename, 'rt').read().splitlines()
+            for line in lines[:10]:
+                if line.startswith('# vispy:') and 'gallery' in line:
+                    # Get what frames to grab
+                    frames = line.split('gallery')[1].strip()
+                    frames = frames or '0'
+                    frames = [int(i) for i in frames.split(':')]
                     if not frames:
-                        m.done = True
-                c = m.Canvas()
-                c.events.paint.connect(grabscreenshot)
-                c.show()
-                while not m.done:
-                    m.app.process_events()
-                c.close()
-                
-                # Save
-                imsave(imagefilename, m.images[0])  # Alwats show one image
-                if len(m.images) > 1:
-                    import imageio  # multiple gif not properly supported yet
-                    imageio.mimsave(imagefilename[:-3]+'.gif', m.images)
+                        frames = [0]
+                    if len(frames)>1:
+                        frames = list(range(*frames))
+                    break
+            else:
+                continue  # gallery hint not found
+            
+            # Check if we need to take a sceenshot
+            if os.path.isfile(imagefilename):
+                print('Screenshot for %s already present (skip).' % name)
+                continue
+            
+            # Import module and prepare
+            m = imp.load_source('vispy_example_'+name, filename)
+            m.done = False
+            m.frame = -1
+            m.images = []
+            
+            # Create a canvas and grab a screenshot
+            def grabscreenshot(event):
+                if m.done: return  # Grab only once
+                m.frame += 1
+                if m.frame in frames:
+                    frames.remove(m.frame)
+                    print('Grabbing a screenshot for %s' % name)
+                    im = _screenshot()
+                    m.images.append(im)
+                if not frames:
+                    m.done = True
+            c = m.Canvas()
+            c.events.paint.connect(grabscreenshot)
+            c.show()
+            while not m.done:
+                m.app.process_events()
+            c.close()
+            
+            # Save
+            imsave(imagefilename, m.images[0])  # Alwats show one image
+            if len(m.images) > 1:
+                import imageio  # multiple gif not properly supported yet
+                imageio.mimsave(imagefilename[:-3]+'.gif', m.images)
     
     
     def _images_thumbnails(self):
@@ -384,6 +381,20 @@ def sphinx_upload(repo_dir):
         sh('git commit -am"Update (automated commit)"')
         print()
         sh('git push')
+
+
+def get_example_filenames(example_dir):
+    """ Yield (filename, name) elements for all examples. The examples
+    are organized in directories, therefore the name can contain a 
+    forward slash.
+    """
+    for (dirpath, dirnames, filenames) in os.walk(example_dir):
+        for fname in filenames:
+            if not fname.endswith('.py'): continue
+            filename = os.path.join(dirpath, fname)
+            name = filename[len(example_dir):].lstrip('/\\')[:-3]
+            name = name.replace('\\', '/')
+            yield filename, name
 
 
 if __name__ == '__main__':
