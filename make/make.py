@@ -137,9 +137,6 @@ class Maker:
             sphinx_clean(build_dir)
             sphinx_build(WEBSITE_DIR, build_dir)
             sphinx_copy_pages(html_dir, PAGES_DIR, PAGES_REPO)
-            for fname in ['CNAME', 'README.md', 'conf.py', '.nojekyll', 'Makefile']:
-                shutil.copyfile(os.path.join(WEBSITE_DIR, fname), 
-                                os.path.join(PAGES_DIR, fname))
         elif 'show' == arg:
             sphinx_show(PAGES_DIR)
         elif 'upload' == arg:
@@ -347,6 +344,10 @@ def sphinx_copy_pages(html_dir, pages_dir, pages_repo):
     finally:
         if os.path.isdir(tmp_git_dir):
             shutil.rmtree(tmp_git_dir)
+    # Copy individual files
+    for fname in ['CNAME', 'README.md', 'conf.py', '.nojekyll', 'Makefile']:
+        shutil.copyfile(os.path.join(WEBSITE_DIR, fname), 
+                        os.path.join(pages_dir, fname))
     # Messages
     os.chdir(pages_dir)
     sh('git status')
