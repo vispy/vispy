@@ -1,5 +1,6 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: gallery 1
 """
 Demonstrating a cloud of points.
 """

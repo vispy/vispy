@@ -59,4 +59,72 @@ def read_mesh(fname, format=None):
         raise ValueError('read_mesh needs could not determine format.')
     else:
         raise ValueError('read_mesh does not understand format %s.' % format)
-        
+
+
+def imread(filename, format=None):
+    """ Function to read image data. Requires imageio or PIL.
+    """
+    # Import imageio or PIL
+    imageio = PIL = None
+    try:
+        import imageio
+    except ImportError:
+        try:
+            import PIL.Image
+        except ImportError:
+            pass
+     
+    if imageio is not None:
+        return imageio.imread(filename, format)
+    elif PIL is not None:
+        im = PIL.Image.open(filename)
+        if im.mode == 'P':
+            im = im.convert()
+        # Make numpy array
+        a = np.asarray(im)
+        if len(a.shape)==0:
+            raise MemoryError("Too little memory to convert PIL image to array")
+    else:
+        raise RuntimeError("imread requires the imageio or PIL package.")
+
+
+def imsave(filename, im, format=None):
+    """ Function to save image data. Requires imageio or PIL.
+    """
+    # Import imageio or PIL
+    imageio = PIL = None
+    try:
+        import imageio
+    except ImportError:
+        try:
+            import PIL.Image
+        except ImportError:
+            pass
+     
+    if imageio is not None:
+        return imageio.imsave(filename, im, format)
+    elif PIL is not None:
+        pim = PIL.Image.fromarray(im)
+        pim.save(filename, format)
+    else:
+        raise RuntimeError("imsave requires the imageio or PIL package.")
+
+
+
+def _screenshot():
+    """ Take a screenshot using glReadPixels. Not sure where to put this 
+    yet, so a private function for now. Used in make.py.
+    """
+    import numpy as np
+    from vispy import gl
+    #gl.glReadBuffer(gl.GL_BACK)  Not avaliable in ES 2.0
+    xywh = gl.glGetIntegerv(gl.GL_VIEWPORT)
+    x,y,w,h = xywh[0], xywh[1], xywh[2], xywh[3]
+    gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)  # PACK, not UNPACK
+    im = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
+    gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
+    # reshape, flip, and store
+    if not isinstance(im, np.ndarray):
+        im = np.frombuffer(im, np.uint8)
+    im.shape = h,w,3
+    return im
