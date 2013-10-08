@@ -1,6 +1,6 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# This code of this example should be considered public domain.
+# vispy: gallery 20
 
 """ 
 Demonstration of boids simulation. Boids is an artificial life

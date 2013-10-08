@@ -1,5 +1,6 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: gallery 2
 
 """ Example demonstrating two viewports in one window, and how one can
 propagate events to the viewports. Note that stuff like this will be
@@ -64,7 +65,7 @@ class ViewPort(object):
         self.program['a_position'] = self.vbo
         
         # Init
-        self._pos = 0, 0
+        self._pos = 25, 25
         self._size = 1, 1
     
     
@@ -97,7 +98,7 @@ class Canvas(app.Canvas):
     
     def __init__(self):
         app.Canvas.__init__(self)
-        
+        self.size = 400, 200
         self.left = ViewPort( (1.0, 0.5, 0.5, 1.0) )
         self.right = ViewPort( (0.5, 1.0, 0.5, 1.0) )
     

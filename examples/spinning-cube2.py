@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: gallery 50
 """
 Show spinning cube using VBO's, and transforms, and texturing.
 """

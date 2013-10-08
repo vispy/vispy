@@ -1,9 +1,11 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# VisPy - Copyright (c) 2013, Vispy Development Team All rights reserved.
-# Distributed under the (new) BSD License. See LICENSE.txt for more info.
-# -----------------------------------------------------------------------------
+# vispy: gallery 2
 """ Display markers at different sizes and line thicknessess. """
+
+import os
+import sys
+
 import numpy as np
 from vispy import gl
 from OpenGL import GL
@@ -12,7 +14,10 @@ from vispy import app
 from vispy.util.transforms import ortho
 from vispy.oogl import Program
 from vispy.oogl import VertexBuffer
+
+sys.path.insert(0, os.path.dirname(__file__))
 import markers
+
 
 n = 540
 data = np.zeros(n, dtype = [ ('a_position', np.float32, 3),

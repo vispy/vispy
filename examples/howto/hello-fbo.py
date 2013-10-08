@@ -1,6 +1,6 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# This code of this example should be considered public domain.
+# vispy: gallery 3
 
 """ 
 Minimal example demonstrating the use of frame buffer objects (FBO).

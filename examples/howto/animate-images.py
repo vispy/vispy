@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# VisPy - Copyright (c) 2013, Vispy Development Team
-# All rights reserved.
-# -----------------------------------------------------------------------------
+# vispy: gallery 2
 """ 
 Example demonstrating showing a, image with a fixed ratio.
 """

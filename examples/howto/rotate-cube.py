@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: gallery 50
 """
 This example shows how to display 3D objects.
 You should see a colored outlined spinning cube.

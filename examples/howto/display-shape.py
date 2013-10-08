@@ -1,6 +1,6 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# This code of this example should be considered public domain.
+# vispy: gallery 2
 
 """ 
 Simple example demonstrating showing a quad.

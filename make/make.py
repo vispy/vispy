@@ -238,7 +238,7 @@ class Maker:
                 if m.frame in frames:
                     frames.remove(m.frame)
                     print('Grabbing a screenshot for %s' % name)
-                    im = _screenshot()
+                    im = _screenshot((0, 0, c.size[0], c.size[1]))
                     m.images.append(im)
                 if not frames:
                     m.done = True

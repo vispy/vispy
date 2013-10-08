@@ -1,6 +1,6 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# This code of this example should be considered public domain.
+# vispy: gallery 2
 
 """ 
 Example demonstrating the use of textures in vispy.oogl.

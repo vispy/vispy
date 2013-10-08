@@ -1,6 +1,6 @@
- # #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# This code of this example should be considered public domain.
+# vispy: gallery 200
 
 """ 
 Example demonstrating the Game of Life in shaders.

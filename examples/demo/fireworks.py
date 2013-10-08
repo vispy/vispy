@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: gallery 20
+
 """
 Example demonstrating simulation of fireworks using point sprites.
 (adapted from the "OpenGL ES 2.0 Programming Guide")
