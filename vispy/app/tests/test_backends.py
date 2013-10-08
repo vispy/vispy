@@ -3,17 +3,26 @@ This tests only to see if all the necessary methods are implemented,
 whether all the right events are mentioned, and whether the keymap 
 contains all keys that should be supported.
 
-This test basically checks whether nothing was forgotton, not that the
+This test basically checks whether nothing was forgotten, not that the
 implementation is corect.
  
 """
+
+import sys
 
 import vispy
 from vispy import keys
 
 class BaseTestmodule:
+    
     def __init__(self, module=None):
         self._module = module
+        if module is None:
+            print("Skipping %s." % self.__class__.__name__)
+            self.test_events = lambda : None
+            self.test_keymap = lambda : None
+            self.test_methods = lambda : None
+    
     
     def test_keymap(self):
         """ Test that the keymap contains all keys supported by vispy.
@@ -85,35 +94,43 @@ class BaseTestmodule:
 class Test_TemplateBackend(BaseTestmodule):
     def __init__(self):
         from vispy.app.backends import template
-        self._module = template
+        BaseTestmodule.__init__(self, template)
 
 class Test_QtBackend(BaseTestmodule):
     def __init__(self):
         from vispy.app.backends import qt
-        self._module = qt
+        BaseTestmodule.__init__(self, qt)
 
 class Test_PygletBackend(BaseTestmodule):
     def __init__(self):
-        from vispy.app.backends import pyglet
-        self._module = pyglet
+        if sys.version_info[0] == 3:
+            pyglet = None
+        else:
+            try:
+                from vispy.app.backends import pyglet
+            except Exception as err:
+                print("Error imporing pyglet:\n%s" % str(err))
+                pyglet = None
+        BaseTestmodule.__init__(self, pyglet)
 
 class Test_GlutBackend(BaseTestmodule):
     def __init__(self):
         from vispy.app.backends import glut
-        self._module = glut
+        BaseTestmodule.__init__(self, glut)
 
 
 
 if __name__ == '__main__':
     
-    from vispy.app.backends import template, qt, pyglet, glut
-    
-    for mod in [template, qt, pyglet, glut]:
-        test = BaseTestmodule(mod)
+    for klass in [  Test_TemplateBackend, 
+                    Test_QtBackend, 
+                    Test_PygletBackend,
+                    Test_GlutBackend
+                  ]:
+        test = klass()
         test.test_keymap()
         test.test_methods()
         test.test_events()
-        print('ok %s' % mod.__name__)
-        
+        print('ok %s' % klass.__name__)
     
     
