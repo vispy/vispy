@@ -88,21 +88,27 @@ class RenderBuffer(GLObject):
         # Convert format
         format = convert_to_enum(format, True)
         
+        # Check shape
+        if not isinstance(shape, tuple):
+            raise ValueError("Shape must be a tuple.")
+        if not ( (len(shape) == ndim) or 
+                  len(shape) == ndim+1 and shape[-1] <= 4 ):
+            raise ValueError("Shape has invalid dimensions.")
+        shape = tuple([int(i) for i in shape])
+        if not all([i>0 for i in shape]):
+            raise ValueError("Cannot have negative shape.")
+        
         # Is this already my shape?
         if format is None or format is self._format:
             if self._shape is not None:
                 if self._shape[:ndim] == shape[:ndim]:
                     return
         
-        # Check shape
-        assert isinstance(shape, tuple)
-        assert len(shape) in (ndim, ndim+1)
-        shape = tuple([int(i) for i in shape])
-        assert all([i>0 for i in shape])
-        
         # Check format
         if format is None:
-            pass  # Set later by FBO
+            # Set later by FBO. 
+            # Note here, because default differs per color/depth/stencil
+            pass  
         elif format not in self._FORMATS:
             raise ValueError('Given format not supported for RenderBuffer storage.')
         
@@ -199,7 +205,8 @@ class FrameBuffer(GLObject):
         level specifies the mipmap level (default 0).
         """
         attachment = gl.GL_COLOR_ATTACHMENT0
-        assert isinstance(level, int)
+        if not isinstance(level, int):
+            raise ValueError("Level must be an int")
         
         if object is None or object == 0:
             # Detach
@@ -226,7 +233,8 @@ class FrameBuffer(GLObject):
         level specifies the mipmap level (default 0).
         """
         attachment = gl.GL_DEPTH_ATTACHMENT
-        assert isinstance(level, int)
+        if not isinstance(level, int):
+            raise ValueError("Level must be an int")
         
         if object is None or object == 0:
             # Detach
