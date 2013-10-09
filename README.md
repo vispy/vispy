@@ -1,5 +1,8 @@
 ## Vispy: interactive scientific visualization in Python
 
+Main website: http://vispy.org
+
+
 ### Description
 
 Vispy is a collaborative project that has two main goals: 
