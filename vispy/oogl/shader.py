@@ -210,8 +210,9 @@ class Shader(GLObject):
             raise ShaderError('No source code given for shader.')
         
         # Set source
+        # Some implementations cannot deal with a list of chars
         #gl.glShaderSource(self._handle, self._code)
-        gl.glShaderSource(self._handle, [self._code.encode('utf-8')])  # Some implementations need this
+        gl.glShaderSource(self._handle, [self._code])  
         
         # Compile the shader
         # todo: can this raise exception?
