@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vispy: gallery 2
-""" Display markers at different sizes and line thicknessess. """
+
+""" Display markers at different sizes and line thicknessess.
+"""
 
 import os
 import sys

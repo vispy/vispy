@@ -1,6 +1,6 @@
 # #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vispy: gallery 20
+# vispy: gallery 30
 
 """ 
 Demonstration of boids simulation. Boids is an artificial life
@@ -39,7 +39,7 @@ target['size'] = 16
 target['color'][:] = 1,1,0,1
 predator['size'] = 16
 predator['color'][:] = 1,0,0,1
-
+target['position'][:] = 0.25, 0.0, 0
 
 VERT_SHADER = """
 #version 120
