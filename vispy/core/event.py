@@ -15,7 +15,11 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 from __future__ import print_function, division, absolute_import
 
 import sys
-import collections, inspect
+if sys.version_info < (2, 7):
+    from vispy.util.ordereddict import OrderedDict
+else:
+    from collections import OrderedDict
+import inspect
 import weakref
 import vispy
 
@@ -374,7 +378,7 @@ class EmitterGroup(EventEmitter):
         
         self.auto_connect = auto_connect
         self.auto_connect_format = "on_%s"
-        self._emitters = collections.OrderedDict()
+        self._emitters = OrderedDict()
         self._emitters_connected = False  # whether the sub-emitters have 
                                           # been connected to the group
                                           
