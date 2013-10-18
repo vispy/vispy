@@ -46,7 +46,7 @@ class Data(GLObject):
     def data(self):
         """ Return a dictionnay of all vertex buffers """
 
-        return { name:buffer[name] for name,(array,buffer) in self._data.items()}
+        return dict( (name,buffer[name]) for name,(array,buffer) in self._data.items())
 
 
     def __setitem__(self, key, value):
