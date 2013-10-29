@@ -6,6 +6,8 @@
 desktop OpenGL implementation.
 """
 
+from __future__ import print_function, division, absolute_import
+
 from OpenGL import GL as _GL
 
 from . import _desktop, _desktop_ext
