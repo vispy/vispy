@@ -9,6 +9,7 @@ desktop OpenGL implementation.
 from __future__ import print_function, division, absolute_import
 
 from OpenGL import GL as _GL
+import OpenGL.GL.framebufferobjects as FBO
 
 from . import _desktop, _desktop_ext
 
@@ -35,6 +36,7 @@ def _get_function_from_pyopengl(funcname):
         func = getattr(_GL, funcname)
     except AttributeError:
         # Get function from FBO
+
         try:
             func = getattr(FBO, funcname)
         except AttributeError:
