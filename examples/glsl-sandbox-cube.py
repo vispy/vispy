@@ -6,8 +6,9 @@ or PyQt4.
 """
 
 import numpy as np
-from vispy import app, gl, oogl, io
+from vispy import app, gloo, io
 from vispy.util.transforms import perspective, translate, rotate
+from vispy.gloo import gl
 
 # Force using qt and take QtCore+QtGui from backend module,
 # since we do not know whether PySide or PyQt4 is used
@@ -53,7 +54,7 @@ void main()
 positions, faces, normals, texcoords = io.read_mesh('cube.obj')
 colors = np.random.uniform(0,1,positions.shape).astype('float32')
 
-faces_buffer = oogl.ElementBuffer(faces.astype(np.uint16))
+faces_buffer = gloo.ElementBuffer(faces.astype(np.uint16))
 
 
 class Canvas(app.Canvas):
@@ -62,13 +63,13 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, **kwargs)
         self.geometry = 0, 0, 400, 400
         
-        self.program = oogl.Program(VERT_CODE, FRAG_CODE)
+        self.program = gloo.Program(VERT_CODE, FRAG_CODE)
         
         # Set attributes
-        self.program['a_position'] = oogl.VertexBuffer(positions)
-        self.program['a_texcoord'] = oogl.VertexBuffer(texcoords)
+        self.program['a_position'] = gloo.VertexBuffer(positions)
+        self.program['a_texcoord'] = gloo.VertexBuffer(texcoords)
         
-        self.program['u_texture'] = oogl.Texture2D(io.crate())
+        self.program['u_texture'] = gloo.Texture2D(io.crate())
         
         # Handle transformations
         self.init_transforms()

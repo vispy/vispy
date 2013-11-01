@@ -5,7 +5,7 @@ This example shows how to retrieve event information from a callback.
 You should see information displayed for any event you triggered.
 """
 
-import vispy.gl as gl
+import vispy.gloo.gl as gl
 import vispy.app as app
 
 class Canvas(app.Canvas):

@@ -5,7 +5,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import numpy as np
-import OpenGL.GL as gl
+#import OpenGL.GL as gl
+from vispy.gloo import gl
 
 def on_display():
     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)

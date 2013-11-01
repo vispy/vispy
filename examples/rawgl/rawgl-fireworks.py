@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This example is equivalent to the fireworks example,
-but does not use vispy.gl, but the raw GL API.
+but does not use vispy.gloo, but the raw GL API.
 
 Example demonstrating simulation of fireworks using point sprites.
 (adapted from the "OpenGL ES 2.0 Programming Guide")
@@ -17,7 +17,8 @@ import time
 import numpy as np
 import ctypes
 
-from vispy import app, gl, io
+from vispy import app, io
+from vispy.gloo import gl
 
 
 # Create a texture

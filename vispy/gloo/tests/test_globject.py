@@ -7,8 +7,8 @@ import unittest
 
 import numpy as np
 
-from vispy import gl
-from vispy import oogl
+from vispy.gloo import gl
+from vispy import gloo
 
 
 def _dummy(*args, **kwargs):
@@ -79,7 +79,7 @@ class GLObjectTest(unittest.TestCase):
     
     
     def test_init(self):
-        obj = oogl.GLObject()
+        obj = gloo.GLObject()
         assert obj._handle  == 0
         assert obj._need_update == False
         assert obj._valid  == False
@@ -92,23 +92,23 @@ class GLObjectTest(unittest.TestCase):
         data = np.zeros(100, np.uint16)
         im2 = np.zeros((50,50), np.uint16)
         im3 = np.zeros((20,20, 20), np.uint16)
-        shaders = oogl.VertexShader("x"), oogl.FragmentShader("x")
+        shaders = gloo.VertexShader("x"), gloo.FragmentShader("x")
          
         items = [
             # Buffers
-            (oogl.buffer.Buffer(target=gl.GL_ARRAY_BUFFER), 'set_data', data),
-            (oogl.buffer.VertexBuffer(np.uint16), 'set_data', data),
-            (oogl.buffer.ElementBuffer(np.uint16), 'set_data', data),
+            (gloo.buffer.Buffer(target=gl.GL_ARRAY_BUFFER), 'set_data', data),
+            (gloo.buffer.VertexBuffer(np.uint16), 'set_data', data),
+            (gloo.buffer.ElementBuffer(np.uint16), 'set_data', data),
             # Textures
-            (oogl.Texture2D(), 'set_data', im2),
-            (oogl.Texture3D(), 'set_data', im3),
+            (gloo.Texture2D(), 'set_data', im2),
+            (gloo.Texture3D(), 'set_data', im3),
             # FBO stuff
-            (oogl.RenderBuffer(), 'set_shape', (1,1)),
-            (oogl.FrameBuffer(), 'attach_color',  oogl.RenderBuffer((1,1)) ),
+            (gloo.RenderBuffer(), 'set_shape', (1,1)),
+            (gloo.FrameBuffer(), 'attach_color',  gloo.RenderBuffer((1,1)) ),
             # Shader stuff
-            (oogl.VertexShader(), 'set_code', "x"),
-            (oogl.FragmentShader(), 'set_code', "x"),
-            (oogl.Program(), 'attach', shaders),
+            (gloo.VertexShader(), 'set_code', "x"),
+            (gloo.FragmentShader(), 'set_code', "x"),
+            (gloo.Program(), 'attach', shaders),
             ]
         
         for ob, funcname, value in items:
@@ -155,10 +155,10 @@ class GLObjectTest(unittest.TestCase):
         
         # Some "data"
         data = np.zeros(100, np.uint16)
-        baseBuffer = oogl.buffer.VertexBuffer(np.uint16)
+        baseBuffer = gloo.buffer.VertexBuffer(np.uint16)
         
         # Create object
-        ob = oogl.buffer.VertexBufferView(np.dtype(np.uint16), baseBuffer, 0)
+        ob = gloo.buffer.VertexBufferView(np.dtype(np.uint16), baseBuffer, 0)
         funcname = 'base.set_data'
         value = data
         

@@ -38,7 +38,7 @@ def _make_debug_wrapper(funcname, func):
 
 
 def use(target='desktop'):
-    """ Set vispy.gl to the target OpenGL ES 2.0 implementation.
+    """ Let Vispy use the target OpenGL ES 2.0 implementation.
     Currently, only "desktop" is supported.
     """
     debug = vispy.config['gl_debug']

@@ -14,8 +14,8 @@ import time
 import numpy as np
 from scipy.spatial import cKDTree
 
-from vispy import gl
-from vispy import oogl
+from vispy.gloo import gl
+from vispy import gloo
 from vispy import app
 
 # Create boids
@@ -80,12 +80,12 @@ class Canvas(app.Canvas):
         self._button = None
         
         # Create program
-        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
+        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
     
         # Create vertex buffers
-        self.vbo_position = oogl.VertexBuffer(particles['position'])
-        self.vbo_color = oogl.VertexBuffer(particles['color'])
-        self.vbo_size = oogl.VertexBuffer(particles['size'])
+        self.vbo_position = gloo.VertexBuffer(particles['position'])
+        self.vbo_color = gloo.VertexBuffer(particles['color'])
+        self.vbo_size = gloo.VertexBuffer(particles['size'])
 
         # Bind vertex buffers
         self.program['color'] = self.vbo_color

@@ -21,9 +21,9 @@ object.
 Example::
     
     # Init
-    program = oogl.Program(vertex_source, fragment_source)
-    program['a_position'] = oogl.VertexBuffer(my_positions_array)
-    program['s_texture'] = oogl.Texture2D(my_image)
+    program = gloo.Program(vertex_source, fragment_source)
+    program['a_position'] = gloo.VertexBuffer(my_positions_array)
+    program['s_texture'] = gloo.Texture2D(my_image)
     ...
     
     # Paint event handler
@@ -32,7 +32,7 @@ Example::
 
 .. Note::
     
-    With vispy.oogl we strive to offer a Python interface that provides
+    With vispy.gloo we strive to offer a Python interface that provides
     the full functionality of OpenGL. However, this layer is a work in
     progress and there are yet a few known limitations. Most notably:
     
@@ -47,7 +47,7 @@ Example::
 from __future__ import print_function, division, absolute_import
 
 from vispy.util.six import string_types
-from vispy import gl
+from . import gl
 
 
 def ext_available(extension_name):

@@ -5,12 +5,12 @@
 import unittest
 import numpy as np
 
-from vispy import gl
-from vispy.oogl.program import Program
-from vispy.oogl.shader import VertexShader
-from vispy.oogl.shader import FragmentShader
-from vispy.oogl.buffer import VertexBuffer
-from vispy.oogl.buffer import ClientVertexBuffer
+from vispy.gloo import gl
+from vispy.gloo.program import Program
+from vispy.gloo.shader import VertexShader
+from vispy.gloo.shader import FragmentShader
+from vispy.gloo.buffer import VertexBuffer
+from vispy.gloo.buffer import ClientVertexBuffer
 
 
 

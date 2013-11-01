@@ -20,13 +20,12 @@ Example
 from __future__ import print_function, division
 
 import re
-import os.path
+import os
 import numpy as np
-import OpenGL.GL as gl
 
-from vispy import gl
 from vispy.util import is_string
-from vispy.oogl.globject import GLObject
+from . import gl
+from . import GLObject
 
 
 

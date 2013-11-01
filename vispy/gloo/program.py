@@ -16,7 +16,7 @@ import weakref
 
 import numpy as np
 
-from vispy import gl
+from . import gl
 from . import GLObject, ext_available, convert_to_enum
 from . import VertexBuffer, ElementBuffer
 from .buffer import ClientElementBuffer

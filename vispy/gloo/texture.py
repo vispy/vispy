@@ -21,9 +21,11 @@ from __future__ import print_function, division, absolute_import
 import sys
 import numpy as np
 
-from vispy import gl
 from vispy.util.six import string_types
+from . import gl
 from . import GLObject, ext_available, convert_to_enum
+
+
 
 
 

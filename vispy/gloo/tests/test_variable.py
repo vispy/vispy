@@ -4,11 +4,11 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
-from vispy import gl
+from vispy.gloo import gl
 
-from vispy.oogl.variable import Uniform
-from vispy.oogl.variable import Variable
-from vispy.oogl.variable import Attribute
+from vispy.gloo.variable import Uniform
+from vispy.gloo.variable import Variable
+from vispy.gloo.variable import Attribute
 
 
 # -----------------------------------------------------------------------------

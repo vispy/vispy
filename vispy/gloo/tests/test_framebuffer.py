@@ -4,10 +4,10 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
-from vispy import gl
+from vispy.gloo import gl
 
-from vispy.oogl.framebuffer import RenderBuffer, FrameBuffer
-from vispy.oogl.texture import Texture2D
+from vispy.gloo.framebuffer import RenderBuffer, FrameBuffer
+from vispy.gloo.texture import Texture2D
 
 
 class RenderBufferTest(unittest.TestCase):

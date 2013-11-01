@@ -4,12 +4,12 @@
 
 """ 
 Simple example demonstrating showing a quad.
-oogl objects that this example demonstrates: Program.
+gloo objects that this example demonstrates: Program.
 """
 
-from vispy import oogl
+from vispy import gloo
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 import numpy as np
 
 # Create vetices 
@@ -39,11 +39,11 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create program
-        self._program = oogl.Program(VERT_SHADER, FRAG_SHADER)
+        self._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         
         # Set uniform and attribute
         self._program['u_color'] = 0.2, 1.0, 0.4, 1
-        self._program['a_position'] = oogl.VertexBuffer(vPosition)
+        self._program['a_position'] = gloo.VertexBuffer(vPosition)
     
     
     def on_initialize(self, event):

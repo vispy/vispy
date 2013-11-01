@@ -3,7 +3,7 @@
 
 import examplesgenerator
 import glapigenerator
-import oogloverviewgenerator
+import gloooverviewgenerator
 
 
 def init():
@@ -11,14 +11,14 @@ def init():
     examplesgenerator.main()
     print('Generating GL API.')
     glapigenerator.main()
-    print('Generating oogl overview section.')
-    oogloverviewgenerator.main()
+    print('Generating gloo overview section.')
+    gloooverviewgenerator.main()
 
 
 def clean(app, *args):
     examplesgenerator.clean()
     glapigenerator.clean()
-    oogloverviewgenerator.clean()
+    gloooverviewgenerator.clean()
 
 
 def setup(app):

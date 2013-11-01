@@ -5,7 +5,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import time
-from vispy import app, gl
+from vispy import app
+from vispy.gloo import gl
 
 app.use('qt')
 # app.use('glut')

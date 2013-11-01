@@ -4,11 +4,11 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
-from vispy import gl
+from vispy.gloo import gl
 
-from vispy.oogl.buffer import Buffer
-from vispy.oogl.buffer import VertexBuffer, ClientVertexBuffer
-from vispy.oogl.buffer import ElementBuffer, ClientElementBuffer
+from vispy.gloo.buffer import Buffer
+from vispy.gloo.buffer import VertexBuffer, ClientVertexBuffer
+from vispy.gloo.buffer import ElementBuffer, ClientElementBuffer
 
 
 

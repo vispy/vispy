@@ -15,9 +15,9 @@ calculated, such that each explostion is unique.
 import time
 import numpy as np
 import vispy
-from vispy import oogl
+from vispy import gloo
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 
 # Create a texture
 radius = 32
@@ -32,7 +32,7 @@ im1 *= np.array((X**2 + Y**2) <= radius * radius, dtype='float32')
 N = 10000
 
 # Create vertex data container
-data = oogl.Data(N, [('a_lifetime', np.float32, 1),
+data = gloo.Data(N, [('a_lifetime', np.float32, 1),
                      ('a_startPosition', np.float32, 3),
                      ('a_endPosition', np.float32, 3)])
 
@@ -91,9 +91,9 @@ class Canvas(app.Canvas):
         self.size = 800, 600
 
         # Create program
-        self._program = oogl.Program( VERT_SHADER, FRAG_SHADER)        
+        self._program = gloo.Program( VERT_SHADER, FRAG_SHADER)        
         self._program.set_vars(data.data,
-                               s_texture = oogl.Texture2D(im1))
+                               s_texture = gloo.Texture2D(im1))
         
         # Create first explosion
         self._new_explosion()

@@ -14,8 +14,8 @@ from __future__ import print_function, division, absolute_import
 import ctypes
 import numpy as np
 
-from vispy import gl
-from .globject import GLObject
+from . import gl
+from . import GLObject
 from .buffer import ClientVertexBuffer, VertexBuffer, VertexBufferView
 from .texture import Texture, Texture2D, TextureCubeMap, Texture3D
 from vispy.util.six import string_types

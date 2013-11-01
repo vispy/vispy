@@ -9,9 +9,9 @@ using one call, by discarting some fragments.
 
 import numpy as np
 from OpenGL import GL
-from vispy import oogl
+from vispy import gloo
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
 #app.use('glut')
@@ -61,11 +61,11 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self)
 
-        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
+        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         
         # Set uniform and attribute
-        self.program['a_id'] = oogl.VertexBuffer(a_id)
-        self.program['a_position'] = oogl.VertexBuffer(a_position)
+        self.program['a_id'] = gloo.VertexBuffer(a_id)
+        self.program['a_position'] = gloo.VertexBuffer(a_position)
 
         self.view       = np.eye(4,dtype=np.float32)
         self.model      = np.eye(4,dtype=np.float32)

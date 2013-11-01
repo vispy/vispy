@@ -1,4 +1,4 @@
-from vispy.oogl import Program, VertexShader, FragmentShader, VertexBuffer
+from vispy.gloo import Program, VertexShader, FragmentShader, VertexBuffer
 #from OpenGL.GL import *
 import OpenGL.GL as gl
 import numpy as np

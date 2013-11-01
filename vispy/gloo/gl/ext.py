@@ -6,4 +6,4 @@ from __future__ import print_function, division, absolute_import
 
 from ._constants_ext import *
 
-# Filled with functions when vispy.gl is imported
+# Filled with functions when vispy.gloo.gl is imported

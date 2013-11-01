@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" Definition of the base class for all oogl objects.
+""" Definition of the base class for all gloo objects.
 """
 
 import vispy

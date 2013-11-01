@@ -6,7 +6,9 @@ OpenGL ES 2.0 API based on desktop OpenGL (via pyOpenGL).
 
 """
 
-from vispy.gl._constants import *
+from __future__ import print_function, division, absolute_import
+
+from ._constants import *
 
 
 _glfunctions = [

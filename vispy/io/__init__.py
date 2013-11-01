@@ -116,7 +116,7 @@ def _screenshot(viewport=None):
     yet, so a private function for now. Used in make.py.
     """
     import numpy as np
-    from vispy import gl
+    from vispy.gloo import gl
     #gl.glReadBuffer(gl.GL_BACK)  Not avaliable in ES 2.0
     if viewport is None:
         viewport = gl.glGetIntegerv(gl.GL_VIEWPORT)

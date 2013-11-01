@@ -15,7 +15,7 @@ non ascii-key will most likely produces garbage.
 """
 
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 app.use('glut')
 
 class Canvas(app.Canvas):

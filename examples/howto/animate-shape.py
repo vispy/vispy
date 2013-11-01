@@ -11,9 +11,9 @@ draw the vertices.
 import time
 import numpy as np
 
-from vispy import oogl
+from vispy import gloo
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 
 
 # Create a texture
@@ -32,8 +32,8 @@ vertex_data['a_texcoord'] = np.array([    [0.0, 0.0], [0.0, 1.0],
 
 # Create indices and an ElementBuffer for it
 indices = np.array([0,1,2, 1,2,3], np.uint16)
-indices_buffer = oogl.ElementBuffer(indices)
-client_indices_buffer = oogl.ElementBuffer(indices, client=True)
+indices_buffer = gloo.ElementBuffer(indices)
+client_indices_buffer = gloo.ElementBuffer(indices, client=True)
 
 
 VERT_SHADER = """ // simple vertex shader
@@ -69,15 +69,15 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create program
-        self._program = oogl.Program( VERT_SHADER, FRAG_SHADER)
+        self._program = gloo.Program( VERT_SHADER, FRAG_SHADER)
         
         # Create vertex buffer
-        self._vbo = oogl.VertexBuffer(vertex_data)
+        self._vbo = gloo.VertexBuffer(vertex_data)
         
         # Set uniforms, samplers, attributes
         # We create one VBO with all vertex data (array of structures)
         # and create two views from it for the attributes.
-        self._program['texture1'] = oogl.Texture2D(im1)
+        self._program['texture1'] = gloo.Texture2D(im1)
         self._program.set_vars(self._vbo)  # This does: 
         #self._program['a_position'] = self._vbo['a_position']
         #self._program['a_texcoords'] = self._vbo['a_texcoords']

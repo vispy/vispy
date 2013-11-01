@@ -9,7 +9,7 @@ every second.
 """
 
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 app.use('pyglet')
 
 class Canvas(app.Canvas):

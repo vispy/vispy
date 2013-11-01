@@ -7,7 +7,7 @@ You should see a colored outlined spinning cube.
 """
 
 import numpy as np
-from vispy import app, gl, oogl
+from vispy import app, gl, gloo
 from vispy.util.transforms import perspective, translate, rotate
 
 
@@ -95,11 +95,11 @@ class Canvas(app.Canvas):
         self.size = 800, 600
         
         self.vertices, self.filled, self.outline = cube()
-        self.filled_buf = oogl.ElementBuffer(self.filled)
-        self.outline_buf = oogl.ElementBuffer(self.outline)
+        self.filled_buf = gloo.ElementBuffer(self.filled)
+        self.outline_buf = gloo.ElementBuffer(self.outline)
         
-        self.program = oogl.Program(vert, frag)
-        self.program.set_vars(oogl.VertexBuffer(self.vertices))
+        self.program = gloo.Program(vert, frag)
+        self.program.set_vars(gloo.VertexBuffer(self.vertices))
 
         self.view       = np.eye(4,dtype=np.float32)
         self.model      = np.eye(4,dtype=np.float32)

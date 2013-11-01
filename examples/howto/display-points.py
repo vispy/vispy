@@ -5,9 +5,9 @@
 """ Simple example plotting 2D points.
 """
 
-from vispy import oogl
+from vispy import gloo
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 from OpenGL import GL
 import numpy as np
 
@@ -76,12 +76,12 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self)
 
-        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
+        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         
         # Set uniform and attribute
-        self.program['a_color']    = oogl.VertexBuffer(v_color)
-        self.program['a_position'] = oogl.VertexBuffer(v_position)
-        self.program['a_size']     = oogl.VertexBuffer(v_size)
+        self.program['a_color']    = gloo.VertexBuffer(v_color)
+        self.program['a_position'] = gloo.VertexBuffer(v_position)
+        self.program['a_size']     = gloo.VertexBuffer(v_size)
     
     
     def on_initialize(self, event):

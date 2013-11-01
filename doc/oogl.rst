@@ -1,17 +1,17 @@
 =====================================
-The object oriented OpenGL API (oogl)
+The object oriented OpenGL API (gloo)
 =====================================
 
 (name of the module is subject to change)
 
-.. automodule:: vispy.oogl
+.. automodule:: vispy.gloo
 
 
 Base class
 ==========
 
 
-.. autoclass:: vispy.oogl.GLObject
+.. autoclass:: vispy.gloo.GLObject
     :members:
 
 
@@ -19,17 +19,17 @@ Base class
 Classes related to shaders
 ==========================
 
-.. autoclass:: vispy.oogl.Program
+.. autoclass:: vispy.gloo.Program
     :members:
 
 
-.. autoclass:: vispy.oogl.VertexShader
+.. autoclass:: vispy.gloo.VertexShader
     :members:
 
-.. autoclass:: vispy.oogl.FragmentShader
+.. autoclass:: vispy.gloo.FragmentShader
     :members:
 
-.. autoclass:: vispy.oogl.shader.Shader
+.. autoclass:: vispy.gloo.shader.Shader
     :members:
 
 
@@ -38,38 +38,38 @@ Buffer classes
 ==============
 
 
-.. autoclass:: vispy.oogl.VertexBuffer
+.. autoclass:: vispy.gloo.VertexBuffer
     :members:
 
-.. autoclass:: vispy.oogl.ElementBuffer
+.. autoclass:: vispy.gloo.ElementBuffer
     :members:
 
-.. autoclass:: vispy.oogl.buffer.DataBuffer
+.. autoclass:: vispy.gloo.buffer.DataBuffer
     :members:
 
-.. autoclass:: vispy.oogl.buffer.Buffer
+.. autoclass:: vispy.gloo.buffer.Buffer
     :members:
 
 
 Texture classes
 ===============
 
-.. autoclass:: vispy.oogl.Texture2D
+.. autoclass:: vispy.gloo.Texture2D
 
-.. autoclass:: vispy.oogl.Texture3D
+.. autoclass:: vispy.gloo.Texture3D
 
-.. autoclass:: vispy.oogl.TextureCubeMap
+.. autoclass:: vispy.gloo.TextureCubeMap
 
-.. autoclass:: vispy.oogl.texture.Texture
+.. autoclass:: vispy.gloo.texture.Texture
     :members:
 
 
 Classes related to FBO
 ======================
 
-.. autoclass:: vispy.oogl.FrameBuffer
+.. autoclass:: vispy.gloo.FrameBuffer
     :members:
 
-.. autoclass:: vispy.oogl.RenderBuffer
+.. autoclass:: vispy.gloo.RenderBuffer
     :members:
 

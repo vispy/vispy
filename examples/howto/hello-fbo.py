@@ -8,9 +8,9 @@ This example blurs the output image.
 """
 
 
-from vispy import oogl
+from vispy import gloo
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 import numpy as np
 
 # Create vetices 
@@ -87,22 +87,22 @@ class Canvas(app.Canvas):
         self.size = 560, 420
         
         # Create texture to render to
-        self._rendertex = oogl.Texture2D()
+        self._rendertex = gloo.Texture2D()
         
         # Create FBO, attach the color buffer and depth buffer
-        self._fbo = oogl.FrameBuffer(self._rendertex, oogl.RenderBuffer())
+        self._fbo = gloo.FrameBuffer(self._rendertex, gloo.RenderBuffer())
         
         # Create program to render a shape
-        self._program1 = oogl.Program(  oogl.VertexShader(VERT_SHADER1), 
-                                        oogl.FragmentShader(FRAG_SHADER1) )
+        self._program1 = gloo.Program(  gloo.VertexShader(VERT_SHADER1), 
+                                        gloo.FragmentShader(FRAG_SHADER1) )
         self._program1['u_color'] = 0.9, 1.0, 0.4, 1
-        self._program1['a_position'] = oogl.VertexBuffer(vPosition)
+        self._program1['a_position'] = gloo.VertexBuffer(vPosition)
         
         # Create program to render FBO result
-        self._program2 = oogl.Program(  oogl.VertexShader(VERT_SHADER2), 
-                                        oogl.FragmentShader(FRAG_SHADER2) )
-        self._program2['a_position'] = oogl.VertexBuffer(vPosition)
-        self._program2['a_texcoord'] =  oogl.VertexBuffer(vTexcoord)
+        self._program2 = gloo.Program(  gloo.VertexShader(VERT_SHADER2), 
+                                        gloo.FragmentShader(FRAG_SHADER2) )
+        self._program2['a_position'] = gloo.VertexBuffer(vPosition)
+        self._program2['a_texcoord'] =  gloo.VertexBuffer(vTexcoord)
         self._program2['u_texture1'] = self._rendertex
     
     

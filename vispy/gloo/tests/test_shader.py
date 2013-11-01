@@ -3,11 +3,11 @@
 # All rights reserved.
 # -----------------------------------------------------------------------------
 import unittest
-from vispy import gl
+from vispy.gloo import gl
 
-from vispy.oogl.shader import ShaderError
-from vispy.oogl.shader import VertexShader
-from vispy.oogl.shader import FragmentShader
+from vispy.gloo.shader import ShaderError
+from vispy.gloo.shader import VertexShader
+from vispy.gloo.shader import FragmentShader
 
 
 

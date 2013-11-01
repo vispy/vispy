@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" vispy.gl.desktop: namespace for OpenGL ES 2.0 API based on the
+""" vispy.gloo.gl.desktop: namespace for OpenGL ES 2.0 API based on the
 desktop OpenGL implementation.
 """
 
@@ -59,7 +59,7 @@ def _get_function_from_pyopengl(funcname):
 def _inject():
     """ Get GL functions from pyopengl. Inject in *this* namespace
     and the ext namespace.
-    Note the similatity with vispy.gl.use().
+    Note the similatity with vispy.gloo.gl.use().
     """
     import vispy
     show_warnings = vispy.config['show_warnings']

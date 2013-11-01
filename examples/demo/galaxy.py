@@ -12,9 +12,9 @@ Astronomers and cosmologists will kill me !
 import os
 import numpy as np
 
-from vispy import oogl
+from vispy import gloo
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 from OpenGL import GL
 from vispy.util.transforms import perspective, translate, rotate
 
@@ -41,7 +41,7 @@ def make_arm(n,angle):
 p = 50000
 n = 3*p
 
-data = oogl.Data(n, [('a_position', np.float32, 3),
+data = gloo.Data(n, [('a_position', np.float32, 3),
                     ('a_size',     np.float32, 1),
                     ('a_dist',     np.float32, 1)])
 for i in range(3):
@@ -129,7 +129,7 @@ class Canvas(app.Canvas):
         self.size = 800, 600
         self.title = "A very fake galaxy [mouse scroll to zoom]"
 
-        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
+        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.view = np.eye(4,dtype=np.float32)
         self.model = np.eye(4,dtype=np.float32)
         self.projection = np.eye(4,dtype=np.float32)
@@ -139,7 +139,7 @@ class Canvas(app.Canvas):
         translate(self.view, 0,0, -self.translate)
 
         self.program.set_vars(data.data,
-                              u_colormap = oogl.Texture2D(cmap),
+                              u_colormap = gloo.Texture2D(cmap),
                               u_size = 5./self.translate,
                               u_model = self.model,
                               u_view = self.view)

@@ -12,7 +12,7 @@ on what is available on your machine.
 
 import math
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 
 class Canvas(app.Canvas):
     def __init__(self, *args, **kwargs):

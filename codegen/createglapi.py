@@ -20,7 +20,7 @@ import sys
 from OpenGL import GL
 
 THISDIR = os.path.abspath(os.path.dirname(__file__))
-GLDIR = os.path.join(THISDIR, '..', 'vispy', 'gl')
+GLDIR = os.path.join(THISDIR, '..', 'vispy', 'gloo', 'gl')
 
 
 # We need header parser
@@ -45,9 +45,11 @@ def create_constants_module(parser, extension=False):
     lines = []
     lines.append(PREAMBLE % 'Constants for OpenGL ES 2.0.')
     
-    # Import enum
-    lines.append('from vispy.gl import _GL_ENUM')
+    # __future__ import
+    lines.append('from __future__ import print_function, division, absolute_import\n')
     
+    # Import enum
+    lines.append('from . import _GL_ENUM')
     lines.append('\n')
     
     # For extensions, we only take the OES ones, and remove the OES
@@ -82,11 +84,14 @@ def create_desktop_module(parser, extension=False):
     doc = 'OpenGL ES 2.0 API based on desktop OpenGL (via pyOpenGL).'
     lines.append(PREAMBLE % doc)
     
+    # __future__ import
+    lines.append('from __future__ import print_function, division, absolute_import\n')
+    
     # Import constants and ext
     if extension:
-        lines.append('from vispy.gl._constants_ext import *')
+        lines.append('from ._constants_ext import *')
     else:
-        lines.append('from vispy.gl._constants import *')
+        lines.append('from ._constants import *')
     
     lines.append('\n')
     

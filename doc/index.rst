@@ -19,9 +19,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   Layer 1: vispy.gl - functional GL API <gl>
-   Layer 2: vispy.oogl - object oriented GL API <oogl>
-   Layer 3: visuals <visuals>
+   vispy.gloo - object oriented GL API <gloo>
+   visuals <visuals>
    event
    app
    examples

@@ -8,9 +8,10 @@ from __future__ import print_function, division, absolute_import
 
 import sys
 import numpy as np
-from vispy import gl
-from vispy.oogl import GLObject
-from vispy.oogl import VertexBuffer
+
+from . import gl
+from . import GLObject
+from . import VertexBuffer
 
 
 

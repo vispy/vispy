@@ -8,7 +8,8 @@ part of the future higher lever visuals layer.
 """
 
 import numpy as np
-from vispy import app, gl, oogl
+from vispy import app, gloo
+from vispy.gloo import gl
 from vispy.core.event import EmitterGroup
 
 
@@ -56,12 +57,12 @@ class ViewPort(object):
                         )
         
         # Create program
-        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
+        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.program['u_size'] = 20.0
         self.program['u_color'] = bgcolor
         
         # Create position
-        self.vbo = oogl.VertexBuffer(('', 'float32', 3))
+        self.vbo = gloo.VertexBuffer(('', 'float32', 3))
         self.program['a_position'] = self.vbo
         
         # Init

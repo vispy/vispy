@@ -3,12 +3,13 @@
 # vispy: gallery 2
 
 """ 
-Example demonstrating the use of textures in vispy.oogl.
+Example demonstrating the use of textures in vispy.gloo.
 Three textures are created and combined in the fragment shader.
 """
 
-from vispy.oogl import Program, Texture2D, VertexBuffer, ElementBuffer
-from vispy import app, gl, io
+from vispy.gloo import Program, Texture2D, VertexBuffer, ElementBuffer
+from vispy import app, io
+from vispy.gloo import gl
 
 
 import numpy as np

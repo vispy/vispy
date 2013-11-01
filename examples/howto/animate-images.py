@@ -9,9 +9,9 @@ import time
 import numpy as np
 
 from vispy.util.transforms import ortho
-from vispy import oogl
+from vispy import gloo
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 
 
 # Image to be displayed
@@ -65,12 +65,12 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         self.size = W*5,H*5
 
-        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = oogl.Texture2D(I)
+        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
+        self.texture = gloo.Texture2D(I)
         self.texture.set_filter(gl.GL_NEAREST, gl.GL_NEAREST)
         
         self.program['u_texture'] = self.texture
-        self.program.set_vars(oogl.VertexBuffer(data))
+        self.program.set_vars(gloo.VertexBuffer(data))
 
         self.view = np.eye(4,dtype=np.float32)
         self.model = np.eye(4,dtype=np.float32)
@@ -100,7 +100,7 @@ class Canvas(app.Canvas):
             w,h = height*R, height
             x,y = int((width-w)/2), 0
         data['a_position'] = np.array([[x, y], [x+w, y], [x, y+h], [x+w, y+h]])
-        self.program.set_vars(oogl.VertexBuffer(data))
+        self.program.set_vars(gloo.VertexBuffer(data))
 
     
     def on_paint(self, event):

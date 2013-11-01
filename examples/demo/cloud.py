@@ -9,15 +9,15 @@ Demonstrating a cloud of points.
 import numpy as np
 from OpenGL import GL
 
-from vispy import oogl
+from vispy import gloo
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
 
 # Create vertices 
 n = 1000000
-data = oogl.Data(n, [('a_position', np.float32, 3),
+data = gloo.Data(n, [('a_position', np.float32, 3),
                      ('a_bg_color', np.float32, 4),
                      ('a_fg_color', np.float32, 4),
                      ('a_size',     np.float32, 1)])
@@ -230,7 +230,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         self.size = 800, 600
         
-        self.program = oogl.Program(vert,frag)
+        self.program = gloo.Program(vert,frag)
         self.view = np.eye(4,dtype=np.float32)
         self.model = np.eye(4,dtype=np.float32)
         self.projection = np.eye(4,dtype=np.float32)

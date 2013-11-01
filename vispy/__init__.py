@@ -9,8 +9,8 @@ by providing powerful interfaces to OpenGL, at different levels of
 abstraction and generality.
 
 These layers are:
-  * vispy.gl: raw OpenGL ES 2.0 API
-  * vispy.oogl: Object oriented GL API
+  * vispy.gloo.gl: raw OpenGL ES 2.0 API
+  * vispy.gloo: Object oriented GL API
   * vispy.visuals: Higher level visualization objects (work in progress)
   * ... more to come
 

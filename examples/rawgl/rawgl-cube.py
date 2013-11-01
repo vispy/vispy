@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This example is equivalent to the spinning cube example,
-but does not use vispy.gl, but the raw GL API.
+but does not use vispy.gloo, but the raw GL API.
 
 Show spinning cube using VBO's, transforms and textures. 
 The use of vertex and element buffer can be turned on or off.
@@ -11,7 +11,8 @@ The use of vertex and element buffer can be turned on or off.
 
 import numpy as np
 from vispy.util.transforms import perspective, translate, rotate
-from vispy import app, gl, io
+from vispy import app, io
+from vispy.gloo import gl
 
 
 VERT_CODE = """

@@ -9,13 +9,13 @@ import os
 import sys
 
 import numpy as np
-from vispy import gl
+from vispy.gloo import gl
 from OpenGL import GL
 
 from vispy import app
 from vispy.util.transforms import ortho
-from vispy.oogl import Program
-from vispy.oogl import VertexBuffer
+from vispy.gloo import Program
+from vispy.gloo import VertexBuffer
 
 sys.path.insert(0, os.path.dirname(__file__))
 import markers

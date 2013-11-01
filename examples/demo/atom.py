@@ -8,9 +8,9 @@ Particles orbiting around a central point (with traces)
 
 import numpy as np
 from OpenGL import GL
-from vispy import oogl
+from vispy import gloo
 from vispy import app
-from vispy import gl
+from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
 
@@ -24,7 +24,7 @@ rot = np.random.uniform(0,2*np.pi,(n,4)).astype(np.float32)
 color = np.ones((n,4),dtype=np.float32) * (1,1,1,1)
 u_size = 6
 
-data = oogl.Data(n*p, [('a_position', np.float32, 2),
+data = gloo.Data(n*p, [('a_position', np.float32, 2),
                        ('a_color',    np.float32, 4),
                        ('a_rot',      np.float32, 4)])
 data['a_position'] = np.repeat(position, p, axis=0)
@@ -108,7 +108,7 @@ class Canvas(app.Canvas):
 
     def __init__(self, **kwargs):
         
-        self.program = oogl.Program(VERT_SHADER, FRAG_SHADER)
+        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.view       = np.eye(4,dtype=np.float32)
         self.model      = np.eye(4,dtype=np.float32)
         self.projection = np.eye(4,dtype=np.float32)

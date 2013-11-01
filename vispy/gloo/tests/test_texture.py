@@ -4,8 +4,8 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
-from vispy import gl
-from vispy.oogl.texture import Texture, Texture2D, Texture3D
+from vispy.gloo import gl
+from vispy.gloo.texture import Texture, Texture2D, Texture3D
 
 
 

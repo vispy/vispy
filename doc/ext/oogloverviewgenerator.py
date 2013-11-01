@@ -1,11 +1,11 @@
 """ Called from vispy_ext.py to generate the overview section of the
-oogl docs. This section is simply added to oogl.__doc__.
+gloo docs. This section is simply added to gloo.__doc__.
 """
 
-from vispy import oogl
+from vispy import gloo
 
 def main():
-    oogl.__doc__ += generate_overview_docs()
+    gloo.__doc__ += generate_overview_docs()
 
 
 def clean():
@@ -17,13 +17,13 @@ def get_docs_for_class(klass):
     """
     
     # Prepare
-    baseatts = dir(oogl.GLObject)
-    functype = type(oogl.GLObject.activate)
-    proptype = type(oogl.GLObject.handle)
+    baseatts = dir(gloo.GLObject)
+    functype = type(gloo.GLObject.activate)
+    proptype = type(gloo.GLObject.handle)
     props, funcs = set(), set()
     
     for att in sorted(dir(klass)):
-        if klass is not oogl.GLObject and att in baseatts:
+        if klass is not gloo.GLObject and att in baseatts:
             continue
         if att.startswith('_') or att.lower() != att:
             continue
@@ -52,20 +52,20 @@ def get_docs_for_class(klass):
 
 
 def generate_overview_docs():
-    """ Generate the overview section for the OOGL docs.
+    """ Generate the overview section for the gloo docs.
     """
     
     lines = []
     lines.append('Overview')
     lines.append('='*len(lines[-1]))
     
-    for klasses in [(oogl.GLObject,),
-                    (oogl.Program,),
-                    (oogl.VertexShader, oogl.FragmentShader), 
-                    (oogl.VertexBuffer, oogl.ElementBuffer), 
-                    (oogl.Texture2D, oogl.Texture3D, oogl.TextureCubeMap),
-                    (oogl.RenderBuffer,), 
-                    (oogl.FrameBuffer,),
+    for klasses in [(gloo.GLObject,),
+                    (gloo.Program,),
+                    (gloo.VertexShader, gloo.FragmentShader), 
+                    (gloo.VertexBuffer, gloo.ElementBuffer), 
+                    (gloo.Texture2D, gloo.Texture3D, gloo.TextureCubeMap),
+                    (gloo.RenderBuffer,), 
+                    (gloo.FrameBuffer,),
                 ]:
         # Init line
         line = '*'

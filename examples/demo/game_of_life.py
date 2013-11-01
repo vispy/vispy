@@ -12,8 +12,8 @@ import time
 
 import numpy as np
 
-from vispy import gl
-from vispy import oogl
+from vispy.gloo import gl
+from vispy import gloo
 from vispy import app
 
 
@@ -96,18 +96,18 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
         
         # Create program
-        self._program = oogl.Program( VERT_SHADER, FRAG_SHADER)
+        self._program = gloo.Program( VERT_SHADER, FRAG_SHADER)
         
         # Creat FBO
-        self._fbo = oogl.FrameBuffer()
-        self._fbo.attach_depth(oogl.RenderBuffer(im1.shape))
+        self._fbo = gloo.FrameBuffer()
+        self._fbo.attach_depth(gloo.RenderBuffer(im1.shape))
         
         # Create vbo
-        self._vbo = oogl.VertexBuffer(vertex_data)
+        self._vbo = gloo.VertexBuffer(vertex_data)
         
         # Create textures 
-        self._tex1 = oogl.Texture2D(im1)
-        self._tex2 = oogl.Texture2D(im1.shape)
+        self._tex1 = gloo.Texture2D(im1)
+        self._tex2 = gloo.Texture2D(im1.shape)
         for tex in (self._tex1, self._tex2):
             tex.set_filter('NEAREST', 'NEAREST')
         
