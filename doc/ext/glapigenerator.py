@@ -53,19 +53,20 @@ def main():
     lines.append('**vispy.gloo.gl**\n')
     
     # Write constants and functions
-    for name in sorted(gl_const_names):
-        lines.append('  * %s' % name)
     for name in sorted(gl_func_names): 
         lines.append('  * %s()' % name)
+    for name in sorted(gl_const_names):
+        lines.append('  * %s' % name)
     
     # Write class header
     lines.append('**vispy.gloo.gl.ext**\n')
     
     # Write constants and functions
-    for name in sorted(glext_const_names):
-        lines.append('  * %s' % name)
     for name in sorted(glext_func_names): 
         lines.append('  * %s()' % name)
+    for name in sorted(glext_const_names):
+        lines.append('  * %s' % name)
+    
     
     # Write file
     with open(os.path.join(DOCSDIR, 'gl.rst'), 'w') as f:
