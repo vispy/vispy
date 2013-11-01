@@ -40,7 +40,7 @@ def make_arm(n,angle):
 p = 50000
 n = 3*p
 
-data = gloo.Data(n, [('a_position', np.float32, 3),
+data = np.zeros(n, [('a_position', np.float32, 3),
                     ('a_size',     np.float32, 1),
                     ('a_dist',     np.float32, 1)])
 for i in range(3):
@@ -133,7 +133,7 @@ class Canvas(app.Canvas):
         self.translate = 5
         translate(self.view, 0,0, -self.translate)
 
-        self.program.set_vars(data.data,
+        self.program.set_vars(gloo.VertexBuffer(data),
                               u_colormap = gloo.Texture2D(cmap),
                               u_size = 5./self.translate,
                               u_model = self.model,

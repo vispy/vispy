@@ -23,7 +23,7 @@ rot = np.random.uniform(0,2*np.pi,(n,4)).astype(np.float32)
 color = np.ones((n,4),dtype=np.float32) * (1,1,1,1)
 u_size = 6
 
-data = gloo.Data(n*p, [('a_position', np.float32, 2),
+data = np.zeros(n*p, [ ('a_position', np.float32, 2),
                        ('a_color',    np.float32, 4),
                        ('a_rot',      np.float32, 4)])
 data['a_position'] = np.repeat(position, p, axis=0)
@@ -110,11 +110,12 @@ class Canvas(app.Canvas):
         self.projection = np.eye(4,dtype=np.float32)
         self.translate = 3
         translate(self.view, 0,0, -self.translate)
-
-        self.program.set_vars(data.data,
-                              u_model = self.model,
-                              u_view = self.view,
-                              u_size = u_size)
+        
+        self.vbo = gloo.VertexBuffer(data)
+        self.program.set_vars(self.vbo )
+        self.program['u_model'] = self.model
+        self.program['u_view'] = self.view
+        self.program['u_size'] = u_size
 
         self.theta = 0
         self.phi = 0
@@ -181,7 +182,7 @@ class Canvas(app.Canvas):
         data['a_position'][self.index::p,1] = .5*np.sin(T)
         data['a_color'][:,3] -= 1.0/p
         data['a_color'][self.index::p,3] = 1
-
+        self.vbo.set_data(data)
         self.program.draw(gl.GL_POINTS)
 
 

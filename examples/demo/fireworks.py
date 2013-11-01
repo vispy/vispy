@@ -32,9 +32,9 @@ im1 *= np.array((X**2 + Y**2) <= radius * radius, dtype='float32')
 N = 10000
 
 # Create vertex data container
-data = gloo.Data(N, [('a_lifetime', np.float32, 1),
+data = np.zeros(N, [ ('a_lifetime', np.float32, 1),
                      ('a_startPosition', np.float32, 3),
-                     ('a_endPosition', np.float32, 3)])
+                     ('a_endPosition', np.float32, 3) ])
 
 
 VERT_SHADER = """
@@ -86,8 +86,8 @@ class Canvas(app.Canvas):
 
         # Create program
         self._program = gloo.Program( VERT_SHADER, FRAG_SHADER)        
-        self._program.set_vars(data.data,
-                               s_texture = gloo.Texture2D(im1))
+        self._program.set_vars(gloo.VertexBuffer(data))
+        self._program['s_texture'] = gloo.Texture2D(im1)
         
         # Create first explosion
         self._new_explosion()

@@ -16,7 +16,7 @@ from vispy.util.transforms import perspective, translate, rotate
 
 # Create vertices 
 n = 1000000
-data = gloo.Data(n, [('a_position', np.float32, 3),
+data = np.zeros(n, [ ('a_position', np.float32, 3),
                      ('a_bg_color', np.float32, 4),
                      ('a_fg_color', np.float32, 4),
                      ('a_size',     np.float32, 1)])
@@ -232,12 +232,13 @@ class Canvas(app.Canvas):
         self.translate = 5
         translate(self.view, 0,0, -self.translate)
 
-        self.program.set_vars(data.data,
-                              u_linewidth = u_linewidth,
-                              u_antialias = u_antialias,
-                              u_model = self.model,
-                              u_view = self.view,
-                              u_size = 5/self.translate)
+        self.program.set_vars(gloo.VertexBuffer(data))
+        self.program['u_linewidth'] = u_linewidth
+        self.program['u_antialias'] = u_antialias
+        self.program['u_model'] = self.model
+        self.program['u_view'] = self.view
+        self.program['u_size'] = 5/self.translate
+        
         self.theta = 0
         self.phi = 0
 

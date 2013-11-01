@@ -81,7 +81,6 @@ from .globject import GLObject
 
 from .buffer import VertexBuffer, ElementBuffer
 #from .buffer import ClientVertexBuffer, ClientElementBuffer
-from .data import Data
 from .texture import Texture2D, Texture3D, TextureCubeMap
 from .shader import VertexShader, FragmentShader
 from .framebuffer import FrameBuffer, RenderBuffer
