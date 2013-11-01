@@ -71,7 +71,7 @@ class GLObject(object):
     
     def __exit__(self, type, value, traceback):
         """ Leaving context  """
-
+        returnval = None
         if value is None:
             # Reset error state on success
             self._error_exit = 0
@@ -79,8 +79,9 @@ class GLObject(object):
             # Error: increase error state. If not the first error, suppress
             self._error_exit += 1
             if self._error_enter or self._error_exit > 1: 
-                return True  # Suppress error
+                returnval = True  # Suppress error
         self.deactivate()
+        return returnval
     
     
     def __del__(self):

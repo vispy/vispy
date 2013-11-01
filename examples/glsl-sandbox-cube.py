@@ -94,7 +94,6 @@ class Canvas(app.Canvas):
     def on_paint(self, event):
         
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        
         self.program.draw(gl.GL_TRIANGLES, faces_buffer)
     
     

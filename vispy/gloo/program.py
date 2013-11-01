@@ -442,7 +442,6 @@ class Program(GLObject):
           * Prepare for activating other objects.
           * Upload pending variables.
         """
-        
         # Use this program!
         gl.glUseProgram(self._handle)
         
@@ -460,24 +459,27 @@ class Program(GLObject):
         # Update?
         if shaders_need_update:
             self._need_update = True
-            self.activate()  # Recursive
+            # Recursive, but beware to deactivate first, or we get
+            # "stuck" in a false activated state
+            self._deactivate()
+            self.activate()
     
     
     def _deactivate(self):
         """ Deactivate any objects that were activated on our behalf,
         and then deactivate ourself.
         """
+        self._active = False
         for ob in reversed(self._activated_objects):
             ob.deactivate()
+        self._activated_objects = []
         gl.glUseProgram(0)
-        self._active = False
     
     
     def _update(self):
         """ Called when the object is activated and the _need_update
         flag is set
         """
-        
         # Check if we have something to link
         if not self._verts:
             raise ProgramError("No vertex shader has been given")
@@ -570,12 +572,9 @@ class Program(GLObject):
         
         # Check if active. If not, call recursively, but activated
         if not self._active:
-            if self._error_enter:
-                # An error message has already been shown, we stop here
-                # because if we would continue we would very likely
-                # just spew messages for spin-off errors.
-                return  
             with self:
+                if self._error_enter:
+                    return  # Do not draw if activation went wrong!
                 return self.draw(mode, subset)
         
         # Check mode
