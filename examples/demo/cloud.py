@@ -7,7 +7,6 @@ Demonstrating a cloud of points.
 """
 
 import numpy as np
-from OpenGL import GL
 
 from vispy import gloo
 from vispy import app
@@ -31,8 +30,6 @@ u_size = 1
 
 
 vert = """
-#version 120
-
 // Uniforms
 // ------------------------------------
 uniform mat4 u_model;
@@ -69,8 +66,6 @@ void main (void) {
 """
 
 frag = """
-#version 120
-
 // Constants
 // ------------------------------------
 
@@ -256,8 +251,6 @@ class Canvas(app.Canvas):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL.GL_POINT_SPRITE)
 
 
     def on_key_press(self,event):

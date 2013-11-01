@@ -594,6 +594,13 @@ class Program(GLObject):
             if variable.active:
                 variable.upload(self)
         
+        # Enable any other stuff
+        need_enabled = set()
+        for shader in self._verts + self._frags:
+            need_enabled.update(shader._need_enabled)
+        for enum in need_enabled:
+            gl.glEnable(enum)
+        
         if isinstance(subset, ElementBuffer):
             # Draw elements
             
@@ -639,3 +646,7 @@ class Program(GLObject):
         
         else:
             raise ValueError('Given subset is of invalid type: %r.' % type(subset))
+        
+        # Clean up
+        for enum in need_enabled:
+            gl.glDisable(enum)

@@ -3,7 +3,8 @@
 """ Probably the simplest vispy example
 """
 
-from vispy import app, gl
+from vispy import app
+from vispy.gloo import gl
 
 c = app.Canvas(show=True)
 

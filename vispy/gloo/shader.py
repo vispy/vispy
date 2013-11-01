@@ -77,6 +77,9 @@ class Shader(GLObject):
             raise ValueError('Target must be vertex or fragment shader.')
         self._target = target
         
+        # For auto-enabling point sprites
+        self._need_enabled = set()
+        
         # Set code
         self._code = None
         self._source = None
@@ -209,9 +212,12 @@ class Shader(GLObject):
             raise ShaderError('No source code given for shader.')
         
         # Set source
-        # Some implementations cannot deal with a list of chars
+        # Note, some implementations cannot deal with a sequence of chars
         #gl.glShaderSource(self._handle, self._code)
-        gl.glShaderSource(self._handle, [self._code])  
+        #gl.glShaderSource(self._handle, [self._code])  
+        
+        # More compativle variant (also deals with above chars problem)
+        self._need_enabled = gl.glShaderSource_compat(self._handle, self._code)
         
         # Compile the shader
         # todo: can this raise exception?
@@ -287,11 +293,11 @@ class Shader(GLObject):
             # Separate line number from description (if we can)
             linenr, error = self._parse_error(error)
             if None in (linenr, lines):
-                results.append(' %s' % error)
+                results.append('%s' % error)
             else:
-                results.append(' on line %i: %s' % (linenr, error))
+                results.append('on line %i: %s' % (linenr, error))
                 if linenr>0 and linenr < len(lines):
-                    results.append(' %s' % lines[linenr-1])
+                    results.append('  %s' % lines[linenr-1])
         
         # Add indentation and return
         results = [' '*indentation + r for r in results]

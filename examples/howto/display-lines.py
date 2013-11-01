@@ -8,7 +8,6 @@ using one call, by discarting some fragments.
 """
 
 import numpy as np
-from OpenGL import GL
 from vispy import gloo
 from vispy import app
 from vispy.gloo import gl
@@ -24,8 +23,6 @@ a_id = np.sort(a_id,axis=0).astype(np.float32)
 
 
 VERT_SHADER = """
-#version 120
-
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
@@ -39,8 +36,6 @@ void main (void) {
 """
 
 FRAG_SHADER = """
-#version 120
-
 varying float v_id;
 void main()
 {
@@ -91,8 +86,6 @@ class Canvas(app.Canvas):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL.GL_POINT_SPRITE)
 
 
     # ---------------------------------

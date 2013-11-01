@@ -7,7 +7,8 @@ You should see a colored outlined spinning cube.
 """
 
 import numpy as np
-from vispy import app, gl, gloo
+from vispy import app, gloo
+from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
 

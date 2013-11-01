@@ -10,7 +10,6 @@ import sys
 
 import numpy as np
 from vispy.gloo import gl
-from OpenGL import GL
 
 from vispy import app
 from vispy.util.transforms import ortho
@@ -91,8 +90,6 @@ class Canvas(app.Canvas):
         gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL.GL_POINT_SPRITE)
 
     def on_key_press(self,event):
         if event.text == ' ':

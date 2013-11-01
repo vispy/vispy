@@ -14,7 +14,6 @@ from vispy.core.event import EmitterGroup
 
 
 VERT_SHADER = """
-#version 120
 attribute vec3 a_position;
 uniform float u_size;
 uniform vec4 u_color;
@@ -28,7 +27,6 @@ void main (void) {
 """
 
 FRAG_SHADER = """
-#version 120
 varying vec4 v_color;
 void main()
 {    
@@ -108,10 +106,6 @@ class Canvas(app.Canvas):
         gl.glClearColor(0,0,0,1)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-        
-        from OpenGL import GL
-        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL.GL_POINT_SPRITE)
     
     
     def on_paint(self, event):

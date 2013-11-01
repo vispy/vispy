@@ -8,7 +8,6 @@
 from vispy import gloo
 from vispy import app
 from vispy.gloo import gl
-from OpenGL import GL
 import numpy as np
 
 # Create vetices 
@@ -18,8 +17,6 @@ v_color = np.random.uniform(0,1,(n,3)).astype(np.float32)
 v_size  = np.random.uniform(2,12,(n,1)).astype(np.float32)
 
 VERT_SHADER = """
-#version 120
-
 attribute vec3  a_position;
 attribute vec3  a_color;
 attribute float a_size;
@@ -43,8 +40,6 @@ void main (void) {
 """
 
 FRAG_SHADER = """
-#version 120
-
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_radius;
@@ -90,12 +85,6 @@ class Canvas(app.Canvas):
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         
-        # Enable point sprites (allow to change the size of the points with
-        # gl_PointSize in the vertex shader)
-        # NOTE: this should not be necessary in futere versions of vispy
-        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL.GL_POINT_SPRITE)
-    
     
     def on_resize(self, event):
         width, height = event.size

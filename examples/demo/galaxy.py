@@ -15,7 +15,6 @@ import numpy as np
 from vispy import gloo
 from vispy import app
 from vispy.gloo import gl
-from OpenGL import GL
 from vispy.util.transforms import perspective, translate, rotate
 
 # Manual galaxy creation
@@ -69,8 +68,6 @@ cmap = np.array([[255, 124,   0], [255, 163,  76],
 
 
 VERT_SHADER = """
-#version 120
-
 // Uniforms
 // ------------------------------------
 uniform mat4  u_model;
@@ -99,8 +96,6 @@ void main (void) {
 """
 
 FRAG_SHADER = """
-#version 120
-
 // Uniforms
 // ------------------------------------
 uniform sampler2D u_colormap;
@@ -153,8 +148,6 @@ class Canvas(app.Canvas):
         gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE) #_MINUS_SRC_ALPHA)
-        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL.GL_POINT_SPRITE)
         # Start the timer upon initialization.
         self.timer.start()
 

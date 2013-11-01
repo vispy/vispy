@@ -5,7 +5,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import numpy as np
-#import OpenGL.GL as gl
 from vispy.gloo import gl
 
 def on_display():

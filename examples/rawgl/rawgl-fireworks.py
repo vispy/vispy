@@ -40,9 +40,6 @@ vertex_data = np.zeros((N,), dtype=[('a_lifetime', np.float32, 1),
 
 
 VERT_CODE = """
-// explosion vertex shader
-#version 120
-
 uniform float u_time;
 uniform vec3 u_centerPosition;
 attribute float a_lifetime;
@@ -68,9 +65,6 @@ void main () {
 """
 
 FRAG_CODE = """
-// explostion fragment shader
-#version 120
-
 uniform sampler2D s_texture;
 uniform vec4 u_color;
 varying float v_lifetime;
@@ -100,17 +94,12 @@ class Canvas(app.Canvas):
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
         
-        # Note: normal GL requires these lines, ES 2.0 does not
-        from OpenGL import GL
-        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL.GL_POINT_SPRITE)
-        
         # Create shader program
         self._prog_handle = gl.glCreateProgram()
 
         # Create vertex shader
         shader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
-        gl.glShaderSource(shader, VERT_CODE)
+        gl.glShaderSource_compat(shader, VERT_CODE)
         gl.glCompileShader(shader)
         status = gl.glGetShaderiv(shader, gl.GL_COMPILE_STATUS)
         if not status:
@@ -121,7 +110,7 @@ class Canvas(app.Canvas):
         
         # Create fragment shader
         shader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
-        gl.glShaderSource(shader, FRAG_CODE)
+        need_enabled = gl.glShaderSource_compat(shader, FRAG_CODE)
         gl.glCompileShader(shader)
         status = gl.glGetShaderiv(shader, gl.GL_COMPILE_STATUS)
         if not status:
@@ -129,6 +118,10 @@ class Canvas(app.Canvas):
             raise RuntimeError('Fragment shader did not compile.')
         else:
             gl.glAttachShader(self._prog_handle, shader)
+        
+        # Enable point sprites
+        for enum in need_enabled:
+            gl.glEnable(enum)
         
         # Link
         gl.glLinkProgram(self._prog_handle)

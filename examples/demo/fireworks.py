@@ -38,9 +38,6 @@ data = gloo.Data(N, [('a_lifetime', np.float32, 1),
 
 
 VERT_SHADER = """
-// explosion vertex shader
-#version 120
-
 uniform float u_time;
 uniform vec3 u_centerPosition;
 attribute float a_lifetime;
@@ -66,9 +63,6 @@ void main () {
 """
 
 FRAG_SHADER = """
-// explostion fragment shader
-#version 120
-
 uniform sampler2D texture1;
 uniform vec4 u_color;
 varying float v_lifetime;
@@ -105,11 +99,6 @@ class Canvas(app.Canvas):
         # Enable blending
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-        
-        # todo: normal GL requires these lines, ES 2.0 does not
-        from OpenGL import GL
-        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL.GL_POINT_SPRITE)
     
     
     def on_resize(self, event):

@@ -22,7 +22,6 @@ import time
 import numpy as np
 from scipy.spatial import cKDTree
 
-from OpenGL import GL
 from vispy.gloo import gl
 from vispy import app
 from vispy.gloo import Program, VertexBuffer, ElementBuffer
@@ -52,7 +51,6 @@ predator['color'][:] = 1,0,0,1
 
 
 VERT_SHADER = """
-#version 120
 attribute vec3 position;
 attribute vec4 color;
 attribute float size;
@@ -66,7 +64,6 @@ void main (void) {
 """
 
 FRAG_SHADER = """
-#version 120
 varying vec4 v_color;
 void main()
 {    
@@ -99,8 +96,6 @@ class Canvas(app.Canvas):
         
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-        gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL.GL_POINT_SPRITE)
     
     def on_resize(self, event):
         width, height = event.size
