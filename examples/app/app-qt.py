@@ -53,7 +53,7 @@ class Canvas(app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
     def on_timer(self, event):
-        print('tick !')
+        print('tick ! (%s)' % event.dt)
     
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ from __future__ import print_function, division, absolute_import
 
 import vispy
 from vispy.core.event import Event, EmitterGroup
-
+from vispy.util.ptime import time as precision_time
 
 
 class Timer(object):
@@ -29,6 +29,7 @@ class Timer(object):
         
         self._interval = interval
         self._running = False
+        self._last_emit_time = None
         self.iter_count = 0
         self.max_iterations = iterations
         if connect is not None:
@@ -77,6 +78,7 @@ class Timer(object):
             self.max_iterations = iterations
         self._backend._vispy_start(self.interval)
         self._running = True
+        self._last_emit_time = None
         self.events.start(type='timer_start')
         
         
@@ -110,7 +112,16 @@ class Timer(object):
         if self.max_iterations >= 0 and self.iter_count >= self.max_iterations:
             self.stop()
             return
-        self.events.timeout(type='timer_timeout', iteration=self.iter_count)
+        
+        # compute dt since last event
+        now = precision_time()
+        if self._last_emit_time is None:
+            dt = None
+        else:
+            dt = now - self._last_emit_time
+        self._last_emit_time = now
+        
+        self.events.timeout(type='timer_timeout', iteration=self.iter_count, dt=dt)
         self.iter_count += 1
     
     def connect(self, callback):
