@@ -8,8 +8,8 @@ Release notes
 In this release we focussed on improving and finalizing the object
 oriented OpenGL interface ``vispy.gloo``. Some major (backward
 incompatible) changes were done. However, from this release we consider
-the ``vispy.gloo`` package stable and we intend to keep it backward
-compatible in future releases.
+the ``vispy.gloo`` package relatively stable and we try to minimize
+backward incompatibilities.
 
 Changes in more detail:
 

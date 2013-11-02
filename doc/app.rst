@@ -8,6 +8,8 @@ The app module
 
 .. autofunction:: vispy.app.use
 
+.. autofunction:: vispy.app.create
+
 .. autofunction:: vispy.app.run
 
 .. autofunction:: vispy.app.quit
