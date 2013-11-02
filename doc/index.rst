@@ -19,12 +19,12 @@ Contents:
 .. toctree::
    :maxdepth: 2
    
-   vispy.gloo.gl - low level GL API <gl>
    vispy.gloo - object oriented GL API <gloo>
    visuals <visuals>
    event
    app
    examples
+   releasenotes
 
 
 Indices and tables

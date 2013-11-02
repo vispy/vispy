@@ -2,8 +2,6 @@
 The object oriented OpenGL API (gloo)
 =====================================
 
-(name of the module is subject to change)
-
 .. automodule:: vispy.gloo
 
 
@@ -73,3 +71,13 @@ Classes related to FBO
 .. autoclass:: vispy.gloo.RenderBuffer
     :members:
 
+
+vispy.gloo.gl - low level GL API
+================================
+
+Vispy also exposes a (low level) functional GL API. At this point gloo
+is not yet fully independenat since it does not cover functions like
+glClear().
+
+ `vispy.gloo.gl docs <gl.html>`_
+ 
