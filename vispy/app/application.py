@@ -65,6 +65,11 @@ class Application(object):
         """
         return self._backend._vispy_process_events()
     
+    def create(self):
+        """ Create the native application.
+        """
+        self.native
+    
     def run(self):
         """ Enter the native GUI event loop. 
         """

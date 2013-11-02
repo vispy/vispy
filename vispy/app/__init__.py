@@ -39,6 +39,12 @@ def use(backend_name=None):
     return default_app.use(backend_name)
 
 
+def create():
+    """ Create the native application.
+    """
+    return default_app.create()
+
+
 def run():
     """ Enter the native GUI event loop. 
     """

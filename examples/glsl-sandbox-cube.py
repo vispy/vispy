@@ -178,7 +178,7 @@ class MainWindow(QtGui.QWidget):
     
 
 if __name__ == '__main__':
-    app.default_app.native  # Force the native application object to be created
+    app.create()
     m = MainWindow()
     m.show()
     app.run()
