@@ -74,17 +74,16 @@ setup(
     provides = ['vispy'],
     install_requires = ['numpy', 'pyOpenGl'],
     
-    packages = ['vispy', 
+    packages = ['vispy',
+                'vispy.util', 
                 'vispy.app',
                 'vispy.app.backends',
-                'vispy.core',
                 'vispy.gloo', 
                 'vispy.gloo.gl',
-                'vispy.util', 
                 'vispy.io',
                ],
     package_dir = {'vispy': 'vispy'},
-    package_data = {'vispy': ['resources/*']},
+    package_data = {'vispy': ['data/*']},
     zip_safe = False,
     
     classifiers=[

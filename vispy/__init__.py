@@ -29,8 +29,8 @@ from __future__ import print_function, division, absolute_import
 __version__ = '0.2.0dev'
 
 
-from vispy.core.event import EmitterGroup, EventEmitter, Event
-from vispy.core import keys
+from vispy.util.event import EmitterGroup, EventEmitter, Event
+from vispy.util import keys
 
 
 class ConfigEvent(Event):

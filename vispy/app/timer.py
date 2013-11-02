@@ -5,7 +5,7 @@
 from __future__ import print_function, division, absolute_import
 
 import vispy
-from vispy.core.event import Event, EmitterGroup
+from vispy.util.event import Event, EmitterGroup
 from vispy.util.ptime import time as precision_time
 
 

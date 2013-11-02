@@ -10,7 +10,7 @@ part of the future higher lever visuals layer.
 import numpy as np
 from vispy import app, gloo
 from vispy.gloo import gl
-from vispy.core.event import EmitterGroup
+from vispy.util.event import EmitterGroup
 
 
 VERT_SHADER = """

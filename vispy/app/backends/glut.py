@@ -8,7 +8,7 @@ vispy backend for glut.
 
 from __future__ import print_function, division, absolute_import
 
-from vispy.core.event import Event
+from vispy.util.event import Event
 from vispy import app
 from vispy import keys
 import vispy.util.ptime as ptime

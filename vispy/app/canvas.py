@@ -4,7 +4,7 @@
 
 from __future__ import print_function, division, absolute_import
 
-from vispy.core.event import EmitterGroup, Event
+from vispy.util.event import EmitterGroup, Event
 import vispy
 import numpy as np
 

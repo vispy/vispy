@@ -9,7 +9,7 @@ vispy backend for pyglet.
 # absolute import is important here, since this module is called pyglet :)
 from __future__ import print_function, division, absolute_import
 
-from vispy.core.event import Event
+from vispy.util.event import Event
 from vispy import app
 from vispy import keys
 import vispy
