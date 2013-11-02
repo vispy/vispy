@@ -40,6 +40,7 @@ class Canvas(app.Canvas):
 
     def on_mouse_release(self, event):
         print('on_mouse_release')
+        print(event.trail())
 
     def on_mouse_move(self, event):
         print('on_mouse_move (%dx%d)' % event.pos)

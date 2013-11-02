@@ -350,7 +350,7 @@ class CanvasBackend(object):
         # Most backends would not need to implement this
         return self
 
-    def _deliver_mouse_press(self, **kwds):
+    def _vispy_mouse_press(self, **kwds):
         # default method for delivering mouse press events to the canvas
         kwds.update(self._vispy_mouse_data)
         ev = self._vispy_canvas.events.mouse_press(**kwds)
@@ -361,7 +361,7 @@ class CanvasBackend(object):
         self._vispy_mouse_data['last_event'] = ev
         return ev
     
-    def _deliver_mouse_move(self, **kwds):
+    def _vispy_mouse_move(self, **kwds):
         # default method for delivering mouse move events to the canvas
         kwds.update(self._vispy_mouse_data)
         
@@ -377,7 +377,7 @@ class CanvasBackend(object):
         self._vispy_mouse_data['last_event'] = ev
         return ev
     
-    def _deliver_mouse_release(self, **kwds):
+    def _vispy_mouse_release(self, **kwds):
         # default method for delivering mouse release events to the canvas
         kwds.update(self._vispy_mouse_data)
         ev = self._vispy_canvas.events.mouse_release(**kwds)

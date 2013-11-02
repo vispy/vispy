@@ -209,7 +209,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     def on_mouse_press(self, x, y, button, modifiers=None):
         if self._vispy_canvas is None:
             return
-        ev2 = self._vispy_canvas.events.mouse_press(
+        ev2 = self._vispy_mouse_press(
             pos=(x, self.get_size()[1] - y),
             button=BUTTONMAP.get(button, 0),
             modifiers=self._modifiers(),
@@ -221,7 +221,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         if self._vispy_canvas is None:
             return
         if True:#(button & self._buttons_accepted) > 0:
-            self._vispy_canvas.events.mouse_release(
+            self._vispy_mouse_release(
                 pos=(x, self.get_size()[1] - y),
                 button=BUTTONMAP.get(button, 0),
                 modifiers=self._modifiers(),
@@ -231,7 +231,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     def on_mouse_motion(self, x, y, dx, dy):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.mouse_move(
+        self._vispy_mouse_move(
             pos=(x, self.get_size()[1] - y),
             modifiers=self._modifiers(),
             )

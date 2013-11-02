@@ -267,9 +267,9 @@ class CanvasBackend(app.CanvasBackend):
             # Mouse click event
             button = BUTTONMAP.get(button, 0)
             if action == 'press':
-                self._vispy_canvas.events.mouse_press(pos=(x,y), button=button, modifiers=mod)
+                self._vispy_mouse_press(pos=(x,y), button=button, modifiers=mod)
             else:
-                self._vispy_canvas.events.mouse_release(pos=(x,y), button=button, modifiers=mod)
+                self._vispy_mouse_release(pos=(x,y), button=button, modifiers=mod)
         
         elif button in (3, 4):
             # Wheel event
@@ -283,7 +283,7 @@ class CanvasBackend(app.CanvasBackend):
     def on_mouse_motion(self, x, y):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.mouse_move(
+        self._vispy_mouse_move(
             pos=(x, y),
             modifiers=self._modifiers(False),
             )

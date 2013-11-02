@@ -203,7 +203,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._deliver_mouse_press(
+        self._vispy_mouse_press(
             native=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=BUTTONMAP.get(ev.button(), 0),
@@ -213,7 +213,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     def mouseReleaseEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._deliver_mouse_release(
+        self._vispy_mouse_release(
             native=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             button=BUTTONMAP[ev.button()],
@@ -223,7 +223,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     def mouseMoveEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._deliver_mouse_move(
+        self._vispy_mouse_move(
             native=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             modifiers=self._modifiers(ev),
