@@ -6,6 +6,7 @@ from __future__ import print_function, division, absolute_import
 
 from vispy.core.event import EmitterGroup, Event
 import vispy
+import numpy as np
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -294,6 +295,13 @@ class CanvasBackend(object):
         # Initially the backend starts out with no canvas.
         # Canvas takes care of setting this for us.
         self._vispy_canvas = None
+        
+        # Data used in the construction of new mouse events
+        self._vispy_mouse_data = {
+            'buttons': [],
+            'press_event': None,
+            'last_event': None,
+            }
     
     def _vispy_set_current(self):  
         # todo: this is currently not used internally
@@ -342,7 +350,45 @@ class CanvasBackend(object):
         # Most backends would not need to implement this
         return self
 
-
+    def _deliver_mouse_press(self, **kwds):
+        # default method for delivering mouse press events to the canvas
+        kwds.update(self._vispy_mouse_data)
+        ev = self._vispy_canvas.events.mouse_press(**kwds)
+        if self._vispy_mouse_data['press_event'] is None:
+            self._vispy_mouse_data['press_event'] = ev
+            
+        self._vispy_mouse_data['buttons'].append(ev.button)
+        self._vispy_mouse_data['last_event'] = ev
+        return ev
+    
+    def _deliver_mouse_move(self, **kwds):
+        # default method for delivering mouse move events to the canvas
+        kwds.update(self._vispy_mouse_data)
+        
+        # Break the chain of prior mouse events if no buttons are pressed
+        # (this means that during a mouse drag, we have full access to every
+        # move event generated since the drag started)
+        if self._vispy_mouse_data['press_event'] is None:
+            last_event = self._vispy_mouse_data['last_event']
+            if last_event is not None:
+                last_event._forget_last_event()
+        
+        ev = self._vispy_canvas.events.mouse_move(**kwds)
+        self._vispy_mouse_data['last_event'] = ev
+        return ev
+    
+    def _deliver_mouse_release(self, **kwds):
+        # default method for delivering mouse release events to the canvas
+        kwds.update(self._vispy_mouse_data)
+        ev = self._vispy_canvas.events.mouse_release(**kwds)
+        if ev.button == self._vispy_mouse_data['press_event'].button:
+            self._vispy_mouse_data['press_event'] = None
+            
+        self._vispy_mouse_data['buttons'].remove(ev.button)
+        self._vispy_mouse_data['last_event'] = ev
+        return ev
+    
+    
 
 ## Event subclasses specific to the Canvas
 
@@ -350,7 +396,7 @@ class CanvasBackend(object):
 class MouseEvent(Event):
     """ Class describing mouse events.
     
-     Note that each event object has an attribute for each of the input
+    Note that each event object has an attribute for each of the input
     arguments listed below.
     
     Input arguments
@@ -360,14 +406,23 @@ class MouseEvent(Event):
     pos : (int, int)
         The position of the mouse (in screen coordinates).
     button : int
-        The button that this event applies to (can be None).
+        The button that generated this event (can be None).
         Left=1, right=2, middle=3.
+    buttons : [int, ...]
+        The list of buttons depressed during this event. 
     modifiers : tuple of Key instances
         Tuple that specifies which modifier keys were pressed down at the
         time of the event (shift, control, alt, meta).
     delta : (float, float)
         The amount of scrolling in horizontal and vertical direction. One 
         "tick" corresponds to a delta of 1.0.
+    press_event : MouseEvent 
+        The press event that was generated at the start of the current drag,
+        if any.
+    last_event : MouseEvent
+        The MouseEvent immediately preceding the current event. During drag
+        operations, all generated events retain their last_event properties,
+        allowing the entire drag to be reconstructed. 
     native : object (optional)
        The native GUI event object
     **kwds : keyword arguments
@@ -375,12 +430,17 @@ class MouseEvent(Event):
     
     """
     
-    def __init__(self, type, pos=None, button=None, modifiers=None, delta=None, **kwds):
+    def __init__(self, type, pos=None, button=None, buttons=None, 
+                 modifiers=None, delta=None, last_event=None, press_event=None,
+                 **kwds):
         Event.__init__(self, type, **kwds)
         self._pos = (0,0) if (pos is None) else (pos[0], pos[1])
         self._button = int(button) if (button is not None) else 0
+        self._buttons = [] if (buttons is None) else buttons
         self._modifiers = tuple( modifiers or () )
         self._delta = (0.0,0.0) if (delta is None) else (delta[0], delta[1])
+        self._last_event = last_event
+        self._press_event = press_event
     
     @property
     def pos(self):
@@ -391,6 +451,10 @@ class MouseEvent(Event):
         return self._button
     
     @property
+    def buttons(self):
+        return self._buttons
+    
+    @property
     def modifiers(self):
         return self._modifiers
     
@@ -398,6 +462,59 @@ class MouseEvent(Event):
     def delta(self):
         return self._delta
 
+    @property
+    def press_event(self):
+        return self._press_event
+
+    @property
+    def last_event(self):
+        return self._last_event
+
+    def _forget_last_event(self):
+        # Needed to break otherwise endless last-event chains
+        self._last_event = None
+
+    # todo: should this be a property?
+    def dragging(self):
+        """ Return True if this event is part of a mouse drag operation.
+        """
+        return self.press_event is not None
+
+    def drag_events(self):
+        """ Return a list of all mouse events in the current drag operation.
+        
+        Returns None if there is no current drag operation.
+        """
+        if not self.dragging():
+            return None
+        
+        event = self
+        events = []
+        while True:
+            if event is None:
+                break
+            events.append(event)
+            event = event.last_event
+            
+        return events[::-1]
+
+    def trail(self):
+        """ Return an (N, 2) array of mouse coordinates for every event in the 
+        current mouse drag operation. 
+        
+        Returns None if there is no current drag operation.
+        """
+        events = self.drag_events()
+        if events is None:
+            return None
+        
+        trail = np.empty((len(events), 2), dtype=int)
+        for i, ev in enumerate(events):
+            trail[i] = ev.pos
+            
+        return trail
+        
+        
 
 class KeyEvent(Event):
     """ Class describing mouse events.
