@@ -118,10 +118,29 @@ class Event(object):
         self._blocked = bool(val)
     
     def __repr__(self):
-        attrs = " ".join(["%s=%s" % (name, getattr(self, name)) for name in dir(self) if not name.startswith('_')])
-        return "<%s %s>" % (self.__class__.__name__, attrs)
+        # Try to generate a nice string representation of the event that 
+        # includes the interesting properties.
+        global _event_repr_depth # need to keep track of depth because it is
+                                 # very difficult to avoid excessive recursion.
+        _event_repr_depth += 1
+        try:
+            if _event_repr_depth > 2:
+                return "<...>"
+            attrs = []
+            for name in dir(self):
+                if name.startswith('_'):
+                    continue
+                # select only properties
+                if not hasattr(type(self), name) or not isinstance(getattr(type(self), name), property):
+                    continue
+                attr = getattr(self, name)
+                
+                attrs.append("%s=%s" % (name, attr))
+            return "<%s %s>" % (self.__class__.__name__, " ".join(attrs))
+        finally:
+            _event_repr_depth -= 1
 
-
+_event_repr_depth = 0
 
 class EventEmitter(object):
     """Encapsulates a list of event callbacks. 

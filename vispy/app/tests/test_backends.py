@@ -39,7 +39,8 @@ class BaseTestmodule:
     def test_methods(self):
         """ Test that all _vispy_x methods are there.
         """
-        exceptions = '_vispy_get_native_canvas', '_vispy_get_native_timer', '_vispy_get_native_app'
+        exceptions = ('_vispy_get_native_canvas', '_vispy_get_native_timer', '_vispy_get_native_app', 
+                      '_vispy_mouse_move', '_vispy_mouse_press', '_vispy_mouse_release')
         
         Klass = self._module.CanvasBackend
         KlassRef = vispy.app.canvas.CanvasBackend
@@ -47,10 +48,11 @@ class BaseTestmodule:
             if not key.startswith('__'):
                 method = getattr(Klass, key)
                 if key not in exceptions:
-                    if hasattr(method, '__module__'): 
-                        assert method.__module__ == self._module.__name__ # Py3k
+                    if hasattr(method, '__module__'):
+                        mod_str = method.__module__ # Py3k
                     else:
-                        assert method.im_func.__module__ == self._module.__name__
+                        mod_str = method.im_func.__module__
+                    assert mod_str == self._module.__name__, "Method %s.%s not defined in %s"%(Klass, key, self._module.__name__)
         
         Klass = self._module.TimerBackend
         KlassRef = vispy.app.timer.TimerBackend
@@ -83,11 +85,13 @@ class BaseTestmodule:
         text = open(fname, 'rb').read().decode('utf-8')
         
         canvas = vispy.app.Canvas(native=None)
-        eventNames = set(canvas.events._emitters.keys())
-        eventNames.discard('stylus'); eventNames.discard('touch') # Leave this for now
+        # Stylus and touch are ignored because they are not yet implemented.
+        # Mouse events are emitted from the CanvasBackend base class.
+        ignore = set(['stylus', 'touch', 'mouse_press', 'mouse_move', 'mouse_release'])
+        eventNames = set(canvas.events._emitters.keys()) - ignore
         
         for name in eventNames:
-            assert 'events.%s'%name in text
+            assert 'events.%s'%name in text, 'events.%s does not appear in %s'%(name, fname)
 
 
 
