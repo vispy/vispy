@@ -342,7 +342,8 @@ class VertexBufferTest(unittest.TestCase):
             buffer = VertexBuffer(dtype)
         
         # VertexBuffer does *not* support these
-        for dtype in (np.uint32, np.int32, np.float64, np.float128):
+        float128 = getattr(np, 'float128', np.float64)  # may not exist
+        for dtype in (np.uint32, np.int32, np.float64, float128):
             with self.assertRaises(TypeError):
                 buffer = VertexBuffer(dtype)
 
