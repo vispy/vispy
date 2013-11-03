@@ -474,9 +474,9 @@ class MouseEvent(Event):
         # Needed to break otherwise endless last-event chains
         self._last_event = None
 
-    # todo: should this be a property?
-    def dragging(self):
-        """ Return True if this event is part of a mouse drag operation.
+    @property
+    def is_dragging(self):
+        """ Indicates whether this event is part of a mouse drag operation.
         """
         return self.press_event is not None
 
@@ -485,7 +485,7 @@ class MouseEvent(Event):
         
         Returns None if there is no current drag operation.
         """
-        if not self.dragging():
+        if not self.is_dragging:
             return None
         
         event = self
