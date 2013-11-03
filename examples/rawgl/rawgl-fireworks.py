@@ -17,7 +17,7 @@ import time
 import numpy as np
 import ctypes
 
-from vispy import app, io
+from vispy import app, dataio
 from vispy.gloo import gl
 
 

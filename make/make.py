@@ -194,7 +194,7 @@ class Maker:
     def _images_screenshots(self):
         # Prepare
         import imp
-        from vispy.io import imsave, _screenshot
+        from vispy.util.dataio import imsave, _screenshot
         examples_dir = os.path.join(ROOT_DIR, 'examples')
         gallery_dir = os.path.join(IMAGES_DIR, 'gallery')
         
@@ -257,7 +257,7 @@ class Maker:
     
     
     def _images_thumbnails(self):
-        from vispy.io import imsave, imread
+        from vispy.util.dataio import imsave, imread
         from skimage.transform import resize
         import numpy as np
         gallery_dir = os.path.join(IMAGES_DIR, 'gallery')

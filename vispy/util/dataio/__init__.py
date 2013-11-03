@@ -10,7 +10,7 @@ import bz2
 import numpy as np
 
 THISDIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(os.path.dirname(THISDIR), 'data')
+DATA_DIR = os.path.join(os.path.dirname(THISDIR), '../data')
 
 
 # So we can demo image data without needing an image reading library

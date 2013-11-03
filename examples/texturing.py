@@ -8,14 +8,14 @@ Three textures are created and combined in the fragment shader.
 """
 
 from vispy.gloo import Program, Texture2D, VertexBuffer, ElementBuffer
-from vispy import app, io
+from vispy import app, dataio
 from vispy.gloo import gl
 
 
 import numpy as np
 
 # Texture 1
-im1 = io.crate()
+im1 = dataio.crate()
 
 # Texture with bumbs (to muliply with im1)
 im2 = np.ones((20,20), 'float32')

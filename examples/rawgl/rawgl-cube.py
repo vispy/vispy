@@ -11,7 +11,7 @@ The use of vertex and element buffer can be turned on or off.
 
 import numpy as np
 from vispy.util.transforms import perspective, translate, rotate
-from vispy import app, io
+from vispy import app, dataio
 from vispy.gloo import gl
 
 
@@ -46,7 +46,7 @@ void main()
 
 
 # Read cube data (replace 'cube.obj' with 'teapot.obj'
-positions, faces, normals, texcoords = io.read_mesh('cube.obj')
+positions, faces, normals, texcoords = dataio.read_mesh('cube.obj')
 colors = np.random.uniform(0,1,positions.shape).astype('float32')
 
 
@@ -98,7 +98,7 @@ class Canvas(app.Canvas):
             raise RuntimeError('Program did not link.')
         
         # Create texture
-        im = io.crate()
+        im = dataio.crate()
         self._tex_handle = gl.glGenTextures(1)
         gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
         gl.glBindTexture(gl.GL_TEXTURE_2D, self._tex_handle)

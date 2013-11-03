@@ -6,7 +6,7 @@ or PyQt4.
 """
 
 import numpy as np
-from vispy import app, gloo, io
+from vispy import app, gloo, dataio
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import gl
 
@@ -51,7 +51,7 @@ void main()
 
 
 # Read cube data
-positions, faces, normals, texcoords = io.read_mesh('cube.obj')
+positions, faces, normals, texcoords = dataio.read_mesh('cube.obj')
 colors = np.random.uniform(0,1,positions.shape).astype('float32')
 
 faces_buffer = gloo.ElementBuffer(faces.astype(np.uint16))
@@ -69,7 +69,7 @@ class Canvas(app.Canvas):
         self.program['a_position'] = gloo.VertexBuffer(positions)
         self.program['a_texcoord'] = gloo.VertexBuffer(texcoords)
         
-        self.program['u_texture'] = gloo.Texture2D(io.crate())
+        self.program['u_texture'] = gloo.Texture2D(dataio.crate())
         
         # Handle transformations
         self.init_transforms()
