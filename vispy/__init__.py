@@ -8,16 +8,18 @@ of code between visualization projects based on OpenGL. It does this
 by providing powerful interfaces to OpenGL, at different levels of
 abstraction and generality.
 
-These layers are:
-  * vispy.gloo.gl: raw OpenGL ES 2.0 API
+Vispy consists of the following modules:
   * vispy.gloo: Object oriented GL API
+  * vispy.gloo.gl: Low level OpenGL API
+  * vispy.app: for creating windows, timers and mainloops for various backends
+  * vispy.util: various utilities
+  * vispy.utils.dataio: read and write data
   * vispy.visuals: Higher level visualization objects (work in progress)
   * ... more to come
 
-Further, vispy comes with a powerful event system and a small
-application framework that works on multiple backends. This allows easy
-creation of figures, and enables integrating visualizations in a GUI
-application.
+Vispy comes with a powerful event system and a simple application
+framework that works on multiple backends. This allows easy creation
+of figures, and enables integrating visualizations in a GUI application.
 
 For more information see http://vispy.org.
 
@@ -27,7 +29,7 @@ from __future__ import print_function, division, absolute_import
 
 # Definition of the version number
 __version__ = '0.2.1'
-
+ 
 
 from vispy.util.event import EmitterGroup, EventEmitter, Event
 from vispy.util import keys, dataio
