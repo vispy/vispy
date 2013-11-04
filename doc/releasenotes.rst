@@ -2,8 +2,12 @@
 Release notes
 =============
 
-**Vispy 0.2**
+**Vispy 0.2.1**
 
+Small fix in the setup script. The buf prevented pip from working.
+
+
+**Vispy 0.2**
 
 In this release we focussed on improving and finalizing the object
 oriented OpenGL interface ``vispy.gloo``. Some major (backward
@@ -24,7 +28,6 @@ Changes in more detail:
 
 
 **Vispy 0.1.0**
-
 
 First release. We have an initial version of the object oriented interface
 to OpenGL, called `vispy.oogl`.
