@@ -81,7 +81,6 @@ setup(
                 'vispy.app.backends',
                 'vispy.gloo', 
                 'vispy.gloo.gl',
-                'vispy.io',
                ],
     package_dir = {'vispy': 'vispy'},
     package_data = {'vispy': ['data/*']},
