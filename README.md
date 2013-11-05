@@ -12,6 +12,17 @@ and allow more sharing of code between visualization projects.
 visualizations, using a high level interface (also for big data).
 
 
+### Current status
+
+Vispy can now be used to interface with OpenGL in a very Pythonic manner, 
+using the ``vispy.gloo`` subpackage. As such, Vispy is not yet suitable
+for the general scientist; you need knowledge of OpenGL to use it.
+
+We are currently working on the higher level layers, which in the future
+will make it possible to make awesome visualization with just a few lines
+of code. Stay tuned!
+
+
 ### Installation
 
 Vispy runs on Python 2.6 and higher, including Python 3. Vispy depends on Numpy and PyOpenGL.
