@@ -5,22 +5,11 @@ Main website: http://vispy.org
 
 ### Description
 
-Vispy is a collaborative project that has two main goals: 
-1) To make it easier to use OpenGL (also in the browser) 
-and allow more sharing of code between visualization projects. 
-2) To create fast, interactive and beautiful (i.e. high quality) 
-visualizations, using a high level interface (also for big data).
+Vispy is an **OpenGL-based interactive visualization library in Python**. Its goal is to make it easy to create beautiful and fast dynamic visualizations. In particular, it will eventually ship with a **scientific plotting** library that will scale to tens of millions of points thanks to the graphics card's hardware acceleration.
 
+**Vispy is currently an alpha-quality software**. Vispy will eventually offer graphical APIs at multiple levels, including a matplotlib-like scientific plotting library. Currently, only the lowest-level API is implemented: it brings an easy-to-use Pythonic object-oriented interface to OpenGL. This layer requires you to have basic knowledge of modern OpenGL (notably the OpenGL shading language, GLSL). For this reason, **Vispy is not yet suitable for the general scientist, but it will be in the future** (in several months at the very least).
 
-### Current status
-
-Vispy can now be used to interface with OpenGL in a very Pythonic manner, 
-using the ``vispy.gloo`` subpackage. As such, Vispy is not yet suitable
-for the general scientist; you need knowledge of OpenGL to use it.
-
-We are currently working on the higher level layers, which in the future
-will make it possible to make awesome visualization with just a few lines
-of code. Stay tuned!
+We are currently working on higher level layers. They will hide most OpenGL concepts and let you create beautiful visualizations in a few lines of code. Stay tuned!
 
 
 ### Installation
