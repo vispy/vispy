@@ -5,11 +5,14 @@ Main website: http://vispy.org
 
 ### Description
 
-Vispy is an **OpenGL-based interactive visualization library in Python**. Its goal is to make it easy to create beautiful and fast dynamic visualizations. In particular, it will eventually ship with a **scientific plotting** library that will scale to tens of millions of points thanks to the graphics card's hardware acceleration.
+Vispy is an OpenGL-based interactive visualization library in Python. Its goal is to make it easy to create beautiful and fast dynamic visualizations. For example, scientific plotting of tens of millions of points, interacting with complex polygonial models, and (dynamic) volume rendering. All thanks to the graphics card’s hardware acceleration.
+Status
 
-**Vispy is currently an alpha-quality software**. Vispy will eventually offer graphical APIs at multiple levels, including a matplotlib-like scientific plotting library. Currently, only the lowest-level API is implemented: it brings an easy-to-use Pythonic object-oriented interface to OpenGL. This layer requires you to have basic knowledge of modern OpenGL (notably the OpenGL shading language, GLSL). For this reason, **Vispy is not yet suitable for the general scientist, but it will be in the future** (in several months at the very least).
+### Status
 
-We are currently working on higher level layers. They will hide most OpenGL concepts and let you create beautiful visualizations in a few lines of code. Stay tuned!
+Vispy will eventually offer graphical APIs at multiple levels, including a matplotlib-like scientific plotting library. Currently, only the lowest-level API is implemented: it brings an easy-to-use Pythonic object-oriented interface to OpenGL. This layer requires you to have basic knowledge of modern OpenGL (notably the OpenGL shading language, GLSL).
+
+For this reason, Vispy is not yet suitable for the general scientist, but it will be in the future (in several months at the very least). We are currently working on higher level layers. They will hide most OpenGL concepts and let you create beautiful visualizations in a few lines of code. Stay tuned!
 
 
 ### Installation
