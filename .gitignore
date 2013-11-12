@@ -1,5 +1,6 @@
 *.pyc
 *.pyo
+*.egg-info/
 doc/_build
 /_website
 /_gh-pages

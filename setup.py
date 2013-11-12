@@ -35,7 +35,7 @@ Announcing:
 import os
 import inspect
 import vispy
-from distutils.core import setup
+from setuptools import setup
 
 
 name = 'vispy'
@@ -57,7 +57,7 @@ setup(
     
     platforms = 'any',
     provides = ['vispy'],
-    install_requires = ['numpy', 'pyOpenGl'],
+    install_requires = ['numpy', 'PyOpenGL'],
     
     packages = ['vispy',
                 'vispy.util', 
