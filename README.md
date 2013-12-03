@@ -44,3 +44,7 @@ You want to help out? Fork our repo and come up with a pull request! Or discuss 
   * Visit our gallery for examples: http://vispy.org/gallery.html
   * View the [wiki](http://github.com/vispy/vispy/wiki) for more information about this project.
 
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/vispy/vispy/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
