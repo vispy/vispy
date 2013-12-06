@@ -14,7 +14,7 @@ Preparations:
 Test installation:
   * clear the build and dist dir (if they exist)
   * python setup.py register -r http://testpypi.python.org/pypi
-  * python setup.py sdist upload -r http://testpypi.python.org/pypi 
+  * python setup.py sdist upload -r http://testpypi.python.org/pypi
   * pip install -i http://testpypi.python.org/pypi
 
 Define the version:
@@ -29,11 +29,14 @@ Generate and upload package (preferably on Windows)
 Announcing:
   * It can be worth waiting a day for eager users to report critical bugs
   * Announce in scipy-user, vispy mailing list, G+
-  
+
 """
 
 import os
-import setuptools  # use setuptools namespace, allows for "develop"
+try:
+    import setuptools  # use setuptools namespace, allows for "develop"
+except ImportError:
+    pass  # it's not essential for installation
 from distutils.core import setup
 
 name = 'vispy'
@@ -64,29 +67,29 @@ setup(
     author = 'Vispy contributers',
     author_email = 'vispy@googlegroups.com',
     license = '(new) BSD',
-    
+
     url = 'http://vispy.org',
-    download_url = 'https://pypi.python.org/pypi/vispy',    
+    download_url = 'https://pypi.python.org/pypi/vispy',
     keywords = "visualization OpenGl ES medical imaging 3D plotting numpy bigdata",
     description = description,
     long_description = __doc__,
-    
+
     platforms = 'any',
     provides = ['vispy'],
-    install_requires = ['numpy', 'pyOpenGl'],
-    
+    install_requires = ['numpy', 'PyOpenGl'],
+
     packages = ['vispy',
-                'vispy.util', 
-                'vispy.util.dataio', 
+                'vispy.util',
+                'vispy.util.dataio',
                 'vispy.app',
                 'vispy.app.backends',
-                'vispy.gloo', 
+                'vispy.gloo',
                 'vispy.gloo.gl',
                ],
     package_dir = {'vispy': 'vispy'},
     package_data = {'vispy': ['data/*']},
     zip_safe = False,
-    
+
     classifiers=[
           'Development Status :: 3 - Alpha',
           'Intended Audience :: Science/Research',
