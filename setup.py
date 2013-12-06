@@ -33,33 +33,18 @@ Announcing:
 """
 
 import os
-from distutils.core import setup
+import inspect
+import vispy
+from setuptools import setup
+
 
 name = 'vispy'
 description = 'Interactive visualization in Python'
 
 
-# Get version and docstring
-__version__ = None
-__doc__ = ''
-docStatus = 0 # Not started, in progress, done
-initFile = os.path.join(os.path.dirname(__file__), 'vispy', '__init__.py')
-for line in open(initFile).readlines():
-    if (line.startswith('__version__')):
-        exec(line.strip())
-    elif line.startswith('"""'):
-        if docStatus == 0:
-            docStatus = 1
-            line = line.lstrip('"')
-        elif docStatus == 1:
-            docStatus = 2
-    if docStatus == 1:
-        __doc__ += line
-
-
 setup(
     name = name,
-    version = __version__,
+    version = vispy.__version__,
     author = 'Vispy contributers',
     author_email = 'vispy@googlegroups.com',
     license = '(new) BSD',
@@ -68,11 +53,11 @@ setup(
     download_url = 'https://pypi.python.org/pypi/vispy',    
     keywords = "visualization OpenGl ES medical imaging 3D plotting numpy bigdata",
     description = description,
-    long_description = __doc__,
+    long_description = inspect.getdoc(vispy),
     
     platforms = 'any',
     provides = ['vispy'],
-    install_requires = ['numpy', 'pyOpenGl'],
+    install_requires = ['numpy', 'PyOpenGL'],
     
     packages = ['vispy',
                 'vispy.util', 
