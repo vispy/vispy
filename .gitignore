@@ -7,3 +7,5 @@ doc/_build
 build
 dist
 MANIFEST
+.coverage
+vispy.egg-info

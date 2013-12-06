@@ -33,6 +33,7 @@ Announcing:
 """
 
 import os
+import setuptools  # use setuptools namespace, allows for "develop"
 from distutils.core import setup
 
 name = 'vispy'
