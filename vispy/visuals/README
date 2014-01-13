@@ -1,4 +1,0 @@
-These are the simplest graphical components, all subclasses of primitives.base. 
-Each defines its own code for drawing to OpenGL, SVG, EPS, etc.
-The compound graphical components are usually made by subclassing or combining primitives, although 
-they have all the same low-level capabilities that primitives have.
