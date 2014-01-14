@@ -1,5 +1,6 @@
 *.pyc
 *.pyo
+*.DS_Store
 doc/_build
 /_website
 /_gh-pages

@@ -3,28 +3,31 @@
 
 # This is a strange test: vispy does not need designer or uic stuff to run!
 
+import numpy as np
+import OpenGL.GL as gl
+import os
 
+from vispy.app import Canvas
+
+test_qt = True
 try:
     from PyQt4 import QtCore, QtGui, QtOpenGL, uic
     test_uic = True
 except ImportError:
-    from PySide import QtCore, QtGui, QtOpenGL
+    try:
+        from PySide import QtCore, QtGui, QtOpenGL
+    except ImportError:
+        test_qt = False
     test_uic = False
 
+requires_qt = np.testing.dec.skipif(not test_qt, 'Requires QT')
+runs_uic = np.testing.dec.skipif(not test_uic, 'Not testing UIC')
 
-import OpenGL.GL as gl
-from vispy.app import Canvas
-import os
-
-
-app = QtGui.QApplication([])
-
+@requires_qt
+@runs_uic
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
-    
-    if not test_uic:
-        return
-    
+    app = QtGui.QApplication([])
     path = os.path.dirname(__file__)
     WindowTemplate, TemplateBaseClass = uic.loadUiType(os.path.join(path, 'qt-designer.ui'))
     
@@ -50,4 +53,5 @@ def test_qt_designer():
 
 
 if __name__ == '__main__':
-    test_qt_designer()
+    if test_qt and test_uic:
+        test_qt_designer()
