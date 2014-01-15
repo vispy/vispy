@@ -2,6 +2,11 @@
 
 Main website: http://vispy.org
 
+<div>
+<a href='https://travis-ci.org/vispy/vispy'><img src='https://travis-ci.org/vispy/vispy.png?branch=master' alt='Build Status' /></a> 
+<a href='https://coveralls.io/r/vispy/vispy?branch=master'><img src='https://coveralls.io/repos/vispy/vispy/badge.png?branch=master' alt='Coverage Status' /></a> 
+<a href='https://bitdeli.com/free'><img src='https://d2weczhvl823v0.cloudfront.net/vispy/vispy/trend.png' alt='Bitdeli Badge' /></a> 
+</div>
 
 ### Description
 
@@ -43,8 +48,4 @@ You want to help out? Fork our repo and come up with a pull request! Or discuss 
   * API documentation is at http://vispy.readthedocs.org
   * Visit our gallery for examples: http://vispy.org/gallery.html
   * View the [wiki](http://github.com/vispy/vispy/wiki) for more information about this project.
-
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/vispy/vispy/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
