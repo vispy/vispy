@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
-# VisPy - Copyright (c) 2013, Vispy Development Team
-# All rights reserved.
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import unittest
 from vispy.gloo import gl

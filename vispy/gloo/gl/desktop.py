@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013, Vispy Development Team.
+# Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """ vispy.gloo.gl.desktop: namespace for OpenGL ES 2.0 API based on the
