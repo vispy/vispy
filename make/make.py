@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013, Vispy Development Team.
+# Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for mo
 
 """
@@ -14,6 +14,7 @@ from __future__ import print_function, division
 
 import sys
 import os
+import time
 import shutil
 import subprocess
 import re
@@ -273,7 +274,46 @@ class Maker:
             imsave(filename2, im)
             print('Created thumbnail %s' % fname)
 
-
+    
+    def copyright(self, arg):
+        """ Update all copyright notices to the current year.
+        """
+        # Initialize
+        TEMPLATE = "# Copyright (c) %i, Vispy Development Team."
+        CURYEAR = int(time.strftime('%Y'))
+        OLDTEXT = TEMPLATE % (CURYEAR-1)
+        NEWTEXT = TEMPLATE % CURYEAR
+        # Initialize counts
+        count_ok, count_replaced = 0, 0
+        
+        # Processing the whole root directory
+        for dirpath, dirnames, filenames in os.walk(ROOT_DIR):
+            # Check if we should skip this directory
+            reldirpath = os.path.relpath(dirpath, ROOT_DIR)
+            if reldirpath[0] in '._' or reldirpath.endswith('__pycache__'):
+                continue
+            if os.path.split(reldirpath)[0] in ('build', 'dist'):
+                continue
+            # Process files
+            for fname in filenames:
+                if not fname.endswith('.py'):
+                    continue
+                # Open and check
+                filename = os.path.join(dirpath, fname)
+                text = open(filename, 'rt').read()
+                if NEWTEXT in text:
+                    count_ok += 1
+                elif OLDTEXT in text:
+                    text = text.replace(OLDTEXT, REPLACE)
+                    open(filename, 'wt').write(text)
+                    print('  Update copyright year in %s/%s' % (reldirpath, fname))
+                    count_replaced += 1
+                elif 'copyright' in text[:200].lower():
+                    print('  Unknown copyright mentioned in %s/%s' % (reldirpath, fname))
+        # Report
+        print('Replaced %i copyright statements' % count_replaced)
+        print('Found %i copyright statements up to date' % count_ok)
+            
 
 ## Functions used by the maker
 
