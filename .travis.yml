@@ -10,6 +10,7 @@ env:
     #            nitime
     # DEPS=minimal: don't build optional dependencies; tests that require those
     #               dependencies are supposed to be skipped
+    - PYTHON=2.6 DEPS=full
     - PYTHON=2.7 DEPS=full
     - PYTHON=3.3 DEPS=full
     - PYTHON=2.7 DEPS=minimal
@@ -23,12 +24,17 @@ before_install:
     - conda update --yes conda
 
 install:
-    - conda create -n testenv --yes pip python=$PYTHON
+    - conda create -n testenv --yes --quiet pip python=$PYTHON
     - source activate testenv
-    - conda install --yes numpy nose
-    - pip install coveralls nose-timer PyOpenGL
+    - conda install --yes --quiet numpy nose
+    - pip install -q coveralls nose-timer PyOpenGL
+    # Use Pyglet alpha to get 3.3 support
     - if [ "${DEPS}" == "full" ]; then
-        conda install --yes qt;
+        if [ "${PYTHON}" == "3.3" ]; then
+          pip install -q http://pyglet.googlecode.com/archive/tip.zip;
+          conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo;
+        fi;
+        pip install -q pyglet Pillow;
       fi;
     - python setup.py build
     - python setup.py install
@@ -56,8 +62,8 @@ script:
 
 after_success:
     # Need to run from source dir to exectue "git" commands
-    # Only do "2.7" "full" here, since that is our most complete testing condition
-    - if [ "${PYTHON}" == "2.7" ] && [ "${DEPS}" == "full" ]; then
+    # Only do "3.3" "full" here, since that is our most complete testing condition
+    - if [ "${PYTHON}" == "3.3" ] && [ "${DEPS}" == "full" ]; then
         echo "Running coveralls";
         cd ${SRC_DIR};
         coveralls;

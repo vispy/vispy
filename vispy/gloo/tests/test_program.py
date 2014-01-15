@@ -62,7 +62,7 @@ class ProgramTest(unittest.TestCase):
         program = Program(vert,frag)
         assert program.attributes[0].name == 'A'
         assert program.attributes[0].gtype == gl.GL_FLOAT
-    
+
     def test_attach(self):
         vert = VertexShader("A")
         frag = FragmentShader("B")
@@ -85,20 +85,20 @@ class ProgramTest(unittest.TestCase):
         frag = FragmentShader("B")
 
         program = Program(vert = vert)
-        with self.assertRaises(RuntimeError):
-            program.activate()
+        self.assertRaises(RuntimeError, program.activate)
 
         program = Program(frag = frag)
-        with self.assertRaises(RuntimeError):
-            program.activate()
+        self.assertRaises(RuntimeError, program.activate)
 
     def test_setitem(self):
         vert = VertexShader("")
         frag = FragmentShader("")
 
         program = Program(vert,frag)
-        with self.assertRaises(NameError):
-            program["A"] = 1
+
+        def modifier(p):
+            p["A"] = 1
+        self.assertRaises(NameError, modifier, program)
 
     def test_set_uniform_vec4(self):
         vert = VertexShader("uniform vec4 color;")
@@ -121,8 +121,9 @@ class ProgramTest(unittest.TestCase):
         assert program._attributes["f"].count == 100
 
         program = Program(vert,frag)
-        with self.assertRaises(ValueError):
-            program["f"] = np.zeros((100,1,1), dtype=np.float32)
+        def modifier(p):
+            p["f"] = np.zeros((100,1,1), dtype=np.float32)
+        self.assertRaises(ValueError, modifier, program)
 
 
 
@@ -131,12 +132,17 @@ class ProgramTest(unittest.TestCase):
         frag = FragmentShader("")
 
         program = Program(vert,frag)
-        with self.assertRaises(ValueError):
-            program["color"] = np.array(3, dtype=np.float32)
+
+        def modifier(p):
+            p["color"] = np.array(3, dtype=np.float32)
+        self.assertRaises(ValueError, modifier, program)
 
         program = Program(vert,frag)
-        with self.assertRaises(ValueError):
-            program["color"] = np.array((100,5), dtype=np.float32)
+
+        def modifier(p):
+            p["color"] = np.array((100,5), dtype=np.float32)
+        self.assertRaises(ValueError, modifier, program)
+
 
         program = Program(vert,frag)
         program["color"] = ClientVertexBuffer(np.zeros((100,4), dtype=np.float32))

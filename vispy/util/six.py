@@ -181,6 +181,7 @@ _moved_attributes = [
                 "tkinter.simpledialog"),
     MovedModule("urllib_robotparser", "robotparser", "urllib.robotparser"),
     MovedModule("winreg", "_winreg"),
+    MovedModule("dummy_thread", "dumm_thread", "_dummy_thread"),
 ]
 for attr in _moved_attributes:
     setattr(_MovedItems, attr.name, attr)

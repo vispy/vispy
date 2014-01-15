@@ -30,20 +30,20 @@ def test_qt_designer():
     app = QtGui.QApplication([])
     path = os.path.dirname(__file__)
     WindowTemplate, TemplateBaseClass = uic.loadUiType(os.path.join(path, 'qt-designer.ui'))
-    
-    class MainWindow(TemplateBaseClass):  
+
+    class MainWindow(TemplateBaseClass):
         def __init__(self):
             TemplateBaseClass.__init__(self)
-            
+
             self.ui = WindowTemplate()
             self.ui.setupUi(self)
             self.show()
-    
+
     global win
     win = MainWindow()
     win.show()
     canvas = Canvas(native=win.ui.canvas)
-    
+
     @canvas.events.paint.connect
     def on_paint(ev):
         gl.glClearColor(0.0, 0.0, 0.0, 0.0)

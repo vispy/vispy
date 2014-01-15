@@ -111,14 +111,11 @@ class Test_QtBackend(BaseTestmodule):
 
 class Test_PygletBackend(BaseTestmodule):
     def __init__(self):
-        if sys.version_info[0] == 3:
+        try:
+            from vispy.app.backends import pyglet
+        except Exception as err:
+            print("Error imporing pyglet:\n%s" % str(err))
             pyglet = None
-        else:
-            try:
-                from vispy.app.backends import pyglet
-            except Exception as err:
-                print("Error imporing pyglet:\n%s" % str(err))
-                pyglet = None
         BaseTestmodule.__init__(self, pyglet)
 
 class Test_GlutBackend(BaseTestmodule):

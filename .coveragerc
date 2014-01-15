@@ -4,3 +4,5 @@ source = vispy
 include = */vispy/*
 omit =
     */setup.py
+    */vispy/util/six.py
+    */vispy/util/_ordereddict.py
