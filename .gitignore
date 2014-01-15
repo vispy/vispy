@@ -1,5 +1,6 @@
 *.pyc
 *.pyo
+*.DS_Store
 doc/_build
 /_website
 /_gh-pages
@@ -7,3 +8,5 @@ doc/_build
 build
 dist
 MANIFEST
+.coverage
+vispy.egg-info

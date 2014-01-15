@@ -1,0 +1,6 @@
+[run]
+branch = True
+source = vispy
+include = */vispy/*
+omit =
+    */setup.py

@@ -1,0 +1,64 @@
+language: python
+
+# Here we use anaconda, since it provides the simplest interface for running
+# different versions of Python
+
+env:
+    # Enable python 2 and python 3 builds
+    # DEPS=full: build optional dependencies: pandas, nitime, statsmodels,
+    #            scikit-learn, patsy, nibabel; in the case of Python 2, also
+    #            nitime
+    # DEPS=minimal: don't build optional dependencies; tests that require those
+    #               dependencies are supposed to be skipped
+    - PYTHON=2.7 DEPS=full
+    - PYTHON=3.3 DEPS=full
+    - PYTHON=2.7 DEPS=minimal
+    # Currently Anaconda doesn't have QtOpenGL, so it's not tested XXX
+
+before_install:
+    - wget http://repo.continuum.io/miniconda/Miniconda-2.2.2-Linux-x86_64.sh -O miniconda.sh
+    - chmod +x miniconda.sh
+    - ./miniconda.sh -b
+    - export PATH=/home/$USER/anaconda/bin:$PATH
+    - conda update --yes conda
+
+install:
+    - conda create -n testenv --yes pip python=$PYTHON
+    - source activate testenv
+    - conda install --yes numpy nose
+    - pip install coveralls nose-timer PyOpenGL
+    - if [ "${DEPS}" == "full" ]; then
+        conda install --yes qt;
+      fi;
+    - python setup.py build
+    - python setup.py install
+    - SRC_DIR=$(pwd)
+    - cd ~
+    - VISPY_DIR=$(python -c 'import vispy;print(vispy.__path__[0])')
+    - ln -s ${SRC_DIR}/.coveragerc ${VISPY_DIR}/../.coveragerc
+    - ln -s ${SRC_DIR}/setup.cfg ${VISPY_DIR}/../setup.cfg
+    # Link coverage to src dir, coveralls should be run from there (needs git calls)
+    - ln -s ${VISPY_DIR}/../.coverage ${SRC_DIR}/.coverage
+
+before_script:
+    # We need to create a (fake) display on Travis, let's use a funny resolution
+    - export DISPLAY=:99.0
+    - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render -noreset
+
+script:
+    - cd ${VISPY_DIR}/../
+    - # Nose-timer has bugs on 3+ as of Jan 2014
+    - if [ "{PYTHON}" == "2.7" ]; then
+        nosetests --with-timer --timer-top-n 20;
+      else
+        nosetests;
+      fi
+
+after_success:
+    # Need to run from source dir to exectue "git" commands
+    # Only do "2.7" "full" here, since that is our most complete testing condition
+    - if [ "${PYTHON}" == "2.7" ] && [ "${DEPS}" == "full" ]; then
+        echo "Running coveralls";
+        cd ${SRC_DIR};
+        coveralls;
+      fi;
