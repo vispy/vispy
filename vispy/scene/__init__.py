@@ -6,8 +6,7 @@
 This package defines the scene graph and associated classes.
 
 
-The Entity
-----------
+**The Entity**
 
 Vispy uses an entity-component system to make up the scene graph; each
 entity is a node in the scene graph, a "thing" inside the scene. Most
@@ -24,8 +23,8 @@ drawing system, for example, is responsible for drawing all the entities
 by using the visual components.
 
 
-Graph properties
-----------------
+**Graph properties**
+
 
 Mathematically speaking, the scene is represented by a weakly connected
 directed graph. Entities are allowed to have multiple parents (although
@@ -33,8 +32,8 @@ we recommend using this feature only in specific situations). Circular
 references (cyclic graphs) should be avoided. 
 
 
-The ViewBox
------------
+**The ViewBox**
+
 
 The ViewBox is a special Entity that represents the root of a scene. A
 scene can in turn contain a ViewBox that contains its own sub-scene.
@@ -63,8 +62,8 @@ be multiple roots in case a certain a (group of) entities have multiple
 parents that lead to different root viewboxes.
 
 
-The Camera
-----------
+**The Camera**
+
 
 The camera is an entity in a scene that defines the viewpoint (by its
 position and orientation) and the projection (e.g. field of view,
