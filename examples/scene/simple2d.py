@@ -34,7 +34,7 @@ pointscontainer = scene.Entity(fig.viewbox)
 points = scene.PointsEntity(pointscontainer, 1000)
 
 # Transform either the camera container or the point container.
-# Their effects should be mutually reversed. 
+# Their effects should be mutually reversed.
 # UNCOMMENT TO ACTIVATE
 #
 #transforms.translate(camcontainer.transform, 50, 50)
@@ -46,18 +46,19 @@ points = scene.PointsEntity(pointscontainer, 1000)
 
 # Count FPS
 t0, frames, t = time.time(), 0, 0
+
+
 @fig.connect
 def on_paint(event):
     global t, t0, frames
     t = time.time()
     frames = frames + 1
-    elapsed = (t-t0) # seconds
+    elapsed = (t - t0)  # seconds
     if elapsed > 2.5:
-        print( "FPS : %.2f (%d frames in %.2f second)"
-               % (frames/elapsed, frames, elapsed))
-        t0, frames = t,0
+        print("FPS : %.2f (%d frames in %.2f second)"
+              % (frames / elapsed, frames, elapsed))
+        t0, frames = t, 0
     event.source.update()
 
 # Run!
 app.run()
-

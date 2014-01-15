@@ -1,4 +1,4 @@
-""" 
+"""
 
 THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 
@@ -27,4 +27,4 @@ _glfunctions = [
     "glTexImage3D",
     "glTexSubImage3D",
     "glUnmapBuffer",
-    ]
+]

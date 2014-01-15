@@ -1,4 +1,4 @@
-# #!/usr/bin/env python
+# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vispy: gallery 2
 
@@ -10,11 +10,11 @@ from vispy import app
 from vispy.gloo import gl
 import numpy as np
 
-# Create vetices 
+# Create vetices
 n = 10000
 v_position = 0.25 * np.random.randn(n, 2).astype(np.float32)
-v_color = np.random.uniform(0,1,(n,3)).astype(np.float32)
-v_size  = np.random.uniform(2,12,(n,1)).astype(np.float32)
+v_color = np.random.uniform(0, 1, (n, 3)).astype(np.float32)
+v_size = np.random.uniform(2, 12, (n, 1)).astype(np.float32)
 
 VERT_SHADER = """
 attribute vec3  a_position;
@@ -46,7 +46,7 @@ varying float v_radius;
 varying float v_linewidth;
 varying float v_antialias;
 void main()
-{    
+{
     float size = 2*(v_radius + v_linewidth + 1.5*v_antialias);
     float t = v_linewidth/2.0-v_antialias;
     float r = length((gl_PointCoord.xy - vec2(0.5,0.5))*size);
@@ -66,31 +66,28 @@ void main()
 """
 
 
-
 class Canvas(app.Canvas):
+
     def __init__(self):
         app.Canvas.__init__(self)
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        
+
         # Set uniform and attribute
-        self.program['a_color']    = gloo.VertexBuffer(v_color)
+        self.program['a_color'] = gloo.VertexBuffer(v_color)
         self.program['a_position'] = gloo.VertexBuffer(v_position)
-        self.program['a_size']     = gloo.VertexBuffer(v_size)
-    
-    
+        self.program['a_size'] = gloo.VertexBuffer(v_size)
+
     def on_initialize(self, event):
-        gl.glClearColor(1,1,1,1)
-        
+        gl.glClearColor(1, 1, 1, 1)
+
         gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        
-    
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
     def on_resize(self, event):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
-    
-    
+
     def on_paint(self, event):
         # Clear
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)

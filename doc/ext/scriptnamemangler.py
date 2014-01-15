@@ -14,6 +14,7 @@ HTMLDIR = os.path.join(THISDIR, '..', '_build', 'html')
 def init():
     pass
 
+
 def clean(app, *args):
     # Rename doctools.js
     shutil.copy(os.path.join(HTMLDIR, '_static', 'doctools.js'),

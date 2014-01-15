@@ -29,43 +29,49 @@ from __future__ import print_function, division, absolute_import
 
 # Definition of the version number
 __version__ = '0.2.1'
- 
+
 
 from vispy.util.event import EmitterGroup, EventEmitter, Event
 from vispy.util import keys, dataio
 
 
 class ConfigEvent(Event):
-    """ Event indicating a configuration change. 
-    
-    This class has a 'changes' attribute which is a dict of all name:value 
+
+    """ Event indicating a configuration change.
+
+    This class has a 'changes' attribute which is a dict of all name:value
     pairs that have changed in the configuration.
     """
+
     def __init__(self, changes):
         Event.__init__(self, type='config_change')
         self.changes = changes
-        
-        
+
+
 class Config(object):
+
     """ Container for global settings used application-wide in vispy.
-    
+
     Events:
     -------
     Config.events.changed - Emits ConfigEvent whenever the configuration changes.
     """
+
     def __init__(self):
         self.events = EmitterGroup(source=self)
-        self.events['changed'] = EventEmitter(event_class=ConfigEvent, source=self)
+        self.events['changed'] = EventEmitter(
+            event_class=ConfigEvent,
+            source=self)
         self._config = {}
-    
+
     def __getitem__(self, item):
         return self._config[item]
-    
+
     def __setitem__(self, item, val):
         self._config[item] = val
         # inform any listeners that a configuration option has changed
-        self.events.changed(changes={item:val})
-        
+        self.events.changed(changes={item: val})
+
     def update(self, **kwds):
         self._config.update(kwds)
         self.events.changed(changes=kwds)
@@ -76,7 +82,7 @@ class Config(object):
 config = Config()
 config.update(
     default_backend='qt',
-    qt_lib= 'any',  # options are 'pyqt', 'pyside', or 'any'
+    qt_lib='any',  # options are 'pyqt', 'pyside', or 'any'
     show_warnings=False,
     gl_debug=False,
 )
@@ -86,7 +92,8 @@ def parse_command_line_arguments():
     """ Transform vispy specific command line args to vispy config.
     Put into a function so that any variables dont leak in the vispy namespace.
     """
-    import getopt, sys
+    import getopt
+    import sys
     # Get command line args for vispy
     argnames = ['vispy-backend', 'vispy-gl-debug']
     try:

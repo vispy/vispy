@@ -66,7 +66,7 @@ float marker(vec2 P, float size);
 // Main
 // ------------------------------------
 void main()
-{    
+{
     float size = v_size +2*(v_linewidth + 1.5*v_antialias);
     float t = v_linewidth/2.0-v_antialias;
 
@@ -108,8 +108,8 @@ float marker(vec2 P, float size)
 arrow = """
 float marker(vec2 P, float size)
 {
-    float r1 = abs(P.x -.50)*size + abs(P.y -.5)*size - v_size/2; 
-    float r2 = abs(P.x -.25)*size + abs(P.y -.5)*size - v_size/2; 
+    float r1 = abs(P.x -.50)*size + abs(P.y -.5)*size - v_size/2;
+    float r2 = abs(P.x -.25)*size + abs(P.y -.5)*size - v_size/2;
     float r = max(r1,-r2);
     return r;
 }
@@ -163,7 +163,7 @@ float marker(vec2 P, float size)
 diamond = """
 float marker(vec2 P, float size)
 {
-    float r = abs(P.x -.5)*size + abs(P.y -.5)*size; 
+    float r = abs(P.x -.5)*size + abs(P.y -.5)*size;
     r -= v_size/2;
     return r;
 }
@@ -173,8 +173,8 @@ float marker(vec2 P, float size)
 vbar = """
 float marker(vec2 P, float size)
 {
-    float r1 = max(abs(P.x - 0.75)*size, abs(P.x - 0.25)*size); 
-    float r3 = max(abs(P.x - 0.50)*size, abs(P.y - 0.50)*size); 
+    float r1 = max(abs(P.x - 0.75)*size, abs(P.x - 0.25)*size);
+    float r3 = max(abs(P.x - 0.50)*size, abs(P.y - 0.50)*size);
     float r = max(r1,r3);
     r -= v_size/2;
     return r;
@@ -185,8 +185,8 @@ float marker(vec2 P, float size)
 hbar = """
 float marker(vec2 P, float size)
 {
-    float r2 = max(abs(P.y - 0.75)*size, abs(P.y - 0.25)*size); 
-    float r3 = max(abs(P.x - 0.50)*size, abs(P.y - 0.50)*size); 
+    float r2 = max(abs(P.y - 0.75)*size, abs(P.y - 0.25)*size);
+    float r3 = max(abs(P.x - 0.50)*size, abs(P.y - 0.50)*size);
     float r = max(r2,r3);
     r -= v_size/2;
     return r;
@@ -197,33 +197,31 @@ float marker(vec2 P, float size)
 cross = """
 float marker(vec2 P, float size)
 {
-    float r1 = max(abs(P.x - 0.75)*size, abs(P.x - 0.25)*size); 
-    float r2 = max(abs(P.y - 0.75)*size, abs(P.y - 0.25)*size); 
-    float r3 = max(abs(P.x - 0.50)*size, abs(P.y - 0.50)*size); 
+    float r1 = max(abs(P.x - 0.75)*size, abs(P.x - 0.25)*size);
+    float r2 = max(abs(P.y - 0.75)*size, abs(P.y - 0.25)*size);
+    float r3 = max(abs(P.x - 0.50)*size, abs(P.y - 0.50)*size);
     float r = max(min(r1,r2),r3);
     r -= v_size/2;
     return r;
 }
 """
 
-tailed_arrow= """
+tailed_arrow = """
 float marker(vec2 P, float size)
 {
 
    //arrow_right
-    float r1 = abs(P.x -.50)*size + abs(P.y -.5)*size - v_size/2; 
-    float r2 = abs(P.x -.25)*size + abs(P.y -.5)*size - v_size/2; 
+    float r1 = abs(P.x -.50)*size + abs(P.y -.5)*size - v_size/2;
+    float r2 = abs(P.x -.25)*size + abs(P.y -.5)*size - v_size/2;
     float arrow = max(r1,-r2);
 
     //hbar
     float r3 = (abs(P.y-.5)*2+.3)*v_size-v_size/2;
     float r4 = (P.x -.775)*size;
     float r6 = abs(P.x -.5)*size-v_size/2;
-    float limit = (P.x -.5)*size + abs(P.y -.5)*size - v_size/2; 
+    float limit = (P.x -.5)*size + abs(P.y -.5)*size - v_size/2;
     float hbar = max(limit,max(max(r3,r4),r6));
 
     return min(arrow,hbar);
 }
 """
-
-

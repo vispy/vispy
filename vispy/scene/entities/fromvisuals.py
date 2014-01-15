@@ -9,9 +9,11 @@ from ..base import Entity
 
 
 class PointsEntity(Entity):
+
     """ An entity that shows a random set of points.
     """
-    
+
     Visual = PointsVisual
+
     def __init__(self, parent=None, N=1000):
         Entity.__init__(self, parent, N=N)

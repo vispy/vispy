@@ -1,4 +1,4 @@
-""" Namespace for functions and constants corresponding to 
+""" Namespace for functions and constants corresponding to
 OpenGL ES 2.0 extensions.
 """
 
