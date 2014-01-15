@@ -8,4 +8,6 @@ one or more Vispy sub-packages.
 
 from vispy.util.six import string_types
 
-def is_string(s): return isinstance(s, string_types)
+
+def is_string(s):
+    return isinstance(s, string_types)

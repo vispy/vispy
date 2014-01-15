@@ -1,4 +1,4 @@
-""" 
+"""
 
 THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 
@@ -155,4 +155,4 @@ _glfunctions = [
     "glVertexAttrib4fv",
     "glVertexAttribPointer",
     "glViewport",
-    ]
+]

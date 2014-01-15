@@ -21,7 +21,7 @@ from vispy.util.six import string_types
 
 
 # class Key(str):
-#     """ A string that can only be compared to another string. 
+#     """ A string that can only be compared to another string.
 #     More strict that a simple string to avoid bugs trying to compare to int.
 #     """
 #     def __new__(cls, s, *alternatives):
@@ -36,35 +36,38 @@ from vispy.util.six import string_types
 #         return XX.__eq__(self, other) or other in self._alternatives
 
 class Key:
+
     """ A Key object represents the identity of a certain key. It
     represents one or more names that the key in question is known by.
-    
+
     A Key object can be compared to one of its string names (case
     insensitive), to the integer ordinal of the key (only for keys that
     represent characters), and to another Key instance.
     """
+
     def __init__(self, *names):
         self._names = names
         self._names_upper = tuple([v.upper() for v in names])
-    
+
     @property
     def name(self):
         """ The name of the key.
         """
         return self._names[0]
-    
-    def __repr__(self):        
+
+    def __repr__(self):
         return "<Key %s>" % ', '.join([repr(v) for v in self._names])
-    
+
     def __eq__(self, other):
         if isinstance(other, string_types):
             return other.upper() in self._names_upper
         elif isinstance(other, Key):
             return self._names[0] == other
         elif isinstance(other, int):
-            return other in [ord(v) for v in self._names_upper if len(v)==1]
+            return other in [ord(v) for v in self._names_upper if len(v) == 1]
         else:
-            raise ValueError('Key constants can only be compared to str, int and Key.')
+            raise ValueError(
+                'Key constants can only be compared to str, int and Key.')
 
 
 SHIFT = Key('Shift')

@@ -46,7 +46,7 @@ description = 'Interactive visualization in Python'
 # Get version and docstring
 __version__ = None
 __doc__ = ''
-docStatus = 0 # Not started, in progress, done
+docStatus = 0  # Not started, in progress, done
 initFile = os.path.join(os.path.dirname(__file__), 'vispy', '__init__.py')
 for line in open(initFile).readlines():
     if (line.startswith('__version__')):
@@ -62,48 +62,52 @@ for line in open(initFile).readlines():
 
 
 setup(
-    name = name,
-    version = __version__,
-    author = 'Vispy contributers',
-    author_email = 'vispy@googlegroups.com',
-    license = '(new) BSD',
-
-    url = 'http://vispy.org',
-    download_url = 'https://pypi.python.org/pypi/vispy',
-    keywords = "visualization OpenGl ES medical imaging 3D plotting numpy bigdata",
-    description = description,
-    long_description = __doc__,
-
-    platforms = 'any',
-    provides = ['vispy'],
-    install_requires = ['numpy', 'PyOpenGl'],
-
-    packages = ['vispy',
-                'vispy.util', 'vispy.util.tests',
-                'vispy.util.dataio',
-                'vispy.app', 'vispy.app.tests',
-                'vispy.app.backends',
-                'vispy.gloo', 'vispy.gloo.tests',
-                'vispy.gloo.gl',
-               ],
-    package_dir = {'vispy': 'vispy'},
-    package_data = {'vispy': ['data/*']},
-    zip_safe = False,
-
+    name=name,
+    version=__version__,
+    author='Vispy contributers',
+    author_email='vispy@googlegroups.com',
+    license='(new) BSD',
+    url='http://vispy.org',
+    download_url='https://pypi.python.org/pypi/vispy',
+    keywords="visualization OpenGl ES medical imaging 3D plotting numpy bigdata",
+    description=description,
+    long_description=__doc__,
+    platforms='any',
+    provides=['vispy'],
+    install_requires=[
+        'numpy',
+        'PyOpenGl'],
+    packages=[
+        'vispy',
+        'vispy.util',
+        'vispy.util.tests',
+        'vispy.util.dataio',
+        'vispy.app',
+        'vispy.app.tests',
+        'vispy.app.backends',
+        'vispy.gloo',
+        'vispy.gloo.tests',
+        'vispy.gloo.gl',
+    ],
+    package_dir={
+        'vispy': 'vispy'},
+    package_data={
+        'vispy': ['data/*']},
+    zip_safe=False,
     classifiers=[
-          'Development Status :: 3 - Alpha',
-          'Intended Audience :: Science/Research',
-          'Intended Audience :: Education',
-          'Intended Audience :: Developers',
-          'Topic :: Scientific/Engineering :: Visualization',
-          'License :: OSI Approved :: BSD License',
-          'Operating System :: MacOS :: MacOS X',
-          'Operating System :: Microsoft :: Windows',
-          'Operating System :: POSIX',
-          'Programming Language :: Python',
-          'Programming Language :: Python :: 2.6',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3.2',
-          'Programming Language :: Python :: 3.3',
-          ],
-    )
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: Education',
+        'Intended Audience :: Developers',
+        'Topic :: Scientific/Engineering :: Visualization',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.2',
+        'Programming Language :: Python :: 3.3',
+    ],
+)

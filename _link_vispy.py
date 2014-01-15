@@ -4,19 +4,19 @@
 
 """
 This module provides an easy way to enable importing a package event
-if it's not on sys.path. The main use case is to import a package 
+if it's not on sys.path. The main use case is to import a package
 from its developmment repository without having to install it.
 
 This module is sort of like a symlink for Python modules.
 
-To install: 
+To install:
   1) Copy this file to a directory that is on the PYTHONPATH
   2) Rename the file to "yourpackage.py".
 
-If the real package is in "yourpackage/yourpackage" relative to this file, 
+If the real package is in "yourpackage/yourpackage" relative to this file,
 you're done. Otherwise modify PARENT_DIR_OF_MODULE.
 
-""" 
+"""
 
 import os
 import sys

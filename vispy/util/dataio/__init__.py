@@ -27,15 +27,14 @@ def crate():
 # def _write_image_blob(im, fname):
 #     bb = bz2.compress(im.tostring())
 #     with open(os.path.join(DATA_DIR, fname), 'wb') as f:
-#         f.write(bb) 
-    
+#         f.write(bb)
 
 
 def read_mesh(fname, format=None):
     """ Read mesh data from file.
     returns (vertices, faces, normals, texcoords)
     texcoords and faces may be None.
-    
+
     Mesh files that ship with vispy always work: 'triceratops.obj'.
     """
     # Check file
@@ -46,12 +45,12 @@ def read_mesh(fname, format=None):
             fname = fname_
         else:
             raise ValueError('File does not exist: %s' % fname)
-    
+
     # Check format
     if format is None:
         format = os.path.splitext(fname)[1]
     format = format.strip('. ').upper()
-    
+
     if format == 'OBJ':
         from .wavefront import WavefrontReader
         return WavefrontReader.read(fname)
@@ -73,7 +72,7 @@ def imread(filename, format=None):
             import PIL.Image
         except ImportError:
             pass
-     
+
     if imageio is not None:
         return imageio.imread(filename, format)
     elif PIL is not None:
@@ -82,8 +81,9 @@ def imread(filename, format=None):
             im = im.convert()
         # Make numpy array
         a = np.asarray(im)
-        if len(a.shape)==0:
-            raise MemoryError("Too little memory to convert PIL image to array")
+        if len(a.shape) == 0:
+            raise MemoryError(
+                "Too little memory to convert PIL image to array")
     else:
         raise RuntimeError("imread requires the imageio or PIL package.")
 
@@ -100,7 +100,7 @@ def imsave(filename, im, format=None):
             import PIL.Image
         except ImportError:
             pass
-     
+
     if imageio is not None:
         return imageio.imsave(filename, im, format)
     elif PIL is not None:
@@ -110,23 +110,22 @@ def imsave(filename, im, format=None):
         raise RuntimeError("imsave requires the imageio or PIL package.")
 
 
-
 def _screenshot(viewport=None):
-    """ Take a screenshot using glReadPixels. Not sure where to put this 
+    """ Take a screenshot using glReadPixels. Not sure where to put this
     yet, so a private function for now. Used in make.py.
     """
     import numpy as np
     from vispy.gloo import gl
-    #gl.glReadBuffer(gl.GL_BACK)  Not avaliable in ES 2.0
+    # gl.glReadBuffer(gl.GL_BACK)  Not avaliable in ES 2.0
     if viewport is None:
         viewport = gl.glGetIntegerv(gl.GL_VIEWPORT)
-    x,y,w,h = viewport
+    x, y, w, h = viewport
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)  # PACK, not UNPACK
     im = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
     # reshape, flip, and return
     if not isinstance(im, np.ndarray):
         im = np.frombuffer(im, np.uint8)
-    im.shape = h,w,3
+    im.shape = h, w, 3
     im = np.flipud(im)
     return im
