@@ -80,6 +80,7 @@ setup(
 
     packages = ['vispy',
                 'vispy.util', 'vispy.util.tests',
+                'vispy.util.dataio',
                 'vispy.app', 'vispy.app.tests',
                 'vispy.app.backends',
                 'vispy.gloo', 'vispy.gloo.tests',
