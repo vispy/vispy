@@ -31,16 +31,20 @@ ATTEMPTED_BACKENDS = []
 
 
 def has_qt(require_uic=False):
-    has = False
     try:
         from PyQt4 import QtCore, QtGui, QtOpenGL, uic  # analysis:ignore
-        has_uic = True
     except ImportError:
+        has_uic = False
         try:
             from PySide import QtCore, QtGui, QtOpenGL  # analysis:ignore
         except ImportError:
             has = False
-        has_uic = False
+        else:
+            has = True
+    else:
+        has = True
+        has_uic = True
+
     if require_uic:
         has = (has and has_uic)
     return has

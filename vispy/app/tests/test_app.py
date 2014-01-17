@@ -22,7 +22,7 @@ def _test_application(backend):
     app = Application()
     app.use(backend)
     app.process_events()
-    assert_equal(app.backend_name, backend)
+    assert_true(backend in app.backend_name)  # "in" b/c "qt" in "PySide (qt)"
 
     # Canvas
     canvas = Canvas(title='me', app=app, show=True, position=[0, 0, 1, 1])
