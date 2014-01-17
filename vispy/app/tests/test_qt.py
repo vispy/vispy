@@ -3,33 +3,25 @@
 
 # This is a strange test: vispy does not need designer or uic stuff to run!
 
+import os
 import numpy as np
 import OpenGL.GL as gl
-import os
 
 from vispy.app import Canvas
+from vispy.app.backends import has_qt
 
-test_qt = True
-try:
-    from PyQt4 import QtCore, QtGui, QtOpenGL, uic
-    test_uic = True
-except ImportError:
-    try:
-        from PySide import QtCore, QtGui, QtOpenGL
-    except ImportError:
-        test_qt = False
-    test_uic = False
 
-requires_qt = np.testing.dec.skipif(not test_qt, 'Requires QT')
-runs_uic = np.testing.dec.skipif(not test_uic, 'Not testing UIC')
+requires_qt_and_uic = np.testing.dec.skipif(not has_qt(require_uic=True),
+                                            'Requires Qt w/UIC')
 
-@requires_qt
-@runs_uic
+
+@requires_qt_and_uic
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
-    app = QtGui.QApplication([])
-    path = os.path.dirname(__file__)
-    WindowTemplate, TemplateBaseClass = uic.loadUiType(os.path.join(path, 'qt-designer.ui'))
+    from PyQt4 import QtGui, uic
+    app = QtGui.QApplication([])  # analysis:ignore
+    fname = os.path.join(os.path.dirname(__file__), 'qt-designer.ui')
+    WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
 
     class MainWindow(TemplateBaseClass):
         def __init__(self):
@@ -51,7 +43,6 @@ def test_qt_designer():
         canvas.swap_buffers()
 
 
-
 if __name__ == '__main__':
-    if test_qt and test_uic:
+    if has_qt(require_uic=True):
         test_qt_designer()

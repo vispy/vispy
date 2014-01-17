@@ -10,6 +10,7 @@ instance we can test whether the GUI toolkit for a backend is already
 imported. This stuff is mostly used in the Application.use method.
 """
 
+
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
 BACKENDS = [    ('Test', 'nonexistent', 'foo.bar.lalalala'), # For testing
@@ -24,5 +25,32 @@ BACKENDS = [    ('Test', 'nonexistent', 'foo.bar.lalalala'), # For testing
 # so that we can look up its properties if we only have a name.
 BACKENDMAP = dict([(be[0].lower(), be) for be in BACKENDS])
 
-# List of attempted backends. For logging and for communicating to the backends.
+# List of attempted backends. For logging and for communicating
+# to the backends.
 ATTEMPTED_BACKENDS = []
+
+
+def has_qt(require_uic=False):
+    has = False
+    try:
+        from PyQt4 import QtCore, QtGui, QtOpenGL, uic  # analysis:ignore
+        has_uic = True
+    except ImportError:
+        try:
+            from PySide import QtCore, QtGui, QtOpenGL  # analysis:ignore
+        except ImportError:
+            has = False
+        has_uic = False
+    if require_uic:
+        has = (has and has_uic)
+    return has
+
+
+def has_pyglet():
+    try:
+        import pyglet  # analysis:ignore
+        has = True
+    except:
+        has = False
+        pass
+    return has

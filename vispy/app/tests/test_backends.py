@@ -8,21 +8,21 @@ implementation is corect.
 
 """
 
-import sys
+import numpy as np
 
 import vispy
 from vispy import keys
+from vispy.app.backends import has_pyglet, has_qt
+
+
+requires_qt = np.testing.dec.skipif(not has_qt(), 'Requires QT')
+requires_pyglet = np.testing.dec.skipif(not has_pyglet(), 'Requires QT-UIC')
+
 
 class BaseTestmodule:
 
     def __init__(self, module=None):
         self._module = module
-        if module is None:
-            print("Skipping %s." % self.__class__.__name__)
-            self.test_events = lambda : None
-            self.test_keymap = lambda : None
-            self.test_methods = lambda : None
-
 
     def test_keymap(self):
         """ Test that the keymap contains all keys supported by vispy.
@@ -34,7 +34,6 @@ class BaseTestmodule:
                 continue
             key = getattr(keys, keyname)
             assert key in vispy_keys
-
 
     def test_methods(self):
         """ Test that all _vispy_x methods are there.
@@ -76,7 +75,6 @@ class BaseTestmodule:
                     else:
                         assert method.im_func.__module__ == self._module.__name__
 
-
     def test_events(self):
         """ Test that all events seem to be emitted.
         """
@@ -87,12 +85,13 @@ class BaseTestmodule:
         canvas = vispy.app.Canvas(native=None)
         # Stylus and touch are ignored because they are not yet implemented.
         # Mouse events are emitted from the CanvasBackend base class.
-        ignore = set(['stylus', 'touch', 'mouse_press', 'mouse_move', 'mouse_release'])
+        ignore = set(['stylus', 'touch', 'mouse_press',
+                      'mouse_move', 'mouse_release'])
         eventNames = set(canvas.events._emitters.keys()) - ignore
 
         for name in eventNames:
-            assert 'events.%s'%name in text, 'events.%s does not appear in %s'%(name, fname)
-
+            assert 'events.%s' % name in text, ('events.%s does not appear '
+                                                'in %s' % (name, fname))
 
 
 class Test_TemplateBackend(BaseTestmodule):
@@ -100,40 +99,22 @@ class Test_TemplateBackend(BaseTestmodule):
         from vispy.app.backends import template
         BaseTestmodule.__init__(self, template)
 
+
 class Test_QtBackend(BaseTestmodule):
+    @requires_qt
     def __init__(self):
-        try:
-            from vispy.app.backends import qt
-        except ImportError:
-            BaseTestmodule.__init__(self, None)
-        else:
-            BaseTestmodule.__init__(self, qt)
+        from vispy.app.backends import qt
+        BaseTestmodule.__init__(self, qt)
+
 
 class Test_PygletBackend(BaseTestmodule):
+    @requires_pyglet
     def __init__(self):
-        try:
-            from vispy.app.backends import pyglet
-        except Exception as err:
-            print("Error imporing pyglet:\n%s" % str(err))
-            pyglet = None
+        from vispy.app.backends import pyglet
         BaseTestmodule.__init__(self, pyglet)
+
 
 class Test_GlutBackend(BaseTestmodule):
     def __init__(self):
         from vispy.app.backends import glut
         BaseTestmodule.__init__(self, glut)
-
-
-
-if __name__ == '__main__':
-
-    for klass in [  Test_TemplateBackend,
-                    Test_QtBackend,
-                    Test_PygletBackend,
-                    Test_GlutBackend
-                  ]:
-        test = klass()
-        test.test_keymap()
-        test.test_methods()
-        test.test_events()
-        print('ok %s' % klass.__name__)
