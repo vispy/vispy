@@ -1,4 +1,5 @@
 import numpy as np
+from nose.tools import assert_equal
 
 from vispy.app import Application, Canvas
 from vispy.app.backends import has_qt, has_pyglet
@@ -12,6 +13,7 @@ def _test_application(backend):
     """Test application running"""
     app = Application()
     app.use(backend)
+    assert_equal(app.backend_name, backend)
     canvas = Canvas('test', app, True)
     canvas.show()
     canvas.close()
@@ -20,13 +22,13 @@ def _test_application(backend):
 
 def test_glut():
     """Test GLUT application"""
-    _test_application('glut')
+    _test_application('Glut')
 
 
 @requires_pyglet
 def test_pyglet():
     """Test Pyglet application"""
-    _test_application('pyglet')
+    _test_application('Pyglet')
 
 
 @requires_qt
