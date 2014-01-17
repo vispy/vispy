@@ -12,16 +12,14 @@ from vispy.gloo.shader import VertexShader, FragmentShader
 from vispy.gloo.buffer import VertexBuffer, ClientVertexBuffer
 
 
-
-
 # -----------------------------------------------------------------------------
 class ProgramTest(unittest.TestCase):
 
     def test_init(self):
         program = Program()
         assert program._handle == 0
-        assert program._need_update == False
-        assert program._valid  == False
+        assert program._need_update is False
+        assert program._valid is False
         assert program.shaders == []
 
     def test_delete_no_context(self):
@@ -83,10 +81,10 @@ class ProgramTest(unittest.TestCase):
         vert = VertexShader("A")
         frag = FragmentShader("B")
 
-        program = Program(vert = vert)
+        program = Program(vert=vert)
         self.assertRaises(RuntimeError, program.activate)
 
-        program = Program(frag = frag)
+        program = Program(frag=frag)
         self.assertRaises(RuntimeError, program.activate)
 
     def test_setitem(self):

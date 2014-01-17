@@ -34,6 +34,7 @@ install:
         pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         if [ "${PYTHON}" == "3.3" ]; then
           conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo;
+          python -c "import QtOpenGL; print(QtOpenGL)"
         fi;
         pip install -q Pillow;
       fi;

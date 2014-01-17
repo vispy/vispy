@@ -7,8 +7,6 @@ import numpy as np
 from vispy.gloo import gl
 
 from vispy.gloo.variable import Uniform, Variable, Attribute
-from vispy.gloo.program import Program
-from vispy.gloo.shader import VertexShader, FragmentShader
 
 
 # -----------------------------------------------------------------------------
@@ -89,17 +87,6 @@ class UniformTest(unittest.TestCase):
         uniform.set_data([1,2,3,4])
         assert (uniform.data == [1,2,3,4]).all()
 
-    def test_upload(self):
-        vert = VertexShader("uniform vec4 pos;"
-                            "void main (void) {gl_Position = pos;}")
-        frag = FragmentShader("uniform vec4 pos;"
-                              "void main (void) {gl_FragColor = pos;}")
-        program = Program(vert,frag)
-        program.activate()  # should print
-        uniform = program.uniforms[0]
-        uniform.set_data([1,2,3,4])
-        uniform.upload(program)
-
     def test_set_exception(self):
         uniform = Uniform("A", gl.GL_FLOAT_VEC4)
 
@@ -123,17 +110,6 @@ class AttributeTest(unittest.TestCase):
 
         attribute.set_data(1)
         assert type(attribute.data) is np.ndarray
-
-    def test_upload(self):
-        vert = VertexShader("attribute vec4 pos;"
-                            "void main (void) {gl_Position = pos;}")
-        frag = FragmentShader("attribute vec4 pos;"
-                              "void main (void) {gl_FragColor = pos;}")
-        program = Program(vert,frag)
-        program.activate()  # should print
-        attribute = program.attributes[0]
-        attribute.set_data([1,2,3,4])
-        attribute.upload(program)
 
 
 if __name__ == "__main__":

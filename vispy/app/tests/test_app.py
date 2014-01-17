@@ -1,9 +1,11 @@
 import numpy as np
-import time
-from nose.tools import assert_equal, assert_true
+from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import Application, Canvas, Timer
 from vispy.app.backends import has_qt, has_pyglet
+
+from vispy.gloo.program import Program
+from vispy.gloo.shader import VertexShader, FragmentShader, ShaderError
 
 
 requires_qt = np.testing.dec.skipif(not has_qt(), 'Requires QT')
@@ -35,9 +37,31 @@ def _test_application(backend):
     canvas.position = (0, 0)
     canvas.connect(on_mouse_move)
     canvas.show()
-    canvas.swap_buffers()
-    canvas.update()
-    canvas.close()
+
+    # GLOO: should have an OpenGL context already, so these should work
+    vert = VertexShader("void main (void) {gl_Position = pos;}")
+    frag = FragmentShader("void main (void) {gl_FragColor = pos;}")
+    program = Program(vert, frag)
+    assert_raises(ShaderError, program.activate)
+
+    vert = VertexShader("uniform vec4 pos;"
+                        "void main (void) {gl_Position = pos;}")
+    frag = FragmentShader("uniform vec4 pos;"
+                          "void main (void) {gl_FragColor = pos;}")
+    program = Program(vert, frag)
+    uniform = program.uniforms[0]
+    uniform.set_data([1, 2, 3, 4])
+    program.activate()  # should print
+    uniform.upload(program)
+
+    vert = VertexShader("attribute vec4 pos;"
+                        "void main (void) {gl_Position = pos;}")
+    frag = FragmentShader("void main (void) {}")
+    program = Program(vert, frag)
+    attribute = program.attributes[0]
+    attribute.set_data([1, 2, 3, 4])
+    program.activate()
+    attribute.upload(program)
 
     # Timer
     timer = Timer(interval=0.001, connect=on_mouse_move, iterations=2,
@@ -49,6 +73,11 @@ def _test_application(backend):
     assert_true(not timer.running)
     assert_true(timer.native)
     timer.disconnect()
+
+    # cleanup
+    canvas.swap_buffers()
+    canvas.update()
+    canvas.close()
     app.quit()
 
 
