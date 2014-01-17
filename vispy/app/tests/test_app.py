@@ -14,7 +14,7 @@ def _test_application(backend):
     app = Application()
     app.use(backend)
     assert_equal(app.backend_name, backend)
-    canvas = Canvas('test', app, True)
+    canvas = Canvas(app=app)
     canvas.show()
     canvas.close()
     app.quit()

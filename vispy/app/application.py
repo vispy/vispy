@@ -15,9 +15,6 @@ import vispy
 from vispy.app.backends import BACKENDS, BACKENDMAP, ATTEMPTED_BACKENDS
 
 
-BACKEND_NAMES = [b[0] for b in BACKENDS]
-
-
 class Application(object):
     """ Representation of the vispy application. This wraps a native
     GUI application instance. Vispy has a default instance of this class
@@ -88,7 +85,6 @@ class Application(object):
         """
         return self._backend._vispy_get_native_app()
 
-
     def use(self, backend_name=None):
         """ Select a backend by name. If the backend name is omitted,
         will chose a suitable backend automatically. It is an error to
@@ -108,9 +104,10 @@ class Application(object):
 
         """
         import vispy.app
-        if backend_name is not None and backend_name not in BACKEND_NAMES:
-            raise ValueError('backend_name must be one of %s or None, not %s'
-                             % (BACKEND_NAMES, backend_name))
+        if backend_name is not None:
+            if backend_name.lower() not in BACKENDMAP:
+                raise ValueError('backend_name must be one of %s or None, not '
+                                 '%s' % (BACKENDMAP, backend_name))
 
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None
