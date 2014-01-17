@@ -13,6 +13,7 @@ requires_pyglet = np.testing.dec.skipif(not has_pyglet(), 'Requires QT-UIC')
 bad_glut = np.testing.dec.skipif(True, 'GLUT window causes segfaults on 2.7 '
                                  'and fails on 2.6')  # XXX should fix
 
+
 def on_mouse_move(self, *args):
     return
 
@@ -53,6 +54,9 @@ def _test_application(backend):
     uniform.set_data([1, 2, 3, 4])
     program.activate()  # should print
     uniform.upload(program)
+    program.detach(vert, frag)
+    assert_raises(ShaderError, program.detach, vert)
+    assert_raises(ShaderError, program.detach, frag)
 
     vert = VertexShader("attribute vec4 pos;"
                         "void main (void) {gl_Position = pos;}")

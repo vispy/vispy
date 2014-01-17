@@ -155,6 +155,21 @@ class ProgramTest(unittest.TestCase):
         program["color"] = ClientVertexBuffer(np.zeros(100, dtype=(np.float32,4)))
         assert program._attributes["color"].count == 100
 
+    def test_set_vars(self):
+        vert = VertexShader("attribute vec4 color;")
+        frag = FragmentShader("")
+        program = Program(vert,frag)
+        arr = np.array((100,5), dtype=np.float32)
+        assert_raises(ValueError, program.set_vars, arr)
+        dtype = np.dtype([('color', np.float32, 4)])
+        dtype = np.dtype([('position', np.float32, 3),
+                          ('texcoord', np.float32, 2),
+                          ('color',    np.float32, 4)])
+        data = np.zeros(100, dtype=dtype)
+        arr = VertexBuffer(data)
+        program.set_vars(arr)
+
+
 
 if __name__ == "__main__":
     unittest.main()
