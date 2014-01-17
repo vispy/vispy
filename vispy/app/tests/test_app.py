@@ -7,20 +7,23 @@ from vispy.app.backends import has_qt, has_pyglet
 
 requires_qt = np.testing.dec.skipif(not has_qt(), 'Requires QT')
 requires_pyglet = np.testing.dec.skipif(not has_pyglet(), 'Requires QT-UIC')
+bad_glut = np.testing.dec.skipif(True, 'GLUT window causes segfaults on 2.7 '
+                                 'and fails on 2.6')  # XXX should fix
 
 
 def _test_application(backend):
     """Test application running"""
     app = Application()
     app.use(backend)
+    app.process_events()
     assert_equal(app.backend_name, backend)
     canvas = Canvas(app=app)
     canvas.show()
     canvas.close()
+    app.quit()
 
 
-@np.testing.dec.skipif(True, 'GLUT window causes segfaults on 2.7 and '
-                       'fails on 2.6')
+@bad_glut
 def test_glut():
     """Test GLUT application"""
     _test_application('Glut')

@@ -4,88 +4,102 @@
 Very simple transformation library that is needed for some examples.
 """
 
-import math
-import numpy
 import numpy as np
 
 
 def translate(M, x, y=None, z=None):
-    """
-    translate produces a translation by (x, y, z) . 
-    
+    """Translate by an offset (x, y, z) .
+
     Parameters
     ----------
-    x, y, z
-        Specify the x, y, and z coordinates of a translation vector.
+    M : array
+        Original transformation (4x4).
+    x : float
+        X coordinate of a translation vector.
+    y : float | None
+        Y coordinate of translation vector. If None, `x` will be used.
+    z : float | None
+        Z coordinate of translation vector. If None, `x` will be used.
+
+    Returns
+    -------
+    M : array
+        Updated transformation (4x4). Note that this function operates
+        in-place to modify M.
     """
-    if y is None: y = x
-    if z is None: z = x
-    T = [[ 1, 0, 0, x],
-         [ 0, 1, 0, y],
-         [ 0, 0, 1, z],
-         [ 0, 0, 0, 1]]
-    T = np.array(T, dtype=np.float32).T
-    M[...] = np.dot(M,T)
+    y = x if y is None else y
+    z = x if z is None else z
+    move = np.array([x, y, z], dtype=M.dtype)
+    M[:3, 3] += move
+    return M
 
 
 def scale(M, x, y=None, z=None):
-    """
-    scale produces a non uniform scaling along the x, y, and z axes. The three
-    parameters indicate the desired scale factor along each of the three axes.
+    """Non-uniform scaling along the x, y, and z axes
 
     Parameters
     ----------
-    x, y, z
-        Specify scale factors along the x, y, and z axes, respectively.
+    M : array
+        Original transformation (4x4).
+    x : float
+        X coordinate of a translation vector.
+    y : float | None
+        Y coordinate of translation vector. If None, `x` will be used.
+    z : float | None
+        Z coordinate of translation vector. If None, `x` will be used.
+
+    Returns
+    -------
+    M : array
+        Updated transformation (4x4). Note that this function operates
+        in-place to modify M.
     """
-    if y is None: y = x
-    if z is None: z = x
-    S = [[ x, 0, 0, 0],
-         [ 0, y, 0, 0],
-         [ 0, 0, z, 0],
-         [ 0, 0, 0, 1]]
-    S = np.array(S,dtype=np.float32).T
-    M[...] = np.dot(M,S)
+    y = x if y is None else y
+    z = x if z is None else z
+    M *= np.array([x, y, z, 1], dtype=M.dtype)[np.newaxis, :]
+    return M
 
 
 def xrotate(M,theta):
-    t = math.pi*theta/180
-    cosT = math.cos( t )
-    sinT = math.sin( t )
-    R = numpy.array(
-        [[ 1.0,  0.0,  0.0, 0.0 ],
-         [ 0.0, cosT,-sinT, 0.0 ],
-         [ 0.0, sinT, cosT, 0.0 ],
-         [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
-    M[...] = np.dot(M,R)
+    t = np.pi * theta / 180.
+    cosT = np.cos(t)
+    sinT = np.sin(t)
+    R = np.array([[ 1.0,  0.0,  0.0, 0.0 ],
+                  [ 0.0, cosT,-sinT, 0.0 ],
+                  [ 0.0, sinT, cosT, 0.0 ],
+                  [ 0.0,  0.0,  0.0, 1.0 ]], dtype=M.dtype)
+    M[...] = np.dot(M, R)
+    return M
+
 
 def yrotate(M,theta):
-    t = math.pi*theta/180
-    cosT = math.cos( t )
-    sinT = math.sin( t )
-    R = numpy.array(
+    t = np.pi*theta/180
+    cosT = np.cos( t )
+    sinT = np.sin( t )
+    R = np.array(
         [[ cosT,  0.0, sinT, 0.0 ],
          [ 0.0,   1.0,  0.0, 0.0 ],
          [-sinT,  0.0, cosT, 0.0 ],
-         [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
+         [ 0.0,  0.0,  0.0, 1.0 ]], dtype=M.dtype)
     M[...] = np.dot(M,R)
 
+
 def zrotate(M,theta):
-    t = math.pi*theta/180
-    cosT = math.cos( t )
-    sinT = math.sin( t )
-    R = numpy.array(
+    t = np.pi*theta/180
+    cosT = np.cos( t )
+    sinT = np.sin( t )
+    R = np.array(
         [[ cosT,-sinT, 0.0, 0.0 ],
          [ sinT, cosT, 0.0, 0.0 ],
          [ 0.0,  0.0,  1.0, 0.0 ],
-         [ 0.0,  0.0,  0.0, 1.0 ]], dtype=np.float32)
+         [ 0.0,  0.0,  0.0, 1.0 ]], dtype=M.dtype)
     M[...] = np.dot(M,R)
 
 
 def rotate(M, angle, x, y, z, point=None):
     """
     rotate produces a rotation of angle degrees around the vector (x, y, z).
-    
+
     Parameters
     ----------
     M
@@ -97,17 +111,17 @@ def rotate(M, angle, x, y, z, point=None):
     x, y, z
         Specify the x, y, and z coordinates of a vector, respectively.
     """
-    angle = math.pi*angle/180
-    c,s = math.cos(angle), math.sin(angle)
-    n = math.sqrt(x*x+y*y+z*z)
+    angle = np.pi*angle/180
+    c,s = np.cos(angle), np.sin(angle)
+    n = np.sqrt(x*x+y*y+z*z)
     x /= n
     y /= n
     z /= n
     cx,cy,cz = (1-c)*x, (1-c)*y, (1-c)*z
-    R = numpy.array([[ cx*x + c  , cy*x - z*s, cz*x + y*s, 0],
+    R = np.array([[ cx*x + c  , cy*x - z*s, cz*x + y*s, 0],
                      [ cx*y + z*s, cy*y + c  , cz*y - x*s, 0],
                      [ cx*z - y*s, cy*z + x*s, cz*z + c,   0],
-                     [          0,          0,        0,   1]]).T
+                     [          0,          0,        0,   1]], dtype=M.dtype).T
     M[...] = np.dot(M,R)
 
 
@@ -115,7 +129,7 @@ def ortho( left, right, bottom, top, znear, zfar ):
     assert( right  != left )
     assert( bottom != top  )
     assert( znear  != zfar )
-    
+
     M = np.zeros((4,4), dtype=np.float32)
     M[0,0] = +2.0/(right-left)
     M[3,0] = -(right+left)/float(right-left)
@@ -125,7 +139,7 @@ def ortho( left, right, bottom, top, znear, zfar ):
     M[3,2] = -(zfar+znear)/float(zfar-znear)
     M[3,3] = 1.0
     return M
-        
+
 def frustum( left, right, bottom, top, znear, zfar ):
     assert( right  != left )
     assert( bottom != top  )
