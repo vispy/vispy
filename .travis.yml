@@ -22,6 +22,7 @@ before_install:
     - ./miniconda.sh -b
     - export PATH=/home/$USER/anaconda/bin:$PATH
     - conda update --yes conda
+    - travis_retry sudo apt-get install apt-get install libgl1-mesa-dri
 
 install:
     - conda create -n testenv --yes --quiet pip python=$PYTHON

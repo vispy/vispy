@@ -28,5 +28,6 @@ inplace:
 	$(PYTHON) setup.py build_ext -i
 
 test:
+	rm .coverage
 	$(NOSETESTS) vispy
 

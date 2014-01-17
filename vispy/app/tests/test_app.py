@@ -1,5 +1,5 @@
 import numpy as np
-from nose.tools import assert_equal
+from nose.tools import assert_equal, assert_true
 
 from vispy.app import Application, Canvas
 from vispy.app.backends import has_qt, has_pyglet
@@ -10,6 +10,9 @@ requires_pyglet = np.testing.dec.skipif(not has_pyglet(), 'Requires QT-UIC')
 bad_glut = np.testing.dec.skipif(True, 'GLUT window causes segfaults on 2.7 '
                                  'and fails on 2.6')  # XXX should fix
 
+def on_mouse_move(self, *args):
+    return
+
 
 def _test_application(backend):
     """Test application running"""
@@ -17,8 +20,20 @@ def _test_application(backend):
     app.use(backend)
     app.process_events()
     assert_equal(app.backend_name, backend)
-    canvas = Canvas(app=app)
+    canvas = Canvas(title='me', app=app, show=True, position=[0, 0, 1, 1])
+    assert_true(canvas.app is app)
+    assert_true(canvas.native)
+    assert_true(canvas.size >= (1, 1))
+    canvas.resize(canvas.size[0] - 1, canvas.size[1] - 1)
+    assert_true(canvas.position >= (0, 0))
+    canvas.move(canvas.position[0] + 1, canvas.position[0] + 1)
+    assert_equal(canvas.title, 'me')
+    canvas.title = 'you'
+    canvas.position = (0, 0)
+    canvas.connect(on_mouse_move)
     canvas.show()
+    canvas.swap_buffers()
+    canvas.update()
     canvas.close()
     app.quit()
 

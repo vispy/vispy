@@ -79,10 +79,10 @@ def xrotate(M, theta):
     t = np.pi * theta / 180.
     cosT = np.cos(t)
     sinT = np.sin(t)
-    R = np.array([[1.0,  0.0,  0.0, 0.0],
+    R = np.array([[1.0, 0.0, 0.0, 0.0],
                   [0.0, cosT, -sinT, 0.0],
                   [0.0, sinT, cosT, 0.0],
-                  [0.0,  0.0,  0.0, 1.0]], dtype=M.dtype)
+                  [0.0, 0.0, 0.0, 1.0]], dtype=M.dtype)
     M[...] = np.dot(M, R)
     return M
 
@@ -103,15 +103,15 @@ def yrotate(M, theta):
         Updated transformation (4x4). Note that this function operates
         in-place.
     """
-    t = np.pi*theta/180
-    cosT = np.cos( t )
-    sinT = np.sin( t )
+    t = np.pi * theta / 180
+    cosT = np.cos(t)
+    sinT = np.sin(t)
     R = np.array(
-        [[ cosT,  0.0, sinT, 0.0 ],
-         [ 0.0,   1.0,  0.0, 0.0 ],
-         [-sinT,  0.0, cosT, 0.0 ],
-         [ 0.0,  0.0,  0.0, 1.0 ]], dtype=M.dtype)
-    M[...] = np.dot(M,R)
+        [[cosT, 0.0, sinT, 0.0],
+         [0.0, 1.0, 0.0, 0.0],
+         [-sinT, 0.0, cosT, 0.0],
+         [0.0, 0.0, 0.0, 1.0]], dtype=M.dtype)
+    M[...] = np.dot(M, R)
     return M
 
 
@@ -131,15 +131,15 @@ def zrotate(M, theta):
         Updated transformation (4x4). Note that this function operates
         in-place.
     """
-    t = np.pi*theta/180
-    cosT = np.cos( t )
-    sinT = np.sin( t )
+    t = np.pi * theta / 180
+    cosT = np.cos(t)
+    sinT = np.sin(t)
     R = np.array(
-        [[ cosT,-sinT, 0.0, 0.0 ],
-         [ sinT, cosT, 0.0, 0.0 ],
-         [ 0.0,  0.0,  1.0, 0.0 ],
-         [ 0.0,  0.0,  0.0, 1.0 ]], dtype=M.dtype)
-    M[...] = np.dot(M,R)
+        [[cosT, -sinT, 0.0, 0.0],
+         [sinT, cosT, 0.0, 0.0],
+         [0.0, 0.0, 1.0, 0.0],
+         [0.0, 0.0, 0.0, 1.0]], dtype=M.dtype)
+    M[...] = np.dot(M, R)
     return M
 
 
@@ -165,13 +165,13 @@ def rotate(M, angle, x, y, z, point=None):
         Updated transformation (4x4). Note that this function operates
         in-place.
     """
-    angle = np.pi*angle/180
+    angle = np.pi * angle / 180
     c, s = np.cos(angle), np.sin(angle)
-    n = np.sqrt(x*x + y*y + z*z)
+    n = np.sqrt(x * x + y * y + z * z)
     x /= n
     y /= n
     z /= n
-    cx, cy, cz = (1-c) * x, (1-c) * y, (1-c) * z
+    cx, cy, cz = (1 - c)*x, (1 - c)*y, (1 - c)*z
     R = np.array([[cx*x + c, cy*x - z*s, cz*x + y*s, 0],
                   [cx*y + z*s, cy*y + c, cz*y - x*s, 0],
                   [cx*z - y*s, cy*z + x*s, cz*z + c, 0],
@@ -207,14 +207,14 @@ def ortho(left, right, bottom, top, znear, zfar):
     assert(bottom != top)
     assert(znear != zfar)
 
-    M = np.zeros((4,4), dtype=np.float32)
-    M[0,0] = +2.0/(right-left)
-    M[3,0] = -(right+left)/float(right-left)
-    M[1,1] = +2.0/(top-bottom)
-    M[3,1] = -(top+bottom)/float(top-bottom)
-    M[2,2] = -2.0/(zfar-znear)
-    M[3,2] = -(zfar+znear)/float(zfar-znear)
-    M[3,3] = 1.0
+    M = np.zeros((4, 4), dtype=np.float32)
+    M[0, 0] = +2.0 / (right - left)
+    M[3, 0] = -(right + left) / float(right - left)
+    M[1, 1] = +2.0 / (top - bottom)
+    M[3, 1] = -(top + bottom) / float(top - bottom)
+    M[2, 2] = -2.0 / (zfar - znear)
+    M[3, 2] = -(zfar + znear) / float(zfar - znear)
+    M[3, 3] = 1.0
     return M
 
 
@@ -241,18 +241,18 @@ def frustum(left, right, bottom, top, znear, zfar):
     M : array
         View frustum matrix (4x4).
     """
-    assert( right  != left )
-    assert( bottom != top  )
-    assert( znear  != zfar )
+    assert(right != left)
+    assert(bottom != top)
+    assert(znear != zfar)
 
-    M = np.zeros((4,4), dtype=np.float32)
-    M[0,0] = +2.0*znear/(right-left)
-    M[2,0] = (right+left)/(right-left)
-    M[1,1] = +2.0*znear/(top-bottom)
-    M[3,1] = (top+bottom)/(top-bottom)
-    M[2,2] = -(zfar+znear)/(zfar-znear)
-    M[3,2] = -2.0*znear*zfar/(zfar-znear)
-    M[2,3] = -1.0
+    M = np.zeros((4, 4), dtype=np.float32)
+    M[0, 0] = +2.0 * znear / (right - left)
+    M[2, 0] = (right + left) / (right - left)
+    M[1, 1] = +2.0 * znear / (top - bottom)
+    M[3, 1] = (top + bottom) / (top - bottom)
+    M[2, 2] = -(zfar + znear) / (zfar - znear)
+    M[3, 2] = -2.0 * znear * zfar / (zfar - znear)
+    M[2, 3] = -1.0
     return M
 
 
@@ -275,7 +275,7 @@ def perspective(fovy, aspect, znear, zfar):
     M : array
         Perspective projection matrix (4x4).
     """
-    assert( znear != zfar )
+    assert(znear != zfar)
     h = np.tan(fovy / 360.0 * np.pi) * znear
     w = h * aspect
-    return frustum( -w, w, -h, h, znear, zfar )
+    return frustum(-w, w, -h, h, znear, zfar)
