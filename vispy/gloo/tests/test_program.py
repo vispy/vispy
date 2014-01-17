@@ -8,10 +8,8 @@ from nose.tools import assert_raises
 
 from vispy.gloo import gl
 from vispy.gloo.program import Program
-from vispy.gloo.shader import VertexShader
-from vispy.gloo.shader import FragmentShader
-from vispy.gloo.buffer import VertexBuffer
-from vispy.gloo.buffer import ClientVertexBuffer
+from vispy.gloo.shader import VertexShader, FragmentShader
+from vispy.gloo.buffer import VertexBuffer, ClientVertexBuffer
 
 
 
