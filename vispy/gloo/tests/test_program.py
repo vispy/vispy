@@ -4,6 +4,7 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
+from nose.tools import assert_raises
 
 from vispy.gloo import gl
 from vispy.gloo.program import Program
@@ -117,7 +118,9 @@ class ProgramTest(unittest.TestCase):
         assert program._attributes["f"].count == 100
 
         program = Program(vert,frag)
-        program["f"] = ClientVertexBuffer(np.zeros((100,1,1), dtype=np.float32))
+        program.set_vars(f=ClientVertexBuffer(np.zeros((100,1,1),
+                                                       dtype=np.float32)))
+        assert_raises(NameError, program.set_vars, junk='foo')
         assert program._attributes["f"].count == 100
 
         program = Program(vert,frag)
