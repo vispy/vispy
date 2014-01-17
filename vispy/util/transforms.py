@@ -25,7 +25,7 @@ def translate(M, x, y=None, z=None):
     -------
     M : array
         Updated transformation (4x4). Note that this function operates
-        in-place to modify M.
+        in-place.
     """
     y = x if y is None else y
     z = x if z is None else z
@@ -42,17 +42,17 @@ def scale(M, x, y=None, z=None):
     M : array
         Original transformation (4x4).
     x : float
-        X coordinate of a translation vector.
+        X coordinate of the translation vector.
     y : float | None
-        Y coordinate of translation vector. If None, `x` will be used.
+        Y coordinate of the translation vector. If None, `x` will be used.
     z : float | None
-        Z coordinate of translation vector. If None, `x` will be used.
+        Z coordinate of the translation vector. If None, `x` will be used.
 
     Returns
     -------
     M : array
         Updated transformation (4x4). Note that this function operates
-        in-place to modify M.
+        in-place.
     """
     y = x if y is None else y
     z = x if z is None else z
@@ -60,19 +60,49 @@ def scale(M, x, y=None, z=None):
     return M
 
 
-def xrotate(M,theta):
+def xrotate(M, theta):
+    """Rotate about the X axis
+
+    Parameters
+    ----------
+    M : array
+        Original transformation (4x4).
+    theta : float
+        Specifies the angle of rotation, in degrees.
+
+    Returns
+    -------
+    M : array
+        Updated transformation (4x4). Note that this function operates
+        in-place.
+    """
     t = np.pi * theta / 180.
     cosT = np.cos(t)
     sinT = np.sin(t)
-    R = np.array([[ 1.0,  0.0,  0.0, 0.0 ],
-                  [ 0.0, cosT,-sinT, 0.0 ],
-                  [ 0.0, sinT, cosT, 0.0 ],
-                  [ 0.0,  0.0,  0.0, 1.0 ]], dtype=M.dtype)
+    R = np.array([[1.0,  0.0,  0.0, 0.0],
+                  [0.0, cosT, -sinT, 0.0],
+                  [0.0, sinT, cosT, 0.0],
+                  [0.0,  0.0,  0.0, 1.0]], dtype=M.dtype)
     M[...] = np.dot(M, R)
     return M
 
 
-def yrotate(M,theta):
+def yrotate(M, theta):
+    """Rotate about the Y axis
+
+    Parameters
+    ----------
+    M : array
+        Original transformation (4x4).
+    theta : float
+        Specifies the angle of rotation, in degrees.
+
+    Returns
+    -------
+    M : array
+        Updated transformation (4x4). Note that this function operates
+        in-place.
+    """
     t = np.pi*theta/180
     cosT = np.cos( t )
     sinT = np.sin( t )
@@ -82,9 +112,25 @@ def yrotate(M,theta):
          [-sinT,  0.0, cosT, 0.0 ],
          [ 0.0,  0.0,  0.0, 1.0 ]], dtype=M.dtype)
     M[...] = np.dot(M,R)
+    return M
 
 
-def zrotate(M,theta):
+def zrotate(M, theta):
+    """Rotate about the Z axis
+
+    Parameters
+    ----------
+    M : array
+        Original transformation (4x4).
+    theta : float
+        Specifies the angle of rotation, in degrees.
+
+    Returns
+    -------
+    M : array
+        Updated transformation (4x4). Note that this function operates
+        in-place.
+    """
     t = np.pi*theta/180
     cosT = np.cos( t )
     sinT = np.sin( t )
@@ -94,41 +140,72 @@ def zrotate(M,theta):
          [ 0.0,  0.0,  1.0, 0.0 ],
          [ 0.0,  0.0,  0.0, 1.0 ]], dtype=M.dtype)
     M[...] = np.dot(M,R)
+    return M
 
 
 def rotate(M, angle, x, y, z, point=None):
-    """
-    rotate produces a rotation of angle degrees around the vector (x, y, z).
+    """Rotation about a vector
 
     Parameters
     ----------
-    M
-       Current transformation as a numpy array
+    M : array
+        Original transformation (4x4).
+    angle : float
+        Specifies the angle of rotation, in degrees.
+    x : float
+        X coordinate of the angle of rotation vector.
+    y : float | None
+        Y coordinate of the angle of rotation vector.
+    z : float | None
+        Z coordinate of the angle of rotation vector.
 
-    angle
-       Specifies the angle of rotation, in degrees.
-
-    x, y, z
-        Specify the x, y, and z coordinates of a vector, respectively.
+    Returns
+    -------
+    M : array
+        Updated transformation (4x4). Note that this function operates
+        in-place.
     """
     angle = np.pi*angle/180
-    c,s = np.cos(angle), np.sin(angle)
-    n = np.sqrt(x*x+y*y+z*z)
+    c, s = np.cos(angle), np.sin(angle)
+    n = np.sqrt(x*x + y*y + z*z)
     x /= n
     y /= n
     z /= n
-    cx,cy,cz = (1-c)*x, (1-c)*y, (1-c)*z
-    R = np.array([[ cx*x + c  , cy*x - z*s, cz*x + y*s, 0],
-                     [ cx*y + z*s, cy*y + c  , cz*y - x*s, 0],
-                     [ cx*z - y*s, cy*z + x*s, cz*z + c,   0],
-                     [          0,          0,        0,   1]], dtype=M.dtype).T
-    M[...] = np.dot(M,R)
+    cx, cy, cz = (1-c) * x, (1-c) * y, (1-c) * z
+    R = np.array([[cx*x + c, cy*x - z*s, cz*x + y*s, 0],
+                  [cx*y + z*s, cy*y + c, cz*y - x*s, 0],
+                  [cx*z - y*s, cy*z + x*s, cz*z + c, 0],
+                  [0, 0, 0, 1]], dtype=M.dtype).T
+    M[...] = np.dot(M, R)
+    return M
 
 
-def ortho( left, right, bottom, top, znear, zfar ):
-    assert( right  != left )
-    assert( bottom != top  )
-    assert( znear  != zfar )
+def ortho(left, right, bottom, top, znear, zfar):
+    """Create orthographic projection matrix
+
+    Parameters
+    ----------
+    left : float
+        Left coordinate of the field of view.
+    right : float
+        Left coordinate of the field of view.
+    bottom : float
+        Bottom coordinate of the field of view.
+    top : float
+        Top coordinate of the field of view.
+    znear : float
+        Near coordinate of the field of view.
+    zfar : float
+        Far coordinate of the field of view.
+
+    Returns
+    -------
+    M : array
+        Orthographic projection matrix (4x4).
+    """
+    assert(right != left)
+    assert(bottom != top)
+    assert(znear != zfar)
 
     M = np.zeros((4,4), dtype=np.float32)
     M[0,0] = +2.0/(right-left)
@@ -140,7 +217,30 @@ def ortho( left, right, bottom, top, znear, zfar ):
     M[3,3] = 1.0
     return M
 
-def frustum( left, right, bottom, top, znear, zfar ):
+
+def frustum(left, right, bottom, top, znear, zfar):
+    """Create view frustum
+
+    Parameters
+    ----------
+    left : float
+        Left coordinate of the field of view.
+    right : float
+        Left coordinate of the field of view.
+    bottom : float
+        Bottom coordinate of the field of view.
+    top : float
+        Top coordinate of the field of view.
+    znear : float
+        Near coordinate of the field of view.
+    zfar : float
+        Far coordinate of the field of view.
+
+    Returns
+    -------
+    M : array
+        View frustum matrix (4x4).
+    """
     assert( right  != left )
     assert( bottom != top  )
     assert( znear  != zfar )
@@ -155,7 +255,26 @@ def frustum( left, right, bottom, top, znear, zfar ):
     M[2,3] = -1.0
     return M
 
+
 def perspective(fovy, aspect, znear, zfar):
+    """Create perspective projection matrix
+
+    Parameters
+    ----------
+    fovy : float
+        The field of view along the y axis.
+    aspect : float
+        Aspect ratio of the view.
+    znear : float
+        Near coordinate of the field of view.
+    zfar : float
+        Far coordinate of the field of view.
+
+    Returns
+    -------
+    M : array
+        Perspective projection matrix (4x4).
+    """
     assert( znear != zfar )
     h = np.tan(fovy / 360.0 * np.pi) * znear
     w = h * aspect

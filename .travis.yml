@@ -30,11 +30,11 @@ install:
     - pip install -q coveralls nose-timer PyOpenGL
     # Use Pyglet alpha to get 3.3 support
     - if [ "${DEPS}" == "full" ]; then
+        pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         if [ "${PYTHON}" == "3.3" ]; then
-          pip install -q http://pyglet.googlecode.com/archive/tip.zip;
           conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo;
         fi;
-        pip install -q pyglet Pillow;
+        pip install -q Pillow;
       fi;
     - python setup.py build
     - python setup.py install
