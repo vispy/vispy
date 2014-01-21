@@ -29,8 +29,8 @@ def translate(M, x, y=None, z=None):
     """
     y = x if y is None else y
     z = x if z is None else z
-    move = np.array([x, y, z], dtype=M.dtype)
-    M[:3, 3] += move
+    move = np.array([x, y, z, 1], dtype=M.dtype)
+    M[:, 3] = np.dot(M, move)
     return M
 
 
