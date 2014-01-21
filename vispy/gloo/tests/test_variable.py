@@ -6,9 +6,7 @@ import unittest
 import numpy as np
 from vispy.gloo import gl
 
-from vispy.gloo.variable import Uniform
-from vispy.gloo.variable import Variable
-from vispy.gloo.variable import Attribute
+from vispy.gloo.variable import Uniform, Variable, Attribute
 
 
 # -----------------------------------------------------------------------------
@@ -24,19 +22,12 @@ class VariableTest(unittest.TestCase):
 
 
     def test_init_wrong_type(self):
-        with self.assertRaises(ValueError):
-            v = Variable("A", gl.GL_INT_VEC2)
-        with self.assertRaises(ValueError):
-            v = Variable("A", gl.GL_INT_VEC3)
-        with self.assertRaises(ValueError):
-            v = Variable("A", gl.GL_INT_VEC4)
-
-        with self.assertRaises(ValueError):
-            v = Variable("A", gl.GL_BOOL_VEC2)
-        with self.assertRaises(ValueError):
-            v = Variable("A", gl.GL_BOOL_VEC3)
-        with self.assertRaises(ValueError):
-            v = Variable("A", gl.GL_BOOL_VEC4)
+        self.assertRaises(ValueError, Variable, "A", gl.GL_INT_VEC2)
+        self.assertRaises(ValueError, Variable, "A", gl.GL_INT_VEC3)
+        self.assertRaises(ValueError, Variable, "A", gl.GL_INT_VEC4)
+        self.assertRaises(ValueError, Variable, "A", gl.GL_BOOL_VEC2)
+        self.assertRaises(ValueError, Variable, "A", gl.GL_BOOL_VEC3)
+        self.assertRaises(ValueError, Variable, "A", gl.GL_BOOL_VEC4)
 
 
 
@@ -99,11 +90,9 @@ class UniformTest(unittest.TestCase):
     def test_set_exception(self):
         uniform = Uniform("A", gl.GL_FLOAT_VEC4)
 
-        with self.assertRaises(ValueError):
-            uniform.set_data([1,2])
+        self.assertRaises(ValueError, uniform.set_data, [1,2])
 
-        with self.assertRaises(ValueError):
-            uniform.set_data([1,2,3,4,5])
+        self.assertRaises(ValueError, uniform.set_data, [1,2,3,4,5])
 
 
 # -----------------------------------------------------------------------------

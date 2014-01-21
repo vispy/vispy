@@ -4,15 +4,12 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
+from nose.tools import assert_raises
 
 from vispy.gloo import gl
 from vispy.gloo.program import Program
-from vispy.gloo.shader import VertexShader
-from vispy.gloo.shader import FragmentShader
-from vispy.gloo.buffer import VertexBuffer
-from vispy.gloo.buffer import ClientVertexBuffer
-
-
+from vispy.gloo.shader import VertexShader, FragmentShader
+from vispy.gloo.buffer import VertexBuffer, ClientVertexBuffer
 
 
 # -----------------------------------------------------------------------------
@@ -21,8 +18,8 @@ class ProgramTest(unittest.TestCase):
     def test_init(self):
         program = Program()
         assert program._handle == 0
-        assert program._need_update == False
-        assert program._valid  == False
+        assert program._need_update is False
+        assert program._valid is False
         assert program.shaders == []
 
     def test_delete_no_context(self):
@@ -62,7 +59,7 @@ class ProgramTest(unittest.TestCase):
         program = Program(vert,frag)
         assert program.attributes[0].name == 'A'
         assert program.attributes[0].gtype == gl.GL_FLOAT
-    
+
     def test_attach(self):
         vert = VertexShader("A")
         frag = FragmentShader("B")
@@ -84,21 +81,21 @@ class ProgramTest(unittest.TestCase):
         vert = VertexShader("A")
         frag = FragmentShader("B")
 
-        program = Program(vert = vert)
-        with self.assertRaises(RuntimeError):
-            program.activate()
+        program = Program(vert=vert)
+        self.assertRaises(RuntimeError, program.activate)
 
-        program = Program(frag = frag)
-        with self.assertRaises(RuntimeError):
-            program.activate()
+        program = Program(frag=frag)
+        self.assertRaises(RuntimeError, program.activate)
 
     def test_setitem(self):
         vert = VertexShader("")
         frag = FragmentShader("")
 
         program = Program(vert,frag)
-        with self.assertRaises(NameError):
-            program["A"] = 1
+
+        def modifier(p):
+            p["A"] = 1
+        self.assertRaises(NameError, modifier, program)
 
     def test_set_uniform_vec4(self):
         vert = VertexShader("uniform vec4 color;")
@@ -117,12 +114,15 @@ class ProgramTest(unittest.TestCase):
         assert program._attributes["f"].count == 100
 
         program = Program(vert,frag)
-        program["f"] = ClientVertexBuffer(np.zeros((100,1,1), dtype=np.float32))
+        program.set_vars(f=ClientVertexBuffer(np.zeros((100,1,1),
+                                                       dtype=np.float32)))
+        assert_raises(NameError, program.set_vars, junk='foo')
         assert program._attributes["f"].count == 100
 
         program = Program(vert,frag)
-        with self.assertRaises(ValueError):
-            program["f"] = np.zeros((100,1,1), dtype=np.float32)
+        def modifier(p):
+            p["f"] = np.zeros((100,1,1), dtype=np.float32)
+        self.assertRaises(ValueError, modifier, program)
 
 
 
@@ -131,12 +131,17 @@ class ProgramTest(unittest.TestCase):
         frag = FragmentShader("")
 
         program = Program(vert,frag)
-        with self.assertRaises(ValueError):
-            program["color"] = np.array(3, dtype=np.float32)
+
+        def modifier(p):
+            p["color"] = np.array(3, dtype=np.float32)
+        self.assertRaises(ValueError, modifier, program)
 
         program = Program(vert,frag)
-        with self.assertRaises(ValueError):
-            program["color"] = np.array((100,5), dtype=np.float32)
+
+        def modifier(p):
+            p["color"] = np.array((100,5), dtype=np.float32)
+        self.assertRaises(ValueError, modifier, program)
+
 
         program = Program(vert,frag)
         program["color"] = ClientVertexBuffer(np.zeros((100,4), dtype=np.float32))
@@ -149,6 +154,21 @@ class ProgramTest(unittest.TestCase):
         program = Program(vert,frag)
         program["color"] = ClientVertexBuffer(np.zeros(100, dtype=(np.float32,4)))
         assert program._attributes["color"].count == 100
+
+    def test_set_vars(self):
+        vert = VertexShader("attribute vec4 color;")
+        frag = FragmentShader("")
+        program = Program(vert,frag)
+        arr = np.array((100,5), dtype=np.float32)
+        assert_raises(ValueError, program.set_vars, arr)
+        dtype = np.dtype([('color', np.float32, 4)])
+        dtype = np.dtype([('position', np.float32, 3),
+                          ('texcoord', np.float32, 2),
+                          ('color',    np.float32, 4)])
+        data = np.zeros(100, dtype=dtype)
+        arr = VertexBuffer(data)
+        program.set_vars(arr)
+
 
 
 if __name__ == "__main__":
