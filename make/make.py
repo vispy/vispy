@@ -38,7 +38,7 @@ DOC_DIR = os.path.join(ROOT_DIR, 'doc')
 WEBSITE_DIR = os.path.join(ROOT_DIR, '_website')
 WEBSITE_REPO = 'git@github.com:vispy/vispy-website'
 #
-PAGES_DIR =  os.path.join(ROOT_DIR, '_gh-pages')
+PAGES_DIR = os.path.join(ROOT_DIR, '_gh-pages')
 PAGES_REPO = 'git@github.com:vispy/vispy.github.com.git'
 #
 IMAGES_DIR = os.path.join(ROOT_DIR, '_images')
@@ -46,13 +46,14 @@ IMAGES_REPO = 'git@github.com:vispy/images.git'
 
 
 class Maker:
+
     """ Collection of make commands.
-    
+
     To create a new command, create a method with a short name, give it
     a docstring, and make it do something useful :)
-    
+
     """
-    
+
     def __init__(self, argv):
         """ Parse command line arguments. """
         # Get function to call
@@ -67,8 +68,7 @@ class Maker:
             func(arg)
         else:
             sys.exit('Invalid command: "%s"' % command)
-    
-    
+
     def help(self, arg):
         """ Show help message. Use 'help X' to get more help on command X. """
         if arg:
@@ -80,9 +80,9 @@ class Maker:
                 print()
             else:
                 sys.exit('Cannot show help on unknown command: "%s"' % command)
-            
+
         else:
-            print(__doc__.strip()+ '\n\nCommands:\n')
+            print(__doc__.strip() + '\n\nCommands:\n')
             for command in sorted(dir(self)):
                 if command.startswith('_'):
                     continue
@@ -91,8 +91,7 @@ class Maker:
                 doc = getattr(self, command).__doc__.strip()
                 print(' %s  %s' % (preamble, doc))
             print()
-    
-    
+
     def doc(self, arg):
         """ Make API documentation. Subcommands:
             * html - build html
@@ -110,8 +109,7 @@ class Maker:
             sphinx_show(os.path.join(build_dir, 'html'))
         else:
             sys.exit('Command "doc" does not have subcommand "%s"' % arg)
-    
-    
+
     def website(self, arg):
         """ Build website. Website source is put in '_website'. Subcommands:
             * html - build html
@@ -122,8 +120,8 @@ class Maker:
         build_dir = os.path.join(WEBSITE_DIR, '_build')
         html_dir = os.path.join(build_dir, 'html')
         if not arg:
-           return self.help('website')
-        
+            return self.help('website')
+
         # Clone repo for website if needed, make up-to-date otherwise
         if not os.path.isdir(WEBSITE_DIR):
             os.chdir(ROOT_DIR)
@@ -132,7 +130,7 @@ class Maker:
             print('Updating website repo')
             os.chdir(WEBSITE_DIR)
             sh('git pull')
-        
+
         # Go
         if 'html' == arg:
             sphinx_clean(build_dir)
@@ -143,19 +141,18 @@ class Maker:
         elif 'upload' == arg:
             sphinx_upload(PAGES_DIR)
             print()
-            print("Do not forget to also commit+push your changes to '_website'")
+            print(
+                "Do not forget to also commit+push your changes to '_website'")
         else:
             sys.exit('Command "website" does not have subcommand "%s"' % arg)
 
-    
     def test(self, arg):
         """ Run all unit tests using nose. """
         os.chdir(ROOT_DIR)
         sys.argv[1:] = []
         import nose
         result = nose.run()
-    
-    
+
     def images(self, arg):
         """ Create images (screenshots). Subcommands:
             * gallery - make screenshots for the gallery
@@ -163,8 +160,8 @@ class Maker:
             * upload - upload the images repository
         """
         if not arg:
-           return self.help('images')
-        
+            return self.help('images')
+
         # Clone repo for images if needed, make up-to-date otherwise
         if not os.path.isdir(IMAGES_DIR):
             os.chdir(ROOT_DIR)
@@ -173,13 +170,13 @@ class Maker:
             print('Updating images repo')
             os.chdir(IMAGES_DIR)
             sh('git pull')
-        
+
         # Create subdirs if needed
         for subdir in ['gallery', 'thumbs', 'test']:
             subdir = os.path.join(IMAGES_DIR, subdir)
             if not os.path.isdir(subdir):
                 os.mkdir(subdir)
-        
+
         # Go
         if arg == 'gallery':
             self._images_screenshots()
@@ -190,20 +187,19 @@ class Maker:
             sphinx_upload(IMAGES_DIR)
         else:
             sys.exit('Command "website" does not have subcommand "%s"' % arg)
-    
-    
+
     def _images_screenshots(self):
         # Prepare
         import imp
         from vispy.util.dataio import imsave, _screenshot
         examples_dir = os.path.join(ROOT_DIR, 'examples')
         gallery_dir = os.path.join(IMAGES_DIR, 'gallery')
-        
+
         # Process all files ...
         for filename, name in get_example_filenames(examples_dir):
             name = name.replace('/', '__')  # We use flat names
-            imagefilename = os.path.join(gallery_dir, name+'.png')
-            
+            imagefilename = os.path.join(gallery_dir, name + '.png')
+
             # Check if should make a screenshot
             frames = []
             lines = open(filename, 'rt').read().splitlines()
@@ -215,26 +211,27 @@ class Maker:
                     frames = [int(i) for i in frames.split(':')]
                     if not frames:
                         frames = [0]
-                    if len(frames)>1:
+                    if len(frames) > 1:
                         frames = list(range(*frames))
                     break
             else:
                 continue  # gallery hint not found
-            
+
             # Check if we need to take a sceenshot
             if os.path.isfile(imagefilename):
                 print('Screenshot for %s already present (skip).' % name)
                 continue
-            
+
             # Import module and prepare
-            m = imp.load_source('vispy_example_'+name, filename)
+            m = imp.load_source('vispy_example_' + name, filename)
             m.done = False
             m.frame = -1
             m.images = []
-            
+
             # Create a canvas and grab a screenshot
             def grabscreenshot(event):
-                if m.done: return  # Grab only once
+                if m.done:
+                    return  # Grab only once
                 m.frame += 1
                 if m.frame in frames:
                     frames.remove(m.frame)
@@ -249,14 +246,13 @@ class Maker:
             while not m.done:
                 m.app.process_events()
             c.close()
-            
+
             # Save
             imsave(imagefilename, m.images[0])  # Alwats show one image
             if len(m.images) > 1:
                 import imageio  # multiple gif not properly supported yet
-                imageio.mimsave(imagefilename[:-3]+'.gif', m.images)
-    
-    
+                imageio.mimsave(imagefilename[:-3] + '.gif', m.images)
+
     def _images_thumbnails(self):
         from vispy.util.dataio import imsave, imread
         from skimage.transform import resize
@@ -269,23 +265,22 @@ class Maker:
             #
             im = imread(filename1)
             newx = 200
-            newy = int( newx * im.shape[0] / im.shape[1])
-            im = (resize(im, (newy, newx), 2)*255).astype(np.uint8)
+            newy = int(newx * im.shape[0] / im.shape[1])
+            im = (resize(im, (newy, newx), 2) * 255).astype(np.uint8)
             imsave(filename2, im)
             print('Created thumbnail %s' % fname)
 
-    
     def copyright(self, arg):
         """ Update all copyright notices to the current year.
         """
         # Initialize
         TEMPLATE = "# Copyright (c) %i, Vispy Development Team."
         CURYEAR = int(time.strftime('%Y'))
-        OLDTEXT = TEMPLATE % (CURYEAR-1)
+        OLDTEXT = TEMPLATE % (CURYEAR - 1)
         NEWTEXT = TEMPLATE % CURYEAR
         # Initialize counts
         count_ok, count_replaced = 0, 0
-        
+
         # Processing the whole root directory
         for dirpath, dirnames, filenames in os.walk(ROOT_DIR):
             # Check if we should skip this directory
@@ -306,16 +301,20 @@ class Maker:
                 elif OLDTEXT in text:
                     text = text.replace(OLDTEXT, REPLACE)
                     open(filename, 'wt').write(text)
-                    print('  Update copyright year in %s/%s' % (reldirpath, fname))
+                    print(
+                        '  Update copyright year in %s/%s' %
+                        (reldirpath, fname))
                     count_replaced += 1
                 elif 'copyright' in text[:200].lower():
-                    print('  Unknown copyright mentioned in %s/%s' % (reldirpath, fname))
+                    print(
+                        '  Unknown copyright mentioned in %s/%s' %
+                        (reldirpath, fname))
         # Report
         print('Replaced %i copyright statements' % count_replaced)
         print('Found %i copyright statements up to date' % count_ok)
-            
 
-## Functions used by the maker
+
+# Functions used by the maker
 
 if sys.version_info[0] < 3:
     input = raw_input
@@ -339,20 +338,20 @@ def sh2(cmd):
 
 
 def sphinx_clean(build_dir):
-        if os.path.isdir(build_dir):
-            shutil.rmtree(build_dir)
-        os.mkdir(build_dir)
-        print('Cleared build directory.')
+    if os.path.isdir(build_dir):
+        shutil.rmtree(build_dir)
+    os.mkdir(build_dir)
+    print('Cleared build directory.')
 
-    
+
 def sphinx_build(src_dir, build_dir):
     import sphinx
-    sphinx.main((   'sphinx-build',  # Dummy 
-                    '-b', 'html', 
-                    '-d', os.path.join(build_dir, 'doctrees'),
-                    src_dir,  # Source
-                    os.path.join(build_dir, 'html'),  # Dest
-                ))
+    sphinx.main(('sphinx-build',  # Dummy
+                 '-b', 'html',
+                 '-d', os.path.join(build_dir, 'doctrees'),
+                 src_dir,  # Source
+                 os.path.join(build_dir, 'html'),  # Dest
+                 ))
     print("Build finished. The HTML pages are in %s/html." % build_dir)
 
 
@@ -375,7 +374,7 @@ def sphinx_copy_pages(html_dir, pages_dir, pages_repo):
     sh('git pull -q')
     # This is pretty unforgiving: we unconditionally nuke the destination
     # directory, and then copy the html tree in there
-    tmp_git_dir = os.path.join(ROOT_DIR, pages_dir+'_git')
+    tmp_git_dir = os.path.join(ROOT_DIR, pages_dir + '_git')
     shutil.move(os.path.join(pages_dir, '.git'), tmp_git_dir)
     try:
         shutil.rmtree(pages_dir)
@@ -386,7 +385,7 @@ def sphinx_copy_pages(html_dir, pages_dir, pages_repo):
             shutil.rmtree(tmp_git_dir)
     # Copy individual files
     for fname in ['CNAME', 'README.md', 'conf.py', '.nojekyll', 'Makefile']:
-        shutil.copyfile(os.path.join(WEBSITE_DIR, fname), 
+        shutil.copyfile(os.path.join(WEBSITE_DIR, fname),
                         os.path.join(pages_dir, fname))
     # Messages
     os.chdir(pages_dir)
@@ -404,7 +403,7 @@ def sphinx_upload(repo_dir):
     branch = re.match('\# On branch (.*)$', status).group(1)
     if branch != 'master':
         e = 'On %r, git branch is %r, MUST be "master"' % (repo_dir,
-                                                            branch)
+                                                           branch)
         raise RuntimeError(e)
     # Show repo and ask confirmation
     print()
@@ -426,12 +425,13 @@ def sphinx_upload(repo_dir):
 
 def get_example_filenames(example_dir):
     """ Yield (filename, name) elements for all examples. The examples
-    are organized in directories, therefore the name can contain a 
+    are organized in directories, therefore the name can contain a
     forward slash.
     """
     for (dirpath, dirnames, filenames) in os.walk(example_dir):
         for fname in filenames:
-            if not fname.endswith('.py'): continue
+            if not fname.endswith('.py'):
+                continue
             filename = os.path.join(dirpath, fname)
             name = filename[len(example_dir):].lstrip('/\\')[:-3]
             name = name.replace('\\', '/')

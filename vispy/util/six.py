@@ -51,6 +51,7 @@ else:
     else:
         # It's possible to have sizeof(long) != sizeof(Py_ssize_t).
         class X(object):
+
             def __len__(self):
                 return 1 << 31
         try:
@@ -128,61 +129,57 @@ class MovedAttribute(_LazyDescr):
         return getattr(module, self.attr)
 
 
-
 class _MovedItems(types.ModuleType):
+
     """Lazy loading of moved objects"""
 
 
 _moved_attributes = [
-    MovedAttribute("cStringIO", "cStringIO", "io", "StringIO"),
-    MovedAttribute("filter", "itertools", "builtins", "ifilter", "filter"),
-    MovedAttribute("input", "__builtin__", "builtins", "raw_input", "input"),
-    MovedAttribute("map", "itertools", "builtins", "imap", "map"),
-    MovedAttribute("reload_module", "__builtin__", "imp", "reload"),
-    MovedAttribute("reduce", "__builtin__", "functools"),
-    MovedAttribute("StringIO", "StringIO", "io"),
-    MovedAttribute("xrange", "__builtin__", "builtins", "xrange", "range"),
-    MovedAttribute("zip", "itertools", "builtins", "izip", "zip"),
-
-    MovedModule("builtins", "__builtin__"),
-    MovedModule("configparser", "ConfigParser"),
-    MovedModule("copyreg", "copy_reg"),
-    MovedModule("http_cookiejar", "cookielib", "http.cookiejar"),
-    MovedModule("http_cookies", "Cookie", "http.cookies"),
-    MovedModule("html_entities", "htmlentitydefs", "html.entities"),
-    MovedModule("html_parser", "HTMLParser", "html.parser"),
-    MovedModule("http_client", "httplib", "http.client"),
-    MovedModule("email_mime_multipart", "email.MIMEMultipart", "email.mime.multipart"),
-    MovedModule("email_mime_text", "email.MIMEText", "email.mime.text"),
-    MovedModule("email_mime_base", "email.MIMEBase", "email.mime.base"),
-    MovedModule("BaseHTTPServer", "BaseHTTPServer", "http.server"),
-    MovedModule("CGIHTTPServer", "CGIHTTPServer", "http.server"),
-    MovedModule("SimpleHTTPServer", "SimpleHTTPServer", "http.server"),
-    MovedModule("cPickle", "cPickle", "pickle"),
-    MovedModule("queue", "Queue"),
-    MovedModule("reprlib", "repr"),
-    MovedModule("socketserver", "SocketServer"),
-    MovedModule("tkinter", "Tkinter"),
-    MovedModule("tkinter_dialog", "Dialog", "tkinter.dialog"),
-    MovedModule("tkinter_filedialog", "FileDialog", "tkinter.filedialog"),
-    MovedModule("tkinter_scrolledtext", "ScrolledText", "tkinter.scrolledtext"),
-    MovedModule("tkinter_simpledialog", "SimpleDialog", "tkinter.simpledialog"),
-    MovedModule("tkinter_tix", "Tix", "tkinter.tix"),
-    MovedModule("tkinter_constants", "Tkconstants", "tkinter.constants"),
-    MovedModule("tkinter_dnd", "Tkdnd", "tkinter.dnd"),
-    MovedModule("tkinter_colorchooser", "tkColorChooser",
-                "tkinter.colorchooser"),
-    MovedModule("tkinter_commondialog", "tkCommonDialog",
-                "tkinter.commondialog"),
-    MovedModule("tkinter_tkfiledialog", "tkFileDialog", "tkinter.filedialog"),
-    MovedModule("tkinter_font", "tkFont", "tkinter.font"),
-    MovedModule("tkinter_messagebox", "tkMessageBox", "tkinter.messagebox"),
-    MovedModule("tkinter_tksimpledialog", "tkSimpleDialog",
-                "tkinter.simpledialog"),
-    MovedModule("urllib_robotparser", "robotparser", "urllib.robotparser"),
-    MovedModule("winreg", "_winreg"),
-    MovedModule("dummy_thread", "dumm_thread", "_dummy_thread"),
-]
+    MovedAttribute(
+        "cStringIO", "cStringIO", "io", "StringIO"), MovedAttribute(
+        "filter", "itertools", "builtins", "ifilter", "filter"), MovedAttribute(
+        "input", "__builtin__", "builtins", "raw_input", "input"), MovedAttribute(
+        "map", "itertools", "builtins", "imap", "map"), MovedAttribute(
+        "reload_module", "__builtin__", "imp", "reload"), MovedAttribute(
+        "reduce", "__builtin__", "functools"), MovedAttribute(
+        "StringIO", "StringIO", "io"), MovedAttribute(
+        "xrange", "__builtin__", "builtins", "xrange", "range"), MovedAttribute(
+        "zip", "itertools", "builtins", "izip", "zip"), MovedModule(
+        "builtins", "__builtin__"), MovedModule(
+        "configparser", "ConfigParser"), MovedModule(
+        "copyreg", "copy_reg"), MovedModule(
+        "http_cookiejar", "cookielib", "http.cookiejar"), MovedModule(
+        "http_cookies", "Cookie", "http.cookies"), MovedModule(
+        "html_entities", "htmlentitydefs", "html.entities"), MovedModule(
+        "html_parser", "HTMLParser", "html.parser"), MovedModule(
+        "http_client", "httplib", "http.client"), MovedModule(
+        "email_mime_multipart", "email.MIMEMultipart", "email.mime.multipart"), MovedModule(
+        "email_mime_text", "email.MIMEText", "email.mime.text"), MovedModule(
+        "email_mime_base", "email.MIMEBase", "email.mime.base"), MovedModule(
+        "BaseHTTPServer", "BaseHTTPServer", "http.server"), MovedModule(
+        "CGIHTTPServer", "CGIHTTPServer", "http.server"), MovedModule(
+        "SimpleHTTPServer", "SimpleHTTPServer", "http.server"), MovedModule(
+        "cPickle", "cPickle", "pickle"), MovedModule(
+        "queue", "Queue"), MovedModule(
+        "reprlib", "repr"), MovedModule(
+        "socketserver", "SocketServer"), MovedModule(
+        "tkinter", "Tkinter"), MovedModule(
+        "tkinter_dialog", "Dialog", "tkinter.dialog"), MovedModule(
+        "tkinter_filedialog", "FileDialog", "tkinter.filedialog"), MovedModule(
+        "tkinter_scrolledtext", "ScrolledText", "tkinter.scrolledtext"), MovedModule(
+        "tkinter_simpledialog", "SimpleDialog", "tkinter.simpledialog"), MovedModule(
+        "tkinter_tix", "Tix", "tkinter.tix"), MovedModule(
+        "tkinter_constants", "Tkconstants", "tkinter.constants"), MovedModule(
+        "tkinter_dnd", "Tkdnd", "tkinter.dnd"), MovedModule(
+        "tkinter_colorchooser", "tkColorChooser", "tkinter.colorchooser"), MovedModule(
+        "tkinter_commondialog", "tkCommonDialog", "tkinter.commondialog"), MovedModule(
+        "tkinter_tkfiledialog", "tkFileDialog", "tkinter.filedialog"), MovedModule(
+        "tkinter_font", "tkFont", "tkinter.font"), MovedModule(
+        "tkinter_messagebox", "tkMessageBox", "tkinter.messagebox"), MovedModule(
+        "tkinter_tksimpledialog", "tkSimpleDialog", "tkinter.simpledialog"), MovedModule(
+        "urllib_robotparser", "robotparser", "urllib.robotparser"), MovedModule(
+        "winreg", "_winreg"), MovedModule(
+        "dummy_thread", "dumm_thread", "_dummy_thread"), ]
 for attr in _moved_attributes:
     setattr(_MovedItems, attr.name, attr)
 del attr
@@ -280,13 +277,16 @@ def iterkeys(d, **kw):
     """Return an iterator over the keys of a dictionary."""
     return iter(getattr(d, _iterkeys)(**kw))
 
+
 def itervalues(d, **kw):
     """Return an iterator over the values of a dictionary."""
     return iter(getattr(d, _itervalues)(**kw))
 
+
 def iteritems(d, **kw):
     """Return an iterator over the (key, value) pairs of a dictionary."""
     return iter(getattr(d, _iteritems)(**kw))
+
 
 def iterlists(d, **kw):
     """Return an iterator over the (key, [values]) pairs of a dictionary."""
@@ -296,6 +296,7 @@ def iterlists(d, **kw):
 if PY3:
     def b(s):
         return s.encode("latin-1")
+
     def u(s):
         return s
     if sys.version_info[1] <= 1:
@@ -310,6 +311,7 @@ if PY3:
 else:
     def b(s):
         return s
+
     def u(s):
         return unicode(s, "unicode_escape")
     int2byte = chr
@@ -323,12 +325,10 @@ if PY3:
     import builtins
     exec_ = getattr(builtins, "exec")
 
-
     def reraise(tp, value, tb=None):
         if value.__traceback__ is not tb:
             raise value.with_traceback(tb)
         raise value
-
 
     print_ = getattr(builtins, "print")
     del builtins
@@ -346,17 +346,16 @@ else:
             _locs_ = _globs_
         exec("""exec _code_ in _globs_, _locs_""")
 
-
     exec_("""def reraise(tp, value, tb=None):
     raise tp, value, tb
 """)
-
 
     def print_(*args, **kwargs):
         """The new-style print function."""
         fp = kwargs.pop("file", sys.stdout)
         if fp is None:
             return
+
         def write(data):
             if not isinstance(data, basestring):
                 data = str(data)

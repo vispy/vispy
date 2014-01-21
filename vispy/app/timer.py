@@ -10,23 +10,31 @@ from vispy.util.ptime import time as precision_time
 
 
 class Timer(object):
+
     """Timer used to schedule events in the future or on a repeating schedule.
     """
-    def __init__(self, interval=0.0, connect=None, iterations=-1, start=False, app=None):
-        self.events = EmitterGroup(source=self, 
-                        start=Event, 
-                        stop=Event,
-                        timeout=Event)
+
+    def __init__(
+            self,
+            interval=0.0,
+            connect=None,
+            iterations=-1,
+            start=False,
+            app=None):
+        self.events = EmitterGroup(source=self,
+                                   start=Event,
+                                   stop=Event,
+                                   timeout=Event)
         #self.connect = self.events.timeout.connect
         #self.disconnect = self.events.timeout.disconnect
-        
-        # Get app instance and make sure that it has an associated backend 
+
+        # Get app instance and make sure that it has an associated backend
         self._app = vispy.app.default_app if app is None else app
         self._app.use()
-        
+
         # Instantiate the backed with the right class
         self._backend = self._app.backend_module.TimerBackend(self)
-        
+
         self._interval = interval
         self._running = False
         self._last_emit_time = None
@@ -36,14 +44,12 @@ class Timer(object):
             self.connect(connect)
         if start:
             self.start()
-            
-        
+
     @property
     def app(self):
         """ The vispy Application instance on which this Timer is based.
         """
         return self._app
-    
 
     @property
     def interval(self):
@@ -61,14 +67,14 @@ class Timer(object):
         return self._running
 
     def start(self, interval=None, iterations=None):
-        """Start the timer. 
+        """Start the timer.
 
         A timeout event will be generated every *interval* seconds.
         If *interval* is None, then self.interval will be used.
-        
-        If *iterations* is specified, the timer will stop after 
-        emitting that number of events. If unspecified, then 
-        the previous value of self.iterations will be used. If the value is 
+
+        If *iterations* is specified, the timer will stop after
+        emitting that number of events. If unspecified, then
+        the previous value of self.iterations will be used. If the value is
         negative, then the timer will continue running until stop() is called.
         """
         self.iter_count = 0
@@ -80,31 +86,30 @@ class Timer(object):
         self._running = True
         self._last_emit_time = None
         self.events.start(type='timer_start')
-        
-        
+
     def stop(self):
         """Stop the timer."""
         self._backend._vispy_stop()
         self._running = False
         self.events.stop(type='timer_stop')
-        
+
     # use timer.app.run() and .quit() instead.
-    #def run_event_loop(self):
+    # def run_event_loop(self):
         #"""Execute the event loop for this Timer's backend.
         #"""
-        #return self._backend._vispy_run()
-        
-    #def quit_event_loop(self):
+        # return self._backend._vispy_run()
+
+    # def quit_event_loop(self):
         #"""Exit the event loop for this Timer's backend.
         #"""
-        #return self._backend._vispy_quit()
-    
+        # return self._backend._vispy_quit()
+
     @property
     def native(self):
         """ The native timer on which this Timer is based.
         """
         return self._backend._vispy_get_native_timer()
-    
+
     def _timeout(self, *args):
         # called when the backend timer has triggered.
         if not self.running:
@@ -112,7 +117,7 @@ class Timer(object):
         if self.max_iterations >= 0 and self.iter_count >= self.max_iterations:
             self.stop()
             return
-        
+
         # compute dt since last event
         now = precision_time()
         if self._last_emit_time is None:
@@ -120,10 +125,13 @@ class Timer(object):
         else:
             dt = now - self._last_emit_time
         self._last_emit_time = now
-        
-        self.events.timeout(type='timer_timeout', iteration=self.iter_count, dt=dt)
+
+        self.events.timeout(
+            type='timer_timeout',
+            iteration=self.iter_count,
+            dt=dt)
         self.iter_count += 1
-    
+
     def connect(self, callback):
         """ Alias for self.events.timeout.connect() """
         return self.events.timeout.connect(callback)
@@ -134,21 +142,23 @@ class Timer(object):
 
 
 class TimerBackend(object):
+
     """ TimerBackend(vispy_timer)
-    
+
     Abstract class that provides an interface between backends and Timer.
     Each backend must implement a subclass of TimerBackend, and
     implement all its _vispy_xxx methods.
     """
+
     def __init__(self, vispy_timer):
         self._vispy_timer = vispy_timer
 
     def _vispy_start(self, interval):
         raise Exception("Method must be reimplemented in subclass.")
-    
+
     def _vispy_stop(self):
         raise Exception("Method must be reimplemented in subclass.")
-    
+
     def _vispy_get_native_timer(self):
         # Should return the native timer object
         # Most backends would not need to implement this

@@ -1,8 +1,8 @@
-# #!/usr/bin/env python
+# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vispy: gallery 2
 
-""" Show a bunch of lines. 
+""" Show a bunch of lines.
 This example demonstrates how multiple line-pieces can be drawn
 using one call, by discarting some fragments.
 """
@@ -13,13 +13,13 @@ from vispy import app
 from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
-#app.use('glut')
+# app.use('glut')
 
-# Create vetices 
+# Create vetices
 n = 100
-a_position = np.random.uniform(-1,1,(n,3)).astype(np.float32)
-a_id = np.random.randint(0,30,(n,1))
-a_id = np.sort(a_id,axis=0).astype(np.float32)
+a_position = np.random.uniform(-1, 1, (n, 3)).astype(np.float32)
+a_id = np.random.randint(0, 30, (n, 1))
+a_id = np.sort(a_id, axis=0).astype(np.float32)
 
 
 VERT_SHADER = """
@@ -49,7 +49,6 @@ void main()
 """
 
 
-
 class Canvas(app.Canvas):
 
     # ---------------------------------
@@ -57,74 +56,67 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        
+
         # Set uniform and attribute
         self.program['a_id'] = gloo.VertexBuffer(a_id)
         self.program['a_position'] = gloo.VertexBuffer(a_position)
 
-        self.view       = np.eye(4,dtype=np.float32)
-        self.model      = np.eye(4,dtype=np.float32)
-        self.projection = np.eye(4,dtype=np.float32)
+        self.view = np.eye(4, dtype=np.float32)
+        self.model = np.eye(4, dtype=np.float32)
+        self.projection = np.eye(4, dtype=np.float32)
 
         self.translate = 5
-        translate(self.view, 0,0, -self.translate)
+        translate(self.view, 0, 0, -self.translate)
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
 
         self.theta = 0
         self.phi = 0
 
-        self.timer = app.Timer(1.0/60)
+        self.timer = app.Timer(1.0 / 60)
         self.timer.connect(self.on_timer)
-        #self.timer.start()
-
-
+        # self.timer.start()
 
     # ---------------------------------
     def on_initialize(self, event):
-        gl.glClearColor(1,1,1,1)
+        gl.glClearColor(1, 1, 1, 1)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
     # ---------------------------------
-    def on_key_press(self,event):
+    def on_key_press(self, event):
         if event.text == ' ':
             if self.timer.running:
                 self.timer.stop()
             else:
                 self.timer.start()
 
-
     # ---------------------------------
-    def on_timer(self,event):
+    def on_timer(self, event):
         self.theta += .5
         self.phi += .5
         self.model = np.eye(4, dtype=np.float32)
-        rotate(self.model, self.theta, 0,0,1)
-        rotate(self.model, self.phi,   0,1,0)
+        rotate(self.model, self.theta, 0, 0, 1)
+        rotate(self.model, self.phi, 0, 1, 0)
         self.program['u_model'] = self.model
         self.update()
-
 
     # ---------------------------------
     def on_resize(self, event):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
-        self.projection = perspective( 45.0, width/float(height), 1.0, 1000.0 )
+        self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
         self.program['u_projection'] = self.projection
-
 
     # ---------------------------------
     def on_mouse_wheel(self, event):
-        self.translate +=event.delta[1]
-        self.translate = max(2,self.translate)
-        self.view       = np.eye(4,dtype=np.float32)
-        translate(self.view, 0,0, -self.translate)
+        self.translate += event.delta[1]
+        self.translate = max(2, self.translate)
+        self.view = np.eye(4, dtype=np.float32)
+        translate(self.view, 0, 0, -self.translate)
         self.program['u_view'] = self.view
         self.update()
-
 
     # ---------------------------------
     def on_paint(self, event):

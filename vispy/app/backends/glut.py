@@ -65,29 +65,30 @@ KEYMAP = {
 }
 
 
-BUTTONMAP = {   glut.GLUT_LEFT_BUTTON:1,
-                glut.GLUT_RIGHT_BUTTON:2,
-                glut.GLUT_MIDDLE_BUTTON:3
-            }
+BUTTONMAP = {glut.GLUT_LEFT_BUTTON: 1,
+             glut.GLUT_RIGHT_BUTTON: 2,
+             glut.GLUT_MIDDLE_BUTTON: 3
+             }
 
 
 ALL_WINDOWS = []
 
+
 class ApplicationBackend(app.ApplicationBackend):
+
     def __init__(self):
         app.ApplicationBackend.__init__(self)
         self._inizialized = False
         self._windows = []
 
-
     def _vispy_get_backend_name(self):
         return 'Glut'
 
     def _vispy_process_events(self):
-        pass # not possible?
+        pass  # not possible?
 
     def _vispy_run(self):
-        self._vispy_get_native_app() # Force exist
+        self._vispy_get_native_app()  # Force exist
         return glut.glutMainLoop()
 
     def _vispy_quit(self):
@@ -96,30 +97,35 @@ class ApplicationBackend(app.ApplicationBackend):
             win._vispy_close()
 
     def _vispy_get_native_app(self):
-        import sys, ctypes
+        import sys
+        import ctypes
         from OpenGL import platform
 
         # HiDPI support for retina display
-        # This requires glut from http://iihm.imag.fr/blanch/software/glut-macosx/
+        # This requires glut from
+        # http://iihm.imag.fr/blanch/software/glut-macosx/
         if sys.platform == 'darwin':
             try:
                 glutInitDisplayString = platform.createBaseFunction(
-                    'glutInitDisplayString', dll=platform.GLUT, resultType=None,
-                    argTypes=[ctypes.c_char_p],
+                    'glutInitDisplayString',
+                    dll=platform.GLUT,
+                    resultType=None,
+                    argTypes=[
+                        ctypes.c_char_p],
                     doc='glutInitDisplayString(  ) -> None',
-                argNames=() )
+                    argNames=())
                 text = ctypes.c_char_p("rgba stencil double samples=8 hidpi")
                 glutInitDisplayString(text)
             except:
                 pass
         if not self._inizialized:
-            glut.glutInit() # todo: maybe allow user to give args?
+            glut.glutInit()  # todo: maybe allow user to give args?
             self._inizialized = True
         return glut
 
 
-
 class CanvasBackend(app.CanvasBackend):
+
     """ GLUT backend for Canvas abstract class."""
 
     def __init__(self, name='glut window', *args, **kwargs):
@@ -133,12 +139,12 @@ class CanvasBackend(app.CanvasBackend):
 
         # Note: this seems to cause the canvas to ignore calls to show()
         # about half of the time.
-        #glut.glutHideWindow()  # Start hidden, like the other backends
+        # glut.glutHideWindow()  # Start hidden, like the other backends
 
         # Register callbacks
         glut.glutDisplayFunc(self.on_draw)
         glut.glutReshapeFunc(self.on_resize)
-        #glut.glutVisibilityFunc(self.on_show)
+        # glut.glutVisibilityFunc(self.on_show)
         glut.glutKeyboardFunc(self.on_key_press)
         glut.glutSpecialFunc(self.on_key_press)
         glut.glutKeyboardUpFunc(self.on_key_release)
@@ -149,7 +155,7 @@ class CanvasBackend(app.CanvasBackend):
         # Set close function. See issue #10. For some reason, the function
         # can still not exist even if we checked its boolean status.
         closeFuncSet = False
-        if bool(glut.glutWMCloseFunc): # OSX specific test
+        if bool(glut.glutWMCloseFunc):  # OSX specific test
             try:
                 glut.glutWMCloseFunc(self.on_close)
                 closeFuncSet = True
@@ -162,11 +168,12 @@ class CanvasBackend(app.CanvasBackend):
             except OpenGL.error.NullFunctionError:
                 pass
 
-        #glut.glutFunc(self.on_)
+        # glut.glutFunc(self.on_)
 
         self._initialized = False
 
-        # LC: I think initializing here makes it more consistent with other backends
+        # LC: I think initializing here makes it more consistent with other
+        # backends
         glut.glutTimerFunc(0, self._emit_initialize, None)
 
     def _emit_initialize(self, _=None):
@@ -239,7 +246,7 @@ class CanvasBackend(app.CanvasBackend):
     def on_resize(self, w, h):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.resize(size=(w,h))
+        self._vispy_canvas.events.resize(size=(w, h))
 
     def on_close(self):
         if self._vispy_canvas is None:
@@ -255,30 +262,40 @@ class CanvasBackend(app.CanvasBackend):
 
         #w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
         #h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
-        self._vispy_canvas.events.paint(region=None)  #(0, 0, w, h))
+        self._vispy_canvas.events.paint(region=None)  # (0, 0, w, h))
 
     def on_mouse_action(self, button, state, x, y):
         if self._vispy_canvas is None:
             return
-        action = {glut.GLUT_UP:'release', glut.GLUT_DOWN:'press'}[state]
+        action = {glut.GLUT_UP: 'release', glut.GLUT_DOWN: 'press'}[state]
         mod = self._modifiers(False)
 
         if button < 3:
             # Mouse click event
             button = BUTTONMAP.get(button, 0)
             if action == 'press':
-                self._vispy_mouse_press(pos=(x,y), button=button, modifiers=mod)
+                self._vispy_mouse_press(
+                    pos=(
+                        x,
+                        y),
+                    button=button,
+                    modifiers=mod)
             else:
-                self._vispy_mouse_release(pos=(x,y), button=button, modifiers=mod)
+                self._vispy_mouse_release(
+                    pos=(
+                        x,
+                        y),
+                    button=button,
+                    modifiers=mod)
 
         elif button in (3, 4):
             # Wheel event
-            deltay = 1.0 if button==3 else -1.0
+            deltay = 1.0 if button == 3 else -1.0
             self._vispy_canvas.events.mouse_wheel(
                 pos=(x, y),
                 delta=(0.0, deltay),
                 modifiers=mod,
-                )
+            )
 
     def on_mouse_motion(self, x, y):
         if self._vispy_canvas is None:
@@ -286,24 +303,23 @@ class CanvasBackend(app.CanvasBackend):
         self._vispy_mouse_move(
             pos=(x, y),
             modifiers=self._modifiers(False),
-            )
-
+        )
 
     def on_key_press(self, key, x, y):
         key, text = self._process_key(key)
         self._vispy_canvas.events.key_press(
-                key=key,
-                text=text,
-                modifiers=self._modifiers(),
-            )
+            key=key,
+            text=text,
+            modifiers=self._modifiers(),
+        )
 
     def on_key_release(self, key, x, y):
         key, text = self._process_key(key)
         self._vispy_canvas.events.key_release(
-                key=key,
-                text=text,
-                modifiers=self._modifiers()
-            )
+            key=key,
+            text=text,
+            modifiers=self._modifiers()
+        )
 
     def _process_key(self, key):
         if key in KEYMAP:
@@ -312,7 +328,7 @@ class CanvasBackend(app.CanvasBackend):
             else:
                 return KEYMAP[key], key
         elif isinstance(key, int):
-            return None, '' # unsupported special char
+            return None, ''  # unsupported special char
         else:
             return keys.Key(key.upper()), key
 
@@ -332,6 +348,7 @@ class CanvasBackend(app.CanvasBackend):
 
 import weakref
 
+
 def _glut_callback(id):
     # Get weakref wrapper for timer
     timer = TimerBackend._timers.get(id, None)
@@ -344,47 +361,47 @@ def _glut_callback(id):
     # Kick it!
     if timer._vispy_timer._running:
         timer._vispy_timer._timeout()
-        ms = int(timer._vispy_timer._interval*1000)
+        ms = int(timer._vispy_timer._interval * 1000)
         glut.glutTimerFunc(ms, _glut_callback, timer._id)
 
 
-#class TimerBackend(app.TimerBackend):
+# class TimerBackend(app.TimerBackend):
     #_counter = 0
     #_timers = {}
 
-    #def __init__(self, vispy_timer):
+    # def __init__(self, vispy_timer):
         #app.TimerBackend.__init__(self, vispy_timer)
-        ## Give this timer a unique id
+        # Give this timer a unique id
         #TimerBackend._counter += 1
         #self._id = TimerBackend._counter
-        ## Store this timer (using a weak ref)
+        # Store this timer (using a weak ref)
         #self._timers[self._id] = weakref.ref(self)
 
     #@classmethod
-    #def _glut_callback(cls, id):
-        ## Get weakref wrapper for timer
+    # def _glut_callback(cls, id):
+        # Get weakref wrapper for timer
         #timer = cls._timers.get(id, None)
-        #if timer is None:
-            #return
-        ## Get timer object
+        # if timer is None:
+            # return
+        # Get timer object
         #timer = timer()
-        #if timer is None:
-            #return
-        ## Kick it!
-        #if timer._vispy_timer._running:
-            #timer._vispy_timer._timeout()
+        # if timer is None:
+            # return
+        # Kick it!
+        # if timer._vispy_timer._running:
+            # timer._vispy_timer._timeout()
             #ms = int(timer._vispy_timer._interval*1000)
             #glut.glutTimerFunc(ms, TimerBackend._glut_callback, timer._id)
 
-    #def _vispy_start(self, interval):
+    # def _vispy_start(self, interval):
         ##glut.glutTimerFunc(int(interval*1000), TimerBackend._glut_callback, self._id)
         #glut.glutTimerFunc(int(interval*1000), _glut_callback, self._id)
 
-    #def _vispy_stop(self):
-        #pass
+    # def _vispy_stop(self):
+        # pass
 
-    #def _vispy_get_native_timer(self):
-        #return glut # or self?
+    # def _vispy_get_native_timer(self):
+        # return glut # or self?
 
 # Note: we could also build a timer using glutTimerFunc, but this causes trouble
 # because timer callbacks appear to take precedence over all others. Thus,
@@ -409,14 +426,14 @@ class TimerBackend(app.TimerBackend):
         now = ptime.time()
         new_schedule = []
 
-        ## see whether there are any timers ready
+        # see whether there are any timers ready
         while len(cls._schedule) > 0 and cls._schedule[0][0] <= now:
             timer = cls._schedule.pop(0)[1]
             timer._vispy_timer._timeout()
             if timer._vispy_timer.running:
-                new_schedule.append((now+timer._vispy_timer.interval, timer))
+                new_schedule.append((now + timer._vispy_timer.interval, timer))
 
-        ## schedule next round of timeouts
+        # schedule next round of timeouts
         if len(new_schedule) > 0:
             cls._schedule.extend(new_schedule)
             cls._schedule.sort()

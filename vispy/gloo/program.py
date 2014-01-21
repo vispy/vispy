@@ -25,16 +25,16 @@ from .shader import VertexShader, FragmentShader, ShaderError
 from vispy.util import is_string
 
 
-
 class ProgramError(RuntimeError):
+
     """ Raised when something goes wrong that depens on state that was set
     earlier (due to deferred loading).
     """
     pass
 
 
-
 class Program(GLObject):
+
     """ Representation of a shader program. It combines (links) a
     vertex and a fragment shaders to compose a complete program.
     On (normal, non-ES 2.0) implementations, multiple shaders of
@@ -121,10 +121,8 @@ class Program(GLObject):
         if shaders:
             self.attach(*shaders)
 
-
     def __repr__(self):
         return "<%s %d>" % (self.__class__.__name__, self._id)
-
 
     def attach(self, *shaders):
         """ Attach one or more vertex/fragment shaders to the program.
@@ -136,7 +134,7 @@ class Program(GLObject):
 
         """
         # Tuple or list given?
-        if len(shaders)==1 and isinstance(shaders[0], (list,tuple)):
+        if len(shaders) == 1 and isinstance(shaders[0], (list, tuple)):
             shaders = shaders[0]
 
         # Process each shader
@@ -159,7 +157,6 @@ class Program(GLObject):
         self._build_uniforms()
         self._build_attributes()
 
-
     def detach(self, *shaders):
         """ Detach one or several vertex/fragment shaders from the program.
 
@@ -170,7 +167,7 @@ class Program(GLObject):
 
         """
         # Tuple or list given?
-        if len(shaders)==1 and isinstance(shaders[0], (list,tuple)):
+        if len(shaders) == 1 and isinstance(shaders[0], (list, tuple)):
             shaders = shaders[0]
 
         # Process each shader
@@ -195,13 +192,11 @@ class Program(GLObject):
         self._build_uniforms()
         self._build_attributes()
 
-
     @property
     def shaders(self):
         """ List of shaders associated with this shading program.
         """
         return self._verts + self._frags
-
 
     def __setitem__(self, name, data):
         """ Behave a bit like a dict to assign attributes and uniforms.
@@ -216,7 +211,6 @@ class Program(GLObject):
             self._attributes[name].set_data(data)
         else:
             raise NameError("Unknown uniform or attribute: %s" % name)
-
 
     def set_vars(self, vars=None, **keyword_vars):
         """ Set variables from a dict-like object. vars can be a dict
@@ -237,11 +231,12 @@ class Program(GLObject):
             # Structured array
             if vars.dtype.fields:
                 print("Warning: attribute data given as a structured " +
-                        "array, you probably want to use a VertexBuffer.")
+                      "array, you probably want to use a VertexBuffer.")
                 for k in vars.dtype.fields:
                     D[k] = vars[k]
             else:
-                raise ValueError("Program.set_attr accepts a structured " +
+                raise ValueError(
+                    "Program.set_attr accepts a structured " +
                     "array, but normal arrays must be given as keyword args.")
 
         elif isinstance(vars, VertexBuffer):
@@ -250,46 +245,43 @@ class Program(GLObject):
                 for k in vars.dtype.names:
                     if k not in self._attributes.keys():
                         print('Dropping "%s" item; '
-                                'it is not a known attribute.' % k)
+                              'it is not a known attribute.' % k)
                     else:
                         D[k] = vars[k]
             else:
                 raise ValueError('Can only set attributes with a ' +
-                                    'structured VertexBuffer.')
+                                 'structured VertexBuffer.')
 
         elif isinstance(vars, dict):
             # Dict
             for k in vars:
                 if not (k in self._attributes.keys() or
-                        k in self._uniforms.keys() ):
+                        k in self._uniforms.keys()):
                     print('Dropping "%s" item; '
-                            'it is not a known attribute/uniform.' % k)
+                          'it is not a known attribute/uniform.' % k)
                 else:
                     D[k] = vars[k]
         else:
             raise ValueError("Don't know how to use attribute of type %r" %
-                                        type(vars))
+                             type(vars))
 
         # Apply each
         for name, data in D.items():
             self[name] = data
-
 
     @property
     def attributes(self):
         """ A list of all Attribute objects associated with this program
         (sorted by name).
         """
-        return list( sorted(self._attributes.values(), key=lambda x:x.name ) )
-
+        return list(sorted(self._attributes.values(), key=lambda x: x.name))
 
     @property
     def uniforms(self):
         """ A list of all Uniform objects associated with this program
         (sorted by name).
         """
-        return list( sorted(self._uniforms.values(), key=lambda x:x.name ) )
-
+        return list(sorted(self._uniforms.values(), key=lambda x: x.name))
 
     def _get_vertex_count(self):
         """ Get count of the number of vertices.
@@ -306,14 +298,13 @@ class Program(GLObject):
                 if count is None:
                     count = attribute.count
                 else:
-                    #if count != attribute.count:
+                    # if count != attribute.count:
                     #    print('Warning: attributes have unequal number of vertices.')
                     count = min(count, attribute.count)
             self._vertex_count = count
 
         # Return
         return self._vertex_count
-
 
     def _build_attributes(self):
         """ Build the attribute objects.
@@ -330,7 +321,6 @@ class Program(GLObject):
         for (name, gtype) in attributes:
             attribute = Attribute(name, gtype)
             self._attributes[name] = attribute
-
 
     def _build_uniforms(self):
         """ Build the uniform objects.
@@ -349,7 +339,6 @@ class Program(GLObject):
         for (name, gtype) in uniforms:
             uniform = Uniform(name, gtype)
             self._uniforms[name] = uniform
-
 
     def _mark_active_attributes(self):
         """ Mark which attributes are active and set the location.
@@ -370,12 +359,13 @@ class Program(GLObject):
             # This checks if the attribute is an array
             # Name will be something like xxx[0] instead of xxx
             m = regex.match(name)
-            # When attribute is an array, size corresponds to the highest used index
+            # When attribute is an array, size corresponds to the highest used
+            # index
             if m:
                 name = m.group('name')
                 if size >= 1:
                     for i in range(size):
-                        name = '%s[%d]' % (m.group('name'),i)
+                        name = '%s[%d]' % (m.group('name'), i)
                         self._active_attributes[name] = loc
             else:
                 self._active_attributes[name] = loc
@@ -383,7 +373,6 @@ class Program(GLObject):
         # Mark these as active (loc non-None means active)
         for attribute in self._attributes.values():
             attribute._loc = self._active_attributes.get(attribute.name, None)
-
 
     def _mark_active_uniforms(self):
         """ Mark which uniforms are actve and set the location,
@@ -405,12 +394,13 @@ class Program(GLObject):
             # This checks if the uniform is an array
             # Name will be something like xxx[0] instead of xxx
             m = regex.match(name)
-            # When uniform is an array, size corresponds to the highest used index
+            # When uniform is an array, size corresponds to the highest used
+            # index
             if m:
                 name = m.group('name')
                 if size >= 1:
                     for i in range(size):
-                        name = '%s[%d]' % (m.group('name'),i)
+                        name = '%s[%d]' % (m.group('name'), i)
                         self._active_uniforms[name] = loc
             else:
                 self._active_uniforms[name] = loc
@@ -424,17 +414,12 @@ class Program(GLObject):
                     uniform._texture_unit = texture_count
                     texture_count += 1
 
-
-
-    ## Behaver like a GLObject
-
+    # Behaver like a GLObject
     def _create(self):
         self._handle = gl.glCreateProgram()
 
-
     def _delete(self):
         gl.glDeleteProgram(self._handle)
-
 
     def _activate(self):
         """
@@ -464,7 +449,6 @@ class Program(GLObject):
             self._deactivate()
             self.activate()
 
-
     def _deactivate(self):
         """ Deactivate any objects that were activated on our behalf,
         and then deactivate ourself.
@@ -474,7 +458,6 @@ class Program(GLObject):
             ob.deactivate()
         self._activated_objects = []
         gl.glUseProgram(0)
-
 
     def _update(self):
         """ Called when the object is activated and the _need_update
@@ -507,8 +490,8 @@ class Program(GLObject):
         if not gl.glGetProgramiv(self._handle, gl.GL_LINK_STATUS):
             errors = gl.glGetProgramInfoLog(self._handle)
             errormsg = self._get_error(errors, 4)
-            #parse_shader_errors(errors)
-            raise ProgramError('Error linking %r:\n'%self + errormsg)
+            # parse_shader_errors(errors)
+            raise ProgramError('Error linking %r:\n' % self + errormsg)
 
         # Mark all active attributes and uniforms
         self._mark_active_attributes()
@@ -520,8 +503,7 @@ class Program(GLObject):
         for var in self._attributes.values():
             var.invalidate()
 
-
-    def  _get_error(self, errors, indentation=0):
+    def _get_error(self, errors, indentation=0):
         """ Get linking error in a somewhat nicer format.
         """
         # Init
@@ -530,24 +512,20 @@ class Program(GLObject):
         # Parse lines
         results = [line for line in errors.splitlines() if line]
         # Add indentation and return
-        results = [' '*indentation + r for r in results]
+        results = [' ' * indentation + r for r in results]
         return '\n'.join(results)
 
-
     ## Drawing and enabling
-
-
     def activate_object(self, object):
         """ Activate an object, e.g. a texture. The program
         will make sure that the object is disabled again.
         Can only be called while Program is active.
         """
         if not self._active:
-            raise ProgramError("Program cannot enable an object if not self being enabled.")
+            raise ProgramError(
+                "Program cannot enable an object if not self being enabled.")
         object.activate()
         self._activated_objects.append(object)
-
-
 
     def draw(self, mode, subset=None):
         """ Draw the vertices in the specified mode.
@@ -607,17 +585,18 @@ class Program(GLObject):
             if isinstance(subset, ClientElementBuffer):
                 ptr = subset.data
             else:
-                ptr = None  # Note that this can also be a ctypes.pointer offset
+                # Note that this can also be a ctypes.pointer offset
+                ptr = None
 
             # Activate
             self.activate_object(subset)
             # Prepare
             gltype = ElementBuffer.DTYPE2GTYPE[subset.dtype.name]
             if gltype == gl.GL_UNSIGNED_INT and not ext_available('element_index_uint'):
-                raise ValueError('element_index_uint extension needed for uint32 ElementBuffer.')
+                raise ValueError(
+                    'element_index_uint extension needed for uint32 ElementBuffer.')
             # Draw
             gl.glDrawElements(mode, subset.count, gltype, ptr)
-
 
         elif isinstance(subset, tuple):
             # Draw arrays
@@ -626,7 +605,7 @@ class Program(GLObject):
             ok = [isinstance(i, (int, type(None))) for i in subset]
             if len(subset) != 2 or not all(ok):
                 raise ValueError('Subset must be a two-element tuple with '
-                                                    'interegers or None.')
+                                 'interegers or None.')
             # Get start, end, refcount
             start, end = subset
             start = start or 0
@@ -635,16 +614,20 @@ class Program(GLObject):
             if end is None:
                 count = refcount
                 if count is None:
-                    raise ProgramError("Could not determine element count for draw.")
+                    raise ProgramError(
+                        "Could not determine element count for draw.")
             else:
                 count = end - start
                 if refcount and count > refcount:
-                    raise ValueError('Count is larger than known number of vertices.')
+                    raise ValueError(
+                        'Count is larger than known number of vertices.')
             # Draw
             gl.glDrawArrays(mode, start, count)
 
         else:
-            raise ValueError('Given subset is of invalid type: %r.' % type(subset))
+            raise ValueError(
+                'Given subset is of invalid type: %r.' %
+                type(subset))
 
         # Clean up
         for enum in need_enabled:

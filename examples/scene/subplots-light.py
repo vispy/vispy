@@ -1,4 +1,4 @@
-""" 
+"""
 Example that illustrates using multiple subplots in a lightweight way
 that uses an empty Entity for the transformation of the individual
 subplots. There is no clipping.
@@ -36,27 +36,29 @@ for col in range(NCOLS):
     for row in range(NROWS):
         # Create "viewbox"
         box = scene.Entity(fig.viewbox)
-        box.transform[-1, 0] = col * RES / NCOLS + 100/NCOLS
-        box.transform[-1, 1] = row * RES / NROWS + 100/NROWS
-        box.transform[0,0] = 1/NCOLS
-        box.transform[1,1] = 1/NROWS
+        box.transform[-1, 0] = col * RES / NCOLS + 100 / NCOLS
+        box.transform[-1, 1] = row * RES / NROWS + 100 / NROWS
+        box.transform[0, 0] = 1 / NCOLS
+        box.transform[1, 1] = 1 / NROWS
         # Create a points visual in the "viewbox"
         points = scene.PointsEntity(box, 100)
 
 
 # Count FPS
 t0, frames, t = time.time(), 0, 0
+
+
 @fig.connect
 def on_paint(event):
     global t, t0, frames
     t = time.time()
     frames = frames + 1
-    elapsed = (t-t0) # seconds
+    elapsed = (t - t0)  # seconds
     if elapsed > 2.5:
-        print( "FPS : %.2f (%d frames in %.2f second)"
-               % (frames/elapsed, frames, elapsed))
-        t0, frames = t,0
+        print("FPS : %.2f (%d frames in %.2f second)"
+              % (frames / elapsed, frames, elapsed))
+        t0, frames = t, 0
     event.source.update()
-    
+
 # Run!
 app.run()

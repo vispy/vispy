@@ -51,14 +51,14 @@ from . import gl
 
 
 def ext_available(extension_name):
-    """ Get whether an extension is available. 
+    """ Get whether an extension is available.
     For now, this always returns True...
     """
-    return True # for now
+    return True  # for now
 
 
 def convert_to_enum(param, allow_none=False):
-    """ Convert parameter (e.g. a string) to GL enum. 
+    """ Convert parameter (e.g. a string) to GL enum.
     """
     if isinstance(param, string_types):
         param = param.upper()
@@ -85,4 +85,3 @@ from .texture import Texture2D, Texture3D, TextureCubeMap
 from .shader import VertexShader, FragmentShader
 from .framebuffer import FrameBuffer, RenderBuffer
 from .program import Program
-

@@ -13,6 +13,7 @@ from .six import string_types
 
 
 class _TempDir(str):
+
     """Class for creating and auto-destroying temp dir
 
     This is designed to be used with testing modules.
@@ -21,6 +22,7 @@ class _TempDir(str):
     function may be cleaned up before this object, so we use the atexit module
     instead.
     """
+
     def __new__(self):
         new = str.__new__(self, tempfile.mkdtemp())
         return new

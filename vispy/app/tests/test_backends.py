@@ -38,8 +38,13 @@ class BaseTestmodule:
     def test_methods(self):
         """ Test that all _vispy_x methods are there.
         """
-        exceptions = ('_vispy_get_native_canvas', '_vispy_get_native_timer', '_vispy_get_native_app',
-                      '_vispy_mouse_move', '_vispy_mouse_press', '_vispy_mouse_release')
+        exceptions = (
+            '_vispy_get_native_canvas',
+            '_vispy_get_native_timer',
+            '_vispy_get_native_app',
+            '_vispy_mouse_move',
+            '_vispy_mouse_press',
+            '_vispy_mouse_release')
 
         Klass = self._module.CanvasBackend
         KlassRef = vispy.app.canvas.CanvasBackend
@@ -48,10 +53,11 @@ class BaseTestmodule:
                 method = getattr(Klass, key)
                 if key not in exceptions:
                     if hasattr(method, '__module__'):
-                        mod_str = method.__module__ # Py3k
+                        mod_str = method.__module__  # Py3k
                     else:
                         mod_str = method.im_func.__module__
-                    assert mod_str == self._module.__name__, "Method %s.%s not defined in %s"%(Klass, key, self._module.__name__)
+                    assert mod_str == self._module.__name__, "Method %s.%s not defined in %s" % (
+                        Klass, key, self._module.__name__)
 
         Klass = self._module.TimerBackend
         KlassRef = vispy.app.timer.TimerBackend
@@ -60,7 +66,8 @@ class BaseTestmodule:
                 method = getattr(Klass, key)
                 if key not in exceptions:
                     if hasattr(method, '__module__'):
-                        assert method.__module__ == self._module.__name__ # Py3k
+                        # Py3k
+                        assert method.__module__ == self._module.__name__
                     else:
                         assert method.im_func.__module__ == self._module.__name__
 
@@ -71,7 +78,8 @@ class BaseTestmodule:
                 method = getattr(Klass, key)
                 if key not in exceptions:
                     if hasattr(method, '__module__'):
-                        assert method.__module__ == self._module.__name__ # Py3k
+                        # Py3k
+                        assert method.__module__ == self._module.__name__
                     else:
                         assert method.im_func.__module__ == self._module.__name__
 
@@ -95,12 +103,14 @@ class BaseTestmodule:
 
 
 class Test_TemplateBackend(BaseTestmodule):
+
     def __init__(self):
         from vispy.app.backends import template
         BaseTestmodule.__init__(self, template)
 
 
 class Test_QtBackend(BaseTestmodule):
+
     @requires_qt
     def __init__(self):
         from vispy.app.backends import qt
@@ -108,6 +118,7 @@ class Test_QtBackend(BaseTestmodule):
 
 
 class Test_PygletBackend(BaseTestmodule):
+
     @requires_pyglet
     def __init__(self):
         from vispy.app.backends import pyglet
@@ -115,6 +126,7 @@ class Test_PygletBackend(BaseTestmodule):
 
 
 class Test_GlutBackend(BaseTestmodule):
+
     def __init__(self):
         from vispy.app.backends import glut
         BaseTestmodule.__init__(self, glut)

@@ -13,12 +13,12 @@ imported. This stuff is mostly used in the Application.use method.
 
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
-BACKENDS = [    ('Test', 'nonexistent', 'foo.bar.lalalala'), # For testing
-                ('Qt', 'qt', None),  # Meta backend
-                ('Glut', 'glut', 'OpenGL.GLUT'),
-                ('Pyglet', 'pyglet', 'pyglet'),
-                ('PySide', 'qt', 'PySide'),
-                ('PyQt4', 'qt', 'PyQt4'),
+BACKENDS = [('Test', 'nonexistent', 'foo.bar.lalalala'),  # For testing
+            ('Qt', 'qt', None),  # Meta backend
+            ('Glut', 'glut', 'OpenGL.GLUT'),
+            ('Pyglet', 'pyglet', 'pyglet'),
+            ('PySide', 'qt', 'PySide'),
+            ('PyQt4', 'qt', 'PyQt4'),
             ]
 
 # Map of the lowercase backend names to the backend descriptions above

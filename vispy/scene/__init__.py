@@ -29,7 +29,7 @@ by using the visual components.
 Mathematically speaking, the scene is represented by a weakly connected
 directed graph. Entities are allowed to have multiple parents (although
 we recommend using this feature only in specific situations). Circular
-references (cyclic graphs) should be avoided. 
+references (cyclic graphs) should be avoided.
 
 
 **The ViewBox**

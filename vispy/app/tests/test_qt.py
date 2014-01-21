@@ -24,6 +24,7 @@ def test_qt_designer():
     WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
 
     class MainWindow(TemplateBaseClass):
+
         def __init__(self):
             TemplateBaseClass.__init__(self)
 
