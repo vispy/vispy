@@ -1,6 +1,7 @@
-import sys
+# -*- coding: utf-8 -*-
+from sys import version_info
 
-if sys.version_info >= (2, 7):
+if version_info[0] > 2 or version_info[1] >= 7:
     from collections import OrderedDict
 else:
     from ._py24_ordereddict import OrderedDict  # noqa

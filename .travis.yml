@@ -27,15 +27,14 @@ install:
     - conda create -n testenv --yes --quiet pip python=$PYTHON
     - source activate testenv
     - conda install --yes --quiet numpy nose
-    - pip install -q --use-mirrors coveralls nose-timer PyOpenGL
+    - pip install -q coveralls nose-timer flake8 PyOpenGL
     # Use Pyglet alpha to get 3.3 support
     - if [ "${DEPS}" == "full" ]; then
         pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         if [ "${PYTHON}" == "3.3" ]; then
           conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo;
-          pip install --use-mirrors flake8;
         fi;
-        pip install -q --use-mirrors Pillow;
+        pip install -q Pillow;
       fi;
     - python setup.py build
     - python setup.py install
@@ -60,6 +59,11 @@ script:
       else
         nosetests;
       fi
+    # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
+    - cd ${SRC_DIR}
+    - if [ "{PYTHON}" != "2.6" ]; then
+        flake8 --exclude=six.py,_py24_ordereddict.py, vispy examples;
+      fi;
 
 after_success:
     # Need to run from source dir to exectue "git" commands
@@ -68,5 +72,4 @@ after_success:
         echo "Running coveralls";
         cd ${SRC_DIR};
         coveralls;
-        flake8 --exit-zero --exclude=test_*,six.py,__init__.py,_py24_ordereddict.py vispy examples;
       fi;
