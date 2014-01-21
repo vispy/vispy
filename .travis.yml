@@ -61,12 +61,13 @@ script:
       fi
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - cd ${SRC_DIR}
+    # Don't run on 2.6 because it has some silly (unimportant) error
     - if [ "${PYTHON}" != "2.6" ]; then
         flake8 --exclude=six.py,_py24_ordereddict.py, vispy examples;
       fi;
 
 after_success:
-    # Need to run from source dir to exectue "git" commands
+    # Need to run from source dir to execute "git" commands
     # Only do "3.3" "full" here, since that is our most complete testing condition
     - if [ "${PYTHON}" == "3.3" ] && [ "${DEPS}" == "full" ]; then
         echo "Running coveralls";
