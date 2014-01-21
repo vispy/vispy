@@ -24,7 +24,7 @@ from scipy.spatial import cKDTree
 
 from vispy.gloo import gl
 from vispy import app
-from vispy.gloo import Program, VertexBuffer, ElementBuffer
+from vispy.gloo import Program, VertexBuffer
 
 
 # Create boids

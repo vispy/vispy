@@ -11,7 +11,6 @@ from __future__ import print_function, division, absolute_import
 
 import sys
 
-import vispy
 from vispy.app.backends import BACKENDS, BACKENDMAP, ATTEMPTED_BACKENDS
 
 
@@ -115,7 +114,8 @@ class Application(object):
 
         # Check if already selected
         if self._backend is not None:
-            if backend_name and backend_name.lower() != self.backend_name.lower():
+            if backend_name and \
+                    backend_name.lower() != self.backend_name.lower():
                 raise RuntimeError('Can only select a backend once.')
             return
 

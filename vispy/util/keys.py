@@ -16,7 +16,6 @@ intended as a compatibility measure.
 
 from __future__ import print_function, division, absolute_import
 
-import sys
 from vispy.util.six import string_types
 
 
@@ -32,7 +31,8 @@ from vispy.util.six import string_types
 #         return s
 #     def __eq__(self, other):
 #         if not isinstance(other, string_types):
-#             raise ValueError('Key constants can only be compared to strings.')
+#             raise ValueError('Key constants can only be compared to '
+#                              'strings.')
 #         return XX.__eq__(self, other) or other in self._alternatives
 
 class Key:

@@ -14,11 +14,11 @@ class VariableTest(unittest.TestCase):
 
     def test_init(self):
         variable = Variable("A", gl.GL_FLOAT)
-        assert variable._dirty == False
+        assert variable._dirty is False
         assert variable.name == "A"
         assert variable.data is None
         assert variable.gtype == gl.GL_FLOAT
-        assert variable.active == False
+        assert variable.active is False
 
     def test_init_wrong_type(self):
         self.assertRaises(ValueError, Variable, "A", gl.GL_INT_VEC2)

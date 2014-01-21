@@ -32,7 +32,7 @@ __version__ = '0.2.1'
 
 
 from vispy.util.event import EmitterGroup, EventEmitter, Event
-from vispy.util import keys, dataio
+from vispy.util import keys, dataio  # noqa
 
 
 class ConfigEvent(Event):
@@ -54,7 +54,8 @@ class Config(object):
 
     Events:
     -------
-    Config.events.changed - Emits ConfigEvent whenever the configuration changes.
+    Config.events.changed - Emits ConfigEvent whenever the configuration
+    changes.
     """
 
     def __init__(self):

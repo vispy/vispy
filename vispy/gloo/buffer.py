@@ -6,13 +6,11 @@
 
 from __future__ import print_function, division, absolute_import
 
-import sys
 import numpy as np
 
 from vispy.util import is_string
 from . import gl
 from . import GLObject
-from . import ext_available
 
 
 # ------------------------------------------------------------ Buffer class ---
@@ -429,7 +427,7 @@ class DataBuffer(Buffer):
         Buffer.set_subdata(self, byte_offset, data)
 
 
-# ------------------------------------------------------ ElementBuffer class ---
+# ------------------------------------------------------ ElementBuffer class --
 class ElementBuffer(DataBuffer):
 
     """ The ElementBuffer allows to specify which element of a

@@ -9,10 +9,8 @@ vispy backend for pyglet.
 # absolute import is important here, since this module is called pyglet :)
 from __future__ import print_function, division, absolute_import
 
-from vispy.util.event import Event
 from vispy import app
 from vispy import keys
-import vispy
 
 import pyglet.window
 import pyglet.app
@@ -209,7 +207,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
     def on_mouse_press(self, x, y, button, modifiers=None):
         if self._vispy_canvas is None:
             return
-        ev2 = self._vispy_mouse_press(
+        self._vispy_mouse_press(
             pos=(x, self.get_size()[1] - y),
             button=BUTTONMAP.get(button, 0),
             modifiers=self._modifiers(),
@@ -262,7 +260,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         # Emit
         self._vispy_canvas.events.key_press(
             key=self._processKey(key),
-            text='',  # Handlers that trigger on text wont see this event
+            text=text,
             modifiers=self._modifiers(modifiers),
         )
 

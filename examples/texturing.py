@@ -7,7 +7,7 @@ Example demonstrating the use of textures in vispy.gloo.
 Three textures are created and combined in the fragment shader.
 """
 
-from vispy.gloo import Program, Texture2D, VertexBuffer, ElementBuffer
+from vispy.gloo import Program, Texture2D, VertexBuffer
 from vispy import app, dataio
 from vispy.gloo import gl
 

@@ -11,8 +11,6 @@ This code is inspired by similar classes from Pygly.
 from __future__ import print_function, division, absolute_import
 
 import re
-import sys
-import weakref
 
 import numpy as np
 
@@ -299,7 +297,8 @@ class Program(GLObject):
                     count = attribute.count
                 else:
                     # if count != attribute.count:
-                    #    print('Warning: attributes have unequal number of vertices.')
+                    #    print('Warning: attributes have unequal number of '
+                    #          'vertices.')
                     count = min(count, attribute.count)
             self._vertex_count = count
 
@@ -592,9 +591,10 @@ class Program(GLObject):
             self.activate_object(subset)
             # Prepare
             gltype = ElementBuffer.DTYPE2GTYPE[subset.dtype.name]
-            if gltype == gl.GL_UNSIGNED_INT and not ext_available('element_index_uint'):
-                raise ValueError(
-                    'element_index_uint extension needed for uint32 ElementBuffer.')
+            if gltype == gl.GL_UNSIGNED_INT and \
+                    not ext_available('element_index_uint'):
+                raise ValueError('element_index_uint extension needed '
+                                 'for uint32 ElementBuffer.')
             # Draw
             gl.glDrawElements(mode, subset.count, gltype, ptr)
 

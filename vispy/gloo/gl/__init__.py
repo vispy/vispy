@@ -74,7 +74,7 @@ def use(target='desktop'):
 
 # Import ext namespace and constants
 from . import ext
-from ._constants import *
+from ._constants import *  # noqa
 
 # Fill this namespace with functions
 use()

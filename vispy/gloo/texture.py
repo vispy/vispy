@@ -18,10 +18,8 @@ This code is inspired by similar classes from Visvis and Pygly.
 
 from __future__ import print_function, division, absolute_import
 
-import sys
 import numpy as np
 
-from vispy.util.six import string_types
 from . import gl
 from . import GLObject, ext_available, convert_to_enum
 
@@ -72,8 +70,10 @@ class Texture(GLObject):
     # We use strings to be more failsafe; e.g. np.float128 does not always
     # exist
     DTYPE2GTYPE = {'uint8': gl.GL_UNSIGNED_BYTE,
-                   'float16': gl.ext.GL_HALF_FLOAT,  # Needs GL_OES_texture_half_float
-                   'float32': gl.GL_FLOAT,  # Needs GL_OES_texture_float
+                   # Needs GL_OES_texture_half_float:
+                   'float16': gl.ext.GL_HALF_FLOAT,
+                   # Needs GL_OES_texture_float:
+                   'float32': gl.GL_FLOAT,
                    }
 
     def __init__(self, target, data=None, format=None, clim=None):
@@ -555,7 +555,7 @@ class Texture(GLObject):
         we need to adjust the byte alignment of the image.
         The image height is unimportant
 
-        http://www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
+        www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
         """
 
         # we know the alignment is appropriate
@@ -713,8 +713,9 @@ def convert_data(data, clim=None):
         if clim[1] - clim[0] != 1.0:
             data *= 1.0 / (clim[1] - clim[0])
 
-    # if CONVERTING:
-    #    print('Warning, converting data.')
+    if CONVERTING:
+        pass
+        #print('Warning, converting data.')
 
     # Convert if necessary
     if data.dtype == np.uint8:

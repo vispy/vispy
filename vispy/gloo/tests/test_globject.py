@@ -82,8 +82,8 @@ class GLObjectTest(unittest.TestCase):
     def test_init(self):
         obj = gloo.GLObject()
         assert obj._handle == 0
-        assert obj._need_update == False
-        assert obj._valid == False
+        assert obj._need_update is False
+        assert obj._valid is False
         # assert obj._id   == 1
 
     def test_buffer(self):
@@ -113,7 +113,8 @@ class GLObjectTest(unittest.TestCase):
 
         for ob, funcname, value in items:
             self._fix_ob(ob)
-            #print('Testing GLObject compliance for %s' % ob.__class__.__name__)
+            #print('Testing GLObject compliance for %s'
+            #      % ob.__class__.__name__)
 
             # Initially a clear state
             self.assertEqual(ob._need_update, False)

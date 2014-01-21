@@ -17,8 +17,8 @@ class BufferTest(unittest.TestCase):
     def test_init(self):
         buffer = Buffer(target=gl.GL_ARRAY_BUFFER)
         assert buffer._handle == 0
-        assert buffer._need_update == False
-        assert buffer._valid == False
+        assert buffer._need_update is False
+        assert buffer._valid is False
         assert buffer._nbytes == 0
         assert buffer._usage == gl.GL_DYNAMIC_DRAW
 
@@ -306,7 +306,7 @@ class VertexBufferTest(unittest.TestCase):
         # VertexBuffer supports these
         for dtype in (np.uint8, np.int8, np.uint16, np.int16,
                       np.float32, np.float16):
-            buffer = VertexBuffer(dtype)
+            VertexBuffer(dtype)
 
         # VertexBuffer does *not* support these
         float128 = getattr(np, 'float128', np.float64)  # may not exist
@@ -348,7 +348,7 @@ class ElementBufferTest(unittest.TestCase):
 
         # ElementBuffer supports these
         for dtype in (np.uint8, np.uint16, np.uint32):
-            buffer = ElementBuffer(dtype)
+            ElementBuffer(dtype)
 
         # ElementBuffer does *not* support these
         for dtype in (np.int8, np.int16, np.int32, np.float32, np.float64):

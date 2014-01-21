@@ -1,5 +1,8 @@
-from OpenGL.GL import *
-from OpenGL.GL import shaders
+from OpenGL.GL import (shaders, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER,
+                       glUseProgram, glGetUniformLocation, glUniform1fv)
+#                       glGetUniformBlockIndex, glUniformBlockBinding,
+#                       glBindBuffer, glGenBuffers, glBufferData,
+#                       GL_UNIFORM_BUFFER, GL_DYNAMIC_DRAW, glBindBufferBase)
 import re
 
 # For centralizing and managing vertex/fragment shader programs.
@@ -28,7 +31,8 @@ def initShaders():
                 varying vec3 normal;
                 void main() {
                     vec4 color = gl_Color;
-                    color.w = min(color.w + 2.0 * color.w * pow(normal.x*normal.x + normal.y*normal.y, 5.0), 1.0);
+                    color.w = min(color.w + 2.0 * color.w *
+                        pow(normal.x*normal.x + normal.y*normal.y, 5.0), 1.0);
                     gl_FragColor = color;
                 }
             """)
@@ -138,7 +142,8 @@ def initShaders():
 
         # colors fragments by z-value.
         # This is useful for coloring surface plots by height.
-        # This shader uses a uniform called "colorMap" to determine how to map the colors:
+        # This shader uses a uniform called "colorMap" to determine how to
+        # map the colors:
         ##    red   = pow(z * colorMap[0] + colorMap[1], colorMap[2])
         ##    green = pow(z * colorMap[3] + colorMap[4], colorMap[5])
         ##    blue  = pow(z * colorMap[6] + colorMap[7], colorMap[8])
@@ -156,36 +161,42 @@ def initShaders():
             FragmentShader("""
                 uniform float colorMap[9];
                 varying vec4 pos;
-                //out vec4 gl_FragColor;   // only needed for later glsl versions
+                //out vec4 gl_FragColor; // only needed for later glsl versions
                 //in vec4 gl_Color;
                 void main() {
                     vec4 color = gl_Color;
                     color.x = colorMap[0] * (pos.z + colorMap[1]);
                     if (colorMap[2] != 1.0)
                         color.x = pow(color.x, colorMap[2]);
-                    color.x = color.x < 0. ? 0. : (color.x > 1. ? 1. : color.x);
-                    
+                    color.x = color.x < 0. ?
+                        0. : (color.x > 1. ? 1. : color.x);
+
                     color.y = colorMap[3] * (pos.z + colorMap[4]);
                     if (colorMap[5] != 1.0)
                         color.y = pow(color.y, colorMap[5]);
-                    color.y = color.y < 0. ? 0. : (color.y > 1. ? 1. : color.y);
-                    
+                    color.y = color.y < 0. ?
+                        0. : (color.y > 1. ? 1. : color.y);
+
                     color.z = colorMap[6] * (pos.z + colorMap[7]);
                     if (colorMap[8] != 1.0)
                         color.z = pow(color.z, colorMap[8]);
-                    color.z = color.z < 0. ? 0. : (color.z > 1. ? 1. : color.z);
-                    
+                    color.z = color.z < 0. ?
+                        0. : (color.z > 1. ? 1. : color.z);
+
                     color.w = 1.0;
                     gl_FragColor = color;
                 }
             """),
         ], uniforms={'colorMap': [1, 1, 1, 1, 0.5, 1, 1, 0, 1]}),
-        ShaderProgram('pointSprite', [  # allows specifying point size using normal.x
+        # allows specifying point size using normal.x
+        ShaderProgram('pointSprite', [
             # See:
             ##
-            # http://stackoverflow.com/questions/9609423/applying-part-of-a-texture-sprite-sheet-texture-map-to-a-point-sprite-in-ios
-            # http://stackoverflow.com/questions/3497068/textured-points-in-opengl-es-2-0
-            ##
+            # stackoverflow.com/questions/9609423/
+            #     applying-part-of-a-texture-sprite-sheet-texture-
+            #     map-to-a-point-sprite-in-ios
+            # stackoverflow.com/questions/3497068/
+            #     textured-points-in-opengl-es-2-0
             ##
             VertexShader("""
                 void main() {
@@ -344,19 +355,24 @@ class ShaderProgram(object):
                         # vec4 diffuse;
                         # };
 
-                        # pick any-old binding point. (there are a limited number of these per-program
+                        # pick any-old binding point.
+                        # (there are a limited number of these per-program)
                         #bindPoint = 1
 
-                        # get the block index for a uniform variable in the shader
-                        #blockIndex = glGetUniformBlockIndex(self.program(), blockName)
+                        # get the block index for a uniform variable in
+                        # the shader
+                        #blockIndex = glGetUniformBlockIndex(self.program(),
+                        #                                    blockName)
 
                         # give the shader block a binding point
-                        #glUniformBlockBinding(self.program(), blockIndex, bindPoint)
+                        #glUniformBlockBinding(self.program(), blockIndex,
+                        #                      bindPoint)
 
                         # create a buffer
                         #buf = glGenBuffers(1)
                         #glBindBuffer(GL_UNIFORM_BUFFER, buf)
-                        #glBufferData(GL_UNIFORM_BUFFER, size, data, GL_DYNAMIC_DRAW)
+                        #glBufferData(GL_UNIFORM_BUFFER, size, data,
+                        #             GL_DYNAMIC_DRAW)
                         # also possible to use glBufferSubData to fill parts of
                         # the buffer
 
@@ -371,17 +387,22 @@ class ShaderProgram(object):
             glUseProgram(0)
 
     def uniform(self, name):
-        """Return the location integer for a uniform variable in this program"""
+        """Return the location integer for a uniform variable in the program"""
         return glGetUniformLocation(self.program(), name)
 
     # def uniformBlockInfo(self, blockName):
         #blockIndex = glGetUniformBlockIndex(self.program(), blockName)
-        #count = glGetActiveUniformBlockiv(self.program(), blockIndex, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS)
+        #count = glGetActiveUniformBlockiv(self.program(), blockIndex,
+        #                                  GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS)
         #indices = []
         # for i in range(count):
-            #indices.append(glGetActiveUniformBlockiv(self.program(), blockIndex, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES))
+            #idx = glGetActiveUniformBlockiv(self.program(), blockIndex,
+            #        GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES)
+            #indices.append(idx)
 
 
+""" This has been commented out because "size", below, is undefined so it would
+    fail.
 class HeightColorShader(ShaderProgram):
 
     def __enter__(self):
@@ -410,5 +431,6 @@ class HeightColorShader(ShaderProgram):
 
         # bind buffer to the same binding point
         glBindBufferBase(GL_UNIFORM_BUFFER, bindPoint, buf)
+"""
 
 initShaders()

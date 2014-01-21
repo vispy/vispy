@@ -26,7 +26,7 @@ class PointsVisual(BaseVisual):
 
 
         attribute vec3 a_position;
-        
+
         varying vec4 v_color;
         void main (void) {
             gl_Position = vec4(a_position, 1.0);
@@ -46,7 +46,7 @@ class PointsVisual(BaseVisual):
             float a = 1.0 - (x*x + y*y);
             gl_FragColor = vec4(v_color.rgb, a*v_color.a);
         }
-        
+
     """
 
     def __init__(self, N=1000):

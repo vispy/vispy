@@ -95,7 +95,7 @@ class Entity(object):
                 oldparent._children.remove(self)
         for parent in parents:
             while self in parent._children:
-                parnt._children.remove(self)
+                parent._children.remove(self)
 
         # Set new parents and add ourself to their list of children
         self._parents = tuple(parents)

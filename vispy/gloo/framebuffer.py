@@ -8,11 +8,9 @@
 
 from __future__ import print_function, division, absolute_import
 
-import sys
-import numpy as np
 
 from . import gl
-from . import GLObject, ext_available, convert_to_enum
+from . import GLObject, convert_to_enum
 from . import Texture2D
 
 # todo: check and test all _delete methods
@@ -268,8 +266,8 @@ class FrameBuffer(GLObject):
             self._attachment_stencil = object
             self._pending_attachments.append((attachment, object, None))
         else:
-            raise ValueError(
-                'For stencil data, can only attach a RenderBuffer to a FrameBuffer.')
+            raise ValueError('For stencil data, can only attach a '
+                             'RenderBuffer to a FrameBuffer.')
         self._need_update = True
 
     def set_size(self, width, height):
@@ -346,8 +344,10 @@ class FrameBuffer(GLObject):
             elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
                 raise FrameBufferError(
                     'attachments do not have the same width and height.')
-            # elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS:  # Not in our namespace?
-            #    raise FrameBufferError('Internal format of attachment is not renderable.')
+            # Not in our namespace?
+            # elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS:
+            #    raise FrameBufferError('Internal format of attachment '
+            #                           'is not renderable.')
             elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
-                raise FrameBufferError(
-                    'Combination of internal formats used by attachments is not supported.')
+                raise FrameBufferError('Combination of internal formats used '
+                                       'by attachments is not supported.')

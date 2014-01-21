@@ -18,7 +18,6 @@ The classes are written with compatibility of Python3 in mind.
 
 """
 
-import time
 import numpy as np
 
 
@@ -58,19 +57,14 @@ class WavefrontReader(object):
             The name of the file to read.
 
         """
-
-        t0 = time.time()
-
         # Open file
-        f = open(fname, 'rb')
-        try:
-            reader = WavefrontReader(f)
-            while True:
-                reader.readLine()
-        except EOFError:
-            pass
-        finally:
-            f.close()
+        with open(fname, 'rb') as f:
+            try:
+                reader = WavefrontReader(f)
+                while True:
+                    reader.readLine()
+            except EOFError:
+                pass
 
         # Done
         mesh = reader.finish()
@@ -156,8 +150,9 @@ class WavefrontReader(object):
                     self._texcords.append(self._vt[texcord_index])
                 else:
                     if self._texcords:
-                        print(
-                            'Warning reading OBJ: ignoring texture coordinates because it is not specified for all faces.')
+                        print('Warning reading OBJ: ignoring texture '
+                              'coordinates because it is not specified '
+                              'for all faces.')
                     self._texcords = None
             if self._normals is not None:
                 if len(indices) > 2 and indices[2]:
@@ -165,8 +160,8 @@ class WavefrontReader(object):
                     self._normals.append(self._vn[normal_index])
                 else:
                     if self._normals:
-                        print(
-                            'Warning reading OBJ: ignoring normals because it is not specified for all faces.')
+                        print('Warning reading OBJ: ignoring normals because '
+                              'it is not specified for all faces.')
                     self._normals = None
 
         # Check face

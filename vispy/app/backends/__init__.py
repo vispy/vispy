@@ -32,11 +32,11 @@ ATTEMPTED_BACKENDS = []
 
 def has_qt(require_uic=False):
     try:
-        from PyQt4 import QtCore, QtGui, QtOpenGL, uic  # analysis:ignore
+        from PyQt4 import QtCore, QtGui, QtOpenGL, uic  # noqa
     except ImportError:
         has_uic = False
         try:
-            from PySide import QtCore, QtGui, QtOpenGL  # analysis:ignore
+            from PySide import QtCore, QtGui, QtOpenGL  # noqa
         except ImportError:
             has = False
         else:
@@ -52,7 +52,7 @@ def has_qt(require_uic=False):
 
 def has_pyglet():
     try:
-        import pyglet  # analysis:ignore
+        import pyglet  # noqa
         has = True
     except:
         has = False

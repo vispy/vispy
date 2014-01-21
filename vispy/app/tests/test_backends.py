@@ -56,8 +56,9 @@ class BaseTestmodule:
                         mod_str = method.__module__  # Py3k
                     else:
                         mod_str = method.im_func.__module__
-                    assert mod_str == self._module.__name__, "Method %s.%s not defined in %s" % (
-                        Klass, key, self._module.__name__)
+                    assert mod_str == self._module.__name__, \
+                        "Method %s.%s not defined in %s" \
+                        % (Klass, key, self._module.__name__)
 
         Klass = self._module.TimerBackend
         KlassRef = vispy.app.timer.TimerBackend
@@ -69,7 +70,8 @@ class BaseTestmodule:
                         # Py3k
                         assert method.__module__ == self._module.__name__
                     else:
-                        assert method.im_func.__module__ == self._module.__name__
+                        t = method.im_func.__module__ == self._module.__name__
+                        assert t
 
         Klass = self._module.ApplicationBackend
         KlassRef = vispy.app.application.ApplicationBackend
@@ -81,7 +83,8 @@ class BaseTestmodule:
                         # Py3k
                         assert method.__module__ == self._module.__name__
                     else:
-                        assert method.im_func.__module__ == self._module.__name__
+                        t = method.im_func.__module__ == self._module.__name__
+                        assert t
 
     def test_events(self):
         """ Test that all events seem to be emitted.

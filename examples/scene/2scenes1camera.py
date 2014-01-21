@@ -5,7 +5,6 @@ of the same data (e.g. an image and its segmentation).
 This example illustrates:
   * Having two viewboxes that show different scenes
   * Using the same camera in both scenes, via multiple parenting
-  
 """
 
 from vispy import scene

@@ -19,7 +19,7 @@ requires_qt_and_uic = np.testing.dec.skipif(not has_qt(require_uic=True),
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
     from PyQt4 import QtGui, uic
-    app = QtGui.QApplication([])  # analysis:ignore
+    app = QtGui.QApplication([])  # noqa
     fname = os.path.join(os.path.dirname(__file__), 'qt-designer.ui')
     WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
 

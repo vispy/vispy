@@ -8,8 +8,6 @@ See http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
 This examples uses textures and FBO's.
 """
 
-import time
-
 import numpy as np
 
 from vispy.gloo import gl
@@ -18,79 +16,10 @@ from vispy import app
 
 
 # Given initial world state
-init_gun = [
-    1,
-    5,
-    2,
-    5,
-    1,
-    6,
-    2,
-    6,
-    11,
-    5,
-    11,
-    6,
-    11,
-    7,
-    12,
-    4,
-    12,
-    8,
-    13,
-    3,
-    13,
-    9,
-    14,
-    3,
-    14,
-    9,
-    15,
-    6,
-    16,
-    4,
-    16,
-    8,
-    17,
-    5,
-    17,
-    6,
-    17,
-    7,
-    18,
-    6,
-    21,
-    3,
-    21,
-    4,
-    21,
-    5,
-    22,
-    3,
-    22,
-    4,
-    22,
-    5,
-    23,
-    2,
-    23,
-    6,
-    25,
-    1,
-    25,
-    2,
-    25,
-    6,
-    25,
-    7,
-    35,
-    3,
-    35,
-    4,
-    36,
-    3,
-    36,
-    4]
+init_gun = [1, 5, 2, 5, 1, 6, 2, 6, 11, 5, 11, 6, 11, 7, 12, 4, 12, 8, 13, 3,
+            13, 9, 14, 3, 14, 9, 15, 6, 16, 4, 16, 8, 17, 5, 17, 6, 17, 7, 18,
+            6, 21, 3, 21, 4, 21, 5, 22, 3, 22, 4, 22, 5, 23, 2, 23, 6, 25, 1,
+            25, 2, 25, 6, 25, 7, 35, 3, 35, 4, 36, 3, 36, 4]
 
 # Create texture to initialize the game
 im1 = np.zeros((100, 120, 3), 'uint8')
@@ -127,7 +56,7 @@ void main()
 {
     float dx = 1.0 / u_texsize.x;
     float dy = 1.0 / u_texsize.y;
-    
+
     // Count alive neigghbours
     int count = 0;
     if (texture2D(u_texture, v_texcoord.xy+vec2(-dx, -dy)).r > 0.0)
@@ -146,12 +75,12 @@ void main()
         count += 1;
     if (texture2D(u_texture, v_texcoord.xy+vec2(+dx, +dy)).r > 0.0)
         count += 1;
-    
+
     // Calculate if we stay alive or reproduce
     float am_alive = texture2D(u_texture, v_texcoord.xy).r;
     float survive = float(count==3) + am_alive*float(count==2);
     survive = min(survive, 1.0);
-    
+
     // Set color
     gl_FragColor = vec4(survive, survive, survive, 1.0);
 }

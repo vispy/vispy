@@ -76,7 +76,8 @@ void main (void) {
     v_color = a_color;
 
     mat4 R = rotation(a_rot.xyz, a_rot.w);
-    gl_Position = u_projection * u_view * u_model * R * vec4(a_position, 0.0, 1.0);
+    gl_Position = u_projection * u_view * u_model * R
+        * vec4(a_position, 0.0, 1.0);
     gl_PointSize = v_size;
 }
 """

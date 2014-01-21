@@ -15,7 +15,7 @@ from . import _GL_ENUM
 from . import _desktop, _desktop_ext
 
 # Prepare namespace with constants and ext
-from ._constants import *
+from ._constants import *  # noqa
 ext = _desktop_ext
 
 
@@ -62,8 +62,8 @@ def _inject():
     Note the similatity with vispy.gloo.gl.use().
     """
     import vispy
-    show_warnings = vispy.config['show_warnings']
-    import OpenGL.GL.framebufferobjects as FBO
+    show_warnings = vispy.config['show_warnings']  # noqa
+    import OpenGL.GL.framebufferobjects as FBO  # noqa
 
     # Import functions here
     NS = globals()

@@ -15,10 +15,8 @@ import ctypes
 import numpy as np
 
 from . import gl
-from . import GLObject
-from .buffer import ClientVertexBuffer, VertexBuffer, VertexBufferView
+from .buffer import ClientVertexBuffer, VertexBuffer
 from .texture import Texture, Texture2D, TextureCubeMap, Texture3D
-from vispy.util.six import string_types
 
 # todo: support arrays of uniforms
 
@@ -185,7 +183,8 @@ class Uniform(Variable):
         object is required.
         """
 
-        if self._gtype in (gl.GL_SAMPLER_2D, gl.GL_SAMPLER_CUBE, gl.ext.GL_SAMPLER_3D):
+        if self._gtype in (gl.GL_SAMPLER_2D, gl.GL_SAMPLER_CUBE,
+                           gl.ext.GL_SAMPLER_3D):
             # Textures need special handling
             if isinstance(data, Texture):
                 self._data = data
@@ -231,7 +230,8 @@ class Uniform(Variable):
         #           returns
 
         # Matrices (need a transpose argument)
-        if self._gtype in (gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT4):
+        if self._gtype in (gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3,
+                           gl.GL_FLOAT_MAT4):
             if not self._dirty:
                 return
             # OpenGL ES 2.0 does not support transpose
@@ -305,7 +305,8 @@ class Attribute(Variable):
         # Data is a tuple with size <= 4, we assume this designates a generate
         # vertex attribute.
         if (isinstance(data, (float, int)) or
-                (isinstance(data, (tuple, list)) and len(data) in [1, 2, 3, 4])):
+                (isinstance(data, (tuple, list)) and
+                 len(data) in [1, 2, 3, 4])):
             # Get dtype, should be float32 for ES 2.0, see issue #9
             _, _, dtype = gl_typeinfo[self._gtype]
             if dtype != np.float32:

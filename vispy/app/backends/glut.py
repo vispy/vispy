@@ -8,11 +8,9 @@ vispy backend for glut.
 
 from __future__ import print_function, division, absolute_import
 
-from vispy.util.event import Event
 from vispy import app
 from vispy import keys
 import vispy.util.ptime as ptime
-import vispy
 
 import OpenGL.error
 import OpenGL.GLUT as glut
@@ -346,7 +344,7 @@ class CanvasBackend(app.CanvasBackend):
         return self._modifiers_cache
 
 
-import weakref
+#import weakref
 
 
 def _glut_callback(id):
@@ -394,7 +392,8 @@ def _glut_callback(id):
             #glut.glutTimerFunc(ms, TimerBackend._glut_callback, timer._id)
 
     # def _vispy_start(self, interval):
-        ##glut.glutTimerFunc(int(interval*1000), TimerBackend._glut_callback, self._id)
+        ##glut.glutTimerFunc(int(interval*1000), TimerBackend._glut_callback,
+        ##                   self._id)
         #glut.glutTimerFunc(int(interval*1000), _glut_callback, self._id)
 
     # def _vispy_stop(self):
@@ -403,9 +402,9 @@ def _glut_callback(id):
     # def _vispy_get_native_timer(self):
         # return glut # or self?
 
-# Note: we could also build a timer using glutTimerFunc, but this causes trouble
-# because timer callbacks appear to take precedence over all others. Thus,
-# a fast timer can block new display events.
+# Note: we could also build a timer using glutTimerFunc, but this causes
+# trouble because timer callbacks appear to take precedence over all others.
+# Thus, a fast timer can block new display events.
 class TimerBackend(app.TimerBackend):
     _initialized = False
     _schedule = []

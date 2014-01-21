@@ -10,11 +10,9 @@ via functions in the module's namespace.
 
 from __future__ import print_function, division, absolute_import
 
-import vispy
-
-from .application import Application, ApplicationBackend
-from .canvas import Canvas, CanvasBackend
-from .timer import Timer, TimerBackend
+from .application import Application, ApplicationBackend  # noqa
+from .canvas import Canvas, CanvasBackend  # noqa
+from .timer import Timer, TimerBackend  # noqa
 
 # Create default application instance
 default_app = Application()

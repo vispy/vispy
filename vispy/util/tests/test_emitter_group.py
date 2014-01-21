@@ -1,7 +1,7 @@
-from vispy.util.event import Event, EventEmitter, EmitterGroup
 import unittest
 import copy
-import functools
+
+from vispy.util.event import Event, EventEmitter, EmitterGroup
 
 
 class BasicEvent(Event):
@@ -211,9 +211,8 @@ class TestGroups(unittest.TestCase):
             self.result[key] = ev, attrs
 
     def assert_result(self, key=None, **kwds):
-        assert (
-            hasattr(
-                self, 'result') and self.result is not None), "No event recorded"
+        assert (hasattr(self, 'result') and self.result is not None), \
+            "No event recorded"
 
         if key is None:
             event, event_attrs = self.result
@@ -227,8 +226,8 @@ class TestGroups(unittest.TestCase):
                 assert event is val, "Event objects do not match"
 
             elif name == 'event_class':
-                assert isinstance(
-                    event, val), "Emitted object is not instance of %s" % val.__name__
+                assert isinstance(event, val), \
+                    "Emitted object is not instance of %s" % val.__name__
 
             else:
                 attr = event_attrs[name]

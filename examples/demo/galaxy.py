@@ -9,7 +9,6 @@ Just a very fake galaxy.
 Astronomers and cosmologists will kill me !
 """
 
-import os
 import numpy as np
 
 from vispy import gloo

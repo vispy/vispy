@@ -9,7 +9,6 @@ should be emitted.
 
 from __future__ import print_function, division, absolute_import
 
-import vispy
 from vispy import app
 from vispy import keys
 
@@ -131,6 +130,8 @@ class CanvasBackend(app.CanvasBackend):
         """ Shown here in one method, but most backends will probably
         have one method for each event.
         """
+        raise NotImplementedError
+        """
         if self._vispy_canvas is None:
             return
 
@@ -159,6 +160,7 @@ class CanvasBackend(app.CanvasBackend):
 
         self._vispy_canvas.events.key_press(key=key, text=text, modifiers=())
         self._vispy_canvas.events.key_release(key=key, text=text, modifiers=())
+        """
 
 
 class TimerBackend(app.TimerBackend):  # Can be mixed with native timer class

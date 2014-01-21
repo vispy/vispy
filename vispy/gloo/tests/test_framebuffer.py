@@ -3,7 +3,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import unittest
-import numpy as np
 from vispy.gloo import gl
 
 from vispy.gloo.framebuffer import RenderBuffer, FrameBuffer
@@ -151,7 +150,7 @@ class FrameBufferTest(unittest.TestCase):
 
     def test_level(self):
         fbo = FrameBuffer()
-        buffer = RenderBuffer()
+        RenderBuffer()
         texture = Texture2D()
 
         # Valid level

@@ -17,7 +17,6 @@ import time
 from vispy import scene
 
 from vispy import app
-from vispy.util import transforms
 
 # app.use('glut')
 

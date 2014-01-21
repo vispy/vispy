@@ -18,7 +18,6 @@ import sys
 from vispy.util.ordereddict import OrderedDict
 import inspect
 import weakref
-import vispy
 
 
 class Event(object):
@@ -44,7 +43,6 @@ class Event(object):
        The native GUI event object
     **kwds : keyword arguments
         All extra keyword arguments become attributes of the event object.
-
     """
 
     def __init__(self, type, native=None, **kwds):
@@ -60,7 +58,7 @@ class Event(object):
 
     @property
     def source(self):
-        """ The object that the event applies to (i.e. the source of the event).
+        """The object that the event applies to (i.e. the source of the event).
         """
         return self._sources[-1] if self._sources else None
 
@@ -91,9 +89,9 @@ class Event(object):
     @property
     def handled(self):
         """This boolean property indicates whether the event has already been
-        acted on by an event handler. Since many handlers may have access to the
-        same events, it is recommended that each check whether the event has
-        already been handled as well as set handled=True if it decides to
+        acted on by an event handler. Since many handlers may have access to
+        the same events, it is recommended that each check whether the event
+        has already been handled as well as set handled=True if it decides to
         act on the event.
         """
         return self._handled
@@ -129,7 +127,8 @@ class Event(object):
                 if name.startswith('_'):
                     continue
                 # select only properties
-                if not hasattr(type(self), name) or not isinstance(getattr(type(self), name), property):
+                if not hasattr(type(self), name) or \
+                        not isinstance(getattr(type(self), name), property):
                     continue
                 attr = getattr(self, name)
 
@@ -148,15 +147,15 @@ class EventEmitter(object):
     Each instance of EventEmitter represents the source of a stream of similar
     events, such as mouse click events or timer activation events. For
     example, the following diagram shows the propagation of a mouse click
-    event to the list of callbacks that are registered to listen for that event::
+    event to the list of callbacks that are registered to listen for that
+    event::
 
-
-       User clicks    |Canvas creates             |Canvas invokes its                  |EventEmitter invokes
-       mouse on       |MouseEvent:                |'mouse_press' EventEmitter:         |callbacks in sequence:
-       Canvas         |                           |                                    |
-                   -->|event = MouseEvent(...) -->|Canvas.events.mouse_press(event) -->|callback1(event)
-                      |                           |                                 -->|callback2(event)
-                      |                           |                                 -->|callback3(event)
+       User clicks    |Canvas creates
+       mouse on       |MouseEvent:                |'mouse_press' EventEmitter:         |callbacks in sequence: # noqa
+       Canvas         |                           |                                    |  # noqa
+                   -->|event = MouseEvent(...) -->|Canvas.events.mouse_press(event) -->|callback1(event)  # noqa
+                      |                           |                                 -->|callback2(event)  # noqa
+                      |                           |                                 -->|callback3(event)  # noqa
 
     Callback functions may be added or removed from an EventEmitter using
     :func:`connect() <vispy.event.EventEmitter.connect>` or
@@ -334,8 +333,8 @@ class EventEmitter(object):
             args.update(kwds)
             event = self.event_class(**args)
         else:
-            raise ValueError(
-                "Event emitters can be called with an Event instance or with keyword arguments only.")
+            raise ValueError("Event emitters can be called with an Event "
+                             "instance or with keyword arguments only.")
         return event
 
     def block(self):
@@ -367,8 +366,8 @@ class EmitterGroup(EventEmitter):
     """EmitterGroup instances manage a set of related
     :class:`EventEmitters <vispy.event.EventEmitter>`.
     Its primary purpose is to provide organization for objects
-    that make use of multiple emitters and to reduce the boilerplate code needed
-    to initialize those emitters with default connections.
+    that make use of multiple emitters and to reduce the boilerplate code
+    needed to initialize those emitters with default connections.
 
     EmitterGroup instances are usually stored as an 'events' attribute on
     objects that use multiple emitters. For example::
@@ -437,8 +436,10 @@ class EmitterGroup(EventEmitter):
                       mouse_release=MouseEvent)
 
             # ..is equivalent to this statement:
-            group.add(mouse_press=EventEmitter(group.source, 'mouse_press', MouseEvent),
-                      mouse_release=EventEmitter(group.source, 'mouse_press', MouseEvent))
+            group.add(mouse_press=EventEmitter(group.source, 'mouse_press',
+                                               MouseEvent),
+                      mouse_release=EventEmitter(group.source, 'mouse_press',
+                                                 MouseEvent))
         """
         if auto_connect is None:
             auto_connect = self.auto_connect
@@ -450,9 +451,9 @@ class EmitterGroup(EventEmitter):
                     "EmitterGroup already has an emitter named '%s'" %
                     name)
             elif hasattr(self, name):
-                raise ValueError(
-                    "The name '%s' cannot be used as an emitter; it is already an attribute of EmitterGroup" %
-                    name)
+                raise ValueError("The name '%s' cannot be used as an emitter; "
+                                 "it is already an attribute of EmitterGroup"
+                                 % name)
 
         # add each emitter specified in the keyword arguments
         for name, emitter in kwds.items():
@@ -465,8 +466,8 @@ class EmitterGroup(EventEmitter):
                     type=name,
                     event_class=emitter)
             elif not isinstance(emitter, EventEmitter):
-                raise Exception(
-                    'Emitter must be specified as either an EventEmitter instance or Event subclass')
+                raise Exception('Emitter must be specified as either an '
+                                'EventEmitter instance or Event subclass')
 
             # give this emitter the same source as the group.
             emitter.source = self.source
@@ -477,8 +478,8 @@ class EmitterGroup(EventEmitter):
             if auto_connect and self.source is not None:
                 emitter.connect((self.source, self.auto_connect_format % name))
 
-            # If emitters are connected to the group already, then this one should
-            # be connected as well.
+            # If emitters are connected to the group already, then this one
+            # should be connected as well.
             if self._emitters_connected:
                 emitter.connect(self)
 
@@ -513,8 +514,8 @@ class EmitterGroup(EventEmitter):
         """ Connect the callback to the event group. The callback will receive
         events from _all_ of the emitters in the group.
 
-        See :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>` for
-        arguments.
+        See :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>`
+        for arguments.
         """
         self._connect_emitters(True)
         return EventEmitter.connect(self, callback)

@@ -74,9 +74,8 @@ the rectangular region of the viewbox.
 
 from __future__ import print_function, division, absolute_import
 
-from .base import Entity, Camera, ViewBox
-from .canvas import CanvasWithScene
-
-from .cameras import *
-from .entities import *
-from .systems import *
+from .base import Entity, Camera, ViewBox  # noqa
+from .canvas import CanvasWithScene  # noqa
+from .cameras import *  # noqa
+from .entities import *  # noqa
+from .systems import *  # noqa

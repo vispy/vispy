@@ -5,7 +5,6 @@
 Example demonstrating showing a, image with a fixed ratio.
 """
 
-import time
 import numpy as np
 
 from vispy.util.transforms import ortho

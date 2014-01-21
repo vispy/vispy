@@ -5,7 +5,6 @@
 import unittest
 from vispy.gloo import gl
 
-from vispy.gloo.shader import ShaderError
 from vispy.gloo.shader import VertexShader
 from vispy.gloo.shader import FragmentShader
 
@@ -33,8 +32,8 @@ class ShaderTest(unittest.TestCase):
     def test_init(self):
         shader = VertexShader()
         assert shader._handle == 0
-        assert shader._need_update == False
-        assert shader._valid == False
+        assert shader._need_update is False
+        assert shader._valid is False
         assert shader.code is None
         assert shader.source is None
 

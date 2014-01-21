@@ -114,9 +114,8 @@ class GLObject(object):
             try:
                 self._create()
             except Exception:
-                raise RuntimeError(
-                    'Could not create %r, perhaps there is no OpenGL context?' %
-                    self)
+                raise RuntimeError('Could not create %r, perhaps there is '
+                                   'no OpenGL context?' % self)
         # Perform an update if necessary
         if self._need_update:
             self._update()  # If it does not raise an error, assume valid

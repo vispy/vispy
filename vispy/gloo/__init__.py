@@ -19,23 +19,23 @@ VertexBuffer should be set as uniforms and attributes of the Program
 object.
 
 Example::
-    
+
     # Init
     program = gloo.Program(vertex_source, fragment_source)
     program['a_position'] = gloo.VertexBuffer(my_positions_array)
     program['s_texture'] = gloo.Texture2D(my_image)
     ...
-    
+
     # Paint event handler
     program['u_color'] = 0.0, 1.0, 0.0
     program.draw(gl.GL_TRIANGLES)
 
 .. Note::
-    
+
     With vispy.gloo we strive to offer a Python interface that provides
     the full functionality of OpenGL. However, this layer is a work in
     progress and there are yet a few known limitations. Most notably:
-    
+
     * TextureCubeMap is not yet implemented
     * FBO's can only do 2D textures (not 3D textures or cube maps)
     * Sharing of Shaders and RenderBuffers (between multiple Program's and
@@ -77,11 +77,11 @@ def convert_to_enum(param, allow_none=False):
     return param
 
 
-from .globject import GLObject
+from .globject import GLObject  # noqa
 
-from .buffer import VertexBuffer, ElementBuffer
+from .buffer import VertexBuffer, ElementBuffer  # noqa
 #from .buffer import ClientVertexBuffer, ClientElementBuffer
-from .texture import Texture2D, Texture3D, TextureCubeMap
-from .shader import VertexShader, FragmentShader
-from .framebuffer import FrameBuffer, RenderBuffer
-from .program import Program
+from .texture import Texture2D, Texture3D, TextureCubeMap  # noqa
+from .shader import VertexShader, FragmentShader  # noqa
+from .framebuffer import FrameBuffer, RenderBuffer  # noqa
+from .program import Program  # noqa

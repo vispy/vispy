@@ -8,7 +8,6 @@ Implementations of our 2D cameras.
 
 from __future__ import print_function, division, absolute_import
 
-import math
 import numpy as np
 
 from ..base import Camera
@@ -32,7 +31,6 @@ class PixelCamera(Camera):
 
     def get_projection(self, viewbox):
         w, h = viewbox.resolution
-        from vispy.util import transforms
         projection = np.eye(4)
         transforms.scale(projection, 2.0 / w, 2.0 / h)
         transforms.translate(projection, -1, -1)

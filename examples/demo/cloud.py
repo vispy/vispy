@@ -131,7 +131,8 @@ float clober(vec2 P, float size)
 // ----------------
 float square(vec2 P, float size)
 {
-    float r = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size);
+    float r = max(abs(gl_PointCoord.x -.5)*size,
+                  abs(gl_PointCoord.y -.5)*size);
     r -= v_size/2;
     return r;
 }
@@ -147,8 +148,10 @@ float diamond(vec2 P, float size)
 // ----------------
 float vbar(vec2 P, float size)
 {
-    float r1 = max(abs(gl_PointCoord.x -.75)*size, abs(gl_PointCoord.x -.25)*size);
-    float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size);
+    float r1 = max(abs(gl_PointCoord.x -.75)*size,
+                   abs(gl_PointCoord.x -.25)*size);
+    float r3 = max(abs(gl_PointCoord.x -.5)*size,
+                   abs(gl_PointCoord.y -.5)*size);
     float r = max(r1,r3);
     r -= v_size/2;
     return r;
@@ -157,8 +160,10 @@ float vbar(vec2 P, float size)
 // ----------------
 float hbar(vec2 P, float size)
 {
-    float r2 = max(abs(gl_PointCoord.y -.75)*size, abs(gl_PointCoord.y -.25)*size);
-    float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size);
+    float r2 = max(abs(gl_PointCoord.y -.75)*size,
+                   abs(gl_PointCoord.y -.25)*size);
+    float r3 = max(abs(gl_PointCoord.x -.5)*size,
+                   abs(gl_PointCoord.y -.5)*size);
     float r = max(r2,r3);
     r -= v_size/2;
     return r;
@@ -167,9 +172,12 @@ float hbar(vec2 P, float size)
 // ----------------
 float cross(vec2 P, float size)
 {
-    float r1 = max(abs(gl_PointCoord.x -.75)*size, abs(gl_PointCoord.x -.25)*size);
-    float r2 = max(abs(gl_PointCoord.y -.75)*size, abs(gl_PointCoord.y -.25)*size);
-    float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size);
+    float r1 = max(abs(gl_PointCoord.x -.75)*size,
+                   abs(gl_PointCoord.x -.25)*size);
+    float r2 = max(abs(gl_PointCoord.y -.75)*size,
+                   abs(gl_PointCoord.y -.25)*size);
+    float r3 = max(abs(gl_PointCoord.x -.5)*size,
+                   abs(gl_PointCoord.y -.5)*size);
     float r = max(min(r1,r2),r3);
     r -= v_size/2;
     return r;

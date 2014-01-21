@@ -146,8 +146,8 @@ class Canvas(object):
         # Get and check name
         name = fun.__name__
         if not name.startswith('on_'):
-            raise ValueError(
-                'When connecting a function based on its name, the name should start with "on_"')
+            raise ValueError('When connecting a function based on its name, '
+                             'the name should start with "on_"')
         eventname = name[3:]
         # Get emitter
         try:
@@ -299,7 +299,8 @@ class CanvasBackend(object):
 
     def _vispy_set_current(self):
         # todo: this is currently not used internally
-        # --> I think the backends should call this themselves before emitting the paint event
+        # --> I think the backends should call this themselves before
+        #     emitting the paint event
         # Make this the current context
         raise NotImplementedError()
 

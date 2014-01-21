@@ -9,7 +9,6 @@ Implementation of a canvas that has a ViewBox so it can hold a scene graph.
 from __future__ import print_function, division, absolute_import
 
 from .base import ViewBox
-from vispy import app
 from vispy import app, gloo
 gl = gloo.gl
 

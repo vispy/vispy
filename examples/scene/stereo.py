@@ -4,7 +4,6 @@ This example illustrates:
   * Having two viewboxes that show the same scene
   * Using a different camera for each viewbox
   * Controlling both cameras simultaneously
-  
 """
 
 from vispy import scene

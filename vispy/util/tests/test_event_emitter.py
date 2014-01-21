@@ -1,7 +1,8 @@
-from vispy.util.event import Event, EventEmitter
 import unittest
 import copy
 import functools
+
+from vispy.util.event import Event, EventEmitter
 
 
 class BasicEvent(Event):
@@ -21,8 +22,8 @@ class TestEmitters(unittest.TestCase):
         """Emitter constructed with no arguments"""
         em = EventEmitter()
 
-        # type must be specified when emitting since Event requires type argument
-        # and the emitter was constructed without it.
+        # type must be specified when emitting since Event requires type
+        # argument and the emitter was constructed without it.
         try:
             em()
             assert False, "Emitting event with no type should have failed."
@@ -76,7 +77,7 @@ class TestEmitters(unittest.TestCase):
             type='qwer',
             sources=[None])
 
-    def test_emitter_type(self):
+    def test_emitter_type_event_class(self):
         """Emitter constructed with event_class argument"""
         em = EventEmitter(event_class=BasicEvent)
         ev = self.try_emitter(em, type='test_event')
@@ -103,7 +104,8 @@ class TestEmitters(unittest.TestCase):
             em = EventEmitter(event_class=X)
             ev = self.try_emitter(em, type='test_event')
             self.assert_result()  # checks event type
-            assert False, "Should not be able to construct emitter with non-Event class"
+            assert False, \
+                "Should not be able to construct emitter with non-Event class"
         except:
             pass
 
@@ -444,9 +446,8 @@ class TestEmitters(unittest.TestCase):
             self.result[key] = ev, attrs
 
     def assert_result(self, key=None, **kwds):
-        assert (
-            hasattr(
-                self, 'result') and self.result is not None), "No event recorded"
+        assert (hasattr(self, 'result') and self.result is not None), \
+            "No event recorded"
 
         if key is None:
             event, event_attrs = self.result
@@ -460,8 +461,8 @@ class TestEmitters(unittest.TestCase):
                 assert event is val, "Event objects do not match"
 
             elif name == 'event_class':
-                assert isinstance(
-                    event, val), "Emitted object is not instance of %s" % val.__name__
+                assert isinstance(event, val), \
+                    "Emitted object is not instance of %s" % val.__name__
 
             else:
                 attr = event_attrs[name]

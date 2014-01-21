@@ -17,7 +17,7 @@ import time
 import numpy as np
 import ctypes
 
-from vispy import app, dataio
+from vispy import app
 from vispy.gloo import gl
 
 
@@ -57,7 +57,7 @@ void main () {
     }
     else
         gl_Position = vec4(-1000, -1000, 0, 0);
-    
+
     v_lifetime = 1.0 - (u_time / a_lifetime);
     v_lifetime = clamp(v_lifetime, 0.0, 1.0);
     gl_PointSize = (v_lifetime * v_lifetime) * 40.0;
