@@ -118,6 +118,10 @@ class ApplicationBackend(app.ApplicationBackend):
                 pass
         if not self._inizialized:
             glut.glutInit()  # todo: maybe allow user to give args?
+            glut.glutInitDisplayMode(glut.GLUT_RGBA |
+                                     glut.GLUT_DOUBLE |
+                                     glut.GLUT_STENCIL |
+                                     glut.GLUT_DEPTH)
             self._inizialized = True
         return glut
 

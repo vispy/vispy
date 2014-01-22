@@ -1,17 +1,20 @@
 import numpy as np
+from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
                        MouseEvent, KeyEvent)
-from vispy.app.backends import requires_pyglet, requires_qt
+from vispy.app.backends import (requires_pyglet, requires_qt,
+                                requires_pyglet_or_qt)
 
 from vispy.gloo.program import (Program, ProgramError, VertexBuffer,
                                 ElementBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader, ShaderError
+from vispy.util.dataio import _screenshot
 
 
-bad_glut = np.testing.dec.skipif(True, 'GLUT window causes segfaults on 2.7 '
-                                 'and fails on 2.6')  # XXX should fix
+def on_nonexist(self, *args):
+    return
 
 
 def on_mouse_move(self, *args):
@@ -49,6 +52,12 @@ def _test_application(backend):
     canvas.connect(on_mouse_move)
     assert_raises(ValueError, canvas.connect, _on_mouse_move)
     canvas.show()
+    assert_raises(ValueError, canvas.connect, on_nonexist)
+
+    # screenshots
+    ss = _screenshot()
+    assert_array_equal(ss.shape[2], 3)  # XXX other dimensions not correct?
+    assert_array_equal(canvas._backend._vispy_get_geometry()[2:], canvas.size)
 
     # GLOO: should have an OpenGL context already, so these should work
     vert = VertexShader("void main (void) {gl_Position = pos;}")
@@ -132,10 +141,14 @@ def _test_application(backend):
     app.quit()
 
 
-@bad_glut
-def test_glut():
-    """Test GLUT application"""
-    _test_application('Glut')
+# XXX We cannot test GLUT, since there is no safe, cross-platform method for
+# closing the main loop!
+
+
+@requires_pyglet_or_qt()  # b/c we can't use GLUT, the other option
+def test_none():
+    """Test default application choosing"""
+    _test_application(None)
 
 
 @requires_pyglet()
@@ -148,12 +161,6 @@ def test_pyglet():
 def test_qt():
     """Test Qt application"""
     _test_application('qt')
-
-
-# XXX This test cannot be used until GLUT works, since it might use that...
-#def test_none():
-#    """Test default application choosing"""
-#    _test_application(None)
 
 
 def test_abstract():

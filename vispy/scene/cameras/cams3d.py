@@ -168,14 +168,8 @@ class FirstPersonCamera(Camera):
 
         # Calculate distance to center in order to have correct FoV and fy.
         if fov == 0:
-            M = transforms.ortho(-
-                                 0.5 *
-                                 fx, 0.5 *
-                                 fx, -
-                                 0.5 *
-                                 fy, 0.5 *
-                                 fy, -
-                                 10000, 10000)
+            M = transforms.ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy,
+                                 -10000, 10000)
             self._d = 0
         else:
             d = fy / (2 * math.tan(math.radians(fov) / 2))

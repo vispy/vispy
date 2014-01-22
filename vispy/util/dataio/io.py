@@ -33,11 +33,30 @@ def crate():
 
 
 def read_mesh(fname, format=None):
-    """ Read mesh data from file.
-    returns (vertices, faces, normals, texcoords)
-    texcoords and faces may be None.
+    """Read mesh data from file.
 
-    Mesh files that ship with vispy always work: 'triceratops.obj'.
+    Parameters
+    ----------
+    fname : str
+        File name to read.
+    format : str | None
+        Format of file to read in. Currently only ``"obj"`` is supported.
+        If None, format will be inferred from the filename.
+
+    Returns
+    -------
+    vertices : array
+        Vertices.
+    faces : array | None
+        Triangle face definitions.
+    normals : array
+        Normals for the mesh.
+    texcoords : array | None
+        Texture coordinates.
+
+    Notes
+    -----
+    Mesh files that ship with vispy always work, such as 'triceratops.obj'.
     """
     # Check file
     if not os.path.isfile(fname):

@@ -16,10 +16,10 @@ import numpy as np
 # This is the order in which they are attempted to be imported.
 BACKENDS = [('Test', 'nonexistent', 'foo.bar.lalalala'),  # For testing
             ('Qt', 'qt', None),  # Meta backend
-            ('Glut', 'glut', 'OpenGL.GLUT'),
             ('Pyglet', 'pyglet', 'pyglet'),
             ('PySide', 'qt', 'PySide'),
             ('PyQt4', 'qt', 'PyQt4'),
+            ('Glut', 'glut', 'OpenGL.GLUT'),
             ]
 
 # Map of the lowercase backend names to the backend descriptions above
@@ -66,4 +66,9 @@ def requires_qt():
 
 
 def requires_pyglet():
-    return np.testing.dec.skipif(not has_pyglet(), 'Requires QT-UIC')
+    return np.testing.dec.skipif(not has_pyglet(), 'Pyglet')
+
+
+def requires_pyglet_or_qt():
+    return np.testing.dec.skipif(not has_pyglet() and not has_qt(),
+                                 'Requires Pyglet or QT')
