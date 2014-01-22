@@ -252,15 +252,10 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
                    pyglet.window.key.LALT, pyglet.window.key.RALT,
                    pyglet.window.key.LSHIFT, pyglet.window.key.RSHIFT):
             self._current_modifiers.add(key)
-        # Get txt
-        try:
-            text = chr(key)
-        except Exception:
-            text = ''
         # Emit
         self._vispy_canvas.events.key_press(
             key=self._processKey(key),
-            text=text,
+            text='',  # Handlers that trigger on text wont see this event
             modifiers=self._modifiers(modifiers),
         )
 
