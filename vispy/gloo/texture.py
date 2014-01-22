@@ -687,20 +687,13 @@ def convert_data(data, clim=None):
         # All other floats are converted with relative ease
         CONVERTING = True
         data = data.astype(np.float32)
-    elif data.dtype.name.startswith('int'):
+    elif 'int' in data.dtype.name:
         # Integers, we need to parse the dtype
         CONVERTING = True
         if clim is None:
-            max = 2 ** int(data.dtype.name[3:])
-            clim = -max // 2, max // 2 - 1
+            clim = (np.iinfo(data.dtype).min, np.iinfo(data.dtype).max)
         data = data.astype(np.float32)
-    elif data.dtype.name.startswith('uint'):
-        # Unsigned integers, we need to parse the dtype
-        CONVERTING = True
-        if clim is None:
-            max = 2 ** int(data.dtype.name[4:])
-            clim = 0, max // 2
-        data = data.astype(np.float32)
+        print('inty')
     else:
         raise TextureError('Could not convert data type %s.' % data.dtype.name)
 
@@ -726,9 +719,8 @@ def convert_data(data, clim=None):
         pass  # Yeah
     elif data.dtype in (np.float16, np.float32):
         # Arg, convert. Don't forget to clip
-        data *= 256.0
-        data[data < 0.0] = 0.0
-        data[data > 256.0] = 256.0
+        data *= 255.0
+        np.clip(data, 0, 255, data)
         data = data.astype(np.uint8)
     else:
         raise TextureError(

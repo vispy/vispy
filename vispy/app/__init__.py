@@ -11,7 +11,7 @@ via functions in the module's namespace.
 from __future__ import print_function, division, absolute_import
 
 from .application import Application, ApplicationBackend  # noqa
-from .canvas import Canvas, CanvasBackend  # noqa
+from .canvas import Canvas, CanvasBackend, MouseEvent, KeyEvent  # noqa
 from .timer import Timer, TimerBackend  # noqa
 
 # Create default application instance
