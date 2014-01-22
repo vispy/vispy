@@ -10,6 +10,7 @@ instance we can test whether the GUI toolkit for a backend is already
 imported. This stuff is mostly used in the Application.use method.
 """
 
+import numpy as np
 
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
@@ -58,3 +59,11 @@ def has_pyglet():
         has = False
         pass
     return has
+
+
+def requires_qt():
+    return np.testing.dec.skipif(not has_qt(), 'Requires QT')
+
+
+def requires_pyglet():
+    return np.testing.dec.skipif(not has_pyglet(), 'Requires QT-UIC')

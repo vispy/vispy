@@ -3,15 +3,13 @@ from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
                        MouseEvent, KeyEvent)
-from vispy.app.backends import has_qt, has_pyglet
+from vispy.app.backends import requires_pyglet, requires_qt
 
 from vispy.gloo.program import (Program, ProgramError, VertexBuffer,
                                 ElementBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader, ShaderError
 
 
-requires_qt = np.testing.dec.skipif(not has_qt(), 'Requires QT')
-requires_pyglet = np.testing.dec.skipif(not has_pyglet(), 'Requires QT-UIC')
 bad_glut = np.testing.dec.skipif(True, 'GLUT window causes segfaults on 2.7 '
                                  'and fails on 2.6')  # XXX should fix
 
@@ -140,13 +138,13 @@ def test_glut():
     _test_application('Glut')
 
 
-@requires_pyglet
+@requires_pyglet()
 def test_pyglet():
     """Test Pyglet application"""
     _test_application('Pyglet')
 
 
-@requires_qt
+@requires_qt()
 def test_qt():
     """Test Qt application"""
     _test_application('qt')
