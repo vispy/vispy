@@ -84,10 +84,11 @@ def _test_application(backend):
 
     # use a real program
     vert = ("uniform mat4 u_model;"
-            "attribute vec2 a_position;attribute vec4 a_color;"
+            "attribute vec2 a_position; attribute vec4 a_color;"
             "varying vec4 v_color;"
             "void main (void) {v_color = a_color;"
-            "gl_Position = u_model vec4(a_position, 0.0, 1.0);}")
+            "gl_Position = u_model * vec4(a_position, 0.0, 1.0);"
+            "v_color = a_color;}")
     frag = "void main() {gl_FragColor = vec4(0, 0, 0, 1);}"
     n, p = 250, 50
     T = np.random.uniform(0, 2 * np.pi, n)
@@ -151,10 +152,10 @@ def test_qt():
     _test_application('qt')
 
 
-@requires_pyglet
-def test_none():
-    """Test default application choosing"""
-    _test_application(None)
+# XXX This test cannot be used until GLUT works, since it might use that...
+#def test_none():
+#    """Test default application choosing"""
+#    _test_application(None)
 
 
 def test_abstract():
