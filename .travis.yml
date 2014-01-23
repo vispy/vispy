@@ -27,7 +27,7 @@ install:
     - conda create -n testenv --yes --quiet pip python=$PYTHON
     - source activate testenv
     - conda install --yes --quiet numpy nose
-    - pip install -q coveralls nose-timer PyOpenGL
+    - pip install -q coveralls nose-timer flake8 PyOpenGL
     # Use Pyglet alpha to get 3.3 support
     - if [ "${DEPS}" == "full" ]; then
         pip install -q http://pyglet.googlecode.com/archive/tip.zip;
@@ -59,9 +59,15 @@ script:
       else
         nosetests;
       fi
+    # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
+    - cd ${SRC_DIR}
+    # Don't run on 2.6 because it has some silly (unimportant) error
+    - if [ "${PYTHON}" != "2.6" ]; then
+        flake8 --exclude=six.py,_py24_ordereddict.py, vispy examples;
+      fi;
 
 after_success:
-    # Need to run from source dir to exectue "git" commands
+    # Need to run from source dir to execute "git" commands
     # Only do "3.3" "full" here, since that is our most complete testing condition
     - if [ "${PYTHON}" == "3.3" ] && [ "${DEPS}" == "full" ]; then
         echo "Running coveralls";

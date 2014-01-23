@@ -1,4 +1,4 @@
-# #!/usr/bin/env python
+# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """ Probably the simplest vispy example
 """
@@ -7,6 +7,7 @@ from vispy import app
 from vispy.gloo import gl
 
 c = app.Canvas(show=True)
+
 
 @c.connect
 def on_paint(event):

@@ -2,19 +2,17 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" 
-The app module defines three classes: Application, Canvas, and Timer. 
+"""
+The app module defines three classes: Application, Canvas, and Timer.
 On loading, vispy creates a default Application instance which can be used
 via functions in the module's namespace.
 """
 
 from __future__ import print_function, division, absolute_import
 
-import vispy
-
-from .application import Application, ApplicationBackend
-from .canvas import Canvas, CanvasBackend
-from .timer import Timer, TimerBackend
+from .application import Application, ApplicationBackend  # noqa
+from .canvas import Canvas, CanvasBackend  # noqa
+from .timer import Timer, TimerBackend  # noqa
 
 # Create default application instance
 default_app = Application()
@@ -26,10 +24,10 @@ def use(backend_name=None):
     select a particular backend if one is already selected. Available
     backends: 'PySide', 'PyQt4', 'Glut', 'Pyglet', 'qt'. The latter
     will use PySide or PyQt4, whichever works.
-    
+
     If a backend name is provided, and that backend could not be loaded,
     an error is raised.
-    
+
     If no backend name is provided, this function will first check if
     the GUI toolkit corresponding to each backend is already imported,
     and try that backend first. If this is unsuccessful, it will try
@@ -46,7 +44,7 @@ def create():
 
 
 def run():
-    """ Enter the native GUI event loop. 
+    """ Enter the native GUI event loop.
     """
     return default_app.run()
 

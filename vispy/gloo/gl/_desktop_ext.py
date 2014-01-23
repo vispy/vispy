@@ -1,4 +1,4 @@
-""" 
+"""
 
 THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 
@@ -8,7 +8,7 @@ OpenGL ES 2.0 API based on desktop OpenGL (via pyOpenGL).
 
 from __future__ import print_function, division, absolute_import
 
-from ._constants_ext import *
+from ._constants_ext import *  # noqa
 
 
 _glfunctions = [
@@ -27,4 +27,4 @@ _glfunctions = [
     "glTexImage3D",
     "glTexSubImage3D",
     "glUnmapBuffer",
-    ]
+]

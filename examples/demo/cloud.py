@@ -1,4 +1,4 @@
-# #!/usr/bin/env python
+# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vispy: gallery 1
 
@@ -14,16 +14,16 @@ from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
 
-# Create vertices 
+# Create vertices
 n = 1000000
-data = np.zeros(n, [ ('a_position', np.float32, 3),
-                     ('a_bg_color', np.float32, 4),
-                     ('a_fg_color', np.float32, 4),
-                     ('a_size',     np.float32, 1)])
-data['a_position'] = 0.45 * np.random.randn(n,3)
-data['a_bg_color'] = np.random.uniform(0.85,1.00,(n,4))
-data['a_fg_color'] = 0,0,0,1
-data['a_size'] = np.random.uniform(5,10,n)
+data = np.zeros(n, [('a_position', np.float32, 3),
+                    ('a_bg_color', np.float32, 4),
+                    ('a_fg_color', np.float32, 4),
+                    ('a_size', np.float32, 1)])
+data['a_position'] = 0.45 * np.random.randn(n, 3)
+data['a_bg_color'] = np.random.uniform(0.85, 1.00, (n, 4))
+data['a_fg_color'] = 0, 0, 0, 1
+data['a_size'] = np.random.uniform(5, 10, n)
 u_linewidth = 1.0
 u_antialias = 1.0
 u_size = 1
@@ -92,8 +92,8 @@ float disc(vec2 P, float size)
 // ----------------
 float arrow_right(vec2 P, float size)
 {
-    float r1 = abs(P.x -.50)*size + abs(P.y -.5)*size - v_size/2; 
-    float r2 = abs(P.x -.25)*size + abs(P.y -.5)*size - v_size/2; 
+    float r1 = abs(P.x -.50)*size + abs(P.y -.5)*size - v_size/2;
+    float r2 = abs(P.x -.25)*size + abs(P.y -.5)*size - v_size/2;
     float r = max(r1,-r2);
     return r;
 }
@@ -131,7 +131,8 @@ float clober(vec2 P, float size)
 // ----------------
 float square(vec2 P, float size)
 {
-    float r = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size);
+    float r = max(abs(gl_PointCoord.x -.5)*size,
+                  abs(gl_PointCoord.y -.5)*size);
     r -= v_size/2;
     return r;
 }
@@ -139,7 +140,7 @@ float square(vec2 P, float size)
 // ----------------
 float diamond(vec2 P, float size)
 {
-    float r = abs(gl_PointCoord.x -.5)*size + abs(gl_PointCoord.y -.5)*size; 
+    float r = abs(gl_PointCoord.x -.5)*size + abs(gl_PointCoord.y -.5)*size;
     r -= v_size/2;
     return r;
 }
@@ -147,8 +148,10 @@ float diamond(vec2 P, float size)
 // ----------------
 float vbar(vec2 P, float size)
 {
-    float r1 = max(abs(gl_PointCoord.x -.75)*size, abs(gl_PointCoord.x -.25)*size); 
-    float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
+    float r1 = max(abs(gl_PointCoord.x -.75)*size,
+                   abs(gl_PointCoord.x -.25)*size);
+    float r3 = max(abs(gl_PointCoord.x -.5)*size,
+                   abs(gl_PointCoord.y -.5)*size);
     float r = max(r1,r3);
     r -= v_size/2;
     return r;
@@ -157,8 +160,10 @@ float vbar(vec2 P, float size)
 // ----------------
 float hbar(vec2 P, float size)
 {
-    float r2 = max(abs(gl_PointCoord.y -.75)*size, abs(gl_PointCoord.y -.25)*size); 
-    float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
+    float r2 = max(abs(gl_PointCoord.y -.75)*size,
+                   abs(gl_PointCoord.y -.25)*size);
+    float r3 = max(abs(gl_PointCoord.x -.5)*size,
+                   abs(gl_PointCoord.y -.5)*size);
     float r = max(r2,r3);
     r -= v_size/2;
     return r;
@@ -167,9 +172,12 @@ float hbar(vec2 P, float size)
 // ----------------
 float cross(vec2 P, float size)
 {
-    float r1 = max(abs(gl_PointCoord.x -.75)*size, abs(gl_PointCoord.x -.25)*size); 
-    float r2 = max(abs(gl_PointCoord.y -.75)*size, abs(gl_PointCoord.y -.25)*size); 
-    float r3 = max(abs(gl_PointCoord.x -.5)*size, abs(gl_PointCoord.y -.5)*size); 
+    float r1 = max(abs(gl_PointCoord.x -.75)*size,
+                   abs(gl_PointCoord.x -.25)*size);
+    float r2 = max(abs(gl_PointCoord.y -.75)*size,
+                   abs(gl_PointCoord.y -.25)*size);
+    float r3 = max(abs(gl_PointCoord.x -.5)*size,
+                   abs(gl_PointCoord.y -.5)*size);
     float r = max(min(r1,r2),r3);
     r -= v_size/2;
     return r;
@@ -179,7 +187,7 @@ float cross(vec2 P, float size)
 // Main
 // ------------------------------------
 void main()
-{    
+{
     float size = v_size +2*(v_linewidth + 1.5*v_antialias);
     float t = v_linewidth/2.0-v_antialias;
 
@@ -216,85 +224,75 @@ void main()
 """
 
 
-
 # ------------------------------------------------------------ Canvas class ---
 class Canvas(app.Canvas):
-
 
     def __init__(self):
         app.Canvas.__init__(self)
         self.size = 800, 600
-        
-        self.program = gloo.Program(vert,frag)
-        self.view = np.eye(4,dtype=np.float32)
-        self.model = np.eye(4,dtype=np.float32)
-        self.projection = np.eye(4,dtype=np.float32)
+
+        self.program = gloo.Program(vert, frag)
+        self.view = np.eye(4, dtype=np.float32)
+        self.model = np.eye(4, dtype=np.float32)
+        self.projection = np.eye(4, dtype=np.float32)
         self.translate = 5
-        translate(self.view, 0,0, -self.translate)
+        translate(self.view, 0, 0, -self.translate)
 
         self.program.set_vars(gloo.VertexBuffer(data))
         self.program['u_linewidth'] = u_linewidth
         self.program['u_antialias'] = u_antialias
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
-        self.program['u_size'] = 5/self.translate
-        
+        self.program['u_size'] = 5 / self.translate
+
         self.theta = 0
         self.phi = 0
 
-        self.timer = app.Timer(1.0/60)
+        self.timer = app.Timer(1.0 / 60)
         self.timer.connect(self.on_timer)
         self.timer.start()
 
-
     def on_initialize(self, event):
-        gl.glClearColor(1,1,1,1)
+        gl.glClearColor(1, 1, 1, 1)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc (gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
-
-    def on_key_press(self,event):
+    def on_key_press(self, event):
         if event.text == ' ':
             if self.timer.running:
                 self.timer.stop()
             else:
                 self.timer.start()
 
-
-    def on_timer(self,event):
+    def on_timer(self, event):
         self.theta += .5
         self.phi += .5
         self.model = np.eye(4, dtype=np.float32)
-        rotate(self.model, self.theta, 0,0,1)
-        rotate(self.model, self.phi,   0,1,0)
+        rotate(self.model, self.theta, 0, 0, 1)
+        rotate(self.model, self.phi, 0, 1, 0)
         self.program['u_model'] = self.model
         self.update()
-
 
     def on_resize(self, event):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
-        self.projection = perspective( 45.0, width/float(height), 1.0, 1000.0 )
+        self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
         self.program['u_projection'] = self.projection
 
-
     def on_mouse_wheel(self, event):
-        self.translate +=event.delta[1]
-        self.translate = max(2,self.translate)
-        self.view       = np.eye(4,dtype=np.float32)
-        translate(self.view, 0,0, -self.translate)
+        self.translate += event.delta[1]
+        self.translate = max(2, self.translate)
+        self.view = np.eye(4, dtype=np.float32)
+        translate(self.view, 0, 0, -self.translate)
 
         self.program['u_view'] = self.view
-        self.program['u_size'] = 5/self.translate
+        self.program['u_size'] = 5 / self.translate
         self.update()
-
 
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         self.program.draw(gl.GL_POINTS)
-
-
 
 
 if __name__ == '__main__':

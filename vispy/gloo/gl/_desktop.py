@@ -1,4 +1,4 @@
-""" 
+"""
 
 THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 
@@ -8,7 +8,7 @@ OpenGL ES 2.0 API based on desktop OpenGL (via pyOpenGL).
 
 from __future__ import print_function, division, absolute_import
 
-from ._constants import *
+from ._constants import *  # noqa
 
 
 _glfunctions = [
@@ -155,4 +155,4 @@ _glfunctions = [
     "glVertexAttrib4fv",
     "glVertexAttribPointer",
     "glViewport",
-    ]
+]

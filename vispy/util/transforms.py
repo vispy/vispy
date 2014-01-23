@@ -171,10 +171,10 @@ def rotate(M, angle, x, y, z, point=None):
     x /= n
     y /= n
     z /= n
-    cx, cy, cz = (1 - c)*x, (1 - c)*y, (1 - c)*z
-    R = np.array([[cx*x + c, cy*x - z*s, cz*x + y*s, 0],
-                  [cx*y + z*s, cy*y + c, cz*y - x*s, 0],
-                  [cx*z - y*s, cy*z + x*s, cz*z + c, 0],
+    cx, cy, cz = (1 - c) * x, (1 - c) * y, (1 - c) * z
+    R = np.array([[cx * x + c, cy * x - z * s, cz * x + y * s, 0],
+                  [cx * y + z * s, cy * y + c, cz * y - x * s, 0],
+                  [cx * z - y * s, cy * z + x * s, cz * z + c, 0],
                   [0, 0, 0, 1]], dtype=M.dtype).T
     M[...] = np.dot(M, R)
     return M

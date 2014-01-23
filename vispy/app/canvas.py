@@ -14,6 +14,7 @@ import numpy as np
 
 
 class Canvas(object):
+
     """ Representation of a GUI element that can be rendered to by an OpenGL
     context. The args and kwargs are used to instantiate the native widget.
 
@@ -44,21 +45,22 @@ class Canvas(object):
 
     """
     # XXX THIS DOCSTRING DOES NOT MATCH WHAT IS DONE BELOW!
+
     def __init__(self, *args, **kwargs):
         self.events = EmitterGroup(source=self,
-                        initialize=Event,
-                        resize=ResizeEvent,
-                        paint=PaintEvent,
-                        mouse_press=MouseEvent,
-                        mouse_release=MouseEvent,
-                        mouse_move=MouseEvent,
-                        mouse_wheel=MouseEvent,
-                        key_press=KeyEvent,
-                        key_release=KeyEvent,
-                        stylus=Event,
-                        touch=Event,
-                        close=Event,
-                        )
+                                   initialize=Event,
+                                   resize=ResizeEvent,
+                                   paint=PaintEvent,
+                                   mouse_press=MouseEvent,
+                                   mouse_release=MouseEvent,
+                                   mouse_move=MouseEvent,
+                                   mouse_wheel=MouseEvent,
+                                   key_press=KeyEvent,
+                                   key_release=KeyEvent,
+                                   stylus=Event,
+                                   touch=Event,
+                                   close=Event,
+                                   )
 
         # Store input and initialize backend attribute
         self._args = args
@@ -71,7 +73,7 @@ class Canvas(object):
         self._our_kwargs['title'] = kwargs.pop('title', 'Vispy canvas')
         self._our_kwargs['show'] = kwargs.pop('show', False)
         self._our_kwargs['autoswap'] = kwargs.pop('autoswap', True)
-        self._our_kwargs['size'] = kwargs.pop('size', (800,600))
+        self._our_kwargs['size'] = kwargs.pop('size', (800, 600))
         self._our_kwargs['position'] = kwargs.pop('position', None)
 
         # Initialise some values
@@ -86,7 +88,6 @@ class Canvas(object):
         else:
             self.create_native()
 
-
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
         is already created, this function does nothing.
@@ -96,7 +97,10 @@ class Canvas(object):
             self._app.use()
             self._app.native
             # Instantiate the backed with the right class
-            self._set_backend(self._app.backend_module.CanvasBackend(*self._args, **self._kwargs))
+            self._set_backend(
+                self._app.backend_module.CanvasBackend(
+                    *self._args,
+                    **self._kwargs))
 
             # Clean up
             del self._args
@@ -115,11 +119,10 @@ class Canvas(object):
         if self._our_kwargs['position']:
             self.position = self._our_kwargs['position']
         if self._our_kwargs['autoswap']:
-            fun = lambda x:self._backend._vispy_swap_buffers()
+            fun = lambda x: self._backend._vispy_swap_buffers()
             self.events.paint.callbacks.append(fun)  # Append callback to end
         if self._our_kwargs['show']:
             self.show()
-
 
     @property
     def app(self):
@@ -127,13 +130,11 @@ class Canvas(object):
         """
         return self._app
 
-
     @property
     def native(self):
         """ The native widget object on which this Canvas is based.
         """
         return self._backend._vispy_get_native_canvas()
-
 
     def connect(self, fun):
         """ Connect a function to an event. The name of the function
@@ -145,17 +146,18 @@ class Canvas(object):
         # Get and check name
         name = fun.__name__
         if not name.startswith('on_'):
-            raise ValueError('When connecting a function based on its name, the name should start with "on_"')
+            raise ValueError('When connecting a function based on its name, '
+                             'the name should start with "on_"')
         eventname = name[3:]
         # Get emitter
         try:
             emitter = self.events[eventname]
         except KeyError:
-            raise ValueError('Event "%s" not available on this canvas.' % eventname)
+            raise ValueError(
+                'Event "%s" not available on this canvas.' %
+                eventname)
         # Connect
         emitter.connect(fun)
-
-
 
     # ---------------------------------------------------------------- size ---
     @property
@@ -165,8 +167,7 @@ class Canvas(object):
 
     @size.setter
     def size(self, size):
-        return self._backend._vispy_set_size(size[0],size[1])
-
+        return self._backend._vispy_set_size(size[0], size[1])
 
     # ------------------------------------------------------------ position ---
     @property
@@ -176,7 +177,7 @@ class Canvas(object):
 
     @position.setter
     def position(self, position):
-        return self._backend._vispy_set_position(position[0],position[1])
+        return self._backend._vispy_set_position(position[0], position[1])
 
     # --------------------------------------------------------------- title ---
     @property
@@ -189,37 +190,31 @@ class Canvas(object):
         self._title = title
         self._backend._vispy_set_title(title)
 
-
     def swap_buffers(self):
         """ Swap GL buffers such that the offscreen buffer becomes visible.
         """
-        #if not self._our_kwargs['autoswap']:
+        # if not self._our_kwargs['autoswap']:
         self._backend._vispy_swap_buffers()
-
 
     def resize(self, w, h):
         """ Resize the canvas givan size """
 
         return self._backend._vispy_set_size(w, h)
 
-
     def move(self, x, y):
         """ Move the widget or window to the given position """
 
-        self._backend._vispy_set_position(x,y)
-
+        self._backend._vispy_set_position(x, y)
 
     def show(self, visible=True):
         """ Show (or hide) the canvas """
 
         return self._backend._vispy_set_visible(visible)
 
-
     def update(self):
         """ Inform the backend that the Canvas needs to be repainted """
 
         return self._backend._vispy_update()
-
 
     def close(self):
         """ Close the canvas """
@@ -227,59 +222,59 @@ class Canvas(object):
         self._backend._vispy_close()
 
 
-    #def mouse_event(self, event):
+    # def mouse_event(self, event):
         #"""Called when a mouse input event has occurred (the mouse has moved,
-        #a button was pressed/released, or the wheel has moved)."""
+        # a button was pressed/released, or the wheel has moved)."""
 
-    #def key_event(self, event):
+    # def key_event(self, event):
         #"""Called when a keyboard event has occurred (a key was pressed or
-        #released while the canvas has focus)."""
+        # released while the canvas has focus)."""
 
-    #def touch_event(self, event):
+    # def touch_event(self, event):
         #"""Called when the user touches the screen over a Canvas.
 
-        #Event properties:
+        # Event properties:
 
-            #event.touches
+            # event.touches
                 #[ (x,y,pressure), ... ]
         #"""
 
-    #def stylus_event(self, event):
+    # def stylus_event(self, event):
         #"""Called when a stylus has been used to interact with the Canvas.
 
-        #Event properties:
+        # Event properties:
 
-            #event.device
+            # event.device
             #event.pos  (x,y)
-            #event.pressure
-            #event.angle
+            # event.pressure
+            # event.angle
 
         #"""
 
 
-    #def initialize_event(self, event):
+    # def initialize_event(self, event):
         #"""Called when the OpenGL context is initialy made available for this
-        #Canvas."""
+        # Canvas."""
 
-    #def resize_event(self, event):
+    # def resize_event(self, event):
         #"""Called when the Canvas is resized.
 
-        #Event properties:
+        # Event properties:
 
             #event.size  (w,h)
         #"""
 
-    #def paint_event(self, event):
+    # def paint_event(self, event):
         #"""Called when all or part of the Canvas needs to be repainted.
 
-        #Event properties:
+        # Event properties:
 
-            #event.region  (x,y,w,h) region of Canvas requiring repaint
+            # event.region  (x,y,w,h) region of Canvas requiring repaint
         #"""
 
 
-
 class CanvasBackend(object):
+
     """ CanvasBackend(vispy_canvas, *args, **kwargs)
 
     Abstract class that provides an interface between backends and Canvas.
@@ -300,11 +295,12 @@ class CanvasBackend(object):
             'buttons': [],
             'press_event': None,
             'last_event': None,
-            }
+        }
 
     def _vispy_set_current(self):
         # todo: this is currently not used internally
-        # --> I think the backends should call this themselves before emitting the paint event
+        # --> I think the backends should call this themselves before
+        #     emitting the paint event
         # Make this the current context
         raise NotImplementedError()
 
@@ -388,11 +384,9 @@ class CanvasBackend(object):
         return ev
 
 
-
-## Event subclasses specific to the Canvas
-
-
+# Event subclasses specific to the Canvas
 class MouseEvent(Event):
+
     """ Class describing mouse events.
 
     Note that each event object has an attribute for each of the input
@@ -433,11 +427,11 @@ class MouseEvent(Event):
                  modifiers=None, delta=None, last_event=None, press_event=None,
                  **kwds):
         Event.__init__(self, type, **kwds)
-        self._pos = (0,0) if (pos is None) else (pos[0], pos[1])
+        self._pos = (0, 0) if (pos is None) else (pos[0], pos[1])
         self._button = int(button) if (button is not None) else 0
         self._buttons = [] if (buttons is None) else buttons
-        self._modifiers = tuple( modifiers or () )
-        self._delta = (0.0,0.0) if (delta is None) else (delta[0], delta[1])
+        self._modifiers = tuple(modifiers or ())
+        self._delta = (0.0, 0.0) if (delta is None) else (delta[0], delta[1])
         self._last_event = last_event
         self._press_event = press_event
 
@@ -514,8 +508,8 @@ class MouseEvent(Event):
         return trail
 
 
-
 class KeyEvent(Event):
+
     """ Class describing mouse events.
 
     Note that each event object has an attribute for each of the input
@@ -542,7 +536,7 @@ class KeyEvent(Event):
         Event.__init__(self, type, **kwds)
         self._key = key
         self._text = text
-        self._modifiers = tuple( modifiers or () )
+        self._modifiers = tuple(modifiers or ())
 
     @property
     def key(self):
@@ -557,8 +551,8 @@ class KeyEvent(Event):
         return self._modifiers
 
 
-
 class ResizeEvent(Event):
+
     """ Class describing canvas resize events.
 
     Note that each event object has an attribute for each of the input
@@ -586,6 +580,7 @@ class ResizeEvent(Event):
 
 
 class PaintEvent(Event):
+
     """ Class describing canvas paint events.
     This type of event is sent to Canvas.events.paint when a repaint
     is required.

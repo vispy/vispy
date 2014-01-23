@@ -18,34 +18,35 @@ from vispy import visuals
 class LogCamera(scene.TwoDCamera):
     pass
     # Does nothing, but the idea is that it defines the kind of transform
-    
+
 
 class LogPointsVisual(visuals.PointsVisual):
-    
+
     VERT_SHADER = """
         // Stuff that each visual must have ...
         uniform   mat4 transform_model;
         uniform   mat4 transform_view;
         uniform   mat4 transform_projection;
-        
+
         attribute vec3 a_position;
-        
+
         varying vec4 v_color;
         void main (void) {
             gl_Position = vec4(a_position, 1.0);
-            
+
             // HERE IS THE EXTRA LINE
             // Comment this line to plot as normal
             gl_Position.y = log2(gl_Position.y);
-            
-            
-            gl_Position = transform_projection * transform_view 
+
+
+            gl_Position = transform_projection * transform_view
                         * transform_model * gl_Position;
-            
+
             v_color = vec4(1.0, 0.5, 0.0, 0.8);
             gl_PointSize = 10.0; //size;
         }
     """
+
 
 class LogPointsEntity(scene.PointsEntity):
     Visual = LogPointsVisual

@@ -4,6 +4,7 @@ gloo docs. This section is simply added to gloo.__doc__.
 
 from vispy import gloo
 
+
 def main():
     gloo.__doc__ += generate_overview_docs()
 
@@ -11,17 +12,17 @@ def main():
 def clean():
     pass
 
-    
+
 def get_docs_for_class(klass):
     """ Get props and methods for a class.
     """
-    
+
     # Prepare
     baseatts = dir(gloo.GLObject)
     functype = type(gloo.GLObject.activate)
     proptype = type(gloo.GLObject.handle)
     props, funcs = set(), set()
-    
+
     for att in sorted(dir(klass)):
         if klass is not gloo.GLObject and att in baseatts:
             continue
@@ -43,10 +44,10 @@ def get_docs_for_class(klass):
         # Append
         if isinstance(attob, functype):
             funcs.add(' :meth:`~%s.%s.%s`,' % (
-                                    modulename, actualklass.__name__, att))
+                modulename, actualklass.__name__, att))
         elif isinstance(attob, proptype):
             props.add(' :attr:`~%s.%s.%s`,' % (
-                                    modulename, actualklass.__name__, att))
+                modulename, actualklass.__name__, att))
     # Done
     return props, funcs
 
@@ -54,19 +55,19 @@ def get_docs_for_class(klass):
 def generate_overview_docs():
     """ Generate the overview section for the gloo docs.
     """
-    
+
     lines = []
     lines.append('Overview')
-    lines.append('='*len(lines[-1]))
-    
+    lines.append('=' * len(lines[-1]))
+
     for klasses in [(gloo.GLObject,),
                     (gloo.Program,),
-                    (gloo.VertexShader, gloo.FragmentShader), 
-                    (gloo.VertexBuffer, gloo.ElementBuffer), 
+                    (gloo.VertexShader, gloo.FragmentShader),
+                    (gloo.VertexBuffer, gloo.ElementBuffer),
                     (gloo.Texture2D, gloo.Texture3D, gloo.TextureCubeMap),
-                    (gloo.RenderBuffer,), 
+                    (gloo.RenderBuffer,),
                     (gloo.FrameBuffer,),
-                ]:
+                    ]:
         # Init line
         line = '*'
         for klass in klasses:
@@ -88,7 +89,6 @@ def generate_overview_docs():
             for item in sorted(funcs):
                 line += item
             # Add line, strip last char
-            lines.append(line[:-1]) 
-    
-    return '\n'.join(lines)
+            lines.append(line[:-1])
 
+    return '\n'.join(lines)

@@ -14,12 +14,11 @@ class VariableTest(unittest.TestCase):
 
     def test_init(self):
         variable = Variable("A", gl.GL_FLOAT)
-        assert variable._dirty == False
-        assert variable.name    == "A"
-        assert variable.data    is None
-        assert variable.gtype   == gl.GL_FLOAT
-        assert variable.active  == False
-
+        assert variable._dirty is False
+        assert variable.name == "A"
+        assert variable.data is None
+        assert variable.gtype == gl.GL_FLOAT
+        assert variable.active is False
 
     def test_init_wrong_type(self):
         self.assertRaises(ValueError, Variable, "A", gl.GL_INT_VEC2)
@@ -28,7 +27,6 @@ class VariableTest(unittest.TestCase):
         self.assertRaises(ValueError, Variable, "A", gl.GL_BOOL_VEC2)
         self.assertRaises(ValueError, Variable, "A", gl.GL_BOOL_VEC3)
         self.assertRaises(ValueError, Variable, "A", gl.GL_BOOL_VEC4)
-
 
 
 # -----------------------------------------------------------------------------
@@ -84,15 +82,15 @@ class UniformTest(unittest.TestCase):
         uniform.set_data(1)
         assert (uniform.data == 1).all()
 
-        uniform.set_data([1,2,3,4])
-        assert (uniform.data == [1,2,3,4]).all()
+        uniform.set_data([1, 2, 3, 4])
+        assert (uniform.data == [1, 2, 3, 4]).all()
 
     def test_set_exception(self):
         uniform = Uniform("A", gl.GL_FLOAT_VEC4)
 
-        self.assertRaises(ValueError, uniform.set_data, [1,2])
+        self.assertRaises(ValueError, uniform.set_data, [1, 2])
 
-        self.assertRaises(ValueError, uniform.set_data, [1,2,3,4,5])
+        self.assertRaises(ValueError, uniform.set_data, [1, 2, 3, 4, 5])
 
 
 # -----------------------------------------------------------------------------
@@ -105,11 +103,11 @@ class AttributeTest(unittest.TestCase):
     def test_set_generic(self):
         attribute = Attribute("A", gl.GL_FLOAT_VEC4)
 
-        attribute.set_data([1,2,3,4])
-        assert type(attribute.data) is np.ndarray
+        attribute.set_data([1, 2, 3, 4])
+        assert isinstance(attribute.data, np.ndarray)
 
         attribute.set_data(1)
-        assert type(attribute.data) is np.ndarray
+        assert isinstance(attribute.data, np.ndarray)
 
 
 if __name__ == "__main__":

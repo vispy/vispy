@@ -5,8 +5,7 @@
 import unittest
 import numpy as np
 from vispy.gloo import gl
-from vispy.gloo.texture import Texture, Texture2D, Texture3D
-
+from vispy.gloo.texture import Texture2D, Texture3D
 
 
 class TextureBasetests:
@@ -17,7 +16,6 @@ class TextureBasetests:
         tex = self._klass(data)
         self.assertEqual(tex._levels[0].format, gl.GL_LUMINANCE)
         self.assertEqual(tex._levels[0].shape, data.shape)
-
 
     def test_allocating_data(self):
 
@@ -52,7 +50,6 @@ class TextureBasetests:
         tex.set_shape(self._shape0, format=gl.GL_ALPHA)
         self.assertEqual(tex._levels[0].format, gl.GL_ALPHA)
         self.assertEqual(tex._levels[0].shape, self._shape0)
-
 
     def test_setting_data(self):
 
@@ -94,7 +91,6 @@ class TextureBasetests:
         self.assertEqual(tex._levels[0].format, gl.GL_ALPHA)
         self.assertEqual(tex._levels[0].shape, data.shape)
 
-
     def test_invalid_shape(self):
 
         tex = self._klass()
@@ -120,7 +116,6 @@ class TextureBasetests:
 
     def test_dtype(self):
         pass  # No use, we convert dtype if necessary
-
 
     def test_subdata(self):
 
@@ -161,7 +156,6 @@ class TextureBasetests:
         tex.set_data(data)
         self.assertEqual(len(tex._levels[0].pending_data), 1)
 
-
     def test_subdata_shape_and_format(self):
 
         tex = self._klass()
@@ -172,7 +166,7 @@ class TextureBasetests:
         offset4 = [11 for i in self._shape0]
 
         # Allocate data
-        tex.set_shape([i+10 for i in self._shape0])
+        tex.set_shape([i + 10 for i in self._shape0])
 
         # Some stuff that should work
         tex.set_subdata(offset1, data)
@@ -188,12 +182,11 @@ class TextureBasetests:
         self.assertRaises(ValueError, tex.set_subdata, offset1,
                           data, format=gl.GL_LUMINANCE_ALPHA)
         self.assertRaises(ValueError, tex.set_subdata, offset1,
-                          data,format= gl.GL_LUMINANCE_ALPHA)
+                          data, format=gl.GL_LUMINANCE_ALPHA)
 
         # But this should work
-        tex.set_shape([i+10 for i in self._shape0], format=gl.GL_ALPHA)
+        tex.set_shape([i + 10 for i in self._shape0], format=gl.GL_ALPHA)
         tex.set_subdata(offset1, data)
-
 
     def test_levels(self):
 
@@ -220,8 +213,8 @@ class TextureBasetests:
         self.assertTrue(4 in tex._levels)
 
 
-
 class Texture2DTest(TextureBasetests, unittest.TestCase):
+
     def setUp(self):
         self._klass = Texture2D
         self._shape0 = 100, 100
@@ -232,8 +225,8 @@ class Texture2DTest(TextureBasetests, unittest.TestCase):
         self._shape5 = 100, 100, 5
 
 
-
 class Texture3DTest(TextureBasetests, unittest.TestCase):
+
     def setUp(self):
         self._klass = Texture3D
         self._shape0 = 10, 10, 10

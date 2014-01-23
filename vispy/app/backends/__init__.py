@@ -13,12 +13,12 @@ imported. This stuff is mostly used in the Application.use method.
 
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
-BACKENDS = [    ('Test', 'nonexistent', 'foo.bar.lalalala'), # For testing
-                ('Qt', 'qt', None),  # Meta backend
-                ('Glut', 'glut', 'OpenGL.GLUT'),
-                ('Pyglet', 'pyglet', 'pyglet'),
-                ('PySide', 'qt', 'PySide'),
-                ('PyQt4', 'qt', 'PyQt4'),
+BACKENDS = [('Test', 'nonexistent', 'foo.bar.lalalala'),  # For testing
+            ('Qt', 'qt', None),  # Meta backend
+            ('Glut', 'glut', 'OpenGL.GLUT'),
+            ('Pyglet', 'pyglet', 'pyglet'),
+            ('PySide', 'qt', 'PySide'),
+            ('PyQt4', 'qt', 'PyQt4'),
             ]
 
 # Map of the lowercase backend names to the backend descriptions above
@@ -32,11 +32,11 @@ ATTEMPTED_BACKENDS = []
 
 def has_qt(require_uic=False):
     try:
-        from PyQt4 import QtCore, QtGui, QtOpenGL, uic  # analysis:ignore
+        from PyQt4 import QtCore, QtGui, QtOpenGL, uic  # noqa
     except ImportError:
         has_uic = False
         try:
-            from PySide import QtCore, QtGui, QtOpenGL  # analysis:ignore
+            from PySide import QtCore, QtGui, QtOpenGL  # noqa
         except ImportError:
             has = False
         else:
@@ -52,7 +52,7 @@ def has_qt(require_uic=False):
 
 def has_pyglet():
     try:
-        import pyglet  # analysis:ignore
+        import pyglet  # noqa
         has = True
     except:
         has = False

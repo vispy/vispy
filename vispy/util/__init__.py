@@ -6,4 +6,4 @@
 one or more Vispy sub-packages.
 """
 
-from .misc import _TempDir, is_string
+from .misc import _TempDir, is_string  # noqa

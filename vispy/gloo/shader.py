@@ -30,34 +30,36 @@ from OpenGL import error
 
 # ------------------------------------------------------- class ShaderError ---
 class ShaderError(RuntimeError):
+
     """ Shader error class """
     pass
 
 
 # ------------------------------------------------------------ class Shader ---
 class Shader(GLObject):
+
     """ Abstract shader class.
     """
 
     # Conversion of known uniform and attribute types to GL constants
     _gtypes = {
-        'float':       gl.GL_FLOAT,
-        'vec2':        gl.GL_FLOAT_VEC2,
-        'vec3':        gl.GL_FLOAT_VEC3,
-        'vec4':        gl.GL_FLOAT_VEC4,
-        'int':         gl.GL_INT,
-        'ivec2':       gl.GL_INT_VEC2,
-        'ivec3':       gl.GL_INT_VEC3,
-        'ivec4':       gl.GL_INT_VEC4,
-        'bool':        gl.GL_BOOL,
-        'bvec2':       gl.GL_BOOL_VEC2,
-        'bvec3':       gl.GL_BOOL_VEC3,
-        'bvec4':       gl.GL_BOOL_VEC4,
-        'mat2':        gl.GL_FLOAT_MAT2,
-        'mat3':        gl.GL_FLOAT_MAT3,
-        'mat4':        gl.GL_FLOAT_MAT4,
-        'sampler2D':   gl.GL_SAMPLER_2D,
-        'sampler3D':   gl.ext.GL_SAMPLER_3D,
+        'float': gl.GL_FLOAT,
+        'vec2': gl.GL_FLOAT_VEC2,
+        'vec3': gl.GL_FLOAT_VEC3,
+        'vec4': gl.GL_FLOAT_VEC4,
+        'int': gl.GL_INT,
+        'ivec2': gl.GL_INT_VEC2,
+        'ivec3': gl.GL_INT_VEC3,
+        'ivec4': gl.GL_INT_VEC4,
+        'bool': gl.GL_BOOL,
+        'bvec2': gl.GL_BOOL_VEC2,
+        'bvec3': gl.GL_BOOL_VEC3,
+        'bvec4': gl.GL_BOOL_VEC4,
+        'mat2': gl.GL_FLOAT_MAT2,
+        'mat3': gl.GL_FLOAT_MAT3,
+        'mat4': gl.GL_FLOAT_MAT4,
+        'sampler2D': gl.GL_SAMPLER_2D,
+        'sampler3D': gl.ext.GL_SAMPLER_3D,
         'samplerCube': gl.GL_SAMPLER_CUBE}
 
     def __init__(self, target, code=None):
@@ -104,10 +106,10 @@ class Shader(GLObject):
         # Set code and source
         if os.path.isfile(code):
             with open(code, 'rb') as file:
-                self._code   = file.read().decode('utf-8')
+                self._code = file.read().decode('utf-8')
                 self._source = os.path.basename(code)
         else:
-            self._code   = code
+            self._code = code
             self._source = '<string>'
 
         # Set given source?
@@ -119,13 +121,11 @@ class Shader(GLObject):
         # Set flags
         self._need_update = True
 
-
     @property
     def code(self):
         """ The GLSL code of this shader.
         """
         return self._code
-
 
     @property
     def source(self):
@@ -133,7 +133,6 @@ class Shader(GLObject):
         (as in where it came from, not the source code).
         """
         return self._source
-
 
     def _get_attributes(self):
         """
@@ -143,20 +142,19 @@ class Shader(GLObject):
         attributes = []
         regex = re.compile("""\s*attribute\s+(?P<type>\w+)\s+"""
                            """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
-        for m in re.finditer(regex,self._code):
+        for m in re.finditer(regex, self._code):
             size = -1
             gtype = Shader._gtypes[m.group('type')]
             if m.group('size'):
                 size = int(m.group('size'))
             if size >= 1:
                 for i in range(size):
-                    name = '%s[%d]' % (m.group('name'),i)
+                    name = '%s[%d]' % (m.group('name'), i)
                     attributes.append((name, gtype))
             else:
                 attributes.append((m.group('name'), gtype))
 
         return attributes
-
 
     def _get_uniforms(self):
         """
@@ -166,20 +164,19 @@ class Shader(GLObject):
         uniforms = []
         regex = re.compile("""\s*uniform\s+(?P<type>\w+)\s+"""
                            """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
-        for m in re.finditer(regex,self._code):
+        for m in re.finditer(regex, self._code):
             size = -1
             gtype = Shader._gtypes[m.group('type')]
             if m.group('size'):
                 size = int(m.group('size'))
             if size >= 1:
                 for i in range(size):
-                    name = '%s[%d]' % (m.group('name'),i)
+                    name = '%s[%d]' % (m.group('name'), i)
                     uniforms.append((name, gtype))
             else:
                 uniforms.append((m.group('name'), gtype))
 
         return uniforms
-
 
     def _create(self):
         """
@@ -187,14 +184,12 @@ class Shader(GLObject):
         """
         self._handle = gl.glCreateShader(self._target)
 
-
     def _delete(self):
         """
         Delete the shader.
         """
 
         gl.glDeleteShader(self._handle)
-
 
     def _update(self):
         """
@@ -238,13 +233,13 @@ class Shader(GLObject):
 
         # Nvidia
         # 0(7): error C1008: undefined variable "MV"
-        match = re.match( r'(\d+)\((\d+)\)\s*:\s(.*)', error )
+        match = re.match(r'(\d+)\((\d+)\)\s*:\s(.*)', error)
         if match:
             return int(match.group(2)), match.group(3)
 
         # ATI / Intel
         # ERROR: 0:131: '{' : syntax error parse error
-        match = re.match( r'ERROR:\s(\d+):(\d+):\s(.*)', error)
+        match = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error)
         if match:
             return int(match.group(2)), match.group(3)
 
@@ -287,15 +282,16 @@ class Shader(GLObject):
             else:
                 results.append('on line %i: %s' % (linenr, error))
                 if linenr > 0 and linenr < len(lines):
-                    results.append('  %s' % lines[linenr-1])
+                    results.append('  %s' % lines[linenr - 1])
 
         # Add indentation and return
-        results = [' '*indentation + r for r in results]
+        results = [' ' * indentation + r for r in results]
         return '\n'.join(results)
 
 
 # ------------------------------------------------------ class VertexShader ---
 class VertexShader(Shader):
+
     """ Vertex shader class. Inherits :class:`shader.Shader`.
 
     Parameters
@@ -313,9 +309,9 @@ class VertexShader(Shader):
         Shader.__init__(self, gl.GL_VERTEX_SHADER, code)
 
 
-
 # ---------------------------------------------------- class FragmentShader ---
 class FragmentShader(Shader):
+
     """ Fragment shader class. Inherits :class:`shader.Shader`.
 
     Parameters

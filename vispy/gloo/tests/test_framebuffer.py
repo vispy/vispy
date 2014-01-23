@@ -3,7 +3,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import unittest
-import numpy as np
 from vispy.gloo import gl
 
 from vispy.gloo.framebuffer import RenderBuffer, FrameBuffer
@@ -23,21 +22,20 @@ class RenderBufferTest(unittest.TestCase):
         buffer = RenderBuffer((100, 100))
         self.assertEqual(buffer._need_update, True)
 
-
     def test_setting_shape(self):
         buffer = RenderBuffer()
 
         # No format
-        buffer.set_shape((100,100))
-        self.assertEqual(buffer._shape, (100,100))
+        buffer.set_shape((100, 100))
+        self.assertEqual(buffer._shape, (100, 100))
         self.assertEqual(buffer._format, None)
         #
-        buffer.set_shape((100,100, 1))
-        self.assertEqual(buffer._shape, (100,100))
+        buffer.set_shape((100, 100, 1))
+        self.assertEqual(buffer._shape, (100, 100))
         self.assertEqual(buffer._format, None)
         #
-        buffer.set_shape((100,100, 3))
-        self.assertEqual(buffer._shape, (100,100))
+        buffer.set_shape((100, 100, 3))
+        self.assertEqual(buffer._shape, (100, 100))
         self.assertEqual(buffer._format, None)
 
         # With invalid shape
@@ -45,44 +43,42 @@ class RenderBufferTest(unittest.TestCase):
         self.assertRaises(ValueError, buffer.set_shape, 4)
         self.assertRaises(ValueError, buffer.set_shape, 'test')
         self.assertRaises(ValueError, buffer.set_shape, (100,))
-        self.assertRaises(ValueError, buffer.set_shape, (100,100,9))
-        self.assertRaises(ValueError, buffer.set_shape, (100,100,3, 3))
+        self.assertRaises(ValueError, buffer.set_shape, (100, 100, 9))
+        self.assertRaises(ValueError, buffer.set_shape, (100, 100, 3, 3))
 
         # With valid format
-        buffer.set_shape((100,100), gl.ext.GL_RGBA8)
-        self.assertEqual(buffer._shape, (100,100))
+        buffer.set_shape((100, 100), gl.ext.GL_RGBA8)
+        self.assertEqual(buffer._shape, (100, 100))
         self.assertEqual(buffer._format, gl.ext.GL_RGBA8)
         #
-        buffer.set_shape((100,100), gl.GL_DEPTH_COMPONENT16)
-        self.assertEqual(buffer._shape, (100,100))
+        buffer.set_shape((100, 100), gl.GL_DEPTH_COMPONENT16)
+        self.assertEqual(buffer._shape, (100, 100))
         self.assertEqual(buffer._format, gl.GL_DEPTH_COMPONENT16)
 
         # With invalid format
-        self.assertRaises(ValueError, buffer.set_shape, (100,100),
+        self.assertRaises(ValueError, buffer.set_shape, (100, 100),
                           gl.GL_LUMINANCE)
-        self.assertRaises(ValueError, buffer.set_shape, (100,100), gl.GL_RGB)
-
+        self.assertRaises(ValueError, buffer.set_shape, (100, 100), gl.GL_RGB)
 
     def test_resetting_shape(self):
         buffer = RenderBuffer()
 
         # Set same shape
-        buffer.set_shape((100,100))
+        buffer.set_shape((100, 100))
         self.assertEqual(buffer._need_update, True)
         buffer._need_update = False
         #
-        buffer.set_shape((100,100))
+        buffer.set_shape((100, 100))
         self.assertEqual(buffer._need_update, False)
         #
-        buffer.set_shape((100,100, 1))
+        buffer.set_shape((100, 100, 1))
         self.assertEqual(buffer._need_update, False)
-        buffer.set_shape((100,100, 3))
+        buffer.set_shape((100, 100, 3))
         self.assertEqual(buffer._need_update, False)
 
         # Set different shape
-        buffer.set_shape((100,101))
+        buffer.set_shape((100, 101))
         self.assertEqual(buffer._need_update, True)
-
 
 
 class FrameBufferTest(unittest.TestCase):
@@ -97,7 +93,6 @@ class FrameBufferTest(unittest.TestCase):
         # Init with args
         fbo = FrameBuffer(RenderBuffer())
         self.assertEqual(fbo._need_update, True)
-
 
     def test_attaching(self):
         fbo = FrameBuffer()
@@ -153,10 +148,9 @@ class FrameBufferTest(unittest.TestCase):
         self.assertRaises(ValueError, fbo.attach_stencil, "test")
         self.assertRaises(ValueError, fbo.attach_stencil, 3)
 
-
     def test_level(self):
         fbo = FrameBuffer()
-        buffer = RenderBuffer()
+        RenderBuffer()
         texture = Texture2D()
 
         # Valid level
@@ -169,19 +163,18 @@ class FrameBufferTest(unittest.TestCase):
         self.assertRaises(ValueError, fbo.attach_color, texture, 1.1)
         self.assertRaises(ValueError, fbo.attach_color, texture, "test")
 
-
     def test_auto_format(self):
         fbo = FrameBuffer()
 
-        buffer = RenderBuffer((100,100))
+        buffer = RenderBuffer((100, 100))
         fbo.attach_color(buffer)
         self.assertEqual(buffer._format, gl.GL_RGB565)
 
-        buffer = RenderBuffer((100,100))
+        buffer = RenderBuffer((100, 100))
         fbo.attach_depth(buffer)
         self.assertEqual(buffer._format, gl.GL_DEPTH_COMPONENT16)
 
-        buffer = RenderBuffer((100,100))
+        buffer = RenderBuffer((100, 100))
         fbo.attach_stencil(buffer)
         self.assertEqual(buffer._format, gl.GL_STENCIL_INDEX8)
 

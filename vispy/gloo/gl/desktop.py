@@ -15,20 +15,19 @@ from . import _GL_ENUM
 from . import _desktop, _desktop_ext
 
 # Prepare namespace with constants and ext
-from ._constants import *
+from ._constants import *  # noqa
 ext = _desktop_ext
-
 
 
 def _make_unavailable_func(funcname):
     def cb(*args, **kwds):
-       raise RuntimeError('OpenGL API call "%s" is not available.' % funcname)
+        raise RuntimeError('OpenGL API call "%s" is not available.' % funcname)
     return cb
 
 
 def _get_function_from_pyopengl(funcname):
     """ Try getting the given function from PyOpenGL, return
-    a dummy function (that prints a warning when called) if it 
+    a dummy function (that prints a warning when called) if it
     could not be found.
     """
     func = None
@@ -48,12 +47,12 @@ def _get_function_from_pyopengl(funcname):
                     func = getattr(_GL, funcname[:-1])
                 except AttributeError:
                     pass
-    
+
     # Set dummy function if we could not find it
     if func is None:
         func = _make_unavailable_func(funcname)
-        if True or show_warnings:  
-            print('warning: %s not available' % funcname )
+        if True or show_warnings:
+            print('warning: %s not available' % funcname)
     return func
 
 
@@ -63,16 +62,16 @@ def _inject():
     Note the similatity with vispy.gloo.gl.use().
     """
     import vispy
-    show_warnings = vispy.config['show_warnings']
-    import OpenGL.GL.framebufferobjects as FBO
-    
+    show_warnings = vispy.config['show_warnings']  # noqa
+    import OpenGL.GL.framebufferobjects as FBO  # noqa
+
     # Import functions here
     NS = globals()
     funcnames = _desktop._glfunctions
     for name in funcnames:
         func = _get_function_from_pyopengl(name)
         NS[name] = func
-    
+
     # Import functions in ext
     NS = ext.__dict__
     funcnames = _desktop_ext._glfunctions
@@ -86,9 +85,10 @@ def _fix():
     """
     NS = globals()
     # Fix glGetActiveAttrib, since if its just the ctypes function
-    if (    'glGetActiveAttrib' in NS and 
-            hasattr(NS['glGetActiveAttrib'], 'restype') ):
+    if ('glGetActiveAttrib' in NS and
+            hasattr(NS['glGetActiveAttrib'], 'restype')):
         import ctypes
+
         def new_glGetActiveAttrib(program, index):
             # Prepare
             bufsize = 32
@@ -97,17 +97,21 @@ def _fix():
             type = ctypes.c_int()
             name = ctypes.create_string_buffer(bufsize)
             # Call
-            _GL.glGetActiveAttrib(program, index, 
-                    bufsize, ctypes.byref(length), ctypes.byref(size), 
-                    ctypes.byref(type), name)
+            _GL.glGetActiveAttrib(
+                program,
+                index,
+                bufsize,
+                ctypes.byref(length),
+                ctypes.byref(size),
+                ctypes.byref(type),
+                name)
             # Return Python objects
-            #return name.value.decode('utf-8'), size.value, type.value
+            # return name.value.decode('utf-8'), size.value, type.value
             return name.value, size.value, type.value
-        
+
         # Patch
         NS['glGetActiveAttrib'] = new_glGetActiveAttrib
-    
-    
+
     # Monkey-patch pyopengl to fix a bug in glBufferSubData
     import sys
     if sys.version_info > (3,):
@@ -123,7 +127,7 @@ _inject()
 _fix()
 
 
-## Compatibility functions
+# Compatibility functions
 
 
 def glShaderSource_compat(handle, code):
@@ -134,32 +138,32 @@ def glShaderSource_compat(handle, code):
       * It returns a (possibly empty) set of enums that should be enabled
         (for automatically enabling point sprites)
     """
-    
+
     # Make a string
     if isinstance(code, (list, tuple)):
         code = '\n'.join(code)
-    
+
     # Determine whether this is a vertex or fragment shader
     code_ = '\n' + code
     is_vertex = '\nattribute' in code_
     is_fragment = not is_vertex
-    
+
     # Determine whether to write the #version pragma
     write_version = True
     for line in code.splitlines():
         if line.startswith('#version'):
             write_version = False
-            print('For compatibility accross different GL backends, ' + 
-                    'avoid using the #version pragma.')
+            print('For compatibility accross different GL backends, ' +
+                  'avoid using the #version pragma.')
     if write_version:
         code = '#version 120\n#line 0\n' + code
-    
+
     # Do the call
     glShaderSource(handle, [code])
-    
+
     # Determine whether to activate point sprites
     enums = set()
-    if is_fragment and  'gl_PointCoord' in code:
-        enums.add( _GL_ENUM('GL_VERTEX_PROGRAM_POINT_SIZE', 34370) )
-        enums.add( _GL_ENUM('GL_POINT_SPRITE', 34913) )
+    if is_fragment and 'gl_PointCoord' in code:
+        enums.add(_GL_ENUM('GL_VERTEX_PROGRAM_POINT_SIZE', 34370))
+        enums.add(_GL_ENUM('GL_POINT_SPRITE', 34913))
     return enums

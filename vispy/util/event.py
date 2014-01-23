@@ -18,10 +18,10 @@ import sys
 from vispy.util.ordereddict import OrderedDict
 import inspect
 import weakref
-import vispy
 
 
 class Event(object):
+
     """Class describing events that occur and can be reacted to with callbacks.
     Each event instance contains information about a single event that has
     occurred such as a key press, mouse motion, timer activation, etc.
@@ -43,8 +43,8 @@ class Event(object):
        The native GUI event object
     **kwds : keyword arguments
         All extra keyword arguments become attributes of the event object.
-
     """
+
     def __init__(self, type, native=None, **kwds):
         # stack of all sources this event has been emitted through
         self._sources = []
@@ -53,12 +53,12 @@ class Event(object):
         # Store args
         self._type = type
         self._native = native
-        for k,v in kwds.items():
+        for k, v in kwds.items():
             setattr(self, k, v)
 
     @property
     def source(self):
-        """ The object that the event applies to (i.e. the source of the event).
+        """The object that the event applies to (i.e. the source of the event).
         """
         return self._sources[-1] if self._sources else None
 
@@ -89,9 +89,9 @@ class Event(object):
     @property
     def handled(self):
         """This boolean property indicates whether the event has already been
-        acted on by an event handler. Since many handlers may have access to the
-        same events, it is recommended that each check whether the event has
-        already been handled as well as set handled=True if it decides to
+        acted on by an event handler. Since many handlers may have access to
+        the same events, it is recommended that each check whether the event
+        has already been handled as well as set handled=True if it decides to
         act on the event.
         """
         return self._handled
@@ -116,7 +116,7 @@ class Event(object):
     def __repr__(self):
         # Try to generate a nice string representation of the event that
         # includes the interesting properties.
-        global _event_repr_depth # need to keep track of depth because it is
+        global _event_repr_depth  # need to keep track of depth because it is
                                  # very difficult to avoid excessive recursion.
         _event_repr_depth += 1
         try:
@@ -127,7 +127,8 @@ class Event(object):
                 if name.startswith('_'):
                     continue
                 # select only properties
-                if not hasattr(type(self), name) or not isinstance(getattr(type(self), name), property):
+                if not hasattr(type(self), name) or \
+                        not isinstance(getattr(type(self), name), property):
                     continue
                 attr = getattr(self, name)
 
@@ -138,21 +139,23 @@ class Event(object):
 
 _event_repr_depth = 0
 
+
 class EventEmitter(object):
+
     """Encapsulates a list of event callbacks.
 
     Each instance of EventEmitter represents the source of a stream of similar
     events, such as mouse click events or timer activation events. For
     example, the following diagram shows the propagation of a mouse click
-    event to the list of callbacks that are registered to listen for that event::
+    event to the list of callbacks that are registered to listen for that
+    event::
 
-
-       User clicks    |Canvas creates             |Canvas invokes its                  |EventEmitter invokes
-       mouse on       |MouseEvent:                |'mouse_press' EventEmitter:         |callbacks in sequence:
-       Canvas         |                           |                                    |
-                   -->|event = MouseEvent(...) -->|Canvas.events.mouse_press(event) -->|callback1(event)
-                      |                           |                                 -->|callback2(event)
-                      |                           |                                 -->|callback3(event)
+       User clicks    |Canvas creates
+       mouse on       |MouseEvent:                |'mouse_press' EventEmitter:         |callbacks in sequence: # noqa
+       Canvas         |                           |                                    |  # noqa
+                   -->|event = MouseEvent(...) -->|Canvas.events.mouse_press(event) -->|callback1(event)  # noqa
+                      |                           |                                 -->|callback2(event)  # noqa
+                      |                           |                                 -->|callback3(event)  # noqa
 
     Callback functions may be added or removed from an EventEmitter using
     :func:`connect() <vispy.event.EventEmitter.connect>` or
@@ -186,6 +189,7 @@ class EventEmitter(object):
         callback raises an exception. (assumes ignore_callback_errors=True)
 
     """
+
     def __init__(self, source=None, type=None, event_class=Event):
         self.callbacks = []
         self.blocked = 0
@@ -205,7 +209,8 @@ class EventEmitter(object):
     def source(self):
         """ The object that events generated by this emitter apply to.
         """
-        return None if self._source is None else self._source()  # get object behind weakref
+        return None if self._source is None else self._source(
+        )  # get object behind weakref
 
     @source.setter
     def source(self, s):
@@ -230,7 +235,7 @@ class EventEmitter(object):
         if callback in self.callbacks:
             return
         self.callbacks.insert(0, callback)
-        return callback  ## allows connect to be used as a decorator
+        return callback  # allows connect to be used as a decorator
 
     def disconnect(self, callback=None):
         """Disconnect a callback from this emitter.
@@ -272,7 +277,8 @@ class EventEmitter(object):
         # create / massage event as needed
         event = self._prepare_event(*args, **kwds)
 
-        # Add our source to the event; remove it after all callbacks have been invoked.
+        # Add our source to the event; remove it after all callbacks have been
+        # invoked.
         event._push_source(self.source)
         self._emitting = True
         try:
@@ -288,9 +294,10 @@ class EventEmitter(object):
                 try:
                     cb(event)
                 except:
-                    # get traceback and store (so we can do postmortem debugging)
+                    # get traceback and store (so we can do postmortem
+                    # debugging)
                     type, value, tb = sys.exc_info()
-                    tb = tb.tb_next # Skip *this* frame
+                    tb = tb.tb_next  # Skip *this* frame
                     sys.last_type = type
                     sys.last_value = value
                     sys.last_traceback = tb
@@ -298,7 +305,9 @@ class EventEmitter(object):
                     if self.ignore_callback_errors:
                         if self.print_callback_errors:
                             sys.excepthook(type, value, tb)
-                            print("Error invoking callback for event: %s" % str(event))
+                            print(
+                                "Error invoking callback for event: %s" %
+                                str(event))
                     else:
                         raise
 
@@ -312,9 +321,9 @@ class EventEmitter(object):
         return event
 
     def _prepare_event(self, *args, **kwds):
-        ## When emitting, this method is called to create or otherwise alter
-        ## an event before it is sent to callbacks. Subclasses may extend
-        ## this method to make custom modifications to the event.
+        # When emitting, this method is called to create or otherwise alter
+        # an event before it is sent to callbacks. Subclasses may extend
+        # this method to make custom modifications to the event.
         if len(args) == 1 and not kwds and isinstance(args[0], Event):
             event = args[0]
             # Ensure that the given event matches what we want to emit
@@ -324,7 +333,8 @@ class EventEmitter(object):
             args.update(kwds)
             event = self.event_class(**args)
         else:
-            raise ValueError("Event emitters can be called with an Event instance or with keyword arguments only.")
+            raise ValueError("Event emitters can be called with an Event "
+                             "instance or with keyword arguments only.")
         return event
 
     def block(self):
@@ -339,7 +349,7 @@ class EventEmitter(object):
     def unblock(self):
         """ Unblock this emitter. See :func:`event.EventEmitter.block`.
         """
-        self.blocked = max(0, self.blocked-1)
+        self.blocked = max(0, self.blocked - 1)
 
     def blocker(self):
         """Return an EventBlocker to be used in 'with' statements::
@@ -352,11 +362,12 @@ class EventEmitter(object):
 
 
 class EmitterGroup(EventEmitter):
+
     """EmitterGroup instances manage a set of related
     :class:`EventEmitters <vispy.event.EventEmitter>`.
     Its primary purpose is to provide organization for objects
-    that make use of multiple emitters and to reduce the boilerplate code needed
-    to initialize those emitters with default connections.
+    that make use of multiple emitters and to reduce the boilerplate code
+    needed to initialize those emitters with default connections.
 
     EmitterGroup instances are usually stored as an 'events' attribute on
     objects that use multiple emitters. For example::
@@ -388,6 +399,7 @@ class EmitterGroup(EventEmitter):
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
 
     """
+
     def __init__(self, source=None, auto_connect=True, **emitters):
         EventEmitter.__init__(self, source)
 
@@ -413,7 +425,6 @@ class EmitterGroup(EventEmitter):
         """
         self.add(**{name: emitter})
 
-
     def add(self, auto_connect=None, **kwds):
         """ Add one or more EventEmitter instances to this emitter group.
         Each keyword argument may be specified as either an EventEmitter
@@ -425,8 +436,10 @@ class EmitterGroup(EventEmitter):
                       mouse_release=MouseEvent)
 
             # ..is equivalent to this statement:
-            group.add(mouse_press=EventEmitter(group.source, 'mouse_press', MouseEvent),
-                      mouse_release=EventEmitter(group.source, 'mouse_press', MouseEvent))
+            group.add(mouse_press=EventEmitter(group.source, 'mouse_press',
+                                               MouseEvent),
+                      mouse_release=EventEmitter(group.source, 'mouse_press',
+                                                 MouseEvent))
         """
         if auto_connect is None:
             auto_connect = self.auto_connect
@@ -434,9 +447,13 @@ class EmitterGroup(EventEmitter):
         # check all names before adding anything
         for name in kwds:
             if name in self._emitters:
-                raise ValueError("EmitterGroup already has an emitter named '%s'" % name)
+                raise ValueError(
+                    "EmitterGroup already has an emitter named '%s'" %
+                    name)
             elif hasattr(self, name):
-                raise ValueError("The name '%s' cannot be used as an emitter; it is already an attribute of EmitterGroup" % name)
+                raise ValueError("The name '%s' cannot be used as an emitter; "
+                                 "it is already an attribute of EmitterGroup"
+                                 % name)
 
         # add each emitter specified in the keyword arguments
         for name, emitter in kwds.items():
@@ -444,11 +461,16 @@ class EmitterGroup(EventEmitter):
                 emitter = Event
 
             if inspect.isclass(emitter) and issubclass(emitter, Event):
-                emitter = EventEmitter(source=self.source, type=name, event_class=emitter)
+                emitter = EventEmitter(
+                    source=self.source,
+                    type=name,
+                    event_class=emitter)
             elif not isinstance(emitter, EventEmitter):
-                raise Exception('Emitter must be specified as either an EventEmitter instance or Event subclass')
+                raise Exception('Emitter must be specified as either an '
+                                'EventEmitter instance or Event subclass')
 
-            emitter.source = self.source # give this emitter the same source as the group.
+            # give this emitter the same source as the group.
+            emitter.source = self.source
 
             setattr(self, name, emitter)
             self._emitters[name] = emitter
@@ -456,11 +478,10 @@ class EmitterGroup(EventEmitter):
             if auto_connect and self.source is not None:
                 emitter.connect((self.source, self.auto_connect_format % name))
 
-            # If emitters are connected to the group already, then this one should
-            # be connected as well.
+            # If emitters are connected to the group already, then this one
+            # should be connected as well.
             if self._emitters_connected:
                 emitter.connect(self)
-
 
     @property
     def emitters(self):
@@ -493,8 +514,8 @@ class EmitterGroup(EventEmitter):
         """ Connect the callback to the event group. The callback will receive
         events from _all_ of the emitters in the group.
 
-        See :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>` for
-        arguments.
+        See :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>`
+        for arguments.
         """
         self._connect_emitters(True)
         return EventEmitter.connect(self, callback)
@@ -525,9 +546,11 @@ class EmitterGroup(EventEmitter):
 
 
 class EventBlocker(object):
+
     """ Represents a block for an EventEmitter to be used in a context
     manager (i.e. 'with' statement).
     """
+
     def __init__(self, target):
         self.target = target
 
@@ -536,4 +559,3 @@ class EventBlocker(object):
 
     def __exit__(self, *args):
         self.target.unblock()
-

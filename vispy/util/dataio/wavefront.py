@@ -18,7 +18,6 @@ The classes are written with compatibility of Python3 in mind.
 
 """
 
-import time
 import numpy as np
 
 
@@ -46,7 +45,6 @@ class WavefrontReader(object):
         # convert the original v/vn/vn to the final vertices/normals/texcords.
         self._facemap = {}
 
-
     @classmethod
     def read(cls, fname, check='ignored'):
         """ read(fname)
@@ -59,25 +57,19 @@ class WavefrontReader(object):
             The name of the file to read.
 
         """
-
-        t0 = time.time()
-
         # Open file
-        f = open(fname, 'rb')
-        try:
-            reader = WavefrontReader(f)
-            while True:
-                reader.readLine()
-        except EOFError:
-            pass
-        finally:
-            f.close()
+        with open(fname, 'rb') as f:
+            try:
+                reader = WavefrontReader(f)
+                while True:
+                    reader.readLine()
+            except EOFError:
+                pass
 
         # Done
         mesh = reader.finish()
         #print('reading mesh took ' + str(time.time()-t0) + ' seconds')
         return mesh
-
 
     def readLine(self):
         """ The method that reads a line and processes it.
@@ -91,35 +83,33 @@ class WavefrontReader(object):
 
         if line.startswith('v '):
             #self._vertices.append( *self.readTuple(line) )
-            self._v.append( self.readTuple(line) )
+            self._v.append(self.readTuple(line))
         elif line.startswith('vt '):
-            self._vt.append( self.readTuple(line, 3) )
+            self._vt.append(self.readTuple(line, 3))
         elif line.startswith('vn '):
-            self._vn.append( self.readTuple(line) )
+            self._vn.append(self.readTuple(line))
         elif line.startswith('f '):
-            self._faces.append( self.readFace(line) )
+            self._faces.append(self.readFace(line))
         elif line.startswith('#'):
-            pass # Comment
+            pass  # Comment
         elif line.startswith('mtllib '):
             print('Notice reading .OBJ: material properties are ignored.')
         elif line.startswith('g ') or line.startswith('s '):
-            pass # Ignore groups and smoothing groups
+            pass  # Ignore groups and smoothing groups
         elif line.startswith('o '):
-            pass # Ignore object names
+            pass  # Ignore object names
         elif line.startswith('usemtl '):
-            pass # Ignore material
+            pass  # Ignore material
         elif not line.strip():
             pass
         else:
             print('Notice reading .OBJ: ignoring %s command.' % line.strip())
 
-
     def readTuple(self, line, n=3):
         """ Reads a tuple of numbers. e.g. vertices, normals or teture coords.
         """
         numbers = [num for num in line.split(' ') if num]
-        return [float(num) for num in numbers[1:n+1]]
-
+        return [float(num) for num in numbers[1:n + 1]]
 
     def readFace(self, line):
         """ Each face consists of three or more sets of indices. Each set
@@ -153,39 +143,41 @@ class WavefrontReader(object):
             # index, the texcords are ignored. Likewise for the normals.
             if True:
                 vertex_index = self._absint(indices[0], len(self._v))
-                self._vertices.append( self._v[vertex_index] )
+                self._vertices.append(self._v[vertex_index])
             if self._texcords is not None:
                 if len(indices) > 1 and indices[1]:
                     texcord_index = self._absint(indices[1], len(self._vt))
-                    self._texcords.append( self._vt[texcord_index] )
+                    self._texcords.append(self._vt[texcord_index])
                 else:
                     if self._texcords:
-                        print('Warning reading OBJ: ignoring texture coordinates because it is not specified for all faces.')
+                        print('Warning reading OBJ: ignoring texture '
+                              'coordinates because it is not specified '
+                              'for all faces.')
                     self._texcords = None
             if self._normals is not None:
                 if len(indices) > 2 and indices[2]:
                     normal_index = self._absint(indices[2], len(self._vn))
-                    self._normals.append( self._vn[normal_index] )
+                    self._normals.append(self._vn[normal_index])
                 else:
                     if self._normals:
-                        print('Warning reading OBJ: ignoring normals because it is not specified for all faces.')
+                        print('Warning reading OBJ: ignoring normals because '
+                              'it is not specified for all faces.')
                     self._normals = None
 
         # Check face
         if self._faces and len(self._faces[0]) != len(final_face):
-            raise RuntimeError('Vispy requires that all faces are either triangles or quads.')
+            raise RuntimeError(
+                'Vispy requires that all faces are either triangles or quads.')
 
         # Done
         return final_face
 
-
     def _absint(self, i, ref):
         i = int(i)
-        if i>0 :
-            return i-1
+        if i > 0:
+            return i - 1
         else:
-            return ref+i
-
+            return ref + i
 
     def _calculate_normals(self):
         vertices, faces = self._vertices, self._faces
@@ -193,17 +185,25 @@ class WavefrontReader(object):
             faces = np.arange(0, vertices.size, dtype=np.uint32)
         # Build normals
         T = vertices[faces]
-        N = np.cross(T[::,1 ]-T[::,0], T[::,2]-T[::,0])
-        L = np.sqrt(N[:,0]**2+N[:,1]**2+N[:,2]**2)
+        N = np.cross(T[::, 1] - T[::, 0], T[::, 2] - T[::, 0])
+        L = np.sqrt(N[:, 0] ** 2 + N[:, 1] ** 2 + N[:, 2] ** 2)
         N /= L[:, np.newaxis]
         normals = np.zeros(vertices.shape)
-        normals[faces[:,0]] += N
-        normals[faces[:,1]] += N
-        normals[faces[:,2]] += N
-        L = np.sqrt(normals[:,0]**2+normals[:,1]**2+normals[:,2]**2)
+        normals[faces[:, 0]] += N
+        normals[faces[:, 1]] += N
+        normals[faces[:, 2]] += N
+        L = np.sqrt(
+            normals[
+                :,
+                0] ** 2 +
+            normals[
+                :,
+                1] ** 2 +
+            normals[
+                :,
+                2] ** 2)
         normals /= L[:, np.newaxis]
         return normals
-
 
     def finish(self):
         """ Converts gathere lists to numpy arrays and creates
@@ -234,7 +234,6 @@ class WavefrontWriter(object):
     def __init__(self, f):
         self._f = f
 
-
     @classmethod
     def write(cls, fname, vertices, faces, normals, texcoords, name=''):
         """ This classmethod is the entry point for writing mesh data to OBJ.
@@ -264,14 +263,12 @@ class WavefrontWriter(object):
         finally:
             f.close()
 
-
     def writeLine(self, text):
         """ Simple writeLine function to write a line of code to the file.
         The encoding is done here, and a newline character is added.
         """
         text += '\n'
         self._f.write(text.encode('ascii'))
-
 
     def writeTuple(self, val, what):
         """ Writes a tuple of numbers (on one line).
@@ -284,24 +281,22 @@ class WavefrontWriter(object):
         # Write line
         self.writeLine('%s %s' % (what, val))
 
-
     def writeFace(self, val, what='f'):
         """ Write the face info to the net line.
         """
         # OBJ counts from 1
-        val = [v+1 for v in val]
+        val = [v + 1 for v in val]
         # Make string
         if self._hasValues and self._hasNormals:
-            val = ' '.join(['%i/%i/%i' % (v,v,v) for v in val])
+            val = ' '.join(['%i/%i/%i' % (v, v, v) for v in val])
         elif self._hasNormals:
-            val = ' '.join(['%i//%i' % (v,v) for v in val])
+            val = ' '.join(['%i//%i' % (v, v) for v in val])
         elif self._hasValues:
-            val = ' '.join(['%i/%i' % (v,v) for v in val])
+            val = ' '.join(['%i/%i' % (v, v) for v in val])
         else:
             val = ' '.join(['%i' % v for v in val])
         # Write line
         self.writeLine('%s %s' % (what, val))
-
 
     def writeMesh(self, vertices, faces, normals, values, name=''):
         """ Write the given mesh instance.

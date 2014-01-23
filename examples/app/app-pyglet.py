@@ -12,7 +12,9 @@ from vispy import app
 from vispy.gloo import gl
 app.use('pyglet')
 
+
 class Canvas(app.Canvas):
+
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
         timer = app.Timer(1.0)
@@ -20,7 +22,7 @@ class Canvas(app.Canvas):
         timer.start()
 
     def on_initialize(self, event):
-        gl.glClearColor(0,0,0,1)
+        gl.glClearColor(0, 0, 0, 1)
         print('on_initialize')
 
     def on_close(self, event):
@@ -47,15 +49,14 @@ class Canvas(app.Canvas):
 
     def on_mouse_wheel(self, event):
         print('on_mouse_wheel: %r' % (event.delta,))
-        
+
     def on_paint(self, event):
         print('on_paint')
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-
     def on_timer(self, event):
         print('tick !')
-    
+
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
     canvas = Canvas()

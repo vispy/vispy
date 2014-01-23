@@ -13,9 +13,10 @@ gl = gloo.gl
 
 
 class DrawingSystem(System):
+
     """ Simple implementation of a drawing engine.
     """
-    
+
     def _process_init(self, viewbox, root):
         # Camera transform and projection are the same for the
         # entire scene
@@ -27,8 +28,7 @@ class DrawingSystem(System):
         self._viewbox, self._root = viewbox, root
         # Return unit transform
         return np.eye(4)
-    
-    
+
     def _process_entity(self, entity, transform):
         #print('processing entity', entity)
         # Set transformation
@@ -45,25 +45,31 @@ class DrawingSystem(System):
             if visual.program is not None:
                 visual.program.set_vars(shaderTransforms)
             visual.draw()
-        # If a viewbox, render the subscene. 
+        # If a viewbox, render the subscene.
         if isinstance(entity, ViewBox):
             entity.process(self._root, 'draw')
         # Return new transform
         return transform
-    
-    
+
     def _prepare_viewbox(self, viewbox):
         # print('preparing viewbox', viewbox )
         M = viewbox.transform
-        w, h = int(M[0,0]), int(M[1,1])
-        x, y = int(M[-1,0]), int(M[-1,1])
-        
+        w, h = int(M[0, 0]), int(M[1, 1])
+        x, y = int(M[-1, 0]), int(M[-1, 1])
+
         need_FBO = False
-        need_FBO |= bool( M[0,1] or M[0,2] or M[1,0] or M[1,2] or M[2,0] or M[2,1] )
-        need_FBO |= (w,h) != viewbox.resolution
-        
+        need_FBO |= bool(
+            M[
+                0, 1] or M[
+                0, 2] or M[
+                1, 0] or M[
+                1, 2] or M[
+                2, 0] or M[
+                2, 1])
+        need_FBO |= (w, h) != viewbox.resolution
+
         # todo: take parent viewboxes into account.
-        
+
         if need_FBO:
             # todo: we cannot use a viewbox or scissors, but need an FBO
             raise NotImplementedError('Need FBO to draw this viewbox')

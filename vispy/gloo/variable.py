@@ -15,43 +15,42 @@ import ctypes
 import numpy as np
 
 from . import gl
-from . import GLObject
-from .buffer import ClientVertexBuffer, VertexBuffer, VertexBufferView
+from .buffer import ClientVertexBuffer, VertexBuffer
 from .texture import Texture, Texture2D, TextureCubeMap, Texture3D
-from vispy.util.six import string_types
 
 # todo: support arrays of uniforms
 
 gl_typeinfo = {
-    gl.GL_FLOAT        : ( 1, gl.GL_FLOAT,        np.float32),
-    gl.GL_FLOAT_VEC2   : ( 2, gl.GL_FLOAT,        np.float32),
-    gl.GL_FLOAT_VEC3   : ( 3, gl.GL_FLOAT,        np.float32),
-    gl.GL_FLOAT_VEC4   : ( 4, gl.GL_FLOAT,        np.float32),
-    gl.GL_INT          : ( 1, gl.GL_INT,          np.int32),
-    gl.GL_INT_VEC2     : ( 2, gl.GL_INT,          np.int32),
-    gl.GL_INT_VEC3     : ( 3, gl.GL_INT,          np.int32),
-    gl.GL_INT_VEC4     : ( 4, gl.GL_INT,          np.int32),
-    gl.GL_BOOL         : ( 1, gl.GL_BOOL,         np.bool),
-    gl.GL_BOOL_VEC2    : ( 2, gl.GL_BOOL,         np.bool),
-    gl.GL_BOOL_VEC3    : ( 3, gl.GL_BOOL,         np.bool),
-    gl.GL_BOOL_VEC4    : ( 4, gl.GL_BOOL,         np.bool),
-    gl.GL_FLOAT_MAT2   : ( 4, gl.GL_FLOAT,        np.float32),
-    gl.GL_FLOAT_MAT3   : ( 9, gl.GL_FLOAT,        np.float32),
-    gl.GL_FLOAT_MAT4   : (16, gl.GL_FLOAT,        np.float32),
-    gl.GL_SAMPLER_2D   : ( 1, gl.GL_UNSIGNED_INT, np.uint32),
-    gl.ext.GL_SAMPLER_3D   : ( 1, gl.GL_UNSIGNED_INT, np.uint32),
-    gl.GL_SAMPLER_CUBE : ( 1, gl.GL_UNSIGNED_INT, np.uint32), }
+    gl.GL_FLOAT: (1, gl.GL_FLOAT, np.float32),
+    gl.GL_FLOAT_VEC2: (2, gl.GL_FLOAT, np.float32),
+    gl.GL_FLOAT_VEC3: (3, gl.GL_FLOAT, np.float32),
+    gl.GL_FLOAT_VEC4: (4, gl.GL_FLOAT, np.float32),
+    gl.GL_INT: (1, gl.GL_INT, np.int32),
+    gl.GL_INT_VEC2: (2, gl.GL_INT, np.int32),
+    gl.GL_INT_VEC3: (3, gl.GL_INT, np.int32),
+    gl.GL_INT_VEC4: (4, gl.GL_INT, np.int32),
+    gl.GL_BOOL: (1, gl.GL_BOOL, np.bool),
+    gl.GL_BOOL_VEC2: (2, gl.GL_BOOL, np.bool),
+    gl.GL_BOOL_VEC3: (3, gl.GL_BOOL, np.bool),
+    gl.GL_BOOL_VEC4: (4, gl.GL_BOOL, np.bool),
+    gl.GL_FLOAT_MAT2: (4, gl.GL_FLOAT, np.float32),
+    gl.GL_FLOAT_MAT3: (9, gl.GL_FLOAT, np.float32),
+    gl.GL_FLOAT_MAT4: (16, gl.GL_FLOAT, np.float32),
+    gl.GL_SAMPLER_2D: (1, gl.GL_UNSIGNED_INT, np.uint32),
+    gl.ext.GL_SAMPLER_3D: (1, gl.GL_UNSIGNED_INT, np.uint32),
+    gl.GL_SAMPLER_CUBE: (1, gl.GL_UNSIGNED_INT, np.uint32), }
 
 
 class VariableError(RuntimeError):
+
     """ Raised when something goes wrong that depens on state that was set
     earlier (due to deferred loading).
     """
     pass
 
 
-
 class Variable(object):
+
     """
     A variable is an interface between a program and some data.
     """
@@ -64,12 +63,12 @@ class Variable(object):
         """ Initialize the data into default state """
 
         # Make sure variable type is allowed (for ES 2.0 shader)
-        if gtype not in  [ gl.GL_FLOAT,        gl.GL_FLOAT_VEC2,
-                           gl.GL_FLOAT_VEC3,   gl.GL_FLOAT_VEC4,
-                           gl.GL_INT,          gl.GL_BOOL,
-                           gl.GL_FLOAT_MAT2,   gl.GL_FLOAT_MAT3,
-                           gl.GL_FLOAT_MAT4,   gl.GL_SAMPLER_2D,
-                           gl.GL_SAMPLER_CUBE]:
+        if gtype not in [gl.GL_FLOAT, gl.GL_FLOAT_VEC2,
+                         gl.GL_FLOAT_VEC3, gl.GL_FLOAT_VEC4,
+                         gl.GL_INT, gl.GL_BOOL,
+                         gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3,
+                         gl.GL_FLOAT_MAT4, gl.GL_SAMPLER_2D,
+                         gl.GL_SAMPLER_CUBE]:
             raise ValueError("Unknown variable type")
 
         # Name of this variable in the program
@@ -91,12 +90,10 @@ class Variable(object):
         # To suppress warnings
         self._show_warning_notset = True
 
-
     def invalidate(self):
         """ Set dirty flag, to force setting the variable on the Program
         object. """
         self._dirty = True
-
 
     @property
     def name(self):
@@ -123,43 +120,40 @@ class Variable(object):
         """ Whether this variable is active in the program. """
         return self._loc is not None
 
-
     @property
     def data(self):
         """ The data for this variable (ndarray, VertexBuffer or Texture). """
         return self._data
 
 
-
-
 # ----------------------------------------------------------- Uniform class ---
 class Uniform(Variable):
+
     """ A Uniform represents a program uniform variable. """
 
     # NOTE: Variable, Uniform, Attribute are FRIENDS of Program,
     # and Program manimpulates the private attributes of these objects.
 
     _ufunctions = {
-        gl.GL_FLOAT:        (gl.glUniform1fv, 1),
-        gl.GL_FLOAT_VEC2:   (gl.glUniform2fv, 2),
-        gl.GL_FLOAT_VEC3:   (gl.glUniform3fv, 3),
-        gl.GL_FLOAT_VEC4:   (gl.glUniform4fv, 4),
-        gl.GL_INT:          (gl.glUniform1iv, 1),
-        gl.GL_INT_VEC2:     (gl.glUniform2iv, 2),
-        gl.GL_INT_VEC3:     (gl.glUniform3iv, 3),
-        gl.GL_INT_VEC4:     (gl.glUniform4iv, 4),
-        gl.GL_BOOL:         (gl.glUniform1iv, 1),
-        gl.GL_BOOL_VEC2:    (gl.glUniform2iv, 2),
-        gl.GL_BOOL_VEC3:    (gl.glUniform3iv, 3),
-        gl.GL_BOOL_VEC4:    (gl.glUniform4iv, 4),
-        gl.GL_FLOAT_MAT2:   (gl.glUniformMatrix2fv, 4),
-        gl.GL_FLOAT_MAT3:   (gl.glUniformMatrix3fv, 9),
-        gl.GL_FLOAT_MAT4:   (gl.glUniformMatrix4fv, 16),
-        gl.GL_SAMPLER_2D:   (gl.glUniform1i, 1),
+        gl.GL_FLOAT: (gl.glUniform1fv, 1),
+        gl.GL_FLOAT_VEC2: (gl.glUniform2fv, 2),
+        gl.GL_FLOAT_VEC3: (gl.glUniform3fv, 3),
+        gl.GL_FLOAT_VEC4: (gl.glUniform4fv, 4),
+        gl.GL_INT: (gl.glUniform1iv, 1),
+        gl.GL_INT_VEC2: (gl.glUniform2iv, 2),
+        gl.GL_INT_VEC3: (gl.glUniform3iv, 3),
+        gl.GL_INT_VEC4: (gl.glUniform4iv, 4),
+        gl.GL_BOOL: (gl.glUniform1iv, 1),
+        gl.GL_BOOL_VEC2: (gl.glUniform2iv, 2),
+        gl.GL_BOOL_VEC3: (gl.glUniform3iv, 3),
+        gl.GL_BOOL_VEC4: (gl.glUniform4iv, 4),
+        gl.GL_FLOAT_MAT2: (gl.glUniformMatrix2fv, 4),
+        gl.GL_FLOAT_MAT3: (gl.glUniformMatrix3fv, 9),
+        gl.GL_FLOAT_MAT4: (gl.glUniformMatrix4fv, 16),
+        gl.GL_SAMPLER_2D: (gl.glUniform1i, 1),
         gl.GL_SAMPLER_CUBE: (gl.glUniform1i, 1),
         gl.ext.GL_SAMPLER_3D: (gl.glUniform1i, 1),
-        }
-
+    }
 
     def __init__(self, name, gtype):
         Variable.__init__(self, name, gtype)
@@ -169,10 +163,13 @@ class Uniform(Variable):
 
         # For textures:
         self._texture_unit = -1  # Set by Program
-        self._textureClass = {  gl.GL_SAMPLER_2D: Texture2D,
-                                gl.GL_SAMPLER_CUBE: TextureCubeMap,
-                                gl.ext.GL_SAMPLER_3D: Texture3D,}.get(gtype, None)
-
+        self._textureClass = {
+            gl.GL_SAMPLER_2D: Texture2D,
+            gl.GL_SAMPLER_CUBE: TextureCubeMap,
+            gl.ext.GL_SAMPLER_3D: Texture3D,
+        }.get(
+            gtype,
+            None)
 
     @property
     def texture_unit(self):
@@ -180,19 +177,21 @@ class Uniform(Variable):
         """
         return self._texture_unit
 
-
     def set_data(self, data):
         """ Set data for this uniform. Data can be anything that can be
         conveted to a numpy array. If the uniform is a sampler, a Texture
         object is required.
         """
 
-        if self._gtype in (gl.GL_SAMPLER_2D, gl.GL_SAMPLER_CUBE, gl.ext.GL_SAMPLER_3D):
+        if self._gtype in (gl.GL_SAMPLER_2D, gl.GL_SAMPLER_CUBE,
+                           gl.ext.GL_SAMPLER_3D):
             # Textures need special handling
             if isinstance(data, Texture):
                 self._data = data
             else:
-                raise ValueError('Expected a Texture for uniform %s.' % self.name)
+                raise ValueError(
+                    'Expected a Texture for uniform %s.' %
+                    self.name)
         else:
             # Try to put it inside the array
             if self._data is None:
@@ -203,11 +202,12 @@ class Uniform(Variable):
                     data = np.array(data)
                 self._data[...] = data.ravel()
             except ValueError:
-                raise ValueError("Wrong data format for uniform %s" % self.name)
+                raise ValueError(
+                    "Wrong data format for uniform %s" %
+                    self.name)
 
         # Mark variable as dirty
         self._dirty = True
-
 
     def upload(self, program):
         """ Actual upload of data to GPU memory """
@@ -230,7 +230,8 @@ class Uniform(Variable):
         #           returns
 
         # Matrices (need a transpose argument)
-        if self._gtype in (gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT4):
+        if self._gtype in (gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3,
+                           gl.GL_FLOAT_MAT4):
             if not self._dirty:
                 return
             # OpenGL ES 2.0 does not support transpose
@@ -260,11 +261,9 @@ class Uniform(Variable):
         self._dirty = False
 
 
-
-
-
 # --------------------------------------------------------- Attribute class ---
 class Attribute(Variable):
+
     """
     An Attribute represents a program attribute variable.
     """
@@ -273,12 +272,11 @@ class Attribute(Variable):
     # and Program manimpulates the private attributes of these objects.
 
     _afunctions = {
-        gl.GL_FLOAT:        gl.glVertexAttrib1f,
-        gl.GL_FLOAT_VEC2:   gl.glVertexAttrib2f,
-        gl.GL_FLOAT_VEC3:   gl.glVertexAttrib3f,
-        gl.GL_FLOAT_VEC4:   gl.glVertexAttrib4f
+        gl.GL_FLOAT: gl.glVertexAttrib1f,
+        gl.GL_FLOAT_VEC2: gl.glVertexAttrib2f,
+        gl.GL_FLOAT_VEC3: gl.glVertexAttrib3f,
+        gl.GL_FLOAT_VEC4: gl.glVertexAttrib4f
     }
-
 
     def __init__(self, name, gtype):
         Variable.__init__(self, name, gtype)
@@ -289,7 +287,6 @@ class Attribute(Variable):
         # Whether this attribure is generic
         self._generic = False
 
-
     @property
     def count(self):
         """ The number of vertices for this attribute.
@@ -298,7 +295,6 @@ class Attribute(Variable):
             return None
         else:
             return self._data.count
-
 
     def set_data(self, data):
         """ Set data for this attribute. """
@@ -309,7 +305,8 @@ class Attribute(Variable):
         # Data is a tuple with size <= 4, we assume this designates a generate
         # vertex attribute.
         if (isinstance(data, (float, int)) or
-            (isinstance(data, (tuple, list)) and len(data) in [1,2,3,4])):
+                (isinstance(data, (tuple, list)) and
+                 len(data) in [1, 2, 3, 4])):
             # Get dtype, should be float32 for ES 2.0, see issue #9
             _, _, dtype = gl_typeinfo[self._gtype]
             if dtype != np.float32:
@@ -326,14 +323,14 @@ class Attribute(Variable):
             self._data = data
             self._generic = False
         elif isinstance(data, np.ndarray):
-            raise ValueError('Cannot set attribute data using numpy arrays: ' +
-                            'use tuple, ClientVertexBuffer or VertexBuffer instead. ')
+            raise ValueError(
+                'Cannot set attribute data using numpy arrays: ' +
+                'use tuple, ClientVertexBuffer or VertexBuffer instead. ')
         else:
             raise ValueError('Wrong data for attribute.')
 
         # Mark variable as dirty
         self._dirty = True
-
 
     def upload(self, program):
         """ Actual upload of data to GPU memory  """
@@ -388,13 +385,19 @@ class Attribute(Variable):
 
             # Check attribute format against data format
             size, gtype, _ = gl_typeinfo[self._gtype]
-            #if self._gtype != self._data._gtype:
+            # if self._gtype != self._data._gtype:
             #    raise ValueError("Data not compatible with attribute type")
             offset = 0
             stride = self._data.stride
 
             # Apply (first disable any previous VertexBuffer)
-            gl.glVertexAttribPointer(self._loc, size, gtype, False, stride, data)
+            gl.glVertexAttribPointer(
+                self._loc,
+                size,
+                gtype,
+                False,
+                stride,
+                data)
 
         # Regular vertex buffer or vertex buffer view
         else:
@@ -414,19 +417,26 @@ class Attribute(Variable):
 
             # Check attribute format against data format
             size, gtype, _ = gl_typeinfo[self._gtype]
-            #if self._gtype != self._data._gtype:
+            # if self._gtype != self._data._gtype:
             #    raise ValueError("Data not compatible with attribute type")
             offset = self._data.offset
             stride = self._data.stride
 
             #size, gtype, dtype = gl_typeinfo[self._gtype]
-            #offset, stride = data._offset, data._stride  # view_params not on VertexBuffer
+            # offset, stride = data._offset, data._stride  # view_params not on
+            # VertexBuffer
 
             # Make offset a pointer, or it will be interpreted as a small array
             offset = ctypes.c_void_p(offset)
 
             # Apply
-            gl.glVertexAttribPointer(self._loc, size, gtype,  False, stride, offset)
+            gl.glVertexAttribPointer(
+                self._loc,
+                size,
+                gtype,
+                False,
+                stride,
+                offset)
 
         # Mark as uploaded
         self._dirty = False

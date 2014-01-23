@@ -85,7 +85,7 @@ KEYMAP = {
     QtCore.Qt.Key_Tab: keys.TAB,
 }
 
-BUTTONMAP = {0:0, 1:1, 2:2, 4:3, 8:4, 16:5}
+BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 
 class ApplicationBackend(app.ApplicationBackend):
@@ -107,7 +107,7 @@ class ApplicationBackend(app.ApplicationBackend):
     def _vispy_run(self):
         app = self._vispy_get_native_app()
         if hasattr(app, '_in_event_loop') and app._in_event_loop:
-            pass # Already in event loop
+            pass  # Already in event loop
         else:
             return app.exec_()
 
@@ -126,14 +126,14 @@ class ApplicationBackend(app.ApplicationBackend):
         return app
 
 
-
 class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
+
     """Qt backend for Canvas abstract class."""
 
     def __init__(self, *args, **kwargs):
         app.CanvasBackend.__init__(self)
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
-        self.setAutoBufferSwap(False) # to make consistent with other backends
+        self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
 
     def _vispy_set_current(self):
@@ -192,12 +192,13 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
     def resizeGL(self, w, h):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.resize(size=(w,h))
+        self._vispy_canvas.events.resize(size=(w, h))
 
     def paintGL(self):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.paint(region=None)#(0, 0, self.width(), self.height()))
+        # (0, 0, self.width(), self.height()))
+        self._vispy_canvas.events.paint(region=None)
 
     def closeEvent(self, ev):
         if self._vispy_canvas is None:
@@ -212,7 +213,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             pos=(ev.pos().x(), ev.pos().y()),
             button=BUTTONMAP.get(ev.button(), 0),
             modifiers = self._modifiers(ev),
-            )
+        )
 
     def mouseReleaseEvent(self, ev):
         if self._vispy_canvas is None:
@@ -222,7 +223,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             pos=(ev.pos().x(), ev.pos().y()),
             button=BUTTONMAP[ev.button()],
             modifiers = self._modifiers(ev),
-            )
+        )
 
     def mouseMoveEvent(self, ev):
         if self._vispy_canvas is None:
@@ -231,7 +232,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
             native=ev,
             pos=(ev.pos().x(), ev.pos().y()),
             modifiers=self._modifiers(ev),
-            )
+        )
 
     def wheelEvent(self, ev):
         if self._vispy_canvas is None:
@@ -239,42 +240,41 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         # Get scrolling
         deltax, deltay = 0.0, 0.0
         if ev.orientation == QtCore.Qt.Horizontal:
-            deltax = ev.delta()/120.0
+            deltax = ev.delta() / 120.0
         else:
-            deltay = ev.delta()/120.0
+            deltay = ev.delta() / 120.0
         # Emit event
         self._vispy_canvas.events.mouse_wheel(
             native=ev,
             delta=(deltax, deltay),
             pos=(ev.pos().x(), ev.pos().y()),
             modifiers=self._modifiers(ev),
-            )
-
+        )
 
     def keyPressEvent(self, ev):
         self._vispy_canvas.events.key_press(
-            native = ev,
-            key = self._processKey(ev),
-            text = text_type(ev.text()),
-            modifiers = self._modifiers(ev),
-            )
+            native=ev,
+            key=self._processKey(ev),
+            text=text_type(ev.text()),
+            modifiers=self._modifiers(ev),
+        )
 
     def keyReleaseEvent(self, ev):
-        #if ev.isAutoRepeat():
-            #return # Skip release auto repeat events
+        # if ev.isAutoRepeat():
+            # return # Skip release auto repeat events
         self._vispy_canvas.events.key_release(
-            native = ev,
-            key = self._processKey(ev),
-            text = text_type(ev.text()),
-            modifiers = self._modifiers(ev),
-            )
+            native=ev,
+            key=self._processKey(ev),
+            text=text_type(ev.text()),
+            modifiers=self._modifiers(ev),
+        )
 
     def _processKey(self, event):
         # evaluates the keycode of qt, and transform to vispy key.
         key = int(event.key())
         if key in KEYMAP:
             return KEYMAP[key]
-        elif key>=32 and key <= 127:
+        elif key >= 32 and key <= 127:
             return keys.Key(chr(key))
         else:
             return None
@@ -294,9 +294,8 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
         return mod
 
 
-
 # class QtMouseEvent(MouseEvent):
-#     # special subclass of MouseEvent for propagating acceptance info back to Qt.
+# special subclass of MouseEvent for propagating acceptance info back to Qt.
 #     @MouseEvent.handled.setter
 #     def handled(self, val):
 #         self._handled = val
@@ -304,9 +303,8 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
 #             self.qt_event.accept()
 #         else:
 #             self.qt_event.ignore()
-
-
 class TimerBackend(app.TimerBackend, QtCore.QTimer):
+
     def __init__(self, vispy_timer):
         if QtGui.QApplication.instance() is None:
             global QAPP
@@ -316,11 +314,10 @@ class TimerBackend(app.TimerBackend, QtCore.QTimer):
         self.timeout.connect(self._vispy_timeout)
 
     def _vispy_start(self, interval):
-        self.start(interval*1000.)
+        self.start(interval * 1000.)
 
     def _vispy_stop(self):
         self.stop()
 
     def _vispy_timeout(self):
         self._vispy_timer._timeout()
-

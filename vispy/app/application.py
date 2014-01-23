@@ -11,11 +11,11 @@ from __future__ import print_function, division, absolute_import
 
 import sys
 
-import vispy
 from vispy.app.backends import BACKENDS, BACKENDMAP, ATTEMPTED_BACKENDS
 
 
 class Application(object):
+
     """ Representation of the vispy application. This wraps a native
     GUI application instance. Vispy has a default instance of this class
     at vispy.app.default_app.
@@ -114,10 +114,10 @@ class Application(object):
 
         # Check if already selected
         if self._backend is not None:
-            if backend_name and backend_name.lower() != self.backend_name.lower():
+            if backend_name and \
+                    backend_name.lower() != self.backend_name.lower():
                 raise RuntimeError('Can only select a backend once.')
             return
-
 
         # Get backends to try ...
         backends_to_try = []
@@ -143,7 +143,6 @@ class Application(object):
                 if name not in backends_to_try:
                     backends_to_try.append(name)
 
-
         # Now try each one
         for key in backends_to_try:
             # Get info for this backend
@@ -164,7 +163,8 @@ class Application(object):
                 if not try_others:
                     raise RuntimeError(msg)
             except Exception as err:
-                msg = 'Error while importing backend "%s":\n%s' % (name, str(err))
+                msg = 'Error while importing backend "%s":\n%s' % (
+                    name, str(err))
                 if not try_others:
                     raise RuntimeError(msg)
                 else:
@@ -181,6 +181,7 @@ class Application(object):
 
 
 class ApplicationBackend(object):
+
     """ ApplicationBackend()
 
     Abstract class that provides an interface between backends and Application.
@@ -203,4 +204,3 @@ class ApplicationBackend(object):
     def _vispy_get_native_app(self):
         # Should return the native application object
         return self
-

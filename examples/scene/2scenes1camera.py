@@ -1,11 +1,10 @@
 """ Test the display of two different scenes using the same camera.
-This can for instance be useful to view two representations 
+This can for instance be useful to view two representations
 of the same data (e.g. an image and its segmentation).
 
 This example illustrates:
   * Having two viewboxes that show different scenes
   * Using the same camera in both scenes, via multiple parenting
-  
 """
 
 from vispy import scene
@@ -20,6 +19,8 @@ fig.size = 800, 400
 fig.show()
 camera = scene.PixelCamera(fig.viewbox)
 #
+
+
 @fig.connect
 def on_mouse_move(event):
     cam0.on_mouse_move(event)
@@ -27,8 +28,8 @@ def on_mouse_move(event):
 # Create two viewboxes
 vp1 = scene.ViewBox(fig.viewbox)
 vp2 = scene.ViewBox(fig.viewbox)
-vp1.bgcolor = (0,0,0.2)
-vp2.bgcolor = (0,0.2,0)
+vp1.bgcolor = (0, 0, 0.2)
+vp2.bgcolor = (0, 0.2, 0)
 
 # Put them next to each-other
 transforms.scale(vp1.transform, 400, 400)
