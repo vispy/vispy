@@ -1,15 +1,14 @@
 from vispy import scene
-from vispy.app.backends import requires_pyglet
+from vispy.app.backends import requires_pyglet_or_qt
 from vispy.app import Application
 from vispy.util import transforms
 
 
-@requires_pyglet()  # XXX only used b/c we can't trust GLUT not to crash
+@requires_pyglet_or_qt()  # XXX only used b/c we can't trust GLUT not to crash
 def test_show_entity():
     """Test showing an entity"""
     # Create a figure
     app = Application()
-    app.use('Pyglet')
     #canvas = Canvas(title='me', app=app, show=True, position=[0, 0, 1, 1])
     fig = scene.CanvasWithScene(app=app)
     fig.size = 1, 1
