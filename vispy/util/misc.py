@@ -103,11 +103,8 @@ def _calculate_normals(rr, tris):
     #
     nn = np.zeros((npts, 3))
     for verts in tris.T:  # note this only loops 3x (number of verts per tri)
-        counts = np.bincount(verts, minlength=npts)
-        reord = np.argsort(verts)
-        vals = np.r_[np.zeros((1, 3)), np.cumsum(tri_nn[reord, :], 0)]
-        idx = np.cumsum(np.r_[0, counts])
-        nn += vals[idx[1:], :] - vals[idx[:-1], :]
+        for idx in range(3):  # x, y, z
+           nn[:, idx] += np.bincount(verts, tri_nn[:, idx], minlength=npts)
     size = np.sqrt(np.sum(nn * nn, axis=1))
     size[size == 0] = 1.0  # prevent ugly divide-by-zero
     nn /= size[:, np.newaxis]

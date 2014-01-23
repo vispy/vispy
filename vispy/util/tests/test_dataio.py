@@ -39,7 +39,7 @@ def test_wavefront():
             assert_allclose(m1, m2)
     # test our efficient normal calculation routine
     assert_allclose(mesh1[2], _slow_calculate_normals(mesh1[0], mesh1[1]),
-                    rtol=1e-7, atol=1e-7)
+                    rtol=1e-10, atol=1e-10)
 
 
 @requires_img_lib
