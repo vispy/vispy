@@ -40,7 +40,7 @@ def is_string(s):
     return isinstance(s, string_types)
 
 
-# These fast normal calculation routines are taken from mne-python
+# These fast normal calculation routines are adapted from mne-python
 
 def _fast_cross_3d(x, y):
     """Compute cross product between list of 3D vectors

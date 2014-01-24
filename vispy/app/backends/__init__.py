@@ -66,7 +66,7 @@ def requires_qt():
 
 
 def requires_pyglet():
-    return np.testing.dec.skipif(not has_pyglet(), 'Pyglet')
+    return np.testing.dec.skipif(not has_pyglet(), 'Requires Pyglet')
 
 
 def requires_pyglet_or_qt():

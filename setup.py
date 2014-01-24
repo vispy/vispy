@@ -70,7 +70,7 @@ setup(
     license='(new) BSD',
     url='http://vispy.org',
     download_url='https://pypi.python.org/pypi/vispy',
-    keywords="visualization OpenGl ES medical imaging 3D plotting"
+    keywords="visualization OpenGl ES medical imaging 3D plotting "
              "numpy bigdata",
     description=description,
     long_description=__doc__,
