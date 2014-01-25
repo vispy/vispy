@@ -693,7 +693,6 @@ def convert_data(data, clim=None):
         if clim is None:
             clim = (np.iinfo(data.dtype).min, np.iinfo(data.dtype).max)
         data = data.astype(np.float32)
-        print('inty')
     else:
         raise TextureError('Could not convert data type %s.' % data.dtype.name)
 
