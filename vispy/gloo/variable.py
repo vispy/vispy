@@ -56,7 +56,7 @@ class Variable(object):
     """
 
     # NOTE: Variable, Uniform, Attribute are FRIENDS of Program,
-    # and Program manimpulates the private attributes of these objects.
+    # and Program manipulates the private attributes of these objects.
 
     # ---------------------------------
     def __init__(self, name, gtype):
@@ -132,7 +132,7 @@ class Uniform(Variable):
     """ A Uniform represents a program uniform variable. """
 
     # NOTE: Variable, Uniform, Attribute are FRIENDS of Program,
-    # and Program manimpulates the private attributes of these objects.
+    # and Program manipulates the private attributes of these objects.
 
     _ufunctions = {
         gl.GL_FLOAT: (gl.glUniform1fv, 1),
@@ -269,7 +269,7 @@ class Attribute(Variable):
     """
 
     # NOTE: Variable, Uniform, Attribute are FRIENDS of Program,
-    # and Program manimpulates the private attributes of these objects.
+    # and Program manipulates the private attributes of these objects.
 
     _afunctions = {
         gl.GL_FLOAT: gl.glVertexAttrib1f,
@@ -284,7 +284,7 @@ class Attribute(Variable):
         # Count number of vertices
         self._count = 0
 
-        # Whether this attribure is generic
+        # Whether this attribute is generic
         self._generic = False
 
     @property

@@ -605,7 +605,7 @@ class Program(GLObject):
             ok = [isinstance(i, (int, type(None))) for i in subset]
             if len(subset) != 2 or not all(ok):
                 raise ValueError('Subset must be a two-element tuple with '
-                                 'interegers or None.')
+                                 'integers or None.')
             # Get start, end, refcount
             start, end = subset
             start = start or 0
