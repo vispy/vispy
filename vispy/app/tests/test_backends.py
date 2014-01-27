@@ -8,8 +8,6 @@ implementation is corect.
 
 """
 
-import numpy as np
-
 import vispy
 from vispy import keys
 from vispy.app.backends import requires_pyglet, requires_qt

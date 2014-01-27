@@ -4,7 +4,6 @@
 # This is a strange test: vispy does not need designer or uic stuff to run!
 
 import os
-import numpy as np
 import OpenGL.GL as gl
 
 from vispy.app import Canvas
@@ -41,5 +40,4 @@ def test_qt_designer():
 
 
 if __name__ == '__main__':
-    if has_qt(require_uic=True):
-        test_qt_designer()
+    test_qt_designer()
