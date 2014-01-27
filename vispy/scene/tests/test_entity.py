@@ -1,10 +1,10 @@
 from vispy import scene
-from vispy.app.backends import requires_pyglet_or_qt
+from vispy.app.backends import requires_non_glut
 from vispy.app import Application
 from vispy.util import transforms
 
 
-@requires_pyglet_or_qt()  # XXX only used b/c we can't trust GLUT not to crash
+@requires_non_glut()  # XXX only used b/c we can't trust GLUT not to crash
 def test_show_entity():
     """Test showing an entity"""
     # Create a figure

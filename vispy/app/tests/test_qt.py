@@ -8,14 +8,10 @@ import numpy as np
 import OpenGL.GL as gl
 
 from vispy.app import Canvas
-from vispy.app.backends import has_qt
+from vispy.app.backends import requires_qt
 
 
-requires_qt_and_uic = np.testing.dec.skipif(not has_qt(require_uic=True),
-                                            'Requires Qt w/UIC')
-
-
-@requires_qt_and_uic
+@requires_qt(requires_uic=True)
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
     from PyQt4 import QtGui, uic

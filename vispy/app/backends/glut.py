@@ -76,7 +76,7 @@ class ApplicationBackend(app.ApplicationBackend):
 
     def __init__(self):
         app.ApplicationBackend.__init__(self)
-        self._inizialized = False
+        self._initialized = False
         self._windows = []
 
     def _vispy_get_backend_name(self):
@@ -116,13 +116,13 @@ class ApplicationBackend(app.ApplicationBackend):
                 glutInitDisplayString(text)
             except:
                 pass
-        if not self._inizialized:
+        if not self._initialized:
             glut.glutInit()  # todo: maybe allow user to give args?
             glut.glutInitDisplayMode(glut.GLUT_RGBA |
                                      glut.GLUT_DOUBLE |
                                      glut.GLUT_STENCIL |
                                      glut.GLUT_DEPTH)
-            self._inizialized = True
+            self._initialized = True
         return glut
 
 

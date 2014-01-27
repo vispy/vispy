@@ -31,7 +31,7 @@ BACKENDMAP = dict([(be[0].lower(), be) for be in BACKENDS])
 ATTEMPTED_BACKENDS = []
 
 
-def has_qt(require_uic=False):
+def has_qt(requires_uic=False):
     try:
         from PyQt4 import QtCore, QtGui, QtOpenGL, uic  # noqa
     except ImportError:
@@ -46,7 +46,7 @@ def has_qt(require_uic=False):
         has = True
         has_uic = True
 
-    if require_uic:
+    if requires_uic:
         has = (has and has_uic)
     return has
 
@@ -61,14 +61,16 @@ def has_pyglet():
     return has
 
 
-def requires_qt():
-    return np.testing.dec.skipif(not has_qt(), 'Requires QT')
+def requires_qt(requires_uic=False):
+    extra = ' with UIC' if requires_uic else ''
+    return np.testing.dec.skipif(not has_qt(requires_uic),
+                                 'Requires QT' + extra)
 
 
 def requires_pyglet():
     return np.testing.dec.skipif(not has_pyglet(), 'Requires Pyglet')
 
 
-def requires_pyglet_or_qt():
+def requires_non_glut():
     return np.testing.dec.skipif(not has_pyglet() and not has_qt(),
-                                 'Requires Pyglet or QT')
+                                 'Requires non-Glut backend')

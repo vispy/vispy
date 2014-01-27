@@ -5,7 +5,7 @@ from nose.tools import assert_equal, assert_true, assert_raises
 from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
                        MouseEvent, KeyEvent)
 from vispy.app.backends import (requires_pyglet, requires_qt,
-                                requires_pyglet_or_qt)
+                                requires_non_glut)
 
 from vispy.gloo.program import (Program, ProgramError, VertexBuffer,
                                 ElementBuffer)
@@ -145,7 +145,7 @@ def _test_application(backend):
 # closing the main loop!
 
 
-@requires_pyglet_or_qt()  # b/c we can't use GLUT, the other option
+@requires_non_glut()  # b/c we can't use GLUT, the other option
 def test_none():
     """Test default application choosing"""
     _test_application(None)
