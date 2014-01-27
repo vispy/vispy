@@ -6,3 +6,4 @@ omit =
     *setup.py
     *vispy/util/six.py
     *vispy/util/_py24_ordereddict.py
+    *vispy/util/decorator.py

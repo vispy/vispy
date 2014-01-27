@@ -223,15 +223,6 @@ class CanvasBackend(BaseCanvasBackend):
         # Force the window or widget to shut down
         glut.glutDestroyWindow(self._id)
 
-    def _vispy_get_geometry(self):
-        # Should return widget (x, y, w, h)
-        glut.glutSetWindow(self._id)
-        x = glut.glutGet(glut.GLUT_WINDOW_X)
-        y = glut.glutGet(glut.GLUT_WINDOW_Y)
-        w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
-        h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
-        return x, y, w, h
-
     def _vispy_get_size(self):
         glut.glutSetWindow(self._id)
         w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)

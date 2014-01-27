@@ -40,6 +40,19 @@ install:
     - python setup.py install
     - SRC_DIR=$(pwd)
     - cd ~
+    # GLFW: version 2 shouldn't work (so let's try on Py2.6), version 3 will
+    - if [ "${PYTHON}" == "2.6" ] && [ "${DEPS}" == "full" ]; then
+        travis_retry sudo apt-get -qq install libglfw2;
+      fi
+    - if [ "${PYTHON}" != "2.6" ] && [ "${DEPS}" == "full" ]; then
+        travis_retry sudo apt-get -qq install xorg-dev libglu1-mesa-dev;
+        git clone git://github.com/glfw/glfw.git;
+        cd glfw;
+        cmake -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .;
+        sudo make install;
+      fi
+    - sudo ldconfig
+    # We will run tests from vispy dir to test our install worked
     - VISPY_DIR=$(python -c 'import vispy;print(vispy.__path__[0])')
     - ln -s ${SRC_DIR}/.coveragerc ${VISPY_DIR}/../.coveragerc
     - ln -s ${SRC_DIR}/setup.cfg ${VISPY_DIR}/../setup.cfg
@@ -49,7 +62,7 @@ install:
 before_script:
     # We need to create a (fake) display on Travis, let's use a funny resolution
     - export DISPLAY=:99.0
-    - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render -noreset
+    - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
 
 script:
     - cd ${VISPY_DIR}/../
@@ -63,14 +76,11 @@ script:
     - cd ${SRC_DIR}
     # Don't run on 2.6 because it has some silly (unimportant) error
     - if [ "${PYTHON}" != "2.6" ]; then
-        flake8 --exclude=six.py,_py24_ordereddict.py, vispy examples;
+        flake8 --exclude=six.py,_py24_ordereddict.py vispy examples;
       fi;
 
 after_success:
-    # Need to run from source dir to execute "git" commands
-    # Only do "3.3" "full" here, since that is our most complete testing condition
-    - if [ "${PYTHON}" == "3.3" ] && [ "${DEPS}" == "full" ]; then
-        echo "Running coveralls";
-        cd ${SRC_DIR};
-        coveralls;
-      fi;
+    # Need to run from source dir to execute appropriate "git" commands
+    echo "Running coveralls";
+    cd ${SRC_DIR};
+    coveralls;

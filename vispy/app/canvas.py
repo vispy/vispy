@@ -214,6 +214,11 @@ class Canvas(object):
 
         self._backend._vispy_close()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
 
     # def mouse_event(self, event):
         #"""Called when a mouse input event has occurred (the mouse has moved,

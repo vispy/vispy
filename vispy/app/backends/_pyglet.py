@@ -158,12 +158,6 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         # Force the window or widget to shut down
         self.close()
 
-    def _vispy_get_geometry(self):
-        # Should return widget (x, y, w, h)
-        xy = self.get_location()
-        wh = self.get_size()
-        return xy + wh
-
     def _vispy_get_size(self):
         x, y = self.get_size()
         return x, y
