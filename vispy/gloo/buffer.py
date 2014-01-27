@@ -726,8 +726,8 @@ class VertexBufferView(VertexBuffer):
         self._handle = self._base._handle
 
     def _delete(self):
-        """ Delete base buffer from GPU. """
-        self._base.delete()
+        """ Delete this view; the underlying Buffer is unaffected. """
+        pass
 
     def _activate(self):
         """ Bind the base buffer to some target """
