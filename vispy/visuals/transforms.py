@@ -6,6 +6,8 @@ from __future__ import print_function, division, absolute_import
 
 import numpy as np
 from ..shaders.composite import ShaderFunction
+from ..util.ordereddict import OrderedDict
+from ..util import transforms
 
 ## TODO: binding should be handled by ShaderFunction? Or perhaps some other type?
 class Transform(object):
@@ -34,6 +36,10 @@ class Transform(object):
         
         2) A dict mapping attribute/uniform names to the values they should
         be assigned in the program.
+        
+        3) A dict containing function definitions that are required by this 
+        transform; the program constructor should ensure that each function is 
+        only included in the program once.
         """
         if var_prefix is None:
             var_prefix = name + "_"
@@ -67,7 +73,9 @@ class Transform(object):
         # bind to a new function + variables
         code = function.bind(name, uniforms=uniforms)
         
-        return code, values
+        defs = {function.name: function.code}
+        
+        return code, values, defs
 
 
 ## TODO: this should inherit from FunctionChain
@@ -111,6 +119,7 @@ class TransformChain(Transform):
         code = "vec4 %s(vec4 pos) {\n" % name
         bindings = []
         variables = {}
+        defs = OrderedDict()
         if imap:
             transforms = self.transforms[::-1]
         else:
@@ -119,25 +128,20 @@ class TransformChain(Transform):
         for i,tr in enumerate(transforms):
             tr_name = '%s_%s_%d' % (name, type(tr).__name__, i)
             if imap:
-                tr_code, tr_vars = tr.bind_imap(tr_name)
+                tr_code, tr_vars, tr_defs = tr.bind_imap(tr_name)
             else:
-                tr_code, tr_vars = tr.bind_map(tr_name)
+                tr_code, tr_vars, tr_defs = tr.bind_map(tr_name)
             bindings.append(tr_code)
             variables.update(tr_vars)
+            defs.update(tr_defs)
             code += "    pos = %s(pos);\n" % tr_name
         code += "    return pos;\n}\n"
         
         code = "\n".join(bindings) + "\n\n" + code
         
-        return code, variables
+        
+        return code, variables, defs
             
-    ## TODO: this should be handled by component deps instead.
-    @property
-    def GLSL_map(self):
-        trcode = {tr.GLSL_map.name:tr.GLSL_map.code for tr in self.transforms}
-        return "\n".join(trcode.values())
-
-
 
 
 
@@ -223,3 +227,143 @@ class STTransform(Transform):
             
     def __repr__(self):
         return "<STTransform scale=%s translate=%s>" % (self.scale, self.translate)
+
+
+
+
+class AffineTransform(Transform):
+    GLSL_map = ShaderFunction("""
+        vec4 AffineTransform_map(vec4 pos, mat4 matrix) {
+            return matrix * pos;
+        }
+    """)
+    
+    GLSL_imap = ShaderFunction("""
+        vec4 AffineTransform_map(vec4 pos, mat4 inv_matrix) {
+            return inv_matrix * pos;
+        }
+    """)
+    
+    def __init__(self):
+        super(AffineTransform, self).__init__()
+        self.reset()
+    
+    def map(self, coords):
+        return np.dot(self.matrix, coords)
+    
+    def imap(self, coords):
+        return np.dot(self.inv_matrix, coords)
+
+    @property
+    def matrix(self):
+        return self._matrix
+    
+    @matrix.setter
+    def matrix(self, m):
+        self._matrix = m
+
+    @property
+    def inv_matrix(self):
+        if self._inv_matrix is None:
+            self.inv_matrix = np.linalg.invert(self.matrix)
+        return self._inv_matrix
+
+    def translate(self, pos):
+        tr = np.eye(4)
+        tr[3, :len(pos)] = pos
+        self.matrix = np.dot(tr, self.matrix)
+        #self.matrix = transforms.translate(self.matrix, *pos)
+        print(self.matrix)
+        self._inv_matrix = None
+        
+    def scale(self, scale):
+        tr = np.eye(4)
+        for i,s in enumerate(scale):
+            tr[i,i] = s
+        self.matrix = np.dot(tr, self.matrix)
+        #self.matrix = transforms.scale(self.matrix, *scale)
+        print(self.matrix)
+        self._inv_matrix = None
+
+    def rotate(self, angle, axis):
+        tr = transforms.rotate(np.eye(4), angle, *axis)
+        self.matrix = np.dot(tr, self.matrix)
+        print(self.matrix)
+        self._inv_matrix = None
+
+    def reset(self):
+        self.matrix = np.eye(4)
+        self._inv_matrix = None
+        
+    
+class SRTTransform(Transform):
+    """ Transform performing scale, rotate, and translate
+    """
+    
+class ProjectionTransform(Transform):
+    @classmethod
+    def frustum(cls, l, r, t, b, n, f):
+        pass
+
+class LogTransform(Transform):
+    """ Transform perfoming logarithmic transformation on three axes.
+    """
+    GLSL_map = ShaderFunction("""
+        vec4 LogTransform_map(vec4 pos, vec3 base) {
+            vec4 p1 = pos;
+            if(base.x > 1.0)
+                p1.x = log(p1.x) / log(base.x);
+            if(base.y > 1.0)
+                p1.y = log(p1.y) / log(base.y);
+            if(base.z > 1.0)
+                p1.z = log(p1.z) / log(base.z);
+            return p1;
+        }
+        """)
+    
+    def __init__(self, base=None):
+        super(LogTransform, self).__init__()
+        self._base = np.zeros(3, dtype=np.float32)
+        self.base = (0.0, 0.0, 0.0) if base is None else base
+        
+    def map(self, coords):
+        ret = np.empty(coords.shape, coords.dtype)
+        base = self.base
+        for i in range(ret.shape[-1]):
+            if base[i] > 1.0:
+                ret[...,i] = np.log(coords[...,i]) / np.log(base[i])
+            else:
+                ret[...,i] = coords[...,i]
+        return ret
+    
+    def imap(self, coords):
+        ret = np.empty(coords.shape, coords.dtype)
+        base = self.base
+        for i in range(ret.shape[-1]):
+            if base[i] > 1.0:
+                ret[...,i] = base[i] ** coords[...,i]
+            else:
+                ret[...,i] = coords[...,i]
+        return ret
+            
+    @property
+    def base(self):
+        return self._base.copy()
+    
+    @base.setter
+    def base(self, s):
+        self._base[:len(s)] = s
+        self._base[len(s):] = 0.0
+            
+    def __repr__(self):
+        return "<LogTransform base=%s>" % (self.base)
+
+class PolarTransform(Transform):
+    pass
+
+class BilinearTransform(Transform):
+    pass
+
+class WarpTransform(Transform):
+    """ Multiple bilinear transforms in a grid arrangement.
+    """

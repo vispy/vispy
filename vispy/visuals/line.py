@@ -69,13 +69,9 @@ class LineVisual(object):
             variables['input_xyz_pos'] = self.vbo
             partial = inp_func.bind('local_position', attributes={'xyz_pos': 'input_xyz_pos'})
             
-        # get function source code for transform
-        transform_code = self.transform.GLSL_map
-        if not isinstance(transform_code, basestring):
-            transform_code = transform_code.code
-            
         # get attribute bindings with the name we need
-        tr_partial, tr_vars = self.transform.bind_map('map_local_to_nd')
+        tr_partial, tr_vars, tr_defs = self.transform.bind_map('map_local_to_nd')
+        transform_code = "\n".join(tr_defs.values())
         
         # set program variables required by transform
         variables.update(tr_vars)
