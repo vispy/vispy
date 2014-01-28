@@ -25,14 +25,14 @@ For more information see http://vispy.org.
 
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 # Definition of the version number
 __version__ = '0.2.1'
 
 
-from vispy.util.event import EmitterGroup, EventEmitter, Event
-from vispy.util import keys, dataio  # noqa
+from .util.event import EmitterGroup, EventEmitter, Event
+from .util import dataio  # noqa
 
 
 class ConfigEvent(Event):

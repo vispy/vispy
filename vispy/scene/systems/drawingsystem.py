@@ -3,13 +3,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import numpy as np
 
 from ..base import System, ViewBox
-from vispy import gloo
-gl = gloo.gl
+from ...gloo import gl
 
 
 class DrawingSystem(System):

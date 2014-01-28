@@ -15,11 +15,11 @@ import numpy as np
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
 BACKENDS = [('Test', 'nonexistent', 'foo.bar.lalalala'),  # For testing
-            ('Qt', 'qt', None),  # Meta backend
-            ('Pyglet', 'pyglet', 'pyglet'),
-            ('PySide', 'qt', 'PySide'),
-            ('PyQt4', 'qt', 'PyQt4'),
-            ('Glut', 'glut', 'OpenGL.GLUT'),
+            ('Qt', '_qt', None),  # Meta backend
+            ('Pyglet', '_pyglet', 'pyglet'),
+            ('PySide', '_qt', 'PySide'),
+            ('PyQt4', '_qt', 'PyQt4'),
+            ('Glut', '_glut', 'OpenGL.GLUT'),
             ]
 
 # Map of the lowercase backend names to the backend descriptions above

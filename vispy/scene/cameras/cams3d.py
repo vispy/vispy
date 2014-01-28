@@ -6,13 +6,13 @@
 Implementations of our 3D cameras.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import math
 import numpy as np
 
 from ..base import Camera
-from vispy.util import transforms
+from ...util import transforms
 
 
 class ThreeDCamera(Camera):

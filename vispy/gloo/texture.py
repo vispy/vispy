@@ -16,7 +16,7 @@ This code is inspired by similar classes from Visvis and Pygly.
 # todo: compressed textures?
 
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import numpy as np
 

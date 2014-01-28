@@ -72,7 +72,7 @@ the rectangular region of the viewbox.
 
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 from .base import Entity, Camera, ViewBox  # noqa
 from .canvas import CanvasWithScene  # noqa

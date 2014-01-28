@@ -6,14 +6,13 @@
 vispy backend for glut.
 """
 
-from __future__ import print_function, division, absolute_import
-
-from vispy import app
-from vispy import keys
-import vispy.util.ptime as ptime
+from __future__ import division
 
 import OpenGL.error
 import OpenGL.GLUT as glut
+
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ...util import ptime, keys
 
 
 # glut.GLUT_ACTIVE_SHIFT: keys.SHIFT,
@@ -72,10 +71,10 @@ BUTTONMAP = {glut.GLUT_LEFT_BUTTON: 1,
 ALL_WINDOWS = []
 
 
-class ApplicationBackend(app.ApplicationBackend):
+class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
-        app.ApplicationBackend.__init__(self)
+        BaseApplicationBackend.__init__(self)
         self._initialized = False
         self._windows = []
 
@@ -126,12 +125,12 @@ class ApplicationBackend(app.ApplicationBackend):
         return glut
 
 
-class CanvasBackend(app.CanvasBackend):
+class CanvasBackend(BaseCanvasBackend):
 
     """ GLUT backend for Canvas abstract class."""
 
     def __init__(self, name='glut window', *args, **kwargs):
-        app.CanvasBackend.__init__(self)
+        BaseCanvasBackend.__init__(self)
         self._id = glut.glutCreateWindow(name)
         global ALL_WINDOWS
         ALL_WINDOWS.append(self)
@@ -367,12 +366,12 @@ def _glut_callback(id):
         glut.glutTimerFunc(ms, _glut_callback, timer._id)
 
 
-# class TimerBackend(app.TimerBackend):
+# class TimerBackend(BaseTimerBackend):
     #_counter = 0
     #_timers = {}
 
     # def __init__(self, vispy_timer):
-        #app.TimerBackend.__init__(self, vispy_timer)
+        #BaseTimerBackend.__init__(self, vispy_timer)
         # Give this timer a unique id
         #TimerBackend._counter += 1
         #self._id = TimerBackend._counter
@@ -409,12 +408,12 @@ def _glut_callback(id):
 # Note: we could also build a timer using glutTimerFunc, but this causes
 # trouble because timer callbacks appear to take precedence over all others.
 # Thus, a fast timer can block new display events.
-class TimerBackend(app.TimerBackend):
+class TimerBackend(BaseTimerBackend):
     _initialized = False
     _schedule = []
 
     def __init__(self, vispy_timer):
-        app.TimerBackend.__init__(self, vispy_timer)
+        BaseTimerBackend.__init__(self, vispy_timer)
         self._init_class()
 
     @classmethod

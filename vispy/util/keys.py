@@ -14,9 +14,9 @@ intended as a compatibility measure.
 
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
-from vispy.util.six import string_types
+from .six import string_types
 
 
 # class Key(str):

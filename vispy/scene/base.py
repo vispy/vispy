@@ -8,7 +8,7 @@ ViewBox, Entity, Camera, System. The latter three are abstract classes
 and are overloaded in subsequent subpackages.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import numpy as np
 
@@ -239,9 +239,10 @@ class ViewBox(Entity):
         # todo: figure out a better way to do this
         # What systems do we use by default? How can the user specify what
         # systems he wants to use?
-        from vispy.scene import systems
+        from .systems.drawingsystem import DrawingSystem  # noqa
+        # XXX Should fix this nested import, but makes a circular import prob
         self._systems = {}
-        self._systems['draw'] = systems.DrawingSystem()
+        self._systems['draw'] = DrawingSystem()
 
     @property
     def bgcolor(self):

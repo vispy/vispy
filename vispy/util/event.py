@@ -12,12 +12,13 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import sys
-from vispy.util.ordereddict import OrderedDict
 import inspect
 import weakref
+
+from .ordereddict import OrderedDict
 
 
 class Event(object):
