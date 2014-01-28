@@ -8,15 +8,9 @@ implementation is corect.
 
 """
 
-import numpy as np
-
 import vispy
 from vispy import keys
-from vispy.app.backends import has_pyglet, has_qt
-
-
-requires_qt = np.testing.dec.skipif(not has_qt(), 'Requires QT')
-requires_pyglet = np.testing.dec.skipif(not has_pyglet(), 'Requires QT-UIC')
+from vispy.app.backends import requires_pyglet, requires_qt
 
 
 class BaseTestmodule:
@@ -114,7 +108,7 @@ class Test_TemplateBackend(BaseTestmodule):
 
 class Test_QtBackend(BaseTestmodule):
 
-    @requires_qt
+    @requires_qt()
     def __init__(self):
         from vispy.app.backends import qt
         BaseTestmodule.__init__(self, qt)
@@ -122,7 +116,7 @@ class Test_QtBackend(BaseTestmodule):
 
 class Test_PygletBackend(BaseTestmodule):
 
-    @requires_pyglet
+    @requires_pyglet()
     def __init__(self):
         from vispy.app.backends import pyglet
         BaseTestmodule.__init__(self, pyglet)

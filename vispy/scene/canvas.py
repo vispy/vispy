@@ -14,19 +14,23 @@ gl = gloo.gl
 
 
 class CanvasWithScene(app.Canvas):
+    """Provide a window or widget that the root scene can be rendered to
 
-    """ The CanvasWithScene class provides a window or widget that the
-    root scene can be rendered to. It has a ViewBox instance for which
+    The generated window or widget has a ViewBox instance for which
     the size is kept in sync with the underlying GL widget.
-    """
 
+    Parameters
+    ----------
+    *args, **kwargs : arguments
+        These are passed directly to app.Canvas.
+    """
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
         self._viewbox = ViewBox()
 
     @property
     def viewbox(self):
-        """ The root viewbox object for this canvas.
+        """The root viewbox object for this canvas.
         """
         return self._viewbox
 

@@ -260,8 +260,8 @@ class Program(GLObject):
                 else:
                     D[k] = vars[k]
         else:
-            raise ValueError("Don't know how to use attribute of type %r" %
-                             type(vars))
+            raise TypeError("Don't know how to use attribute of type %r" %
+                            type(vars))
 
         # Apply each
         for name, data in D.items():

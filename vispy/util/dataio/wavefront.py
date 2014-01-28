@@ -19,6 +19,7 @@ The classes are written with compatibility of Python3 in mind.
 """
 
 import numpy as np
+from ..misc import _calculate_normals
 
 
 class WavefrontReader(object):
@@ -182,35 +183,16 @@ class WavefrontReader(object):
     def _calculate_normals(self):
         vertices, faces = self._vertices, self._faces
         if faces is None:
-            faces = np.arange(0, vertices.size, dtype=np.uint32)
-        # Build normals
-        T = vertices[faces]
-        N = np.cross(T[::, 1] - T[::, 0], T[::, 2] - T[::, 0])
-        L = np.sqrt(N[:, 0] ** 2 + N[:, 1] ** 2 + N[:, 2] ** 2)
-        N /= L[:, np.newaxis]
-        normals = np.zeros(vertices.shape)
-        normals[faces[:, 0]] += N
-        normals[faces[:, 1]] += N
-        normals[faces[:, 2]] += N
-        L = np.sqrt(
-            normals[
-                :,
-                0] ** 2 +
-            normals[
-                :,
-                1] ** 2 +
-            normals[
-                :,
-                2] ** 2)
-        normals /= L[:, np.newaxis]
+            # ensure it's always 2D so we can use our methods
+            faces = np.arange(0, vertices.size, dtype=np.uint32)[:, np.newaxis]
+        normals = _calculate_normals(vertices, faces)
         return normals
 
     def finish(self):
         """ Converts gathere lists to numpy arrays and creates
         BaseMesh instance.
         """
-        if True:
-            self._vertices = np.array(self._vertices, 'float32')
+        self._vertices = np.array(self._vertices, 'float32')
         if self._faces:
             self._faces = np.array(self._faces, 'uint32')
         else:
