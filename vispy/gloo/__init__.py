@@ -85,4 +85,4 @@ from .texture import Texture2D, Texture3D, TextureCubeMap  # noqa
 from .shader import VertexShader, FragmentShader  # noqa
 from .framebuffer import FrameBuffer, RenderBuffer  # noqa
 from .program import Program  # noqa
-from .util import _screenshot
+from .util import _screenshot  # noqa

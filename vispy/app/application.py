@@ -11,7 +11,6 @@ from __future__ import division
 
 import sys
 
-from . import backends
 from .backends import BACKENDS, BACKENDMAP, ATTEMPTED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
