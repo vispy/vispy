@@ -63,7 +63,7 @@ script:
     - cd ${SRC_DIR}
     # Don't run on 2.6 because it has some silly (unimportant) error
     - if [ "${PYTHON}" != "2.6" ]; then
-        flake8 --exclude=six.py,_py24_ordereddict.py, vispy examples;
+        flake8 --exclude=six.py,_py24_ordereddict.py,decorator.py vispy examples;
       fi;
 
 after_success:

@@ -9,6 +9,7 @@ import numpy as np
 
 from ..base import System, ViewBox
 from ...gloo import gl
+from ...util import logger
 
 
 class DrawingSystem(System):
@@ -29,7 +30,7 @@ class DrawingSystem(System):
         return np.eye(4)
 
     def _process_entity(self, entity, transform):
-        #print('processing entity', entity)
+        logger.info('processing entity %s' % entity)
         # Set transformation
         if entity.transform is not None:
             transform = np.dot(transform, entity.transform)
@@ -51,7 +52,7 @@ class DrawingSystem(System):
         return transform
 
     def _prepare_viewbox(self, viewbox):
-        # print('preparing viewbox', viewbox )
+        logger.debug('preparing viewbox %s' % viewbox)
         M = viewbox.transform
         w, h = int(M[0, 0]), int(M[1, 1])
         x, y = int(M[-1, 0]), int(M[-1, 1])

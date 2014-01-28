@@ -10,6 +10,7 @@ from __future__ import division
 
 from .base import ViewBox
 from .. import app, gloo
+from ..util import logger
 gl = gloo.gl
 
 
@@ -47,12 +48,12 @@ class CanvasWithScene(app.Canvas):
     def on_paint(self, event):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        #print('painting ...')
+        logger.debug('Painting ...')
 
         # Draw viewbox
         self._process_entity_count = 0
         self._viewbox.process(self, 'draw')
-        # print(self._process_entity_count)
+        logger.debug('Entity count %s' % self._process_entity_count)
 
     def on_mouse_move(self, event):
         # todo: we need a proper way to deal with events

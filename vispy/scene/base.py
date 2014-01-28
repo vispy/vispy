@@ -12,6 +12,8 @@ from __future__ import division
 
 import numpy as np
 
+from ..util import logger
+
 
 class Entity(object):
 
@@ -352,11 +354,11 @@ class System(object):
         for entity in viewbox:
             self.process_entity(entity, *result)
 
-    def process_entity(self, entity, *args):
+    def process_entity(self, entity, *args, **kwargs):
         """ Process the given entity.
         """
         self._root._process_entity_count += 1
-        #print('process', entity)
+        logger.debug('process %s' % entity)
         # Process and turn result into a tuple if necessary
         result = self._process_entity(entity, *args)
         if result is None:

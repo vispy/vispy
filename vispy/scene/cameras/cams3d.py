@@ -12,7 +12,7 @@ import math
 import numpy as np
 
 from ..base import Camera
-from ...util import transforms
+from ...util import transforms, logger
 
 
 class ThreeDCamera(Camera):
@@ -66,7 +66,7 @@ class ThreeDCamera(Camera):
                 self._view_el = -90
             if self._view_el > 90:
                 self._view_el = 90
-            #print(self._view_az, self._view_el)
+            logger.debug('(Az %s, El %s)' % (self._view_az, self._view_el))
 
             # Init matrix
             M = np.eye(4)

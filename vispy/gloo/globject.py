@@ -5,7 +5,7 @@
 """ Definition of the base class for all gloo objects.
 """
 
-from .. import config
+from ..util import logger
 
 
 class GLObject(object):
@@ -90,8 +90,7 @@ class GLObject(object):
         try:
             self.delete()
         except Exception as err:
-            if config['show_warnings']:
-                print('Error deleting %r: %s' % (self, err))
+            logger.warn('Error deleting %r: %s' % (self, err))
 
     def delete(self):
         """ Delete the object from OpenGl memory. """

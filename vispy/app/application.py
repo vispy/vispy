@@ -15,6 +15,7 @@ from. import backends
 from .backends import BACKENDS, BACKENDMAP, ATTEMPTED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
+from ..util import logger
 
 
 class Application(object):
@@ -151,7 +152,8 @@ class Application(object):
             try:
                 name, module_name, native_module_name = BACKENDMAP[key]
             except KeyError:
-                print('This should not happen, unknown backend: "".' % key)
+                logger.warn('This should not happen, unknown backend: "".'
+                            % key)
                 continue
             # Try to import it ...
 
@@ -169,7 +171,7 @@ class Application(object):
                 if not try_others:
                     raise RuntimeError(msg)
                 else:
-                    print(msg)
+                    logger.info(msg)
             else:
                 # Success!
                 self._backend_module = getattr(backends, module_name)

@@ -15,7 +15,7 @@ import OpenGL.GL.framebufferobjects as FBO
 
 from . import _GL_ENUM
 from . import _desktop, _desktop_ext
-from ... import config
+from ...util import logger
 
 # Prepare namespace with constants and ext
 from ._constants import *  # noqa
@@ -30,7 +30,7 @@ def _make_unavailable_func(funcname):
 
 def _get_function_from_pyopengl(funcname):
     """ Try getting the given function from PyOpenGL, return
-    a dummy function (that prints a warning when called) if it
+    a dummy function (that shows a warning when called) if it
     could not be found.
     """
     func = None
@@ -52,11 +52,9 @@ def _get_function_from_pyopengl(funcname):
                     pass
 
     # Set dummy function if we could not find it
-    show_warnings = config['show_warnings']
     if func is None:
         func = _make_unavailable_func(funcname)
-        if True or show_warnings:
-            print('warning: %s not available' % funcname)
+        logger.warn('warning: %s not available' % funcname)
     return func
 
 
@@ -152,8 +150,8 @@ def glShaderSource_compat(handle, code):
     for line in code.splitlines():
         if line.startswith('#version'):
             write_version = False
-            print('For compatibility accross different GL backends, ' +
-                  'avoid using the #version pragma.')
+            logger.warn('For compatibility accross different GL backends, ' +
+                        'avoid using the #version pragma.')
     if write_version:
         code = '#version 120\n#line 0\n' + code
 
