@@ -69,13 +69,20 @@ class LineVisual(object):
             variables['input_xyz_pos'] = self.vbo
             partial = inp_func.bind('local_position', attributes={'xyz_pos': 'input_xyz_pos'})
             
-        transform = self.transform.GLSL_map
+        # get function source code for transform
+        transform_code = self.transform.GLSL_map
+        if not isinstance(transform_code, basestring):
+            transform_code = transform_code.code
+            
+        # get attribute bindings with the name we need
         tr_partial, tr_vars = self.transform.bind_map('map_local_to_nd')
+        
+        # set program variables required by transform
         variables.update(tr_vars)
         
         vshader = "\n\n".join([vertex_shader, 
                                inp_func.code, partial,
-                               transform.code, tr_partial,])
+                               transform_code, tr_partial,])
 
         self.program = gloo.Program(vshader, fragment_shader)
         for k,v in variables.items():

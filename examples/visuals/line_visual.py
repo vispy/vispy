@@ -6,7 +6,7 @@ import vispy.app
 import vispy.gloo as gloo
 from vispy.gloo import gl
 from vispy.visuals.line import LineVisual
-from vispy.visuals.transforms import STTransform
+from vispy.visuals.transforms import STTransform, TransformChain
 
 # vertex positions of rectangle to draw
 N = 20
@@ -21,7 +21,7 @@ class Canvas(vispy.app.Canvas):
     def __init__(self):
         self.line1 = LineVisual(pos)
         self.line2 = LineVisual(pos)
-        self.line2.transform = STTransform(scale=(1, 0.1, 1))
+        self.line2.transform = TransformChain([STTransform(scale=(1, 0.1, 1)), STTransform(translate=(0.1, 0.4, 0))])
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)

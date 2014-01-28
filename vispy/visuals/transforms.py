@@ -7,7 +7,7 @@ from __future__ import print_function, division, absolute_import
 import numpy as np
 from ..shaders.composite import ShaderFunction
 
-
+## TODO: binding should be handled by ShaderFunction? Or perhaps some other type?
 class Transform(object):
     """
     Transform is a base class that defines a pair of complementary 
@@ -15,8 +15,6 @@ class Transform(object):
     """
     GLSL_map = None  # Must be ShaderFunction instance
     GLSL_imap = None
-    dim_in = 3
-    dim_out = 3
     
     def map(self, obj):
         raise NotImplementedError()
@@ -70,6 +68,77 @@ class Transform(object):
         code = function.bind(name, uniforms=uniforms)
         
         return code, values
+
+
+## TODO: this should inherit from FunctionChain
+class TransformChain(Transform):
+    """
+    Sequential chain of Transforms.
+    
+    """
+    GLSL_map = ""
+    GLSL_imap = ""
+    
+    def __init__(self, transforms=None):
+        super(TransformChain, self).__init__()
+        if transforms is None:
+            transforms = []
+        self.transforms = transforms
+        
+    @property
+    def transforms(self):
+        return self._transforms
+    
+    @transforms.setter
+    def transforms(self, tr):
+        #if self._enabled:
+            #raise RuntimeError("Shader is already enabled; cannot modify.")
+        if not isinstance(tr, list):
+            raise TypeError("Transform chain must be a list")
+        self._transforms = tr
+        
+    def map(self, obj):
+        for tr in self.transforms:
+            obj = tr.map(obj)
+        return obj
+
+    def imap(self, obj):
+        for tr in self.transforms[::-1]:
+            obj = tr.imap(obj)
+        return obj
+
+    def _bind(self, name, var_prefix, imap):
+        code = "vec4 %s(vec4 pos) {\n" % name
+        bindings = []
+        variables = {}
+        if imap:
+            transforms = self.transforms[::-1]
+        else:
+            transforms = self.transforms
+        
+        for i,tr in enumerate(transforms):
+            tr_name = '%s_%s_%d' % (name, type(tr).__name__, i)
+            if imap:
+                tr_code, tr_vars = tr.bind_imap(tr_name)
+            else:
+                tr_code, tr_vars = tr.bind_map(tr_name)
+            bindings.append(tr_code)
+            variables.update(tr_vars)
+            code += "    pos = %s(pos);\n" % tr_name
+        code += "    return pos;\n}\n"
+        
+        code = "\n".join(bindings) + "\n\n" + code
+        
+        return code, variables
+            
+    ## TODO: this should be handled by component deps instead.
+    @property
+    def GLSL_map(self):
+        trcode = {tr.GLSL_map.name:tr.GLSL_map.code for tr in self.transforms}
+        return "\n".join(trcode.values())
+
+
+
 
 
 class NullTransform(Transform):
