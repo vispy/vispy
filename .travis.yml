@@ -75,8 +75,9 @@ script:
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - cd ${SRC_DIR}
     # Don't run on 2.6 because it has some silly (unimportant) error
+    # Note that flake8 settings are alsoin
     - if [ "${PYTHON}" != "2.6" ]; then
-        flake8 --exclude=six.py,_py24_ordereddict.py vispy examples;
+        make flake;
       fi;
 
 after_success:

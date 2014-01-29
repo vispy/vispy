@@ -47,7 +47,6 @@ def _test_application(backend):
         assert_true(canvas.native)
         print(canvas.size >= (1, 1))
         canvas.resize(90, 90)
-        assert_true(canvas.position >= (0, 0))
         canvas.move(1, 1)
         assert_equal(canvas.title, 'me')
         canvas.title = 'you'
@@ -61,7 +60,8 @@ def _test_application(backend):
         # screenshots
         ss = _screenshot()
         assert_array_equal(ss.shape[2], 3)  # XXX other dimensions not correct?
-        assert_array_equal(canvas._backend._vispy_get_geometry()[2:], canvas.size)
+        assert_array_equal(canvas._backend._vispy_get_geometry()[2:],
+                           canvas.size)
 
         # GLOO: should have an OpenGL context already, so these should work
         vert = VertexShader("void main (void) {gl_Position = pos;}")

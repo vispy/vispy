@@ -65,7 +65,7 @@ for line in open(initFile).readlines():
 setup(
     name=name,
     version=__version__,
-    author='Vispy contributers',
+    author='Vispy contributors',
     author_email='vispy@googlegroups.com',
     license='(new) BSD',
     url='http://vispy.org',
@@ -97,7 +97,7 @@ setup(
     package_dir={
         'vispy': 'vispy'},
     package_data={
-        'vispy': ['data/*']},
+        'vispy': ['data/*', 'setup.cfg', 'Makefile', '.coveragerc']},
     zip_safe=False,
     classifiers=[
         'Development Status :: 3 - Alpha',
