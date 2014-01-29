@@ -266,28 +266,18 @@ class CanvasBackend(BaseCanvasBackend):
             # Mouse click event
             button = BUTTONMAP.get(button, 0)
             if action == 'press':
-                self._vispy_mouse_press(
-                    pos=(
-                        x,
-                        y),
-                    button=button,
-                    modifiers=mod)
+                self._vispy_mouse_press(pos=(x, y), button=button,
+                                        modifiers=mod)
             else:
-                self._vispy_mouse_release(
-                    pos=(
-                        x,
-                        y),
-                    button=button,
-                    modifiers=mod)
+                self._vispy_mouse_release(pos=(x, y), button=button,
+                                          modifiers=mod)
 
         elif button in (3, 4):
             # Wheel event
             deltay = 1.0 if button == 3 else -1.0
-            self._vispy_canvas.events.mouse_wheel(
-                pos=(x, y),
-                delta=(0.0, deltay),
-                modifiers=mod,
-            )
+            self._vispy_canvas.events.mouse_wheel(pos=(x, y),
+                                                  delta=(0.0, deltay),
+                                                  modifiers=mod)
 
     def on_mouse_motion(self, x, y):
         if self._vispy_canvas is None:
@@ -299,19 +289,13 @@ class CanvasBackend(BaseCanvasBackend):
 
     def on_key_press(self, key, x, y):
         key, text = self._process_key(key)
-        self._vispy_canvas.events.key_press(
-            key=key,
-            text=text,
-            modifiers=self._modifiers(),
-        )
+        self._vispy_canvas.events.key_press(key=key, text=text,
+                                            modifiers=self._modifiers())
 
     def on_key_release(self, key, x, y):
         key, text = self._process_key(key)
-        self._vispy_canvas.events.key_release(
-            key=key,
-            text=text,
-            modifiers=self._modifiers()
-        )
+        self._vispy_canvas.events.key_release(key=key, text=text,
+                                              modifiers=self._modifiers())
 
     def _process_key(self, key):
         if key in KEYMAP:

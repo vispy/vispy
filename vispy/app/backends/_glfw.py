@@ -95,6 +95,9 @@ def _get_glfw_windows(check=False):
     return wins
 
 
+_do_draw = False
+
+
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
@@ -115,8 +118,11 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_run(self):
         win = _get_glfw_windows(check=True)[0]
-        while not glfw.glfwWindowShouldClose(win._id):
-            glfw.glfwWaitEvents()
+        global _do_draw
+        while win._id is not None and not glfw.glfwWindowShouldClose(win._id):
+            if _do_draw:
+                win._on_draw()
+            glfw.glfwPollEvents()
         # tear down timers
         for timer in self._timers:
             timer._vispy_stop()
@@ -125,7 +131,6 @@ class ApplicationBackend(BaseApplicationBackend):
     def _vispy_quit(self):
         wins = _get_glfw_windows()
         for win in wins:
-            glfw.glfwSetWindowShouldClose(win._id, 1)
             win._vispy_close()
 
     def _vispy_get_native_app(self):
@@ -155,66 +160,94 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSetCursorPosCallback(self._id, self._on_mouse_motion)
         glfw.glfwSetWindowCloseCallback(self._id, self._on_close)
         glfw.glfwSwapInterval(1)  # avoid tearing
-        # glfw.glfwFunc(self.on_)
+        self._vispy_canvas_ = None
+
+    ###########################################################################
+    # Deal with events we get from vispy
+    @property
+    def _vispy_canvas(self):
+        """ The size of canvas/window """
+        return self._vispy_canvas_
+
+    @_vispy_canvas.setter
+    def _vispy_canvas(self, vc):
+        # Init events when the property is set by Canvas
+        self._vispy_canvas_ = vc
+        if vc is not None:
+            self._vispy_canvas.events.initialize()
+        return self._vispy_canvas
 
     def _vispy_set_current(self):
+        if self._id is None:
+            return
         # Make this the current context
         glfw.glfwMakeContextCurrent(self._id)
 
     def _vispy_swap_buffers(self):
+        if self._id is None:
+            return
         # Swap front and back buffer
         glfw.glfwSwapBuffers(self._id)
 
     def _vispy_set_title(self, title):
+        if self._id is None:
+            return
         # Set the window title. Has no effect for widgets
         glfw.glfwSetWindowTitle(self._id, title)
 
     def _vispy_set_size(self, w, h):
+        if self._id is None:
+            return
         # Set size of the widget or window
         glfw.glfwSetWindowSize(self._id, w, h)
 
     def _vispy_set_position(self, x, y):
+        if self._id is None:
+            return
         # Set position of the widget or window. May have no effect for widgets
         glfw.glfwSetWindowPos(self._id, x, y)
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
-        self._on_show(self._id)
+        if self._id is None:
+            return
         if visible:
             glfw.glfwShowWindow(self._id)
         else:
             glfw.glfwHideWindow(self._id)
-        pass
 
     def _vispy_update(self):
-        # Invoke a redraw
-        if self._vispy_canvas is None:
+        # Invoke a redraw, passing it on to the canvas
+        if self._vispy_canvas is None or self._id is None:
             return
-        self._vispy_canvas.events.paint(region=None)
+        # XXX HACKISH SOLUTION
+        global _do_draw
+        _do_draw = True
+        #self._on_draw(self._id)
 
     def _vispy_close(self):
         # Force the window or widget to shut down
         self._vispy_set_visible(False)  # Destroying doesn't hide!
         global ALL_WINDOWS
-        if self in ALL_WINDOWS:
+        if self in ALL_WINDOWS and self._id is not None:
             ALL_WINDOWS.pop(ALL_WINDOWS.index(self))
             glfw.glfwDestroyWindow(self._id)
+            self._id = None
 
     def _vispy_get_size(self):
+        if self._id is None:
+            return
         w, h = glfw.glfwGetWindowSize(self._id)
         return w, h
 
     def _vispy_get_position(self):
+        if self._id is None:
+            return
         x, y = glfw.glfwGetWindowPos(self._id)
         return x, y
 
-    def _on_show(self, _id):
-        if self._vispy_canvas is None:
-            return
-        # Redraw
-        self._vispy_update()
-        self._vispy_canvas.events.initialize()
-
+    ###########################################################################
+    # Notify vispy of events triggered by GLFW
     def _on_resize(self, _id, w, h):
         if self._vispy_canvas is None:
             return
@@ -225,23 +258,28 @@ class CanvasBackend(BaseCanvasBackend):
             return
         self._vispy_canvas.events.close()
 
-    def _on_draw(self, _id):
-        if self._vispy_canvas is None:
+    def _on_draw(self, _id=None):
+        if self._vispy_canvas is None or self._id is None:
             return
-        self._vispy_canvas.events.paint(region=None)
+        self._vispy_canvas.events.paint(region=None)  # (0, 0, w, h))
 
     def _on_mouse_button(self, _id, button, action, mod):
-        if self._vispy_canvas is None:
+        if self._vispy_canvas is None and self._id is not None:
             return
         pos = glfw.glfwGetCursorPos(self._id)
         if button < 3:
             # Mouse click event
             button = BUTTONMAP.get(button, 0)
-            self._vispy_mouse_press(pos=pos, button=button,
-                                    modifiers=self._mod)
+            if action == glfw.GLFW_PRESS:
+                fun = self._vispy_mouse_press
+            elif action == glfw.GLFW_RELEASE:
+                fun = self._vispy_mouse_release
+            else:
+                return
+            fun(pos=pos, button=button, modifiers=self._mod)
 
     def _on_mouse_scroll(self, _id, x_off, y_off):
-        if self._vispy_canvas is None:
+        if self._vispy_canvas is None and self._id is not None:
             return
         pos = glfw.glfwGetCursorPos(self._id)
         delta = (float(x_off), float(y_off))
@@ -251,7 +289,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_mouse_motion(self, _id, x, y):
         if self._vispy_canvas is None:
             return
-        self._vispy_mouse_move(pos=(x, y), modifiers=self._mod)  # XXX
+        self._vispy_mouse_move(pos=(x, y), modifiers=self._mod)
 
     def _on_key_press(self, _id, key, scancode, action, mod):
         if self._vispy_canvas is None:
