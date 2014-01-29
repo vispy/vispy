@@ -6,7 +6,8 @@ from __future__ import print_function, division, absolute_import
 
 import numpy as np
 
-from vispy import gloo
+from .. import gloo
+from ..gloo import gl
 from . import BaseVisual
 from ..shaders.composite import ShaderFunction
 from .transforms import NullTransform
@@ -20,16 +21,25 @@ vec4 local_position(void);
 // system to normalized device coordinates.
 vec4 map_local_to_nd(vec4);
 
+// generic hook for executing code after the vertex position has been set
+void post_hook();
+
 void main(void) {
     vec4 local_pos = local_position();
     vec4 nd_pos = map_local_to_nd(local_pos);
     gl_Position = nd_pos;
+    
+    post_hook();
 }
 """
 
 fragment_shader = """
+// Must return the color for this fragment
+// or discard.
+vec4 frag_color();
+
 void main(void) {
-    gl_FragColor = vec4(1, 1, 1, 1);
+    gl_FragColor = frag_color();
 }
 """    
       
@@ -49,47 +59,125 @@ vec4 v3_to_v4(vec3 xyz_pos) {
 }
 """)
 
+RGBAInputFunc = ShaderFunction("""
+vec4 v4_to_v4(vec4 rgba) {
+    return rgba;
+}
+""")
 
-class LineVisual(object):
-    def __init__(self, pos):
-        self.pos = pos
-        self.program = None
-        self.transform = NullTransform()
+
+class LineVisual(BaseVisual):
+    def __init__(self, pos=None, color=None, width=None):
+        #super(LineVisual, self).__init__()
+        
+        self._opts = {
+            'pos': None,
+            'color': (1, 1, 1, 1),
+            'width': 1,
+            'transform': NullTransform(),
+            }
+        
+        self._program = None
+        self._vbo = None
+        
+        self.set_data(pos=pos, color=color, width=width)
+
+    @property
+    def transform(self):
+        return self._opts['transform']
+    
+    @transform.setter
+    def transform(self, tr):
+        self._opts['transform'] = tr
+
+    def set_data(self, pos=None, color=None, width=None):
+        """
+        Keyword arguments:
+        pos     (N, 2-3) array
+        color   (3-4) or (N, 3-4) array
+        width   scalar or (N,) array
+        """
+        if pos is not None:
+            self._opts['pos'] = pos
+        if color is not None:
+            self._opts['color'] = color
+        if width is not None:
+            self._opts['width'] = width
         
     def build_program(self):
-        self.vbo = gloo.VertexBuffer(self.pos)
+        
+        # Construct complete data array with position and optionally color
+        pos = self._opts['pos']
+        typ = [('pos', np.float32, pos.shape[-1])]
+        color = self._opts['color']
+        color_is_array = isinstance(color, np.ndarray) and color.ndim > 1
+        if color_is_array:
+            typ.append(('color', np.float32, self._opts['color'].shape[-1]))
+        self._data = np.empty(pos.shape[:-1], typ)
+        self._data['pos'] = pos
+        if color_is_array:
+            self._data['color'] = color
+            
+        # convert to vertex buffer
+        self._vbo = gloo.VertexBuffer(self._data)
+        
+        # collect all variables that must be set on the program
         variables = {}
-        if self.pos.shape[-1] == 2:
+        
+        # select the correct function to read in vertex data based on position array shape
+        if pos.shape[-1] == 2:
             inp_func = XYInputFunc
-            variables['input_xy_pos'] = self.vbo
+            variables['input_xy_pos'] = self._vbo['pos']
             variables['input_z_pos'] = 0.0
             partial = inp_func.bind('local_position', attributes={'xy_pos': 'input_xy_pos'}, uniforms={'z_pos': 'input_z_pos'})
         else:
             inp_func = XYZInputFunc
-            variables['input_xyz_pos'] = self.vbo
+            variables['input_xyz_pos'] = self._vbo
             partial = inp_func.bind('local_position', attributes={'xyz_pos': 'input_xyz_pos'})
             
-        # get attribute bindings with the name we need
+        # get code and variables needed for transformation fucntions
         tr_partial, tr_vars, tr_defs = self.transform.bind_map('map_local_to_nd')
         transform_code = "\n".join(tr_defs.values())
+        
+        # get code and variables needed for fragment coloring
+        if color_is_array:
+            color_partial = RGBAInputFunc.bind('frag_color', varyings={'rgba': 'input_color_var'})
+            variables['input_color'] = self._vbo['color']
+            v_post_hook = """
+            attribute vec4 input_color;
+            varying vec4 input_color_var;
+            void post_hook(void) {
+                input_color_var = input_color;
+            }"""
+        else:
+            color_partial = RGBAInputFunc.bind('frag_color', uniforms={'rgba': 'input_color'})
+            variables['input_color'] = np.array(color)
+            v_post_hook = """
+            void post_hook() {}
+            """
         
         # set program variables required by transform
         variables.update(tr_vars)
         
         vshader = "\n\n".join([vertex_shader, 
                                inp_func.code, partial,
-                               transform_code, tr_partial,])
+                               transform_code, tr_partial,
+                               v_post_hook])
 
-        self.program = gloo.Program(vshader, fragment_shader)
+        fshader = "\n\n".join([fragment_shader, 
+                               RGBAInputFunc.code,
+                               color_partial])
+
+        self._program = gloo.Program(vshader, fshader)
         for k,v in variables.items():
-            self.program[k] = v
+            self._program[k] = v
         
         
     def draw(self):
-        if self.program is None:
+        if self._program is None:
             self.build_program()
             
-        self.program.draw('LINE_STRIP')
+        self._program.draw('LINE_STRIP')
 
 
 
@@ -273,7 +361,7 @@ class LineVisual(object):
         #if isinstance(self._opts['color'], np.ndarray):
             #self._data['color'] = self._opts['color']
         
-        #self.vbo = VertexBuffer(self._data)
+        #self._vbo = VertexBuffer(self._data)
 
     #def _generate_program(self):
         #if self._opts['pos'].shape[-1] == 2:
@@ -320,7 +408,7 @@ class LineVisual(object):
         #if self._program is None:
             #self._generate_program()
         
-        #self._program.attributes['in_position'] = self.vbo['pos']
+        #self._program.attributes['in_position'] = self._vbo['pos']
         #if self._opts['pos'].shape[-1] == 2:
             #self._program.uniforms['in_z_position'] = 1.0
 
@@ -328,9 +416,9 @@ class LineVisual(object):
             #self._program.uniforms['in_color'] = self._opts['color']
         #elif self._opts['color'].shape[-1] == 3:
             #self._program.uniforms['in_alpha'] = 1.0;
-            #self._program.attributes['in_color'] = self.vbo['color']
+            #self._program.attributes['in_color'] = self._vbo['color']
         #else:
-            #self._program.attributes['in_color'] = self.vbo['color']
+            #self._program.attributes['in_color'] = self._vbo['color']
                 
         #self._program.draw(gl.GL_LINE_STRIP)
         

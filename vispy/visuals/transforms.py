@@ -273,7 +273,6 @@ class AffineTransform(Transform):
         tr[3, :len(pos)] = pos
         self.matrix = np.dot(tr, self.matrix)
         #self.matrix = transforms.translate(self.matrix, *pos)
-        print(self.matrix)
         self._inv_matrix = None
         
     def scale(self, scale):
@@ -282,13 +281,11 @@ class AffineTransform(Transform):
             tr[i,i] = s
         self.matrix = np.dot(tr, self.matrix)
         #self.matrix = transforms.scale(self.matrix, *scale)
-        print(self.matrix)
         self._inv_matrix = None
 
     def rotate(self, angle, axis):
         tr = transforms.rotate(np.eye(4), angle, *axis)
         self.matrix = np.dot(tr, self.matrix)
-        print(self.matrix)
         self._inv_matrix = None
 
     def reset(self):

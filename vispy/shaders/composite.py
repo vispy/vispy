@@ -22,7 +22,7 @@ class ShaderFunction:
         self._arg_types = dict([(a[1], a[0]) for a in self.args])
         
                     
-    def bind(self, name, attributes=None, uniforms=None):
+    def bind(self, name, attributes=None, uniforms=None, varyings=None):
         """
         Return GLSL code for a new function with *name* that replaces
         some of the arguments to the original function with attributes or
@@ -61,6 +61,7 @@ class ShaderFunction:
         """
         attributes = {} if attributes is None else attributes
         uniforms = {} if uniforms is None else uniforms
+        varyings = {} if varyings is None else varyings
         
         code = ""
         
@@ -71,10 +72,13 @@ class ShaderFunction:
         for arg, uni in uniforms.items():
             typ = self._arg_types[arg]
             code += "uniform %s %s;\n" % (typ, uni)
+        for arg, var in varyings.items():
+            typ = self._arg_types[arg]
+            code += "varying %s %s;\n" % (typ, var)
         code += "\n"
         
         # new function signature
-        arg_defs = ["%s %s" % x for x in self.args[:] if x[1] not in attributes and x[1] not in uniforms]
+        arg_defs = ["%s %s" % x for x in self.args[:] if x[1] not in attributes and x[1] not in uniforms and x[1] not in varyings]
         new_sig = ", ".join(arg_defs)
         code += "%s %s(%s) {\n" % (self.rtype, name, new_sig)
         
@@ -85,6 +89,8 @@ class ShaderFunction:
                 args.append(attributes[argname])
             elif argname in uniforms:
                 args.append(uniforms[argname])
+            elif argname in varyings:
+                args.append(varyings[argname])
             else:
                 args.append(argname)
         code += "    return %s(%s);\n" % (self.name, ", ".join(args))
