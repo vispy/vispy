@@ -14,6 +14,8 @@ vispy backend for glfw.
 # $ sudo make install
 # $ sudo apt-get -qq install libx11-dev
 
+# On OSX, consider using brew.
+
 from __future__ import division
 
 from threading import Timer
@@ -79,29 +81,54 @@ BUTTONMAP = {glfw.GLFW_MOUSE_BUTTON_LEFT: 1,
 ALL_WINDOWS = []
 
 
+MOD_KEYS = [keys.SHIFT, keys.ALT, keys.CONTROL, keys.META]
+
+
+def _get_glfw_windows(check=False):
+    wins = list()
+    global ALL_WINDOWS
+    for win in ALL_WINDOWS:
+        if isinstance(win, CanvasBackend):
+            wins.append(win)
+    if check and len(wins) != 1:
+        raise RuntimeError('Can only use a single window')
+    return wins
+
+
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
+        self._timers = list()
+
+    def _add_timer(self, timer):
+        if timer not in self._timers:
+            self._timers.append(timer)
 
     def _vispy_get_backend_name(self):
         return 'Glfw'
 
     def _vispy_process_events(self):
-        self._vispy_get_native_app()  # Force exist
-        pass  # not possible?
-        #return glfw.glfwPollEvents(self._id)  # XXX CHECK?
+        wins = _get_glfw_windows()
+        for win in wins:
+            glfw.glfwPollEvents(win._id)
 
     def _vispy_run(self):
-        self._vispy_get_native_app()  # Force exist
-        #return glfw.glfwWaitEvents(self._id)  # XXX does this work?
+        win = _get_glfw_windows(check=True)[0]
+        while not glfw.glfwWindowShouldClose(win._id):
+            glfw.glfwWaitEvents()
+        # tear down timers
+        for timer in self._timers:
+            timer._vispy_stop()
+        win._vispy_close()
 
     def _vispy_quit(self):
-        #glfw.glfwTerminate()  # XXX this can cause breakages?
-        pass
+        wins = _get_glfw_windows()
+        for win in wins:
+            glfw.glfwSetWindowShouldClose(win._id, 1)
+            win._vispy_close()
 
     def _vispy_get_native_app(self):
-        glfw.glfwInit()
         return glfw
 
 
@@ -111,20 +138,22 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, name='glut window', *args, **kwargs):
         BaseCanvasBackend.__init__(self)
+        glfw.glfwInit()
         self._id = glfw.glfwCreateWindow(title=name)
         glfw.glfwMakeContextCurrent(self._id)
+        glfw.glfwHideWindow(self._id)  # Start hidden, like the other backends
         global ALL_WINDOWS
         ALL_WINDOWS.append(self)
-
-        glfw.glfwHideWindow(self._id)  # Start hidden, like the other backends
+        self._mod = list()
 
         # Register callbacks
-        glfw.glfwSetWindowRefreshCallback(self._id, self.on_draw)
-        glfw.glfwSetWindowSizeCallback(self._id, self.on_resize)
-        glfw.glfwSetKeyCallback(self._id, self.on_key_press)
-        glfw.glfwSetMouseButtonCallback(self._id, self.on_mouse_action)
-        glfw.glfwSetCursorPosCallback(self._id, self.on_mouse_motion)
-        glfw.glfwSetWindowCloseCallback(self._id, self.on_close)
+        glfw.glfwSetWindowRefreshCallback(self._id, self._on_draw)
+        glfw.glfwSetWindowSizeCallback(self._id, self._on_resize)
+        glfw.glfwSetKeyCallback(self._id, self._on_key_press)
+        glfw.glfwSetMouseButtonCallback(self._id, self._on_mouse_button)
+        glfw.glfwSetScrollCallback(self._id, self._on_mouse_scroll)
+        glfw.glfwSetCursorPosCallback(self._id, self._on_mouse_motion)
+        glfw.glfwSetWindowCloseCallback(self._id, self._on_close)
         glfw.glfwSwapInterval(1)  # avoid tearing
         # glfw.glfwFunc(self.on_)
 
@@ -150,6 +179,7 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
+        self._on_show(self._id)
         if visible:
             glfw.glfwShowWindow(self._id)
         else:
@@ -165,7 +195,10 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_close(self):
         # Force the window or widget to shut down
         self._vispy_set_visible(False)  # Destroying doesn't hide!
-        glfw.glfwDestroyWindow(self._id)
+        global ALL_WINDOWS
+        if self in ALL_WINDOWS:
+            ALL_WINDOWS.pop(ALL_WINDOWS.index(self))
+            glfw.glfwDestroyWindow(self._id)
 
     def _vispy_get_size(self):
         w, h = glfw.glfwGetWindowSize(self._id)
@@ -175,89 +208,99 @@ class CanvasBackend(BaseCanvasBackend):
         x, y = glfw.glfwGetWindowPos(self._id)
         return x, y
 
-    def on_show(self, _id):
-        if self._vispy_canvas is None or _id != self._id:
+    def _on_show(self, _id):
+        if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.initialize()
         # Redraw
         self._vispy_update()
+        self._vispy_canvas.events.initialize()
 
-    def on_resize(self, _id, w, h):
-        if self._vispy_canvas is None or _id != self._id:
+    def _on_resize(self, _id, w, h):
+        if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.resize(size=(w, h))
 
-    def on_close(self, _id):
-        if self._vispy_canvas is None or _id != self._id:
+    def _on_close(self, _id):
+        if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.close()
 
-    def on_draw(self, _id):
-        if self._vispy_canvas is None or _id != self._id:
+    def _on_draw(self, _id):
+        if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.paint(region=None)
 
-    def on_mouse_action(self, _id, button, action, mod):
-        if self._vispy_canvas is None or _id != self._id:
+    def _on_mouse_button(self, _id, button, action, mod):
+        if self._vispy_canvas is None:
             return
-        pos = glfw.glfwGetCursorPos()
-        mod = self._process_mod(mod)
+        pos = glfw.glfwGetCursorPos(self._id)
         if button < 3:
             # Mouse click event
             button = BUTTONMAP.get(button, 0)
             self._vispy_mouse_press(pos=pos, button=button,
-                                    modifiers=mod)
-        elif button in (3, 4):
-            # Wheel event
-            deltay = 1.0 if button == 3 else -1.0
-            self._vispy_canvas.events.mouse_wheel(pos=pos, delta=(0.0, deltay),
-                                                  modifiers=mod)
+                                    modifiers=self._mod)
 
-    def on_mouse_motion(self, _id, x, y):
-        if self._vispy_canvas is None or _id != self._id:
+    def _on_mouse_scroll(self, _id, x_off, y_off):
+        if self._vispy_canvas is None:
             return
-        self._vispy_mouse_move(pos=(x, y), modifiers=None)  # XXX
+        pos = glfw.glfwGetCursorPos(self._id)
+        delta = (float(x_off), float(y_off))
+        self._vispy_canvas.events.mouse_wheel(pos=pos, delta=delta,
+                                              modifiers=self._mod)
 
-    def on_key_press(self, _id, key, scancode, action, mod):
-        if self._vispy_canvas is None or _id != self._id:
+    def _on_mouse_motion(self, _id, x, y):
+        if self._vispy_canvas is None:
+            return
+        self._vispy_mouse_move(pos=(x, y), modifiers=self._mod)  # XXX
+
+    def _on_key_press(self, _id, key, scancode, action, mod):
+        if self._vispy_canvas is None:
             return
         key, text = self._process_key(key)
         if action == glfw.GLFW_PRESS:
             fun = self._vispy_canvas.events.key_press
+            down = True
         elif action == glfw.GLFW_RELEASE:
             fun = self._vispy_canvas.events.key_release
+            down = False
         else:
             return
-        fun(key=key, text=text, modifiers=self._process_mod(mod))
+        self._process_mod(key, down=down)
+        fun(key=key, text=text, modifiers=self._mod)
 
     def _process_key(self, key):
         if key in KEYMAP:
-            if isinstance(key, int):
-                return KEYMAP[key], ''
-            else:
-                return KEYMAP[key], key
-        elif isinstance(key, int):
-            return None, ''  # unsupported special char
+            return KEYMAP[key], ''
+        elif 32 <= key <= 127:
+            return keys.Key(chr(key)), chr(key)
         else:
-            return keys.Key(key.upper()), key
+            return None, ''
 
-    def _process_mod(self, glfw_mod):
-        mod = ()
-        if glfw.GLFW_MOD_SHIFT & glfw_mod:
-            mod += keys.SHIFT
-        if glfw.GLFW_MOD_CONTRAL & glfw_mod:
-            mod += keys.CONTROL
-        if glfw.GLFW_MOD_ALT & glfw_mod:
-            mod += keys.ALT
-        return mod
+    def _process_mod(self, key, down):
+        """Process (possible) keyboard modifiers
+
+        GLFW provides "mod" with many callbacks, but not (critically) the
+        scroll callback, so we keep track on our own here.
+        """
+        if key in MOD_KEYS:
+            if down:
+                if key not in self._mod:
+                    self._mod.append(key)
+            elif key in self._mod:
+                self._mod.pop(self._mod.index(key))
+        return self._mod
 
 
 class TimerBackend(BaseTimerBackend):
 
+    def __init__(self, vispy_timer):
+        BaseTimerBackend.__init__(self, vispy_timer)
+        # tell application instance about existence
+        vispy_timer._app._backend._add_timer(self)
+
     def _vispy_start(self, interval):
         self._timer = None
         self.interval = interval
-        self.function = self._vispy_timer._timeout
         self.is_running = False
         self._start()
 
@@ -268,7 +311,7 @@ class TimerBackend(BaseTimerBackend):
     def _run(self):
         self.is_running = False
         self._start()
-        self.function()
+        self._vispy_timer._timeout()
 
     def _start(self):
         if not self.is_running:

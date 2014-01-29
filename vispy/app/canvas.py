@@ -95,7 +95,7 @@ class Canvas(object):
             # Make sure that the app is active
             self._app.use()
             self._app.native
-            # Instantiate the backed with the right class
+            # Instantiate the backend with the right class
             self._set_backend(
                 self._app.backend_module.CanvasBackend(*self._native_args,
                                                        **self._native_kwargs))

@@ -38,6 +38,7 @@ import os
 import ctypes.util
 from ctypes import (Structure, POINTER, CFUNCTYPE, byref, c_char_p, c_int,
                     c_uint, c_double, c_float, c_ushort)
+from ...util._logging import logger  # noqa
 
 
 _glfw_file = None
@@ -474,7 +475,8 @@ __c_callbacks__ = {}
 __py_callbacks__ = {}
 
 
-def glfwCreateWindow(width=640, height=480, title="GLFW Window", monitor=None, share=None):
+def glfwCreateWindow(width=640, height=480, title="GLFW Window",
+                     monitor=None, share=None):
     _glfw.glfwCreateWindow.restype = POINTER(GLFWwindow)
     window = _glfw.glfwCreateWindow(width,height,title,monitor,share)
     __windows__.append(window)
@@ -616,7 +618,7 @@ def __callback__(name):
 def %(callback)s(window, callback = None):
     index = __windows__.index(window)
     old_callback = __py_callbacks__[index]['%(fun)s']
-    print(old_callback)
+    logger.debug(old_callback)
     __py_callbacks__[index]['%(fun)s'] = callback
     if callback: callback = %(fun)s(callback)
     __c_callbacks__[index]['%(fun)s'] = callback
