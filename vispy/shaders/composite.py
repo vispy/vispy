@@ -269,8 +269,7 @@ class BoundShaderFunction(ShaderFunction):
     @property
     def code(self):
         """
-        The GLSL code that defines this function. Does not include dependencies,
-        program variables, hooks, etc. (see also: generate_code())
+        The GLSL code that defines this function.
         """
         if self._code is None:
             code = self.generate_function_code()
@@ -303,5 +302,44 @@ class BoundShaderFunction(ShaderFunction):
         code += "}\n"
         
         return code
+        
+    
+class ShaderFunctionChain(ShaderFunction):
+    def __init__(self, name, funcs):
+        self._funcs = funcs
+        self._deps = funcs
+        self._code = None
+        self.name = name
+        self.rtype = funcs[-1].rtype
+        self.args = funcs[0].args[:]
+        
+    @property
+    def code(self):
+        """
+        The GLSL code that defines this function.
+        """
+        if self._code is None:
+            code = self.generate_function_code()
+            self.set_code(code)
+        return self._code
+        
+    def generate_function_code(self):
+        
+        args = ", ".join(["%s %s" % arg for arg in self.args])
+        code = "%s %s(%s) {\n" % (self.rtype, self.name, args)
+        
+        if self.rtype == 'void':
+            for fn in self._funcs:
+                code += "    %s();\n" % fn.name
+        else:
+            code += "    return "
+            for fn in self._funcs[::-1]:
+                code += "%s(\n           " % fn.name
+            code += "    %s%s;\n" % (self.args[0][1], ')'*len(self._funcs))
+        
+        code += "}\n"
+        
+        return code
+        
         
     
