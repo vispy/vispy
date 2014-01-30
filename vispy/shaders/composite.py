@@ -264,6 +264,7 @@ class BoundShaderFunction(ShaderFunction):
         self._bound_arguments = bound_args
         ShaderFunction.__init__(self)
         self._deps.append(self._parent)
+        self.set_code(self.generate_function_code())
 
     @property
     def code(self):

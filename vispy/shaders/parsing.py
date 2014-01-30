@@ -8,7 +8,7 @@ import re
 
 # regular expressions for parsing GLSL
 re_type = r'(void|int|float|vec2|vec3|vec4|mat2|mat3|mat4)'
-re_identifier = r'([\w_]+)'
+re_identifier = r'([a-zA-Z_][\w_]*)'
 re_declaration = "(?:" + re_type + "\s+" + re_identifier + ")"
 re_decl_list = "(" + re_declaration + "(?:,\s*" + re_declaration + ")*)?"
 re_func_decl = re_type + "\s+" + re_identifier + "\(" + re_decl_list + "\)"
@@ -19,7 +19,7 @@ def parse_function_signature(code):
     Return the name, arguments, and return type of the first function 
     definition found in *code*. Arguments are returned as [(type, name), ...].
     """
-    m = re.match("\s*" + re_func_decl + "\s*{", code, re.M)
+    m = re.search("^\s*" + re_func_decl + "\s*{", code, re.M)
     if m is None:
         print(code)
         raise Exception("Failed to parse function signature. Full code is printed above.")
