@@ -176,7 +176,3 @@ class ProgramTest(unittest.TestCase):
         program.set_vars(arr)
         assert_raises(TypeError, program.set_vars, 'hello')
         program.set_vars(dict(color=arr, fake=arr))
-
-
-if __name__ == "__main__":
-    unittest.main()

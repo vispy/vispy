@@ -468,17 +468,3 @@ class TestEmitters(unittest.TestCase):
                 attr = event_attrs[name]
                 assert (attr == val), "Event.%s != %s  (%s)" % (
                     name, str(val), str(attr))
-
-
-
-# if __name__ == '__main__':
-    #import sys
-    #test = EventTest()
-
-    # for name in [n for n in dir(test) if n.endswith('_test')]:
-        # try:
-            #getattr(test, name)()
-            # print name, 'OK'
-        # except:
-            # sys.excepthook(*sys.exc_info())
-            # print name, 'FAILED'

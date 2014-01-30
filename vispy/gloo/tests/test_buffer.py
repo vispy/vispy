@@ -386,7 +386,3 @@ class ElementBufferTest(unittest.TestCase):
         self.assertTrue(b._activate() is None)
         self.assertTrue(b._deactivate() is None)
         self.assertTrue(b._update() is None)
-
-
-if __name__ == "__main__":
-    unittest.main()

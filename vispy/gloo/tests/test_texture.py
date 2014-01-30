@@ -250,10 +250,3 @@ def test_convert_data():
     assert_equal(convert_data(1e5 * np.ones(10, dtype=np.float64)).max(), 1e5)
     assert_equal(convert_data(np.zeros(10, dtype=np.int32)).max(), 0.5)
     assert_equal(convert_data(np.zeros(10, dtype=np.uint32)).max(), 0.0)
-
-
-if __name__ == "__main__":
-    unittest.main()
-#     t = Texture2DTest()
-#     t.setUp()
-#     t.test_invalid_shape()
