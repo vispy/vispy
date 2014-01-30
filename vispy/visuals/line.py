@@ -12,6 +12,8 @@ from . import BaseVisual
 from ..shaders.composite import ShaderFunction
 from .transforms import NullTransform
 
+
+
 vertex_shader = """
 // local_position function must return the current vertex position
 // in the Visual's local coordinate system.
