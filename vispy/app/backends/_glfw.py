@@ -123,15 +123,16 @@ class ApplicationBackend(BaseApplicationBackend):
             if _do_draw:
                 win._on_draw()
             glfw.glfwPollEvents()
-        # tear down timers
-        for timer in self._timers:
-            timer._vispy_stop()
-        win._vispy_close()
+        self._vispy_quit()
 
     def _vispy_quit(self):
         wins = _get_glfw_windows()
         for win in wins:
             win._vispy_close()
+        # tear down timers
+        for timer in self._timers:
+            timer._vispy_stop()
+        self._timers = []
 
     def _vispy_get_native_app(self):
         return glfw
