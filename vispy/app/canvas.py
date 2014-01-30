@@ -371,7 +371,8 @@ class MouseEvent(Event):
         event = self
         events = []
         while True:
-            if event is None:
+            # mouse_press events can only be the start of a trail
+            if event is None or event.type == 'mouse_press':
                 break
             events.append(event)
             event = event.last_event
