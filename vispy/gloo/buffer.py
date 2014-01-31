@@ -364,11 +364,6 @@ class DataBuffer(Buffer):
         if not isinstance(data, np.ndarray):
             raise ValueError("Data should be a numpy array.")
 
-        # If data is a structure array with a unique field
-        # we get this unique field as data
-        while data.dtype.fields and len(data.dtype.fields) == 1:
-            data = data[data.dtype.names[0]]
-
         # Get props of the given data
         dtype, vsize, stride, count = self._parse_array(data)
 
@@ -398,11 +393,6 @@ class DataBuffer(Buffer):
         data : np.ndarray
             The data to update.
         """
-
-        # If data is a structure array with a unique field
-        # we get this unique field as data
-        while data.dtype.fields and len(data.dtype.fields) == 1:
-            data = data[data.dtype.names[0]]
 
         # Get props of the given data and check whether it's a match
         dtype, vsize, stride, count = self._parse_array(data)
@@ -580,11 +570,6 @@ class VertexBuffer(DataBuffer):
         """ Return (dtype, vsize, stride, count), given an array.
         """
 
-        # If data is a structure array with a unique field
-        # we get this unique field as data
-        while data.dtype.fields and len(data.dtype.fields) == 1:
-            data = data[data.dtype.names[0]]
-
         # Set dtype, vsize and stride
         dtype, vsize, stride = self._parse_dtype(data.dtype)
 
@@ -629,11 +614,6 @@ class VertexBuffer(DataBuffer):
     def _parse_dtype(self, dtype):
         """ Return (dtype, vsize, stride), given a dtype.
         """
-
-        # If dtype is a structure with a unique field
-        # we get this unique field as dtype
-        while dtype.fields and len(dtype.fields) == 1:
-            dtype = dtype[dtype.names[0]]
 
         # Get base dtype, this will turn ('x', '<f4', 3) into np.float32
         dtype_ = dtype.base
