@@ -5,7 +5,7 @@
 from __future__ import print_function, division, absolute_import
 
 import numpy as np
-from ..shaders.composite import ShaderFunction
+from ..shaders.composite import ShaderFunction, ShaderFunctionChain
 from ..util.ordereddict import OrderedDict
 from ..util import transforms
 
@@ -26,20 +26,8 @@ class Transform(object):
 
     def bind_map(self, name, var_prefix=None):
         """
-        Return a tuple containing:
-        
-        1) Code for a GLSL map function with *name* that accepts only a single
-        input argument and binds all other arguments to program 
-        uniform/attributes. (see ShaderFunction.bind)
-        All uniform/attribute names are prefixed with *var_prefix* to ensure
-        uniqueness. If var_prefix is not given, then *name_* is used instead.
-        
-        2) A dict mapping attribute/uniform names to the values they should
-        be assigned in the program.
-        
-        3) A dict containing function definitions that are required by this 
-        transform; the program constructor should ensure that each function is 
-        only included in the program once.
+        Return a BoundShaderFunction that accepts only a single vec4 argument,
+        with all others bound to new attributes or uniforms.
         """
         if var_prefix is None:
             var_prefix = name + "_"
@@ -61,21 +49,22 @@ class Transform(object):
         
         function = self.GLSL_imap if imap else self.GLSL_map
         
-        # get names of all arguments after the first
-        args = [arg[1] for arg in function.args[1:]]
-        
         # map all extra args to uniforms
-        uniforms = dict([(arg, var_prefix+arg) for arg in args]) 
+        uniforms = {}
+        for arg_type, arg_name in function.args[1:]:
+            uniforms[arg_name] = ('uniform', arg_type, var_prefix+arg_name)
         
-        # assume there is a self.property with the same name
-        values = dict([(var_prefix+arg, getattr(self, arg)) for arg in args])
         
         # bind to a new function + variables
-        code = function.bind(name, uniforms=uniforms)
+        bound = function.bind(name, **uniforms)
         
-        defs = {function.name: function.code}
+        # set uniform values based on properties having same name as 
+        # bound argument
+        for arg_type, arg_name in function.args[1:]:
+            bound[var_prefix+arg_name] = getattr(self, arg_name)
         
-        return code, values, defs
+        
+        return bound
 
 
 ## TODO: this should inherit from FunctionChain
@@ -116,31 +105,22 @@ class TransformChain(Transform):
         return obj
 
     def _bind(self, name, var_prefix, imap):
-        code = "vec4 %s(vec4 pos) {\n" % name
-        bindings = []
-        variables = {}
-        defs = OrderedDict()
         if imap:
             transforms = self.transforms[::-1]
         else:
             transforms = self.transforms
         
+        bindings = []
         for i,tr in enumerate(transforms):
-            tr_name = '%s_%s_%d' % (name, type(tr).__name__, i)
+            
+            tr_name = '%s_%d_%s' % (name, i, type(tr).__name__)
             if imap:
-                tr_code, tr_vars, tr_defs = tr.bind_imap(tr_name)
+                bound = tr.bind_imap(tr_name)
             else:
-                tr_code, tr_vars, tr_defs = tr.bind_map(tr_name)
-            bindings.append(tr_code)
-            variables.update(tr_vars)
-            defs.update(tr_defs)
-            code += "    pos = %s(pos);\n" % tr_name
-        code += "    return pos;\n}\n"
-        
-        code = "\n".join(bindings) + "\n\n" + code
-        
-        
-        return code, variables, defs
+                bound = tr.bind_map(tr_name)
+            bindings.append(bound)
+            
+        return ShaderFunctionChain(name, bindings)
             
 
 

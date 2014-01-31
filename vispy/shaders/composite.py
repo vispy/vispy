@@ -4,7 +4,7 @@
 
 from __future__ import print_function, division, absolute_import
 
-from ..gloo import Program
+from ..gloo import Program, VertexShader, FragmentShader
 from . import parsing
 
 
@@ -58,15 +58,25 @@ class CompositeProgram(Program):
         self._hook_defs = {}
         
         self._find_hooks()
+        
+        self._post_hooks = []
+        
+        # force _update to be called when the program is activated.
+        self._need_update = True
+
+    def add_post_hook(self, function):
+        """
+        Add a new function to be called at the end of the vertex shader.
+        """
+        self._post_hooks.append(function)
 
     def _update(self):
         # generate all code..
-        vcode, fcode = self.generate_code()
+        vcode, fcode = self._generate_code()
         self.attach(VertexShader(vcode), FragmentShader(fcode))
         
         # set all variables..
-        self.vmain.apply_variables(self)
-        self.fmain.apply_variables(self)
+        self._apply_variables()
         
         # and continue.
         super(CompositeProgram, self)._update()
@@ -113,12 +123,24 @@ class CompositeProgram(Program):
         
         self._hook_defs[hook_name] = function
     
-    def generate_code(self):
+    def _generate_code(self):
         vcode = self.vmain
         fcode = self.fmain
         vdeps = set()
         fdeps = set()
         
+        # first, look for FragmentShaderFunctions and add vertex code to the 
+        # post-hook
+        for hook_name, func in self._hook_defs.items():
+            for dep in func.all_deps():
+                if isinstance(dep, FragmentShaderFunction):
+                    self.add_post_hook(dep.vertex_post)
+
+        # Install shader chain for post_hooks
+        post_chain = ShaderFunctionChain('post_hook', self._post_hooks)
+        self.set_hook('post_hook', post_chain)
+
+        # Now add code for all hooks and dependencies in order.
         for hook_name, func in self._hook_defs.items():
             shader, hook_args, hook_rtype = self._hooks[hook_name]
             if shader == 'vertex':
@@ -126,40 +148,45 @@ class CompositeProgram(Program):
                     if dep.name not in vdeps:
                         vcode += dep.code
                         vdeps.add(dep.name)
-                vcode += func.code
+                #vcode += func.code
                 
             elif shader == 'fragment': 
                 for dep in func.all_deps():
                     if dep.name not in fdeps:
                         fcode += dep.code
                         fdeps.add(dep.name)
-                fcode += func.generate_code()
+                #fcode += func.code
                 
             else:
                 raise Exception("Unsupported shader type: %s" % shader)
-            
-        return vcode, fcode
-            
 
-#class CompositeMainFunction:
-    #def __init__(self, code, shader):
-        #"""
-        #*code* is the GLSL source containing the main() definition for this 
-        #shader.
-        #*shader* is 'vertex' or 'fragment'.
-        #"""
-        #self.code = code
-        #self.shader = shader
+        #print ("--vertex------------------------------")
+        #print (vcode)
+        #print ("--fragment------------------------------")
+        #print (fcode)
+        #print ("--------------------------------")
+        return vcode, fcode
+         
+    def _apply_variables(self):
+        """
+        Apply all program variables that are carried by the components of this 
+        program.
+        """
+        for hook_name, func in self._hook_defs.items():
+            for dep in func.all_deps():
+                for name, value in dep._program_values.items():
+                    self[name] = value
         
 
 
-class ShaderFunction:
+class ShaderFunction(object):
     def __init__(self, code=None, name=None, args=None, rtype=None):
         """
         *args* must be a list of ('type', 'name') tuples.        
         """
         self.set_code(code, name, args, rtype)
         self._deps = []
+        self._program_values = {}
         
     @property
     def code(self):
@@ -188,6 +215,7 @@ class ShaderFunction:
             self.name = name
             self.args = args
             self.rtype = rtype
+            
         self._arg_types = dict([(a[1], a[0]) for a in self.args])
 
     def bind(self, name, **kwds):
@@ -246,22 +274,38 @@ class ShaderFunction:
         """
         Set the value of a program variable declared on this function.        
         """
+        self._program_values[var] = value
 
     def all_deps(self):
         """
         Return complete, ordered list of functions required by this function.
+        (including this function)
         """
         deps = []
         for fn in self._deps:
             deps.extend(fn.all_deps())
             deps.append(fn)
+        deps.append(self)
         return deps
+
+
+class FragmentShaderFunction(ShaderFunction):
+    """
+    ShaderFunction meant to be used in fragment shaders when some supporting 
+    code must also be introduced to the vertex shader post-hook, usually to
+    initialize a varying.    
+    """
+    def __init__(self, code, vertex_post):
+        super(FragmentShaderFunction, self).__init__(code)
+        self.vertex_post = vertex_post
+
 
 class BoundShaderFunction(ShaderFunction):
     def __init__(self, parent_function, name, bound_args):
         self._parent = parent_function
         self._name = name
         self._bound_arguments = bound_args
+        
         ShaderFunction.__init__(self)
         self._deps.append(self._parent)
         self.set_code(self.generate_function_code())
@@ -306,12 +350,17 @@ class BoundShaderFunction(ShaderFunction):
     
 class ShaderFunctionChain(ShaderFunction):
     def __init__(self, name, funcs):
+        ShaderFunction.__init__(self)
         self._funcs = funcs
         self._deps = funcs
         self._code = None
         self.name = name
-        self.rtype = funcs[-1].rtype
-        self.args = funcs[0].args[:]
+        if len(funcs) > 0:
+            self.rtype = funcs[-1].rtype
+            self.args = funcs[0].args[:]
+        else:
+            self.rtype = 'void'
+            self.args = []
         
     @property
     def code(self):

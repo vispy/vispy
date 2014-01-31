@@ -9,7 +9,7 @@ import numpy as np
 from .. import gloo
 from ..gloo import gl
 from . import BaseVisual
-from ..shaders.composite import ShaderFunction
+from ..shaders.composite import ShaderFunction, FragmentShaderFunction, CompositeProgram
 from .transforms import NullTransform
 
 
@@ -17,7 +17,7 @@ from .transforms import NullTransform
 vertex_shader = """
 // local_position function must return the current vertex position
 // in the Visual's local coordinate system.
-vec4 local_position(void);  
+vec4 local_position(void);
 
 // mapping function that transforms from the Visual's local coordinate
 // system to normalized device coordinates.
@@ -61,11 +61,17 @@ vec4 v3_to_v4(vec3 xyz_pos) {
 }
 """)
 
-RGBAInputFunc = ShaderFunction("""
+RGBAInputFunc = FragmentShaderFunction("""
 vec4 v4_to_v4(vec4 rgba) {
     return rgba;
 }
-""")
+""", 
+vertex_post=ShaderFunction("""
+attribute vec4 input_color;
+varying vec4 input_color_var;
+void post_hook(void) {
+    input_color_var = input_color;
+}"""))
 
 
 class LineVisual(BaseVisual):
@@ -123,56 +129,59 @@ class LineVisual(BaseVisual):
         # convert to vertex buffer
         self._vbo = gloo.VertexBuffer(self._data)
         
-        # collect all variables that must be set on the program
-        variables = {}
+        
+        self._program = CompositeProgram(vmain=vertex_shader, fmain=fragment_shader)
         
         # select the correct function to read in vertex data based on position array shape
         if pos.shape[-1] == 2:
             inp_func = XYInputFunc
-            variables['input_xy_pos'] = self._vbo['pos']
-            variables['input_z_pos'] = 0.0
-            partial = inp_func.bind('local_position', attributes={'xy_pos': 'input_xy_pos'}, uniforms={'z_pos': 'input_z_pos'})
+            bound_fn = inp_func.bind('local_position', 
+                                     xy_pos=('attribute', 'vec2', 'input_xy_pos'),
+                                     z_pos=('uniform', 'float', 'input_z_pos'))
+            bound_fn['input_xy_pos'] = self._vbo['pos']
+            bound_fn['input_z_pos'] = 0.0
         else:
             inp_func = XYZInputFunc
-            variables['input_xyz_pos'] = self._vbo
-            partial = inp_func.bind('local_position', attributes={'xyz_pos': 'input_xyz_pos'})
+            bound_fn = inp_func.bind('local_position', 
+                                     xyz_pos=('attribute', 'vec3', 'input_xyz_pos'))
+            bound_fn['input_xyz_pos'] = self._vbo
             
+        self._program.set_hook('local_position', bound_fn)
+        
+        
         # get code and variables needed for transformation fucntions
-        tr_partial, tr_vars, tr_defs = self.transform.bind_map('map_local_to_nd')
-        transform_code = "\n".join(tr_defs.values())
+        tr_bound = self.transform.bind_map('map_local_to_nd')
+        self._program.set_hook('map_local_to_nd', tr_bound)
+        
         
         # get code and variables needed for fragment coloring
         if color_is_array:
-            color_partial = RGBAInputFunc.bind('frag_color', varyings={'rgba': 'input_color_var'})
-            variables['input_color'] = self._vbo['color']
-            v_post_hook = """
-            attribute vec4 input_color;
-            varying vec4 input_color_var;
-            void post_hook(void) {
-                input_color_var = input_color;
-            }"""
+            color_bound = RGBAInputFunc.bind('frag_color', 
+                                             rgba=('varying', 'vec4', 'input_color_var'))
+            color_bound['input_color'] = self._vbo['color']
         else:
-            color_partial = RGBAInputFunc.bind('frag_color', uniforms={'rgba': 'input_color'})
-            variables['input_color'] = np.array(color)
-            v_post_hook = """
-            void post_hook() {}
-            """
+            color_bound = RGBAInputFunc.bind('frag_color', 
+                                             rgba=('uniform', 'vec4', 'input_color'))
+            color_bound['input_color'] = np.array(color)
+            
+        self._program.set_hook('frag_color', color_bound)
+
         
         # set program variables required by transform
-        variables.update(tr_vars)
+        #variables.update(tr_vars)
         
-        vshader = "\n\n".join([vertex_shader, 
-                               inp_func.code, partial,
-                               transform_code, tr_partial,
-                               v_post_hook])
+        #vshader = "\n\n".join([vertex_shader, 
+                               #inp_func.code, partial,
+                               #transform_code, tr_partial,
+                               #v_post_hook])
 
-        fshader = "\n\n".join([fragment_shader, 
-                               RGBAInputFunc.code,
-                               color_partial])
-
-        self._program = gloo.Program(vshader, fshader)
-        for k,v in variables.items():
-            self._program[k] = v
+        #fshader = "\n\n".join([fragment_shader, 
+                               #RGBAInputFunc.code,
+                               #color_partial])
+                               
+        #self._program = gloo.Program(vshader, fshader)
+        #for k,v in variables.items():
+            #self._program[k] = v
         
         
     def draw(self):
