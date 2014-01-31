@@ -8,6 +8,10 @@ vispy backend for glut.
 
 from __future__ import division
 
+import sys
+import ctypes
+from OpenGL import platform
+
 import OpenGL.error
 import OpenGL.GLUT as glut
 
@@ -94,10 +98,6 @@ class ApplicationBackend(BaseApplicationBackend):
             win._vispy_close()
 
     def _vispy_get_native_app(self):
-        import sys
-        import ctypes
-        from OpenGL import platform
-
         # HiDPI support for retina display
         # This requires glut from
         # http://iihm.imag.fr/blanch/software/glut-macosx/
