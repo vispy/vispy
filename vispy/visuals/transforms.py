@@ -336,7 +336,34 @@ class LogTransform(Transform):
         return "<LogTransform base=%s>" % (self.base)
 
 class PolarTransform(Transform):
-    pass
+    """
+    Polar transform maps (theta, r, ...) to (x, y, ...)
+    
+    """
+    
+    GLSL_map = ShaderFunction("""
+        vec4 PolarTransform_map(vec4 pos) {
+            return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1);
+        }
+        """)
+
+    def map(self, coords):
+        ret = np.empty(coords.shape, coords.dtype)
+        ret[...,0] = coords[...,1] * np.cos[coords[...,0]]
+        ret[...,1] = coords[...,1] * np.sin[coords[...,0]]
+        for i in range(2, coords.shape[-1]): # copy any further axes
+            ret[...,i] = coords[...,i]
+        return ret
+    
+    def imap(self, coords):
+        ret = np.empty(coords.shape, coords.dtype)
+        ret[...,0] = np.atan2(coords[...,0], np.sin[coords[...,1]])
+        ret[...,1] = (coords[...,0]**2 + coords[...,1]**2) ** 0.5
+        for i in range(2, coords.shape[-1]): # copy any further axes
+            ret[...,i] = coords[...,i]
+        return ret
+            
+    
 
 class BilinearTransform(Transform):
     pass
