@@ -1,26 +1,47 @@
+from ..gloo import gl
 from .. import app
+from .entities import Document
+from ..visuals.transforms import STTransform
 
 class SceneCanvas(app.Canvas):
 
     """ SceneCanvas provides a Canvas that automatically draws the contents
     of a scene.
+    
+    Automatically constructs a Document instance as the root entity.
     """
 
     def __init__(self, *args, **kwargs):
-        root = kwargs.pop('root', None)
         app.Canvas.__init__(self, *args, **kwargs)
-        self._root_entity = root
+        
+        root = Document()
+        root.transform = STTransform()
+        self.root = root
 
     @property
-    def root_entity(self):
+    def root(self):
         """ The root entity of the scene graph to be displayed.
         """
-        return self._root_entity
+        return self._root
     
-    @root_entity.setter
-    def root_entity(self, e):
-        self._root_entity = e
-        self.update()
+    @root.setter
+    def root(self, e):
+        self._root = e
+        self._update_document()
+
+    def _update_document(self):
+        # 1. Set scaling on document such that its local coordinate system 
+        #    represents pixels in the canvas.
+        self.root.transform.scale = (2. / self.size[0], 2. / self.size[1])
+        self.root.transform.translate = (-1, -1)
+        
+        # 2. Set size of document to match the area of the canvas
+        print('set root size')
+        self.root.size = self.size
+
+    def on_resize(self, event):
+        print('resize canvas')
+        self._update_document()
 
     def on_paint(self, event):
         gl.glClearColor(0, 0, 0, 1)
@@ -28,4 +49,4 @@ class SceneCanvas(app.Canvas):
         gl.glViewport(0, 0, *self.size)
 
         # Draw viewbox
-        self._root_entity.paint_tree(canvas=self)
+        self.root.paint_tree(canvas=self)

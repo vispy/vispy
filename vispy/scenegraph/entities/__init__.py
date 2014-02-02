@@ -1,2 +1,2 @@
-from .box import Box
-from .line import Line
+from .box import *
+from .line import *

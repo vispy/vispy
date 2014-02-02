@@ -1,10 +1,12 @@
 from ..entity import Entity
 from ...visuals import LineVisual
 
+__all__ = ['Line']
+
 class Line(Entity):
     """
     """
-    VisualClass = Line
+    VisualClass = LineVisual
     WrapMethods = []
 
     def __init__(self, *args, **kwds):
@@ -14,9 +16,8 @@ class Line(Entity):
         for method in self.WrapMethods:
             setattr(self, method, getattr(self._visual, method))
         
-    def paint(self, canvas, path):
-        tr = self.get_path_transform(path)
-        self._visual.transform = tr
+    def paint(self, canvas):
+        self._visual.transform = self.root_transform()
         self._visual.paint()
 
 

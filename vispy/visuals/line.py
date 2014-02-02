@@ -171,6 +171,7 @@ class LineVisual(BaseVisual):
         if self._program is None:
             self.build_program()
             
+        gl.glLineWidth(self._opts['width'])
         self._program.draw('LINE_STRIP')
 
 

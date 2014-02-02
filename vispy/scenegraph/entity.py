@@ -98,6 +98,15 @@ class Entity(object):
         # Set singleton parent
         self._parent = self._parents[0] if self._parents else None
 
+    def _select_parent(self, parent):
+        """
+        Set the currently active parent for this entity.
+        If None, then this entity is assumed to be the root of
+        the scenegraph until a new parent is selected.
+        """
+        assert parent is None or parent in self._parents
+        self._parent = parent
+    
         # todo: Should we destroy GL objects (because we are removed)
 # from an OpenGL context)?
 # LC: No--only destroy when the visual is garbage collected or when explicitly 
@@ -118,6 +127,11 @@ class Entity(object):
         By default, this is an AffineTransform instance.
         """
         return self._transform
+
+    @transform.setter
+    def transform(self, tr):
+        assert isinstance(tr, transforms.Transform)
+        self._transform = tr
 
 
 
@@ -140,11 +154,31 @@ class Entity(object):
                                                     **self._visual_kwargs)
         return visual
 
-    def get_path_transform(self, path):
+    def root_transform(self):
         """
-        Return the complete Transform that maps from *path[0]* to self.
+        Return the complete Transform that maps from self to the root of the 
+        scenegraph.
         """
-        return transforms.TransformChain([e.transform for e in path])
+        tr = []
+        ent = self
+        while ent is not None:
+            tr.append(ent.transform)
+            ent = ent.parent
+        return transforms.TransformChain(tr)
+
+    def document_transform(self):
+        """
+        Return the complete Transform that maps from self to the first
+        Document in its ancestry.
+        """
+
+        from .entities import Document
+        tr = []
+        ent = self
+        while not isinstance(ent, Document):
+            tr.append(ent.transform)
+            ent = ent.parent
+        return transforms.TransformChain(tr)
 
     def paint(self, canvas, path):
         """
@@ -153,21 +187,16 @@ class Entity(object):
         """
         pass
     
-    def paint_tree(self, canvas):
+    def paint_tree(self, canvas, parent=None):
         """
         Paint the entire tree of Entities beginnging here.            
         """
+        self._select_parent(parent)
         
-        # Determine the order in which entity paths should be painted.
-        # (here, we may draw a single entity multiple times if there are
-        # multiple paths from self to the entity)
-        order = [[self]]  # (this is incomplete)
+        for child in self:
+            child.paint_tree(canvas, parent=self)
         
-        # Paint all in order.
-        for path in order:
-            entity = path[-1]
-            if hasattr(entity, 'paint'):
-                entity.paint(canvas, path)
+        self.paint(canvas)
 
     def process_mouse_event(self, canvas, ev):
         """
@@ -179,6 +208,5 @@ class Entity(object):
         # 2. send the event to each entity one at a time
         #    (we should use a specialized emitter for this, rather than 
         #     rebuild the emitter machinery!)
-
 
 
