@@ -24,8 +24,12 @@ class Canvas(vispy.app.Canvas):
                   (1, 1, 0, 1), (0, 1, 1, 1), (1, 0, 1, 1)]
         self.lines = [LineVisual(pos, color=colors[i]) for i in range(5)]
         self.lines[1].transform = STTransform(scale=(1, 0.1, 1))
-        self.lines[2].transform = TransformChain([STTransform(scale=(1, 0.1, 1)), STTransform(translate=(0.1, 0.5, 0))])
-        self.lines[3].transform = TransformChain([STTransform(translate=(1.1, -0.7, 0)), LogTransform(base=(10, 0, 0))])
+        self.lines[2].transform = TransformChain([
+                                    STTransform(scale=(1, 0.1, 1)), 
+                                    STTransform(translate=(0.1, 0.5, 0))])
+        self.lines[3].transform = TransformChain([
+                                    STTransform(translate=(1.1, -0.7, 0)), 
+                                    LogTransform(base=(10, 0, 0))])
         self.lines[4].transform = AffineTransform()
         self.lines[4].transform.translate((0.5, -0.5, 0))
         self.lines[4].transform.scale((0.1, 0.1, 1))

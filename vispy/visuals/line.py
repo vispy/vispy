@@ -167,24 +167,7 @@ class LineVisual(BaseVisual):
         self._program.set_hook('frag_color', color_bound)
 
         
-        # set program variables required by transform
-        #variables.update(tr_vars)
-        
-        #vshader = "\n\n".join([vertex_shader, 
-                               #inp_func.code, partial,
-                               #transform_code, tr_partial,
-                               #v_post_hook])
-
-        #fshader = "\n\n".join([fragment_shader, 
-                               #RGBAInputFunc.code,
-                               #color_partial])
-                               
-        #self._program = gloo.Program(vshader, fshader)
-        #for k,v in variables.items():
-            #self._program[k] = v
-        
-        
-    def draw(self):
+    def paint(self):
         if self._program is None:
             self.build_program()
             

@@ -44,3 +44,4 @@ class BaseVisual(object):
 
 # Import visuals in this namespace
 from .points import PointsVisual  # noqa
+from .line import LineVisual
