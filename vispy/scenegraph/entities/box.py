@@ -1,7 +1,7 @@
 from ..entity import Entity
-from ...util.geometry import Rect
 from ...visuals import LineVisual
 from ...util.event import EmitterGroup, Event
+from ...util.geometry import Rect
 import numpy as np
 
 __all__ = ['Box', 'Document', 'GridBox', 'ViewBox']
@@ -9,59 +9,68 @@ __all__ = ['Box', 'Document', 'GridBox', 'ViewBox']
 class Box(Entity):
     """
     Rectangular Entity used as a container for other entities.
-    
-    By default, Boxes automatically resize their child boxes unless they have
-    been explicitly assigned a position or size.
     """
     def __init__(self, parent=None, pos=None, size=None, border=None, clip=False):
-        self._auto_rect = pos is None and size is None
-        self._rect = Rect()
+        super(Box, self).__init__(parent)
+        self.events.add(rect_change=Event)
+        
         if border is None:
             border = (0.2, 0.2, 0.2, 0.5)
-        self._visual = LineVisual(color=border, width=4) # for drawing border
-        self.rect = Rect(pos, size)
+        self._border = border
+        self._visual = LineVisual(color=border, width=2) # for drawing border
         self._clip = clip
-        self.padding = 10
-        self.margin = 10
-        self.events = EmitterGroup(source=self,
-                                   auto_connect=True,
-                                   rect_change=Event)
-        
-        Entity.__init__(self, parent)
+        self._pos = (0, 0)
+        self._size = (1, 1)
+        self.padding = 0
+        self.margin = 0
+        self._boxes = set()
 
     @property
-    def rect(self):
-        return self._rect
-    
-    @rect.setter
-    def rect(self, r):
-        # TODO: don't use mutable objects as properties!
-        assert isinstance(r, Rect)
-        if self._rect == r:
-            return
-        self._rect = r
-        self._update_line()
-        self.events.rect_change(rect=self._rect)
-        
-    @property
     def pos(self):
-        return self._rect.pos
+        return self._pos
     
     @pos.setter
     def pos(self, p):
-        self.rect.pos = p
+        assert isinstance(p, tuple)
+        assert len(p) == 2
+        self._pos = p
         self._update_line()
-        self.events.rect_change(rect=self._rect)
+        self.events.rect_change()
         
     @property
     def size(self):
-        return self._rect.size
+        return self._size
     
     @size.setter
     def size(self, s):
-        self.rect.size = s
+        assert isinstance(s, tuple)
+        assert len(s) == 2
+        self._size = s
         self._update_line()
-        self.events.rect_change(rect=self._rect)
+        self.update()
+        self.events.rect_change()
+        
+    @property
+    def rect(self):
+        return Rect(self.pos, self.size)
+
+    @rect.setter
+    def rect(self, r):
+        with self.events.rect_change.blocker():
+            self.pos = r.pos
+            self.size = r.size
+        self.update()
+        self.events.rect_change()
+
+    @property
+    def border(self):
+        return self._border
+    
+    @border.setter
+    def border(self, b):
+        self._border = b
+        self._visual.set_data(color=b)
+        self.update()
 
     def _update_line(self):
         pad = self.margin
@@ -76,7 +85,6 @@ class Box(Entity):
             [right, top],
             [left, top],
             [left, bottom]])
-        print(pos)
         self._visual.set_data(pos=pos)
         
     def paint(self, canvas):
@@ -84,10 +92,46 @@ class Box(Entity):
         self._visual.paint()
         
     def on_rect_change(self, ev):
-        print('rc')
-        for ch in self:
-            if isinstance(ch, Box) and ch._auto_rect:
-                ch.rect = self.rect.padded(self.padding + self.margin)
+        self._update_child_boxes()
+
+    def _update_child_boxes(self):
+        # Set the position and size of child boxes (only those added
+        # using add_box)
+        for ch in self._boxes:
+            ch.rect = self.rect.padded(self.padding + self.margin)
+
+    def add_box(self, box):
+        """
+        Add a Box as a managed child of this Box. The child will be 
+        automatically positioned and sized to fill the entire space inside
+        this Box.        
+        """
+        self._boxes.add(box)
+        box.add_parent(self)
+        self._update_child_boxes()
+        return box
+
+    def add_grid(self, *args, **kwds):
+        """
+        Convenience function that creates a new GridBox and adds it to the grid.
+        
+        All arguments are given to add_box().
+        """
+        grid = GridBox()
+        return self.add_box(grid, *args, **kwds)
+    
+    def add_view(self, *args, **kwds):
+        """
+        Convenience function that creates a new ViewBox and adds it to the grid.
+        
+        All arguments are given to add_box().
+        """
+        view = ViewBox()
+        return self.add_box(view, *args, **kwds)
+
+    def remove_box(self, box):
+        self._boxes.remove(box)
+        box.remove_parent(self)
 
 
 class Document(Box):
@@ -119,7 +163,7 @@ class GridBox(Box):
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
         self._boxes = {}
-        self.spacing = 20
+        self.spacing = 6
         
     def add_box(self, box=None, row=None, col=None, row_span=1, col_span=1):
         """
@@ -136,35 +180,16 @@ class GridBox(Box):
         _row = self._cells.setdefault(row, {})
         _row[col] = box
         self._boxes[box] = row, col, row_span, col_span
-        box.parent = self
+        box.add_parent(self)
         
         self._next_cell = [row, col+col_span]
-        self._update_grid()
+        self._update_child_boxes()
         return box
         
-    def add_grid(self, *args, **kwds):
-        """
-        Convenience function that creates a new GridBox and adds it to the grid.
-        
-        All arguments are given to add_box().
-        """
-        grid = GridBox()
-        return self.add_box(grid, *args, **kwds)
-    
-    def add_view(self, *args, **kwds):
-        """
-        Convenience function that creates a new ViewBox and adds it to the grid.
-        
-        All arguments are given to add_box().
-        """
-        view = ViewBox()
-        return self.add_box(view, *args, **kwds)
-        
-    
     def next_row(self):
         self._next_cell = [self._next_cell[0] + 1, 0]
 
-    def _update_grid(self):
+    def _update_child_boxes(self):
         # Resize all boxes in this grid to share space.
         # This logic will need a lot of work..
 
@@ -179,6 +204,7 @@ class GridBox(Box):
         # determine starting/ending position of each row and column
         s2 = self.spacing / 2.
         rect = self.rect.padded(self.padding + self.margin - s2)
+        # TODO: should rows run top to bottom, or bottom to top??
         rows = np.linspace(rect.bottom, rect.top, nrows+1)
         rowstart = rows[:-1] + s2
         rowend = rows[1:] - s2
@@ -186,19 +212,17 @@ class GridBox(Box):
         colstart = cols[:-1] + s2
         colend = cols[1:] - s2
         
-        print('----------')
-        for ch in self:
-            if isinstance(ch, Box) and ch._auto_rect:
-                row, col, rspan, cspan = self._boxes[ch]
-                r = Rect(pos=(rowstart[row], colstart[col]),
-                         size=(rowend[row+rspan-1]-rowstart[row], 
-                               colend[col+cspan-1]-colstart[col])
-                         )
-                ch.rect = r
-                print(r)
-
-    def on_rect_change(self, ev):
-        self._update_grid()
+        for ch in self._boxes:
+            row, col, rspan, cspan = self._boxes[ch]
+            
+            # Translate the origin of the entity to the corner of the area
+            ch.transform.reset()
+            ch.transform.translate((colstart[col], rowstart[row]))
+            
+            # ..and set the size to match.
+            w = colend[col+cspan-1]-colstart[col]
+            h = rowend[row+rspan-1]-rowstart[row]
+            ch.size = w, h
 
     
 class ViewBox(Box):

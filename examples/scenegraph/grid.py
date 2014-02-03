@@ -11,15 +11,22 @@ canvas = scenegraph.SceneCanvas()
 canvas.size = 600, 600
 canvas.show()
 
-#pos = np.empty((1000,2))
-#pos[:,0] = np.linspace(-0.9, 0.9, 1000)
-#pos[:,1] = np.random.normal(size=1000)
+pos = np.empty((1000,2))
+pos[:,0] = np.linspace(0, 10, 1000)
+pos[:,1] = np.random.normal(size=1000)
 
-grid = scenegraph.entities.GridBox(parent=canvas.root, border=(1, 0, 0, 1))
+grid = canvas.root.add_grid()
 
-grid.add_box(row=0, col=0)
-grid.add_box(row=0, col=1)
-grid.add_box(row=1, col=0)
-grid.add_box(row=1, col=1)
+b1 = grid.add_box(row=0, col=0, col_span=2)
+b2 = grid.add_box(row=1, col=0)
+b3 = grid.add_box(row=1, col=1)
 
-app.run()
+l1 = scenegraph.entities.Line(pos)
+l1.transform.translate((20, 100))
+l1.transform.scale((10, 1))
+
+l1.parents = b1, b2, b3
+
+import sys
+if sys.flags.interactive == 0:
+    app.run()

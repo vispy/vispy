@@ -467,7 +467,8 @@ class EmitterGroup(EventEmitter):
                     event_class=emitter)
             elif not isinstance(emitter, EventEmitter):
                 raise Exception('Emitter must be specified as either an '
-                                'EventEmitter instance or Event subclass')
+                                'EventEmitter instance or Event subclass. '
+                                '(got %s=%s)' % (name, emitter))
 
             # give this emitter the same source as the group.
             emitter.source = self.source

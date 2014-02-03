@@ -97,6 +97,7 @@ class LineVisual(BaseVisual):
     @transform.setter
     def transform(self, tr):
         self._opts['transform'] = tr
+        self._program = None
 
     def set_data(self, pos=None, color=None, width=None):
         """
@@ -111,6 +112,10 @@ class LineVisual(BaseVisual):
             self._opts['color'] = color
         if width is not None:
             self._opts['width'] = width
+            
+        # might need to rebuild vbo or program.. 
+        # this could be made more clever.
+        self._program = None
         
     def build_program(self):
         
@@ -168,6 +173,9 @@ class LineVisual(BaseVisual):
 
         
     def paint(self):
+        if self._opts['pos'] is None or len(self._opts['pos']) == 0:
+            return
+        
         if self._program is None:
             self.build_program()
             

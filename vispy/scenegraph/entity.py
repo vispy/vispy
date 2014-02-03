@@ -5,6 +5,7 @@
 from __future__ import division
 
 from ..visuals import transforms
+from ..util.event import EmitterGroup, Event
 
 class Entity(object):
 
@@ -19,93 +20,111 @@ class Entity(object):
     It is recommended to use multi-parenting with care.
     """
 
-    Visual = None
-
     def __init__(self, parent=None, **kwargs):
+        self.events = EmitterGroup(source=self,
+                                   auto_connect=True,
+                                   parents_change=Event,
+                                   active_parent_change=Event,
+                                   children_change=Event,
+                                   )
 
         # Entities are organized in a parent-children hierarchy
-        self._children = []
-        self._parents = ()
-        self._parent = None
+        self._children = set()
+        # TODO: use weakrefs for parents. 
+        self._parents = set()
+        self._active_parent = None
         self.parent = parent
 
         # Components that all entities in vispy have
         self._transform = transforms.AffineTransform()
-        self._visuals = {}
-        self._visual_kwargs = kwargs
+        
 
     @property
     def children(self):
         """ The list of children of this entity.
         """
-        return [c for c in self._children]
+        return list(self._children)
 
     @property
     def parent(self):
         """ The parent entity. In case there are multiple parents,
-        the first parent is given. During a draw, however, the parent
-        from which the draw originated is given.
+        the active parent is given, if any.
         """
-        return self._parent
+        return self._active_parent
 
     @parent.setter
     def parent(self, value):
         if value is None:
-            self.parents = ()
+            self.parents = set()
         else:
-            self.parents = (value,)
+            self.parents = set([value])
 
     @property
     def parents(self):
-        """ Get/set the tuple of parents. Typically the tuple will have
+        """ Get/set the list of parents. Typically the tuple will have
         one element.
         """
-        return self._parents
+        return list(self._parents)
 
     @parents.setter
     def parents(self, parents):
-
         # Test input
-        if not isinstance(parents, (tuple, list)):
-            raise ValueError("Entity.parents must be a tuple or list.")
+        if not hasattr(parents, '__iter__'):
+            raise ValueError("Entity.parents must be iterable (got %s)" % type(parents))
 
         # Test that all parents are entities
         for p in parents:
             if not isinstance(p, Entity):
                 raise ValueError('A parent of an entity must be an entity too,'
                                  ' not %s.' % p.__class__.__name__)
+        
+        # convert to set
+        prev = self._parents.copy()
+        parents = set(parents)
+        
+        with self.events.parents_change.blocker():
+            # Remove from parents
+            for parent in prev - parents:
+                self.remove_parent(parent)
+                
+            # Add new
+            for parent in parents - prev:
+                self.add_parent(parent)
 
-        # Test that each parent occurs exactly once
-        parentids = set([id(p) for p in parents])
-        if len(parentids) != len(parents):
-            raise ValueError('An entity cannot have the same parent twice '
-                             '(%r)' % self)
+        self.events.parents_change(new=parents, old=prev)
 
-        # Remove from old parents (and from new parents just to be sure)
-        oldparents = self.parents
-        for oldparent in oldparents:
-            while self in oldparent._children:
-                oldparent._children.remove(self)
-        for parent in parents:
-            while self in parent._children:
-                parent._children.remove(self)
+    def add_parent(self, parent):
+        if parent in self._parents:
+            return
+        self._parents.add(parent)
+        parent._add_child(self)
+        self.events.parents_change(added=parent)
+        
+    def remove_parent(self, parent):
+        if parent not in self._parents:
+            raise ValueError("Parent not in set of parents for this entity.")
+        self._parents.remove(parent)
+        parent._remove_child(self)
+        self.events.parents_change(removed=parent)
 
-        # Set new parents and add ourself to their list of children
-        self._parents = tuple(parents)
-        for parent in parents:
-            parent._children.append(self)
+    def _add_child(self, ent):
+        self._children.add(ent)
+        self.events.children_change(added=ent)
 
-        # Set singleton parent
-        self._parent = self._parents[0] if self._parents else None
-
-    def _select_parent(self, parent):
+    def _remove_child(self, ent):
+        self._children.remove(ent)
+        self.events.children_change(removed=ent)
+        
+    def _set_active_parent(self, parent):
         """
         Set the currently active parent for this entity.
         If None, then this entity is assumed to be the root of
         the scenegraph until a new parent is selected.
         """
         assert parent is None or parent in self._parents
-        self._parent = parent
+        prev = self._active_parent
+        self._active_parent = parent
+        self.events.active_parent_change(prev=prev)
     
         # todo: Should we destroy GL objects (because we are removed)
 # from an OpenGL context)?
@@ -132,27 +151,6 @@ class Entity(object):
     def transform(self, tr):
         assert isinstance(tr, transforms.Transform)
         self._transform = tr
-
-
-
-#     @property
-#     def visual(self):
-#         """ The visual object that can draw this entity. Can be None.
-#         """
-#         return self._visual
-
-    def get_visual(self, root):
-        """ Get the visual for this entity, based on the given root.
-        May be overloaded to enable the use of multiple visuals.
-        """
-        if self.Visual is None:
-            return None
-        try:
-            visual = self._visuals[id(root)]
-        except KeyError:
-            visual = self._visuals[id(root)] = self.Visual(
-                                                    **self._visual_kwargs)
-        return visual
 
     def root_transform(self):
         """
@@ -191,7 +189,7 @@ class Entity(object):
         """
         Paint the entire tree of Entities beginnging here.            
         """
-        self._select_parent(parent)
+        self._set_active_parent(parent)
         
         for child in self:
             child.paint_tree(canvas, parent=self)
@@ -209,4 +207,9 @@ class Entity(object):
         #    (we should use a specialized emitter for this, rather than 
         #     rebuild the emitter machinery!)
 
-
+    def update(self):
+        """
+        Emit an event to inform Canvases that this Entity needs to be redrawn.
+        """
+        # TODO
+        pass

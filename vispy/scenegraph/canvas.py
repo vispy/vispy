@@ -36,11 +36,9 @@ class SceneCanvas(app.Canvas):
         self.root.transform.translate = (-1, -1)
         
         # 2. Set size of document to match the area of the canvas
-        print('set root size')
         self.root.size = self.size
 
     def on_resize(self, event):
-        print('resize canvas')
         self._update_document()
 
     def on_paint(self, event):
