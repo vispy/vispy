@@ -11,6 +11,7 @@ from __future__ import division
 
 import sys
 
+from. import backends
 from .backends import BACKENDS, BACKENDMAP, ATTEMPTED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
@@ -156,17 +157,8 @@ class Application(object):
 
             try:
                 ATTEMPTED_BACKENDS.append(name)
-                if module_name == '_pyglet':
-                    from .backends import _pyglet
-                    loaded_module = _pyglet
-                elif module_name == '_qt':
-                    from .backends import _qt
-                    loaded_module = _qt
-                elif module_name == '_glut':
-                    from .backends import _glut
-                    loaded_module = _glut
-                else:
-                    raise ImportError('Unknown backend')
+                mod_name = 'backends.' + module_name
+                __import__(mod_name, globals(), level=1)
             except ImportError as err:
                 msg = 'Could not import backend "%s":\n%s' % (name, str(err))
                 if not try_others:
@@ -180,7 +172,7 @@ class Application(object):
                     print(msg)
             else:
                 # Success!
-                self._backend_module = loaded_module
+                self._backend_module = getattr(backends, module_name)
                 break
         else:
             raise RuntimeError('Could not import any of the backends.')
