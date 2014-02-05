@@ -5,7 +5,7 @@
 """ Definition of the base class for all gloo objects.
 """
 
-import vispy
+from .. import config
 
 
 class GLObject(object):
@@ -90,7 +90,7 @@ class GLObject(object):
         try:
             self.delete()
         except Exception as err:
-            if vispy.config['show_warnings']:
+            if config['show_warnings']:
                 print('Error deleting %r: %s' % (self, err))
 
     def delete(self):

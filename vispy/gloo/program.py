@@ -8,7 +8,7 @@ This code is inspired by similar classes from Pygly.
 
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import re
 
@@ -20,7 +20,7 @@ from . import VertexBuffer, ElementBuffer
 from .buffer import ClientElementBuffer
 from .variable import Attribute, Uniform
 from .shader import VertexShader, FragmentShader, ShaderError
-from vispy.util import is_string
+from ..util import is_string
 
 
 class ProgramError(RuntimeError):

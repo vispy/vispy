@@ -7,11 +7,14 @@ Implements the global singleton app object.
 
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import sys
 
-from vispy.app.backends import BACKENDS, BACKENDMAP, ATTEMPTED_BACKENDS
+from. import backends
+from .backends import BACKENDS, BACKENDMAP, ATTEMPTED_BACKENDS
+from .. import config
+from .base import BaseApplicationBackend as ApplicationBackend  # noqa
 
 
 class Application(object):
@@ -103,7 +106,6 @@ class Application(object):
         predetermined order.
 
         """
-        import vispy.app
         if backend_name is not None:
             if backend_name.lower() not in BACKENDMAP:
                 raise ValueError('backend_name must be one of %s or None, not '
@@ -133,7 +135,7 @@ class Application(object):
                 if native_module_name and native_module_name in sys.modules:
                     backends_to_try.append(name.lower())
             # See if a default is given
-            default_backend = vispy.config['default_backend'].lower()
+            default_backend = config['default_backend'].lower()
             if default_backend.lower() in BACKENDMAP.keys():
                 if default_backend not in backends_to_try:
                     backends_to_try.append(default_backend)
@@ -151,56 +153,29 @@ class Application(object):
             except KeyError:
                 print('This should not happen, unknown backend: "".' % key)
                 continue
-            # Get backend module name
-            mod_name = 'vispy.app.backends.' + module_name
             # Try to import it ...
 
             try:
                 ATTEMPTED_BACKENDS.append(name)
-                __import__(mod_name)
+                mod_name = 'backends.' + module_name
+                __import__(mod_name, globals(), level=1)
             except ImportError as err:
                 msg = 'Could not import backend "%s":\n%s' % (name, str(err))
                 if not try_others:
                     raise RuntimeError(msg)
             except Exception as err:
-                msg = 'Error while importing backend "%s":\n%s' % (
-                    name, str(err))
+                msg = ('Error while importing backend "%s":\n%s'
+                       % (name, str(err)))
                 if not try_others:
                     raise RuntimeError(msg)
                 else:
                     print(msg)
             else:
                 # Success!
-                self._backend_module = getattr(vispy.app.backends, module_name)
+                self._backend_module = getattr(backends, module_name)
                 break
         else:
             raise RuntimeError('Could not import any of the backends.')
 
         # Store classes for app backend and canvas backend
         self._backend = self.backend_module.ApplicationBackend()
-
-
-class ApplicationBackend(object):
-
-    """ ApplicationBackend()
-
-    Abstract class that provides an interface between backends and Application.
-    Each backend must implement a subclass of ApplicationBackend, and
-    implement all its _vispy_xxx methods.
-    """
-
-    def _vispy_get_backend_name(self):
-        raise NotImplementedError()
-
-    def _vispy_process_events(self):
-        raise NotImplementedError()
-
-    def _vispy_run(self):
-        raise NotImplementedError()
-
-    def _vispy_quit(self):
-        raise NotImplementedError()
-
-    def _vispy_get_native_app(self):
-        # Should return the native application object
-        return self

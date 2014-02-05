@@ -6,13 +6,16 @@
 desktop OpenGL implementation.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
+import sys
+import ctypes
 from OpenGL import GL as _GL
 import OpenGL.GL.framebufferobjects as FBO
 
 from . import _GL_ENUM
 from . import _desktop, _desktop_ext
+from ... import config
 
 # Prepare namespace with constants and ext
 from ._constants import *  # noqa
@@ -49,6 +52,7 @@ def _get_function_from_pyopengl(funcname):
                     pass
 
     # Set dummy function if we could not find it
+    show_warnings = config['show_warnings']
     if func is None:
         func = _make_unavailable_func(funcname)
         if True or show_warnings:
@@ -61,9 +65,6 @@ def _inject():
     and the ext namespace.
     Note the similatity with vispy.gloo.gl.use().
     """
-    import vispy
-    show_warnings = vispy.config['show_warnings']  # noqa
-    import OpenGL.GL.framebufferobjects as FBO  # noqa
 
     # Import functions here
     NS = globals()
@@ -87,7 +88,6 @@ def _fix():
     # Fix glGetActiveAttrib, since if its just the ctypes function
     if ('glGetActiveAttrib' in NS and
             hasattr(NS['glGetActiveAttrib'], 'restype')):
-        import ctypes
 
         def new_glGetActiveAttrib(program, index):
             # Prepare
@@ -113,7 +113,6 @@ def _fix():
         NS['glGetActiveAttrib'] = new_glGetActiveAttrib
 
     # Monkey-patch pyopengl to fix a bug in glBufferSubData
-    import sys
     if sys.version_info > (3,):
         buffersubdatafunc = NS['glBufferSubData']
         if hasattr(buffersubdatafunc, 'wrapperFunction'):

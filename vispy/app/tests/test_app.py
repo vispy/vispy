@@ -10,7 +10,7 @@ from vispy.app.backends import (requires_pyglet, requires_qt,
 from vispy.gloo.program import (Program, ProgramError, VertexBuffer,
                                 ElementBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader, ShaderError
-from vispy.util.dataio import _screenshot
+from vispy.gloo import _screenshot
 
 
 def on_nonexist(self, *args):

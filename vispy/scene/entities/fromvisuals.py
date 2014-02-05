@@ -2,9 +2,9 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
-from vispy.visuals import PointsVisual
+from ...visuals import PointsVisual
 from ..base import Entity
 
 

@@ -9,7 +9,7 @@ the uploading of gl data to the GPU.
 
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import ctypes
 import numpy as np

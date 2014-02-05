@@ -2,11 +2,13 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
-from vispy.util.event import EmitterGroup, Event
-import vispy
 import numpy as np
+
+from ._default_app import default_app
+from ..util.event import EmitterGroup, Event
+from .base import BaseCanvasBackend as CanvasBackend  # noqa
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -14,9 +16,9 @@ import numpy as np
 
 
 class Canvas(object):
+    """Representation of a GUI element with an OpenGL context
 
-    """ Representation of a GUI element that can be rendered to by an OpenGL
-    context. The args and kwargs are used to instantiate the native widget.
+    The args and kwargs are used to instantiate the native widget.
 
     Receives the following events:
     initialize, resize, paint,
@@ -42,9 +44,7 @@ class Canvas(object):
     autoswap :: bool
         Whether to swap the buffers automatically after a paint event.
         Default True.
-
     """
-    # XXX THIS DOCSTRING DOES NOT MATCH WHAT IS DONE BELOW!
 
     def __init__(self, *args, **kwargs):
         self.events = EmitterGroup(source=self,
@@ -80,7 +80,7 @@ class Canvas(object):
         self._title = ''
 
         # Get app instance
-        self._app = kwargs.pop('app', vispy.app.default_app)
+        self._app = kwargs.pop('app', default_app)
 
         # Create widget now
         if 'native' in kwargs:
@@ -271,117 +271,6 @@ class Canvas(object):
 
             # event.region  (x,y,w,h) region of Canvas requiring repaint
         #"""
-
-
-class CanvasBackend(object):
-
-    """ CanvasBackend(vispy_canvas, *args, **kwargs)
-
-    Abstract class that provides an interface between backends and Canvas.
-    Each backend must implement a subclass of CanvasBackend, and
-    implement all its _vispy_xxx methods. Also, also a backend must
-    make sure to generate the following events: 'initialize', 'resize',
-    'paint', 'mouse_press', 'mouse_release', 'mouse_move',
-    'mouse_wheel', 'key_press', 'key_release', 'close'.
-    """
-
-    def __init__(self, *args, **kwargs):
-        # Initially the backend starts out with no canvas.
-        # Canvas takes care of setting this for us.
-        self._vispy_canvas = None
-
-        # Data used in the construction of new mouse events
-        self._vispy_mouse_data = {
-            'buttons': [],
-            'press_event': None,
-            'last_event': None,
-        }
-
-    def _vispy_set_current(self):
-        # todo: this is currently not used internally
-        # --> I think the backends should call this themselves before
-        #     emitting the paint event
-        # Make this the current context
-        raise NotImplementedError()
-
-    def _vispy_swap_buffers(self):
-        # Swap front and back buffer
-        raise NotImplementedError()
-
-    def _vispy_set_title(self, title):
-        # Set the window title. Has no effect for widgets
-        raise NotImplementedError()
-
-    def _vispy_set_size(self, w, h):
-        # Set size of the widget or window
-        raise NotImplementedError()
-
-    def _vispy_set_position(self, x, y):
-        # Set location of the widget or window. May have no effect for widgets
-        raise NotImplementedError()
-
-    def _vispy_set_visible(self, visible):
-        # Show or hide the window or widget
-        raise NotImplementedError()
-
-    def _vispy_update(self):
-        # Invoke a redraw
-        raise NotImplementedError()
-
-    def _vispy_close(self):
-        # Force the window or widget to shut down
-        raise NotImplementedError()
-
-    def _vispy_get_size(self):
-        # Should return widget size
-        raise NotImplementedError()
-
-    def _vispy_get_position(self):
-        # Should return widget position
-        raise NotImplementedError()
-
-    def _vispy_get_native_canvas(self):
-        # Should return the native widget object
-        # Most backends would not need to implement this
-        return self
-
-    def _vispy_mouse_press(self, **kwds):
-        # default method for delivering mouse press events to the canvas
-        kwds.update(self._vispy_mouse_data)
-        ev = self._vispy_canvas.events.mouse_press(**kwds)
-        if self._vispy_mouse_data['press_event'] is None:
-            self._vispy_mouse_data['press_event'] = ev
-
-        self._vispy_mouse_data['buttons'].append(ev.button)
-        self._vispy_mouse_data['last_event'] = ev
-        return ev
-
-    def _vispy_mouse_move(self, **kwds):
-        # default method for delivering mouse move events to the canvas
-        kwds.update(self._vispy_mouse_data)
-
-        # Break the chain of prior mouse events if no buttons are pressed
-        # (this means that during a mouse drag, we have full access to every
-        # move event generated since the drag started)
-        if self._vispy_mouse_data['press_event'] is None:
-            last_event = self._vispy_mouse_data['last_event']
-            if last_event is not None:
-                last_event._forget_last_event()
-
-        ev = self._vispy_canvas.events.mouse_move(**kwds)
-        self._vispy_mouse_data['last_event'] = ev
-        return ev
-
-    def _vispy_mouse_release(self, **kwds):
-        # default method for delivering mouse release events to the canvas
-        kwds.update(self._vispy_mouse_data)
-        ev = self._vispy_canvas.events.mouse_release(**kwds)
-        if ev.button == self._vispy_mouse_data['press_event'].button:
-            self._vispy_mouse_data['press_event'] = None
-
-        self._vispy_mouse_data['buttons'].remove(ev.button)
-        self._vispy_mouse_data['last_event'] = ev
-        return ev
 
 
 # Event subclasses specific to the Canvas

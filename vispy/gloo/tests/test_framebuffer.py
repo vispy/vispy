@@ -177,7 +177,3 @@ class FrameBufferTest(unittest.TestCase):
         buffer = RenderBuffer((100, 100))
         fbo.attach_stencil(buffer)
         self.assertEqual(buffer._format, gl.GL_STENCIL_INDEX8)
-
-
-if __name__ == "__main__":
-    unittest.main()

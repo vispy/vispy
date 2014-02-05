@@ -9,7 +9,7 @@ implementation is corect.
 """
 
 import vispy
-from vispy import keys
+from vispy.util import keys
 from vispy.app.backends import requires_pyglet, requires_qt
 
 
@@ -102,28 +102,28 @@ class BaseTestmodule:
 class Test_TemplateBackend(BaseTestmodule):
 
     def __init__(self):
-        from vispy.app.backends import template
-        BaseTestmodule.__init__(self, template)
+        from vispy.app.backends import _template
+        BaseTestmodule.__init__(self, _template)
 
 
 class Test_QtBackend(BaseTestmodule):
 
     @requires_qt()
     def __init__(self):
-        from vispy.app.backends import qt
-        BaseTestmodule.__init__(self, qt)
+        from vispy.app.backends import _qt
+        BaseTestmodule.__init__(self, _qt)
 
 
 class Test_PygletBackend(BaseTestmodule):
 
     @requires_pyglet()
     def __init__(self):
-        from vispy.app.backends import pyglet
-        BaseTestmodule.__init__(self, pyglet)
+        from vispy.app.backends import _pyglet
+        BaseTestmodule.__init__(self, _pyglet)
 
 
 class Test_GlutBackend(BaseTestmodule):
 
     def __init__(self):
-        from vispy.app.backends import glut
-        BaseTestmodule.__init__(self, glut)
+        from vispy.app.backends import _glut
+        BaseTestmodule.__init__(self, _glut)

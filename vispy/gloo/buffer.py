@@ -4,11 +4,11 @@
 # -----------------------------------------------------------------------------
 """ Definition of VertexBuffer, ElemenBuffer and client buffer classes. """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import numpy as np
 
-from vispy.util import is_string
+from ..util import is_string
 from . import gl
 from . import GLObject
 

@@ -2,11 +2,12 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
-import vispy
-from vispy.util.event import Event, EmitterGroup
-from vispy.util.ptime import time as precision_time
+from ._default_app import default_app
+from ..util.event import Event, EmitterGroup
+from ..util.ptime import time as precision_time
+from .base import BaseTimerBackend as TimerBackend  # noqa
 
 
 class Timer(object):
@@ -29,7 +30,7 @@ class Timer(object):
         #self.disconnect = self.events.timeout.disconnect
 
         # Get app instance and make sure that it has an associated backend
-        self._app = vispy.app.default_app if app is None else app
+        self._app = default_app if app is None else app
         self._app.use()
 
         # Instantiate the backed with the right class
@@ -139,27 +140,3 @@ class Timer(object):
     def disconnect(self, callback=None):
         """ Alias for self.events.timeout.disconnect() """
         return self.events.timeout.disconnect(callback)
-
-
-class TimerBackend(object):
-
-    """ TimerBackend(vispy_timer)
-
-    Abstract class that provides an interface between backends and Timer.
-    Each backend must implement a subclass of TimerBackend, and
-    implement all its _vispy_xxx methods.
-    """
-
-    def __init__(self, vispy_timer):
-        self._vispy_timer = vispy_timer
-
-    def _vispy_start(self, interval):
-        raise Exception("Method must be reimplemented in subclass.")
-
-    def _vispy_stop(self):
-        raise Exception("Method must be reimplemented in subclass.")
-
-    def _vispy_get_native_timer(self):
-        # Should return the native timer object
-        # Most backends would not need to implement this
-        return self
