@@ -30,6 +30,7 @@ logging_types = dict(debug=logging.DEBUG, info=logging.INFO,
                      warning=logging.WARNING, error=logging.ERROR,
                      critical=logging.CRITICAL)
 
+
 def set_log_level(verbose, return_old_level=False):
     """Convenience function for setting the logging level
 
