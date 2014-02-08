@@ -17,6 +17,8 @@ import numpy as np
 from . import gl
 from .buffer import ClientVertexBuffer, VertexBuffer
 from .texture import Texture, Texture2D, TextureCubeMap, Texture3D
+from ..util import logger
+
 
 # todo: support arrays of uniforms
 
@@ -215,7 +217,7 @@ class Uniform(Variable):
         # If there is not data, there is no point in uploading
         if self._data is None:
             if self._show_warning_notset:
-                print("Value for uniform '%s' is not set." % self.name)
+                logger.warn("Value for uniform '%s' is not set." % self.name)
                 self._show_warning_notset = False
             return
 
@@ -310,7 +312,8 @@ class Attribute(Variable):
             # Get dtype, should be float32 for ES 2.0, see issue #9
             _, _, dtype = gl_typeinfo[self._gtype]
             if dtype != np.float32:
-                print('Warning: OpenGL ES 2.0 only supports float attributes.')
+                logger.warn('Warning: OpenGL ES 2.0 only supports '
+                            'float attributes.')
             # Let numpy convert the data for us
             self._data = np.array(data, dtype=dtype)
             self._data.shape = self._data.size,
@@ -338,7 +341,7 @@ class Attribute(Variable):
         # If there is not data, there is no point in uploading
         if self._data is None:
             if self._show_warning_notset:
-                print("Value for attribute '%s' is not set." % self.name)
+                logger.warn("Value for attribute '%s' is not set." % self.name)
                 self._show_warning_notset = False
             return
 
@@ -440,4 +443,4 @@ class Attribute(Variable):
 
         # Mark as uploaded
         self._dirty = False
-        #print('upload attribute %s' % self.name, self._loc)
+        logger.debug('upload attribute %s to %s' % (self.name, self._loc))

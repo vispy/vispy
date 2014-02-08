@@ -22,6 +22,7 @@ import numpy as np
 
 from . import gl
 from . import GLObject, ext_available, convert_to_enum
+from ..util import logger
 
 
 class TextureError(RuntimeError):
@@ -450,8 +451,7 @@ class Texture(GLObject):
                 # If not ok, warn (one time)
                 if not gl.glIsTexture(self._handle):
                     self._handle = 0
-                    print(
-                        'Warning enabling texture, the texture is not valid.')
+                    logger.warn('The texture is not valid.')
                     return
                 if new_texture_created:
                     # We have a new texture: apply all parameters that were set
@@ -706,8 +706,7 @@ def convert_data(data, clim=None):
             data *= 1.0 / (clim[1] - clim[0])
 
     if CONVERTING:
-        pass
-        #print('Warning, converting data.')
+        logger.debug('Converting data.')
 
     # Convert if necessary
     if data.dtype == np.uint8:

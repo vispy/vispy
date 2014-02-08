@@ -13,7 +13,7 @@ submodule implementations.
 
 from __future__ import division
 
-from ... import config
+from ...util import config, logger
 
 
 class _GL_ENUM(int):
@@ -34,9 +34,9 @@ def _make_debug_wrapper(funcname, func):
         argstr = ', '.join(list(map(repr, args)) +
                            ['%s=%s' %
                             item for item in kwds.items()])
-        print("%s(%s)" % (funcname, argstr))
+        logger.debug("%s(%s)" % (funcname, argstr))
         ret = func(*args, **kwds)
-        print(" <= %s" % repr(ret))
+        logger.debug(" <= %s" % repr(ret))
         return ret
     return cb
 

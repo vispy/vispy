@@ -17,7 +17,7 @@ Example
 
   program = Program(vert,frag)
 """
-from __future__ import print_function, division
+from __future__ import division
 
 import re
 import os

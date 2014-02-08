@@ -19,7 +19,10 @@ The classes are written with compatibility of Python3 in mind.
 """
 
 import numpy as np
+import time
+
 from ..misc import _calculate_normals
+from .._logging import logger
 
 
 class WavefrontReader(object):
@@ -68,8 +71,9 @@ class WavefrontReader(object):
                 pass
 
         # Done
+        t0 = time.time()
         mesh = reader.finish()
-        #print('reading mesh took ' + str(time.time()-t0) + ' seconds')
+        logger.debug('reading mesh took ' + str(time.time() - t0) + ' seconds')
         return mesh
 
     def readLine(self):
@@ -94,7 +98,8 @@ class WavefrontReader(object):
         elif line.startswith('#'):
             pass  # Comment
         elif line.startswith('mtllib '):
-            print('Notice reading .OBJ: material properties are ignored.')
+            logger.warning('Notice reading .OBJ: material properties are '
+                           'ignored.')
         elif line.startswith('g ') or line.startswith('s '):
             pass  # Ignore groups and smoothing groups
         elif line.startswith('o '):
@@ -104,7 +109,8 @@ class WavefrontReader(object):
         elif not line.strip():
             pass
         else:
-            print('Notice reading .OBJ: ignoring %s command.' % line.strip())
+            logger.warning('Notice reading .OBJ: ignoring %s command.'
+                           % line.strip())
 
     def readTuple(self, line, n=3):
         """ Reads a tuple of numbers. e.g. vertices, normals or teture coords.
@@ -151,9 +157,8 @@ class WavefrontReader(object):
                     self._texcords.append(self._vt[texcord_index])
                 else:
                     if self._texcords:
-                        print('Warning reading OBJ: ignoring texture '
-                              'coordinates because it is not specified '
-                              'for all faces.')
+                        logger.warning('Ignoring texture coordinates because '
+                                       'it is not specified for all faces.')
                     self._texcords = None
             if self._normals is not None:
                 if len(indices) > 2 and indices[2]:
@@ -161,8 +166,8 @@ class WavefrontReader(object):
                     self._normals.append(self._vn[normal_index])
                 else:
                     if self._normals:
-                        print('Warning reading OBJ: ignoring normals because '
-                              'it is not specified for all faces.')
+                        logger.warning('Ignoring normals because it is not '
+                                       'specified for all faces.')
                     self._normals = None
 
         # Check face
