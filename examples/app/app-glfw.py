@@ -4,7 +4,7 @@
 This example shows how to actively select and test the glfw backend.
 
 You should see a black window and any mouse or keyboard event should be
-detected. A timer is also ran every second and it should print "tick !"
+detected. A timer is also run every second and it should print "tick !"
 every second.
 """
 

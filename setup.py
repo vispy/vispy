@@ -33,6 +33,7 @@ Announcing:
 """
 
 import os
+from os import path as op
 try:
     # use setuptools namespace, allows for "develop"
     import setuptools  # noqa, analysis:ignore
@@ -97,7 +98,8 @@ setup(
     package_dir={
         'vispy': 'vispy'},
     package_data={
-        'vispy': ['data/*', 'setup.cfg', 'Makefile', '.coveragerc']},
+        'vispy': [op.join('data', '*'),
+                  op.join('app', 'tests', 'qt-designer.ui')]},
     zip_safe=False,
     classifiers=[
         'Development Status :: 3 - Alpha',

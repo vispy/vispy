@@ -1,40 +1,50 @@
 language: python
 
-# Here we use anaconda, since it provides the simplest interface for running
-# different versions of Python
+# Here we use anaconda for 2.6 and 3.3, since it provides the simplest
+# interface for running different versions of Python. We could also use
+# it for 2.7, but the Ubuntu system has installable 2.7 Qt4-GL, which
+# allows for more complete testing.
+
+virtualenv:
+    system_site_packages: true
 
 env:
     # Enable python 2 and python 3 builds
-    # DEPS=full: build optional dependencies: pandas, nitime, statsmodels,
-    #            scikit-learn, patsy, nibabel; in the case of Python 2, also
-    #            nitime
-    # DEPS=minimal: don't build optional dependencies; tests that require those
-    #               dependencies are supposed to be skipped
     - PYTHON=2.6 DEPS=full
     - PYTHON=2.7 DEPS=full
     - PYTHON=3.3 DEPS=full
     - PYTHON=2.7 DEPS=minimal
 
 before_install:
-    - wget http://repo.continuum.io/miniconda/Miniconda-2.2.2-Linux-x86_64.sh -O miniconda.sh
-    - chmod +x miniconda.sh
-    - ./miniconda.sh -b
-    - export PATH=/home/$USER/anaconda/bin:$PATH
-    - conda update --yes conda
-    - travis_retry sudo apt-get -qq install libgl1-mesa-dri
+    - travis_retry sudo apt-get -qq update;
+    - if [ "${PYTHON}" != "2.7" ]; then
+        wget http://repo.continuum.io/miniconda/Miniconda-2.2.2-Linux-x86_64.sh -O miniconda.sh;
+        chmod +x miniconda.sh;
+        ./miniconda.sh -b;
+        export PATH=/home/$USER/anaconda/bin:$PATH;
+        conda update --yes conda;
+        travis_retry sudo apt-get -qq -y install libgl1-mesa-dri;
+      fi;
 
 install:
-    - conda create -n testenv --yes --quiet pip python=$PYTHON
-    - source activate testenv
-    - conda install --yes --quiet numpy nose
+    - if [ "${PYTHON}" != "2.7" ]; then
+        conda create -n testenv --yes --quiet pip python=$PYTHON;
+        source activate testenv;
+        conda install --yes --quiet numpy nose;
+      else
+        travis_retry sudo apt-get -qq -y install python-numpy python-nose;
+      fi;
     - pip install -q coveralls nose-timer flake8 PyOpenGL
     # Use Pyglet alpha to get 3.3 support
     - if [ "${DEPS}" == "full" ]; then
         pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         if [ "${PYTHON}" == "3.3" ]; then
           conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo;
+          conda install --yes --quiet pillow;
         fi;
-        pip install -q Pillow;
+        if [ "${PYTHON}" == "2.7" ]; then
+          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging;
+        fi;
       fi;
     - python setup.py build
     - python setup.py install
@@ -75,7 +85,6 @@ script:
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - cd ${SRC_DIR}
     # Don't run on 2.6 because it has some silly (unimportant) error
-    # Note that flake8 settings are alsoin
     - if [ "${PYTHON}" != "2.6" ]; then
         make flake;
       fi;
