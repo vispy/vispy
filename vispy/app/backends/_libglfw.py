@@ -50,7 +50,7 @@ if 'GLFW_LIBRARY' in os.environ:
 
 # Else, try to find it
 if _glfw_file is None:
-    order = ['glfw', 'glfw3']
+    order = ['glfw3', 'glfw']
     for check in order:
         _glfw_file = ctypes.util.find_library(check)
         if _glfw_file is not None:
