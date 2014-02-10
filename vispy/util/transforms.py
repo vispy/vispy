@@ -4,6 +4,9 @@
 Very simple transformation library that is needed for some examples.
 """
 
+# Note: we use functions (e.g. sin) from math module because they're faster
+
+import math
 import numpy as np
 
 
@@ -29,10 +32,10 @@ def translate(M, x, y=None, z=None):
     """
     y = x if y is None else y
     z = x if z is None else z
-    T = np.array([[ 1.0, 0.0, 0.0, x],
-                  [ 0.0, 1.0, 0.0, y],
-                  [ 0.0, 0.0, 1.0, z],
-                  [ 0.0, 0.0, 0.0, 1.0]], dtype=M.dtype).T
+    T = np.array([[1.0, 0.0, 0.0, x],
+                  [0.0, 1.0, 0.0, y],
+                  [0.0, 0.0, 1.0, z],
+                  [0.0, 0.0, 0.0, 1.0]], dtype=M.dtype).T
     M[...] = np.dot(M, T)
     return M
 
@@ -59,10 +62,10 @@ def scale(M, x, y=None, z=None):
     """
     y = x if y is None else y
     z = x if z is None else z
-    S = np.array([[ x, 0.0, 0.0, 0.0],
-                  [ 0.0, y, 0.0, 0.0],
-                  [ 0.0, 0.0, z, 0.0],
-                  [ 0.0, 0.0, 0.0, 1.0]], dtype=M.dtype).T
+    S = np.array([[x, 0.0, 0.0, 0.0],
+                  [0.0, y, 0.0, 0.0],
+                  [0.0, 0.0, z, 0.0],
+                  [0.0, 0.0, 0.0, 1.0]], dtype=M.dtype).T
     M[...] = np.dot(M, S)
     return M
 
@@ -83,9 +86,9 @@ def xrotate(M, theta):
         Updated transformation (4x4). Note that this function operates
         in-place.
     """
-    t = np.pi * theta / 180.
-    cosT = np.cos(t)
-    sinT = np.sin(t)
+    t = math.pi * theta / 180.
+    cosT = math.cos(t)
+    sinT = math.sin(t)
     R = np.array([[1.0, 0.0, 0.0, 0.0],
                   [0.0, cosT, -sinT, 0.0],
                   [0.0, sinT, cosT, 0.0],
@@ -110,9 +113,9 @@ def yrotate(M, theta):
         Updated transformation (4x4). Note that this function operates
         in-place.
     """
-    t = np.pi * theta / 180
-    cosT = np.cos(t)
-    sinT = np.sin(t)
+    t = math.pi * theta / 180
+    cosT = math.cos(t)
+    sinT = math.sin(t)
     R = np.array(
         [[cosT, 0.0, sinT, 0.0],
          [0.0, 1.0, 0.0, 0.0],
@@ -138,9 +141,9 @@ def zrotate(M, theta):
         Updated transformation (4x4). Note that this function operates
         in-place.
     """
-    t = np.pi * theta / 180
-    cosT = np.cos(t)
-    sinT = np.sin(t)
+    t = math.pi * theta / 180
+    cosT = math.cos(t)
+    sinT = math.sin(t)
     R = np.array(
         [[cosT, -sinT, 0.0, 0.0],
          [sinT, cosT, 0.0, 0.0],
@@ -172,9 +175,9 @@ def rotate(M, angle, x, y, z, point=None):
         Updated transformation (4x4). Note that this function operates
         in-place.
     """
-    angle = np.pi * angle / 180
-    c, s = np.cos(angle), np.sin(angle)
-    n = np.sqrt(x * x + y * y + z * z)
+    angle = math.pi * angle / 180
+    c, s = math.cos(angle), math.sin(angle)
+    n = math.sqrt(x * x + y * y + z * z)
     x /= n
     y /= n
     z /= n
@@ -283,6 +286,6 @@ def perspective(fovy, aspect, znear, zfar):
         Perspective projection matrix (4x4).
     """
     assert(znear != zfar)
-    h = np.tan(fovy / 360.0 * np.pi) * znear
+    h = math.tan(fovy / 360.0 * math.pi) * znear
     w = h * aspect
     return frustum(-w, w, -h, h, znear, zfar)
