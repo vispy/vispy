@@ -9,7 +9,7 @@ import numpy as np
 from .. import gloo
 from ..gloo import gl
 from . import BaseVisual
-from ..shaders.composite import ShaderFunction, FragmentShaderFunction, CompositeProgram
+from ..shaders.composite import ShaderFunction, ShaderFunctionTemplate, CompositeProgram
 from .transforms import NullTransform
 
 
@@ -47,31 +47,48 @@ void main(void) {
       
 
 # generate local coordinate from xy (vec2) attribute and z (float) uniform
-XYInputFunc = ShaderFunction("""
-vec4 v2_f_to_v4(vec2 xy_pos, float z_pos) {
-    return vec4(xy_pos, z_pos, 1.0);
+# Note that the ShaderFunction and ShaderFunctionTemplate approaches
+# should work equally well.
+#XYInputFunc = ShaderFunction("""
+#vec4 v2_f_to_v4(vec2 xy_pos, float z_pos) {
+    #return vec4(xy_pos, z_pos, 1.0);
+#}
+#""")
+XYInputFunc = ShaderFunctionTemplate("""
+vec4 $func_name() {
+    return vec4($xy_pos, $z_pos, 1.0);
 }
-""")
+""", var_names=['xy_pos', 'z_pos'])
 
 
 # generate local coordinate from xyz (vec3) attribute
-XYZInputFunc = ShaderFunction("""
-vec4 v3_to_v4(vec3 xyz_pos) {
-    return vec4(xyz_pos, 1.0);
+#XYZInputFunc = ShaderFunction("""
+#vec4 v3_to_v4(vec3 xyz_pos) {
+    #return vec4(xyz_pos, 1.0);
+#}
+#""")
+XYZInputFunc = ShaderFunctionTemplate("""
+vec4 $func_name() {
+    return vec4($xyz_pos, 1.0);
 }
-""")
+""", var_names=['xyz_pos'])
 
-RGBAInputFunc = FragmentShaderFunction("""
-vec4 v4_to_v4(vec4 rgba) {
-    return rgba;
+# pair of functions used to provide uniform/attribute input to fragment shader
+#RGBAInputFunc = ShaderFunction("""
+#vec4 v4_to_v4(vec4 rgba) {
+    #return rgba;
+#}
+#""")
+RGBAInputFunc = ShaderFunctionTemplate("""
+vec4 $func_name() {
+    return $rgba;
 }
-""", 
-vertex_post=ShaderFunction("""
-attribute vec4 input_color;
-varying vec4 input_color_var;
-void post_hook(void) {
-    input_color_var = input_color;
-}"""))
+""", var_names=['rgba'])
+RGBAVertexInputFunc = ShaderFunctionTemplate("""
+void $func_name() {
+    $output = $input;
+}
+""", var_names=['input', 'output'])
 
 
 class LineVisual(BaseVisual):
@@ -161,15 +178,30 @@ class LineVisual(BaseVisual):
         
         # get code and variables needed for fragment coloring
         if color_is_array:
+            # variable used to carry color input from vertex shader to 
+            # fragment shader:
+            varying = ('varying', 'vec4', 'input_color_varying')
+            
+            # fragment shader function that retrives color from varying:
             color_bound = RGBAInputFunc.bind('frag_color', 
-                                             rgba=('varying', 'vec4', 'input_color_var'))
+                                             rgba=varying)
             color_bound['input_color'] = self._vbo['color']
+            self._program.set_hook('frag_color', color_bound)
+            
+            # vertex shader function that retrives color from attribute:
+            color_frag_bound = RGBAVertexInputFunc.bind(
+                                   name='frag_color',
+                                   input=('attribute', 'vec4', 'input_color'),
+                                   output=varying)
+            self._program.add_post_hook(color_frag_bound)
+                                                        
+            
         else:
             color_bound = RGBAInputFunc.bind('frag_color', 
                                              rgba=('uniform', 'vec4', 'input_color'))
             color_bound['input_color'] = np.array(color)
+            self._program.set_hook('frag_color', color_bound)
             
-        self._program.set_hook('frag_color', color_bound)
 
         
     def paint(self):
