@@ -153,6 +153,13 @@ class Maker:
         import nose
         nose.run()
 
+    def flake(self, arg):
+        """ Run flake8 to find style inconsistencies. """
+        os.chdir(ROOT_DIR)
+        sys.argv[1:] = ['--exclude=six.py,_py24_ordereddict.py', 'vispy', 'examples']
+        from flake8.main import main
+        main()
+
     def images(self, arg):
         """ Create images (screenshots). Subcommands:
             * gallery - make screenshots for the gallery
