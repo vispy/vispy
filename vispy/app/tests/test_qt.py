@@ -31,7 +31,9 @@ def test_qt_designer():
     win = MainWindow()
     try:
         win.show()
-        canvas = Canvas(native=win.ui.canvas)
+        canvas = Canvas(create_native=False)
+        canvas._set_backend(win.ui.canvas)
+        canvas.create_native()
 
         @canvas.events.paint.connect
         def on_paint(ev):
