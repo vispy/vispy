@@ -164,12 +164,14 @@ class Application(object):
             except ImportError as err:
                 msg = 'Could not import backend "%s":\n%s' % (name, str(err))
                 if not try_others:
-                    raise RuntimeError(msg)
+                    logger.error(msg)
+                    raise
             except Exception as err:
                 msg = ('Error while importing backend "%s":\n%s'
                        % (name, str(err)))
                 if not try_others:
-                    raise RuntimeError(msg)
+                    logger.error(msg)
+                    raise
                 else:
                     logger.info(msg)
             else:
