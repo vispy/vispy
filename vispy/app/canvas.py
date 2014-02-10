@@ -46,7 +46,7 @@ class Canvas(object):
         The keyword arguments to use when creaing the native widget.
     """
 
-    def __init__(self, title='Vispy canvas', size=(800,600), position=None,
+    def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  native_args=None, native_kwargs=None):
         self.events = EmitterGroup(source=self,
