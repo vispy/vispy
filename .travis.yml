@@ -35,7 +35,7 @@ install:
         travis_retry sudo apt-get -qq -y install python-numpy python-nose;
       fi;
     - pip install -q coveralls nose-timer flake8 PyOpenGL
-    # Use Pyglet alpha to get 3.3 support
+    # Use Pyglet alpha to get Py3.3 support
     - if [ "${DEPS}" == "full" ]; then
         pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         if [ "${PYTHON}" == "3.3" ]; then
