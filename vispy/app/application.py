@@ -175,6 +175,7 @@ class Application(object):
             else:
                 # Success!
                 self._backend_module = getattr(backends, module_name)
+                logger.info('Selected backend %s' % module_name)
                 break
         else:
             raise RuntimeError('Could not import any of the backends.')
