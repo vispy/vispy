@@ -181,10 +181,10 @@ class CompositeProgram(Program):
         
         # first, look for FragmentFunctions and add vertex code to the 
         # post-hook
-        for hook_name, func in self._hook_defs.items():
-            for dep in func.all_deps():
-                if isinstance(dep, FragmentFunction):
-                    self.add_post_hook(dep.vertex_post)
+        #for hook_name, func in self._hook_defs.items():
+            #for dep in func.all_deps():
+                #if isinstance(dep, FragmentFunction):
+                    #self.add_post_hook(dep.vertex_post)
 
         # Install shader chain for post_hooks
         post_chain = FunctionChain('post_hook', self._post_hooks)
