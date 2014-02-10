@@ -87,7 +87,7 @@ class BaseTestmodule:
         fname = self._module.__file__.strip('c')
         text = open(fname, 'rb').read().decode('utf-8')
 
-        canvas = vispy.app.Canvas(native=None)
+        canvas = vispy.app.Canvas(create_native=False)
         # Stylus and touch are ignored because they are not yet implemented.
         # Mouse events are emitted from the CanvasBackend base class.
         ignore = set(['stylus', 'touch', 'mouse_press',

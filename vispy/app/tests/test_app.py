@@ -119,7 +119,7 @@ def _test_application(backend):
     frag_bad = ("varying vec4 v_colors")  # no semicolon
     program = Program(vert, frag_bad)
     assert_raises(ShaderError, program.activate)
-    frag_bad = ("varying vec4 v_colors;")  # no main
+    frag_bad = None  # no fragment code. no main is not always enough
     program = Program(vert, frag_bad)
     assert_raises(ProgramError, program.activate)
 
