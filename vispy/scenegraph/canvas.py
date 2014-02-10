@@ -48,3 +48,19 @@ class SceneCanvas(app.Canvas):
 
         # Draw viewbox
         self.root.paint_tree(canvas=self)
+
+    def on_mouse_press(self, event):
+        if event.handled:
+            return
+        self._root.process_mouse_event(self, event)
+        
+    def on_mouse_move(self, event):
+        if event.handled:
+            return
+        self._root.process_mouse_event(self, event)
+        
+    def on_mouse_release(self, event):
+        if event.handled:
+            return
+        self._root.process_mouse_event(self, event)
+        

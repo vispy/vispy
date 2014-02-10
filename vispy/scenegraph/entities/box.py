@@ -232,4 +232,19 @@ class ViewBox(Box):
     def __init__(self, *args, **kwds):
         Box.__init__(self, *args, **kwds)
     
+    def on_mouse_press(self, event):
+        if event.handled:
+            return
+        print(event)
+    
+    def on_mouse_move(self, event):
+        if event.handled:
+            return
+        print(event)
+    
+    def on_mouse_release(self, event):
+        if event.handled:
+            return
+        print(event)
+    
     

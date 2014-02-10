@@ -6,6 +6,7 @@ from __future__ import division
 
 from ..visuals import transforms
 from ..util.event import EmitterGroup, Event
+from .events import SceneMouseEvent
 
 class Entity(object):
 
@@ -26,6 +27,9 @@ class Entity(object):
                                    parents_change=Event,
                                    active_parent_change=Event,
                                    children_change=Event,
+                                   mouse_press=SceneMouseEvent,
+                                   mouse_move=SceneMouseEvent,
+                                   mouse_release=SceneMouseEvent,
                                    )
 
         # Entities are organized in a parent-children hierarchy
@@ -196,16 +200,32 @@ class Entity(object):
         
         self.paint(canvas)
 
-    def process_mouse_event(self, canvas, ev):
+    def process_mouse_event(self, canvas, event):
         """
         Propagate a mouse event through the scene tree starting at this Entity.
         """
-        pass
         
         # 1. find all entities whose mouse-area includes the point of the click.
         # 2. send the event to each entity one at a time
         #    (we should use a specialized emitter for this, rather than 
         #     rebuild the emitter machinery!)
+        
+        # TODO: for now we send the event to all entities; need to use
+        # picking to decide which entities should receive the event.
+        scene_event = SceneMouseEvent(event)
+        for entity in self.walk():
+            getattr(entity.events, event.type)(scene_event)
+
+    def walk(self):
+        """
+        Return an iterator that walks the entire scene graph starting at this
+        Entity.        
+        """
+        # TODO: need some control over the order..
+        yield self
+        for ch in self:
+            for e in ch.walk():
+                yield e
 
     def update(self):
         """

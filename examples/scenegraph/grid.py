@@ -17,7 +17,7 @@ pos[:,1] = np.random.normal(size=1000)
 
 grid = canvas.root.add_grid()
 
-b1 = grid.add_box(row=0, col=0, col_span=2)
+b1 = grid.add_view(row=0, col=0, col_span=2)
 b2 = grid.add_box(row=1, col=0)
 b3 = grid.add_box(row=1, col=1)
 
