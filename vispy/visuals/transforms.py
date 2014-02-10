@@ -9,11 +9,23 @@ from ..shaders.composite import Function, FunctionChain
 from ..util.ordereddict import OrderedDict
 from ..util import transforms
 
-## TODO: binding should be handled by Function? Or perhaps some other type?
+
 class Transform(object):
     """
     Transform is a base class that defines a pair of complementary 
     coordinate mapping functions in both python and GLSL.
+    
+    All Transform subclasses define map() and imap() methods that map 
+    an object through the forward or inverse transformation, respectively.
+    
+    Note that although all classes should define both map() and imap(), it
+    is not necessarily the case that imap(map(x)) == x; there may be instances
+    where the inverse mapping is ambiguous or otherwise meaningless.
+    
+    The two class variables GLSL_map and GLSL_imap are instances of 
+    shaders.composite.Function or shaders.composite.FunctionTemplate that
+    define the forward- and inverse-mapping GLSL function code.
+    
     """
     GLSL_map = None  # Must be Function instance
     GLSL_imap = None
@@ -67,11 +79,15 @@ class Transform(object):
         return bound
 
 
-## TODO: this should inherit from FunctionChain
 class TransformChain(Transform):
     """
-    Sequential chain of Transforms.
+    Transform subclass that performs a sequence of transformations in order.
+    Internally, this class uses shaders.composite.FunctionChain to generate
+    its GLSL_map and GLSL_imap functions.
     
+    Arguments:
+    
+    transforms : list of Transform instances
     """
     GLSL_map = ""
     GLSL_imap = ""
@@ -276,15 +292,28 @@ class AffineTransform(Transform):
 class SRTTransform(Transform):
     """ Transform performing scale, rotate, and translate
     """
+    # TODO
+
     
 class ProjectionTransform(Transform):
+    
+    # TODO
+    
     @classmethod
     def frustum(cls, l, r, t, b, n, f):
         pass
 
+
 class LogTransform(Transform):
     """ Transform perfoming logarithmic transformation on three axes.
+    Maps (x, y, z) => (log(base.x, x), log(base.y, y), log(base.z, z))
+    
+    No transformation is applied for axes with base <= 0.
     """
+    
+    # TODO: Evaluate the performance costs of using conditionals. 
+    # An alternative approach is to transpose the vector before log-transforming,
+    # and then transpose back afterward.
     GLSL_map = Function("""
         vec4 LogTransform_map(vec4 pos, vec3 base) {
             vec4 p1 = pos;
@@ -303,6 +332,20 @@ class LogTransform(Transform):
         self._base = np.zeros(3, dtype=np.float32)
         self.base = (0.0, 0.0, 0.0) if base is None else base
         
+    @property
+    def base(self):
+        """
+        *base* is a tuple (x, y, z) containing the log base that should be 
+        applied to each axis of the input vector. If any axis has a base <= 0,
+        then that axis is not affected.
+        """
+        return self._base.copy()
+    
+    @base.setter
+    def base(self, s):
+        self._base[:len(s)] = s
+        self._base[len(s):] = 0.0
+            
     def map(self, coords):
         ret = np.empty(coords.shape, coords.dtype)
         base = self.base
@@ -323,24 +366,15 @@ class LogTransform(Transform):
                 ret[...,i] = coords[...,i]
         return ret
             
-    @property
-    def base(self):
-        return self._base.copy()
-    
-    @base.setter
-    def base(self, s):
-        self._base[:len(s)] = s
-        self._base[len(s):] = 0.0
-            
     def __repr__(self):
         return "<LogTransform base=%s>" % (self.base)
+
 
 class PolarTransform(Transform):
     """
     Polar transform maps (theta, r, ...) to (x, y, ...)
     
     """
-    
     GLSL_map = Function("""
         vec4 PolarTransform_map(vec4 pos) {
             return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1);
@@ -364,10 +398,12 @@ class PolarTransform(Transform):
         return ret
             
     
-
 class BilinearTransform(Transform):
+    # TODO
     pass
+
 
 class WarpTransform(Transform):
     """ Multiple bilinear transforms in a grid arrangement.
     """
+    # TODO
