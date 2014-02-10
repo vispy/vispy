@@ -7,6 +7,7 @@ vispy backend for Qt (PySide and PyQt4).
 """
 
 from __future__ import print_function, division, absolute_import
+import logging
 
 import vispy
 from vispy import app
@@ -38,6 +39,18 @@ elif qt_lib == 'pyside':
 else:
     raise Exception("Do not recognize Qt library '%s'. Options are "
                     "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
+
+# Properly log Qt messages
+# Also, ignore spam about tablet input
+def message_handler(msg_type, msg):
+    if msg == ("QCocoaView handleTabletEvent: This tablet device is "
+               "unknown (received no proximity event for it). Discarding event."):
+        return
+    else:
+        logging.warning(msg)
+
+QtCore.qInstallMsgHandler(message_handler)
+
 
 # todo: add support for distinguishing left and right shift/ctrl/alt keys.
 # Linux scan codes:  (left, right)
