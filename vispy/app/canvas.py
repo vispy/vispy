@@ -18,23 +18,14 @@ from .base import BaseCanvasBackend as CanvasBackend  # noqa
 class Canvas(object):
     """Representation of a GUI element with an OpenGL context
 
-    The args and kwargs are used to instantiate the native widget.
-
     Receives the following events:
-    initialize, resize, paint,
-    mouse_press, mouse_release, mouse_move, mouse_wheel,
-    key_press, key_release,
-    stylus, touch, close
+    initialize, resize, paint, mouse_press, mouse_release, mouse_move,
+    mouse_wheel, key_press, key_release, stylus, touch, close
 
-    Keyword arguments
-    -----------------
+    Arguments
+    ---------
     title :: str
         The widget title
-    app :: Application
-        Give vispy Application instance to use as a backend.
-        (vispy.app is used by default.)
-    create_native :: bool
-        Whether to create the widget immediately. Default True.
     size :: (width, height)
         The size of the window.
     position :: (x, y)
@@ -44,9 +35,20 @@ class Canvas(object):
     autoswap :: bool
         Whether to swap the buffers automatically after a paint event.
         Default True.
+    app :: Application
+        Give vispy Application instance to use as a backend.
+        (vispy.app is used by default.)
+    create_native :: bool
+        Whether to create the widget immediately. Default True.
+    native_args :: iterable
+        Extra arguments to use when creating the native widget.
+    native_kwargs :: dict
+        The keyword arguments to use when creaing the native widget.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, title='Vispy canvas', size=(800,600), position=None,
+                 show=False, autoswap=True, app=None, create_native=True,
+                 native_args=None, native_kwargs=None):
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
                                    resize=ResizeEvent,
@@ -62,30 +64,27 @@ class Canvas(object):
                                    close=Event,
                                    )
 
-        # Store input and initialize backend attribute
-        self._args = args
-        self._kwargs = kwargs
+        # Initialize backend attribute
         self._backend = None
+        self._native_args = native_args or ()
+        self._native_kwargs = native_kwargs or {}
 
-        # Extract kwargs that are for us
-        # Most are used in _set_backend
+        # Collect arguments that we will use later
         self._our_kwargs = {}
-        self._our_kwargs['title'] = kwargs.pop('title', 'Vispy canvas')
-        self._our_kwargs['show'] = kwargs.pop('show', False)
-        self._our_kwargs['autoswap'] = kwargs.pop('autoswap', True)
-        self._our_kwargs['size'] = kwargs.pop('size', (800, 600))
-        self._our_kwargs['position'] = kwargs.pop('position', None)
+        self._our_kwargs['title'] = title
+        self._our_kwargs['size'] = size
+        self._our_kwargs['position'] = position
+        self._our_kwargs['show'] = show
+        self._our_kwargs['autoswap'] = autoswap
 
         # Initialise some values
         self._title = ''
 
         # Get app instance
-        self._app = kwargs.pop('app', default_app)
+        self._app = default_app if app is None else app
 
         # Create widget now
-        if 'native' in kwargs:
-            self._set_backend(kwargs.pop('native'))
-        else:
+        if create_native:
             self.create_native()
 
     def create_native(self):
@@ -98,13 +97,8 @@ class Canvas(object):
             self._app.native
             # Instantiate the backed with the right class
             self._set_backend(
-                self._app.backend_module.CanvasBackend(
-                    *self._args,
-                    **self._kwargs))
-
-            # Clean up
-            del self._args
-            del self._kwargs
+                self._app.backend_module.CanvasBackend(*self._native_args,
+                                                       **self._native_kwargs))
 
     def _set_backend(self, backend):
         self._backend = backend
@@ -193,7 +187,6 @@ class Canvas(object):
     def swap_buffers(self):
         """ Swap GL buffers such that the offscreen buffer becomes visible.
         """
-        # if not self._our_kwargs['autoswap']:
         self._backend._vispy_swap_buffers()
 
     def resize(self, w, h):
