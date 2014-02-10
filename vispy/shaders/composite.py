@@ -516,7 +516,15 @@ class FunctionChain(Function):
     
     If the return type is not 'void', then the return value of each function
     will be used to supply the first input argument of the next function in
-    the chain.
+    the chain. For example:
+    
+        vec3 my_func_1(vec3 input) {return input + vec3(1, 0, 0);}
+        void my_func_2(vec3 input) {return input + vec3(0, 1, 0);}
+        
+        vev3 my_func_chain(vec3 input) {
+            return my_func_2(my_func_1(input));
+        }
+    
     """
     def __init__(self, name, funcs):
         Function.__init__(self)
