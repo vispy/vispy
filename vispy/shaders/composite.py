@@ -20,7 +20,7 @@ should be able to do something like:
     # (but of course the code must internally call this function already)
     s.add_hook('my_hook_name', return='vec4', args=['vec4 arg1', 'float arg2'])
 
-    fn = ShaderFunction(...)
+    fn = Function(...)
     bound_fn = fn.bind(arg2=('varying', 'my_var_name'))
     s.set_hook('my_hook_name', bound_fn)
 
@@ -41,7 +41,7 @@ fragment functions allow installation of code to vertex post_hook:
 class CompositeProgram(Program):
     """
     Shader program that is composed of main shader functions combined with
-    any number of ShaderFunctions. Each function that is included in the
+    any number of Functions. Each function that is included in the
     program provides the definition to a function prototype (hook) that is
     declared in the main code.
     
@@ -130,15 +130,15 @@ class CompositeProgram(Program):
         vdeps = set()
         fdeps = set()
         
-        # first, look for FragmentShaderFunctions and add vertex code to the 
+        # first, look for FragmentFunctions and add vertex code to the 
         # post-hook
         for hook_name, func in self._hook_defs.items():
             for dep in func.all_deps():
-                if isinstance(dep, FragmentShaderFunction):
+                if isinstance(dep, FragmentFunction):
                     self.add_post_hook(dep.vertex_post)
 
         # Install shader chain for post_hooks
-        post_chain = ShaderFunctionChain('post_hook', self._post_hooks)
+        post_chain = FunctionChain('post_hook', self._post_hooks)
         self.set_hook('post_hook', post_chain)
 
         # Now add code for all hooks and dependencies in order.
@@ -147,9 +147,9 @@ class CompositeProgram(Program):
             if shader == 'vertex':
                 for dep in func.all_deps():
                     if dep.name not in vdeps:
-                        print("++vertex dep++")
-                        print(dep)
-                        print(dep.code)
+                        #print("++vertex dep++")
+                        #print(dep)
+                        #print(dep.code)
                         vcode += dep.code
                         vdeps.add(dep.name)
                 #vcode += func.code
@@ -157,9 +157,9 @@ class CompositeProgram(Program):
             elif shader == 'fragment': 
                 for dep in func.all_deps():
                     if dep.name not in fdeps:
-                        print("++fragment dep++")
-                        print(dep)
-                        print(dep.code)
+                        #print("++fragment dep++")
+                        #print(dep)
+                        #print(dep.code)
                         fcode += dep.code
                         fdeps.add(dep.name)
                 #fcode += func.code
@@ -167,11 +167,11 @@ class CompositeProgram(Program):
             else:
                 raise Exception("Unsupported shader type: %s" % shader)
 
-        print ("--vertex------------------------------")
-        print (vcode)
-        print ("--fragment------------------------------")
-        print (fcode)
-        print ("--------------------------------")
+        #print ("--vertex------------------------------")
+        #print (vcode)
+        #print ("--fragment------------------------------")
+        #print (fcode)
+        #print ("--------------------------------")
         return vcode, fcode
          
     def _apply_variables(self):
@@ -179,25 +179,25 @@ class CompositeProgram(Program):
         Apply all program variables that are carried by the components of this 
         program.
         """
-        print("apply variables:")
+        #print("apply variables:")
         for hook_name, func in self._hook_defs.items():
             for dep in func.all_deps():
                 for name, value in dep._program_values.items():
-                    print(name, value, dep)
+                    #print(name, value, dep)
                     self[name] = value
         
 
 
-class ShaderFunction(object):
+class Function(object):
     """
     This class represents a single function in GLSL. Its *code* property 
     contains the entire GLSL code of the function as well as any program
-    variable declarations it depends on. ShaderFunctions also have a list
-    of dependencies, which are other ShaderFunctions that must be included
+    variable declarations it depends on. Functions also have a list
+    of dependencies, which are other Functions that must be included
     in the program because they are called from this function.
     
     A CompositeProgram generates its code by concatenating the *code* property
-    of multiple ShaderFunctions and their dependencies; each function is
+    of multiple Functions and their dependencies; each function is
     included exactly once, even if it is depended upon multiple times.
     """    
     def __init__(self, code=None, name=None, args=None, rtype=None, deps=None):
@@ -215,7 +215,7 @@ class ShaderFunction(object):
         rtype : None or str
             String indicating the return type of the function.
             If None, this value will be automatically parsed from *code*.
-        deps : None or list of ShaderFunctions
+        deps : None or list of Functions
             Lists functions that are called by this function, and therefore must
             be included by a CompositeProgram when compiling the complete
             program.
@@ -256,7 +256,7 @@ class ShaderFunction(object):
 
     def bind(self, name, **kwds):
         """
-        Return a new ShaderFunction that wraps this function, using program 
+        Return a new Function that wraps this function, using program 
         variables to supply input to some of its arguments.
         
         This is analogous to python bound methods, where the first argument
@@ -264,7 +264,7 @@ class ShaderFunction(object):
         bound to uniforms/attributes/varyings).
         
         The primary purpose of this is to allow multiple instances of the same
-        ShaderFunction to be used in the final program, where each instance
+        Function to be used in the final program, where each instance
         generates a new bound function with unique attribute/uniform inputs. 
         
         Keyword arguments are used to bind specific function arguments; each
@@ -282,7 +282,7 @@ class ShaderFunction(object):
                       b=('uniform', 'vec2', 'input_b'), 
                       c=('attribute', 'vec3', 'input_c'))
                       
-        Would return a ShaderFunction with the following code:
+        Would return a Function with the following code:
         
             uniform vec2 input_b;
             attribute vec3 input_c;
@@ -291,7 +291,7 @@ class ShaderFunction(object):
             }
         
         """
-        return BoundShaderFunction(self, name, kwds)
+        return BoundFunction(self, name, kwds)
      
 
     def apply_variables(self, program):
@@ -327,22 +327,22 @@ class ShaderFunction(object):
         return deps
     
     def __repr__(self):
-        return "<ShaderFunction %s>" % self.name
+        return "<Function %s>" % self.name
 
 
-class FragmentShaderFunction(ShaderFunction):
+class FragmentFunction(Function):
     """
-    ShaderFunction meant to be used in fragment shaders when some supporting 
+    Function meant to be used in fragment shaders when some supporting 
     code must also be introduced to the vertex shader post-hook, usually to
     initialize one or more varyings.    
     """
     def __init__(self, code, vertex_post=None):
-        super(FragmentShaderFunction, self).__init__(code)
+        super(FragmentFunction, self).__init__(code)
         self.vertex_post = vertex_post
 
     def bind(self, name, **kwds):
         """
-        Behaves exactly as ShaderFunction.bind(), with one exception:
+        Behaves exactly as Function.bind(), with one exception:
         any *attribute* variables bound to a shader function are actually
         introduced via a separate piece of code in the vertex shader.
         
@@ -351,13 +351,13 @@ class FragmentShaderFunction(ShaderFunction):
         """
 
 
-class BoundShaderFunction(ShaderFunction):
+class BoundFunction(Function):
     def __init__(self, parent_function, name, bound_args):
         self._parent = parent_function
         self._name = name
         self._bound_arguments = bound_args
         
-        ShaderFunction.__init__(self)
+        Function.__init__(self)
         self._deps.append(self._parent)
         self.set_code(self.generate_function_code())
 
@@ -399,9 +399,9 @@ class BoundShaderFunction(ShaderFunction):
         return code
         
     
-class ShaderFunctionChain(ShaderFunction):
+class FunctionChain(Function):
     def __init__(self, name, funcs):
-        ShaderFunction.__init__(self)
+        Function.__init__(self)
         self._funcs = funcs
         self._deps = funcs
         self._code = None
@@ -442,33 +442,33 @@ class ShaderFunctionChain(ShaderFunction):
         return code
         
         
-class ShaderFunctionTemplate(object):
+class FunctionTemplate(object):
     """
     Template-based shader function generator. This allows to generate new 
-    ShaderFunction instances with a custom function name and with any custom
+    Function instances with a custom function name and with any custom
     program variable names substituted in. This has effectively the same
-    functionality as ShaderFunction.bind(), but avoids the use of wrapper
+    functionality as Function.bind(), but avoids the use of wrapper
     functions.
     
     Arguments:
     
     template : str
-        A template string used to construct ShaderFunction instances.
+        A template string used to construct Function instances.
         Uses string.Template formatting style ('$name' substitutions). 
         Must contain $func_name in place of the function name, and $var_name for 
         each variable declared in the *var_names* argument.
     var_names : list
         List of the names of program variables that must be added to the code
         and substituted in the template.
-    deps : list(ShaderFunction)
-        List of ShaderFunctions that are required by this function.
+    deps : list(Function)
+        List of Functions that are required by this function.
         
-    See bind() for more information about the construction of ShaderFunctions
+    See bind() for more information about the construction of Functions
     from templates. 
 
     Example that converts a vec2 input variable to vec4:
     
-        template = ShaderFunctionTemplate('''
+        template = FunctionTemplate('''
             vec4 $func_name() {
                 return vec4($input, 0, 1);
             }
@@ -493,7 +493,7 @@ class ShaderFunctionTemplate(object):
     
     def bind(self, name, **kwds):
         """
-        Return a ShaderFunction whose code is constructed by the following 
+        Return a Function whose code is constructed by the following 
         rules:
         
         * $func_name is replaced with the contents of the *name* argument
@@ -520,5 +520,5 @@ class ShaderFunctionTemplate(object):
            
         kwds['func_name'] = name
         code += self.template.substitute(**subs)
-        return ShaderFunction(code, deps=self.deps[:])
+        return Function(code, deps=self.deps[:])
 

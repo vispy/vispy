@@ -9,7 +9,7 @@ import numpy as np
 from .. import gloo
 from ..gloo import gl
 from . import BaseVisual
-from ..shaders.composite import ShaderFunction, ShaderFunctionTemplate, CompositeProgram
+from ..shaders.composite import Function, FunctionTemplate, CompositeProgram
 from .transforms import NullTransform
 
 
@@ -47,14 +47,14 @@ void main(void) {
       
 
 # generate local coordinate from xy (vec2) attribute and z (float) uniform
-# Note that the ShaderFunction and ShaderFunctionTemplate approaches
+# Note that the Function and FunctionTemplate approaches
 # should work equally well.
-#XYInputFunc = ShaderFunction("""
+#XYInputFunc = Function("""
 #vec4 v2_f_to_v4(vec2 xy_pos, float z_pos) {
     #return vec4(xy_pos, z_pos, 1.0);
 #}
 #""")
-XYInputFunc = ShaderFunctionTemplate("""
+XYInputFunc = FunctionTemplate("""
 vec4 $func_name() {
     return vec4($xy_pos, $z_pos, 1.0);
 }
@@ -62,29 +62,29 @@ vec4 $func_name() {
 
 
 # generate local coordinate from xyz (vec3) attribute
-#XYZInputFunc = ShaderFunction("""
+#XYZInputFunc = Function("""
 #vec4 v3_to_v4(vec3 xyz_pos) {
     #return vec4(xyz_pos, 1.0);
 #}
 #""")
-XYZInputFunc = ShaderFunctionTemplate("""
+XYZInputFunc = FunctionTemplate("""
 vec4 $func_name() {
     return vec4($xyz_pos, 1.0);
 }
 """, var_names=['xyz_pos'])
 
 # pair of functions used to provide uniform/attribute input to fragment shader
-#RGBAInputFunc = ShaderFunction("""
+#RGBAInputFunc = Function("""
 #vec4 v4_to_v4(vec4 rgba) {
     #return rgba;
 #}
 #""")
-RGBAInputFunc = ShaderFunctionTemplate("""
+RGBAInputFunc = FunctionTemplate("""
 vec4 $func_name() {
     return $rgba;
 }
 """, var_names=['rgba'])
-RGBAVertexInputFunc = ShaderFunctionTemplate("""
+RGBAVertexInputFunc = FunctionTemplate("""
 void $func_name() {
     $output = $input;
 }
@@ -227,7 +227,7 @@ class LineVisual(BaseVisual):
 
 
 
-#XYPositionFunc = ShaderFunction("""
+#XYPositionFunc = Function("""
     #// XY position vertex shader
     #attribute vec2 in_position;
     #uniform float in_z_position;

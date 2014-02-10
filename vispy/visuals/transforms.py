@@ -5,17 +5,17 @@
 from __future__ import print_function, division, absolute_import
 
 import numpy as np
-from ..shaders.composite import ShaderFunction, ShaderFunctionChain
+from ..shaders.composite import Function, FunctionChain
 from ..util.ordereddict import OrderedDict
 from ..util import transforms
 
-## TODO: binding should be handled by ShaderFunction? Or perhaps some other type?
+## TODO: binding should be handled by Function? Or perhaps some other type?
 class Transform(object):
     """
     Transform is a base class that defines a pair of complementary 
     coordinate mapping functions in both python and GLSL.
     """
-    GLSL_map = None  # Must be ShaderFunction instance
+    GLSL_map = None  # Must be Function instance
     GLSL_imap = None
     
     def map(self, obj):
@@ -26,7 +26,7 @@ class Transform(object):
 
     def bind_map(self, name, var_prefix=None):
         """
-        Return a BoundShaderFunction that accepts only a single vec4 argument,
+        Return a BoundFunction that accepts only a single vec4 argument,
         with all others bound to new attributes or uniforms.
         """
         if var_prefix is None:
@@ -120,7 +120,7 @@ class TransformChain(Transform):
                 bound = tr.bind_map(tr_name)
             bindings.append(bound)
             
-        return ShaderFunctionChain(name, bindings)
+        return FunctionChain(name, bindings)
             
 
 
@@ -128,8 +128,8 @@ class TransformChain(Transform):
 class NullTransform(Transform):
     """ Transform having no effect on coordinates (identity transform).
     """
-    GLSL_map = ShaderFunction("vec4 NullTransform_map(vec4 pos) {return pos;}")
-    GLSL_imap = ShaderFunction("vec4 NullTransform_imap(vec4 pos) {return pos;}")
+    GLSL_map = Function("vec4 NullTransform_map(vec4 pos) {return pos;}")
+    GLSL_imap = Function("vec4 NullTransform_imap(vec4 pos) {return pos;}")
 
     def map(self, obj):
         return obj
@@ -141,13 +141,13 @@ class NullTransform(Transform):
 class STTransform(Transform):
     """ Transform performing only scale and translate
     """
-    GLSL_map = ShaderFunction("""
+    GLSL_map = Function("""
         vec4 STTransform_map(vec4 pos, vec3 scale, vec3 translate) {
             return (pos * vec4(scale, 1)) + vec4(translate, 0);
         }
     """)
     
-    GLSL_imap = ShaderFunction("""
+    GLSL_imap = Function("""
         vec4 STTransform_map(vec4 pos, vec3 scale, vec3 translate) {
             return (pos - vec4(translate, 0)) / vec4(scale, 1);
         }
@@ -212,13 +212,13 @@ class STTransform(Transform):
 
 
 class AffineTransform(Transform):
-    GLSL_map = ShaderFunction("""
+    GLSL_map = Function("""
         vec4 AffineTransform_map(vec4 pos, mat4 matrix) {
             return matrix * pos;
         }
     """)
     
-    GLSL_imap = ShaderFunction("""
+    GLSL_imap = Function("""
         vec4 AffineTransform_map(vec4 pos, mat4 inv_matrix) {
             return inv_matrix * pos;
         }
@@ -285,7 +285,7 @@ class ProjectionTransform(Transform):
 class LogTransform(Transform):
     """ Transform perfoming logarithmic transformation on three axes.
     """
-    GLSL_map = ShaderFunction("""
+    GLSL_map = Function("""
         vec4 LogTransform_map(vec4 pos, vec3 base) {
             vec4 p1 = pos;
             if(base.x > 1.0)
@@ -341,7 +341,7 @@ class PolarTransform(Transform):
     
     """
     
-    GLSL_map = ShaderFunction("""
+    GLSL_map = Function("""
         vec4 PolarTransform_map(vec4 pos) {
             return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1);
         }
