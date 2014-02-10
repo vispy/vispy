@@ -9,34 +9,6 @@ from ..gloo import Program, VertexShader, FragmentShader
 from . import parsing
 
 
-"""
-
-should be able to do something like:
-
-    s = CompositeProgram(vcode, fcode)
-    # this auto-detects undefined function prototypes
-    
-    # or we can do this to auto-generate the prototype
-    # (but of course the code must internally call this function already)
-    s.add_hook('my_hook_name', return='vec4', args=['vec4 arg1', 'float arg2'])
-
-    fn = Function(...)
-    bound_fn = fn.bind(arg2=('varying', 'my_var_name'))
-    s.set_hook('my_hook_name', bound_fn)
-
-maybe also this:
-
-    s.add_attribute('vec4 my_attribute')
-    bf = fn.bind(arg2=s.my_attribute)
-    
-fragment functions allow installation of code to vertex post_hook:
-
-    ffn = FragmentFunction(...)
-    s.set_hook(ffn) # may add variables and post_hook entries to vertex shader
-
-    # note this means that CompositeProgram must have a post_hook function chain.
-
-"""
 
 class CompositeProgram(Program):
     """
@@ -45,6 +17,67 @@ class CompositeProgram(Program):
     program provides the definition to a function prototype (hook) that is
     declared in the main code.
     
+    Arguments:
+    
+    vmain : str
+        GLSL code for vertex shader main function
+    fmain : str
+        GLSL code for fragment shader main function
+    
+    Upon initialization, the GLSL code is searched for undefined function
+    prototypes.
+    
+    
+    Example:
+    
+        vertex_code = '''
+        vec4 swappable_function();
+        
+        void main() {
+            gl_Position = swappable_function();
+        }        
+        '''
+        
+        fragment_code = '''
+        void main() {
+            gl_FragColor = vec4(1, 1, 1, 1);
+        }
+        '''
+        
+        prog = CompositeProgram(vertex_code, fragment_code)
+        
+    This example contains one hook--the undefined 'swappable_function' 
+    prototype. Any function may be attached to this hook:
+    
+        func = ShaderFunction('''
+        attribute vec2 input_position;
+        vec4 func_definition() {
+            return vec4(input_position, 0, 1);
+        }
+        ''')
+        
+        # attach to the shader:
+        prog.set_hook('swappable_function', func)
+        
+    In this example, a wrapper function is generated with the correct name
+    'swappable_function' that calls the attached 'func_definition'. The output
+    program code looks like:
+    
+        vec4 swappable_function();
+        
+        void main() {
+            gl_Position = swappable_function();
+        }        
+    
+        attribute vec2 input_position;
+        vec4 func_definition() {
+            return vec4(input_position, 0, 1);
+        }
+        
+        vec4 swappable_function() {
+            return func_definition();
+        }
+        
     """
     def __init__(self, vmain, fmain):
         Program.__init__(self)
@@ -68,6 +101,10 @@ class CompositeProgram(Program):
     def add_post_hook(self, function):
         """
         Add a new function to be called at the end of the vertex shader.
+        
+        Arguments:
+        
+        function : Function instance
         """
         self._post_hooks.append(function)
 
@@ -98,6 +135,18 @@ class CompositeProgram(Program):
         Use *function* as the definition of *hook*. If the function does not
         have the correct name, a wrapper will be created by calling
         `function.bind(hook_name)`.
+        
+        Arguments:
+        
+        hook_name : str
+            The name of the hook to be defined by *function*. There must exist 
+            a corresponding function prototype in the GLSL main function code.
+        function : Function instance
+            The function that provides the definition for the *hook_name*
+            prototype. The function must have a compatible return type and
+            arguments. If this function does not have the correct name, then
+            a wrapper function will be automatically created with the correct
+            name.
         """
         
         if hook_name not in self._hooks:
@@ -293,24 +342,12 @@ class Function(object):
         """
         return BoundFunction(self, name, kwds)
      
-
-    def apply_variables(self, program):
-        pass
-        
-
-    def add_variable(self, vtype, dtype, name):
-        """
-        Add code for a program variable declaration to this function. 
-        
-        Example:
-        
-            fn.add_variable('attribute', 'vec3', 'input_pos')
-        
-        """
-
     def __setitem__(self, var, value):
         """
-        Set the value of a program variable declared on this function.        
+        Set the value of a program variable declared in this function's code.
+        
+        Any CompositeProgram that depends on this function will automatically
+        apply the variable when it is activated.
         """
         self._program_values[var] = value
 
@@ -330,28 +367,72 @@ class Function(object):
         return "<Function %s>" % self.name
 
 
-class FragmentFunction(Function):
-    """
-    Function meant to be used in fragment shaders when some supporting 
-    code must also be introduced to the vertex shader post-hook, usually to
-    initialize one or more varyings.    
-    """
-    def __init__(self, code, vertex_post=None):
-        super(FragmentFunction, self).__init__(code)
-        self.vertex_post = vertex_post
+#class FragmentFunction(Function):
+    #"""
+    #Function meant to be used in fragment shaders when some supporting 
+    #code must also be introduced to the vertex shader post-hook, usually to
+    #initialize one or more varyings.    
+    #"""
+    #def __init__(self, code, vertex_post=None):
+        #super(FragmentFunction, self).__init__(code)
+        #self.vertex_post = vertex_post
 
-    def bind(self, name, **kwds):
-        """
-        Behaves exactly as Function.bind(), with one exception:
-        any *attribute* variables bound to a shader function are actually
-        introduced via a separate piece of code in the vertex shader.
+    #def bind(self, name, **kwds):
+        #"""
+        #Behaves exactly as Function.bind(), with one exception:
+        #any *attribute* variables bound to a shader function are actually
+        #introduced via a separate piece of code in the vertex shader.
         
         
         
-        """
+        #"""
 
 
 class BoundFunction(Function):
+    """
+    A BoundFunction is a wrapper around a Function that 'binds' zero or more 
+    of the function's input arguments to program variables.
+    
+    Arguments:
+    parent_function : Function instance
+        The Function to be wrapped
+    name : str
+        The name of the new GLSL function that wraps *parent_function*
+    **bound_args : tuple
+        The name of each keyword argument must match one of the argument names
+        for *parent_function*. The value is a tuple that specifies a new
+        program variable to declare: 
+        ('uniform'|'attribute'|'varying', type, name)
+        This program variable will be used to supply the value to the
+        corresponding input argument to *parent_function*.
+
+    
+    For example:
+    
+        func = Function('''
+        vec4 transform(vec4 pos, mat4 matrix) {
+            return vec4 matrix * pos;
+        }
+        ''')
+        
+        bound = BoundFunction(func, 
+                              name='my_transform', 
+                              matrix=('uniform', 'mat4', 'my_matrix'))
+                              
+    In this example, the BoundFunction *bound* calls the original Function 
+    *func* using a new uniform variable *my_matrix* as the *matrix* argument.
+    When *bound* is included in a CompositeProgram, the following code is
+    generated:
+    
+        vec4 transform(vec4 pos, mat4 matrix) {
+            return vec4 matrix * pos;
+        }
+        
+        uniform mat4 my_matrix;
+        vec4 my_transform(vec4 pos) {
+            return transform(pos, my_matrix);
+        }
+    """
     def __init__(self, parent_function, name, bound_args):
         self._parent = parent_function
         self._name = name
@@ -400,6 +481,43 @@ class BoundFunction(Function):
         
     
 class FunctionChain(Function):
+    """
+    Function subclass that generates GLSL code to call a list of Functions 
+    in order. 
+    
+    Arguments:
+    
+    name : str
+        The name of the generated function
+    funcs : list of Functions
+        The list of Functions that will be called by the generated GLSL code.
+        
+        
+    Example:
+    
+        func1 = Function('void my_func_1() {}')
+        func2 = Function('void my_func_2() {}')
+        chain = FunctionChain('my_func_chain', [func1, func2])
+        
+    If *chain* is included in a CompositeProgram, it will generate the following
+    output:
+    
+        void my_func_1() {}
+        void my_func_2() {}
+        
+        void my_func_chain() {
+            my_func_1();
+            my_func_2();
+        }
+
+    The return type of the generated function is the same as the return type
+    of the last function in the chain. Likewise, the arguments for the 
+    generated function are the same as the first function in the chain.
+    
+    If the return type is not 'void', then the return value of each function
+    will be used to supply the first input argument of the next function in
+    the chain.
+    """
     def __init__(self, name, funcs):
         Function.__init__(self)
         self._funcs = funcs
