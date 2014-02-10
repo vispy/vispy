@@ -29,8 +29,11 @@ def translate(M, x, y=None, z=None):
     """
     y = x if y is None else y
     z = x if z is None else z
-    move = np.array([x, y, z, 1], dtype=M.dtype)
-    M[:, 3] = np.dot(M, move)
+    T = np.array([[ 1.0, 0.0, 0.0, x],
+                  [ 0.0, 1.0, 0.0, y],
+                  [ 0.0, 0.0, 1.0, z],
+                  [ 0.0, 0.0, 0.0, 1.0]], dtype=M.dtype).T
+    M[...] = np.dot(M, T)
     return M
 
 
@@ -56,7 +59,11 @@ def scale(M, x, y=None, z=None):
     """
     y = x if y is None else y
     z = x if z is None else z
-    M *= np.array([x, y, z, 1], dtype=M.dtype)[np.newaxis, :]
+    S = np.array([[ x, 0.0, 0.0, 0.0],
+                  [ 0.0, y, 0.0, 0.0],
+                  [ 0.0, 0.0, z, 0.0],
+                  [ 0.0, 0.0, 0.0, 1.0]], dtype=M.dtype).T
+    M[...] = np.dot(M, S)
     return M
 
 
