@@ -24,25 +24,25 @@ class Canvas(object):
 
     Arguments
     ---------
-    title :: str
+    title : str
         The widget title
-    size :: (width, height)
+    size : (width, height)
         The size of the window.
-    position :: (x, y)
+    position : (x, y)
         The position of the window in screen coordinates.
-    show :: bool
+    show : bool
         Whether to show the widget immediately. Default False.
-    autoswap :: bool
+    autoswap : bool
         Whether to swap the buffers automatically after a paint event.
         Default True.
-    app :: Application
+    app : Application
         Give vispy Application instance to use as a backend.
         (vispy.app is used by default.)
-    create_native :: bool
+    create_native : bool
         Whether to create the widget immediately. Default True.
-    native_args :: iterable
+    native_args : iterable
         Extra arguments to use when creating the native widget.
-    native_kwargs :: dict
+    native_kwargs : dict
         The keyword arguments to use when creaing the native widget.
     """
 

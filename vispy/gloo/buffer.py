@@ -353,7 +353,7 @@ class DataBuffer(Buffer):
 
         Parameters
         ----------
-        data :: np.ndarray
+        data : np.ndarray
             The data to upload.
 
         """
