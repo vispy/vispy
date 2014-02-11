@@ -124,7 +124,7 @@ class Canvas(app.Canvas):
         self.timer.connect(self.on_timer)
         self.timer.start()
 
-        # Initialize for real
+        # Initialize the canvas for real
         app.Canvas.__init__(self, **kwargs)
 
     def on_initialize(self, event):

@@ -249,7 +249,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_get_size(self):
         if self._id is None:
             return
-        w, h = glfw.glfwGetWindowSize(self._id)
+        w, h = glfw.glfwGetFramebufferSize(self._id)
         return w, h
 
     def _vispy_get_position(self):

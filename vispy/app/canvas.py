@@ -206,8 +206,10 @@ class Canvas(object):
 
     def update(self):
         """ Inform the backend that the Canvas needs to be repainted """
-
-        return self._backend._vispy_update()
+        if self._backend is not None:
+            return self._backend._vispy_update()
+        else:
+            return
 
     def close(self):
         """ Close the canvas """
