@@ -54,7 +54,7 @@ def _get_function_from_pyopengl(funcname):
     # Set dummy function if we could not find it
     if func is None:
         func = _make_unavailable_func(funcname)
-        logger.warn('warning: %s not available' % funcname)
+        logger.debug('warning: %s not available' % funcname)
     return func
 
 
