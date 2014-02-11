@@ -12,12 +12,14 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import sys
-from vispy.util.ordereddict import OrderedDict
 import inspect
 import weakref
+
+from .ordereddict import OrderedDict
+from ._logging import logger
 
 
 class Event(object):
@@ -186,8 +188,9 @@ class EventEmitter(object):
         the emitter, allowing it to continue invoking other callbacks.
     print_callback_errors : bool
         If True, the emitter prints a message and stack trace whenever a
-        callback raises an exception. (assumes ignore_callback_errors=True)
-
+        callback raises an exception. (assumes ignore_callback_errors=True).
+        NOTE: These will be raised as warnings, so ensure that the vispy
+        logging level is set to at least "warning".
     """
 
     def __init__(self, source=None, type=None, event_class=Event):
@@ -305,9 +308,8 @@ class EventEmitter(object):
                     if self.ignore_callback_errors:
                         if self.print_callback_errors:
                             sys.excepthook(type, value, tb)
-                            print(
-                                "Error invoking callback for event: %s" %
-                                str(event))
+                            logger.warning("Error invoking callback for "
+                                           "event: %s" % str(event))
                     else:
                         raise
 

@@ -12,9 +12,9 @@ transforms, lighting etc. Later we will probably use shader chaining
 and we would only need some hooks in GLSL of the visuals.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
-from vispy import gloo
+from .. import gloo
 
 
 class BaseVisual(object):

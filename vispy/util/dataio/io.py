@@ -33,11 +33,30 @@ def crate():
 
 
 def read_mesh(fname, format=None):
-    """ Read mesh data from file.
-    returns (vertices, faces, normals, texcoords)
-    texcoords and faces may be None.
+    """Read mesh data from file.
 
-    Mesh files that ship with vispy always work: 'triceratops.obj'.
+    Parameters
+    ----------
+    fname : str
+        File name to read.
+    format : str | None
+        Format of file to read in. Currently only ``"obj"`` is supported.
+        If None, format will be inferred from the filename.
+
+    Returns
+    -------
+    vertices : array
+        Vertices.
+    faces : array | None
+        Triangle face definitions.
+    normals : array
+        Normals for the mesh.
+    texcoords : array | None
+        Texture coordinates.
+
+    Notes
+    -----
+    Mesh files that ship with vispy always work, such as 'triceratops.obj'.
     """
     # Check file
     if not os.path.isfile(fname):
@@ -111,27 +130,6 @@ def imsave(filename, im, format=None):
         pim.save(filename, format)
     else:
         raise RuntimeError("imsave requires the imageio or PIL package.")
-
-
-def _screenshot(viewport=None):
-    """ Take a screenshot using glReadPixels. Not sure where to put this
-    yet, so a private function for now. Used in make.py.
-    """
-    import numpy as np
-    from vispy.gloo import gl
-    # gl.glReadBuffer(gl.GL_BACK)  Not avaliable in ES 2.0
-    if viewport is None:
-        viewport = gl.glGetIntegerv(gl.GL_VIEWPORT)
-    x, y, w, h = viewport
-    gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)  # PACK, not UNPACK
-    im = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
-    gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
-    # reshape, flip, and return
-    if not isinstance(im, np.ndarray):
-        im = np.frombuffer(im, np.uint8)
-    im.shape = h, w, 3
-    im = np.flipud(im)
-    return im
 
 
 def _check_img_lib():

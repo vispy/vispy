@@ -7,14 +7,14 @@ vispy backend for pyglet.
 """
 
 # absolute import is important here, since this module is called pyglet :)
-from __future__ import print_function, division, absolute_import
-
-from vispy import app
-from vispy import keys
+from __future__ import division
 
 import pyglet.window
 import pyglet.app
 import pyglet.clock
+
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ...util import keys
 
 
 # Map native keys to vispy keys
@@ -69,10 +69,10 @@ BUTTONMAP = {pyglet.window.mouse.LEFT: 1,
              }
 
 
-class ApplicationBackend(app.ApplicationBackend):
+class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
-        app.ApplicationBackend.__init__(self)
+        BaseApplicationBackend.__init__(self)
 
     def _vispy_get_backend_name(self):
         return 'Pyglet'
@@ -90,12 +90,12 @@ class ApplicationBackend(app.ApplicationBackend):
         return pyglet.app
 
 
-class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
+class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
 
     """ Pyglet backend for Canvas abstract class."""
 
     def __init__(self, *args, **kwargs):
-        app.CanvasBackend.__init__(self)
+        BaseCanvasBackend.__init__(self)
         # Initialize native widget, but default hidden and resizable
         kwargs['visible'] = kwargs.get('visible', False)
         kwargs['resizable'] = kwargs.get('resizable', True)
@@ -313,7 +313,7 @@ class CanvasBackend(pyglet.window.Window, app.CanvasBackend):
         return mod
 
 
-class TimerBackend(app.TimerBackend):
+class TimerBackend(BaseTimerBackend):
 
     def _vispy_start(self, interval):
         interval = self._vispy_timer._interval

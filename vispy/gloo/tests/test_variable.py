@@ -108,7 +108,3 @@ class AttributeTest(unittest.TestCase):
 
         attribute.set_data(1)
         assert isinstance(attribute.data, np.ndarray)
-
-
-if __name__ == "__main__":
-    unittest.main()

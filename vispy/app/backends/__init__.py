@@ -10,15 +10,16 @@ instance we can test whether the GUI toolkit for a backend is already
 imported. This stuff is mostly used in the Application.use method.
 """
 
+import numpy as np
 
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
-BACKENDS = [('Test', 'nonexistent', 'foo.bar.lalalala'),  # For testing
-            ('Qt', 'qt', None),  # Meta backend
-            ('Glut', 'glut', 'OpenGL.GLUT'),
-            ('Pyglet', 'pyglet', 'pyglet'),
-            ('PySide', 'qt', 'PySide'),
-            ('PyQt4', 'qt', 'PyQt4'),
+BACKENDS = [('Qt', '_qt', None),  # Meta backend
+            ('Pyglet', '_pyglet', 'pyglet'),
+            ('PySide', '_qt', 'PySide'),
+            ('PyQt4', '_qt', 'PyQt4'),
+            ('Glut', '_glut', 'OpenGL.GLUT'),
+            #('Test', 'nonexistent', 'foo.bar.lalalala'),  # For testing
             ]
 
 # Map of the lowercase backend names to the backend descriptions above
@@ -30,7 +31,7 @@ BACKENDMAP = dict([(be[0].lower(), be) for be in BACKENDS])
 ATTEMPTED_BACKENDS = []
 
 
-def has_qt(require_uic=False):
+def has_qt(requires_uic=False):
     try:
         from PyQt4 import QtCore, QtGui, QtOpenGL, uic  # noqa
     except ImportError:
@@ -45,7 +46,7 @@ def has_qt(require_uic=False):
         has = True
         has_uic = True
 
-    if require_uic:
+    if requires_uic:
         has = (has and has_uic)
     return has
 
@@ -58,3 +59,18 @@ def has_pyglet():
         has = False
         pass
     return has
+
+
+def requires_qt(requires_uic=False):
+    extra = ' with UIC' if requires_uic else ''
+    return np.testing.dec.skipif(not has_qt(requires_uic),
+                                 'Requires QT' + extra)
+
+
+def requires_pyglet():
+    return np.testing.dec.skipif(not has_pyglet(), 'Requires Pyglet')
+
+
+def requires_non_glut():
+    return np.testing.dec.skipif(not has_pyglet() and not has_qt(),
+                                 'Requires non-Glut backend')

@@ -168,14 +168,11 @@ class ProgramTest(unittest.TestCase):
         program = Program(vert, frag)
         arr = np.array((100, 5), dtype=np.float32)
         assert_raises(ValueError, program.set_vars, arr)
-        dtype = np.dtype([('color', np.float32, 4)])
         dtype = np.dtype([('position', np.float32, 3),
                           ('texcoord', np.float32, 2),
                           ('color', np.float32, 4)])
         data = np.zeros(100, dtype=dtype)
         arr = VertexBuffer(data)
         program.set_vars(arr)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert_raises(TypeError, program.set_vars, 'hello')
+        program.set_vars(dict(color=arr, fake=arr))

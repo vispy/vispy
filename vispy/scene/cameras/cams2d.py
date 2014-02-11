@@ -6,12 +6,12 @@
 Implementations of our 2D cameras.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import numpy as np
 
 from ..base import Camera
-from vispy.util import transforms
+from ...util import transforms
 
 
 class NDCCamera(Camera):
@@ -73,7 +73,6 @@ class TwoDCamera(Camera):
 
     def get_projection(self, viewbox):
         w, h = self.fov
-        from vispy.util import transforms
         projection = np.eye(4)
         transforms.scale(projection, 2.0 / w, 2.0 / h)
         transforms.scale(projection, 1, -1)  # Flip y-axis

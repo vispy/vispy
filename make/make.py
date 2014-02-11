@@ -10,7 +10,7 @@ Convenience tools for vispy developers
 
 """
 
-from __future__ import print_function, division
+from __future__ import division
 
 import sys
 import os
@@ -151,7 +151,14 @@ class Maker:
         os.chdir(ROOT_DIR)
         sys.argv[1:] = []
         import nose
-        result = nose.run()
+        nose.run()
+
+    def flake(self, arg):
+        """ Run flake8 to find style inconsistencies. """
+        os.chdir(ROOT_DIR)
+        sys.argv[1:] = ['--exclude=six.py,_py24_ordereddict.py', 'vispy', 'examples']
+        from flake8.main import main
+        main()
 
     def images(self, arg):
         """ Create images (screenshots). Subcommands:
@@ -182,7 +189,7 @@ class Maker:
             self._images_screenshots()
             self._images_thumbnails()
         elif arg == 'test':
-            rsys.exit('images test command not yet implemented')
+            sys.exit('images test command not yet implemented')
         elif arg == 'upload':
             sphinx_upload(IMAGES_DIR)
         else:
@@ -191,7 +198,8 @@ class Maker:
     def _images_screenshots(self):
         # Prepare
         import imp
-        from vispy.util.dataio import imsave, _screenshot
+        from vispy.util.dataio import imsave
+        from vispy.gloo import _screenshot
         examples_dir = os.path.join(ROOT_DIR, 'examples')
         gallery_dir = os.path.join(IMAGES_DIR, 'gallery')
 

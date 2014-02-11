@@ -8,9 +8,11 @@ ViewBox, Entity, Camera, System. The latter three are abstract classes
 and are overloaded in subsequent subpackages.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import numpy as np
+
+from ..util import logger
 
 
 class Entity(object):
@@ -239,9 +241,10 @@ class ViewBox(Entity):
         # todo: figure out a better way to do this
         # What systems do we use by default? How can the user specify what
         # systems he wants to use?
-        from vispy.scene import systems
+        from .systems.drawingsystem import DrawingSystem  # noqa
+        # XXX Should fix this nested import, but makes a circular import prob
         self._systems = {}
-        self._systems['draw'] = systems.DrawingSystem()
+        self._systems['draw'] = DrawingSystem()
 
     @property
     def bgcolor(self):
@@ -351,11 +354,11 @@ class System(object):
         for entity in viewbox:
             self.process_entity(entity, *result)
 
-    def process_entity(self, entity, *args):
+    def process_entity(self, entity, *args, **kwargs):
         """ Process the given entity.
         """
         self._root._process_entity_count += 1
-        #print('process', entity)
+        logger.debug('process %s' % entity)
         # Process and turn result into a tuple if necessary
         result = self._process_entity(entity, *args)
         if result is None:

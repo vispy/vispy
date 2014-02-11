@@ -17,15 +17,15 @@ Example
 
   program = Program(vert,frag)
 """
-from __future__ import print_function, division
+from __future__ import division
 
 import re
 import os
+from OpenGL import error
 
-from vispy.util import is_string
+from ..util import is_string
 from . import gl
 from . import GLObject
-from OpenGL import error
 
 
 # ------------------------------------------------------- class ShaderError ---

@@ -6,9 +6,9 @@ import unittest
 import numpy as np
 from vispy.gloo import gl
 
-from vispy.gloo.buffer import Buffer
-from vispy.gloo.buffer import VertexBuffer, ClientVertexBuffer
-from vispy.gloo.buffer import ElementBuffer, ClientElementBuffer
+from vispy.gloo.buffer import (VertexBuffer, ClientVertexBuffer,
+                               ElementBuffer, ClientElementBuffer,
+                               Buffer, DataBuffer)
 
 
 # -----------------------------------------------------------------------------
@@ -103,6 +103,14 @@ class BufferTest(unittest.TestCase):
         some_bytes = 'foo'.encode('utf-8')
         self.assertRaises(ValueError, buffer.set_subdata, 0, some_bytes)
         self.assertRaises(ValueError, buffer.set_subdata, some_bytes, data)
+
+
+# -----------------------------------------------------------------------------
+class DataBufferTest(unittest.TestCase):
+    def test_buffer(self):
+        self.assertRaises(NotImplementedError, DataBuffer, gl.GL_ARRAY_BUFFER,
+                          'float32')
+        self.assertRaises(ValueError, DataBuffer, gl.GL_ARRAY_BUFFER, 1.5)
 
 
 # -----------------------------------------------------------------------------
@@ -297,6 +305,14 @@ class VertexBufferTest(unittest.TestCase):
         data = np.zeros((100, 3), dtype=np.float32)
         buffer = ClientVertexBuffer(data)
         self.assertTrue(buffer.data is data)
+        # these are all "pass"
+        buffer['hi'] = 1
+        self.assertTrue(buffer['hi'] is None)
+        self.assertTrue(buffer._create() is None)
+        self.assertTrue(buffer._delete() is None)
+        self.assertTrue(buffer._activate() is None)
+        self.assertTrue(buffer._deactivate() is None)
+        self.assertTrue(buffer._update() is None)
 
         self.assertRaises(RuntimeError, buffer.set_data, data)
         self.assertRaises(RuntimeError, buffer.set_subdata, data)
@@ -356,12 +372,17 @@ class ElementBufferTest(unittest.TestCase):
 
     def test_client_buffer(self):
         data = np.zeros((100, 3), dtype=np.uint32)
-        buffer = ClientElementBuffer(data)
-        self.assertTrue(buffer.data is data)
+        self.assertRaises(ValueError, ClientElementBuffer, 'me')
+        b = ClientElementBuffer(data)
+        self.assertTrue(b.data is data)
 
-        self.assertRaises(RuntimeError, buffer.set_data, data)
-        self.assertRaises(RuntimeError, buffer.set_subdata, data)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        for fun in (b.set_data, b.set_subdata, b.set_count):
+            self.assertRaises(RuntimeError, fun)
+        # these all "pass"
+        b['me'] = 1
+        self.assertTrue(b['me'] is None)
+        self.assertTrue(b._create() is None)
+        self.assertTrue(b._delete() is None)
+        self.assertTrue(b._activate() is None)
+        self.assertTrue(b._deactivate() is None)
+        self.assertTrue(b._update() is None)

@@ -44,9 +44,9 @@ Example::
 
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
-from vispy.util.six import string_types
+from ..util.six import string_types
 from . import gl
 
 
@@ -85,3 +85,4 @@ from .texture import Texture2D, Texture3D, TextureCubeMap  # noqa
 from .shader import VertexShader, FragmentShader  # noqa
 from .framebuffer import FrameBuffer, RenderBuffer  # noqa
 from .program import Program  # noqa
+from .util import _screenshot  # noqa

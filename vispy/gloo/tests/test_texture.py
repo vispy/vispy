@@ -4,8 +4,9 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
+from nose.tools import assert_equal
 from vispy.gloo import gl
-from vispy.gloo.texture import Texture2D, Texture3D
+from vispy.gloo.texture import Texture2D, Texture3D, convert_data
 
 
 class TextureBasetests:
@@ -237,8 +238,15 @@ class Texture3DTest(TextureBasetests, unittest.TestCase):
         self._shape5 = 10, 10, 10, 5
 
 
-if __name__ == "__main__":
-    unittest.main()
-#     t = Texture2DTest()
-#     t.setUp()
-#     t.test_invalid_shape()
+def test_convert_data():
+    """Test conversion of data"""
+    assert_equal(convert_data(np.ones(10, dtype=bool)).max(), 1)
+    assert_equal(convert_data(np.ones(10, dtype=np.uint8),
+                              clim=(0, 1)).max(), 1)
+    assert_equal(convert_data(1e5 * np.ones(10, dtype=np.float16)).max(), 1e5)
+    assert_equal(convert_data(1e5 * np.ones(10, dtype=np.float32)).max(), 1e5)
+    assert_equal(convert_data(1e5 * np.ones(10, dtype=np.float32),
+                              clim=(0, 10)).max(), 1e4)  # XXX IS THIS CORRECT?
+    assert_equal(convert_data(1e5 * np.ones(10, dtype=np.float64)).max(), 1e5)
+    assert_equal(convert_data(np.zeros(10, dtype=np.int32)).max(), 0.5)
+    assert_equal(convert_data(np.zeros(10, dtype=np.uint32)).max(), 0.0)

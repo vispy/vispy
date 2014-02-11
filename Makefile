@@ -27,7 +27,7 @@ in: inplace # just a shortcut
 inplace:
 	$(PYTHON) setup.py build_ext -i
 
-test:
+test: clean
 	rm -f .coverage
 	$(NOSETESTS) vispy
 

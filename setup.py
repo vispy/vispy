@@ -34,7 +34,8 @@ Announcing:
 
 import os
 try:
-    import setuptools  # use setuptools namespace, allows for "develop"
+    # use setuptools namespace, allows for "develop"
+    import setuptools  # noqa, analysis:ignore
 except ImportError:
     pass  # it's not essential for installation
 from distutils.core import setup
@@ -69,7 +70,8 @@ setup(
     license='(new) BSD',
     url='http://vispy.org',
     download_url='https://pypi.python.org/pypi/vispy',
-    keywords="visualization OpenGl ES medical imaging 3D plotting numpy bigdata",
+    keywords="visualization OpenGl ES medical imaging 3D plotting "
+             "numpy bigdata",
     description=description,
     long_description=__doc__,
     platforms='any',
@@ -79,15 +81,18 @@ setup(
         'PyOpenGl'],
     packages=[
         'vispy',
-        'vispy.util',
-        'vispy.util.tests',
-        'vispy.util.dataio',
-        'vispy.app',
-        'vispy.app.tests',
+        'vispy.app', 'vispy.app.tests',
         'vispy.app.backends',
-        'vispy.gloo',
-        'vispy.gloo.tests',
+        'vispy.gloo', 'vispy.gloo.tests',
         'vispy.gloo.gl',
+        'vispy.scene', 'vispy.scene.tests',
+        'vispy.scene.systems',
+        'vispy.scene.entities',
+        'vispy.scene.cameras',
+        'vispy.shaders',
+        'vispy.util', 'vispy.util.tests',
+        'vispy.util.dataio',
+        'vispy.visuals',
     ],
     package_dir={
         'vispy': 'vispy'},

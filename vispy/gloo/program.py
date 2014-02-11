@@ -8,7 +8,7 @@ This code is inspired by similar classes from Pygly.
 
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import re
 
@@ -20,7 +20,7 @@ from . import VertexBuffer, ElementBuffer
 from .buffer import ClientElementBuffer
 from .variable import Attribute, Uniform
 from .shader import VertexShader, FragmentShader, ShaderError
-from vispy.util import is_string
+from ..util import is_string, logger
 
 
 class ProgramError(RuntimeError):
@@ -228,8 +228,8 @@ class Program(GLObject):
         elif isinstance(vars, np.ndarray):
             # Structured array
             if vars.dtype.fields:
-                print("Warning: attribute data given as a structured " +
-                      "array, you probably want to use a VertexBuffer.")
+                logger.warn("Warning: attribute data given as a structured " +
+                            "array, you probably want to use a VertexBuffer.")
                 for k in vars.dtype.fields:
                     D[k] = vars[k]
             else:
@@ -242,8 +242,8 @@ class Program(GLObject):
             if vars.dtype.names:
                 for k in vars.dtype.names:
                     if k not in self._attributes.keys():
-                        print('Dropping "%s" item; '
-                              'it is not a known attribute.' % k)
+                        logger.warn('Dropping "%s" item; '
+                                    'it is not a known attribute.' % k)
                     else:
                         D[k] = vars[k]
             else:
@@ -255,13 +255,13 @@ class Program(GLObject):
             for k in vars:
                 if not (k in self._attributes.keys() or
                         k in self._uniforms.keys()):
-                    print('Dropping "%s" item; '
-                          'it is not a known attribute/uniform.' % k)
+                    logger.warn('Dropping "%s" item; '
+                                'it is not a known attribute/uniform.' % k)
                 else:
                     D[k] = vars[k]
         else:
-            raise ValueError("Don't know how to use attribute of type %r" %
-                             type(vars))
+            raise TypeError("Don't know how to use attribute of type %r" %
+                            type(vars))
 
         # Apply each
         for name, data in D.items():
@@ -296,9 +296,9 @@ class Program(GLObject):
                 if count is None:
                     count = attribute.count
                 else:
-                    # if count != attribute.count:
-                    #    print('Warning: attributes have unequal number of '
-                    #          'vertices.')
+                    if count != attribute.count:
+                        logger.warn('Warning: attributes have unequal '
+                                    'number of vertices.')
                     count = min(count, attribute.count)
             self._vertex_count = count
 

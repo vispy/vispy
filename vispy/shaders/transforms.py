@@ -1,5 +1,11 @@
-from vispy.gloo import VertexShader
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 import numpy as np
+
+from ..gloo import VertexShader
+from ..util import logger
 
 
 class TransformChain(VertexShader):
@@ -82,8 +88,7 @@ class TransformChain(VertexShader):
             "".join(func_calls) +
             "    return pos;\n" +
             "}\n")
-        # print("====================")
-        # print(source)
+        logger.debug("====================\n%s" % source)
         return source
 
     def _disable(self):

@@ -6,13 +6,16 @@
 desktop OpenGL implementation.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
+import sys
+import ctypes
 from OpenGL import GL as _GL
 import OpenGL.GL.framebufferobjects as FBO
 
 from . import _GL_ENUM
 from . import _desktop, _desktop_ext
+from ...util import logger
 
 # Prepare namespace with constants and ext
 from ._constants import *  # noqa
@@ -27,7 +30,7 @@ def _make_unavailable_func(funcname):
 
 def _get_function_from_pyopengl(funcname):
     """ Try getting the given function from PyOpenGL, return
-    a dummy function (that prints a warning when called) if it
+    a dummy function (that shows a warning when called) if it
     could not be found.
     """
     func = None
@@ -51,6 +54,7 @@ def _get_function_from_pyopengl(funcname):
     # Set dummy function if we could not find it
     if func is None:
         func = _make_unavailable_func(funcname)
+        logger.warn('warning: %s not available' % funcname)
     return func
 
 
@@ -59,9 +63,6 @@ def _inject():
     and the ext namespace.
     Note the similatity with vispy.gloo.gl.use().
     """
-    import vispy
-    show_warnings = vispy.config['show_warnings']  # noqa
-    import OpenGL.GL.framebufferobjects as FBO  # noqa
 
     # Import functions here
     NS = globals()
@@ -85,7 +86,6 @@ def _fix():
     # Fix glGetActiveAttrib, since if its just the ctypes function
     if ('glGetActiveAttrib' in NS and
             hasattr(NS['glGetActiveAttrib'], 'restype')):
-        import ctypes
 
         def new_glGetActiveAttrib(program, index):
             # Prepare
@@ -111,7 +111,6 @@ def _fix():
         NS['glGetActiveAttrib'] = new_glGetActiveAttrib
 
     # Monkey-patch pyopengl to fix a bug in glBufferSubData
-    import sys
     if sys.version_info > (3,):
         buffersubdatafunc = NS['glBufferSubData']
         if hasattr(buffersubdatafunc, 'wrapperFunction'):
@@ -151,8 +150,8 @@ def glShaderSource_compat(handle, code):
     for line in code.splitlines():
         if line.startswith('#version'):
             write_version = False
-            print('For compatibility accross different GL backends, ' +
-                  'avoid using the #version pragma.')
+            logger.warn('For compatibility accross different GL backends, ' +
+                        'avoid using the #version pragma.')
     if write_version:
         code = '#version 120\n#line 0\n' + code
 

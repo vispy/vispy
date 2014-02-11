@@ -19,6 +19,10 @@ The classes are written with compatibility of Python3 in mind.
 """
 
 import numpy as np
+import time
+
+from ..misc import _calculate_normals
+from .._logging import logger
 
 
 class WavefrontReader(object):
@@ -67,8 +71,9 @@ class WavefrontReader(object):
                 pass
 
         # Done
+        t0 = time.time()
         mesh = reader.finish()
-        #print('reading mesh took ' + str(time.time()-t0) + ' seconds')
+        logger.debug('reading mesh took ' + str(time.time() - t0) + ' seconds')
         return mesh
 
     def readLine(self):
@@ -93,7 +98,8 @@ class WavefrontReader(object):
         elif line.startswith('#'):
             pass  # Comment
         elif line.startswith('mtllib '):
-            print('Notice reading .OBJ: material properties are ignored.')
+            logger.warning('Notice reading .OBJ: material properties are '
+                           'ignored.')
         elif line.startswith('g ') or line.startswith('s '):
             pass  # Ignore groups and smoothing groups
         elif line.startswith('o '):
@@ -103,7 +109,8 @@ class WavefrontReader(object):
         elif not line.strip():
             pass
         else:
-            print('Notice reading .OBJ: ignoring %s command.' % line.strip())
+            logger.warning('Notice reading .OBJ: ignoring %s command.'
+                           % line.strip())
 
     def readTuple(self, line, n=3):
         """ Reads a tuple of numbers. e.g. vertices, normals or teture coords.
@@ -150,9 +157,8 @@ class WavefrontReader(object):
                     self._texcords.append(self._vt[texcord_index])
                 else:
                     if self._texcords:
-                        print('Warning reading OBJ: ignoring texture '
-                              'coordinates because it is not specified '
-                              'for all faces.')
+                        logger.warning('Ignoring texture coordinates because '
+                                       'it is not specified for all faces.')
                     self._texcords = None
             if self._normals is not None:
                 if len(indices) > 2 and indices[2]:
@@ -160,8 +166,8 @@ class WavefrontReader(object):
                     self._normals.append(self._vn[normal_index])
                 else:
                     if self._normals:
-                        print('Warning reading OBJ: ignoring normals because '
-                              'it is not specified for all faces.')
+                        logger.warning('Ignoring normals because it is not '
+                                       'specified for all faces.')
                     self._normals = None
 
         # Check face
@@ -182,35 +188,16 @@ class WavefrontReader(object):
     def _calculate_normals(self):
         vertices, faces = self._vertices, self._faces
         if faces is None:
-            faces = np.arange(0, vertices.size, dtype=np.uint32)
-        # Build normals
-        T = vertices[faces]
-        N = np.cross(T[::, 1] - T[::, 0], T[::, 2] - T[::, 0])
-        L = np.sqrt(N[:, 0] ** 2 + N[:, 1] ** 2 + N[:, 2] ** 2)
-        N /= L[:, np.newaxis]
-        normals = np.zeros(vertices.shape)
-        normals[faces[:, 0]] += N
-        normals[faces[:, 1]] += N
-        normals[faces[:, 2]] += N
-        L = np.sqrt(
-            normals[
-                :,
-                0] ** 2 +
-            normals[
-                :,
-                1] ** 2 +
-            normals[
-                :,
-                2] ** 2)
-        normals /= L[:, np.newaxis]
+            # ensure it's always 2D so we can use our methods
+            faces = np.arange(0, vertices.size, dtype=np.uint32)[:, np.newaxis]
+        normals = _calculate_normals(vertices, faces)
         return normals
 
     def finish(self):
         """ Converts gathere lists to numpy arrays and creates
         BaseMesh instance.
         """
-        if True:
-            self._vertices = np.array(self._vertices, 'float32')
+        self._vertices = np.array(self._vertices, 'float32')
         if self._faces:
             self._faces = np.array(self._faces, 'uint32')
         else:

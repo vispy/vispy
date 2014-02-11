@@ -7,7 +7,7 @@ ptime.py -  Precision time function made os-independent
 (should have been taken care of by python)
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import sys
 import time as systime

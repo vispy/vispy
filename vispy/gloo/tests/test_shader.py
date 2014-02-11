@@ -84,6 +84,3 @@ class ShaderTest(unittest.TestCase):
         shader = VertexShader("attribute vec4 color;")
         attributes = shader._get_attributes()
         assert attributes == [("color", gl.GL_FLOAT_VEC4)]
-
-if __name__ == "__main__":
-    unittest.main()

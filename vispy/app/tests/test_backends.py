@@ -8,15 +8,9 @@ implementation is corect.
 
 """
 
-import numpy as np
-
 import vispy
-from vispy import keys
-from vispy.app.backends import has_pyglet, has_qt
-
-
-requires_qt = np.testing.dec.skipif(not has_qt(), 'Requires QT')
-requires_pyglet = np.testing.dec.skipif(not has_pyglet(), 'Requires QT-UIC')
+from vispy.util import keys
+from vispy.app.backends import requires_pyglet, requires_qt
 
 
 class BaseTestmodule:
@@ -93,7 +87,7 @@ class BaseTestmodule:
         fname = self._module.__file__.strip('c')
         text = open(fname, 'rb').read().decode('utf-8')
 
-        canvas = vispy.app.Canvas(native=None)
+        canvas = vispy.app.Canvas(create_native=False)
         # Stylus and touch are ignored because they are not yet implemented.
         # Mouse events are emitted from the CanvasBackend base class.
         ignore = set(['stylus', 'touch', 'mouse_press',
@@ -108,28 +102,28 @@ class BaseTestmodule:
 class Test_TemplateBackend(BaseTestmodule):
 
     def __init__(self):
-        from vispy.app.backends import template
-        BaseTestmodule.__init__(self, template)
+        from vispy.app.backends import _template
+        BaseTestmodule.__init__(self, _template)
 
 
 class Test_QtBackend(BaseTestmodule):
 
-    @requires_qt
+    @requires_qt()
     def __init__(self):
-        from vispy.app.backends import qt
-        BaseTestmodule.__init__(self, qt)
+        from vispy.app.backends import _qt
+        BaseTestmodule.__init__(self, _qt)
 
 
 class Test_PygletBackend(BaseTestmodule):
 
-    @requires_pyglet
+    @requires_pyglet()
     def __init__(self):
-        from vispy.app.backends import pyglet
-        BaseTestmodule.__init__(self, pyglet)
+        from vispy.app.backends import _pyglet
+        BaseTestmodule.__init__(self, _pyglet)
 
 
 class Test_GlutBackend(BaseTestmodule):
 
     def __init__(self):
-        from vispy.app.backends import glut
-        BaseTestmodule.__init__(self, glut)
+        from vispy.app.backends import _glut
+        BaseTestmodule.__init__(self, _glut)

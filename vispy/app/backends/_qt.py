@@ -6,20 +6,20 @@
 vispy backend for Qt (PySide and PyQt4).
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 import logging
 
-import vispy
-from vispy import app
-from vispy import keys
-from vispy.app.backends import ATTEMPTED_BACKENDS
-from vispy.util.six import text_type
+from ... import config
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ...util import keys
+from . import ATTEMPTED_BACKENDS
+from ...util.six import text_type
 
 # Get what qt lib to try
 if len(ATTEMPTED_BACKENDS):
     qt_lib = ATTEMPTED_BACKENDS[-1].lower()
     if qt_lib.lower() == 'qt':
-        qt_lib = vispy.config['qt_lib'].lower()
+        qt_lib = config['qt_lib'].lower()
     # in case the last app we ran was something else (e.g., Pyglet)
     if qt_lib not in ['pyqt', 'pyqt4', 'pyside', 'qt']:
         qt_lib = 'any'
@@ -101,10 +101,10 @@ KEYMAP = {
 BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 
-class ApplicationBackend(app.ApplicationBackend):
+class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
-        app.ApplicationBackend.__init__(self)
+        BaseApplicationBackend.__init__(self)
 
     def _vispy_get_backend_name(self):
         if 'pyside' in QtCore.__name__.lower():
@@ -139,12 +139,12 @@ class ApplicationBackend(app.ApplicationBackend):
         return app
 
 
-class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
+class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     """Qt backend for Canvas abstract class."""
 
     def __init__(self, *args, **kwargs):
-        app.CanvasBackend.__init__(self)
+        BaseCanvasBackend.__init__(self)
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
@@ -316,13 +316,13 @@ class CanvasBackend(QtOpenGL.QGLWidget, app.CanvasBackend):
 #             self.qt_event.accept()
 #         else:
 #             self.qt_event.ignore()
-class TimerBackend(app.TimerBackend, QtCore.QTimer):
+class TimerBackend(BaseTimerBackend, QtCore.QTimer):
 
     def __init__(self, vispy_timer):
         if QtGui.QApplication.instance() is None:
             global QAPP
             QAPP = QtGui.QApplication([])
-        app.TimerBackend.__init__(self, vispy_timer)
+        BaseTimerBackend.__init__(self, vispy_timer)
         QtCore.QTimer.__init__(self)
         self.timeout.connect(self._vispy_timeout)
 

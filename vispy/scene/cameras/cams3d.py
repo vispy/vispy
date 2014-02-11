@@ -6,13 +6,13 @@
 Implementations of our 3D cameras.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import math
 import numpy as np
 
 from ..base import Camera
-from vispy.util import transforms
+from ...util import transforms, logger
 
 
 class ThreeDCamera(Camera):
@@ -66,7 +66,7 @@ class ThreeDCamera(Camera):
                 self._view_el = -90
             if self._view_el > 90:
                 self._view_el = 90
-            #print(self._view_az, self._view_el)
+            logger.debug('(Az %s, El %s)' % (self._view_az, self._view_el))
 
             # Init matrix
             M = np.eye(4)
@@ -168,14 +168,8 @@ class FirstPersonCamera(Camera):
 
         # Calculate distance to center in order to have correct FoV and fy.
         if fov == 0:
-            M = transforms.ortho(-
-                                 0.5 *
-                                 fx, 0.5 *
-                                 fx, -
-                                 0.5 *
-                                 fy, 0.5 *
-                                 fy, -
-                                 10000, 10000)
+            M = transforms.ortho(-0.5*fx, 0.5*fx, -0.5*fy, 0.5*fy,
+                                 -10000, 10000)
             self._d = 0
         else:
             d = fy / (2 * math.tan(math.radians(fov) / 2))

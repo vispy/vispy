@@ -4,11 +4,11 @@
 # -----------------------------------------------------------------------------
 """ Definition of VertexBuffer, ElemenBuffer and client buffer classes. """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import numpy as np
 
-from vispy.util import is_string
+from ..util import is_string, logger
 from . import gl
 from . import GLObject
 
@@ -142,11 +142,11 @@ class Buffer(GLObject):
         gl.glBindBuffer(self._target, self._handle)
 
     def _deactivate(self):
-        """ Unbind the current bound buffer """
+        """Unbind the current bound buffer"""
         gl.glBindBuffer(self._target, 0)
 
     def _update(self):
-        """ Upload all pending data to GPU. """
+        """Upload all pending data to GPU"""
 
         # Bind buffer now
         gl.glBindBuffer(self._target, self._handle)
@@ -156,17 +156,15 @@ class Buffer(GLObject):
             # This will only allocate the buffer on GPU
             # WARNING: we should check if this operation is ok
             gl.glBufferData(self._target, self._nbytes, None, self._usage)
-            # debug
-            # print("Creating a new buffer (%d) of %d bytes"
-            #        % (self._handle, self._nbytes))
+            logger.debug("Creating a new buffer (%d) of %d bytes"
+                         % (self._handle, self._nbytes))
             self._need_resize = False
 
         # Upload data
         while self._pending_data:
             data, nbytes, offset = self._pending_data.pop(0)
-            # debug
-            # print("Uploading %d bytes at offset %d to buffer (%d)"
-            #        % (nbytes, offset, self._handle))
+            logger.debug("Uploading %d bytes at offset %d to buffer (%d)"
+                         % (nbytes, offset, self._handle))
             try:
                 gl.glBufferSubData(self._target, offset, nbytes, data)
             except Exception as error:
@@ -355,7 +353,7 @@ class DataBuffer(Buffer):
 
         Parameters
         ----------
-        data :: np.ndarray
+        data : np.ndarray
             The data to upload.
 
         """

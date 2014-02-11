@@ -7,10 +7,10 @@ It clearly indicates what methods should be implemented and what events
 should be emitted.
 """
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
-from vispy import app
-from vispy import keys
+from ... import app
+from ...util import keys
 
 # Map native keys to vispy keys
 KEYMAP = {

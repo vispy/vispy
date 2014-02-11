@@ -16,12 +16,13 @@ This code is inspired by similar classes from Visvis and Pygly.
 # todo: compressed textures?
 
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import numpy as np
 
 from . import gl
 from . import GLObject, ext_available, convert_to_enum
+from ..util import logger
 
 
 class TextureError(RuntimeError):
@@ -450,8 +451,7 @@ class Texture(GLObject):
                 # If not ok, warn (one time)
                 if not gl.glIsTexture(self._handle):
                     self._handle = 0
-                    print(
-                        'Warning enabling texture, the texture is not valid.')
+                    logger.warn('The texture is not valid.')
                     return
                 if new_texture_created:
                     # We have a new texture: apply all parameters that were set
@@ -687,19 +687,11 @@ def convert_data(data, clim=None):
         # All other floats are converted with relative ease
         CONVERTING = True
         data = data.astype(np.float32)
-    elif data.dtype.name.startswith('int'):
+    elif 'int' in data.dtype.name:
         # Integers, we need to parse the dtype
         CONVERTING = True
         if clim is None:
-            max = 2 ** int(data.dtype.name[3:])
-            clim = -max // 2, max // 2 - 1
-        data = data.astype(np.float32)
-    elif data.dtype.name.startswith('uint'):
-        # Unsigned integers, we need to parse the dtype
-        CONVERTING = True
-        if clim is None:
-            max = 2 ** int(data.dtype.name[4:])
-            clim = 0, max // 2
+            clim = (np.iinfo(data.dtype).min, np.iinfo(data.dtype).max)
         data = data.astype(np.float32)
     else:
         raise TextureError('Could not convert data type %s.' % data.dtype.name)
@@ -714,8 +706,7 @@ def convert_data(data, clim=None):
             data *= 1.0 / (clim[1] - clim[0])
 
     if CONVERTING:
-        pass
-        #print('Warning, converting data.')
+        logger.debug('Converting data.')
 
     # Convert if necessary
     if data.dtype == np.uint8:
@@ -726,9 +717,8 @@ def convert_data(data, clim=None):
         pass  # Yeah
     elif data.dtype in (np.float16, np.float32):
         # Arg, convert. Don't forget to clip
-        data *= 256.0
-        data[data < 0.0] = 0.0
-        data[data > 256.0] = 256.0
+        data *= 255.0
+        np.clip(data, 0, 255, data)
         data = data.astype(np.uint8)
     else:
         raise TextureError(
