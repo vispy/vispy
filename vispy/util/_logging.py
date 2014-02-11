@@ -21,7 +21,7 @@ def _get_vispy_caller():
         if module.startswith('vispy'):
             line = str(record[0].f_lineno)
             func = record[3]
-            caller = "{:s}:{:s}({:s}): ".format(module, func, line)
+            caller = "{0}:{1}({2}): ".format(module, func, line)
             return caller
     return 'unknown'
 
