@@ -87,8 +87,8 @@ class Box(Entity):
             [left, bottom]])
         self._visual.set_data(pos=pos)
         
-    def paint(self, canvas):
-        self._visual.transform = self.root_transform()
+    def on_paint(self, event):
+        self._visual.transform = event.root_transform()
         self._visual.paint()
         
     def on_rect_change(self, ev):
@@ -235,16 +235,14 @@ class ViewBox(Box):
     def on_mouse_press(self, event):
         if event.handled:
             return
-        print(event)
+        print(event.pos)
     
     def on_mouse_move(self, event):
         if event.handled:
             return
-        
     
     def on_mouse_release(self, event):
         if event.handled:
             return
-        print(event)
     
     

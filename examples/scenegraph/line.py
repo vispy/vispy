@@ -15,7 +15,7 @@ pos = np.empty((1000,2))
 pos[:,0] = np.linspace(0., 1., 1000)
 pos[:,1] = np.random.normal(size=1000)
 
-line = scenegraph.entities.Line(parent=canvas.root, pos=pos)
+line = scenegraph.entities.Line(parents=[canvas.root], pos=pos)
 line.transform.translate((50, 300))
 line.transform.scale((700, 50))
 

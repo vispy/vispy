@@ -79,6 +79,19 @@ class Transform(object):
         return bound
 
 
+def arg_to_array(func):
+    def fn(self, arg):
+        return func(self, np.array(arg))
+    return fn
+
+def arg_to_vec4(func):
+    def fn(self, arg):
+        arg = np.array(arg)
+        if arg.ndim == 1:
+            pass
+        return func(self, np.array(arg))
+    return fn
+
 class TransformChain(Transform):
     """
     Transform subclass that performs a sequence of transformations in order.
@@ -110,11 +123,13 @@ class TransformChain(Transform):
             raise TypeError("Transform chain must be a list")
         self._transforms = tr
         
+    @arg_to_array
     def map(self, obj):
         for tr in self.transforms:
             obj = tr.map(obj)
         return obj
 
+    @arg_to_array
     def imap(self, obj):
         for tr in self.transforms[::-1]:
             obj = tr.imap(obj)
@@ -147,9 +162,11 @@ class NullTransform(Transform):
     GLSL_map = Function("vec4 NullTransform_map(vec4 pos) {return pos;}")
     GLSL_imap = Function("vec4 NullTransform_imap(vec4 pos) {return pos;}")
 
+    @arg_to_array
     def map(self, obj):
         return obj
     
+    @arg_to_array
     def imap(self, obj):
         return obj
 
@@ -178,10 +195,12 @@ class STTransform(Transform):
         self.scale = (1.0, 1.0, 1.0) if scale is None else scale
         self.translate = (0.0, 0.0, 0.0) if translate is None else translate
     
+    @arg_to_array
     def map(self, coords):
         n = coords.shape[-1]
         return coords * self.scale[:n] + self.translate[:n]
     
+    @arg_to_array
     def imap(self, coords):
         n = coords.shape[-1]
         return (coords - self.translate[:n]) / self.scale[:n]
@@ -244,9 +263,11 @@ class AffineTransform(Transform):
         super(AffineTransform, self).__init__()
         self.reset()
     
+    @arg_to_vec4
     def map(self, coords):
         return np.dot(self.matrix, coords)
     
+    @arg_to_vec4
     def imap(self, coords):
         return np.dot(self.inv_matrix, coords)
 
@@ -261,7 +282,7 @@ class AffineTransform(Transform):
     @property
     def inv_matrix(self):
         if self._inv_matrix is None:
-            self.inv_matrix = np.linalg.invert(self.matrix)
+            self._inv_matrix = np.linalg.inv(self.matrix)
         return self._inv_matrix
 
     def translate(self, pos):
@@ -346,6 +367,7 @@ class LogTransform(Transform):
         self._base[:len(s)] = s
         self._base[len(s):] = 0.0
             
+    @arg_to_array
     def map(self, coords):
         ret = np.empty(coords.shape, coords.dtype)
         base = self.base
@@ -356,6 +378,7 @@ class LogTransform(Transform):
                 ret[...,i] = coords[...,i]
         return ret
     
+    @arg_to_array
     def imap(self, coords):
         ret = np.empty(coords.shape, coords.dtype)
         base = self.base
@@ -381,6 +404,7 @@ class PolarTransform(Transform):
         }
         """)
 
+    @arg_to_array
     def map(self, coords):
         ret = np.empty(coords.shape, coords.dtype)
         ret[...,0] = coords[...,1] * np.cos[coords[...,0]]
@@ -389,6 +413,7 @@ class PolarTransform(Transform):
             ret[...,i] = coords[...,i]
         return ret
     
+    @arg_to_array
     def imap(self, coords):
         ret = np.empty(coords.shape, coords.dtype)
         ret[...,0] = np.atan2(coords[...,0], np.sin[coords[...,1]])

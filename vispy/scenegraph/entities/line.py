@@ -6,18 +6,17 @@ __all__ = ['Line']
 class Line(Entity):
     """
     """
-    VisualClass = LineVisual
     WrapMethods = []
 
     def __init__(self, *args, **kwds):
-        parent = kwds.pop('parent', None)
-        Entity.__init__(self, parent)
-        self._visual = self.VisualClass(*args, **kwds)
+        parents = kwds.pop('parents', None)
+        Entity.__init__(self, parents)
+        self._visual = LineVisual(*args, **kwds)
         for method in self.WrapMethods:
             setattr(self, method, getattr(self._visual, method))
         
-    def paint(self, canvas):
-        self._visual.transform = self.root_transform()
+    def on_paint(self, event):
+        self._visual.transform = event.root_transform()
         self._visual.paint()
 
 

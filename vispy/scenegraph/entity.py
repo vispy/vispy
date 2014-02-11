@@ -6,7 +6,7 @@ from __future__ import division
 
 from ..visuals import transforms
 from ..util.event import EmitterGroup, Event
-from .events import SceneMouseEvent
+from .events import ScenePaintEvent, SceneMouseEvent
 
 class Entity(object):
 
@@ -21,7 +21,7 @@ class Entity(object):
     It is recommended to use multi-parenting with care.
     """
 
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, parents=None):
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    parents_change=Event,
@@ -30,38 +30,24 @@ class Entity(object):
                                    mouse_press=SceneMouseEvent,
                                    mouse_move=SceneMouseEvent,
                                    mouse_release=SceneMouseEvent,
+                                   paint=ScenePaintEvent,
                                    )
 
         # Entities are organized in a parent-children hierarchy
         self._children = set()
-        # TODO: use weakrefs for parents. 
+        # TODO: use weakrefs for parents.
         self._parents = set()
-        self._active_parent = None
-        self.parent = parent
+        if parents is not None:
+            self.parents = parents
 
         # Components that all entities in vispy have
         self._transform = transforms.AffineTransform()
-        
 
     @property
     def children(self):
         """ The list of children of this entity.
         """
         return list(self._children)
-
-    @property
-    def parent(self):
-        """ The parent entity. In case there are multiple parents,
-        the active parent is given, if any.
-        """
-        return self._active_parent
-
-    @parent.setter
-    def parent(self, value):
-        if value is None:
-            self.parents = set()
-        else:
-            self.parents = set([value])
 
     @property
     def parents(self):
@@ -103,6 +89,7 @@ class Entity(object):
         self._parents.add(parent)
         parent._add_child(self)
         self.events.parents_change(added=parent)
+        self.update()
         
     def remove_parent(self, parent):
         if parent not in self._parents:
@@ -118,34 +105,14 @@ class Entity(object):
     def _remove_child(self, ent):
         self._children.remove(ent)
         self.events.children_change(removed=ent)
-        
-    def _set_active_parent(self, parent):
-        """
-        Set the currently active parent for this entity.
-        If None, then this entity is assumed to be the root of
-        the scenegraph until a new parent is selected.
-        """
-        assert parent is None or parent in self._parents
-        prev = self._active_parent
-        self._active_parent = parent
-        self.events.active_parent_change(prev=prev)
-    
-        # todo: Should we destroy GL objects (because we are removed)
-# from an OpenGL context)?
-# LC: No--only destroy when the visual is garbage collected or when explicitly 
-# asked to destroy.
-#         canvas1 = self.get_canvas()
-#         canvas2 = value.get_canvas()
-#         if canvas1 and (canvas1 is not canvas2):
-#             self.clear_gl()
 
     def __iter__(self):
         return self._children.__iter__()
 
     @property
     def transform(self):
-        """ The transform for this entity; how the local coordinate system
-        is transformed with respect to the parent coordinate system.
+        """ The transform for this entity; maps from the local coordinate
+        system of the entity to its parent's coordinate system.
         
         By default, this is an AffineTransform instance.
         """
@@ -155,56 +122,28 @@ class Entity(object):
     def transform(self, tr):
         assert isinstance(tr, transforms.Transform)
         self._transform = tr
+        self.update()
 
-    def root_transform(self):
+    def on_paint(self, event):
         """
-        Return the complete Transform that maps from self to the root of the 
-        scenegraph.
-        """
-        tr = []
-        ent = self
-        while ent is not None:
-            tr.append(ent.transform)
-            ent = ent.parent
-        return transforms.TransformChain(tr)
-
-    def document_transform(self):
-        """
-        Return the complete Transform that maps from self to the first
-        Document in its ancestry.
-        """
-
-        from .entities import Document
-        tr = []
-        ent = self
-        while not isinstance(ent, Document):
-            tr.append(ent.transform)
-            ent = ent.parent
-        return transforms.TransformChain(tr)
-
-    def paint(self, canvas, path):
-        """
-        Paint this entity, given that we are drawing on *canvas* through 
-        the given entity *path*.
+        Paint this entity, given that we are drawing through 
+        the given scene *path*.
         """
         pass
     
-    def paint_tree(self, canvas, parent=None):
+    def _process_paint_event(self, event):
         """
         Paint the entire tree of Entities beginnging here.            
         """
-        self._set_active_parent(parent)
-        
-        for child in self:
-            child.paint_tree(canvas, parent=self)
-        
-        self.paint(canvas)
+        for path in self.walk():
+            event._set_path(path)
+            entity = path[-1]
+            entity.events.paint(event)
 
-    def process_mouse_event(self, canvas, event):
+    def _process_mouse_event(self, event):
         """
         Propagate a mouse event through the scene tree starting at this Entity.
         """
-        
         # 1. find all entities whose mouse-area includes the point of the click.
         # 2. send the event to each entity one at a time
         #    (we should use a specialized emitter for this, rather than 
@@ -212,20 +151,33 @@ class Entity(object):
         
         # TODO: for now we send the event to all entities; need to use
         # picking to decide which entities should receive the event.
-        scene_event = SceneMouseEvent(event)
-        for entity in self.walk():
-            getattr(entity.events, event.type)(scene_event)
+        for path in self.walk():
+            event._set_path(path)
+            entity = path[-1]
+            getattr(entity.events, event.type)(event)
 
-    def walk(self):
+    def walk(self, path=None):
         """
         Return an iterator that walks the entire scene graph starting at this
-        Entity.        
+        Entity. Yields a list of Entities for each path in the scenegraph.
         """
         # TODO: need some control over the order..
-        yield self
+        #if path is None:
+            #path = []
+            #yield path, self
+        #if len(self.children) > 0:
+            #path = path + [self]
+            #yield path, self.children
+            #for ch in self:
+                #for e in ch.walk(path):
+                    #yield e
+        path = (path or []) + [self]
+        yield path
         for ch in self:
-            for e in ch.walk():
-                yield e
+            for p in ch.walk(path):
+                yield p
+        
+        
 
     def update(self):
         """
@@ -233,3 +185,6 @@ class Entity(object):
         """
         # TODO
         pass
+
+
+    

@@ -2,6 +2,7 @@ from ..gloo import gl
 from .. import app
 from .entities import Document
 from ..visuals.transforms import STTransform
+from .events import ScenePaintEvent, SceneMouseEvent
 
 class SceneCanvas(app.Canvas):
 
@@ -13,6 +14,9 @@ class SceneCanvas(app.Canvas):
 
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
+        self.events.mouse_press.connect(self._process_mouse_event)
+        self.events.mouse_move.connect(self._process_mouse_event)
+        self.events.mouse_release.connect(self._process_mouse_event)
         
         root = Document()
         root.transform = STTransform()
@@ -47,20 +51,22 @@ class SceneCanvas(app.Canvas):
         gl.glViewport(0, 0, *self.size)
 
         # Draw viewbox
-        self.root.paint_tree(canvas=self)
+        scene_event = ScenePaintEvent(canvas=self, event=event)
+        self._root._process_paint_event(scene_event)
+        
 
-    def on_mouse_press(self, event):
-        if event.handled:
-            return
-        self._root.process_mouse_event(self, event)
+    def _process_mouse_event(self, event):
+        scene_event = SceneMouseEvent(canvas=self, event=event)
+        self._root._process_mouse_event(scene_event)
         
-    def on_mouse_move(self, event):
-        if event.handled:
-            return
-        self._root.process_mouse_event(self, event)
-        
-    def on_mouse_release(self, event):
-        if event.handled:
-            return
-        self._root.process_mouse_event(self, event)
-        
+        # If something in the scene handled the scene_event, then we mark
+        # the original event accordingly.
+        event.handled = scene_event.handled
+
+    def nd_transform(self):
+        """
+        Return the transform that maps from ND coordinates to pixel coordinates
+        on the Canvas.        
+        """
+        s = (self.size[0]/2., self.size[1]/2.)
+        return STTransform(scale=s, translate=s)
