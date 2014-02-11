@@ -30,7 +30,7 @@ class DrawingSystem(System):
         return np.eye(4)
 
     def _process_entity(self, entity, transform):
-        logger.info('processing entity %s' % entity)
+        logger.debug('processing entity %s' % entity)
         # Set transformation
         if entity.transform is not None:
             transform = np.dot(transform, entity.transform)

@@ -49,7 +49,7 @@
   <customwidget>
    <class>CanvasBackend</class>
    <extends>QWidget</extends>
-   <header>vispy.app.backends.qt</header>
+   <header>vispy.app.backends._qt</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

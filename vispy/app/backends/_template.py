@@ -118,7 +118,7 @@ class CanvasBackend(app.CanvasBackend):
         raise NotImplementedError()
 
     def _vispy_get_position(self):
-        # Should return widget (x, y, w, h)
+        # Should return widget position
         raise NotImplementedError()
 
     def _vispy_get_native_canvas(self):

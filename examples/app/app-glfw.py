@@ -1,22 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This example shows how to actively select and test the glut backend.
+This example shows how to actively select and test the glfw backend.
 
 You should see a black window and any mouse or keyboard event should be
 detected. A timer is also run every second and it should print "tick !"
 every second.
-
-Note:
-====
-Depending on on your glut implementation (native or freeglut), the mouse wheel
-event may or may not be detected. Furthermore, glut has no utf-8 support and
-non ascii-key will most likely produces garbage.
 """
 
-from vispy import app
+from vispy import app, keys
 from vispy.gloo import gl
-app.use('glut')
+app.use('glfw')
 
 
 class Canvas(app.Canvas):
@@ -39,6 +33,8 @@ class Canvas(app.Canvas):
 
     def on_key_press(self, event):
         print('on_key_press: %s' % event.text)
+        if event.key == keys.ESCAPE:
+            self.app.quit()
 
     def on_key_release(self, event):
         print('on_key_release')

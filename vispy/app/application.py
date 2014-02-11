@@ -19,20 +19,19 @@ from ..util import logger
 
 
 class Application(object):
+    """Representation of the vispy application
 
-    """ Representation of the vispy application. This wraps a native
-    GUI application instance. Vispy has a default instance of this class
-    at vispy.app.default_app.
+    This wraps a native GUI application instance. Vispy has a default
+    instance of this class at vispy.app.default_app.
 
     There are multiple stages for an Application object:
         * Backend-less - the state when it is just initialized
         * Backend selected - use() has been successfully called. Note that
-          the Canvas calls use() without arguments reight before creating
+          the Canvas calls use() without arguments right before creating
           its backend widget.
         * Native application is created - the Canvas probes the
-          Application,native property to ensure that there is a native
+          Application.native property to ensure that there is a native
           application right before a native widget is created.
-
     """
 
     def __init__(self):

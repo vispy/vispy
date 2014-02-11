@@ -171,11 +171,6 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         # Force the window or widget to shut down
         self.close()
 
-    def _vispy_get_geometry(self):
-        # Should return widget (x, y, w, h)
-        g = self.geometry()
-        return (g.x(), g.y(), g.width(), g.height())
-
     def _vispy_get_position(self):
         g = self.geometry()
         return g.x(), g.y()

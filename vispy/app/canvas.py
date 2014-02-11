@@ -95,7 +95,7 @@ class Canvas(object):
             # Make sure that the app is active
             self._app.use()
             self._app.native
-            # Instantiate the backed with the right class
+            # Instantiate the backend with the right class
             self._set_backend(
                 self._app.backend_module.CanvasBackend(*self._native_args,
                                                        **self._native_kwargs))
@@ -206,14 +206,21 @@ class Canvas(object):
 
     def update(self):
         """ Inform the backend that the Canvas needs to be repainted """
-
-        return self._backend._vispy_update()
+        if self._backend is not None:
+            return self._backend._vispy_update()
+        else:
+            return
 
     def close(self):
         """ Close the canvas """
 
         self._backend._vispy_close()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
 
     # def mouse_event(self, event):
         #"""Called when a mouse input event has occurred (the mouse has moved,
@@ -366,7 +373,8 @@ class MouseEvent(Event):
         event = self
         events = []
         while True:
-            if event is None:
+            # mouse_press events can only be the start of a trail
+            if event is None or event.type == 'mouse_press':
                 break
             events.append(event)
             event = event.last_event
