@@ -80,16 +80,46 @@ class Transform(object):
 
 
 def arg_to_array(func):
+    """
+    Decorator to convert argument to array.
+    """
     def fn(self, arg):
         return func(self, np.array(arg))
     return fn
 
 def arg_to_vec4(func):
+    """
+    Decorator for converting argument to vec4 format suitable for 4x4 matrix 
+    multiplication.
+    
+    [x, y]      =>  [[x, y, 0, 1]]
+    
+    [x, y, z]   =>  [[x, y, z, 1]]
+    
+    [[x1, y1],      [[x1, y1, 0, 1],
+     [x2, y2],  =>   [x2, y2, 0, 1],
+     [x3, y3]]       [x3, y3, 0, 1]]
+     
+    If 1D input is provided, then the return value will be flattened.
+    Accepts input of any dimension, as long as shape[-1] <= 4
+    """
     def fn(self, arg):
         arg = np.array(arg)
+        flatten = False
         if arg.ndim == 1:
-            pass
-        return func(self, np.array(arg))
+            arg = arg[np.newaxis, :]
+            flatten = True
+        if arg.shape[-1] < 4:
+            new = np.zeros(arg.shape[:-1] + (4,), dtype=arg.dtype)
+            new[...,3] = 1
+            new[...,:arg.shape[-1]] = arg
+            arg = new
+        elif arg.shape[-1] > 4:
+            raise TypeError("Array shape %s cannot be converted to vec4" % arg.shape)
+        ret = func(self, np.array(arg))
+        if flatten:
+            return ret.flatten()
+        return ret
     return fn
 
 class TransformChain(Transform):
@@ -123,13 +153,11 @@ class TransformChain(Transform):
             raise TypeError("Transform chain must be a list")
         self._transforms = tr
         
-    @arg_to_array
     def map(self, obj):
         for tr in self.transforms:
             obj = tr.map(obj)
         return obj
 
-    @arg_to_array
     def imap(self, obj):
         for tr in self.transforms[::-1]:
             obj = tr.imap(obj)
@@ -162,11 +190,9 @@ class NullTransform(Transform):
     GLSL_map = Function("vec4 NullTransform_map(vec4 pos) {return pos;}")
     GLSL_imap = Function("vec4 NullTransform_imap(vec4 pos) {return pos;}")
 
-    @arg_to_array
     def map(self, obj):
         return obj
     
-    @arg_to_array
     def imap(self, obj):
         return obj
 
@@ -265,11 +291,12 @@ class AffineTransform(Transform):
     
     @arg_to_vec4
     def map(self, coords):
-        return np.dot(self.matrix, coords)
+        # looks backwards, but both matrices are transposed.
+        return np.dot(coords, self.matrix)
     
     @arg_to_vec4
     def imap(self, coords):
-        return np.dot(self.inv_matrix, coords)
+        return np.dot(coords, self.inv_matrix)
 
     @property
     def matrix(self):
