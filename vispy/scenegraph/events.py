@@ -92,6 +92,25 @@ class SceneMouseEvent(SceneEvent):
     def pos(self):
         return self.map_from_canvas(self.mouse_event.pos)
 
+    @property
+    def last_event(self):
+        ev = SceneMouseEvent(self.mouse_event.last_event, self.canvas)
+        ev._set_path(self.path)
+        return ev
+        
+    @property
+    def press_event(self):
+        ev = SceneMouseEvent(self.mouse_event.press_event, self.canvas)
+        ev._set_path(self.path)
+        return ev
+        
+    @property
+    def button(self):
+        return self.mouse_event.button
+        
+    @property
+    def buttons(self):
+        return self.mouse_event.buttons
         
 class ScenePaintEvent(SceneEvent):
     def __init__(self, event, canvas):

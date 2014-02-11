@@ -82,5 +82,8 @@ class Rect(object):
             return False
         return r.pos == self.pos and r.size == self.size
     
+    def contains(self, x, y):
+        return x >= self.left and x <= self.right and y >= self.bottom and y <= self.top
+    
     def __repr__(self):
         return "<Rect (%g, %g) (%g, %g)>" % (self.pos + self.size)

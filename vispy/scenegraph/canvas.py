@@ -20,6 +20,7 @@ class SceneCanvas(app.Canvas):
         
         root = Document()
         root.transform = STTransform()
+        self._root = None
         self.root = root
 
     @property
@@ -30,8 +31,14 @@ class SceneCanvas(app.Canvas):
     
     @root.setter
     def root(self, e):
+        if self._root is not None:
+            self._root.events.update.disconnect(self._scene_update)
         self._root = e
+        self._root.events.update.connect(self._scene_update)
         self._update_document()
+
+    def _scene_update(self, event):
+        self.update()
 
     def _update_document(self):
         # 1. Set scaling on document such that its local coordinate system 

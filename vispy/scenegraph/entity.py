@@ -31,6 +31,7 @@ class Entity(object):
                                    mouse_move=SceneMouseEvent,
                                    mouse_release=SceneMouseEvent,
                                    paint=ScenePaintEvent,
+                                   update=Event,
                                    )
 
         # Entities are organized in a parent-children hierarchy
@@ -101,10 +102,12 @@ class Entity(object):
     def _add_child(self, ent):
         self._children.add(ent)
         self.events.children_change(added=ent)
+        ent.events.update.connect(self.events.update)
 
     def _remove_child(self, ent):
         self._children.remove(ent)
         self.events.children_change(removed=ent)
+        ent.events.update.disconnect(self.events.update)
 
     def __iter__(self):
         return self._children.__iter__()
@@ -183,8 +186,7 @@ class Entity(object):
         """
         Emit an event to inform Canvases that this Entity needs to be redrawn.
         """
-        # TODO
-        pass
+        self.events.update()
 
 
     

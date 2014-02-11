@@ -87,6 +87,25 @@ def arg_to_array(func):
         return func(self, np.array(arg))
     return fn
 
+
+def as_vec4(obj):
+    obj = np.array(obj)
+    
+    # If this is a single vector, reshape to (1, 4)
+    if obj.ndim == 1:
+        obj = obj[np.newaxis, :]
+        
+    # For multiple vectors, reshape to (..., 4)
+    if obj.shape[-1] < 4:
+        new = np.zeros(obj.shape[:-1] + (4,), dtype=obj.dtype)
+        new[...,:obj.shape[-1]] = obj
+        obj = new
+    elif obj.shape[-1] > 4:
+        raise TypeError("Array shape %s cannot be converted to vec4" % obj.shape)
+    
+    return obj
+
+
 def arg_to_vec4(func):
     """
     Decorator for converting argument to vec4 format suitable for 4x4 matrix 
@@ -103,21 +122,17 @@ def arg_to_vec4(func):
     If 1D input is provided, then the return value will be flattened.
     Accepts input of any dimension, as long as shape[-1] <= 4
     """
-    def fn(self, arg):
+    def fn(self, arg, *args, **kwds):
         arg = np.array(arg)
-        flatten = False
-        if arg.ndim == 1:
-            arg = arg[np.newaxis, :]
-            flatten = True
-        if arg.shape[-1] < 4:
-            new = np.zeros(arg.shape[:-1] + (4,), dtype=arg.dtype)
-            new[...,3] = 1
-            new[...,:arg.shape[-1]] = arg
-            arg = new
-        elif arg.shape[-1] > 4:
-            raise TypeError("Array shape %s cannot be converted to vec4" % arg.shape)
-        ret = func(self, np.array(arg))
-        if flatten:
+        flatten = arg.ndim == 1
+        arg = as_vec4(arg)
+        
+        
+        # force 1 in last column (is this a bad idea?)
+        arg[...,3] = 1
+        
+        ret = func(self, arg, *args, **kwds)
+        if flatten and ret is not None:
             return ret.flatten()
         return ret
     return fn
@@ -305,6 +320,7 @@ class AffineTransform(Transform):
     @matrix.setter
     def matrix(self, m):
         self._matrix = m
+        self._inv_matrix = None
 
     @property
     def inv_matrix(self):
@@ -312,29 +328,35 @@ class AffineTransform(Transform):
             self._inv_matrix = np.linalg.inv(self.matrix)
         return self._inv_matrix
 
+    @arg_to_vec4
     def translate(self, pos):
-        tr = np.eye(4)
-        tr[3, :len(pos)] = pos
-        self.matrix = np.dot(tr, self.matrix)
-        #self.matrix = transforms.translate(self.matrix, *pos)
-        self._inv_matrix = None
+        #tr = np.eye(4)
+        #tr[3, :pos.shape[-1]] = pos
+        #self.matrix = np.dot(tr, self.matrix)
+        self.matrix = transforms.translate(self.matrix, *pos[0,:3])
         
-    def scale(self, scale):
-        tr = np.eye(4)
-        for i,s in enumerate(scale):
-            tr[i,i] = s
-        self.matrix = np.dot(tr, self.matrix)
-        #self.matrix = transforms.scale(self.matrix, *scale)
-        self._inv_matrix = None
+    @arg_to_vec4
+    def scale(self, scale, center=None):
+        #tr = np.eye(4)
+        #for i,s in enumerate(scale[0,:3]):
+            #tr[i,i] = s
+        #self.matrix = np.dot(tr, self.matrix)
+        if center is not None:
+            center = as_vec4(center)[0,:3]
+            m = transforms.translate(self.matrix, *(-center))
+            m = transforms.scale(m, *scale[0,:3])
+            m = transforms.translate(self.matrix, *center)
+            self.matrix = m
+            
+        else:
+            self.matrix = transforms.scale(self.matrix, *scale[0,:3])
 
     def rotate(self, angle, axis):
         tr = transforms.rotate(np.eye(4), angle, *axis)
         self.matrix = np.dot(tr, self.matrix)
-        self._inv_matrix = None
 
     def reset(self):
         self.matrix = np.eye(4)
-        self._inv_matrix = None
         
     
 class SRTTransform(Transform):
