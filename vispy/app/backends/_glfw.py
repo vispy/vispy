@@ -144,7 +144,18 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, name='glut window', *args, **kwargs):
         BaseCanvasBackend.__init__(self)
+        # Init GLFW, add window hints, and create window
         glfw.glfwInit()
+        glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)
+        glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, True)
+        glfw.glfwWindowHint(glfw.GLFW_DEPTH_BITS, 24)
+        glfw.glfwWindowHint(glfw.GLFW_RED_BITS, 8)
+        glfw.glfwWindowHint(glfw.GLFW_GREEN_BITS, 8)
+        glfw.glfwWindowHint(glfw.GLFW_BLUE_BITS, 8)
+        glfw.glfwWindowHint(glfw.GLFW_ALPHA_BITS, 8)
+        glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, True)
+        glfw.glfwWindowHint(glfw.GLFW_DECORATED, True)
+        glfw.glfwWindowHint(glfw.GLFW_VISIBLE, True)
         self._id = glfw.glfwCreateWindow(title=name)
         glfw.glfwMakeContextCurrent(self._id)
         glfw.glfwHideWindow(self._id)  # Start hidden, like the other backends
@@ -154,7 +165,7 @@ class CanvasBackend(BaseCanvasBackend):
 
         # Register callbacks
         glfw.glfwSetWindowRefreshCallback(self._id, self._on_draw)
-        glfw.glfwSetWindowSizeCallback(self._id, self._on_resize)
+        glfw.glfwSetFramebufferSizeCallback(self._id, self._on_resize)
         glfw.glfwSetKeyCallback(self._id, self._on_key_press)
         glfw.glfwSetMouseButtonCallback(self._id, self._on_mouse_button)
         glfw.glfwSetScrollCallback(self._id, self._on_mouse_scroll)

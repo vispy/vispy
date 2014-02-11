@@ -10,7 +10,7 @@ from vispy import scene
 
 from vispy import app
 
-# app.use('glut')
+app.use('glfw')
 
 # Create a figure
 fig = scene.CanvasWithScene()
