@@ -9,11 +9,12 @@ import re
 
 from .six import string_types
 
+
 ###############################################################################
 # LOGGING (some adapted from mne-python)
 
-
 def _get_vispy_caller():
+    """Helper to get vispy calling function from the stack"""
     records = inspect.stack()
     # first few records are vispy-based logging calls
     for record in records[5:]:
@@ -35,23 +36,19 @@ class _WrapStdOut(object):
 
 
 class _VispyFormatter(logging.Formatter):
+    """Formatter that prepends caller in debug mode"""
     def __init__(self):
         logging.Formatter.__init__(self, '%(levelname)s: %(message)s')
 
     def format(self, record):
         out = logging.Formatter.format(self, record)
         if logger.level <= logging.DEBUG:
-            prepend = _get_vispy_caller()
-        else:
-            prepend = ''
-        return prepend + out
+            out = _get_vispy_caller() + out
+        return out
 
 
 class _VispyStreamHandler(logging.StreamHandler):
-    """Stream handler allowing matching and recording
-
-    Recording is only done when ``match`` is not None.
-    """
+    """Stream handler allowing matching and recording"""
     def __init__(self):
         logging.StreamHandler.__init__(self, _WrapStdOut())
         self._vispy_formatter = _VispyFormatter()
