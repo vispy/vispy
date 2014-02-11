@@ -21,22 +21,26 @@ def test_debug_logging():
     with use_log_level('debug', 'Selected', True) as l:
         a = app.Application()
         a.use()
+        a.quit()
     assert_equal(len(l), 1)
     assert_true('vispy.app.application' in l[0])
 
     with use_log_level('debug', record=True) as l:
         a = app.Application()
         a.use()
+        a.quit()
     assert_equal(len(l), 1)
     assert_true('vispy.app.application' in l[0])
 
     with use_log_level('debug', 'foo', True) as l:
         a = app.Application()
         a.use()
+        a.quit()
     assert_equal(len(l), 0)
 
     with use_log_level('info', record=True) as l:
         a = app.Application()
         a.use()
+        a.quit()
     assert_equal(len(l), 1)
     assert_true('vispy.app.application' not in l[0])
