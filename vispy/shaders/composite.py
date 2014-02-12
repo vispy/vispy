@@ -367,25 +367,22 @@ class Function(object):
         return "<Function %s>" % self.name
 
 
-#class FragmentFunction(Function):
-    #"""
-    #Function meant to be used in fragment shaders when some supporting 
-    #code must also be introduced to the vertex shader post-hook, usually to
-    #initialize one or more varyings.    
-    #"""
-    #def __init__(self, code, vertex_post=None):
-        #super(FragmentFunction, self).__init__(code)
-        #self.vertex_post = vertex_post
+class FragmentFunction(Function):
+    """
+    Function meant to be used in fragment shaders when some supporting 
+    code must also be introduced to the vertex shader post-hook, usually to
+    initialize one or more varyings.    
+    """
+    def __init__(self, code, vertex_post=None):
+        super(FragmentFunction, self).__init__(code)
+        self.vertex_post = vertex_post
 
-    #def bind(self, name, **kwds):
-        #"""
-        #Behaves exactly as Function.bind(), with one exception:
-        #any *attribute* variables bound to a shader function are actually
-        #introduced via a separate piece of code in the vertex shader.
+    def bind(self, name, **kwds):
+        """
+        * bind both this function and its vertex shader component to new functions
+        * automatically bind varyings        
+        """
         
-        
-        
-        #"""
 
 
 class BoundFunction(Function):
