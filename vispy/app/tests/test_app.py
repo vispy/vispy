@@ -57,6 +57,7 @@ def _test_callbacks(canvas):
     else:
         raise ValueError
 
+
 def _test_application(backend):
     """Test application running"""
     app = Application()
