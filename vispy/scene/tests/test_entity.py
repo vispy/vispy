@@ -9,7 +9,6 @@ def test_show_entity():
     """Test showing an entity"""
     # Create a figure
     app = Application()
-    #canvas = Canvas(title='me', app=app, show=True, position=[0, 0, 1, 1])
     fig = scene.CanvasWithScene(app=app)
     fig.size = 1, 1
     fig.show()
