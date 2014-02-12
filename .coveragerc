@@ -1,9 +1,9 @@
 [run]
 branch = True
 source = vispy
-include = *vispy/*
+#include = */vispy/*
 omit =
-    *setup.py
-    *vispy/util/six.py
-    *vispy/util/_py24_ordereddict.py
+    */setup.py
+    */vispy/util/six.py
+    */vispy/util/_py24_ordereddict.py
 
