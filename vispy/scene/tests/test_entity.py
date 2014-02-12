@@ -18,7 +18,8 @@ def test_show_entity():
     fig.viewbox.camera = camera
     pointscontainer = scene.Entity(fig.viewbox)
     scene.PointsEntity(pointscontainer, 1000)
-    fig.on_paint(None)
+    app.process_events()
+    app.process_events()  # for good measure
 
     # Now do 2D
     camcontainer = scene.PixelCamera(fig.viewbox)
@@ -30,7 +31,8 @@ def test_show_entity():
     scene.PointsEntity(pointscontainer, 1000)
     transforms.translate(camcontainer.transform, 50, 50)
     transforms.rotate(camcontainer.transform, 10, 0, 0, 1)
-    fig.on_paint(None)
+    app.process_events()
+    app.process_events()  # for good measure
 
     fig.close()
     app.quit()
