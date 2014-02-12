@@ -37,11 +37,16 @@ install:
       fi;
     - pip install -q coveralls nose-timer flake8
     - if [ "${OGL}" == "beta" ]; then
-        echo "Using OpenGL beta version";
+        echo "Using OpenGL beta version (pip)";
         pip install -q https://pypi.python.org/packages/source/P/PyOpenGL/PyOpenGL-3.1.0b1.tar.gz;
       else
-        echo "Using OpenGL stable version";
-        pip install -q PyOpenGL;
+        if [ "${PYTHON}" == "2.7" ]; then
+          echo "Using OpenGL stable version (repos)";
+          travis_retry sudo apt-get -qq -y install python-opengl;
+        else
+          echo "Using OpenGL stable version (pip)";
+          pip install -q PyOpenGL;
+        fi;
       fi;
 
     # Use Pyglet alpha to get Py3.3 support
