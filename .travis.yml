@@ -91,6 +91,9 @@ script:
 
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
-    echo "Running coveralls";
-    cd ${SRC_DIR};
-    coveralls;
+    # Let's use the "full" test case for coveralls
+    - if [ "${PYTHON}" == "2.7" ] && [ "${DEPS}" == "full" ]; then
+        echo "Running coveralls";
+        cd ${SRC_DIR};
+        coveralls;
+      fi;
