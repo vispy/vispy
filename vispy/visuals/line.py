@@ -9,7 +9,7 @@ import numpy as np
 from .. import gloo
 from ..gloo import gl
 from . import BaseVisual
-from ..shaders.composite import Function, FunctionTemplate, CompositeProgram
+from ..shaders.composite import Function, FunctionTemplate, CompositeProgram, FragmentFunction
 from .transforms import NullTransform
 
 
@@ -74,23 +74,41 @@ vec4 $func_name() {
 """, var_names=['xyz_pos'])
 
 # pair of functions used to provide uniform/attribute input to fragment shader
-#RGBAInputFunc = Function("""
-#vec4 v4_to_v4(vec4 rgba) {
-    #return rgba;
+#RGBAInputFunc = FunctionTemplate("""
+#vec4 $func_name() {
+    #return $rgba;
 #}
-#""")
-RGBAInputFunc = FunctionTemplate("""
+#""", var_names=['rgba'])
+#RGBAVertexInputFunc = FunctionTemplate("""
+#void $func_name() {
+    #$output = $input;
+#}
+#""", var_names=['input', 'output'])
+
+RGBAAttributeFunc = FragmentFunction(
+    frag_func=FunctionTemplate("""
+        vec4 $func_name() {
+            return $rgba;
+        }
+        """, 
+        var_names=['rgba']),
+    vertex_post=FunctionTemplate("""
+        void $func_name() {
+            $output = $input;
+        }
+        """, 
+        var_names=['input', 'output']),
+    # vertex variable 'output' and fragment variable 'rgba' should both 
+    # be bound to the same vec4 varying.
+    link_vars=[('vec4', 'output', 'rgba')]
+    )
+
+RGBAUniformFunc = FunctionTemplate("""
 vec4 $func_name() {
     return $rgba;
 }
 """, var_names=['rgba'])
-RGBAVertexInputFunc = FunctionTemplate("""
-void $func_name() {
-    $output = $input;
-}
-""", var_names=['input', 'output'])
-
-
+    
 class LineVisual(BaseVisual):
     def __init__(self, pos=None, color=None, width=None):
         #super(LineVisual, self).__init__()
@@ -132,17 +150,19 @@ class LineVisual(BaseVisual):
             
         # might need to rebuild vbo or program.. 
         # this could be made more clever.
+        self._vbo = None
         self._program = None
-        
-    def build_program(self):
-        
+
+    def _build_vbo(self):
         # Construct complete data array with position and optionally color
+        
         pos = self._opts['pos']
         typ = [('pos', np.float32, pos.shape[-1])]
         color = self._opts['color']
         color_is_array = isinstance(color, np.ndarray) and color.ndim > 1
         if color_is_array:
             typ.append(('color', np.float32, self._opts['color'].shape[-1]))
+        
         self._data = np.empty(pos.shape[:-1], typ)
         self._data['pos'] = pos
         if color_is_array:
@@ -152,65 +172,64 @@ class LineVisual(BaseVisual):
         self._vbo = gloo.VertexBuffer(self._data)
         
         
+    def _build_program(self):
+        if self._vbo is None:
+            self._build_vbo()
+        
+        # Create composite program
         self._program = CompositeProgram(vmain=vertex_shader, fmain=fragment_shader)
         
-        # select the correct function to read in vertex data based on position array shape
-        if pos.shape[-1] == 2:
-            inp_func = XYInputFunc
-            bound_fn = inp_func.bind('local_position', 
-                                     xy_pos=('attribute', 'vec2', 'input_xy_pos'),
-                                     z_pos=('uniform', 'float', 'input_z_pos'))
-            bound_fn['input_xy_pos'] = self._vbo['pos']
-            bound_fn['input_z_pos'] = 0.0
-        else:
-            inp_func = XYZInputFunc
-            bound_fn = inp_func.bind('local_position', 
-                                     xyz_pos=('attribute', 'vec3', 'input_xyz_pos'))
-            bound_fn['input_xyz_pos'] = self._vbo
-            
-        self._program.set_hook('local_position', bound_fn)
+        # Attach position input component
+        pos_func = self._get_position_function()
+        self._program.set_hook('local_position', pos_func)
         
-        
-        # get code and variables needed for transformation fucntions
+        # Attach transformation function
         tr_bound = self.transform.bind_map('map_local_to_nd')
         self._program.set_hook('map_local_to_nd', tr_bound)
         
-        
-        # get code and variables needed for fragment coloring
-        if color_is_array:
-            # variable used to carry color input from vertex shader to 
-            # fragment shader:
-            varying = ('varying', 'vec4', 'input_color_varying')
-            
-            # fragment shader function that retrives color from varying:
-            color_bound = RGBAInputFunc.bind('frag_color', 
-                                             rgba=varying)
-            color_bound['input_color'] = self._vbo['color']
-            self._program.set_hook('frag_color', color_bound)
-            
-            # vertex shader function that retrives color from attribute:
-            color_frag_bound = RGBAVertexInputFunc.bind(
-                                   name='frag_color',
-                                   input=('attribute', 'vec4', 'input_color'),
-                                   output=varying)
-            self._program.add_post_hook(color_frag_bound)
-                                                        
-            
-        else:
-            color_bound = RGBAInputFunc.bind('frag_color', 
-                                             rgba=('uniform', 'vec4', 'input_color'))
-            color_bound['input_color'] = np.array(color)
-            self._program.set_hook('frag_color', color_bound)
-            
-
+        # Attach color input function
+        color_func = self._get_color_func()
+        self._program.set_hook('frag_color', color_func)
         
     def paint(self):
         if self._opts['pos'] is None or len(self._opts['pos']) == 0:
             return
         
         if self._program is None:
-            self.build_program()
+            self._build_program()
             
         gl.glLineWidth(self._opts['width'])
         self._program.draw('LINE_STRIP')
 
+
+
+    def _get_position_function(self):
+        # select the correct shader function to read in vertex data based on 
+        # position array shape
+        if self._data['pos'].shape[-1] == 2:
+            func = XYInputFunc.bind(
+                        name='local_position', 
+                        xy_pos=('attribute', 'vec2', 'input_xy_pos'),
+                        z_pos=('uniform', 'float', 'input_z_pos'))
+            func['input_xy_pos'] = self._vbo['pos']
+            func['input_z_pos'] = 0.0
+        else:
+            func = XYZInputFunc.bind(
+                        name='local_position', 
+                        xyz_pos=('attribute', 'vec3', 'input_xyz_pos'))
+            func['input_xyz_pos'] = self._vbo
+        return func
+
+    def _get_color_func(self):
+        # Select uniform- or attribute-input 
+        if 'color' in self._data.dtype.fields:
+            func = RGBAAttributeFunc.bind(
+                            name='frag_color',
+                            input=('attribute', 'vec4', 'input_color')
+                            )
+            func['input_color'] = self._vbo['color']
+        else:
+            func = RGBAUniformFunc.bind('frag_color', 
+                                             rgba=('uniform', 'vec4', 'input_color'))
+            func['input_color'] = np.array(self._opts['color'])
+        return func

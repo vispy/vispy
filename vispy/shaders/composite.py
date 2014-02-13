@@ -10,6 +10,24 @@ from . import parsing
 
 
 
+"""
+API issues to work out:
+
+  - Any useful way to make FunctionTemplate and FragmentFunction subclasses
+    of Function? (and should we want to?)
+        No: subclasses of Function have valid GLSL code; FragmentFunction
+        and FunctionTemplate do not. Perhaps we need a more general
+        FunctionGenerator class that defines bind() ?
+    
+  - Can FragmentFunction besimplified or generalized in some way?
+    (and should it?)
+    Specifically: can bind() return only the bound fragment shader function,
+    and have the vertex shader support automatically included?
+
+"""
+
+
+
 class CompositeProgram(Program):
     """
     Shader program that is composed of main shader functions combined with
@@ -179,12 +197,12 @@ class CompositeProgram(Program):
         vdeps = set()
         fdeps = set()
         
-        # first, look for FragmentFunctions and add vertex code to the 
-        # post-hook
-        #for hook_name, func in self._hook_defs.items():
-            #for dep in func.all_deps():
-                #if isinstance(dep, FragmentFunction):
-                    #self.add_post_hook(dep.vertex_post)
+        # first, look for functions that request an addition to the vertex
+        # shader post-hook
+        for hook_name, func in self._hook_defs.items():
+            for dep in func.all_deps():
+                if dep._vertex_post is not None:
+                    self.add_post_hook(dep._vertex_post)
 
         # Install shader chain for post_hooks
         post_chain = FunctionChain('post_hook', self._post_hooks)
@@ -199,7 +217,7 @@ class CompositeProgram(Program):
                         #print("++vertex dep++")
                         #print(dep)
                         #print(dep.code)
-                        vcode += dep.code
+                        vcode += "\n" + dep.code
                         vdeps.add(dep.name)
                 #vcode += func.code
                 
@@ -209,7 +227,7 @@ class CompositeProgram(Program):
                         #print("++fragment dep++")
                         #print(dep)
                         #print(dep.code)
-                        fcode += dep.code
+                        fcode += "\n" + dep.code
                         fdeps.add(dep.name)
                 #fcode += func.code
                 
@@ -231,9 +249,11 @@ class CompositeProgram(Program):
         """
         #print("apply variables:")
         for hook_name, func in self._hook_defs.items():
+            #print("  ", hook_name, func)
             for dep in func.all_deps():
+                #print("    ", dep)
                 for name, value in dep._program_values.items():
-                    #print(name, value, dep)
+                    #print("      ", name, value, dep)
                     self[name] = value
         
 
@@ -250,7 +270,8 @@ class Function(object):
     of multiple Functions and their dependencies; each function is
     included exactly once, even if it is depended upon multiple times.
     """    
-    def __init__(self, code=None, name=None, args=None, rtype=None, deps=None):
+    def __init__(self, code=None, name=None, args=None, rtype=None, deps=None,
+                 variables=None):
         """
         Arguments:
         
@@ -269,10 +290,17 @@ class Function(object):
             Lists functions that are called by this function, and therefore must
             be included by a CompositeProgram when compiling the complete
             program.
+        variables : None or dict
+            Dict describing program variables declared in this function's code.
+            See variable_names property.
         """
-        self.set_code(code, name, args, rtype)
+        self.set_code(code, name, args, rtype, variables)
         self._deps = deps or []
         self._program_values = {}
+        
+        # Used by FragmentFunction to automatically attach a function to the
+        # vertex shader post_hook.
+        self._vertex_post = None
         
     @property
     def code(self):
@@ -281,8 +309,17 @@ class Function(object):
         program variables, hooks, etc. (see also: generate_code())
         """
         return self._code
+    
+    @property
+    def bindable_names(self):
+        """
+        List of names that may be bound to program variables.
+        
+        These are the allowed keyword arguments to bind().
+        """
+        return self.args.keys()
 
-    def set_code(self, code, name=None, args=None, rtype=None):
+    def set_code(self, code, name=None, args=None, rtype=None, variables=None):
         """
         Set the GLSL code for this function.
         
@@ -301,6 +338,11 @@ class Function(object):
             self.name = name
             self.args = args
             self.rtype = rtype
+            
+        if variables is None:
+            self.variables = parsing.find_program_variables(self.code)
+        else:
+            self.variables = variables
             
         self._arg_types = dict([(a[1], a[0]) for a in self.args])
 
@@ -350,7 +392,12 @@ class Function(object):
         Any CompositeProgram that depends on this function will automatically
         apply the variable when it is activated.
         """
-        self._program_values[var] = value
+        if var in self.variables:
+            self._program_values[var] = value
+        else:
+            # try setting on the vertex_post instead..
+            if self._vertex_post is not None:
+                self._vertex_post[var] = value
 
     def all_deps(self):
         """
@@ -368,21 +415,70 @@ class Function(object):
         return "<Function %s>" % self.name
 
 
-class FragmentFunction(Function):
+class FragmentFunction(object):
     """
     Function meant to be used in fragment shaders when some supporting 
     code must also be introduced to the vertex shader post-hook, usually to
-    initialize one or more varyings.    
+    initialize one or more varyings.
+    
+    Parameters:
+        frag_func : Function or FunctionTemplate
+            To be bound in the fragment shader
+        vert_post : Function or FunctionTemplate
+            To be included in the vertex shader post_hook
+        link_vars : list of tuples
+            Each tuple indicates (type, vertex_var, fragment_var) variables that 
+            should be bound to the same varying.
+    
     """
-    def __init__(self, code, vertex_post=None):
-        super(FragmentFunction, self).__init__(code)
-        self.vertex_post = vertex_post
+    def __init__(self, frag_func, vertex_post, link_vars):
+        self.frag_func = frag_func
+        self.vert_post = vertex_post
+        self.link_vars = link_vars
+        
+        # TODO: check that linked variables have the same type in both functions
+        for var_type, vname, fname in link_vars:
+            assert vname in vertex_post.bindable_names
+            assert fname in frag_func.bindable_names
 
     def bind(self, name, **kwds):
         """
         * bind both this function and its vertex shader component to new functions
         * automatically bind varyings        
         """
+        # separate kwds into fragment variables and vertex variables
+        # TODO: should this be made explicit in the bind() arguments, or
+        #       can we just require that the vertex and fragment functions 
+        #       never have the same variable names?
+        frag_vars = {}
+        vert_vars = {}
+        for bind_name in kwds:
+            if bind_name in self.frag_func.bindable_names:
+                frag_vars[bind_name] = kwds[bind_name]
+            elif bind_name in self.vert_post.bindable_names:
+                vert_vars[bind_name] = kwds[bind_name]
+            else:
+                raise KeyError("The name '%s' is not bindable in %s" %
+                               (bind_name, self))
+                    
+        
+        # add varyings to each
+        for var_type, vname, fname in self.link_vars:
+            # This is likely to be a unique name...
+            var_name = "%s_%s_%s_var" % (name, vname, fname)
+            var = ('varying', var_type, var_name)
+            vert_vars[vname] = var
+            frag_vars[fname] = var
+        
+        # bind both functions
+        frag_bound = self.frag_func.bind(name, **frag_vars)
+        
+        # also likely to be a unique name...
+        vert_name = name + "_fragment_support"
+        vert_bound = self.vert_post.bind(vert_name, **vert_vars)
+        
+        frag_bound._vertex_post = vert_bound
+        return frag_bound
         
 
 
@@ -614,7 +710,11 @@ class FunctionTemplate(object):
         self.template = string.Template(template)
         self.var_names = var_names
         self.deps = deps
-    
+
+    @property
+    def bindable_names(self):
+        return self.var_names[:]
+        
     def bind(self, name, **kwds):
         """
         Return a Function whose code is constructed by the following 

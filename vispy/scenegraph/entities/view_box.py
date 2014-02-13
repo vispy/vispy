@@ -7,7 +7,7 @@ import numpy as np
 
 from ..entity import Entity
 from .box import Box
-from ...visuals.transforms import STTransform
+from ...visuals.transforms import STTransform, PerspectiveTransform
 
 class ViewBox(Box):
     """
@@ -125,3 +125,51 @@ class TwoDCamera(Camera):
                               STTransform(translate=-center))
             self.update()        
             event.handled = True
+
+
+class PerspectiveCamera(Camera):
+    """
+    In progress.
+    
+    """
+    def __init__(self, parent=None):
+        super(Camera, self).__init__(parent)
+        self.transform = PerspectiveTransform()
+        # TODO: allow self.look to be derived from an Anchor
+        self._perspective = {
+            'look': np.array([0., 0., 0., 1.]),
+            'near': 1e-6,
+            'far': 1e6,
+            'fov': 60,
+            'top': np.array([0., 0., 1., 1.])
+            }
+
+    def _update_transform(self):
+        # create transform based on look, near, far, fov, and top.
+        self.transform.set_perspective(origin=(0,0,0), **self.perspective)
+        
+    def view_mouse_event(self, event):
+        """
+        An attached ViewBox received a mouse event; 
+        
+        """
+        if 1 in event.buttons:
+            p1 = np.array(event.last_event.pos)
+            p2 = np.array(event.pos)
+            self.transform = self.transform * STTransform(translate=p1-p2)
+            self.update()
+            event.handled = True
+        elif 2 in event.buttons:
+            p1 = np.array(event.last_event.pos)[:2]
+            p2 = np.array(event.pos)[:2]
+            s = 0.97 ** ((p2-p1) * np.array([1, -1]))
+            center = event.press_event.pos
+            # TODO: would be nice if STTransform had a nice scale(s, center) 
+            # method like AffineTransform.
+            self.transform = (self.transform *
+                              STTransform(translate=center) * 
+                              STTransform(scale=s) * 
+                              STTransform(translate=-center))
+            self.update()        
+            event.handled = True
+

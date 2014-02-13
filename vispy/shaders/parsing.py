@@ -13,6 +13,9 @@ re_identifier = r'([a-zA-Z_][\w_]*)'
 # type and identifier like "vec4 var_name"
 re_declaration = "(?:" + re_type + "\s+" + re_identifier + ")"
 
+# qualifier, type, and identifier like "uniform vec4 var_name"
+re_prog_var_declaration = "(?:(uniform|attribute|varying)\s*" + re_type + "\s+" + re_identifier + ")"
+
 # list of variable declarations like "vec4 var_name, float other_var_name"
 re_arg_list = "(" + re_declaration + "(?:,\s*" + re_declaration + ")*)?"
 
@@ -65,4 +68,23 @@ def find_prototypes(code):
             prots.append((name, args, rtype))
     
     return prots
+    
+def find_program_variables(code):
+    """
+    Return a dict describing program variables::
+    
+        {'var_name': ('uniform|attribute|varying', type), ...}
+    
+    """
+    vars = {}
+    lines = code.split('\n')
+    for line in lines:
+        m = re.match("\s*" + re_prog_var_declaration + "\s*;", line)
+        if m is not None:
+            vtype, dtype, name = m.groups()
+            vars[name] = (vtype, dtype)
+    return vars
+    
+    
+
     

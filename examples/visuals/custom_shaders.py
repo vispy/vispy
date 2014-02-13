@@ -1,9 +1,9 @@
 """
 Demonstrates plugging custom shaders in to a LineVisual.
 """
+
 import numpy as np
 import vispy.app
-import vispy.gloo as gloo
 from vispy.gloo import gl
 from vispy.visuals.line import LineVisual
 from vispy.visuals.transforms import Transform
@@ -21,7 +21,30 @@ color[:, 1] = color[::-1, 0]
 
 
 # A custom Transform
-class SineTransform(Transform)
+class SineTransform(Transform):
+    """
+    Add sine wave to y-value for wavy effect.
+    """
+    GLSL_map = Function("""
+        vec4 SineTransform_map(vec4 pos) {
+            return vec4(pos.x, pos.y * sin(pos.x), pos.z, 1);
+        }
+        """)
+
+    @arg_to_array
+    def map(self, coords):
+        ret = coords.copy()
+        ret[...,1] += np.sin(ret[...,0])
+        return ret
+    
+    @arg_to_array
+    def imap(self, coords):
+        ret = coords.copy()
+        ret[...,1] -= np.sin(ret[...,0])
+        return ret
+
+
+
 
 
 class Canvas(vispy.app.Canvas):
