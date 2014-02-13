@@ -9,6 +9,33 @@ from ..shaders.composite import Function, FunctionChain
 from ..util.ordereddict import OrderedDict
 from ..util import transforms
 
+"""
+API Issues to work out:
+
+  - Should transforms within a chain be treated as mutable? 
+  
+        t1 = STTransform(...)
+        t2 = AffineTransform(...)
+        ct = ChainTransform([t1, t2])
+        
+        t1.scale = (0.5, 0.5) # should this affect ChainTransform?
+        
+  - Should transform multiplication work like matrix multiplication?
+    (and should we use __mul__ at all?)
+    
+        t1 * t2  => ChainTransform([t2, t1])  
+                        OR
+                 => ChainTransform([t1, t2])
+
+  - Should transforms have a 'changed' event?
+  
+        t1.changed.connect(callback)
+            OR
+        t1.events.change.connect(callback)
+"""
+
+
+
 
 class Transform(object):
     """
@@ -128,14 +155,16 @@ class Transform(object):
                * return ChainTransform([A, B]) if the superclass would return an
                  invalid result.
                  
-        6. When Transform.__rmul__(B, A) is called, ChainTransform([A, B]) is 
-           returned.
+        6. When Transform.__rmul__(B, A) is called, ChainTransform([B, A]) is 
+           returned. Note that the order is reversed so that multiplication
+           works like matrix multiplication (last matrix in a product is the
+           first to be applied when mapping vectors).
         """
         # switch to __rmul__ attempts.
         return NotImplemented
 
     def __rmul__(self, tr):
-        return ChainTransform([tr, self])
+        return ChainTransform([self, tr])
         
     
 
@@ -303,7 +332,7 @@ class ChainTransform(Transform):
         transforms if possible.        
         """
         while len(self.transforms) > 0:
-            pr = self.transforms[-1] * tr
+            pr = tr * self.transforms[-1]
             if isinstance(pr, ChainTransform):
                 self.transforms.append(tr)
                 break
@@ -320,7 +349,7 @@ class ChainTransform(Transform):
         subsequent transforms if possible.        
         """
         while len(self.transforms) > 0:
-            pr = tr * self.transforms[0]
+            pr = self.transforms[0] * tr
             if isinstance(pr, ChainTransform):
                 self.transforms.insert(0, tr)
                 break
@@ -339,12 +368,12 @@ class ChainTransform(Transform):
             
         new = ChainTransform(self.transforms)
         for t in trs:
-            new.append(t)
+            new.prepend(t)
         return new
         
     def __rmul__(self, tr):
         new = ChainTransform(self.transforms)
-        new.prepend(tr)
+        new.apppend(tr)
         return new
         
     def __repr__(self):
@@ -375,7 +404,7 @@ class NullTransform(Transform):
     
 
 class STTransform(Transform):
-    """ Transform performing only scale and translate
+    """ Transform performing only scale and translate, in that order.
     """
     GLSL_map = Function("""
         vec4 STTransform_map(vec4 pos, vec3 scale, vec3 translate) {
@@ -555,13 +584,22 @@ class AffineTransform(Transform):
         return s
     
 class SRTTransform(Transform):
-    """ Transform performing scale, rotate, and translate
+    """ Transform performing scale, rotate, and translate, in that order.
+    
+    This transformation allows objects to be placed arbitrarily in a scene
+    much the same way AffineTransform does. However, an incorrect order of
+    operations in AffineTransform may result in shearing the object (if scale
+    is applied after rotate) or in unpredictable translation (if scale/rotate
+    is applied after translation). SRTTransform avoids these problems by
+    enforcing the correct order of operations.
     """
     # TODO
 
     
-class ProjectionTransform(AffineTransform):
-    
+class PerspectiveTransform(AffineTransform):
+    """
+    Matrix transform that also implements perspective division.    
+    """
     # TODO
     
     @classmethod
@@ -572,7 +610,7 @@ class ProjectionTransform(AffineTransform):
 class OrthoTransform(AffineTransform):
     """
     Orthographic transform
-    
+    (possibly no need for this; just add an ortho() method to AffineTransform?)
     """
     # TODO
 
@@ -647,7 +685,8 @@ class LogTransform(Transform):
 
 class PolarTransform(Transform):
     """
-    Polar transform maps (theta, r, ...) to (x, y, ...)
+    Polar transform maps (theta, r, z) to (x, y, z), where `x = r*cos(theta)`
+    and `y = r*sin(theta)`.
     
     """
     GLSL_map = Function("""

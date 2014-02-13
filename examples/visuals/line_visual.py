@@ -31,21 +31,21 @@ class Canvas(vispy.app.Canvas):
         
         self.lines[1].transform = STTransform(scale=(1, 0.1, 1))
         
-        self.lines[2].transform = (STTransform(scale=(1, 0.1, 1)) *
-                                   STTransform(translate=(0.1, 0.5, 0)))
+        self.lines[2].transform = (STTransform(translate=(0.1, 0.5, 0)) *
+                                   STTransform(scale=(1, 0.1, 1)))
         
-        self.lines[3].transform = (STTransform(translate=(1.1, -0.7, 0)) *
-                                   LogTransform(base=(10, 0, 0)))
+        self.lines[3].transform = (LogTransform(base=(10, 0, 0)) *
+                                   STTransform(translate=(1.1, -0.7, 0)))
         
         self.lines[4].transform = AffineTransform()
-        self.lines[4].transform.translate((0.5, -0.5, 0))
-        self.lines[4].transform.scale((0.1, 0.1, 1))
         self.lines[4].transform.rotate(45, (0, 0, 1))
+        self.lines[4].transform.scale((0.1, 0.1, 1))
+        self.lines[4].transform.translate((0.7, -0.7, 0))
         
-        self.lines[5].transform = (STTransform(scale=(3, .1), translate=(1.5, .2)) *
-                                   LogTransform(base=(2, 0, 0)) *
+        self.lines[5].transform = (STTransform(translate=(-0.5, 0.7, 0)) *
                                    PolarTransform() *
-                                   STTransform(translate=(-0.5, 0.7, 0)))
+                                   LogTransform(base=(2, 0, 0)) *
+                                   STTransform(scale=(6.0, 0.1), translate=(5.9, 0.2)))
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)

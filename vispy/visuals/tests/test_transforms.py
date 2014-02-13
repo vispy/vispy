@@ -4,6 +4,7 @@ NT = tr.NullTransform
 ST = tr.STTransform
 AT = tr.AffineTransform
 PT = tr.PolarTransform
+LT = tr.LogTransform
 CT = tr.ChainTransform
 
 def assert_chain_types(chain, types):
@@ -14,6 +15,7 @@ def test_multiplication():
     s = ST()
     a = AT()
     p = PT()
+    l = LT()
     c1 = CT([s, a, p])
     c2 = CT([s, a, s])
     
@@ -25,12 +27,13 @@ def test_multiplication():
     assert isinstance(s * a, AT)
     assert isinstance(n * p, PT)
     assert isinstance(s * p, CT)
-    assert_chain_types(s * p, [ST, PT])
-    assert_chain_types(s * p * a, [ST, PT, AT])
-    assert_chain_types(s * a * p, [AT, PT])
+    assert_chain_types(s * p, [PT, ST])
+    assert_chain_types(s * p * a, [AT, PT, ST])
+    assert_chain_types(s * a * p, [PT, AT])
     assert_chain_types(s * p * s, [ST, PT, ST])
     assert_chain_types(s * a * p * s * a, [AT, PT, AT])
     assert_chain_types(c2 * a, [AT])
+    assert_chain_types(p * l * s, [ST, LT, PT])
     
     
     

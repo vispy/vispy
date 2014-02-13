@@ -221,6 +221,7 @@ class CompositeProgram(Program):
         #print ("--fragment------------------------------")
         #print (fcode)
         #print ("--------------------------------")
+        
         return vcode, fcode
          
     def _apply_variables(self):
