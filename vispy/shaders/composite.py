@@ -13,17 +13,16 @@ from . import parsing
 """
 API issues to work out:
 
+  - Currently, program variables are set when the program is built. To 
+    optimize, it must be possible to upload new variables to a pre-built
+    program.
+  
   - Any useful way to make FunctionTemplate and FragmentFunction subclasses
     of Function? (and should we want to?)
         No: subclasses of Function have valid GLSL code; FragmentFunction
         and FunctionTemplate do not. Perhaps we need a more general
         FunctionGenerator class that defines bind() ?
     
-  - Can FragmentFunction besimplified or generalized in some way?
-    (and should it?)
-    Specifically: can bind() return only the bound fragment shader function,
-    and have the vertex shader support automatically included?
-
 """
 
 
