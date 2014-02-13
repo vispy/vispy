@@ -18,6 +18,9 @@ class Transform(object):
     All Transform subclasses define map() and imap() methods that map 
     an object through the forward or inverse transformation, respectively.
     
+    Optionally, an inverse() method returns a new Transform performing the
+    inverse mapping.
+    
     Note that although all classes should define both map() and imap(), it
     is not necessarily the case that imap(map(x)) == x; there may be instances
     where the inverse mapping is ambiguous or otherwise meaningless.
@@ -31,15 +34,36 @@ class Transform(object):
     GLSL_imap = None
     
     def map(self, obj):
+        """
+        Return *obj* mapped through the forward transformation.
+        
+        Parameters:
+            obj : tuple (x,y) or (x,y,z)
+                  array with shape (..., 2) or (..., 3)
+        """
         raise NotImplementedError()
     
     def imap(self, obj):
+        """
+        Return *obj* mapped through the inverse transformation.
+        
+        Parameters:
+            obj : tuple (x,y) or (x,y,z)
+                  array with shape (..., 2) or (..., 3)
+        """
+        raise NotImplementedError()
+    
+    def inverse(self):
+        """
+        Return a new Transform that performs the inverse mapping of this 
+        transform.
+        """
         raise NotImplementedError()
 
     def bind_map(self, name, var_prefix=None):
         """
-        Return a BoundFunction that accepts only a single vec4 argument,
-        with all others bound to new attributes or uniforms.
+        Return a Function that accepts only a single vec4 argument and defines
+        new attributes / uniforms supplying the Function with any static input.
         """
         if var_prefix is None:
             var_prefix = name + "_"
@@ -66,7 +90,6 @@ class Transform(object):
         for arg_type, arg_name in function.args[1:]:
             uniforms[arg_name] = ('uniform', arg_type, var_prefix+arg_name)
         
-        
         # bind to a new function + variables
         bound = function.bind(name, **uniforms)
         
@@ -75,9 +98,46 @@ class Transform(object):
         for arg_type, arg_name in function.args[1:]:
             bound[var_prefix+arg_name] = getattr(self, arg_name)
         
-        
         return bound
 
+    def __mul__(self, tr):
+        """
+        Transform multiplication returns a new Transform that is equivalent to 
+        the two operands performed in series.
+        
+        By default, multiplying two Transforms `A * B` will return 
+        ChainTransform([A, B]). Subclasses may redefine this operation to return 
+        more optimized results.
+        
+        To ensure that both operands have a chance to simplify the operation,
+        all subclasses should follow the same procedure. For `A * B`:
+        
+        1. A.__mul__(B) attempts to generate an optimized Transform product.
+        2. If that fails, it must:
+        
+               * return super(A).__mul__(B) OR 
+               * return NotImplemented if the superclass would return an invalid
+                 result.
+                 
+        3. When Transform.__mul__(A, B) is called, it returns NotImplemented, 
+           which causes B.__rmul__(A) to be invoked.
+        4. B.__rmul__(A) attempts to generate an optimized Transform product.
+        5. If that fails, it must:
+        
+               * return super(B).__rmul__(A) OR
+               * return ChainTransform([A, B]) if the superclass would return an
+                 invalid result.
+                 
+        6. When Transform.__rmul__(B, A) is called, ChainTransform([A, B]) is 
+           returned.
+        """
+        # switch to __rmul__ attempts.
+        return NotImplemented
+
+    def __rmul__(self, tr):
+        return ChainTransform([tr, self])
+        
+    
 
 def arg_to_array(func):
     """
@@ -137,7 +197,8 @@ def arg_to_vec4(func):
         return ret
     return fn
 
-class TransformChain(Transform):
+
+class ChainTransform(Transform):
     """
     Transform subclass that performs a sequence of transformations in order.
     Internally, this class uses shaders.composite.FunctionChain to generate
@@ -150,11 +211,14 @@ class TransformChain(Transform):
     GLSL_map = ""
     GLSL_imap = ""
     
-    def __init__(self, transforms=None):
-        super(TransformChain, self).__init__()
+    def __init__(self, transforms=None, simplify=False):
+        super(ChainTransform, self).__init__()
         if transforms is None:
             transforms = []
         self.transforms = transforms
+        self.flatten()
+        if simplify:
+            self.simplify()
         
     @property
     def transforms(self):
@@ -177,6 +241,43 @@ class TransformChain(Transform):
         for tr in self.transforms[::-1]:
             obj = tr.imap(obj)
         return obj
+    
+    def inverse(self):
+        return ChainTransform([tr.inverse() for tr in self.transforms[::-1]])
+    
+    def flatten(self):
+        """
+        Attempt to simplify the chain by expanding any nested chains.
+        """
+        new_tr = []
+        for tr in self.transforms:
+            if isinstance(tr, ChainTransform):
+                new_tr.extend(tr.transforms)
+            else:
+                new_tr.append(tr)
+        self.transforms = new_tr
+    
+    def simplify(self):
+        """
+        Attempt to simplify the chain by joining adjacent transforms.        
+        """
+        self.flatten()
+        while True:
+            new_tr = [self.transforms[0]]
+            exit = True
+            for t2 in self.transforms[1:]:
+                t1 = new_tr[-1]
+                pr = t1 * t2
+                if not isinstance(pr, ChainTransform):
+                    exit = False
+                    new_tr.pop()
+                    new_tr.append(pr)
+                else:
+                    new_tr.append(tr2)
+            self.transforms = new_tr
+            if exit:
+                break
+            
 
     def _bind(self, name, var_prefix, imap):
         if imap:
@@ -195,8 +296,60 @@ class TransformChain(Transform):
             bindings.append(bound)
             
         return FunctionChain(name, bindings)
-            
 
+    def append(self, tr):
+        """
+        Add a new Transform to the end of this chain, combining with prior
+        transforms if possible.        
+        """
+        while len(self.transforms) > 0:
+            pr = self.transforms[-1] * tr
+            if isinstance(pr, ChainTransform):
+                self.transforms.append(tr)
+                break
+            else:
+                self.transforms.pop()
+                tr = pr
+                if len(self.transforms)  == 0:
+                    self.transforms = [pr]
+                    break
+
+    def prepend(self, tr):
+        """
+        Add a new Transform to the beginning of this chain, combining with 
+        subsequent transforms if possible.        
+        """
+        while len(self.transforms) > 0:
+            pr = tr * self.transforms[0]
+            if isinstance(pr, ChainTransform):
+                self.transforms.insert(0, tr)
+                break
+            else:
+                self.transforms.pop(0)
+                tr = pr
+                if len(self.transforms)  == 0:
+                    self.transforms = [pr]
+                    break
+    
+    def __mul__(self, tr):
+        if isinstance(tr, ChainTransform):
+            trs = tr.transforms
+        else:
+            trs = [tr]
+            
+        new = ChainTransform(self.transforms)
+        for t in trs:
+            new.append(t)
+        return new
+        
+    def __rmul__(self, tr):
+        new = ChainTransform(self.transforms)
+        new.prepend(tr)
+        return new
+        
+    def __repr__(self):
+        names = [tr.__class__.__name__ for tr in self.transforms]
+        return "<ChainTransform [%s]>" % (", ".join(names))
 
 
 class NullTransform(Transform):
@@ -210,7 +363,16 @@ class NullTransform(Transform):
     
     def imap(self, obj):
         return obj
+    
+    def inverse(self):
+        return NullTransform()
 
+    def __mul__(self, tr):
+        return tr
+    
+    def __rmul__(self, tr):
+        return tr
+    
 
 class STTransform(Transform):
     """ Transform performing only scale and translate
@@ -245,6 +407,11 @@ class STTransform(Transform):
     def imap(self, coords):
         n = coords.shape[-1]
         return (coords - self.translate[:n]) / self.scale[:n]
+
+    def inverse(self):
+        s = 1./self.scale
+        t = -self.translate * s
+        return STTransform(scale=s, translate=t)
     
     @property
     def scale(self):
@@ -279,7 +446,12 @@ class STTransform(Transform):
         elif isinstance(tr, AffineTransform):
             return self.as_affine() * tr
         else:
-            return NotImplemented
+            return super(STTransform, self).__mul__(tr)
+
+    def __rmul__(self, tr):
+        if isinstance(tr, AffineTransform):
+            return tr * self.as_affine()
+        return super(STTransform, self).__rmul__(tr)
             
     def __repr__(self):
         return "<STTransform scale=%s translate=%s>" % (self.scale, self.translate)
@@ -300,9 +472,12 @@ class AffineTransform(Transform):
         }
     """)
     
-    def __init__(self):
+    def __init__(self, matrix=None):
         super(AffineTransform, self).__init__()
-        self.reset()
+        if matrix is not None:
+            self.matrix = matrix
+        else:
+            self.reset()
     
     @arg_to_vec4
     def map(self, coords):
@@ -312,6 +487,11 @@ class AffineTransform(Transform):
     @arg_to_vec4
     def imap(self, coords):
         return np.dot(coords, self.inv_matrix)
+
+    def inverse(self):
+        tr = AffineTransform()
+        tr.matrix = np.linalg.inv(self.matrix)
+        return tr
 
     @property
     def matrix(self):
@@ -358,6 +538,21 @@ class AffineTransform(Transform):
     def reset(self):
         self.matrix = np.eye(4)
         
+    def __mul__(self, tr):
+        if isinstance(tr, AffineTransform):
+            return AffineTransform(matrix=np.dot(tr.matrix, self.matrix))
+        else:
+            return tr.__rmul__(self)
+            #return super(AffineTransform, self).__mul__(tr)
+
+    def __repr__(self):
+        s = "AffineTransform(matrix=["
+        indent = " "*len(s)
+        s += str(list(self.matrix[0])) + ",\n"
+        s += indent + str(list(self.matrix[1])) + ",\n"
+        s += indent + str(list(self.matrix[2])) + ",\n"
+        s += indent + str(list(self.matrix[3])) + "])"
+        return s
     
 class SRTTransform(Transform):
     """ Transform performing scale, rotate, and translate
@@ -365,13 +560,21 @@ class SRTTransform(Transform):
     # TODO
 
     
-class ProjectionTransform(Transform):
+class ProjectionTransform(AffineTransform):
     
     # TODO
     
     @classmethod
     def frustum(cls, l, r, t, b, n, f):
         pass
+
+
+class OrthoTransform(AffineTransform):
+    """
+    Orthographic transform
+    
+    """
+    # TODO
 
 
 class LogTransform(Transform):
