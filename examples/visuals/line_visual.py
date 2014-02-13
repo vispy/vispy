@@ -9,7 +9,7 @@ from vispy.visuals.line import LineVisual
 from vispy.visuals.transforms import STTransform, LogTransform, AffineTransform, PolarTransform
 
 # vertex positions of data to draw
-N = 100
+N = 200
 pos = np.zeros((N, 3), dtype=np.float32)
 pos[:, 0] = np.linspace(-0.9, 0.9, N)
 pos[:, 1] = np.random.normal(size=N, scale=0.2).astype(np.float32)
@@ -31,21 +31,23 @@ class Canvas(vispy.app.Canvas):
         
         self.lines[1].transform = STTransform(scale=(1, 0.1, 1))
         
-        self.lines[2].transform = (STTransform(translate=(0.1, 0.5, 0)) *
-                                   STTransform(scale=(1, 0.1, 1)))
+        self.lines[2].transform = (STTransform(translate=(0.5, 0.6, 0)) *
+                                   STTransform(scale=(0.3, 0.5, 1)))
         
-        self.lines[3].transform = (LogTransform(base=(10, 0, 0)) *
-                                   STTransform(translate=(1.1, -0.7, 0)))
+        self.lines[3].transform = (STTransform(translate=(0, -0.7, 0),
+                                               scale=(1, 0.5)) *
+                                   LogTransform(base=(10, 0, 0)) *
+                                   STTransform(translate=(1, 0, 0)))
         
         self.lines[4].transform = AffineTransform()
         self.lines[4].transform.rotate(45, (0, 0, 1))
-        self.lines[4].transform.scale((0.1, 0.1, 1))
+        self.lines[4].transform.scale((0.3, 0.3, 1))
         self.lines[4].transform.translate((0.7, -0.7, 0))
         
         self.lines[5].transform = (STTransform(translate=(-0.5, 0.7, 0)) *
                                    PolarTransform() *
                                    LogTransform(base=(2, 0, 0)) *
-                                   STTransform(scale=(6.0, 0.1), translate=(5.9, 0.2)))
+                                   STTransform(scale=(6.0, 0.1), translate=(5.6, 0.2)))
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)
