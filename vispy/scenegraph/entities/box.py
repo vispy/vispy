@@ -1,10 +1,15 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+from __future__ import division
 from ..entity import Entity
 from ...visuals import LineVisual
 from ...util.event import EmitterGroup, Event
 from ...util.geometry import Rect
 import numpy as np
 
-__all__ = ['Box', 'Document', 'GridBox', 'ViewBox']
+__all__ = ['Box', 'Document', 'GridBox']
 
 class Box(Entity):
     """
@@ -225,46 +230,5 @@ class GridBox(Box):
             ch.size = w, h
 
     
-class ViewBox(Box):
-    """
-    Box class that provides an interactive (pan/zoom) view on its children.    
-    """
-    def __init__(self, *args, **kwds):
-        Box.__init__(self, *args, **kwds)
-        self._child_group = Entity(parents=[self])
-        
-    def add_entity(self, entity):
-        entity.add_parent(self._child_group)
     
-    def on_mouse_press(self, event):
-        if event.handled:
-            return
-    
-    def on_mouse_move(self, event):
-        if event.handled:
-            return
-        
-        # TODO: original event dispatcher should pick Entities under cursor
-        # so we don't need this check.
-        if not self.rect.contains(*event.pos[:2]):
-            return
-        
-        if 1 in event.buttons:
-            p1 = np.array(event.last_event.pos)
-            p2 = np.array(event.pos)
-            self._child_group.transform.translate(p2-p1)
-            self.update()
-            event.handled = True
-        elif 2 in event.buttons:
-            p1 = np.array(event.last_event.pos)[:2]
-            p2 = np.array(event.pos)[:2]
-            s = 1.03 ** ((p2-p1) * np.array([1, -1]))
-            self._child_group.transform.scale(s, center=event.press_event.pos)
-            self.update()        
-            event.handled = True
-        
-    def on_mouse_release(self, event):
-        if event.handled:
-            return
-    
-    
+from .view_box import ViewBox

@@ -42,7 +42,7 @@ class SceneEvent(Event):
         """
         tr = [e.transform for e in self.path[::-1]]
         # TODO: cache transform chains
-        return transforms.TransformChain(tr)
+        return transforms.ChainTransform(tr)
 
     def document_transform(self):
         """
@@ -59,7 +59,7 @@ class SceneEvent(Event):
             tr.append(e.transform)
         if not found:
             raise Exception("No Document in the Entity path for this Event.")
-        return transforms.TransformChain(tr)
+        return transforms.ChainTransform(tr)
 
     def map_to_document(self, obj):
         return self.document_transform().map(obj)
@@ -72,7 +72,7 @@ class SceneEvent(Event):
         Return a Transform that maps from the end of the path to the Canvas.
         """
         tr = [e.transform for e in self.path[::-1]] + [self.canvas.nd_transform()]
-        return transforms.TransformChain(tr)
+        return transforms.ChainTransform(tr)
         
     def map_to_canvas(self, obj):
         return self.canvas_transform().map(obj)
