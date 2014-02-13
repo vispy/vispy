@@ -26,12 +26,24 @@ API Issues to work out:
         t1 * t2  => ChainTransform([t2, t1])  
                         OR
                  => ChainTransform([t1, t2])
+                 
+    Matrix-multiplication style is tempting, but confounded by the fact 
+    that throughout vispy, we use transformation matrices and vectors that are 
+    transposed relative to traditional linear algebra expectations. This has the 
+    awkward side-effect that the arguments to np.dot() must be reversed (and 
+    potentially other side effects). Since we are reversing the matrix 
+    multiplication order anyway, perhaps it makes sense to reverse it here as 
+    well?
 
   - Should transforms have a 'changed' event?
   
         t1.changed.connect(callback)
             OR
         t1.events.change.connect(callback)
+        
+  - AffineTransform and STTransform both have 'scale' and 'translate'
+    attributes, but they are used in very different ways. It would be nice
+    to keep this consistent, but how?
 """
 
 
@@ -45,6 +57,10 @@ class Transform(object):
     All Transform subclasses define map() and imap() methods that map 
     an object through the forward or inverse transformation, respectively.
     
+    The two class variables GLSL_map and GLSL_imap are instances of 
+    shaders.composite.Function or shaders.composite.FunctionTemplate that
+    define the forward- and inverse-mapping GLSL function code.
+    
     Optionally, an inverse() method returns a new Transform performing the
     inverse mapping.
     
@@ -52,9 +68,6 @@ class Transform(object):
     is not necessarily the case that imap(map(x)) == x; there may be instances
     where the inverse mapping is ambiguous or otherwise meaningless.
     
-    The two class variables GLSL_map and GLSL_imap are instances of 
-    shaders.composite.Function or shaders.composite.FunctionTemplate that
-    define the forward- and inverse-mapping GLSL function code.
     
     """
     GLSL_map = None  # Must be Function instance
@@ -177,7 +190,14 @@ def arg_to_array(func):
     return fn
 
 
-def as_vec4(obj):
+def as_vec4(obj, default=(0,0,0,1)):
+    """
+    Convert *obj* to 4-element vector (numpy array with shape[-1] == 4)
+    
+    If *obj* has < 4 elements, then new elements are added from *default*.
+    For inputs intended as a position or translation, use default=(0,0,0,1).
+    For inputs intended as scale factors, use default=(1,1,1,1).
+    """
     obj = np.array(obj)
     
     # If this is a single vector, reshape to (1, 4)
@@ -186,7 +206,8 @@ def as_vec4(obj):
         
     # For multiple vectors, reshape to (..., 4)
     if obj.shape[-1] < 4:
-        new = np.zeros(obj.shape[:-1] + (4,), dtype=obj.dtype)
+        new = np.empty(obj.shape[:-1] + (4,), dtype=obj.dtype)
+        new[:] = default
         new[...,:obj.shape[-1]] = obj
         obj = new
     elif obj.shape[-1] > 4:
@@ -215,10 +236,6 @@ def arg_to_vec4(func):
         arg = np.array(arg)
         flatten = arg.ndim == 1
         arg = as_vec4(arg)
-        
-        
-        # force 1 in last column (is this a bad idea?)
-        arg[...,3] = 1
         
         ret = func(self, arg, *args, **kwds)
         if flatten and ret is not None:
@@ -448,7 +465,7 @@ class STTransform(Transform):
     
     @scale.setter
     def scale(self, s):
-        self._scale[:len(s)] = s
+        self._scale[:len(s)] = s[:3]
         self._scale[len(s):] = 1.0
         #self._update()
         
@@ -458,7 +475,7 @@ class STTransform(Transform):
     
     @translate.setter
     def translate(self, t):
-        self._translate[:len(t)] = t
+        self._translate[:len(t)] = t[:3]
         self._translate[len(t):] = 0.0
             
     def as_affine(self):
@@ -519,7 +536,11 @@ class AffineTransform(Transform):
 
     def inverse(self):
         tr = AffineTransform()
-        tr.matrix = np.linalg.inv(self.matrix)
+        try:
+            tr.matrix = np.linalg.inv(self.matrix)
+        except:
+            print(self.matrix)
+            raise
         return tr
 
     @property
@@ -539,24 +560,28 @@ class AffineTransform(Transform):
 
     @arg_to_vec4
     def translate(self, pos):
-        #tr = np.eye(4)
-        #tr[3, :pos.shape[-1]] = pos
-        #self.matrix = np.dot(tr, self.matrix)
+        """
+        Translate the matrix by *pos*. 
+        
+        The translation is applied *after* the transformations already present
+        in the matrix.
+        """
         self.matrix = transforms.translate(self.matrix, *pos[0,:3])
         
-    @arg_to_vec4
     def scale(self, scale, center=None):
-        #tr = np.eye(4)
-        #for i,s in enumerate(scale[0,:3]):
-            #tr[i,i] = s
-        #self.matrix = np.dot(tr, self.matrix)
+        """
+        Scale the matrix by *scale* around the origin *center*. 
+        
+        The scaling is applied *after* the transformations already present
+        in the matrix.
+        """
+        scale = as_vec4(scale, default=(1,1,1,1))
         if center is not None:
             center = as_vec4(center)[0,:3]
             m = transforms.translate(self.matrix, *(-center))
             m = transforms.scale(m, *scale[0,:3])
             m = transforms.translate(self.matrix, *center)
             self.matrix = m
-            
         else:
             self.matrix = transforms.scale(self.matrix, *scale[0,:3])
 

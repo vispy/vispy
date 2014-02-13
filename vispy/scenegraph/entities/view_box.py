@@ -7,7 +7,7 @@ import numpy as np
 
 from ..entity import Entity
 from .box import Box
-from ..visuals.transforms import STTransform
+from ...visuals.transforms import STTransform
 
 class ViewBox(Box):
     """
@@ -16,7 +16,22 @@ class ViewBox(Box):
     def __init__(self, *args, **kwds):
         Box.__init__(self, *args, **kwds)
         self._child_group = Entity(parents=[self])
-        self._camera = 
+        self._camera = None
+        self.camera = TwoDCamera()
+
+    @property
+    def camera(self):
+        return self._camera
+    
+    @camera.setter
+    def camera(self, cam):
+        if self._camera is not None:
+            self._camera.events.update.disconnect(self._camera_update)
+        self._camera = cam
+        cam.events.update.connect(self._camera_update)
+        
+    def _camera_update(self, event):
+        self._child_group.transform = self.camera.transform.inverse()
         
     def add_entity(self, entity):
         entity.add_parent(self._child_group)
@@ -27,7 +42,7 @@ class ViewBox(Box):
         
         # TODO: original event dispatcher should pick Entities under cursor
         # so we won't need this check.
-        if not self.rect.contains(*event.pos[:2]):
+        if event.press_event is None or not self.rect.contains(*event.press_event.pos[:2]):
             return
             
         self.camera.view_mouse_event(event)
@@ -41,6 +56,9 @@ class Camera(Entity):
     By convention, the unit cube in the local coordinate system of the camera
     contains everything that will be visible to a ViewBox using this camera.
     """
+    def __init__(self, parent):
+        super(Camera, self).__init__(parent)
+        
     def view_mouse_event(self, event):
         """
         An attached ViewBox received a mouse event; update the camera 
@@ -88,24 +106,22 @@ class TwoDCamera(Camera):
         An attached ViewBox received a mouse event; 
         
         """
-        if event.handled:
-            return
-        
-        # TODO: original event dispatcher should pick Entities under cursor
-        # so we won't need this check.
-        if not self.rect.contains(*event.pos[:2]):
-            return
-        
         if 1 in event.buttons:
             p1 = np.array(event.last_event.pos)
             p2 = np.array(event.pos)
-            self.transform.translate = self.transform.translate + (p1-p2)
+            self.transform = self.transform * STTransform(translate=p1-p2)
             self.update()
             event.handled = True
         elif 2 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]
             p2 = np.array(event.pos)[:2]
-            s = 1.03 ** ((p2-p1) * np.array([1, -1]))
-            self._child_group.transform.scale(s, center=event.press_event.pos)
+            s = 0.97 ** ((p2-p1) * np.array([1, -1]))
+            center = event.press_event.pos
+            # TODO: would be nice if STTransform had a nice scale(s, center) 
+            # method like AffineTransform.
+            self.transform = (self.transform *
+                              STTransform(translate=center) * 
+                              STTransform(scale=s) * 
+                              STTransform(translate=-center))
             self.update()        
             event.handled = True

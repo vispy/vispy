@@ -94,12 +94,16 @@ class SceneMouseEvent(SceneEvent):
 
     @property
     def last_event(self):
+        if self.mouse_event.last_event is None:
+            return None
         ev = SceneMouseEvent(self.mouse_event.last_event, self.canvas)
         ev._set_path(self.path)
         return ev
         
     @property
     def press_event(self):
+        if self.mouse_event.press_event is None:
+            return None
         ev = SceneMouseEvent(self.mouse_event.press_event, self.canvas)
         ev._set_path(self.path)
         return ev
