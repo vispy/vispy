@@ -31,6 +31,7 @@ class Entity(object):
                                    mouse_move=SceneMouseEvent,
                                    mouse_release=SceneMouseEvent,
                                    paint=ScenePaintEvent,
+                                   children_painted=ScenePaintEvent,
                                    update=Event,
                                    )
 
@@ -138,10 +139,14 @@ class Entity(object):
         """
         Paint the entire tree of Entities beginnging here.            
         """
-        for path in self.walk():
+        for enter, path in self.walk():
             event._set_path(path)
             entity = path[-1]
-            entity.events.paint(event)
+            if enter:
+                entity.events.paint(event)
+            else:
+                entity.events.children_painted(event)
+                
 
     def _process_mouse_event(self, event):
         """
@@ -154,7 +159,7 @@ class Entity(object):
         
         # TODO: for now we send the event to all entities; need to use
         # picking to decide which entities should receive the event.
-        for path in self.walk():
+        for enter, path in self.walk():
             event._set_path(path)
             entity = path[-1]
             getattr(entity.events, event.type)(event)
@@ -162,7 +167,9 @@ class Entity(object):
     def walk(self, path=None):
         """
         Return an iterator that walks the entire scene graph starting at this
-        Entity. Yields a list of Entities for each path in the scenegraph.
+        Entity. Yields (True, [list of Entities]) as each path in the 
+        scenegraph is visited. Yields (False, [list of Entities]) as each path
+        is finished.
         """
         # TODO: need some control over the order..
         #if path is None:
@@ -175,10 +182,11 @@ class Entity(object):
                 #for e in ch.walk(path):
                     #yield e
         path = (path or []) + [self]
-        yield path
+        yield ('enter', path)
         for ch in self:
             for p in ch.walk(path):
                 yield p
+        yield ('exit', path)
         
         
 

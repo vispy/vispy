@@ -93,7 +93,7 @@ class Box(Entity):
         self._visual.set_data(pos=pos)
         
     def on_paint(self, event):
-        self._visual.transform = event.root_transform()
+        self._visual.transform = event.viewport_transform()
         self._visual.paint()
         
     def on_rect_change(self, ev):

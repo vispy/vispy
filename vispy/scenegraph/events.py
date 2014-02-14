@@ -6,6 +6,7 @@ from __future__ import division
 
 from ..util.event import Event
 from ..visuals import transforms
+from ..gloo import gl
 
 class SceneEvent(Event):
     """
@@ -16,6 +17,7 @@ class SceneEvent(Event):
         super(SceneEvent, self).__init__(type=type)
         self._canvas = canvas
         self._path = []
+        self._viewport_stack = []
         
     @property
     def canvas(self):
@@ -38,16 +40,67 @@ class SceneEvent(Event):
     def root_transform(self):
         """
         Return the complete Transform that maps from the end of the path to the
-        beginning.
+        root.
         """
         tr = [e.transform for e in self.path[::-1]]
         # TODO: cache transform chains
         return transforms.ChainTransform(tr)
+    
+    def viewport_transform(self):
+        """
+        Return the transform that maps from the end of the path to normalized
+        device coordinates (-1 to 1 within the current glViewport).
+        
+        This transform consists of the root_transform plus a correction for the
+        current glViewport.
+        
+        Most entities should use this transform when painting.
+        """
+        root_tr = self.root_transform()
+        csize = self.canvas.size
+        viewport = self._viewport_stack[-1]
+        scale = csize[0]/viewport[2], csize[1]/viewport[3]
+        view_tr = (transforms.STTransform(scale=scale) * 
+                   transforms.STTransform(translate=(-viewport[0], -viewport[1])))
+        return view_tr * root_tr
+        
+    def framebuffer_transform(self):
+        """
+        Return the transform mapping from the end of the path to framebuffer
+        pixels (device pixels).
+        
+        This is the coordinate system required by glViewport().
+        """
+        root_tr = self.root_transform()
+        # TODO: How do we get the framebuffer size?
+        csize = self.canvas.size
+        scale = csize[0]/2.0, -csize[1]/2.0
+        fb_tr = (transforms.STTransform(scale=scale) * 
+                 transforms.STTransform(translate=(1, -1)))
+        return fb_tr * root_tr
+        
+    def canvas_transform(self):
+        """
+        Return the transform mapping from the end of the path to Canvas
+        pixels (logical pixels).
+        
+        In most cases, the use of document_transform is preferred over 
+        canvas_transform.
+        """
+        root_tr = self.root_transform()
+        csize = self.canvas.size
+        scale = csize[0]/2.0, -csize[1]/2.0
+        canvas_tr = (transforms.STTransform(scale=scale) * 
+                     transforms.STTransform(translate=(1, -1)))
+        return canvas_tr * root_tr
 
     def document_transform(self):
         """
         Return the complete Transform that maps from the end of the path to the 
         first Document in its ancestry.
+        
+        This coordinate system should be used for all physical unit measurements
+        (px, mm, etc.)
         """
         from .entities import Document
         tr = []
@@ -80,7 +133,15 @@ class SceneEvent(Event):
     def map_from_canvas(self, obj):
         return self.canvas_transform().imap(obj)
     
-    
+    def push_viewport(self, x, y, w, h):
+        self._viewport_stack.append((x, y, w, h))
+        gl.glViewport(x, y, w, h)
+        
+    def pop_viewport(self):
+        self._viewport_stack.pop()
+        gl.glViewport(*self._viewport_stack[-1])
+        
+        
     
 
 class SceneMouseEvent(SceneEvent):

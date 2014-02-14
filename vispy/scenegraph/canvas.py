@@ -55,10 +55,12 @@ class SceneCanvas(app.Canvas):
     def on_paint(self, event):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glViewport(0, 0, *self.size)
+        
 
         # Draw viewbox
         scene_event = ScenePaintEvent(canvas=self, event=event)
+        scene_event.push_viewport(0, 0, *self.size)
+
         self._root._process_paint_event(scene_event)
         
 

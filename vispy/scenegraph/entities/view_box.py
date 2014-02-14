@@ -47,6 +47,14 @@ class ViewBox(Box):
             
         self.camera.view_mouse_event(event)
 
+    def on_paint(self, event):
+        super(ViewBox, self).on_paint(event)
+        
+        r = event.framebuffer_transform.map(self.rect)
+        event.push_viewport(r.left, r.bottom, r.width, r.height)
+        
+    def on_children_painted(self, event):
+        event.pop_viewport()
 
 class Camera(Entity):
     """ The Camera class defines the viewpoint from which a scene is

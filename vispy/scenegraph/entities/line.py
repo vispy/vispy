@@ -21,7 +21,7 @@ class Line(Entity):
             setattr(self, method, getattr(self._visual, method))
         
     def on_paint(self, event):
-        self._visual.transform = event.root_transform()
+        self._visual.transform = event.viewport_transform()
         self._visual.paint()
 
 
