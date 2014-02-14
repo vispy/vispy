@@ -203,10 +203,10 @@ class Uniform(Variable):
                 if not isinstance(data, np.ndarray):
                     data = np.array(data)
                 self._data[...] = data.ravel()
-            except ValueError:
+            except ValueError as e:
                 raise ValueError(
-                    "Wrong data format for uniform %s" %
-                    self.name)
+                    "Wrong data format for uniform %s (%s)" %
+                    (self.name, e.message))
 
         # Mark variable as dirty
         self._dirty = True
