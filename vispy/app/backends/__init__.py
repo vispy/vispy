@@ -43,6 +43,7 @@ def has_qt(requires_uic=False, return_which=False):
             which = None
             has = False
         else:
+            import PySide
             which = 'PySide ' + str(PySide.__version__)
             has = True
     else:
