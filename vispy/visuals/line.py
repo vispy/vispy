@@ -35,7 +35,7 @@ from .transforms import NullTransform
 vertex_shader = """
 // local_position function must return the current vertex position
 // in the Visual's local coordinate system.
-vec4 local_position(void);
+vec4 local_position();
 
 // mapping function that transforms from the Visual's local coordinate
 // system to normalized device coordinates.
@@ -75,7 +75,7 @@ XYInputFunc = FunctionTemplate("""
 vec4 $func_name() {
     return vec4($xy_pos, $z_pos, 1.0);
 }
-""", bindings=['vec4 xy_pos', 'float z_pos'])
+""", bindings=['vec2 xy_pos', 'float z_pos'])
 
 
 # generate local coordinate from xyz (vec3) attribute
@@ -223,14 +223,14 @@ class LineVisual(BaseVisual):
         if self._data['pos'].shape[-1] == 2:
             func = XYInputFunc.bind(
                         name='local_position', 
-                        xy_pos=('attribute', 'vec2', 'input_xy_pos'),
-                        z_pos=('uniform', 'float', 'input_z_pos'))
+                        xy_pos=('attribute', 'input_xy_pos'),
+                        z_pos=('uniform', 'input_z_pos'))
             func['input_xy_pos'] = self._vbo['pos']
             func['input_z_pos'] = 0.0
         else:
             func = XYZInputFunc.bind(
                         name='local_position', 
-                        xyz_pos=('attribute', 'vec3', 'input_xyz_pos'))
+                        xyz_pos=('attribute', 'input_xyz_pos'))
             func['input_xyz_pos'] = self._vbo
         return func
 
@@ -239,12 +239,12 @@ class LineVisual(BaseVisual):
         if 'color' in self._data.dtype.fields:
             func = RGBAAttributeFunc.bind(
                             name='frag_color',
-                            input=('attribute', 'vec4', 'input_color')
+                            input=('attribute', 'input_color')
                             )
             func['input_color'] = self._vbo['color']
         else:
             func = RGBAUniformFunc.bind('frag_color', 
-                                             rgba=('uniform', 'vec4', 'input_color'))
+                                             rgba=('uniform', 'input_color'))
             func['input_color'] = np.array(self._opts['color'])
         return func
 

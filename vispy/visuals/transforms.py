@@ -128,10 +128,10 @@ class Transform(object):
         # map all extra args to uniforms
         uniforms = {}
         #for arg_type, arg_name in function.args[1:]:
-        for var_name, var_type in function.bindings.items():
+        for var_name in function.bindings:
             if var_name == function.args[0][1]:
                 continue
-            uniforms[var_name] = ('uniform', var_type, var_prefix+var_name)
+            uniforms[var_name] = ('uniform', var_prefix+var_name)
         
         # bind to a new function + variables
         bound = function.bind(name, **uniforms)

@@ -85,8 +85,8 @@ class Canvas(vispy.app.Canvas):
         dist[1:] = np.cumsum(diff)
         
         dasher = Dasher.bind(name="fragment_dasher", 
-                             distance_attr=('attribute', 'float', 'distance_attr'),
-                             dash_len=('uniform', 'float', 'dash_len_unif'))
+                             distance_attr=('attribute', 'distance_attr'),
+                             dash_len=('uniform', 'dash_len_unif'))
         dasher['distance_attr'] = gloo.VertexBuffer(dist)
         dasher['dash_len_unif'] = 20.
         self.line.add_fragment_hook(dasher)

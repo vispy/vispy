@@ -466,7 +466,7 @@ class BoundFunction(Function):
         The name of each keyword argument must match one of the argument names
         for *parent_function*. The value is a tuple that specifies a new
         program variable to declare: 
-        ('uniform'|'attribute'|'varying', type, name)
+        ('uniform'|'attribute'|'varying', name)
         This program variable will be used to supply the value to the
         corresponding input argument to *parent_function*.
 
@@ -481,7 +481,7 @@ class BoundFunction(Function):
         
         bound = BoundFunction(func, 
                               name='my_transform', 
-                              matrix=('uniform', 'mat4', 'my_matrix'))
+                              matrix=('uniform', 'my_matrix'))
                               
     In this example, the BoundFunction *bound* calls the original Function 
     *func* using a new uniform variable *my_matrix* as the *matrix* argument.
@@ -520,8 +520,10 @@ class BoundFunction(Function):
         code = ""
         
         # Generate attribute/uniform declarations
-        for arg in self._bound_arguments.values():
-            code += "%s %s %s;\n" % arg
+        for bname, varspec in self._bound_arguments.items():
+            vtype, vname = varspec
+            dtype = self._parent.bindings[bname]
+            code += "%s %s %s;\n" % (vtype, dtype, vname)
         code += "\n"
         
         # new function signature
@@ -534,7 +536,7 @@ class BoundFunction(Function):
         args = []
         for dtype, argname in fn_args:
             if argname in self._bound_arguments:
-                args.append(self._bound_arguments[argname][2])
+                args.append(self._bound_arguments[argname][1])
             else:
                 args.append(argname)
         ret = "return " if self._parent.rtype is not 'void' else ""
@@ -716,9 +718,13 @@ class FunctionTemplate(object):
         code = ""
         for var_name, var_spec in kwds.items():
             var_names.remove(var_name)
-            subs[var_name] = var_spec[2]
+            subs[var_name] = var_spec[1]
             if var_name in self._bindings:
-                code += "%s %s %s;\n" % var_spec
+                dtype = self._bindings[var_name]
+                code += "%s %s %s;\n" % (var_spec[0], dtype, var_spec[1])
+            else:
+                raise KeyError("Variable name '%s' is not bindable. Bindings "
+                               "are: %s" % (var_name, self._bindings.keys()))
         
         if var_names:
             raise Exception('Unsubstituted template variables in bind(): %s' % var_names)
@@ -791,7 +797,7 @@ class FragmentFunction(object):
             # This is likely to be a unique name...
             var_type = self.vert_post.bindings[vname]
             var_name = "%s_%s_%s_var" % (name, vname, fname)
-            var = ('varying', var_type, var_name)
+            var = ('varying', var_name)
             vert_vars[vname] = var
             frag_vars[fname] = var
         
