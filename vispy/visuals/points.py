@@ -57,13 +57,10 @@ class PointsVisual(Visual):
         self._vbo = gloo.VertexBuffer(self.pos)
         
     def _build_program(self):
-        if self._vbo is None:
-            self._build_vbo()
         
         # Create composite program
         self._program = CompositeProgram(vmain=self.VERT_SHADER, 
                                          fmain=self.FRAG_SHADER)
-        self._program['a_position'] = self._vbo
         
         # Attach transformation function
         tr_bound = self.transform.bind_map('map_local_to_nd')
@@ -79,5 +76,9 @@ class PointsVisual(Visual):
         if self._program is None:
             self._build_program()
             
+        if self._vbo is None:
+            self._build_vbo()
+        self._program['a_position'] = self._vbo
+        
         self._program.draw('POINTS')
         

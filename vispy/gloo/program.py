@@ -74,11 +74,16 @@ class Program(GLObject):
         # name -> Variable
         self._attributes = {}
         self._uniforms = {}
-
+        
         # Keep track of which names are active (queried after linking)
         # name -> location
         self._active_attributes = {}
         self._active_uniforms = {}
+        
+        # Calling __setitem__ before all shaders are attached causes 
+        # this dict to accumulate items. It is cleared when the program is 
+        # activated.
+        self._deferred_item_set = {}
 
         # Keep track of number of vertices
         self._vertex_count = None
@@ -208,7 +213,7 @@ class Program(GLObject):
             # Set data
             self._attributes[name].set_data(data)
         else:
-            raise NameError("Unknown uniform or attribute: %s" % name)
+            self._deferred_item_set[name] = data
 
     def set_vars(self, vars=None, **keyword_vars):
         """ Set variables from a dict-like object. vars can be a dict
@@ -447,6 +452,10 @@ class Program(GLObject):
             # "stuck" in a false activated state
             self._deactivate()
             self.activate()
+            
+        # try offloading all deferred program variables here
+        for name, value in self._deferred_item_set.items():
+            self[name] = value
 
     def _deactivate(self):
         """ Deactivate any objects that were activated on our behalf,
