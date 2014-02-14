@@ -33,6 +33,12 @@ re_anon_arg_list = "(" + re_anon_decl + "(?:,\s*" + re_anon_decl + ")*)?"
 #    "vec4 function_name(float, float);"
 re_func_prot = re_type + "\s+" + re_identifier + "\((void|" + re_anon_arg_list + ")\)\s*;"
 
+# template variables like
+#     $func_name
+re_template_var = r"(?:(?:\$" + re_identifier + ")|(?:\$\{" + re_identifier + "\}))"
+
+
+
 def parse_function_signature(code):
     """ 
     Return the name, arguments, and return type of the first function 
@@ -86,5 +92,10 @@ def find_program_variables(code):
     return vars
     
     
-
+def find_template_variables(code):
+    """
+    Return a list of template variables found in *code*. 
+    
+    """
+    return re.findall(re_template_var, code)
     

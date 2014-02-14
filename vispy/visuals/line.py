@@ -2,6 +2,23 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+
+"""
+Simple visual based on GL_LINE_STRIP / GL_LINES
+
+
+API issues to work out:
+
+    The main vertex and fragment shaders define a few useful hooks, but these
+    may need to be rethought in the future as we consider different kinds of 
+    modular components. 
+    
+    Some of the hooks defined here may be applicable to all Visuals (for
+    example, map_local_to_nd), but I expect that each Visual may want to define
+    a different set of hooks.
+    
+"""
+
 from __future__ import print_function, division, absolute_import
 
 import numpy as np
@@ -9,7 +26,8 @@ import numpy as np
 from .. import gloo
 from ..gloo import gl
 from . import BaseVisual
-from ..shaders.composite import Function, FunctionTemplate, CompositeProgram, FragmentFunction
+from ..shaders.composite import (Function, FunctionTemplate, CompositeProgram, 
+                                 FragmentFunction, FunctionChain)
 from .transforms import NullTransform
 
 
@@ -40,74 +58,61 @@ fragment_shader = """
 // or discard.
 vec4 frag_color();
 
+// Generic hook for executing code after the fragment color has been set
+// Functions in this hook may modify glFragColor or discard.
+void frag_post_hook();
+
 void main(void) {
     gl_FragColor = frag_color();
+    
+    frag_post_hook();
 }
 """    
       
 
 # generate local coordinate from xy (vec2) attribute and z (float) uniform
-# Note that the Function and FunctionTemplate approaches
-# should work equally well.
-#XYInputFunc = Function("""
-#vec4 v2_f_to_v4(vec2 xy_pos, float z_pos) {
-    #return vec4(xy_pos, z_pos, 1.0);
-#}
-#""")
 XYInputFunc = FunctionTemplate("""
 vec4 $func_name() {
     return vec4($xy_pos, $z_pos, 1.0);
 }
-""", var_names=['xy_pos', 'z_pos'])
+""", bindings=['vec4 xy_pos', 'float z_pos'])
 
 
 # generate local coordinate from xyz (vec3) attribute
-#XYZInputFunc = Function("""
-#vec4 v3_to_v4(vec3 xyz_pos) {
-    #return vec4(xyz_pos, 1.0);
-#}
-#""")
 XYZInputFunc = FunctionTemplate("""
 vec4 $func_name() {
     return vec4($xyz_pos, 1.0);
 }
-""", var_names=['xyz_pos'])
+""", bindings=['vec3 xyz_pos'])
 
-# pair of functions used to provide uniform/attribute input to fragment shader
-#RGBAInputFunc = FunctionTemplate("""
-#vec4 $func_name() {
-    #return $rgba;
-#}
-#""", var_names=['rgba'])
-#RGBAVertexInputFunc = FunctionTemplate("""
-#void $func_name() {
-    #$output = $input;
-#}
-#""", var_names=['input', 'output'])
 
 RGBAAttributeFunc = FragmentFunction(
+    # Read color directly from 'rgba' varying
     frag_func=FunctionTemplate("""
         vec4 $func_name() {
             return $rgba;
         }
         """, 
-        var_names=['rgba']),
+        bindings=['vec4 rgba']),
+    # Set varying from vec4 attribute
     vertex_post=FunctionTemplate("""
         void $func_name() {
             $output = $input;
         }
         """, 
-        var_names=['input', 'output']),
+        bindings=['vec4 input', 'vec4 output']),
     # vertex variable 'output' and fragment variable 'rgba' should both 
     # be bound to the same vec4 varying.
-    link_vars=[('vec4', 'output', 'rgba')]
+    link_vars=[('output', 'rgba')]
     )
+
 
 RGBAUniformFunc = FunctionTemplate("""
 vec4 $func_name() {
     return $rgba;
 }
-""", var_names=['rgba'])
+""", bindings=['vec4 rgba'])
+
     
 class LineVisual(BaseVisual):
     def __init__(self, pos=None, color=None, width=None):
@@ -122,7 +127,7 @@ class LineVisual(BaseVisual):
         
         self._program = None
         self._vbo = None
-        
+        self._fragment_hooks = []
         self.set_data(pos=pos, color=color, width=width)
 
     @property
@@ -132,6 +137,10 @@ class LineVisual(BaseVisual):
     @transform.setter
     def transform(self, tr):
         self._opts['transform'] = tr
+        self._program = None
+
+    def add_fragment_hook(self, func):
+        self._fragment_hooks.append(func)
         self._program = None
 
     def set_data(self, pos=None, color=None, width=None):
@@ -191,6 +200,11 @@ class LineVisual(BaseVisual):
         color_func = self._get_color_func()
         self._program.set_hook('frag_color', color_func)
         
+        # Attach fragment shader post-hook chain
+        post_chain = self._get_fragment_post_chain()
+        self._program.set_hook('frag_post_hook', post_chain)
+        
+        
     def paint(self):
         if self._opts['pos'] is None or len(self._opts['pos']) == 0:
             return
@@ -233,3 +247,6 @@ class LineVisual(BaseVisual):
                                              rgba=('uniform', 'vec4', 'input_color'))
             func['input_color'] = np.array(self._opts['color'])
         return func
+
+    def _get_fragment_post_chain(self):
+        return FunctionChain('frag_post_hook', self._fragment_hooks)

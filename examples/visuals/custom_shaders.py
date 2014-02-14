@@ -5,11 +5,18 @@ Demonstrates plugging custom shaders in to a LineVisual.
 import numpy as np
 import vispy.app
 from vispy.gloo import gl
+import vispy.gloo as gloo
 from vispy.visuals.line import LineVisual
-from vispy.visuals.transforms import Transform
+from vispy.visuals.transforms import Transform, STTransform, arg_to_array
+from vispy.shaders.composite import FragmentFunction, FunctionTemplate, Function
+
+#import pyqtgraph as pg
+#c = pg.dbg()
+#c.catchNextException()
+
 
 # vertex positions of data to draw
-N = 100
+N = 50
 pos = np.zeros((N, 3), dtype=np.float32)
 pos[:, 0] = np.linspace(-0.9, 0.9, N)
 pos[:, 1] = np.random.normal(size=N, scale=0.2).astype(np.float32)
@@ -19,15 +26,14 @@ color = np.ones((N, 4), dtype=np.float32)
 color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
-
 # A custom Transform
 class SineTransform(Transform):
     """
     Add sine wave to y-value for wavy effect.
     """
-    GLSL_map = Function("""
-        vec4 SineTransform_map(vec4 pos) {
-            return vec4(pos.x, pos.y * sin(pos.x), pos.z, 1);
+    GLSL_map = FunctionTemplate("""
+        vec4 $func_name(vec4 pos) {
+            return vec4(pos.x, pos.y + sin(pos.x), pos.z, 1);
         }
         """)
 
@@ -44,17 +50,46 @@ class SineTransform(Transform):
         return ret
 
 
-
+# A custom fragment shader
+Dasher = FragmentFunction(
+    frag_func = FunctionTemplate("""
+    void $func_name() {
+        float mod = $distance / $dash_len;
+        mod = mod - int(mod);
+        gl_FragColor.a = 0.5 * sin(mod*3.141593*2) + 0.5;
+    }
+    """, bindings=['float distance', 'float dash_len']),
+    
+    vertex_post = FunctionTemplate("""
+    void $func_name() {
+        $output = $distance_attr;
+    }
+    """, bindings=['float distance_attr', 'float output']),
+    
+    link_vars=[('output', 'distance')])
 
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
         
-        # Define several LineVisuals that use the same position data
-        # but have different colors and transformations
-        colors = [color, (1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1),
-                  (1, 1, 0, 1), (1, 1, 1, 1)]
-        self.lines = [LineVisual(pos, color=colors[i]) for i in range(1)]
+        self.line = LineVisual(pos, color=color)
+        self.line.transform = (STTransform(scale=(0.1,.3)) * 
+                               SineTransform() * 
+                               STTransform(scale=(10,3)))
+        
+        pixel_tr = STTransform(scale=(400,400)) * self.line.transform
+        pixel_pos = pixel_tr.map(pos)
+        dist = np.empty(pos.shape[0], dtype=np.float32)
+        diff = ((pixel_pos[1:] - pixel_pos[:-1]) ** 2).sum(axis=1) ** 0.5
+        dist[0] = 0.0
+        dist[1:] = np.cumsum(diff)
+        
+        dasher = Dasher.bind(name="fragment_dasher", 
+                             distance_attr=('attribute', 'float', 'distance_attr'),
+                             dash_len=('uniform', 'float', 'dash_len_unif'))
+        dasher['distance_attr'] = gloo.VertexBuffer(dist)
+        dasher['dash_len_unif'] = 20.
+        self.line.add_fragment_hook(dasher)
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)
@@ -64,8 +99,11 @@ class Canvas(vispy.app.Canvas):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glViewport(0, 0, *self.size)
-        for line in self.lines:
-            line.paint()
+        
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glLineWidth(3)
+        self.line.paint()
         
 
 if __name__ == '__main__':

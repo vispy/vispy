@@ -22,7 +22,14 @@ API issues to work out:
         No: subclasses of Function have valid GLSL code; FragmentFunction
         and FunctionTemplate do not. Perhaps we need a more general
         FunctionGenerator class that defines bind() ?
-    
+
+  - FunctionTemplate should be declared with a list of (type, name) tuples
+    describing bindable variables. This would allow automatic binding,
+    as used in Transform, but makes the initial declaration more verbose.
+    (on the other hand, it makes the initial declaration more complete)
+    X Also, link_vars no longer needs type
+    X maybe allow 'type var_name' instead of tuple..
+    Also also, bindings no longer need type.
 """
 
 
@@ -189,6 +196,12 @@ class CompositeProgram(Program):
             function = function.bind(hook_name)
         
         self._hook_defs[hook_name] = function
+        
+        for dep in function.all_deps():
+            if dep._vertex_post is not None:
+                self.add_post_hook(dep._vertex_post)
+        
+        
     
     def _generate_code(self):
         vcode = self.vmain
@@ -198,10 +211,10 @@ class CompositeProgram(Program):
         
         # first, look for functions that request an addition to the vertex
         # shader post-hook
-        for hook_name, func in self._hook_defs.items():
-            for dep in func.all_deps():
-                if dep._vertex_post is not None:
-                    self.add_post_hook(dep._vertex_post)
+        #for hook_name, func in self._hook_defs.items():
+            #for dep in func.all_deps():
+                #if dep._vertex_post is not None:
+                    #self.add_post_hook(dep._vertex_post)
 
         # Install shader chain for post_hooks
         post_chain = FunctionChain('post_hook', self._post_hooks)
@@ -211,22 +224,24 @@ class CompositeProgram(Program):
         for hook_name, func in self._hook_defs.items():
             shader, hook_args, hook_rtype = self._hooks[hook_name]
             if shader == 'vertex':
+                vcode += "\n\n//  -------- Begin hook '%s' --------\n" % hook_name
                 for dep in func.all_deps():
                     if dep.name not in vdeps:
                         #print("++vertex dep++")
                         #print(dep)
                         #print(dep.code)
-                        vcode += "\n" + dep.code
+                        vcode += "\n\n" + dep.code
                         vdeps.add(dep.name)
                 #vcode += func.code
                 
             elif shader == 'fragment': 
+                fcode += "\n\n//  -------- Begin hook '%s' --------\n" % hook_name
                 for dep in func.all_deps():
                     if dep.name not in fdeps:
                         #print("++fragment dep++")
                         #print(dep)
                         #print(dep.code)
-                        fcode += "\n" + dep.code
+                        fcode += "\n\n" + dep.code
                         fdeps.add(dep.name)
                 #fcode += func.code
                 
@@ -255,7 +270,6 @@ class CompositeProgram(Program):
                     #print("      ", name, value, dep)
                     self[name] = value
         
-
 
 class Function(object):
     """
@@ -294,7 +308,7 @@ class Function(object):
             See variable_names property.
         """
         self.set_code(code, name, args, rtype, variables)
-        self._deps = deps or []
+        self._deps = deps[:] if deps is not None else []
         self._program_values = {}
         
         # Used by FragmentFunction to automatically attach a function to the
@@ -310,13 +324,17 @@ class Function(object):
         return self._code
     
     @property
-    def bindable_names(self):
+    def bindings(self):
         """
-        List of names that may be bound to program variables.
+        Dict of {name: type} pairs describing function arguments that may be 
+        bound to new program variables.
         
-        These are the allowed keyword arguments to bind().
+        The names are the allowed keyword arguments to bind().
+        
+        For normal Function instances, bindings are simply the function 
+        arguments. 
         """
-        return self.args.keys()
+        return self._bindings
 
     def set_code(self, code, name=None, args=None, rtype=None, variables=None):
         """
@@ -326,17 +344,19 @@ class Function(object):
         these are omitted, then the values will be automatically parsed from
         the code.
         """
-        self._code = code
         if code is None:
-            self.name = self.args = self.rtype = None
+            self._code = self.name = self.args = self.rtype = None
             return
         
+        self._code = self.clean_code(code)
         if name is None:
             self.name, self.args, self.rtype = parsing.parse_function_signature(self.code)
         else:
             self.name = name
             self.args = args
             self.rtype = rtype
+            
+        self._bindings = dict([(a[1], a[0]) for a in self.args])
             
         if variables is None:
             self.variables = parsing.find_program_variables(self.code)
@@ -406,78 +426,29 @@ class Function(object):
         deps = []
         for fn in self._deps:
             deps.extend(fn.all_deps())
-            deps.append(fn)
+            #deps.append(fn)
         deps.append(self)
         return deps
     
     def __repr__(self):
-        return "<Function %s>" % self.name
-
-
-class FragmentFunction(object):
-    """
-    Function meant to be used in fragment shaders when some supporting 
-    code must also be introduced to the vertex shader post-hook, usually to
-    initialize one or more varyings.
+        return "<%s %s>" % (self.__class__.__name__, self.name)
     
-    Parameters:
-        frag_func : Function or FunctionTemplate
-            To be bound in the fragment shader
-        vert_post : Function or FunctionTemplate
-            To be included in the vertex shader post_hook
-        link_vars : list of tuples
-            Each tuple indicates (type, vertex_var, fragment_var) variables that 
-            should be bound to the same varying.
-    
-    """
-    def __init__(self, frag_func, vertex_post, link_vars):
-        self.frag_func = frag_func
-        self.vert_post = vertex_post
-        self.link_vars = link_vars
-        
-        # TODO: check that linked variables have the same type in both functions
-        for var_type, vname, fname in link_vars:
-            assert vname in vertex_post.bindable_names
-            assert fname in frag_func.bindable_names
-
-    def bind(self, name, **kwds):
-        """
-        * bind both this function and its vertex shader component to new functions
-        * automatically bind varyings        
-        """
-        # separate kwds into fragment variables and vertex variables
-        # TODO: should this be made explicit in the bind() arguments, or
-        #       can we just require that the vertex and fragment functions 
-        #       never have the same variable names?
-        frag_vars = {}
-        vert_vars = {}
-        for bind_name in kwds:
-            if bind_name in self.frag_func.bindable_names:
-                frag_vars[bind_name] = kwds[bind_name]
-            elif bind_name in self.vert_post.bindable_names:
-                vert_vars[bind_name] = kwds[bind_name]
-            else:
-                raise KeyError("The name '%s' is not bindable in %s" %
-                               (bind_name, self))
-                    
-        
-        # add varyings to each
-        for var_type, vname, fname in self.link_vars:
-            # This is likely to be a unique name...
-            var_name = "%s_%s_%s_var" % (name, vname, fname)
-            var = ('varying', var_type, var_name)
-            vert_vars[vname] = var
-            frag_vars[fname] = var
-        
-        # bind both functions
-        frag_bound = self.frag_func.bind(name, **frag_vars)
-        
-        # also likely to be a unique name...
-        vert_name = name + "_fragment_support"
-        vert_bound = self.vert_post.bind(vert_name, **vert_vars)
-        
-        frag_bound._vertex_post = vert_bound
-        return frag_bound
+    @staticmethod
+    def clean_code(code):
+        lines = code.split("\n")
+        min_indent = 100
+        while lines[0].strip() == "":
+            lines.pop(0)
+        while lines[-1].strip() == "":
+            lines.pop()
+        for line in lines:
+            if line.strip() != "":
+                indent = len(line) - len(line.lstrip())
+                min_indent = min(indent, min_indent)
+        if min_indent > 0:
+            lines = [line[min_indent:] for line in lines]
+        code = "\n".join(lines)
+        return code
         
 
 
@@ -566,7 +537,8 @@ class BoundFunction(Function):
                 args.append(self._bound_arguments[argname][2])
             else:
                 args.append(argname)
-        code += "    return %s(%s);\n" % (self._parent.name, ", ".join(args))
+        ret = "return " if self._parent.rtype is not 'void' else ""
+        code += "    %s%s(%s);\n" % (ret, self._parent.name, ", ".join(args))
         
         code += "}\n"
         
@@ -621,8 +593,8 @@ class FunctionChain(Function):
     """
     def __init__(self, name, funcs):
         Function.__init__(self)
-        self._funcs = funcs
-        self._deps = funcs
+        self._funcs = funcs[:]
+        self._deps = funcs[:]
         self._code = None
         self.name = name
         if len(funcs) > 0:
@@ -657,7 +629,6 @@ class FunctionChain(Function):
             code += "    %s%s;\n" % (self.args[0][1], ')'*len(self._funcs))
         
         code += "}\n"
-        
         return code
         
         
@@ -676,9 +647,9 @@ class FunctionTemplate(object):
         Uses string.Template formatting style ('$name' substitutions). 
         Must contain $func_name in place of the function name, and $var_name for 
         each variable declared in the *var_names* argument.
-    var_names : list
-        List of the names of program variables that must be added to the code
-        and substituted in the template.
+    bindings : list
+        List of the variables that must be specified when calling bind(). Each
+        variable is given as "type var_name".
     deps : list(Function)
         List of Functions that are required by this function.
         
@@ -705,14 +676,25 @@ class FunctionTemplate(object):
         }
         
     """
-    def __init__(self, template, var_names, deps=()):
-        self.template = string.Template(template)
-        self.var_names = var_names
-        self.deps = deps
+    def __init__(self, template, bindings=(), deps=()):
+        self.template = string.Template(Function.clean_code(template))
+        self.deps = deps[:]
+        self._bindings = {}
+        for b in bindings:
+            i = b.index(' ')
+            b = (b[:i], b[i+1:])
+            self._bindings[b[1]] = b[0]
+        
+        ## Do a fake replacement and parse for function signature
+        ##  [removed; don't think this will be necessary..]
+        subs = dict([(n, n) for n in self.bindings.keys() + ['func_name']])
+        code = self.template.substitute(**subs)
+        name, self.args, self.rtype = parsing.parse_function_signature(code)
+        self.name = None
 
     @property
-    def bindable_names(self):
-        return self.var_names[:]
+    def bindings(self):
+        return self._bindings.copy()
         
     def bind(self, name, **kwds):
         """
@@ -729,19 +711,96 @@ class FunctionTemplate(object):
           with *name*.
 
         """
-        var_names = self.var_names[:]
+        var_names = self._bindings.keys()
         subs = {'func_name': name}
         code = ""
-        for name, var_spec in kwds.items():
-            var_names.remove(name)
-            subs[name] = var_spec[2]
-            if name in self.var_names:
+        for var_name, var_spec in kwds.items():
+            var_names.remove(var_name)
+            subs[var_name] = var_spec[2]
+            if var_name in self._bindings:
                 code += "%s %s %s;\n" % var_spec
         
         if var_names:
             raise Exception('Unsubstituted template variables in bind(): %s' % var_names)
            
-        kwds['func_name'] = name
         code += self.template.substitute(**subs)
         return Function(code, deps=self.deps[:])
 
+
+
+class FragmentFunction(object):
+    """
+    Function meant to be used in fragment shaders when some supporting 
+    code must also be introduced to the vertex shader post-hook, usually to
+    initialize one or more varyings.
+    
+    Parameters:
+        frag_func : Function or FunctionTemplate
+            To be bound in the fragment shader
+        vert_post : Function or FunctionTemplate
+            To be included in the vertex shader post_hook
+        link_vars : list of tuples
+            Each tuple indicates (type, vertex_var, fragment_var) variables that 
+            should be bound to the same varying.
+    
+    """
+    def __init__(self, frag_func, vertex_post, link_vars):
+        self.frag_func = frag_func
+        self.vert_post = vertex_post
+        self.link_vars = link_vars
+        
+        for vname, fname in link_vars:
+            vtype = vertex_post.bindings.get(vname, None)
+            ftype = frag_func.bindings.get(fname, None)
+            if vtype is None:
+                raise NameError("Variable name '%s' is not bindable in vertex "
+                                "shader. Names are: %s" %
+                                (vname, vertex_post.bindings.keys()))
+            if ftype is None:
+                raise NameError("Variable name '%s' is not bindable in fragment"
+                                " shader. Names are: %s" %
+                                (fname, frag_func.bindings.keys()))
+            if vtype != ftype:
+                raise TypeError("Linked variables '%s' and '%s' must have the"
+                                "same type. (types are %s, %s)" % 
+                                (vname, fname, vtype, ftype))
+
+    def bind(self, name, **kwds):
+        """
+        * bind both this function and its vertex shader component to new functions
+        * automatically bind varyings        
+        """
+        # separate kwds into fragment variables and vertex variables
+        # TODO: should this be made explicit in the bind() arguments, or
+        #       can we just require that the vertex and fragment functions 
+        #       never have the same variable names?
+        frag_vars = {}
+        vert_vars = {}
+        for bind_name in kwds:
+            if bind_name in self.frag_func.bindings:
+                frag_vars[bind_name] = kwds[bind_name]
+            elif bind_name in self.vert_post.bindings:
+                vert_vars[bind_name] = kwds[bind_name]
+            else:
+                raise KeyError("The name '%s' is not bindable in %s" %
+                               (bind_name, self))
+                    
+        
+        # add varyings to each
+        for vname, fname in self.link_vars:
+            # This is likely to be a unique name...
+            var_type = self.vert_post.bindings[vname]
+            var_name = "%s_%s_%s_var" % (name, vname, fname)
+            var = ('varying', var_type, var_name)
+            vert_vars[vname] = var
+            frag_vars[fname] = var
+        
+        # bind both functions
+        frag_bound = self.frag_func.bind(name, **frag_vars)
+        
+        # also likely to be a unique name...
+        vert_name = name + "_support"
+        vert_bound = self.vert_post.bind(vert_name, **vert_vars)
+        
+        frag_bound._vertex_post = vert_bound
+        return frag_bound

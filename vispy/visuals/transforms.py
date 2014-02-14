@@ -5,7 +5,7 @@
 from __future__ import print_function, division, absolute_import
 
 import numpy as np
-from ..shaders.composite import Function, FunctionChain
+from ..shaders.composite import Function, FunctionChain, FunctionTemplate
 from ..util.ordereddict import OrderedDict
 from ..util import transforms
 
@@ -127,16 +127,19 @@ class Transform(object):
         
         # map all extra args to uniforms
         uniforms = {}
-        for arg_type, arg_name in function.args[1:]:
-            uniforms[arg_name] = ('uniform', arg_type, var_prefix+arg_name)
+        #for arg_type, arg_name in function.args[1:]:
+        for var_name, var_type in function.bindings.items():
+            if var_name == function.args[0][1]:
+                continue
+            uniforms[var_name] = ('uniform', var_type, var_prefix+var_name)
         
         # bind to a new function + variables
         bound = function.bind(name, **uniforms)
         
         # set uniform values based on properties having same name as 
         # bound argument
-        for arg_type, arg_name in function.args[1:]:
-            bound[var_prefix+arg_name] = getattr(self, arg_name)
+        for var_name in uniforms:
+            bound[var_prefix+var_name] = getattr(self, var_name)
         
         return bound
 
@@ -390,7 +393,7 @@ class ChainTransform(Transform):
         
     def __rmul__(self, tr):
         new = ChainTransform(self.transforms)
-        new.apppend(tr)
+        new.append(tr)
         return new
         
     def __repr__(self):
@@ -401,8 +404,8 @@ class ChainTransform(Transform):
 class NullTransform(Transform):
     """ Transform having no effect on coordinates (identity transform).
     """
-    GLSL_map = Function("vec4 NullTransform_map(vec4 pos) {return pos;}")
-    GLSL_imap = Function("vec4 NullTransform_imap(vec4 pos) {return pos;}")
+    GLSL_map = FunctionTemplate("vec4 $func_name(vec4 pos) {return pos;}")
+    GLSL_imap = FunctionTemplate("vec4 $func_name(vec4 pos) {return pos;}")
 
     def map(self, obj):
         return obj
@@ -423,17 +426,17 @@ class NullTransform(Transform):
 class STTransform(Transform):
     """ Transform performing only scale and translate, in that order.
     """
-    GLSL_map = Function("""
-        vec4 STTransform_map(vec4 pos, vec3 scale, vec3 translate) {
-            return (pos * vec4(scale, 1)) + vec4(translate, 0);
+    GLSL_map = FunctionTemplate("""
+        vec4 $func_name(vec4 pos) {
+            return (pos * vec4($scale, 1)) + vec4($translate, 0);
         }
-    """)
+    """, bindings=['vec3 scale', 'vec3 translate'])
     
-    GLSL_imap = Function("""
-        vec4 STTransform_map(vec4 pos, vec3 scale, vec3 translate) {
-            return (pos - vec4(translate, 0)) / vec4(scale, 1);
+    GLSL_imap = FunctionTemplate("""
+        vec4 $func_name(vec4 pos) {
+            return (pos - vec4($translate, 0)) / vec4($scale, 1);
         }
-    """)
+    """, bindings=['vec3 scale', 'vec3 translate'])
     
     def __init__(self, scale=None, translate=None):
         super(STTransform, self).__init__()
@@ -506,17 +509,17 @@ class STTransform(Transform):
 
 
 class AffineTransform(Transform):
-    GLSL_map = Function("""
-        vec4 AffineTransform_map(vec4 pos, mat4 matrix) {
-            return matrix * pos;
+    GLSL_map = FunctionTemplate("""
+        vec4 $func_name(vec4 pos) {
+            return $matrix * pos;
         }
-    """)
+    """, bindings=['mat4 matrix'])
     
-    GLSL_imap = Function("""
-        vec4 AffineTransform_map(vec4 pos, mat4 inv_matrix) {
-            return inv_matrix * pos;
+    GLSL_imap = FunctionTemplate("""
+        vec4 $func_name(vec4 pos) {
+            return $inv_matrix * pos;
         }
-    """)
+    """, bindings=['mat4 inv_matrix'])
     
     def __init__(self, matrix=None):
         super(AffineTransform, self).__init__()
@@ -714,8 +717,8 @@ class PolarTransform(Transform):
     and `y = r*sin(theta)`.
     
     """
-    GLSL_map = Function("""
-        vec4 PolarTransform_map(vec4 pos) {
+    GLSL_map = FunctionTemplate("""
+        vec4 $func_name(vec4 pos) {
             return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1);
         }
         """)
