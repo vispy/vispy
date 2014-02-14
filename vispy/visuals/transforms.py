@@ -234,16 +234,27 @@ def arg_to_vec4(func):
      
     If 1D input is provided, then the return value will be flattened.
     Accepts input of any dimension, as long as shape[-1] <= 4
+    
+    Alternatively, any class may define its own transform conversion interface
+    by defining a _transform_in() method that returns an array with shape
+    (.., 4), and a _transform_out() method that accepts the same array shape 
+    and returns a new (mapped) object.
+    
     """
     def fn(self, arg, *args, **kwds):
-        arg = np.array(arg)
-        flatten = arg.ndim == 1
-        arg = as_vec4(arg)
-        
-        ret = func(self, arg, *args, **kwds)
-        if flatten and ret is not None:
-            return ret.flatten()
-        return ret
+        if type(arg) in (tuple, list, np.ndarray):
+            arg = np.array(arg)
+            flatten = arg.ndim == 1
+            arg = as_vec4(arg)
+            
+            ret = func(self, arg, *args, **kwds)
+            if flatten and ret is not None:
+                return ret.flatten()
+            return ret
+        elif hasattr(arg, '_transform_in'):
+            arg = arg._transform_in()
+            ret = func(self, arg, *args, **kwds)
+            return arg._transform_out(ret)
     return fn
 
 

@@ -87,3 +87,15 @@ class Rect(object):
     
     def __repr__(self):
         return "<Rect (%g, %g) (%g, %g)>" % (self.pos + self.size)
+    
+    def _transform_in(self):
+        """Return array of coordinates that can be mapped by Transform 
+        classes."""
+        return np.array([
+            [self.left, self.top, 0, 1],
+            [self.right, self.bottom, 0, 1]])
+    
+    def _transform_out(self, coords):
+        """Return a new Rect from coordinates mapped after _transform_in()."""
+        return Rect(self.pos = coords[0,:2], size=coords[1,:2]-coords[0,:2])
+        
