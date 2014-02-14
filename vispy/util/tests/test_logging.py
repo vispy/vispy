@@ -1,8 +1,11 @@
 from nose.tools import assert_equal, assert_true
+from os import path as op
 import logging
 
 from vispy import app
-from vispy.util import logger, use_log_level, sys_info
+from vispy.util import logger, use_log_level, sys_info, _Tempdir
+
+temp_dir = _TempDir()
 
 
 def test_logging():
@@ -48,4 +51,10 @@ def test_debug_logging():
 
 def test_sys_info():
     """Test printing of system information"""
-    sys_info()
+    fname = op.join(temp_dir, 'info.txt')
+    sys_info(fname)
+    with open(fname, 'r') as fid:
+        out = ''.join(fid.readlines())
+    keys = ['Python', 'Backend', 'Pyglet', 'GL version']
+    for key in keys:
+        assert_true(key in out)

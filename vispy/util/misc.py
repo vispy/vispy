@@ -12,6 +12,7 @@ from shutil import rmtree
 import sys
 import platform
 import getopt
+from OpenGL import GL as gl
 
 from .six import string_types
 from .event import EmitterGroup, EventEmitter, Event
@@ -199,17 +200,40 @@ def parse_command_line_arguments():
                 logger.warning("Unsupported vispy flag: %s" % o)
 
 
-def sys_info():
-    """Get debugging info"""
+def sys_info(fname=None):
+    """Get debugging info
+
+    Parameters
+    ----------
+    fname : str | None
+        Filename to dump info to. Use None to simply print.
+
+    Returns
+    -------
+    out : str
+        The system information as a string.
+    """
     # Nest all imports here to avoid any circular imports
     from ..app import default_app, backends
     # get default app
     with use_log_level('warning'):
         default_app.use()  # suppress unnecessary messages
-    print('Platform: %s' % platform.platform())
-    print('Python:   %s' % str(sys.version).replace('\n', ' '))
-    print('Backend:  %s' % default_app.backend_name)
-    print('Qt:       %s' % backends.has_qt(return_which=True)[1])
-    print('Pyglet:   %s' % backends.has_pyglet(return_which=True)[1])
-    print('glfw:     %s' % backends.has_glfw(return_which=True)[1])
-    print('glut:     %s' % backends.has_glut(return_which=True)[1])
+
+    out = ''
+    out += 'Platform: %s\n' % platform.platform()
+    out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
+    out += 'Backend:  %s\n' % default_app.backend_name
+    out += 'Qt:       %s\n' % backends.has_qt(return_which=True)[1]
+    out += 'Pyglet:   %s\n' % backends.has_pyglet(return_which=True)[1]
+    out += 'glfw:     %s\n' % backends.has_glfw(return_which=True)[1]
+    out += 'glut:     %s\n' % backends.has_glut(return_which=True)[1]
+    out += '\n'
+    out += 'GL version:  %s' % gl.glGetString(gl.GL_VERSION)
+    out += 'MAX_TEXTURE_SIZE: %d' % gl.glGetIntegerv(gl.GL_MAX_TEXTURE_SIZE)
+    x_ = gl.GL_MAX_3D_TEXTURE_SIZE
+    out += 'MAX_3D_TEXTURE_SIZE: %d' % gl.glGetIntegerv(x_)
+    out += 'Extensions: ' + gl.glGetString(gl.GL_EXTENSIONS)
+    print(out)
+    if fname is not None:
+        with open(fname, 'w') as fid:
+            fid.write(out)
