@@ -19,10 +19,26 @@ API issues to work out:
   
   - Any useful way to make FunctionTemplate and FragmentFunction subclasses
     of Function? (and should we want to?)
-        No: subclasses of Function have valid GLSL code; FragmentFunction
-        and FunctionTemplate do not. Perhaps we need a more general
-        FunctionGenerator class that defines bind() ?
+        Perhaps we need a more general superclass for all of these?
+        
+        Common attributes:
+            code  (= None for functions that must be bound)
+            name  (also may be None)
+            args
+            rtype
+            bindings
+            bind()
+            
 
+  - Would be awesome if Function.bind() could optionally accept variable
+    values instead of (type, name) specifications. This would simplify most
+    uses of bind() and additionally allow the function and program to decide
+    on a suitable (unique) variable name.
+
+  - Would like FragmentFunction to have a convenience method that auto-generates
+    vertex shader support code for translating attributes into varyings.
+    (but this must be optional, because some components may need more complex
+    support code)
 """
 
 

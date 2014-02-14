@@ -7,10 +7,10 @@ from __future__ import division
 import numpy as np
 
 from .. import gloo
-from . import BaseVisual
+from . import Visual
 
 
-class PointsVisual(BaseVisual):
+class PointsVisual(Visual):
 
     """ PointsVisual(N=1000)
     A simple visual that shows a random set of points. N can also be
@@ -19,19 +19,15 @@ class PointsVisual(BaseVisual):
     """
 
     VERT_SHADER = """
-        // Stuff that each visual must have ...
-        uniform   mat4 transform_model;
-        uniform   mat4 transform_view;
-        uniform   mat4 transform_projection;
-
-
+        void post_hook();
+        vec4 map_local_to_nd(vec4);
+        
         attribute vec3 a_position;
 
         varying vec4 v_color;
         void main (void) {
-            gl_Position = vec4(a_position, 1.0);
-            gl_Position = transform_projection * transform_view
-                        * transform_model * gl_Position;
+            vec4 pos = vec4(a_position, 1.0);
+            gl_Position = map_local_to_nd(pos);
             v_color = vec4(1.0, 0.5, 0.0, 0.8);
             gl_PointSize = 10.0; //size;
         }
@@ -46,18 +42,40 @@ class PointsVisual(BaseVisual):
             float a = 1.0 - (x*x + y*y);
             gl_FragColor = vec4(v_color.rgb, a*v_color.a);
         }
-
     """
 
-    def __init__(self, N=1000):
-        BaseVisual.__init__(self)
+    def __init__(self, pos):
+        super(PointsVisual, self).__init__()
 
-        if isinstance(N, np.ndarray):
-            data = N
-        elif isinstance(N, int):
-            data = np.random.uniform(0, 400, (N, 3)).astype('float32')
-        else:
-            raise ValueError('Invalid value for N.')
+        self.pos = pos
+        self._vbo = None
+        self._program = None
+        self.transform = AffineTransform()
 
-        # Create and attach vertex buffer
-        self.program['a_position'] = gloo.VertexBuffer(data)
+    def _build_vbo(self):
+        self._vbo = gloo.VertexBuffer(self.pos)
+        
+    def _build_program(self):
+        if self._vbo is None:
+            self._build_vbo()
+        
+        # Create composite program
+        self._program = CompositeProgram(vmain=self.VERT_SHADER, 
+                                         fmain=self.FRAG_SHADER)
+        
+        # Attach transformation function
+        tr_bound = self.transform.bind_map('map_local_to_nd')
+        self._program.set_hook('map_local_to_nd', tr_bound)
+        
+        
+    def paint(self):
+        super(PointsVisual, self).paint()
+        
+        if self.pos is None or len(self.pos) == 0:
+            return
+        
+        if self._program is None:
+            self._build_program()
+            
+        self._program.draw('POINTS')
+        
