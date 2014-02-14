@@ -23,13 +23,6 @@ API issues to work out:
         and FunctionTemplate do not. Perhaps we need a more general
         FunctionGenerator class that defines bind() ?
 
-  - FunctionTemplate should be declared with a list of (type, name) tuples
-    describing bindable variables. This would allow automatic binding,
-    as used in Transform, but makes the initial declaration more verbose.
-    (on the other hand, it makes the initial declaration more complete)
-    X Also, link_vars no longer needs type
-    X maybe allow 'type var_name' instead of tuple..
-    Also also, bindings no longer need type.
 """
 
 
