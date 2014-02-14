@@ -55,6 +55,6 @@ def test_sys_info():
     sys_info(fname)
     with open(fname, 'r') as fid:
         out = ''.join(fid.readlines())
-    keys = ['Python', 'Backend', 'Pyglet', 'GL version']
+    keys = ['Python', 'Backend', 'Pyglet']  # 'GL version' only for non-GLUT
     for key in keys:
         assert_true(key in out)
