@@ -32,7 +32,7 @@ BACKENDMAP = dict([(be[0].lower(), be) for be in BACKENDS])
 ATTEMPTED_BACKENDS = []
 
 
-def has_qt(requires_uic=False):
+def has_qt(requires_uic=False, return_which=False):
     try:
         from PyQt4 import QtCore, QtGui, QtOpenGL, uic  # noqa
     except ImportError:
@@ -40,41 +40,82 @@ def has_qt(requires_uic=False):
         try:
             from PySide import QtCore, QtGui, QtOpenGL  # noqa
         except ImportError:
+            which = None
             has = False
         else:
+            which = 'PySide ' + str(PySide.__version__)
             has = True
     else:
+        which = 'PyQt4 ' + str(QtOpenGL.__file__)
         has = True
         has_uic = True
 
     if requires_uic:
         has = (has and has_uic)
-    return has
+    if return_which:
+        out = (has, which)
+    else:
+        out = has
+    return out
 
 
-def has_pyglet():
+def has_pyglet(return_which=False):
     try:
         import pyglet  # noqa
-        has = True
     except:
+        which = None
         has = False
         pass
-    return has
+    else:
+        has = True
+        which = 'pyglet ' + str(pyglet.version)
+    if return_which:
+        out = (has, which)
+    else:
+        out = has
+    return out
 
 
-def has_glfw(return_why=False):
+def has_glfw(return_why=False, return_which=False):
     try:
         from . import _glfw  # noqa
-        has = True
-        why = ''
     except Exception as exp:
         has = False
+        which = None
         why = str(exp)
         pass
-    if return_why:
-        return has, why
     else:
-        return has
+        has = True
+        which = 'glfw ' + str(_glfw.glfw.__version__)
+        why = ''
+    if return_why:
+        if return_which:
+            out = (has, why, which)
+        else:
+            out = (has, why)
+    else:
+        if return_which:
+            out = (has, which)
+        else:
+            out = has
+    return out
+
+
+def has_glut(return_which=False):
+    try:
+        from OpenGL import GLUT  # noqa
+    except:
+        has = False
+        which = None
+    else:
+        import OpenGL
+        has = True
+        which = 'from OpenGL %s' % OpenGL.__version__
+    if return_which:
+        out = (has, which)
+    else:
+        out = has
+    return out
 
 
 def requires_qt(requires_uic=False):

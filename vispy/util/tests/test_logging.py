@@ -2,7 +2,7 @@ from nose.tools import assert_equal, assert_true
 import logging
 
 from vispy import app
-from vispy.util import logger, use_log_level
+from vispy.util import logger, use_log_level, sys_info
 
 
 def test_logging():
@@ -44,3 +44,8 @@ def test_debug_logging():
         a.quit()
     assert_equal(len(l), 1)
     assert_true('vispy.app.application' not in l[0])
+
+
+def test_sys_info():
+    """Test printing of system information"""
+    sys_info()

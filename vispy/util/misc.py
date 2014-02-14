@@ -9,10 +9,13 @@ import numpy as np
 import tempfile
 import atexit
 from shutil import rmtree
+import sys
+import platform
+import getopt
 
 from .six import string_types
 from .event import EmitterGroup, EventEmitter, Event
-from ._logging import logger, set_log_level
+from ._logging import logger, set_log_level, use_log_level
 
 
 class _TempDir(str):
@@ -178,8 +181,6 @@ def parse_command_line_arguments():
     """ Transform vispy specific command line args to vispy config.
     Put into a function so that any variables dont leak in the vispy namespace.
     """
-    import getopt
-    import sys
     # Get command line args for vispy
     argnames = ['vispy-backend', 'vispy-gl-debug']
     try:
@@ -196,3 +197,19 @@ def parse_command_line_arguments():
                 config['gl_debug'] = True
             else:
                 logger.warning("Unsupported vispy flag: %s" % o)
+
+
+def sys_info():
+    """Get debugging info"""
+    # Nest all imports here to avoid any circular imports
+    from ..app import default_app, backends
+    # get default app
+    with use_log_level('warning'):
+        default_app.use()  # suppress unnecessary messages
+    print('Platform: %s' % platform.platform())
+    print('Python:   %s' % str(sys.version).replace('\n', ' '))
+    print('Backend:  %s' % default_app.backend_name)
+    print('Qt:       %s' % backends.has_qt(return_which=True)[1])
+    print('Pyglet:   %s' % backends.has_pyglet(return_which=True)[1])
+    print('glfw:     %s' % backends.has_glfw(return_which=True)[1])
+    print('glut:     %s' % backends.has_glut(return_which=True)[1])
