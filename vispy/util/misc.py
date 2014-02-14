@@ -239,7 +239,7 @@ def sys_info(fname=None, overwrite=False):
         # We need an OpenGL context to get GL info
         if 'glut' in this_app.backend_name.lower():
             # glut causes problems
-            out += 'OpenGL information omitted for glut backend'
+            out += 'OpenGL information omitted for glut backend\n'
         else:
             canvas = Canvas('Test', (10, 10), show=False, app=this_app)
             canvas._backend._vispy_set_current()
