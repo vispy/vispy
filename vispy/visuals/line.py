@@ -76,6 +76,7 @@ void main(void) {
 class LineVisual(Visual):
     def __init__(self, pos=None, color=None, width=None):
         super(LineVisual, self).__init__()
+        self.set_gl_options('translucent')
         
         self._opts = {
             'pos': None,
@@ -204,7 +205,7 @@ class LinePosInputComponent(VisualComponent):
         }
         """, bindings=['vec3 xyz_pos'])
     
-    def activate(self, program):
+    def _activate(self, program):
         # select the correct shader function to read in vertex data based on 
         # position array shape
         if self.visual._data['pos'].shape[-1] == 2:
@@ -253,7 +254,7 @@ class LineColorInputComponent(VisualComponent):
     }
     """, bindings=['vec4 rgba'])
     
-    def activate(self, program):
+    def _activate(self, program):
         # Select uniform- or attribute-input 
         if 'color' in self.visual._data.dtype.fields:
             func = self.RGBAAttributeFunc.bind(

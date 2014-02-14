@@ -8,7 +8,8 @@ import numpy as np
 
 from .. import gloo
 from . import Visual
-
+from .transforms import AffineTransform
+from ..shaders.composite import CompositeProgram
 
 class PointsVisual(Visual):
 
@@ -62,6 +63,7 @@ class PointsVisual(Visual):
         # Create composite program
         self._program = CompositeProgram(vmain=self.VERT_SHADER, 
                                          fmain=self.FRAG_SHADER)
+        self._program['a_position'] = self._vbo
         
         # Attach transformation function
         tr_bound = self.transform.bind_map('map_local_to_nd')
