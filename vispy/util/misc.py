@@ -237,16 +237,19 @@ def sys_info(fname=None, overwrite=False):
         out += 'glut:     %s\n' % backends.has_glut(return_which=True)[1]
         out += '\n'
         # We need an OpenGL context to get GL info
-        canvas = Canvas('Test', (10, 10), show=False, app=this_app)
-        canvas._backend._vispy_set_current()
-        this_app.process_events()
-        out += 'GL version:  %s\n' % gl.glGetString(gl.GL_VERSION)
-        x_ = gl.GL_MAX_TEXTURE_SIZE
-        out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetIntegerv(x_)
-        x_ = gl.GL_MAX_3D_TEXTURE_SIZE
-        out += 'MAX_3D_TEXTURE_SIZE: %d\n\n' % gl.glGetIntegerv(x_)
-        out += 'Extensions: %s\n' % gl.glGetString(gl.GL_EXTENSIONS)
-        canvas.close()
+        if 'glut' in this_app.backend_name.lower():
+            # glut causes problems
+            out += 'OpenGL information omitted for glut backend'
+        else:
+            canvas = Canvas('Test', (10, 10), show=False, app=this_app)
+            canvas._backend._vispy_set_current()
+            out += 'GL version:  %s\n' % gl.glGetString(gl.GL_VERSION)
+            x_ = gl.GL_MAX_TEXTURE_SIZE
+            out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetIntegerv(x_)
+            x_ = gl.GL_MAX_3D_TEXTURE_SIZE
+            out += 'MAX_3D_TEXTURE_SIZE: %d\n\n' % gl.glGetIntegerv(x_)
+            out += 'Extensions: %s\n' % gl.glGetString(gl.GL_EXTENSIONS)
+            canvas.close()
     except Exception:  # don't stop printing info
         out += '\nInfo-gathering error:\n%s' % traceback.format_exc()
         pass
