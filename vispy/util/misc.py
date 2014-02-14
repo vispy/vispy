@@ -12,6 +12,7 @@ from shutil import rmtree
 import sys
 import platform
 import getopt
+from os import path as op
 from OpenGL import GL as gl
 
 from .six import string_types
@@ -200,19 +201,24 @@ def parse_command_line_arguments():
                 logger.warning("Unsupported vispy flag: %s" % o)
 
 
-def sys_info(fname=None):
+def sys_info(fname=None, overwrite=False):
     """Get debugging info
 
     Parameters
     ----------
     fname : str | None
         Filename to dump info to. Use None to simply print.
+    overwrite : bool
+        If True, overwrite file (if it exists).
 
     Returns
     -------
     out : str
         The system information as a string.
     """
+    if fname is not None and op.isfile(fname) and not overwrite:
+        raise IOError('file exists, use overwrite=True to overwrite')
+
     # Nest all imports here to avoid any circular imports
     from ..app import default_app, backends
     # get default app
@@ -237,3 +243,4 @@ def sys_info(fname=None):
     if fname is not None:
         with open(fname, 'w') as fid:
             fid.write(out)
+    return out
