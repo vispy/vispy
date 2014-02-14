@@ -14,6 +14,7 @@ import platform
 import getopt
 from os import path as op
 from OpenGL import GL as gl
+import traceback
 
 from .six import string_types
 from .event import EmitterGroup, EventEmitter, Event
@@ -219,26 +220,36 @@ def sys_info(fname=None, overwrite=False):
     if fname is not None and op.isfile(fname) and not overwrite:
         raise IOError('file exists, use overwrite=True to overwrite')
 
-    # Nest all imports here to avoid any circular imports
-    from ..app import default_app, backends
-    # get default app
-    with use_log_level('warning'):
-        default_app.use()  # suppress unnecessary messages
-
     out = ''
-    out += 'Platform: %s\n' % platform.platform()
-    out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
-    out += 'Backend:  %s\n' % default_app.backend_name
-    out += 'Qt:       %s\n' % backends.has_qt(return_which=True)[1]
-    out += 'Pyglet:   %s\n' % backends.has_pyglet(return_which=True)[1]
-    out += 'glfw:     %s\n' % backends.has_glfw(return_which=True)[1]
-    out += 'glut:     %s\n' % backends.has_glut(return_which=True)[1]
-    out += '\n'
-    out += 'GL version:  %s\n' % gl.glGetString(gl.GL_VERSION)
-    out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetIntegerv(gl.GL_MAX_TEXTURE_SIZE)
-    x_ = gl.GL_MAX_3D_TEXTURE_SIZE
-    out += 'MAX_3D_TEXTURE_SIZE: %d\n\n' % gl.glGetIntegerv(x_)
-    out += 'Extensions: %s\n' % gl.glGetString(gl.GL_EXTENSIONS)
+    try:
+        # Nest all imports here to avoid any circular imports
+        from ..app import Application, Canvas, backends
+        # get default app
+        this_app = Application()
+        with use_log_level('warning'):
+            this_app.use()  # suppress unnecessary messages
+        out += 'Platform: %s\n' % platform.platform()
+        out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
+        out += 'Backend:  %s\n' % this_app.backend_name
+        out += 'Qt:       %s\n' % backends.has_qt(return_which=True)[1]
+        out += 'Pyglet:   %s\n' % backends.has_pyglet(return_which=True)[1]
+        out += 'glfw:     %s\n' % backends.has_glfw(return_which=True)[1]
+        out += 'glut:     %s\n' % backends.has_glut(return_which=True)[1]
+        out += '\n'
+        # We need an OpenGL context to get GL info
+        canvas = Canvas('Test', (10, 10), show=False, app=this_app)
+        canvas._backend._vispy_set_current()
+        this_app.process_events()
+        out += 'GL version:  %s\n' % gl.glGetString(gl.GL_VERSION)
+        x_ = gl.GL_MAX_TEXTURE_SIZE
+        out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetIntegerv(x_)
+        x_ = gl.GL_MAX_3D_TEXTURE_SIZE
+        out += 'MAX_3D_TEXTURE_SIZE: %d\n\n' % gl.glGetIntegerv(x_)
+        out += 'Extensions: %s\n' % gl.glGetString(gl.GL_EXTENSIONS)
+        canvas.close()
+    except Exception:  # don't stop printing info
+        out += '\nInfo-gathering error:\n%s' % traceback.format_exc()
+        pass
     print(out)
     if fname is not None:
         with open(fname, 'w') as fid:
