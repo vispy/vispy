@@ -228,11 +228,11 @@ def sys_info(fname=None):
     out += 'glfw:     %s\n' % backends.has_glfw(return_which=True)[1]
     out += 'glut:     %s\n' % backends.has_glut(return_which=True)[1]
     out += '\n'
-    out += 'GL version:  %s' % gl.glGetString(gl.GL_VERSION)
-    out += 'MAX_TEXTURE_SIZE: %d' % gl.glGetIntegerv(gl.GL_MAX_TEXTURE_SIZE)
+    out += 'GL version:  %s\n' % gl.glGetString(gl.GL_VERSION)
+    out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetIntegerv(gl.GL_MAX_TEXTURE_SIZE)
     x_ = gl.GL_MAX_3D_TEXTURE_SIZE
-    out += 'MAX_3D_TEXTURE_SIZE: %d' % gl.glGetIntegerv(x_)
-    out += 'Extensions: ' + gl.glGetString(gl.GL_EXTENSIONS)
+    out += 'MAX_3D_TEXTURE_SIZE: %d\n\n' % gl.glGetIntegerv(x_)
+    out += 'Extensions: %s\n' % gl.glGetString(gl.GL_EXTENSIONS)
     print(out)
     if fname is not None:
         with open(fname, 'w') as fid:
