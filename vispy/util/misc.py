@@ -13,7 +13,6 @@ import sys
 import platform
 import getopt
 from os import path as op
-from OpenGL import GL as gl
 import traceback
 
 from .six import string_types
@@ -224,6 +223,7 @@ def sys_info(fname=None, overwrite=False):
     try:
         # Nest all imports here to avoid any circular imports
         from ..app import Application, Canvas, backends
+        from ..gloo import gl
         # get default app
         this_app = Application()
         with use_log_level('warning'):
