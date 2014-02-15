@@ -119,7 +119,6 @@ VERTEX, FRAGMENT = program._generate_code()
 
 
 ('Function binding (manual)', '''
-
 """
 This example introduces the rationale for function binding, 
 which allows a function's arguments to be bound to program variables. 
@@ -228,7 +227,6 @@ VERTEX, FRAGMENT = program._generate_code()
 
 
 ('Function templates', '''
-
 """
 Function binding is very useful, but it makes a mess of the shader code by 
 doubling the number of function definitions. An alternative (but nearly 
@@ -284,8 +282,6 @@ VERTEX, FRAGMENT = program._generate_code()
 '''),
 
 ('Function chaining', '''
-
-
 """
 Function chains are another essential component of shader composition,
 allowing a list of functions to be executed in order.
@@ -413,6 +409,151 @@ VERTEX, FRAGMENT = program._generate_code()
 
 '''),
 
+
+
+
+('Fragment shaders (manual)', '''
+"""
+Although the prior examples focused on vertex shaders, these concepts 
+apply equally well for fragment shaders.
+
+However: fragment shaders have one limitation that makes them very
+different--they lack attributes. In order to supply attribute data
+to a fragment shader, we will need to introduce some supporting code
+to the vertex shader.
+
+This example is a manual demonstration; the next will automate the 
+same procedure.
+"""
+
+from vispy.shaders.composite import (CompositeProgram, Function,
+                                     FunctionTemplate, FunctionChain)
+
+# we require a void hook in the vertex shader that can be used 
+# to attach supporting code for the fragment shader.
+vertex_shader = """
+void vert_post_hook();
+
+void main() {
+    gl_Position = vec4(0,0,0,0);
+    vert_post_hook();
+}
+"""
+
+# add a hook to the fragment shader to allow arbitrary color input
+fragment_shader = """
+vec4 fragment_color();
+
+void main() {
+    gl_FragColor = fragment_color();
+}
+"""
+
+program = CompositeProgram(vertex_shader, fragment_shader)
+
+# First, define a simple fragment color function and bind it to a varying
+# input:
+frag_func = FunctionTemplate(template="vec4 $func_name() { return $input; }",
+                             bindings=[('vec4 input')])
+frag_func_bound = frag_func.bind(name='fragment_color',
+                                 input=('varying', 'color_var'))
+
+# Attach to the program
+program.set_hook('fragment_color', frag_func_bound)
+
+# Next, we need a vertex shader function that will supply input 
+# to the varying.
+vert_func = FunctionTemplate(template="void $func_name() { $output = $input; }",
+                             bindings=[('vec4 input'), ('vec4 output')])
+
+# Now we bind the vertex support to both the varying and a new input attribute.
+vert_func_bound = vert_func.bind(name='frag_color_support',
+                                 input=('attribute', 'color_a'),
+                                 output=('varying', 'color_var'))
+
+# Note #1: The output varing is given the same name 'color_var' as the input 
+#          varying to the fragment function. This is crucial!
+# Note #2: We *could* have bound the vert_func to name='vert_post_hook' and
+#          attached it directly to the vertex shader, but instead we will 
+#          install a function chain and attach vert_func to that.
+
+# Automatically attach a new FunctionChain to *vert_post_hook*:
+program.add_chain('vert_post_hook')
+
+# ..and attach the support function to the chain:
+program.add_callback('vert_post_hook', vert_func_bound)
+
+
+# obligatory: these variables are used to fill the text fields on the right.
+VERTEX, FRAGMENT = program._generate_code() 
+'''),
+
+
+
+
+('Fragment shaders (automatic)', '''
+"""
+This example automates the work done in the previous example "Fragment
+shaders (manual)".
+"""
+
+from vispy.shaders.composite import (CompositeProgram, Function,
+                                     FunctionTemplate, FragmentFunction)
+
+# we require a void hook in the vertex shader that can be used 
+# to attach supporting code for the fragment shader.
+vertex_shader = """
+void vert_post_hook();
+
+void main() {
+    gl_Position = vec4(0,0,0,0);
+    vert_post_hook();
+}
+"""
+
+# add a hook to the fragment shader to allow arbitrary color input
+fragment_shader = """
+vec4 fragment_color();
+
+void main() {
+    gl_FragColor = fragment_color();
+}
+"""
+
+program = CompositeProgram(vertex_shader, fragment_shader)
+
+# Start by defining both the fragment function we'd like to install
+# and the required vertex shader support code:
+frag_func = FunctionTemplate(template="vec4 $func_name() { return $input; }",
+                             bindings=[('vec4 input')])
+vert_func = FunctionTemplate(template="void $func_name() { $output = $input; }",
+                             bindings=[('vec4 input'), ('vec4 output')])
+
+# Now combine these into a single object:
+combined = FragmentFunction(frag_func, vert_func,
+                            link_vars=[('output', 'input')],
+                            vert_hook='vert_post_hook')
+# The 'link_vars' argument specifies that the vertex shader 'output' and
+# the fragment shader 'input' must be bound to the same varying.
+
+# The 'vert_hook' argument specifies a chain in the vertex shader to which 
+# the support code will be attached.
+
+frag_bound = combined.bind('fragment_color',
+                           input=('attribute', 'color_a'))
+
+# As in the previous example, attach a new FunctionChain to *vert_post_hook*:
+program.add_chain('vert_post_hook')
+
+# and finally attach the fragment code
+# (at this point, the supporting vertex code will be automaticaly attached as well)
+program.set_hook('fragment_color', frag_bound)
+
+
+# obligatory: these variables are used to fill the text fields on the right.
+VERTEX, FRAGMENT = program._generate_code() 
+'''),
+
 ]
 
 
@@ -426,7 +567,16 @@ from PyQt4 import QtCore
 from PyQt4.QtGui import *
 import sys, traceback
 
-from editor import Editor
+from editor import Editor, HAVE_QSCI
+
+qsci_note = """
+#  [[ NOTE: Install PyQt.QsciScintilla for improved code editing ]]
+#  [[ (Debian packages: python-qscintilla2 or python3-pyqt4.qsci ]]
+
+"""
+if not HAVE_QSCI:
+    presets[0] = (presets[0][0], qsci_note + presets[0][1])
+
 
 app = QApplication([])
 

@@ -30,6 +30,12 @@ if not HAVE_QSCI:
         def text(self):
             return str(self.toPlainText()).encode('UTF-8')
         
+        def set_marker(self, line):
+            pass
+        
+        def clear_marker(self):
+            pass
+        
 else:
     class Editor(QsciScintilla):
         ARROW_MARKER_NUM = 8

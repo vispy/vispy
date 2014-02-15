@@ -654,12 +654,14 @@ class FunctionChain(Function):
         """ Append a new function to the end of this chain.
         """
         self._funcs.append(function)
+        self._deps.append(function)
         self._update_signature()
         
     def insert(self, index, function):
         """ Insert a new function into the chain at *index*.
         """
         self._funcs.insert(index, function)
+        self._deps.insert(index, function)
         self._update_signature()
         
     def generate_function_code(self):
@@ -773,7 +775,8 @@ class FunctionTemplate(object):
                                "are: %s" % (var_name, self._bindings.keys()))
         
         if var_names:
-            raise Exception('Unsubstituted template variables in bind(): %s' % var_names)
+            raise Exception('Unsubstituted template variables in bind(%s): %s' % 
+                            (name, var_names))
            
         code += self.template.substitute(**subs)
         return Function(code, deps=self.deps[:])
@@ -833,15 +836,6 @@ class FragmentFunction(object):
         #       never have the same variable names?
         frag_vars = {}
         vert_vars = {}
-        for bind_name in kwds:
-            if bind_name in self.frag_func.bindings:
-                frag_vars[bind_name] = kwds[bind_name]
-            elif bind_name in self.vert_func.bindings:
-                vert_vars[bind_name] = kwds[bind_name]
-            else:
-                raise KeyError("The name '%s' is not bindable in %s" %
-                               (bind_name, self))
-                    
         
         # add varyings to each
         for vname, fname in self.link_vars:
@@ -851,6 +845,20 @@ class FragmentFunction(object):
             var = ('varying', var_name)
             vert_vars[vname] = var
             frag_vars[fname] = var
+        
+        # TODO: this is a little sketchy.. can we always unambiguously decide
+        # which variable goes to which function, or should this be made more
+        # explicit?
+        for bind_name in kwds:
+            if bind_name not in frag_vars and bind_name in self.frag_func.bindings:
+                frag_vars[bind_name] = kwds[bind_name]
+            elif bind_name in self.vert_func.bindings:
+                vert_vars[bind_name] = kwds[bind_name]
+            else:
+                raise KeyError("The name '%s' is not bindable in %s" %
+                               (bind_name, self))
+                    
+        
         
         # bind both functions
         frag_bound = self.frag_func.bind(name, **frag_vars)
