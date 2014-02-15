@@ -36,29 +36,42 @@ class _WrapStdOut(object):
 
 
 class _VispyFormatter(logging.Formatter):
-    """Formatter that prepends caller in debug mode"""
+    """Formatter that optionally prepends caller"""
     def __init__(self):
         logging.Formatter.__init__(self, '%(levelname)s: %(message)s')
+        self._vispy_prepend_caller = False
+
+    def _vispy_set_prepend(self, prepend):
+        self._vispy_prepend_caller = prepend
 
     def format(self, record):
         out = logging.Formatter.format(self, record)
-        if logger.level <= logging.DEBUG:
+        if self._vispy_prepend_caller:
             out = _get_vispy_caller() + out
         return out
 
 
 class _VispyStreamHandler(logging.StreamHandler):
-    """Stream handler allowing matching and recording"""
+    """Stream handler allowing matching and recording
+
+    This handler has two useful optional additions:
+
+        1. Recording emitted messages.
+        2. Performing regexp substring matching.
+
+    Prepending of traceback information is done in _VispyFormatter.
+    """
     def __init__(self):
         logging.StreamHandler.__init__(self, _WrapStdOut())
-        self._vispy_formatter = _VispyFormatter()
+        self._vispy_formatter = _lf
         self.setFormatter(self._vispy_formatter)
         self._vispy_match = None
         self._vispy_emit_list = list()
         self._vispy_set_emit_record(False)
         self._vispy_set_match(None)
 
-    def _vispy_emit_match(self, record):
+    def _vispy_emit_match_andor_record(self, record):
+        """Log message emitter that optionally matches and/or records"""
         test = record.getMessage()
         match = self._vispy_match
         if match is None or len(re.findall(match, test)) > 0:
@@ -68,6 +81,7 @@ class _VispyStreamHandler(logging.StreamHandler):
             return logging.StreamHandler.emit(self, record)
 
     def _vispy_emit(self, record):
+        """Log message emitter that wraps directly to the standard method"""
         return logging.StreamHandler.emit(self, record)
 
     def _vispy_set_match(self, match):
@@ -75,7 +89,7 @@ class _VispyStreamHandler(logging.StreamHandler):
         self._vispy_match = match
         # Triage here to avoid a bunch of if's later (more efficient)
         if match is not None or self._vispy_emit_record:
-            self.emit = self._vispy_emit_match
+            self.emit = self._vispy_emit_match_andor_record
         else:
             self.emit = self._vispy_emit
         return old_match
@@ -85,7 +99,7 @@ class _VispyStreamHandler(logging.StreamHandler):
         match = self._vispy_match
         # Triage here to avoid a bunch of if's later (more efficient)
         if match is not None or self._vispy_emit_record:
-            self.emit = self._vispy_emit_match
+            self.emit = self._vispy_emit_match_andor_record
         else:
             self.emit = self._vispy_emit
 
@@ -94,9 +108,9 @@ class _VispyStreamHandler(logging.StreamHandler):
 
 
 logger = logging.getLogger('vispy')
-_lh = _VispyStreamHandler()
+_lf = _VispyFormatter()
+_lh = _VispyStreamHandler()  # needs _lf to exist
 logger.addHandler(_lh)
-
 
 logging_types = dict(debug=logging.DEBUG, info=logging.INFO,
                      warning=logging.WARNING, error=logging.ERROR,
@@ -118,14 +132,25 @@ def set_log_level(verbose, match=None, return_old=False):
         that regexp matches ``'match'`` (and the ``verbose`` level) will be
         displayed.
     return_old_level : bool
-        If True, return the old verbosity level.
+        If True, return the old verbosity level and old match.
 
     Notes
     -----
-    If ``verbose=='debug'`` or ``match is not None``, then a small
-    performance overhead is added. Thus it is suggested to only use these
-    options when performance is not crucial.
+    If ``verbose=='debug'``, then the ``vispy`` method emitting the log
+    message will be prepended to each log message, which is useful for
+    debugging. If ``verbose=='debug'`` or ``match is not None``, then a
+    small performance overhead is added. Thus it is suggested to only use
+    these options when performance is not crucial.
+
+    See also
+    --------
+    vispy.util.use_log_level
     """
+    # This method is responsible for setting properties of the handler and
+    # formatter such that proper messages (possibly with the vispy caller
+    # prepended) are displayed. Storing log messages is only available
+    # via the context handler (use_log_level), so that configuration is
+    # done by the context handler itself.
     if isinstance(verbose, bool):
         verbose = 'info' if verbose else 'warning'
     if isinstance(verbose, string_types):
@@ -139,6 +164,10 @@ def set_log_level(verbose, match=None, return_old=False):
     old_verbose = logger.level
     old_match = _lh._vispy_set_match(match)
     logger.setLevel(verbose)
+    if verbose <= logging.DEBUG:
+        _lf._vispy_set_prepend(True)
+    else:
+        _lf._vispy_set_prepend(False)
     out = None
     if return_old:
         out = (old_verbose, old_match)
@@ -151,8 +180,20 @@ class use_log_level(object):
     Parameters
     ----------
     level : str
-        See ``set_log_level`` for options
+        See ``set_log_level`` for options.
+    record : bool
+        If True, the context manager will keep a record of the logging
+        messages generated by vispy. Otherwise, an empty list will
+        be returned.
+
+    Returns
+    -------
+    records : list
+        As a context manager, an empty list or the list of logging messages
+        will be returned (depending on the input ``record``).
     """
+    # This method mostly wraps to set_log_level, but also takes
+    # care of enabling/disabling message recording in the formatter.
     def __init__(self, level, match=None, record=False):
         self._new_level = level
         self._new_match = match
@@ -161,6 +202,7 @@ class use_log_level(object):
             raise TypeError('match must be None or str')
 
     def __enter__(self):
+        # set the log level
         old_level, old_match = set_log_level(self._new_level,
                                              self._new_match, return_old=True)
         for key, value in logging_types.items():
@@ -168,6 +210,7 @@ class use_log_level(object):
                 old_level = key
         self._old_level = old_level
         self._old_match = old_match
+        # set handler to record, if appropriate
         _lh._vispy_reset_list()
         if self._record:
             _lh._vispy_set_emit_record(True)
@@ -176,6 +219,8 @@ class use_log_level(object):
             return list()
 
     def __exit__(self, type, value, traceback):
+        # reset log level
         set_log_level(self._old_level, self._old_match)
+        # reset handler
         if self._record:
             _lh._vispy_set_emit_record(False)
