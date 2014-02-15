@@ -252,8 +252,8 @@ def arg_to_vec4(func):
                 return ret.flatten()
             return ret
         elif hasattr(arg, '_transform_in'):
-            arg = arg._transform_in()
-            ret = func(self, arg, *args, **kwds)
+            arr = arg._transform_in()
+            ret = func(self, arr, *args, **kwds)
             return arg._transform_out(ret)
     return fn
 
@@ -439,31 +439,31 @@ class STTransform(Transform):
     """
     GLSL_map = FunctionTemplate("""
         vec4 $func_name(vec4 pos) {
-            return (pos * vec4($scale, 1)) + vec4($translate, 0);
+            return (pos * $scale) + $translate;
         }
-    """, bindings=['vec3 scale', 'vec3 translate'])
+    """, bindings=['vec4 scale', 'vec4 translate'])
     
     GLSL_imap = FunctionTemplate("""
         vec4 $func_name(vec4 pos) {
-            return (pos - vec4($translate, 0)) / vec4($scale, 1);
+            return (pos - $translate) / $scale;
         }
-    """, bindings=['vec3 scale', 'vec3 translate'])
+    """, bindings=['vec4 scale', 'vec4 translate'])
     
     def __init__(self, scale=None, translate=None):
         super(STTransform, self).__init__()
             
-        self._scale = np.ones(3, dtype=np.float32)
-        self._translate = np.zeros(3, dtype=np.float32)
+        self._scale = np.ones(4, dtype=np.float32)
+        self._translate = np.zeros(4, dtype=np.float32)
         
         self.scale = (1.0, 1.0, 1.0) if scale is None else scale
         self.translate = (0.0, 0.0, 0.0) if translate is None else translate
     
-    @arg_to_array
+    @arg_to_vec4
     def map(self, coords):
         n = coords.shape[-1]
         return coords * self.scale[:n] + self.translate[:n]
     
-    @arg_to_array
+    @arg_to_vec4
     def imap(self, coords):
         n = coords.shape[-1]
         return (coords - self.translate[:n]) / self.scale[:n]
@@ -479,7 +479,7 @@ class STTransform(Transform):
     
     @scale.setter
     def scale(self, s):
-        self._scale[:len(s)] = s[:3]
+        self._scale[:len(s)] = s[:4]
         self._scale[len(s):] = 1.0
         #self._update()
         
@@ -489,7 +489,7 @@ class STTransform(Transform):
     
     @translate.setter
     def translate(self, t):
-        self._translate[:len(t)] = t[:3]
+        self._translate[:len(t)] = t[:4]
         self._translate[len(t):] = 0.0
             
     def as_affine(self):

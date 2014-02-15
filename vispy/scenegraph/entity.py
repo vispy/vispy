@@ -182,11 +182,11 @@ class Entity(object):
                 #for e in ch.walk(path):
                     #yield e
         path = (path or []) + [self]
-        yield ('enter', path)
+        yield (True, path)
         for ch in self:
             for p in ch.walk(path):
                 yield p
-        yield ('exit', path)
+        yield (False, path)
         
         
 

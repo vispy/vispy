@@ -1,10 +1,15 @@
+import numpy as np
+
 class Rect(object):
     """
     Representation of a rectangular area in a 2D coordinate system.
     """
     def __init__(self, pos=None, size=None):
-        self._pos = pos or (0,0)
-        self._size = size or (0,0)
+        self._pos = tuple(pos) if pos is not None else (0,0)
+        self._size = tuple(size) if pos is not None else (0,0)
+        if len(self._pos) != 2 or len(self._size) != 2:
+            raise ValueError("Rect pos and size arguments must have 2 elements.")
+        
 
     @property
     def pos(self):
@@ -77,6 +82,13 @@ class Rect(object):
         return Rect(pos=(self.pos[0]+padding, self.pos[1]+padding),
                     size=(self.size[0]-2*padding, self.size[1]-2*padding))
     
+    def normalized(self):
+        """Return a Rect covering the same area, but with height and width 
+        guaranteed to be positive."""
+        return Rect(pos=(min(self.left, self.right), min(self.top, self.bottom)),
+                    size=(abs(self.width), abs(self.height)))
+        
+    
     def __eq__(self, r):
         if not isinstance(r, Rect):
             return False
@@ -92,10 +104,10 @@ class Rect(object):
         """Return array of coordinates that can be mapped by Transform 
         classes."""
         return np.array([
-            [self.left, self.top, 0, 1],
-            [self.right, self.bottom, 0, 1]])
+            [self.left, self.bottom, 0, 1],
+            [self.right, self.top, 0, 1]])
     
     def _transform_out(self, coords):
         """Return a new Rect from coordinates mapped after _transform_in()."""
-        return Rect(self.pos = coords[0,:2], size=coords[1,:2]-coords[0,:2])
+        return Rect(pos=coords[0,:2], size=coords[1,:2]-coords[0,:2])
         

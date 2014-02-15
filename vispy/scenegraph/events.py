@@ -5,7 +5,7 @@
 from __future__ import division
 
 from ..util.event import Event
-from ..visuals import transforms
+from ..visuals.transforms import STTransform, ChainTransform
 from ..gloo import gl
 
 class SceneEvent(Event):
@@ -37,6 +37,7 @@ class SceneEvent(Event):
     def _set_path(self, path):
         self._path = path
     
+    @property
     def root_transform(self):
         """
         Return the complete Transform that maps from the end of the path to the
@@ -44,8 +45,9 @@ class SceneEvent(Event):
         """
         tr = [e.transform for e in self.path[::-1]]
         # TODO: cache transform chains
-        return transforms.ChainTransform(tr)
+        return ChainTransform(tr)
     
+    @property
     def viewport_transform(self):
         """
         Return the transform that maps from the end of the path to normalized
@@ -56,29 +58,35 @@ class SceneEvent(Event):
         
         Most entities should use this transform when painting.
         """
-        root_tr = self.root_transform()
-        csize = self.canvas.size
         viewport = self._viewport_stack[-1]
+        csize = self.canvas.size
         scale = csize[0]/viewport[2], csize[1]/viewport[3]
-        view_tr = (transforms.STTransform(scale=scale) * 
-                   transforms.STTransform(translate=(-viewport[0], -viewport[1])))
-        return view_tr * root_tr
+        origin = (((csize[0] - 2.0 * viewport[0]) / viewport[2] - 1), 
+                  ((csize[1] - 2.0 * viewport[1]) / viewport[3] - 1))
         
+        root_tr = self.root_transform
+        return (STTransform(translate=(origin[0], origin[1])) * 
+                STTransform(scale=scale) * 
+                root_tr)
+        
+    @property
     def framebuffer_transform(self):
         """
         Return the transform mapping from the end of the path to framebuffer
         pixels (device pixels).
         
         This is the coordinate system required by glViewport().
+        The origin is at the bottom-left corner of the canvas.
         """
-        root_tr = self.root_transform()
+        root_tr = self.root_transform
         # TODO: How do we get the framebuffer size?
         csize = self.canvas.size
-        scale = csize[0]/2.0, -csize[1]/2.0
-        fb_tr = (transforms.STTransform(scale=scale) * 
-                 transforms.STTransform(translate=(1, -1)))
+        scale = csize[0]/2.0, csize[1]/2.0
+        fb_tr = (STTransform(scale=scale) * 
+                 STTransform(translate=(1, 1)))
         return fb_tr * root_tr
         
+    @property
     def canvas_transform(self):
         """
         Return the transform mapping from the end of the path to Canvas
@@ -87,13 +95,14 @@ class SceneEvent(Event):
         In most cases, the use of document_transform is preferred over 
         canvas_transform.
         """
-        root_tr = self.root_transform()
+        root_tr = self.root_transform
         csize = self.canvas.size
         scale = csize[0]/2.0, -csize[1]/2.0
-        canvas_tr = (transforms.STTransform(scale=scale) * 
-                     transforms.STTransform(translate=(1, -1)))
+        canvas_tr = (STTransform(scale=scale) * 
+                     STTransform(translate=(1, -1)))
         return canvas_tr * root_tr
 
+    @property
     def document_transform(self):
         """
         Return the complete Transform that maps from the end of the path to the 
@@ -112,34 +121,36 @@ class SceneEvent(Event):
             tr.append(e.transform)
         if not found:
             raise Exception("No Document in the Entity path for this Event.")
-        return transforms.ChainTransform(tr)
+        return ChainTransform(tr)
 
     def map_to_document(self, obj):
-        return self.document_transform().map(obj)
+        return self.document_transform.map(obj)
     
     def map_from_document(self, obj):
-        return self.document_transform().imap(obj)
+        return self.document_transform.imap(obj)
     
-    def canvas_transform(self):
-        """
-        Return a Transform that maps from the end of the path to the Canvas.
-        """
-        tr = [e.transform for e in self.path[::-1]] + [self.canvas.nd_transform()]
-        return transforms.ChainTransform(tr)
+    #def canvas_transform(self):
+        #"""
+        #Return a Transform that maps from the end of the path to the Canvas.
+        #"""
+        #tr = [e.transform for e in self.path[::-1]] + [self.canvas.nd_transform()]
+        #return ChainTransform(tr)
         
     def map_to_canvas(self, obj):
-        return self.canvas_transform().map(obj)
+        return self.canvas_transform.map(obj)
     
     def map_from_canvas(self, obj):
-        return self.canvas_transform().imap(obj)
+        return self.canvas_transform.imap(obj)
     
     def push_viewport(self, x, y, w, h):
         self._viewport_stack.append((x, y, w, h))
-        gl.glViewport(x, y, w, h)
+        #print('push', self._viewport_stack[-1])
+        gl.glViewport(int(x), int(y), int(w), int(h))
         
     def pop_viewport(self):
         self._viewport_stack.pop()
-        gl.glViewport(*self._viewport_stack[-1])
+        #print('pop', self._viewport_stack[-1])
+        gl.glViewport(*map(int, self._viewport_stack[-1]))
         
         
     

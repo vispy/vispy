@@ -15,19 +15,19 @@ class Box(Entity):
     """
     Rectangular Entity used as a container for other entities.
     """
-    def __init__(self, parent=None, pos=None, size=None, border=None, clip=False):
-        super(Box, self).__init__(parent)
+    def __init__(self, parents=None, pos=None, size=None, border=None, clip=False):
+        super(Box, self).__init__(parents)
         self.events.add(rect_change=Event)
         
         if border is None:
-            border = (0.2, 0.2, 0.2, 0.5)
+            border = (0.9, 0.2, 0.2, 0.5)
         self._border = border
         self._visual = LineVisual(color=border, width=2) # for drawing border
         self._clip = clip
         self._pos = (0, 0)
         self._size = (1, 1)
-        self.padding = 0
-        self.margin = 0
+        self._padding = 0
+        self._margin = 5
         self._boxes = set()
 
     @property
@@ -77,6 +77,25 @@ class Box(Entity):
         self._visual.set_data(color=b)
         self.update()
 
+    @property
+    def margin(self):
+        return self._margin
+    
+    @margin.setter
+    def margin(self, m):
+        self._margin = m
+        self._update_line()
+        
+    @property
+    def padding(self):
+        return self._padding
+    
+    @padding.setter
+    def padding(self, p):
+        self._padding = p
+        self._update_child_boxes()
+        
+
     def _update_line(self):
         pad = self.margin
         left = self.pos[0] + pad
@@ -93,7 +112,7 @@ class Box(Entity):
         self._visual.set_data(pos=pos)
         
     def on_paint(self, event):
-        self._visual.transform = event.viewport_transform()
+        self._visual.transform = event.viewport_transform
         self._visual.paint()
         
     def on_rect_change(self, ev):
@@ -102,8 +121,10 @@ class Box(Entity):
     def _update_child_boxes(self):
         # Set the position and size of child boxes (only those added
         # using add_box)
+        print('box changed', self)
         for ch in self._boxes:
             ch.rect = self.rect.padded(self.padding + self.margin)
+            print("    ", ch, ch.rect)
 
     def add_box(self, box):
         """
@@ -209,10 +230,9 @@ class GridBox(Box):
         # determine starting/ending position of each row and column
         s2 = self.spacing / 2.
         rect = self.rect.padded(self.padding + self.margin - s2)
-        # TODO: should rows run top to bottom, or bottom to top??
-        rows = np.linspace(rect.bottom, rect.top, nrows+1)
-        rowstart = rows[:-1] + s2
-        rowend = rows[1:] - s2
+        rows = np.linspace(rect.top, rect.bottom, nrows+1)
+        rowstart = rows[1:] + s2
+        rowend = rows[:-1] - s2
         cols = np.linspace(rect.left, rect.right, ncols+1)
         colstart = cols[:-1] + s2
         colend = cols[1:] - s2
@@ -231,4 +251,4 @@ class GridBox(Box):
 
     
     
-from .view_box import ViewBox
+from .viewbox import ViewBox

@@ -35,5 +35,10 @@ def test_multiplication():
     assert_chain_types(c2 * a, [AT])
     assert_chain_types(p * l * s, [ST, LT, PT])
     
-    
-    
+def test_map_rect():
+    from vispy.util.geometry import Rect
+    r = Rect((2, 7), (13, 19))
+    r1 = ST(scale=(2, 2), translate=(-10, 10)).map(r)
+    assert r1 == Rect((-6, 24), (26, 38))
+
+

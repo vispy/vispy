@@ -43,8 +43,8 @@ class SceneCanvas(app.Canvas):
     def _update_document(self):
         # 1. Set scaling on document such that its local coordinate system 
         #    represents pixels in the canvas.
-        self.root.transform.scale = (2. / self.size[0], -2. / self.size[1])
-        self.root.transform.translate = (-1, 1)
+        self.root.transform.scale = (2. / self.size[0], 2. / self.size[1])
+        self.root.transform.translate = (-1, -1)
         
         # 2. Set size of document to match the area of the canvas
         self.root.size = self.size

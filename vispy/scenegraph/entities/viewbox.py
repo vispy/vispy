@@ -33,7 +33,7 @@ class ViewBox(Box):
     def _camera_update(self, event):
         self._child_group.transform = self.camera.transform.inverse()
         
-    def add_entity(self, entity):
+    def add(self, entity):
         entity.add_parent(self._child_group)
     
     def on_mouse_move(self, event):
@@ -50,11 +50,13 @@ class ViewBox(Box):
     def on_paint(self, event):
         super(ViewBox, self).on_paint(event)
         
-        r = event.framebuffer_transform.map(self.rect)
+        r = self.rect.padded(self.margin)
+        r = event.framebuffer_transform.map(r).normalized()
         event.push_viewport(r.left, r.bottom, r.width, r.height)
         
     def on_children_painted(self, event):
         event.pop_viewport()
+
 
 class Camera(Entity):
     """ The Camera class defines the viewpoint from which a scene is
@@ -123,7 +125,7 @@ class TwoDCamera(Camera):
         elif 2 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]
             p2 = np.array(event.pos)[:2]
-            s = 0.97 ** ((p2-p1) * np.array([1, -1]))
+            s = 0.97 ** ((p2-p1) * np.array([1, 1]))
             center = event.press_event.pos
             # TODO: would be nice if STTransform had a nice scale(s, center) 
             # method like AffineTransform.
