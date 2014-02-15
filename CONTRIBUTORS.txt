@@ -1,0 +1,14 @@
+Core team
+---------
+
+- Luke Campagnola
+- Almar Klein
+- Nicolas Rougier 
+- Cyrille Rossant. 
+
+
+Contributors
+------------
+
+- Eric Larson
+  Tests, CI, coveralls, GLFW, and much more
