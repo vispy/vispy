@@ -10,6 +10,7 @@ def test_show_entity():
     # Create a figure
     app = Application()
     fig = scene.CanvasWithScene(app=app)
+    app.create()
     fig.size = 1, 1
     fig.show()
     camcontainer = scene.PixelCamera(fig.viewbox)

@@ -124,7 +124,7 @@ def set_log_level(verbose, match=None, return_old=False):
     -----
     If ``verbose=='debug'`` or ``match is not None``, then a slightly slower
     logging method is used. Thus it is suggested to only use these options
-    when fastest performance is desired.
+    when performance is not crucial.
     """
     if isinstance(verbose, bool):
         verbose = 'info' if verbose else 'warning'
