@@ -10,10 +10,11 @@ virtualenv:
 
 env:
     # Enable python 2 and python 3 builds
-    - PYTHON=2.6 DEPS=full
-    - PYTHON=2.7 DEPS=full
-    - PYTHON=3.3 DEPS=full
-    - PYTHON=2.7 DEPS=minimal
+    - PYTHON=2.6 DEPS=full    OGL=stable
+    - PYTHON=2.7 DEPS=full    OGL=stable
+    - PYTHON=2.7 DEPS=full    OGL=beta
+    - PYTHON=2.7 DEPS=minimal OGL=stable
+    - PYTHON=3.3 DEPS=full    OGL=stable
 
 before_install:
     - travis_retry sudo apt-get -qq update;
@@ -34,7 +35,20 @@ install:
       else
         travis_retry sudo apt-get -qq -y install python-numpy python-nose;
       fi;
-    - pip install -q coveralls nose-timer flake8 PyOpenGL
+    - pip install -q coveralls nose-timer flake8
+    - if [ "${OGL}" == "beta" ]; then
+        echo "Using OpenGL beta version (pip)";
+        pip install -q https://pypi.python.org/packages/source/P/PyOpenGL/PyOpenGL-3.1.0b1.tar.gz;
+      else
+        if [ "${PYTHON}" == "2.7" ]; then
+          echo "Using OpenGL stable version (repos)";
+          travis_retry sudo apt-get -qq -y install python-opengl;
+        else
+          echo "Using OpenGL stable version (pip)";
+          pip install -q PyOpenGL;
+        fi;
+      fi;
+
     # Use Pyglet alpha to get Py3.3 support
     - if [ "${DEPS}" == "full" ]; then
         pip install -q http://pyglet.googlecode.com/archive/tip.zip;
@@ -91,6 +105,9 @@ script:
 
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
-    echo "Running coveralls";
-    cd ${SRC_DIR};
-    coveralls;
+    # Let's use the "full" test case for coveralls, best case for coverage
+    - if [ "${PYTHON}" == "2.7" ] && [ "${DEPS}" == "full" ] && [ "${OGL}" != "beta" ]; then
+        echo "Running coveralls";
+        cd ${SRC_DIR};
+        coveralls;
+      fi;

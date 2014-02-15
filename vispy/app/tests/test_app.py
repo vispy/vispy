@@ -25,6 +25,39 @@ def _on_mouse_move(self, *args):
     return
 
 
+def _test_callbacks(canvas):
+    """Tests input capabilities, triaging based on backend"""
+    backend_name = canvas._app.backend_name
+    backend = canvas._backend
+    if backend_name.lower() == 'pyglet':
+        # Test Pyglet callbacks can take reasonable args
+        backend.on_resize(100, 100)
+        backend.our_paint_func()
+        backend.on_mouse_press(10, 10, 1)
+        backend.on_mouse_release(10, 11, 1)
+        backend.on_mouse_motion(10, 12, 0, 1)
+        backend.on_mouse_drag(10, 13, 0, 1, 1, 0)
+        backend.on_mouse_scroll(10, 13, 1, 1)
+        backend.on_key_press(10, 0)
+        backend.on_key_release(10, 0)
+        backend.on_text('foo')
+    elif backend_name.lower() == 'glfw':
+        # Test GLFW callbacks can take reasonable args
+        _id = backend._id
+        backend._on_draw(_id)
+        backend._on_resize(_id, 100, 100)
+        backend._on_key_press(_id, 50, 50, 1, 0)
+        backend._on_mouse_button(_id, 1, 1, 0)
+        backend._on_mouse_scroll(_id, 1, 0)
+        backend._on_mouse_motion(_id, 10, 10)
+        backend._on_close(_id)
+    elif 'qt' in backend_name.lower():
+        # constructing fake Qt events is too hard :(
+        pass
+    else:
+        raise ValueError
+
+
 def _test_application(backend):
     """Test application running"""
     app = Application()
@@ -133,6 +166,7 @@ def _test_application(backend):
         # Timer
         timer = Timer(interval=0.001, connect=on_mouse_move, iterations=2,
                       start=True, app=app)
+        timer.start()
         timer.interval = 0.002
         assert_equal(timer.interval, 0.002)
         assert_true(timer.running)
@@ -140,6 +174,9 @@ def _test_application(backend):
         assert_true(not timer.running)
         assert_true(timer.native)
         timer.disconnect()
+
+        # test that callbacks take reasonable inputs
+        _test_callbacks(canvas)
 
         # cleanup
         canvas.swap_buffers()
