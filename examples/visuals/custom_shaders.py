@@ -1,5 +1,8 @@
 """
 Demonstrates plugging custom shaders in to a LineVisual.
+
+This allows to modify the appearance of the visual without modifying or
+subclassing the original LineVisual class.
 """
 
 import numpy as np

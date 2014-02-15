@@ -55,11 +55,12 @@ else:
             self.setMarginLineNumbers(0, True)
             self.setMarginsBackgroundColor(QColor("#cccccc"))
 
+            self._marker = None
             # Clickable margin 1 for showing markers
-            self.setMarginSensitivity(1, True)
-            self.connect(self,
-                SIGNAL('marginClicked(int, int, Qt::KeyboardModifiers)'),
-                self.on_margin_clicked)
+            #self.setMarginSensitivity(1, True)
+            #self.connect(self,
+                #SIGNAL('marginClicked(int, int, Qt::KeyboardModifiers)'),
+                #self.on_margin_clicked)
             self.markerDefine(QsciScintilla.RightArrow,
                 self.ARROW_MARKER_NUM)
             self.setMarkerBackgroundColor(QColor("#ee1111"),
@@ -94,12 +95,21 @@ else:
             # not too small
             #self.setMinimumSize(600, 450)
 
-        def on_margin_clicked(self, nmargin, nline, modifiers):
-            # Toggle marker for the line the margin was clicked on
-            if self.markersAtLine(nline) != 0:
-                self.markerDelete(nline, self.ARROW_MARKER_NUM)
-            else:
-                self.markerAdd(nline, self.ARROW_MARKER_NUM)
+        def set_marker(self, line):
+            self.clear_marker()
+            self.markerAdd(line, self.ARROW_MARKER_NUM)
+            self._marker = line
+        
+        def clear_marker(self):
+            if self._marker is not None:
+                self.markerDelete(self._marker, self.ARROW_MARKER_NUM)
+            
+        #def on_margin_clicked(self, nmargin, nline, modifiers):
+            ## Toggle marker for the line the margin was clicked on
+            #if self.markersAtLine(nline) != 0:
+                #self.markerDelete(nline, self.ARROW_MARKER_NUM)
+            #else:
+                #self.markerAdd(nline, self.ARROW_MARKER_NUM)
 
         def wheelEvent(self, ev):
             # Use ctrl+wheel to zoom in/out

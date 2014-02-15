@@ -42,14 +42,14 @@ vec4 local_position();
 vec4 map_local_to_nd(vec4);
 
 // generic hook for executing code after the vertex position has been set
-void post_hook();
+void vert_post_hook();
 
 void main(void) {
     vec4 local_pos = local_position();
     vec4 nd_pos = map_local_to_nd(local_pos);
     gl_Position = nd_pos;
     
-    post_hook();
+    vert_post_hook();
 }
 """
 
@@ -89,7 +89,7 @@ class LineVisual(Visual):
         self.pos_input_component = LinePosInputComponent(self)
         self.color_input_component = LineColorInputComponent(self)
         self._vbo = None
-        self._fragment_hooks = []
+        self._fragment_callbacks = []
         self.set_data(pos=pos, color=color, width=width)
 
     @property
@@ -148,21 +148,26 @@ class LineVisual(Visual):
             self._build_vbo()
         
         # Create composite program
-        self._program = CompositeProgram(vmain=vertex_shader, fmain=fragment_shader)
+        program = CompositeProgram(vertex_shader, fragment_shader)
+        
+        program.add_chain('vert_post_hook')
+        program.add_chain('frag_post_hook')
         
         # Activate position input component
-        self.pos_input_component._activate(self._program)
+        self.pos_input_component._activate(program)
         
         # Attach transformation function
         tr_bound = self.transform.bind_map('map_local_to_nd')
-        self._program.set_hook('map_local_to_nd', tr_bound)
+        program.set_hook('map_local_to_nd', tr_bound)
         
         # Activate color input function
-        self.color_input_component._activate(self._program)
+        self.color_input_component._activate(program)
         
         # Attach fragment shader post-hook chain
-        post_chain = self._get_fragment_post_chain()
-        self._program.set_hook('frag_post_hook', post_chain)
+        for func in self._fragment_callbacks:
+            program.add_callback('frag_post_chain', func)
+        
+        self._program = program
         
         
     def paint(self):
@@ -177,8 +182,6 @@ class LineVisual(Visual):
         gl.glLineWidth(self._opts['width'])
         self._program.draw('LINE_STRIP')
 
-    def _get_fragment_post_chain(self):
-        return FunctionChain('frag_post_hook', self._fragment_hooks)
 
 
 
@@ -229,14 +232,14 @@ class LineColorInputComponent(VisualComponent):
     
     RGBAAttributeFunc = FragmentFunction(
         # Read color directly from 'rgba' varying
-        frag_func=FunctionTemplate("""
+        fragment_func=FunctionTemplate("""
             vec4 $func_name() {
                 return $rgba;
             }
             """, 
             bindings=['vec4 rgba']),
         # Set varying from vec4 attribute
-        vertex_post=FunctionTemplate("""
+        vertex_func=FunctionTemplate("""
             void $func_name() {
                 $output = $input;
             }
@@ -244,7 +247,9 @@ class LineColorInputComponent(VisualComponent):
             bindings=['vec4 input', 'vec4 output']),
         # vertex variable 'output' and fragment variable 'rgba' should both 
         # be bound to the same vec4 varying.
-        link_vars=[('output', 'rgba')]
+        link_vars=[('output', 'rgba')],
+        # where to install vertex_post callback.
+        vert_hook='vert_post_hook'
         )
 
 
@@ -261,7 +266,7 @@ class LineColorInputComponent(VisualComponent):
                             name='frag_color',
                             input=('attribute', 'input_color')
                             )
-            func['input_color'] = self.visual._vbo['color']
+            func.fragment_support['input_color'] = self.visual._vbo['color']
         else:
             func = self.RGBAUniformFunc.bind('frag_color', 
                                              rgba=('uniform', 'input_color'))

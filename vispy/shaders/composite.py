@@ -14,7 +14,7 @@ from . import parsing
 API issues to work out:
 
   - Currently, program variables are set when the program is built. To 
-    optimize, it must be possible to upload new variables to a pre-built
+    optimize, it must be possible to set new variables on a pre-built
     program.
   
   - Any useful way to make FunctionTemplate and FragmentFunction subclasses
@@ -39,6 +39,8 @@ API issues to work out:
     vertex shader support code for translating attributes into varyings.
     (but this must be optional, because some components may need more complex
     support code)
+    
+    
 """
 
 
@@ -126,21 +128,36 @@ class CompositeProgram(Program):
         
         self._find_hooks()
         
-        self._post_hooks = []
-        
         # force _update to be called when the program is activated.
         self._need_update = True
 
-    def add_post_hook(self, function):
-        """
-        Add a new function to be called at the end of the vertex shader.
+    def add_chain(self, hook, chain=None):
+        """ Attach a new FunctionChain to *hook*. 
         
-        Arguments:
-        
-        function : Function instance
+        This allows callbacks to be added to the chain with add_callback.
         """
-        self._post_hooks.append(function)
-
+        if chain is None:
+            chain = FunctionChain(name=hook)
+        
+        self.set_hook(hook, chain)
+        
+    def add_callback(self, hook, function, pre=False):
+        """ Add a new function to the end of the FunctionChain attached to 
+        *hook*. if *pre* is True, then the function is added to the beginning
+        of the chain. Raises TypeError if there is no FunctionChain attached
+        to *hook*.
+        """
+        hook_def = self._hook_defs.get(hook, None)
+        
+        if (hook_def is None or not isinstance(hook_def, FunctionChain)):
+            raise TypeError("Cannot add callback to hook '%s'; not a "
+                            "FunctionChain. (%s)" % (hook, type(hook_def)))
+                            
+        if pre:
+            hook_def.insert(0, function)
+        else:
+            hook_def.append(function)
+        
     def _update(self):
         # generate all code..
         vcode, fcode = self._generate_code()
@@ -185,6 +202,11 @@ class CompositeProgram(Program):
         if hook_name not in self._hooks:
             raise NameError("This program has no hook named '%s'" % hook_name)
         
+        if hook_name in self._hook_defs and not replace:
+            raise RuntimeError("Cannot set hook '%s'; this hook is already set "
+                               "(with %s)." % 
+                               (hook_name, self._hook_defs[hook_name]))
+        
         # make sure the function definition fits the hook.
         shader, hook_args, hook_rtype = self._hooks[hook_name]
         if function.rtype != hook_rtype:
@@ -206,30 +228,22 @@ class CompositeProgram(Program):
         
         self._hook_defs[hook_name] = function
         
+        # Search through all dependencies of this function for callbacks
+        # and install them.
         for dep in function.all_deps():
-            if dep._vertex_post is not None:
-                self.add_post_hook(dep._vertex_post)
-        
-        
+            for hook_name, cb in dep.callbacks:
+                self.add_callback(hook_name, cb)
     
     def _generate_code(self):
+        # Assemble main shader functions along with their hook definitions
+        # into a single block of code.
+        
         vcode = self.vmain
         fcode = self.fmain
         vdeps = set()
         fdeps = set()
         
-        # first, look for functions that request an addition to the vertex
-        # shader post-hook
-        #for hook_name, func in self._hook_defs.items():
-            #for dep in func.all_deps():
-                #if dep._vertex_post is not None:
-                    #self.add_post_hook(dep._vertex_post)
-
-        # Install shader chain for post_hooks
-        post_chain = FunctionChain('post_hook', self._post_hooks)
-        self.set_hook('post_hook', post_chain)
-
-        # Now add code for all hooks and dependencies in order.
+        # add code for all hooks and dependencies in order.
         for hook_name, func in self._hook_defs.items():
             shader, hook_args, hook_rtype = self._hooks[hook_name]
             if shader == 'vertex':
@@ -320,9 +334,7 @@ class Function(object):
         self._deps = deps[:] if deps is not None else []
         self._program_values = {}
         
-        # Used by FragmentFunction to automatically attach a function to the
-        # vertex shader post_hook.
-        self._vertex_post = None
+        self._callbacks = []
         
     @property
     def code(self):
@@ -344,6 +356,16 @@ class Function(object):
         arguments. 
         """
         return self._bindings
+        
+    @property
+    def callbacks(self):
+        """
+        List of (hook, function) pairs.
+        
+        When this function is added to a program, each pair will cause
+        program.add_callback(hook, function) to be called.
+        """
+        return self._callbacks
 
     def set_code(self, code, name=None, args=None, rtype=None, variables=None):
         """
@@ -420,12 +442,10 @@ class Function(object):
         Any CompositeProgram that depends on this function will automatically
         apply the variable when it is activated.
         """
-        if var in self.variables:
-            self._program_values[var] = value
-        else:
-            # try setting on the vertex_post instead..
-            if self._vertex_post is not None:
-                self._vertex_post[var] = value
+        if var not in self.variables:
+            raise NameError("Variable '%s' does not exist in this function." 
+                            % var)
+        self._program_values[var] = value
 
     def all_deps(self):
         """
@@ -597,23 +617,28 @@ class FunctionChain(Function):
         vec3 my_func_1(vec3 input) {return input + vec3(1, 0, 0);}
         void my_func_2(vec3 input) {return input + vec3(0, 1, 0);}
         
-        vev3 my_func_chain(vec3 input) {
+        vec3 my_func_chain(vec3 input) {
             return my_func_2(my_func_1(input));
         }
     
     """
-    def __init__(self, name, funcs):
+    def __init__(self, name, funcs=()):
         Function.__init__(self)
-        self._funcs = funcs[:]
-        self._deps = funcs[:]
+        self._funcs = list(funcs)
+        self._deps = list(funcs)
         self._code = None
         self.name = name
+        self._update_signature()
+        
+    def _update_signature(self):
+        funcs = self._funcs
         if len(funcs) > 0:
             self.rtype = funcs[-1].rtype
             self.args = funcs[0].args[:]
         else:
             self.rtype = 'void'
             self.args = []
+        self._bindings = dict([(a[1], a[0]) for a in self.args])
         
     @property
     def code(self):
@@ -624,6 +649,18 @@ class FunctionChain(Function):
             code = self.generate_function_code()
             self.set_code(code)
         return self._code
+
+    def append(self, function):
+        """ Append a new function to the end of this chain.
+        """
+        self._funcs.append(function)
+        self._update_signature()
+        
+    def insert(self, index, function):
+        """ Insert a new function into the chain at *index*.
+        """
+        self._funcs.insert(index, function)
+        self._update_signature()
         
     def generate_function_code(self):
         
@@ -746,35 +783,40 @@ class FunctionTemplate(object):
 class FragmentFunction(object):
     """
     Function meant to be used in fragment shaders when some supporting 
-    code must also be introduced to the vertex shader post-hook, usually to
+    code must also be introduced to a vertex shader chain, usually to
     initialize one or more varyings.
     
     Parameters:
         frag_func : Function or FunctionTemplate
             To be bound in the fragment shader
-        vert_post : Function or FunctionTemplate
-            To be included in the vertex shader post_hook
+        vert_func : Function or FunctionTemplate
+            To be included in the vertex shader chain given by *vert_hook*
         link_vars : list of tuples
             Each tuple indicates (type, vertex_var, fragment_var) variables that 
             should be bound to the same varying.
+        vert_hook : str
+            Name of the vertex shader function chain to which vert_callback 
+            should be added. Default is 'vert_post_hook'.
     
     """
-    def __init__(self, frag_func, vertex_post, link_vars):
-        self.frag_func = frag_func
-        self.vert_post = vertex_post
+    def __init__(self, fragment_func, vertex_func, 
+                 link_vars, vert_hook='vert_post_hook'):
+        self.frag_func = fragment_func
+        self.vert_func = vertex_func
         self.link_vars = link_vars
+        self._vert_hook = vert_hook
         
         for vname, fname in link_vars:
-            vtype = vertex_post.bindings.get(vname, None)
-            ftype = frag_func.bindings.get(fname, None)
+            vtype = vertex_func.bindings.get(vname, None)
+            ftype = fragment_func.bindings.get(fname, None)
             if vtype is None:
                 raise NameError("Variable name '%s' is not bindable in vertex "
                                 "shader. Names are: %s" %
-                                (vname, vertex_post.bindings.keys()))
+                                (vname, vertex_func.bindings.keys()))
             if ftype is None:
                 raise NameError("Variable name '%s' is not bindable in fragment"
                                 " shader. Names are: %s" %
-                                (fname, frag_func.bindings.keys()))
+                                (fname, fragment_func.bindings.keys()))
             if vtype != ftype:
                 raise TypeError("Linked variables '%s' and '%s' must have the"
                                 "same type. (types are %s, %s)" % 
@@ -794,7 +836,7 @@ class FragmentFunction(object):
         for bind_name in kwds:
             if bind_name in self.frag_func.bindings:
                 frag_vars[bind_name] = kwds[bind_name]
-            elif bind_name in self.vert_post.bindings:
+            elif bind_name in self.vert_func.bindings:
                 vert_vars[bind_name] = kwds[bind_name]
             else:
                 raise KeyError("The name '%s' is not bindable in %s" %
@@ -804,7 +846,7 @@ class FragmentFunction(object):
         # add varyings to each
         for vname, fname in self.link_vars:
             # This is likely to be a unique name...
-            var_type = self.vert_post.bindings[vname]
+            var_type = self.vert_func.bindings[vname]
             var_name = "%s_%s_%s_var" % (name, vname, fname)
             var = ('varying', var_name)
             vert_vars[vname] = var
@@ -815,7 +857,13 @@ class FragmentFunction(object):
         
         # also likely to be a unique name...
         vert_name = name + "_support"
-        vert_bound = self.vert_post.bind(vert_name, **vert_vars)
+        vert_bound = self.vert_func.bind(vert_name, **vert_vars)
         
-        frag_bound._vertex_post = vert_bound
+        frag_bound._callbacks.append((self._vert_hook, vert_bound))
+        
+        # make it easy to access the vertex support function
+        # to assign variables.
+        frag_bound.fragment_support = vert_bound
+        
         return frag_bound
+
