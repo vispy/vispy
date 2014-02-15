@@ -43,7 +43,7 @@ class SceneEvent(Event):
         Return the complete Transform that maps from the end of the path to the
         root.
         """
-        tr = [e.transform for e in self.path[::-1]]
+        tr = [e.parent_transform for e in self.path[::-1]]
         # TODO: cache transform chains
         return ChainTransform(tr)
     
@@ -92,8 +92,9 @@ class SceneEvent(Event):
         Return the transform mapping from the end of the path to Canvas
         pixels (logical pixels).
         
-        In most cases, the use of document_transform is preferred over 
-        canvas_transform.
+        Canvas_transform is used mainly for mouse interaction. 
+        For measuring distance in physical units, the use of document_transform 
+        is preferred. 
         """
         root_tr = self.root_transform
         csize = self.canvas.size
@@ -118,7 +119,7 @@ class SceneEvent(Event):
             if isinstance(e, Document):
                 found = True
                 break
-            tr.append(e.transform)
+            tr.append(e.parent_transform)
         if not found:
             raise Exception("No Document in the Entity path for this Event.")
         return ChainTransform(tr)
@@ -129,13 +130,6 @@ class SceneEvent(Event):
     def map_from_document(self, obj):
         return self.document_transform.imap(obj)
     
-    #def canvas_transform(self):
-        #"""
-        #Return a Transform that maps from the end of the path to the Canvas.
-        #"""
-        #tr = [e.transform for e in self.path[::-1]] + [self.canvas.nd_transform()]
-        #return ChainTransform(tr)
-        
     def map_to_canvas(self, obj):
         return self.canvas_transform.map(obj)
     
@@ -144,12 +138,10 @@ class SceneEvent(Event):
     
     def push_viewport(self, x, y, w, h):
         self._viewport_stack.append((x, y, w, h))
-        #print('push', self._viewport_stack[-1])
         gl.glViewport(int(x), int(y), int(w), int(h))
         
     def pop_viewport(self):
         self._viewport_stack.pop()
-        #print('pop', self._viewport_stack[-1])
         gl.glViewport(*map(int, self._viewport_stack[-1]))
         
         

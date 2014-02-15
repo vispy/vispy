@@ -20,14 +20,14 @@ class Box(Entity):
         self.events.add(rect_change=Event)
         
         if border is None:
-            border = (0.9, 0.2, 0.2, 0.5)
+            border = (0.2, 0.2, 0.2, 0.5)
         self._border = border
-        self._visual = LineVisual(color=border, width=2) # for drawing border
+        self._visual = LineVisual(color=border, width=1) # for drawing border
         self._clip = clip
         self._pos = (0, 0)
         self._size = (1, 1)
         self._padding = 0
-        self._margin = 5
+        self._margin = 0
         self._boxes = set()
 
     @property

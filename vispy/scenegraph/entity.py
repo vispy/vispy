@@ -115,19 +115,33 @@ class Entity(object):
 
     @property
     def transform(self):
-        """ The transform for this entity; maps from the local coordinate
-        system of the entity to its parent's coordinate system.
+        """ The user-accessible transform for this entity.
         
+        This transform forms some or all of the *parent_transform*.        
         By default, this is an AffineTransform instance.
         """
         return self._transform
-
+        
     @transform.setter
     def transform(self, tr):
         assert isinstance(tr, transforms.Transform)
         self._transform = tr
         self.update()
-
+        
+    @property
+    def parent_transform(self):
+        """
+        maps from the local coordinate system of the Entity to its parent's 
+        coordinate system.
+        
+        It is possible to map into the local coordinate system of any Entity
+        by assembling a chain of parent_transforms.
+        
+        By default, this is equal to self.transform. However, subclasses may
+        choose to augment this transform with extra components.
+        """
+        return self._transform
+    
     def on_paint(self, event):
         """
         Paint this entity, given that we are drawing through 
