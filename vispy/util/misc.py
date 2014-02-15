@@ -246,7 +246,7 @@ def sys_info(fname=None, overwrite=False):
             out += 'GL version:  %s\n' % gl.glGetString(gl.GL_VERSION)
             x_ = gl.GL_MAX_TEXTURE_SIZE
             out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetIntegerv(x_)
-            x_ = gl.GL_MAX_3D_TEXTURE_SIZE
+            x_ = gl.ext.GL_MAX_3D_TEXTURE_SIZE
             out += 'MAX_3D_TEXTURE_SIZE: %d\n\n' % gl.glGetIntegerv(x_)
             out += 'Extensions: %s\n' % gl.glGetString(gl.GL_EXTENSIONS)
             canvas.close()
