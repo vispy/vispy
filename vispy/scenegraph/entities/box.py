@@ -121,10 +121,8 @@ class Box(Entity):
     def _update_child_boxes(self):
         # Set the position and size of child boxes (only those added
         # using add_box)
-        print('box changed', self)
         for ch in self._boxes:
             ch.rect = self.rect.padded(self.padding + self.margin)
-            print("    ", ch, ch.rect)
 
     def add_box(self, box):
         """
