@@ -8,6 +8,7 @@ import numpy as np
 
 from ._default_app import default_app
 from ..util.event import EmitterGroup, Event
+from ..util.ptime import time
 from .base import BaseCanvasBackend as CanvasBackend  # noqa
 
 # todo: add functions for asking about current mouse/keyboard state
@@ -79,6 +80,12 @@ class Canvas(object):
 
         # Initialise some values
         self._title = ''
+        self._frame_count = 0
+        self._fps = 0
+        self._basetime = time()
+
+        #Connect update_fps function to paint
+        self.events.paint.connect(self._update_fps)
 
         # Get app instance
         self._app = default_app if app is None else app
@@ -184,13 +191,19 @@ class Canvas(object):
         self._title = title
         self._backend._vispy_set_title(title)
 
+    # --------------------------------------------------------------- frame_count ---
+    @property
+    def fps(self):
+        """ The fps of canvas/window """
+        return self._fps
+
     def swap_buffers(self):
         """ Swap GL buffers such that the offscreen buffer becomes visible.
         """
         self._backend._vispy_swap_buffers()
 
     def resize(self, w, h):
-        """ Resize the canvas givan size """
+        """ Resize the canvas given size """
 
         return self._backend._vispy_set_size(w, h)
 
@@ -215,6 +228,14 @@ class Canvas(object):
         """ Close the canvas """
 
         self._backend._vispy_close()
+
+    def _update_fps(self, event):
+        self._frame_count += 1
+        diff = time() - self._basetime
+        if (diff > 1):
+            self._fps = self._frame_count/diff
+            self._basetime = time()
+            self._frame_count = 0
 
     def __enter__(self):
         return self
