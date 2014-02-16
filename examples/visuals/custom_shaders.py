@@ -55,7 +55,7 @@ class SineTransform(Transform):
 
 # A custom fragment shader
 Dasher = FragmentFunction(
-    frag_func = FunctionTemplate("""
+    fragment_func = FunctionTemplate("""
     void $func_name() {
         float mod = $distance / $dash_len;
         mod = mod - int(mod);
@@ -63,13 +63,14 @@ Dasher = FragmentFunction(
     }
     """, bindings=['float distance', 'float dash_len']),
     
-    vertex_post = FunctionTemplate("""
+    vertex_func=FunctionTemplate("""
     void $func_name() {
         $output = $distance_attr;
     }
     """, bindings=['float distance_attr', 'float output']),
     
-    link_vars=[('output', 'distance')])
+    link_vars=[('output', 'distance')],
+    vert_hook='vert_post_hook')
 
 
 class Canvas(vispy.app.Canvas):
@@ -90,9 +91,9 @@ class Canvas(vispy.app.Canvas):
         dasher = Dasher.bind(name="fragment_dasher", 
                              distance_attr=('attribute', 'distance_attr'),
                              dash_len=('uniform', 'dash_len_unif'))
-        dasher['distance_attr'] = gloo.VertexBuffer(dist)
+        dasher.fragment_support['distance_attr'] = gloo.VertexBuffer(dist)
         dasher['dash_len_unif'] = 20.
-        self.line.add_fragment_hook(dasher)
+        self.line.add_fragment_callback(dasher)
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)

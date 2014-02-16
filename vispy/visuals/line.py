@@ -101,8 +101,8 @@ class LineVisual(Visual):
         self._opts['transform'] = tr
         self._program = None
 
-    def add_fragment_hook(self, func):
-        self._fragment_hooks.append(func)
+    def add_fragment_callback(self, func):
+        self._fragment_callbacks.append(func)
         self._program = None
 
     def set_data(self, pos=None, color=None, width=None):
@@ -165,7 +165,7 @@ class LineVisual(Visual):
         
         # Attach fragment shader post-hook chain
         for func in self._fragment_callbacks:
-            program.add_callback('frag_post_chain', func)
+            program.add_callback('frag_post_hook', func)
         
         self._program = program
         

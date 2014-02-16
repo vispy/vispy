@@ -147,6 +147,8 @@ class CompositeProgram(Program):
         of the chain. Raises TypeError if there is no FunctionChain attached
         to *hook*.
         """
+        if hook not in self._hooks:
+            raise Exception('This program has no hook named "%s"' % hook)
         hook_def = self._hook_defs.get(hook, None)
         
         if (hook_def is None or not isinstance(hook_def, FunctionChain)):
@@ -157,28 +159,9 @@ class CompositeProgram(Program):
             hook_def.insert(0, function)
         else:
             hook_def.append(function)
-        
-    def _update(self):
-        # generate all code..
-        vcode, fcode = self._generate_code()
-        self.attach(VertexShader(vcode), FragmentShader(fcode))
-        
-        # set all variables..
-        self._apply_variables()
-        
-        # and continue.
-        super(CompositeProgram, self)._update()
-
-    def _find_hooks(self):
-        # Locate all undefined function prototypes in both shaders
-        vprots = parsing.find_prototypes(self.vmain)
-        fprots = parsing.find_prototypes(self.fmain)
-        self._hooks = {}
-        for shader_type, prots in [('vertex', vprots), ('fragment', fprots)]:
-            for name, args, rtype in prots:
-                if name in self._hooks:
-                    raise ValueError("Function prototype declared twice: '%s'" % name)
-                self._hooks[name] = (shader_type, args, rtype)
+            
+        self._install_dep_callbacks(function)
+            
         
     def set_hook(self, hook_name, function):
         """
@@ -228,12 +211,38 @@ class CompositeProgram(Program):
         
         self._hook_defs[hook_name] = function
         
+        self._install_dep_callbacks(function)
+                
+    def _install_dep_callbacks(self, function):
         # Search through all dependencies of this function for callbacks
         # and install them.
         for dep in function.all_deps():
             for hook_name, cb in dep.callbacks:
                 self.add_callback(hook_name, cb)
     
+        
+    def _update(self):
+        # generate all code..
+        vcode, fcode = self._generate_code()
+        self.attach(VertexShader(vcode), FragmentShader(fcode))
+        
+        # set all variables..
+        self._apply_variables()
+        
+        # and continue.
+        super(CompositeProgram, self)._update()
+
+    def _find_hooks(self):
+        # Locate all undefined function prototypes in both shaders
+        vprots = parsing.find_prototypes(self.vmain)
+        fprots = parsing.find_prototypes(self.fmain)
+        self._hooks = {}
+        for shader_type, prots in [('vertex', vprots), ('fragment', fprots)]:
+            for name, args, rtype in prots:
+                if name in self._hooks:
+                    raise ValueError("Function prototype declared twice: '%s'" % name)
+                self._hooks[name] = (shader_type, args, rtype)
+                
     def _generate_code(self):
         # Assemble main shader functions along with their hook definitions
         # into a single block of code.
