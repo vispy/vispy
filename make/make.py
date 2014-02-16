@@ -86,7 +86,7 @@ class Maker:
             for command in sorted(dir(self)):
                 if command.startswith('_'):
                     continue
-                preamble = command.ljust(11)
+                preamble = command.ljust(11)  # longest command is 9 or 10
                 #doc = getattr(self, command).__doc__.splitlines()[0].strip()
                 doc = getattr(self, command).__doc__.strip()
                 print(' %s  %s' % (preamble, doc))
