@@ -25,7 +25,7 @@ clean: clean-build clean-pyc clean-so clean-ctags
 
 flake:
 	if command -v flake8 > /dev/null; then \
-	    flake8 --count vispy examples make; \
+		flake8 --count vispy examples make; \
 	fi
 
 in: inplace # just a shortcut
@@ -36,6 +36,9 @@ nosetests:
 	rm -f .coverage
 	$(NOSETESTS) vispy
 
-test: clean nosetests flake
+importtests:
+	$(PYTHON) make/importtests.py
+
+test: clean nosetests flake importtests
 
 
