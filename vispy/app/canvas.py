@@ -230,6 +230,9 @@ class Canvas(object):
         self._backend._vispy_close()
 
     def _update_fps(self, event):
+        """ Updates the fps every 1 second at most and resets the basetime
+        and frame count to current time and 0, respectively
+        """
         self._frame_count += 1
         diff = time() - self._basetime
         if (diff > 1):
