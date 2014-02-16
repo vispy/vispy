@@ -158,12 +158,6 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         # Force the window or widget to shut down
         self.close()
 
-    def _vispy_get_geometry(self):
-        # Should return widget (x, y, w, h)
-        xy = self.get_location()
-        wh = self.get_size()
-        return xy + wh
-
     def _vispy_get_size(self):
         x, y = self.get_size()
         return x, y
@@ -256,8 +250,7 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         self._vispy_canvas.events.key_press(
             key=self._processKey(key),
             text='',  # Handlers that trigger on text wont see this event
-            modifiers=self._modifiers(modifiers),
-        )
+            modifiers=self._modifiers(modifiers))
 
     def on_text(self, text):
         # Typically this is called after on_key_press and before
@@ -265,8 +258,7 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         self._vispy_canvas.events.key_press(
             key=None,  # Handlers that trigger on key wont see this event
             text=text,
-            modifiers=self._modifiers(),
-        )
+            modifiers=self._modifiers())
 
     def on_key_release(self, key, modifiers):
         # Process modifiers
@@ -281,10 +273,8 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
             text = ''
         # Emit
         self._vispy_canvas.events.key_release(
-            key=self._processKey(key),
-            text=text,
-            modifiers=self._modifiers(modifiers)
-        )
+            key=self._processKey(key), text=text,
+            modifiers=self._modifiers(modifiers))
 
     def _processKey(self, key):
         if 97 <= key <= 122:

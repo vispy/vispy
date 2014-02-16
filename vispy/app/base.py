@@ -92,6 +92,12 @@ class BaseCanvasBackend(object):
         # Should return widget position
         raise NotImplementedError()
 
+    def _vispy_get_geometry(self):
+        # Should return widget (x, y, w, h)
+        x, y = self._vispy_get_position()
+        w, h = self._vispy_get_size()
+        return x, y, w, h
+
     def _vispy_get_native_canvas(self):
         # Should return the native widget object
         # Most backends would not need to implement this
@@ -148,10 +154,10 @@ class BaseTimerBackend(object):
         self._vispy_timer = vispy_timer
 
     def _vispy_start(self, interval):
-        raise Exception("Method must be reimplemented in subclass.")
+        raise NotImplementedError
 
     def _vispy_stop(self):
-        raise Exception("Method must be reimplemented in subclass.")
+        raise NotImplementedError
 
     def _vispy_get_native_timer(self):
         # Should return the native timer object

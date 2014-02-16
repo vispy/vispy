@@ -18,6 +18,7 @@ BACKENDS = [('Qt', '_qt', None),  # Meta backend
             ('Pyglet', '_pyglet', 'pyglet'),
             ('PySide', '_qt', 'PySide'),
             ('PyQt4', '_qt', 'PyQt4'),
+            ('Glfw', '_glfw', 'vispy.app.backends._libglfw'),
             ('Glut', '_glut', 'OpenGL.GLUT'),
             #('Test', 'nonexistent', 'foo.bar.lalalala'),  # For testing
             ]
@@ -61,6 +62,21 @@ def has_pyglet():
     return has
 
 
+def has_glfw(return_why=False):
+    try:
+        from . import _glfw  # noqa
+        has = True
+        why = ''
+    except Exception as exp:
+        has = False
+        why = str(exp)
+        pass
+    if return_why:
+        return has, why
+    else:
+        return has
+
+
 def requires_qt(requires_uic=False):
     extra = ' with UIC' if requires_uic else ''
     return np.testing.dec.skipif(not has_qt(requires_uic),
@@ -69,6 +85,11 @@ def requires_qt(requires_uic=False):
 
 def requires_pyglet():
     return np.testing.dec.skipif(not has_pyglet(), 'Requires Pyglet')
+
+
+def requires_glfw():
+    has, why = has_glfw(return_why=True)
+    return np.testing.dec.skipif(not has, 'Requires Glfw: %s' % why)
 
 
 def requires_non_glut():

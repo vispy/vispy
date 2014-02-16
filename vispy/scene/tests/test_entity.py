@@ -21,6 +21,16 @@ def test_show_entity():
     scene.PointsEntity(pointscontainer, 1000)
     fig.on_paint(None)
 
+    # Now do first-person
+    camcontainer = scene.PixelCamera(fig.viewbox)
+    camera = scene.FirstPersonCamera(camcontainer)
+    camera.update_angles()
+    fig.viewbox.camera = camera
+    pointscontainer = scene.Entity(fig.viewbox)
+    scene.PointsEntity(pointscontainer, 1000)
+    app.process_events()
+    app.process_events()  # for good measure
+
     # Now do 2D
     camcontainer = scene.PixelCamera(fig.viewbox)
     camera = scene.TwoDCamera(camcontainer)

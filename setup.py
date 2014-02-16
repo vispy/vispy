@@ -33,6 +33,7 @@ Announcing:
 """
 
 import os
+from os import path as op
 try:
     # use setuptools namespace, allows for "develop"
     import setuptools  # noqa, analysis:ignore
@@ -65,7 +66,7 @@ for line in open(initFile).readlines():
 setup(
     name=name,
     version=__version__,
-    author='Vispy contributers',
+    author='Vispy contributors',
     author_email='vispy@googlegroups.com',
     license='(new) BSD',
     url='http://vispy.org',
@@ -97,7 +98,8 @@ setup(
     package_dir={
         'vispy': 'vispy'},
     package_data={
-        'vispy': ['data/*']},
+        'vispy': [op.join('data', '*'),
+                  op.join('app', 'tests', 'qt-designer.ui')]},
     zip_safe=False,
     classifiers=[
         'Development Status :: 3 - Alpha',

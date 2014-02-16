@@ -702,7 +702,7 @@ def convert_data(data, clim=None):
         assert len(clim) == 2
         if clim[0] != 0.0:
             data -= clim[0]
-        if clim[1] - clim[0] != 1.0:
+        if clim[1] - clim[0] != 0.0:
             data *= 1.0 / (clim[1] - clim[0])
 
     if CONVERTING:

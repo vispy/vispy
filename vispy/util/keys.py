@@ -65,6 +65,8 @@ class Key:
             return self._names[0] == other
         elif isinstance(other, int):
             return other in [ord(v) for v in self._names_upper if len(v) == 1]
+        elif other is None:
+            return False
         else:
             raise ValueError(
                 'Key constants can only be compared to str, int and Key.')

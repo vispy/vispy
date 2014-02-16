@@ -23,11 +23,19 @@ clean-ctags:
 
 clean: clean-build clean-pyc clean-so clean-ctags
 
+flake:
+	if command -v flake8 > /dev/null; then \
+	    flake8 --count vispy examples; \
+	fi
+
 in: inplace # just a shortcut
 inplace:
 	$(PYTHON) setup.py build_ext -i
 
-test: clean
+nosetests:
 	rm -f .coverage
 	$(NOSETESTS) vispy
+
+test: clean nosetests flake
+
 

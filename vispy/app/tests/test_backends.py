@@ -9,8 +9,8 @@ implementation is corect.
 """
 
 import vispy
-from vispy.util import keys
-from vispy.app.backends import requires_pyglet, requires_qt
+from vispy import keys
+from vispy.app.backends import requires_pyglet, requires_qt, requires_glfw
 
 
 class BaseTestmodule:
@@ -38,7 +38,8 @@ class BaseTestmodule:
             '_vispy_get_native_app',
             '_vispy_mouse_move',
             '_vispy_mouse_press',
-            '_vispy_mouse_release')
+            '_vispy_mouse_release',
+            '_vispy_get_geometry')  # defined in base class
 
         Klass = self._module.CanvasBackend
         KlassRef = vispy.app.canvas.CanvasBackend
@@ -120,6 +121,14 @@ class Test_PygletBackend(BaseTestmodule):
     def __init__(self):
         from vispy.app.backends import _pyglet
         BaseTestmodule.__init__(self, _pyglet)
+
+
+class Test_GlfwBackend(BaseTestmodule):
+
+    @requires_glfw()
+    def __init__(self):
+        from vispy.app.backends import _glfw
+        BaseTestmodule.__init__(self, _glfw)
 
 
 class Test_GlutBackend(BaseTestmodule):
