@@ -191,7 +191,7 @@ class Canvas(object):
         self._title = title
         self._backend._vispy_set_title(title)
 
-    # --------------------------------------------------------------- frame_count ---
+    # --------------------------------------------------------------- fps ---
     @property
     def fps(self):
         """ The fps of canvas/window """
