@@ -25,7 +25,7 @@ clean: clean-build clean-pyc clean-so clean-ctags
 
 flake:
 	if command -v flake8 > /dev/null; then \
-	    flake8 --count vispy examples; \
+	    flake8 --count vispy examples make; \
 	fi
 
 in: inplace # just a shortcut
