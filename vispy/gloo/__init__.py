@@ -48,7 +48,7 @@ from __future__ import division
 
 from ..util.six import string_types
 from . import gl
-
+import vispy.app  # todo: inserted for testing the import-tests
 
 def ext_available(extension_name):
     """ Get whether an extension is available.

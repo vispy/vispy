@@ -83,6 +83,7 @@ def test_import_vispy_gloo():
 
 
 if __name__ == '__main__':
+    print(sys.version)
     for name in list(globals().keys()):
         if name.startswith('test_'):
             test = globals()[name]
