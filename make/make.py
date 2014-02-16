@@ -5,7 +5,7 @@
 
 """
 Convenience tools for vispy developers
-
+#
     make.py command [arg]
 
 """
@@ -156,7 +156,8 @@ class Maker:
     def flake(self, arg):
         """ Run flake8 to find style inconsistencies. """
         os.chdir(ROOT_DIR)
-        sys.argv[1:] = ['--exclude=six.py,_py24_ordereddict.py', 'vispy', 'examples']
+        sys.argv[1:] = ['--exclude=six.py,_py24_ordereddict.py',
+                        'vispy', 'examples', 'make']
         from flake8.main import main
         main()
 
@@ -307,7 +308,7 @@ class Maker:
                 if NEWTEXT in text:
                     count_ok += 1
                 elif OLDTEXT in text:
-                    text = text.replace(OLDTEXT, REPLACE)
+                    text = text.replace(OLDTEXT, NEWTEXT)
                     open(filename, 'wt').write(text)
                     print(
                         '  Update copyright year in %s/%s' %
