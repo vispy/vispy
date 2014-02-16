@@ -5,7 +5,7 @@
 
 """
 Convenience tools for vispy developers
-#
+
     make.py command [arg]
 
 """
@@ -326,7 +326,7 @@ class Maker:
 # Functions used by the maker
 
 if sys.version_info[0] < 3:
-    input = raw_input
+    input = raw_input  # noqa
 
 
 def sh(cmd):
