@@ -3,7 +3,7 @@ from os import path as op
 import logging
 
 from vispy import app
-from vispy.util import logger, use_log_level, sys_info, _Tempdir
+from vispy.util import logger, use_log_level, sys_info, _TempDir
 
 temp_dir = _TempDir()
 
