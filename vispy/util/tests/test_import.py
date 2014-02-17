@@ -16,17 +16,18 @@ import vispy
 
 def check_output(*popenargs, **kwargs):
     """ Py2.6 does not have check_output. Here is a minimal version.
+    Taken from https://gist.github.com/edufelipe/1027906
     """
-    with Popen(*popenargs, stdout=PIPE, **kwargs) as process:
-        try:
-            output, unused_err = process.communicate(timeout=None)
-        except:
-            process.kill()
-            process.wait()
-            raise
-        retcode = process.poll()
-        if retcode:
-            raise CalledProcessError(retcode, process.args, output=output)
+    process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        cmd = kwargs.get("args")
+        if cmd is None:
+            cmd = popenargs[0]
+        error = subprocess.CalledProcessError(retcode, cmd)
+        error.output = output
+        raise error
     return output
 
 
