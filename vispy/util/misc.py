@@ -202,7 +202,7 @@ def parse_command_line_arguments():
 
 
 def sys_info(fname=None, overwrite=False):
-    """Get debugging info
+    """Get relevant system and debugging information
 
     Parameters
     ----------
@@ -253,7 +253,6 @@ def sys_info(fname=None, overwrite=False):
     except Exception:  # don't stop printing info
         out += '\nInfo-gathering error:\n%s' % traceback.format_exc()
         pass
-    print(out)
     if fname is not None:
         with open(fname, 'w') as fid:
             fid.write(out)
