@@ -3,8 +3,6 @@ Test that importing vispy subpackages do not pull
 in any more vispy submodules than strictly necessary.
 """
 
-from __future__ import print_function
-
 import sys
 import os
 import subprocess
@@ -15,7 +13,9 @@ import vispy
 
 
 def check_output(*popenargs, **kwargs):
-    """ Py2.6 does not have check_output. Here is a minimal version.
+    """ Minimal py 2.6 compatible version of subprocess.check_output()
+    
+    Py2.6 does not have check_output.
     Taken from https://gist.github.com/edufelipe/1027906
     """
     process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
@@ -32,7 +32,9 @@ def check_output(*popenargs, **kwargs):
 
 
 def loaded_vispy_modules(import_module, depth=None):
-    """ Import a certain module in a clean subprocess and return the
+    """ Import the given module in subprocess and return loaded modules
+    
+    Import a certain module in a clean subprocess and return the
     vispy modules that are subsequently loaded. The given depth
     indicates the module level (i.e. depth=1 will only yield 'vispy.app'
     but not 'vispy.app.backends').
