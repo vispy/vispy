@@ -36,9 +36,6 @@ nosetests:
 	rm -f .coverage
 	$(NOSETESTS) vispy
 
-importtests:
-	$(PYTHON) make/importtests.py
-
-test: clean nosetests flake importtests
+test: clean nosetests flake
 
 

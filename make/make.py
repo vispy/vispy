@@ -145,20 +145,19 @@ class Maker:
                 "Do not forget to also commit+push your changes to '_website'")
         else:
             sys.exit('Command "website" does not have subcommand "%s"' % arg)
-    
+
     def test(self, arg):
         """ Run all tests. """
         self.test_nose(arg)
         self.test_flake(arg)
-        self.test_import(arg)
-    
+
     def test_nose(self, arg):
         """ Run all unit tests using nose. """
         os.chdir(ROOT_DIR)
         sys.argv[1:] = []
         import nose
         nose.run()
-    
+
     def test_flake(self, arg):
         """ Run flake8 to find style inconsistencies. """
         os.chdir(ROOT_DIR)
@@ -167,19 +166,6 @@ class Maker:
         from flake8.main import main
         main()
 
-    def test_import(self, arg):
-        """ Run import tests. """
-        success = False
-        try:
-            subprocess.check_call(
-                [sys.executable, os.path.join(THIS_DIR, 'importtests.py')],
-                cwd=ROOT_DIR, stderr=subprocess.STDOUT)
-            success = True
-        except Exception:
-            pass
-        if not success:
-            raise Exception('Import test fail.')
-    
     def images(self, arg):
         """ Create images (screenshots). Subcommands:
                 * gallery - make screenshots for the gallery
