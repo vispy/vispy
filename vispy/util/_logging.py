@@ -27,12 +27,12 @@ def _get_vispy_caller():
     return 'unknown'
 
 
-class _WrapStdOut(object):
-    """Class to work around how doctest captures stdout"""
-    def __getattr__(self, name):
-        # Even more ridiculous than this class, this must be sys.stdout (not
-        # just stdout) in order for this to work (tested on OSX and Linux)
-        return getattr(sys.stdout, name)
+# class _WrapStdOut(object):
+#     """Class to work around how doctest captures stdout"""
+#     def __getattr__(self, name):
+#         # Even more ridiculous than this class, this must be sys.stdout (not
+#         # just stdout) in order for this to work (tested on OSX and Linux)
+#         return getattr(sys.stdout, name)
 
 
 class _VispyFormatter(logging.Formatter):
@@ -62,7 +62,8 @@ class _VispyStreamHandler(logging.StreamHandler):
     Prepending of traceback information is done in _VispyFormatter.
     """
     def __init__(self):
-        logging.StreamHandler.__init__(self, _WrapStdOut())
+        #logging.StreamHandler.__init__(self, _WrapStdOut())
+        logging.StreamHandler.__init__(self, sys.stdout)
         self._vispy_formatter = _lf
         self.setFormatter(self._vispy_formatter)
         self._vispy_match = None

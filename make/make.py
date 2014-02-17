@@ -86,7 +86,7 @@ class Maker:
             for command in sorted(dir(self)):
                 if command.startswith('_'):
                     continue
-                preamble = command.ljust(9)
+                preamble = command.ljust(11)  # longest command is 9 or 10
                 #doc = getattr(self, command).__doc__.splitlines()[0].strip()
                 doc = getattr(self, command).__doc__.strip()
                 print(' %s  %s' % (preamble, doc))
@@ -94,8 +94,8 @@ class Maker:
 
     def doc(self, arg):
         """ Make API documentation. Subcommands:
-            * html - build html
-            * show - show the docs in your browser
+                * html - build html
+                * show - show the docs in your browser
         """
         # Prepare
         build_dir = os.path.join(DOC_DIR, '_build')
@@ -112,9 +112,9 @@ class Maker:
 
     def website(self, arg):
         """ Build website. Website source is put in '_website'. Subcommands:
-            * html - build html
-            * show - show the website in your browser
-            * upload - upload (commit+push) the resulting html to github
+                * html - build html
+                * show - show the website in your browser
+                * upload - upload (commit+push) the resulting html to github
         """
         # Prepare
         build_dir = os.path.join(WEBSITE_DIR, '_build')
@@ -147,25 +147,29 @@ class Maker:
             sys.exit('Command "website" does not have subcommand "%s"' % arg)
 
     def test(self, arg):
+        """ Run all tests. """
+        self.test_nose(arg)
+        self.test_flake(arg)
+
+    def test_nose(self, arg):
         """ Run all unit tests using nose. """
         os.chdir(ROOT_DIR)
         sys.argv[1:] = []
         import nose
         nose.run()
 
-    def flake(self, arg):
+    def test_flake(self, arg):
         """ Run flake8 to find style inconsistencies. """
         os.chdir(ROOT_DIR)
-        sys.argv[1:] = ['--exclude=six.py,_py24_ordereddict.py',
-                        'vispy', 'examples', 'make']
+        sys.argv[1:] = ['vispy', 'examples', 'make']
         from flake8.main import main
         main()
 
     def images(self, arg):
         """ Create images (screenshots). Subcommands:
-            * gallery - make screenshots for the gallery
-            * test - make screenshots for testing
-            * upload - upload the images repository
+                * gallery - make screenshots for the gallery
+                * test - make screenshots for testing
+                * upload - upload the images repository
         """
         if not arg:
             return self.help('images')
