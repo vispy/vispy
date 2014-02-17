@@ -102,7 +102,6 @@ script:
     - if [ "${PYTHON}" != "2.6" ]; then
         make flake;
       fi;
-    - python make/importtests.py
 
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
