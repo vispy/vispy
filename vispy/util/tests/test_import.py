@@ -7,11 +7,27 @@ from __future__ import print_function
 
 import sys
 import os
-import subprocess
+from subprocess import Popen, CalledProcessError, PIPE
 
 from nose.tools import assert_equal
 
 import vispy
+
+
+def check_output(*popenargs, **kwargs):
+    """ Py2.6 does not have check_output. Here is a minimal version.
+    """
+    with Popen(*popenargs, stdout=PIPE, **kwargs) as process:
+        try:
+            output, unused_err = process.communicate(timeout=None)
+        except:
+            process.kill()
+            process.wait()
+            raise
+        retcode = process.poll()
+        if retcode:
+            raise CalledProcessError(retcode, process.args, output=output)
+    return output
 
 
 def loaded_vispy_modules(import_module, depth=None):
@@ -25,7 +41,7 @@ def loaded_vispy_modules(import_module, depth=None):
 
     # Get the loaded modules in a clean interpreter
     code = "import sys, %s; print(', '.join(sys.modules))" % import_module
-    res = subprocess.check_output([sys.executable, '-c', code], cwd=vispy_dir)
+    res = check_output([sys.executable, '-c', code], cwd=vispy_dir)
     res = res.decode('utf-8')
     loaded_modules = [name.strip() for name in res.split(',')]
 
