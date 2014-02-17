@@ -161,8 +161,7 @@ class Maker:
     def test_flake(self, arg):
         """ Run flake8 to find style inconsistencies. """
         os.chdir(ROOT_DIR)
-        sys.argv[1:] = ['--exclude=six.py,_py24_ordereddict.py',
-                        'vispy', 'examples', 'make']
+        sys.argv[1:] = ['vispy', 'examples', 'make']
         from flake8.main import main
         main()
 
