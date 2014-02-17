@@ -7,7 +7,7 @@ from __future__ import print_function
 
 import sys
 import os
-from subprocess import Popen, CalledProcessError, PIPE
+import subprocess
 
 from nose.tools import assert_equal
 
