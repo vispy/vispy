@@ -2,7 +2,7 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import division
+from __future__ import division, print_function
 
 import numpy as np
 
@@ -84,13 +84,10 @@ class Canvas(object):
         self._frame_count = 0
         self._fps = 0
         self._basetime = time()
+        self._fps_callback = None
 
         # Get app instance
         self._app = default_app if app is None else app
-
-        # Create timer for fps callback
-        self._timer = Timer(interval=1, connect=None,
-                            iterations=None, start=False, app=self._app)
 
         # Create widget now
         if create_native:
@@ -232,35 +229,28 @@ class Canvas(object):
         self._backend._vispy_close()
 
     def _update_fps(self, event):
-        """ Updates the fps every 1 second at most and resets the basetime
+        """ Updates the fps after every window and resets the basetime
         and frame count to current time and 0, respectively
         """
         self._frame_count += 1
         diff = time() - self._basetime
-        if (diff > 1):
+        if (diff > self._window):
             self._fps = self._frame_count/diff
             self._basetime = time()
             self._frame_count = 0
+            self._fps_callback(self.fps)
 
-    def measure_fps(self, window=1, callback=None):
-        """ Updates the fps every 1 second and calls the callback function
-        after every window(in seconds)
+    def measure_fps(self, window=1, callback=print):
+        """ Sets the update window, connects the paint event to
+        update_fps and sets the callback function
+        If no callback is passed, measurement stops
         """
         # Connect update_fps function to paint
-        if(self._timer.running):
-            self._timer.stop()
-            self._timer.disconnect()
+        self.events.paint.disconnect(self._update_fps)
         if(callback):
+            self._window = window
             self.events.paint.connect(self._update_fps)
-            self._timer.start(interval=window, iterations=None)
-            self._timer.connect(callback)
-
-    def _default_fps_callback(self, event):
-        """The default callback for fps measurement. Currently it just
-        prints the fps on the console. Later it can be modified to
-        display fps on the scene itself.
-        """
-        print(self.fps)
+            self._fps_callback = callback
 
     def __enter__(self):
         return self
