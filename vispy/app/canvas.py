@@ -246,7 +246,7 @@ class Canvas(object):
         """
         # Connect update_fps function to paint
         self.events.paint.disconnect(self._update_fps)
-        if(callback):
+        if callback:
             self._window = window
             self.events.paint.connect(self._update_fps)
             self._fps_callback = callback
