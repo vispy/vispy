@@ -250,13 +250,10 @@ class Canvas(object):
         if(self._timer.running):
             self._timer.stop()
             self._timer.disconnect()
-        self.events.paint.connect(self._update_fps)
-        self._timer.start(interval=window, iterations=None)
-
-        if (callback):
+        if(callback):
+            self.events.paint.connect(self._update_fps)
+            self._timer.start(interval=window, iterations=None)
             self._timer.connect(callback)
-        else:
-            self._timer.connect(self._default_fps_callback)
 
     def _default_fps_callback(self, event):
         """The default callback for fps measurement. Currently it just
