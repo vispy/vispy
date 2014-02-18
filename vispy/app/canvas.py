@@ -250,6 +250,8 @@ class Canvas(object):
             self._window = window
             self.events.paint.connect(self._update_fps)
             self._fps_callback = callback
+        else:
+            self._fps_callback = None
 
     def __enter__(self):
         return self
