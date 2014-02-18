@@ -89,8 +89,8 @@ class Canvas(object):
         self._app = default_app if app is None else app
 
         # Create timer for fps callback
-        self._timer = Timer(interval=1, connect=None, 
-                        iterations=None, start=False, app=self._app)
+        self._timer = Timer(interval=1, connect=None,
+                            iterations=None, start=False, app=self._app)
 
         # Create widget now
         if create_native:
@@ -259,8 +259,8 @@ class Canvas(object):
             self._timer.connect(self._default_fps_callback)
 
     def _default_fps_callback(self, event):
-        """The default callback for fps measurement. Currently it just 
-        prints the fps on the console. Later it can be modified to 
+        """The default callback for fps measurement. Currently it just
+        prints the fps on the console. Later it can be modified to
         display fps on the scene itself.
         """
         print(self.fps)
