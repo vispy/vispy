@@ -10,6 +10,7 @@ from ._default_app import default_app
 from ..util.event import EmitterGroup, Event
 from ..util.ptime import time
 from .base import BaseCanvasBackend as CanvasBackend  # noqa
+from .timer import Timer
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -84,11 +85,11 @@ class Canvas(object):
         self._fps = 0
         self._basetime = time()
 
-        #Connect update_fps function to paint
-        self.events.paint.connect(self._update_fps)
-
         # Get app instance
         self._app = default_app if app is None else app
+
+        # Create timer for fps callback
+        self._timer = Timer(start=False,app=self._app)
 
         # Create widget now
         if create_native:
@@ -239,6 +240,29 @@ class Canvas(object):
             self._fps = self._frame_count/diff
             self._basetime = time()
             self._frame_count = 0
+
+    def measure_fps(self, window=1, callback=None):
+        """ Updates the fps every 1 second and calls the callback function
+        after every window(in seconds)
+        """
+        # Connect update_fps function to paint
+        if(self._timer.running):
+            self._timer.stop()
+            self._timer.disconnect()
+        self.events.paint.connect(self._update_fps)
+        self._timer.start(interval=window, iterations=None)
+
+        if (callback):
+            self._timer.connect(callback)
+        else:
+            self._timer.connect(self._default_fps_callback)
+
+    def _default_fps_callback(self, event):
+        """The default callback for fps measurement. Currently it just 
+        prints the fps on the console. Later it can be modified to 
+        display fps on the scene itself.
+        """
+        print(self.fps)
 
     def __enter__(self):
         return self
