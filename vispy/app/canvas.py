@@ -10,7 +10,6 @@ from ._default_app import default_app
 from ..util.event import EmitterGroup, Event
 from ..util.ptime import time
 from .base import BaseCanvasBackend as CanvasBackend  # noqa
-from .timer import Timer
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
