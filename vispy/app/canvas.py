@@ -89,7 +89,8 @@ class Canvas(object):
         self._app = default_app if app is None else app
 
         # Create timer for fps callback
-        self._timer = Timer(start=False,app=self._app)
+        self._timer = Timer(interval=1, connect=None, 
+                        iterations=None, start=False, app=self._app)
 
         # Create widget now
         if create_native:
