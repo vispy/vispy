@@ -2,12 +2,13 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import division
+from __future__ import division, print_function
 
 import numpy as np
 
 from ._default_app import default_app
 from ..util.event import EmitterGroup, Event
+from ..util.ptime import time
 from .base import BaseCanvasBackend as CanvasBackend  # noqa
 
 # todo: add functions for asking about current mouse/keyboard state
@@ -79,6 +80,10 @@ class Canvas(object):
 
         # Initialise some values
         self._title = ''
+        self._frame_count = 0
+        self._fps = 0
+        self._basetime = time()
+        self._fps_callback = None
 
         # Get app instance
         self._app = default_app if app is None else app
@@ -184,13 +189,20 @@ class Canvas(object):
         self._title = title
         self._backend._vispy_set_title(title)
 
+    # --------------------------------------------------------------- fps ---
+    @property
+    def fps(self):
+        """ The fps of canvas/window, measured as the rate that events.paint
+        is emitted. """
+        return self._fps
+
     def swap_buffers(self):
         """ Swap GL buffers such that the offscreen buffer becomes visible.
         """
         self._backend._vispy_swap_buffers()
 
     def resize(self, w, h):
-        """ Resize the canvas givan size """
+        """ Resize the canvas given size """
 
         return self._backend._vispy_set_size(w, h)
 
@@ -215,6 +227,32 @@ class Canvas(object):
         """ Close the canvas """
 
         self._backend._vispy_close()
+
+    def _update_fps(self, event):
+        """ Updates the fps after every window and resets the basetime
+        and frame count to current time and 0, respectively
+        """
+        self._frame_count += 1
+        diff = time() - self._basetime
+        if (diff > self._fps_window):
+            self._fps = self._frame_count/diff
+            self._basetime = time()
+            self._frame_count = 0
+            self._fps_callback(self.fps)
+
+    def measure_fps(self, window=1, callback=print):
+        """ Sets the update window, connects the paint event to
+        update_fps and sets the callback function
+        If no callback is passed, measurement stops
+        """
+        # Connect update_fps function to paint
+        self.events.paint.disconnect(self._update_fps)
+        if callback:
+            self._fps_window = window
+            self.events.paint.connect(self._update_fps)
+            self._fps_callback = callback
+        else:
+            self._fps_callback = None
 
     def __enter__(self):
         return self
