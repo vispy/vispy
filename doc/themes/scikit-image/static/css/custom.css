@@ -41,6 +41,12 @@ h6 {
     font-size: 13px;
     line-height: 15px;
 }
+blockquote {
+    border-left: 0;
+}
+dt {
+    font-weight: normal;
+}
 
 .logo {
     float: left;
@@ -51,21 +57,18 @@ h6 {
 }
 
 .hero {
-    padding: 10px 25px 15px 25px;
+    padding: 10px 25px;
 }
 
 .gallery-random {
     float: right;
     line-height: 180px;
-    margin-left: 10px;
 }
 .gallery-random img {
     max-height: 180px;
-    max-width: 180px;
 }
 
 .coins-sample {
-    float: left;
     padding: 5px;
 }
 
@@ -74,6 +77,10 @@ h6 {
 }
 .sidebar-box-heading {
     padding-left: 15px;
+}
+
+#current {
+    font-weight: bold;
 }
 
 .headerlink {
@@ -226,7 +233,7 @@ p.admonition-title {
     text-align: center !important;
 }
 
-.summary-box {
-    /* Should derive width from span8 */
-    width: 640px;
+/* misc */
+div.math {
+    text-align: center;
 }
