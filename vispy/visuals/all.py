@@ -5,5 +5,6 @@ TODO: Is this a reasonable idea? Should we replicate it for entities?
 """
 from .line import LineVisual
 from .points import PointsVisual
+from .image import ImageVisual
 # perhaps import transforms as well?
 
