@@ -10,18 +10,16 @@ from vispy.gloo import gl
 from vispy.gloo.variable import Uniform, Variable, Attribute
 
 
-
 # -----------------------------------------------------------------------------
 class VariableTest(unittest.TestCase):
 
     def test_init(self):
         variable = Variable(None, "A", gl.GL_FLOAT)
         assert variable._handle == -1
-        assert variable.name    == "A"
-        assert variable.data    is None
-        assert variable.gtype   == gl.GL_FLOAT
-        assert variable.active  == True
-
+        assert variable.name == "A"
+        assert variable.data is None
+        assert variable.gtype == gl.GL_FLOAT
+        assert variable.active is True
 
     def test_init_wrong_type(self):
         with self.assertRaises(TypeError):
@@ -37,7 +35,7 @@ class VariableTest(unittest.TestCase):
             v = Variable(None, "A", gl.GL_BOOL_VEC3)
         with self.assertRaises(TypeError):
             v = Variable(None, "A", gl.GL_BOOL_VEC4)
-
+            print(v)
 
 
 # -----------------------------------------------------------------------------
@@ -93,17 +91,17 @@ class UniformTest(unittest.TestCase):
         uniform.set_data(1)
         assert (uniform.data == 1).all()
 
-        uniform.set_data([1,2,3,4])
-        assert (uniform.data == [1,2,3,4]).all()
+        uniform.set_data([1, 2, 3, 4])
+        assert (uniform.data == [1, 2, 3, 4]).all()
 
     def test_set_exception(self):
         uniform = Uniform(None, "A", gl.GL_FLOAT_VEC4)
 
         with self.assertRaises(ValueError):
-            uniform.set_data([1,2])
+            uniform.set_data([1, 2])
 
         with self.assertRaises(ValueError):
-            uniform.set_data([1,2,3,4,5])
+            uniform.set_data([1, 2, 3, 4, 5])
 
 
 # -----------------------------------------------------------------------------
@@ -123,7 +121,7 @@ class AttributeTest(unittest.TestCase):
     def test_set_generic_2(self):
         attribute = Attribute(None, "A", gl.GL_FLOAT_VEC4)
 
-        attribute.set_data([1,2,3,4])
+        attribute.set_data([1, 2, 3, 4])
         assert type(attribute.data) is np.ndarray
 
 
