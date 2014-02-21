@@ -142,6 +142,7 @@ class Texture(GLObject):
 
         return self._shape
 
+
     @property
     def offset(self):
         """ Texture offset """
@@ -471,21 +472,21 @@ class Texture(GLObject):
     def _create(self):
         """ Create texture on GPU """
 
-        log("GPU: Creating texture")
+        logger.debug("GPU: Creating texture")
         self._handle = gl.glCreateTexture()
 
 
     def _delete(self):
         """ Delete texture from GPU """
 
-        log("GPU: Deleting texture")
+        logger.debug("GPU: Deleting texture")
         gl.deleteTexture(self._handle)
 
 
     def _activate(self):
         """ Activate texture on GPU """
 
-        log("GPU: Activate texture")
+        logger.debug("GPU: Activate texture")
         gl.glBindTexture(self.target, self._handle)
         if self._need_parameterization:
             self._parameterize()
@@ -494,7 +495,7 @@ class Texture(GLObject):
     def _deactivate(self):
         """ Deactivate texture on GPU """
 
-        log("GPU: Deactivate texture")
+        logger.debug("GPU: Deactivate texture")
         gl.glBindTexture(self._target, 0)
 
 
@@ -550,9 +551,9 @@ class Texture1D(Texture):
             if shape[-1] > 4:
                 raise ValueError("Too many channels for texture")
 
-        Texture.__init__(self, data=data, shape=shape, dtype=dtype, base=base,
-                         resizeable=resizeable, store=store, copy=copy,
-                         target=gl.GL_TEXTURE_1D, offset=offset)
+        Texture.__init__(self, data=data, shape=(1,shape[0]), dtype=dtype,
+                         base=base, resizeable=resizeable, store=store,
+                         copy=copy, target=gl.GL_TEXTURE_2D, offset=offset)
 
         self._format = Texture._formats.get(self.shape[-1], None)
         if self._format is None:
@@ -569,8 +570,10 @@ class Texture1D(Texture):
     def _resize(self):
         """ Texture resize on GPU """
 
-        log("GPU: Resizing texture(%s)"% (self.width))
-        gl.glTexImage1D(self.target, 0, self._format, self.width,
+        logger.debug("GPU: Resizing texture(%s)"% (self.width))
+        #gl.glTexImage1D(self.target, 0, self._format, self.width,
+        #                0, self._format, self._gtype, None)
+        gl.glTexImage2D(self.target, 0, self._format, self.width, 1,
                         0, self._format, self._gtype, None)
 
 
@@ -584,7 +587,7 @@ class Texture1D(Texture):
         if self._need_resize:
             self._resize()
             self._need_resize = False
-        log("GPU: Updating texture (%d pending operation(s))" % len(self._pending_data))
+        logger.debug("GPU: Updating texture (%d pending operation(s))" % len(self._pending_data))
 
         while self._pending_data:
             data, offset = self._pending_data.pop(0)
@@ -593,8 +596,10 @@ class Texture1D(Texture):
             else:
                 x = offset[0]
             width = data.shape[0]
-            gl.glTexSubImage1D(self.target, 0, x,
-                               width, self._format, self._gtype, data)
+            #gl.glTexSubImage1D(self.target, 0, x,
+            #                   width, self._format, self._gtype, data)
+            gl.glTexSubImage2D(self.target, 0, x, 0,
+                               width, 1, self._format, self._gtype, data)
 
 
 # --------------------------------------------------------- Texture2D class ---
@@ -675,7 +680,7 @@ class Texture2D(Texture):
     def _resize(self):
         """ Texture resize on GPU """
 
-        log("GPU: Resizing texture(%sx%s)"% (self.width,self.height))
+        logger.debug("GPU: Resizing texture(%sx%s)"% (self.width,self.height))
         gl.glTexImage2D(self.target, 0, self._format, self.width, self.height,
                         0, self._format, self._gtype, None)
 
@@ -690,7 +695,7 @@ class Texture2D(Texture):
         if self._need_resize:
             self._resize()
             self._need_resize = False
-        log("GPU: Updating texture (%d pending operation(s))" % len(self._pending_data))
+        logger.debug("GPU: Updating texture (%d pending operation(s))" % len(self._pending_data))
 
         while self._pending_data:
             data, offset = self._pending_data.pop(0)
@@ -700,6 +705,7 @@ class Texture2D(Texture):
             width, height = data.shape[1],data.shape[0]
             gl.glTexSubImage2D(self.target, 0, x, y,
                                width, height, self._format, self._gtype, data)
+
 
 
 # ---------------------------------------------------- TextureCubeMap class ---
@@ -727,6 +733,9 @@ class TextureCubeMap(Texture):
 
         store : boolean
            Indicate whether to use an intermediate CPU storage
+
+        copy : boolean
+           Indicate whether to use given data as CPU storage
         """
 
         # We don't want these parameters to be seen from outside (because they
@@ -789,43 +798,43 @@ class TextureCubeMap(Texture):
     def _create(self):
         """ Create texture on GPU """
 
-        log("GPU: Creating texture")
+        logger.debug("GPU: Creating texture")
 
 
     def _delete(self):
         """ Delete texture from GPU """
 
-        log("GPU: Deleting texture")
+        logger.debug("GPU: Deleting texture")
 
 
     def _parameterize(self):
         """ Paramaterize texture """
 
-        log("GPU: Parameterizing texture")
+        logger.debug("GPU: Parameterizing texture")
 
 
     def _activate(self):
         """ Activate texture on GPU """
 
-        log("GPU: Activate texture")
+        logger.debug("GPU: Activate texture")
 
 
     def _deactivate(self):
         """ Deactivate texture on GPU """
 
-        log("GPU: Deactivate texture")
+        logger.debug("GPU: Deactivate texture")
 
 
     def _resize(self):
         """ Texture resize on GPU """
 
-        log("GPU: Resizing texture(%sx%s)"% (self.width,self.height))
+        logger.debug("GPU: Resizing texture(%sx%s)"% (self.width,self.height))
 
 
     def _update(self):
         """ Texture upload on GPU """
 
-        log("GPU: Updating texture (%d pending operation(s))" % len(self._pending_data))
+        logger.debug("GPU: Updating texture (%d pending operation(s))" % len(self._pending_data))
 
 
 #if __name__ == '__main__':

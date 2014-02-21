@@ -4,8 +4,9 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 import unittest
-import OpenGL.GL as gl
-from shader import VertexShader, FragmentShader
+
+from vispy.gloo import gl
+from vispy.gloo.shader import VertexShader, FragmentShader
 
 
 
