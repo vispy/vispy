@@ -25,6 +25,7 @@ color[:, 1] = color[::-1, 0]
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
+        color=(1,1,1,1)
         self.line = LineVisual(pos, color=color)
         
         vispy.app.Canvas.__init__(self)

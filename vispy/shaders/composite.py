@@ -202,28 +202,8 @@ class CompositeProgram(Program):
         if isinstance(function, list):
             function = FunctionChain("$%s_hook" % hook_name, function)
         
-        # make sure the function definition fits the hook.
-        shader, hook_args, hook_rtype = self._hooks[hook_name]
-        if function.rtype != hook_rtype:
-            raise TypeError("function does not return correct type for hook "
-                            "'%s' (returns %s, should be %s)" % (hook_name, function.rtype, hook_rtype))
-        if len(function.args) != len(hook_args):
-            raise TypeError("function does not accept correct number of arguments for hook "
-                            "'%s' (accepts %d, should be %d)" % (hook_name, len(function.args), len(hook_args)))
-        for i, arg in enumerate(function.args):
-            if arg[0] != hook_args[i][0]:
-                fnsig = ", ".join([arg[0] for arg in function.args])
-                hksig = ", ".join([arg[0] for arg in hook_args])
-                raise TypeError("function has incorrect signature for hook "
-                                "'%s' (signature is (%s), should be (%s))" % (hook_name, fnsig, hksig))
-           
-        # if the name is incorrect, make a wrapper with the correct name.
-        if function.name != hook_name:
-            function = function.wrap(hook_name)
         
         self._hook_defs[hook_name] = function
-        
-        self._install_dep_callbacks(function)
                 
     def _install_dep_callbacks(self, function):
         # Search through all dependencies of this function for callbacks
@@ -236,6 +216,7 @@ class CompositeProgram(Program):
     def _update(self):
         # generate all code..
         vcode, fcode = self._generate_code()
+        
         self.attach(VertexShader(vcode), FragmentShader(fcode))
         
         # set all variables..
@@ -264,39 +245,75 @@ class CompositeProgram(Program):
         vdeps = set()
         fdeps = set()
         
+                
+        ## All this was taken from set_hook:
+                
+            ## make sure the function definition fits the hook.
+            #shader, hook_args, hook_rtype = self._hooks[hook_name]
+            #if function.rtype != hook_rtype:
+                #raise TypeError("function does not return correct type for hook "
+                                #"'%s' (returns %s, should be %s)" % (hook_name, function.rtype, hook_rtype))
+            #if len(function.args) != len(hook_args):
+                #raise TypeError("function does not accept correct number of arguments for hook "
+                                #"'%s' (accepts %d, should be %d)" % (hook_name, len(function.args), len(hook_args)))
+            #for i, arg in enumerate(function.args):
+                #if arg[0] != hook_args[i][0]:
+                    #fnsig = ", ".join([arg[0] for arg in function.args])
+                    #hksig = ", ".join([arg[0] for arg in hook_args])
+                    #raise TypeError("function has incorrect signature for hook "
+                                    #"'%s' (signature is (%s), should be (%s))" % (hook_name, fnsig, hksig))
+            
+            ## if the name is incorrect, make a wrapper with the correct name.
+            #if function.name != hook_name:
+                #function = function.resolve(hook_name)
+                
+            #self._install_dep_callbacks(function)
+
+        
+        
         # add code for all hooks and dependencies in order.
         for hook_name, func in self._hook_defs.items():
             shader, hook_args, hook_rtype = self._hooks[hook_name]
             if shader == 'vertex':
                 vcode += "\n\n//  -------- Begin hook '%s' --------\n" % hook_name
                 for dep in func.all_deps():
-                    if dep.name not in vdeps:
+                    if dep is func:
+                        if dep.name is None:
+                            vcode += "\n\n" + dep.compile(self, hook_name)
+                        else:
+                            vcode += "\n\n" + dep.compile(self)
+                    elif dep not in vdeps:
                         #print("++vertex dep++")
                         #print(dep)
                         #print(dep.code)
-                        vcode += "\n\n" + dep.code
-                        vdeps.add(dep.name)
+                        vcode += "\n\n" + dep.compile(self)
+                        vdeps.add(dep)
                 #vcode += func.code
                 
             elif shader == 'fragment': 
                 fcode += "\n\n//  -------- Begin hook '%s' --------\n" % hook_name
                 for dep in func.all_deps():
-                    if dep.name not in fdeps:
+                    if dep is func:
+                        if dep.name is None:
+                            fcode += "\n\n" + dep.compile(self, hook_name)
+                        else:
+                            fcode += "\n\n" + dep.compile(self)
+                    elif dep not in fdeps:
                         #print("++fragment dep++")
                         #print(dep)
                         #print(dep.code)
-                        fcode += "\n\n" + dep.code
-                        fdeps.add(dep.name)
+                        fcode += "\n\n" + dep.compile(self)
+                        fdeps.add(dep)
                 #fcode += func.code
                 
             else:
                 raise Exception("Unsupported shader type: %s" % shader)
 
-        #print ("--vertex------------------------------")
-        #print (vcode)
-        #print ("--fragment------------------------------")
-        #print (fcode)
-        #print ("--------------------------------")
+        print ("--vertex------------------------------")
+        print (vcode)
+        print ("--fragment------------------------------")
+        print (fcode)
+        print ("--------------------------------")
         
         return vcode, fcode
          
@@ -310,8 +327,8 @@ class CompositeProgram(Program):
             #print("  ", hook_name, func)
             for dep in func.all_deps():
                 #print("    ", dep)
-                for name, value in dep._program_values.items():
+                for name, spec in dep._program_values.items():
                     #print("      ", name, value, dep)
-                    self[name] = value
+                    self[name] = spec[2]
         
 

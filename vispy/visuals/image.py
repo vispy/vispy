@@ -132,8 +132,7 @@ class ImageVisual(Visual):
         #self.pos_input_component._activate(program)
         
         # Attach transformation function
-        tr_bound = self.transform.wrap_map('map_local_to_nd')
-        program.set_hook('map_local_to_nd', tr_bound)
+        program['map_local_to_nd'] = self.transform.shader_map()
         
         # Activate color input function
         #self.color_input_component._activate(program)

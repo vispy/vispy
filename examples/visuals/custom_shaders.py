@@ -13,9 +13,11 @@ from vispy.visuals.line import LineVisual
 from vispy.visuals.transforms import Transform, STTransform, arg_to_array
 from vispy.shaders.composite import FragmentFunction, Function
 
-#import pyqtgraph as pg
-#c = pg.dbg()
-#c.catchNextException()
+
+
+import pyqtgraph as pg
+c = pg.dbg()
+c.catchNextException()
 
 
 # vertex positions of data to draw
@@ -87,7 +89,7 @@ class Canvas(vispy.app.Canvas):
         dist[0] = 0.0
         dist[1:] = np.cumsum(diff)
         
-        dasher = Dasher.wrap(name="fragment_dasher", 
+        dasher = Dasher.resolve(name="fragment_dasher", 
                              distance_attr=('attribute', 'distance_attr'),
                              dash_len=('uniform', 'dash_len_unif'))
         dasher.fragment_support['distance_attr'] = gloo.VertexBuffer(dist)

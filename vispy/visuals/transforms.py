@@ -70,8 +70,11 @@ class Transform(object):
     
     
     """
-    GLSL_map = None  # Must be Function instance
+    GLSL_map = None  # Must be GLSL code
     GLSL_imap = None
+    def __init__(self):
+        self._shader_map = Function(self.GLSL_map)
+        self._shader_imap = Function(self.GLSL_imap)
     
     def map(self, obj):
         """
@@ -100,48 +103,51 @@ class Transform(object):
         """
         raise NotImplementedError()
 
-    def wrap_map(self, name, var_prefix=None):
+    def shader_map(self, name=None, var_prefix=None):
         """
-        Return a Function that accepts only a single vec4 argument and defines
+        Return a shader Function that accepts only a single vec4 argument and defines
         new attributes / uniforms supplying the Function with any static input.
         """
-        if var_prefix is None:
-            var_prefix = name + "_"
-        return self._wrap(name, var_prefix, imap=False)
+        #return self._resolve(name, var_prefix, imap=False)
+        return self._shader_map
         
-    def wrap_imap(self, name, var_prefix=None):
+    def shader_imap(self, name=None, var_prefix=None):
         """
-        see wrap_map.
+        see shader_map.
         """
-        if var_prefix is None:
-            var_prefix = name + "_"
-        return self._wrap(name, var_prefix, imap=True)
+        #return self._resolve(name, var_prefix, imap=True)
+        return self._shader_imap
 
-    def _wrap(self, name, var_prefix, imap):
-        # The default implemntation assumes the following:
-        # * The first argument to the GLSL function should not be bound
-        # * All remaining arguments should be bound using self.property of the
-        #   same name to determine the value.
+    #def _resolve(self, name, var_prefix, imap):
+        ## The default implemntation assumes the following:
+        ## * The first argument to the GLSL function should not be bound
+        ## * All remaining arguments should be bound using self.property of the
+        ##   same name to determine the value.
+        #function = self.GLSL_imap if imap else self.GLSL_map
         
-        function = self.GLSL_imap if imap else self.GLSL_map
+        #if var_prefix is None:
+            #if name is None:
+                #var_prefix = function._template_name.lstrip('$') + '_'
+            #else:
+                #var_prefix = name + "_"
         
-        # map all extra args to uniforms
-        uniforms = {}
-        #for arg_type, arg_name in function.args[1:]:
-        for var_name in function.bindings:
-            if var_name == function.args[0][1]:
-                continue
-            uniforms[var_name] = ('uniform', var_prefix+var_name)
+        ## map all extra args to uniforms
+        #uniforms = {}
+        ##for arg_type, arg_name in function.args[1:]:
+        #for var_name in function.template_vars:
+            #if var_name == function.args[0][1]:
+                #continue
+            #uniforms[var_name] = ('uniform', var_prefix+var_name)
         
-        # bind to a new function + variables
-        bound = function.wrap(name, **uniforms)
+        ## bind to a new function + variables
+        #bound = function.resolve(name, **uniforms)
         
-        # set uniform values based on properties having same name as 
-        # bound argument
-        for var_name in uniforms:
-            bound[var_prefix+var_name] = getattr(self, var_name)
+        ## set uniform values based on properties having same name as 
+        ## bound argument
+        #for var_name in uniforms:
+            #bound[var_name] = getattr(self, var_name)
         
-        return bound
+        #return bound
 
     def __mul__(self, tr):
         """
@@ -339,7 +345,7 @@ class ChainTransform(Transform):
                 break
             
 
-    def _wrap(self, name, var_prefix, imap):
+    def _resolve(self, name, var_prefix, imap):
         if imap:
             transforms = self.transforms[::-1]
         else:
@@ -350,9 +356,9 @@ class ChainTransform(Transform):
             
             tr_name = '%s_%d_%s' % (name, i, type(tr).__name__)
             if imap:
-                bound = tr.wrap_imap(tr_name)
+                bound = tr.shader_imap(tr_name)
             else:
-                bound = tr.wrap_map(tr_name)
+                bound = tr.shader_map(tr_name)
             bindings.append(bound)
             
         return FunctionChain(name, bindings)
@@ -415,14 +421,16 @@ class ChainTransform(Transform):
 class NullTransform(Transform):
     """ Transform having no effect on coordinates (identity transform).
     """
-    GLSL_map = Function("vec4 $func_name(vec4 pos) {return pos;}")
-    GLSL_imap = Function("vec4 $func_name(vec4 pos) {return pos;}")
+    GLSL_map = "vec4 $null_transform_map(vec4 pos) {return pos;}"
+    GLSL_imap = "vec4 $null_transform_imap(vec4 pos) {return pos;}"
 
     def map(self, obj):
         return obj
     
     def imap(self, obj):
         return obj
+    
+        
     
     def inverse(self):
         return NullTransform()
@@ -437,17 +445,17 @@ class NullTransform(Transform):
 class STTransform(Transform):
     """ Transform performing only scale and translate, in that order.
     """
-    GLSL_map = Function("""
-        vec4 $func_name(vec4 pos) {
-            return (pos * $vec4_scale) + $vec4_translate;
+    GLSL_map = """
+        vec4 $st_transform_map(vec4 pos) {
+            return (pos * $scale) + $translate;
         }
-    """)
+    """
     
-    GLSL_imap = Function("""
-        vec4 $func_name(vec4 pos) {
-            return (pos - $vec4_translate) / $vec4_scale;
+    GLSL_imap = """
+        vec4 $st_transform_imap(vec4 pos) {
+            return (pos - $translate) / $scale;
         }
-    """)
+    """
     
     def __init__(self, scale=None, translate=None):
         super(STTransform, self).__init__()
@@ -520,17 +528,17 @@ class STTransform(Transform):
 
 
 class AffineTransform(Transform):
-    GLSL_map = Function("""
-        vec4 $func_name(vec4 pos) {
-            return $mat4_matrix * pos;
+    GLSL_map = """
+        vec4 $affine_transform_map(vec4 pos) {
+            return $matrix * pos;
         }
-    """)
+    """
     
-    GLSL_imap = Function("""
-        vec4 $func_name(vec4 pos) {
-            return $mat4_inv_matrix * pos;
+    GLSL_imap = """
+        vec4 $affine_transform_imap(vec4 pos) {
+            return $inv_matrix * pos;
         }
-    """)
+    """
     
     def __init__(self, matrix=None):
         super(AffineTransform, self).__init__()
@@ -547,6 +555,11 @@ class AffineTransform(Transform):
     @arg_to_vec4
     def imap(self, coords):
         return np.dot(coords, self.inv_matrix)
+
+    def shader_map(self, *args, **kwds):
+        fn = super(AffineTransform, self).shader_map(*args, **kwds)
+        fn['matrix'] = ('uniform', 'mat4', self.matrix)
+        return fn
 
     def inverse(self):
         tr = AffineTransform()
@@ -664,18 +677,18 @@ class LogTransform(Transform):
     # TODO: Evaluate the performance costs of using conditionals. 
     # An alternative approach is to transpose the vector before log-transforming,
     # and then transpose back afterward.
-    GLSL_map = Function("""
-        vec4 LogTransform_map(vec4 pos, vec3 base) {
+    GLSL_map = """
+        vec4 $LogTransform_map(vec4 pos) {
             vec4 p1 = pos;
-            if(base.x > 1.0)
-                p1.x = log(p1.x) / log(base.x);
-            if(base.y > 1.0)
-                p1.y = log(p1.y) / log(base.y);
-            if(base.z > 1.0)
-                p1.z = log(p1.z) / log(base.z);
+            if($base.x > 1.0)
+                p1.x = log(p1.x) / log($base.x);
+            if($base.y > 1.0)
+                p1.y = log(p1.y) / log($base.y);
+            if($base.z > 1.0)
+                p1.z = log(p1.z) / log($base.z);
             return p1;
         }
-        """)
+        """
     
     def __init__(self, base=None):
         super(LogTransform, self).__init__()
@@ -728,11 +741,11 @@ class PolarTransform(Transform):
     and `y = r*sin(theta)`.
     
     """
-    GLSL_map = Function("""
-        vec4 $func_name(vec4 pos) {
+    GLSL_map = """
+        vec4 $polar_transform_map(vec4 pos) {
             return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1);
         }
-        """)
+        """
 
     @arg_to_array
     def map(self, coords):

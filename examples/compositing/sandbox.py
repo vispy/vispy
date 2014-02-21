@@ -4,54 +4,6 @@ Sandbox for experimenting with vispy.shaders.composite
 """
 
 presets = [
-('TEST', '''
- 
-from vispy.shaders.composite import CompositeProgram, Function
-
-
-vertex_shader = """
-vec4 input_position();
-
-void main() {
-    gl_Position = input_position();
-}
-"""
-
-fragment_shader = """
-void main() {
-}
-"""
-
-program = CompositeProgram(vertex_shader, fragment_shader)
-
-# Function templates allow the creation of new functions by using string.Template 
-# to fill in names of the function and the program variables it depends on.
-flatten = Function("""
-    vec4 $func_name() {
-        vec4 pos = $vec4_pos;
-        pos.z = 0;
-        pos.w = 1;
-        return pos;
-    }
-    """)
-
-# Note the bindings argument above; this is required because there is otherwise
-# no way to determine the type of the variable 'pos'.
-
-# As with the previous Function example, we use bind() to create a new Function 
-# with the correct name and program variables.
-bound = flatten.wrap('input_position', pos=('attribute', 'position_u'))
-
-program.set_hook('input_position', bound)
-
-
-# obligatory: these variables are used to fill the text fields on the right.
-VERTEX, FRAGMENT = program._generate_code()
- 
- 
- 
-'''
-),
 
 ('Introduction', '''
 """
@@ -117,7 +69,7 @@ func = Function("""
     }
     """)
 
-program.set_hook('input_position', func)
+program['input_position'] = func
 
 
 # obligatory: these variables are used to fill the text fields on the right.
@@ -255,7 +207,8 @@ program = CompositeProgram(vertex_shader, fragment_shader)
 
 # This function has the wrong signature to be attached to input_position.
 func = Function("""
-    vec4 flatten_pos(vec4 pos) {
+    vec4 flatten_pos() {
+        vec4 pos = $position_a;
         pos.z = 0;
         pos.w = 1;
         return pos;
@@ -264,9 +217,11 @@ func = Function("""
 
 # Because this function cannot be ised as a definition for input_position, 
 # we will need another function that wraps it, providing input to the pos argument.
-wrapper = func.wrap('input_position', pos=('attribute', 'position_u'))
+#wrapper = func.wrap('input_position', pos=('attribute', 'position_u'))
 
-program.set_hook('input_position', wrapper)
+func.set_value('position_a', ('attribute', 'vec4', None))
+
+program.set_hook('input_position', func)
 
 
 # obligatory: these variables are used to fill the text fields on the right.

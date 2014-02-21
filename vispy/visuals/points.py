@@ -63,8 +63,7 @@ class PointsVisual(Visual):
                                          fmain=self.FRAG_SHADER)
         
         # Attach transformation function
-        tr_bound = self.transform.wrap_map('map_local_to_nd')
-        self._program.set_hook('map_local_to_nd', tr_bound)
+        self._program['map_local_to_nd'] = self.transform.shader_map()
         
         
     def paint(self):
