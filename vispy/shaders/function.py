@@ -283,7 +283,7 @@ class Function(object):
 
         """
         var_names = self.template_vars.keys()
-        subs = {'func_name': name} if name is not None else {}
+        subs = {self.name[1:]: name} if name is not None else {}
         code = ""
         for var_name, var_spec in kwds.items():
             var_names.remove(var_name)
@@ -300,7 +300,14 @@ class Function(object):
             raise Exception('Unsubstituted template variables in wrap(%s): %s' % 
                             (name, var_names))
            
-        code += self._template.substitute(**subs)
+        try:
+            code += self._template.safe_substitute(**subs)
+        except KeyError as exc:
+            print("--------",self._template)
+            print(self.code)
+            print(kwds)
+            print(subs)
+            raise
         return Function(code, deps=self._deps[:])
 
 

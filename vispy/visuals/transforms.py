@@ -2,7 +2,7 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import numpy as np
 from ..shaders.composite import Function, FunctionChain
@@ -100,24 +100,24 @@ class Transform(object):
         """
         raise NotImplementedError()
 
-    def bind_map(self, name, var_prefix=None):
+    def wrap_map(self, name, var_prefix=None):
         """
         Return a Function that accepts only a single vec4 argument and defines
         new attributes / uniforms supplying the Function with any static input.
         """
         if var_prefix is None:
             var_prefix = name + "_"
-        return self._bind(name, var_prefix, imap=False)
+        return self._wrap(name, var_prefix, imap=False)
         
-    def bind_imap(self, name, var_prefix=None):
+    def wrap_imap(self, name, var_prefix=None):
         """
         see bind_map.
         """
         if var_prefix is None:
             var_prefix = name + "_"
-        return self._bind(name, var_prefix, imap=True)
+        return self._wrap(name, var_prefix, imap=True)
 
-    def _bind(self, name, var_prefix, imap):
+    def _wrap(self, name, var_prefix, imap):
         # The default implemntation assumes the following:
         # * The first argument to the GLSL function should not be bound
         # * All remaining arguments should be bound using self.property of the
@@ -134,7 +134,7 @@ class Transform(object):
             uniforms[var_name] = ('uniform', var_prefix+var_name)
         
         # bind to a new function + variables
-        bound = function.bind(name, **uniforms)
+        bound = function.wrap(name, **uniforms)
         
         # set uniform values based on properties having same name as 
         # bound argument
@@ -339,7 +339,7 @@ class ChainTransform(Transform):
                 break
             
 
-    def _bind(self, name, var_prefix, imap):
+    def _wrap(self, name, var_prefix, imap):
         if imap:
             transforms = self.transforms[::-1]
         else:
