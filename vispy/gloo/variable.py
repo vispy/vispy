@@ -203,7 +203,8 @@ class Uniform(Variable):
         #           return
 
         # Matrices (need a transpose argument)
-        if self._gtype in (gl.GL_FLOAT_MAT2, gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT4):
+        if self._gtype in (gl.GL_FLOAT_MAT2,
+                           gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT4):
             # OpenGL ES 2.0 does not support transpose
             transpose = False
             self._ufunction(self._handle, 1, transpose, self._data)
@@ -257,7 +258,8 @@ class Attribute(Variable):
         # Data is a tuple with size <= 4, we assume this designates a generate
         # vertex attribute.
         if (type(data) in (float, int) or
-                (type(data) in (tuple, list) and len(data) in [1, 2, 3, 4] and data[0] in (float, int))):
+            (type(data) in (tuple, list)
+             and len(data) in [1, 2, 3, 4] and data[0] in (float, int))):
 
             # Let numpy convert the data for us
             _, _, dtype = gl_typeinfo[self._gtype]
@@ -318,7 +320,7 @@ class Attribute(Variable):
             #offset = 0
             #stride = self._data.stride
             # Apply (first disable any previous VertexBuffer)
-            #gl.glVertexAttribPointer(self._loc, size, gtype, False, stride, data)
+            #gl.glVertexAttribPointer(self._loc, size, gtype,False,stride,data)
 
         # Regular vertex buffer
         elif self._handle >= 0:
