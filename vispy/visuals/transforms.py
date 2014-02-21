@@ -111,7 +111,7 @@ class Transform(object):
         
     def wrap_imap(self, name, var_prefix=None):
         """
-        see bind_map.
+        see wrap_map.
         """
         if var_prefix is None:
             var_prefix = name + "_"
@@ -350,9 +350,9 @@ class ChainTransform(Transform):
             
             tr_name = '%s_%d_%s' % (name, i, type(tr).__name__)
             if imap:
-                bound = tr.bind_imap(tr_name)
+                bound = tr.wrap_imap(tr_name)
             else:
-                bound = tr.bind_map(tr_name)
+                bound = tr.wrap_map(tr_name)
             bindings.append(bound)
             
         return FunctionChain(name, bindings)

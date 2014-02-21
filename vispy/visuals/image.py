@@ -132,7 +132,7 @@ class ImageVisual(Visual):
         #self.pos_input_component._activate(program)
         
         # Attach transformation function
-        tr_bound = self.transform.bind_map('map_local_to_nd')
+        tr_bound = self.transform.wrap_map('map_local_to_nd')
         program.set_hook('map_local_to_nd', tr_bound)
         
         # Activate color input function
