@@ -46,9 +46,12 @@ class Function(object):
         """
         self.set_code(code, name, args, rtype, variables)
         self._deps = deps[:] if deps is not None else []
-        self._program_values = {}
-        
-        self._callbacks = []
+        self._program_values = {}    # values for attribute/uniforms carried by this function;
+                                     # will be set on any CompositeProgram the function is
+                                     # attached to.
+        self._template_cache = None  # stores a string.Template object
+        self._callbacks = []         # Functions that should be installed on a
+                                     # particular CompositeProgram hook.
         
     @property
     def code(self):
@@ -81,7 +84,22 @@ class Function(object):
         """
         return self._callbacks
 
-    def set_code(self, code, name=None, args=None, rtype=None, variables=None):
+    @property
+    def is_anonymous(self):
+        """ Indicates whether this is an anonymous function (the function name
+        begins with "$". Anonymous functions must be wrapped before they can
+        be used in a program."""
+        return self.name.startswith('$')
+    
+    @property
+    def _template(self):
+        if self._template_cache is None:
+            self._template_cache = string.Template(Function.clean_code(self.code))
+        return self._template_cache
+        
+
+    def set_code(self, code, name=None, args=None, rtype=None, variables=None,
+                 template_vars=None):
         """
         Set the GLSL code for this function.
         
@@ -96,12 +114,36 @@ class Function(object):
         self._code = self.clean_code(code)
         if name is None:
             self.name, self.args, self.rtype = parsing.parse_function_signature(self.code)
+            
+            # If the function is anonymous (its name is a template variable)
+            # then we parse for more template variables
+            self.template_vars = {}
+            for var in parsing.find_template_variables(code):
+                if var == self.name:
+                    continue
+                
+                # split each typ_variable_name into its (typ, variable_name) parts
+                try:
+                    ind = var.index('_')
+                except ValueError:
+                    raise Exception('Template variables names must look like'
+                                    '"$typ_name". (offender is %s in %s)' % 
+                                    (var, self.name))
+                typ = var[1:ind]
+                # TODO: make sure typ is a valid GLSL type
+                name = var[ind+1:]
+                self.template_vars[name] = typ
+            
         else:
             self.name = name
             self.args = args
             self.rtype = rtype
+            self.template_vars = None
             
+        
+        # May bind both function arguments and template variables
         self._bindings = dict([(a[1], a[0]) for a in self.args])
+        self._bindings.update(self.template_vars)
             
         if variables is None:
             self.variables = parsing.find_program_variables(self.code)
@@ -109,8 +151,9 @@ class Function(object):
             self.variables = variables
             
         self._arg_types = dict([(a[1], a[0]) for a in self.args])
+        
 
-    def bind(self, name, **kwds):
+    def wrap(self, name=None, **kwds):
         """
         Return a new Function that wraps this function, using program 
         variables to supply input to some of its arguments.
@@ -147,7 +190,37 @@ class Function(object):
             }
         
         """
-        return BoundFunction(self, name, kwds)
+        if self.is_anonymous:
+            # Decide which kwds refer to arguments and which refer to template variables:
+            sub_kwds = {}
+            arg_kwds = {}
+            for vname,val in kwds.items():
+                if vname in self.template_vars:
+                    sub_kwds[vname] = val
+                else:
+                    arg_kwds[vname] = val
+            
+            # Do template substitutions now if necessary
+            if name is not None or len(sub_kwds) > 0:
+                wrapper = self._wrap_template(name, **kwds)
+            else:
+                wrapper = self
+            
+            # Bind arguments if necessary
+            if len(arg_kwds) > 0:
+                wrapper = BoundFunction(wrapper, name, arg_kwds)
+                
+            # Possibly this can be removed.. there may be situations when we expect
+            # that wrap() just returns self.
+            if wrapper is self:
+                raise Exception("Nothing to do for wrapper!")
+            
+            return wrapper
+        else:
+            # create a function wrapper
+            if name is None:
+                name = "$func_name" # no name specified; make the new function anonymous.
+            return BoundFunction(self, name, kwds)
      
     def __setitem__(self, var, value):
         """
@@ -193,6 +266,49 @@ class Function(object):
         code = "\n".join(lines)
         return code
         
+    def _wrap_template(self, name=None, **kwds):
+        """
+        Return a Function whose code is constructed by the following 
+        rules:
+        
+        * $func_name is replaced with the contents of the *name* argument,
+          if it is supplied.
+        * each keyword represents a program variable::
+            
+              template_name=('uniform|attribute|varying', type, name)
+            
+          The declaration for this variable will be automatically added to 
+          the returned function code, and $template_name will be substituted
+          with *name*.
+
+        """
+        var_names = self.template_vars.keys()
+        subs = {self.name[1:]: name} if name is not None else {}
+        code = ""
+        for var_name, var_spec in kwds.items():
+            var_names.remove(var_name)
+            template_var = self.template_vars[var_name] + "_" + var_name
+            subs[template_var] = var_spec[1]
+            if var_name in self.template_vars:
+                dtype = self.template_vars[var_name]
+                code += "%s %s %s;\n" % (var_spec[0], dtype, var_spec[1])
+            else:
+                raise KeyError("'%s' is not a template variable. Variables "
+                               "are: %s" % (var_name, self._template_vars.keys()))
+        
+        if var_names:
+            raise Exception('Unsubstituted template variables in wrap(%s): %s' % 
+                            (name, var_names))
+           
+        try:
+            code += self._template.safe_substitute(**subs)
+        except KeyError as exc:
+            print("--------",self._template)
+            print(self.code)
+            print(kwds)
+            print(subs)
+            raise
+        return Function(code, deps=self._deps[:])
 
 
 class BoundFunction(Function):
@@ -396,116 +512,81 @@ class FunctionChain(Function):
         return code
         
         
-class FunctionTemplate(object):
-    """
-    Template-based shader function generator. This allows to generate new 
-    Function instances with a custom function name and with any custom
-    program variable names substituted in. This has effectively the same
-    functionality as Function.bind(), but avoids the use of wrapper
-    functions.
+#class FunctionTemplate(object):
+    #"""
+    #Template-based shader function generator. This allows to generate new 
+    #Function instances with a custom function name and with any custom
+    #program variable names substituted in. This has effectively the same
+    #functionality as Function.bind(), but avoids the use of wrapper
+    #functions.
     
-    Arguments:
+    #Arguments:
     
-    template : str
-        A template string used to construct Function instances.
-        Uses string.Template formatting style ('$name' substitutions). 
-        Must contain $func_name in place of the function name, and $var_name for 
-        each variable declared in the *var_names* argument.
-    bindings : list
-        List of the variables that must be specified when calling bind(). Each
-        variable is given as "type var_name".
-    deps : list(Function)
-        List of Functions that are required by this function.
+    #template : str
+        #A template string used to construct Function instances.
+        #Uses string.Template formatting style ('$name' substitutions). 
+        #Must contain $func_name in place of the function name, and $var_name for 
+        #each variable declared in the *var_names* argument.
+    #bindings : list
+        #List of the variables that must be specified when calling bind(). Each
+        #variable is given as "type var_name".
+    #deps : list(Function)
+        #List of Functions that are required by this function.
         
-    See bind() for more information about the construction of Functions
-    from templates. 
+    #See bind() for more information about the construction of Functions
+    #from templates. 
 
-    Example that converts a vec2 input variable to vec4:
+    #Example that converts a vec2 input variable to vec4:
     
-        template = FunctionTemplate('''
-            vec4 $func_name() {
-                return vec4($input, 0, 1);
-            }
-        ''', var_names=['input'])
+        #template = FunctionTemplate('''
+            #vec4 $func_name() {
+                #return vec4($input, 0, 1);
+            #}
+        #''', var_names=['input'])
         
-        func = template.bind(name='my_function', 
-                             input=('uniform', 'vec2', 'my_input_uniform'))
+        #func = template.bind(name='my_function', 
+                             #input=('uniform', 'vec2', 'my_input_uniform'))
                              
-    If we include *func* in a CompositeProgram, it will generate the following 
-    code:
+    #If we include *func* in a CompositeProgram, it will generate the following 
+    #code:
     
-        uniform vec2 my_input_uniform;
-        vec4 my_function() {
-            return vec4(my_input_uniform, 0, 1);
-        }
+        #uniform vec2 my_input_uniform;
+        #vec4 my_function() {
+            #return vec4(my_input_uniform, 0, 1);
+        #}
         
-    """
-    def __init__(self, template, bindings=(), deps=()):
-        self.template = string.Template(Function.clean_code(template))
-        self.deps = deps[:]
-        self._bindings = {}
-        for b in bindings:
-            i = b.index(' ')
-            b = (b[:i], b[i+1:])
-            self._bindings[b[1]] = b[0]
+    #"""
+    #def __init__(self, template, bindings=(), deps=()):
+        #self.template = string.Template(Function.clean_code(template))
+        #self.deps = deps[:]
+        #self._bindings = {}
+        #for b in bindings:
+            #i = b.index(' ')
+            #b = (b[:i], b[i+1:])
+            #self._bindings[b[1]] = b[0]
         
-        ## Do a fake replacement and parse for function signature
-        ##  [removed; don't think this will be necessary..]
-        subs = dict([(n, n) for n in self.bindings.keys() + ['func_name']])
-        code = self.template.substitute(**subs)
-        name, self.args, self.rtype = parsing.parse_function_signature(code)
-        self.name = None
+        ### Do a fake replacement and parse for function signature
+        ###  [removed; don't think this will be necessary..]
+        #subs = dict([(n, n) for n in self.bindings.keys() + ['func_name']])
+        #code = self.template.substitute(**subs)
+        #name, self.args, self.rtype = parsing.parse_function_signature(code)
+        #self.name = None
 
-    @property
-    def bindings(self):
-        return self._bindings.copy()
+    #@property
+    #def bindings(self):
+        #return self._bindings.copy()
         
-    def bind(self, name, **kwds):
-        """
-        Return a Function whose code is constructed by the following 
-        rules:
-        
-        * $func_name is replaced with the contents of the *name* argument
-        * each keyword represents a program variable:
-            
-            template_name=('uniform|attribute|varying', type, name)
-            
-          The declaration for this variable will be automatically added to 
-          the returned function code, and $template_name will be substituted
-          with *name*.
-
-        """
-        var_names = self._bindings.keys()
-        subs = {'func_name': name}
-        code = ""
-        for var_name, var_spec in kwds.items():
-            var_names.remove(var_name)
-            subs[var_name] = var_spec[1]
-            if var_name in self._bindings:
-                dtype = self._bindings[var_name]
-                code += "%s %s %s;\n" % (var_spec[0], dtype, var_spec[1])
-            else:
-                raise KeyError("Variable name '%s' is not bindable. Bindings "
-                               "are: %s" % (var_name, self._bindings.keys()))
-        
-        if var_names:
-            raise Exception('Unsubstituted template variables in bind(%s): %s' % 
-                            (name, var_names))
-           
-        code += self.template.substitute(**subs)
-        return Function(code, deps=self.deps[:])
 
 
 
-class FragmentFunction(object):
+class FragmentFunction(Function):
     """
     Function meant to be used in fragment shaders when some supporting 
     code must also be introduced to a vertex shader chain, usually to
     initialize one or more varyings.
     
     Parameters:
-        frag_func : Function or FunctionTemplate
-            To be bound in the fragment shader
+        code : Function code to be used in the fragment shader
         vert_func : Function or FunctionTemplate
             To be included in the vertex shader chain given by *vert_hook*
         link_vars : list of tuples
@@ -514,32 +595,35 @@ class FragmentFunction(object):
         vert_hook : str
             Name of the vertex shader function chain to which vert_callback 
             should be added. Default is 'vert_post_hook'.
+        **kwds : passed to Function.__init__
     
     """
-    def __init__(self, fragment_func, vertex_func, 
-                 link_vars, vert_hook='vert_post_hook'):
-        self.frag_func = fragment_func
+    def __init__(self, code, vertex_func, 
+                 link_vars, vert_hook='vert_post_hook', **kwds):
+        
+        super(FragmentFunction, self).__init__(code, **kwds)
+        
         self.vert_func = vertex_func
         self.link_vars = link_vars
         self._vert_hook = vert_hook
         
         for vname, fname in link_vars:
-            vtype = vertex_func.bindings.get(vname, None)
-            ftype = fragment_func.bindings.get(fname, None)
+            vtype = self.vert_func.bindings.get(vname, None)
+            ftype = self.bindings.get(fname, None)
             if vtype is None:
                 raise NameError("Variable name '%s' is not bindable in vertex "
                                 "shader. Names are: %s" %
-                                (vname, vertex_func.bindings.keys()))
+                                (vname, self.vert_func.bindings.keys()))
             if ftype is None:
                 raise NameError("Variable name '%s' is not bindable in fragment"
                                 " shader. Names are: %s" %
-                                (fname, fragment_func.bindings.keys()))
+                                (fname, self.bindings.keys()))
             if vtype != ftype:
                 raise TypeError("Linked variables '%s' and '%s' must have the"
                                 "same type. (types are %s, %s)" % 
                                 (vname, fname, vtype, ftype))
 
-    def bind(self, name, **kwds):
+    def wrap(self, name, **kwds):
         """
         * bind both this function and its vertex shader component to new functions
         * automatically bind varyings        
@@ -554,7 +638,7 @@ class FragmentFunction(object):
         # add varyings to each
         for vname, fname in self.link_vars:
             # This is likely to be a unique name...
-            var_type = self.vert_func.bindings[vname]
+            var_type = self.bindings[fname]
             var_name = "%s_%s_%s_var" % (name, vname, fname)
             var = ('varying', var_name)
             vert_vars[vname] = var
@@ -564,7 +648,7 @@ class FragmentFunction(object):
         # which variable goes to which function, or should this be made more
         # explicit?
         for bind_name in kwds:
-            if bind_name not in frag_vars and bind_name in self.frag_func.bindings:
+            if bind_name not in frag_vars and bind_name in self.bindings:
                 frag_vars[bind_name] = kwds[bind_name]
             elif bind_name in self.vert_func.bindings:
                 vert_vars[bind_name] = kwds[bind_name]
@@ -575,11 +659,11 @@ class FragmentFunction(object):
         
         
         # bind both functions
-        frag_bound = self.frag_func.bind(name, **frag_vars)
+        frag_bound = super(FragmentFunction, self).wrap(name, **frag_vars)
         
         # also likely to be a unique name...
         vert_name = name + "_support"
-        vert_bound = self.vert_func.bind(vert_name, **vert_vars)
+        vert_bound = self.vert_func.wrap(vert_name, **vert_vars)
         
         frag_bound._callbacks.append((self._vert_hook, vert_bound))
         

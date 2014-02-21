@@ -9,7 +9,7 @@ import numpy as np
 from .. import gloo
 from ..gloo import gl
 from . import Visual, VisualComponent
-from ..shaders.composite import (Function, FunctionTemplate, CompositeProgram, 
+from ..shaders.composite import (Function, CompositeProgram, 
                                  FragmentFunction, FunctionChain)
 from .transforms import NullTransform
 
@@ -54,7 +54,7 @@ uniform vec2 image_size;
 varying vec2 image_pos;
 
 void main(void) {
-    gl_FragColor = vec4(1,1,1,1); //texture2D(tex, image_pos/image_size);
+    gl_FragColor = texture2D(tex, image_pos/image_size);
     
     frag_post_hook();
 }
@@ -132,7 +132,7 @@ class ImageVisual(Visual):
         #self.pos_input_component._activate(program)
         
         # Attach transformation function
-        tr_bound = self.transform.bind_map('map_local_to_nd')
+        tr_bound = self.transform.wrap_map('map_local_to_nd')
         program.set_hook('map_local_to_nd', tr_bound)
         
         # Activate color input function

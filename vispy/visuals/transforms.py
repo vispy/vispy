@@ -2,10 +2,10 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import print_function, division, absolute_import
+from __future__ import division
 
 import numpy as np
-from ..shaders.composite import Function, FunctionChain, FunctionTemplate
+from ..shaders.composite import Function, FunctionChain
 from ..util.ordereddict import OrderedDict
 from ..util import transforms
 
@@ -58,7 +58,7 @@ class Transform(object):
     an object through the forward or inverse transformation, respectively.
     
     The two class variables GLSL_map and GLSL_imap are instances of 
-    shaders.composite.Function or shaders.composite.FunctionTemplate that
+    shaders.composite.Function that
     define the forward- and inverse-mapping GLSL function code.
     
     Optionally, an inverse() method returns a new Transform performing the
@@ -100,24 +100,24 @@ class Transform(object):
         """
         raise NotImplementedError()
 
-    def bind_map(self, name, var_prefix=None):
+    def wrap_map(self, name, var_prefix=None):
         """
         Return a Function that accepts only a single vec4 argument and defines
         new attributes / uniforms supplying the Function with any static input.
         """
         if var_prefix is None:
             var_prefix = name + "_"
-        return self._bind(name, var_prefix, imap=False)
+        return self._wrap(name, var_prefix, imap=False)
         
-    def bind_imap(self, name, var_prefix=None):
+    def wrap_imap(self, name, var_prefix=None):
         """
-        see bind_map.
+        see wrap_map.
         """
         if var_prefix is None:
             var_prefix = name + "_"
-        return self._bind(name, var_prefix, imap=True)
+        return self._wrap(name, var_prefix, imap=True)
 
-    def _bind(self, name, var_prefix, imap):
+    def _wrap(self, name, var_prefix, imap):
         # The default implemntation assumes the following:
         # * The first argument to the GLSL function should not be bound
         # * All remaining arguments should be bound using self.property of the
@@ -134,7 +134,7 @@ class Transform(object):
             uniforms[var_name] = ('uniform', var_prefix+var_name)
         
         # bind to a new function + variables
-        bound = function.bind(name, **uniforms)
+        bound = function.wrap(name, **uniforms)
         
         # set uniform values based on properties having same name as 
         # bound argument
@@ -339,7 +339,7 @@ class ChainTransform(Transform):
                 break
             
 
-    def _bind(self, name, var_prefix, imap):
+    def _wrap(self, name, var_prefix, imap):
         if imap:
             transforms = self.transforms[::-1]
         else:
@@ -350,9 +350,9 @@ class ChainTransform(Transform):
             
             tr_name = '%s_%d_%s' % (name, i, type(tr).__name__)
             if imap:
-                bound = tr.bind_imap(tr_name)
+                bound = tr.wrap_imap(tr_name)
             else:
-                bound = tr.bind_map(tr_name)
+                bound = tr.wrap_map(tr_name)
             bindings.append(bound)
             
         return FunctionChain(name, bindings)
@@ -415,8 +415,8 @@ class ChainTransform(Transform):
 class NullTransform(Transform):
     """ Transform having no effect on coordinates (identity transform).
     """
-    GLSL_map = FunctionTemplate("vec4 $func_name(vec4 pos) {return pos;}")
-    GLSL_imap = FunctionTemplate("vec4 $func_name(vec4 pos) {return pos;}")
+    GLSL_map = Function("vec4 $func_name(vec4 pos) {return pos;}")
+    GLSL_imap = Function("vec4 $func_name(vec4 pos) {return pos;}")
 
     def map(self, obj):
         return obj
@@ -437,17 +437,17 @@ class NullTransform(Transform):
 class STTransform(Transform):
     """ Transform performing only scale and translate, in that order.
     """
-    GLSL_map = FunctionTemplate("""
+    GLSL_map = Function("""
         vec4 $func_name(vec4 pos) {
-            return (pos * $scale) + $translate;
+            return (pos * $vec4_scale) + $vec4_translate;
         }
-    """, bindings=['vec4 scale', 'vec4 translate'])
+    """)
     
-    GLSL_imap = FunctionTemplate("""
+    GLSL_imap = Function("""
         vec4 $func_name(vec4 pos) {
-            return (pos - $translate) / $scale;
+            return (pos - $vec4_translate) / $vec4_scale;
         }
-    """, bindings=['vec4 scale', 'vec4 translate'])
+    """)
     
     def __init__(self, scale=None, translate=None):
         super(STTransform, self).__init__()
@@ -520,17 +520,17 @@ class STTransform(Transform):
 
 
 class AffineTransform(Transform):
-    GLSL_map = FunctionTemplate("""
+    GLSL_map = Function("""
         vec4 $func_name(vec4 pos) {
-            return $matrix * pos;
+            return $mat4_matrix * pos;
         }
-    """, bindings=['mat4 matrix'])
+    """)
     
-    GLSL_imap = FunctionTemplate("""
+    GLSL_imap = Function("""
         vec4 $func_name(vec4 pos) {
-            return $inv_matrix * pos;
+            return $mat4_inv_matrix * pos;
         }
-    """, bindings=['mat4 inv_matrix'])
+    """)
     
     def __init__(self, matrix=None):
         super(AffineTransform, self).__init__()
@@ -728,7 +728,7 @@ class PolarTransform(Transform):
     and `y = r*sin(theta)`.
     
     """
-    GLSL_map = FunctionTemplate("""
+    GLSL_map = Function("""
         vec4 $func_name(vec4 pos) {
             return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1);
         }

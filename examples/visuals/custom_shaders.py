@@ -11,7 +11,7 @@ from vispy.gloo import gl
 import vispy.gloo as gloo
 from vispy.visuals.line import LineVisual
 from vispy.visuals.transforms import Transform, STTransform, arg_to_array
-from vispy.shaders.composite import FragmentFunction, FunctionTemplate, Function
+from vispy.shaders.composite import FragmentFunction, Function
 
 #import pyqtgraph as pg
 #c = pg.dbg()
@@ -34,11 +34,10 @@ class SineTransform(Transform):
     """
     Add sine wave to y-value for wavy effect.
     """
-    GLSL_map = FunctionTemplate("""
+    GLSL_map = Function("""
         vec4 $func_name(vec4 pos) {
             return vec4(pos.x, pos.y + sin(pos.x), pos.z, 1);
-        }
-        """)
+        }""")
 
     @arg_to_array
     def map(self, coords):
@@ -55,19 +54,19 @@ class SineTransform(Transform):
 
 # A custom fragment shader
 Dasher = FragmentFunction(
-    fragment_func = FunctionTemplate("""
+    """
     void $func_name() {
-        float mod = $distance / $dash_len;
+        float mod = $float_distance / $float_dash_len;
         mod = mod - int(mod);
         gl_FragColor.a = 0.5 * sin(mod*3.141593*2) + 0.5;
     }
-    """, bindings=['float distance', 'float dash_len']),
+    """,
     
-    vertex_func=FunctionTemplate("""
+    vertex_func=Function("""
     void $func_name() {
-        $output = $distance_attr;
+        $float_output = $float_distance_attr;
     }
-    """, bindings=['float distance_attr', 'float output']),
+    """),
     
     link_vars=[('output', 'distance')],
     vert_hook='vert_post_hook')
@@ -88,7 +87,7 @@ class Canvas(vispy.app.Canvas):
         dist[0] = 0.0
         dist[1:] = np.cumsum(diff)
         
-        dasher = Dasher.bind(name="fragment_dasher", 
+        dasher = Dasher.wrap(name="fragment_dasher", 
                              distance_attr=('attribute', 'distance_attr'),
                              dash_len=('uniform', 'dash_len_unif'))
         dasher.fragment_support['distance_attr'] = gloo.VertexBuffer(dist)

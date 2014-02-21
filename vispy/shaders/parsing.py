@@ -7,35 +7,39 @@ from __future__ import print_function, division, absolute_import
 import re
 
 # regular expressions for parsing GLSL
-re_type = r'(void|int|float|vec2|vec3|vec4|mat2|mat3|mat4)'
-re_identifier = r'([a-zA-Z_][\w_]*)'
+re_type = r'(?:void|int|float|vec2|vec3|vec4|mat2|mat3|mat4)'
+re_identifier = r'(?:[a-zA-Z_][\w_]*)'
+
+# template variables like
+#     $func_name
+re_template_var = r"(?:(?:\$" + re_identifier + ")|(?:\$\{" + re_identifier + "\}))"
+
+# function names may be either identifier or template var
+re_func_name = r"(" + re_identifier + "|" + re_template_var + ")"
 
 # type and identifier like "vec4 var_name"
-re_declaration = "(?:" + re_type + "\s+" + re_identifier + ")"
+re_declaration = "(?:(" + re_type + ")\s+(" + re_identifier + "))"
 
 # qualifier, type, and identifier like "uniform vec4 var_name"
-re_prog_var_declaration = "(?:(uniform|attribute|varying)\s*" + re_type + "\s+" + re_identifier + ")"
+re_prog_var_declaration = "(?:(uniform|attribute|varying)\s*(" + re_type + ")\s+(" + re_identifier + "))"
 
 # list of variable declarations like "vec4 var_name, float other_var_name"
 re_arg_list = "(" + re_declaration + "(?:,\s*" + re_declaration + ")*)?"
 
 # function declaration like "vec4 function_name(float x, float y)"
-re_func_decl = re_type + "\s+" + re_identifier + "\((void|" + re_arg_list + ")\)"
+re_func_decl = "(" + re_type + ")\s+" + re_func_name + "\((void|" + re_arg_list + ")\)"
 
 # anonymous variable declarations may or may not include a name:
 #  "vec4" or "vec4 var_name"
-re_anon_decl = "(?:" + re_type + "(?:\s+" + re_identifier + ")?)"
+re_anon_decl = "(?:(" + re_type + ")(?:\s+" + re_identifier + ")?)"
 
 # list of anonymous declarations 
 re_anon_arg_list = "(" + re_anon_decl + "(?:,\s*" + re_anon_decl + ")*)?"
 
 # function prototype declaration like
 #    "vec4 function_name(float, float);"
-re_func_prot = re_type + "\s+" + re_identifier + "\((void|" + re_anon_arg_list + ")\)\s*;"
+re_func_prot = "(" + re_type + ")\s+" + re_func_name + "\((void|" + re_anon_arg_list + ")\)\s*;"
 
-# template variables like
-#     $func_name
-re_template_var = r"(?:(?:\$" + re_identifier + ")|(?:\$\{" + re_identifier + "\}))"
 
 
 
