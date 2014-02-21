@@ -100,7 +100,9 @@ void main()
 }
 """
 
-# Hack
+# HACK: True OpenGL ES does not need to enable point sprite and does not define
+# these two constants. Desktop OpenGL needs to enable these two modes but we do
+# not have these two constants because our GL namespace pretends to be ES.
 GL_VERTEX_PROGRAM_POINT_SIZE = 34370
 GL_POINT_SPRITE = 34913
 
@@ -188,7 +190,7 @@ class Canvas(app.Canvas):
 
 
 if __name__ == '__main__':
-    c = Canvas(show=True,size=(600,600),
+    c = Canvas(show=True, size=(600, 600),
                title="Atom [zoom with mouse scroll]")
     # c.show()
     app.run()
