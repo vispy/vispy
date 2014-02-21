@@ -124,19 +124,19 @@ class Shader(GLObject):
 
         # Nvidia
         # 0(7): error C1008: undefined variable "MV"
-        m = re.match(r'(\d+)\((\d+)\):\s(.*)', error)
+        m = re.match(b'(\d+)\((\d+)\):\s(.*)', error)
         if m:
             return int(m.group(2)), m.group(3)
 
         # ATI / Intel
         # ERROR: 0:131: '{' : syntax error parse error
-        m = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error)
+        m = re.match(b'ERROR:\s(\d+):(\d+):\s(.*)', error)
         if m:
             return int(m.group(2)), m.group(3)
 
         # Nouveau
         # 0:28(16): error: syntax error, unexpected ')', expecting '('
-        m = re.match(r'(\d+):(\d+)\((\d+)\):\s(.*)', error)
+        m = re.match(b'(\d+):(\d+)\((\d+)\):\s(.*)', error)
         if m:
             return int(m.group(2)), m.group(4)
 
@@ -178,8 +178,8 @@ class Shader(GLObject):
         """ Shader uniforms obtained from source code """
 
         uniforms = []
-        regex = re.compile("""\s*uniform\s+(?P<type>\w+)\s+"""
-                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
+        regex = re.compile(b"""\s*uniform\s+(?P<type>\w+)\s+"""
+                           b"""(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
         for m in re.finditer(regex, self._code):
             size = -1
             gtype = Shader._gtypes[m.group('type')]
@@ -198,8 +198,8 @@ class Shader(GLObject):
         """ Shader attributes obtained from source code """
 
         attributes = []
-        regex = re.compile("""\s*attribute\s+(?P<type>\w+)\s+"""
-                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
+        regex = re.compile(b"""\s*attribute\s+(?P<type>\w+)\s+"""
+                           b"""(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
         for m in re.finditer(regex, self._code):
             size = -1
             gtype = Shader._gtypes[m.group('type')]
