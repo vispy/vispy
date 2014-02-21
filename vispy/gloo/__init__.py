@@ -52,5 +52,5 @@ from . import gl                                 # noqa
 from .globject import GLObject                   # noqa
 from .buffer import VertexBuffer, IndexBuffer    # noqa
 from .texture import Texture1D, Texture2D        # noqa
-from .shader import VertexShader, FragmentShader # noqa
+from .shader import VertexShader, FragmentShader  # noqa
 from .program import Program                     # noqa
