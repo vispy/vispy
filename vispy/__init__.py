@@ -32,6 +32,6 @@ __version__ = '0.2.1'
 
 
 from .util import (dataio, parse_command_line_arguments, config,  # noqa
-                   set_log_level, keys)  # noqa
+                   set_log_level, keys, sys_info)  # noqa
 
 parse_command_line_arguments()
