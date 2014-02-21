@@ -54,7 +54,7 @@ uniform vec2 image_size;
 varying vec2 image_pos;
 
 void main(void) {
-    gl_FragColor = texture2D(tex, image_pos/image_size);
+    gl_FragColor = vec4(1,1,1,1); //texture2D(tex, image_pos/image_size);
     
     frag_post_hook();
 }

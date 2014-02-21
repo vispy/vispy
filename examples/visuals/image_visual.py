@@ -9,7 +9,7 @@ Simple demonstration of ImageVisual.
 import numpy as np
 import vispy.app
 from vispy.gloo import gl
-from vispy.visuals.all import ImageVisual
+from vispy.visuals import ImageVisual
 from vispy.visuals.transforms import STTransform
 
 image = np.random.normal(size=(100, 100, 3), loc=128, scale=50).astype(np.ubyte)
