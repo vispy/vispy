@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_array_equal
+
 from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
@@ -100,7 +100,7 @@ def _test_application(backend):
 
         # screenshots
         #ss = _screenshot()
-        #assert_array_equal(ss.shape[2], 3)  # XXX other dimensions not correct?
+        #assert_array_equal(ss.shape[2], 3) # XXX other dimensions not correct?
         # XXX it would be good to do real checks, but sometimes the
         # repositionings don't "take" (i.e., lead to random errors)
         #assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
@@ -160,7 +160,8 @@ def _test_application(backend):
         program = Program(vert, frag)
         program.bind(VertexBuffer(data))
         program['u_model'] = np.eye(4, dtype=np.float32)
-        program.draw(gl.GL_POINTS)  # different codepath if no call to activate()
+        # different codepath if no call to activate()
+        program.draw(gl.GL_POINTS)
         subset = IndexBuffer(np.arange(10, dtype=np.uint32))
         program.draw(gl.GL_POINTS, subset)
 

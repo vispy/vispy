@@ -9,7 +9,7 @@ import numpy as np
 from . import gl
 from .globject import GLObject
 from .buffer import VertexBuffer
-from .texture import Texture1D, Texture2D
+from .texture import Texture2D
 from ..util import logger
 
 

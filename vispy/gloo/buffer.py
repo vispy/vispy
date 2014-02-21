@@ -623,10 +623,10 @@ class VertexBuffer(DataBuffer):
                     count = 1
                 if btype not in [np.int8,  np.uint8,  np.float16,
                                  np.int16, np.uint16, np.float32]:
-                    msg = "Data basetype not allowed for VertexBuffer/%s" % name
+                    msg = "Data basetype not allowed for Buffer/%s" % name
                     raise TypeError(msg)
                 elif count not in [1, 2, 3, 4]:
-                    msg = "Data basecount not allowed for VertexBuffer/%s" % name
+                    msg = "Data basecount not allowed for Buffer/%s" % name
                     raise TypeError(msg)
 
 
