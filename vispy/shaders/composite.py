@@ -162,6 +162,12 @@ class CompositeProgram(Program):
             
         self._install_dep_callbacks(function)
             
+    def __setitem__(self, name, value):
+        if name in self._hooks:
+            self.set_hook(name, value)
+        else:
+            super(CompositeProgram, self).__setitem__(name, value)
+
         
     def set_hook(self, hook_name, function):
         """

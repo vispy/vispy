@@ -158,7 +158,7 @@ class LineVisual(Visual):
         
         # Attach transformation function
         tr_bound = self.transform.wrap_map('map_local_to_nd')
-        program.set_hook('map_local_to_nd', tr_bound)
+        program['map_local_to_nd'] = tr_bound
         
         # Activate color input function
         self.color_input_component._activate(program)
@@ -224,7 +224,7 @@ class LinePosInputComponent(VisualComponent):
                         xyz_pos=('attribute', 'input_xyz_pos'))
             func['input_xyz_pos'] = self.visual._vbo
             
-        program.set_hook('local_position', func)
+        program['local_position'] = func
 
 
 
@@ -270,5 +270,5 @@ class LineColorInputComponent(VisualComponent):
                                              rgba=('uniform', 'input_color'))
             func['input_color'] = np.array(self.visual._opts['color'])
             
-        program.set_hook('frag_color', func)
+        program['frag_color'] = func
     
