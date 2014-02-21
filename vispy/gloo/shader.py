@@ -1,222 +1,109 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team. All rights reserved.
-# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
+# Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
-"""
-VertexShader and FragmentShader classes.
-
-These classes are almost never created explicitly but are created implicitly
-from within a Program object.
-
-Example
--------
-
-  vert = "some code"
-  frag = "some code"
-
-  program = Program(vert,frag)
-"""
-from __future__ import division
-
 import re
-import os
-# from OpenGL import error
+import os.path
+import numpy as np
 
-from ..util import is_string
-from . import gl
-from . import GLObject
-
-
-# ------------------------------------------------------- class ShaderError ---
-class ShaderError(RuntimeError):
-
-    """ Shader error class """
-    pass
+import .gl
+from .globject import GLObject
+from .debug import log
 
 
-# ------------------------------------------------------------ class Shader ---
+
+# ------------------------------------------------------------ Shader class ---
 class Shader(GLObject):
+    """Abstract shader class."""
 
-    """ Abstract shader class.
-    """
-
-    # Conversion of known uniform and attribute types to GL constants
     _gtypes = {
-        'float': gl.GL_FLOAT,
-        'vec2': gl.GL_FLOAT_VEC2,
-        'vec3': gl.GL_FLOAT_VEC3,
-        'vec4': gl.GL_FLOAT_VEC4,
-        'int': gl.GL_INT,
-        'ivec2': gl.GL_INT_VEC2,
-        'ivec3': gl.GL_INT_VEC3,
-        'ivec4': gl.GL_INT_VEC4,
-        'bool': gl.GL_BOOL,
-        'bvec2': gl.GL_BOOL_VEC2,
-        'bvec3': gl.GL_BOOL_VEC3,
-        'bvec4': gl.GL_BOOL_VEC4,
-        'mat2': gl.GL_FLOAT_MAT2,
-        'mat3': gl.GL_FLOAT_MAT3,
-        'mat4': gl.GL_FLOAT_MAT4,
-        'sampler2D': gl.GL_SAMPLER_2D,
-        # todo: !
-        #'sampler3D': gl.ext.GL_SAMPLER_3D,
-        'samplerCube': gl.GL_SAMPLER_CUBE}
+        'float':       gl.GL_FLOAT,
+        'vec2':        gl.GL_FLOAT_VEC2,
+        'vec3':        gl.GL_FLOAT_VEC3,
+        'vec4':        gl.GL_FLOAT_VEC4,
+        'int':         gl.GL_INT,
+        'ivec2':       gl.GL_INT_VEC2,
+        'ivec3':       gl.GL_INT_VEC3,
+        'ivec4':       gl.GL_INT_VEC4,
+        'bool':        gl.GL_BOOL,
+        'bvec2':       gl.GL_BOOL_VEC2,
+        'bvec3':       gl.GL_BOOL_VEC3,
+        'bvec4':       gl.GL_BOOL_VEC4,
+        'mat2':        gl.GL_FLOAT_MAT2,
+        'mat3':        gl.GL_FLOAT_MAT3,
+        'mat4':        gl.GL_FLOAT_MAT4,
+        'sampler1D':   gl.GL_SAMPLER_1D,
+        'sampler2D':   gl.GL_SAMPLER_2D,
+    }
+
 
     def __init__(self, target, code=None):
         """
-        Create the shader and store code.
-        """
-
-        GLObject.__init__(self)
-
-        # Check and store target
-        if target not in [gl.GL_VERTEX_SHADER, gl.GL_FRAGMENT_SHADER]:
-            raise ValueError('Target must be vertex or fragment shader.')
-        self._target = target
-
-        # For auto-enabling point sprites
-        self._need_enabled = set()
-
-        # Set code
-        self._code = None
-        self._source = None
-        if code is not None:
-            self.set_code(code)
-
-    def __repr__(self):
-        return "<%s %d (%s)>" % (self.__class__.__name__,
-                                 self._id, self._source)
-
-    def set_code(self, code, source=None):
-        """ Set the code for this shader.
+        Initialize the shader and get code if possible.
 
         Parameters
         ----------
-        code : str
-            The GLSL source code, or a filename that contains the code.
-        source : str
-            A specifier where the code came from. If not given,
-            "<string>" is used, or the filename where the code is loaded
-            from. Optional.
+
+        code: str
+            code can be a filename or the actual code
         """
 
-        if not is_string(code):
-            raise TypeError('Code must be a string (%s)' % type(code))
+        GLObject.__init__(self)
+        if target not in [gl.GL_VERTEX_SHADER, gl.GL_FRAGMENT_SHADER]:
+            raise ValueError("Shader target must be vertex or fragment")
 
-        # Set code and source
-        if os.path.isfile(code):
-            with open(code, 'rb') as file:
-                self._code = file.read().decode('utf-8')
-                self._source = os.path.basename(code)
-        else:
-            self._code = code
-            self._source = '<string>'
+        self._target = target
+        self._code = None
+        self._source = None
+        if code is not None:
+            self.code = code
 
-        # Set given source?
-        if source is not None:
-            if not is_string(source):
-                raise TypeError('Source must be a string (%s)' % type(source))
-            self._source = source
-
-        # Set flags
-        self._need_update = True
 
     @property
     def code(self):
-        """ The GLSL code of this shader.
-        """
+        """ Shader source code """
         return self._code
+
+    @code.setter
+    def code(self, code):
+        """ Shader source code """
+        if os.path.exists(code):
+            with open(code) as file:
+                self._code = file.read()
+                self._source = os.path.basename(code)
+        else:
+            self._code   = code
+            self._source = '<string>'
+        self._need_update = True
+
 
     @property
     def source(self):
-        """ The source of the code for this shader
-        (as in where it came from, not the source code).
-        """
+        """ Shader source (string or filename) """
         return self._source
 
-    def _get_attributes(self):
-        """
-        Extract attributes (name and type) from code.
-        """
-
-        attributes = []
-        regex = re.compile("""\s*attribute\s+(?P<type>\w+)\s+"""
-                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
-        for m in re.finditer(regex, self._code):
-            size = -1
-            gtype = Shader._gtypes[m.group('type')]
-            if m.group('size'):
-                size = int(m.group('size'))
-            if size >= 1:
-                for i in range(size):
-                    name = '%s[%d]' % (m.group('name'), i)
-                    attributes.append((name, gtype))
-            else:
-                attributes.append((m.group('name'), gtype))
-
-        return attributes
-
-    def _get_uniforms(self):
-        """
-        Extract uniforms (name and type) from code.
-        """
-
-        uniforms = []
-        regex = re.compile("""\s*uniform\s+(?P<type>\w+)\s+"""
-                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
-        for m in re.finditer(regex, self._code):
-            size = -1
-            gtype = Shader._gtypes[m.group('type')]
-            if m.group('size'):
-                size = int(m.group('size'))
-            if size >= 1:
-                for i in range(size):
-                    name = '%s[%d]' % (m.group('name'), i)
-                    uniforms.append((name, gtype))
-            else:
-                uniforms.append((m.group('name'), gtype))
-
-        return uniforms
 
     def _create(self):
-        """
-        Create the shader.
-        """
-        self._handle = gl.glCreateShader(self._target)
+        """ Compile the source and checks eveyrthing's ok """
 
-    def _delete(self):
-        """
-        Delete the shader.
-        """
-        gl.glDeleteShader(self._handle)
-
-    def _update(self):
-        """
-        Compile the shader.
-        """
-
-        # Check if we have source code
+        # Check if we have something to compile
         if not self._code:
-            raise ShaderError('No source code given for shader.')
+            raise RuntimeError("No code has been given")
 
-        # Set source
-        # Note, some implementations cannot deal with a sequence of chars
-        #gl.glShaderSource(self._handle, self._code)
-        #gl.glShaderSource(self._handle, [self._code])
+        # Check that shader object has been created
+        if self._handle <= 0:
+            self._handle = gl.glCreateShader(self._target)
+            if self._handle <= 0:
+                raise RuntimeError("Cannot create shader object")
 
-        # More compativle variant (also deals with above chars problem)
-        self._need_enabled = gl.glShaderSource_compat(self._handle, self._code)
+        # Set shader source
+        gl.glShaderSource(self._handle, self._code)
 
-        # Compile the shader
-        try:
-            gl.glCompileShader(self._handle)
-        except Exception as errors:  # error.GLError as errors:
-            # todo: ...
-            errormsg = self._get_error(str(errors), 4)
-            raise ShaderError(("Error compiling %r:\n" % self) + str(errors))
+        log("GPU: Creating shader")
 
-        # Check the compile status
+        # Actual compilation
+        gl.glCompileShader(self._handle)
         status = gl.glGetShaderParameter(self._handle, gl.GL_COMPILE_STATUS)
         if not status:
             errors = gl.glGetShaderInfoLog(self._handle)
@@ -224,108 +111,139 @@ class Shader(GLObject):
             errormsg = str(errors)+str(self._handle)
             raise ShaderError("Error compiling %r:\n" % self + errormsg)
 
+    def _delete(self):
+        """ Delete shader from GPU memory (if it was present). """
+
+        gl.glDeleteShader(self._handle)
+
     def _parse_error(self, error):
-        """Parse a GLSL error to extract the line number and description
+        """
+        Parses a single GLSL error and extracts the line number and error
+        description.
 
         Parameters
         ----------
         error : str
-            An error string as returned by the compilation process
+            An error string as returned byt the compilation process
         """
 
         # Nvidia
         # 0(7): error C1008: undefined variable "MV"
-        match = re.match(r'(\d+)\((\d+)\)\s*:\s(.*)', error)
-        if match:
-            return int(match.group(2)), match.group(3)
+        m = re.match(r'(\d+)\((\d+)\):\s(.*)', error )
+        if m: return int(m.group(2)), m.group(3)
 
         # ATI / Intel
         # ERROR: 0:131: '{' : syntax error parse error
-        match = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error)
-        if match:
-            return int(match.group(2)), match.group(3)
+        m = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error )
+        if m: return int(m.group(2)), m.group(3)
 
         # Nouveau
         # 0:28(16): error: syntax error, unexpected ')', expecting '('
-        match = re.match(r'(\d+):(\d+)\((\d+)\):\s(.*)', error)
-        if match:
-            return int(match.group(2)), match.group(4)
+        m = re.match( r'(\d+):(\d+)\((\d+)\):\s(.*)', error )
+        if m: return int(m.group(2)), m.group(4)
 
-        # Other ...
-        return None, error
+        raise ValueError('Unknown GLSL error format')
 
-    def _get_error(self, errors, indentation=0):
-        """Get error and show the faulty line + some context
+
+    def _print_error(self, error, lineno):
+        """
+        Print error and show the faulty line + some context
 
         Parameters
         ----------
         error : str
-            An error string as returned by the compilation process
-        indentation : int
-            Number of spaces to indent the found error.
+            An error string as returned byt the compilation process
+
+        lineno: int
+            Line where error occurs
         """
-        # Init
-        if not is_string(errors):
-            errors = errors.decode('utf-8', 'replace')
-        results = []
-        lines = None
-        if self._code:
-            lines = [line.strip() for line in self._code.split('\n')]
+        OFF = '\033[0m'
+        BOLD = '\033[1m'
+        BLACK = '\033[30m'
+        RED = '\033[31m'
+        lines = self._code.split('\n')
+        start = max(0,lineno-2)
+        end = min(len(lines),lineno+1)
 
-        for error in errors.split('\n'):
-            # Strip; skip empy lines
-            error = error.strip()
-            if not error:
-                continue
-            # Separate line number from description (if we can)
-            linenr, error = self._parse_error(error)
-            if None in (linenr, lines):
-                results.append('%s' % error)
+        print('%sError in %s%s' % (BOLD, repr(self),OFF))
+        print(' -> %s' % error)
+        print()
+        if start > 0:
+            print(' ...')
+        for i, line in enumerate(lines[start:end]):
+            if (i+start) == lineno:
+                print(' %03d %s' % (i+start, BOLD+RED+line+OFF))
             else:
-                results.append('on line %i: %s' % (linenr, error))
-                if linenr > 0 and linenr < len(lines):
-                    results.append('  %s' % lines[linenr - 1])
-
-        # Add indentation and return
-        results = [' ' * indentation + r for r in results]
-        return '\n'.join(results)
+                if len(line):
+                    print(' %03d %s' % (i+start,line))
+        if end < len(lines):
+            print(' ...')
+        print()
 
 
-# ------------------------------------------------------ class VertexShader ---
+    @property
+    def uniforms(self):
+        """ Shader uniforms obtained from source code """
+
+        uniforms = []
+        regex = re.compile("""\s*uniform\s+(?P<type>\w+)\s+"""
+                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
+        for m in re.finditer(regex,self._code):
+            size = -1
+            gtype = Shader._gtypes[m.group('type')]
+            if m.group('size'):
+                size = int(m.group('size'))
+            if size >= 1:
+                for i in range(size):
+                    name = '%s[%d]' % (m.group('name'),i)
+                    uniforms.append((name, gtype))
+            else:
+                uniforms.append((m.group('name'), gtype))
+        return uniforms
+
+
+    @property
+    def attributes(self):
+        """ Shader attributes obtained from source code """
+
+        attributes = []
+        regex = re.compile("""\s*attribute\s+(?P<type>\w+)\s+"""
+                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
+        for m in re.finditer(regex,self._code):
+            size = -1
+            gtype = Shader._gtypes[m.group('type')]
+            if m.group('size'):
+                size = int(m.group('size'))
+            if size >= 1:
+                for i in range(size):
+                    name = '%s[%d]' % (m.group('name'),i)
+                    attributess.append((name, gtype))
+            else:
+                attributes.append((m.group('name'), gtype))
+        return attributes
+
+
+
+# ------------------------------------------------------ VertexShader class ---
 class VertexShader(Shader):
-
-    """ Vertex shader class. Inherits :class:`shader.Shader`.
-
-    Parameters
-    ----------
-    code : str
-        The GLSL source code, or a filename that contains the code.
-
-    """
+    """ Vertex shader class """
 
     def __init__(self, code=None):
-        """
-        Create the shader.
-        """
-
         Shader.__init__(self, gl.GL_VERTEX_SHADER, code)
 
+    def __repr__(self):
+        return "Vertex Shader %d (%s)" % (self._id, self._source)
 
-# ---------------------------------------------------- class FragmentShader ---
+
+
+# ---------------------------------------------------- FragmentShader class ---
 class FragmentShader(Shader):
+    """ Fragment shader class """
 
-    """ Fragment shader class. Inherits :class:`shader.Shader`.
-
-    Parameters
-    ----------
-    code : str
-        The GLSL source code, or a filename that contains the code.
-
-    """
 
     def __init__(self, code=None):
-        """
-        Create the shader.
-        """
-
         Shader.__init__(self, gl.GL_FRAGMENT_SHADER, code)
+
+
+    def __repr__(self):
+        return "Fragment Shader %d (%s)" % (self._id, self._source)
