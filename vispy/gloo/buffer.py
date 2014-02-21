@@ -4,9 +4,11 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 import numpy as np
-import .gl
-from .debug import log
-from .globject import GLObject
+
+from . import gl
+from . globject import GLObject
+from ..util import logger
+
 
 
 # ------------------------------------------------------------ Buffer class ---
@@ -125,21 +127,21 @@ class Buffer(GLObject):
     def _create(self):
         """ Create buffer on GPU """
 
-        log("GPU: Creating buffer")
+        logger.debug("GPU: Creating buffer")
         self._handle = gl.glGenBuffers(1)
 
 
     def _delete(self):
         """ Delete buffer from GPU """
 
-        log("GPU: Deleting buffer")
+        logger.debug("GPU: Deleting buffer")
         gl.glDeleteBuffers(1 , [self._handle])
 
 
     def _resize(self):
         """ """
 
-        log("GPU: Resizing buffer(%d bytes)"% self._nbytes)
+        logger.debug("GPU: Resizing buffer(%d bytes)"% self._nbytes)
         gl.glBufferData(self._target, self._nbytes, None, self._usage)
         self._need_resize = False
 
@@ -147,14 +149,14 @@ class Buffer(GLObject):
     def _activate(self):
         """ Bind the buffer to some target """
 
-        log("GPU: Activating buffer")
+        logger.debug("GPU: Activating buffer")
         gl.glBindBuffer(self._target, self._handle)
 
 
     def _deactivate(self):
         """ Unbind the current bound buffer """
 
-        log("GPU: Deactivating buffer")
+        logger.debug("GPU: Deactivating buffer")
         gl.glBindBuffer(self._target, 0)
 
 
@@ -168,7 +170,7 @@ class Buffer(GLObject):
             self._resize()
             self._need_resize = False
 
-        log("GPU: Updating buffer (%d pending operation(s))" % len(self._pending_data))
+        logger.debug("GPU: Updating buffer (%d pending operation(s))" % len(self._pending_data))
         while self._pending_data:
             data, nbytes, offset = self._pending_data.pop(0)
             gl.glBufferSubData(self._target, offset, nbytes, data)
@@ -245,7 +247,7 @@ class DataBuffer(Buffer):
             if self._store:
                 if not data.flags["C_CONTIGUOUS"]:
                     if self._copy == False:
-                        log("WARNING: cannot use non contiguous data as CPU storage")
+                        logger.warning("Cannot use non contiguous data as CPU storage")
                     self._copy = True
                 self._data = np.array(data,copy=self._copy).ravel()
                 self.set_data(self._data,copy=False)
