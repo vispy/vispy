@@ -10,20 +10,21 @@ from . import gl
 from . globject import GLObject
 from . buffer import VertexBuffer, IndexBuffer
 from . shader import VertexShader, FragmentShader
-from . variable import gl_typeinfo, Uniform, Attribute
+from . variable import Uniform, Attribute
 from ..util import logger
 
 
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
     """
-    A program is an object to which shaders can be attached and linked to create
-    the program.
+    A program is an object to which shaders can be attached and linked to
+    create the program.
     """
 
     # ---------------------------------
     def __init__(self, verts=[], frags=[], count=0):
-        """Initialize the program and register shaders to be linked.
+        """
+        Initialize the program and register shaders to be linked.
 
         Parameters
         ----------
@@ -42,8 +43,8 @@ class Program(GLObject):
         If several vertex shaders are specified, only one can contain the main
         function.
 
-        If several fragment shaders are specified, only one can contain the main
-        function.
+        If several fragment shaders are specified, only one can contain the
+        main function.
         """
 
         GLObject.__init__(self)
@@ -265,8 +266,9 @@ class Program(GLObject):
         for attribute in self._attributes.values():
             attribute.deactivate()
 
-    def _get_all_uniforms(self):
-        """Extract uniforms from shaders code """
+    @property
+    def all_uniforms(self):
+        """ Program uniforms obtained from shaders code """
 
         uniforms = []
         for shader in self._verts:
@@ -275,11 +277,10 @@ class Program(GLObject):
             uniforms.extend(shader.uniforms)
         uniforms = list(set(uniforms))
         return uniforms
-    all_uniforms = property(_get_all_uniforms,
-                            doc=""" Program uniforms obtained from shaders code """)
 
-    def _get_active_uniforms(self):
-        """ Extract active uniforms from GPU """
+    @property
+    def active_uniforms(self):
+        """ Program active uniforms obtained from GPU """
 
         count = gl.glGetProgramParameter(self.handle, gl.GL_ACTIVE_UNIFORMS)
         # This match a name of the form "name[size]" (= array)
@@ -302,11 +303,10 @@ class Program(GLObject):
                 uniforms.append((name, gtype))
 
         return uniforms
-    active_uniforms = property(_get_active_uniforms,
-                               doc="Program active uniforms obtained from GPU")
 
-    def _get_inactive_uniforms(self):
-        """ Extract inactive uniforms from GPU """
+    @property
+    def inactive_uniforms(self):
+        """ Program inactive uniforms obtained from GPU """
 
         active_uniforms = self.active_uniforms
         inactive_uniforms = self.all_uniforms
@@ -314,11 +314,10 @@ class Program(GLObject):
             if uniform in inactive_uniforms:
                 inactive_uniforms.remove(uniform)
         return inactive_uniforms
-    inactive_uniforms = property(_get_inactive_uniforms,
-                                 doc="Program inactive uniforms obtained from GPU")
 
-    def _get_all_attributes(self):
-        """ Extract attributes from shaders code """
+    @property
+    def all_attributes(self):
+        """ Program attributes obtained from shaders code """
 
         attributes = []
         for shader in self._verts:
@@ -326,11 +325,10 @@ class Program(GLObject):
         # No attribute in fragment shaders
         attributes = list(set(attributes))
         return attributes
-    all_attributes = property(_get_all_attributes,
-                              doc="Program attributes obtained from shaders code")
 
-    def _get_active_attributes(self):
-        """ Extract active attributes from GPU """
+    @property
+    def active_attributes(self):
+        """ Program active attributes obtained from GPU """
 
         count = gl.glGetProgramParameter(self.handle, gl.GL_ACTIVE_ATTRIBUTES)
         attributes = []
@@ -355,20 +353,17 @@ class Program(GLObject):
             else:
                 attributes.append((name, gtype))
         return attributes
-    active_attributes = property(_get_active_attributes,
-                                 doc="Program active attributes obtained from GPU")
 
-    def _get_inactive_attributes(self):
-        """ Extract inactive attributes from GPU """
+    @property
+    def inactive_attributes(self):
+        """ Program inactive attributes obtained from GPU """
 
         active_attributes = self.active_attributes
         inactive_attributes = self.all_attributes
         for attribute in active_attributes:
             if attribute in inactive_attributes:
-                inacative_attributes.remove(attribute)
+                inactive_attributes.remove(attribute)
         return inactive_attributes
-    inactive_attributes = property(_get_inactive_attributes,
-                                   doc="Program inactive attributes obtained from GPU")
 
     @property
     def shaders(self):

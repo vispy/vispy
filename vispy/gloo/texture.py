@@ -160,7 +160,7 @@ class Texture(GLObject):
     def wrapping(self):
         """ Texture wrapping mode """
 
-        if base is not None:
+        if self.base is not None:
             return self.base.wrapping
         return self._wrapping
 
@@ -168,7 +168,7 @@ class Texture(GLObject):
     def wrapping(self, value):
         """ Texture wrapping mode """
 
-        if base is not None:
+        if self.base is not None:
             raise ValueError("Cannot set wrapping on texture view")
 
         assert value in (gl.GL_REPEAT, gl.GL_CLAMP_TO_EDGE,
@@ -180,7 +180,7 @@ class Texture(GLObject):
     def interpolation(self):
         """ Texture interpolation for minification and magnification. """
 
-        if base is not None:
+        if self.base is not None:
             return self.base.interpolation
 
         return self._interpolation

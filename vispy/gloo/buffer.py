@@ -24,7 +24,8 @@ class Buffer(GLObject):
     pending data to GPU memory and requires an active GL context.
     """
 
-    def __init__(self, data=None, target=gl.GL_ARRAY_BUFFER, nbytes=0, resizeable=True):
+    def __init__(self, data=None, target=gl.GL_ARRAY_BUFFER, nbytes=0,
+                 resizeable=True):
         """ Initialize buffer
 
         Parameters
@@ -176,7 +177,8 @@ class DataBuffer(Buffer):
     """ GPU data buffer """
 
     def __init__(self, data=None, dtype=None, target=gl.GL_ARRAY_BUFFER,
-                 size=0, base=None, offset=0, store=True, copy=False, resizeable=True):
+                 size=0, base=None, offset=0, store=True, copy=False,
+                 resizeable=True):
         """
         Initialize the buffer
 
@@ -239,7 +241,7 @@ class DataBuffer(Buffer):
             self._nbytes = data.nbytes
             if self._store:
                 if not data.flags["C_CONTIGUOUS"]:
-                    if self._copy == False:
+                    if self._copy is False:
                         logger.warning(
                             "Cannot use non contiguous data as CPU storage")
                     self._copy = True
@@ -473,7 +475,8 @@ class DataBuffer(Buffer):
                     "Cannot set a specific field on a non-base buffer")
             if self._data is None:
                 raise ValueError(
-                    "Cannot set non contiguous data on buffer without CPU storage")
+                    """Cannot set non contiguous """
+                    """data on buffer without CPU storage""")
 
             # WARNING: do we check data size
             #          or do we let numpy raises an error ?
@@ -516,7 +519,8 @@ class DataBuffer(Buffer):
             # Base buffer has no CPU storage, we cannot do operation
             else:
                 raise ValueError(
-                    "Cannot set non contiguous data on buffer without CPU storage")
+                    """Cannot set non contiguous data """
+                    """on buffer without CPU storage""")
 
         # Buffer is a base buffer and we have CPU storage
         elif self.data is not None:
@@ -605,8 +609,8 @@ class VertexBuffer(DataBuffer):
                 dtype = np.dtype([('f0', dtype, 1)])
 
         DataBuffer.__init__(self, data=data, dtype=dtype, size=size, base=base,
-                            offset=offset, target=gl.GL_ARRAY_BUFFER, store=store,
-                            copy=copy, resizeable=resizeable)
+                            offset=offset, target=gl.GL_ARRAY_BUFFER,
+                            store=store, copy=copy, resizeable=resizeable)
 
         # Check base type and count for each dtype fields (if buffer is a base)
         if base is None:
