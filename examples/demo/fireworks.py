@@ -18,9 +18,11 @@ from vispy import gloo
 from vispy import app
 from vispy.gloo import gl
 
+# app.use('glfw')
+
 # Create a texture
 radius = 32
-im1 = np.random.normal(0.8, 0.3, (radius * 2 + 1, radius * 2 + 1))
+im1 = np.random.normal(0.8, 0.3, (radius * 2 + 1, radius * 2 + 1)).astype(np.float32)
 
 # Mask it with a disk
 L = np.linspace(-radius, radius, 2 * radius + 1)
@@ -37,6 +39,7 @@ data = np.zeros(N, [('a_lifetime', np.float32, 1),
 
 
 VERT_SHADER = """
+#version 120
 uniform float u_time;
 uniform vec3 u_centerPosition;
 attribute float a_lifetime;
@@ -62,6 +65,8 @@ void main () {
 """
 
 FRAG_SHADER = """
+#version 120
+
 uniform sampler2D texture1;
 uniform vec4 u_color;
 varying float v_lifetime;
@@ -76,6 +81,10 @@ void main()
 }
 """
 
+# Hack
+GL_VERTEX_PROGRAM_POINT_SIZE = 34370
+GL_POINT_SPRITE = 34913
+
 
 class Canvas(app.Canvas):
 
@@ -85,8 +94,9 @@ class Canvas(app.Canvas):
 
         # Create program
         self._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self._program.set_vars(gloo.VertexBuffer(data))
+        self._program.bind(gloo.VertexBuffer(data))
         self._program['s_texture'] = gloo.Texture2D(im1)
+
 
         # Create first explosion
         self._new_explosion()
@@ -97,6 +107,8 @@ class Canvas(app.Canvas):
         # Enable blending
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+        gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+        gl.glEnable(GL_POINT_SPRITE)
 
     def on_resize(self, event):
         width, height = event.size

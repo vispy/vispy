@@ -193,7 +193,7 @@ class Uniform(Variable):
 
     def _activate(self):
         #if self._gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
-        if self._gtype in (gl.GL_SAMPLER_2D):
+        if self._gtype in (gl.GL_SAMPLER_2D,):
             if self.data is not None:
                 logger.debug("GPU: Active texture is %d" % self._unit)
                 gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
@@ -219,7 +219,7 @@ class Uniform(Variable):
 
         # Textures (need to get texture count)
         #elif self._gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
-        elif self._gtype in (gl.GL_SAMPLER_2D):
+        elif self._gtype in (gl.GL_SAMPLER_2D,):
             # texture = self.data
             # log("GPU: Active texture is %d" % self._unit)
             # gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
@@ -303,7 +303,7 @@ class Attribute(Variable):
     def _update(self):
         """ Actual upload of data to GPU memory  """
 
-        log("GPU: Updating %s" % self.name)
+        logger.debug("GPU: Updating %s" % self.name)
 
         # Generic vertex attribute (all vertices receive the same value)
         if self._generic:
