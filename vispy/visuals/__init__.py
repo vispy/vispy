@@ -68,7 +68,10 @@ class Visual(object):
         for name, val in self._gl_options.items():
             if isinstance(val, bool):
                 flag = getattr(gloo.gl, name)
-                gloo.gl.glEnable(flag, val)
+                if val:
+                    gloo.gl.glEnable(flag)
+                else:
+                    gloo.gl.glDisable(flag)
             else:
                 args = []
                 for arg in val:
