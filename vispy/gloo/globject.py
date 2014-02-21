@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
-# Distributed under the terms of the new BSD License.
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-
 
 class GLObject(object):
     """ Generic GL object that may live both on CPU and GPU """
