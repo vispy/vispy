@@ -5,7 +5,6 @@
 # -----------------------------------------------------------------------------
 import re
 import os.path
-import numpy as np
 
 from . import gl
 from ..util import logger
@@ -156,22 +155,18 @@ class Shader(GLObject):
         lineno: int
             Line where error occurs
         """
-        OFF = '\033[0m'
-        BOLD = '\033[1m'
-        BLACK = '\033[30m'
-        RED = '\033[31m'
         lines = self._code.split('\n')
         start = max(0, lineno - 2)
         end = min(len(lines), lineno + 1)
 
-        print('%sError in %s%s' % (BOLD, repr(self), OFF))
+        print('Error in %s' % (repr(self)))
         print(' -> %s' % error)
         print()
         if start > 0:
             print(' ...')
         for i, line in enumerate(lines[start:end]):
             if (i + start) == lineno:
-                print(' %03d %s' % (i + start, BOLD + RED + line + OFF))
+                print(' %03d %s' % (i + start, line))
             else:
                 if len(line):
                     print(' %03d %s' % (i + start, line))
@@ -214,7 +209,7 @@ class Shader(GLObject):
             if size >= 1:
                 for i in range(size):
                     name = '%s[%d]' % (m.group('name'), i)
-                    attributess.append((name, gtype))
+                    attributes.append((name, gtype))
             else:
                 attributes.append((m.group('name'), gtype))
         return attributes
