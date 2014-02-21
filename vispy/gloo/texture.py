@@ -4,11 +4,11 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 import numpy as np
-import OpenGL.GL as gl
 from operator import mul
 
-from debug import log
-from globject import GLObject
+from . import gl
+from .globject import GLObject
+from ..util import logger
 
 
 

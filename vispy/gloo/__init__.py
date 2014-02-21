@@ -48,9 +48,9 @@ from __future__ import division
 
 from ..util.six import string_types
 
-import .gl
-from .globject import GLObject  # noqa
-from .buffer import VertexBuffer, IndexBuffer  # noqa
-from .texture import Texture1D, Texture2D  # noqa
-from .shader import VertexShader, FragmentShader  # noqa
-from .program import Program  # noqa
+from . import gl                                 # noqa
+from .globject import GLObject                   # noqa
+from .buffer import VertexBuffer, IndexBuffer    # noqa
+from .texture import Texture1D, Texture2D        # noqa
+from .shader import VertexShader, FragmentShader # noqa
+from .program import Program                     # noqa
