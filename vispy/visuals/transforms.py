@@ -5,7 +5,7 @@
 from __future__ import print_function, division, absolute_import
 
 import numpy as np
-from ..shaders.composite import Function, FunctionChain, FunctionTemplate
+from ..shaders.composite import Function, FunctionChain
 from ..util.ordereddict import OrderedDict
 from ..util import transforms
 
@@ -58,7 +58,7 @@ class Transform(object):
     an object through the forward or inverse transformation, respectively.
     
     The two class variables GLSL_map and GLSL_imap are instances of 
-    shaders.composite.Function or shaders.composite.FunctionTemplate that
+    shaders.composite.Function that
     define the forward- and inverse-mapping GLSL function code.
     
     Optionally, an inverse() method returns a new Transform performing the
@@ -415,8 +415,8 @@ class ChainTransform(Transform):
 class NullTransform(Transform):
     """ Transform having no effect on coordinates (identity transform).
     """
-    GLSL_map = FunctionTemplate("vec4 $func_name(vec4 pos) {return pos;}")
-    GLSL_imap = FunctionTemplate("vec4 $func_name(vec4 pos) {return pos;}")
+    GLSL_map = Function("vec4 $func_name(vec4 pos) {return pos;}")
+    GLSL_imap = Function("vec4 $func_name(vec4 pos) {return pos;}")
 
     def map(self, obj):
         return obj
@@ -437,17 +437,17 @@ class NullTransform(Transform):
 class STTransform(Transform):
     """ Transform performing only scale and translate, in that order.
     """
-    GLSL_map = FunctionTemplate("""
+    GLSL_map = Function("""
         vec4 $func_name(vec4 pos) {
-            return (pos * $scale) + $translate;
+            return (pos * $vec4_scale) + $vec4_translate;
         }
-    """, bindings=['vec4 scale', 'vec4 translate'])
+    """)
     
-    GLSL_imap = FunctionTemplate("""
+    GLSL_imap = Function("""
         vec4 $func_name(vec4 pos) {
-            return (pos - $translate) / $scale;
+            return (pos - $vec4_translate) / $vec4_scale;
         }
-    """, bindings=['vec4 scale', 'vec4 translate'])
+    """)
     
     def __init__(self, scale=None, translate=None):
         super(STTransform, self).__init__()
@@ -520,17 +520,17 @@ class STTransform(Transform):
 
 
 class AffineTransform(Transform):
-    GLSL_map = FunctionTemplate("""
+    GLSL_map = Function("""
         vec4 $func_name(vec4 pos) {
-            return $matrix * pos;
+            return $mat4_matrix * pos;
         }
-    """, bindings=['mat4 matrix'])
+    """)
     
-    GLSL_imap = FunctionTemplate("""
+    GLSL_imap = Function("""
         vec4 $func_name(vec4 pos) {
-            return $inv_matrix * pos;
+            return $mat4_inv_matrix * pos;
         }
-    """, bindings=['mat4 inv_matrix'])
+    """)
     
     def __init__(self, matrix=None):
         super(AffineTransform, self).__init__()
@@ -728,7 +728,7 @@ class PolarTransform(Transform):
     and `y = r*sin(theta)`.
     
     """
-    GLSL_map = FunctionTemplate("""
+    GLSL_map = Function("""
         vec4 $func_name(vec4 pos) {
             return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1);
         }

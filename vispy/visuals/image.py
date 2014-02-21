@@ -9,7 +9,7 @@ import numpy as np
 from .. import gloo
 from ..gloo import gl
 from . import Visual, VisualComponent
-from ..shaders.composite import (Function, FunctionTemplate, CompositeProgram, 
+from ..shaders.composite import (Function, CompositeProgram, 
                                  FragmentFunction, FunctionChain)
 from .transforms import NullTransform
 

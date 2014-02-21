@@ -4,7 +4,55 @@ Sandbox for experimenting with vispy.shaders.composite
 """
 
 presets = [
-    
+('TEST', '''
+ 
+from vispy.shaders.composite import CompositeProgram, Function
+
+
+vertex_shader = """
+vec4 input_position();
+
+void main() {
+    gl_Position = input_position();
+}
+"""
+
+fragment_shader = """
+void main() {
+}
+"""
+
+program = CompositeProgram(vertex_shader, fragment_shader)
+
+# Function templates allow the creation of new functions by using string.Template 
+# to fill in names of the function and the program variables it depends on.
+flatten = Function("""
+    vec4 $func_name() {
+        vec4 pos = $vec4_pos;
+        pos.z = 0;
+        pos.w = 1;
+        return pos;
+    }
+    """)
+
+# Note the bindings argument above; this is required because there is otherwise
+# no way to determine the type of the variable 'pos'.
+
+# As with the previous Function example, we use bind() to create a new Function 
+# with the correct name and program variables.
+bound = flatten.wrap('input_position', pos=('attribute', 'position_u'))
+
+program.set_hook('input_position', bound)
+
+
+# obligatory: these variables are used to fill the text fields on the right.
+VERTEX, FRAGMENT = program._generate_code()
+ 
+ 
+ 
+'''
+),
+
 ('Introduction', '''
 """
              ------ Shader Composition Sandbox -------
@@ -118,9 +166,9 @@ VERTEX, FRAGMENT = program._generate_code()
 '''),
 
 
-('Function binding (manual)', '''
+('Function wrapping (manual)', '''
 """
-This example introduces the rationale for function binding, 
+This example introduces the rationale for function wrapping, 
 which allows a function's arguments to be bound to program variables. 
 
 This example does the task manually; the next example will do it 
@@ -216,7 +264,7 @@ func = Function("""
 
 # Because this function cannot be ised as a definition for input_position, 
 # we will need another function that wraps it, providing input to the pos argument.
-wrapper = func.bind('input_position', pos=('attribute', 'position_u'))
+wrapper = func.wrap('input_position', pos=('attribute', 'position_u'))
 
 program.set_hook('input_position', wrapper)
 
@@ -237,7 +285,7 @@ Occasionally, we may have a large function that must be bound multiple
 times; in this case it may be preferrable to use Function instead.
 """
 
-from vispy.shaders.composite import CompositeProgram, FunctionTemplate
+from vispy.shaders.composite import CompositeProgram, Function
 
 
 vertex_shader = """
@@ -257,22 +305,21 @@ program = CompositeProgram(vertex_shader, fragment_shader)
 
 # Function templates allow the creation of new functions by using string.Template 
 # to fill in names of the function and the program variables it depends on.
-flatten = FunctionTemplate("""
+flatten = Function("""
     vec4 $func_name() {
-        vec4 pos = $pos;
+        vec4 pos = $vec4_pos;
         pos.z = 0;
         pos.w = 1;
         return pos;
     }
-    """,
-    bindings=[('vec4 pos')])
+    """)
 
 # Note the bindings argument above; this is required because there is otherwise
 # no way to determine the type of the variable 'pos'.
 
 # As with the previous Function example, we use bind() to create a new Function 
 # with the correct name and program variables.
-bound = flatten.bind('input_position', pos=('attribute', 'position_u'))
+bound = flatten.wrap('input_position', pos=('attribute', 'position_u'))
 
 program.set_hook('input_position', bound)
 
@@ -287,8 +334,7 @@ Function chains are another essential component of shader composition,
 allowing a list of functions to be executed in order.
 """
 
-from vispy.shaders.composite import (CompositeProgram, Function,
-                                     FunctionTemplate, FunctionChain)
+from vispy.shaders.composite import (CompositeProgram, Function, FunctionChain)
 
 # Added a new hook to allow any number of functions to be executed
 # after gl_Position is set.
@@ -324,14 +370,14 @@ flatten = Function("""
 
 # Add another function that copies an attribute to a varying
 # for use in the fragment shader
-read_attr = FunctionTemplate("""
+read_attr = Function("""
     void $func_name() {
-        $output = $input;
+        $vec4_output = $vec4_input;
     }
-    """, bindings=[('vec4 output'), ('vec4 input')])
+    """)
 
 # ..and bind this to two new program variables
-read_attr_bound = read_attr.bind(name='read_attr_func', 
+read_attr_bound = read_attr.wrap(name='read_attr_func', 
                                  input=('attribute', 'data_a'),
                                  output=('varying', 'data_v'))
 
@@ -357,8 +403,7 @@ This is most commonly used for passing vertex positions through a series
 of transform functions.
 """
 
-from vispy.shaders.composite import (CompositeProgram, Function,
-                                     FunctionTemplate, FunctionChain)
+from vispy.shaders.composite import (CompositeProgram, Function, FunctionChain)
 
 
 vertex_shader = """
@@ -385,21 +430,21 @@ flatten = Function("""
     """)
 
 # Define a scaling function
-scale = FunctionTemplate("""
+scale = Function("""
     vec4 $func_name(vec4 pos) {
-        return pos * vec4($scale, 1);
+        return pos * vec4($vec3_scale, 1);
     }
-    """, bindings=[('vec3 scale')])
+    """)
 
 # ..and bind it to use 'uniform vec3 scale_u' as its scale factor
-scale_bound = scale.bind('scale_func', scale=('uniform', 'scale_u'))
+scale_bound = scale.wrap('scale_func', scale=('uniform', 'scale_u'))
 
 # Now create a chain that calls flatten and scale_bound in order, passing
 # the return value of each call to the input of the next:
 transform = FunctionChain('transform', [flatten, scale_bound])
 
 # finally, bind the input of the new chain function to an attribute.
-bound = transform.bind('input_position', pos=('attribute', 'position_u'))
+bound = transform.wrap('input_position', pos=('attribute', 'position_u'))
 
 program.set_hook('input_position', bound)
 
@@ -426,8 +471,7 @@ This example is a manual demonstration; the next will automate the
 same procedure.
 """
 
-from vispy.shaders.composite import (CompositeProgram, Function,
-                                     FunctionTemplate, FunctionChain)
+from vispy.shaders.composite import (CompositeProgram, Function, FunctionChain)
 
 # we require a void hook in the vertex shader that can be used 
 # to attach supporting code for the fragment shader.
@@ -453,9 +497,8 @@ program = CompositeProgram(vertex_shader, fragment_shader)
 
 # First, define a simple fragment color function and bind it to a varying
 # input:
-frag_func = FunctionTemplate(template="vec4 $func_name() { return $input; }",
-                             bindings=[('vec4 input')])
-frag_func_bound = frag_func.bind(name='fragment_color',
+frag_func = Function("vec4 $func_name() { return $vec4_input; }")
+frag_func_bound = frag_func.wrap(name='fragment_color',
                                  input=('varying', 'color_var'))
 
 # Attach to the program
@@ -463,11 +506,10 @@ program.set_hook('fragment_color', frag_func_bound)
 
 # Next, we need a vertex shader function that will supply input 
 # to the varying.
-vert_func = FunctionTemplate(template="void $func_name() { $output = $input; }",
-                             bindings=[('vec4 input'), ('vec4 output')])
+vert_func = Function("void $func_name() { $vec4_output = $vec4_input; }")
 
 # Now we bind the vertex support to both the varying and a new input attribute.
-vert_func_bound = vert_func.bind(name='frag_color_support',
+vert_func_bound = vert_func.wrap(name='frag_color_support',
                                  input=('attribute', 'color_a'),
                                  output=('varying', 'color_var'))
 
@@ -497,8 +539,7 @@ This example automates the work done in the previous example "Fragment
 shaders (manual)".
 """
 
-from vispy.shaders.composite import (CompositeProgram, Function,
-                                     FunctionTemplate, FragmentFunction)
+from vispy.shaders.composite import (CompositeProgram, Function, FragmentFunction)
 
 # we require a void hook in the vertex shader that can be used 
 # to attach supporting code for the fragment shader.
@@ -524,10 +565,8 @@ program = CompositeProgram(vertex_shader, fragment_shader)
 
 # Start by defining both the fragment function we'd like to install
 # and the required vertex shader support code:
-frag_func = FunctionTemplate(template="vec4 $func_name() { return $input; }",
-                             bindings=[('vec4 input')])
-vert_func = FunctionTemplate(template="void $func_name() { $output = $input; }",
-                             bindings=[('vec4 input'), ('vec4 output')])
+frag_func = Function("vec4 $func_name() { return $vec4_input; }")
+vert_func = Function("void $func_name() { $vec4_output = $vec4_input; }")
 
 # Now combine these into a single object:
 combined = FragmentFunction(frag_func, vert_func,
@@ -539,7 +578,7 @@ combined = FragmentFunction(frag_func, vert_func,
 # The 'vert_hook' argument specifies a chain in the vertex shader to which 
 # the support code will be attached.
 
-frag_bound = combined.bind('fragment_color',
+frag_bound = combined.wrap('fragment_color',
                            input=('attribute', 'color_a'))
 
 # As in the previous example, attach a new FunctionChain to *vert_post_hook*:
@@ -604,17 +643,22 @@ menubar = win.menuBar()
 last_loaded = -1
 def load_example(name):
     global last_loaded
-    for i, preset in enumerate(presets):
-        n, code = preset
-        if n == name:
-            editor.setText(code)
-            last_loaded = i
-            return
+    if isinstance(name, int):
+        code = presets[name][1]
+        editor.setText(code)
+        last_loaded = name
+    else:
+        for i, preset in enumerate(presets):
+            n, code = preset
+            if n == name:
+                editor.setText(code)
+                last_loaded = i
+                return
 
 def load_next():
     global last_loaded
     try:
-        load_example(presets[last_loaded+1][0])
+        load_example(last_loaded+1)
     except IndexError:
         pass
 
@@ -633,7 +677,7 @@ win.show()
 win.resize(1000,800)
 hsplit.setSizes([700, 300])
 
-load_example('Introduction')
+load_example(0)
 
 def update():
     code = editor.text()

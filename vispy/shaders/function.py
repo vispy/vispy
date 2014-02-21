@@ -98,7 +98,7 @@ class Function(object):
         return self._template_cache
         
 
-    def set_code(self, code, name=None, args=None, rtype=None, variables=None
+    def set_code(self, code, name=None, args=None, rtype=None, variables=None,
                  template_vars=None):
         """
         Set the GLSL code for this function.
@@ -119,9 +119,17 @@ class Function(object):
             # then we parse for more template variables
             self.template_vars = {}
             for var in parsing.find_template_variables(code):
+                if var == self.name:
+                    continue
+                
                 # split each typ_variable_name into its (typ, variable_name) parts
-                ind = var.index('_')
-                typ = var[:ind]
+                try:
+                    ind = var.index('_')
+                except ValueError:
+                    raise Exception('Template variables names must look like'
+                                    '"$typ_name". (offender is %s in %s)' % 
+                                    (var, self.name))
+                typ = var[1:ind]
                 # TODO: make sure typ is a valid GLSL type
                 name = var[ind+1:]
                 self.template_vars[name] = typ
@@ -274,25 +282,26 @@ class Function(object):
           with *name*.
 
         """
-        var_names = self._bindings.keys()
+        var_names = self.template_vars.keys()
         subs = {'func_name': name} if name is not None else {}
         code = ""
         for var_name, var_spec in kwds.items():
             var_names.remove(var_name)
-            subs[var_name] = var_spec[1]
-            if var_name in self._bindings:
-                dtype = self._bindings[var_name]
+            template_var = self.template_vars[var_name] + "_" + var_name
+            subs[template_var] = var_spec[1]
+            if var_name in self.template_vars:
+                dtype = self.template_vars[var_name]
                 code += "%s %s %s;\n" % (var_spec[0], dtype, var_spec[1])
             else:
-                raise KeyError("Variable name '%s' is not bindable. Bindings "
-                               "are: %s" % (var_name, self._bindings.keys()))
+                raise KeyError("'%s' is not a template variable. Variables "
+                               "are: %s" % (var_name, self._template_vars.keys()))
         
         if var_names:
             raise Exception('Unsubstituted template variables in wrap(%s): %s' % 
                             (name, var_names))
            
-        code += self.template.substitute(**subs)
-        return Function(code, deps=self.deps[:])
+        code += self._template.substitute(**subs)
+        return Function(code, deps=self._deps[:])
 
 
 class BoundFunction(Function):

@@ -207,7 +207,7 @@ class CompositeProgram(Program):
            
         # if the name is incorrect, make a wrapper with the correct name.
         if function.name != hook_name:
-            function = function.bind(hook_name)
+            function = function.wrap(hook_name)
         
         self._hook_defs[hook_name] = function
         
