@@ -20,7 +20,8 @@ from vispy.gloo import gl
 
 # Create a texture
 radius = 32
-im1 = np.random.normal(0.8, 0.3, (radius * 2 + 1, radius * 2 + 1)).astype(np.float32)
+im1 = np.random.normal(
+    0.8, 0.3, (radius * 2 + 1, radius * 2 + 1)).astype(np.float32)
 
 # Mask it with a disk
 L = np.linspace(-radius, radius, 2 * radius + 1)
@@ -79,7 +80,9 @@ void main()
 }
 """
 
-# Hack
+# HACK: True OpenGL ES does not need to enable point sprite and does not define
+# these two constants. Desktop OpenGL needs to enable these two modes but we do
+# not have these two constants because our GL namespace pretends to be ES.
 GL_VERTEX_PROGRAM_POINT_SIZE = 34370
 GL_POINT_SPRITE = 34913
 
@@ -94,7 +97,6 @@ class Canvas(app.Canvas):
         self._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self._program.bind(gloo.VertexBuffer(data))
         self._program['s_texture'] = gloo.Texture2D(im1)
-
 
         # Create first explosion
         self._new_explosion()
