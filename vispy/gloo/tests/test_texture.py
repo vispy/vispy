@@ -6,7 +6,6 @@
 import unittest
 import numpy as np
 
-from vispy.gloo import gl
 from vispy.gloo.texture import Texture, Texture1D, Texture2D
 
 
@@ -18,6 +17,7 @@ class TextureTest(unittest.TestCase):
     def test_init_none(self):
         with self.assertRaises(ValueError):
             T = Texture()
+            print(T)
 
     # Data only
     # ---------------------------------
@@ -27,25 +27,25 @@ class TextureTest(unittest.TestCase):
         assert T._shape == (10, 10)
         assert T._dtype == np.uint8
         assert T._offset == (0, 0)
-        assert T._store == True
-        assert T._copy == False
-        assert T._need_resize == True
-        assert T._need_update == True
+        assert T._store is True
+        assert T._copy is False
+        assert T._need_resize is True
+        assert T._need_update is True
         assert T._data is data
         assert len(T._pending_data) == 1
 
     # Non contiguous data
     # ---------------------------------
-    def test_init_data(self):
+    def test_init_non_contiguous_data(self):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data[::2, ::2])
         assert T._shape == (5, 5)
         assert T._dtype == np.uint8
         assert T._offset == (0, 0)
-        assert T._store == True
-        assert T._copy == True
-        assert T._need_resize == True
-        assert T._need_update == True
+        assert T._store is True
+        assert T._copy is True
+        assert T._need_resize is True
+        assert T._need_update is True
         assert T._data is not data
         assert len(T._pending_data) == 1
 
@@ -56,10 +56,10 @@ class TextureTest(unittest.TestCase):
         assert T._shape == (10, 10)
         assert T._dtype == np.uint8
         assert T._offset == (0, 0)
-        assert T._store == True
-        assert T._copy == False
-        assert T._need_resize == True
-        assert T._need_update == False
+        assert T._store is True
+        assert T._copy is False
+        assert T._need_resize is True
+        assert T._need_update is False
         assert T._data is not None
         assert T._data.shape == (10, 10)
         assert T._data.dtype == np.uint8
@@ -72,10 +72,10 @@ class TextureTest(unittest.TestCase):
         assert T._shape == ()
         assert T._dtype == np.uint8
         assert T._offset == ()
-        assert T._store == True
-        assert T._copy == False
-        assert T._need_resize == False
-        assert T._need_update == False
+        assert T._store is True
+        assert T._copy is False
+        assert T._need_resize is False
+        assert T._need_update is False
         assert T._data is not None
         assert len(T._pending_data) == 0
 
@@ -87,10 +87,10 @@ class TextureTest(unittest.TestCase):
         assert T._shape == (10, 10)
         assert T._dtype == np.uint16
         assert T._offset == (0, 0)
-        assert T._store == True
-        assert T._copy == False
-        assert T._need_resize == True
-        assert T._need_update == True
+        assert T._store is True
+        assert T._copy is False
+        assert T._need_resize is True
+        assert T._need_update is True
         assert T._data is not data
         assert len(T._pending_data) == 1
 
@@ -161,8 +161,8 @@ class TextureTest(unittest.TestCase):
         T.resize((5, 5))
         assert T.shape == (5, 5)
         assert T._data.shape == (5, 5)
-        assert T._need_resize == True
-        assert T._need_update == False
+        assert T._need_resize is True
+        assert T._need_update is False
         assert len(T._pending_data) == 0
 
     # Resize with bad shape
@@ -199,7 +199,7 @@ class TextureTest(unittest.TestCase):
         assert Z._base is T
         assert Z._data.base is T._data
         assert Z._shape == (10, 10)
-        assert Z._resizeable == False
+        assert Z._resizeable is False
         assert len(Z._pending_data) == 0
 
     # Get a view using ellipsis at start
@@ -212,7 +212,7 @@ class TextureTest(unittest.TestCase):
         assert Z._base is T
         assert Z._data.base is T._data
         assert Z._shape == (10, 10, 1)
-        assert Z._resizeable == False
+        assert Z._resizeable is False
         assert len(Z._pending_data) == 0
 
     # Get a view using ellipsis at end
@@ -225,7 +225,7 @@ class TextureTest(unittest.TestCase):
         assert Z._base is T
         assert Z._data.base is T._data
         assert Z._shape == (1, 10, 10)
-        assert Z._resizeable == False
+        assert Z._resizeable is False
         assert len(Z._pending_data) == 0
 
     # Get a single item
@@ -238,7 +238,7 @@ class TextureTest(unittest.TestCase):
         assert Z._base is T
         assert Z._data.base is T._data
         assert Z._shape == (1, 1, 1)
-        assert Z._resizeable == False
+        assert Z._resizeable is False
         assert len(Z._pending_data) == 0
 
     # Get a partial view
@@ -252,7 +252,7 @@ class TextureTest(unittest.TestCase):
         assert Z._data.base is T._data
         assert Z._shape == (3, 3)
         assert Z._offset == (2, 2)
-        assert Z._resizeable == False
+        assert Z._resizeable is False
         assert len(Z._pending_data) == 0
 
     # Get non contiguous view : forbidden
@@ -263,6 +263,7 @@ class TextureTest(unittest.TestCase):
         T = Texture(data=data)
         with self.assertRaises(ValueError):
             Z = T[::2, ::2]
+            print(Z)
 
     # Set data with store
     # ---------------------------------
@@ -331,7 +332,7 @@ class TextureTest(unittest.TestCase):
         T = Texture(data=data)
         Z = T[5:, 5:]
         T.resize((5, 5))
-        assert Z._valid == False
+        assert Z._valid is False
 
 
 # --------------------------------------------------------------- Texture1D ---
