@@ -5,9 +5,9 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
-import OpenGL.GL as gl
 
-from variable import Uniform, Variable, Attribute
+from vispy.gloo import gl
+from vispy.gloo.variable import Uniform, Variable, Attribute
 
 
 

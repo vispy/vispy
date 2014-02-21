@@ -16,22 +16,22 @@ from ..util import logger
 
 
 # Patch: pythonize the glGetActiveAttrib
-import ctypes
-gl._glGetActiveAttrib = gl.glGetActiveAttrib
-def glGetActiveAttrib(program, index):
-    # Prepare
-    bufsize = 32
-    length = ctypes.c_int()
-    size = ctypes.c_int()
-    type = ctypes.c_int()
-    name = ctypes.create_string_buffer(bufsize)
-    # Call
-    gl._glGetActiveAttrib(program, index,
-                          bufsize, ctypes.byref(length), ctypes.byref(size),
-                          ctypes.byref(type), name)
-    # Return Python objects
-    return name.value, size.value, type.value
-gl.glGetActiveAttrib = glGetActiveAttrib
+# import ctypes
+# gl._glGetActiveAttrib = gl.glGetActiveAttrib
+# def glGetActiveAttrib(program, index):
+#     # Prepare
+#     bufsize = 32
+#     length = ctypes.c_int()
+#     size = ctypes.c_int()
+#     type = ctypes.c_int()
+#     name = ctypes.create_string_buffer(bufsize)
+#     # Call
+#     gl._glGetActiveAttrib(program, index,
+#                           bufsize, ctypes.byref(length), ctypes.byref(size),
+#                           ctypes.byref(type), name)
+#     # Return Python objects
+#     return name.value, size.value, type.value
+# gl.glGetActiveAttrib = glGetActiveAttrib
 
 
 
@@ -228,7 +228,8 @@ class Program(GLObject):
         count = 0
         for (name,gtype) in self.all_uniforms:
             uniform = Uniform(self, name, gtype)
-            if gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
+            #if gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
+            if gtype in (gl.GL_SAMPLER_2D,):
                 uniform._unit = count
                 count += 1
             self._uniforms[name] = uniform
@@ -277,7 +278,7 @@ class Program(GLObject):
     def _activate(self):
         """Activate the program as part of current rendering state."""
 
-        log("GPU: Activating program")
+        logger.debug("GPU: Activating program")
         gl.glUseProgram(self.handle)
 
         for uniform in self._uniforms.values():
@@ -293,7 +294,7 @@ class Program(GLObject):
     def _deactivate(self):
         """Deactivate the program."""
 
-        log("GPU: Deactivating program")
+        logger.debug("GPU: Deactivating program")
         gl.glUseProgram(0)
 
         for uniform in self._uniforms.values():

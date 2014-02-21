@@ -5,8 +5,9 @@
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
-import OpenGL.GL as gl
-from texture import Texture, Texture1D, Texture2D
+
+from vispy.gloo import gl
+from vispy.gloo.texture import Texture, Texture1D, Texture2D
 
 
 # ----------------------------------------------------------------- Texture ---

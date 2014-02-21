@@ -6,8 +6,9 @@
 import sys
 import unittest
 import numpy as np
-import OpenGL.GL as gl
-from buffer import Buffer, DataBuffer, VertexBuffer, IndexBuffer
+
+from vispy.gloo import gl
+from vispy.gloo.buffer import Buffer, DataBuffer, VertexBuffer, IndexBuffer
 
 
 

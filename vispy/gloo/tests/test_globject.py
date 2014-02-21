@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 import sys
 import unittest
-from globject import GLObject
+from vispy.gloo.globject import GLObject
 
 
 # -----------------------------------------------------------------------------
