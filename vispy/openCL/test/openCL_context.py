@@ -140,11 +140,11 @@ class Canvas(app.Canvas):
                                 numpy.int32(self.tex_size),
                                 numpy.int32(self.tex_size))
         self.ocl_prg.buf_to_tex(self.queue, (self.tex_size,self.tex_size), (8,8),
-                                  self.ocl_ary.data, numpy.int32(self.tex_size), numpy.int32(self.tex_size),
+                                  self.ary_float.data, numpy.int32(self.tex_size), numpy.int32(self.tex_size),
                                   numpy.float32(0.0), numpy.float32(65000.0), self.ocl_tex)
         pyopencl.enqueue_release_gl_objects(self.queue, [self.ocl_tex]).wait()
         t = time.time()
-        print("pyopencl program called fps= %.3fs"%(1.0/(t-self.last_start)))
+        print("pyopencl program called fps= %.3f"%(1.0/(t-self.last_start)))
         self.last_start = t
         self.on_paint(None)
 
