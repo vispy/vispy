@@ -180,12 +180,15 @@ class CompositeProgram(Program):
         hook_name : str
             The name of the hook to be defined by *function*. There must exist 
             a corresponding function prototype in the GLSL main function code.
-        function : Function instance
+        function : Function instance or list
             The function that provides the definition for the *hook_name*
             prototype. The function must have a compatible return type and
             arguments. If this function does not have the correct name, then
             a wrapper function will be automatically created with the correct
             name.
+            If *function* is a list, then a FunctionChain is automatically 
+            created with the given functions.
+            
         """
         
         if hook_name not in self._hooks:
@@ -195,6 +198,9 @@ class CompositeProgram(Program):
             raise RuntimeError("Cannot set hook '%s'; this hook is already set "
                                "(with %s)." % 
                                (hook_name, self._hook_defs[hook_name]))
+        
+        if isinstance(function, list):
+            function = FunctionChain("$%s_hook" % hook_name, function)
         
         # make sure the function definition fits the hook.
         shader, hook_args, hook_rtype = self._hooks[hook_name]

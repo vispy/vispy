@@ -44,6 +44,11 @@ class Function(object):
             Dict describing program variables declared in this function's code.
             See variable_names property.
         """
+        self.name = None
+        self.rtype = None
+        self.args = None
+        self.template_vars = {}
+        
         self.set_code(code, name, args, rtype, variables)
         self._deps = deps[:] if deps is not None else []
         self._program_values = {}    # values for attribute/uniforms carried by this function;
