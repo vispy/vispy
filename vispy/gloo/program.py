@@ -14,9 +14,9 @@ from . variable import gl_typeinfo, Uniform, Attribute
 from ..util import logger
 
 
-
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
+
     """
     A program is an object to which shaders can be attached and linked to create
     the program.
@@ -49,10 +49,8 @@ class Program(GLObject):
 
         GLObject.__init__(self)
 
-
         self._count = count
         self._buffer = None
-
 
         # Get all vertex shaders
         self._verts = []
@@ -80,7 +78,6 @@ class Program(GLObject):
         self._build_uniforms()
         self._build_attributes()
 
-
         # Build associated structured vertex buffer if count is given
         if self._count > 0:
             dtype = []
@@ -88,8 +85,6 @@ class Program(GLObject):
                 dtype.append(attribute.dtype)
             self._buffer = VertexBuffer(np.zeros(self._count, dtype=dtype))
             self.bind(self._buffer)
-
-
 
     def attach(self, shaders):
         """ Attach one or several vertex/fragment shaders to the program. """
@@ -112,8 +107,6 @@ class Program(GLObject):
         # Build uniforms and attributes
         self._build_uniforms()
         self._build_attributes()
-
-
 
     def detach(self, shaders):
         """Detach one or several vertex/fragment shaders from the program.
@@ -143,7 +136,6 @@ class Program(GLObject):
         # Build uniforms and attributes
         self._build_uniforms()
         self._build_attributes()
-
 
     def _create(self):
         """
@@ -186,7 +178,7 @@ class Program(GLObject):
             raise RuntimeError('Linking error')
 
         # Activate uniforms
-        active_uniforms = [name for (name,gtype) in self.active_uniforms]
+        active_uniforms = [name for (name, gtype) in self.active_uniforms]
         for uniform in self._uniforms.values():
             if uniform.name in active_uniforms:
                 uniform.active = True
@@ -194,28 +186,26 @@ class Program(GLObject):
                 uniform.active = False
 
         # Activate attributes
-        active_attributes = [name for (name,gtype) in self.active_attributes]
+        active_attributes = [name for (name, gtype) in self.active_attributes]
         for attribute in self._attributes.values():
             if attribute.name in active_attributes:
                 attribute.active = True
             else:
                 attribute.active = False
 
-
     def _build_uniforms(self):
         """ Build the uniform objects """
 
         self._uniforms = {}
         count = 0
-        for (name,gtype) in self.all_uniforms:
+        for (name, gtype) in self.all_uniforms:
             uniform = Uniform(self, name, gtype)
-            #if gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
+            # if gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
             if gtype in (gl.GL_SAMPLER_2D,):
                 uniform._unit = count
                 count += 1
             self._uniforms[name] = uniform
         self._need_update = True
-
 
     def _build_attributes(self):
         """ Build the attribute objects """
@@ -223,11 +213,10 @@ class Program(GLObject):
         self._attributes = {}
 
         dtype = []
-        for (name,gtype) in self.all_attributes:
+        for (name, gtype) in self.all_attributes:
             attribute = Attribute(self, name, gtype)
             self._attributes[name] = attribute
             dtype.append(attribute.dtype)
-
 
     def bind(self, data):
         """ """
@@ -235,7 +224,6 @@ class Program(GLObject):
             for name in data.dtype.names:
                 if name in self._attributes.keys():
                     self._attributes[name].set_data(data[name])
-
 
     def __setitem__(self, name, data):
         if name in self._uniforms.keys():
@@ -245,7 +233,6 @@ class Program(GLObject):
         else:
             raise ValueError("Unknown uniform or attribute")
 
-
     def __getitem__(self, name):
         if name in self._uniforms.keys():
             return self._uniforms[name].data
@@ -253,8 +240,6 @@ class Program(GLObject):
             return self._attributes[name].data
         else:
             raise IndexError("Unknown uniform or attribute")
-
-
 
     def _activate(self):
         """Activate the program as part of current rendering state."""
@@ -270,8 +255,6 @@ class Program(GLObject):
             if attribute.active:
                 attribute.activate()
 
-
-
     def _deactivate(self):
         """Deactivate the program."""
 
@@ -282,7 +265,6 @@ class Program(GLObject):
             uniform.deactivate()
         for attribute in self._attributes.values():
             attribute.deactivate()
-
 
     def _get_all_uniforms(self):
         """Extract uniforms from shaders code """
@@ -295,8 +277,7 @@ class Program(GLObject):
         uniforms = list(set(uniforms))
         return uniforms
     all_uniforms = property(_get_all_uniforms,
-        doc = """ Program uniforms obtained from shaders code """)
-
+                            doc=""" Program uniforms obtained from shaders code """)
 
     def _get_active_uniforms(self):
         """ Extract active uniforms from GPU """
@@ -310,21 +291,20 @@ class Program(GLObject):
             # This checks if the uniform is an array
             # Name will be something like xxx[0] instead of xxx
             m = regex.match(name)
-            # When uniform is an array, size corresponds to the highest used index
+            # When uniform is an array, size corresponds to the highest used
+            # index
             if m:
                 name = m.group('name')
                 if size >= 1:
                     for i in range(size):
-                        name = '%s[%d]' % (m.group('name'),i)
+                        name = '%s[%d]' % (m.group('name'), i)
                         uniforms.append((name, gtype))
             else:
                 uniforms.append((name, gtype))
 
         return uniforms
     active_uniforms = property(_get_active_uniforms,
-        doc = "Program active uniforms obtained from GPU")
-
-
+                               doc="Program active uniforms obtained from GPU")
 
     def _get_inactive_uniforms(self):
         """ Extract inactive uniforms from GPU """
@@ -336,23 +316,19 @@ class Program(GLObject):
                 inactive_uniforms.remove(uniform)
         return inactive_uniforms
     inactive_uniforms = property(_get_inactive_uniforms,
-        doc = "Program inactive uniforms obtained from GPU")
-
-
+                                 doc="Program inactive uniforms obtained from GPU")
 
     def _get_all_attributes(self):
         """ Extract attributes from shaders code """
 
-        attributes= []
+        attributes = []
         for shader in self._verts:
             attributes.extend(shader.attributes)
         # No attribute in fragment shaders
         attributes = list(set(attributes))
         return attributes
     all_attributes = property(_get_all_attributes,
-        doc = "Program attributes obtained from shaders code")
-
-
+                              doc="Program attributes obtained from shaders code")
 
     def _get_active_attributes(self):
         """ Extract active attributes from GPU """
@@ -369,20 +345,19 @@ class Program(GLObject):
             # This checks if the attribute is an array
             # Name will be something like xxx[0] instead of xxx
             m = regex.match(name)
-            # When attribute is an array, size corresponds to the highest used index
+            # When attribute is an array, size corresponds to the highest used
+            # index
             if m:
                 name = m.group('name')
                 if size >= 1:
                     for i in range(size):
-                        name = '%s[%d]' % (m.group('name'),i)
+                        name = '%s[%d]' % (m.group('name'), i)
                         attributes.append((name, gtype))
             else:
                 attributes.append((name, gtype))
         return attributes
     active_attributes = property(_get_active_attributes,
-        doc = "Program active attributes obtained from GPU")
-
-
+                                 doc="Program active attributes obtained from GPU")
 
     def _get_inactive_attributes(self):
         """ Extract inactive attributes from GPU """
@@ -394,8 +369,7 @@ class Program(GLObject):
                 inacative_attributes.remove(attribute)
         return inactive_attributes
     inactive_attributes = property(_get_inactive_attributes,
-        doc = "Program inactive attributes obtained from GPU")
-
+                                   doc="Program inactive attributes obtained from GPU")
 
     @property
     def shaders(self):
@@ -406,9 +380,8 @@ class Program(GLObject):
         shaders.extend(self._frags)
         return shaders
 
-
-
-    def draw(self, mode = gl.GL_TRIANGLES, indices=None): #first=0, count=None):
+    # first=0, count=None):
+    def draw(self, mode=gl.GL_TRIANGLES, indices=None):
         """ Draw the attribute arrays in the specified mode.
 
         Parameters
@@ -435,9 +408,9 @@ class Program(GLObject):
 
         if isinstance(indices, IndexBuffer):
             indices.activate()
-            gltypes = { np.dtype(np.uint8) : gl.GL_UNSIGNED_BYTE,
-                        np.dtype(np.uint16): gl.GL_UNSIGNED_SHORT,
-                        np.dtype(np.uint32): gl.GL_UNSIGNED_INT }
+            gltypes = {np.dtype(np.uint8): gl.GL_UNSIGNED_BYTE,
+                       np.dtype(np.uint16): gl.GL_UNSIGNED_SHORT,
+                       np.dtype(np.uint32): gl.GL_UNSIGNED_INT}
             gl.glDrawElements(mode, indices.size, gltypes[indices.dtype], None)
             indices.deactivate()
         else:
@@ -446,5 +419,5 @@ class Program(GLObject):
             count = attributes[0].size
             gl.glDrawArrays(mode, first, count)
 
-        gl.glBindBuffer( gl.GL_ARRAY_BUFFER, 0 )
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         self.deactivate()
