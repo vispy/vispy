@@ -565,11 +565,11 @@ program = CompositeProgram(vertex_shader, fragment_shader)
 
 # Start by defining both the fragment function we'd like to install
 # and the required vertex shader support code:
-frag_func = Function("vec4 $func_name() { return $vec4_input; }")
+frag_code = "vec4 $func_name() { return $vec4_input; }"
 vert_func = Function("void $func_name() { $vec4_output = $vec4_input; }")
 
 # Now combine these into a single object:
-combined = FragmentFunction(frag_func, vert_func,
+combined = FragmentFunction(frag_code, vert_func,
                             link_vars=[('output', 'input')],
                             vert_hook='vert_post_hook')
 # The 'link_vars' argument specifies that the vertex shader 'output' and

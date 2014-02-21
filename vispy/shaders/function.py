@@ -572,15 +572,14 @@ class FunctionChain(Function):
 
 
 
-class FragmentFunction(object):
+class FragmentFunction(Function):
     """
     Function meant to be used in fragment shaders when some supporting 
     code must also be introduced to a vertex shader chain, usually to
     initialize one or more varyings.
     
     Parameters:
-        frag_func : Function or FunctionTemplate
-            To be bound in the fragment shader
+        code : Function code to be used in the fragment shader
         vert_func : Function or FunctionTemplate
             To be included in the vertex shader chain given by *vert_hook*
         link_vars : list of tuples
@@ -589,32 +588,35 @@ class FragmentFunction(object):
         vert_hook : str
             Name of the vertex shader function chain to which vert_callback 
             should be added. Default is 'vert_post_hook'.
+        **kwds : passed to Function.__init__
     
     """
-    def __init__(self, fragment_func, vertex_func, 
-                 link_vars, vert_hook='vert_post_hook'):
-        self.frag_func = fragment_func
+    def __init__(self, code, vertex_func, 
+                 link_vars, vert_hook='vert_post_hook', **kwds):
+        
+        super(FragmentFunction, self).__init__(code, **kwds)
+        
         self.vert_func = vertex_func
         self.link_vars = link_vars
         self._vert_hook = vert_hook
         
         for vname, fname in link_vars:
-            vtype = vertex_func.bindings.get(vname, None)
-            ftype = fragment_func.bindings.get(fname, None)
+            vtype = self.vert_func.bindings.get(vname, None)
+            ftype = self.bindings.get(fname, None)
             if vtype is None:
                 raise NameError("Variable name '%s' is not bindable in vertex "
                                 "shader. Names are: %s" %
-                                (vname, vertex_func.bindings.keys()))
+                                (vname, self.vert_func.bindings.keys()))
             if ftype is None:
                 raise NameError("Variable name '%s' is not bindable in fragment"
                                 " shader. Names are: %s" %
-                                (fname, fragment_func.bindings.keys()))
+                                (fname, self.bindings.keys()))
             if vtype != ftype:
                 raise TypeError("Linked variables '%s' and '%s' must have the"
                                 "same type. (types are %s, %s)" % 
                                 (vname, fname, vtype, ftype))
 
-    def bind(self, name, **kwds):
+    def wrap(self, name, **kwds):
         """
         * bind both this function and its vertex shader component to new functions
         * automatically bind varyings        
@@ -629,7 +631,7 @@ class FragmentFunction(object):
         # add varyings to each
         for vname, fname in self.link_vars:
             # This is likely to be a unique name...
-            var_type = self.vert_func.bindings[vname]
+            var_type = self.bindings[fname]
             var_name = "%s_%s_%s_var" % (name, vname, fname)
             var = ('varying', var_name)
             vert_vars[vname] = var
@@ -639,7 +641,7 @@ class FragmentFunction(object):
         # which variable goes to which function, or should this be made more
         # explicit?
         for bind_name in kwds:
-            if bind_name not in frag_vars and bind_name in self.frag_func.bindings:
+            if bind_name not in frag_vars and bind_name in self.bindings:
                 frag_vars[bind_name] = kwds[bind_name]
             elif bind_name in self.vert_func.bindings:
                 vert_vars[bind_name] = kwds[bind_name]
@@ -650,11 +652,11 @@ class FragmentFunction(object):
         
         
         # bind both functions
-        frag_bound = self.frag_func.bind(name, **frag_vars)
+        frag_bound = super(FragmentFunction, self).wrap(name, **frag_vars)
         
         # also likely to be a unique name...
         vert_name = name + "_support"
-        vert_bound = self.vert_func.bind(vert_name, **vert_vars)
+        vert_bound = self.vert_func.wrap(vert_name, **vert_vars)
         
         frag_bound._callbacks.append((self._vert_hook, vert_bound))
         
