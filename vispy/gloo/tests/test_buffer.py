@@ -323,7 +323,7 @@ class DataBufferTest(unittest.TestCase):
                             ('texcoord', np.float32, 2),
                             ('color',    np.float32, 4) ] )
         data1 = np.zeros(10,dtype=dtype)
-        data2 = np.empty(10,dtype=dtype)
+        data2 = np.ones(10,dtype=dtype)
         B = DataBuffer(data1, store=True, copy=False)
         B[...] = data2
         assert np.allclose(data1['position'],data2['position'])
@@ -337,7 +337,7 @@ class DataBufferTest(unittest.TestCase):
                             ('texcoord', np.float32, 2),
                             ('color',    np.float32, 4) ] )
         data1 = np.zeros(10,dtype=dtype)
-        data2 = np.empty(10,dtype=dtype)
+        data2 = np.ones(10,dtype=dtype)
         B = DataBuffer(data1, store=True, copy=False)
         B[::2] = data2[::2]
         assert np.allclose(data1['position'][::2],data2['position'][::2])
@@ -351,7 +351,7 @@ class DataBufferTest(unittest.TestCase):
                             ('texcoord', np.float32, 2),
                             ('color',    np.float32, 4) ] )
         data1 = np.zeros(10,dtype=dtype)
-        data2 = np.empty(10,dtype=dtype)
+        data2 = np.ones(10,dtype=dtype)
         B = DataBuffer(data1, store=True, copy=False)
         B[:5] = data2[:5]
         assert np.allclose(data1['position'][:5],data2['position'][:5])
