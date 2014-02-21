@@ -15,27 +15,6 @@ from ..util import logger
 
 
 
-# Patch: pythonize the glGetActiveAttrib
-# import ctypes
-# gl._glGetActiveAttrib = gl.glGetActiveAttrib
-# def glGetActiveAttrib(program, index):
-#     # Prepare
-#     bufsize = 32
-#     length = ctypes.c_int()
-#     size = ctypes.c_int()
-#     type = ctypes.c_int()
-#     name = ctypes.create_string_buffer(bufsize)
-#     # Call
-#     gl._glGetActiveAttrib(program, index,
-#                           bufsize, ctypes.byref(length), ctypes.byref(size),
-#                           ctypes.byref(type), name)
-#     # Return Python objects
-#     return name.value, size.value, type.value
-# gl.glGetActiveAttrib = glGetActiveAttrib
-
-
-
-
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
     """
@@ -79,21 +58,23 @@ class Program(GLObject):
         self._verts = []
         if type(verts) in [str, VertexShader]:
             verts = [verts]
-        for shader in verts:
-            if type(shader) is str:
-                self._verts.append(VertexShader(shader))
-            elif shader not in self._verts:
-                self._verts.append(shader)
+        if verts is not None:
+            for shader in verts:
+                if type(shader) is str:
+                    self._verts.append(VertexShader(shader))
+                elif shader not in self._verts:
+                    self._verts.append(shader)
 
         # Get all fragment shaders
         self._frags = []
         if type(frags) in [str, FragmentShader]:
             frags = [frags]
-        for shader in frags:
-            if type(shader) is str:
-                self._frags.append(FragmentShader(shader))
-            elif shader not in self._frags:
-                self._frags.append(shader)
+        if frags is not None:
+            for shader in frags:
+                if type(shader) is str:
+                    self._frags.append(FragmentShader(shader))
+                elif shader not in self._frags:
+                    self._frags.append(shader)
 
         # Build uniforms and attributes
         self._build_uniforms()
@@ -151,12 +132,12 @@ class Program(GLObject):
                 if shader in self._verts:
                     self._verts.remove(shader)
                 else:
-                    raise ShaderException("Shader is not attached to the program")
+                    raise RuntimeError("Shader is not attached to the program")
             if type(shader) is FragmentShader:
                 if shader in self._frags:
                     self._frags.remove(shader)
                 else:
-                    raise ShaderException("Shader is not attached to the program")
+                    raise RuntimeError("Shader is not attached to the program")
         self._need_update = True
 
         # Build uniforms and attributes
@@ -181,7 +162,7 @@ class Program(GLObject):
         if self._handle <= 0:
             self._handle = gl.glCreateProgram()
             if not self._handle:
-                raise ShaderException("Cannot create program object")
+                raise RuntimeError("Cannot create program object")
 
         # Detach any attached shaders
         attached = gl.glGetAttachedShaders(self._handle)
@@ -202,7 +183,7 @@ class Program(GLObject):
         gl.glLinkProgram(self._handle)
         if not gl.glGetProgramiv(self._handle, gl.GL_LINK_STATUS):
             print(gl.glGetProgramInfoLog(self._handle))
-            raise ShaderException('Linking error')
+            raise RuntimeError('Linking error')
 
         # Activate uniforms
         active_uniforms = [name for (name,gtype) in self.active_uniforms]
