@@ -227,7 +227,9 @@ void main()
 }
 """
 
-# Hack
+# HACK: True OpenGL ES does not need to enable point sprite and does not define
+# these two constants. Desktop OpenGL needs to enable these two modes but we do
+# not have these two constants because our GL namespace pretends to be ES.
 GL_VERTEX_PROGRAM_POINT_SIZE = 34370
 GL_POINT_SPRITE = 34913
 
