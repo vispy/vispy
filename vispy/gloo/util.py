@@ -7,6 +7,7 @@ import numpy as np
 
 from . import gl
 
+
 def _screenshot(viewport=None):
     """ Take a screenshot using glReadPixels. Not sure where to put this
     yet, so a private function for now. Used in make.py.

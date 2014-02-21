@@ -12,7 +12,6 @@ from ..util import logger
 from .globject import GLObject
 
 
-
 # ------------------------------------------------------------ Shader class ---
 class Shader(GLObject):
     """Abstract shader class."""
@@ -33,11 +32,10 @@ class Shader(GLObject):
         'mat2':        gl.GL_FLOAT_MAT2,
         'mat3':        gl.GL_FLOAT_MAT3,
         'mat4':        gl.GL_FLOAT_MAT4,
-#        'sampler1D':   gl.GL_SAMPLER_1D,
+        #        'sampler1D':   gl.GL_SAMPLER_1D,
         'sampler2D':   gl.GL_SAMPLER_2D,
-#        'sampler13':   gl.GL_SAMPLER_3D,
+        #        'sampler13':   gl.GL_SAMPLER_3D,
     }
-
 
     def __init__(self, target, code=None):
         """
@@ -60,7 +58,6 @@ class Shader(GLObject):
         if code is not None:
             self.code = code
 
-
     @property
     def code(self):
         """ Shader source code """
@@ -74,16 +71,14 @@ class Shader(GLObject):
                 self._code = file.read()
                 self._source = os.path.basename(code)
         else:
-            self._code   = code
+            self._code = code
             self._source = '<string>'
         self._need_update = True
-
 
     @property
     def source(self):
         """ Shader source (string or filename) """
         return self._source
-
 
     def _create(self):
         """ Compile the source and checks eveyrthing's ok """
@@ -107,10 +102,10 @@ class Shader(GLObject):
         gl.glCompileShader(self._handle)
         status = gl.glGetShaderParameter(self._handle, gl.GL_COMPILE_STATUS)
         if not status:
-            errors = gl.glGetShaderInfoLog(self._handle)
-            #errprmsg = self._get_error(errors, 4)
-            errormsg = str(errors)+str(self._handle)
-            raise ShaderError("Error compiling %r:\n" % self + errormsg)
+            error = gl.glGetShaderInfoLog(self._handle)
+            lineno, mesg = self._parse_error(error)
+            self._print_error(mesg, lineno - 1)
+            raise RuntimeError("Shader compilation error")
 
     def _delete(self):
         """ Delete shader from GPU memory (if it was present). """
@@ -130,21 +125,23 @@ class Shader(GLObject):
 
         # Nvidia
         # 0(7): error C1008: undefined variable "MV"
-        m = re.match(r'(\d+)\((\d+)\):\s(.*)', error )
-        if m: return int(m.group(2)), m.group(3)
+        m = re.match(r'(\d+)\((\d+)\):\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(3)
 
         # ATI / Intel
         # ERROR: 0:131: '{' : syntax error parse error
-        m = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error )
-        if m: return int(m.group(2)), m.group(3)
+        m = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(3)
 
         # Nouveau
         # 0:28(16): error: syntax error, unexpected ')', expecting '('
-        m = re.match( r'(\d+):(\d+)\((\d+)\):\s(.*)', error )
-        if m: return int(m.group(2)), m.group(4)
+        m = re.match(r'(\d+):(\d+)\((\d+)\):\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(4)
 
         raise ValueError('Unknown GLSL error format')
-
 
     def _print_error(self, error, lineno):
         """
@@ -163,24 +160,23 @@ class Shader(GLObject):
         BLACK = '\033[30m'
         RED = '\033[31m'
         lines = self._code.split('\n')
-        start = max(0,lineno-2)
-        end = min(len(lines),lineno+1)
+        start = max(0, lineno - 2)
+        end = min(len(lines), lineno + 1)
 
-        print('%sError in %s%s' % (BOLD, repr(self),OFF))
+        print('%sError in %s%s' % (BOLD, repr(self), OFF))
         print(' -> %s' % error)
         print()
         if start > 0:
             print(' ...')
         for i, line in enumerate(lines[start:end]):
-            if (i+start) == lineno:
-                print(' %03d %s' % (i+start, BOLD+RED+line+OFF))
+            if (i + start) == lineno:
+                print(' %03d %s' % (i + start, BOLD + RED + line + OFF))
             else:
                 if len(line):
-                    print(' %03d %s' % (i+start,line))
+                    print(' %03d %s' % (i + start, line))
         if end < len(lines):
             print(' ...')
         print()
-
 
     @property
     def uniforms(self):
@@ -189,19 +185,18 @@ class Shader(GLObject):
         uniforms = []
         regex = re.compile("""\s*uniform\s+(?P<type>\w+)\s+"""
                            """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
-        for m in re.finditer(regex,self._code):
+        for m in re.finditer(regex, self._code):
             size = -1
             gtype = Shader._gtypes[m.group('type')]
             if m.group('size'):
                 size = int(m.group('size'))
             if size >= 1:
                 for i in range(size):
-                    name = '%s[%d]' % (m.group('name'),i)
+                    name = '%s[%d]' % (m.group('name'), i)
                     uniforms.append((name, gtype))
             else:
                 uniforms.append((m.group('name'), gtype))
         return uniforms
-
 
     @property
     def attributes(self):
@@ -210,19 +205,18 @@ class Shader(GLObject):
         attributes = []
         regex = re.compile("""\s*attribute\s+(?P<type>\w+)\s+"""
                            """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
-        for m in re.finditer(regex,self._code):
+        for m in re.finditer(regex, self._code):
             size = -1
             gtype = Shader._gtypes[m.group('type')]
             if m.group('size'):
                 size = int(m.group('size'))
             if size >= 1:
                 for i in range(size):
-                    name = '%s[%d]' % (m.group('name'),i)
+                    name = '%s[%d]' % (m.group('name'), i)
                     attributess.append((name, gtype))
             else:
                 attributes.append((m.group('name'), gtype))
         return attributes
-
 
 
 # ------------------------------------------------------ VertexShader class ---
@@ -236,15 +230,12 @@ class VertexShader(Shader):
         return "Vertex Shader %d (%s)" % (self._id, self._source)
 
 
-
 # ---------------------------------------------------- FragmentShader class ---
 class FragmentShader(Shader):
     """ Fragment shader class """
 
-
     def __init__(self, code=None):
         Shader.__init__(self, gl.GL_FRAGMENT_SHADER, code)
-
 
     def __repr__(self):
         return "Fragment Shader %d (%s)" % (self._id, self._source)
