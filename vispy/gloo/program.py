@@ -5,12 +5,14 @@
 # -----------------------------------------------------------------------------
 import re
 import numpy as np
-import .gl
-from .debug import log
-from .globject import GLObject
-from .buffer import VertexBuffer, IndexBuffer
-from .shader import VertexShader, FragmentShader
-from .variable import gl_typeinfo, Uniform, Attribute
+
+from . import gl
+from . globject import GLObject
+from . buffer import VertexBuffer, IndexBuffer
+from . shader import VertexShader, FragmentShader
+from . variable import gl_typeinfo, Uniform, Attribute
+from ..util import logger
+
 
 
 # Patch: pythonize the glGetActiveAttrib
@@ -194,7 +196,7 @@ class Program(GLObject):
             shader.activate()
             gl.glAttachShader(self._handle, shader.handle)
 
-        log("GPU: Creating program")
+        logger.debug("GPU: Creating program")
 
         # Link the program
         gl.glLinkProgram(self._handle)

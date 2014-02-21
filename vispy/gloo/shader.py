@@ -7,9 +7,9 @@ import re
 import os.path
 import numpy as np
 
-import .gl
+from . import gl
+from ..util import logger
 from .globject import GLObject
-from .debug import log
 
 
 
@@ -33,8 +33,9 @@ class Shader(GLObject):
         'mat2':        gl.GL_FLOAT_MAT2,
         'mat3':        gl.GL_FLOAT_MAT3,
         'mat4':        gl.GL_FLOAT_MAT4,
-        'sampler1D':   gl.GL_SAMPLER_1D,
+#        'sampler1D':   gl.GL_SAMPLER_1D,
         'sampler2D':   gl.GL_SAMPLER_2D,
+#        'sampler13':   gl.GL_SAMPLER_3D,
     }
 
 
@@ -100,7 +101,7 @@ class Shader(GLObject):
         # Set shader source
         gl.glShaderSource(self._handle, self._code)
 
-        log("GPU: Creating shader")
+        logger.debug("GPU: Creating shader")
 
         # Actual compilation
         gl.glCompileShader(self._handle)
