@@ -615,10 +615,13 @@ class VertexBuffer(DataBuffer):
         # Check base type and count for each dtype fields (if buffer is a base)
         if base is None:
             for name in self.dtype.names:
-                from operator import mul
                 btype = self.dtype[name].base
                 if len(self.dtype[name].shape):
-                    count = reduce(mul, self.dtype[name].shape)
+                    count = 1
+                    s = self.dtype[name].shape
+                    for i in range(len(s)):
+                        count *= s[i]
+                    #count = reduce(mul, self.dtype[name].shape)
                 else:
                     count = 1
                 if btype not in [np.int8,  np.uint8,  np.float16,
