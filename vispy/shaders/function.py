@@ -242,7 +242,7 @@ class Function(object):
                 #name = "$func_name" # no name specified; make the new function anonymous.
             #return BoundFunction(self, name, kwds)
 
-    def compile(self, program, name=None):
+    def compile(self, program, name=None, prefix=None):
         """
         Generate complete code to be used in *program*.
         This must resolve all template variables and set a function name.
@@ -252,7 +252,10 @@ class Function(object):
         if name is not None:
             self.name = name
         elif self.name is None:
-            self.name = self._template_name.lstrip('$')
+            name = self._template_name.lstrip('$')
+            if prefix is not None:
+                name = prefix + "_" + name
+            self.name = name
         
         # Decide on variable names based on prefix and uniqueness
         subs = {}
@@ -533,11 +536,6 @@ class FunctionChain(Function):
         self._funcs = list(funcs)
         self._deps = list(funcs)
         self._code = None
-        if name is not None:
-            if name.startswith('$'):
-                self._template_name = name
-            else:
-                self.name = name
         self._update_signature()
         
         

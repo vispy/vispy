@@ -32,7 +32,7 @@ class Canvas(vispy.app.Canvas):
         
         # Define several LineVisuals that use the same position data
         # but have different colors and transformations
-        colors = [color, (1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1),
+        colors = [(1, 1, 1, 1), (1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1),
                   (1, 1, 0, 1), (1, 1, 1, 1)]
         self.lines = [LineVisual(pos, color=colors[i]) for i in range(6)]
         

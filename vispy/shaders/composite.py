@@ -279,14 +279,14 @@ class CompositeProgram(Program):
                 for dep in func.all_deps():
                     if dep is func:
                         if dep.name is None:
-                            vcode += "\n\n" + dep.compile(self, hook_name)
+                            vcode += "\n\n" + dep.compile(self, name=hook_name)
                         else:
                             vcode += "\n\n" + dep.compile(self)
                     elif dep not in vdeps:
                         #print("++vertex dep++")
                         #print(dep)
                         #print(dep.code)
-                        vcode += "\n\n" + dep.compile(self)
+                        vcode += "\n\n" + dep.compile(self, prefix=hook_name)
                         vdeps.add(dep)
                 #vcode += func.code
                 
@@ -295,23 +295,23 @@ class CompositeProgram(Program):
                 for dep in func.all_deps():
                     if dep is func:
                         if dep.name is None:
-                            fcode += "\n\n" + dep.compile(self, hook_name)
+                            fcode += "\n\n" + dep.compile(self, name=hook_name)
                         else:
                             fcode += "\n\n" + dep.compile(self)
                     elif dep not in fdeps:
                         #print("++fragment dep++")
                         #print(dep)
                         #print(dep.code)
-                        fcode += "\n\n" + dep.compile(self)
+                        fcode += "\n\n" + dep.compile(self, prefix=hook_name)
                         fdeps.add(dep)
                 #fcode += func.code
                 
             else:
                 raise Exception("Unsupported shader type: %s" % shader)
 
-        print ("--vertex------------------------------")
+        print ("-------------------------VERTEX------------------------------")
         print (vcode)
-        print ("--fragment------------------------------")
+        print ("\n-----------------------FRAGMENT------------------------------")
         print (fcode)
         print ("--------------------------------")
         
@@ -322,13 +322,13 @@ class CompositeProgram(Program):
         Apply all program variables that are carried by the components of this 
         program.
         """
-        #print("apply variables:")
+        logging.debug("apply variables:")
         for hook_name, func in self._hook_defs.items():
-            #print("  ", hook_name, func)
+            logging.debug("  ", hook_name, func)
             for dep in func.all_deps():
-                #print("    ", dep)
+                logging.debug("    ", dep)
                 for name, spec in dep._program_values.items():
-                    #print("      ", name, value, dep)
+                    logging.debug("      ", name, value, dep)
                     self[name] = spec[2]
         
 

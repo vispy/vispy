@@ -103,7 +103,7 @@ class Transform(object):
         """
         raise NotImplementedError()
 
-    def shader_map(self, name=None, var_prefix=None):
+    def shader_map(self):
         """
         Return a shader Function that accepts only a single vec4 argument and defines
         new attributes / uniforms supplying the Function with any static input.
@@ -111,7 +111,7 @@ class Transform(object):
         #return self._resolve(name, var_prefix, imap=False)
         return self._shader_map
         
-    def shader_imap(self, name=None, var_prefix=None):
+    def shader_imap(self):
         """
         see shader_map.
         """
@@ -278,13 +278,16 @@ class ChainTransform(Transform):
     GLSL_imap = ""
     
     def __init__(self, transforms=None, simplify=False):
-        super(ChainTransform, self).__init__()
+        #super(ChainTransform, self).__init__()
         if transforms is None:
             transforms = []
         self.transforms = transforms
         self.flatten()
         if simplify:
             self.simplify()
+            
+        self._shader_map = None
+        self._shader_imap = None
         
     @property
     def transforms(self):
@@ -308,6 +311,38 @@ class ChainTransform(Transform):
             obj = tr.imap(obj)
         return obj
     
+    def shader_map(self):
+        if self._shader_map is None:
+            self._shader_map = self._make_shader_map(imap=False)
+            
+        return self._shader_map
+    
+    def shader_imap(self):
+        if self._shader_imap is None:
+            self._shader_imap = self._make_shader_map(imap=True)
+            
+        return self._shader_imap
+    
+    def _make_shader_map(self, imap):
+        if imap:
+            funcs = [tr.shader_imap() for tr in self.transforms[::-1]]
+        else:
+            funcs = [tr.shader_map for tr in self.transforms]
+        
+        #bindings = []
+        #for i,tr in enumerate(transforms):
+            
+            #tr_name = '%s_%d_%s' % (name, i, type(tr).__name__)
+            #if imap:
+                #bound = tr.shader_imap(tr_name)
+            #else:
+                #bound = tr.shader_map(tr_name)
+            #bindings.append(bound)
+            
+        name = "$transform_%s_chain" % ('imap' if imap else 'map')
+        return FunctionChain(name, funcs)
+
+
     def inverse(self):
         return ChainTransform([tr.inverse() for tr in self.transforms[::-1]])
     
@@ -342,26 +377,7 @@ class ChainTransform(Transform):
                     new_tr.append(tr2)
             self.transforms = new_tr
             if exit:
-                break
-            
-
-    def _resolve(self, name, var_prefix, imap):
-        if imap:
-            transforms = self.transforms[::-1]
-        else:
-            transforms = self.transforms
-        
-        bindings = []
-        for i,tr in enumerate(transforms):
-            
-            tr_name = '%s_%d_%s' % (name, i, type(tr).__name__)
-            if imap:
-                bound = tr.shader_imap(tr_name)
-            else:
-                bound = tr.shader_map(tr_name)
-            bindings.append(bound)
-            
-        return FunctionChain(name, bindings)
+                break            
 
     def append(self, tr):
         """
@@ -430,8 +446,6 @@ class NullTransform(Transform):
     def imap(self, obj):
         return obj
     
-        
-    
     def inverse(self):
         return NullTransform()
 
@@ -480,6 +494,16 @@ class STTransform(Transform):
         s = 1./self.scale
         t = -self.translate * s
         return STTransform(scale=s, translate=t)
+    
+    def shader_map(self):
+        self._shader_map['scale'] = ('uniform', 'vec4', self.scale)
+        self._shader_map['translate'] = ('uniform', 'vec4', self.translate)
+        return self._shader_map
+    
+    def shader_map(self):
+        self._shader_imap['scale'] = ('uniform', 'vec4', self.scale)
+        self._shader_imap['translate'] = ('uniform', 'vec4', self.translate)
+        return self._shader_imap
     
     @property
     def scale(self):
