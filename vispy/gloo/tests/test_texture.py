@@ -15,10 +15,9 @@ class TextureTest(unittest.TestCase):
     # No data, no dtype : forbidden
     # ---------------------------------
     def test_init_none(self):
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    T = Texture()
         self.assertRaises(ValueError, Texture)
-
 
     # Data only
     # ---------------------------------
@@ -124,9 +123,9 @@ class TextureTest(unittest.TestCase):
     def test_set_misplaced_data(self):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    T.set_data(np.ones((5, 5)), offset=(8, 8))
-        self.assertRaises(ValueError,T.set_data,
+        self.assertRaises(ValueError, T.set_data,
                           np.ones((5, 5)), offset=(8, 8))
 
     # Set misshaped data
@@ -134,7 +133,7 @@ class TextureTest(unittest.TestCase):
     def test_set_misshaped_data(self):
         data = np.zeros(10, dtype=np.uint8)
         T = Texture(data=data)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    T.set_data(np.ones((10, 10)))
         self.assertRaises(ValueError, T.set_data, np.ones((10, 10)))
 
@@ -174,7 +173,7 @@ class TextureTest(unittest.TestCase):
     def test_resize_bad_shape(self):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    T.resize((5, 5, 5))
         self.assertRaises(ValueError, T.resize, (5, 5, 5))
 
@@ -183,17 +182,17 @@ class TextureTest(unittest.TestCase):
     def test_resize_view(self):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data)
-        #with self.assertRaises(RuntimeError):
+        # with self.assertRaises(RuntimeError):
         #    T[...].resize((5, 5))
         Z = T[...]
-        self.assertRaises(RuntimeError, Z.resize, (5,5))
+        self.assertRaises(RuntimeError, Z.resize, (5, 5))
 
     # Resize not resizeable
     # ---------------------------------
     def test_resize_unresizeable(self):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data, resizeable=False)
-        #with self.assertRaises(RuntimeError):
+        # with self.assertRaises(RuntimeError):
         #    T.resize((5, 5))
         self.assertRaises(RuntimeError, T.resize, (5, 5))
 
@@ -269,11 +268,11 @@ class TextureTest(unittest.TestCase):
 
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    Z = T[::2, ::2]
         #    print(Z)
-        s = slice(None,None,2)
-        self.assertRaises(ValueError, T.__getitem__, (s,s))
+        s = slice(None, None, 2)
+        self.assertRaises(ValueError, T.__getitem__, (s, s))
 
     # Set data with store
     # ---------------------------------
@@ -320,10 +319,10 @@ class TextureTest(unittest.TestCase):
     def test_setitem_wrong(self):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    T[::2, ::2] = 1
-        s = slice(None,None,2)
-        self.assertRaises(ValueError, T.__setitem__, (s,s), 1)
+        s = slice(None, None, 2)
+        self.assertRaises(ValueError, T.__setitem__, (s, s), 1)
 
     # Set via get (pending data on base)
     # ---------------------------------
