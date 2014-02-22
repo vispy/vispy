@@ -30,10 +30,9 @@ class BufferTest(unittest.TestCase):
     # Unknown target
     # --------------
     def test_init_wrong_target(self):
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    B = Buffer(target=-1)
         self.assertRaises(ValueError, Buffer, target=-1)
-
 
     # No data
     # -------
@@ -77,7 +76,7 @@ class BufferTest(unittest.TestCase):
     def test_oversized_data(self):
         data = np.zeros(10)
         B = Buffer(data=data, resizeable=False)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    B.set_data(np.ones(20))
         self.assertRaises(ValueError, B.set_data, np.ones(20))
 
@@ -86,7 +85,7 @@ class BufferTest(unittest.TestCase):
     def test_negative_offset(self):
         data = np.zeros(10)
         B = Buffer(data=data, resizeable=False)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    B.set_data(np.ones(1), offset=-1)
         self.assertRaises(ValueError, B.set_data, np.ones(1), offset=-1)
 
@@ -95,7 +94,7 @@ class BufferTest(unittest.TestCase):
     def test_offlimit_offset(self):
         data = np.zeros(10)
         B = Buffer(data=data, resizeable=False)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    B.set_data(np.ones(1), offset=10 * data.dtype.itemsize)
         self.assertRaises(ValueError, B.set_data,
                           np.ones(1), offset=10 * data.dtype.itemsize)
@@ -124,7 +123,7 @@ class BufferTest(unittest.TestCase):
         data = np.zeros(10)
         B = Buffer(data=data, resizeable=False)
         data = np.zeros(20)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    B.set_data(data)
         self.assertRaises(ValueError, B.set_data, data)
 
@@ -189,7 +188,7 @@ class DataBufferTest(unittest.TestCase):
     # Empty init (not allowed)
     # ------------------------
     def test_empty_init(self):
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    B = DataBuffer()
         self.assertRaises(ValueError, DataBuffer)
 
@@ -297,10 +296,10 @@ class DataBufferTest(unittest.TestCase):
         # set_data on field is not allowed because set_data
         # can result in a buffer resize
 
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    B['position'].set_data(data)
         Z = B['position']
-        self.assertRaises(ValueError, Z.set_data ,data)
+        self.assertRaises(ValueError, Z.set_data, data)
 
     # Setitem + broadcast
     # ------------------------------------------------------
@@ -364,7 +363,7 @@ class DataBufferTest(unittest.TestCase):
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data, store=False, copy=False)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    B['position'] = 1, 2, 3
         self.assertRaises(ValueError,  B.__setitem__, 'position', (1, 2, 3))
 
@@ -376,9 +375,9 @@ class DataBufferTest(unittest.TestCase):
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data, store=False)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    B[::2] = data[::2]
-        s = slice(None,None,2)
+        s = slice(None, None, 2)
         self.assertRaises(ValueError, B.__setitem__, s, data[::2])
 
     # Resize
@@ -397,7 +396,7 @@ class DataBufferTest(unittest.TestCase):
         data = np.zeros(10)
         B = DataBuffer(data=data)
         data = np.zeros(30)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    B[...] = data
         self.assertRaises(ValueError, B.__setitem__, Ellipsis, data)
 
@@ -407,7 +406,7 @@ class DataBufferTest(unittest.TestCase):
         data = np.zeros(10)
         B = DataBuffer(data=data, resizeable=False)
         data = np.zeros(20)
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    B.set_data(data)
         self.assertRaises(ValueError, B.set_data, data)
 
@@ -428,7 +427,7 @@ class VertexBufferTest(unittest.TestCase):
     # -----------------------------------
     def test_init_not_allowed_dtype(self):
         for dtype in (np.uint32, np.int32, np.float64):
-            #with self.assertRaises(TypeError):
+            # with self.assertRaises(TypeError):
             #    V = VertexBuffer(dtype=dtype)
             self.assertRaises(TypeError, VertexBuffer, dtype=dtype)
 
@@ -449,7 +448,7 @@ class IndexBufferTest(unittest.TestCase):
     def test_init_not_allowed_dtype(self):
         for dtype in (np.int8, np.int16, np.int32,
                       np.float16, np.float32, np.float64):
-            #with self.assertRaises(TypeError):
+            # with self.assertRaises(TypeError):
             #    V = IndexBuffer(dtype=dtype)
             self.assertRaises(TypeError, IndexBuffer, dtype=dtype)
 
