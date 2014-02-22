@@ -291,7 +291,7 @@ class Program(GLObject):
             name, size, gtype = gl.glGetActiveUniform(self.handle, i)
             # This checks if the uniform is an array
             # Name will be something like xxx[0] instead of xxx
-            m = regex.match(name)
+            m = regex.match(name.decode('utf-8'))
             # When uniform is an array, size corresponds to the highest used
             # index
             if m:
@@ -342,7 +342,7 @@ class Program(GLObject):
 
             # This checks if the attribute is an array
             # Name will be something like xxx[0] instead of xxx
-            m = regex.match(name)
+            m = regex.match(name.decode('utf-8'))
             # When attribute is an array, size corresponds to the highest used
             # index
             if m:
@@ -393,7 +393,9 @@ class Program(GLObject):
         """
 
         self.activate()
-        attributes = self._attributes.values()
+
+        # WARNING: The "list" of values from a dict is not a list
+        attributes = list(self._attributes.values())
 
         # Get buffer size first attribute
         # We need more tests here
