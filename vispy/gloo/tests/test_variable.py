@@ -129,12 +129,11 @@ class AttributeTest(unittest.TestCase):
         attribute.set_data(1)
         assert type(attribute.data) is np.ndarray
 
-    @unittest.expectedFailure
-    def test_set_generic_2(self):
-        attribute = Attribute(None, "A", gl.GL_FLOAT_VEC4)
-
-        attribute.set_data([1, 2, 3, 4])
-        assert type(attribute.data) is np.ndarray
+#    @unittest.expectedFailure
+#    def test_set_generic_2(self):
+#        attribute = Attribute(None, "A", gl.GL_FLOAT_VEC4)
+#        attribute.set_data([1, 2, 3, 4])
+#        assert type(attribute.data) is np.ndarray
 
 
 if __name__ == "__main__":
