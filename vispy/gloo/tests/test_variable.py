@@ -22,30 +22,29 @@ class VariableTest(unittest.TestCase):
         assert variable.active is True
 
     def test_init_wrong_type(self):
-        #with self.assertRaises(TypeError):
+        # with self.assertRaises(TypeError):
         #    v = Variable(None, "A", gl.GL_INT_VEC2)
         self.assertRaises(TypeError, Variable, None, "A", gl.GL_INT_VEC2)
 
-        #with self.assertRaises(TypeError):
+        # with self.assertRaises(TypeError):
         #    v = Variable(None, "A", gl.GL_INT_VEC3)
         self.assertRaises(TypeError, Variable, None, "A", gl.GL_INT_VEC3)
 
-        #with self.assertRaises(TypeError):
+        # with self.assertRaises(TypeError):
         #    v = Variable(None, "A", gl.GL_INT_VEC4)
         self.assertRaises(TypeError, Variable, None, "A", gl.GL_INT_VEC4)
 
-        #with self.assertRaises(TypeError):
+        # with self.assertRaises(TypeError):
         #    v = Variable(None, "A", gl.GL_BOOL_VEC2)
         self.assertRaises(TypeError, Variable, None, "A", gl.GL_BOOL_VEC2)
 
-        #with self.assertRaises(TypeError):
+        # with self.assertRaises(TypeError):
         #    v = Variable(None, "A", gl.GL_BOOL_VEC3)
         self.assertRaises(TypeError, Variable, None, "A", gl.GL_BOOL_VEC3)
 
-        #with self.assertRaises(TypeError):
+        # with self.assertRaises(TypeError):
         #    v = Variable(None, "A", gl.GL_BOOL_VEC4)
         self.assertRaises(TypeError, Variable, None, "A", gl.GL_BOOL_VEC4)
-
 
 
 # -----------------------------------------------------------------------------
@@ -107,13 +106,13 @@ class UniformTest(unittest.TestCase):
     def test_set_exception(self):
         uniform = Uniform(None, "A", gl.GL_FLOAT_VEC4)
 
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    uniform.set_data([1, 2])
         self.assertRaises(ValueError, uniform.set_data, [1, 2])
 
-        #with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
         #    uniform.set_data([1, 2, 3, 4, 5])
-        self.assertRaises(ValueError, uniform.set_data , [1, 2, 3, 4, 5])
+        self.assertRaises(ValueError, uniform.set_data, [1, 2, 3, 4, 5])
 
 
 # -----------------------------------------------------------------------------
