@@ -42,8 +42,9 @@ class ShaderTest(unittest.TestCase):
 
     def test_empty_build(self):
         shader = VertexShader()
-        with self.assertRaises(RuntimeError):
-            shader.activate()
+        #with self.assertRaises(RuntimeError):
+        #    shader.activate()
+        self.assertRaises(RuntimeError, shader.activate)
 
     def test_delete_no_context(self):
         shader = VertexShader()
