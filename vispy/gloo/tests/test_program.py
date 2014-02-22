@@ -74,20 +74,23 @@ class ProgramTest(unittest.TestCase):
         frag = FragmentShader("B")
 
         program = Program(verts=vert)
-        with self.assertRaises(ValueError):
-            program.activate()
+        #with self.assertRaises(ValueError):
+        #    program.activate()
+        self.assertRaises(ValueError, program.activate)
 
         program = Program(frags=frag)
-        with self.assertRaises(ValueError):
-            program.activate()
+        #with self.assertRaises(ValueError):
+        #    program.activate()
+        self.assertRaises(ValueError, program.activate)
 
     def test_setitem(self):
         vert = VertexShader("")
         frag = FragmentShader("")
 
         program = Program(vert, frag)
-        with self.assertRaises(ValueError):
-            program["A"] = 1
+        #with self.assertRaises(ValueError):
+        #    program["A"] = 1
+        self.assertRaises(ValueError, program.__setitem__, "A", 1)
 
 
 if __name__ == "__main__":
