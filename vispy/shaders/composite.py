@@ -3,6 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
+import logging
 
 from ..gloo import Program, VertexShader, FragmentShader
 from .function import *
@@ -322,13 +323,13 @@ class CompositeProgram(Program):
         Apply all program variables that are carried by the components of this 
         program.
         """
-        logging.debug("apply variables:")
+        print("apply variables:")
         for hook_name, func in self._hook_defs.items():
-            logging.debug("  ", hook_name, func)
+            print("  ", hook_name, func)
             for dep in func.all_deps():
-                logging.debug("    ", dep)
+                print("    ", dep)
                 for name, spec in dep._program_values.items():
-                    logging.debug("      ", name, value, dep)
+                    print("      ", name, spec, dep)
                     self[name] = spec[2]
         
 

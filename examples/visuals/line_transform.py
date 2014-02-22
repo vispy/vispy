@@ -15,6 +15,9 @@ from vispy.gloo import gl
 from vispy.visuals.line import LineVisual
 from vispy.visuals.transforms import STTransform, LogTransform, AffineTransform, PolarTransform
 
+import vispy.util
+vispy.util.use_log_level('debug')
+
 # vertex positions of data to draw
 N = 200
 pos = np.zeros((N, 3), dtype=np.float32)

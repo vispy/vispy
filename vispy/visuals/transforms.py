@@ -327,7 +327,7 @@ class ChainTransform(Transform):
         if imap:
             funcs = [tr.shader_imap() for tr in self.transforms[::-1]]
         else:
-            funcs = [tr.shader_map for tr in self.transforms]
+            funcs = [tr.shader_map() for tr in self.transforms]
         
         #bindings = []
         #for i,tr in enumerate(transforms):
@@ -500,7 +500,7 @@ class STTransform(Transform):
         self._shader_map['translate'] = ('uniform', 'vec4', self.translate)
         return self._shader_map
     
-    def shader_map(self):
+    def shader_imap(self):
         self._shader_imap['scale'] = ('uniform', 'vec4', self.scale)
         self._shader_imap['translate'] = ('uniform', 'vec4', self.translate)
         return self._shader_imap
@@ -580,9 +580,14 @@ class AffineTransform(Transform):
     def imap(self, coords):
         return np.dot(coords, self.inv_matrix)
 
-    def shader_map(self, *args, **kwds):
-        fn = super(AffineTransform, self).shader_map(*args, **kwds)
+    def shader_map(self):
+        fn = super(AffineTransform, self).shader_map()
         fn['matrix'] = ('uniform', 'mat4', self.matrix)
+        return fn
+
+    def shader_imap(self):
+        fn = super(AffineTransform, self).shader_imap()
+        fn['inv_matrix'] = ('uniform', 'mat4', self.inv_matrix)
         return fn
 
     def inverse(self):
@@ -754,6 +759,17 @@ class LogTransform(Transform):
             else:
                 ret[...,i] = coords[...,i]
         return ret
+
+    def shader_map(self):
+        fn = super(LogTransform, self).shader_map()
+        fn['base'] = ('uniform', 'vec3', self.base)
+        return fn
+
+    def shader_imap(self):
+        fn = super(LogTransform, self).shader_imap()
+        fn['base'] = ('uniform', 'vec3', self.base)
+        return fn
+
             
     def __repr__(self):
         return "<LogTransform base=%s>" % (self.base)
