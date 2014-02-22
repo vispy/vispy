@@ -103,6 +103,7 @@ class Shader(GLObject):
         status = gl.glGetShaderiv(self._handle, gl.GL_COMPILE_STATUS)
         if not status:
             error = gl.glGetShaderInfoLog(self._handle)
+            error = error.decode('utf-8')
             lineno, mesg = self._parse_error(error)
             self._print_error(mesg, lineno - 1)
             raise RuntimeError("Shader compilation error")
