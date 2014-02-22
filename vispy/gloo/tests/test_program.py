@@ -43,8 +43,10 @@ class ProgramTest(unittest.TestCase):
         vert = VertexShader("uniform float A;")
         frag = FragmentShader("uniform float A; uniform vec4 B;")
         program = Program(vert, frag)
-        assert program.all_uniforms == [("A", gl.GL_FLOAT),
-                                        ("B", gl.GL_FLOAT_VEC4)]
+        print(program.all_uniforms)
+        assert ("A", gl.GL_FLOAT) in program.all_uniforms
+        assert ("B", gl.GL_FLOAT_VEC4) in program.all_uniforms
+        assert len(program.all_uniforms) == 2
 
     def test_attributes(self):
         vert = VertexShader("attribute float A;")
