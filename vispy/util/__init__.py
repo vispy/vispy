@@ -7,5 +7,5 @@ one or more Vispy sub-packages.
 """
 
 from .misc import (_TempDir, is_string, parse_command_line_arguments,  # noqa
-                   config)  # noqa
+                   config, sys_info)  # noqa
 from ._logging import logger, set_log_level, use_log_level  # noqa

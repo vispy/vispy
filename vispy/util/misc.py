@@ -9,10 +9,15 @@ import numpy as np
 import tempfile
 import atexit
 from shutil import rmtree
+import sys
+import platform
+import getopt
+from os import path as op
+import traceback
 
 from .six import string_types
 from .event import EmitterGroup, EventEmitter, Event
-from ._logging import logger, set_log_level
+from ._logging import logger, set_log_level, use_log_level
 
 
 class _TempDir(str):
@@ -178,8 +183,6 @@ def parse_command_line_arguments():
     """ Transform vispy specific command line args to vispy config.
     Put into a function so that any variables dont leak in the vispy namespace.
     """
-    import getopt
-    import sys
     # Get command line args for vispy
     argnames = ['vispy-backend', 'vispy-gl-debug']
     try:
@@ -196,3 +199,61 @@ def parse_command_line_arguments():
                 config['gl_debug'] = True
             else:
                 logger.warning("Unsupported vispy flag: %s" % o)
+
+
+def sys_info(fname=None, overwrite=False):
+    """Get relevant system and debugging information
+
+    Parameters
+    ----------
+    fname : str | None
+        Filename to dump info to. Use None to simply print.
+    overwrite : bool
+        If True, overwrite file (if it exists).
+
+    Returns
+    -------
+    out : str
+        The system information as a string.
+    """
+    if fname is not None and op.isfile(fname) and not overwrite:
+        raise IOError('file exists, use overwrite=True to overwrite')
+
+    out = ''
+    try:
+        # Nest all imports here to avoid any circular imports
+        from ..app import Application, Canvas, backends
+        from ..gloo import gl
+        # get default app
+        this_app = Application()
+        with use_log_level('warning'):
+            this_app.use()  # suppress unnecessary messages
+        out += 'Platform: %s\n' % platform.platform()
+        out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
+        out += 'Backend:  %s\n' % this_app.backend_name
+        out += 'Qt:       %s\n' % backends.has_qt(return_which=True)[1]
+        out += 'Pyglet:   %s\n' % backends.has_pyglet(return_which=True)[1]
+        out += 'glfw:     %s\n' % backends.has_glfw(return_which=True)[1]
+        out += 'glut:     %s\n' % backends.has_glut(return_which=True)[1]
+        out += '\n'
+        # We need an OpenGL context to get GL info
+        if 'glut' in this_app.backend_name.lower():
+            # glut causes problems
+            out += 'OpenGL information omitted for glut backend\n'
+        else:
+            canvas = Canvas('Test', (10, 10), show=False, app=this_app)
+            canvas._backend._vispy_set_current()
+            out += 'GL version:  %s\n' % gl.glGetString(gl.GL_VERSION)
+            x_ = gl.GL_MAX_TEXTURE_SIZE
+            out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetIntegerv(x_)
+            x_ = gl.ext.GL_MAX_3D_TEXTURE_SIZE
+            out += 'MAX_3D_TEXTURE_SIZE: %d\n\n' % gl.glGetIntegerv(x_)
+            out += 'Extensions: %s\n' % gl.glGetString(gl.GL_EXTENSIONS)
+            canvas.close()
+    except Exception:  # don't stop printing info
+        out += '\nInfo-gathering error:\n%s' % traceback.format_exc()
+        pass
+    if fname is not None:
+        with open(fname, 'w') as fid:
+            fid.write(out)
+    return out
