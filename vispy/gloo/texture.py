@@ -4,7 +4,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import numpy as np
-from operator import mul
 
 from . import gl
 from .globject import GLObject
@@ -401,7 +400,10 @@ class Texture(GLObject):
 
         offset = tuple([s.start for s in slices])
         shape = tuple([s.stop - s.start for s in slices])
-        size = reduce(mul, shape)
+        size = 1
+        for i in range(len(shape)):
+            size *= shape[i]
+        #size = reduce(mul, shape)
 
         # We have CPU storage
         if self.data is not None:
