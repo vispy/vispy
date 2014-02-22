@@ -43,7 +43,6 @@ class ProgramTest(unittest.TestCase):
         vert = VertexShader("uniform float A;")
         frag = FragmentShader("uniform float A; uniform vec4 B;")
         program = Program(vert, frag)
-        print(program.all_uniforms)
         assert ("A", gl.GL_FLOAT) in program.all_uniforms
         assert ("B", gl.GL_FLOAT_VEC4) in program.all_uniforms
         assert len(program.all_uniforms) == 2
