@@ -411,17 +411,14 @@ class Function(object):
         self._program_values[name] = spec
         
      
-    #def __setitem__(self, var, value):
-        #"""
-        #Set the value of a program variable declared in this function's code.
+    def __setitem__(self, var, value):
+        """
+        Set the value of a program variable declared in this function's code.
         
-        #Any CompositeProgram that depends on this function will automatically
-        #apply the variable when it is activated.
-        #"""
-        #if var not in self.template_vars:
-            #raise NameError("Variable '%s' does not exist in this function." 
-                            #% var)
-        #self._program_values[var] = value
+        Any CompositeProgram that depends on this function will automatically
+        apply the variable when it is activated.
+        """
+        self.set_value(var, value)
 
     def all_deps(self):
         """
@@ -696,7 +693,8 @@ class FunctionChain(Function):
 
     def _generate_code(self, subs, dep_names):
         args = ", ".join(["%s %s" % arg for arg in self.args])
-        code = "%s %s(%s) {\n" % (self.rtype, self.name, args)
+        name = subs[self.name.lstrip('$')]
+        code = "%s %s(%s) {\n" % (self.rtype, name, args)
         
         if self.rtype == 'void':
             for fn in self._funcs:
