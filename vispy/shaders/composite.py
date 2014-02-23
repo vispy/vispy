@@ -216,12 +216,12 @@ class CompositeProgram(Program):
         
     def _update(self):
         # generate all code..
-        vcode, fcode = self._generate_code()
+        vcode, fcode, namespace = self._generate_code()
         
         self.attach(VertexShader(vcode), FragmentShader(fcode))
         
         # set all variables..
-        self._apply_variables()
+        self._apply_variables(namespace)
         
         # and continue.
         super(CompositeProgram, self)._update()
@@ -344,21 +344,28 @@ class CompositeProgram(Program):
         print ("\n-----------------------FRAGMENT------------------------------")
         print (fcode)
         print ("--------------------------------")
-        
-        return vcode, fcode
+        namespace = vnames
+        namespace.update(fnames)
+        #print("final namespace:", namespace)
+        return vcode, fcode, namespace
          
-    def _apply_variables(self):
+    def _apply_variables(self, namespace):
         """
         Apply all program variables that are carried by the components of this 
         program.
         """
         print("apply variables:")
-        for hook_name, func in self._hook_defs.items():
-            print("  ", hook_name, func)
-            for dep in func.all_deps():
-                print("    ", dep)
-                for name, spec in dep._program_values.items():
-                    print("      ", name, spec, dep)
-                    self[name] = spec[2]
+        for name, spec in namespace.items():
+            if isinstance(spec, Function):
+                continue
+            print("  ", name, spec)
+            self[name] = spec[2]
+        #for hook_name, func in self._hook_defs.items():
+            #print("  ", hook_name, func)
+            #for dep in func.all_deps():
+                #print("    ", dep)
+                #for name, spec in dep._program_values.items():
+                    #print("      ", name, spec, dep)
+                    #self[name] = spec[2]
         
 

@@ -333,7 +333,7 @@ class Function(object):
         elif name is None:
             func_name = self.name.lstrip('$')
             if prefix:
-                func_name = prefix + '__' + func_name
+                func_name = prefix + '_' + func_name
             template_subs[self.name.lstrip('$')] = func_name
         else:
             if prefix is not None:
@@ -362,7 +362,7 @@ class Function(object):
         for name, spec in self._program_values.items():
             vtype, dtype, data = spec
             
-            var_name = func_name + '__' + name
+            var_name = func_name + '_' + name
             
             if var_name in namespace:
                 if namespace[var_name] is spec:
