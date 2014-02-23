@@ -345,15 +345,7 @@ class Function(object):
         namespace[func_name] = self
         
         # Visit all dependencies, begin assembling code and values
-        code = ""
-        dep_names = {} # keep track of the names of our dependencies in case
-                       # we need to modify the code to match
-        for dep in self.deps:
-            if dep.is_anonymous:
-                prefix = func_name
-            n, c = dep.compile(namespace, prefix=prefix)
-            code += c + "\n"
-            dep_names[dep] = n
+        dep_names, code = self._compile_deps(func_name, namespace)
 
         
         # Select template variable names based on function name
@@ -368,9 +360,9 @@ class Function(object):
                 if namespace[var_name] is spec:
                     pass # already have this variable and the correct data
                 else:
-                    raise Exception("Cannot declare program variable %s; "
+                    raise Exception("Cannot declare program variable %s as %s; "
                                     "already declared as %s." % 
-                                    (spec, namespace[var_name]))
+                                    (var_name, spec, namespace[var_name]))
             else:
                 # declare new variable and add to namespace.
                 code += '%s %s %s;\n' % (vtype, dtype, var_name)
@@ -395,6 +387,23 @@ class Function(object):
             except KeyError as err:
                 raise KeyError("Must specify variable $%s in substitution" % 
                             err.args[0])
+
+    def _compile_deps(self, func_name, namespace):
+        """
+        Compile each dependency, return a dict of {name: dep} pairs and a single
+        concatenated code string.
+        """
+        code = ""
+        dep_names = {} # keep track of the names of our dependencies in case
+                       # we need to modify the code to match
+        for dep in self.deps:
+            if dep.is_anonymous:
+                prefix = func_name
+            n, c = dep.compile(namespace, prefix=prefix)
+            code += c + "\n"
+            dep_names[dep] = n
+        
+        return dep_names, code
      
     def wrap(self, name=None, **kwds):
         """
@@ -708,6 +717,25 @@ class FunctionChain(Function):
         code += "}\n"
         return code
         
+    def _compile_deps(self, func_name, namespace):
+        """
+        Compile each dependency, return a dict of {name: dep} pairs and a single
+        concatenated code string.
+        """
+        code = ""
+        dep_names = {} # keep track of the names of our dependencies in case
+                       # we need to modify the code to match
+        for i, dep in enumerate(self.deps):
+            if dep.is_anonymous:
+                name = func_name + "_" + dep.name.lstrip('$') + "_" + str(i)
+            else:
+                name = None
+                
+            n, c = dep.compile(namespace, name=name)
+            code += c + "\n"
+            dep_names[dep] = n
+        
+        return dep_names, code
         
 #class FunctionTemplate(object):
     #"""
