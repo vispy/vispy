@@ -64,7 +64,7 @@ program = CompositeProgram(vertex_shader, fragment_shader)
 
 # Now we make a new function definition and attach it to the program.
 func = Function("""
-    vec4 input_position() {
+    vec4 $input_position() {
         return vec4(0,0,0,0);
     }
     """)
@@ -583,6 +583,10 @@ cw.setLayout(layout)
 editor = Editor(language='Python')
 vertex = Editor(language='CPP')
 fragment = Editor(language='CPP')
+for i in range(3):
+    editor.zoomOut()
+    vertex.zoomOut()
+    fragment.zoomOut()
 
 hsplit = QSplitter(QtCore.Qt.Horizontal)
 vsplit = QSplitter(QtCore.Qt.Vertical)
@@ -629,8 +633,8 @@ for i, preset in enumerate(presets):
 next_action = menubar.addAction("Next example", load_next)
 
 win.show()
-win.resize(1000,800)
-hsplit.setSizes([700, 300])
+win.resize(1800,1100)
+hsplit.setSizes([900, 900])
 
 load_example(0)
 

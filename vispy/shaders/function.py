@@ -4,6 +4,7 @@
 
 from __future__ import division
 import string
+import logging
 
 from . import parsing
 
@@ -20,44 +21,55 @@ class Function(object):
     of multiple Functions and their dependencies; each function is
     included exactly once, even if it is depended upon multiple times.
     """    
-    def __init__(self, code=None, name=None, args=None, rtype=None, deps=None,
-                 variables=None):
-        """
-        Arguments:
+    #def __init__(self, code=None, name=None, args=None, rtype=None, deps=None,
+                 #variables=None):
+        #"""
+        #Arguments:
         
-        code : str
-        name : None or str
-            The name of the function as defined in *code*.
-            If None, this value will be automatically parsed from *code*.
-        args : None or list of tuples
-            Describes the arguments accepted by this function.
-            Each tuple contains two strings ('type', 'name').
-            If None, this value will be automatically parsed from *code*.
-        rtype : None or str
-            String indicating the return type of the function.
-            If None, this value will be automatically parsed from *code*.
-        deps : None or list of Functions
-            Lists functions that are called by this function, and therefore must
-            be included by a CompositeProgram when compiling the complete
-            program.
-        variables : None or dict
-            Dict describing program variables declared in this function's code.
-            See variable_names property.
-        """
-        self._name = None
-        self._template_name = None
-        self.rtype = None
-        self.args = None
-        self.template_vars = {}
+        #code : str
+        #name : None or str
+            #The name of the function as defined in *code*.
+            #If None, this value will be automatically parsed from *code*.
+        #args : None or list of tuples
+            #Describes the arguments accepted by this function.
+            #Each tuple contains two strings ('type', 'name').
+            #If None, this value will be automatically parsed from *code*.
+        #rtype : None or str
+            #String indicating the return type of the function.
+            #If None, this value will be automatically parsed from *code*.
+        #deps : None or list of Functions
+            #Lists functions that are called by this function, and therefore must
+            #be included by a CompositeProgram when compiling the complete
+            #program.
+        #variables : None or dict
+            #Dict describing program variables declared in this function's code.
+            #See variable_names property.
+        #"""
+        #self._name = None
+        #self._template_name = None
+        #self.rtype = None
+        #self.args = None
+        #self.template_vars = {}
         
-        self.set_code(code, name, args, rtype, variables)
-        self._deps = deps[:] if deps is not None else []
-        self._program_values = {}    # values for attribute/uniforms carried by this function;
-                                     # will be set on any CompositeProgram the function is
-                                     # attached to.
-        self._template_cache = None  # stores a string.Template object
-        self._callbacks = []         # Functions that should be installed on a
-                                     # particular CompositeProgram hook.
+        #self._set_code(code, name, args, rtype, variables)
+        #self._deps = deps[:] if deps is not None else []
+        #self._program_values = {}    # values for attribute/uniforms carried by this function;
+                                     ## will be set on any CompositeProgram the function is
+                                     ## attached to.
+        #self._template_cache = None  # stores a string.Template object
+        #self._callbacks = []         # Functions that should be installed on a
+                                     ## particular CompositeProgram hook.
+                                     
+                                     
+    def __init__(self, code=None, deps=()):
+        self._code = code
+        self._deps = deps
+        self._signature = None
+        self._program_vars = None
+        self._program_values = {}
+        self._template_vars = None
+        self._callbacks = []
+        self._str_template = None
         
     @property
     def code(self):
@@ -69,13 +81,83 @@ class Function(object):
     
     @property
     def name(self):
-        return self._name
+        """
+        Function name as given in the code.
+        
+        Anonymous functions have name starting with $
+        """
+        return self.signature[0]
+
+    @property
+    def is_anonymous(self):
+        """ Indicates whether this is an anonymous function (the function name
+        begins with "$". Anonymous functions must be wrapped before they can
+        be used in a program."""
+        return self.name.startswith('$')
     
-    @name.setter
-    def name(self, n):
-        if self._name is not None:
-            raise Exception('Cannot rename function "%s" to "%s".' % (self._name, n))
-        self._name = n
+    @property
+    def args(self):
+        """
+        [(arg_name, arg_type), ...]
+        """
+        return self.signature[1]
+
+    @property
+    def rtype(self):
+        """
+        Return type of this function.
+        
+        """
+        return self.signature[2]
+
+    @property
+    def signature(self):
+        """
+        Function signature; (name, args, return_type)
+        
+        """
+        if self._signature is None:
+            self._parse_signature()
+        return self._signature
+    
+    @property
+    def template_vars(self):
+        """
+        List of all template variables in the code.
+        
+        """
+        if self._template_vars is None:
+            self._parse_template_vars()
+        return self._template_vars
+    
+    @property
+    def program_vars(self):
+        """
+        dict of program variables declared by this code
+        {var_name: (vtype, dtype)}
+        
+        """
+        if self._program_vars is None:
+            self._parse_program_vars()
+        return self._program_vars
+        
+    @property
+    def deps(self):
+        """
+        List of dependencies for this function.
+        
+        """
+        return self._deps
+        
+    #@property
+    #def name(self):
+        #return self._name
+    
+    #@name.setter
+    #def name(self, n):
+        #if self._name is not None:
+            #raise Exception('Cannot rename function "%s" to "%s".' % (self._name, n))
+        #self._name = n
     
     #@property
     #def bindings(self):
@@ -101,82 +183,61 @@ class Function(object):
         return self._callbacks
 
     @property
-    def is_anonymous(self):
-        """ Indicates whether this is an anonymous function (the function name
-        begins with "$". Anonymous functions must be wrapped before they can
-        be used in a program."""
-        return self.name is None
-    
-    @property
     def _template(self):
-        if self._template_cache is None:
-            self._template_cache = string.Template(Function.clean_code(self.code))
-        return self._template_cache
+        if self._str_template is None:
+            self._str_template = string.Template(Function.clean_code(self.code))
+        return self._str_template
         
 
-    def set_code(self, code, name=None, args=None, rtype=None, variables=None,
-                 template_vars=None):
-        """
-        Set the GLSL code for this function.
+    #def _set_code(self, code, name=None, args=None, rtype=None, variables=None,
+                 #template_vars=None):
+        #"""
+        #Set the GLSL code for this function.
         
-        Optionally, the name, arguments, and return type may be specified. If
-        these are omitted, then the values will be automatically parsed from
-        the code.
-        """
-        if code is None:
-            self._code = self.args = self.rtype = None
-            return
+        #Optionally, the name, arguments, and return type may be specified. If
+        #these are omitted, then the values will be automatically parsed from
+        #the code.
+        #"""
+        #if code is None:
+            #self._code = self.args = self.rtype = None
+            #return
         
-        self._code = self.clean_code(code)
-        if name is None:
-            name, self.args, self.rtype = parsing.parse_function_signature(self.code)
-            if name.startswith('$'):
-                self._template_name = name
-            else:
-                self.name = name
+        #self._code = self.clean_code(code)
+        #if name is None:
+            #self._parse_code(code)
             
-            # If the function is anonymous (its name is a template variable)
-            # then we parse for more template variables
-            self.template_vars = {}
-            for var in parsing.find_template_variables(code):
-                if var == self.name:
-                    continue
-                
-                
-                # No longer requiring type in variable names:
-                    # split each typ_variable_name into its (typ, variable_name) parts
-                    #try:
-                        #ind = var.index('_')
-                    #except ValueError:
-                        #raise Exception('Template variables names must look like'
-                                        #'"$typ_name". (offender is %s in %s)' % 
-                                        #(var, self.name))
-                    #typ = var[1:ind]
-                    
-                    # TODO: make sure typ is a valid GLSL type
-                    #name = var[ind+1:]
-                
-                
-                self.template_vars[var.lstrip('$')] = None
-            
-        else:
-            self.name = name
-            self.args = args
-            self.rtype = rtype
-            self.template_vars = None
+        #else:
+            #self.name = name
+            #self.args = args
+            #self.rtype = rtype
+            #self.template_vars = None
             
         
-        # May bind both function arguments and template variables
-        #self._bindings = dict([(a[1], a[0]) for a in self.args])
-        #self._bindings.update(self.template_vars)
+        ## May bind both function arguments and template variables
+        ##self._bindings = dict([(a[1], a[0]) for a in self.args])
+        ##self._bindings.update(self.template_vars)
             
-        if variables is None:
-            self.variables = parsing.find_program_variables(self.code)
-        else:
-            self.variables = variables
+        #if variables is None:
+            #self.variables = parsing.find_program_variables(self.code)
+        #else:
+            #self.variables = variables
             
-        self._arg_types = dict([(a[1], a[0]) for a in self.args])
+        #self._arg_types = dict([(a[1], a[0]) for a in self.args])
         
+    def _parse_signature(self):
+        # Search code for function signature and template variables
+        name, args, rtype = parsing.parse_function_signature(self.code)
+        self._signature = (name, args, rtype)
+        
+    def _parse_template_vars(self):        
+        self._template_vars = {}
+        for var in parsing.find_template_variables(self.code):
+            if var == self.name:
+                continue
+            self._template_vars[var.lstrip('$')] = None
+
+    def _parse_program_vars(self):
+        raise NotImplementedError
 
     #def resolve(self, name=None):
         #"""
@@ -242,49 +303,98 @@ class Function(object):
                 #name = "$func_name" # no name specified; make the new function anonymous.
             #return BoundFunction(self, name, kwds)
 
-    def compile(self, program, name=None, prefix=None):
+    def compile(self, namespace, name=None, prefix=None):
         """
-        Generate complete code to be used in *program*.
-        This must resolve all template variables and set a function name.
+        Generate the complete code, including all dependencies, that defines
+        this function. Returns (func_name, code).
         
-        Also return variables to apply?
+        The *namespace* argument is a dict containing all globally declared
+        names in the shader; this method is responsible for adding new names
+        to the namespace as needed and for ensuring that previously-declared
+        names are not redeclared.
+        
+        For program varibles, namespace[var] must be (vtype, dtype, data); this
+        will be used to assign data to the program after it is compiled.
+        
+        If supplied, *name* determines the name that must be assigned to this 
+        function in the returned code.
         """
-        if name is not None:
-            self.name = name
-        elif self.name is None:
-            name = self._template_name.lstrip('$')
+        template_subs = {}  # accumulates necessary template substitutions
+        
+        # First decide on a name for this function
+        if not self.is_anonymous:
+            if name is not None and name != self.name:
+                raise Exception("Function already has name '%s'; cannot use " 
+                                "requested name '%s'" % (self.name, name))
             if prefix is not None:
-                name = prefix + "_" + name
-            self.name = name
+                raise Exception("Function already has name '%s'; cannot use " 
+                                "requested prefix '%s'" % (self.name, prefix))
+            func_name = self.name
+        elif name is None:
+            func_name = self.name.lstrip('$')
+            if prefix:
+                func_name = prefix + '__' + func_name
+            template_subs[self.name.lstrip('$')] = func_name
+        else:
+            if prefix is not None:
+                raise Exception("Cannot compile with both name and prefix.")
+            func_name = name
+            template_subs[self.name.lstrip('$')] = func_name
         
-        # Decide on variable names based on prefix and uniqueness
-        subs = {}
-        new_vars = []
+        # declare this function in the namespace
+        namespace[func_name] = self
+        
+        # Visit all dependencies, begin assembling code and values
         code = ""
+        dep_names = {} # keep track of the names of our dependencies in case
+                       # we need to modify the code to match
+        for dep in self.deps:
+            if dep.is_anonymous:
+                prefix = func_name
+            n, c = dep.compile(namespace, prefix=prefix)
+            code += c + "\n"
+            dep_names[dep] = n
+
+        
+        # Select template variable names based on function name
+        new_vars = []
+        code += "\n"
         for name, spec in self._program_values.items():
             vtype, dtype, data = spec
             
-            # todo: 
-            var_name = name
+            var_name = func_name + '__' + name
             
-            subs[name] = var_name
-            code += '%s %s %s;\n' % (vtype, dtype, var_name)
-                
-                
-        #code = self._process_template(func_name, subs)
-        if self._template_name is not None:
-            subs[self._template_name.lstrip('$')] = self.name
+            if var_name in namespace:
+                if namespace[var_name] is spec:
+                    pass # already have this variable and the correct data
+                else:
+                    raise Exception("Cannot declare program variable %s; "
+                                    "already declared as %s." % 
+                                    (spec, namespace[var_name]))
+            else:
+                # declare new variable and add to namespace.
+                code += '%s %s %s;\n' % (vtype, dtype, var_name)
+                namespace[var_name] = spec
+            
+            template_subs[name] = var_name
         
-        code += self._template.safe_substitute(**subs)
+        code += self._generate_code(template_subs, dep_names)
         
-        return code
+        return func_name, code
         
-        
-        
-        
-        
-        
-        
+    def _generate_code(self, template_subs, dep_names):
+        """
+        Generate the final code for this function (excluding dependencies)
+        using the given template substitutions. *dep_names* contains {dep: name}
+        for each dependency and may be used by subclasses to modify the final 
+        code.
+        """
+        if len(template_subs) > 0:
+            try:
+                return self._template.substitute(**template_subs)
+            except KeyError as err:
+                raise KeyError("Must specify variable $%s in substitution" % 
+                            err.args[0])
      
     def wrap(self, name=None, **kwds):
         """
@@ -292,6 +402,7 @@ class Function(object):
         arguments filled in ..
         
         """
+        raise NotImplementedError
      
     def set_value(self, name, spec):
         if name not in self.template_vars:
@@ -300,17 +411,17 @@ class Function(object):
         self._program_values[name] = spec
         
      
-    def __setitem__(self, var, value):
-        """
-        Set the value of a program variable declared in this function's code.
+    #def __setitem__(self, var, value):
+        #"""
+        #Set the value of a program variable declared in this function's code.
         
-        Any CompositeProgram that depends on this function will automatically
-        apply the variable when it is activated.
-        """
-        if var not in self.template_vars:
-            raise NameError("Variable '%s' does not exist in this function." 
-                            % var)
-        self._program_values[var] = value
+        #Any CompositeProgram that depends on this function will automatically
+        #apply the variable when it is activated.
+        #"""
+        #if var not in self.template_vars:
+            #raise NameError("Variable '%s' does not exist in this function." 
+                            #% var)
+        #self._program_values[var] = value
 
     def all_deps(self):
         """
@@ -390,99 +501,99 @@ class Function(object):
         #return Function(code, deps=self._deps[:])
 
 
-class BoundFunction(Function):
-    """
-    A BoundFunction is a wrapper around a Function that 'binds' zero or more 
-    of the function's input arguments to program variables.
+#class BoundFunction(Function):
+    #"""
+    #A BoundFunction is a wrapper around a Function that 'binds' zero or more 
+    #of the function's input arguments to program variables.
     
-    Arguments:
-    parent_function : Function instance
-        The Function to be wrapped
-    name : str
-        The name of the new GLSL function that wraps *parent_function*
-    **bound_args : tuple
-        The name of each keyword argument must match one of the argument names
-        for *parent_function*. The value is a tuple that specifies a new
-        program variable to declare: 
-        ('uniform'|'attribute'|'varying', name)
-        This program variable will be used to supply the value to the
-        corresponding input argument to *parent_function*.
+    #Arguments:
+    #parent_function : Function instance
+        #The Function to be wrapped
+    #name : str
+        #The name of the new GLSL function that wraps *parent_function*
+    #**bound_args : tuple
+        #The name of each keyword argument must match one of the argument names
+        #for *parent_function*. The value is a tuple that specifies a new
+        #program variable to declare: 
+        #('uniform'|'attribute'|'varying', name)
+        #This program variable will be used to supply the value to the
+        #corresponding input argument to *parent_function*.
 
     
-    For example:
+    #For example:
     
-        func = Function('''
-        vec4 transform(vec4 pos, mat4 matrix) {
-            return vec4 matrix * pos;
-        }
-        ''')
+        #func = Function('''
+        #vec4 transform(vec4 pos, mat4 matrix) {
+            #return vec4 matrix * pos;
+        #}
+        #''')
         
-        bound = BoundFunction(func, 
-                              name='my_transform', 
-                              matrix=('uniform', 'my_matrix'))
+        #bound = BoundFunction(func, 
+                              #name='my_transform', 
+                              #matrix=('uniform', 'my_matrix'))
                               
-    In this example, the BoundFunction *bound* calls the original Function 
-    *func* using a new uniform variable *my_matrix* as the *matrix* argument.
-    When *bound* is included in a CompositeProgram, the following code is
-    generated:
+    #In this example, the BoundFunction *bound* calls the original Function 
+    #*func* using a new uniform variable *my_matrix* as the *matrix* argument.
+    #When *bound* is included in a CompositeProgram, the following code is
+    #generated:
     
-        vec4 transform(vec4 pos, mat4 matrix) {
-            return vec4 matrix * pos;
-        }
+        #vec4 transform(vec4 pos, mat4 matrix) {
+            #return vec4 matrix * pos;
+        #}
         
-        uniform mat4 my_matrix;
-        vec4 my_transform(vec4 pos) {
-            return transform(pos, my_matrix);
-        }
-    """
-    def __init__(self, parent_function, name, bound_args):
-        self._parent = parent_function
-        self._name = name
-        self._bound_arguments = bound_args
+        #uniform mat4 my_matrix;
+        #vec4 my_transform(vec4 pos) {
+            #return transform(pos, my_matrix);
+        #}
+    #"""
+    #def __init__(self, parent_function, name, bound_args):
+        #self._parent = parent_function
+        #self._name = name
+        #self._bound_arguments = bound_args
         
-        Function.__init__(self)
-        self._deps.append(self._parent)
-        self.set_code(self.generate_function_code())
+        #Function.__init__(self)
+        #self._deps.append(self._parent)
+        #self._set_code(self.generate_function_code())
 
-    @property
-    def code(self):
-        """
-        The GLSL code that defines this function.
-        """
-        if self._code is None:
-            code = self.generate_function_code()
-            self.set_code(code)
-        return self._code
+    #@property
+    #def code(self):
+        #"""
+        #The GLSL code that defines this function.
+        #"""
+        #if self._code is None:
+            #code = self.generate_function_code()
+            #self._set_code(code)
+        #return self._code
         
-    def generate_function_code(self):
-        code = ""
+    #def generate_function_code(self):
+        #code = ""
         
-        # Generate attribute/uniform declarations
-        for bname, varspec in self._bound_arguments.items():
-            vtype, vname = varspec
-            dtype = self._parent.bindings[bname]
-            code += "%s %s %s;\n" % (vtype, dtype, vname)
-        code += "\n"
+        ## Generate attribute/uniform declarations
+        #for bname, varspec in self._bound_arguments.items():
+            #vtype, vname = varspec
+            #dtype = self._parent.bindings[bname]
+            #code += "%s %s %s;\n" % (vtype, dtype, vname)
+        #code += "\n"
         
-        # new function signature
-        fn_args = self._parent.args
-        arg_defs = ["%s %s" % x for x in fn_args[:] if x[1] not in self._bound_arguments]
-        new_sig = ", ".join(arg_defs)
-        code += "%s %s(%s) {\n" % (self._parent.rtype, self._name, new_sig)
+        ## new function signature
+        #fn_args = self._parent.args
+        #arg_defs = ["%s %s" % x for x in fn_args[:] if x[1] not in self._bound_arguments]
+        #new_sig = ", ".join(arg_defs)
+        #code += "%s %s(%s) {\n" % (self._parent.rtype, self._name, new_sig)
         
-        # call original function
-        args = []
-        for dtype, argname in fn_args:
-            if argname in self._bound_arguments:
-                args.append(self._bound_arguments[argname][1])
-            else:
-                args.append(argname)
-        ret = "return " if self._parent.rtype is not 'void' else ""
-        code += "    %s%s(%s);\n" % (ret, self._parent.name, ", ".join(args))
+        ## call original function
+        #args = []
+        #for dtype, argname in fn_args:
+            #if argname in self._bound_arguments:
+                #args.append(self._bound_arguments[argname][1])
+            #else:
+                #args.append(argname)
+        #ret = "return " if self._parent.rtype is not 'void' else ""
+        #code += "    %s%s(%s);\n" % (ret, self._parent.name, ", ".join(args))
         
-        code += "}\n"
+        #code += "}\n"
         
-        return code
+        #return code
         
     
 class FunctionChain(Function):
@@ -538,15 +649,22 @@ class FunctionChain(Function):
         self._code = None
         self._update_signature()
         
-        
+    @property
+    def name(self):
+        return "$chain"
+
+    @property
+    def signature(self):
+        return self.name, self._args, self._rtype
+    
     def _update_signature(self):
         funcs = self._funcs
         if len(funcs) > 0:
-            self.rtype = funcs[-1].rtype
-            self.args = funcs[0].args[:]
+            self._rtype = funcs[-1].rtype
+            self._args = funcs[0].args[:]
         else:
-            self.rtype = 'void'
-            self.args = []
+            self._rtype = 'void'
+            self._args = []
         #self._bindings = dict([(a[1], a[0]) for a in self.args])
         
     @property
@@ -554,10 +672,11 @@ class FunctionChain(Function):
         """
         The GLSL code that defines this function.
         """
-        if self._code is None:
-            code = self.generate_function_code()
-            self.set_code(code)
-        return self._code
+        raise NotImplementedError
+        #if self._code is None:
+            #code = self._generate_code()
+            #self._code = code
+        #return self._code
 
     def append(self, function):
         """ Append a new function to the end of this chain.
@@ -565,6 +684,7 @@ class FunctionChain(Function):
         self._funcs.append(function)
         self._deps.append(function)
         self._update_signature()
+        self._code = None
         
     def insert(self, index, function):
         """ Insert a new function into the chain at *index*.
@@ -572,23 +692,19 @@ class FunctionChain(Function):
         self._funcs.insert(index, function)
         self._deps.insert(index, function)
         self._update_signature()
-        
-    def compile(self, program, name=None):
-        if name is not None:
-            self.name = name
-        elif self.name is None:
-            self.name = self._template_name.lstrip('$')
-        
+        self._code = None
+
+    def _generate_code(self, subs, dep_names):
         args = ", ".join(["%s %s" % arg for arg in self.args])
         code = "%s %s(%s) {\n" % (self.rtype, self.name, args)
         
         if self.rtype == 'void':
             for fn in self._funcs:
-                code += "    %s();\n" % fn.name
+                code += "    %s();\n" % dep_names[fn]
         else:
             code += "    return "
             for fn in self._funcs[::-1]:
-                code += "%s(\n           " % fn.name
+                code += "%s(\n           " % dep_names[fn]
             code += "    %s%s;\n" % (self.args[0][1], ')'*len(self._funcs))
         
         code += "}\n"

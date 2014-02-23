@@ -241,10 +241,10 @@ class CompositeProgram(Program):
         # Assemble main shader functions along with their hook definitions
         # into a single block of code.
         
-        vcode = self.vmain
-        fcode = self.fmain
-        vdeps = set()
-        fdeps = set()
+        vcode = [self.vmain]
+        fcode = [self.fmain]
+        vnames = {} # namespaces for each shader
+        fnames = {}
         
                 
         ## All this was taken from set_hook:
@@ -273,43 +273,72 @@ class CompositeProgram(Program):
         
         
         # add code for all hooks and dependencies in order.
+        
         for hook_name, func in self._hook_defs.items():
             shader, hook_args, hook_rtype = self._hooks[hook_name]
-            if shader == 'vertex':
-                vcode += "\n\n//  -------- Begin hook '%s' --------\n" % hook_name
-                for dep in func.all_deps():
-                    if dep is func:
-                        if dep.name is None:
-                            vcode += "\n\n" + dep.compile(self, name=hook_name)
-                        else:
-                            vcode += "\n\n" + dep.compile(self)
-                    elif dep not in vdeps:
-                        #print("++vertex dep++")
-                        #print(dep)
-                        #print(dep.code)
-                        vcode += "\n\n" + dep.compile(self, prefix=hook_name)
-                        vdeps.add(dep)
-                #vcode += func.code
+            
+            code, namespace = {
+                'vertex': (vcode, vnames),
+                'fragment': (fcode, fnames)}[shader]
+            
+            code.append("\n\n//  -------- Begin hook '%s' --------\n" % 
+                        hook_name)
+            
+            if not func.is_anonymous and func.name != hook_name:
+                func = func.wrap(name=hook_name)
+            
+            n, c = func.compile(namespace, name=hook_name)
+            code.append(c)
+            #for dep in func.all_deps():
+                #if dep is func:  # this is the function being attached; it must have the hook name
+                    #if dep.is_anonymous:
+                        #name, code = dep.compile(self, name=hook_name)
+                    #else:
+                        #name, code = dep.compile(self)
+                        #if name is not hook_name:
+                            #raise Exception("Cannot attach function %s to" 
+                                            #"hook '%s'; incorrect name." % 
+                                            #(dep, hook_name))
+                #else:
+                    ##print("++vertex dep++")
+                    ##print(dep)
+                    ##print(dep.code)
+                    #prefix = hook_name + '_' + parent_name
+                    #name, code = dep.compile(self, prefix=prefix)
+                    #deps[name] = dep
+                    
+                #if name in vdeps:
+                    #if deps[name] is dep:
+                        #pass  # function has already been attached; ignore.
+                    #raise Exception("Cannot attach function %s to %s shader;" 
+                                    #"the name '%s' is"
+                                    #"already in use by %s" % (dep, shader, name, 
+                                                #deps[name]))
+                #else:
+                    #code += "\n\n" + code
+                ##vcode += func.code
                 
-            elif shader == 'fragment': 
-                fcode += "\n\n//  -------- Begin hook '%s' --------\n" % hook_name
-                for dep in func.all_deps():
-                    if dep is func:
-                        if dep.name is None:
-                            fcode += "\n\n" + dep.compile(self, name=hook_name)
-                        else:
-                            fcode += "\n\n" + dep.compile(self)
-                    elif dep not in fdeps:
-                        #print("++fragment dep++")
-                        #print(dep)
-                        #print(dep.code)
-                        fcode += "\n\n" + dep.compile(self, prefix=hook_name)
-                        fdeps.add(dep)
-                #fcode += func.code
+            #elif shader == 'fragment': 
+                #fcode += "\n\n//  -------- Begin hook '%s' --------\n" % hook_name
+                #for dep in func.all_deps():
+                    #if dep is func:
+                        #if dep.name is None:
+                            #fcode += "\n\n" + dep.compile(self, name=hook_name)
+                        #else:
+                            #fcode += "\n\n" + dep.compile(self)
+                    #elif dep not in fdeps:
+                        ##print("++fragment dep++")
+                        ##print(dep)
+                        ##print(dep.code)
+                        #fcode += "\n\n" + dep.compile(self, prefix=hook_name)
+                        #fdeps.add(dep)
+                ##fcode += func.code
                 
-            else:
-                raise Exception("Unsupported shader type: %s" % shader)
+            #else:
+                #raise Exception("Unsupported shader type: %s" % shader)
 
+        vcode = '\n'.join(vcode)
+        fcode = '\n'.join(fcode)
         print ("-------------------------VERTEX------------------------------")
         print (vcode)
         print ("\n-----------------------FRAGMENT------------------------------")
