@@ -393,7 +393,7 @@ class Program(GLObject):
 
         self.activate()
 
-        # WARNING: The "list" of values from a dict is not a list
+        # WARNING: The "list" of values from a dict is not a list (py3k)
         attributes = list(self._attributes.values())
 
         # Get buffer size first attribute
