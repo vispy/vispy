@@ -3,6 +3,8 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+
+#import OpenGL.GL as gl
 from . import gl
 from .globject import GLObject
 from .texture import Texture2D
@@ -83,7 +85,7 @@ class RenderBuffer(GLObject):
         gl.glDeleteRenderbuffers([self._handle])
 
     def _activate(self):
-        """ Activate texture on GPU """
+        """ Activate buffer on GPU """
 
         logger.debug("GPU: Activate render buffer")
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._handle)
@@ -114,7 +116,7 @@ class ColorBuffer(RenderBuffer):
     Encapsulation of color buffer object.
     """
 
-    def __init__(self, shape, format=gl.GL_RGB565, resizeable=True):
+    def __init__(self, shape, format=gl.GL_RGBA, resizeable=True):
         """
         Initialize the color buffer
 
@@ -128,11 +130,11 @@ class ColorBuffer(RenderBuffer):
             Buffer shape (always two dimensional)
 
         resizeable : boolean
-            Indicates whether texture can be resized
+            Indicates whether buffer can be resized
         """
 
-        if format not in (gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1):
-            raise ValueError("Format not allowed for color buffer")
+#        if format not in (gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1):
+#            raise ValueError("Format not allowed for color buffer")
 
         RenderBuffer.__init__(self, shape, format, resizeable)
 
@@ -145,7 +147,7 @@ class DepthBuffer(RenderBuffer):
     """
 
     def __init__(self, shape,
-                 format=gl.GL_DEPTH_COMPONENT16, resizeable=True):
+                 format=gl.GL_DEPTH_COMPONENT, resizeable=True):
         """
         Initialize the depth buffer
 
@@ -159,11 +161,11 @@ class DepthBuffer(RenderBuffer):
             gl.GL_DEPTH_COMPONENT16
 
         resizeable : boolean
-            Indicates whether texture can be resized
+            Indicates whether buffer can be resized
         """
 
-        if format not in (gl.GL_DEPTH_COMPONENT16,):
-            raise ValueError("Format not allowed for depth buffer")
+#        if format not in (gl.GL_DEPTH_COMPONENT16,):
+#            raise ValueError("Format not allowed for depth buffer")
 
         RenderBuffer.__init__(self, shape, format, resizeable)
 
@@ -190,11 +192,11 @@ class StencilBuffer(RenderBuffer):
             gl.GL_STENCIL_INDEX8
 
         resizeable : boolean
-            Indicates whether texture can be resized
+            Indicates whether buffer can be resized
         """
 
-        if format not in (gl.GL_STENCIL_INDEX8,):
-            raise ValueError("Format not allowed for color buffer")
+#        if format not in (gl.GL_STENCIL_INDEX,):
+#            raise ValueError("Format not allowed for color buffer")
 
         RenderBuffer.__init__(self, shape, format, resizeable)
 
@@ -329,7 +331,7 @@ class FrameBuffer(GLObject):
 
 
     def _activate(self):
-        """ Activate texture on GPU """
+        """ Activate framebuffer on GPU """
 
         logger.debug("GPU: Activate render framebuffer")
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
@@ -339,7 +341,7 @@ class FrameBuffer(GLObject):
 
 
     def _deactivate(self):
-        """ Deactivate buffer on GPU """
+        """ Deactivate framebuffer on GPU """
 
         logger.debug("GPU: Deactivate render framebuffer")
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
@@ -356,12 +358,16 @@ class FrameBuffer(GLObject):
                                              gl.GL_RENDERBUFFER, 0)
             elif isinstance(buffer, RenderBuffer):
                 buffer.activate()
+                print(gl.GL_FRAMEBUFFER, attachment,
+                      gl.GL_RENDERBUFFER, buffer.handle)
                 gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, attachment,
                                              gl.GL_RENDERBUFFER, buffer.handle)
                 buffer.deactivate()
             elif isinstance(buffer, Texture2D):
                 buffer.activate()
                 # INFO: 0 is for mipmap level 0 (default) of the texture
+                print(gl.GL_FRAMEBUFFER, attachment,
+                      buffer.target, buffer.handle, 0)
                 gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, attachment,
                                           buffer.target, buffer.handle, 0)
                 buffer.deactivate()
