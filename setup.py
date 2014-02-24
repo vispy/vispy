@@ -94,7 +94,6 @@ setup(
         'vispy.util', 'vispy.util.tests',
         'vispy.util.dataio',
         'vispy.visuals',
-        'vispy.openCL',
     ],
     package_dir={
         'vispy': 'vispy'},
