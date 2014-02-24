@@ -162,6 +162,7 @@ class CompositeProgram(Program):
             hook_def.append(function)
             
         self._install_dep_callbacks(function)
+        self._need_update = True
             
     def __setitem__(self, name, value):
         if name in self._hooks:
@@ -205,6 +206,7 @@ class CompositeProgram(Program):
         
         
         self._hook_defs[hook_name] = function
+        self._need_update = True
                 
     def _install_dep_callbacks(self, function):
         # Search through all dependencies of this function for callbacks
@@ -354,12 +356,13 @@ class CompositeProgram(Program):
         Apply all program variables that are carried by the components of this 
         program.
         """
-        print("apply variables:")
+        #print("apply variables:")
         for name, spec in namespace.items():
             if isinstance(spec, Function):
                 continue
-            print("  ", name, spec)
-            self[name] = spec[2]
+            #print("  ", name, spec)
+            if spec[0] != 'varying':
+                self[name] = spec[2]
         #for hook_name, func in self._hook_defs.items():
             #print("  ", hook_name, func)
             #for dep in func.all_deps():

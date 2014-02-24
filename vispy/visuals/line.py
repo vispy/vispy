@@ -138,7 +138,7 @@ class LineVisual(Visual):
         self._data['pos'] = pos
         if color_is_array:
             self._data['color'] = color
-            
+
         # convert to vertex buffer
         self._vbo = gloo.VertexBuffer(self._data)
         
@@ -225,42 +225,53 @@ class LinePosInputComponent(VisualComponent):
 
 class LineColorInputComponent(VisualComponent):
     
-    RGBAAttributeFunc = FragmentFunction(
-        # Read color directly from 'rgba' varying
-        """
-            vec4 $func_name() {
+    #RGBAAttributeFunc = FragmentFunction(
+        ## Read color directly from 'rgba' varying
+        #"""
+            #vec4 $func_name() {
+                #return $rgba;
+            #}
+        #""",
+        ## Set varying from vec4 attribute
+        #vertex_func=Function("""
+            #void $func_name() {
+                #$output = $input;
+            #}
+            #"""),
+        ## vertex variable 'output' and fragment variable 'rgba' should both 
+        ## be bound to the same vec4 varying.
+        #link_vars=[('output', 'rgba')],
+        ## where to install vertex_post callback.
+        #vert_hook='vert_post_hook'
+        #)
+
+    def __init__(self, visual):
+        super(LineColorInputComponent, self).__init__(visual)
+        self.frag_func = Function("""
+            vec4 $colorInput() {
                 return $rgba;
             }
-        """,
-        # Set varying from vec4 attribute
-        vertex_func=Function("""
-            void $func_name() {
+            """)
+        
+        self.support_func = Function("""
+            void $colorInputSupport() {
                 $output = $input;
             }
-            """),
-        # vertex variable 'output' and fragment variable 'rgba' should both 
-        # be bound to the same vec4 varying.
-        link_vars=[('output', 'rgba')],
-        # where to install vertex_post callback.
-        vert_hook='vert_post_hook'
-        )
-
-
-    RGBAUniformFunc = Function("""
-    vec4 $func_name() {
-        return $rgba;
-    }
-    """)
+            """)
     
     def _activate(self, program):
         # Select uniform- or attribute-input 
         if 'color' in self.visual._data.dtype.fields:
-            func = self.RGBAAttributeFunc
-            func['input'] = ('attribute', 'vec4', self.visual._vbo['color'])
-            #func.fragment_support['input_color'] = 
-        else:
-            func = self.RGBAUniformFunc
-            func['rgba'] = ('uniform', 'vec4', np.array(self.visual._opts['color']))
+            varying = ('varying', 'vec4', 'frag_color_v')
+            self.frag_func['rgba'] = varying
+            program['frag_color'] = self.frag_func
             
-        program['frag_color'] = func
+            program.add_callback('vert_post_hook', self.support_func)
+            self.support_func['input'] = ('attribute', 'vec4', self.visual._vbo['color'])
+            self.support_func['output'] = varying
+            
+        else:
+            self.frag_func['rgba'] = ('uniform', 'vec4', np.array(self.visual._opts['color']))
+            program['frag_color'] = self.frag_func
+            
     

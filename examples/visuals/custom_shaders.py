@@ -14,12 +14,6 @@ from vispy.visuals.transforms import Transform, STTransform, arg_to_array
 from vispy.shaders.composite import FragmentFunction, Function
 
 
-
-import pyqtgraph as pg
-c = pg.dbg()
-c.catchNextException()
-
-
 # vertex positions of data to draw
 N = 50
 pos = np.zeros((N, 3), dtype=np.float32)

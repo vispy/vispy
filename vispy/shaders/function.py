@@ -5,6 +5,7 @@
 from __future__ import division
 import string
 import logging
+import random
 
 from . import parsing
 
@@ -331,14 +332,14 @@ class Function(object):
                                 "requested prefix '%s'" % (self.name, prefix))
             func_name = self.name
         elif name is None:
-            func_name = self.name.lstrip('$')
+            func_name = self.shorten(self.name.lstrip('$'))
             if prefix:
                 func_name = prefix + '_' + func_name
             template_subs[self.name.lstrip('$')] = func_name
         else:
             if prefix is not None:
                 raise Exception("Cannot compile with both name and prefix.")
-            func_name = name
+            func_name = self.shorten(name)
             template_subs[self.name.lstrip('$')] = func_name
         
         # declare this function in the namespace
@@ -354,7 +355,10 @@ class Function(object):
         for name, spec in self._program_values.items():
             vtype, dtype, data = spec
             
-            var_name = func_name + '_' + name
+            if vtype == 'varying':
+                var_name = data
+            else:
+                var_name = self.shorten(func_name + '_' + name)
             
             if var_name in namespace:
                 if namespace[var_name] is spec:
@@ -460,6 +464,29 @@ class Function(object):
             lines = [line[min_indent:] for line in lines]
         code = "\n".join(lines)
         return code
+    
+    @staticmethod
+    def shorten(name):
+        """
+        Make a name 31 characters or less. (longer names are not allowed in 
+        GLSL)
+        """
+        if len(name) < 32:
+            return name
+        
+        #name = name.translate(None, 'aeiou')
+        #if len(name) < 32:
+            #TODO: check for '__'
+            #return name
+
+        chars = string.ascii_uppercase
+        rand = ''.join([random.choice(chars) for i in range(10)])
+        if name[-20] == '_':
+            return rand + name[-20:]
+        else:
+            return rand + "_" + name[-20:]
+        
+        
         
     #def _process_template(self, name, vars):
         #"""
