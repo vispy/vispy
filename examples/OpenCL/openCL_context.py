@@ -22,18 +22,18 @@ __kernel void buf_to_tex( global const float *ary,
                           global const float *mini,
                           global const float *maxi,
                           const int logscale,
-                          global const float *colormap,
-                          const int cmap_size,
                           write_only image2d_t texture)
 {
     int x = get_global_id(0);
     int y = get_global_id(1);
     if ((x>=width)||(y>=height)) return;
-    float data = (ary[x+width*y] - mini[0])/(maxi[0]-mini[0]);
+    float data;
+    if (maxi[0]==mini[0])
+        data = (ary[x+width*y] - mini[0]);
+    else
+        data = (ary[x+width*y] - mini[0])/(maxi[0]-mini[0]);
     if (logscale)
         data = log(data*(M_E_F-1.0f)+1.0f);
-//    int n = (int)((float)cmap_size * data);
-//    float4 data4 = (float4)(colormap[3*n],colormap[3*n+1],colormap[3*n+2],1.0);
     write_imagef( texture, (int2)(x,y), data);
 }
 __kernel void
@@ -95,6 +95,11 @@ class Canvas(app.Canvas):
                           [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0, ]], numpy.float32)
         texcoords = numpy.array([[1.0, 1.0], [0.0, 1.0],
                           [1.0, 0.0], [0.0, 0.0]], numpy.float32)
+        self.colormap = numpy.array([[0, 0, 0],
+                                     [1, 0, 0],
+                                     [1, 1, 0],
+                                     [1, 1, 1]], dtype=numpy.float32)
+
         self.gl_program['u_texture1'] = self.gl_tex
         self.gl_program['position'] = gloo.VertexBuffer(positions)
         self.gl_program['texcoord'] = gloo.VertexBuffer(texcoords)
@@ -133,11 +138,6 @@ class Canvas(app.Canvas):
         self.maxi_mini = pyopencl.array.empty(self.queue, (self.red_size, 2), dtype=numpy.float32)
         self.mini = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
         self.maxi = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
-        self.colormap = numpy.array([[0, 0, 0],
-                                     [1, 0, 0],
-                                     [1, 1, 0],
-                                     [1, 1, 1]], dtype=numpy.float32)
-        self.colormap_size = numpy.int32(self.colormap.shape[0])
         self.cl_colormap = pyopencl.array.to_device(self.queue, self.colormap)
         self.ocl_tex = pyopencl.GLTexture(self.ctx, pyopencl.mem_flags.READ_WRITE,
                         gloo.gl.GL_TEXTURE_2D, 0, int(self.gl_tex.handle), 2)
@@ -168,17 +168,28 @@ class Canvas(app.Canvas):
         self.ocl_prg.buf_to_tex(self.queue, (self.tex_size, self.tex_size), (8, 4),
                                   self.ary_float.data, numpy.int32(self.tex_size), numpy.int32(self.tex_size),
                                   self.mini.data, self.maxi.data, numpy.int32(self.logscale),
-                                  self.cl_colormap.data, self.colormap_size,
                                   self.ocl_tex)
         pyopencl.enqueue_release_gl_objects(self.queue, [self.ocl_tex]).wait()
         self.on_paint(None)
 
-    def benchmark(self, number=10):
+    def benchmark(self):
         """
         This is run after clicking on the picture ... to let the application initialize
         """
         print("Starting benchmark")
-        imgs = [numpy.random.randint(0, 65000, N ** 2).reshape((N, N)).astype(numpy.uint16) for i in range(number) ]
+        y,x = numpy.ogrid[:self.tex_size,:self.tex_size]
+        imgs = [numpy.zeros((self.tex_size,self.tex_size),dtype=numpy.uint16),
+                numpy.dot(y,numpy.ones(self.tex_size,dtype=numpy.uint16).reshape(1,-1)).astype(numpy.uint16),
+                numpy.dot(numpy.ones(self.tex_size,dtype=numpy.uint16).reshape(-1,1),x).astype(numpy.uint16),
+                numpy.dot(self.tex_size-y,numpy.ones(self.tex_size,dtype=numpy.uint16).reshape(1,-1)).astype(numpy.uint16),
+                numpy.dot(numpy.ones(self.tex_size,dtype=numpy.uint16).reshape(-1,1),self.tex_size-x).astype(numpy.uint16),
+                (numpy.dot(y, x) / self.tex_size).astype(numpy.uint16),
+                (numpy.dot(self.tex_size - y, self.tex_size - x) / self.tex_size).astype(numpy.uint16),
+                (numpy.dot(y,x)//self.tex_size).astype(numpy.uint16),
+                (numpy.dot(self.tex_size-y,self.tex_size-x)/self.tex_size).astype(numpy.uint16),
+                numpy.random.randint(0, 65000, N ** 2).reshape((N, N)).astype(numpy.uint16)]
+
+        number = len(imgs)
         t1 = time.time()
         for i in range(10):
             t0 = t1
@@ -186,6 +197,7 @@ class Canvas(app.Canvas):
                 c.new_image(i)
             t1 = time.time()
             print("Rendering at %4.2f fps (average of %i)" % (number / (t1 - t0), number))
+
 
     def on_key_release(self, ev):
         if ev.key.name == "L":
