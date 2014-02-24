@@ -30,10 +30,10 @@ class SineTransform(Transform):
     """
     Add sine wave to y-value for wavy effect.
     """
-    GLSL_map = Function("""
-        vec4 $func_name(vec4 pos) {
+    GLSL_map = """
+        vec4 $sineTransform(vec4 pos) {
             return vec4(pos.x, pos.y + sin(pos.x), pos.z, 1);
-        }""")
+        }"""
 
     @arg_to_array
     def map(self, coords):
@@ -46,26 +46,6 @@ class SineTransform(Transform):
         ret = coords.copy()
         ret[...,1] -= np.sin(ret[...,0])
         return ret
-
-
-# A custom fragment shader
-Dasher = FragmentFunction(
-    """
-    void $func_name() {
-        float mod = $float_distance / $float_dash_len;
-        mod = mod - int(mod);
-        gl_FragColor.a = 0.5 * sin(mod*3.141593*2) + 0.5;
-    }
-    """,
-    
-    vertex_func=Function("""
-    void $func_name() {
-        $float_output = $float_distance_attr;
-    }
-    """),
-    
-    link_vars=[('output', 'distance')],
-    vert_hook='vert_post_hook')
 
 
 class Canvas(vispy.app.Canvas):
@@ -83,12 +63,28 @@ class Canvas(vispy.app.Canvas):
         dist[0] = 0.0
         dist[1:] = np.cumsum(diff)
         
-        dasher = Dasher.resolve(name="fragment_dasher", 
-                             distance_attr=('attribute', 'distance_attr'),
-                             dash_len=('uniform', 'dash_len_unif'))
-        dasher.fragment_support['distance_attr'] = gloo.VertexBuffer(dist)
-        dasher['dash_len_unif'] = 20.
+        
+        dasher = Function("""
+            void $dash() {
+                float mod = $distance / $dash_len;
+                mod = mod - int(mod);
+                gl_FragColor.a = 0.5 * sin(mod*3.141593*2) + 0.5;
+            }
+            """)
+        
+        dasher_support = Function("""
+            void $dashSup() {
+                $output = $distance_attr;
+            }
+            """)
+        
+        varying = ('varying', 'float', 'dasher_distance_v')
+        dasher_support['distance_attr'] = ('attribute', 'float', gloo.VertexBuffer(dist))
+        dasher_support['output'] = varying
+        dasher['dash_len'] = ('uniform', 'float', 20.)
+        dasher['distance'] = varying
         self.line.add_fragment_callback(dasher)
+        self.line.add_vertex_callback(dasher_support)
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)

@@ -9,7 +9,7 @@ import numpy as np
 from .. import gloo
 from . import Visual
 from .transforms import AffineTransform
-from ..shaders.composite import CompositeProgram
+from ..shaders.composite import ModularProgram
 
 class PointsVisual(Visual):
 
@@ -59,7 +59,7 @@ class PointsVisual(Visual):
     def _build_program(self):
         
         # Create composite program
-        self._program = CompositeProgram(vmain=self.VERT_SHADER, 
+        self._program = ModularProgram(vmain=self.VERT_SHADER, 
                                          fmain=self.FRAG_SHADER)
         
         # Attach transformation function

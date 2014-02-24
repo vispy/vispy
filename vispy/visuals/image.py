@@ -9,7 +9,7 @@ import numpy as np
 from .. import gloo
 from ..gloo import gl
 from . import Visual, VisualComponent
-from ..shaders.composite import (Function, CompositeProgram, 
+from ..shaders.composite import (Function, ModularProgram, 
                                  FragmentFunction, FunctionChain)
 from .transforms import NullTransform
 
@@ -120,7 +120,7 @@ class ImageVisual(Visual):
             self._build_data()
         
         # Create composite program
-        program = CompositeProgram(vertex_shader, fragment_shader)
+        program = ModularProgram(vertex_shader, fragment_shader)
         program['local_pos'] = self._vbo
         program['tex'] = self._texture
         program['image_size'] = self._data.shape[:2]

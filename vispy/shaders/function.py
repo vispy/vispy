@@ -6,6 +6,7 @@ from __future__ import division
 import string
 import logging
 import random
+import re
 
 from . import parsing
 
@@ -63,6 +64,8 @@ class Function(object):
                                      
                                      
     def __init__(self, code=None, deps=()):
+        if code is not None and not isinstance(code, basestring):
+            raise ValueError("code argument must be string or None (got %s)" % type(code))
         self._code = code
         self._deps = deps
         self._signature = None
@@ -320,7 +323,6 @@ class Function(object):
         If supplied, *name* determines the name that must be assigned to this 
         function in the returned code.
         """
-        template_subs = {}  # accumulates necessary template substitutions
         
         # First decide on a name for this function
         if not self.is_anonymous:
@@ -330,20 +332,33 @@ class Function(object):
             if prefix is not None:
                 raise Exception("Function already has name '%s'; cannot use " 
                                 "requested prefix '%s'" % (self.name, prefix))
-            func_name = self.name
-        elif name is None:
-            func_name = self.shorten(self.name.lstrip('$'))
+            
+            name = self.name
+            
+        if name is None:
+            # free to choose a suitable name.
+            func_name = self.name.lstrip('$')
             if prefix:
                 func_name = prefix + '_' + func_name
-            template_subs[self.name.lstrip('$')] = func_name
+            
+            # Add to namespace, possibly changing name to ensure uniqueness.
+            func_name = self.add_to_namespace(namespace, func_name, self)
+            
         else:
+            # Must use the given name
             if prefix is not None:
                 raise Exception("Cannot compile with both name and prefix.")
-            func_name = self.shorten(name)
+            if name in namespace and namespace[name] is not self:
+                raise Exception("Shader namespace already has a different "
+                                "Function named %s." % name)
+            namespace[name] = self
+            func_name = name
+            
+        template_subs = {}  # accumulates necessary template substitutions
+        if self.is_anonymous:
             template_subs[self.name.lstrip('$')] = func_name
-        
-        # declare this function in the namespace
-        namespace[func_name] = self
+            
+            
         
         # Visit all dependencies, begin assembling code and values
         dep_names, code = self._compile_deps(func_name, namespace)
@@ -357,20 +372,30 @@ class Function(object):
             
             if vtype == 'varying':
                 var_name = data
+                anonymous = False
             else:
-                var_name = self.shorten(func_name + '_' + name)
+                var_name = name
+                anonymous = True
             
-            if var_name in namespace:
-                if namespace[var_name] is spec:
-                    pass # already have this variable and the correct data
-                else:
-                    raise Exception("Cannot declare program variable %s as %s; "
-                                    "already declared as %s." % 
-                                    (var_name, spec, namespace[var_name]))
+            if anonymous:
+                var_name = self.add_to_namespace(namespace, var_name, spec)
+                added = True
             else:
+                if var_name in namespace:
+                    if namespace[var_name] is spec:
+                        pass # already have this variable and the correct data
+                    else:
+                        raise Exception("Cannot declare program variable %s as %s; "
+                                        "already declared as %s." % 
+                                        (var_name, spec, namespace[var_name]))
+                    added = False
+                else:
+                    namespace[var_name] = spec
+                    added = True
+            
+            if added:
                 # declare new variable and add to namespace.
                 code += '%s %s %s;\n' % (vtype, dtype, var_name)
-                namespace[var_name] = spec
             
             template_subs[name] = var_name
         
@@ -464,6 +489,28 @@ class Function(object):
             lines = [line[min_indent:] for line in lines]
         code = "\n".join(lines)
         return code
+    
+    @staticmethod
+    def add_to_namespace(ns, name, value):
+        """
+        Add *value* to the namespace *ns*, using *name* if possible, or 
+        modifying *name* if needed to ensure a unique name. 
+        The final chosen name is returned.
+        """
+        if name in ns:
+            m = re.match(r'(.*)_(\d+)', name)
+            if m is None:
+                base_name = name
+                index = 1
+            else:
+                base_name, index = m.groups()
+            while True:
+                name = base_name + '_' + str(index)
+                if name not in ns:
+                    break
+                index += 1
+        ns[name] = value
+        return name
     
     @staticmethod
     def shorten(name):
@@ -753,12 +800,12 @@ class FunctionChain(Function):
         dep_names = {} # keep track of the names of our dependencies in case
                        # we need to modify the code to match
         for i, dep in enumerate(self.deps):
-            if dep.is_anonymous:
-                name = func_name + "_" + dep.name.lstrip('$') + "_" + str(i)
-            else:
-                name = None
+            #if dep.is_anonymous:
+                #name = func_name + "_" + dep.name.lstrip('$') + "_" + str(i)
+            #else:
+                #name = None
                 
-            n, c = dep.compile(namespace, name=name)
+            n, c = dep.compile(namespace)
             code += c + "\n"
             dep_names[dep] = n
         

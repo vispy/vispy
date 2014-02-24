@@ -46,7 +46,7 @@ API issues to work out:
 
 
 
-class CompositeProgram(Program):
+class ModularProgram(Program):
     """
     Shader program that is composed of main shader functions combined with
     any number of Functions. Each function that is included in the
@@ -80,7 +80,7 @@ class CompositeProgram(Program):
         }
         '''
         
-        prog = CompositeProgram(vertex_code, fragment_code)
+        prog = ModularProgram(vertex_code, fragment_code)
         
     This example contains one hook--the undefined 'swappable_function' 
     prototype. Any function may be attached to this hook:
@@ -168,7 +168,7 @@ class CompositeProgram(Program):
         if name in self._hooks:
             self.set_hook(name, value)
         else:
-            super(CompositeProgram, self).__setitem__(name, value)
+            super(ModularProgram, self).__setitem__(name, value)
 
         
     def set_hook(self, hook_name, function):
@@ -226,7 +226,7 @@ class CompositeProgram(Program):
         self._apply_variables(namespace)
         
         # and continue.
-        super(CompositeProgram, self)._update()
+        super(ModularProgram, self)._update()
 
     def _find_hooks(self):
         # Locate all undefined function prototypes in both shaders
@@ -291,61 +291,14 @@ class CompositeProgram(Program):
             
             n, c = func.compile(namespace, name=hook_name)
             code.append(c)
-            #for dep in func.all_deps():
-                #if dep is func:  # this is the function being attached; it must have the hook name
-                    #if dep.is_anonymous:
-                        #name, code = dep.compile(self, name=hook_name)
-                    #else:
-                        #name, code = dep.compile(self)
-                        #if name is not hook_name:
-                            #raise Exception("Cannot attach function %s to" 
-                                            #"hook '%s'; incorrect name." % 
-                                            #(dep, hook_name))
-                #else:
-                    ##print("++vertex dep++")
-                    ##print(dep)
-                    ##print(dep.code)
-                    #prefix = hook_name + '_' + parent_name
-                    #name, code = dep.compile(self, prefix=prefix)
-                    #deps[name] = dep
-                    
-                #if name in vdeps:
-                    #if deps[name] is dep:
-                        #pass  # function has already been attached; ignore.
-                    #raise Exception("Cannot attach function %s to %s shader;" 
-                                    #"the name '%s' is"
-                                    #"already in use by %s" % (dep, shader, name, 
-                                                #deps[name]))
-                #else:
-                    #code += "\n\n" + code
-                ##vcode += func.code
-                
-            #elif shader == 'fragment': 
-                #fcode += "\n\n//  -------- Begin hook '%s' --------\n" % hook_name
-                #for dep in func.all_deps():
-                    #if dep is func:
-                        #if dep.name is None:
-                            #fcode += "\n\n" + dep.compile(self, name=hook_name)
-                        #else:
-                            #fcode += "\n\n" + dep.compile(self)
-                    #elif dep not in fdeps:
-                        ##print("++fragment dep++")
-                        ##print(dep)
-                        ##print(dep.code)
-                        #fcode += "\n\n" + dep.compile(self, prefix=hook_name)
-                        #fdeps.add(dep)
-                ##fcode += func.code
-                
-            #else:
-                #raise Exception("Unsupported shader type: %s" % shader)
 
         vcode = '\n'.join(vcode)
         fcode = '\n'.join(fcode)
-        print ("-------------------------VERTEX------------------------------")
-        print (vcode)
-        print ("\n-----------------------FRAGMENT------------------------------")
-        print (fcode)
-        print ("--------------------------------")
+        #print ("-------------------------VERTEX------------------------------")
+        #print (vcode)
+        #print ("\n-----------------------FRAGMENT------------------------------")
+        #print (fcode)
+        #print ("--------------------------------")
         namespace = vnames
         namespace.update(fnames)
         #print("final namespace:", namespace)

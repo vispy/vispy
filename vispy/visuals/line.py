@@ -26,7 +26,7 @@ import numpy as np
 from .. import gloo
 from ..gloo import gl
 from . import Visual, VisualComponent
-from ..shaders.composite import (Function, CompositeProgram, 
+from ..shaders.composite import (Function, ModularProgram, 
                                  FragmentFunction, FunctionChain)
 from .transforms import NullTransform
 
@@ -90,6 +90,7 @@ class LineVisual(Visual):
         self.color_input_component = LineColorInputComponent(self)
         self._vbo = None
         self._fragment_callbacks = []
+        self._vertex_callbacks = []
         self.set_data(pos=pos, color=color, width=width)
 
     @property
@@ -103,6 +104,10 @@ class LineVisual(Visual):
 
     def add_fragment_callback(self, func):
         self._fragment_callbacks.append(func)
+        self._program = None
+
+    def add_vertex_callback(self, func):
+        self._vertex_callbacks.append(func)
         self._program = None
 
     def set_data(self, pos=None, color=None, width=None):
@@ -148,10 +153,10 @@ class LineVisual(Visual):
             self._build_vbo()
         
         # Create composite program
-        program = CompositeProgram(vertex_shader, fragment_shader)
+        program = ModularProgram(vertex_shader, fragment_shader)
         
         program.add_chain('vert_post_hook')
-        #program.add_chain('frag_post_hook')
+        program.add_chain('frag_post_hook')
         
         # Activate position input component
         self.pos_input_component._activate(program)
@@ -163,9 +168,13 @@ class LineVisual(Visual):
         self.color_input_component._activate(program)
         
         # Attach fragment shader post-hook chain
-        #for func in self._fragment_callbacks:
-            #program.add_callback('frag_post_hook', func)
-        program['frag_post_hook'] = self._fragment_callbacks
+        for func in self._fragment_callbacks:
+            program.add_callback('frag_post_hook', func)
+        for func in self._vertex_callbacks:
+            program.add_callback('vert_post_hook', func)
+            
+        #program['vert_post_hook'] = self._vertex_callbacks
+        #program['frag_post_hook'] = self._fragment_callbacks
         
         self._program = program
         
