@@ -10,54 +10,54 @@ from vispy import gloo
 from vispy import openCL
 import numpy
 import time
-import threading
-import pyopencl, pyopencl.array
+import os
+import pyopencl.array
 N = 2048
 
 
 src = """
-__kernel void buf_to_tex( global float *ary,
+__kernel void buf_to_tex( global const float *ary,
                           int width,
                           int height,
-                          float mini,
-                          float maxi,
+                          global const float *mini,
+                          global const float *maxi,
+                          const int logscale,
+                          global const float *colormap,
+                          const int cmap_size,
                           write_only image2d_t texture)
 {
-  int x = get_global_id(0);
-  int y = get_global_id(1);
-  float data = (ary[x+width*y] - mini)/(maxi-mini); 
-  if ((x>=width)||(y>=height)) return;
-  write_imagef( texture, (int2)(x,y), data);
+    int x = get_global_id(0);
+    int y = get_global_id(1);
+    if ((x>=width)||(y>=height)) return;
+    float data = (ary[x+width*y] - mini[0])/(maxi[0]-mini[0]);
+    if (logscale)
+        data = log(data*(M_E_F-1.0f)+1.0f);
+//    int n = (int)((float)cmap_size * data);
+//    float4 data4 = (float4)(colormap[3*n],colormap[3*n+1],colormap[3*n+2],1.0);
+    write_imagef( texture, (int2)(x,y), data);
 }
-    __kernel void
-    u16_to_float(__global unsigned short  *array_int,
-    __global float *array_float,
-    const int IMAGE_W,
-    const int IMAGE_H
-    )
-    {
+__kernel void
+u16_to_float(global unsigned short  *array_int,
+             global float *array_float,
+             const int IMAGE_W,
+             const int IMAGE_H
+            )
+{
     //Global memory guard for padding
     if ((get_global_id(0)<IMAGE_W) && (get_global_id(1) < IMAGE_H)){
-    int i = get_global_id(0) + IMAGE_W * get_global_id(1);
-    array_float[i]=(float)array_int[i];
+        int i = get_global_id(0) + IMAGE_W * get_global_id(1);
+        array_float[i]=(float)array_int[i];
     }
-    }//end kernel
-    """
-#//uniform sampler1D u_colormap;
+}//end kernel
+"""
+# //uniform sampler1D u_colormap;
 
 fragment = """ // texture fragment shader
 uniform sampler2D u_texture1;
 varying vec2 v_texcoord;
 void main()
 {
-    float clr1 = texture2D(u_texture1, v_texcoord).r;
-    //vec4 color = vec4(texture1d(u_colormap, clr1).rgb,1.0);
-    //gl_FragColor = color;
-    gl_FragColor = vec4(vec3(clr1),1.0);
-//    if (clr1>0.5)
-//        gl_FragColor = vec4(vec3(1.0),1.0);
-//    else
-//        gl_FragColor = vec4(vec3(0.0),1.0);
+    gl_FragColor = vec4(texture2D(u_texture1, v_texcoord).rgb,1.0);
 }
 """
 vertex = """
@@ -78,12 +78,16 @@ class Canvas(app.Canvas):
         self.tex_size = tex_size
         self.gl_program = None
         self.ocl_prg = None
+        self.logscale = 0
+        self.connect(self.on_key_release)
+        print('Press "L" to log scale, "N" for normal mode and "B" to benchmark')
+
 
 
     def init_gl(self):
         # Create program
         self.gl_program = gloo.Program(vertex, fragment)
-        self.gl_tex = gloo.Texture2D(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5) #initial color: plain gray
+        self.gl_tex = gloo.Texture2D(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5)  # initial color: plain gray
         self.gl_tex.activate()
         print("activated")
         # Set uniforms and samplers
@@ -94,6 +98,7 @@ class Canvas(app.Canvas):
         self.gl_program['u_texture1'] = self.gl_tex
         self.gl_program['position'] = gloo.VertexBuffer(positions)
         self.gl_program['texcoord'] = gloo.VertexBuffer(texcoords)
+
 
     def on_initialize(self, event):
         gloo.gl.glClearColor(1, 1, 1, 1)
@@ -115,53 +120,82 @@ class Canvas(app.Canvas):
 
     def init_openCL(self):
         self.gl_program.draw(gloo.gl.GL_TRIANGLE_STRIP)
-#        import pyopencl
-#        self.ocl_ctx = pyopencl.Context(devices=[(pyopencl.get_platforms()[0]).get_devices()[1]],
-#                                        properties=pyopencl.tools.get_gl_sharing_context_properties() +
-#                                        [(pyopencl.context_properties.PLATFORM, pyopencl.get_platforms()[0])])
-        self.ocl_ctx = openCL.get_OCL_context()
-        print("OpenCL context on device: %s" % self.ocl_ctx.devices[0])
-        self.queue = pyopencl.CommandQueue(self.ocl_ctx)
-        self.ocl_prg = pyopencl.Program(self.ocl_ctx, src).build()
+        self.ctx = openCL.get_OCL_context()
+        d = self.ctx.devices[0]
+        print("OpenCL context on device: %s" % d.name)
+        wg_float = min(d.max_work_group_size, self.tex_size)
+        self.red_size = 2 ** (int(numpy.ceil(numpy.log2(wg_float))))
+        self.queue = pyopencl.CommandQueue(self.ctx)
+        self.ocl_prg = pyopencl.Program(self.ctx, src).build()
+        reduction_src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "reductions.cl")).read()
+        self.ocl_red = pyopencl.Program(self.ctx, reduction_src).build("-D WORKGROUP_SIZE=%s" % self.red_size)
         self.ary_float = pyopencl.array.empty(self.queue, shape=(self.tex_size, self.tex_size), dtype=numpy.float32)
-
-        self.ocl_tex = pyopencl.GLTexture(self.ocl_ctx, pyopencl.mem_flags.READ_WRITE,
+        self.maxi_mini = pyopencl.array.empty(self.queue, (self.red_size, 2), dtype=numpy.float32)
+        self.mini = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
+        self.maxi = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
+        self.colormap = numpy.array([[0, 0, 0],
+                                     [1, 0, 0],
+                                     [1, 1, 0],
+                                     [1, 1, 1]], dtype=numpy.float32)
+        self.colormap_size = numpy.int32(self.colormap.shape[0])
+        self.cl_colormap = pyopencl.array.to_device(self.queue, self.colormap)
+        self.ocl_tex = pyopencl.GLTexture(self.ctx, pyopencl.mem_flags.READ_WRITE,
                         gloo.gl.GL_TEXTURE_2D, 0, int(self.gl_tex.handle), 2)
 
         img = numpy.random.randint(0, 65000, self.tex_size ** 2).reshape((self.tex_size, self.tex_size)).astype(numpy.uint16)
         self.ocl_ary = pyopencl.array.to_device(self.queue, img)
-
         self.new_image(img)
 
     def new_image(self, img):
         if self.ocl_prg is None:
             self.init_openCL()
-        self.ocl_ary.set(img)
-        self.ocl_prg.u16_to_float(self.queue, (self.tex_size, self.tex_size), (8, 8),
+        pyopencl.enqueue_copy(self.queue, self.ocl_ary.data, img)
+        self.ocl_prg.u16_to_float(self.queue, (self.tex_size, self.tex_size), (8, 4),
                                 self.ocl_ary.data,
                                 self.ary_float.data,
                                 numpy.int32(self.tex_size),
-                                numpy.int32(self.tex_size)).wait()
-        pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_tex]).wait()
-        self.ocl_prg.buf_to_tex(self.queue, (self.tex_size, self.tex_size), (8, 8),
+                                numpy.int32(self.tex_size))
+        self.ocl_red.max_min_global_stage1(self.queue, (self.red_size * self.red_size,), (self.red_size,),
+                                                                   self.ary_float.data,
+                                                                   self.maxi_mini.data,
+                                                                   numpy.uint32(self.tex_size * self.tex_size))
+        self.ocl_red.max_min_global_stage2(self.queue, (self.red_size,), (self.red_size,),
+                                                                   self.maxi_mini.data,
+                                                                   self.maxi.data,
+                                                                   self.mini.data)
+
+        pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_tex])
+        self.ocl_prg.buf_to_tex(self.queue, (self.tex_size, self.tex_size), (8, 4),
                                   self.ary_float.data, numpy.int32(self.tex_size), numpy.int32(self.tex_size),
-                                  numpy.float32(0.0), numpy.float32(65000.0), self.ocl_tex).wait()
+                                  self.mini.data, self.maxi.data, numpy.int32(self.logscale),
+                                  self.cl_colormap.data, self.colormap_size,
+                                  self.ocl_tex)
         pyopencl.enqueue_release_gl_objects(self.queue, [self.ocl_tex]).wait()
         self.on_paint(None)
 
     def benchmark(self, number=10):
         """
-        This is run after a while ... to let the application initialize
+        This is run after clicking on the picture ... to let the application initialize
         """
-        imgs = [numpy.random.randint(0, 65000, N ** 2).reshape((N, N)).astype(numpy.uint16) for i in range(number) ]
         print("Starting benchmark")
+        imgs = [numpy.random.randint(0, 65000, N ** 2).reshape((N, N)).astype(numpy.uint16) for i in range(number) ]
         t1 = time.time()
-        while True:
+        for i in range(10):
             t0 = t1
             for i in imgs:
                 c.new_image(i)
             t1 = time.time()
             print("Rendering at %4.2f fps (average of %i)" % (number / (t1 - t0), number))
+
+    def on_key_release(self, ev):
+        if ev.key.name == "L":
+            self.logscale = 1
+            print("Switching logscale: %s" % self.logscale)
+        elif ev.key.name == "N":
+            self.logscale = 0
+            print("Switching logscale: %s" % self.logscale)
+        elif ev.key.name == "B":
+            self.benchmark()
 
 if __name__ == '__main__':
 
@@ -170,6 +204,4 @@ if __name__ == '__main__':
     c.init_gl()
     c.show()
     c.init_openCL()
-    print("Starting benchmark in 1 seconds ...")
-    threading.Timer(1.0, c.benchmark).start()
     app.run()
