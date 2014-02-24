@@ -348,7 +348,6 @@ class Program(GLObject):
         """ Mark which attributes are active and set the location.
         Called after linking.
         """
-
         count = gl.glGetProgramiv(self.handle, gl.GL_ACTIVE_ATTRIBUTES)
 
         # This match a name of the form "name[size]" (= array)
@@ -371,12 +370,21 @@ class Program(GLObject):
                     for i in range(size):
                         name = '%s[%d]' % (m.group('name'), i)
                         self._active_attributes[name] = loc
+                        if name not in self._attributes:
+                            logger.warn("Program has active attribute '%s', but "
+                                        "this is not in Program.attributes!" % name)
             else:
                 self._active_attributes[name] = loc
+                if name not in self._attributes:
+                    logger.warn("Program has active attribute '%s', but "
+                                "this is not in Program.attributes!" % name)
+        
 
         # Mark these as active (loc non-None means active)
         for attribute in self._attributes.values():
             attribute._loc = self._active_attributes.get(attribute.name, None)
+            if attribute._loc is None:
+                logger.info("Inactive attribute: " + attribute.name)
 
     def _mark_active_uniforms(self):
         """ Mark which uniforms are actve and set the location,
@@ -406,8 +414,14 @@ class Program(GLObject):
                     for i in range(size):
                         name = '%s[%d]' % (m.group('name'), i)
                         self._active_uniforms[name] = loc
+                        if name not in self._uniforms:
+                            logger.warn("Program has active uniform '%s', but "
+                                        "this is not in Program.uniforms!" % name)
             else:
                 self._active_uniforms[name] = loc
+                if name not in self._uniforms:
+                    logger.warn("Program has active uniform '%s', but "
+                                "this is not in Program.uniforms!" % name)
 
         # Mark these as active (loc non-None means active)
         texture_count = 0
@@ -417,6 +431,8 @@ class Program(GLObject):
                 if uniform._textureClass:
                     uniform._texture_unit = texture_count
                     texture_count += 1
+            if uniform._loc is None:
+                logger.info("Inactive uniform: " + attribute.name)
 
     # Behaver like a GLObject
     def _create(self):
@@ -434,8 +450,7 @@ class Program(GLObject):
         # Use this program!
         gl.glUseProgram(self._handle)
 
-        # Mark as enabled, prepare to enable other objects
-        self._active = True
+        # Prepare to enable other objects
         self._activated_objects = []
 
         # Check if one of our shaders nees an updata.
@@ -456,6 +471,9 @@ class Program(GLObject):
         # try offloading all deferred program variables here
         for name, value in self._deferred_item_set.items():
             self[name] = value
+
+        # Mark as enabled.
+        self._active = True
 
     def _deactivate(self):
         """ Deactivate any objects that were activated on our behalf,

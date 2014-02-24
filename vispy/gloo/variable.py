@@ -72,6 +72,9 @@ class Variable(object):
                          gl.GL_FLOAT_MAT4, gl.GL_SAMPLER_2D,
                          gl.GL_SAMPLER_CUBE]:
             raise ValueError("Unknown variable type")
+        
+        if len(name) > 31:
+            raise ValueError("Variable name is too long: %s" % name)
 
         # Name of this variable in the program
         self._name = name
@@ -300,7 +303,6 @@ class Attribute(Variable):
 
     def set_data(self, data):
         """ Set data for this attribute. """
-
         # No magic conversion to VertexBuffer here. If we want it, we
         # should do it in Program.__setitem__
 
