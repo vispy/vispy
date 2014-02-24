@@ -1,8 +1,11 @@
 from nose.tools import assert_equal, assert_true
+from os import path as op
 import logging
 
 from vispy import app
-from vispy.util import logger, use_log_level
+from vispy.util import logger, use_log_level, sys_info, _TempDir
+
+temp_dir = _TempDir()
 
 
 def test_logging():
@@ -44,3 +47,14 @@ def test_debug_logging():
         a.quit()
     assert_equal(len(l), 1)
     assert_true('vispy.app.application' not in l[0])
+
+
+def test_sys_info():
+    """Test printing of system information"""
+    fname = op.join(temp_dir, 'info.txt')
+    sys_info(fname)
+    with open(fname, 'r') as fid:
+        out = ''.join(fid.readlines())
+    keys = ['Python', 'Backend', 'Pyglet']  # 'GL version' only for non-GLUT
+    for key in keys:
+        assert_true(key in out)
