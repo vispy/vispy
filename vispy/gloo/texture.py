@@ -470,6 +470,10 @@ class Texture(GLObject):
         gl.glBindTexture(self.target, self._handle)
         if self._need_parameterization:
             self._parameterize()
+        if self._need_resize:
+            self._resize()
+            self._need_resize = False
+
 
     def _deactivate(self):
         """ Deactivate texture on GPU """
@@ -560,9 +564,6 @@ class Texture1D(Texture):
         if self.base is not None:
             return
 
-        if self._need_resize:
-            self._resize()
-            self._need_resize = False
         logger.debug("GPU: Updating texture (%d pending operation(s))" %
                      len(self._pending_data))
 
