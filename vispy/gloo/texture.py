@@ -19,6 +19,10 @@ This code is inspired by similar classes from Visvis and Pygly.
 from __future__ import division
 
 import numpy as np
+if "float16" in dir(np):
+    NP_HAS_FLOAT16 = True
+else:
+    NP_HAS_FLOAT16 = True
 
 from . import gl
 from . import GLObject, ext_available, convert_to_enum
@@ -27,7 +31,7 @@ from ..util import logger
 
 class TextureError(RuntimeError):
 
-    """ Raised when something goes wrong that depens on state that was set
+    """ Raised when something goes wrong that depends on state that was set
     earlier (due to deferred loading).
     """
     pass
@@ -71,11 +75,11 @@ class Texture(GLObject):
     # We use strings to be more failsafe; e.g. np.float128 does not always
     # exist
     DTYPE2GTYPE = {'uint8': gl.GL_UNSIGNED_BYTE,
-                   # Needs GL_OES_texture_half_float:
-                   'float16': gl.ext.GL_HALF_FLOAT,
                    # Needs GL_OES_texture_float:
                    'float32': gl.GL_FLOAT,
                    }
+    if NP_HAS_FLOAT16: # Needs GL_OES_texture_half_float:
+        DTYPE2GTYPE['float16'] = gl.ext.GL_HALF_FLOAT
 
     def __init__(self, target, data=None, format=None, clim=None):
         GLObject.__init__(self)
@@ -669,13 +673,6 @@ def convert_data(data, clim=None):
         # Uint8 is what we need! If clim is None, no action required
         if clim is not None:
             data = data.astype(np.float32)
-    elif data.dtype.name == 'float16':
-        # Float16 may be allowed. If clim is None, no action is required
-        if clim is not None:
-            data = data.copy()
-        elif not FLOAT16_SUPPORT:
-            CONVERTING = True
-            data = data.copy()
     elif data.dtype.name == 'float32':
         # Float32 may be allowed. If clim is None, no action is required
         if clim is not None:
@@ -687,6 +684,13 @@ def convert_data(data, clim=None):
         # All other floats are converted with relative ease
         CONVERTING = True
         data = data.astype(np.float32)
+    elif data.dtype.name == 'float16':
+        # Float16 may be allowed. If clim is None, no action is required
+        if clim is not None:
+            data = data.copy()
+        elif not FLOAT16_SUPPORT:
+            CONVERTING = True
+            data = data.copy()
     elif 'int' in data.dtype.name:
         # Integers, we need to parse the dtype
         CONVERTING = True
@@ -709,11 +713,11 @@ def convert_data(data, clim=None):
         logger.debug('Converting data.')
 
     # Convert if necessary
-    if data.dtype == np.uint8:
+    if data.dtype.name == "uint8":
         pass  # Always possible
-    elif data.dtype == np.float16 and FLOAT16_SUPPORT:
+    elif data.dtype.name == "float16" and FLOAT16_SUPPORT:
         pass  # Yeah
-    elif data.dtype == np.float32 and FLOAT32_SUPPORT:
+    elif data.dtype.name == "float32" and FLOAT32_SUPPORT:
         pass  # Yeah
     elif data.dtype in (np.float16, np.float32):
         # Arg, convert. Don't forget to clip
