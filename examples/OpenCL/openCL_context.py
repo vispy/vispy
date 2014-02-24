@@ -78,13 +78,12 @@ class Canvas(app.Canvas):
         self.tex_size = tex_size
         self.gl_program = None
         self.ocl_prg = None
-#        self.last_start = 0.0
 
 
     def init_gl(self):
         # Create program
         self.gl_program = gloo.Program(vertex, fragment)
-        self.gl_tex = gloo.Texture2D(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5)
+        self.gl_tex = gloo.Texture2D(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5) #initial color: plain gray
         self.gl_tex.activate()
         print("activated")
         # Set uniforms and samplers
@@ -138,19 +137,16 @@ class Canvas(app.Canvas):
         if self.ocl_prg is None:
             self.init_openCL()
         self.ocl_ary.set(img)
-        pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_tex])
         self.ocl_prg.u16_to_float(self.queue, (self.tex_size, self.tex_size), (8, 8),
                                 self.ocl_ary.data,
                                 self.ary_float.data,
                                 numpy.int32(self.tex_size),
-                                numpy.int32(self.tex_size))
+                                numpy.int32(self.tex_size)).wait()
+        pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_tex]).wait()
         self.ocl_prg.buf_to_tex(self.queue, (self.tex_size, self.tex_size), (8, 8),
                                   self.ary_float.data, numpy.int32(self.tex_size), numpy.int32(self.tex_size),
-                                  numpy.float32(0.0), numpy.float32(65000.0), self.ocl_tex)
+                                  numpy.float32(0.0), numpy.float32(65000.0), self.ocl_tex).wait()
         pyopencl.enqueue_release_gl_objects(self.queue, [self.ocl_tex]).wait()
-        t = time.time()
-#        print("pyopencl program called fps= %.3f"%(1.0/(t-self.last_start)))
-#        self.last_start = t
         self.on_paint(None)
 
     def benchmark(self, number=10):
@@ -170,7 +166,6 @@ class Canvas(app.Canvas):
 if __name__ == '__main__':
 
     c = Canvas(N)
-#    c.measure_fps(1)
     c.show()
     c.init_gl()
     c.show()
