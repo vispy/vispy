@@ -129,9 +129,9 @@ class Canvas(app.Canvas):
         self.swap_buffers()
 
 
-    def init_openCL(self):
+    def init_openCL(self, platform=None, device=None):
         self.gl_program.draw(gloo.gl.GL_TRIANGLE_STRIP)
-        self.ctx = opencl.get_context()
+        self.ctx = opencl.get_context(platform, device)
         d = self.ctx.devices[0]
         print("OpenCL context on device: %s" % d.name)
         wg_float = min(d.max_work_group_size, self.tex_size)
@@ -222,9 +222,15 @@ class Canvas(app.Canvas):
             self.app.quit()
 
 if __name__ == '__main__':
+    if len(sys.argv) ==3:
+        platform = int(sys.argv[1])
+        device = int(sys.argv[2])
+    else:
+        platform = None
+        device = None
     c = Canvas(N)
     c.show()
     c.init_gl()
     c.show()
-    c.init_openCL()
+    c.init_openCL(platform, device)
     app.run()
