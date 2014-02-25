@@ -344,8 +344,7 @@ class Program(GLObject):
         Called after linking.
         """
 
-        count = gl.glGetProgramiv(self.handle, gl.GL_ACTIVE_ATTRIBUTES)
-
+        count = gl.glGetProgramParameter(self.handle, gl.GL_ACTIVE_ATTRIBUTES)
         # This match a name of the form "name[size]" (= array)
         regex = re.compile("""(?P<name>\w+)\s*(\[(?P<size>\d+)\])""")
 
@@ -354,7 +353,7 @@ class Program(GLObject):
         for i in range(count):
             name, size, gtype = gl.glGetActiveAttrib(self.handle, i)
             loc = gl.glGetAttribLocation(self._handle, name)
-            name = name.decode('utf-8')
+#             name = name.decode('utf-8')  # not in our version
             # This checks if the attribute is an array
             # Name will be something like xxx[0] instead of xxx
             m = regex.match(name)
@@ -379,7 +378,7 @@ class Program(GLObject):
         Called after linking.
         """
 
-        count = gl.glGetProgramiv(self.handle, gl.GL_ACTIVE_UNIFORMS)
+        count = gl.glGetProgramParameter(self.handle, gl.GL_ACTIVE_UNIFORMS)
 
         # This match a name of the form "name[size]" (= array)
         regex = re.compile("""(?P<name>\w+)\s*(\[(?P<size>\d+)\])\s*""")
@@ -389,7 +388,7 @@ class Program(GLObject):
         for i in range(count):
             name, size, gtype = gl.glGetActiveUniform(self.handle, i)
             loc = gl.glGetUniformLocation(self._handle, name)
-            name = name.decode('utf-8')
+#             name = name.decode('utf-8')  # not in gl2
             # This checks if the uniform is an array
             # Name will be something like xxx[0] instead of xxx
             m = regex.match(name)
@@ -486,7 +485,7 @@ class Program(GLObject):
         # Link the program
         # todo: should there be a try-except around this?
         gl.glLinkProgram(self._handle)
-        if not gl.glGetProgramiv(self._handle, gl.GL_LINK_STATUS):
+        if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
             errors = gl.glGetProgramInfoLog(self._handle)
             errormsg = self._get_error(errors, 4)
             # parse_shader_errors(errors)
@@ -526,7 +525,7 @@ class Program(GLObject):
         object.activate()
         self._activated_objects.append(object)
 
-    def draw(self, mode, subset=None):
+    def draw(self, mode, subset=None, check_error=True):
         """ Draw the vertices in the specified mode.
 
         If the program is not active, it is activated to do the
@@ -632,3 +631,7 @@ class Program(GLObject):
         # Clean up
         for enum in need_enabled:
             gl.glDisable(enum)
+        
+        # Check ok
+        if check_error:
+            gl.check_error()

@@ -25,7 +25,7 @@ def _dummy_glGetProgramiv(handle, mode):
         return 1
 
 
-def _dummy_glGetAttachedShaders(*args, **kwargs):
+def _dummy_glGetProgramParameter(*args, **kwargs):
     return ()
 
 
@@ -41,7 +41,7 @@ class GLObjectTest(unittest.TestCase):
             if key.startswith('gl'):
                 setattr(gl.ext, key, _dummy)
         #
-        gl.glGetProgramiv = _dummy_glGetProgramiv
+        gl.glGetProgramParameter = _dummy_glGetProgramParameter
         gl.glGetAttachedShaders = _dummy_glGetAttachedShaders
 
     def tearDown(self):

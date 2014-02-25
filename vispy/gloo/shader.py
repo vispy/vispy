@@ -21,7 +21,7 @@ from __future__ import division
 
 import re
 import os
-from OpenGL import error
+# from OpenGL import error
 
 from ..util import is_string
 from . import gl
@@ -59,7 +59,8 @@ class Shader(GLObject):
         'mat3': gl.GL_FLOAT_MAT3,
         'mat4': gl.GL_FLOAT_MAT4,
         'sampler2D': gl.GL_SAMPLER_2D,
-        'sampler3D': gl.ext.GL_SAMPLER_3D,
+        # todo: !
+#         'sampler3D': gl.ext.GL_SAMPLER_3D,
         'samplerCube': gl.GL_SAMPLER_CUBE}
 
     def __init__(self, target, code=None):
@@ -190,7 +191,6 @@ class Shader(GLObject):
         """
 
         gl.glDeleteShader(self._handle)
-
     def _update(self):
         """
         Compile the shader.
@@ -211,15 +211,16 @@ class Shader(GLObject):
         # Compile the shader
         try:
             gl.glCompileShader(self._handle)
-        except error.GLError as errors:
+        except Exception:#error.GLError as errors:
+            # todoL ...
             errormsg = self._get_error(str(errors), 4)
-            raise ShaderError("Error compiling %r:\n" % self + errormsg)
+            raise ShaderError(("Error compiling %r:\n" % self) + str(errors))
 
         # Check the compile status
-        status = gl.glGetShaderiv(self._handle, gl.GL_COMPILE_STATUS)
+        status = gl.glGetShaderParameter(self._handle, gl.GL_COMPILE_STATUS)
         if not status:
             errors = gl.glGetShaderInfoLog(self._handle)
-            errormsg = self._get_error(errors, 4)
+            errormsg = str(errors)+str(self._handle)#self._get_error(errors, 4)
             raise ShaderError("Error compiling %r:\n" % self + errormsg)
 
     def _parse_error(self, error):
