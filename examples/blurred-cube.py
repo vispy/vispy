@@ -57,10 +57,26 @@ uniform sampler2D u_texture;
 varying vec2 v_texcoord;
 void main()
 {
-    if( v_texcoord.x > 0.5 )
+    // Totally wrong gaussian blur...
+    // This shoudl be made in two passes (vertical + horizontal)
+    if( v_texcoord.x > 0.5 ) {
+      float x = v_texcoord.x, dx = 1.0/256.0;
+      float y = v_texcoord.y, dy = 1.0/256.0;
+      vec4 color = vec4(0.0);
+      color += texture2D( u_texture, v_texcoord + vec2(-3.0*dx, -3.0*dy)) * 0.015625;
+      color += texture2D( u_texture, v_texcoord + vec2(-2.0*dx, -2.0*dy))*0.09375;
+      color += texture2D( u_texture, v_texcoord + vec2(-1.0*dx, -1.0*dy ) )*0.234375;
+      color += texture2D( u_texture, v_texcoord + vec2( 0.0,     0.0) )*0.3125;
+      color += texture2D( u_texture, v_texcoord + vec2( 1.0*dx,  1.0*dy ) )*0.234375;
+      color += texture2D( u_texture, v_texcoord + vec2( 2.0*dx,  2.0*dy ) )*0.09375;
+      color += texture2D( u_texture, v_texcoord + vec2( 3.0*dx, -3.0*dy ) ) * 0.015625;
+      color.a = 1.0;
+      gl_FragColor = color;
+    } else if( abs(v_texcoord.x -0.5) < 1.0/512.0) {
+        gl_FragColor = vec4(1.0);
+    } else {
         gl_FragColor = texture2D(u_texture, v_texcoord);
-    else
-        gl_FragColor = vec4(vec3(.25),1.0) + 0.75*texture2D(u_texture, v_texcoord);
+    }
 }
 """
 
@@ -75,7 +91,11 @@ def display():
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glEnable(gl.GL_DEPTH_TEST)
         cube.draw(gl.GL_TRIANGLES, indices)
+        # cube.draw(gl.GL_TRIANGLES)
+        # gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 24)
+        gl.glDrawBuffer( gl.GL_NONE )
         framebuffer.deactivate()
+
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT) # | gl.GL_DEPTH_BUFFER_BIT)
         gl.glDisable(gl.GL_DEPTH_TEST)
@@ -144,18 +164,15 @@ cube["u_texture"].interpolation = gl.GL_LINEAR
 cube['u_model'] = model
 cube['u_view'] = view
 
+depth = DepthBuffer((512,512))
+color = Texture2D(shape=(512,512,3), dtype=np.dtype(np.float32))
+framebuffer = FrameBuffer(color=color, depth=depth)
+
 quad = Program(quad_vertex, quad_fragment, count=4)
 quad['a_texcoord'] = [ ( 0, 0), ( 0, 1), ( 1, 0), ( 1, 1) ]
 quad['a_position'] = [ (-1,-1), (-1,+1), (+1,-1), (+1,+1) ]
-
-depth = DepthBuffer((512,512))
-color = Texture2D(shape=(512,512,3), dtype=np.dtype(np.float32))
-#depth = Texture2D(shape=(512,512,1), dtype=np.dtype(np.float32),
-#                  format=gl.GL_DEPTH_COMPONENT)
 quad['u_texture'] = color
 quad["u_texture"].interpolation = gl.GL_LINEAR
-
-framebuffer = FrameBuffer(color=color, depth=depth)
 
 
 

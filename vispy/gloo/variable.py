@@ -293,6 +293,7 @@ class Attribute(Variable):
     def _activate(self):
         if isinstance(self.data, VertexBuffer):
             self.data.activate()
+        self._update()
 
     def _update(self):
         """ Actual upload of data to GPU memory  """

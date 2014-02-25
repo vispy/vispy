@@ -358,16 +358,12 @@ class FrameBuffer(GLObject):
                                              gl.GL_RENDERBUFFER, 0)
             elif isinstance(buffer, RenderBuffer):
                 buffer.activate()
-                print(gl.GL_FRAMEBUFFER, attachment,
-                      gl.GL_RENDERBUFFER, buffer.handle)
                 gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, attachment,
                                              gl.GL_RENDERBUFFER, buffer.handle)
                 buffer.deactivate()
             elif isinstance(buffer, Texture2D):
                 buffer.activate()
                 # INFO: 0 is for mipmap level 0 (default) of the texture
-                print(gl.GL_FRAMEBUFFER, attachment,
-                      buffer.target, buffer.handle, 0)
                 gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, attachment,
                                           buffer.target, buffer.handle, 0)
                 buffer.deactivate()
