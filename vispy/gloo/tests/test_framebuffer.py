@@ -47,9 +47,9 @@ class RenderBufferTest(unittest.TestCase):
         self.assertRaises(ValueError, buffer.set_shape, (100, 100, 3, 3))
 
         # With valid format
-        buffer.set_shape((100, 100), gl.ext.GL_RGBA8)
-        self.assertEqual(buffer._shape, (100, 100))
-        self.assertEqual(buffer._format, gl.ext.GL_RGBA8)
+        #buffer.set_shape((100, 100), gl.ext.GL_RGBA8)
+        #self.assertEqual(buffer._shape, (100, 100))
+        #self.assertEqual(buffer._format, gl.ext.GL_RGBA8)
         #
         buffer.set_shape((100, 100), gl.GL_DEPTH_COMPONENT16)
         self.assertEqual(buffer._shape, (100, 100))

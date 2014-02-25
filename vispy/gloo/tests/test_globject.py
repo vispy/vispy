@@ -11,21 +11,25 @@ from vispy.gloo import gl
 from vispy import gloo
 
 
-def _dummy(*args, **kwargs):
+def _dummy1(*args, **kwargs):
     """ Dummy method to replace all GL calls with.
     Return 1 for glGenTextures etc.
     """
     return 1
 
+def _dummy0(*args, **kwargs):
+    """ Dummy method that returns 0.
+    """
+    return 0
 
-def _dummy_glGetProgramiv(handle, mode):
+def _dummy_glGetProgramParameter(handle, mode):
     if mode in (gl.GL_ACTIVE_ATTRIBUTES, gl.GL_ACTIVE_UNIFORMS):
         return 0
     else:
         return 1
 
 
-def _dummy_glGetProgramParameter(*args, **kwargs):
+def _dummy_glGetAttachedShaders(*args, **kwargs):
     return ()
 
 
@@ -35,11 +39,14 @@ class GLObjectTest(unittest.TestCase):
         #print('Dummyfying gl namespace.')
         for key in dir(gl):
             if key.startswith('gl'):
-                setattr(gl, key, _dummy)
+                if key=='glGetError':
+                    setattr(gl, key, _dummy0)
+                else:
+                    setattr(gl, key, _dummy1)
         #
-        for key in dir(gl.ext):
-            if key.startswith('gl'):
-                setattr(gl.ext, key, _dummy)
+        #for key in dir(gl.ext):
+        #    if key.startswith('gl'):
+        #        setattr(gl.ext, key, _dummy)
         #
         gl.glGetProgramParameter = _dummy_glGetProgramParameter
         gl.glGetAttachedShaders = _dummy_glGetAttachedShaders
@@ -101,7 +108,7 @@ class GLObjectTest(unittest.TestCase):
             (gloo.buffer.ElementBuffer(np.uint16), 'set_data', data),
             # Textures
             (gloo.Texture2D(), 'set_data', im2),
-            (gloo.Texture3D(), 'set_data', im3),
+            #(gloo.Texture3D(), 'set_data', im3),
             # FBO stuff
             (gloo.RenderBuffer(), 'set_shape', (1, 1)),
             (gloo.FrameBuffer(), 'attach_color', gloo.RenderBuffer((1, 1))),

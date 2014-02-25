@@ -318,11 +318,19 @@ def glGetShaderParameter(shader, pname):
 
 
 def glGetParameter(pname):
-    # GL_VENDOR, GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION,
-    # GL_EXTENSIONS are strings, rest is numbers, gl takes care of
-    # type conversion if needed.
-    if pname not in [7936, 7937, 7938, 35724, 7939]:
+    if pname in [33902, 33901, 32773, 3106, 2931, 2928,
+                 2849, 32824, 10752, 32938]:
+        # GL_ALIASED_LINE_WIDTH_RANGE GL_ALIASED_POINT_SIZE_RANGE
+        # GL_BLEND_COLOR GL_COLOR_CLEAR_VALUE GL_DEPTH_CLEAR_VALUE
+        # GL_DEPTH_RANGE GL_LINE_WIDTH GL_POLYGON_OFFSET_FACTOR
+        # GL_POLYGON_OFFSET_UNITS GL_SAMPLE_COVERAGE_VALUE
         return _glGetFloatv(pname)
+    elif pname in [7936, 7937, 7938, 35724, 7939]:
+        # GL_VENDOR, GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION,
+        # GL_EXTENSIONS are strings
+        pass  # string handled below
+    else:
+        return _glGetIntegerv(pname)
     name = pname
     return GL.glGetString(pname)
 
@@ -405,6 +413,9 @@ def glPolygonOffset(factor, units):
 def glReadPixels(x, y, width, height, format, type):
     """ Return pixels as bytes.
     """
+    # GL_ALPHA, GL_RGB, GL_RGBA
+    t = {6406:1,6407:3, 6408:4}[format]
+    # we kind of only support type GL_UNSIGNED_BYTE
 
 
 def glRenderbufferStorage(target, internalformat, width, height):

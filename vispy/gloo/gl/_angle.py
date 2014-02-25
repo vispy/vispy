@@ -492,9 +492,15 @@ def glGetFramebufferAttachmentParameter(target, attachment, pname):
 _lib.glGetIntegerv.argtypes = ctypes.c_uint, ctypes.POINTER(ctypes.c_int),
 # void = glGetIntegerv(GLenum pname, GLint* params)
 def _glGetIntegerv(pname):
-    params = (ctypes.c_int*1)()
+    n = 16
+    d = -99999  # A bit dangerous
+    params = (ctypes.c_int*n)(*[d for i in range(n)])
     res = _lib.glGetIntegerv(pname, params)
-    return params[0]
+    params = [p for p in params if p!=d]
+    if len(params) == 1:
+        return params[0]
+    else:
+        return params
 
 
 _lib.glGetProgramInfoLog.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_char_p,
@@ -564,11 +570,19 @@ _lib.glGetString.argtypes = ctypes.c_uint,
 _lib.glGetString.restype = ctypes.c_char_p
 # GLubyte* = glGetString(GLenum name)
 def glGetParameter(pname):
-    # GL_VENDOR, GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION,
-    # GL_EXTENSIONS are strings, rest is numbers, gl takes care of
-    # type conversion if needed.
-    if pname not in [7936, 7937, 7938, 35724, 7939]:
+    if pname in [33902, 33901, 32773, 3106, 2931, 2928,
+                 2849, 32824, 10752, 32938]:
+        # GL_ALIASED_LINE_WIDTH_RANGE GL_ALIASED_POINT_SIZE_RANGE
+        # GL_BLEND_COLOR GL_COLOR_CLEAR_VALUE GL_DEPTH_CLEAR_VALUE
+        # GL_DEPTH_RANGE GL_LINE_WIDTH GL_POLYGON_OFFSET_FACTOR
+        # GL_POLYGON_OFFSET_UNITS GL_SAMPLE_COVERAGE_VALUE
         return _glGetFloatv(pname)
+    elif pname in [7936, 7937, 7938, 35724, 7939]:
+        # GL_VENDOR, GL_RENDERER, GL_VERSION, GL_SHADING_LANGUAGE_VERSION,
+        # GL_EXTENSIONS are strings
+        pass  # string handled below
+    else:
+        return _glGetIntegerv(pname)
     name = pname
     res = _lib.glGetString(name)
     return res.decode('utf-8')
@@ -715,7 +729,10 @@ _lib.glReadPixels.argtypes = ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_
 def glReadPixels(x, y, width, height, format, type):
     """ Return pixels as bytes.
     """
-    size = width*height
+    # GL_ALPHA, GL_RGB, GL_RGBA
+    t = {6406:1,6407:3, 6408:4}[format]
+    # we kind of only support type GL_UNSIGNED_BYTE
+    size = int(width*height*t)
     pixels = (ctypes.c_uint8*size)()
     res = _lib.glReadPixels(x, y, width, height, format, type, pixels)
     return bytes(pixels)

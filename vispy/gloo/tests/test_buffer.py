@@ -321,7 +321,7 @@ class VertexBufferTest(unittest.TestCase):
 
         # VertexBuffer supports these
         for dtype in (np.uint8, np.int8, np.uint16, np.int16,
-                      np.float32, np.float16):
+                      np.float32):
             VertexBuffer(dtype)
 
         # VertexBuffer does *not* support these

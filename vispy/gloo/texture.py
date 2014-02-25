@@ -77,7 +77,7 @@ class Texture(GLObject):
     # We use strings to be more failsafe; e.g. np.float128 does not always
     # exist
     DTYPE2GTYPE = {'uint8': gl.GL_UNSIGNED_BYTE,
-                   #'float16': gl.ext.GL_HALF_FLOAT,  # Need texture_half_float
+                   #'float16': gl.GL_HALF_FLOAT,  # Need texture_half_float
                    'float32': gl.GL_FLOAT,  #  Need texture_float extension
                    }
 

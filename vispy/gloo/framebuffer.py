@@ -120,10 +120,10 @@ class RenderBuffer(GLObject):
         self._need_update = True
 
     def _create(self):
-        self._handle = gl.glGenRenderbuffers(1)
+        self._handle = gl.glCreateRenderbuffer()
 
     def _delete(self):
-        gl.glDeleteRenderbuffers([self._handle])
+        gl.glDeleteRenderbuffer(self._handle)
 
     def _activate(self):
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._handle)
@@ -288,10 +288,10 @@ class FrameBuffer(GLObject):
                 attachment.set_shape(shape)
 
     def _create(self):
-        self._handle = gl.glGenFramebuffers(1)
+        self._handle = gl.glCreateFramebuffer()
 
     def _delete(self):
-        gl.glDeleteFramebuffers([self._handle])
+        gl.glDeleteFramebuffer(self._handle)
 
     def _activate(self):
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)

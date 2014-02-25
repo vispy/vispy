@@ -567,7 +567,8 @@ class VertexBuffer(DataBuffer):
                    'uint16': gl.GL_UNSIGNED_SHORT,
                    'int16': gl.GL_SHORT,
                    'float32': gl.GL_FLOAT,
-                   #'float16': gl.ext.GL_HALF_FLOAT,
+                   # vertex_half_float extension not in webgl
+                   #'float16': gl.ext.GL_HALF_FLOAT,  
                    }
 
     def __new__(cls, *args, **kwargs):
