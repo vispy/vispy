@@ -66,7 +66,27 @@ void main(void) {
 
     
 class ImageVisual(Visual):
-    def __init__(self, data):
+    """
+    Visual subclass displaying an image. 
+    
+    Parameters:
+        data : (height, width, 4) ubyte array
+        method : str
+            Selects method of rendering image in case of non-linear transforms.
+            Each method produces similar results, but may trade efficiency 
+            and accuracy. If the transform is linear, this parameter is ignored
+            and a single quad is drawn around the area of the image.
+            'subdivide': Image is represented as a grid of triangles with
+                texture coordinates linearly mapped.
+            'impostor': Image is represented as a quad covering the entire
+                view, with texture coordinates determined by the transform. This
+                produces the best transformation results, but may be slow.
+        grid: (rows, cols)
+            If method='subdivide', this tuple determines the number of rows and
+            columns in the image grid.
+    """
+    
+    def __init__(self, data, method='subdivide', grid=(10,10)):
         super(ImageVisual, self).__init__()
         self.set_gl_options('opaque')
         
@@ -87,8 +107,8 @@ class ImageVisual(Visual):
         self.set_data(data)
         self.set_gl_options(glCullFace=('GL_FRONT_AND_BACK',))
         
-        #self.method = 'subdivide'
-        self.method = 'impostor'
+        self.method = method
+        self.grid = grid
         
 
     @property
@@ -115,24 +135,29 @@ class ImageVisual(Visual):
 
     def _build_data(self):
         # Construct complete data array with position and optionally color
+        if self.transform.Linear:
+            method = 'subdivide'
+            grid = (1, 1)
+        else:
+            method = self.method
+            grid = self.grid
         
         if self.method == 'subdivide':
             # quads cover area of image as closely as possible
-            subdiv = 4
-            w = self._data.shape[0] / subdiv
-            h = self._data.shape[1] / subdiv
+            w = self._data.shape[0] / grid[1]
+            h = self._data.shape[1] / grid[0]
             
             quad = np.array([[0,0], [w,h], [w,0], [0,0], [0,h], [w,h]], 
                             dtype=np.float32)
-            quads = np.empty((subdiv, subdiv, 6, 2), dtype=np.float32)
+            quads = np.empty((grid[1], grid[0], 6, 2), dtype=np.float32)
             quads[:] = quad
             
-            grid = np.mgrid[0:subdiv, 0:subdiv].transpose(1,2,0)[:, :, np.newaxis, :]
-            grid[...,0] *= w
-            grid[...,1] *= h
+            mgrid = np.mgrid[0.:grid[1], 0.:grid[0]].transpose(1,2,0)[:, :, np.newaxis, :]
+            mgrid[...,0] *= w
+            mgrid[...,1] *= h
             
-            quads += grid
-            self._vbo = gloo.VertexBuffer(quads.reshape(subdiv*subdiv*6,2))
+            quads += mgrid
+            self._vbo = gloo.VertexBuffer(quads.reshape(grid[1]*grid[0]*6,2))
         
         elif self.method == 'impostor':
             # quad covers entire view; frag. shader will deal with image shape
