@@ -325,7 +325,7 @@ class Maker:
         # Report
         print('Replaced %i copyright statements' % count_replaced)
         print('Found %i copyright statements up to date' % count_ok)
-    
+
     def lineendings(self, args):
         """ Check that all lineendings are LF """
         for dirpath, dirnames, filenames in os.walk(ROOT_DIR):
@@ -345,7 +345,7 @@ class Maker:
                 crcount = text.count('\r')
                 if crcount:
                     lfcount = text.count('\n')
-                    print('In %s found %i/%i CR/LF' % 
+                    print('In %s found %i/%i CR/LF' %
                           (relfilename, crcount, lfcount))
 
 
