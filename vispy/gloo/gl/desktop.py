@@ -1,130 +1,61 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
-# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" vispy.gloo.gl.desktop: namespace for OpenGL ES 2.0 API based on the
-desktop OpenGL implementation.
-"""
-
-from __future__ import division
 
 import sys
-import ctypes
-from OpenGL import GL as _GL
-import OpenGL.GL.framebufferobjects as FBO
+import ctypes.util
 
-from . import _GL_ENUM
-from . import _desktop, _desktop_ext
-from ...util import logger
-
-# Prepare namespace with constants and ext
-from ._constants import *  # noqa
-ext = _desktop_ext
+from . import _copy_gl_functions
+from ._constants import *
 
 
-def _make_unavailable_func(funcname):
-    def cb(*args, **kwds):
-        raise RuntimeError('OpenGL API call "%s" is not available.' % funcname)
-    return cb
+## Ctypes stuff
 
 
-def _get_function_from_pyopengl(funcname):
-    """ Try getting the given function from PyOpenGL, return
-    a dummy function (that shows a warning when called) if it
-    could not be found.
-    """
-    func = None
-    # Get function from GL
+if sys.platform.startswith('win'):
+    _lib = ctypes.windll.opengl32    
     try:
-        func = getattr(_GL, funcname)
+        wglGetProcAddress = _lib.wglGetProcAddress
+        wglGetProcAddress.restype = ctypes.CFUNCTYPE(ctypes.POINTER(ctypes.c_int))
+        wglGetProcAddress.argtypes = [ctypes.c_char_p]
+        _have_get_proc_address = True
     except AttributeError:
-        # Get function from FBO
+        _have_get_proc_address = False
+else:
+    _have_get_proc_address = False
+    fname = ctypes.util.find_library('GL')
+    _lib = ctypes.cdll.LoadLibrary(fname)
 
-        try:
-            func = getattr(FBO, funcname)
-        except AttributeError:
-            # Some functions are known by a slightly different name
-            # e.g. glDepthRangef, glDepthRangef
-            if funcname.endswith('f'):
-                try:
-                    func = getattr(_GL, funcname[:-1])
-                except AttributeError:
-                    pass
-
-    # Set dummy function if we could not find it
-    if func is None:
-        func = _make_unavailable_func(funcname)
-        logger.warn('warning: %s not available' % funcname)
-    return func
+del sys
 
 
-def _inject():
-    """ Get GL functions from pyopengl. Inject in *this* namespace
-    and the ext namespace.
-    Note the similatity with vispy.gloo.gl.use().
-    """
-
-    # Import functions here
-    NS = globals()
-    funcnames = _desktop._glfunctions
-    for name in funcnames:
-        func = _get_function_from_pyopengl(name)
-        NS[name] = func
-
-    # Import functions in ext
-    NS = ext.__dict__
-    funcnames = _desktop_ext._glfunctions
-    for name in funcnames:
-        func = _get_function_from_pyopengl(name)
-        NS[name] = func
+def _have_context():
+    return _lib.glGetError() != 1282  # GL_INVALID_OPERATION
 
 
-def _fix():
-    """ Apply some fixes and patches.
-    """
-    NS = globals()
-    # Fix glGetActiveAttrib, since if its just the ctypes function
-    if ('glGetActiveAttrib' in NS and
-            hasattr(NS['glGetActiveAttrib'], 'restype')):
-
-        def new_glGetActiveAttrib(program, index):
-            # Prepare
-            bufsize = 32
-            length = ctypes.c_int()
-            size = ctypes.c_int()
-            type = ctypes.c_int()
-            name = ctypes.create_string_buffer(bufsize)
-            # Call
-            _GL.glGetActiveAttrib(
-                program,
-                index,
-                bufsize,
-                ctypes.byref(length),
-                ctypes.byref(size),
-                ctypes.byref(type),
-                name)
-            # Return Python objects
-            # return name.value.decode('utf-8'), size.value, type.value
-            return name.value, size.value, type.value
-
-        # Patch
-        NS['glGetActiveAttrib'] = new_glGetActiveAttrib
-
-    # Monkey-patch pyopengl to fix a bug in glBufferSubData
-    if sys.version_info > (3,):
-        buffersubdatafunc = NS['glBufferSubData']
-        if hasattr(buffersubdatafunc, 'wrapperFunction'):
-            buffersubdatafunc = buffersubdatafunc.wrapperFunction
-        _m = sys.modules[buffersubdatafunc.__module__]
-        _m.long = int
+def _get_gl_func(name, restype, argtypes):
+    # Based on a function in Pyglet
+    try:
+        # Try using normal ctypes stuff
+        func = getattr(_lib, name)
+        func.restype = restype
+        func.argtypes = argtypes
+        return func
+    except AttributeError:
+        # Ask for a pointer to the function, this is the approach
+        # for OpenGL extensions on Windows 
+        fargs = (restype,) + argtypes
+        ftype = ctypes.WINFUNCTYPE(*fargs)
+        if not _have_get_proc_address:
+            raise RuntimeError('Function %s not available.' % name)
+        if not _have_context():
+            raise RuntimeError('Using %s with no OpenGL context.' % name)
+        address = wglGetProcAddress(name.encode('utf-8'))
+        if address:
+            return ctypes.cast(address, ftype)
+        else:
+            raise RuntimeError('Function %s not present in current context.' % name)
 
 
-# Apply
-_inject()
-_fix()
-
-
-# Compatibility functions
+## Compatibility
 
 
 def glShaderSource_compat(handle, code):
@@ -161,6 +92,14 @@ def glShaderSource_compat(handle, code):
     # Determine whether to activate point sprites
     enums = set()
     if is_fragment and 'gl_PointCoord' in code:
-        enums.add(_GL_ENUM('GL_VERTEX_PROGRAM_POINT_SIZE', 34370))
-        enums.add(_GL_ENUM('GL_POINT_SPRITE', 34913))
+        enums.add(Enum('GL_VERTEX_PROGRAM_POINT_SIZE', 34370))
+        enums.add(Enum('GL_POINT_SPRITE', 34913))
     return enums
+    return []
+
+
+## Inject
+
+
+from . import _desktop
+_copy_gl_functions(_desktop, globals())
