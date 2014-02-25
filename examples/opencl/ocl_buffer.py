@@ -7,7 +7,7 @@
 # -----------------------------------------------------------------------------
 
 """
-Demo showing the sharing of a OpenGL texture <--> OpenCL image
+Demo showing the sharing of a VisPy buffer object <--> OpenCL buffer
 """
 
 import os, sys, time
@@ -20,7 +20,7 @@ N = 2048
 
 
 src = """
-__kernel void buf_to_buf( global const float *ary,
+__kernel void buf_to_buf( global float *ary,
                           int width,
                           int height,
                           global const float *mini,
@@ -29,15 +29,16 @@ __kernel void buf_to_buf( global const float *ary,
 {
     int x = get_global_id(0);
     int y = get_global_id(1);
+    int i = x+width*y;
     if ((x>=width)||(y>=height)) return;
     float data;
     if (maxi[0]==mini[0])
-        data = (ary[x+width*y] - mini[0]);
+        data = (ary[i] - mini[0]);
     else
-        data = (ary[x+width*y] - mini[0])/(maxi[0]-mini[0]);
+        data = (ary[i] - mini[0])/(maxi[0]-mini[0]);
     if (logscale)
         data = log(data*(M_E_F-1.0f)+1.0f);
-    write_imagef( texture, (int2)(x,y), data);
+    ary[i] = data;
 }
 __kernel void
 u16_to_float(global unsigned short  *array_int,
@@ -55,12 +56,15 @@ u16_to_float(global unsigned short  *array_int,
 """
 # //uniform sampler1D u_colormap;
 
-fragment = """ // texture fragment shader
-uniform sampler2D u_texture1;
+fragment = """ // buffer fragment shader
+attribute float u_ary;
+uniform vec2 u_size;
 uniform sampler2D u_colormap;
 varying vec2 v_texcoord;
 void main()
-{   float data = texture2D(u_texture1, v_texcoord).r;
+{
+    int i = gl_FragCoord.y*u_size.x+gl_FragCoord.x;
+    float data = u_ary[i];
     gl_FragColor = vec4(texture2D(u_colormap,vec2(1.0f,data)).rgb, 1.0f);
 }
 """
@@ -91,7 +95,7 @@ class Canvas(app.Canvas):
     def init_gl(self):
         # Create program
         self.gl_program = gloo.Program(vertex, fragment)
-        self.gl_tex = gloo.Texture2D(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5)  # initial color: plain gray
+        self.gl_buf = gloo.VertexBuffer(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5)  # initial color: plain gray
         # Set uniforms and samplers
         positions = numpy.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
                           [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0, ]], numpy.float32)
@@ -102,12 +106,12 @@ class Canvas(app.Canvas):
                                      [1, 1, 0],
                                      [1, 1, 1]], dtype=numpy.float32)
 
-        self.gl_program['u_texture1'] = self.gl_tex
+
         self.gl_program['position'] = gloo.VertexBuffer(positions)
         self.gl_program['texcoord'] = gloo.VertexBuffer(texcoords)
         gl_colormap = gloo.Texture2D(self.colormap.reshape((self.colormap.shape[0], 1, 3)))
         self.gl_program['u_colormap'] = gl_colormap
-
+        self.gl_program['u_ary'] = self.gl_buf
 
     def on_initialize(self, event):
         gloo.gl.glClearColor(1, 1, 1, 1)
