@@ -14,32 +14,6 @@ from . import parsing
 """
 API issues to work out:
 
-  - Currently, program variables are set when the program is built. To 
-    optimize, it must be possible to set new variables on a pre-built
-    program.
-  
-  - Any useful way to make FunctionTemplate and FragmentFunction subclasses
-    of Function? (and should we want to?)
-        Perhaps we need a more general superclass for all of these?
-        
-        Common attributes:
-            code  (= None for functions that must be bound)
-            name  (also may be None)
-            args
-            rtype
-            bindings
-            bind()
-            
-
-  - Would be awesome if Function.bind() could optionally accept variable
-    values instead of (type, name) specifications. This would simplify most
-    uses of bind() and additionally allow the function and program to decide
-    on a suitable (unique) variable name.
-
-  - Would like FragmentFunction to have a convenience method that auto-generates
-    vertex shader support code for translating attributes into varyings.
-    (but this must be optional, because some components may need more complex
-    support code)
     
     
 """
@@ -119,6 +93,22 @@ class ModularProgram(Program):
         Program.__init__(self)
         self.vmain = vmain
         self.fmain = fmain
+        
+        # Collection of all names declared in each shader.
+        self.namespaces = {
+            'vertex': {},
+            'fragment': {},
+            }
+        
+        # Garbage collection system: keep track of all objects (functions and
+        # variables) included in the program and their referrers. When no 
+        # referrers are found, remove the object.
+        # Format is {obj: [list of referrers]}
+        self.referrers = {}
+        
+        # cache of compilation results for each function and variable
+        self._function_cache = {}  
+        self._variable_cache = {}
         
         # lists all hooks (function prototypes in both shaders. Format is:
         # {'hook_name': ((vertex|fragment), args, rtype)}
@@ -218,12 +208,12 @@ class ModularProgram(Program):
         
     def _update(self):
         # generate all code..
-        vcode, fcode, namespace = self._generate_code()
+        self._compile()
         
-        self.attach(VertexShader(vcode), FragmentShader(fcode))
+        self.attach(VertexShader(self.vert_code), FragmentShader(self.frag_code))
         
         # set all variables..
-        self._apply_variables(namespace)
+        self._apply_variables()
         
         # and continue.
         super(ModularProgram, self)._update()
@@ -238,60 +228,147 @@ class ModularProgram(Program):
                 if name in self._hooks:
                     raise ValueError("Function prototype declared twice: '%s'" % name)
                 self._hooks[name] = (shader_type, args, rtype)
-                
-    def _generate_code(self):
-        # Assemble main shader functions along with their hook definitions
-        # into a single block of code.
+
+    def _compile(self):
+        """
+        Generate complete vertex and fragment shader code
         
-        vcode = [self.vmain]
-        fcode = [self.fmain]
-        namespace = {}
         
-        # add code for all hooks and dependencies in order.
+        """
+        code = {'vertex': [self.vmain], 'fragment': [self.fmain]}
         
         for hook_name, func in self._hook_defs.items():
             shader, hook_args, hook_rtype = self._hooks[hook_name]
             
+            if func not in self._function_cache:
+                self._resolve_function(func, shader, hook_name)
+            code[shader].append(self._function_cache[func][1])
+        self.vcode = '\n'.join(code['vertex'])
+        self.fcode = '\n'.join(code['fragment'])
             
-            ## make sure the function definition fits the hook.
-            # TODO: If this is expensive, perhaps we can skip it and just let 
-            # the compiler generate an error.
-            if func.rtype != hook_rtype:
-                raise TypeError("function does not return correct type for hook "
-                                "'%s' (returns %s, should be %s)" % (hook_name, func.rtype, hook_rtype))
-            if len(func.args) != len(hook_args):
-                raise TypeError("function does not accept correct number of arguments for hook "
-                                "'%s' (accepts %d, should be %d)" % (hook_name, len(func.args), len(hook_args)))
-            for i, arg in enumerate(func.args):
-                if arg[0] != hook_args[i][0]:
-                    fnsig = ", ".join([arg[0] for arg in func.args])
-                    hksig = ", ".join([arg[0] for arg in hook_args])
-                    raise TypeError("function has incorrect signature for hook "
-                                    "'%s' (signature is (%s), should be (%s))" % (hook_name, fnsig, hksig))
+    def _resolve_function(self, func, shader, func_name):
+        """
+        Generate complete code needed for one function, store in 
+        self._func_code_cache
+        """
+        code = ""
+        subs = {}
+        
+        # resolve function name
+        if func_name is not None:
+            subs[func.name.lstrip('$')] = func_name
+        
+        # resolve all variable names and generate declarations if needed
+        for local_name, var in func.template_vars.items():
+            if var not in self._variable_cache:
+                self._resolve_variable(var, shader)
+            n, c = self._variable_cache[var]
+            if n not in self.namespaces[shader]:
+                code += c
+                self.namespaces[shader][n] = var
+            subs[var.name] = n
             
-            if not func.is_anonymous and func.name != hook_name:
-                func = func.wrap(name=hook_name)
+        # resolve all dependencies
+        dep_names = {}
+        for dep in func.deps:
+            if dep not in self._function_cache:
+                self._resolve_function(dep, shader)
+            dep_names[dep] = self._function_cache[dep][0]
             
-            if shader == 'vertex':
-                code = vcode
-            else:
-                code = fcode
-            
-            code.append("\n\n//  -------- Begin hook '%s' --------\n" % 
-                        hook_name)
-            
-            n, c = func.compile(namespace, name=hook_name)
-            code.append(c)
+        # compile code with the suggested substitutions and dependency names
+        c = func.compile(subs, dep_names)
+        
+        code += c
+        self._function_cache[func] = (func_name, code)
 
-        vcode = '\n'.join(vcode)
-        fcode = '\n'.join(fcode)
+    
+    def _resolve_variable(self, var, shader):
+        """
+        Decide on a name for *var* and generate its declaration code.        
+        """
+        # TODO: If this references another variable, call _resolve_variable on
+        # the ref'd variable and use the resulting name.
+        
+        if var.name.startswith('$'):
+            name = self.suggest_name(var.name)
+        else:
+            self.check_name(shader, var.name, var)
+            name = var.name
+        decl = "%s %s %s;\n" % (var.vtype, var.dtype, name)
+        self._variable_cache[var] = (name, decl)
+        
+    def check_name(self, shader, name, val):
+        """
+        Check that *name* correctly refers to *val* in the program namespace,
+        if it is present.
+        """
+        nsnames = self.namespaces.keys()
+        for nsname in nsnames:
+            if name in self.namespaces[nsname] and self.namespaces[nsname][name] != val:
+                raise Exception("Cannot use name '%s' for variable %s; already used by %s." % (var.name, var, self.namespaces[nsname][name]))
+                
+    #def _compile(self):
+        ## Assemble main shader functions along with their hook definitions
+        ## into a single block of code.
+        
+        #vcode = [self.vmain]
+        #fcode = [self.fmain]
+        #namespace = {}  # total namespace of program
+        #vnames = {}  # vertex shader namespace
+        #fnames = {}  # fragment shader namespace
+        
+        
+        ## add code for all hooks and dependencies in order.
+        
+        #for hook_name, func in self._hook_defs.items():
+            #shader, hook_args, hook_rtype = self._hooks[hook_name]
+            
+            
+            ### make sure the function definition fits the hook.
+            ## TODO: If this is expensive, perhaps we can skip it and just let 
+            ## the compiler generate an error.
+            #if func.rtype != hook_rtype:
+                #raise TypeError("function does not return correct type for hook "
+                                #"'%s' (returns %s, should be %s)" % (hook_name, func.rtype, hook_rtype))
+            #if len(func.args) != len(hook_args):
+                #raise TypeError("function does not accept correct number of arguments for hook "
+                                #"'%s' (accepts %d, should be %d)" % (hook_name, len(func.args), len(hook_args)))
+            #for i, arg in enumerate(func.args):
+                #if arg[0] != hook_args[i][0]:
+                    #fnsig = ", ".join([arg[0] for arg in func.args])
+                    #hksig = ", ".join([arg[0] for arg in hook_args])
+                    #raise TypeError("function has incorrect signature for hook "
+                                    #"'%s' (signature is (%s), should be (%s))" % (hook_name, fnsig, hksig))
+            
+            #if not func.is_anonymous and func.name != hook_name:
+                #func = func.wrap(name=hook_name)
+            
+            #if shader == 'vertex':
+                #code = vcode
+                #shader_ns = vnames
+            #else:
+                #code = fcode
+                #shader_ns = fnames
+            
+            #code.append("\n\n//  -------- Begin hook '%s' --------\n" % 
+                        #hook_name)
+            
+            #n, c = func.compile(self, name=hook_name)
+            #code.append(c)
+
+        #vcode = '\n'.join(vcode)
+        #fcode = '\n'.join(fcode)
         #print ("-------------------------VERTEX------------------------------")
         #print (vcode)
         #print ("\n-----------------------FRAGMENT------------------------------")
         #print (fcode)
         #print ("--------------------------------")
-        #print("final namespace:", namespace)
-        return vcode, fcode, namespace
+        ##print("final namespace:", namespace)
+        
+        #self.vert_code = vcode
+        #self.frag_code = fcode
+        #self.vert_ns = vnames
+        #self.frag_ns = fnames
          
     def _apply_variables(self, namespace):
         """

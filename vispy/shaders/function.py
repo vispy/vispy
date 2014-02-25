@@ -19,7 +19,7 @@ class Function(object):
     of dependencies, which are other Functions that must be included
     in the program because they are called from this function.
     
-    A CompositeProgram generates its code by concatenating the *code* property
+    A ModularProgram generates its code by concatenating the *code* property
     of multiple Functions and their dependencies; each function is
     included exactly once, even if it is depended upon multiple times.
     """    
@@ -41,7 +41,7 @@ class Function(object):
             #If None, this value will be automatically parsed from *code*.
         #deps : None or list of Functions
             #Lists functions that are called by this function, and therefore must
-            #be included by a CompositeProgram when compiling the complete
+            #be included by a ModularProgram when compiling the complete
             #program.
         #variables : None or dict
             #Dict describing program variables declared in this function's code.
@@ -56,11 +56,11 @@ class Function(object):
         #self._set_code(code, name, args, rtype, variables)
         #self._deps = deps[:] if deps is not None else []
         #self._program_values = {}    # values for attribute/uniforms carried by this function;
-                                     ## will be set on any CompositeProgram the function is
+                                     ## will be set on any ModularProgram the function is
                                      ## attached to.
         #self._template_cache = None  # stores a string.Template object
         #self._callbacks = []         # Functions that should be installed on a
-                                     ## particular CompositeProgram hook.
+                                     ## particular ModularProgram hook.
                                      
                                      
     def __init__(self, code=None, deps=()):
@@ -69,9 +69,9 @@ class Function(object):
         self._code = code
         self._deps = deps
         self._signature = None
-        self._program_vars = None
+        self._program_vars = None  # variables defined in the program code
         self._program_values = {}
-        self._template_vars = None
+        self._template_vars = None # template variables used in the program code (excluding the function name)
         self._callbacks = []
         self._str_template = None
         
@@ -238,7 +238,8 @@ class Function(object):
         for var in parsing.find_template_variables(self.code):
             if var == self.name:
                 continue
-            self._template_vars[var.lstrip('$')] = None
+            vname = var.lstrip('$')
+            self._template_vars[vname] = VariableReference(self, vname)
 
     def _parse_program_vars(self):
         raise NotImplementedError
@@ -307,103 +308,119 @@ class Function(object):
                 #name = "$func_name" # no name specified; make the new function anonymous.
             #return BoundFunction(self, name, kwds)
 
-    def compile(self, namespace, name=None, prefix=None):
-        """
-        Generate the complete code, including all dependencies, that defines
-        this function. Returns (func_name, code).
+    #def compile(self, program, name=None):
+        #"""
+        #Generate the complete code, including all dependencies, that defines
+        #this function. Returns (func_name, code).
         
-        The *namespace* argument is a dict containing all globally declared
-        names in the shader; this method is responsible for adding new names
-        to the namespace as needed and for ensuring that previously-declared
-        names are not redeclared.
+        #The *program_ns* argument is a dict containing all globally declared
+        #names in the program, whereas *shader_ns* contains names declared
+        #in the shader. This method is responsible for adding new names
+        #to both namespaces as needed and for ensuring that previously-declared
+        #names are not redeclared.
         
-        For program varibles, namespace[var] must be (vtype, dtype, data); this
-        will be used to assign data to the program after it is compiled.
+        #For program varibles, program_ns[var] must be (vtype, dtype, data); this
+        #will be used to assign data to the program after it is compiled.
         
-        If supplied, *name* determines the name that must be assigned to this 
-        function in the returned code.
-        """
+        #If supplied, *name* determines the name that must be assigned to this 
+        #function in the returned code.
+        #"""
         
-        # First decide on a name for this function
-        if not self.is_anonymous:
-            if name is not None and name != self.name:
-                raise Exception("Function already has name '%s'; cannot use " 
-                                "requested name '%s'" % (self.name, name))
-            if prefix is not None:
-                raise Exception("Function already has name '%s'; cannot use " 
-                                "requested prefix '%s'" % (self.name, prefix))
+        ## First decide on a name for this function
+        #if not self.is_anonymous:
+            #if name is not None and name != self.name:
+                #raise Exception("Function already has name '%s'; cannot use " 
+                                #"requested name '%s'" % (self.name, name))
             
-            name = self.name
+            #name = self.name
             
-        if name is None:
-            # free to choose a suitable name.
-            func_name = self.name.lstrip('$')
-            if prefix:
-                func_name = prefix + '_' + func_name
+        #if name is None:
+            ## free to choose a suitable name.
+            #func_name = self.name.lstrip('$')
             
-            # Add to namespace, possibly changing name to ensure uniqueness.
-            func_name = self.add_to_namespace(namespace, func_name, self)
+            ## Add to namespace, possibly changing name to ensure uniqueness.
+            #func_name = self.add_to_namespace(program_ns, func_name, self)
+            #shader_ns[func_name] = self
             
-        else:
-            # Must use the given name
-            if prefix is not None:
-                raise Exception("Cannot compile with both name and prefix.")
-            if name in namespace and namespace[name] is not self:
-                raise Exception("Shader namespace already has a different "
-                                "Function named %s." % name)
-            namespace[name] = self
-            func_name = name
             
-        template_subs = {}  # accumulates necessary template substitutions
-        if self.is_anonymous:
-            template_subs[self.name.lstrip('$')] = func_name
+        #else:
+            ## Must use the given name
+            #if name in program_ns and program_ns[name] is not self:
+                #raise Exception("Program namespace already has a different "
+                                #"Function named %s." % name)
+            #program_ns[name] = self
+            #shader_ns[name] = self
+            #func_name = name
+            
+        #template_subs = {}  # accumulates necessary template substitutions
+        #if self.is_anonymous:
+            #template_subs[self.name.lstrip('$')] = func_name
             
             
         
-        # Visit all dependencies, begin assembling code and values
-        dep_names, code = self._compile_deps(func_name, namespace)
+        ## Visit all dependencies, begin assembling code and values
+        #dep_names, code = self._compile_deps(program_ns, shader_ns, func_name)
 
         
-        # Select template variable names based on function name
-        new_vars = []
-        code += "\n"
-        for name, spec in self._program_values.items():
-            vtype, dtype, data = spec
+        ## Select template variable names based on function name
+        #var_names = {}
+        #code += "\n"
+        #for name, spec in self._program_values.items():
+            #if isinstance(spec, VariableReference):
+                ## TODO: look up variable in the current namespace
+                ## What do do if it is not defined yet?? Need to re-assign 
+                ## the referenced variable as a named variable?
+                ##    no; need to remember the original assignment for future use.
+                ##    Maybe leave the referenced variable as-is?
+                ##        - What if it is anonymous? need to assign a name just
+                ##          for this compilation!
+                    
+                #raise NotImplementedError
+            #if len(spec) == 2:
+                #spec = spec + (None,)
+            #vtype, dtype, data = spec
             
-            if vtype == 'varying':
-                var_name = data
-                anonymous = False
-            else:
-                var_name = name
-                anonymous = True
+            ## Decide based on spec whether this variable is already assigned to
+            ## a specific program variable name
+            #if vtype == 'varying':
+                #var_name = data
+                #anonymous = data is None
+            #else:
+                #if isinstance(data, basestring):
+                    #var_name = data
+                    #anonymous = False
+                #else:
+                    #var_name = name
+                    #anonymous = True
             
-            if anonymous:
-                var_name = self.add_to_namespace(namespace, var_name, spec)
-                added = True
-            else:
-                if var_name in namespace:
-                    if namespace[var_name] is spec:
-                        pass # already have this variable and the correct data
-                    else:
-                        raise Exception("Cannot declare program variable %s as %s; "
-                                        "already declared as %s." % 
-                                        (var_name, spec, namespace[var_name]))
-                    added = False
-                else:
-                    namespace[var_name] = spec
-                    added = True
+            #if anonymous:
+                #var_name = self.add_to_namespace(program_ns, var_name, spec)
+                #added = True
+            #else:
+                #if var_name in namespace:
+                    #if namespace[var_name] is spec:
+                        #pass # already have this variable and the correct data
+                    #else:
+                        #raise Exception("Cannot declare program variable %s as %s; "
+                                        #"already declared as %s." % 
+                                        #(var_name, spec, namespace[var_name]))
+                    #added = False
+                #else:
+                    #namespace[var_name] = spec
+                    #added = True
             
-            if added:
-                # declare new variable and add to namespace.
-                code += '%s %s %s;\n' % (vtype, dtype, var_name)
+            #if added:
+                ## declare new variable and add to namespace.
+                #code += '%s %s %s;\n' % (vtype, dtype, var_name)
             
-            template_subs[name] = var_name
+            #var_names[name] = var_name
+            #template_subs[name] = var_name
         
-        code += self._generate_code(template_subs, dep_names)
+        #code += self._generate_code(template_subs, dep_names)
         
-        return func_name, code
+        #return CompileResult(self, code, func_name, var_names)
         
-    def _generate_code(self, template_subs, dep_names):
+    def compile(self, template_subs, dep_names):
         """
         Generate the final code for this function (excluding dependencies)
         using the given template substitutions. *dep_names* contains {dep: name}
@@ -417,7 +434,7 @@ class Function(object):
                 raise KeyError("Must specify variable $%s in substitution" % 
                             err.args[0])
 
-    def _compile_deps(self, func_name, namespace):
+    def _compile_deps(self, program, func_name):
         """
         Compile each dependency, return a dict of {name: dep} pairs and a single
         concatenated code string.
@@ -426,9 +443,7 @@ class Function(object):
         dep_names = {} # keep track of the names of our dependencies in case
                        # we need to modify the code to match
         for dep in self.deps:
-            if dep.is_anonymous:
-                prefix = func_name
-            n, c = dep.compile(namespace, prefix=prefix)
+            n, c = dep.compile(program)
             code += c + "\n"
             dep_names[dep] = n
         
@@ -453,10 +468,24 @@ class Function(object):
         """
         Set the value of a program variable declared in this function's code.
         
-        Any CompositeProgram that depends on this function will automatically
+        Any ModularProgram that depends on this function will automatically
         apply the variable when it is activated.
         """
         self.set_value(var, value)
+
+    def __getitem__(self, var):
+        """
+        Return a reference to a program variable from this function.
+        
+        This allows variables between functions to be linked together::
+        
+            func1['var_name'] = func2['other_var_name']
+            
+        In the example above, the two local variables would be assigned to the 
+        same program variable whenever func1 and func2 are attached to the same 
+        program.
+        """
+        return VariableReference(self, var)
 
     def all_deps(self):
         """
@@ -580,7 +609,34 @@ class Function(object):
             #raise
         #return Function(code, deps=self._deps[:])
 
-
+class VariableReference(object):
+    """
+    References a program variable from a function.
+    
+    """
+    def __init__(self, function, name):
+        self.function = function
+        self.name = name
+        
+    @property
+    def vtype(self):
+        return self.function._program_values[self.name][0]
+    
+    @property
+    def dtype(self):
+        return self.function._program_values[self.name][1]
+    
+class CompileResult(object):
+    """
+    Stores the results of a call to Function.compile(), including the complete
+    code, function name, and variable name assignments.    
+    """
+    def __init__(self, function, code, name, variables):
+        self.function = function
+        self.code = code
+        self.name = name
+        self.variables = variables
+    
 #class BoundFunction(Function):
     #"""
     #A BoundFunction is a wrapper around a Function that 'binds' zero or more 
@@ -614,7 +670,7 @@ class Function(object):
                               
     #In this example, the BoundFunction *bound* calls the original Function 
     #*func* using a new uniform variable *my_matrix* as the *matrix* argument.
-    #When *bound* is included in a CompositeProgram, the following code is
+    #When *bound* is included in a ModularProgram, the following code is
     #generated:
     
         #vec4 transform(vec4 pos, mat4 matrix) {
@@ -695,7 +751,7 @@ class FunctionChain(Function):
         func2 = Function('void my_func_2() {}')
         chain = FunctionChain('my_func_chain', [func1, func2])
         
-    If *chain* is included in a CompositeProgram, it will generate the following
+    If *chain* is included in a ModularProgram, it will generate the following
     output:
     
         void my_func_1() {}
@@ -846,7 +902,7 @@ class FunctionChain(Function):
         #func = template.bind(name='my_function', 
                              #input=('uniform', 'vec2', 'my_input_uniform'))
                              
-    #If we include *func* in a CompositeProgram, it will generate the following 
+    #If we include *func* in a ModularProgram, it will generate the following 
     #code:
     
         #uniform vec2 my_input_uniform;

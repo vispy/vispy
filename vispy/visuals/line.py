@@ -271,13 +271,15 @@ class LineColorInputComponent(VisualComponent):
     def _activate(self, program):
         # Select uniform- or attribute-input 
         if 'color' in self.visual._data.dtype.fields:
-            varying = ('varying', 'vec4', 'frag_color_v')
-            self.frag_func['rgba'] = varying
+            # explicitly declare a new variable (to be shared)
+            # TODO: does this need to be explicit?
+            self.frag_func['rgba'] = program.new_variable('varying', 'vec4')   
+            
             program['frag_color'] = self.frag_func
             
             program.add_callback('vert_post_hook', self.support_func)
             self.support_func['input'] = ('attribute', 'vec4', self.visual._vbo['color'])
-            self.support_func['output'] = varying
+            self.support_func['output'] = self.frag_func['rgba'] # automatically assign same variable to both
             
         else:
             self.frag_func['rgba'] = ('uniform', 'vec4', np.array(self.visual._opts['color']))
