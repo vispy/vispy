@@ -52,6 +52,10 @@ varying vec2 image_pos;
 
 void main(void) {
     vec4 tex_coord = map_local_to_tex(vec4(image_pos,0,1));
+    if(tex_coord.x < 0 || tex_coord.x > 1 || 
+       tex_coord.y < 0 || tex_coord.y > 1) {
+        discard;
+    }
     gl_FragColor = texture2D(tex, tex_coord.xy);
     
     frag_post_hook();
@@ -82,6 +86,10 @@ class ImageVisual(Visual):
         self._fragment_callbacks = []
         self.set_data(data)
         self.set_gl_options(glCullFace=('GL_FRONT_AND_BACK',))
+        
+        #self.method = 'subdivide'
+        self.method = 'impostor'
+        
 
     @property
     def transform(self):
@@ -108,22 +116,32 @@ class ImageVisual(Visual):
     def _build_data(self):
         # Construct complete data array with position and optionally color
         
-        subdiv = 4
-        w = self._data.shape[0] / subdiv
-        h = self._data.shape[1] / subdiv
+        if self.method == 'subdivide':
+            # quads cover area of image as closely as possible
+            subdiv = 4
+            w = self._data.shape[0] / subdiv
+            h = self._data.shape[1] / subdiv
+            
+            quad = np.array([[0,0], [w,h], [w,0], [0,0], [0,h], [w,h]], 
+                            dtype=np.float32)
+            quads = np.empty((subdiv, subdiv, 6, 2), dtype=np.float32)
+            quads[:] = quad
+            
+            grid = np.mgrid[0:subdiv, 0:subdiv].transpose(1,2,0)[:, :, np.newaxis, :]
+            grid[...,0] *= w
+            grid[...,1] *= h
+            
+            quads += grid
+            self._vbo = gloo.VertexBuffer(quads.reshape(subdiv*subdiv*6,2))
         
-        quad = np.array([[0,0], [w,h], [w,0], [0,0], [0,h], [w,h]], 
-                        dtype=np.float32)
-        quads = np.empty((subdiv, subdiv, 6, 2), dtype=np.float32)
-        quads[:] = quad
-        
-        grid = np.mgrid[0:subdiv, 0:subdiv].transpose(1,2,0)[:, :, np.newaxis, :]
-        grid[...,0] *= w
-        grid[...,1] *= h
-        
-        quads += grid
-        self._vbo = gloo.VertexBuffer(quads.reshape(subdiv*subdiv*6,2))
-        
+        elif self.method == 'impostor':
+            # quad covers entire view; frag. shader will deal with image shape
+            quad = np.array([[-1,-1], [1,1], [1,-1], [-1,-1], [-1,1], [1,1]], 
+                            dtype=np.float32)
+            self._vbo = gloo.VertexBuffer(quad)
+        else:
+            raise NotImplementedError
+            
         
         self._texture = gloo.Texture2D(self._data)
         self._texture.set_filter('NEAREST', 'NEAREST')
@@ -144,12 +162,19 @@ class ImageVisual(Visual):
         
         # Activate position input component
         #self.pos_input_component._activate(program)
-        
-        # Attach transformation functions
-        program['map_local_to_nd'] = self.transform.shader_map()
 
         self._tex_transform.scale = (1./self._data.shape[0], 1./self._data.shape[1])
-        program['map_local_to_tex'] = self._tex_transform.shader_map()
+        if self.method == 'subdivide':
+            # Attach transformation functions
+            program['map_local_to_nd'] = self.transform.shader_map()
+
+            program['map_local_to_tex'] = self._tex_transform.shader_map()
+        elif self.method == 'impostor':
+            program['map_local_to_nd'] = NullTransform().shader_map()
+            program['map_local_to_tex'] = (self._tex_transform * self.transform.inverse()).shader_map()
+            
+        else:
+            raise NotImplementedError
         
         # Activate color input function
         #self.color_input_component._activate(program)

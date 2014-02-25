@@ -652,6 +652,7 @@ class AffineTransform(Transform):
         return fn
 
     def inverse(self):
+        # TODO: make inverse() free; defer matrix inversion until mapping is needed.
         tr = AffineTransform()
         try:
             tr.matrix = np.linalg.inv(self.matrix)
@@ -761,7 +762,9 @@ class LogTransform(Transform):
     """ Transform perfoming logarithmic transformation on three axes.
     Maps (x, y, z) => (log(base.x, x), log(base.y, y), log(base.z, z))
     
-    No transformation is applied for axes with base <= 0.
+    No transformation is applied for axes with base == 0.
+    
+    If base < 0, then the inverse function is applied: x => base.x ** x
     """
     
     # TODO: Evaluate the performance costs of using conditionals. 
@@ -769,14 +772,21 @@ class LogTransform(Transform):
     # and then transpose back afterward.
     GLSL_map = """
         vec4 $LogTransform_map(vec4 pos) {
-            vec4 p1 = pos;
             if($base.x > 1.0)
-                p1.x = log(p1.x) / log($base.x);
+                pos.x = log(pos.x) / log($base.x);
+            else if($base.x < -1.0)
+                pos.x = pow(-$base.x, pos.x);
+            
             if($base.y > 1.0)
-                p1.y = log(p1.y) / log($base.y);
+                pos.y = log(pos.y) / log($base.y);
+            else if($base.y < -1.0)
+                pos.y = pow(-$base.y, pos.y);
+            
             if($base.z > 1.0)
-                p1.z = log(p1.z) / log($base.z);
-            return p1;
+                pos.z = log(pos.z) / log($base.z);
+            else if($base.z < -1.0)
+                pos.z = pow(-$base.z, pos.z);
+            return pos;
         }
         """
     
@@ -805,26 +815,25 @@ class LogTransform(Transform):
         self._base[len(s):] = 0.0
             
     @arg_to_array
-    def map(self, coords):
+    def map(self, coords, base=None):
         ret = np.empty(coords.shape, coords.dtype)
-        base = self.base
+        if base is None:
+            base = self.base
         for i in range(ret.shape[-1]):
             if base[i] > 1.0:
                 ret[...,i] = np.log(coords[...,i]) / np.log(base[i])
+            elif base[i] < -1.0:
+                ret[...,i] = -base[i] ** coords[...,i]
             else:
                 ret[...,i] = coords[...,i]
         return ret
     
     @arg_to_array
     def imap(self, coords):
-        ret = np.empty(coords.shape, coords.dtype)
-        base = self.base
-        for i in range(ret.shape[-1]):
-            if base[i] > 1.0:
-                ret[...,i] = base[i] ** coords[...,i]
-            else:
-                ret[...,i] = coords[...,i]
-        return ret
+        return self.map(coords, -self.base)
+    
+    def inverse(self):
+        return LogTransform(base=-self.base)
 
     def shader_map(self):
         fn = super(LogTransform, self).shader_map()
@@ -856,7 +865,7 @@ class PolarTransform(Transform):
     GLSL_imap = """
         vec4 $polar_transform_map(vec4 pos) {
             // TODO: need some modulo math to handle larger theta values..?
-            float theta = arctan2(pos.x, pos.y);
+            float theta = atan(pos.y, pos.x);
             float r = length(pos.xy);
             return vec4(theta, r, pos.z, 1);
         }
@@ -885,6 +894,24 @@ class PolarTransform(Transform):
             ret[...,i] = coords[...,i]
         return ret
             
+    def inverse(self):
+        return InvPolarTransform()
+    
+class InvPolarTransform(Transform):
+    GLSL_map = PolarTransform.GLSL_imap
+    GLSL_imap = PolarTransform.GLSL_map
+    
+    Linear = False
+    Orthogonal = False
+    NonScaling = False
+    Isometric = False
+
+    map = PolarTransform.imap
+    imap = PolarTransform.map
+    
+    def inverse(self):
+        return PolarTransform()
+    
     
 class BilinearTransform(Transform):
     # TODO
