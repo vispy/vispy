@@ -55,7 +55,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, **kwargs)
         self.size = 512, 512
         self.position = 50, 50
-
+        
         self.vbo = gloo.VertexBuffer(data)
         self.index = gloo.ElementBuffer(edges)
         self.view = np.eye(4, dtype=np.float32)
