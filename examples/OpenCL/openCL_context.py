@@ -1,16 +1,15 @@
-#!/usr/bin/python
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
 # Copyright (c) 2014, Vispy Development Team.
+# Author: Jérôme KIEFFER
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+import os, sys, time
+import numpy
 from vispy import app
 from vispy import gloo
 from vispy import openCL
-import numpy
-import time
-import os
 import pyopencl.array
 N = 2048
 
@@ -54,10 +53,11 @@ u16_to_float(global unsigned short  *array_int,
 
 fragment = """ // texture fragment shader
 uniform sampler2D u_texture1;
+uniform sampler2D u_colormap;
 varying vec2 v_texcoord;
 void main()
-{
-    gl_FragColor = vec4(texture2D(u_texture1, v_texcoord).rgb,1.0);
+{   float data = texture2D(u_texture1, v_texcoord).r;
+    gl_FragColor = vec4(texture2D(u_colormap,vec2(1.0f,data)).rgb, 1.0f);
 }
 """
 vertex = """
@@ -78,9 +78,10 @@ class Canvas(app.Canvas):
         self.tex_size = tex_size
         self.gl_program = None
         self.ocl_prg = None
+        self.last_img = None
         self.logscale = 0
         self.connect(self.on_key_release)
-        print('Press "L" to log scale, "N" for normal mode and "B" to benchmark')
+        print('Press "L" to log scale, "N" for normal mode, "B" to benchmark and "Q" to quit')
 
 
 
@@ -103,6 +104,8 @@ class Canvas(app.Canvas):
         self.gl_program['u_texture1'] = self.gl_tex
         self.gl_program['position'] = gloo.VertexBuffer(positions)
         self.gl_program['texcoord'] = gloo.VertexBuffer(texcoords)
+        gl_colormap = gloo.Texture2D(self.colormap.reshape((self.colormap.shape[0], 1, 3)))
+        self.gl_program['u_colormap'] = gl_colormap
 
 
     def on_initialize(self, event):
@@ -146,7 +149,11 @@ class Canvas(app.Canvas):
         self.ocl_ary = pyopencl.array.to_device(self.queue, img)
         self.new_image(img)
 
-    def new_image(self, img):
+    def new_image(self, img=None):
+        if img is not None:
+            self.last_img = img
+        else:
+            img = self.last_img
         if self.ocl_prg is None:
             self.init_openCL()
         pyopencl.enqueue_copy(self.queue, self.ocl_ary.data, img)
@@ -177,16 +184,16 @@ class Canvas(app.Canvas):
         This is run after clicking on the picture ... to let the application initialize
         """
         print("Starting benchmark")
-        y,x = numpy.ogrid[:self.tex_size,:self.tex_size]
-        imgs = [numpy.zeros((self.tex_size,self.tex_size),dtype=numpy.uint16),
-                numpy.dot(y,numpy.ones(self.tex_size,dtype=numpy.uint16).reshape(1,-1)).astype(numpy.uint16),
-                numpy.dot(numpy.ones(self.tex_size,dtype=numpy.uint16).reshape(-1,1),x).astype(numpy.uint16),
-                numpy.dot(self.tex_size-y,numpy.ones(self.tex_size,dtype=numpy.uint16).reshape(1,-1)).astype(numpy.uint16),
-                numpy.dot(numpy.ones(self.tex_size,dtype=numpy.uint16).reshape(-1,1),self.tex_size-x).astype(numpy.uint16),
+        y, x = numpy.ogrid[:self.tex_size, :self.tex_size]
+        imgs = [numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.uint16),
+                numpy.dot(y, numpy.ones(self.tex_size, dtype=numpy.uint16).reshape(1, -1)).astype(numpy.uint16),
+                numpy.dot(numpy.ones(self.tex_size, dtype=numpy.uint16).reshape(-1, 1), x).astype(numpy.uint16),
+                numpy.dot(self.tex_size - y, numpy.ones(self.tex_size, dtype=numpy.uint16).reshape(1, -1)).astype(numpy.uint16),
+                numpy.dot(numpy.ones(self.tex_size, dtype=numpy.uint16).reshape(-1, 1), self.tex_size - x).astype(numpy.uint16),
                 (numpy.dot(y, x) / self.tex_size).astype(numpy.uint16),
                 (numpy.dot(self.tex_size - y, self.tex_size - x) / self.tex_size).astype(numpy.uint16),
-                (numpy.dot(y,x)//self.tex_size).astype(numpy.uint16),
-                (numpy.dot(self.tex_size-y,self.tex_size-x)/self.tex_size).astype(numpy.uint16),
+                (numpy.dot(y, x) // self.tex_size).astype(numpy.uint16),
+                (numpy.dot(self.tex_size - y, self.tex_size - x) / self.tex_size).astype(numpy.uint16),
                 numpy.random.randint(0, 65000, N ** 2).reshape((N, N)).astype(numpy.uint16)]
 
         number = len(imgs)
@@ -203,12 +210,15 @@ class Canvas(app.Canvas):
         if ev.key.name == "L":
             self.logscale = 1
             print("Switching logscale: %s" % self.logscale)
+            self.new_image()
         elif ev.key.name == "N":
             self.logscale = 0
             print("Switching logscale: %s" % self.logscale)
+            self.new_image()
         elif ev.key.name == "B":
             self.benchmark()
-
+        elif ev.key.name == "Q":
+            self.app.quit()
 if __name__ == '__main__':
 
     c = Canvas(N)
