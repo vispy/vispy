@@ -27,6 +27,7 @@ else:
 from . import gl
 from . import GLObject, ext_available, convert_to_enum
 from ..util import logger
+from .. import opencl
 
 
 class TextureError(RuntimeError):
@@ -572,6 +573,35 @@ class Texture(GLObject):
             if width % alignment == 0:
                 return alignment
 
+    def get_ocl(self, ctx=None):
+        """
+        Retrieves an OpenCL view on the texture.
+        
+        To use it you need to grab it using:
+        pyopencl.enqueue_acquire_gl_objects(queue, [ocl_tex]) 
+        """
+        if (opencl is None) or (opencl.pyopencl is None):
+            return
+        else:
+            cl = opencl.pyopencl
+        if ctx is None:
+            print opencl.context
+            if opencl.context is None:
+                ctx = opencl.get_context()
+            else:
+                ctx = opencl.context
+            if ctx is None:
+                return
+        if self._handle == 0:
+            self.activate()
+
+        # Get ndim
+        MAP = {gl.GL_TEXTURE_2D: 2, gl.ext.GL_TEXTURE_3D: 3}
+        ndim = MAP.get(self._target, 0)
+
+        ocl_img = cl.GLTexture(ctx, cl.mem_flags.READ_WRITE,
+                        self._target, 0, int(self.handle), ndim)
+        return ocl_img
 
 class Texture2D(Texture):
 

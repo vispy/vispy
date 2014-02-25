@@ -5,13 +5,18 @@
 # Author: Jérôme KIEFFER
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+
+"""
+Demo showing the sharing of a OpenGL texture <--> OpenCL image
+"""
+
 import os, sys, time
 import numpy
 from vispy import app
 from vispy import gloo
-from vispy import openCL
+from vispy import opencl
 import pyopencl.array
-N = 2048
+N = 4096
 
 
 src = """
@@ -89,8 +94,6 @@ class Canvas(app.Canvas):
         # Create program
         self.gl_program = gloo.Program(vertex, fragment)
         self.gl_tex = gloo.Texture2D(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5)  # initial color: plain gray
-        self.gl_tex.activate()
-        print("activated")
         # Set uniforms and samplers
         positions = numpy.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
                           [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0, ]], numpy.float32)
@@ -128,7 +131,7 @@ class Canvas(app.Canvas):
 
     def init_openCL(self):
         self.gl_program.draw(gloo.gl.GL_TRIANGLE_STRIP)
-        self.ctx = openCL.get_OCL_context()
+        self.ctx = opencl.get_context()
         d = self.ctx.devices[0]
         print("OpenCL context on device: %s" % d.name)
         wg_float = min(d.max_work_group_size, self.tex_size)
@@ -142,9 +145,7 @@ class Canvas(app.Canvas):
         self.mini = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
         self.maxi = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
         self.cl_colormap = pyopencl.array.to_device(self.queue, self.colormap)
-        self.ocl_tex = pyopencl.GLTexture(self.ctx, pyopencl.mem_flags.READ_WRITE,
-                        gloo.gl.GL_TEXTURE_2D, 0, int(self.gl_tex.handle), 2)
-
+        self.ocl_tex = self.gl_tex.get_ocl()
         img = numpy.random.randint(0, 65000, self.tex_size ** 2).reshape((self.tex_size, self.tex_size)).astype(numpy.uint16)
         self.ocl_ary = pyopencl.array.to_device(self.queue, img)
         self.new_image(img)
@@ -171,11 +172,11 @@ class Canvas(app.Canvas):
                                                                    self.maxi.data,
                                                                    self.mini.data)
 
-        pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_tex])
+        pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_tex]).wait()
         self.ocl_prg.buf_to_tex(self.queue, (self.tex_size, self.tex_size), (8, 4),
                                   self.ary_float.data, numpy.int32(self.tex_size), numpy.int32(self.tex_size),
                                   self.mini.data, self.maxi.data, numpy.int32(self.logscale),
-                                  self.ocl_tex)
+                                  self.ocl_tex).wait()
         pyopencl.enqueue_release_gl_objects(self.queue, [self.ocl_tex]).wait()
         self.on_paint(None)
 
@@ -219,8 +220,8 @@ class Canvas(app.Canvas):
             self.benchmark()
         elif ev.key.name == "Q":
             self.app.quit()
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     c = Canvas(N)
     c.show()
     c.init_gl()
