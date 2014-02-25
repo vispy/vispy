@@ -331,7 +331,8 @@ class Maker:
         for dirpath, dirnames, filenames in os.walk(ROOT_DIR):
             # Process files
             for fname in filenames:
-                if os.path.splitext(fname)[1] in ('.pyc', '.pyo', '.so', '.dll'):
+                if os.path.splitext(fname)[1] in ('.pyc', '.pyo', 
+                                                  '.so', '.dll'):
                     continue
                 # Get filename
                 filename = os.path.join(dirpath, fname)
