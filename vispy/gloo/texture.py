@@ -578,14 +578,18 @@ class Texture(GLObject):
         Retrieves an OpenCL view on the texture.
         
         To use it you need to grab it using:
-        pyopencl.enqueue_acquire_gl_objects(queue, [ocl_tex]) 
+        pyopencl.enqueue_acquire_gl_objects(queue, [ocl_tex])
+        
+        Parameters
+        ----------
+        ctx : OpenCL Context
+            If None is provided, generate/reuse an existing one 
         """
         if (opencl is None) or (opencl.pyopencl is None):
             return
         else:
             cl = opencl.pyopencl
         if ctx is None:
-            print opencl.context
             if opencl.context is None:
                 ctx = opencl.get_context()
             else:
