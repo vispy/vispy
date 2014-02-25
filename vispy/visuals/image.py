@@ -11,7 +11,7 @@ from ..gloo import gl
 from . import Visual, VisualComponent
 from ..shaders.composite import (Function, ModularProgram, 
                                  FragmentFunction, FunctionChain)
-from .transforms import NullTransform
+from .transforms import NullTransform, STTransform
 
 
 
@@ -32,7 +32,6 @@ void vert_post_hook();
 varying vec2 image_pos;
 
 void main(void) {
-    //vec4 local_pos = local_position();
     vec4 nd_pos = map_local_to_nd(vec4(local_pos, 0, 1));
     gl_Position = nd_pos;
     image_pos = local_pos;
@@ -41,25 +40,23 @@ void main(void) {
 """
 
 fragment_shader = """
-// Must return the color for this fragment
-// or discard.
-vec4 frag_color();
+// maps from local coordinates of the Visual to texture coordinates.
+vec4 map_local_to_tex(vec4);
 
 // Generic hook for executing code after the fragment color has been set
 // Functions in this hook may modify glFragColor or discard.
 void frag_post_hook();
 
 uniform sampler2D tex;
-uniform vec2 image_size;
 varying vec2 image_pos;
 
 void main(void) {
-    gl_FragColor = texture2D(tex, image_pos/image_size);
+    vec4 tex_coord = map_local_to_tex(vec4(image_pos,0,1));
+    gl_FragColor = texture2D(tex, tex_coord.xy);
     
     frag_post_hook();
 }
-"""    
-
+"""
 
 
 
@@ -70,7 +67,12 @@ class ImageVisual(Visual):
         self.set_gl_options('opaque')
         
         self._data = None
+        
+        # maps from quad vertexes to ND coordinates
         self._transform = NullTransform()
+        
+        # maps from quad coordinates to texture coordinates
+        self._tex_transform = STTransform() 
         
         self._program = None
         self._texture = None
@@ -106,10 +108,22 @@ class ImageVisual(Visual):
     def _build_data(self):
         # Construct complete data array with position and optionally color
         
-        w,h = self._data.shape[:2]
+        subdiv = 4
+        w = self._data.shape[0] / subdiv
+        h = self._data.shape[1] / subdiv
+        
         quad = np.array([[0,0], [w,h], [w,0], [0,0], [0,h], [w,h]], 
                         dtype=np.float32)
-        self._vbo = gloo.VertexBuffer(quad)
+        quads = np.empty((subdiv, subdiv, 6, 2), dtype=np.float32)
+        quads[:] = quad
+        
+        grid = np.mgrid[0:subdiv, 0:subdiv].transpose(1,2,0)[:, :, np.newaxis, :]
+        grid[...,0] *= w
+        grid[...,1] *= h
+        
+        quads += grid
+        self._vbo = gloo.VertexBuffer(quads.reshape(subdiv*subdiv*6,2))
+        
         
         self._texture = gloo.Texture2D(self._data)
         self._texture.set_filter('NEAREST', 'NEAREST')
@@ -123,7 +137,7 @@ class ImageVisual(Visual):
         program = ModularProgram(vertex_shader, fragment_shader)
         program['local_pos'] = self._vbo
         program['tex'] = self._texture
-        program['image_size'] = self._data.shape[:2]
+        #program['image_size'] = self._data.shape[:2]
         
         program.add_chain('vert_post_hook')
         program.add_chain('frag_post_hook')
@@ -131,8 +145,11 @@ class ImageVisual(Visual):
         # Activate position input component
         #self.pos_input_component._activate(program)
         
-        # Attach transformation function
+        # Attach transformation functions
         program['map_local_to_nd'] = self.transform.shader_map()
+
+        self._tex_transform.scale = (1./self._data.shape[0], 1./self._data.shape[1])
+        program['map_local_to_tex'] = self._tex_transform.shader_map()
         
         # Activate color input function
         #self.color_input_component._activate(program)

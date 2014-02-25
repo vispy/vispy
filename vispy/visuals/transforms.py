@@ -72,6 +72,19 @@ class Transform(object):
     """
     GLSL_map = None  # Must be GLSL code
     GLSL_imap = None
+    
+    # Flags used to describe the transformation. Subclasses should define each
+    # as True or False.
+    # (usually used for making optimization decisions)
+    Linear = None     # If True, then for any 3 colinear points, the transformed
+                      # points will also be colinear.
+    Orthogonal = None # The transformation's effect on one axis is independent
+                      # of the input position along any other axis. 
+    NonScaling = None # If True, then the distance between two points is the
+                      # same as the distance between the transformed points.
+    Isometric = None  # Scale factors are applied equally to all axes.
+    
+    
     def __init__(self):
         self._shader_map = Function(self.GLSL_map)
         self._shader_imap = Function(self.GLSL_imap)
@@ -277,6 +290,11 @@ class ChainTransform(Transform):
     GLSL_map = ""
     GLSL_imap = ""
     
+    Linear = False
+    Orthogonal = False
+    NonScaling = False
+    Isometric = False
+
     def __init__(self, transforms=None, simplify=False):
         #super(ChainTransform, self).__init__()
         if transforms is None:
@@ -300,6 +318,34 @@ class ChainTransform(Transform):
         if not isinstance(tr, list):
             raise TypeError("Transform chain must be a list")
         self._transforms = tr
+        
+    @property
+    def Linear(self):
+        b = True
+        for tr in self._transforms:
+            b &= tr.Linear
+        return b
+        
+    @property
+    def Orthogonal(self):
+        b = True
+        for tr in self._transforms:
+            b &= tr.Orthogonal
+        return b
+        
+    @property
+    def NonScaling(self):
+        b = True
+        for tr in self._transforms:
+            b &= tr.NonScaling
+        return b
+        
+    @property
+    def Isometric(self):
+        b = True
+        for tr in self._transforms:
+            b &= tr.Isometric
+        return b
         
     def map(self, obj):
         for tr in self.transforms:
@@ -439,6 +485,11 @@ class NullTransform(Transform):
     """
     GLSL_map = "vec4 $null_transform_map(vec4 pos) {return pos;}"
     GLSL_imap = "vec4 $null_transform_imap(vec4 pos) {return pos;}"
+    
+    Linear = True
+    Orthogonal = True
+    NonScaling = True
+    Isometric = True
 
     def map(self, obj):
         return obj
@@ -471,6 +522,11 @@ class STTransform(Transform):
         }
     """
     
+    Linear = True
+    Orthogonal = True
+    NonScaling = False
+    Isometric = False
+
     def __init__(self, scale=None, translate=None):
         super(STTransform, self).__init__()
             
@@ -564,6 +620,11 @@ class AffineTransform(Transform):
         }
     """
     
+    Linear = True
+    Orthogonal = False
+    NonScaling = False
+    Isometric = False
+
     def __init__(self, matrix=None):
         super(AffineTransform, self).__init__()
         if matrix is not None:
@@ -719,6 +780,11 @@ class LogTransform(Transform):
         }
         """
     
+    Linear = False
+    Orthogonal = True
+    NonScaling = False
+    Isometric = False
+
     def __init__(self, base=None):
         super(LogTransform, self).__init__()
         self._base = np.zeros(3, dtype=np.float32)
@@ -787,6 +853,20 @@ class PolarTransform(Transform):
         }
         """
 
+    GLSL_imap = """
+        vec4 $polar_transform_map(vec4 pos) {
+            // TODO: need some modulo math to handle larger theta values..?
+            float theta = arctan2(pos.x, pos.y);
+            float r = length(pos.xy);
+            return vec4(theta, r, pos.z, 1);
+        }
+        """
+
+    Linear = False
+    Orthogonal = False
+    NonScaling = False
+    Isometric = False
+
     @arg_to_array
     def map(self, coords):
         ret = np.empty(coords.shape, coords.dtype)
@@ -799,7 +879,7 @@ class PolarTransform(Transform):
     @arg_to_array
     def imap(self, coords):
         ret = np.empty(coords.shape, coords.dtype)
-        ret[...,0] = np.atan2(coords[...,0], np.sin[coords[...,1]])
+        ret[...,0] = np.atan2(coords[...,0], coords[...,1])
         ret[...,1] = (coords[...,0]**2 + coords[...,1]**2) ** 0.5
         for i in range(2, coords.shape[-1]): # copy any further axes
             ret[...,i] = coords[...,i]

@@ -432,7 +432,7 @@ class Program(GLObject):
                     uniform._texture_unit = texture_count
                     texture_count += 1
             if uniform._loc is None:
-                logger.info("Inactive uniform: " + attribute.name)
+                logger.info("Inactive uniform: " + uniform.name)
 
     # Behaver like a GLObject
     def _create(self):

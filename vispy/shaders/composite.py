@@ -245,49 +245,40 @@ class ModularProgram(Program):
         
         vcode = [self.vmain]
         fcode = [self.fmain]
-        vnames = {} # namespaces for each shader
-        fnames = {}
-        
-                
-        ## All this was taken from set_hook:
-                
-            ## make sure the function definition fits the hook.
-            #shader, hook_args, hook_rtype = self._hooks[hook_name]
-            #if function.rtype != hook_rtype:
-                #raise TypeError("function does not return correct type for hook "
-                                #"'%s' (returns %s, should be %s)" % (hook_name, function.rtype, hook_rtype))
-            #if len(function.args) != len(hook_args):
-                #raise TypeError("function does not accept correct number of arguments for hook "
-                                #"'%s' (accepts %d, should be %d)" % (hook_name, len(function.args), len(hook_args)))
-            #for i, arg in enumerate(function.args):
-                #if arg[0] != hook_args[i][0]:
-                    #fnsig = ", ".join([arg[0] for arg in function.args])
-                    #hksig = ", ".join([arg[0] for arg in hook_args])
-                    #raise TypeError("function has incorrect signature for hook "
-                                    #"'%s' (signature is (%s), should be (%s))" % (hook_name, fnsig, hksig))
-            
-            ## if the name is incorrect, make a wrapper with the correct name.
-            #if function.name != hook_name:
-                #function = function.resolve(hook_name)
-                
-            #self._install_dep_callbacks(function)
-
-        
+        namespace = {}
         
         # add code for all hooks and dependencies in order.
         
         for hook_name, func in self._hook_defs.items():
             shader, hook_args, hook_rtype = self._hooks[hook_name]
             
-            code, namespace = {
-                'vertex': (vcode, vnames),
-                'fragment': (fcode, fnames)}[shader]
             
-            code.append("\n\n//  -------- Begin hook '%s' --------\n" % 
-                        hook_name)
+            ## make sure the function definition fits the hook.
+            # TODO: If this is expensive, perhaps we can skip it and just let 
+            # the compiler generate an error.
+            if func.rtype != hook_rtype:
+                raise TypeError("function does not return correct type for hook "
+                                "'%s' (returns %s, should be %s)" % (hook_name, func.rtype, hook_rtype))
+            if len(func.args) != len(hook_args):
+                raise TypeError("function does not accept correct number of arguments for hook "
+                                "'%s' (accepts %d, should be %d)" % (hook_name, len(func.args), len(hook_args)))
+            for i, arg in enumerate(func.args):
+                if arg[0] != hook_args[i][0]:
+                    fnsig = ", ".join([arg[0] for arg in func.args])
+                    hksig = ", ".join([arg[0] for arg in hook_args])
+                    raise TypeError("function has incorrect signature for hook "
+                                    "'%s' (signature is (%s), should be (%s))" % (hook_name, fnsig, hksig))
             
             if not func.is_anonymous and func.name != hook_name:
                 func = func.wrap(name=hook_name)
+            
+            if shader == 'vertex':
+                code = vcode
+            else:
+                code = fcode
+            
+            code.append("\n\n//  -------- Begin hook '%s' --------\n" % 
+                        hook_name)
             
             n, c = func.compile(namespace, name=hook_name)
             code.append(c)
@@ -299,8 +290,6 @@ class ModularProgram(Program):
         #print ("\n-----------------------FRAGMENT------------------------------")
         #print (fcode)
         #print ("--------------------------------")
-        namespace = vnames
-        namespace.update(fnames)
         #print("final namespace:", namespace)
         return vcode, fcode, namespace
          
