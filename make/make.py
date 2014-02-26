@@ -326,6 +326,11 @@ class Maker:
         print('Replaced %i copyright statements' % count_replaced)
         print('Found %i copyright statements up to date' % count_ok)
 
+    def lineendings(self, args):
+        """ Check that all lineendings are LF """
+        from vispy.util.codequality import check_line_endings
+        check_line_endings()
+
 
 # Functions used by the maker
 
