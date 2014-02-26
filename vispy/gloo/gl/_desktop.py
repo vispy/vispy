@@ -648,7 +648,7 @@ def glGetError():
 # void = glGetFloatv(GLenum pname, GLfloat* params)
 def _glGetFloatv(pname):
     n = 16
-    d = -99999  # A bit dangerous
+    d = float('Inf')
     params = (ctypes.c_float*n)(*[d for i in range(n)])
     try:
         func = _glGetFloatv._native
@@ -676,7 +676,7 @@ def glGetFramebufferAttachmentParameter(target, attachment, pname):
 # void = glGetIntegerv(GLenum pname, GLint* params)
 def _glGetIntegerv(pname):
     n = 16
-    d = -99999  # A bit dangerous
+    d = -2**31  # smallest 32bit integer
     params = (ctypes.c_int*n)(*[d for i in range(n)])
     try:
         func = _glGetIntegerv._native
@@ -817,7 +817,7 @@ def glGetTexParameteriv(target, pname):
 
 
 def glGetUniformfv(program, location):
-    d = -99999  # Note: this is a bit dangerous
+    d = float("Inf")
     values = (ctypes.c_float*16)(*[d for i in range(16)])
     try:
         func = glGetUniformfv._native
@@ -826,7 +826,7 @@ def glGetUniformfv(program, location):
     func(program, location, values)
     return tuple([val for val in values if val!=d])
 def glGetUniformiv(program, location):
-    d = -99999  # Note: this is a bit dangerous
+    d = -2**31
     values = (ctypes.c_int*16)(*[d for i in range(16)])
     try:
         func = glGetUniformiv._native
@@ -848,7 +848,7 @@ def glGetUniformLocation(program, name):
 
 
 def glGetVertexAttribfv(index, pname):
-    d = -99999  # Note: this is a bit dangerous
+    d = float("Inf")
     values = (ctypes.c_float*4)(*[d for i in range(4)])
     try:
         func = glGetVertexAttribfv._native
@@ -857,7 +857,7 @@ def glGetVertexAttribfv(index, pname):
     func(index, pname, values)
     return tuple([val for val in values if val!=d])
 def glGetVertexAttribiv(index, pname):
-    d = -99999  # Note: this is a bit dangerous
+    d = -2**31
     values = (ctypes.c_int*4)(*[d for i in range(4)])
     try:
         func = glGetVertexAttribiv._native

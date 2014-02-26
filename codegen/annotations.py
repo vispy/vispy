@@ -284,7 +284,7 @@ def _getBooleanv(pname):
 def _getIntegerv(pname):
     # --- desktop angle
     n = 16
-    d = -99999  # A bit dangerous
+    d = -2**31  # smallest 32bit integer
     params = (ctypes.c_int*n)(*[d for i in range(n)])
     ()
     params = [p for p in params if p!=d]
@@ -296,7 +296,7 @@ def _getIntegerv(pname):
 def _getFloatv(pname):
     # --- desktop angle
     n = 16
-    d = -99999  # A bit dangerous
+    d = float('Inf')
     params = (ctypes.c_float*n)(*[d for i in range(n)])
     ()
     params = [p for p in params if p!=d]

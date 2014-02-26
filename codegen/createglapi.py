@@ -648,8 +648,9 @@ class DesktopApiGenerator(ApiGenerator):
             lines.append(call_line(funcname, es2func, 'location, count, transpose, values'))
         elif des.name == 'getUniform':
             t = {'f':'float', 'i':'int'}[funcname[-2]]
+            placeholder = {'f':'float("Inf")', 'i':'-2**31'}[funcname[-2]]
             lines.append('def %s:' % sig)
-            lines.append('    d = -99999  # Note: this is a bit dangerous')
+            lines.append('    d = %s' % placeholder)
             lines.append('    values = (ctypes.c_%s*16)(*[d for i in range(16)])' % t)
             lines.append(call_line(funcname, es2func, 'program, location, values'))
             lines.append('    return tuple([val for val in values if val!=d])')
@@ -659,8 +660,9 @@ class DesktopApiGenerator(ApiGenerator):
             lines.append(call_line(funcname, es2func, args))
         elif des.name == 'getVertexAttrib':
             t = {'f':'float', 'i':'int'}[funcname[-2]]
+            placeholder = {'f':'float("Inf")', 'i':'-2**31'}[funcname[-2]]
             lines.append('def %s:' % sig)
-            lines.append('    d = -99999  # Note: this is a bit dangerous')
+            lines.append('    d = %s' % placeholder)
             lines.append('    values = (ctypes.c_%s*4)(*[d for i in range(4)])' % t)
             lines.append(call_line(funcname, es2func, 'index, pname, values'))
             lines.append('    return tuple([val for val in values if val!=d])')

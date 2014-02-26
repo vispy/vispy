@@ -471,7 +471,7 @@ _lib.glGetFloatv.argtypes = ctypes.c_uint, ctypes.POINTER(ctypes.c_float),
 # void = glGetFloatv(GLenum pname, GLfloat* params)
 def _glGetFloatv(pname):
     n = 16
-    d = -99999  # A bit dangerous
+    d = float('Inf')
     params = (ctypes.c_float*n)(*[d for i in range(n)])
     res = _lib.glGetFloatv(pname, params)
     params = [p for p in params if p!=d]
@@ -493,7 +493,7 @@ _lib.glGetIntegerv.argtypes = ctypes.c_uint, ctypes.POINTER(ctypes.c_int),
 # void = glGetIntegerv(GLenum pname, GLint* params)
 def _glGetIntegerv(pname):
     n = 16
-    d = -99999  # A bit dangerous
+    d = -2**31  # smallest 32bit integer
     params = (ctypes.c_int*n)(*[d for i in range(n)])
     res = _lib.glGetIntegerv(pname, params)
     params = [p for p in params if p!=d]
@@ -602,13 +602,13 @@ def glGetTexParameteriv(target, pname):
 
 _lib.glGetUniformfv.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_float),
 def glGetUniformfv(program, location):
-    d = -99999  # Note: this is a bit dangerous
+    d = float("Inf")
     values = (ctypes.c_float*16)(*[d for i in range(16)])
     _lib.glGetUniformfv(program, location, values)
     return tuple([val for val in values if val!=d])
 _lib.glGetUniformiv.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int),
 def glGetUniformiv(program, location):
-    d = -99999  # Note: this is a bit dangerous
+    d = -2**31
     values = (ctypes.c_int*16)(*[d for i in range(16)])
     _lib.glGetUniformiv(program, location, values)
     return tuple([val for val in values if val!=d])
@@ -625,13 +625,13 @@ def glGetUniformLocation(program, name):
 
 _lib.glGetVertexAttribfv.argtypes = ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),
 def glGetVertexAttribfv(index, pname):
-    d = -99999  # Note: this is a bit dangerous
+    d = float("Inf")
     values = (ctypes.c_float*4)(*[d for i in range(4)])
     _lib.glGetVertexAttribfv(index, pname, values)
     return tuple([val for val in values if val!=d])
 _lib.glGetVertexAttribiv.argtypes = ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),
 def glGetVertexAttribiv(index, pname):
-    d = -99999  # Note: this is a bit dangerous
+    d = -2**31
     values = (ctypes.c_int*4)(*[d for i in range(4)])
     _lib.glGetVertexAttribiv(index, pname, values)
     return tuple([val for val in values if val!=d])
