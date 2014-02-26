@@ -20,12 +20,13 @@ N = 2048
 
 
 src = """
-__kernel void buf_to_buf( global const float *ary,
+__kernel void buf_to_tex( global const float *ary,
                           int width,
                           int height,
                           global const float *mini,
                           global const float *maxi,
-                          const int logscale)
+                          const int logscale,
+                          write_only image2d_t texture)
 {
     int x = get_global_id(0);
     int y = get_global_id(1);
