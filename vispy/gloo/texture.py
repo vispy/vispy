@@ -22,7 +22,7 @@ import numpy as np
 if "float16" in dir(np):
     NP_HAS_FLOAT16 = True
 else:
-    NP_HAS_FLOAT16 = True
+    NP_HAS_FLOAT16 = False
 
 from . import gl
 from . import GLObject, ext_available, convert_to_enum
