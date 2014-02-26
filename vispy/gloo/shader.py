@@ -60,7 +60,7 @@ class Shader(GLObject):
         'mat4': gl.GL_FLOAT_MAT4,
         'sampler2D': gl.GL_SAMPLER_2D,
         # todo: !
-#         'sampler3D': gl.ext.GL_SAMPLER_3D,
+        #'sampler3D': gl.ext.GL_SAMPLER_3D,
         'samplerCube': gl.GL_SAMPLER_CUBE}
 
     def __init__(self, target, code=None):
@@ -189,8 +189,8 @@ class Shader(GLObject):
         """
         Delete the shader.
         """
-
         gl.glDeleteShader(self._handle)
+
     def _update(self):
         """
         Compile the shader.
@@ -211,8 +211,8 @@ class Shader(GLObject):
         # Compile the shader
         try:
             gl.glCompileShader(self._handle)
-        except Exception:#error.GLError as errors:
-            # todoL ...
+        except Exception as errors:  # error.GLError as errors:
+            # todo: ...
             errormsg = self._get_error(str(errors), 4)
             raise ShaderError(("Error compiling %r:\n" % self) + str(errors))
 
@@ -220,7 +220,8 @@ class Shader(GLObject):
         status = gl.glGetShaderParameter(self._handle, gl.GL_COMPILE_STATUS)
         if not status:
             errors = gl.glGetShaderInfoLog(self._handle)
-            errormsg = str(errors)+str(self._handle)#self._get_error(errors, 4)
+            #errprmsg = self._get_error(errors, 4)
+            errormsg = str(errors)+str(self._handle)
             raise ShaderError("Error compiling %r:\n" % self + errormsg)
 
     def _parse_error(self, error):

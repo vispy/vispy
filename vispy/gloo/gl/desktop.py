@@ -1,20 +1,26 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+""" GL ES 2.0 API implemented via desktop GL (i.e subset of normal OpenGL).
+"""
 
 import sys
 import ctypes.util
 
 from . import _copy_gl_functions
-from ._constants import *
+from ._constants import *  # noqa
 
 
 ## Ctypes stuff
 
 
 if sys.platform.startswith('win'):
-    _lib = ctypes.windll.opengl32    
+    _lib = ctypes.windll.opengl32
     try:
         wglGetProcAddress = _lib.wglGetProcAddress
-        wglGetProcAddress.restype = ctypes.CFUNCTYPE(ctypes.POINTER(ctypes.c_int))
+        wglGetProcAddress.restype = ctypes.CFUNCTYPE(
+            ctypes.POINTER(ctypes.c_int))
         wglGetProcAddress.argtypes = [ctypes.c_char_p]
         _have_get_proc_address = True
     except AttributeError:
@@ -41,7 +47,7 @@ def _get_gl_func(name, restype, argtypes):
         return func
     except AttributeError:
         # Ask for a pointer to the function, this is the approach
-        # for OpenGL extensions on Windows 
+        # for OpenGL extensions on Windows
         fargs = (restype,) + argtypes
         ftype = ctypes.WINFUNCTYPE(*fargs)
         if not _have_get_proc_address:
@@ -52,7 +58,7 @@ def _get_gl_func(name, restype, argtypes):
         if address:
             return ctypes.cast(address, ftype)
         else:
-            raise RuntimeError('Function %s not present in current context.' % name)
+            raise RuntimeError('Function %s not present in context.' % name)
 
 
 ## Compatibility

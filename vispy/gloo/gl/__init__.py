@@ -18,7 +18,7 @@ from ...util import config, logger
 
 from ._constants import *  # noqa
 from . import _main
-from ._main import *
+from ._main import *  # noqa
 
 
 # Variable that will hold the module corresponding to the current backend
@@ -28,12 +28,12 @@ current_backend = _main
 # todo: we need a vispy.use(), e.g. webgl needs action both here and in app
 def use(target='desktop'):
     """ Let Vispy use the target OpenGL ES 2.0 implementation.
-    
+
     Parameters
     ----------
     target : str
-        The target GL backend to use. 
-    
+        The target GL backend to use.
+
     Backends
     --------
     * desktop - Use desktop (i.e. normal) OpenGL.
@@ -41,26 +41,25 @@ def use(target='desktop'):
     * pyopengl - Use pyopengl (for fallback and testing).
     * mock - Dummy backend that can be useful for testing.
     * webgl - Send the GL commands to the browser.
-    
+
     """
-    
+
     # Get options
     target, _, options = target.partition(' ')
     debug = config['gl_debug'] or ('debug' in options)
-    
+
     # Select modules to import names from
     try:
         mod = __import__(target, globals(), level=1)
     except ImportError as err:
         msg = 'Could not import gl target "%s":\n%s' % (target, str(err))
         raise RuntimeError(msg)
-    
+
     # Apply
     global current_backend
     current_backend = mod
     _main.PROXY = mod.__dict__
     _copy_gl_functions(mod, globals(), debug)
-    
 
 
 def _copy_gl_functions(source, dest, debug=False):
@@ -100,8 +99,8 @@ def _make_debug_wrapper(funcname, func):
     """
     def cb(*args, **kwds):
         argstr = ', '.join(list(map(_arg_repr, args)) +
-                        ['%s=%s' % (key, _arg_repr(val)) 
-                         for (key, val) in kwds.items()])
+                           ['%s=%s' % (key, _arg_repr(val))
+                            for (key, val) in kwds.items()])
         logger.debug("%s(%s)" % (funcname, argstr))
         ret = func(*args, **kwds)
         logger.debug(" <= %s" % repr(ret))
@@ -116,13 +115,14 @@ def _make_debug_wrapper(funcname, func):
 
 def check_error(when='periodic check'):
     """ Check this from time to time to detect GL errors.
-    
+
     Parameters
     ----------
     when : str
         Shown in the exception to help the developer determine when
         this check was done.
     """
+
     errors = []
     while True:
         e = glGetError()
@@ -132,14 +132,15 @@ def check_error(when='periodic check'):
     if errors:
         msg = ', '.join([repr(ENUM_MAP.get(e, e)) for e in errors])
         err = RuntimeError('OpenGL got errors (%s): %s' % (when, msg))
-        err.errors = errors 
+        err.errors = errors
         err.err = errors[-1]  # pyopengl compat
         raise err
 
 
 # Load default gl backend
-# todo: this would be a slow version, but gloo keeps some function objects when importing 
-# and we need to be able to switch gl backend *after* gloo is loaded
+# todo: this would be a slow version, but gloo keeps some function
+# objects when importing and we need to be able to switch gl backend
+# *after* gloo is loaded
 
 from . import desktop as default_backend
 # from . import desktop as default_backend

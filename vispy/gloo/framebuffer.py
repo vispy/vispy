@@ -38,17 +38,17 @@ class RenderBuffer(GLObject):
 
     _COLOR_FORMATS = (gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1,
                       #gl.ext.GL_RGB8, gl.ext.GL_RGBA8)
-                      # todo: it seems these 
+                      # todo: it seems these
                       )
     _DEPTH_FORMATS = (gl.GL_DEPTH_COMPONENT16,
-                      #gl.ext.GL_DEPTH_COMPONENT24, gl.ext.GL_DEPTH_COMPONENT32)
+                      #gl.ext.GL_DEPTH_COMPONENT24,gl.ext.GL_DEPTH_COMPONENT32)
                       )
     _STENCIL_FORMATS = (gl.GL_STENCIL_INDEX8,
                         #gl.ext.GL_STENCIL_INDEX1, gl.ext.GL_STENCIL_INDEX4)
                         )
 
     _FORMATS = (_COLOR_FORMATS + _DEPTH_FORMATS + _STENCIL_FORMATS +
-                ())#(gl.ext.GL_DEPTH24_STENCIL8,))
+                ())  # (gl.ext.GL_DEPTH24_STENCIL8,))
 
     def __init__(self, shape=None, format=None):
         GLObject.__init__(self)

@@ -1,31 +1,29 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+""" GL ES 2.0 API implemented via Angle (i.e translated to DirectX).
+"""
 
 import ctypes
 
 from . import _copy_gl_functions
-from ._constants import *
+from ._constants import *  # noqa
 
 
 ## Ctypes stuff
 
+# todo: were are we going to put our libs?
+dirname = r'C:\Users\Almar\AppData\Local\Chromium\Application\34.0.1790.0'
 
+# Load dependency (so that libGLESv2 can find it
+fname = dirname + r'\d3dcompiler_46.dll'
+_libdum = ctypes.windll.LoadLibrary(fname)
 
-# fname = r'C:\Qt\Qt5.2.1-64-noogl\5.2.1\msvc2012_64\bin\msvcr110.dll'
-# _libgles2 = ctypes.windll.LoadLibrary(fname)
-# fname = r'C:\Qt\Qt5.2.1-64-noogl\5.2.1\msvc2012_64\bin\msvcp110.dll'
-# _libgles2 = ctypes.windll.LoadLibrary(fname)   
-# fname = r'C:\Qt\Qt5.2.1-64-noogl\5.2.1\msvc2012_64\bin\d3dcompiler_46.dll'
-# _libgles2 = ctypes.windll.LoadLibrary(fname) 
-# 
-# #fname = r'C:\almar\projects\py\vispy\gles2 and egl libs\Qt5.2.1 32bit gl es2 libs\libGLESv2.dll'
-# fname = r'C:\Qt\Qt5.2.1-64-noogl\5.2.1\msvc2012_64\bin\libGLESv2.dll'
-# _lib = ctypes.windll.LoadLibrary(fname)
-
-fname = r'C:\Users\Almar\AppData\Local\Chromium\Application\34.0.1790.0\d3dcompiler_46.dll'
-_libdum = ctypes.windll.LoadLibrary(fname) 
-
-#fname = r'C:\almar\projects\py\vispy\gles2 and egl libs\Qt5.2.1 32bit gl es2 libs\libGLESv2.dll'
-fname = r'C:\Users\Almar\AppData\Local\Chromium\Application\34.0.1790.0\libGLESv2.dll'
+# Load GL ES 2.0 lib (Angle)
+fname = dirname + r'\libGLESv2.dll'
 _lib = ctypes.windll.LoadLibrary(fname)
+
 
 ## Compatibility
 

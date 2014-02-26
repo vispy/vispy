@@ -13,7 +13,6 @@ from . import gl
 from . import GLObject
 
 
-
 # ------------------------------------------------------------ Buffer class ---
 class Buffer(GLObject):
 
@@ -568,7 +567,7 @@ class VertexBuffer(DataBuffer):
                    'int16': gl.GL_SHORT,
                    'float32': gl.GL_FLOAT,
                    # vertex_half_float extension not in webgl
-                   #'float16': gl.ext.GL_HALF_FLOAT,  
+                   #'float16': gl.ext.GL_HALF_FLOAT,
                    }
 
     def __new__(cls, *args, **kwargs):

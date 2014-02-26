@@ -78,7 +78,7 @@ class Texture(GLObject):
     # exist
     DTYPE2GTYPE = {'uint8': gl.GL_UNSIGNED_BYTE,
                    #'float16': gl.GL_HALF_FLOAT,  # Need texture_half_float
-                   'float32': gl.GL_FLOAT,  #  Need texture_float extension
+                   'float32': gl.GL_FLOAT,  # Need texture_float extension
                    }
 
     def __init__(self, target, data=None, format=None, clim=None):
@@ -430,7 +430,7 @@ class Texture(GLObject):
 
         # If we use a 3D texture, we need an extension
         if self._target == GL_TEXTURE_3D:
-            # todo: we are probably going to support it via a non-gles interface
+            # todo: we're probably going to support it via a non-gles interface
             # since webgl does not have it even in ext
             if not ext_available('GL_texture_3D'):
                 raise TextureError('3D Texture not available.')
@@ -508,7 +508,7 @@ class Texture(GLObject):
         #size = [i for i in reversed(shape[:ndim])]
         #args = [target, level, format] + size + [0, format, gltype, None]
         args = [target, level, format, format, gltype, shape[:ndim]]
-        
+
         # Call
         uploadFun(*tuple(args))
 

@@ -2,12 +2,12 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" vispy.gloo.gl.desktop: namespace for OpenGL ES 2.0 API based on the
-desktop OpenGL implementation.
+""" GL ES 2.0 API implemented via pyOpenGL library. Intended as a
+fallback and for testing.
 """
 
 from . import _copy_gl_functions
-from ._constants import *
+from ._constants import *  # noqa
 
 
 ## Compatibility

@@ -631,7 +631,7 @@ class Program(GLObject):
         # Clean up
         for enum in need_enabled:
             gl.glDisable(enum)
-        
+
         # Check ok
         if check_error:
             gl.check_error()
