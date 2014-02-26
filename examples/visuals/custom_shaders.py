@@ -11,7 +11,7 @@ from vispy.gloo import gl
 import vispy.gloo as gloo
 from vispy.visuals.line import LineVisual
 from vispy.visuals.transforms import Transform, STTransform, arg_to_array
-from vispy.shaders.composite import FragmentFunction, Function
+from vispy.shaders.composite import Function
 
 
 # vertex positions of data to draw

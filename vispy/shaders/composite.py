@@ -15,6 +15,25 @@ from . import parsing
 API issues to work out:
 
     
+Need to think more about efficiency:
+    - ability to re-assign hooks or modify chains and have dependencies
+      automatically re-calculated
+        => need to track {dep: [refs...]} so that deps are only removed when no
+           more referrers are present.
+        => same goes for shared variables..
+    - ability to assign new program variable values to an existing program
+    - caching compilation of individual functions if possible
+    - remember variable name assignments, only recompute when necessary.
+    - Ideally, one Function may appear in multiple ModularPrograms
+      (with the same variable assignments each time)
+    
+Need ability to assign function calls to program variables 
+    (specifically, to replace uniforms with texture lookup for Collections)
+
+Possibly move hook/chain features out to ModularShader; keep ModularProgram
+more focused on compilation. 
+    Maybe ModularShader is a subclass of Function? Or vice-versa?
+
     
 """
 
@@ -59,9 +78,9 @@ class ModularProgram(Program):
     This example contains one hook--the undefined 'swappable_function' 
     prototype. Any function may be attached to this hook:
     
-        func = ShaderFunction('''
+        func = Function('''
         attribute vec2 input_position;
-        vec4 func_definition() {
+        vec4 swappable_function() {
             return vec4(input_position, 0, 1);
         }
         ''')
@@ -69,24 +88,9 @@ class ModularProgram(Program):
         # attach to the shader:
         prog.set_hook('swappable_function', func)
         
-    In this example, a wrapper function is generated with the correct name
-    'swappable_function' that calls the attached 'func_definition'. The output
-    program code looks like:
-    
-        vec4 swappable_function();
-        
-        void main() {
-            gl_Position = swappable_function();
-        }        
-    
-        attribute vec2 input_position;
-        vec4 func_definition() {
-            return vec4(input_position, 0, 1);
-        }
-        
-        vec4 swappable_function() {
-            return func_definition();
-        }
+        # Data assigned to the function will be passed on to the program when 
+        # it is activated.
+        func['input_position'] = VertexBuffer(...)
         
     """
     def __init__(self, vmain, fmain):
@@ -95,7 +99,7 @@ class ModularProgram(Program):
         self.fmain = fmain
         
         # Collection of all names declared in each shader.
-        # TODO: Should be WeakValueDict for automatic GC
+        # {'function_name': Function, 'variable_name': VariableReference, ...}
         self.namespaces = {
             'vertex': {},
             'fragment': {},
@@ -105,19 +109,19 @@ class ModularProgram(Program):
         # variables) included in the program and their referrers. When no 
         # referrers are found, remove the object from here and from
         # the namespaces / caches.
-        # Format is {obj: [list of referrers]}
-        self.referrers = {}
+        # TODO: Not implemented yet..
+        self.referrers = {}  # {obj: [list of referrers]}
         
         # cache of compilation results for each function and variable
-        self._function_cache = {}  
-        self._variable_cache = {}
+        self._function_cache = {}  # {function: (name, code)}
+        self._variable_cache = {}  # {variable: (name, code)}
         
         # lists all hooks (function prototypes in both shaders. Format is:
         # {'hook_name': ((vertex|fragment), args, rtype)}
         self._hooks = {}
         
         # hook definitions
-        self._hook_defs = {}
+        self._hook_defs = {}  # {'hook_name': Function}
         
         self._find_hooks()
         
@@ -125,7 +129,8 @@ class ModularProgram(Program):
         self._need_update = True
 
     def add_chain(self, hook, chain=None):
-        """ Attach a new FunctionChain to *hook*. 
+        """ 
+        Attach a new FunctionChain to *hook*. 
         
         This allows callbacks to be added to the chain with add_callback.
         """
@@ -135,8 +140,11 @@ class ModularProgram(Program):
         self.set_hook(hook, chain)
         
     def add_callback(self, hook, function, pre=False):
-        """ Add a new function to the end of the FunctionChain attached to 
-        *hook*. if *pre* is True, then the function is added to the beginning
+        """ 
+        Add a new function to the end of the FunctionChain attached to 
+        *hook*. 
+        
+        If *pre* is True, then the function is added to the beginning
         of the chain. Raises TypeError if there is no FunctionChain attached
         to *hook*.
         """
@@ -153,7 +161,8 @@ class ModularProgram(Program):
         else:
             hook_def.append(function)
             
-        self._install_dep_callbacks(function)
+        # TODO: remove or resurrect
+        #self._install_dep_callbacks(function)
         self._need_update = True
             
     def __setitem__(self, name, value):
@@ -167,7 +176,7 @@ class ModularProgram(Program):
         """
         Use *function* as the definition of *hook*. If the function does not
         have the correct name, a wrapper will be created by calling
-        `function.bind(hook_name)`.
+        `function.wrap(hook_name)`.
         
         Arguments:
         
@@ -189,6 +198,9 @@ class ModularProgram(Program):
             raise NameError("This program has no hook named '%s'" % hook_name)
         
         if hook_name in self._hook_defs and not replace:
+            # TODO: Allow hooks to be redefined. This requires properly
+            # flushing out cached compilation results that need to be 
+            # recompiled.
             raise RuntimeError("Cannot set hook '%s'; this hook is already set "
                                "(with %s)." % 
                                (hook_name, self._hook_defs[hook_name]))
@@ -200,19 +212,22 @@ class ModularProgram(Program):
         self._hook_defs[hook_name] = function
         self._need_update = True
                 
-    def _install_dep_callbacks(self, function):
-        # Search through all dependencies of this function for callbacks
-        # and install them.
-        for dep in function.all_deps():
-            for hook_name, cb in dep.callbacks:
-                self.add_callback(hook_name, cb)
-    
+    # TODO: might remove this functionality. 
+    # It is not currently in use..
+    #def _install_dep_callbacks(self, function):
+        ## Search through all dependencies of this function for callbacks
+        ## and install them.
+        
+        #for dep in function.all_deps():
+            #for hook_name, cb in dep.callbacks:
+                #self.add_callback(hook_name, cb)
         
     def _update(self):
         # generate all code..
         self._compile()
         
-        self.attach(VertexShader(self.vert_code), FragmentShader(self.frag_code))
+        self.attach(VertexShader(self.vert_code), 
+                    FragmentShader(self.frag_code))
         
         # set all variables..
         self._apply_variables()
@@ -228,18 +243,19 @@ class ModularProgram(Program):
         for shader_type, prots in [('vertex', vprots), ('fragment', fprots)]:
             for name, args, rtype in prots:
                 if name in self._hooks:
-                    raise ValueError("Function prototype declared twice: '%s'" % name)
+                    raise ValueError("Function prototype declared twice: '%s'" 
+                                     % name)
                 self._hooks[name] = (shader_type, args, rtype)
 
     def _compile(self):
         """
-        Generate complete vertex and fragment shader code
-        
-        
+        Generate complete vertex and fragment shader code by compiling hook
+        definitions and concatenating each to the shaders.
         """
         code = {'vertex': [self.vmain], 'fragment': [self.fmain]}
         
         for hook_name, func in self._hook_defs.items():
+            self._check_hook(hook_name)
             shader, hook_args, hook_rtype = self._hooks[hook_name]
             n, c = self._resolve_function(func, shader, hook_name)
             code[shader].append(c)
@@ -248,8 +264,9 @@ class ModularProgram(Program):
             
     def _resolve_function(self, func, shader, func_name=None):
         """
-        Generate complete code needed for one function, store in 
-        self._func_code_cache
+        Generate complete code needed for one function (including dependencies).
+        
+        Return (function_name, code).
         """
         func_res = self._function_cache.get(func, None)
         if func_res is not None:
@@ -260,7 +277,6 @@ class ModularProgram(Program):
         subs = {}
         
         # resolve function name
-        
         if func.is_anonymous:
             if func_name is None:
                 func_name = func.name.lstrip('$')
@@ -268,7 +284,9 @@ class ModularProgram(Program):
             subs[func.name.lstrip('$')] = func_name
         else:
             if func.name != func_name:
-                raise Exception("Cannot compile function %s with name %s; function is not anonymous." % (func, func_name))
+                raise Exception("Cannot compile function %s with name %s; "
+                                "function is not anonymous." 
+                                % (func, func_name))
         self.namespaces[shader][func_name] = func
         
         # resolve all variable names and generate declarations if needed
@@ -294,14 +312,13 @@ class ModularProgram(Program):
         func_res = (func_name, code)
         self._function_cache[func] = func_res
         return func_res
-
     
     def _resolve_variable(self, var, shader):
         """
-        Decide on a name for *var* and generate its declaration code.        
+        Decide on a name for *var* and generate its declaration code.
+        
+        Return (variable_name, declaration_code).
         """
-        # TODO: If this references another variable, call _resolve_variable on
-        # the ref'd variable and use the resulting name.
         var_res = self._variable_cache.get(var, None)
         if var_res is not None:
             return var_res
@@ -325,18 +342,19 @@ class ModularProgram(Program):
         if it is present.
         """
         for nsname in self.namespaces:
-            if name in self.namespaces[nsname] and self.namespaces[nsname][name] != val:
-                raise Exception("Cannot use name '%s' for variable %s; already used by %s." % (name, val, self.namespaces[nsname][name]))
+            if (name in self.namespaces[nsname] and 
+                self.namespaces[nsname][name] != val):
+                raise Exception("Cannot use name '%s' for variable %s; already "
+                                "used by %s." % 
+                                (name, val, self.namespaces[nsname][name]))
                 
     def _suggest_name(self, shader, name, val):
         """
         Suggest a new name for *val* if the given *name* is already in use.        
         """
-        #print("suggest:", name, val)
         ns = {}
         for nsname in self.namespaces:
             ns.update(self.namespaces[nsname])
-        #print(ns)
         
         if name in ns and ns[name] is not val:
             m = re.match(r'(.*)_(\d+)', name)
@@ -350,91 +368,41 @@ class ModularProgram(Program):
                 if name not in ns or ns[name] is val:
                     break
                 index += 1
-            #print("   new name:", name)
-        #else:
-            #print("   use as-is")
         return name
-        
-    #def _compile(self):
-        ## Assemble main shader functions along with their hook definitions
-        ## into a single block of code.
-        
-        #vcode = [self.vmain]
-        #fcode = [self.fmain]
-        #namespace = {}  # total namespace of program
-        #vnames = {}  # vertex shader namespace
-        #fnames = {}  # fragment shader namespace
-        
-        
-        ## add code for all hooks and dependencies in order.
-        
-        #for hook_name, func in self._hook_defs.items():
-            #shader, hook_args, hook_rtype = self._hooks[hook_name]
-            
-            
-            ### make sure the function definition fits the hook.
-            ## TODO: If this is expensive, perhaps we can skip it and just let 
-            ## the compiler generate an error.
-            #if func.rtype != hook_rtype:
-                #raise TypeError("function does not return correct type for hook "
-                                #"'%s' (returns %s, should be %s)" % (hook_name, func.rtype, hook_rtype))
-            #if len(func.args) != len(hook_args):
-                #raise TypeError("function does not accept correct number of arguments for hook "
-                                #"'%s' (accepts %d, should be %d)" % (hook_name, len(func.args), len(hook_args)))
-            #for i, arg in enumerate(func.args):
-                #if arg[0] != hook_args[i][0]:
-                    #fnsig = ", ".join([arg[0] for arg in func.args])
-                    #hksig = ", ".join([arg[0] for arg in hook_args])
-                    #raise TypeError("function has incorrect signature for hook "
-                                    #"'%s' (signature is (%s), should be (%s))" % (hook_name, fnsig, hksig))
-            
-            #if not func.is_anonymous and func.name != hook_name:
-                #func = func.wrap(name=hook_name)
-            
-            #if shader == 'vertex':
-                #code = vcode
-                #shader_ns = vnames
-            #else:
-                #code = fcode
-                #shader_ns = fnames
-            
-            #code.append("\n\n//  -------- Begin hook '%s' --------\n" % 
-                        #hook_name)
-            
-            #n, c = func.compile(self, name=hook_name)
-            #code.append(c)
 
-        #vcode = '\n'.join(vcode)
-        #fcode = '\n'.join(fcode)
-        #print ("-------------------------VERTEX------------------------------")
-        #print (vcode)
-        #print ("\n-----------------------FRAGMENT------------------------------")
-        #print (fcode)
-        #print ("--------------------------------")
-        ##print("final namespace:", namespace)
+    def _check_hook(self, hook_name):
+        """
+        Raise an exception if the function attached to *hook_name* does not 
+        have the required signature.
+        """
+        # TODO: If this is expensive, perhaps we can skip it and just let 
+        # the compiler generate an error.
+        shader, hook_args, hook_rtype = self._hooks[hook_name]
+        func = self._hook_defs[hook_name]
         
-        #self.vert_code = vcode
-        #self.frag_code = fcode
-        #self.vert_ns = vnames
-        #self.frag_ns = fnames
-         
+        if func.rtype != hook_rtype:
+            raise TypeError("function does not return correct type for hook "
+                            "'%s' (returns %s, should be %s)" % 
+                            (hook_name, func.rtype, hook_rtype))
+        if len(func.args) != len(hook_args):
+            raise TypeError("function does not accept correct number of "
+                            "arguments for hook '%s' (accepts %d, should be %d)"
+                            % (hook_name, len(func.args), len(hook_args)))
+        for i, arg in enumerate(func.args):
+            if arg[0] != hook_args[i][0]:
+                fnsig = ", ".join([arg[0] for arg in func.args])
+                hksig = ", ".join([arg[0] for arg in hook_args])
+                raise TypeError("function has incorrect signature for hook '%s'"
+                                " (signature is (%s), should be (%s))" % 
+                                (hook_name, fnsig, hksig))
+    
     def _apply_variables(self):
         """
         Apply all program variables that are carried by the components of this 
         program.
         """
-        #print("apply variables:")
         for namespace in self.namespaces.values():
             for name, spec in namespace.items():
                 if isinstance(spec, Function) or spec.vtype == 'varying':
                     continue
                 self[name] = spec.value
-        #for hook_name, func in self._hook_defs.items():
-            #print("  ", hook_name, func)
-            #for dep in func.all_deps():
-                #print("    ", dep)
-                #for name, spec in dep._program_values.items():
-                    #print("      ", name, spec, dep)
-                    #self[name] = spec[2]
-        
-
