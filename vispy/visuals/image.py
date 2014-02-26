@@ -99,8 +99,6 @@ class ImageVisual(Visual):
         
         self._program = None
         self._texture = None
-        #self.pos_input_component = LinePosInputComponent(self)
-        #self.color_input_component = LineColorInputComponent(self)
         self._vbo = None
         self._fragment_callbacks = []
         self.set_data(data)
@@ -199,9 +197,6 @@ class ImageVisual(Visual):
             
         else:
             raise NotImplementedError
-        
-        # Activate color input function
-        #self.color_input_component._activate(program)
         
         # Attach fragment shader post-hook chain
         for func in self._fragment_callbacks:

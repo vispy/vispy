@@ -81,15 +81,26 @@ class LineVisual(Visual):
             'pos': None,
             'color': (1, 1, 1, 1),
             'width': 1,
-            'transform': NullTransform(),
+            'transform': None,
             }
         
-        self._program = None
+        self._program = ModularProgram(vertex_shader, fragment_shader)
+        
+        self.transform = NullTransform()
+        
+        # Generic chains for attaching post-processing functions
+        self._program.add_chain('vert_post_hook')
+        self._program.add_chain('frag_post_hook')
+        
+        # Components for plugging different types of position and color input.
+        self._pos_input_component = None
+        self._color_input_component = None
         self.pos_input_component = LinePosInputComponent(self)
         self.color_input_component = LineColorInputComponent(self)
+        
         self._vbo = None
-        self._fragment_callbacks = []
-        self._vertex_callbacks = []
+        #self._fragment_callbacks = []
+        #self._vertex_callbacks = []
         self.set_data(pos=pos, color=color, width=width)
 
     @property
@@ -99,15 +110,43 @@ class LineVisual(Visual):
     @transform.setter
     def transform(self, tr):
         self._opts['transform'] = tr
-        self._program = None
+        #self._program = None
+        self._program['map_local_to_nd'] = tr.shader_map()
 
     def add_fragment_callback(self, func):
-        self._fragment_callbacks.append(func)
-        self._program = None
+        #self._fragment_callbacks.append(func)
+        #self._program = None
+        self._program.add_callback('frag_post_hook', func)
 
     def add_vertex_callback(self, func):
-        self._vertex_callbacks.append(func)
-        self._program = None
+        #self._vertex_callbacks.append(func)
+        #self._program = None
+        self._program.add_callback('vert_post_hook', func)
+
+    @property
+    def pos_input_component(self):
+        return self._pos_input_component
+
+    @pos_input_component.setter
+    def pos_input_component(self, component):
+        if self._pos_input_component is not None:
+            self._pos_input_component._detach(self)
+            self._pos_input_component = None
+        component._attach(self)
+        self._pos_input_component = component
+        
+    @property
+    def color_input_component(self):
+        return self._color_input_component
+
+    @color_input_component.setter
+    def color_input_component(self, component):
+        if self._color_input_component is not None:
+            self._color_input_component._detach(self)
+            self._color_input_component = None
+        component._attach(self)
+        self._color_input_component = component
+        
 
     def set_data(self, pos=None, color=None, width=None):
         """
@@ -126,7 +165,7 @@ class LineVisual(Visual):
         # might need to rebuild vbo or program.. 
         # this could be made more clever.
         self._vbo = None
-        self._program = None
+        #self._program = None
 
     def _build_vbo(self):
         # Construct complete data array with position and optionally color
@@ -147,35 +186,32 @@ class LineVisual(Visual):
         self._vbo = gloo.VertexBuffer(self._data)
         
         
-    def _build_program(self):
-        if self._vbo is None:
-            self._build_vbo()
+    #def _build_program(self):
+        #if self._vbo is None:
+            #self._build_vbo()
         
         # Create composite program
-        program = ModularProgram(vertex_shader, fragment_shader)
+        #program = ModularProgram(vertex_shader, fragment_shader)
         
-        program.add_chain('vert_post_hook')
-        program.add_chain('frag_post_hook')
+        #program.add_chain('vert_post_hook')
+        #program.add_chain('frag_post_hook')
         
         # Activate position input component
-        self.pos_input_component._activate(program)
+        #self.pos_input_component._activate(program)
         
         # Attach transformation function
-        program['map_local_to_nd'] = self.transform.shader_map()
+        #program['map_local_to_nd'] = self.transform.shader_map()
         
         # Activate color input function
-        self.color_input_component._activate(program)
+        #self.color_input_component._activate(program)
         
         # Attach fragment shader post-hook chain
-        for func in self._fragment_callbacks:
-            program.add_callback('frag_post_hook', func)
-        for func in self._vertex_callbacks:
-            program.add_callback('vert_post_hook', func)
+        #for func in self._fragment_callbacks:
+            #program.add_callback('frag_post_hook', func)
+        #for func in self._vertex_callbacks:
+            #program.add_callback('vert_post_hook', func)
             
-        #program['vert_post_hook'] = self._vertex_callbacks
-        #program['frag_post_hook'] = self._fragment_callbacks
-        
-        self._program = program
+        #self._program = program
         
         
     def paint(self):
@@ -184,8 +220,12 @@ class LineVisual(Visual):
         if self._opts['pos'] is None or len(self._opts['pos']) == 0:
             return
         
-        if self._program is None:
-            self._build_program()
+        if self._vbo is None:
+            self._build_vbo()
+            
+            # tell components to use the new VBO data
+            self.pos_input_component.update()
+            self.color_input_component.update()
             
         gl.glLineWidth(self._opts['width'])
         self._program.draw('LINE_STRIP')
@@ -216,7 +256,7 @@ class LinePosInputComponent(VisualComponent):
         }
         """)
     
-    def _activate(self, program):
+    def update(self):
         # select the correct shader function to read in vertex data based on 
         # position array shape
         if self.visual._data['pos'].shape[-1] == 2:
@@ -227,7 +267,7 @@ class LinePosInputComponent(VisualComponent):
             func = self.XYZInputFunc
             func['xyz_pos']=('attribute', 'vec3', self.visual._vbo)
             
-        program['local_position'] = func
+        self.visual._program['local_position'] = func
 
 
 
@@ -267,8 +307,9 @@ class LineColorInputComponent(VisualComponent):
             }
             """)
     
-    def _activate(self, program):
+    def update(self):
         # Select uniform- or attribute-input 
+        program = self.visual._program
         if 'color' in self.visual._data.dtype.fields:
             # explicitly declare a new variable (to be shared)
             # TODO: does this need to be explicit?

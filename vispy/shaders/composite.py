@@ -172,7 +172,7 @@ class ModularProgram(Program):
             super(ModularProgram, self).__setitem__(name, value)
 
         
-    def set_hook(self, hook_name, function):
+    def set_hook(self, hook_name, function, replace=False):
         """
         Use *function* as the definition of *hook*. If the function does not
         have the correct name, a wrapper will be created by calling
@@ -197,17 +197,20 @@ class ModularProgram(Program):
         if hook_name not in self._hooks:
             raise NameError("This program has no hook named '%s'" % hook_name)
         
-        if hook_name in self._hook_defs and not replace:
+        if hook_name in self._hook_defs:
+            if function is self._hook_defs[hook_name]:
+                return
+            
+            if not replace:
+                raise RuntimeError("Cannot set hook '%s'; this hook is already set "
+                                "(with %s)." % 
+                                (hook_name, self._hook_defs[hook_name]))
             # TODO: Allow hooks to be redefined. This requires properly
             # flushing out cached compilation results that need to be 
             # recompiled.
-            raise RuntimeError("Cannot set hook '%s'; this hook is already set "
-                               "(with %s)." % 
-                               (hook_name, self._hook_defs[hook_name]))
         
         if isinstance(function, list):
             function = FunctionChain("$%s_hook" % hook_name, function)
-        
         
         self._hook_defs[hook_name] = function
         self._need_update = True

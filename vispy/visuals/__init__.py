@@ -15,7 +15,7 @@ and we would only need some hooks in GLSL of the visuals.
 from __future__ import division
 
 from .. import gloo
-
+from ..util import event
 
 GLOptions = {
     'opaque': {
@@ -56,6 +56,10 @@ class Visual(object):
         #       'glBlendFunc': ('GL_SRC_ALPHA', 'GL_ONE') }
         # 
         self._gl_options = {}
+        
+        self.events = event.EmitterGroup(source=self,
+                                         update=event.Event,
+                                         bounds_change=event.Event)
     
     def paint(self):
         """
