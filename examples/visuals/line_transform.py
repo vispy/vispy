@@ -37,6 +37,7 @@ class Canvas(vispy.app.Canvas):
         # but have different colors and transformations
         colors = [color, (1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1),
                   (1, 1, 0, 1), (1, 1, 1, 1)]
+        
         self.lines = [LineVisual(pos, color=colors[i]) for i in range(6)]
         
         self.lines[1].transform = STTransform(scale=(1, 0.1, 1))

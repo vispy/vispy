@@ -8,6 +8,7 @@ import logging
 from ..gloo import Program, VertexShader, FragmentShader
 from .function import *
 from . import parsing
+from ..util import logger
 
 
 
@@ -98,6 +99,10 @@ class ModularProgram(Program):
         self.vmain = vmain
         self.fmain = fmain
         
+        # keep track of attached shaders
+        self.vshader = None
+        self.fshader = None
+        
         # Collection of all names declared in each shader.
         # {'function_name': Function, 'variable_name': VariableReference, ...}
         self.namespaces = {
@@ -172,7 +177,7 @@ class ModularProgram(Program):
             super(ModularProgram, self).__setitem__(name, value)
 
         
-    def set_hook(self, hook_name, function, replace=False):
+    def set_hook(self, hook_name, function):
         """
         Use *function* as the definition of *hook*. If the function does not
         have the correct name, a wrapper will be created by calling
@@ -200,20 +205,19 @@ class ModularProgram(Program):
         if hook_name in self._hook_defs:
             if function is self._hook_defs[hook_name]:
                 return
-            
-            if not replace:
-                raise RuntimeError("Cannot set hook '%s'; this hook is already set "
-                                "(with %s)." % 
-                                (hook_name, self._hook_defs[hook_name]))
-            # TODO: Allow hooks to be redefined. This requires properly
-            # flushing out cached compilation results that need to be 
-            # recompiled.
+            else:
+                self.unset_hook(hook_name)
         
         if isinstance(function, list):
             function = FunctionChain("$%s_hook" % hook_name, function)
         
         self._hook_defs[hook_name] = function
         self._need_update = True
+
+    def unset_hook(self, hook_name):
+        self._hook_defs[hook_name] = None
+        self._need_update = True
+        
                 
     # TODO: might remove this functionality. 
     # It is not currently in use..
@@ -229,8 +233,15 @@ class ModularProgram(Program):
         # generate all code..
         self._compile()
         
-        self.attach(VertexShader(self.vert_code), 
-                    FragmentShader(self.frag_code))
+        if self.vshader is not None:
+            self.detach(self.vshader, self.fshader)
+            self.vshader = self.fshader = None
+        
+        vs = VertexShader(self.vert_code)
+        fs = FragmentShader(self.frag_code)
+        self.attach(vs, fs)
+        self.vshader = vs
+        self.fshader = fs
         
         # set all variables..
         self._apply_variables()
@@ -261,9 +272,16 @@ class ModularProgram(Program):
             self._check_hook(hook_name)
             shader, hook_args, hook_rtype = self._hooks[hook_name]
             n, c = self._resolve_function(func, shader, hook_name)
-            code[shader].append(c)
+            header = "\n//------- Begin hook %s -------\n\n" % hook_name
+            code[shader].append(header + c)
         self.vert_code = '\n'.join(code['vertex'])
         self.frag_code = '\n'.join(code['fragment'])
+        
+        logger.debug('==================== VERTEX SHADER ====================')
+        logger.debug(self.vert_code)
+        logger.debug('=================== FRAGMENT SHADER ===================')
+        logger.debug(self.frag_code)
+        
             
     def _resolve_function(self, func, shader, func_name=None):
         """
@@ -311,6 +329,7 @@ class ModularProgram(Program):
             
         # compile code with the suggested substitutions and dependency names
         code += func.compile(subs, dep_names)
+        code += "\n"
         
         func_res = (func_name, code)
         self._function_cache[func] = func_res
@@ -404,8 +423,10 @@ class ModularProgram(Program):
         Apply all program variables that are carried by the components of this 
         program.
         """
+        logger.debug("Apply variables:")
         for namespace in self.namespaces.values():
             for name, spec in namespace.items():
                 if isinstance(spec, Function) or spec.vtype == 'varying':
                     continue
+                logger.debug("    %s = %s" % (name, spec.value))
                 self[name] = spec.value

@@ -240,6 +240,8 @@ class Function(object):
         
         if isinstance(spec, VariableReference):
             if name in self._program_values:
+                if self._program_values[name] is spec:
+                    return
                 raise Exception("Cannot assign variable to %s; already assigned to %s." % (spec, self._program_values[name]))
             self._program_values[name] = spec
         else:

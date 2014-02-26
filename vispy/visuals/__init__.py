@@ -17,6 +17,21 @@ from __future__ import division
 from .. import gloo
 from ..util import event
 
+
+"""
+API Issues to work out:
+
+  * Need Visual.bounds() as described here:
+    https://github.com/vispy/vispy/issues/141
+    
+  * Design of VisualComponent still needs a bit more direction..
+    will see where to take it with more examples.
+
+"""
+
+
+
+# Commonly-used GL option groups.
 GLOptions = {
     'opaque': {
         'GL_DEPTH_TEST': True,
@@ -42,8 +57,22 @@ GLOptions = {
 
 
 class Visual(object):
-
-    """ Abstract visual class.
+    """ 
+    Abstract class representing a drawable object. Visuals implement the 
+    following interfaces:
+    
+        * paint() calls all of the GL commands necessary to paint the visual.
+        * bounds() describes the bounding rectangle of the visual.
+        * gl_options() is used to configure the OpenGL state immediately
+          before the visual is painted.
+          
+    
+    Events:
+    
+    update : Event
+        Emitted when the visual has changed and needs to be repainted.
+    bounds_change : Event
+        Emitted when the bounding rectangle of the visual has changed.
     """
     def __init__(self):
         
@@ -152,9 +181,10 @@ class VisualComponent(object):
         """
         self._visual = None
         
-    def _activate(self, program):
-        """Install this component into *program*. This method is called by the 
-        Visual when it is ready to build its program.
+    def update(self):
+        """
+        Called by the Visual immediately before drawing; this method should be
+        overridden to handle any changes to the visual that have teken place.
         """
         raise NotImplementedError
 

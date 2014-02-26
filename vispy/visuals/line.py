@@ -9,13 +9,24 @@ Simple visual based on GL_LINE_STRIP / GL_LINES
 
 API issues to work out:
 
-    The main vertex and fragment shaders define a few useful hooks, but these
+  * Currently this only uses GL_LINE_STRIP. Should add a 'method' argument like
+    ImageVisual.method that can be used to select higher-quality triangle 
+    methods.
+    
+  * The main vertex and fragment shaders define a few useful hooks, but these
     may need to be rethought in the future as we consider different kinds of 
     modular components. 
     
-    Some of the hooks defined here may be applicable to all Visuals (for
+  * Some of the hooks defined here may be applicable to all Visuals (for
     example, map_local_to_nd), but I expect that each Visual may want to define
     a different set of hooks.
+    
+  * 'pos_input_component' and 'color_input_component' are verbose and ugly.
+  
+  * Add a few different position input components:
+        - X values from vertex buffer of index values, Xmin, and Xstep
+        - position from float texture
+        
     
 """
 
@@ -26,7 +37,7 @@ import numpy as np
 from .. import gloo
 from ..gloo import gl
 from . import Visual, VisualComponent
-from ..shaders.composite import (Function, ModularProgram, FunctionChain)
+from ..shaders.composite import Function, ModularProgram, FunctionChain
 from .transforms import NullTransform
 
 
@@ -99,8 +110,6 @@ class LineVisual(Visual):
         self.color_input_component = LineColorInputComponent(self)
         
         self._vbo = None
-        #self._fragment_callbacks = []
-        #self._vertex_callbacks = []
         self.set_data(pos=pos, color=color, width=width)
 
     @property
@@ -110,18 +119,15 @@ class LineVisual(Visual):
     @transform.setter
     def transform(self, tr):
         self._opts['transform'] = tr
-        #self._program = None
-        self._program['map_local_to_nd'] = tr.shader_map()
+        self.events.update()
 
     def add_fragment_callback(self, func):
-        #self._fragment_callbacks.append(func)
-        #self._program = None
         self._program.add_callback('frag_post_hook', func)
+        self.events.update()
 
     def add_vertex_callback(self, func):
-        #self._vertex_callbacks.append(func)
-        #self._program = None
         self._program.add_callback('vert_post_hook', func)
+        self.events.update()
 
     @property
     def pos_input_component(self):
@@ -134,6 +140,7 @@ class LineVisual(Visual):
             self._pos_input_component = None
         component._attach(self)
         self._pos_input_component = component
+        self.events.update()
         
     @property
     def color_input_component(self):
@@ -146,6 +153,7 @@ class LineVisual(Visual):
             self._color_input_component = None
         component._attach(self)
         self._color_input_component = component
+        self.events.update()
         
 
     def set_data(self, pos=None, color=None, width=None):
@@ -162,10 +170,10 @@ class LineVisual(Visual):
         if width is not None:
             self._opts['width'] = width
             
-        # might need to rebuild vbo or program.. 
-        # this could be made more clever.
+        # TODO: this could be made more clever--might be able to simply 
+        # re-upload data to VBO.
         self._vbo = None
-        #self._program = None
+        self.events.update()
 
     def _build_vbo(self):
         # Construct complete data array with position and optionally color
@@ -185,35 +193,6 @@ class LineVisual(Visual):
         # convert to vertex buffer
         self._vbo = gloo.VertexBuffer(self._data)
         
-        
-    #def _build_program(self):
-        #if self._vbo is None:
-            #self._build_vbo()
-        
-        # Create composite program
-        #program = ModularProgram(vertex_shader, fragment_shader)
-        
-        #program.add_chain('vert_post_hook')
-        #program.add_chain('frag_post_hook')
-        
-        # Activate position input component
-        #self.pos_input_component._activate(program)
-        
-        # Attach transformation function
-        #program['map_local_to_nd'] = self.transform.shader_map()
-        
-        # Activate color input function
-        #self.color_input_component._activate(program)
-        
-        # Attach fragment shader post-hook chain
-        #for func in self._fragment_callbacks:
-            #program.add_callback('frag_post_hook', func)
-        #for func in self._vertex_callbacks:
-            #program.add_callback('vert_post_hook', func)
-            
-        #self._program = program
-        
-        
     def paint(self):
         super(LineVisual, self).paint()
         
@@ -226,6 +205,9 @@ class LineVisual(Visual):
             # tell components to use the new VBO data
             self.pos_input_component.update()
             self.color_input_component.update()
+            
+        # TODO: this must be optimized.
+        self._program['map_local_to_nd'] = self.transform.shader_map()
             
         gl.glLineWidth(self._opts['width'])
         self._program.draw('LINE_STRIP')
