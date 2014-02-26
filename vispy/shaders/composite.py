@@ -95,6 +95,7 @@ class ModularProgram(Program):
         self.fmain = fmain
         
         # Collection of all names declared in each shader.
+        # TODO: Should be WeakValueDict for automatic GC
         self.namespaces = {
             'vertex': {},
             'fragment': {},
@@ -102,7 +103,8 @@ class ModularProgram(Program):
         
         # Garbage collection system: keep track of all objects (functions and
         # variables) included in the program and their referrers. When no 
-        # referrers are found, remove the object.
+        # referrers are found, remove the object from here and from
+        # the namespaces / caches.
         # Format is {obj: [list of referrers]}
         self.referrers = {}
         
@@ -239,47 +241,59 @@ class ModularProgram(Program):
         
         for hook_name, func in self._hook_defs.items():
             shader, hook_args, hook_rtype = self._hooks[hook_name]
+            n, c = self._resolve_function(func, shader, hook_name)
+            code[shader].append(c)
+        self.vert_code = '\n'.join(code['vertex'])
+        self.frag_code = '\n'.join(code['fragment'])
             
-            if func not in self._function_cache:
-                self._resolve_function(func, shader, hook_name)
-            code[shader].append(self._function_cache[func][1])
-        self.vcode = '\n'.join(code['vertex'])
-        self.fcode = '\n'.join(code['fragment'])
-            
-    def _resolve_function(self, func, shader, func_name):
+    def _resolve_function(self, func, shader, func_name=None):
         """
         Generate complete code needed for one function, store in 
         self._func_code_cache
         """
+        func_res = self._function_cache.get(func, None)
+        if func_res is not None:
+            return func_res
+        
+        
         code = ""
         subs = {}
         
         # resolve function name
-        if func_name is not None:
+        
+        if func.is_anonymous:
+            if func_name is None:
+                func_name = func.name.lstrip('$')
+            func_name = self._suggest_name(shader, func_name, func)
             subs[func.name.lstrip('$')] = func_name
+        else:
+            if func.name != func_name:
+                raise Exception("Cannot compile function %s with name %s; function is not anonymous." % (func, func_name))
+        self.namespaces[shader][func_name] = func
         
         # resolve all variable names and generate declarations if needed
-        for local_name, var in func.template_vars.items():
-            if var not in self._variable_cache:
-                self._resolve_variable(var, shader)
-            n, c = self._variable_cache[var]
+        for local_name in func.template_vars:
+            var = func[local_name]
+            n, c = self._resolve_variable(var, shader)
             if n not in self.namespaces[shader]:
                 code += c
                 self.namespaces[shader][n] = var
-            subs[var.name] = n
+            subs[local_name] = n
             
         # resolve all dependencies
         dep_names = {}
         for dep in func.deps:
-            if dep not in self._function_cache:
-                self._resolve_function(dep, shader)
-            dep_names[dep] = self._function_cache[dep][0]
+            n, c = self._resolve_function(dep, shader)
+            dep_names[dep] = n
+            code += c
+            code += "\n\n"
             
         # compile code with the suggested substitutions and dependency names
-        c = func.compile(subs, dep_names)
+        code += func.compile(subs, dep_names)
         
-        code += c
-        self._function_cache[func] = (func_name, code)
+        func_res = (func_name, code)
+        self._function_cache[func] = func_res
+        return func_res
 
     
     def _resolve_variable(self, var, shader):
@@ -288,25 +302,59 @@ class ModularProgram(Program):
         """
         # TODO: If this references another variable, call _resolve_variable on
         # the ref'd variable and use the resulting name.
+        var_res = self._variable_cache.get(var, None)
+        if var_res is not None:
+            return var_res
         
-        if var.name.startswith('$'):
-            name = self.suggest_name(var.name)
+        if var.anonymous:
+            name = self._suggest_name(shader, var.name, var)
         else:
-            self.check_name(shader, var.name, var)
+            self._check_name(shader, var.name, var)
             name = var.name
-        decl = "%s %s %s;\n" % (var.vtype, var.dtype, name)
-        self._variable_cache[var] = (name, decl)
+        try:
+            decl = "%s %s %s;\n" % (var.vtype, var.dtype, name)
+        except KeyError:
+            raise Exception("%s has not been assigned a value" % var)
+        var_res = (name, decl)
+        self._variable_cache[var] = var_res
+        return var_res
         
-    def check_name(self, shader, name, val):
+    def _check_name(self, shader, name, val):
         """
         Check that *name* correctly refers to *val* in the program namespace,
         if it is present.
         """
-        nsnames = self.namespaces.keys()
-        for nsname in nsnames:
+        for nsname in self.namespaces:
             if name in self.namespaces[nsname] and self.namespaces[nsname][name] != val:
-                raise Exception("Cannot use name '%s' for variable %s; already used by %s." % (var.name, var, self.namespaces[nsname][name]))
+                raise Exception("Cannot use name '%s' for variable %s; already used by %s." % (name, val, self.namespaces[nsname][name]))
                 
+    def _suggest_name(self, shader, name, val):
+        """
+        Suggest a new name for *val* if the given *name* is already in use.        
+        """
+        #print("suggest:", name, val)
+        ns = {}
+        for nsname in self.namespaces:
+            ns.update(self.namespaces[nsname])
+        #print(ns)
+        
+        if name in ns and ns[name] is not val:
+            m = re.match(r'(.*)_(\d+)', name)
+            if m is None:
+                base_name = name
+                index = 1
+            else:
+                base_name, index = m.groups()
+            while True:
+                name = base_name + '_' + str(index)
+                if name not in ns or ns[name] is val:
+                    break
+                index += 1
+            #print("   new name:", name)
+        #else:
+            #print("   use as-is")
+        return name
+        
     #def _compile(self):
         ## Assemble main shader functions along with their hook definitions
         ## into a single block of code.
@@ -370,18 +418,17 @@ class ModularProgram(Program):
         #self.vert_ns = vnames
         #self.frag_ns = fnames
          
-    def _apply_variables(self, namespace):
+    def _apply_variables(self):
         """
         Apply all program variables that are carried by the components of this 
         program.
         """
         #print("apply variables:")
-        for name, spec in namespace.items():
-            if isinstance(spec, Function):
-                continue
-            #print("  ", name, spec)
-            if spec[0] != 'varying':
-                self[name] = spec[2]
+        for namespace in self.namespaces.values():
+            for name, spec in namespace.items():
+                if isinstance(spec, Function) or spec.vtype == 'varying':
+                    continue
+                self[name] = spec.value
         #for hook_name, func in self._hook_defs.items():
             #print("  ", hook_name, func)
             #for dep in func.all_deps():

@@ -273,7 +273,7 @@ class LineColorInputComponent(VisualComponent):
         if 'color' in self.visual._data.dtype.fields:
             # explicitly declare a new variable (to be shared)
             # TODO: does this need to be explicit?
-            self.frag_func['rgba'] = program.new_variable('varying', 'vec4')   
+            self.frag_func['rgba'] = ('varying', 'vec4')   
             
             program['frag_color'] = self.frag_func
             

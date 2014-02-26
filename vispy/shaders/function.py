@@ -239,7 +239,7 @@ class Function(object):
             if var == self.name:
                 continue
             vname = var.lstrip('$')
-            self._template_vars[vname] = VariableReference(self, vname)
+            self._template_vars[vname] = None
 
     def _parse_program_vars(self):
         raise NotImplementedError
@@ -427,12 +427,21 @@ class Function(object):
         for each dependency and may be used by subclasses to modify the final 
         code.
         """
+        if self.is_anonymous and self.name.lstrip('$') not in template_subs:
+            raise Exception("Cannot compile anonymous function %s; no function name specified." % self)
+        
+        for name in self.template_vars:
+            if name not in template_subs:
+                raise Exception("Cannot compile function %s; no global name given for variable %s" % (self, name))
+        
         if len(template_subs) > 0:
             try:
                 return self._template.substitute(**template_subs)
             except KeyError as err:
                 raise KeyError("Must specify variable $%s in substitution" % 
                             err.args[0])
+        else:
+            return self.code
 
     def _compile_deps(self, program, func_name):
         """
@@ -457,23 +466,34 @@ class Function(object):
         """
         raise NotImplementedError
      
-    def set_value(self, name, spec):
-        if name not in self.template_vars:
-            raise NameError("Variable '%s' does not exist in this function." 
-                            % name)
-        self._program_values[name] = spec
-        
      
-    def __setitem__(self, var, value):
+    def __setitem__(self, name, spec):
         """
         Set the value of a program variable declared in this function's code.
         
         Any ModularProgram that depends on this function will automatically
         apply the variable when it is activated.
         """
-        self.set_value(var, value)
+        if name in self.template_vars:
+            anon = True
+        elif name in self.program_vars:
+            anon = False
+        else:
+            raise NameError("Variable '%s' does not exist in this function." 
+                            % name)
+        
+        if isinstance(spec, VariableReference):
+            if name in self._program_values:
+                raise Exception("Cannot assign variable to %s; already assigned to %s." % (spec, self._program_values[name]))
+            self._program_values[name] = spec
+        else:
+            if name in self._program_values:
+                self._program_values[name].spec = spec
+            else:
+                ref = VariableReference(self, name, spec, anonymous=anon)
+                self._program_values[name] = ref
 
-    def __getitem__(self, var):
+    def __getitem__(self, name):
         """
         Return a reference to a program variable from this function.
         
@@ -485,7 +505,10 @@ class Function(object):
         same program variable whenever func1 and func2 are attached to the same 
         program.
         """
-        return VariableReference(self, var)
+        # create empty reference if needed
+        if name not in self._program_values:
+            self._program_values[name] = VariableReference(self, name)
+        return self._program_values[name]
 
     def all_deps(self):
         """
@@ -500,7 +523,7 @@ class Function(object):
         return deps
     
     def __repr__(self):
-        return "<%s %s>" % (self.__class__.__name__, self.name)
+        return "<%s %s %d>" % (self.__class__.__name__, self.name, id(self))
     
     @staticmethod
     def clean_code(code):
@@ -614,17 +637,34 @@ class VariableReference(object):
     References a program variable from a function.
     
     """
-    def __init__(self, function, name):
+    def __init__(self, function, name, spec=None, anonymous=False):
         self.function = function
         self.name = name
+        self.spec = None  # (vtype, dtype, value)
+        if spec is not None:
+            self.spec = spec
+        self.anonymous = anonymous  # if True, variable may be renamed.
         
     @property
     def vtype(self):
-        return self.function._program_values[self.name][0]
+        if self.spec is None:
+            raise Exception("Variable %s has not been assigned; cannot determine vtype." % self)
+        return self.spec[0]
     
     @property
     def dtype(self):
-        return self.function._program_values[self.name][1]
+        if self.spec is None:
+            raise Exception("Variable %s has not been assigned; cannot determine dtype." % self)
+        return self.spec[1]
+
+    @property
+    def value(self):
+        if self.spec is None:
+            raise Exception("Variable %s has not been assigned; cannot determine value." % self)
+        return self.spec[2]
+
+    def __repr__(self):
+        return "<VariableReference '%s' on %s (%d)>" % (self.name, self.function.name, id(self))
     
 class CompileResult(object):
     """
@@ -813,6 +853,10 @@ class FunctionChain(Function):
             #code = self._generate_code()
             #self._code = code
         #return self._code
+        
+    @property
+    def template_vars(self):
+        return {}
 
     def append(self, function):
         """ Append a new function to the end of this chain.
@@ -830,7 +874,7 @@ class FunctionChain(Function):
         self._update_signature()
         self._code = None
 
-    def _generate_code(self, subs, dep_names):
+    def compile(self, subs, dep_names):
         args = ", ".join(["%s %s" % arg for arg in self.args])
         name = subs[self.name.lstrip('$')]
         code = "%s %s(%s) {\n" % (self.rtype, name, args)
