@@ -78,11 +78,10 @@ class Canvas(vispy.app.Canvas):
             }
             """)
         
-        varying = ('varying', 'float', 'dasher_distance_v')
         dasher_support['distance_attr'] = ('attribute', 'float', gloo.VertexBuffer(dist))
-        dasher_support['output'] = varying
+        dasher_support['output'] = ('varying', 'float')
         dasher['dash_len'] = ('uniform', 'float', 20.)
-        dasher['distance'] = varying
+        dasher['distance'] = dasher_support['output']
         self.line.add_fragment_callback(dasher)
         self.line.add_vertex_callback(dasher_support)
         
