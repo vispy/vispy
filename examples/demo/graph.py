@@ -10,7 +10,6 @@ import numpy as np
 from vispy import gloo
 from vispy import app
 from vispy.gloo import gl
-from vispy.util.transforms import ortho
 import markers
 
 vs = """
@@ -48,7 +47,9 @@ data['a_size'] = np.random.randint(size=n, low=10, high=30)
 data['a_linewidth'] = 2
 u_antialias = 1
 
+
 class Canvas(app.Canvas):
+
     def __init__(self, **kwargs):
         # Initialize the canvas for real
         app.Canvas.__init__(self, **kwargs)
@@ -60,7 +61,7 @@ class Canvas(app.Canvas):
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        
+
         self.program = gloo.Program(markers.vert, markers.frag + markers.disc)
         self.program.set_vars(self.vbo,
                               u_size=1,
@@ -68,10 +69,10 @@ class Canvas(app.Canvas):
                               u_model=self.model,
                               u_view=self.view,
                               u_projection=self.projection)
-        
+
         self.program_e = gloo.Program(vs, fs)
         self.program_e.set_vars(self.vbo)
-        
+
         # self.timer = app.Timer(.01)
         # self.timer.connect(self.on_timer)
         # self.timer.start()
