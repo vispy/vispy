@@ -328,25 +328,8 @@ class Maker:
 
     def lineendings(self, args):
         """ Check that all lineendings are LF """
-        for dirpath, dirnames, filenames in os.walk(ROOT_DIR):
-            # Process files
-            for fname in filenames:
-                if os.path.splitext(fname)[1] in ('.pyc', '.pyo',
-                                                  '.so', '.dll'):
-                    continue
-                # Get filename
-                filename = os.path.join(dirpath, fname)
-                relfilename = os.path.relpath(filename, ROOT_DIR)
-                # Open and check
-                try:
-                    text = open(filename, 'rb').read().decode('utf-8')
-                except UnicodeDecodeError:
-                    continue
-                crcount = text.count('\r')
-                if crcount:
-                    lfcount = text.count('\n')
-                    print('In %s found %i/%i CR/LF' %
-                          (relfilename, crcount, lfcount))
+        from vispy.util.codequality import check_line_endings
+        check_line_endings()
 
 
 # Functions used by the maker
