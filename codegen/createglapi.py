@@ -3,7 +3,38 @@
 # Copyright (c) 2013, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" Scipt to generate code for our gl API, including all its backends.
+"""
+Scipt to generate code for our gl API, including all its backends.
+
+The files involved in the code generation process are:
+
+  * gl2.h - the C header file for the GL ES 2.0 API
+  * webgl.idl - the interface definition language for WebGL
+  * annotations.py - manual annotations for non-trivial functions
+  * headerparser.py - parses .h and .idl files 
+  * createglapi.py - uses all of the above to generate the actual code
+
+Rationale
+---------
+
+The GL ES 2.0 API is relatively small. Therefore a fully automated build
+process like PyOpenGL now has is not really necessary. I tried to
+automate what we can and simply do the rest with manual annotations.
+Some groups of functions (like glUniform and friends) are handled in
+*this* file.
+
+Even though the API is quite small, we want to generate several
+implementations, such as desktop, Angle, a generic proxy, webgl, a mock
+backend and possibly more. Therefore automation is crucial.
+
+Further notes
+-------------
+
+This file is pretty big and even though I tried to make the code as clear
+as possible, it's not always that easy to read. In effect this code is
+not so easy to maintain. I hope it is at least clear enough so it can be
+used to maintain the GL API itself.
+
 """
 
 import os
