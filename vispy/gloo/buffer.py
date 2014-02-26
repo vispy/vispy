@@ -13,6 +13,7 @@ from . import gl
 from . import GLObject
 from .. import opencl
 
+
 # ------------------------------------------------------------ Buffer class ---
 class Buffer(GLObject):
 
@@ -180,14 +181,14 @@ class Buffer(GLObject):
     def get_ocl(self, ctx=None):
         """
         Retrieves an OpenCL view on the Buffer.
-        
+
         To use it you need to grab it using:
         pyopencl.enqueue_acquire_gl_objects(queue, [ocl_buf])
-        
+
         Parameters
         ----------
         ctx : OpenCL Context
-            If None is provided, generate/reuse an existing one 
+            If None is provided, generate/reuse an existing one
         """
         if (opencl is None) or (opencl.pyopencl is None):
             return
@@ -206,6 +207,7 @@ class Buffer(GLObject):
         cl_buf = cl.GLBuffer(ctx, cl.mem_flags.READ_WRITE,
                                    int(self.handle))
         return cl_buf
+
 
 # ------------------------------------------------------ DataBuffer class ---
 class DataBuffer(Buffer):

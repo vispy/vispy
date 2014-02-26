@@ -79,7 +79,8 @@ class Texture(GLObject):
                    # Needs GL_OES_texture_float:
                    'float32': gl.GL_FLOAT,
                    }
-    if NP_HAS_FLOAT16: # Needs GL_OES_texture_half_float:
+    if NP_HAS_FLOAT16:
+        # Needs GL_OES_texture_half_float:
         DTYPE2GTYPE['float16'] = gl.ext.GL_HALF_FLOAT
 
     def __init__(self, target, data=None, format=None, clim=None):
@@ -576,14 +577,14 @@ class Texture(GLObject):
     def get_ocl(self, ctx=None):
         """
         Retrieves an OpenCL view on the texture.
-        
+
         To use it you need to grab it using:
         pyopencl.enqueue_acquire_gl_objects(queue, [ocl_tex])
-        
+
         Parameters
         ----------
-        ctx : OpenCL Context
-            If None is provided, generate/reuse an existing one 
+        ctx: OpenCL Context
+            If None is provided, generate/reuse an existing one
         """
         if (opencl is None) or (opencl.pyopencl is None):
             return
@@ -606,6 +607,7 @@ class Texture(GLObject):
         ocl_img = cl.GLTexture(ctx, cl.mem_flags.READ_WRITE,
                         self._target, 0, int(self.handle), ndim)
         return ocl_img
+
 
 class Texture2D(Texture):
 
