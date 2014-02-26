@@ -74,6 +74,28 @@ class Color(object):
         If no alpha is not supplied in ``color`` entry and ``alpha`` is None,
         then this will default to 1.0 (opaque). If float, it will override
         any alpha values in ``color``, if provided.
+
+    Examples
+    --------
+    There are many ways to define colors. Here are some basic cases:
+
+        >>> from vispy.color import Color
+        >>> r = Color('red')  # using string name
+        >>> r
+        <Color: 1 color ((1.0, 0.0, 0.0, 1.0))>
+        >>> g = Color((0, 1, 0, 1))  # RGBA tuple
+        >>> b = Color('#ff0000')  # hex color
+        >>> w = Color()  # defaults to black
+        >>> w.rgb = r.rgb + g.rgb + b.rgb
+        >>> w == Color('white')
+        True
+        >>> w.alpha = 0
+        >>> w
+        <Color: 1 color ((1.0, 1.0, 1.0, 0.0))>
+        >>> rgb = Color(['r', (0, 1, 0), '#FF0000FF'])
+        >>> rgb
+        <Color: 3 colors ((1.0, 0.0, 0.0, 1.0) ... (1.0, 0.0, 0.0, 1.0))>
+        >>>
     """
     def __init__(self, color=(0., 0., 0., 1.), alpha=None):
         """Parse input type"""
@@ -114,12 +136,12 @@ class Color(object):
 
     @property
     def RGB(self):
-        return (self._rgba[:, :3] * 255).astype(int)
+        return np.round(self._rgba[:, :3] * 255).astype(int)
 
     @RGB.setter
     def RGB(self, val):
         # need to convert to normalized float
-        val = np.atleast_1d(val).astype(np.float64) / 255
+        val = np.atleast_1d(val).astype(np.float64) / 255.
         return self._set_rgba(val)
 
     @property
@@ -129,6 +151,10 @@ class Color(object):
     @alpha.setter
     def alpha(self, val):
         self._rgba[:, 3] = val
+
+    @property
+    def intensity(self):
+        return np.sqrt(np.sum(self._rgba[:, :3] ** 2, axis=1))
 
     def copy(self):
         """Return a copy of the color"""
@@ -142,7 +168,7 @@ class Color(object):
         plural = ''
         if len(self) > 1:
             plural = 's'
-            nice_str += '... ' + str(tuple(self.rgba[-1]))
+            nice_str += ' ... ' + str(tuple(self.rgba[-1]))
         return ('<Color: %i color%s (%s)>' % (len(self), plural, nice_str))
 
     def __eq__(self, other):

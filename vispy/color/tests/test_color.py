@@ -16,10 +16,13 @@ def test_color_interpretation():
     r = Color('r')
     print(r)  # test repr
     assert_equal(r, Color('#ff0000'))
-    assert_equal(r, Color('#ff0000ff'))
+    assert_equal(r, Color('#FF0000FF'))
     assert_equal(r, Color('red'))
     assert_equal(r, Color('red', alpha=1.0))
     assert_equal(Color((1, 0, 0, 0.1)), Color('red', alpha=0.1))
+    assert_array_equal(r.rgb.ravel(), (1., 0., 0.))
+    assert_array_equal(r.rgba.ravel(), (1., 0., 0., 1.))
+    assert_array_equal(r.RGBA.ravel(), (255, 0, 0, 255))
 
     # handling multiple colors
     rgb = Color(list('rgb'))
@@ -41,6 +44,11 @@ def test_color_interpretation():
     r.RGB = 255, 0, 0
     assert_equal(r, Color('r'))
     assert_array_equal(r.RGB.ravel(), (255, 0, 0))
+    r.RGBA = 255, 0, 0, 0
+    assert_equal(r, Color('r', alpha=0))
+    w = Color()
+    w.rgb = Color('r').rgb + Color('g').rgb + Color('b').rgb
+    assert_equal(w, Color('white'))
 
     # warnings and errors
     assert_raises(ValueError, Color, '#ffii00')  # non-hex
@@ -55,9 +63,6 @@ def test_color_interpretation():
     for key in get_color_names():
         assert_true(Color(key))
     assert_raises(ValueError, Color, 'foo')  # unknown color error
-    assert_array_equal(r.rgb.ravel(), (1., 0., 0.))
-    assert_array_equal(r.rgba.ravel(), (1., 0., 0., 1.))
-    assert_array_equal(r.RGBA.ravel(), (255, 0, 0, 255))
 
 
 def test_color_conversion():
