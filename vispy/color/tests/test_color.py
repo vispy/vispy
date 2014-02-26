@@ -16,9 +16,31 @@ def test_color_interpretation():
     r = Color('r')
     print(r)  # test repr
     assert_equal(r, Color('#ff0000'))
+    assert_equal(r, Color('#ff0000ff'))
     assert_equal(r, Color('red'))
     assert_equal(r, Color('red', alpha=1.0))
     assert_equal(Color((1, 0, 0, 0.1)), Color('red', alpha=0.1))
+
+    # handling multiple colors
+    rgb = Color(list('rgb'))
+    print(rgb)  # multi repr
+    assert_array_equal(rgb, Color(np.eye(3)))
+    # complex/annoying case
+    rgb = Color(['r', (0, 1, 0), '#0000ff'])
+    assert_array_equal(rgb, Color(np.eye(3)))
+    assert_raises(RuntimeError, Color, ['r', np.eye(3)])  # can't nest
+
+    # getting/setting properties
+    r = Color('#ff000000')
+    assert_equal(r.alpha, 0)
+    r.alpha = 1.0
+    assert_equal(r, Color('r'))
+    r.rgb = 0, 1, 0
+    assert_equal(r, Color('green'))
+    assert_array_equal(r.rgb.ravel(), (0., 1., 0.))
+    r.RGB = 255, 0, 0
+    assert_equal(r, Color('r'))
+    assert_array_equal(r.RGB.ravel(), (255, 0, 0))
 
     # warnings and errors
     assert_raises(ValueError, Color, '#ffii00')  # non-hex
@@ -33,18 +55,9 @@ def test_color_interpretation():
     for key in get_color_names():
         assert_true(Color(key))
     assert_raises(ValueError, Color, 'foo')  # unknown color error
-    assert_array_equal(r.rgb[0], (1., 0., 0.))
-    assert_array_equal(r.rgba[0], (1., 0., 0., 1.))
-    assert_array_equal(r.RGBA[0], (255, 0, 0, 255))
-
-    # multiple colors
-    rgb = Color(list('rgb'))
-    print(rgb)  # multi repr
-    assert_array_equal(rgb, Color(np.eye(3)))
-    # complex/annoying case
-    rgb = Color(['r', (0, 1, 0), '#0000ff'])
-    assert_array_equal(rgb, Color(np.eye(3)))
-    assert_raises(RuntimeError, Color, ['r', np.eye(3)])  # can't nest
+    assert_array_equal(r.rgb.ravel(), (1., 0., 0.))
+    assert_array_equal(r.rgba.ravel(), (1., 0., 0., 1.))
+    assert_array_equal(r.RGBA.ravel(), (255, 0, 0, 255))
 
 
 def test_color_conversion():

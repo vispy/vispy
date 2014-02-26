@@ -19,16 +19,17 @@ def get_color_names():
     return list(_color_dict.keys())
 
 
-def _user_to_rgba(color, alpha):
+def _user_to_rgba(color, alpha=None):
     """Convert colors from user form to RGBA array"""
     if isinstance(color, string_types):
         if color.startswith('#'):
             # hex color
             color = color[1:]
-            if len(color) != 6:
-                raise ValueError('Hex color must have 6 elements '
-                                    'following the # sign')
-            color = [int(color[i:i+2], 16) / 255. for i in range(0, 5, 2)]
+            lc = len(color)
+            if lc not in (6, 8):
+                raise ValueError('Hex color must have exactly six or eight '
+                                 'elements following the # sign')
+            color = [int(color[i:i+2], 16) / 255. for i in range(0, lc, 2)]
         else:
             # named color
             if color not in _color_dict:
@@ -54,7 +55,7 @@ def _user_to_rgba(color, alpha):
         raise ValueError('color must have three or four elements')
     if color.shape[1] == 3:
         color = np.concatenate((color, np.ones((color.shape[0], 1))),
-                                axis=1)
+                               axis=1)
     if alpha is not None:
         color[:, 3] = alpha
     return color
@@ -83,6 +84,7 @@ class Color(object):
         if self._rgba is None:
             self._rgba = val
             return
+        self._rgba = _user_to_rgba(val)
 
     @property
     def rgb(self):
@@ -104,6 +106,30 @@ class Color(object):
     def RGBA(self):
         return (self._rgba * 255).astype(int)
 
+    @RGBA.setter
+    def RGBA(self, val):
+        # need to convert to normalized float
+        val = np.atleast_1d(val).astype(np.float64) / 255
+        return self._set_rgba(val)
+
+    @property
+    def RGB(self):
+        return (self._rgba[:, :3] * 255).astype(int)
+
+    @RGB.setter
+    def RGB(self, val):
+        # need to convert to normalized float
+        val = np.atleast_1d(val).astype(np.float64) / 255
+        return self._set_rgba(val)
+
+    @property
+    def alpha(self):
+        return self._rgba[:, 3]
+
+    @alpha.setter
+    def alpha(self, val):
+        self._rgba[:, 3] = val
+
     def copy(self):
         """Return a copy of the color"""
         return Color(self)
@@ -123,12 +149,14 @@ class Color(object):
         return np.array_equal(self._rgba, other._rgba)
 
 
-# This is used by color functions to translate strings to colors
-_color_dict = dict(
+# This is used by color functions to translate user strings to colors
+_color_dict = dict(black=(0, 0, 0),
+                   white=(1, 1, 1),
+                   gray=(0.5, 0.5, 0.5),
                    r=(1, 0, 0),
                    g=(0, 1, 0),
                    b=(0, 0, 1),
                    red=(1, 0, 0),
-                   blue=(0, 1, 0),
-                   green=(0, 0, 1),
+                   green=(0, 1, 0),
+                   blue=(0, 0, 1),
                    )
