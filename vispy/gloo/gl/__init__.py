@@ -43,7 +43,8 @@ def use(target='desktop'):
     * webgl - Send the GL commands to the browser.
 
     """
-
+    target = target or 'desktop'
+    
     # Get options
     target, _, options = target.partition(' ')
     debug = config['gl_debug'] or ('debug' in options)
