@@ -218,8 +218,7 @@ def _lab_to_rgb(labs):
         fZ = fY - b / 200
         Z = fZ ** 3 if fZ > T2 else (fZ - 16. / 116.) / 7.787
 
-        rgb = np.dot(_xyz2rgb, [X, Y, Z])
-        rgb = np.minimum(np.maximum(rgb, 0), 1)
+        rgb = np.clip(np.dot(_xyz2rgb, [X, Y, Z]), 0, 1)
         rgbs.append(rgb)
     rgbs = np.array(rgbs, dtype=np.float64)
     if n_dim == 4:
@@ -264,20 +263,13 @@ class Color(object):
         >>>
     """
     def __init__(self, color=(0., 0., 0., 1.), alpha=None):
-        """Parse input type"""
-        self._rgba = None
+        """Parse input type, and set attribute"""
         self.rgba = _user_to_rgba(color, alpha=alpha)
 
     ###########################################################################
     # Builtins and utilities
-    def _set_rgba(self, val):
-        if self._rgba is None:
-            self._rgba = val
-            return
-        self._rgba = _user_to_rgba(val)
-
     def copy(self):
-        """Return a copy of the color"""
+        """Return a copy of the Color instance"""
         return Color(self)
 
     def __len__(self):
@@ -295,22 +287,24 @@ class Color(object):
         return np.array_equal(self._rgba, other._rgba)
 
     ###########################################################################
-    # RGB
-    @property
-    def rgb(self):
-        return self._rgba[:, :3].copy()
-
-    @rgb.setter
-    def rgb(self, val):
-        self._set_rgba(val)
-
+    # RGB(A)
     @property
     def rgba(self):
         return self._rgba.copy()
 
     @rgba.setter
     def rgba(self, val):
-        return self._set_rgba(val)
+        """Note: all other attribute sets get routed here!"""
+        # This method is meant to do the heavy lifting of setting data
+        self._rgba = _user_to_rgba(val)
+
+    @property
+    def rgb(self):
+        return self._rgba[:, :3].copy()
+
+    @rgb.setter
+    def rgb(self, val):
+        self.rgba = val
 
     @property
     def RGBA(self):
@@ -320,7 +314,7 @@ class Color(object):
     def RGBA(self, val):
         # need to convert to normalized float
         val = np.atleast_1d(val).astype(np.float64) / 255
-        return self._set_rgba(val)
+        self.rgba = val
 
     @property
     def RGB(self):
@@ -330,7 +324,7 @@ class Color(object):
     def RGB(self, val):
         # need to convert to normalized float
         val = np.atleast_1d(val).astype(np.float64) / 255.
-        return self._set_rgba(val)
+        self.rgba = val
 
     @property
     def alpha(self):
@@ -348,7 +342,7 @@ class Color(object):
 
     @hsv.setter
     def hsv(self, val):
-        return self._set_rgba(_hsv_to_rgb(val))
+        self.rgba = _hsv_to_rgb(val)
 
     @property
     def value(self):
@@ -362,7 +356,7 @@ class Color(object):
             logger.warn('value will be clipped between 0 and 1')
         val = np.clip(val, 0, 1)
         hsv[:, 2] = val
-        return self._set_rgba(_hsv_to_rgb(hsv))
+        self.rgba = _hsv_to_rgb(hsv)
 
     def lighten(self):
         """Lighten the color"""
@@ -382,7 +376,7 @@ class Color(object):
 
     @lab.setter
     def lab(self, val):
-        return self._set_rgba(_lab_to_rgb(val))
+        self.rgba = _lab_to_rgb(val)
 
 
 # This is used by color functions to translate user strings to colors
