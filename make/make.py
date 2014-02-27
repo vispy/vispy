@@ -148,17 +148,23 @@ class Maker:
 
     def test(self, arg):
         """ Run all tests. """
-        self.test_nose(arg)
-        self.test_flake(arg)
+        self.nose(arg)
+        self.flake(arg)
 
-    def test_nose(self, arg):
+    def nose(self, arg):
         """ Run all unit tests using nose. """
         os.chdir(ROOT_DIR)
+        # Clear coverage: rm -f .coverage
+        try:
+            os.remove('.coverage')
+        except OSError:  # FileNotFoundError not on py 2.x
+            pass
+        # Test
         sys.argv[1:] = []
         import nose
         nose.run()
 
-    def test_flake(self, arg):
+    def flake(self, arg):
         """ Run flake8 to find style inconsistencies. """
         os.chdir(ROOT_DIR)
         sys.argv[1:] = ['vispy', 'examples', 'make']
