@@ -125,10 +125,10 @@ def check_error(when='periodic check'):
 
     errors = []
     while True:
-        e = glGetError()
-        if e == GL_NO_ERROR:
+        err = glGetError()
+        if err == GL_NO_ERROR:
             break
-        errors.append(e)
+        errors.append(err)
     if errors:
         msg = ', '.join([repr(ENUM_MAP.get(e, e)) for e in errors])
         err = RuntimeError('OpenGL got errors (%s): %s' % (when, msg))

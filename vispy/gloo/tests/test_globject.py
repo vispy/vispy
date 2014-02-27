@@ -17,10 +17,12 @@ def _dummy1(*args, **kwargs):
     """
     return 1
 
+
 def _dummy0(*args, **kwargs):
     """ Dummy method that returns 0.
     """
     return 0
+
 
 def _dummy_glGetProgramParameter(handle, mode):
     if mode in (gl.GL_ACTIVE_ATTRIBUTES, gl.GL_ACTIVE_UNIFORMS):
@@ -39,7 +41,7 @@ class GLObjectTest(unittest.TestCase):
         #print('Dummyfying gl namespace.')
         for key in dir(gl):
             if key.startswith('gl'):
-                if key=='glGetError':
+                if key == 'glGetError':
                     setattr(gl, key, _dummy0)
                 else:
                     setattr(gl, key, _dummy1)
@@ -98,7 +100,7 @@ class GLObjectTest(unittest.TestCase):
         # Some data that we need
         data = np.zeros(100, np.uint16)
         im2 = np.zeros((50, 50), np.uint16)
-        im3 = np.zeros((20, 20, 20), np.uint16)
+        #im3 = np.zeros((20, 20, 20), np.uint16)
         shaders = gloo.VertexShader("x"), gloo.FragmentShader("x")
 
         items = [
