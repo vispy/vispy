@@ -74,14 +74,14 @@ class Canvas(vispy.app.Canvas):
         
         dasher_support = Function("""
             void $dashSup() {
-                $output = $distance_attr;
+                $output_dist = $distance_attr;
             }
             """)
         
         dasher_support['distance_attr'] = ('attribute', 'float', gloo.VertexBuffer(dist))
-        dasher_support['output'] = ('varying', 'float')
+        dasher_support['output_dist'] = ('varying', 'float')
         dasher['dash_len'] = ('uniform', 'float', 20.)
-        dasher['distance'] = dasher_support['output']
+        dasher['distance'] = dasher_support['output_dist']
         self.line.add_fragment_callback(dasher)
         self.line.add_vertex_callback(dasher_support)
         
