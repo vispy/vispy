@@ -10,34 +10,34 @@ from vispy import app
 
 
 def test_functionality_desktop():
-    """ Test that desktop GL backend functions appropriately. """ 
+    """ Test that desktop GL backend functions appropriately. """
     _test_functonality('desktop')
 
 
 def test_functionality_angle():
-    """ Test that angle GL backend functions appropriately. """ 
+    """ Test that angle GL backend functions appropriately. """
     if True:
         raise SkipTest('Skip Angle functionality test for now.')
     if sys.platform.startswith('win'):
         raise SkipTest('Can only test angle functionality on Windows.')
-    
+
     _test_functonality('angle')
 
 
 def _test_functonality(backend):
     """ Create app and canvas so we have a context. Then run tests.
     """
-    
+
     # use the backend
     gl.use(backend)
-    
+
     # Create app and canvas to get an OpenGL context
     app.create()
     c = app.Canvas()
     c.show()
     app.process_events()
     app.process_events()
-    
+
     try:
         _test_setting_parameters()
         _test_enabling_disabling()
@@ -90,9 +90,9 @@ def _test_setting_stuff():
 
 
 def _test_object_creation_and_deletion():
-    
+
     # Stuff that is originally glGenX
-    
+
     # Create/delete texture
     assert_equal(gl.glIsTexture(1), False)
     handle = gl.glCreateTexture()
@@ -100,7 +100,7 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsTexture(handle), True)
     gl.glDeleteTexture(handle)
     assert_equal(gl.glIsTexture(handle), False)
-    
+
     # Create/delete buffer
     assert_equal(gl.glIsBuffer(1), False)
     handle = gl.glCreateBuffer()
@@ -108,7 +108,7 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsBuffer(handle), True)
     gl.glDeleteBuffer(handle)
     assert_equal(gl.glIsBuffer(handle), False)
-    
+
     # Create/delete framebuffer
     assert_equal(gl.glIsFramebuffer(1), False)
     handle = gl.glCreateFramebuffer()
@@ -116,7 +116,7 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsFramebuffer(handle), True)
     gl.glDeleteFramebuffer(handle)
     assert_equal(gl.glIsFramebuffer(handle), False)
-    
+
     # Create/delete renderbuffer
     assert_equal(gl.glIsRenderbuffer(1), False)
     handle = gl.glCreateRenderbuffer()
@@ -124,17 +124,16 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsRenderbuffer(handle), True)
     gl.glDeleteRenderbuffer(handle)
     assert_equal(gl.glIsRenderbuffer(handle), False)
-    
-    
+
     # Stuff that is originally called glCreate
-    
+
     # Create/delete program
     assert_equal(gl.glIsProgram(1), False)
     handle = gl.glCreateProgram()
     assert_equal(gl.glIsProgram(handle), True)
     gl.glDeleteProgram(handle)
     assert_equal(gl.glIsProgram(handle), False)
-    
+
     # Create/delete shader
     assert_equal(gl.glIsShader(1), False)
     handle = gl.glCreateShader(gl.GL_VERTEX_SHADER)

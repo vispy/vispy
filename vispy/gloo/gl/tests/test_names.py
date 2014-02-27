@@ -3,6 +3,18 @@ from nose.tools import assert_equal
 from vispy.gloo import gl
 
 
+class _DummyObject:
+    """ To be able to import angle even in Linux, so that we can test the
+    names defined inside.
+    """
+    def LoadLibrary(self, fname):
+        return _DummyObject()
+
+    def __getattr__(self, name):
+        setattr(self, name, self.__class__())
+        return getattr(self, name)
+
+
 def _test_function_names(mod):
     fnames = set([name for name in dir(mod) if name.startswith('gl')])
     assert_equal(function_names.difference(fnames), set())
@@ -26,18 +38,12 @@ def test_angle():
     """ Angle backend should have all ES 2.0 names. No more, no less. """
     # Import. Install a dummy lib so that at least we can import angle.
     try:
-        from vispy.gloo.gl import angle
+        from vispy.gloo.gl import angle  # noqa
     except Exception:
         import ctypes
-        class _DummyObject:
-            def LoadLibrary(self, fname):
-                return _DummyObject()
-            def __getattr__(self, name):
-                setattr(self, name, self.__class__())
-                return getattr(self, name)
         ctypes.windll = _DummyObject()
-    from vispy.gloo.gl import angle
-    
+    from vispy.gloo.gl import angle  # noqa
+
     # Test
     _test_function_names(angle)
     _test_contant_names(angle)
@@ -64,7 +70,7 @@ def _main():
     test_destop()
     test_angle()
     test_pyopengl()
-    
+
 
 # Note: I took these names below from _main and _constants, which is a
 # possible cause for error.
@@ -202,7 +208,6 @@ function_names = set([n for n in function_names if n])
 constant_names = [n.strip() for n in constant_names.split(' ')]
 constant_names = set([n for n in constant_names if n])
 
-    
+
 if __name__ == '__main__':
     _main()
-    
