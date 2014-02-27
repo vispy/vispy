@@ -221,7 +221,7 @@ _lib.glDeleteFramebuffers.argtypes = ctypes.c_int, ctypes.POINTER(ctypes.c_uint)
 # void = glDeleteFramebuffers(GLsizei n, GLuint* framebuffers)
 def glDeleteFramebuffer(framebuffer):
     n = 1
-    buffers = (ctypes.c_uint*n)(framebuffer)
+    framebuffers = (ctypes.c_uint*n)(framebuffer)
     res = _lib.glDeleteFramebuffers(n, framebuffers)
 
 
@@ -235,7 +235,7 @@ _lib.glDeleteRenderbuffers.argtypes = ctypes.c_int, ctypes.POINTER(ctypes.c_uint
 # void = glDeleteRenderbuffers(GLsizei n, GLuint* renderbuffers)
 def glDeleteRenderbuffer(renderbuffer):
     n = 1
-    buffers = (ctypes.c_uint*n)(renderbuffer)
+    renderbuffers = (ctypes.c_uint*n)(renderbuffer)
     res = _lib.glDeleteRenderbuffers(n, renderbuffers)
 
 
@@ -249,7 +249,7 @@ _lib.glDeleteTextures.argtypes = ctypes.c_int, ctypes.POINTER(ctypes.c_uint),
 # void = glDeleteTextures(GLsizei n, GLuint* textures)
 def glDeleteTexture(texture):
     n = 1
-    buffers = (ctypes.c_uint*n)(texture)
+    textures = (ctypes.c_uint*n)(texture)
     res = _lib.glDeleteTextures(n, textures)
 
 

@@ -13,110 +13,110 @@ from .desktop import _lib, _get_gl_func
 # void = glActiveTexture(GLenum texture)
 def glActiveTexture(texture):
     try:
-        func = glActiveTexture._native
+        nativefunc = glActiveTexture._native
     except AttributeError:
-        func = glActiveTexture._native = _get_gl_func("glActiveTexture", None, (ctypes.c_uint,))
-    func(texture)
+        nativefunc = glActiveTexture._native = _get_gl_func("glActiveTexture", None, (ctypes.c_uint,))
+    nativefunc(texture)
 
 
 # void = glAttachShader(GLuint program, GLuint shader)
 def glAttachShader(program, shader):
     try:
-        func = glAttachShader._native
+        nativefunc = glAttachShader._native
     except AttributeError:
-        func = glAttachShader._native = _get_gl_func("glAttachShader", None, (ctypes.c_uint, ctypes.c_uint,))
-    func(program, shader)
+        nativefunc = glAttachShader._native = _get_gl_func("glAttachShader", None, (ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(program, shader)
 
 
 # void = glBindAttribLocation(GLuint program, GLuint index, GLchar* name)
 def glBindAttribLocation(program, index, name):
     name = ctypes.c_char_p(name.encode('utf-8'))
     try:
-        func = glBindAttribLocation._native
+        nativefunc = glBindAttribLocation._native
     except AttributeError:
-        func = glBindAttribLocation._native = _get_gl_func("glBindAttribLocation", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_char_p,))
-    res = func(program, index, name)
+        nativefunc = glBindAttribLocation._native = _get_gl_func("glBindAttribLocation", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_char_p,))
+    res = nativefunc(program, index, name)
 
 
 # void = glBindBuffer(GLenum target, GLuint buffer)
 def glBindBuffer(target, buffer):
     try:
-        func = glBindBuffer._native
+        nativefunc = glBindBuffer._native
     except AttributeError:
-        func = glBindBuffer._native = _get_gl_func("glBindBuffer", None, (ctypes.c_uint, ctypes.c_uint,))
-    func(target, buffer)
+        nativefunc = glBindBuffer._native = _get_gl_func("glBindBuffer", None, (ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(target, buffer)
 
 
 # void = glBindFramebuffer(GLenum target, GLuint framebuffer)
 def glBindFramebuffer(target, framebuffer):
     try:
-        func = glBindFramebuffer._native
+        nativefunc = glBindFramebuffer._native
     except AttributeError:
-        func = glBindFramebuffer._native = _get_gl_func("glBindFramebuffer", None, (ctypes.c_uint, ctypes.c_uint,))
-    func(target, framebuffer)
+        nativefunc = glBindFramebuffer._native = _get_gl_func("glBindFramebuffer", None, (ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(target, framebuffer)
 
 
 # void = glBindRenderbuffer(GLenum target, GLuint renderbuffer)
 def glBindRenderbuffer(target, renderbuffer):
     try:
-        func = glBindRenderbuffer._native
+        nativefunc = glBindRenderbuffer._native
     except AttributeError:
-        func = glBindRenderbuffer._native = _get_gl_func("glBindRenderbuffer", None, (ctypes.c_uint, ctypes.c_uint,))
-    func(target, renderbuffer)
+        nativefunc = glBindRenderbuffer._native = _get_gl_func("glBindRenderbuffer", None, (ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(target, renderbuffer)
 
 
 # void = glBindTexture(GLenum target, GLuint texture)
 def glBindTexture(target, texture):
     try:
-        func = glBindTexture._native
+        nativefunc = glBindTexture._native
     except AttributeError:
-        func = glBindTexture._native = _get_gl_func("glBindTexture", None, (ctypes.c_uint, ctypes.c_uint,))
-    func(target, texture)
+        nativefunc = glBindTexture._native = _get_gl_func("glBindTexture", None, (ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(target, texture)
 
 
 # void = glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 def glBlendColor(red, green, blue, alpha):
     try:
-        func = glBlendColor._native
+        nativefunc = glBlendColor._native
     except AttributeError:
-        func = glBlendColor._native = _get_gl_func("glBlendColor", None, (ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
-    func(red, green, blue, alpha)
+        nativefunc = glBlendColor._native = _get_gl_func("glBlendColor", None, (ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
+    nativefunc(red, green, blue, alpha)
 
 
 # void = glBlendEquation(GLenum mode)
 def glBlendEquation(mode):
     try:
-        func = glBlendEquation._native
+        nativefunc = glBlendEquation._native
     except AttributeError:
-        func = glBlendEquation._native = _get_gl_func("glBlendEquation", None, (ctypes.c_uint,))
-    func(mode)
+        nativefunc = glBlendEquation._native = _get_gl_func("glBlendEquation", None, (ctypes.c_uint,))
+    nativefunc(mode)
 
 
 # void = glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 def glBlendEquationSeparate(modeRGB, modeAlpha):
     try:
-        func = glBlendEquationSeparate._native
+        nativefunc = glBlendEquationSeparate._native
     except AttributeError:
-        func = glBlendEquationSeparate._native = _get_gl_func("glBlendEquationSeparate", None, (ctypes.c_uint, ctypes.c_uint,))
-    func(modeRGB, modeAlpha)
+        nativefunc = glBlendEquationSeparate._native = _get_gl_func("glBlendEquationSeparate", None, (ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(modeRGB, modeAlpha)
 
 
 # void = glBlendFunc(GLenum sfactor, GLenum dfactor)
 def glBlendFunc(sfactor, dfactor):
     try:
-        func = glBlendFunc._native
+        nativefunc = glBlendFunc._native
     except AttributeError:
-        func = glBlendFunc._native = _get_gl_func("glBlendFunc", None, (ctypes.c_uint, ctypes.c_uint,))
-    func(sfactor, dfactor)
+        nativefunc = glBlendFunc._native = _get_gl_func("glBlendFunc", None, (ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(sfactor, dfactor)
 
 
 # void = glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
 def glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha):
     try:
-        func = glBlendFuncSeparate._native
+        nativefunc = glBlendFuncSeparate._native
     except AttributeError:
-        func = glBlendFuncSeparate._native = _get_gl_func("glBlendFuncSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
-    func(srcRGB, dstRGB, srcAlpha, dstAlpha)
+        nativefunc = glBlendFuncSeparate._native = _get_gl_func("glBlendFuncSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(srcRGB, dstRGB, srcAlpha, dstAlpha)
 
 
 # void = glBufferData(GLenum target, GLsizeiptr size, GLvoid* data, GLenum usage)
@@ -133,10 +133,10 @@ def glBufferData(target, data, usage):
         size = data_.nbytes
         data = data_.ctypes.data
     try:
-        func = glBufferData._native
+        nativefunc = glBufferData._native
     except AttributeError:
-        func = glBufferData._native = _get_gl_func("glBufferData", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_void_p, ctypes.c_uint,))
-    res = func(target, size, data, usage)
+        nativefunc = glBufferData._native = _get_gl_func("glBufferData", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_void_p, ctypes.c_uint,))
+    res = nativefunc(target, size, data, usage)
 
 
 # void = glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, GLvoid* data)
@@ -147,73 +147,73 @@ def glBufferSubData(target, offset, data):
     size = data_.nbytes
     data = data_.ctypes.data
     try:
-        func = glBufferSubData._native
+        nativefunc = glBufferSubData._native
     except AttributeError:
-        func = glBufferSubData._native = _get_gl_func("glBufferSubData", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_void_p,))
-    res = func(target, offset, size, data)
+        nativefunc = glBufferSubData._native = _get_gl_func("glBufferSubData", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_void_p,))
+    res = nativefunc(target, offset, size, data)
 
 
 # GLenum = glCheckFramebufferStatus(GLenum target)
 def glCheckFramebufferStatus(target):
     try:
-        func = glCheckFramebufferStatus._native
+        nativefunc = glCheckFramebufferStatus._native
     except AttributeError:
-        func = glCheckFramebufferStatus._native = _get_gl_func("glCheckFramebufferStatus", ctypes.c_uint, (ctypes.c_uint,))
-    return func(target)
+        nativefunc = glCheckFramebufferStatus._native = _get_gl_func("glCheckFramebufferStatus", ctypes.c_uint, (ctypes.c_uint,))
+    return nativefunc(target)
 
 
 # void = glClear(GLbitfield mask)
 def glClear(mask):
     try:
-        func = glClear._native
+        nativefunc = glClear._native
     except AttributeError:
-        func = glClear._native = _get_gl_func("glClear", None, (ctypes.c_uint,))
-    func(mask)
+        nativefunc = glClear._native = _get_gl_func("glClear", None, (ctypes.c_uint,))
+    nativefunc(mask)
 
 
 # void = glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 def glClearColor(red, green, blue, alpha):
     try:
-        func = glClearColor._native
+        nativefunc = glClearColor._native
     except AttributeError:
-        func = glClearColor._native = _get_gl_func("glClearColor", None, (ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
-    func(red, green, blue, alpha)
+        nativefunc = glClearColor._native = _get_gl_func("glClearColor", None, (ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
+    nativefunc(red, green, blue, alpha)
 
 
 # void = glClearDepthf(GLclampf depth)
 def glClearDepth(depth):
     try:
-        func = glClearDepth._native
+        nativefunc = glClearDepth._native
     except AttributeError:
-        func = glClearDepth._native = _get_gl_func("glClearDepthf", None, (ctypes.c_float,))
-    func(depth)
+        nativefunc = glClearDepth._native = _get_gl_func("glClearDepthf", None, (ctypes.c_float,))
+    nativefunc(depth)
 
 
 # void = glClearStencil(GLint s)
 def glClearStencil(s):
     try:
-        func = glClearStencil._native
+        nativefunc = glClearStencil._native
     except AttributeError:
-        func = glClearStencil._native = _get_gl_func("glClearStencil", None, (ctypes.c_int,))
-    func(s)
+        nativefunc = glClearStencil._native = _get_gl_func("glClearStencil", None, (ctypes.c_int,))
+    nativefunc(s)
 
 
 # void = glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 def glColorMask(red, green, blue, alpha):
     try:
-        func = glColorMask._native
+        nativefunc = glColorMask._native
     except AttributeError:
-        func = glColorMask._native = _get_gl_func("glColorMask", None, (ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool,))
-    func(red, green, blue, alpha)
+        nativefunc = glColorMask._native = _get_gl_func("glColorMask", None, (ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool,))
+    nativefunc(red, green, blue, alpha)
 
 
 # void = glCompileShader(GLuint shader)
 def glCompileShader(shader):
     try:
-        func = glCompileShader._native
+        nativefunc = glCompileShader._native
     except AttributeError:
-        func = glCompileShader._native = _get_gl_func("glCompileShader", None, (ctypes.c_uint,))
-    func(shader)
+        nativefunc = glCompileShader._native = _get_gl_func("glCompileShader", None, (ctypes.c_uint,))
+    nativefunc(shader)
 
 
 # void = glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, GLvoid* data)
@@ -225,10 +225,10 @@ def glCompressedTexImage2D(target, level, internalformat, width, height, border,
     size = data_.size
     data = data_.ctypes.data
     try:
-        func = glCompressedTexImage2D._native
+        nativefunc = glCompressedTexImage2D._native
     except AttributeError:
-        func = glCompressedTexImage2D._native = _get_gl_func("glCompressedTexImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p,))
-    res = func(target, level, internalformat, width, height, border, imageSize, data)
+        nativefunc = glCompressedTexImage2D._native = _get_gl_func("glCompressedTexImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p,))
+    res = nativefunc(target, level, internalformat, width, height, border, imageSize, data)
 
 
 # void = glCompressedTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, GLvoid* data)
@@ -239,55 +239,55 @@ def glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, fo
     size = data_.size
     data = data_.ctypes.data
     try:
-        func = glCompressedTexSubImage2D._native
+        nativefunc = glCompressedTexSubImage2D._native
     except AttributeError:
-        func = glCompressedTexSubImage2D._native = _get_gl_func("glCompressedTexSubImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint, ctypes.c_int, ctypes.c_void_p,))
-    res = func(target, level, xoffset, yoffset, width, height, format, imageSize, data)
+        nativefunc = glCompressedTexSubImage2D._native = _get_gl_func("glCompressedTexSubImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint, ctypes.c_int, ctypes.c_void_p,))
+    res = nativefunc(target, level, xoffset, yoffset, width, height, format, imageSize, data)
 
 
 # void = glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
 def glCopyTexImage2D(target, level, internalformat, x, y, width, height, border):
     try:
-        func = glCopyTexImage2D._native
+        nativefunc = glCopyTexImage2D._native
     except AttributeError:
-        func = glCopyTexImage2D._native = _get_gl_func("glCopyTexImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
-    func(target, level, internalformat, x, y, width, height, border)
+        nativefunc = glCopyTexImage2D._native = _get_gl_func("glCopyTexImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
+    nativefunc(target, level, internalformat, x, y, width, height, border)
 
 
 # void = glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
 def glCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height):
     try:
-        func = glCopyTexSubImage2D._native
+        nativefunc = glCopyTexSubImage2D._native
     except AttributeError:
-        func = glCopyTexSubImage2D._native = _get_gl_func("glCopyTexSubImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
-    func(target, level, xoffset, yoffset, x, y, width, height)
+        nativefunc = glCopyTexSubImage2D._native = _get_gl_func("glCopyTexSubImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
+    nativefunc(target, level, xoffset, yoffset, x, y, width, height)
 
 
 # GLuint = glCreateProgram()
 def glCreateProgram():
     try:
-        func = glCreateProgram._native
+        nativefunc = glCreateProgram._native
     except AttributeError:
-        func = glCreateProgram._native = _get_gl_func("glCreateProgram", ctypes.c_uint, ())
-    return func()
+        nativefunc = glCreateProgram._native = _get_gl_func("glCreateProgram", ctypes.c_uint, ())
+    return nativefunc()
 
 
 # GLuint = glCreateShader(GLenum type)
 def glCreateShader(type):
     try:
-        func = glCreateShader._native
+        nativefunc = glCreateShader._native
     except AttributeError:
-        func = glCreateShader._native = _get_gl_func("glCreateShader", ctypes.c_uint, (ctypes.c_uint,))
-    return func(type)
+        nativefunc = glCreateShader._native = _get_gl_func("glCreateShader", ctypes.c_uint, (ctypes.c_uint,))
+    return nativefunc(type)
 
 
 # void = glCullFace(GLenum mode)
 def glCullFace(mode):
     try:
-        func = glCullFace._native
+        nativefunc = glCullFace._native
     except AttributeError:
-        func = glCullFace._native = _get_gl_func("glCullFace", None, (ctypes.c_uint,))
-    func(mode)
+        nativefunc = glCullFace._native = _get_gl_func("glCullFace", None, (ctypes.c_uint,))
+    nativefunc(mode)
 
 
 # void = glDeleteBuffers(GLsizei n, GLuint* buffers)
@@ -295,124 +295,124 @@ def glDeleteBuffer(buffer):
     n = 1
     buffers = (ctypes.c_uint*n)(buffer)
     try:
-        func = glDeleteBuffer._native
+        nativefunc = glDeleteBuffer._native
     except AttributeError:
-        func = glDeleteBuffer._native = _get_gl_func("glDeleteBuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
-    res = func(n, buffers)
+        nativefunc = glDeleteBuffer._native = _get_gl_func("glDeleteBuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
+    res = nativefunc(n, buffers)
 
 
 # void = glDeleteFramebuffers(GLsizei n, GLuint* framebuffers)
 def glDeleteFramebuffer(framebuffer):
     n = 1
-    buffers = (ctypes.c_uint*n)(framebuffer)
+    framebuffers = (ctypes.c_uint*n)(framebuffer)
     try:
-        func = glDeleteFramebuffer._native
+        nativefunc = glDeleteFramebuffer._native
     except AttributeError:
-        func = glDeleteFramebuffer._native = _get_gl_func("glDeleteFramebuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
-    res = func(n, framebuffers)
+        nativefunc = glDeleteFramebuffer._native = _get_gl_func("glDeleteFramebuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
+    res = nativefunc(n, framebuffers)
 
 
 # void = glDeleteProgram(GLuint program)
 def glDeleteProgram(program):
     try:
-        func = glDeleteProgram._native
+        nativefunc = glDeleteProgram._native
     except AttributeError:
-        func = glDeleteProgram._native = _get_gl_func("glDeleteProgram", None, (ctypes.c_uint,))
-    func(program)
+        nativefunc = glDeleteProgram._native = _get_gl_func("glDeleteProgram", None, (ctypes.c_uint,))
+    nativefunc(program)
 
 
 # void = glDeleteRenderbuffers(GLsizei n, GLuint* renderbuffers)
 def glDeleteRenderbuffer(renderbuffer):
     n = 1
-    buffers = (ctypes.c_uint*n)(renderbuffer)
+    renderbuffers = (ctypes.c_uint*n)(renderbuffer)
     try:
-        func = glDeleteRenderbuffer._native
+        nativefunc = glDeleteRenderbuffer._native
     except AttributeError:
-        func = glDeleteRenderbuffer._native = _get_gl_func("glDeleteRenderbuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
-    res = func(n, renderbuffers)
+        nativefunc = glDeleteRenderbuffer._native = _get_gl_func("glDeleteRenderbuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
+    res = nativefunc(n, renderbuffers)
 
 
 # void = glDeleteShader(GLuint shader)
 def glDeleteShader(shader):
     try:
-        func = glDeleteShader._native
+        nativefunc = glDeleteShader._native
     except AttributeError:
-        func = glDeleteShader._native = _get_gl_func("glDeleteShader", None, (ctypes.c_uint,))
-    func(shader)
+        nativefunc = glDeleteShader._native = _get_gl_func("glDeleteShader", None, (ctypes.c_uint,))
+    nativefunc(shader)
 
 
 # void = glDeleteTextures(GLsizei n, GLuint* textures)
 def glDeleteTexture(texture):
     n = 1
-    buffers = (ctypes.c_uint*n)(texture)
+    textures = (ctypes.c_uint*n)(texture)
     try:
-        func = glDeleteTexture._native
+        nativefunc = glDeleteTexture._native
     except AttributeError:
-        func = glDeleteTexture._native = _get_gl_func("glDeleteTextures", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
-    res = func(n, textures)
+        nativefunc = glDeleteTexture._native = _get_gl_func("glDeleteTextures", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
+    res = nativefunc(n, textures)
 
 
 # void = glDepthFunc(GLenum func)
 def glDepthFunc(func):
     try:
-        func = glDepthFunc._native
+        nativefunc = glDepthFunc._native
     except AttributeError:
-        func = glDepthFunc._native = _get_gl_func("glDepthFunc", None, (ctypes.c_uint,))
-    func(func)
+        nativefunc = glDepthFunc._native = _get_gl_func("glDepthFunc", None, (ctypes.c_uint,))
+    nativefunc(func)
 
 
 # void = glDepthMask(GLboolean flag)
 def glDepthMask(flag):
     try:
-        func = glDepthMask._native
+        nativefunc = glDepthMask._native
     except AttributeError:
-        func = glDepthMask._native = _get_gl_func("glDepthMask", None, (ctypes.c_bool,))
-    func(flag)
+        nativefunc = glDepthMask._native = _get_gl_func("glDepthMask", None, (ctypes.c_bool,))
+    nativefunc(flag)
 
 
 # void = glDepthRangef(GLclampf zNear, GLclampf zFar)
 def glDepthRange(zNear, zFar):
     try:
-        func = glDepthRange._native
+        nativefunc = glDepthRange._native
     except AttributeError:
-        func = glDepthRange._native = _get_gl_func("glDepthRangef", None, (ctypes.c_float, ctypes.c_float,))
-    func(zNear, zFar)
+        nativefunc = glDepthRange._native = _get_gl_func("glDepthRangef", None, (ctypes.c_float, ctypes.c_float,))
+    nativefunc(zNear, zFar)
 
 
 # void = glDetachShader(GLuint program, GLuint shader)
 def glDetachShader(program, shader):
     try:
-        func = glDetachShader._native
+        nativefunc = glDetachShader._native
     except AttributeError:
-        func = glDetachShader._native = _get_gl_func("glDetachShader", None, (ctypes.c_uint, ctypes.c_uint,))
-    func(program, shader)
+        nativefunc = glDetachShader._native = _get_gl_func("glDetachShader", None, (ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(program, shader)
 
 
 # void = glDisable(GLenum cap)
 def glDisable(cap):
     try:
-        func = glDisable._native
+        nativefunc = glDisable._native
     except AttributeError:
-        func = glDisable._native = _get_gl_func("glDisable", None, (ctypes.c_uint,))
-    func(cap)
+        nativefunc = glDisable._native = _get_gl_func("glDisable", None, (ctypes.c_uint,))
+    nativefunc(cap)
 
 
 # void = glDisableVertexAttribArray(GLuint index)
 def glDisableVertexAttribArray(index):
     try:
-        func = glDisableVertexAttribArray._native
+        nativefunc = glDisableVertexAttribArray._native
     except AttributeError:
-        func = glDisableVertexAttribArray._native = _get_gl_func("glDisableVertexAttribArray", None, (ctypes.c_uint,))
-    func(index)
+        nativefunc = glDisableVertexAttribArray._native = _get_gl_func("glDisableVertexAttribArray", None, (ctypes.c_uint,))
+    nativefunc(index)
 
 
 # void = glDrawArrays(GLenum mode, GLint first, GLsizei count)
 def glDrawArrays(mode, first, count):
     try:
-        func = glDrawArrays._native
+        nativefunc = glDrawArrays._native
     except AttributeError:
-        func = glDrawArrays._native = _get_gl_func("glDrawArrays", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int,))
-    func(mode, first, count)
+        nativefunc = glDrawArrays._native = _get_gl_func("glDrawArrays", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int,))
+    nativefunc(mode, first, count)
 
 
 # void = glDrawElements(GLenum mode, GLsizei count, GLenum type, GLvoid* indices)
@@ -430,73 +430,73 @@ def glDrawElements(mode, count, type, offset):
         offset = offset.ctypes.data
     indices = offset
     try:
-        func = glDrawElements._native
+        nativefunc = glDrawElements._native
     except AttributeError:
-        func = glDrawElements._native = _get_gl_func("glDrawElements", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctypes.c_void_p,))
-    res = func(mode, count, type, indices)
+        nativefunc = glDrawElements._native = _get_gl_func("glDrawElements", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctypes.c_void_p,))
+    res = nativefunc(mode, count, type, indices)
 
 
 # void = glEnable(GLenum cap)
 def glEnable(cap):
     try:
-        func = glEnable._native
+        nativefunc = glEnable._native
     except AttributeError:
-        func = glEnable._native = _get_gl_func("glEnable", None, (ctypes.c_uint,))
-    func(cap)
+        nativefunc = glEnable._native = _get_gl_func("glEnable", None, (ctypes.c_uint,))
+    nativefunc(cap)
 
 
 # void = glEnableVertexAttribArray(GLuint index)
 def glEnableVertexAttribArray(index):
     try:
-        func = glEnableVertexAttribArray._native
+        nativefunc = glEnableVertexAttribArray._native
     except AttributeError:
-        func = glEnableVertexAttribArray._native = _get_gl_func("glEnableVertexAttribArray", None, (ctypes.c_uint,))
-    func(index)
+        nativefunc = glEnableVertexAttribArray._native = _get_gl_func("glEnableVertexAttribArray", None, (ctypes.c_uint,))
+    nativefunc(index)
 
 
 # void = glFinish()
 def glFinish():
     try:
-        func = glFinish._native
+        nativefunc = glFinish._native
     except AttributeError:
-        func = glFinish._native = _get_gl_func("glFinish", None, ())
-    func()
+        nativefunc = glFinish._native = _get_gl_func("glFinish", None, ())
+    nativefunc()
 
 
 # void = glFlush()
 def glFlush():
     try:
-        func = glFlush._native
+        nativefunc = glFlush._native
     except AttributeError:
-        func = glFlush._native = _get_gl_func("glFlush", None, ())
-    func()
+        nativefunc = glFlush._native = _get_gl_func("glFlush", None, ())
+    nativefunc()
 
 
 # void = glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)
 def glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer):
     try:
-        func = glFramebufferRenderbuffer._native
+        nativefunc = glFramebufferRenderbuffer._native
     except AttributeError:
-        func = glFramebufferRenderbuffer._native = _get_gl_func("glFramebufferRenderbuffer", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
-    func(target, attachment, renderbuffertarget, renderbuffer)
+        nativefunc = glFramebufferRenderbuffer._native = _get_gl_func("glFramebufferRenderbuffer", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(target, attachment, renderbuffertarget, renderbuffer)
 
 
 # void = glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
 def glFramebufferTexture2D(target, attachment, textarget, texture, level):
     try:
-        func = glFramebufferTexture2D._native
+        nativefunc = glFramebufferTexture2D._native
     except AttributeError:
-        func = glFramebufferTexture2D._native = _get_gl_func("glFramebufferTexture2D", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_int,))
-    func(target, attachment, textarget, texture, level)
+        nativefunc = glFramebufferTexture2D._native = _get_gl_func("glFramebufferTexture2D", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_int,))
+    nativefunc(target, attachment, textarget, texture, level)
 
 
 # void = glFrontFace(GLenum mode)
 def glFrontFace(mode):
     try:
-        func = glFrontFace._native
+        nativefunc = glFrontFace._native
     except AttributeError:
-        func = glFrontFace._native = _get_gl_func("glFrontFace", None, (ctypes.c_uint,))
-    func(mode)
+        nativefunc = glFrontFace._native = _get_gl_func("glFrontFace", None, (ctypes.c_uint,))
+    nativefunc(mode)
 
 
 # void = glGenBuffers(GLsizei n, GLuint* buffers)
@@ -504,10 +504,10 @@ def glCreateBuffer():
     n = 1
     buffers = (ctypes.c_uint*n)()
     try:
-        func = glCreateBuffer._native
+        nativefunc = glCreateBuffer._native
     except AttributeError:
-        func = glCreateBuffer._native = _get_gl_func("glGenBuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
-    res = func(n, buffers)
+        nativefunc = glCreateBuffer._native = _get_gl_func("glGenBuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
+    res = nativefunc(n, buffers)
     return buffers[0]
 
 
@@ -516,10 +516,10 @@ def glCreateFramebuffer():
     n = 1
     framebuffers = (ctypes.c_uint*n)()
     try:
-        func = glCreateFramebuffer._native
+        nativefunc = glCreateFramebuffer._native
     except AttributeError:
-        func = glCreateFramebuffer._native = _get_gl_func("glGenFramebuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
-    res = func(n, framebuffers)
+        nativefunc = glCreateFramebuffer._native = _get_gl_func("glGenFramebuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
+    res = nativefunc(n, framebuffers)
     return framebuffers[0]
 
 
@@ -528,10 +528,10 @@ def glCreateRenderbuffer():
     n = 1
     renderbuffers = (ctypes.c_uint*n)()
     try:
-        func = glCreateRenderbuffer._native
+        nativefunc = glCreateRenderbuffer._native
     except AttributeError:
-        func = glCreateRenderbuffer._native = _get_gl_func("glGenRenderbuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
-    res = func(n, renderbuffers)
+        nativefunc = glCreateRenderbuffer._native = _get_gl_func("glGenRenderbuffers", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
+    res = nativefunc(n, renderbuffers)
     return renderbuffers[0]
 
 
@@ -540,20 +540,20 @@ def glCreateTexture():
     n = 1
     textures = (ctypes.c_uint*n)()
     try:
-        func = glCreateTexture._native
+        nativefunc = glCreateTexture._native
     except AttributeError:
-        func = glCreateTexture._native = _get_gl_func("glGenTextures", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
-    res = func(n, textures)
+        nativefunc = glCreateTexture._native = _get_gl_func("glGenTextures", None, (ctypes.c_int, ctypes.POINTER(ctypes.c_uint),))
+    res = nativefunc(n, textures)
     return textures[0]
 
 
 # void = glGenerateMipmap(GLenum target)
 def glGenerateMipmap(target):
     try:
-        func = glGenerateMipmap._native
+        nativefunc = glGenerateMipmap._native
     except AttributeError:
-        func = glGenerateMipmap._native = _get_gl_func("glGenerateMipmap", None, (ctypes.c_uint,))
-    func(target)
+        nativefunc = glGenerateMipmap._native = _get_gl_func("glGenerateMipmap", None, (ctypes.c_uint,))
+    nativefunc(target)
 
 
 # void = glGetActiveAttrib(GLuint program, GLuint index, GLsizei bufsize, GLsizei* length, GLint* size, GLenum* type, GLchar* name)
@@ -564,10 +564,10 @@ def glGetActiveAttrib(program, index):
     type = (ctypes.c_uint*1)()
     name = ctypes.create_string_buffer(bufsize)
     try:
-        func = glGetActiveAttrib._native
+        nativefunc = glGetActiveAttrib._native
     except AttributeError:
-        func = glGetActiveAttrib._native = _get_gl_func("glGetActiveAttrib", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_uint), ctypes.c_char_p,))
-    res = func(program, index, bufsize, length, size, type, name)
+        nativefunc = glGetActiveAttrib._native = _get_gl_func("glGetActiveAttrib", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_uint), ctypes.c_char_p,))
+    res = nativefunc(program, index, bufsize, length, size, type, name)
     name = name[:length[0]].decode('utf-8')
     return name, size[0], type[0]
 
@@ -580,10 +580,10 @@ def glGetActiveUniform(program, index):
     type = (ctypes.c_uint*1)()
     name = ctypes.create_string_buffer(bufsize)
     try:
-        func = glGetActiveUniform._native
+        nativefunc = glGetActiveUniform._native
     except AttributeError:
-        func = glGetActiveUniform._native = _get_gl_func("glGetActiveUniform", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_uint), ctypes.c_char_p,))
-    res = func(program, index, bufsize, length, size, type, name)
+        nativefunc = glGetActiveUniform._native = _get_gl_func("glGetActiveUniform", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_uint), ctypes.c_char_p,))
+    res = nativefunc(program, index, bufsize, length, size, type, name)
     name = name[:length[0]].decode('utf-8')
     return name, size[0], type[0]
 
@@ -594,10 +594,10 @@ def glGetAttachedShaders(program):
     count = (ctypes.c_int*1)()
     shaders = (ctypes.c_uint*maxcount)()
     try:
-        func = glGetAttachedShaders._native
+        nativefunc = glGetAttachedShaders._native
     except AttributeError:
-        func = glGetAttachedShaders._native = _get_gl_func("glGetAttachedShaders", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_uint),))
-    res = func(program, maxcount, count, shaders)
+        nativefunc = glGetAttachedShaders._native = _get_gl_func("glGetAttachedShaders", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_uint),))
+    res = nativefunc(program, maxcount, count, shaders)
     return tuple(shaders[:count[0]])
 
 
@@ -605,10 +605,10 @@ def glGetAttachedShaders(program):
 def glGetAttribLocation(program, name):
     name = ctypes.c_char_p(name.encode('utf-8'))
     try:
-        func = glGetAttribLocation._native
+        nativefunc = glGetAttribLocation._native
     except AttributeError:
-        func = glGetAttribLocation._native = _get_gl_func("glGetAttribLocation", ctypes.c_int, (ctypes.c_uint, ctypes.c_char_p,))
-    res = func(program, name)
+        nativefunc = glGetAttribLocation._native = _get_gl_func("glGetAttribLocation", ctypes.c_int, (ctypes.c_uint, ctypes.c_char_p,))
+    res = nativefunc(program, name)
     return res
 
 
@@ -616,10 +616,10 @@ def glGetAttribLocation(program, name):
 def _glGetBooleanv(pname):
     params = (ctypes.c_bool*1)()
     try:
-        func = _glGetBooleanv._native
+        nativefunc = _glGetBooleanv._native
     except AttributeError:
-        func = _glGetBooleanv._native = _get_gl_func("glGetBooleanv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_bool),))
-    res = func(pname, params)
+        nativefunc = _glGetBooleanv._native = _get_gl_func("glGetBooleanv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_bool),))
+    res = nativefunc(pname, params)
     return params[0]
 
 
@@ -627,20 +627,20 @@ def _glGetBooleanv(pname):
 def glGetBufferParameter(target, pname):
     data = (ctypes.c_int*1)()
     try:
-        func = glGetBufferParameter._native
+        nativefunc = glGetBufferParameter._native
     except AttributeError:
-        func = glGetBufferParameter._native = _get_gl_func("glGetBufferParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
-    res = func(target, pname, params)
+        nativefunc = glGetBufferParameter._native = _get_gl_func("glGetBufferParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
+    res = nativefunc(target, pname, params)
     return data[0]
 
 
 # GLenum = glGetError()
 def glGetError():
     try:
-        func = glGetError._native
+        nativefunc = glGetError._native
     except AttributeError:
-        func = glGetError._native = _get_gl_func("glGetError", ctypes.c_uint, ())
-    return func()
+        nativefunc = glGetError._native = _get_gl_func("glGetError", ctypes.c_uint, ())
+    return nativefunc()
 
 
 # void = glGetFloatv(GLenum pname, GLfloat* params)
@@ -649,10 +649,10 @@ def _glGetFloatv(pname):
     d = float('Inf')
     params = (ctypes.c_float*n)(*[d for i in range(n)])
     try:
-        func = _glGetFloatv._native
+        nativefunc = _glGetFloatv._native
     except AttributeError:
-        func = _glGetFloatv._native = _get_gl_func("glGetFloatv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
-    res = func(pname, params)
+        nativefunc = _glGetFloatv._native = _get_gl_func("glGetFloatv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
+    res = nativefunc(pname, params)
     params = [p for p in params if p!=d]
     if len(params) == 1:
         return params[0]
@@ -664,10 +664,10 @@ def _glGetFloatv(pname):
 def glGetFramebufferAttachmentParameter(target, attachment, pname):
     params = (ctypes.c_int*1)()
     try:
-        func = glGetFramebufferAttachmentParameter._native
+        nativefunc = glGetFramebufferAttachmentParameter._native
     except AttributeError:
-        func = glGetFramebufferAttachmentParameter._native = _get_gl_func("glGetFramebufferAttachmentParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
-    res = func(target, attachment, pname, params)
+        nativefunc = glGetFramebufferAttachmentParameter._native = _get_gl_func("glGetFramebufferAttachmentParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
+    res = nativefunc(target, attachment, pname, params)
     return params[0]
 
 
@@ -677,10 +677,10 @@ def _glGetIntegerv(pname):
     d = -2**31  # smallest 32bit integer
     params = (ctypes.c_int*n)(*[d for i in range(n)])
     try:
-        func = _glGetIntegerv._native
+        nativefunc = _glGetIntegerv._native
     except AttributeError:
-        func = _glGetIntegerv._native = _get_gl_func("glGetIntegerv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
-    res = func(pname, params)
+        nativefunc = _glGetIntegerv._native = _get_gl_func("glGetIntegerv", None, (ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
+    res = nativefunc(pname, params)
     params = [p for p in params if p!=d]
     if len(params) == 1:
         return params[0]
@@ -694,10 +694,10 @@ def glGetProgramInfoLog(program):
     length = (ctypes.c_int*1)()
     infolog = ctypes.create_string_buffer(bufsize)
     try:
-        func = glGetProgramInfoLog._native
+        nativefunc = glGetProgramInfoLog._native
     except AttributeError:
-        func = glGetProgramInfoLog._native = _get_gl_func("glGetProgramInfoLog", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_char_p,))
-    res = func(program, bufsize, length, infolog)
+        nativefunc = glGetProgramInfoLog._native = _get_gl_func("glGetProgramInfoLog", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_char_p,))
+    res = nativefunc(program, bufsize, length, infolog)
     return infolog[:length[0]].decode('utf-8')
 
 
@@ -705,10 +705,10 @@ def glGetProgramInfoLog(program):
 def glGetProgramParameter(program, pname):
     params = (ctypes.c_int*1)()
     try:
-        func = glGetProgramParameter._native
+        nativefunc = glGetProgramParameter._native
     except AttributeError:
-        func = glGetProgramParameter._native = _get_gl_func("glGetProgramiv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
-    res = func(program, pname, params)
+        nativefunc = glGetProgramParameter._native = _get_gl_func("glGetProgramiv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
+    res = nativefunc(program, pname, params)
     return params[0]
 
 
@@ -716,10 +716,10 @@ def glGetProgramParameter(program, pname):
 def glGetRenderbufferParameter(target, pname):
     params = (ctypes.c_int*1)()
     try:
-        func = glGetRenderbufferParameter._native
+        nativefunc = glGetRenderbufferParameter._native
     except AttributeError:
-        func = glGetRenderbufferParameter._native = _get_gl_func("glGetRenderbufferParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
-    res = func(target, pname, params)
+        nativefunc = glGetRenderbufferParameter._native = _get_gl_func("glGetRenderbufferParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
+    res = nativefunc(target, pname, params)
     return params[0]
 
 
@@ -729,10 +729,10 @@ def glGetShaderInfoLog(shader):
     length = (ctypes.c_int*1)()
     infolog = ctypes.create_string_buffer(bufsize)
     try:
-        func = glGetShaderInfoLog._native
+        nativefunc = glGetShaderInfoLog._native
     except AttributeError:
-        func = glGetShaderInfoLog._native = _get_gl_func("glGetShaderInfoLog", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_char_p,))
-    res = func(shader, bufsize, length, infolog)
+        nativefunc = glGetShaderInfoLog._native = _get_gl_func("glGetShaderInfoLog", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_char_p,))
+    res = nativefunc(shader, bufsize, length, infolog)
     return infolog[:length[0]].decode('utf-8')
 
 
@@ -741,10 +741,10 @@ def glGetShaderPrecisionFormat(shadertype, precisiontype):
     range = (ctypes.c_int*1)()
     precision = (ctypes.c_int*1)()
     try:
-        func = glGetShaderPrecisionFormat._native
+        nativefunc = glGetShaderPrecisionFormat._native
     except AttributeError:
-        func = glGetShaderPrecisionFormat._native = _get_gl_func("glGetShaderPrecisionFormat", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int),))
-    res = func(shadertype, precisiontype, range, precision)
+        nativefunc = glGetShaderPrecisionFormat._native = _get_gl_func("glGetShaderPrecisionFormat", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int),))
+    res = nativefunc(shadertype, precisiontype, range, precision)
     return range[0], precision[0]
 
 
@@ -754,10 +754,10 @@ def glGetShaderSource(shader):
     length = (ctypes.c_int*1)()
     source = (ctypes.c_char*bufsize)()
     try:
-        func = glGetShaderSource._native
+        nativefunc = glGetShaderSource._native
     except AttributeError:
-        func = glGetShaderSource._native = _get_gl_func("glGetShaderSource", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_char_p,))
-    res = func(shader, bufsize, length, source)
+        nativefunc = glGetShaderSource._native = _get_gl_func("glGetShaderSource", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_char_p,))
+    res = nativefunc(shader, bufsize, length, source)
     return source.value[:length[0]].decode('utf-8')
 
 
@@ -765,10 +765,10 @@ def glGetShaderSource(shader):
 def glGetShaderParameter(shader, pname):
     params = (ctypes.c_int*1)()
     try:
-        func = glGetShaderParameter._native
+        nativefunc = glGetShaderParameter._native
     except AttributeError:
-        func = glGetShaderParameter._native = _get_gl_func("glGetShaderiv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
-    res = func(shader, pname, params)
+        nativefunc = glGetShaderParameter._native = _get_gl_func("glGetShaderiv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
+    res = nativefunc(shader, pname, params)
     return params[0]
 
 
@@ -789,10 +789,10 @@ def glGetParameter(pname):
         return _glGetIntegerv(pname)
     name = pname
     try:
-        func = glGetParameter._native
+        nativefunc = glGetParameter._native
     except AttributeError:
-        func = glGetParameter._native = _get_gl_func("glGetString", ctypes.c_char_p, (ctypes.c_uint,))
-    res = func(name)
+        nativefunc = glGetParameter._native = _get_gl_func("glGetString", ctypes.c_char_p, (ctypes.c_uint,))
+    res = nativefunc(name)
     return res.decode('utf-8')
 
 
@@ -802,10 +802,10 @@ def glGetTexParameter(target, pname):
     d = float('Inf')
     params = (ctypes.c_float*n)(*[d for i in range(n)])
     try:
-        func = glGetTexParameter._native
+        nativefunc = glGetTexParameter._native
     except AttributeError:
-        func = glGetTexParameter._native = _get_gl_func("glGetTexParameterfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
-    res = func(target, pname, params)
+        nativefunc = glGetTexParameter._native = _get_gl_func("glGetTexParameterfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
+    res = nativefunc(target, pname, params)
     return params[0]
 
 
@@ -815,10 +815,10 @@ def glGetUniform(program, location):
     d = float('Inf')
     values = (ctypes.c_float*n)(*[d for i in range(n)])
     try:
-        func = glGetUniform._native
+        nativefunc = glGetUniform._native
     except AttributeError:
-        func = glGetUniform._native = _get_gl_func("glGetUniformfv", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
-    res = func(program, location, params)
+        nativefunc = glGetUniform._native = _get_gl_func("glGetUniformfv", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
+    res = nativefunc(program, location, params)
     values = [p for p in values if p!=d]
     if len(values) == 1:
         return values[0]
@@ -830,10 +830,10 @@ def glGetUniform(program, location):
 def glGetUniformLocation(program, name):
     name = ctypes.c_char_p(name.encode('utf-8'))
     try:
-        func = glGetUniformLocation._native
+        nativefunc = glGetUniformLocation._native
     except AttributeError:
-        func = glGetUniformLocation._native = _get_gl_func("glGetUniformLocation", ctypes.c_int, (ctypes.c_uint, ctypes.c_char_p,))
-    res = func(program, name)
+        nativefunc = glGetUniformLocation._native = _get_gl_func("glGetUniformLocation", ctypes.c_int, (ctypes.c_uint, ctypes.c_char_p,))
+    res = nativefunc(program, name)
     return res
 
 
@@ -843,10 +843,10 @@ def glGetVertexAttrib(program, location):
     d = float('Inf')
     values = (ctypes.c_float*n)(*[d for i in range(n)])
     try:
-        func = glGetVertexAttrib._native
+        nativefunc = glGetVertexAttrib._native
     except AttributeError:
-        func = glGetVertexAttrib._native = _get_gl_func("glGetVertexAttribfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
-    res = func(index, pname, params)
+        nativefunc = glGetVertexAttrib._native = _get_gl_func("glGetVertexAttribfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
+    res = nativefunc(index, pname, params)
     values = [p for p in values if p!=d]
     if len(values) == 1:
         return values[0]
@@ -858,119 +858,119 @@ def glGetVertexAttrib(program, location):
 def glGetVertexAttribOffset(index, pname):
     pointer = (ctypes.c_void_p*1)()
     try:
-        func = glGetVertexAttribOffset._native
+        nativefunc = glGetVertexAttribOffset._native
     except AttributeError:
-        func = glGetVertexAttribOffset._native = _get_gl_func("glGetVertexAttribPointerv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_void_p),))
-    res = func(index, pname, pointer)
+        nativefunc = glGetVertexAttribOffset._native = _get_gl_func("glGetVertexAttribPointerv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_void_p),))
+    res = nativefunc(index, pname, pointer)
     return pointer[0]
 
 
 # void = glHint(GLenum target, GLenum mode)
 def glHint(target, mode):
     try:
-        func = glHint._native
+        nativefunc = glHint._native
     except AttributeError:
-        func = glHint._native = _get_gl_func("glHint", None, (ctypes.c_uint, ctypes.c_uint,))
-    func(target, mode)
+        nativefunc = glHint._native = _get_gl_func("glHint", None, (ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(target, mode)
 
 
 # GLboolean = glIsBuffer(GLuint buffer)
 def glIsBuffer(buffer):
     try:
-        func = glIsBuffer._native
+        nativefunc = glIsBuffer._native
     except AttributeError:
-        func = glIsBuffer._native = _get_gl_func("glIsBuffer", ctypes.c_bool, (ctypes.c_uint,))
-    return func(buffer)
+        nativefunc = glIsBuffer._native = _get_gl_func("glIsBuffer", ctypes.c_bool, (ctypes.c_uint,))
+    return nativefunc(buffer)
 
 
 # GLboolean = glIsEnabled(GLenum cap)
 def glIsEnabled(cap):
     try:
-        func = glIsEnabled._native
+        nativefunc = glIsEnabled._native
     except AttributeError:
-        func = glIsEnabled._native = _get_gl_func("glIsEnabled", ctypes.c_bool, (ctypes.c_uint,))
-    return func(cap)
+        nativefunc = glIsEnabled._native = _get_gl_func("glIsEnabled", ctypes.c_bool, (ctypes.c_uint,))
+    return nativefunc(cap)
 
 
 # GLboolean = glIsFramebuffer(GLuint framebuffer)
 def glIsFramebuffer(framebuffer):
     try:
-        func = glIsFramebuffer._native
+        nativefunc = glIsFramebuffer._native
     except AttributeError:
-        func = glIsFramebuffer._native = _get_gl_func("glIsFramebuffer", ctypes.c_bool, (ctypes.c_uint,))
-    return func(framebuffer)
+        nativefunc = glIsFramebuffer._native = _get_gl_func("glIsFramebuffer", ctypes.c_bool, (ctypes.c_uint,))
+    return nativefunc(framebuffer)
 
 
 # GLboolean = glIsProgram(GLuint program)
 def glIsProgram(program):
     try:
-        func = glIsProgram._native
+        nativefunc = glIsProgram._native
     except AttributeError:
-        func = glIsProgram._native = _get_gl_func("glIsProgram", ctypes.c_bool, (ctypes.c_uint,))
-    return func(program)
+        nativefunc = glIsProgram._native = _get_gl_func("glIsProgram", ctypes.c_bool, (ctypes.c_uint,))
+    return nativefunc(program)
 
 
 # GLboolean = glIsRenderbuffer(GLuint renderbuffer)
 def glIsRenderbuffer(renderbuffer):
     try:
-        func = glIsRenderbuffer._native
+        nativefunc = glIsRenderbuffer._native
     except AttributeError:
-        func = glIsRenderbuffer._native = _get_gl_func("glIsRenderbuffer", ctypes.c_bool, (ctypes.c_uint,))
-    return func(renderbuffer)
+        nativefunc = glIsRenderbuffer._native = _get_gl_func("glIsRenderbuffer", ctypes.c_bool, (ctypes.c_uint,))
+    return nativefunc(renderbuffer)
 
 
 # GLboolean = glIsShader(GLuint shader)
 def glIsShader(shader):
     try:
-        func = glIsShader._native
+        nativefunc = glIsShader._native
     except AttributeError:
-        func = glIsShader._native = _get_gl_func("glIsShader", ctypes.c_bool, (ctypes.c_uint,))
-    return func(shader)
+        nativefunc = glIsShader._native = _get_gl_func("glIsShader", ctypes.c_bool, (ctypes.c_uint,))
+    return nativefunc(shader)
 
 
 # GLboolean = glIsTexture(GLuint texture)
 def glIsTexture(texture):
     try:
-        func = glIsTexture._native
+        nativefunc = glIsTexture._native
     except AttributeError:
-        func = glIsTexture._native = _get_gl_func("glIsTexture", ctypes.c_bool, (ctypes.c_uint,))
-    return func(texture)
+        nativefunc = glIsTexture._native = _get_gl_func("glIsTexture", ctypes.c_bool, (ctypes.c_uint,))
+    return nativefunc(texture)
 
 
 # void = glLineWidth(GLfloat width)
 def glLineWidth(width):
     try:
-        func = glLineWidth._native
+        nativefunc = glLineWidth._native
     except AttributeError:
-        func = glLineWidth._native = _get_gl_func("glLineWidth", None, (ctypes.c_float,))
-    func(width)
+        nativefunc = glLineWidth._native = _get_gl_func("glLineWidth", None, (ctypes.c_float,))
+    nativefunc(width)
 
 
 # void = glLinkProgram(GLuint program)
 def glLinkProgram(program):
     try:
-        func = glLinkProgram._native
+        nativefunc = glLinkProgram._native
     except AttributeError:
-        func = glLinkProgram._native = _get_gl_func("glLinkProgram", None, (ctypes.c_uint,))
-    func(program)
+        nativefunc = glLinkProgram._native = _get_gl_func("glLinkProgram", None, (ctypes.c_uint,))
+    nativefunc(program)
 
 
 # void = glPixelStorei(GLenum pname, GLint param)
 def glPixelStorei(pname, param):
     try:
-        func = glPixelStorei._native
+        nativefunc = glPixelStorei._native
     except AttributeError:
-        func = glPixelStorei._native = _get_gl_func("glPixelStorei", None, (ctypes.c_uint, ctypes.c_int,))
-    func(pname, param)
+        nativefunc = glPixelStorei._native = _get_gl_func("glPixelStorei", None, (ctypes.c_uint, ctypes.c_int,))
+    nativefunc(pname, param)
 
 
 # void = glPolygonOffset(GLfloat factor, GLfloat units)
 def glPolygonOffset(factor, units):
     try:
-        func = glPolygonOffset._native
+        nativefunc = glPolygonOffset._native
     except AttributeError:
-        func = glPolygonOffset._native = _get_gl_func("glPolygonOffset", None, (ctypes.c_float, ctypes.c_float,))
-    func(factor, units)
+        nativefunc = glPolygonOffset._native = _get_gl_func("glPolygonOffset", None, (ctypes.c_float, ctypes.c_float,))
+    nativefunc(factor, units)
 
 
 # void = glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* pixels)
@@ -981,38 +981,38 @@ def glReadPixels(x, y, width, height, format, type):
     size = int(width*height*t)
     pixels = ctypes.create_string_buffer(size)
     try:
-        func = glReadPixels._native
+        nativefunc = glReadPixels._native
     except AttributeError:
-        func = glReadPixels._native = _get_gl_func("glReadPixels", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
-    res = func(x, y, width, height, format, type, pixels)
+        nativefunc = glReadPixels._native = _get_gl_func("glReadPixels", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
+    res = nativefunc(x, y, width, height, format, type, pixels)
     return pixels[:]
 
 
 # void = glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height)
 def glRenderbufferStorage(target, internalformat, width, height):
     try:
-        func = glRenderbufferStorage._native
+        nativefunc = glRenderbufferStorage._native
     except AttributeError:
-        func = glRenderbufferStorage._native = _get_gl_func("glRenderbufferStorage", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int, ctypes.c_int,))
-    func(target, internalformat, width, height)
+        nativefunc = glRenderbufferStorage._native = _get_gl_func("glRenderbufferStorage", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int, ctypes.c_int,))
+    nativefunc(target, internalformat, width, height)
 
 
 # void = glSampleCoverage(GLclampf value, GLboolean invert)
 def glSampleCoverage(value, invert):
     try:
-        func = glSampleCoverage._native
+        nativefunc = glSampleCoverage._native
     except AttributeError:
-        func = glSampleCoverage._native = _get_gl_func("glSampleCoverage", None, (ctypes.c_float, ctypes.c_bool,))
-    func(value, invert)
+        nativefunc = glSampleCoverage._native = _get_gl_func("glSampleCoverage", None, (ctypes.c_float, ctypes.c_bool,))
+    nativefunc(value, invert)
 
 
 # void = glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 def glScissor(x, y, width, height):
     try:
-        func = glScissor._native
+        nativefunc = glScissor._native
     except AttributeError:
-        func = glScissor._native = _get_gl_func("glScissor", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
-    func(x, y, width, height)
+        nativefunc = glScissor._native = _get_gl_func("glScissor", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
+    nativefunc(x, y, width, height)
 
 
 # void = glShaderSource(GLuint shader, GLsizei count, GLchar** string, GLint* length)
@@ -1026,64 +1026,64 @@ def glShaderSource(shader, source):
     string = (ctypes.c_char_p*count)(*[s.encode('utf-8') for s in strings])
     length = (ctypes.c_int*count)(*[len(s) for s in strings])
     try:
-        func = glShaderSource._native
+        nativefunc = glShaderSource._native
     except AttributeError:
-        func = glShaderSource._native = _get_gl_func("glShaderSource", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_char_p), ctypes.POINTER(ctypes.c_int),))
-    res = func(shader, count, string, length)
+        nativefunc = glShaderSource._native = _get_gl_func("glShaderSource", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_char_p), ctypes.POINTER(ctypes.c_int),))
+    res = nativefunc(shader, count, string, length)
 
 
 # void = glStencilFunc(GLenum func, GLint ref, GLuint mask)
 def glStencilFunc(func, ref, mask):
     try:
-        func = glStencilFunc._native
+        nativefunc = glStencilFunc._native
     except AttributeError:
-        func = glStencilFunc._native = _get_gl_func("glStencilFunc", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint,))
-    func(func, ref, mask)
+        nativefunc = glStencilFunc._native = _get_gl_func("glStencilFunc", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint,))
+    nativefunc(func, ref, mask)
 
 
 # void = glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
 def glStencilFuncSeparate(face, func, ref, mask):
     try:
-        func = glStencilFuncSeparate._native
+        nativefunc = glStencilFuncSeparate._native
     except AttributeError:
-        func = glStencilFuncSeparate._native = _get_gl_func("glStencilFuncSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int, ctypes.c_uint,))
-    func(face, func, ref, mask)
+        nativefunc = glStencilFuncSeparate._native = _get_gl_func("glStencilFuncSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int, ctypes.c_uint,))
+    nativefunc(face, func, ref, mask)
 
 
 # void = glStencilMask(GLuint mask)
 def glStencilMask(mask):
     try:
-        func = glStencilMask._native
+        nativefunc = glStencilMask._native
     except AttributeError:
-        func = glStencilMask._native = _get_gl_func("glStencilMask", None, (ctypes.c_uint,))
-    func(mask)
+        nativefunc = glStencilMask._native = _get_gl_func("glStencilMask", None, (ctypes.c_uint,))
+    nativefunc(mask)
 
 
 # void = glStencilMaskSeparate(GLenum face, GLuint mask)
 def glStencilMaskSeparate(face, mask):
     try:
-        func = glStencilMaskSeparate._native
+        nativefunc = glStencilMaskSeparate._native
     except AttributeError:
-        func = glStencilMaskSeparate._native = _get_gl_func("glStencilMaskSeparate", None, (ctypes.c_uint, ctypes.c_uint,))
-    func(face, mask)
+        nativefunc = glStencilMaskSeparate._native = _get_gl_func("glStencilMaskSeparate", None, (ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(face, mask)
 
 
 # void = glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
 def glStencilOp(fail, zfail, zpass):
     try:
-        func = glStencilOp._native
+        nativefunc = glStencilOp._native
     except AttributeError:
-        func = glStencilOp._native = _get_gl_func("glStencilOp", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
-    func(fail, zfail, zpass)
+        nativefunc = glStencilOp._native = _get_gl_func("glStencilOp", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(fail, zfail, zpass)
 
 
 # void = glStencilOpSeparate(GLenum face, GLenum fail, GLenum zfail, GLenum zpass)
 def glStencilOpSeparate(face, fail, zfail, zpass):
     try:
-        func = glStencilOpSeparate._native
+        nativefunc = glStencilOpSeparate._native
     except AttributeError:
-        func = glStencilOpSeparate._native = _get_gl_func("glStencilOpSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
-    func(face, fail, zfail, zpass)
+        nativefunc = glStencilOpSeparate._native = _get_gl_func("glStencilOpSeparate", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.c_uint,))
+    nativefunc(face, fail, zfail, zpass)
 
 
 # void = glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, GLvoid* pixels)
@@ -1100,24 +1100,24 @@ def glTexImage2D(target, level, internalformat, format, type, pixels):
         pixels = pixels_.ctypes.data
         width, height = pixels_.shape[:2]
     try:
-        func = glTexImage2D._native
+        nativefunc = glTexImage2D._native
     except AttributeError:
-        func = glTexImage2D._native = _get_gl_func("glTexImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
-    res = func(target, level, internalformat, width, height, border, format, type, pixels)
+        nativefunc = glTexImage2D._native = _get_gl_func("glTexImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
+    res = nativefunc(target, level, internalformat, width, height, border, format, type, pixels)
 
 
 def glTexParameterf(target, pname, param):
     try:
-        func = glTexParameterf._native
+        nativefunc = glTexParameterf._native
     except AttributeError:
-        func = glTexParameterf._native = _get_gl_func("glTexParameterf", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_float,))
-    func(target, pname, param)
+        nativefunc = glTexParameterf._native = _get_gl_func("glTexParameterf", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_float,))
+    nativefunc(target, pname, param)
 def glTexParameteri(target, pname, param):
     try:
-        func = glTexParameteri._native
+        nativefunc = glTexParameteri._native
     except AttributeError:
-        func = glTexParameteri._native = _get_gl_func("glTexParameteri", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int,))
-    func(target, pname, param)
+        nativefunc = glTexParameteri._native = _get_gl_func("glTexParameteri", None, (ctypes.c_uint, ctypes.c_uint, ctypes.c_int,))
+    nativefunc(target, pname, param)
 
 
 # void = glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* pixels)
@@ -1128,194 +1128,194 @@ def glTexSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
     pixels = pixels_.ctypes.data
     width, height = pixels_.shape[:2]
     try:
-        func = glTexSubImage2D._native
+        nativefunc = glTexSubImage2D._native
     except AttributeError:
-        func = glTexSubImage2D._native = _get_gl_func("glTexSubImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
-    res = func(target, level, xoffset, yoffset, width, height, format, type, pixels)
+        nativefunc = glTexSubImage2D._native = _get_gl_func("glTexSubImage2D", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,))
+    res = nativefunc(target, level, xoffset, yoffset, width, height, format, type, pixels)
 
 
 def glUniform1f(location, v1):
     try:
-        func = glUniform1f._native
+        nativefunc = glUniform1f._native
     except AttributeError:
-        func = glUniform1f._native = _get_gl_func("glUniform1f", None, (ctypes.c_int, ctypes.c_float,))
-    func(location, v1)
+        nativefunc = glUniform1f._native = _get_gl_func("glUniform1f", None, (ctypes.c_int, ctypes.c_float,))
+    nativefunc(location, v1)
 def glUniform2f(location, v1, v2):
     try:
-        func = glUniform2f._native
+        nativefunc = glUniform2f._native
     except AttributeError:
-        func = glUniform2f._native = _get_gl_func("glUniform2f", None, (ctypes.c_int, ctypes.c_float, ctypes.c_float,))
-    func(location, v1, v2)
+        nativefunc = glUniform2f._native = _get_gl_func("glUniform2f", None, (ctypes.c_int, ctypes.c_float, ctypes.c_float,))
+    nativefunc(location, v1, v2)
 def glUniform3f(location, v1, v2, v3):
     try:
-        func = glUniform3f._native
+        nativefunc = glUniform3f._native
     except AttributeError:
-        func = glUniform3f._native = _get_gl_func("glUniform3f", None, (ctypes.c_int, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
-    func(location, v1, v2, v3)
+        nativefunc = glUniform3f._native = _get_gl_func("glUniform3f", None, (ctypes.c_int, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
+    nativefunc(location, v1, v2, v3)
 def glUniform4f(location, v1, v2, v3, v4):
     try:
-        func = glUniform4f._native
+        nativefunc = glUniform4f._native
     except AttributeError:
-        func = glUniform4f._native = _get_gl_func("glUniform4f", None, (ctypes.c_int, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
-    func(location, v1, v2, v3, v4)
+        nativefunc = glUniform4f._native = _get_gl_func("glUniform4f", None, (ctypes.c_int, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
+    nativefunc(location, v1, v2, v3, v4)
 def glUniform1i(location, v1):
     try:
-        func = glUniform1i._native
+        nativefunc = glUniform1i._native
     except AttributeError:
-        func = glUniform1i._native = _get_gl_func("glUniform1i", None, (ctypes.c_int, ctypes.c_int,))
-    func(location, v1)
+        nativefunc = glUniform1i._native = _get_gl_func("glUniform1i", None, (ctypes.c_int, ctypes.c_int,))
+    nativefunc(location, v1)
 def glUniform2i(location, v1, v2):
     try:
-        func = glUniform2i._native
+        nativefunc = glUniform2i._native
     except AttributeError:
-        func = glUniform2i._native = _get_gl_func("glUniform2i", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int,))
-    func(location, v1, v2)
+        nativefunc = glUniform2i._native = _get_gl_func("glUniform2i", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int,))
+    nativefunc(location, v1, v2)
 def glUniform3i(location, v1, v2, v3):
     try:
-        func = glUniform3i._native
+        nativefunc = glUniform3i._native
     except AttributeError:
-        func = glUniform3i._native = _get_gl_func("glUniform3i", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
-    func(location, v1, v2, v3)
+        nativefunc = glUniform3i._native = _get_gl_func("glUniform3i", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
+    nativefunc(location, v1, v2, v3)
 def glUniform4i(location, v1, v2, v3, v4):
     try:
-        func = glUniform4i._native
+        nativefunc = glUniform4i._native
     except AttributeError:
-        func = glUniform4i._native = _get_gl_func("glUniform4i", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
-    func(location, v1, v2, v3, v4)
+        nativefunc = glUniform4i._native = _get_gl_func("glUniform4i", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
+    nativefunc(location, v1, v2, v3, v4)
 def glUniform1fv(location, count, values):
     values = [val for val in values]
     values = (ctypes.c_float*len(values))(*values)
     try:
-        func = glUniform1fv._native
+        nativefunc = glUniform1fv._native
     except AttributeError:
-        func = glUniform1fv._native = _get_gl_func("glUniform1fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
-    func(location, count, values)
+        nativefunc = glUniform1fv._native = _get_gl_func("glUniform1fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
+    nativefunc(location, count, values)
 def glUniform2fv(location, count, values):
     values = [val for val in values]
     values = (ctypes.c_float*len(values))(*values)
     try:
-        func = glUniform2fv._native
+        nativefunc = glUniform2fv._native
     except AttributeError:
-        func = glUniform2fv._native = _get_gl_func("glUniform2fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
-    func(location, count, values)
+        nativefunc = glUniform2fv._native = _get_gl_func("glUniform2fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
+    nativefunc(location, count, values)
 def glUniform3fv(location, count, values):
     values = [val for val in values]
     values = (ctypes.c_float*len(values))(*values)
     try:
-        func = glUniform3fv._native
+        nativefunc = glUniform3fv._native
     except AttributeError:
-        func = glUniform3fv._native = _get_gl_func("glUniform3fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
-    func(location, count, values)
+        nativefunc = glUniform3fv._native = _get_gl_func("glUniform3fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
+    nativefunc(location, count, values)
 def glUniform4fv(location, count, values):
     values = [val for val in values]
     values = (ctypes.c_float*len(values))(*values)
     try:
-        func = glUniform4fv._native
+        nativefunc = glUniform4fv._native
     except AttributeError:
-        func = glUniform4fv._native = _get_gl_func("glUniform4fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
-    func(location, count, values)
+        nativefunc = glUniform4fv._native = _get_gl_func("glUniform4fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
+    nativefunc(location, count, values)
 def glUniform1iv(location, count, values):
     values = [val for val in values]
     values = (ctypes.c_int*len(values))(*values)
     try:
-        func = glUniform1iv._native
+        nativefunc = glUniform1iv._native
     except AttributeError:
-        func = glUniform1iv._native = _get_gl_func("glUniform1iv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
-    func(location, count, values)
+        nativefunc = glUniform1iv._native = _get_gl_func("glUniform1iv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
+    nativefunc(location, count, values)
 def glUniform2iv(location, count, values):
     values = [val for val in values]
     values = (ctypes.c_int*len(values))(*values)
     try:
-        func = glUniform2iv._native
+        nativefunc = glUniform2iv._native
     except AttributeError:
-        func = glUniform2iv._native = _get_gl_func("glUniform2iv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
-    func(location, count, values)
+        nativefunc = glUniform2iv._native = _get_gl_func("glUniform2iv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
+    nativefunc(location, count, values)
 def glUniform3iv(location, count, values):
     values = [val for val in values]
     values = (ctypes.c_int*len(values))(*values)
     try:
-        func = glUniform3iv._native
+        nativefunc = glUniform3iv._native
     except AttributeError:
-        func = glUniform3iv._native = _get_gl_func("glUniform3iv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
-    func(location, count, values)
+        nativefunc = glUniform3iv._native = _get_gl_func("glUniform3iv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
+    nativefunc(location, count, values)
 def glUniform4iv(location, count, values):
     values = [val for val in values]
     values = (ctypes.c_int*len(values))(*values)
     try:
-        func = glUniform4iv._native
+        nativefunc = glUniform4iv._native
     except AttributeError:
-        func = glUniform4iv._native = _get_gl_func("glUniform4iv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
-    func(location, count, values)
+        nativefunc = glUniform4iv._native = _get_gl_func("glUniform4iv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
+    nativefunc(location, count, values)
 
 
 def glUniformMatrix2fv(location, count, transpose, values):
     values = [val for val in values]
     values = (ctypes.c_float*len(values))(*values)
     try:
-        func = glUniformMatrix2fv._native
+        nativefunc = glUniformMatrix2fv._native
     except AttributeError:
-        func = glUniformMatrix2fv._native = _get_gl_func("glUniformMatrix2fv", None, (ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),))
-    func(location, count, transpose, values)
+        nativefunc = glUniformMatrix2fv._native = _get_gl_func("glUniformMatrix2fv", None, (ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),))
+    nativefunc(location, count, transpose, values)
 def glUniformMatrix3fv(location, count, transpose, values):
     values = [val for val in values]
     values = (ctypes.c_float*len(values))(*values)
     try:
-        func = glUniformMatrix3fv._native
+        nativefunc = glUniformMatrix3fv._native
     except AttributeError:
-        func = glUniformMatrix3fv._native = _get_gl_func("glUniformMatrix3fv", None, (ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),))
-    func(location, count, transpose, values)
+        nativefunc = glUniformMatrix3fv._native = _get_gl_func("glUniformMatrix3fv", None, (ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),))
+    nativefunc(location, count, transpose, values)
 def glUniformMatrix4fv(location, count, transpose, values):
     values = [val for val in values]
     values = (ctypes.c_float*len(values))(*values)
     try:
-        func = glUniformMatrix4fv._native
+        nativefunc = glUniformMatrix4fv._native
     except AttributeError:
-        func = glUniformMatrix4fv._native = _get_gl_func("glUniformMatrix4fv", None, (ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),))
-    func(location, count, transpose, values)
+        nativefunc = glUniformMatrix4fv._native = _get_gl_func("glUniformMatrix4fv", None, (ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),))
+    nativefunc(location, count, transpose, values)
 
 
 # void = glUseProgram(GLuint program)
 def glUseProgram(program):
     try:
-        func = glUseProgram._native
+        nativefunc = glUseProgram._native
     except AttributeError:
-        func = glUseProgram._native = _get_gl_func("glUseProgram", None, (ctypes.c_uint,))
-    func(program)
+        nativefunc = glUseProgram._native = _get_gl_func("glUseProgram", None, (ctypes.c_uint,))
+    nativefunc(program)
 
 
 # void = glValidateProgram(GLuint program)
 def glValidateProgram(program):
     try:
-        func = glValidateProgram._native
+        nativefunc = glValidateProgram._native
     except AttributeError:
-        func = glValidateProgram._native = _get_gl_func("glValidateProgram", None, (ctypes.c_uint,))
-    func(program)
+        nativefunc = glValidateProgram._native = _get_gl_func("glValidateProgram", None, (ctypes.c_uint,))
+    nativefunc(program)
 
 
 def glVertexAttrib1f(index, v1):
     try:
-        func = glVertexAttrib1f._native
+        nativefunc = glVertexAttrib1f._native
     except AttributeError:
-        func = glVertexAttrib1f._native = _get_gl_func("glVertexAttrib1f", None, (ctypes.c_uint, ctypes.c_float,))
-    func(index, v1)
+        nativefunc = glVertexAttrib1f._native = _get_gl_func("glVertexAttrib1f", None, (ctypes.c_uint, ctypes.c_float,))
+    nativefunc(index, v1)
 def glVertexAttrib2f(index, v1, v2):
     try:
-        func = glVertexAttrib2f._native
+        nativefunc = glVertexAttrib2f._native
     except AttributeError:
-        func = glVertexAttrib2f._native = _get_gl_func("glVertexAttrib2f", None, (ctypes.c_uint, ctypes.c_float, ctypes.c_float,))
-    func(index, v1, v2)
+        nativefunc = glVertexAttrib2f._native = _get_gl_func("glVertexAttrib2f", None, (ctypes.c_uint, ctypes.c_float, ctypes.c_float,))
+    nativefunc(index, v1, v2)
 def glVertexAttrib3f(index, v1, v2, v3):
     try:
-        func = glVertexAttrib3f._native
+        nativefunc = glVertexAttrib3f._native
     except AttributeError:
-        func = glVertexAttrib3f._native = _get_gl_func("glVertexAttrib3f", None, (ctypes.c_uint, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
-    func(index, v1, v2, v3)
+        nativefunc = glVertexAttrib3f._native = _get_gl_func("glVertexAttrib3f", None, (ctypes.c_uint, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
+    nativefunc(index, v1, v2, v3)
 def glVertexAttrib4f(index, v1, v2, v3, v4):
     try:
-        func = glVertexAttrib4f._native
+        nativefunc = glVertexAttrib4f._native
     except AttributeError:
-        func = glVertexAttrib4f._native = _get_gl_func("glVertexAttrib4f", None, (ctypes.c_uint, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
-    func(index, v1, v2, v3, v4)
+        nativefunc = glVertexAttrib4f._native = _get_gl_func("glVertexAttrib4f", None, (ctypes.c_uint, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float,))
+    nativefunc(index, v1, v2, v3, v4)
 
 
 # void = glVertexAttribPointer(GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, GLvoid* ptr)
@@ -1333,18 +1333,18 @@ def glVertexAttribPointer(indx, size, type, normalized, stride, offset):
         offset = offset.ctypes.data
     ptr = offset
     try:
-        func = glVertexAttribPointer._native
+        nativefunc = glVertexAttribPointer._native
     except AttributeError:
-        func = glVertexAttribPointer._native = _get_gl_func("glVertexAttribPointer", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctypes.c_bool, ctypes.c_int, ctypes.c_void_p,))
-    res = func(indx, size, type, normalized, stride, ptr)
+        nativefunc = glVertexAttribPointer._native = _get_gl_func("glVertexAttribPointer", None, (ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctypes.c_bool, ctypes.c_int, ctypes.c_void_p,))
+    res = nativefunc(indx, size, type, normalized, stride, ptr)
 
 
 # void = glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 def glViewport(x, y, width, height):
     try:
-        func = glViewport._native
+        nativefunc = glViewport._native
     except AttributeError:
-        func = glViewport._native = _get_gl_func("glViewport", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
-    func(x, y, width, height)
+        nativefunc = glViewport._native = _get_gl_func("glViewport", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
+    nativefunc(x, y, width, height)
 
 

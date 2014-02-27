@@ -23,10 +23,10 @@ from OpenGL.GL import glBindAttribLocation
 from OpenGL.GL import glBindBuffer
 
 
-from OpenGL.FBO import glBindFramebuffer
+from OpenGL.GL.framebufferobjects import glBindFramebuffer
 
 
-from OpenGL.FBO import glBindRenderbuffer
+from OpenGL.GL.framebufferobjects import glBindRenderbuffer
 
 
 from OpenGL.GL import glBindTexture
@@ -63,7 +63,7 @@ def glBufferSubData(target, offset, data):
     GL.glBufferSubData(target, offset, size, data)
 
 
-from OpenGL.FBO import glCheckFramebufferStatus
+from OpenGL.GL.framebufferobjects import glCheckFramebufferStatus
 
 
 from OpenGL.GL import glClear
@@ -168,10 +168,10 @@ from OpenGL.GL import glFinish
 from OpenGL.GL import glFlush
 
 
-from OpenGL.FBO import glFramebufferRenderbuffer
+from OpenGL.GL.framebufferobjects import glFramebufferRenderbuffer
 
 
-from OpenGL.FBO import glFramebufferTexture2D
+from OpenGL.GL.framebufferobjects import glFramebufferTexture2D
 
 
 from OpenGL.GL import glFrontFace
@@ -233,7 +233,7 @@ from OpenGL.GL import glGetError
 from OpenGL.GL import glGetFloatv as _glGetFloatv
 
 
-from OpenGL.FBO import glGetFramebufferAttachmentParameteriv as glGetFramebufferAttachmentParameter
+from OpenGL.GL.framebufferobjects import glGetFramebufferAttachmentParameteriv as glGetFramebufferAttachmentParameter
 
 
 from OpenGL.GL import glGetIntegerv as _glGetIntegerv
@@ -245,7 +245,7 @@ from OpenGL.GL import glGetProgramInfoLog
 from OpenGL.GL import glGetProgramiv as glGetProgramParameter
 
 
-from OpenGL.FBO import glGetRenderbufferParameteriv as glGetRenderbufferParameter
+from OpenGL.GL.framebufferobjects import glGetRenderbufferParameteriv as glGetRenderbufferParameter
 
 
 from OpenGL.GL import glGetShaderInfoLog
@@ -318,13 +318,13 @@ from OpenGL.GL import glIsBuffer
 from OpenGL.GL import glIsEnabled
 
 
-from OpenGL.FBO import glIsFramebuffer
+from OpenGL.GL.framebufferobjects import glIsFramebuffer
 
 
 from OpenGL.GL import glIsProgram
 
 
-from OpenGL.FBO import glIsRenderbuffer
+from OpenGL.GL.framebufferobjects import glIsRenderbuffer
 
 
 from OpenGL.GL import glIsShader
@@ -348,7 +348,7 @@ from OpenGL.GL import glPolygonOffset
 from OpenGL.GL import glReadPixels
 
 
-from OpenGL.FBO import glRenderbufferStorage
+from OpenGL.GL.framebufferobjects import glRenderbufferStorage
 
 
 from OpenGL.GL import glSampleCoverage
