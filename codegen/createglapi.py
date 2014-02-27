@@ -535,11 +535,11 @@ class DesktopApiGenerator(ApiGenerator):
             cargstr = ', '.join(cargs)
         
         lines = 'try:\n'
-        lines += '    func = %s._native\n' % apiname(name)
+        lines += '    nativefunc = %s._native\n' % apiname(name)
         lines += 'except AttributeError:\n'
-        lines += '    func = %s._native = _get_gl_func("%s", %s, %s)\n' % (
+        lines += '    nativefunc = %s._native = _get_gl_func("%s", %s, %s)\n' % (
                 apiname(name), es2func.glname, resstr, argstr)
-        lines += '%sfunc(%s)\n' % (prefix, cargstr)
+        lines += '%snativefunc(%s)\n' % (prefix, cargstr)
         
         #lines += 'check_error("%s")' % name
         
