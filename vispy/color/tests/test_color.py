@@ -134,11 +134,12 @@ def test_color_conversion():
         test.lab = lab_dict[key]
         assert_allclose(c.rgba, test.rgba, atol=1e-4, rtol=1e-4)
         assert_allclose(test.lab.ravel(), lab_dict[key], atol=1e-4, rtol=1e-4)
+    rng = np.random.RandomState(0)
     for _ in range(50):
         # Here we test RGB->Lab->RGB, since Lab->RGB->Lab will not
         # necessarily project to the exact same color for some reason...
         # This is also true in the MATLAB code.
-        rgb = np.random.rand(3)[np.newaxis, :]
+        rgb = rng.rand(3)[np.newaxis, :]
         c.rgb = rgb
         lab = c.lab
         c.lab = lab
