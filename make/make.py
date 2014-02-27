@@ -157,7 +157,7 @@ class Maker:
         # Clear coverage: rm -f .coverage
         try:
             os.remove('.coverage')
-        except FileNotFoundError:
+        except OSError:  # FileNotFoundError not on py 2.x
             pass
         # Test
         sys.argv[1:] = []
