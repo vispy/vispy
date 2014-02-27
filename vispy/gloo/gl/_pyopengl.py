@@ -387,10 +387,10 @@ from OpenGL.GL import glStencilOpSeparate
 def glTexImage2D(target, level, internalformat, format, type, pixels):
     border = 0
     if isinstance(pixels, (tuple, list)):
-        width, height = pixels
+        height, width = pixels
         pixels = None
     else:
-        width, height = pixels.shape[:2]
+        height, width = pixels.shape[:2]
     GL.glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
 
 
@@ -399,7 +399,7 @@ from OpenGL.GL import glTexParameteri
 
 
 def glTexSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
-    width, height = pixels.shape[:2]
+    height, width = pixels.shape[:2]
     GL.glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels)
 
 

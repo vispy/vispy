@@ -1090,7 +1090,7 @@ def glStencilOpSeparate(face, fail, zfail, zpass):
 def glTexImage2D(target, level, internalformat, format, type, pixels):
     border = 0
     if isinstance(pixels, (tuple, list)):
-        width, height = pixels
+        height, width = pixels
         pixels = ctypes.c_void_p(0)
         pixels = None
     else:
@@ -1098,7 +1098,7 @@ def glTexImage2D(target, level, internalformat, format, type, pixels):
             pixels = pixels.copy('C')
         pixels_ = pixels
         pixels = pixels_.ctypes.data
-        width, height = pixels_.shape[:2]
+        height, width = pixels_.shape[:2]
     try:
         nativefunc = glTexImage2D._native
     except AttributeError:
@@ -1126,7 +1126,7 @@ def glTexSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
         pixels = pixels.copy('C')
     pixels_ = pixels
     pixels = pixels_.ctypes.data
-    width, height = pixels_.shape[:2]
+    height, width = pixels_.shape[:2]
     try:
         nativefunc = glTexSubImage2D._native
     except AttributeError:

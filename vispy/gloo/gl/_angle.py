@@ -805,7 +805,7 @@ _lib.glTexImage2D.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.c_int, ctypes.c
 def glTexImage2D(target, level, internalformat, format, type, pixels):
     border = 0
     if isinstance(pixels, (tuple, list)):
-        width, height = pixels
+        height, width = pixels
         pixels = ctypes.c_void_p(0)
         pixels = None
     else:
@@ -813,7 +813,7 @@ def glTexImage2D(target, level, internalformat, format, type, pixels):
             pixels = pixels.copy('C')
         pixels_ = pixels
         pixels = pixels_.ctypes.data
-        width, height = pixels_.shape[:2]
+        height, width = pixels_.shape[:2]
     res = _lib.glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
 
 
@@ -832,7 +832,7 @@ def glTexSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
         pixels = pixels.copy('C')
     pixels_ = pixels
     pixels = pixels_.ctypes.data
-    width, height = pixels_.shape[:2]
+    height, width = pixels_.shape[:2]
     res = _lib.glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels)
 
 
