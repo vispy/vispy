@@ -9,6 +9,14 @@ vispy backend for pyglet.
 # absolute import is important here, since this module is called pyglet :)
 from __future__ import division
 
+from distutils.version import LooseVersion
+import pyglet
+version = pyglet.version
+
+if LooseVersion(version) < LooseVersion('1.2'):
+    raise ImportError('Pyglet version too old (%s), need >= 1.2'
+                      % pyglet.version)
+
 import pyglet.window
 import pyglet.app
 import pyglet.clock
