@@ -329,8 +329,8 @@ class Attribute(Variable):
 
         # Regular vertex buffer
         elif self._handle >= 0:
-            if self._need_update:
-                self.data.update()
+#            if self._need_update:
+#                self.data.update()
 
             # Get relevant information from gl_typeinfo
             size, gtype, dtype = gl_typeinfo[self._gtype]
@@ -340,7 +340,7 @@ class Attribute(Variable):
             offset = ctypes.c_void_p(self.data.offset)
 
             gl.glEnableVertexAttribArray(self.handle)
-            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.data.handle)
+            #gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.data.handle)
             gl.glVertexAttribPointer(
                 self.handle, size, gtype,  gl.GL_FALSE, stride, offset)
 
