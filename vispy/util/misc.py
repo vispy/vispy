@@ -184,17 +184,27 @@ def parse_command_line_arguments():
     Put into a function so that any variables dont leak in the vispy namespace.
     """
     # Get command line args for vispy
-    argnames = ['vispy-backend', 'vispy-gl-debug']
+    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-log=']
     try:
         opts, args = getopt.getopt(sys.argv[1:], '', argnames)
     except getopt.GetoptError:
         opts = []
     # Use them to set the config values
     for o, a in opts:
+        print(o,a)
         if o.startswith('--vispy'):
             if o == '--vispy-backend':
                 config['default_backend'] = a
                 logger.info('backend', a)
+            elif o == '--vispy-log':
+                if ',' in a:
+                    verbose, match = a.split(',')
+                else:
+                    verbose = a
+                    match = None
+                config['logging_level'] = a
+                print(verbose, match)
+                set_log_level(verbose, match)
             elif o == '--vispy-gl-debug':
                 config['gl_debug'] = True
             else:
