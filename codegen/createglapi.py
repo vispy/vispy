@@ -686,25 +686,33 @@ class PyOpenGLApiGenrator(ApiGenerator):
         mod = 'GL'
         if 'renderbuffer' in des.name.lower() or 'framebuffer' in des.name.lower():
             mod = 'FBO'
-        # Def function
+        # Get call line
         argstr = ', '.join(des.args)
-        self.lines.append('def %s(%s):' % (des.apiname, argstr))
-        # Content
         call_line = '    return %s.%s(%s)' % (mod, des.es2.glname, argstr)
-        if des.ann is None:
-            self.lines.append(call_line)
+        # Get annotation lines
+        ann_lines = []
+        if des.ann is not None:
+            ann_lines = des.ann.get_lines(call_line, 'pyopengl')
+        # Use annotation or not
+        if ann_lines:
+            self.lines.append('def %s(%s):' % (des.apiname, argstr))
+            self.lines.extend(ann_lines)
         else:
-            lines = des.ann.get_lines(call_line, 'pyopengl')
-            lines = lines or [call_line]
-            self.lines.extend(lines)
+            if des.es2.glname == des.apiname:
+                self.lines.append('from OpenGL.%s import %s' % (mod, des.apiname))
+            else:
+                self.lines.append('from OpenGL.%s import %s as %s' % 
+                                  (mod, des.es2.glname, des.apiname))
     
     def _add_group_function(self, des, sig, es2func):
-        # Def function
         funcname = apiname(sig.split('(')[0])
-        args = sig.split('(', 1)[1].split(')')[0]
-        self.lines.append('def %s:' % sig)
-        # Content
-        self.lines.append('    return GL.%s' % sig)
+        self.lines.append('from OpenGL.GL import %s' % funcname)
+#         # Def function
+#         funcname = apiname(sig.split('(')[0])
+#         args = sig.split('(', 1)[1].split(')')[0]
+#         self.lines.append('def %s:' % sig)
+#         # Content
+#         self.lines.append('    return GL.%s' % sig)
 
 
 

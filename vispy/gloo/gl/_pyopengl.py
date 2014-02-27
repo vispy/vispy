@@ -11,52 +11,40 @@ from OpenGL import GL
 import OpenGL.GL.framebufferobjects as FBO
 
 
-def glActiveTexture(texture):
-    return GL.glActiveTexture(texture)
+from OpenGL.GL import glActiveTexture
 
 
-def glAttachShader(program, shader):
-    return GL.glAttachShader(program, shader)
+from OpenGL.GL import glAttachShader
 
 
-def glBindAttribLocation(program, index, name):
-    return GL.glBindAttribLocation(program, index, name)
+from OpenGL.GL import glBindAttribLocation
 
 
-def glBindBuffer(target, buffer):
-    return GL.glBindBuffer(target, buffer)
+from OpenGL.GL import glBindBuffer
 
 
-def glBindFramebuffer(target, framebuffer):
-    return FBO.glBindFramebuffer(target, framebuffer)
+from OpenGL.FBO import glBindFramebuffer
 
 
-def glBindRenderbuffer(target, renderbuffer):
-    return FBO.glBindRenderbuffer(target, renderbuffer)
+from OpenGL.FBO import glBindRenderbuffer
 
 
-def glBindTexture(target, texture):
-    return GL.glBindTexture(target, texture)
+from OpenGL.GL import glBindTexture
 
 
-def glBlendColor(red, green, blue, alpha):
-    return GL.glBlendColor(red, green, blue, alpha)
+from OpenGL.GL import glBlendColor
 
 
-def glBlendEquation(mode):
-    return GL.glBlendEquation(mode)
+from OpenGL.GL import glBlendEquation
 
 
-def glBlendEquationSeparate(modeRGB, modeAlpha):
-    return GL.glBlendEquationSeparate(modeRGB, modeAlpha)
+from OpenGL.GL import glBlendEquationSeparate
 
 
-def glBlendFunc(sfactor, dfactor):
-    return GL.glBlendFunc(sfactor, dfactor)
+from OpenGL.GL import glBlendFunc
 
 
-def glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha):
-    return GL.glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha)
+from OpenGL.GL import glBlendFuncSeparate
 
 
 def glBufferData(target, data, usage):
@@ -75,32 +63,25 @@ def glBufferSubData(target, offset, data):
     GL.glBufferSubData(target, offset, size, data)
 
 
-def glCheckFramebufferStatus(target):
-    return FBO.glCheckFramebufferStatus(target)
+from OpenGL.FBO import glCheckFramebufferStatus
 
 
-def glClear(mask):
-    return GL.glClear(mask)
+from OpenGL.GL import glClear
 
 
-def glClearColor(red, green, blue, alpha):
-    return GL.glClearColor(red, green, blue, alpha)
+from OpenGL.GL import glClearColor
 
 
-def glClearDepth(depth):
-    return GL.glClearDepthf(depth)
+from OpenGL.GL import glClearDepthf as glClearDepth
 
 
-def glClearStencil(s):
-    return GL.glClearStencil(s)
+from OpenGL.GL import glClearStencil
 
 
-def glColorMask(red, green, blue, alpha):
-    return GL.glColorMask(red, green, blue, alpha)
+from OpenGL.GL import glColorMask
 
 
-def glCompileShader(shader):
-    return GL.glCompileShader(shader)
+from OpenGL.GL import glCompileShader
 
 
 def glCompressedTexImage2D(target, level, internalformat, width, height, border, data):
@@ -114,24 +95,19 @@ def glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, fo
     GL.glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, size, data)
 
 
-def glCopyTexImage2D(target, level, internalformat, x, y, width, height, border):
-    return GL.glCopyTexImage2D(target, level, internalformat, x, y, width, height, border)
+from OpenGL.GL import glCopyTexImage2D
 
 
-def glCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height):
-    return GL.glCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height)
+from OpenGL.GL import glCopyTexSubImage2D
 
 
-def glCreateProgram():
-    return GL.glCreateProgram()
+from OpenGL.GL import glCreateProgram
 
 
-def glCreateShader(type):
-    return GL.glCreateShader(type)
+from OpenGL.GL import glCreateShader
 
 
-def glCullFace(mode):
-    return GL.glCullFace(mode)
+from OpenGL.GL import glCullFace
 
 
 def glDeleteBuffer(buffer):
@@ -142,81 +118,63 @@ def glDeleteFramebuffer(framebuffer):
     FBO.glDeleteFrameBuffers([framebuffer])
 
 
-def glDeleteProgram(program):
-    return GL.glDeleteProgram(program)
+from OpenGL.GL import glDeleteProgram
 
 
 def glDeleteRenderbuffer(renderbuffer):
     FBO.glDeleteRenderbuffers([renderbuffer])
 
 
-def glDeleteShader(shader):
-    return GL.glDeleteShader(shader)
+from OpenGL.GL import glDeleteShader
 
 
 def glDeleteTexture(texture):
     GL.glDeleteTextures([texture])
 
 
-def glDepthFunc(func):
-    return GL.glDepthFunc(func)
+from OpenGL.GL import glDepthFunc
 
 
-def glDepthMask(flag):
-    return GL.glDepthMask(flag)
+from OpenGL.GL import glDepthMask
 
 
-def glDepthRange(zNear, zFar):
-    return GL.glDepthRangef(zNear, zFar)
+from OpenGL.GL import glDepthRangef as glDepthRange
 
 
-def glDetachShader(program, shader):
-    return GL.glDetachShader(program, shader)
+from OpenGL.GL import glDetachShader
 
 
-def glDisable(cap):
-    return GL.glDisable(cap)
+from OpenGL.GL import glDisable
 
 
-def glDisableVertexAttribArray(index):
-    return GL.glDisableVertexAttribArray(index)
+from OpenGL.GL import glDisableVertexAttribArray
 
 
-def glDrawArrays(mode, first, count):
-    return GL.glDrawArrays(mode, first, count)
+from OpenGL.GL import glDrawArrays
 
 
-def glDrawElements(mode, count, type, offset):
-    """ offset can be integer offset or array of indices.
-    """
+from OpenGL.GL import glDrawElements
 
 
-def glEnable(cap):
-    return GL.glEnable(cap)
+from OpenGL.GL import glEnable
 
 
-def glEnableVertexAttribArray(index):
-    return GL.glEnableVertexAttribArray(index)
+from OpenGL.GL import glEnableVertexAttribArray
 
 
-def glFinish():
-    return GL.glFinish()
+from OpenGL.GL import glFinish
 
 
-def glFlush():
-    return GL.glFlush()
+from OpenGL.GL import glFlush
 
 
-def glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer):
-    return FBO.glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer)
+from OpenGL.FBO import glFramebufferRenderbuffer
 
 
-def glFramebufferTexture2D(target, attachment, textarget, texture, level):
-    return FBO.glFramebufferTexture2D(target, attachment, textarget, texture, level)
+from OpenGL.FBO import glFramebufferTexture2D
 
 
-def glFrontFace(mode):
-    return GL.glFrontFace(mode)
+from OpenGL.GL import glFrontFace
 
 
 def glCreateBuffer():
@@ -235,8 +193,7 @@ def glCreateTexture():
     return GL.glGenTextures(1)
 
 
-def glGenerateMipmap(target):
-    return GL.glGenerateMipmap(target)
+from OpenGL.GL import glGenerateMipmap
 
 
 def glGetActiveAttrib(program, index):
@@ -256,8 +213,7 @@ def glGetActiveUniform(program, index):
     return name.decode('utf-8'), size, type
 
 
-def glGetAttachedShaders(program):
-    return GL.glGetAttachedShaders(program)
+from OpenGL.GL import glGetAttachedShaders
 
 
 def glGetAttribLocation(program, name):
@@ -265,56 +221,43 @@ def glGetAttribLocation(program, name):
     return GL.glGetAttribLocation(program, name)
 
 
-def _glGetBooleanv(pname):
-    return GL.glGetBooleanv(pname)
+from OpenGL.GL import glGetBooleanv as _glGetBooleanv
 
 
-def glGetBufferParameter(target, pname):
-    return GL.glGetBufferParameteriv(target, pname)
+from OpenGL.GL import glGetBufferParameteriv as glGetBufferParameter
 
 
-def glGetError():
-    return GL.glGetError()
+from OpenGL.GL import glGetError
 
 
-def _glGetFloatv(pname):
-    return GL.glGetFloatv(pname)
+from OpenGL.GL import glGetFloatv as _glGetFloatv
 
 
-def glGetFramebufferAttachmentParameter(target, attachment, pname):
-    return FBO.glGetFramebufferAttachmentParameteriv(target, attachment, pname)
+from OpenGL.FBO import glGetFramebufferAttachmentParameteriv as glGetFramebufferAttachmentParameter
 
 
-def _glGetIntegerv(pname):
-    return GL.glGetIntegerv(pname)
+from OpenGL.GL import glGetIntegerv as _glGetIntegerv
 
 
-def glGetProgramInfoLog(program):
-    return GL.glGetProgramInfoLog(program)
+from OpenGL.GL import glGetProgramInfoLog
 
 
-def glGetProgramParameter(program, pname):
-    return GL.glGetProgramiv(program, pname)
+from OpenGL.GL import glGetProgramiv as glGetProgramParameter
 
 
-def glGetRenderbufferParameter(target, pname):
-    return FBO.glGetRenderbufferParameteriv(target, pname)
+from OpenGL.FBO import glGetRenderbufferParameteriv as glGetRenderbufferParameter
 
 
-def glGetShaderInfoLog(shader):
-    return GL.glGetShaderInfoLog(shader)
+from OpenGL.GL import glGetShaderInfoLog
 
 
-def glGetShaderPrecisionFormat(shadertype, precisiontype):
-    return GL.glGetShaderPrecisionFormat(shadertype, precisiontype)
+from OpenGL.GL import glGetShaderPrecisionFormat
 
 
-def glGetShaderSource(shader):
-    return GL.glGetShaderSource(shader)
+from OpenGL.GL import glGetShaderSource
 
 
-def glGetShaderParameter(shader, pname):
-    return GL.glGetShaderiv(shader, pname)
+from OpenGL.GL import glGetShaderiv as glGetShaderParameter
 
 
 def glGetParameter(pname):
@@ -343,8 +286,7 @@ def glGetTexParameter(target, pname):
     return params[0]
 
 
-def glGetUniform(program, location):
-    return GL.glGetUniformfv(program, location)
+from OpenGL.GL import glGetUniformfv as glGetUniform
 
 
 def glGetUniformLocation(program, name):
@@ -364,79 +306,59 @@ def glGetVertexAttrib(program, location):
         return values
 
 
-def glGetVertexAttribOffset(index, pname):
-    return GL.glGetVertexAttribPointerv(index, pname)
+from OpenGL.GL import glGetVertexAttribPointerv as glGetVertexAttribOffset
 
 
-def glHint(target, mode):
-    return GL.glHint(target, mode)
+from OpenGL.GL import glHint
 
 
-def glIsBuffer(buffer):
-    return GL.glIsBuffer(buffer)
+from OpenGL.GL import glIsBuffer
 
 
-def glIsEnabled(cap):
-    return GL.glIsEnabled(cap)
+from OpenGL.GL import glIsEnabled
 
 
-def glIsFramebuffer(framebuffer):
-    return FBO.glIsFramebuffer(framebuffer)
+from OpenGL.FBO import glIsFramebuffer
 
 
-def glIsProgram(program):
-    return GL.glIsProgram(program)
+from OpenGL.GL import glIsProgram
 
 
-def glIsRenderbuffer(renderbuffer):
-    return FBO.glIsRenderbuffer(renderbuffer)
+from OpenGL.FBO import glIsRenderbuffer
 
 
-def glIsShader(shader):
-    return GL.glIsShader(shader)
+from OpenGL.GL import glIsShader
 
 
-def glIsTexture(texture):
-    return GL.glIsTexture(texture)
+from OpenGL.GL import glIsTexture
 
 
-def glLineWidth(width):
-    return GL.glLineWidth(width)
+from OpenGL.GL import glLineWidth
 
 
-def glLinkProgram(program):
-    return GL.glLinkProgram(program)
+from OpenGL.GL import glLinkProgram
 
 
-def glPixelStorei(pname, param):
-    return GL.glPixelStorei(pname, param)
+from OpenGL.GL import glPixelStorei
 
 
-def glPolygonOffset(factor, units):
-    return GL.glPolygonOffset(factor, units)
+from OpenGL.GL import glPolygonOffset
 
 
-def glReadPixels(x, y, width, height, format, type):
-    """ Return pixels as bytes.
-    """
-    # GL_ALPHA, GL_RGB, GL_RGBA
-    t = {6406:1, 6407:3, 6408:4}[format]
-    # we kind of only support type GL_UNSIGNED_BYTE
+from OpenGL.GL import glReadPixels
 
 
-def glRenderbufferStorage(target, internalformat, width, height):
-    return FBO.glRenderbufferStorage(target, internalformat, width, height)
+from OpenGL.FBO import glRenderbufferStorage
 
 
-def glSampleCoverage(value, invert):
-    return GL.glSampleCoverage(value, invert)
+from OpenGL.GL import glSampleCoverage
 
 
-def glScissor(x, y, width, height):
-    return GL.glScissor(x, y, width, height)
+from OpenGL.GL import glScissor
 
 
 def glShaderSource(shader, source):
+    # Some implementation do not like getting a list of single chars
     if isinstance(source, (tuple, list)):
         strings = [s for s in source]
     else:
@@ -444,28 +366,22 @@ def glShaderSource(shader, source):
     GL.glShaderSource(shader, strings)
 
 
-def glStencilFunc(func, ref, mask):
-    return GL.glStencilFunc(func, ref, mask)
+from OpenGL.GL import glStencilFunc
 
 
-def glStencilFuncSeparate(face, func, ref, mask):
-    return GL.glStencilFuncSeparate(face, func, ref, mask)
+from OpenGL.GL import glStencilFuncSeparate
 
 
-def glStencilMask(mask):
-    return GL.glStencilMask(mask)
+from OpenGL.GL import glStencilMask
 
 
-def glStencilMaskSeparate(face, mask):
-    return GL.glStencilMaskSeparate(face, mask)
+from OpenGL.GL import glStencilMaskSeparate
 
 
-def glStencilOp(fail, zfail, zpass):
-    return GL.glStencilOp(fail, zfail, zpass)
+from OpenGL.GL import glStencilOp
 
 
-def glStencilOpSeparate(face, fail, zfail, zpass):
-    return GL.glStencilOpSeparate(face, fail, zfail, zpass)
+from OpenGL.GL import glStencilOpSeparate
 
 
 def glTexImage2D(target, level, internalformat, format, type, pixels):
@@ -478,10 +394,8 @@ def glTexImage2D(target, level, internalformat, format, type, pixels):
     GL.glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
 
 
-def glTexParameterf(target, pname, param):
-    return GL.glTexParameterf(target, pname, param)
-def glTexParameteri(target, pname, param):
-    return GL.glTexParameteri(target, pname, param)
+from OpenGL.GL import glTexParameterf
+from OpenGL.GL import glTexParameteri
 
 
 def glTexSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
@@ -489,71 +403,44 @@ def glTexSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
     GL.glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels)
 
 
-def glUniform1f(location, v1):
-    return GL.glUniform1f(location, v1)
-def glUniform2f(location, v1, v2):
-    return GL.glUniform2f(location, v1, v2)
-def glUniform3f(location, v1, v2, v3):
-    return GL.glUniform3f(location, v1, v2, v3)
-def glUniform4f(location, v1, v2, v3, v4):
-    return GL.glUniform4f(location, v1, v2, v3, v4)
-def glUniform1i(location, v1):
-    return GL.glUniform1i(location, v1)
-def glUniform2i(location, v1, v2):
-    return GL.glUniform2i(location, v1, v2)
-def glUniform3i(location, v1, v2, v3):
-    return GL.glUniform3i(location, v1, v2, v3)
-def glUniform4i(location, v1, v2, v3, v4):
-    return GL.glUniform4i(location, v1, v2, v3, v4)
-def glUniform1fv(location, count, values):
-    return GL.glUniform1fv(location, count, values)
-def glUniform2fv(location, count, values):
-    return GL.glUniform2fv(location, count, values)
-def glUniform3fv(location, count, values):
-    return GL.glUniform3fv(location, count, values)
-def glUniform4fv(location, count, values):
-    return GL.glUniform4fv(location, count, values)
-def glUniform1iv(location, count, values):
-    return GL.glUniform1iv(location, count, values)
-def glUniform2iv(location, count, values):
-    return GL.glUniform2iv(location, count, values)
-def glUniform3iv(location, count, values):
-    return GL.glUniform3iv(location, count, values)
-def glUniform4iv(location, count, values):
-    return GL.glUniform4iv(location, count, values)
+from OpenGL.GL import glUniform1f
+from OpenGL.GL import glUniform2f
+from OpenGL.GL import glUniform3f
+from OpenGL.GL import glUniform4f
+from OpenGL.GL import glUniform1i
+from OpenGL.GL import glUniform2i
+from OpenGL.GL import glUniform3i
+from OpenGL.GL import glUniform4i
+from OpenGL.GL import glUniform1fv
+from OpenGL.GL import glUniform2fv
+from OpenGL.GL import glUniform3fv
+from OpenGL.GL import glUniform4fv
+from OpenGL.GL import glUniform1iv
+from OpenGL.GL import glUniform2iv
+from OpenGL.GL import glUniform3iv
+from OpenGL.GL import glUniform4iv
 
 
-def glUniformMatrix2fv(location, count, transpose, values):
-    return GL.glUniformMatrix2fv(location, count, transpose, values)
-def glUniformMatrix3fv(location, count, transpose, values):
-    return GL.glUniformMatrix3fv(location, count, transpose, values)
-def glUniformMatrix4fv(location, count, transpose, values):
-    return GL.glUniformMatrix4fv(location, count, transpose, values)
+from OpenGL.GL import glUniformMatrix2fv
+from OpenGL.GL import glUniformMatrix3fv
+from OpenGL.GL import glUniformMatrix4fv
 
 
-def glUseProgram(program):
-    return GL.glUseProgram(program)
+from OpenGL.GL import glUseProgram
 
 
-def glValidateProgram(program):
-    return GL.glValidateProgram(program)
+from OpenGL.GL import glValidateProgram
 
 
-def glVertexAttrib1f(index, v1):
-    return GL.glVertexAttrib1f(index, v1)
-def glVertexAttrib2f(index, v1, v2):
-    return GL.glVertexAttrib2f(index, v1, v2)
-def glVertexAttrib3f(index, v1, v2, v3):
-    return GL.glVertexAttrib3f(index, v1, v2, v3)
-def glVertexAttrib4f(index, v1, v2, v3, v4):
-    return GL.glVertexAttrib4f(index, v1, v2, v3, v4)
+from OpenGL.GL import glVertexAttrib1f
+from OpenGL.GL import glVertexAttrib2f
+from OpenGL.GL import glVertexAttrib3f
+from OpenGL.GL import glVertexAttrib4f
 
 
-def glVertexAttribPointer(indx, size, type, normalized, stride, offset):
-    return GL.glVertexAttribPointer(indx, size, type, normalized, stride, offset)
+from OpenGL.GL import glVertexAttribPointer
 
 
-def glViewport(x, y, width, height):
-    return GL.glViewport(x, y, width, height)
+from OpenGL.GL import glViewport
 
 

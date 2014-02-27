@@ -298,8 +298,6 @@ def glDrawArrays(mode, first, count):
 _lib.glDrawElements.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctypes.c_void_p,
 # void = glDrawElements(GLenum mode, GLsizei count, GLenum type, GLvoid* indices)
 def glDrawElements(mode, count, type, offset):
-    """ offset can be integer offset or array of indices.
-    """
     if offset is None:
         offset = ctypes.c_void_p(0)
     elif isinstance(offset, c_void_p):
@@ -725,8 +723,6 @@ def glPolygonOffset(factor, units):
 _lib.glReadPixels.argtypes = ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p,
 # void = glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* pixels)
 def glReadPixels(x, y, width, height, format, type):
-    """ Return pixels as bytes.
-    """
     # GL_ALPHA, GL_RGB, GL_RGBA
     t = {6406:1, 6407:3, 6408:4}[format]
     # we kind of only support type GL_UNSIGNED_BYTE
@@ -757,6 +753,7 @@ def glScissor(x, y, width, height):
 _lib.glShaderSource.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_char_p), ctypes.POINTER(ctypes.c_int),
 # void = glShaderSource(GLuint shader, GLsizei count, GLchar** string, GLint* length)
 def glShaderSource(shader, source):
+    # Some implementation do not like getting a list of single chars
     if isinstance(source, (tuple, list)):
         strings = [s for s in source]
     else:

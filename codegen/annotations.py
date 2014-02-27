@@ -134,18 +134,17 @@ def texSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
 
 
 def readPixels(x, y, width, height, format, type):
-    """ Return pixels as bytes.
-    """
+    # --- desktop angle mock
     # GL_ALPHA, GL_RGB, GL_RGBA
     t = {6406:1, 6407:3, 6408:4}[format]
     # we kind of only support type GL_UNSIGNED_BYTE
-    # --- desktop angle
     size = int(width*height*t)
+    # --- desktop angle
     pixels = ctypes.create_string_buffer(size)
     ()
     return pixels[:]
     # --- mock
-    return width * height * t * b'\x00'
+    return size * b'\x00'
 
 
 def compressedTexImage2D(target, level, internalformat, width, height, border=0, data=None):
@@ -215,8 +214,6 @@ def bufferSubData(target, offset, data):
 
 
 def drawElements(mode, count, type, offset):
-    """ offset can be integer offset or array of indices.
-    """
     # --- desktop angle
     if offset is None:
         offset = ctypes.c_void_p(0)
@@ -260,6 +257,7 @@ def bindAttribLocation(program, index, name):
 
 
 def shaderSource(shader, source):
+    # Some implementation do not like getting a list of single chars
     if isinstance(source, (tuple, list)):
         strings = [s for s in source]
     else:
