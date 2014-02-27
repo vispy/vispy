@@ -2,7 +2,7 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import division
+from __future__ import division, print_function
 import logging
 
 from ..gloo import Program, VertexShader, FragmentShader
@@ -110,15 +110,23 @@ class ModularProgram(Program):
             'fragment': {},
             }
         
+        # Compiled code for each shader
+        self.code = {
+            'vertex': '',
+            'fragment': '',
+            }
+        
         # Garbage collection system: keep track of all objects (functions and
         # variables) included in the program and their referrers. When no 
         # referrers are found, remove the object from here and from
         # the namespaces / caches.
         # TODO: Not implemented yet..
-        self.referrers = {}  # {obj: [list of referrers]}
+        self._referrers = {}  # {obj: [list of referrers]}
         
         # cache of compilation results for each function and variable
-        self._function_cache = {}  # {function: (name, code)}
+        self._function_cache = {}  # {function: (name, code, deps)}
+                                   # *deps* is the list of functions and
+                                   # variables this function depends on.
         self._variable_cache = {}  # {variable: (name, code)}
         
         # lists all hooks (function prototypes in both shaders. Format is:
@@ -215,10 +223,37 @@ class ModularProgram(Program):
         self._need_update = True
 
     def unset_hook(self, hook_name):
+        func = self._hook_defs[hook_name]
+        # removing function; also remove all other objects that no longer serve 
+        # a purpose here..
+        self._forget_object(func)
         self._hook_defs[hook_name] = None
         self._need_update = True
         
-                
+               
+    def _forget_object(self, obj):
+        # Remove obj from namespaces, forget any cached information about it,
+        # remove from referrer lists
+        print("FORGET:", obj)
+        if isinstance(obj, Function):
+            fc = self._function_cache.pop(obj, None)
+            if fc is None:
+                return
+            name, code, references = fc
+            for ref in references:
+                referrers = self._referrers[ref]
+                referrers.remove(obj)
+                if len(referrers) == 0:
+                    self._forget_object(ref)
+        else:
+            name, code = self._variable_cache.pop(obj)
+        
+        self._referrers.pop(obj, None)
+        
+        for ns in self.namespaces.values():
+            ns.pop(name, None)
+            
+        
     # TODO: might remove this functionality. 
     # It is not currently in use..
     #def _install_dep_callbacks(self, function):
@@ -261,19 +296,54 @@ class ModularProgram(Program):
                                      % name)
                 self._hooks[name] = (shader_type, args, rtype)
 
+    """
+    New strategy:
+    
+    
+    1) collect all objects that need to be in the program, in order
+    2) objects that already have compiled code are added to namespace
+       (if _all_ objects are compiled, we can skip the namespace)
+    3) remaining objects are compiled and added to namespace
+    4) code is constructed sequentially from compiled objects
+    5) namespace is used to set variables, then discarded.
+    
+    
+    Problems:
+    1) Variable declarations should be added independently of function
+       definitions. 
+    
+    
+    When objects are removed:
+    
+    1) Anything that the object depends on loses a reference
+    2) Objects with no remaining references are removed
+    
+    
+    
+    
+    
+    
+    """
+    def _compile(self):
+        object_list = self._collect_objects
+
     def _compile(self):
         """
         Generate complete vertex and fragment shader code by compiling hook
         definitions and concatenating each to the shaders.
         """
-        code = {'vertex': [self.vmain], 'fragment': [self.fmain]}
+        self.code['vertex'] = [self.vmain]
+        self.code['fragment'] = [self.fmain]
+        #self.namespaces = {'vertex': {}, 'fragment': {}}
         
         for hook_name, func in self._hook_defs.items():
             self._check_hook(hook_name)
             shader, hook_args, hook_rtype = self._hooks[hook_name]
-            n, c = self._resolve_function(func, shader, hook_name)
+            self.code[shader].append(header)
+            
             header = "\n//------- Begin hook %s -------\n\n" % hook_name
-            code[shader].append(header + c)
+            n, c = self._resolve_function(func, shader, hook_name)
+            
         self.vert_code = '\n'.join(code['vertex'])
         self.frag_code = '\n'.join(code['fragment'])
         
@@ -289,10 +359,10 @@ class ModularProgram(Program):
         
         Return (function_name, code).
         """
+        print("RESOLVE FUNCTION:", func)
         func_res = self._function_cache.get(func, None)
         if func_res is not None:
-            return func_res
-        
+            return func_res[:2]
         
         code = ""
         subs = {}
@@ -301,7 +371,9 @@ class ModularProgram(Program):
         if func.is_anonymous:
             if func_name is None:
                 func_name = func.name.lstrip('$')
-            func_name = self._suggest_name(shader, func_name, func)
+                func_name = self._suggest_name(shader, func_name, func)
+            else:
+                self._check_name(shader, func_name, func)
             subs[func.name.lstrip('$')] = func_name
         else:
             if func_name is None:
@@ -316,29 +388,40 @@ class ModularProgram(Program):
         self.namespaces[shader][func_name] = func
         
         # resolve all variable names and generate declarations if needed
+        func_deps = []
+        print("  add variables:")
         for local_name in func.template_vars:
+            print("    ",local_name)
             var = func[local_name]
             n, c = self._resolve_variable(var, shader)
             if n not in self.namespaces[shader]:
+                print("      ",c)
                 code += c
                 self.namespaces[shader][n] = var
+            else:
+                print("      already defined")
             subs[local_name] = n
+            self._referrers.setdefault(var, set()).add(func)
+            func_deps.append(var)
             
-        # resolve all dependencies
+        # resolve all function dependencies
         dep_names = {}
         for dep in func.deps:
-            n, c = self._resolve_function(dep, shader)
-            dep_names[dep] = n
-            code += c
-            code += "\n\n"
+            if dep not already_added_to_code:
+                n, c = self._resolve_function(dep, shader)
+                dep_names[dep] = n
+                code += c
+                code += "\n"
+            self._referrers.setdefault(dep, set()).add(func)
+            func_deps.append(dep)
             
         # compile code with the suggested substitutions and dependency names
         code += func.compile(subs, dep_names)
         code += "\n"
         
-        func_res = (func_name, code)
+        func_res = (func_name, code, func_deps)
         self._function_cache[func] = func_res
-        return func_res
+        return func_res[:2]
     
     def _resolve_variable(self, var, shader):
         """
@@ -362,6 +445,16 @@ class ModularProgram(Program):
         var_res = (name, decl)
         self._variable_cache[var] = var_res
         return var_res
+        
+    def _add_to_shader(self, shader, name, code, value):
+        # Add *code* to the specified shader
+        # Add *value* to the namespace
+        if name not in self.namsepaces[shader]:
+            self.code[shader] += code
+            self.namespaces[shader][name] = value
+        else:
+            if self.namespaces[shader][name] is not value:
+                raise Exception("Attempted to define %s multiple times" % name)
         
     def _check_name(self, shader, name, val):
         """
