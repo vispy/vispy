@@ -62,14 +62,13 @@ def has_qt(requires_uic=False, return_which=False):
 
 def has_pyglet(return_which=False):
     try:
-        import pyglet  # noqa
+        from . import _pyglet  # noqa
     except:
         which = None
         has = False
-        pass
     else:
         has = True
-        which = 'pyglet ' + str(pyglet.version)
+        which = 'pyglet ' + str(_pyglet.version)
     if return_which:
         out = (has, which)
     else:

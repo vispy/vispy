@@ -168,8 +168,12 @@ class Maker:
         """ Run flake8 to find style inconsistencies. """
         os.chdir(ROOT_DIR)
         sys.argv[1:] = ['vispy', 'examples', 'make']
-        from flake8.main import main
-        main()
+        try:
+            from flake8.main import main
+        except ImportError:
+            print('Skipping flake8 test, flake8 not installed')
+        else:
+            main()
 
     def images(self, arg):
         """ Create images (screenshots). Subcommands:

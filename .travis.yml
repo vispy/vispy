@@ -10,11 +10,12 @@ virtualenv:
 
 env:
     # Enable python 2 and python 3 builds
-    - PYTHON=2.6 DEPS=full    OGL=stable
-    - PYTHON=2.7 DEPS=full    OGL=stable
-    - PYTHON=2.7 DEPS=full    OGL=beta
-    - PYTHON=2.7 DEPS=minimal OGL=stable
-    - PYTHON=3.3 DEPS=full    OGL=stable
+    # Note that the 2.6 build doesn't get flake8, and runs old versions of
+    # Pyglet and GLFW to make sure we deal with those correctly
+    - PYTHON=2.6 DEPS=full
+    - PYTHON=2.7 DEPS=full
+    - PYTHON=2.7 DEPS=minimal
+    - PYTHON=3.3 DEPS=full
 
 before_install:
     - travis_retry sudo apt-get -qq update;
@@ -35,23 +36,27 @@ install:
       else
         travis_retry sudo apt-get -qq -y install python-numpy python-nose;
       fi;
-    - pip install -q coveralls nose-timer flake8
-    - if [ "${OGL}" == "beta" ]; then
-        echo "Using OpenGL beta version (pip)";
-        pip install -q https://pypi.python.org/packages/source/P/PyOpenGL/PyOpenGL-3.1.0b1.tar.gz;
+    - pip install -q coveralls nose-timer
+    # Dont install flake8 on 2.6 to make sure tests still run without it
+    - if [ "${PYTHON}" != "2.6" ]; then
+        pip install -q flake8;
+      fi
+    - if [ "${PYTHON}" == "2.7" ]; then
+        echo "Using OpenGL stable version (repos)";
+        travis_retry sudo apt-get -qq -y install python-opengl;
       else
-        if [ "${PYTHON}" == "2.7" ]; then
-          echo "Using OpenGL stable version (repos)";
-          travis_retry sudo apt-get -qq -y install python-opengl;
-        else
-          echo "Using OpenGL stable version (pip)";
-          pip install -q PyOpenGL;
-        fi;
+        echo "Using OpenGL stable version (pip)";
+        pip install -q PyOpenGL;
       fi;
 
     # Use Pyglet alpha to get Py3.3 support
+    # Test old (insufficient) version of Pyglet on 2.6
     - if [ "${DEPS}" == "full" ]; then
-        pip install -q http://pyglet.googlecode.com/archive/tip.zip;
+        if [ "${PYTHON}" == "2.6" ]; then
+          pip install -q pyglet;
+        else
+          pip install -q http://pyglet.googlecode.com/archive/tip.zip;
+        fi;
         if [ "${PYTHON}" == "3.3" ]; then
           conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo;
           conda install --yes --quiet pillow;
@@ -92,21 +97,18 @@ script:
     - cd ${VISPY_DIR}/../
     - # Nose-timer has bugs on 3+ as of Jan 2014
     - if [ "${PYTHON}" == "2.7" ]; then
-        nosetests --with-timer --timer-top-n 10;
+        nosetests -x --with-timer --timer-top-n 10;
       else
         nosetests;
       fi
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - cd ${SRC_DIR}
-    # Don't run on 2.6 because it has some silly (unimportant) error
-    - if [ "${PYTHON}" != "2.6" ]; then
-        make flake;
-      fi;
+    - make flake
 
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
     # Let's use the "full" test case for coveralls, best case for coverage
-    - if [ "${PYTHON}" == "2.7" ] && [ "${DEPS}" == "full" ] && [ "${OGL}" != "beta" ]; then
+    - if [ "${PYTHON}" == "2.7" ] && [ "${DEPS}" == "full" ]; then
         echo "Running coveralls";
         cd ${SRC_DIR};
         coveralls;
