@@ -494,11 +494,11 @@ class Texture(GLObject):
         # Determine function and target from texType
         # todo: define this map on the class and define the Texture3D in
         # a separate module which uses goo.glplus or something
-        D = {  # gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),  # not in ES 2.0
-            #gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
-            gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
-            #gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)
-            }
+        D = {   # gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),  # not in ES 2.0
+                #gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
+                gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
+                #gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)
+        }
         uploadFun, ndim = D[target]
 
         # Determine type
@@ -524,10 +524,10 @@ class Texture(GLObject):
 
         # Determine function and target from texType
         # todo: define this map on the class
-        D = {  # gl.GL_TEXTURE_1D: (gl.glTexSubImage1D, 1),
-            gl.GL_TEXTURE_2D: (gl.glTexSubImage2D, 2),
-            #gl.ext.GL_TEXTURE_3D: (gl.ext.glTexSubImage3D, 3)
-            }
+        D = {   # gl.GL_TEXTURE_1D: (gl.glTexSubImage1D, 1),
+                gl.GL_TEXTURE_2D: (gl.glTexSubImage2D, 2),
+                #gl.ext.GL_TEXTURE_3D: (gl.ext.glTexSubImage3D, 3)
+        }
         uploadFun, ndim = D[target]
 
         # Reverse and check offset
