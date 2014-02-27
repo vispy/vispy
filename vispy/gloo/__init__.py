@@ -46,16 +46,16 @@ Example::
 
 from __future__ import division
 
-from . import gl                       # noqa
-from .globject import GLObject         # noqa
-from .buffer import VertexBuffer       # noqa
-from .buffer import IndexBuffer        # noqa
-from .texture import Texture1D         # noqa
-from .texture import Texture2D         # noqa
-from .shader import VertexShader       # noqa
-from .shader import FragmentShader     # noqa
-from .program import Program           # noqa
-from .framebuffer import FrameBuffer   # noqa
-from .framebuffer import ColorBuffer   # noqa
-from .framebuffer import DepthBuffer   # noqa
-from .framebuffer import StencilBuffer # noqa
+from . import gl                        # noqa
+from .globject import GLObject          # noqa
+from .buffer import VertexBuffer        # noqa
+from .buffer import IndexBuffer         # noqa
+from .texture import Texture1D          # noqa
+from .texture import Texture2D          # noqa
+from .shader import VertexShader        # noqa
+from .shader import FragmentShader      # noqa
+from .program import Program            # noqa
+from .framebuffer import FrameBuffer    # noqa
+from .framebuffer import ColorBuffer    # noqa
+from .framebuffer import DepthBuffer    # noqa
+from .framebuffer import StencilBuffer  # noqa

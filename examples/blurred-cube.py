@@ -10,13 +10,9 @@ import OpenGL.GL as gl
 import OpenGL.GLUT as glut
 
 import cube
-from vispy.gloo import Program, VertexBuffer, IndexBuffer, Texture2D, FrameBuffer
-from vispy.gloo import FrameBuffer, ColorBuffer, DepthBuffer, StencilBuffer
+from vispy.gloo import Program, VertexBuffer, IndexBuffer, Texture2D
+from vispy.gloo import FrameBuffer, DepthBuffer
 from vispy.util.transforms import perspective, translate, rotate
-
-# from vispy.util import set_log_level
-# set_log_level("debug")
-
 
 cube_vertex = """
 uniform mat4 u_model;
@@ -57,23 +53,9 @@ uniform sampler2D u_texture;
 varying vec2 v_texcoord;
 void main()
 {
-    // Totally wrong gaussian blur...
-    // This shoudl be made in two passes (vertical + horizontal)
+    // Inverse video
     if( v_texcoord.x > 0.5 ) {
-      float x = v_texcoord.x, dx = 1.0/256.0;
-      float y = v_texcoord.y, dy = 1.0/256.0;
-      vec4 color = vec4(0.0);
-      color += texture2D( u_texture, v_texcoord + vec2(-3.0*dx, -3.0*dy)) * 0.015625;
-      color += texture2D( u_texture, v_texcoord + vec2(-2.0*dx, -2.0*dy))*0.09375;
-      color += texture2D( u_texture, v_texcoord + vec2(-1.0*dx, -1.0*dy ) )*0.234375;
-      color += texture2D( u_texture, v_texcoord + vec2( 0.0,     0.0) )*0.3125;
-      color += texture2D( u_texture, v_texcoord + vec2( 1.0*dx,  1.0*dy ) )*0.234375;
-      color += texture2D( u_texture, v_texcoord + vec2( 2.0*dx,  2.0*dy ) )*0.09375;
-      color += texture2D( u_texture, v_texcoord + vec2( 3.0*dx, -3.0*dy ) ) * 0.015625;
-      color.a = 1.0;
-      gl_FragColor = color;
-    } else if( abs(v_texcoord.x -0.5) < 1.0/512.0) {
-        gl_FragColor = vec4(1.0);
+        gl_FragColor.rgb = 1.0 - texture2D(u_texture, v_texcoord).rgb;
     } else {
         gl_FragColor = texture2D(u_texture, v_texcoord);
     }
@@ -81,52 +63,44 @@ void main()
 """
 
 
-
 def display():
 
-    if 1:
-        framebuffer.activate()
-        gl.glDrawBuffer(gl.GL_COLOR_ATTACHMENT0)
-        gl.glViewport(0, 0, 512, 512)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        cube.draw(gl.GL_TRIANGLES, indices)
-        # cube.draw(gl.GL_TRIANGLES)
-        # gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 24)
-        gl.glDrawBuffer( gl.GL_NONE )
-        framebuffer.deactivate()
+    framebuffer.activate()
+    gl.glDrawBuffer(gl.GL_COLOR_ATTACHMENT0)
+    gl.glViewport(0, 0, 512, 512)
+    gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+    gl.glEnable(gl.GL_DEPTH_TEST)
+    cube.draw(gl.GL_TRIANGLES, indices)
+    gl.glDrawBuffer(gl.GL_NONE)
+    framebuffer.deactivate()
 
-
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT) # | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        quad.draw(gl.GL_TRIANGLE_STRIP)
-
-    else:
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        cube.draw(gl.GL_TRIANGLES, indices)
+    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+    gl.glDisable(gl.GL_DEPTH_TEST)
+    quad.draw(gl.GL_TRIANGLE_STRIP)
 
     glut.glutSwapBuffers()
 
-def reshape(width,height):
+
+def reshape(width, height):
     gl.glViewport(0, 0, width, height)
-    projection = perspective( 35.0, width/float(height), 2.0, 10.0 )
+    projection = perspective(30.0, width / float(height), 2.0, 10.0)
     cube['u_projection'] = projection
+
 
 def keyboard(key, x, y):
     if key == '\033':
-        sys.exit( )
-    if key == ' ':
-        screenshot('screenshot.png')
+        sys.exit()
+
 
 def timer(fps):
     global theta, phi
     theta += .5
     phi += .5
     model = np.eye(4, dtype=np.float32)
-    rotate(model, theta, 0,0,1)
-    rotate(model, phi, 0,1,0)
+    rotate(model, theta, 0, 0, 1)
+    rotate(model, phi, 0, 1, 0)
     cube['u_model'] = model
-    glut.glutTimerFunc(1000/fps, timer, fps)
+    glut.glutTimerFunc(1000 / fps, timer, fps)
     glut.glutPostRedisplay()
 
 
@@ -134,12 +108,12 @@ def timer(fps):
 # --------------------------------------
 glut.glutInit(sys.argv)
 glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_DEPTH)
-glut.glutCreateWindow('Blurred textured Cube')
-glut.glutReshapeWindow(512,512)
+glut.glutCreateWindow('Framebuffer rendering')
+glut.glutReshapeWindow(512, 512)
 glut.glutReshapeFunc(reshape)
-glut.glutKeyboardFunc(keyboard )
+glut.glutKeyboardFunc(keyboard)
 glut.glutDisplayFunc(display)
-glut.glutTimerFunc(1000/60, timer, 60)
+glut.glutTimerFunc(1000 / 60, timer, 60)
 
 # Build cube data
 # --------------------------------------
@@ -149,13 +123,13 @@ indices = IndexBuffer(indices)
 
 # Build program
 # --------------------------------------
-view = np.eye(4,dtype=np.float32)
-model = np.eye(4,dtype=np.float32)
-projection = np.eye(4,dtype=np.float32)
-translate(view, 0,0,-7)
-phi, theta = 60,20
-rotate(model, theta, 0,0,1)
-rotate(model, phi, 0,1,0)
+view = np.eye(4, dtype=np.float32)
+model = np.eye(4, dtype=np.float32)
+projection = np.eye(4, dtype=np.float32)
+translate(view, 0, 0, -7)
+phi, theta = 60, 20
+rotate(model, theta, 0, 0, 1)
+rotate(model, phi, 0, 1, 0)
 
 cube = Program(cube_vertex, cube_fragment)
 cube.bind(vertices)
@@ -164,21 +138,19 @@ cube["u_texture"].interpolation = gl.GL_LINEAR
 cube['u_model'] = model
 cube['u_view'] = view
 
-depth = DepthBuffer((512,512))
-color = Texture2D(shape=(512,512,3), dtype=np.dtype(np.float32))
+depth = DepthBuffer((512, 512))
+color = Texture2D(shape=(512, 512, 3), dtype=np.dtype(np.float32))
 framebuffer = FrameBuffer(color=color, depth=depth)
 
 quad = Program(quad_vertex, quad_fragment, count=4)
-quad['a_texcoord'] = [ ( 0, 0), ( 0, 1), ( 1, 0), ( 1, 1) ]
-quad['a_position'] = [ (-1,-1), (-1,+1), (+1,-1), (+1,+1) ]
+quad['a_texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+quad['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
 quad['u_texture'] = color
 quad["u_texture"].interpolation = gl.GL_LINEAR
 
-
-
 # OpenGL initalization
 # --------------------------------------
-gl.glClearColor( .3, .3, .35, 1 )
+gl.glClearColor(.3, .3, .35, 1)
 gl.glEnable(gl.GL_DEPTH_TEST)
 
 # Start

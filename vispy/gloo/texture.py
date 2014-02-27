@@ -473,7 +473,6 @@ class Texture(GLObject):
             self._resize()
             self._need_resize = False
 
-
     def _deactivate(self):
         """ Deactivate texture on GPU """
 

@@ -11,6 +11,8 @@ from .texture import Texture2D
 from ..util import logger
 
 # ------------------------------------------------------ RenderBuffer class ---
+
+
 class RenderBuffer(GLObject):
 
     """
@@ -235,7 +237,6 @@ class FrameBuffer(GLObject):
 
         return self._color_buffer
 
-
     @color_buffer.setter
     def color_buffer(self, buffer):
         """Color buffer attachment"""
@@ -247,7 +248,6 @@ class FrameBuffer(GLObject):
         else:
             raise ValueError(
                 "Buffer must be a ColorBuffer, Texture2D or None")
-
 
     @property
     def depth_buffer(self):
@@ -291,7 +291,6 @@ class FrameBuffer(GLObject):
 
         return self._shape
 
-
     def resize(self, shape):
         """ Resize the buffer (deferred operation)
 
@@ -315,20 +314,17 @@ class FrameBuffer(GLObject):
         if self.stencil is not None:
             self.stencil.resize(shape)
 
-
     def _create(self):
         """ Create framebuffer on GPU """
 
         logger.debug("GPU: Create framebuffer")
         self._handle = gl.glGenFramebuffers(1)
 
-
     def _delete(self):
         """ Delete buffer from GPU """
 
         logger.debug("GPU: Delete framebuffer")
         gl.glDeleteFramebuffers([self._handle])
-
 
     def _activate(self):
         """ Activate framebuffer on GPU """
@@ -339,13 +335,11 @@ class FrameBuffer(GLObject):
             self._attach()
             self._need_attach = False
 
-
     def _deactivate(self):
         """ Deactivate framebuffer on GPU """
 
         logger.debug("GPU: Deactivate render framebuffer")
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
-
 
     def _attach(self):
         """ Attach render buffers to framebuffer """
@@ -387,7 +381,7 @@ class FrameBuffer(GLObject):
                     'attachments do not have the same width and height.')
             elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS:
                 raise RuntimeError('Internal format of attachment '
-                                       'is not renderable.')
+                                   'is not renderable.')
             elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
                 raise RuntimeError('Combination of internal formats used '
-                                       'by attachments is not supported.')
+                                   'by attachments is not supported.')
