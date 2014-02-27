@@ -91,15 +91,52 @@ hsv_dict = dict(red=(0, 1, 1),
                 purple=(300, 1, 0.5),
                 navy=(240, 1, 0.5))
 
+# Taken from MATLAB script
+lab_dict = dict(red=(53.2405879437448, 80.0941668344849, 67.2015369950715),
+                lime=(87.7350994883189, -86.1812575110439, 83.1774770684517),
+                yellow=(97.1395070397132, -21.5523924360088, 94.4757817840079),
+                black=(0., 0., 0.),
+                white=(100., 0., 0.),
+                gray=(76.1894560083518, 0., 0.),
+                olive=(73.9161173021056, -17.1284770202945, 75.0833700744091))
+
 
 def test_color_conversion():
     """Test color conversions"""
+    # HSV
+    # test known values
     test = Color()
     for key in hsv_dict:
         c = Color(key)
         test.hsv = hsv_dict[key]
         assert_allclose(c.RGB, test.RGB, atol=1)
     test.value = 0
+    assert_equal(test.value, 0)
     assert_equal(test, Color('black'))
     c = Color('black')
     assert_array_equal(c.hsv.ravel(), (0, 0, 0))
+    for _ in range(50):
+        hsv = np.random.rand(3)
+        hsv[0] *= 360
+        hsv[1] = hsv[1] * 0.99 + 0.01  # avoid ugly boundary effects
+        hsv[2] = hsv[2] * 0.99 + 0.01
+        c.hsv = hsv
+        assert_allclose(c.hsv.ravel(), hsv)
+
+    # Lab
+    test = Color()
+    for key in lab_dict:
+        c = Color(key)
+        test.lab = lab_dict[key]
+        assert_allclose(c.rgba, test.rgba, atol=1e-4, rtol=1e-4)
+        assert_allclose(test.lab.ravel(), lab_dict[key], atol=1e-4, rtol=1e-4)
+    for _ in range(50):
+        # Here we test RGB->Lab->RGB, since Lab->RGB->Lab will not
+        # necessarily project to the exact same color for some reason...
+        # This is also true in the MATLAB code.
+        rgb = np.random.rand(3)[np.newaxis, :]
+        c.rgb = rgb
+        lab = c.lab
+        c.lab = lab
+        assert_allclose(c.lab, lab, atol=1e-4, rtol=1e-4)
+        assert_allclose(c.rgb, rgb, atol=1e-4, rtol=1e-4)

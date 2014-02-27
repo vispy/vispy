@@ -96,7 +96,7 @@ def _rgb_to_hsv(rgbs):
             sat = c / val
         hsv = [hue, sat, val]
         if n_dim == 4:
-            hsv.append(rgbs[3])
+            hsv.append(rgb[3])
         hsvs.append(hsv)
     hsvs = np.array(hsvs, dtype=np.float64)
     return hsvs
@@ -127,9 +127,103 @@ def _hsv_to_rgb(hsvs):
             r, g, b = c, 0, x
         rgb = [r + m, g + m, b + m]
         if n_dim == 4:
-            rgb.append(hsvs[3])
+            rgb.append(hsv[3])
         rgbs.append(rgb)
     rgbs = np.array(rgbs, dtype=np.float64)
+    return rgbs
+
+
+# Let's build the white normalization that would happen into the matrix:
+#_rgb2xyz = np.array([[0.412453, 0.357580, 0.180423],
+#                     [0.212671, 0.715160, 0.072169],
+#                     [0.019334, 0.119193, 0.950227]])
+#_white_norm = np.array([0.950456, 1.0, 1.088754])
+#_rgb2xyz /= _white_norm[:, np.newaxis]
+_rgb2xyz = np.array([[0.43395276, 0.37621941, 0.18982783],
+                     [0.212671, 0.71516, 0.072169],
+                     [0.01775791, 0.10947652, 0.87276557]])
+
+
+def _rgb_to_lab(rgbs):
+    rgbs, n_dim = _check_color_dim(rgbs)
+    labs = list()
+    for rgb in rgbs:
+        # Set a threshold
+        T = 0.008856
+
+        # RGB to XYZ, Normalize for D65 white point
+        X, Y, Z = np.dot(_rgb2xyz, rgb)
+
+        # Convert using threshold
+        fX = X ** (1. / 3.) if X > T else 7.787 * X + 16. / 116.
+        if Y > T:
+            Y3 = Y ** (1. / 3.)
+            fY = Y3
+            L = 116 * Y3 - 16.0
+        else:
+            fY = 7.787 * Y + 16. / 116.
+            L = 903.3 * Y
+        fZ = Z ** (1. / 3.) if Z > T else 7.787 * Z + 16. / 116.
+
+        # Return Lab space
+        a = 500 * (fX - fY)
+        b = 200 * (fY - fZ)
+        lab = [L, a, b]
+        if n_dim == 4:
+            lab.append(rgb[3])
+        labs.append(lab)
+
+    labs = np.array(labs, dtype=np.float64)
+    return labs
+
+
+# XYZ to RGB conversion matrix, w/D65 white point normalization
+#_xyz2rgb = np.array([[3.240479, -1.537150, -0.498535],
+#                     [-0.969256, 1.875992, 0.041556],
+#                     [0.055648, -0.204043, 1.057311]])
+#_white_norm = np.array([0.950456, 1., 1.088754])
+#_xyz2rgb *= _white_norm[np.newaxis, :]
+_xyz2rgb = np.array([[3.07993271, -1.53715, -0.54278198],
+                     [-0.92123518, 1.875992, 0.04524426],
+                     [0.05289098, -0.204043, 1.15115158]])
+
+
+def _lab_to_rgb(labs):
+    """Convert Nx3 or Nx4 lab to rgb"""
+    # adapted from BSD-licensed work in MATLAB by Mark Ruzon
+    # Based on ITU-R Recommendation BT.709 using the D65
+    labs, n_dim = _check_color_dim(labs)
+    rgbs = list()
+    for lab in labs:
+        L, a, b = lab
+        # Thresholds
+        T1 = 0.008856
+        T2 = 0.206893
+
+        # Compute Y
+        fY = ((L + 16) / 116.) ** 3
+        if fY > T1:
+            Y = fY
+            fY = fY ** (1. / 3.)
+        else:
+            fY = L / 903.3
+            Y = fY
+            fY = 7.787 * fY + 16. / 116.
+
+        # Compute X
+        fX = a / 500 + fY
+        X = fX ** 3 if fX > T2 else (fX - 16. / 116.) / 7.787
+
+        # Compute Z
+        fZ = fY - b / 200
+        Z = fZ ** 3 if fZ > T2 else (fZ - 16. / 116.) / 7.787
+
+        rgb = np.dot(_xyz2rgb, [X, Y, Z])
+        rgb = np.minimum(np.maximum(rgb, 0), 1)
+        rgbs.append(rgb)
+    rgbs = np.array(rgbs, dtype=np.float64)
+    if n_dim == 4:
+        rgbs = np.concatenate((rgbs, labs[:, 3]), axis=1)
     return rgbs
 
 
@@ -174,12 +268,34 @@ class Color(object):
         self._rgba = None
         self.rgba = _user_to_rgba(color, alpha=alpha)
 
+    ###########################################################################
+    # Builtins and utilities
     def _set_rgba(self, val):
         if self._rgba is None:
             self._rgba = val
             return
         self._rgba = _user_to_rgba(val)
 
+    def copy(self):
+        """Return a copy of the color"""
+        return Color(self)
+
+    def __len__(self):
+        return self._rgba.shape[0]
+
+    def __repr__(self):
+        nice_str = str(tuple(self._rgba[0]))
+        plural = ''
+        if len(self) > 1:
+            plural = 's'
+            nice_str += ' ... ' + str(tuple(self.rgba[-1]))
+        return ('<Color: %i color%s (%s)>' % (len(self), plural, nice_str))
+
+    def __eq__(self, other):
+        return np.array_equal(self._rgba, other._rgba)
+
+    ###########################################################################
+    # RGB
     @property
     def rgb(self):
         return self._rgba[:, :3].copy()
@@ -224,6 +340,8 @@ class Color(object):
     def alpha(self, val):
         self._rgba[:, 3] = val
 
+    ###########################################################################
+    # HSV
     @property
     def hsv(self):
         return _rgb_to_hsv(self._rgba[:, :3])
@@ -256,23 +374,15 @@ class Color(object):
         # we might be able to do something perceptually nicer here...
         self.value /= 2
 
-    def copy(self):
-        """Return a copy of the color"""
-        return Color(self)
+    ###########################################################################
+    # Lab
+    @property
+    def lab(self):
+        return _rgb_to_lab(self._rgba[:, :3])
 
-    def __len__(self):
-        return self._rgba.shape[0]
-
-    def __repr__(self):
-        nice_str = str(tuple(self._rgba[0]))
-        plural = ''
-        if len(self) > 1:
-            plural = 's'
-            nice_str += ' ... ' + str(tuple(self.rgba[-1]))
-        return ('<Color: %i color%s (%s)>' % (len(self), plural, nice_str))
-
-    def __eq__(self, other):
-        return np.array_equal(self._rgba, other._rgba)
+    @lab.setter
+    def lab(self, val):
+        return self._set_rgba(_lab_to_rgb(val))
 
 
 # This is used by color functions to translate user strings to colors
