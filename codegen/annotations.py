@@ -137,7 +137,7 @@ def readPixels(x, y, width, height, format, type):
     """ Return pixels as bytes.
     """
     # GL_ALPHA, GL_RGB, GL_RGBA
-    t = {6406:1,6407:3, 6408:4}[format]
+    t = {6406:1, 6407:3, 6408:4}[format]
     # we kind of only support type GL_UNSIGNED_BYTE
     # --- desktop angle
     size = int(width*height*t)
@@ -331,6 +331,39 @@ def getParameter(pname):
     ()
     # --- desktop angle
     return res.decode('utf-8')
+
+
+def getUniform(program, location):
+    # --- desktop angle
+    n = 16
+    d = float('Inf')
+    values = (ctypes.c_float*n)(*[d for i in range(n)])
+    ()
+    values = [p for p in values if p!=d]
+    if len(values) == 1:
+        return values[0]
+    else:
+        return values
+
+
+def getVertexAttrib(program, location):
+    n = 4
+    d = float('Inf')
+    values = (ctypes.c_float*n)(*[d for i in range(n)])
+    ()
+    values = [p for p in values if p!=d]
+    if len(values) == 1:
+        return values[0]
+    else:
+        return values
+
+
+def getTexParameter(target, pname):
+    n = 1
+    d = float('Inf')
+    params = (ctypes.c_float*n)(*[d for i in range(n)])
+    ()
+    return params[0]
 
 
 def getActiveAttrib(program, index):

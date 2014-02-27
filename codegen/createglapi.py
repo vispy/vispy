@@ -191,7 +191,7 @@ WEBGL_EQUIVALENTS = {
     'getBooleanv': 'getParameter',
     'getFloatv': 'getParameter',
     'getIntegerv': 'getParameter',
-    'getString': 'getParameter',
+    'getString': 'getParameter',  # getParameter is getString + getFloat
     }
 
 # Types that we convert easily from Python to C (and back)
@@ -383,7 +383,12 @@ class ApiGenerator:
     
     def add_function(self, des):
         if des.es2.group:
-            self._add_function_group(des)
+            if des.name.startswith('get'):
+                assert len(des.es2.group) == 2  # vi and fv
+                des.es2 = des.es2.group[0]  # f comes before 1
+                self._add_function(des)
+            else:
+                self._add_function_group(des)
         else:
             self._add_function(des)
         self.lines.append('\n')  # two lines between each function
@@ -416,35 +421,17 @@ class ApiGenerator:
                 cname = 'uniformMatrix%ifv' % i
                 sig = '%s(location, count, transpose, values)' % apiname(cname)
                 self._add_group_function(des, sig, es2funcs[cname])
-        elif des.name == 'getUniform':
-            for t in ('float', 'int'):
-                cname = 'getUniform%sv' % t[0]
-                sig = '%s(program, location)' % apiname(cname)
-                self._add_group_function(des, sig, es2funcs[cname])
-        
         elif des.name == 'vertexAttrib':
             for i in (1,2,3,4):
                 args = ', '.join(['v%i'%j for j in range(1,i+1)])
                 cname = 'vertexAttrib%if' % i
                 sig = '%s(index, %s)' % (apiname(cname), args)
                 self._add_group_function(des, sig, es2funcs[cname])
-        elif des.name == 'getVertexAttrib':
-            for t in ('float', 'int'):
-                cname = 'getVertexAttrib%sv' % t[0]
-                sig = '%s(index, pname)' % apiname(cname)
-                self._add_group_function(des, sig, es2funcs[cname])
-        
         elif des.name == 'texParameter':
             for t in ('float', 'int'):
                 cname = 'texParameter%s' % t[0]
                 sig = '%s(target, pname, param)' % apiname(cname)
                 self._add_group_function(des, sig, es2funcs[cname])
-        elif des.name == 'getTexParameter':
-            for t in ('float', 'int'):
-                cname = 'getTexParameter%sv' % t[0]
-                sig = '%s(target, pname)' % apiname(cname)
-                self._add_group_function(des, sig, es2funcs[cname])
-        
         else:
             handled = False
         
@@ -646,36 +633,12 @@ class DesktopApiGenerator(ApiGenerator):
             lines.append('    values = [val for val in values]')
             lines.append('    values = (ctypes.c_float*len(values))(*values)')
             lines.append(call_line(funcname, es2func, 'location, count, transpose, values'))
-        elif des.name == 'getUniform':
-            t = {'f':'float', 'i':'int'}[funcname[-2]]
-            placeholder = {'f':'float("Inf")', 'i':'-2**31'}[funcname[-2]]
-            lines.append('def %s:' % sig)
-            lines.append('    d = %s' % placeholder)
-            lines.append('    values = (ctypes.c_%s*16)(*[d for i in range(16)])' % t)
-            lines.append(call_line(funcname, es2func, 'program, location, values'))
-            lines.append('    return tuple([val for val in values if val!=d])')
-        
         elif des.name == 'vertexAttrib':
             lines.append('def %s:' % sig)
             lines.append(call_line(funcname, es2func, args))
-        elif des.name == 'getVertexAttrib':
-            t = {'f':'float', 'i':'int'}[funcname[-2]]
-            placeholder = {'f':'float("Inf")', 'i':'-2**31'}[funcname[-2]]
-            lines.append('def %s:' % sig)
-            lines.append('    d = %s' % placeholder)
-            lines.append('    values = (ctypes.c_%s*4)(*[d for i in range(4)])' % t)
-            lines.append(call_line(funcname, es2func, 'index, pname, values'))
-            lines.append('    return tuple([val for val in values if val!=d])')
-        
         elif des.name == 'texParameter':
             lines.append('def %s:' % sig)
             lines.append(call_line(funcname, es2func, args))
-        elif des.name == 'getTexParameter':
-            t = {'f':'float', 'i':'int'}[funcname[-2]]
-            lines.append('def %s:' % sig)
-            lines.append('    params = (ctypes.c_%s*1)()' % t)
-            lines.append(call_line(funcname, es2func, 'target, pname, params'))
-            lines.append('    return params[0]')
         
         else:
             raise ValueError('unknown group func')

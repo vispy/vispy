@@ -335,16 +335,16 @@ def glGetParameter(pname):
     return GL.glGetString(pname)
 
 
-def glGetTexParameterfv(target, pname):
+def glGetTexParameter(target, pname):
+    n = 1
+    d = float('Inf')
+    params = (ctypes.c_float*n)(*[d for i in range(n)])
     return GL.glGetTexParameterfv(target, pname)
-def glGetTexParameteriv(target, pname):
-    return GL.glGetTexParameteriv(target, pname)
+    return params[0]
 
 
-def glGetUniformfv(program, location):
+def glGetUniform(program, location):
     return GL.glGetUniformfv(program, location)
-def glGetUniformiv(program, location):
-    return GL.glGetUniformiv(program, location)
 
 
 def glGetUniformLocation(program, name):
@@ -352,10 +352,16 @@ def glGetUniformLocation(program, name):
     return GL.glGetUniformLocation(program, name)
 
 
-def glGetVertexAttribfv(index, pname):
-    return GL.glGetVertexAttribfv(index, pname)
-def glGetVertexAttribiv(index, pname):
-    return GL.glGetVertexAttribiv(index, pname)
+def glGetVertexAttrib(program, location):
+    n = 4
+    d = float('Inf')
+    values = (ctypes.c_float*n)(*[d for i in range(n)])
+    return GL.glGetVertexAttribfv(program, location)
+    values = [p for p in values if p!=d]
+    if len(values) == 1:
+        return values[0]
+    else:
+        return values
 
 
 def glGetVertexAttribOffset(index, pname):
@@ -414,7 +420,7 @@ def glReadPixels(x, y, width, height, format, type):
     """ Return pixels as bytes.
     """
     # GL_ALPHA, GL_RGB, GL_RGBA
-    t = {6406:1,6407:3, 6408:4}[format]
+    t = {6406:1, 6407:3, 6408:4}[format]
     # we kind of only support type GL_UNSIGNED_BYTE
 
 

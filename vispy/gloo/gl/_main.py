@@ -298,26 +298,20 @@ def glGetParameter(pname):
     return PROXY["glGetParameter"](pname)
 
 
-def glGetTexParameterfv(target, pname):
-    return PROXY["glGetTexParameterfv"](target, pname)
-def glGetTexParameteriv(target, pname):
-    return PROXY["glGetTexParameteriv"](target, pname)
+def glGetTexParameter(target, pname):
+    return PROXY["glGetTexParameter"](target, pname)
 
 
-def glGetUniformfv(program, location):
-    return PROXY["glGetUniformfv"](program, location)
-def glGetUniformiv(program, location):
-    return PROXY["glGetUniformiv"](program, location)
+def glGetUniform(program, location):
+    return PROXY["glGetUniform"](program, location)
 
 
 def glGetUniformLocation(program, name):
     return PROXY["glGetUniformLocation"](program, name)
 
 
-def glGetVertexAttribfv(index, pname):
-    return PROXY["glGetVertexAttribfv"](index, pname)
-def glGetVertexAttribiv(index, pname):
-    return PROXY["glGetVertexAttribiv"](index, pname)
+def glGetVertexAttrib(program, location):
+    return PROXY["glGetVertexAttrib"](program, location)
 
 
 def glGetVertexAttribOffset(index, pname):

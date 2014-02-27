@@ -798,42 +798,34 @@ def glGetParameter(pname):
     return res.decode('utf-8')
 
 
-def glGetTexParameterfv(target, pname):
-    params = (ctypes.c_float*1)()
+# void = glGetTexParameterfv(GLenum target, GLenum pname, GLfloat* params)
+def glGetTexParameter(target, pname):
+    n = 1
+    d = float('Inf')
+    params = (ctypes.c_float*n)(*[d for i in range(n)])
     try:
-        func = glGetTexParameterfv._native
+        func = glGetTexParameter._native
     except AttributeError:
-        func = glGetTexParameterfv._native = _get_gl_func("glGetTexParameterfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
-    func(target, pname, params)
-    return params[0]
-def glGetTexParameteriv(target, pname):
-    params = (ctypes.c_int*1)()
-    try:
-        func = glGetTexParameteriv._native
-    except AttributeError:
-        func = glGetTexParameteriv._native = _get_gl_func("glGetTexParameteriv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
-    func(target, pname, params)
+        func = glGetTexParameter._native = _get_gl_func("glGetTexParameterfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
+    res = func(target, pname, params)
     return params[0]
 
 
-def glGetUniformfv(program, location):
-    d = float("Inf")
-    values = (ctypes.c_float*16)(*[d for i in range(16)])
+# void = glGetUniformfv(GLuint program, GLint location, GLfloat* params)
+def glGetUniform(program, location):
+    n = 16
+    d = float('Inf')
+    values = (ctypes.c_float*n)(*[d for i in range(n)])
     try:
-        func = glGetUniformfv._native
+        func = glGetUniform._native
     except AttributeError:
-        func = glGetUniformfv._native = _get_gl_func("glGetUniformfv", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
-    func(program, location, values)
-    return tuple([val for val in values if val!=d])
-def glGetUniformiv(program, location):
-    d = -2**31
-    values = (ctypes.c_int*16)(*[d for i in range(16)])
-    try:
-        func = glGetUniformiv._native
-    except AttributeError:
-        func = glGetUniformiv._native = _get_gl_func("glGetUniformiv", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
-    func(program, location, values)
-    return tuple([val for val in values if val!=d])
+        func = glGetUniform._native = _get_gl_func("glGetUniformfv", None, (ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
+    res = func(program, location, params)
+    values = [p for p in values if p!=d]
+    if len(values) == 1:
+        return values[0]
+    else:
+        return values
 
 
 # GLint = glGetUniformLocation(GLuint program, GLchar* name)
@@ -847,24 +839,21 @@ def glGetUniformLocation(program, name):
     return res
 
 
-def glGetVertexAttribfv(index, pname):
-    d = float("Inf")
-    values = (ctypes.c_float*4)(*[d for i in range(4)])
+# void = glGetVertexAttribfv(GLuint index, GLenum pname, GLfloat* params)
+def glGetVertexAttrib(program, location):
+    n = 4
+    d = float('Inf')
+    values = (ctypes.c_float*n)(*[d for i in range(n)])
     try:
-        func = glGetVertexAttribfv._native
+        func = glGetVertexAttrib._native
     except AttributeError:
-        func = glGetVertexAttribfv._native = _get_gl_func("glGetVertexAttribfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
-    func(index, pname, values)
-    return tuple([val for val in values if val!=d])
-def glGetVertexAttribiv(index, pname):
-    d = -2**31
-    values = (ctypes.c_int*4)(*[d for i in range(4)])
-    try:
-        func = glGetVertexAttribiv._native
-    except AttributeError:
-        func = glGetVertexAttribiv._native = _get_gl_func("glGetVertexAttribiv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),))
-    func(index, pname, values)
-    return tuple([val for val in values if val!=d])
+        func = glGetVertexAttrib._native = _get_gl_func("glGetVertexAttribfv", None, (ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),))
+    res = func(index, pname, params)
+    values = [p for p in values if p!=d]
+    if len(values) == 1:
+        return values[0]
+    else:
+        return values
 
 
 # void = glGetVertexAttribPointerv(GLuint index, GLenum pname, GLvoid** pointer)
@@ -991,7 +980,7 @@ def glReadPixels(x, y, width, height, format, type):
     """ Return pixels as bytes.
     """
     # GL_ALPHA, GL_RGB, GL_RGBA
-    t = {6406:1,6407:3, 6408:4}[format]
+    t = {6406:1, 6407:3, 6408:4}[format]
     # we kind of only support type GL_UNSIGNED_BYTE
     size = int(width*height*t)
     pixels = (ctypes.c_uint8*size)()
