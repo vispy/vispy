@@ -35,7 +35,7 @@ def test_color_interpretation():
     print(rgb)  # multi repr
     assert_array_equal(rgb, Color(np.eye(3)))
     # complex/annoying case
-    rgb = Color(['r', (0, 1, 0), '#0000ff'])
+    rgb = Color(['r', (0, 1, 0), '#0000ffff'])
     assert_array_equal(rgb, Color(np.eye(3)))
     assert_raises(RuntimeError, Color, ['r', np.eye(3)])  # can't nest
 
@@ -44,6 +44,10 @@ def test_color_interpretation():
     assert_equal(r.alpha, 0)
     r.alpha = 1.0
     assert_equal(r, Color('r'))
+    r.alpha = 0
+    r.rgb = (1, 0, 0)
+    assert_equal(r.alpha, 0)
+    r.alpha = 1
     r.rgb = 0, 1, 0
     assert_equal(r, Color('g'))
     assert_array_equal(r.rgb.ravel(), (0., 1., 0.))

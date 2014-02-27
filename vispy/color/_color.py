@@ -19,8 +19,8 @@ def get_color_names():
     return list(_color_dict.keys())
 
 
-def _string_to_rgba(color, alpha):
-    """Convert user string or hex color to color array"""
+def _string_to_rgb(color):
+    """Convert user string or hex color to color array (length 3 or 4)"""
     if not color.startswith('#'):
         if color.lower() not in _color_dict:
             raise ValueError('Color "%s" unknown' % color)
@@ -32,37 +32,32 @@ def _string_to_rgba(color, alpha):
     if lc not in (6, 8):
         raise ValueError('Hex color must have exactly six or eight '
                          'elements following the # sign')
-    color = [int(color[i:i+2], 16) / 255. for i in range(0, lc, 2)]
-    if len(color) == 3:
-        alpha = 1.0 if alpha is None else alpha
-        color.append(alpha)
-    return np.array(color)
+    color = np.array([int(color[i:i+2], 16) / 255. for i in range(0, lc, 2)])
+    return color
 
 
-def _user_to_rgba(color, alpha=None):
-    """Convert color(s) from any set of fmts (str/hex/array) to RGBA array"""
+def _user_to_rgba(color, expand=True):
+    """Convert color(s) from any set of fmts (str/hex/arr) to RGB(A) array"""
     if isinstance(color, string_types):
-        color = _string_to_rgba(color, alpha)
+        color = _string_to_rgb(color)
     elif isinstance(color, Color):
         color = color.rgba
     # We have to treat this specially
     elif isinstance(color, (list, tuple)):
         if any(isinstance(c, string_types) for c in color):
-            color = [_user_to_rgba(c, alpha) for c in color]
+            color = [_user_to_rgba(c) for c in color]
             if any(len(c) > 1 for c in color):
                 raise RuntimeError('could not parse colors, are they nested?')
             color = [c[0] for c in color]
     color = np.atleast_2d(color).astype(np.float64)
     if color.shape[1] not in (3, 4):
         raise ValueError('color must have three or four elements')
-    if color.shape[1] == 3:
+    if expand and color.shape[1] == 3:  # only expand if requested
         color = np.concatenate((color, np.ones((color.shape[0], 1))),
                                axis=1)
     if color.min() < 0 or color.max() > 1:
         logger.warn('Color will be clamped between 0 and 1: %s' % color)
         color = np.clip(color, 0, 1)
-    if alpha is not None:
-        color[:, 3] = alpha
     return color
 
 
@@ -79,6 +74,7 @@ def _rgb_to_hsv(rgbs):
     rgbs, n_dim = _check_color_dim(rgbs)
     hsvs = list()
     for rgb in rgbs:
+        rgb = rgb[:3]  # don't use alpha here
         idx = np.argmax(rgb)
         val = rgb[idx]
         c = val - np.min(rgb)
@@ -95,10 +91,10 @@ def _rgb_to_hsv(rgbs):
             hue *= 60
             sat = c / val
         hsv = [hue, sat, val]
-        if n_dim == 4:
-            hsv.append(rgb[3])
         hsvs.append(hsv)
     hsvs = np.array(hsvs, dtype=np.float64)
+    if n_dim == 4:
+        hsvs = np.concatenate((hsvs, rgbs[:, 3]), axis=1)
     return hsvs
 
 
@@ -126,10 +122,10 @@ def _hsv_to_rgb(hsvs):
         else:
             r, g, b = c, 0, x
         rgb = [r + m, g + m, b + m]
-        if n_dim == 4:
-            rgb.append(hsv[3])
         rgbs.append(rgb)
     rgbs = np.array(rgbs, dtype=np.float64)
+    if n_dim == 4:
+        rgbs = np.concatenate((rgbs, hsvs[:, 3]), axis=1)
     return rgbs
 
 
@@ -152,7 +148,7 @@ def _rgb_to_lab(rgbs):
         T = 0.008856
 
         # RGB to XYZ, Normalize for D65 white point
-        X, Y, Z = np.dot(_rgb2xyz, rgb)
+        X, Y, Z = np.dot(_rgb2xyz, rgb[:3])
 
         # Convert using threshold
         fX = X ** (1. / 3.) if X > T else 7.787 * X + 16. / 116.
@@ -169,11 +165,11 @@ def _rgb_to_lab(rgbs):
         a = 500 * (fX - fY)
         b = 200 * (fY - fZ)
         lab = [L, a, b]
-        if n_dim == 4:
-            lab.append(rgb[3])
         labs.append(lab)
 
     labs = np.array(labs, dtype=np.float64)
+    if n_dim == 4:
+        labs = np.concatenate((labs, rgbs[:, 3]), axis=1)
     return labs
 
 
@@ -195,7 +191,7 @@ def _lab_to_rgb(labs):
     labs, n_dim = _check_color_dim(labs)
     rgbs = list()
     for lab in labs:
-        L, a, b = lab
+        L, a, b = lab[:3]
         # Thresholds
         T1 = 0.008856
         T2 = 0.206893
@@ -264,7 +260,11 @@ class Color(object):
     """
     def __init__(self, color=(0., 0., 0., 1.), alpha=None):
         """Parse input type, and set attribute"""
-        self.rgba = _user_to_rgba(color, alpha=alpha)
+        rgba = _user_to_rgba(color)
+        if alpha is not None:
+            rgba[:, 3] = alpha
+        self._rgba = None
+        self.rgba = rgba
 
     ###########################################################################
     # Builtins and utilities
@@ -296,7 +296,11 @@ class Color(object):
     def rgba(self, val):
         """Note: all other attribute sets get routed here!"""
         # This method is meant to do the heavy lifting of setting data
-        self._rgba = _user_to_rgba(val)
+        rgba = _user_to_rgba(val, expand=False)
+        if self._rgba is None:
+            self._rgba = rgba  # only on init
+        else:
+            self._rgba[:, :rgba.shape[1]] = rgba
 
     @property
     def rgb(self):
