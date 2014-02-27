@@ -683,9 +683,10 @@ class PyOpenGLApiGenrator(ApiGenerator):
     
     def _add_function(self, des):
         # Fix for FBO?
-        mod = 'GL'
+        mod = fullmod = 'GL'
         if 'renderbuffer' in des.name.lower() or 'framebuffer' in des.name.lower():
             mod = 'FBO'
+            fullmod = 'GL.framebufferobjects'
         # Get call line
         argstr = ', '.join(des.args)
         call_line = '    return %s.%s(%s)' % (mod, des.es2.glname, argstr)
@@ -699,10 +700,10 @@ class PyOpenGLApiGenrator(ApiGenerator):
             self.lines.extend(ann_lines)
         else:
             if des.es2.glname == des.apiname:
-                self.lines.append('from OpenGL.%s import %s' % (mod, des.apiname))
+                self.lines.append('from OpenGL.%s import %s' % (fullmod, des.apiname))
             else:
                 self.lines.append('from OpenGL.%s import %s as %s' % 
-                                  (mod, des.es2.glname, des.apiname))
+                                  (fullmod, des.es2.glname, des.apiname))
     
     def _add_group_function(self, des, sig, es2func):
         funcname = apiname(sig.split('(')[0])
