@@ -285,7 +285,7 @@ class LineColorInputComponent(VisualComponent):
         
         self.support_func = Function("""
             void $colorInputSupport() {
-                $output = $input;
+                $output_color = $input_color;
             }
             """)
     
@@ -300,8 +300,8 @@ class LineColorInputComponent(VisualComponent):
             program['frag_color'] = self.frag_func
             
             program.add_callback('vert_post_hook', self.support_func)
-            self.support_func['input'] = ('attribute', 'vec4', self.visual._vbo['color'])
-            self.support_func['output'] = self.frag_func['rgba'] # automatically assign same variable to both
+            self.support_func['input_color'] = ('attribute', 'vec4', self.visual._vbo['color'])
+            self.support_func['output_color'] = self.frag_func['rgba'] # automatically assign same variable to both
             
         else:
             self.frag_func['rgba'] = ('uniform', 'vec4', np.array(self.visual._opts['color']))
