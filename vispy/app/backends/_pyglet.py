@@ -6,7 +6,6 @@
 vispy backend for pyglet.
 """
 
-# absolute import is important here, since this module is called pyglet :)
 from __future__ import division
 
 from distutils.version import LooseVersion
