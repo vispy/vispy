@@ -731,9 +731,9 @@ def glReadPixels(x, y, width, height, format, type):
     t = {6406:1, 6407:3, 6408:4}[format]
     # we kind of only support type GL_UNSIGNED_BYTE
     size = int(width*height*t)
-    pixels = (ctypes.c_uint8*size)()
+    pixels = ctypes.create_string_buffer(size)
     res = _lib.glReadPixels(x, y, width, height, format, type, pixels)
-    return bytes(pixels)
+    return pixels[:]
 
 
 _lib.glRenderbufferStorage.argtypes = ctypes.c_uint, ctypes.c_uint, ctypes.c_int, ctypes.c_int,

@@ -141,9 +141,9 @@ def readPixels(x, y, width, height, format, type):
     # we kind of only support type GL_UNSIGNED_BYTE
     # --- desktop angle
     size = int(width*height*t)
-    pixels = (ctypes.c_uint8*size)()
+    pixels = ctypes.create_string_buffer(size)
     ()
-    return bytes(pixels)
+    return pixels[:]
     # --- mock
     return width * height * t * b'\x00'
 
