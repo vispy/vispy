@@ -47,7 +47,8 @@ class PointsVisual(Visual):
 
     def __init__(self, pos):
         super(PointsVisual, self).__init__()
-
+        self.set_gl_options('additive')
+        
         self.pos = pos
         self._vbo = None
         self._program = None
