@@ -959,6 +959,10 @@ def glVertexAttribPointer(indx, size, type, normalized, stride, offset):
             offset = offset.copy('C')
         offset_ = offset
         offset = offset.ctypes.data
+        # We need to ensure that the data exists at draw time :(
+        # PyOpenGL does this too
+        key = '_vert_attr_'+str(indx)
+        setattr(glVertexAttribPointer, key, offset_)
     ptr = offset
     res = _lib.glVertexAttribPointer(indx, size, type, normalized, stride, ptr)
 
