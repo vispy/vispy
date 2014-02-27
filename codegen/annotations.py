@@ -22,7 +22,7 @@ def deleteBuffer(buffer):
     buffers = (ctypes.c_uint*n)(buffer)  
     ()  
     # --- pyopengl
-    GL.glDeleteBuffers([buffer])
+    GL.glDeleteBuffers(1, [buffer])
 
 def deleteFramebuffer(framebuffer):
     # --- desktop angle
@@ -30,7 +30,7 @@ def deleteFramebuffer(framebuffer):
     framebuffers = (ctypes.c_uint*n)(framebuffer)  
     ()
     # --- pyopengl
-    FBO.glDeleteFrameBuffers([framebuffer])
+    FBO.glDeleteFramebuffers(1, [framebuffer])
 
 def deleteRenderbuffer(renderbuffer):
     # --- desktop angle
@@ -38,7 +38,7 @@ def deleteRenderbuffer(renderbuffer):
     renderbuffers = (ctypes.c_uint*n)(renderbuffer)  
     ()
     # --- pyopengl
-    FBO.glDeleteRenderbuffers([renderbuffer])
+    FBO.glDeleteRenderbuffers(1, [renderbuffer])
 
 def deleteTexture(texture):
     # --- desktop angle
@@ -67,7 +67,7 @@ def createFramebuffer():
     ()
     return framebuffers[0]
     # --- pyopengl
-    return FBO.glGenFrameBuffers(1)
+    return FBO.glGenFramebuffers(1)
     # --- mock
     return 1
 

@@ -111,18 +111,18 @@ from OpenGL.GL import glCullFace
 
 
 def glDeleteBuffer(buffer):
-    GL.glDeleteBuffers([buffer])
+    GL.glDeleteBuffers(1, [buffer])
 
 
 def glDeleteFramebuffer(framebuffer):
-    FBO.glDeleteFrameBuffers([framebuffer])
+    FBO.glDeleteFramebuffers(1, [framebuffer])
 
 
 from OpenGL.GL import glDeleteProgram
 
 
 def glDeleteRenderbuffer(renderbuffer):
-    FBO.glDeleteRenderbuffers([renderbuffer])
+    FBO.glDeleteRenderbuffers(1, [renderbuffer])
 
 
 from OpenGL.GL import glDeleteShader
@@ -182,7 +182,7 @@ def glCreateBuffer():
 
 
 def glCreateFramebuffer():
-    return FBO.glGenFrameBuffers(1)
+    return FBO.glGenFramebuffers(1)
 
 
 def glCreateRenderbuffer():

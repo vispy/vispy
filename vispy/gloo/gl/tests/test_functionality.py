@@ -14,6 +14,11 @@ def test_functionality_desktop():
     _test_functonality('desktop')
 
 
+def test_functionality_pypengl():
+    """ Test that pyopengl GL backend functions appropriately. """
+    _test_functonality('pyopengl')
+
+
 def test_functionality_angle():
     """ Test that angle GL backend functions appropriately. """
     if True:
@@ -144,3 +149,4 @@ def _test_object_creation_and_deletion():
 
 if __name__ == '__main__':
     test_functionality_desktop()
+    test_functionality_pypengl()
