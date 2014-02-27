@@ -318,14 +318,15 @@ class ModularProgram(Program):
     1) Anything that the object depends on loses a reference
     2) Objects with no remaining references are removed
     
-    
-    
-    
-    
-    
     """
     def _compile(self):
-        object_list = self._collect_objects
+        objects = {'vertex': [], 'fragment': []}
+        
+        for hook_name, func in self._hook_defs.items():
+            self._check_hook(hook_name)
+            shader, hook_args, hook_rtype = self._hooks[hook_name]
+            objs = self._resolve_function(func, shader, hook_name)
+            objects[shader].extend(objs)
 
     def _compile(self):
         """
@@ -364,7 +365,7 @@ class ModularProgram(Program):
         if func_res is not None:
             return func_res[:2]
         
-        code = ""
+        objects = []  # all variables and functions required by *func*
         subs = {}
         
         # resolve function name
@@ -393,10 +394,10 @@ class ModularProgram(Program):
         for local_name in func.template_vars:
             print("    ",local_name)
             var = func[local_name]
-            n, c = self._resolve_variable(var, shader)
+            self._resolve_variable(var, shader)
+            objects.append(var)
             if n not in self.namespaces[shader]:
                 print("      ",c)
-                code += c
                 self.namespaces[shader][n] = var
             else:
                 print("      already defined")
@@ -408,20 +409,20 @@ class ModularProgram(Program):
         dep_names = {}
         for dep in func.deps:
             if dep not already_added_to_code:
-                n, c = self._resolve_function(dep, shader)
+                objs = self._resolve_function(dep, shader)
+                objects.extend(objs)
                 dep_names[dep] = n
-                code += c
-                code += "\n"
             self._referrers.setdefault(dep, set()).add(func)
             func_deps.append(dep)
             
         # compile code with the suggested substitutions and dependency names
-        code += func.compile(subs, dep_names)
-        code += "\n"
-        
+        code = func.compile(subs, dep_names)
         func_res = (func_name, code, func_deps)
         self._function_cache[func] = func_res
-        return func_res[:2]
+        
+        objects.append(self)
+        
+        return objects
     
     def _resolve_variable(self, var, shader):
         """
@@ -444,7 +445,6 @@ class ModularProgram(Program):
             raise Exception("%s has not been assigned a value" % var)
         var_res = (name, decl)
         self._variable_cache[var] = var_res
-        return var_res
         
     def _add_to_shader(self, shader, name, code, value):
         # Add *code* to the specified shader
