@@ -32,6 +32,7 @@ data['a_rot'] = np.repeat(rot, p, axis=0)
 
 
 VERT_SHADER = """
+#version 120
 // Uniforms
 // --------
 uniform mat4 u_model;
@@ -83,6 +84,7 @@ void main (void) {
 """
 
 FRAG_SHADER = """
+#version 120
 
 // Varyings
 // ------------------------------------
@@ -98,6 +100,12 @@ void main()
 }
 """
 
+# HACK: True OpenGL ES does not need to enable point sprite and does not define
+# these two constants. Desktop OpenGL needs to enable these two modes but we do
+# not have these two constants because our GL namespace pretends to be ES.
+GL_VERTEX_PROGRAM_POINT_SIZE = 34370
+GL_POINT_SPRITE = 34913
+
 
 class Canvas(app.Canvas):
 
@@ -111,7 +119,7 @@ class Canvas(app.Canvas):
         translate(self.view, 0, 0, -self.translate)
 
         self.vbo = gloo.VertexBuffer(data)
-        self.program.set_vars(self.vbo)
+        self.program.bind(self.vbo)
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
         self.program['u_size'] = u_size
@@ -129,6 +137,8 @@ class Canvas(app.Canvas):
 
     def on_initialize(self, event):
         gl.glClearColor(0, 0, 0, 1)
+        gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+        gl.glEnable(GL_POINT_SPRITE)
         gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
@@ -180,11 +190,7 @@ class Canvas(app.Canvas):
 
 
 if __name__ == '__main__':
-    c = Canvas(
-        show=True,
-        size=(
-            600,
-            600),
-        title="Atom [zoom with mouse scroll]")
+    c = Canvas(show=True, size=(600, 600),
+               title="Atom [zoom with mouse scroll]")
     # c.show()
     app.run()
