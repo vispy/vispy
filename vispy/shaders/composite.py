@@ -304,10 +304,15 @@ class ModularProgram(Program):
             func_name = self._suggest_name(shader, func_name, func)
             subs[func.name.lstrip('$')] = func_name
         else:
-            if func.name != func_name:
+            if func_name is None:
+                func_name = func.name
+                self._check_name(shader, func_name, func)
+            elif func_name != func.name:
                 raise Exception("Cannot compile function %s with name %s; "
                                 "function is not anonymous." 
                                 % (func, func_name))
+            self._check_name(shader, func_name, func)
+        
         self.namespaces[shader][func_name] = func
         
         # resolve all variable names and generate declarations if needed

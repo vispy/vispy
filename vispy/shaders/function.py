@@ -193,12 +193,13 @@ class Function(object):
         
         if len(template_subs) > 0:
             try:
-                return self._template.substitute(**template_subs)
+                code = self._template.substitute(**template_subs)
+                return self.clean_code(code)
             except KeyError as err:
                 raise KeyError("Must specify variable $%s in substitution" % 
                             err.args[0])
         else:
-            return self.code
+            return self.clean_code(self.code)
     
     def wrap(self, name=None, **kwds):
         """
