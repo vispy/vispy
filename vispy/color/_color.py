@@ -40,7 +40,7 @@ def _user_to_rgba(color, expand=True):
     """Convert color(s) from any set of fmts (str/hex/arr) to RGB(A) array"""
     if isinstance(color, string_types):
         color = _string_to_rgb(color)
-    elif isinstance(color, Color):
+    elif isinstance(color, ColorArray):
         color = color.rgba
     # We have to treat this specially
     elif isinstance(color, (list, tuple)):
@@ -135,41 +135,33 @@ def _hsv_to_rgb(hsvs):
 #                     [0.019334, 0.119193, 0.950227]])
 #_white_norm = np.array([0.950456, 1.0, 1.088754])
 #_rgb2xyz /= _white_norm[:, np.newaxis]
-_rgb2xyz = np.array([[0.43395276, 0.37621941, 0.18982783],
-                     [0.212671, 0.71516, 0.072169],
-                     [0.01775791, 0.10947652, 0.87276557]])
+#_rgb2xyz_norm = _rgb2xyz.T
+_rgb2xyz_norm = np.array([[0.43395276, 0.212671, 0.01775791],
+                         [0.37621941, 0.71516, 0.10947652],
+                         [0.18982783, 0.072169, 0.87276557]])
 
 
 def _rgb_to_lab(rgbs):
     rgbs, n_dim = _check_color_dim(rgbs)
-    labs = list()
-    for rgb in rgbs:
-        # Set a threshold
-        T = 0.008856
+    # convert RGB->XYZ
+    xyz = rgbs[:, :3].copy()  # a misnomer for now but will end up being XYZ
+    over = xyz > 0.04045
+    xyz[over] = ((xyz[over] + 0.055) / 1.055) ** 2.4
+    xyz[~over] /= 12.92
+    xyz = np.dot(xyz, _rgb2xyz_norm)
+    over = xyz > 0.008856
+    xyz[over] = xyz[over] ** (1. / 3.)
+    xyz[~over] = 7.787 * xyz[~over] + 0.13793103448275862
 
-        # RGB to XYZ, Normalize for D65 white point
-        X, Y, Z = np.dot(_rgb2xyz, rgb[:3])
-
-        # Convert using threshold
-        fX = X ** (1. / 3.) if X > T else 7.787 * X + 16. / 116.
-        if Y > T:
-            Y3 = Y ** (1. / 3.)
-            fY = Y3
-            L = 116 * Y3 - 16.0
-        else:
-            fY = 7.787 * Y + 16. / 116.
-            L = 903.3 * Y
-        fZ = Z ** (1. / 3.) if Z > T else 7.787 * Z + 16. / 116.
-
-        # Return Lab space
-        a = 500 * (fX - fY)
-        b = 200 * (fY - fZ)
-        lab = [L, a, b]
-        labs.append(lab)
-
-    labs = np.array(labs, dtype=np.float64)
+    # Convert XYZ->LAB
+    L = (116. * xyz[:, 1]) - 16
+    a = 500 * (xyz[:, 0] - xyz[:, 1])
+    b = 200 * (xyz[:, 1] - xyz[:, 2])
+    labs = [L, a, b]
+    # Append alpha if necessary
     if n_dim == 4:
-        labs = np.concatenate((labs, rgbs[:, 3]), axis=1)
+        labs.append(np.atleast1d(rgbs[:, 3]))
+    labs = np.array(labs, order='F').T  # Becomes 'C' order b/c of .T
     return labs
 
 
@@ -179,9 +171,9 @@ def _rgb_to_lab(rgbs):
 #                     [0.055648, -0.204043, 1.057311]])
 #_white_norm = np.array([0.950456, 1., 1.088754])
 #_xyz2rgb *= _white_norm[np.newaxis, :]
-_xyz2rgb = np.array([[3.07993271, -1.53715, -0.54278198],
-                     [-0.92123518, 1.875992, 0.04524426],
-                     [0.05289098, -0.204043, 1.15115158]])
+_xyz2rgb_norm = np.array([[3.07993271, -1.53715, -0.54278198],
+                          [-0.92123518, 1.875992, 0.04524426],
+                          [0.05289098, -0.204043, 1.15115158]])
 
 
 def _lab_to_rgb(labs):
@@ -189,48 +181,38 @@ def _lab_to_rgb(labs):
     # adapted from BSD-licensed work in MATLAB by Mark Ruzon
     # Based on ITU-R Recommendation BT.709 using the D65
     labs, n_dim = _check_color_dim(labs)
-    rgbs = list()
-    for lab in labs:
-        L, a, b = lab[:3]
-        # Thresholds
-        T1 = 0.008856
-        T2 = 0.206893
 
-        # Compute Y
-        fY = ((L + 16) / 116.) ** 3
-        if fY > T1:
-            Y = fY
-            fY = fY ** (1. / 3.)
-        else:
-            fY = L / 903.3
-            Y = fY
-            fY = 7.787 * fY + 16. / 116.
+    # Convert Lab->XYZ (silly indexing used to preserve dimensionality)
+    y = (labs[:, 0] + 16.) / 116.
+    x = (labs[:, 1] / 500.) + y
+    z = y - (labs[:, 2] / 200.)
+    xyz = np.concatenate(([x], [y], [z]))  # 3xN
+    over = xyz > 0.2068966
+    xyz[over] = xyz[over] ** 3.
+    xyz[~over] = (xyz[~over] - 0.13793103448275862) / 7.787
 
-        # Compute X
-        fX = a / 500 + fY
-        X = fX ** 3 if fX > T2 else (fX - 16. / 116.) / 7.787
-
-        # Compute Z
-        fZ = fY - b / 200
-        Z = fZ ** 3 if fZ > T2 else (fZ - 16. / 116.) / 7.787
-
-        rgb = np.clip(np.dot(_xyz2rgb, [X, Y, Z]), 0, 1)
-        rgbs.append(rgb)
-    rgbs = np.array(rgbs, dtype=np.float64)
+    # Convert XYZ->LAB
+    rgbs = np.dot(_xyz2rgb_norm, xyz).T
+    over = rgbs > 0.0031308
+    rgbs[over] = 1.055 * (rgbs[over] ** (1. / 2.4)) - 0.055
+    rgbs[~over] *= 12.92
     if n_dim == 4:
         rgbs = np.concatenate((rgbs, labs[:, 3]), axis=1)
+    rgbs = np.clip(rgbs, 0., 1.)
     return rgbs
 
 
-class Color(object):
-    """A color object
+class ColorArray(object):
+    """An array of colors
 
     Parameters
     ----------
-    color : str | tuple | list of colors |
+    color : str | tuple | list of colors
         If str, can be any of the names in ``vispy.color.get_color_names``.
         Can also be a hex value if it starts with ``'#'`` as ``'#ff0000'``.
         If array-like, it must be an Nx3 or Nx4 array-like object.
+        Can also be a list of colors, such as
+        ``['red', '#00ff00', ColorArray('blue')]``.
     alpha : float | None
         If no alpha is not supplied in ``color`` entry and ``alpha`` is None,
         then this will default to 1.0 (opaque). If float, it will override
@@ -240,23 +222,29 @@ class Color(object):
     --------
     There are many ways to define colors. Here are some basic cases:
 
-        >>> from vispy.color import Color
-        >>> r = Color('red')  # using string name
+        >>> from vispy.color import ColorArray
+        >>> r = ColorArray('red')  # using string name
         >>> r
-        <Color: 1 color ((1.0, 0.0, 0.0, 1.0))>
-        >>> g = Color((0, 1, 0, 1))  # RGBA tuple
-        >>> b = Color('#ff0000')  # hex color
-        >>> w = Color()  # defaults to black
+        <ColorArray: 1 color ((1.0, 0.0, 0.0, 1.0))>
+        >>> g = ColorArray((0, 1, 0, 1))  # RGBA tuple
+        >>> b = ColorArray('#0000ff')  # hex color
+        >>> w = ColorArray()  # defaults to black
         >>> w.rgb = r.rgb + g.rgb + b.rgb
-        >>> w == Color('white')
+        >>> w == ColorArray('white')
         True
         >>> w.alpha = 0
         >>> w
-        <Color: 1 color ((1.0, 1.0, 1.0, 0.0))>
-        >>> rgb = Color(['r', (0, 1, 0), '#FF0000FF'])
+        <ColorArray: 1 color ((1.0, 1.0, 1.0, 0.0))>
+        >>> rgb = ColorArray(['r', (0, 1, 0), '#0000FFFF'])
         >>> rgb
-        <Color: 3 colors ((1.0, 0.0, 0.0, 1.0) ... (1.0, 0.0, 0.0, 1.0))>
-        >>>
+        <ColorArray: 3 colors ((1.0, 0.0, 0.0, 1.0) ... (1.0, 0.0, 0.0, 1.0))>
+        >>> rgb == ColorArray(['red', '#00ff00', ColorArray('blue')])
+        True
+
+    Notes
+    -----
+    Under the hood, this class stores data in RGBA format suitable for use
+    on the GPU.
     """
     def __init__(self, color=(0., 0., 0., 1.), alpha=None):
         """Parse input type, and set attribute"""
@@ -270,7 +258,11 @@ class Color(object):
     # Builtins and utilities
     def copy(self):
         """Return a copy of the Color instance"""
-        return Color(self)
+        return ColorArray(self)
+
+    @classmethod
+    def _name(cls):
+        return cls.__name__
 
     def __len__(self):
         return self._rgba.shape[0]
@@ -281,7 +273,10 @@ class Color(object):
         if len(self) > 1:
             plural = 's'
             nice_str += ' ... ' + str(tuple(self.rgba[-1]))
-        return ('<Color: %i color%s (%s)>' % (len(self), plural, nice_str))
+        # use self._name() here instead of hard-coding name in case
+        # we eventually subclass this class
+        return ('<%s: %i color%s (%s)>' % (self._name(), len(self),
+                                           plural, nice_str))
 
     def __eq__(self, other):
         return np.array_equal(self._rgba, other._rgba)
