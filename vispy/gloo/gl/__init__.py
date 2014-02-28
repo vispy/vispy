@@ -2,11 +2,24 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-The raw API to OpenGL ES 2.0. There are multiple backend implementations
-of this API, available as submodules of this module. The funcions in
-this modules are a copy of the functions in one of the backends. One
-can select a backend using use().
+""" This module provides a (functional) API to OpenGL ES 2.0.
+
+There are multiple backend implementations of this API, available as
+submodules of this module. One can use one of the backends directly,
+or call `gl.use()` to select one. The backend system allow running
+visualizations using Angle, WebGL, or other forms of remote rendering.
+This is in part possible by the widespread availability of OpenGL ES 2.0.
+
+All functions that this API provides accept and return Python arguments
+(no ctypes is required); strings are real strings and you can pass 
+data as numpy arrays. In general the input arguments are not checked
+(for performance reasons). Each function results in exactly one OpenGL
+API call, except when using the pyopengl backend.
+
+The functions do not have docstrings, but most IDE's should provide you
+with the function signature. For more documentation see
+http://www.khronos.org/opengles/sdk/docs/man/
+
 """
 
 # NOTE: modules in this package that start with one underscore are
@@ -37,10 +50,10 @@ def use(target='desktop'):
     Backends
     --------
     * desktop - Use desktop (i.e. normal) OpenGL.
-    * angle - Use the Angle library to target DirectX (Windows only).
-    * pyopengl - Use pyopengl (for fallback and testing).
-    * mock - Dummy backend that can be useful for testing.
-    * webgl - Send the GL commands to the browser.
+    * pyopengl - Use pyopengl (for fallback and testing). 
+    * angle - Use the Angle library to target DirectX (Windows only). (WIP)
+    * mock - Dummy backend that can be useful for testing. (not yet available)
+    * webgl - Send the GL commands to the browser. (not yet available)
 
     """
     target = target or 'desktop'
