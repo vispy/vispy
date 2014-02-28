@@ -6,7 +6,7 @@ import numpy as np
 from nose.tools import assert_equal, assert_raises, assert_true
 from numpy.testing import assert_array_equal, assert_allclose
 
-from vispy.color import ColorArray, get_color_names
+from vispy.color import ColorArray, LinearGradient, get_color_names
 from vispy.util import use_log_level
 
 
@@ -141,3 +141,14 @@ def test_color_conversion():
         c.lab = lab
         assert_allclose(c.lab, lab, atol=1e-4, rtol=1e-4)
         assert_allclose(c.rgb, rgb, atol=1e-4, rtol=1e-4)
+
+
+def test_linear_gradient():
+    """Test basic support for linear gradients"""
+    colors = ['r', 'g', 'b']
+    xs = [0, 1, 2]
+    grad = LinearGradient(ColorArray(colors), xs)
+    colors.extend([[0.5, 0.5, 0], [0, 0, 1], [1, 0, 0]])
+    xs.extend([0.5, 10, -10])
+    for x, c in zip(xs, colors):
+        assert_array_equal(grad[x], ColorArray(c).rgba[0])

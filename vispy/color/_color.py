@@ -378,6 +378,43 @@ class ColorArray(object):
         self.rgba = _lab_to_rgb(val)
 
 
+class LinearGradient(ColorArray):
+    """Class to represent linear gradients
+
+    Parameters
+    ----------
+    colors : ColorArray
+        The control points to use as colors.
+    x : array
+        Array of the same length as ``colors`` that give the x-values
+        to use along the axis of the array.
+    """
+    def __init__(self, colors, x):
+        ColorArray.__init__(self, colors)
+        self.gradient_x = x
+
+    @property
+    def gradient_x(self):
+        return self._grad_x.copy()
+
+    @gradient_x.setter
+    def gradient_x(self, val):
+        x = np.array(val, dtype=np.float64)
+        if x.ndim != 1 or x.size != len(self):
+            raise ValueError('x must 1D with the same size as colors (%s), '
+                             'not %s' % (len(self), x.shape))
+        self._grad_x = x
+
+    def __getitem__(self, loc):
+        try:
+            loc = float(loc)
+        except:
+            raise RuntimeError('location could not be converted to float: %s'
+                               % str(loc))
+        rgba = [np.interp(loc, self._grad_x, rr) for rr in self._rgba.T]
+        return np.array(rgba)
+
+
 # This is used by color functions to translate user strings to colors
 # For now, this is web colors, and all in hex. It will take some simple
 # but annoying refactoring to deal with non-hex entries if we want them.
