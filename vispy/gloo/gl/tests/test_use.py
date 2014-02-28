@@ -32,7 +32,3 @@ def test_use_desktop():
             val1 = getattr(gl, name)
             val2 = getattr(gl.desktop, name)
             assert_is(val1, val2)
-
-
-if __name__ == '__main__':
-    test_use_desktop()

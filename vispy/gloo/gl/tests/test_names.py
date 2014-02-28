@@ -66,6 +66,8 @@ def test_main():
 
 
 def _main():
+    """ For testing this test suite :)
+    """
     test_main()
     test_destop()
     test_angle()
@@ -207,7 +209,3 @@ function_names = [n.strip() for n in function_names.split(' ')]
 function_names = set([n for n in function_names if n])
 constant_names = [n.strip() for n in constant_names.split(' ')]
 constant_names = set([n for n in constant_names if n])
-
-
-if __name__ == '__main__':
-    _main()

@@ -147,6 +147,6 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsShader(handle), False)
 
 
-if __name__ == '__main__':
-    test_functionality_desktop()
-    test_functionality_pypengl()
+# if __name__ == '__main__':
+#     test_functionality_desktop()
+#     test_functionality_pypengl()
