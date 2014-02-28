@@ -11,7 +11,7 @@ from vispy.gloo.program import (Program, ProgramError, VertexBuffer,
                                 ElementBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader, ShaderError
 from vispy.gloo import _screenshot
-from vispy.util import assert_in
+from vispy.util import assert_in, assert_is
 
 
 def on_nonexist(self, *args):
@@ -77,7 +77,7 @@ def _test_application(backend):
     # Use "with" statement so failures don't leave open window
     # (and test context manager behavior)
     with Canvas(title='me', app=app, show=True, position=pos) as canvas:
-        assert_true(canvas.app is app)
+        assert_is(canvas.app, app)
         assert_true(canvas.native)
         print(canvas.size >= (1, 1))
         canvas.resize(90, 90)

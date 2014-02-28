@@ -262,6 +262,7 @@ def sys_info(fname=None, overwrite=False):
 # Adapted from Python's unittest2 (which is wrapped by nose)
 # http://docs.python.org/2/license.html
 def _safe_repr(obj, short=False):
+    """Helper for assert_* ports"""
     try:
         result = repr(obj)
     except Exception:
@@ -272,10 +273,22 @@ def _safe_repr(obj, short=False):
 
 
 def _safe_str(obj):
+    """Helper for assert_* ports"""
     try:
         return str(obj)
     except Exception:
         return object.__str__(obj)
+
+
+def _format_msg(msg, std_msg):
+    """Helper for assert_* ports"""
+    if msg is None:
+        msg = std_msg
+    else:
+        try:
+            msg = '%s : %s' % (std_msg, msg)
+        except UnicodeDecodeError:
+            msg = '%s : %s' % (_safe_str(std_msg), _safe_str(msg))
 
 
 def assert_in(member, container, msg=None):
@@ -288,11 +301,12 @@ def assert_in(member, container, msg=None):
     # failed, deal with it
     std_msg = '%s not found in %s' % (_safe_repr(member),
                                       _safe_repr(container))
-    if msg is None:
-        msg = std_msg
-    else:
-        try:
-            msg = '%s : %s' % (std_msg, msg)
-        except UnicodeDecodeError:
-            msg = '%s : %s' % (_safe_str(std_msg), _safe_str(msg))
+    msg = _format_msg(msg, std_msg)
     raise AssertionError(msg)
+
+
+def assert_is(expr1, expr2, msg=None):
+    """Backpoprt for old nose.tools"""
+    if expr1 is not expr2:
+        std_msg = '%s is not %s' % (_safe_repr(expr1), _safe_repr(expr2))
+        raise AssertionError(_format_msg(msg, std_msg))
