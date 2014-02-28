@@ -465,7 +465,7 @@ class FunctionChain(Function):
         self._funcs = list(funcs)
         self._name = name or "chain"
         self._update_signature()
-        self.anonymous = anonymous
+        self._anonymous = anonymous
         
     @property
     def name(self):
@@ -515,7 +515,9 @@ class FunctionChain(Function):
 
     def compile(self, obj_names):
         name = obj_names[self]
-        #if self.is_anonymous:
+        if not self.is_anonymous and name != self.name:
+            raise Exception("Cannot compile %s with name %s; function is not "
+                            "anonymous." % (self, name))
             #name = subs[self.name.lstrip('$')]
         #else:
             #name = self.name

@@ -113,6 +113,7 @@ class ModularProgram(Program):
         # cache of compilation results for each function and variable
         self._object_names = {}  # {object: name}
         self._object_code = {}   # {object: code}
+        self.namespace = None    # {name: object} (only valid for one compile)
         
         # lists all hooks (function prototypes in both shaders. Format is:
         # {'hook_name': ((vertex|fragment), args, rtype)}
@@ -219,7 +220,6 @@ class ModularProgram(Program):
     def _forget_object(self, obj):
         # Remove obj from namespaces, forget any cached information about it,
         # remove from referrer lists
-        print("FORGET:", obj)
         if isinstance(obj, Function):
             fc = self._function_cache.pop(obj, None)
             if fc is None:
@@ -291,6 +291,9 @@ class ModularProgram(Program):
         
         # list of all ShaderObjects
         all_objs = []
+
+        # map of {name: object} for this compilation
+        self.namespace = namespace = {}   
         
         # 1) Walk over all hook definitions and collect a list of their object
         # dependencies
@@ -302,15 +305,23 @@ class ModularProgram(Program):
             header = "\n//------- Begin hook %s -------\n\n" % hook_name
             objects[shader].append(header)
             
-            # add all dependencies of this hook in topological order
-            func_deps = self._collect_objects(func)
+            # record all dependencies of this hook in topological order
+            func_deps = self._function_dependencies(func)
             objects[shader].extend(func_deps)
-            all_objs.extend(func_deps)
+            
+            # collect dependencies, but exclude the hook itself because it
+            # has a required name.
+            all_objs.extend(func_deps[:-1])
+            
+            # add hook to namespace
+            if hook_name in namespace:
+                raise Exception('Cannot assign %s to hook %s; name already in '
+                                'use by %s.' % 
+                                (func, hook_name, namespace[hook_name]))
+            self._set_object_name(func, hook_name)
 
-        # 2) Objects with fixed names are added to the namespace first
-        namespace = {}   # map of {name: object} for this compilation
-        anon = []        # keep track of all anonymous objects
-        
+        # 2) Add objects with fixed names to the namespace
+        anon = [] # keep track of all anonymous objects
         for obj in all_objs:
             if obj.is_anonymous:
                 anon.append(obj)
@@ -342,11 +353,7 @@ class ModularProgram(Program):
         #    we must clear the code caches of its referrers.
         for obj in unnamed:
             name = self._suggest_name(namespace, obj.name)
-            namespace[name] = obj
-            self._object_names[obj] = name
-            self._object_code.pop(obj, None)
-            for ref in self._referrers.get(obj, ()):
-                self._object_code.pop(ref, None)
+            self._set_object_name(obj, name)
         
         # 5) Now we have a complete namespace; compile all objects that lack 
         #    a code cache and assemble a list of code strings for each shader.
@@ -372,21 +379,33 @@ class ModularProgram(Program):
         # 6) Assemble shaders
         self.vert_code = '\n'.join(shader_code['vertex'])
         self.frag_code = '\n'.join(shader_code['fragment'])
-        self.namespace = namespace
         
         logger.debug('==================== VERTEX SHADER ====================')
         logger.debug(self.vert_code)
         logger.debug('=================== FRAGMENT SHADER ===================')
         logger.debug(self.frag_code)
+        logger.debug('====================== NAMESPACE ======================')
+        logger.debug(self.namespace)
 
-    def _collect_objects(self, obj):
+    def _function_dependencies(self, obj):
         objs = []
         for dep in obj.dependencies:
-            objs.extend(self._collect_objects(dep))
+            objs.extend(self._function_dependencies(dep))
         objs.append(obj)
         return objs
         
-
+    def _set_object_name(self, obj, name):
+        self.namespace[name] = obj
+        old_name = self._object_names.get(obj, None)
+        self._object_names[obj] = name
+        if old_name != name:  # name has changed; must recompile this object 
+                              # and everything that refers to it.
+            self._object_code.pop(obj, None)
+            for ref in self._referrers.get(obj, ()):
+                self._object_code.pop(ref, None)
+    
+        
+        
     #def _compile(self):
         #"""
         #Generate complete vertex and fragment shader code by compiling hook
