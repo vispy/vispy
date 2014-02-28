@@ -249,6 +249,12 @@ def vertexAttribPointer(indx, size, type, normalized, stride, offset):
         setattr(glVertexAttribPointer, key, offset_)
     ptr = offset
     ()
+    # --- pyopengl
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, (int, ctypes.c_int)):
+        offset = ctypes.c_void_p(int(offset))
+    ()
 
 
 def bindAttribLocation(program, index, name):

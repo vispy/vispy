@@ -438,7 +438,12 @@ from OpenGL.GL import glVertexAttrib3f
 from OpenGL.GL import glVertexAttrib4f
 
 
-from OpenGL.GL import glVertexAttribPointer
+def glVertexAttribPointer(indx, size, type, normalized, stride, offset):
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, (int, ctypes.c_int)):
+        offset = ctypes.c_void_p(int(offset))
+    return GL.glVertexAttribPointer(indx, size, type, normalized, stride, offset)
 
 
 from OpenGL.GL import glViewport
