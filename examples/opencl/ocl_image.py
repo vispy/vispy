@@ -92,7 +92,7 @@ class Canvas(app.Canvas):
     def init_gl(self):
         # Create program
         self.gl_program = gloo.Program(vertex, fragment)
-        self.gl_tex = gloo.Texture2D(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5)  # initial color: plain gray
+        self.gl_tex = opencl.Texture2D(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5)  # initial color: plain gray
         # Set uniforms and samplers
         positions = numpy.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
                           [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0, ]], numpy.float32)
@@ -130,7 +130,7 @@ class Canvas(app.Canvas):
 
     def init_openCL(self, platform=None, device=None):
         self.gl_program.draw(gloo.gl.GL_TRIANGLE_STRIP)
-        self.ctx = opencl.get_context(platform, device)
+        self.ctx = opencl.OpenCL.get_context(platform, device)
         d = self.ctx.devices[0]
         print("OpenCL context on device: %s" % d.name)
         wg_float = min(d.max_work_group_size, self.tex_size)
@@ -145,6 +145,7 @@ class Canvas(app.Canvas):
         self.maxi = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
         self.cl_colormap = pyopencl.array.to_device(self.queue, self.colormap)
         self.ocl_tex = self.gl_tex.get_ocl()
+        print self.gl_tex, self.ocl_tex
         img = numpy.random.randint(0, 65000, self.tex_size ** 2).reshape((self.tex_size, self.tex_size)).astype(numpy.uint16)
         self.ocl_ary = pyopencl.array.to_device(self.queue, img)
         self.new_image(img)
@@ -175,7 +176,7 @@ class Canvas(app.Canvas):
         self.ocl_prg.buf_to_tex(self.queue, (self.tex_size, self.tex_size), (8, 4),
                                   self.ary_float.data, numpy.int32(self.tex_size), numpy.int32(self.tex_size),
                                   self.mini.data, self.maxi.data, numpy.int32(self.logscale),
-                                  self.ocl_tex).wait()
+                                  self.ocl_tex)
         pyopencl.enqueue_release_gl_objects(self.queue, [self.ocl_tex]).wait()
         self.on_paint(None)
 
