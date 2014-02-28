@@ -80,7 +80,7 @@ class Variable(ShaderObject):
         return ()
 
     def compile(self, obj_names):
-        name = obj_names[self]
+        name = obj_names.get(self, self.name)
         if not self.is_anonymous and name != self.name:
             raise Exception("Cannot compile %s with name %s; variable "
                             "is not anonymous." % (self, name))
@@ -300,7 +300,7 @@ class Function(ShaderObject):
         Generate the final code for this function (excluding dependencies)
         using the given name and object name mappings.
         """
-        name = obj_names[self]
+        name = obj_names.get(self, self.name)
         subs = {}
         if self.is_anonymous:
             subs[self.name] = name
@@ -514,7 +514,7 @@ class FunctionChain(Function):
         self._update_signature()
 
     def compile(self, obj_names):
-        name = obj_names[self]
+        name = obj_names.get(self, self.name)
         if not self.is_anonymous and name != self.name:
             raise Exception("Cannot compile %s with name %s; function is not "
                             "anonymous." % (self, name))

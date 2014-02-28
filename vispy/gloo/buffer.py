@@ -277,6 +277,9 @@ class DataBuffer(Buffer):
     def offset(self):
         """ The byte offset in the buffer. """
         return self._offset
+    
+    def __repr__(self):
+        return "<%s %s %s>" % (self.__class__.__name__, self.dtype, self.count)
 
     def __setitem__(self, key, data):
         """ Set data (deferred operation) """

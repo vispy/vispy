@@ -215,29 +215,20 @@ class ModularProgram(Program):
         self._forget_object(func)
         self._hook_defs[hook_name] = None
         self._need_update = True
-        
                
     def _forget_object(self, obj):
         # Remove obj from namespaces, forget any cached information about it,
         # remove from referrer lists
-        if isinstance(obj, Function):
-            fc = self._function_cache.pop(obj, None)
-            if fc is None:
-                return
-            name, code, references = fc
-            for ref in references:
-                referrers = self._referrers[ref]
-                referrers.remove(obj)
-                if len(referrers) == 0:
-                    self._forget_object(ref)
-        else:
-            name, code = self._variable_cache.pop(obj)
-        
+        self._object_names.pop(obj, None)
+        self._object_code.pop(obj, None)
         self._referrers.pop(obj, None)
-        
-        for ns in self.namespaces.values():
-            ns.pop(name, None)
-            
+        for dep in obj.dependencies:
+            referrers = self._referrers.get(dep, None)
+            if referrers is None:
+                continue
+            referrers.remove(obj)
+            if len(referrers) == 0:
+                self._forget_object(dep)
         
     # TODO: might remove this functionality. 
     # It is not currently in use..
@@ -404,144 +395,6 @@ class ModularProgram(Program):
             for ref in self._referrers.get(obj, ()):
                 self._object_code.pop(ref, None)
     
-        
-        
-    #def _compile(self):
-        #"""
-        #Generate complete vertex and fragment shader code by compiling hook
-        #definitions and concatenating each to the shaders.
-        #"""
-        #self.code['vertex'] = [self.vmain]
-        #self.code['fragment'] = [self.fmain]
-        ##self.namespaces = {'vertex': {}, 'fragment': {}}
-        
-        #for hook_name, func in self._hook_defs.items():
-            #self._check_hook(hook_name)
-            #shader, hook_args, hook_rtype = self._hooks[hook_name]
-            #self.code[shader].append(header)
-            
-            #header = "\n//------- Begin hook %s -------\n\n" % hook_name
-            #n, c = self._resolve_function(func, shader, hook_name)
-            
-        #self.vert_code = '\n'.join(code['vertex'])
-        #self.frag_code = '\n'.join(code['fragment'])
-        
-        
-            
-    #def _resolve_function(self, func, shader, func_name=None):
-        #"""
-        #Generate complete code needed for one function (including dependencies).
-        
-        #Return (function_name, code).
-        #"""
-        #print("RESOLVE FUNCTION:", func)
-        #func_res = self._function_cache.get(func, None)
-        #if func_res is not None:
-            #return func_res[:2]
-        
-        #objects = []  # all variables and functions required by *func*
-        #subs = {}
-        
-        ## resolve function name
-        #if func.is_anonymous:
-            #if func_name is None:
-                #func_name = func.name.lstrip('$')
-                #func_name = self._suggest_name(shader, func_name, func)
-            #else:
-                #self._check_name(shader, func_name, func)
-            #subs[func.name.lstrip('$')] = func_name
-        #else:
-            #if func_name is None:
-                #func_name = func.name
-                #self._check_name(shader, func_name, func)
-            #elif func_name != func.name:
-                #raise Exception("Cannot compile function %s with name %s; "
-                                #"function is not anonymous." 
-                                #% (func, func_name))
-            #self._check_name(shader, func_name, func)
-        
-        #self.namespaces[shader][func_name] = func
-        
-        ## resolve all variable names and generate declarations if needed
-        #func_deps = []
-        #print("  add variables:")
-        #for local_name in func.template_vars:
-            #print("    ",local_name)
-            #var = func[local_name]
-            #self._resolve_variable(var, shader)
-            #objects.append(var)
-            #if n not in self.namespaces[shader]:
-                #print("      ",c)
-                #self.namespaces[shader][n] = var
-            #else:
-                #print("      already defined")
-            #subs[local_name] = n
-            #self._referrers.setdefault(var, set()).add(func)
-            #func_deps.append(var)
-            
-        ## resolve all function dependencies
-        #dep_names = {}
-        #for dep in func.deps:
-            #if dep not already_added_to_code:
-                #objs = self._resolve_function(dep, shader)
-                #objects.extend(objs)
-                #dep_names[dep] = n
-            #self._referrers.setdefault(dep, set()).add(func)
-            #func_deps.append(dep)
-            
-        ## compile code with the suggested substitutions and dependency names
-        #code = func.compile(subs, dep_names)
-        #func_res = (func_name, code, func_deps)
-        #self._function_cache[func] = func_res
-        
-        #objects.append(self)
-        
-        #return objects
-    
-    #def _resolve_variable(self, var, shader):
-        #"""
-        #Decide on a name for *var* and generate its declaration code.
-        
-        #Return (variable_name, declaration_code).
-        #"""
-        #var_res = self._variable_cache.get(var, None)
-        #if var_res is not None:
-            #return var_res
-        
-        #if var.anonymous:
-            #name = self._suggest_name(shader, var.name, var)
-        #else:
-            #self._check_name(shader, var.name, var)
-            #name = var.name
-        #try:
-            #decl = "%s %s %s;\n" % (var.vtype, var.dtype, name)
-        #except KeyError:
-            #raise Exception("%s has not been assigned a value" % var)
-        #var_res = (name, decl)
-        #self._variable_cache[var] = var_res
-        
-    #def _add_to_shader(self, shader, name, code, value):
-        ## Add *code* to the specified shader
-        ## Add *value* to the namespace
-        #if name not in self.namsepaces[shader]:
-            #self.code[shader] += code
-            #self.namespaces[shader][name] = value
-        #else:
-            #if self.namespaces[shader][name] is not value:
-                #raise Exception("Attempted to define %s multiple times" % name)
-        
-    #def _check_name(self, shader, name, val):
-        #"""
-        #Check that *name* correctly refers to *val* in the program namespace,
-        #if it is present.
-        #"""
-        #for nsname in self.namespaces:
-            #if (name in self.namespaces[nsname] and 
-                #self.namespaces[nsname][name] != val):
-                #raise Exception("Cannot use name '%s' for variable %s; already "
-                                #"used by %s." % 
-                                #(name, val, self.namespaces[nsname][name]))
-                
     def _suggest_name(self, ns, name):
         """
         Suggest a name similar to *name* that does not exist in *ns*.
