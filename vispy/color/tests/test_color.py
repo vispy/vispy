@@ -43,6 +43,7 @@ def test_color_interpretation():
     r = ColorArray('#ffff')
     assert_equal(r, ColorArray('white'))
     r = ColorArray('#ff000000')
+    assert_true('turquoise' in get_color_names())  # make sure our JSON loaded
     assert_equal(r.alpha, 0)
     r.alpha = 1.0
     assert_equal(r, ColorArray('r'))

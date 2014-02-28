@@ -5,6 +5,8 @@
 from __future__ import division  # just to be safe...
 
 import numpy as np
+from os import path as op
+import json
 from copy import deepcopy
 
 from ..util.six import string_types
@@ -505,3 +507,9 @@ _color_dict = dict(r='#FF0000',
                    fuchsia='#FF00FF',
                    purple='#800080',
                    )
+# Add the CSS colors, courtesy MIT-licensed code from Dave Eddy:
+# github.com/bahamas10/css-color-names/blob/master/css-color-names.json
+_css_file = op.join(op.dirname(__file__), '..', 'data',
+                    'css-color-names.json')
+with open(_css_file, 'r') as fid:
+    _color_dict.update(json.load(fid))
