@@ -10,7 +10,111 @@ import re
 from . import parsing
 
 
-class Function(object):
+class ShaderObject(object):
+    """
+    Base class for objects that may appear in a GLSL shader (functions and
+    variables). This class defines the interface used by ModularProgram to
+    compile multiple objects together into a single program.
+    """
+    @property
+    def is_anonymous(self):
+        """
+        Indicates whether this object may be assigned a new name. 
+        """
+        raise NotImplementedError
+
+    @property
+    def name(self):
+        """
+        The name of this object. If this object is anonymous, then the name
+        is only used as a suggestion when compiling a program.
+        """
+        raise NotImplementedError
+    
+    @property 
+    def dependencies(self):
+        """
+        A collection of objects that must be defined before this object.
+        """
+        raise NotImplementedError
+
+    def compile(self, object_names):
+        """
+        Return complete GLSL code needed to implement this object in a program.
+        
+        *object_names* is a dict that maps ShaderObjects to the
+        names they have been assigned in a program. The generated code must make
+        use of these names when referring to other objects, as well as for
+        determining its own name.
+        
+        """
+        raise NotImplementedError
+
+
+
+class Variable(ShaderObject):
+    """
+    References a program variable from a function.
+    
+    Created by Function.__getitem__
+    """
+    def __init__(self, function, name, spec=None, anonymous=False):
+        super(ShaderObject, self).__init__()
+        self.function = function
+        self._name = name  # local name within the function
+        self.spec = None  # (vtype, dtype, value)
+        if spec is not None:
+            self.spec = spec
+        self.anonymous = anonymous  # if True, variable may be renamed.
+
+    @property
+    def is_anonymous(self):
+        return self.anonymous
+    
+    @property
+    def name(self):
+        return self._name 
+
+    @property
+    def dependencies(self):
+        return ()
+
+    def compile(self, obj_names):
+        name = obj_names[self]
+        if not self.is_anonymous and name != self.name:
+            raise Exception("Cannot compile %s with name %s; variable "
+                            "is not anonymous." % (self, name))
+        return "%s %s %s;" % (self.vtype, self.dtype, name)
+        
+    @property
+    def vtype(self):
+        if self.spec is None:
+            raise Exception("%s has not been assigned; cannot "
+                            "determine vtype." % self)
+        return self.spec[0]
+    
+    @property
+    def dtype(self):
+        if self.spec is None:
+            raise Exception("%s has not been assigned; cannot "
+                            "determine dtype." % self)
+        return self.spec[1]
+
+    @property
+    def value(self):
+        if self.spec is None:
+            raise Exception("%s has not been assigned; cannot "
+                            "determine value." % self)
+        return self.spec[2]
+
+    def __repr__(self):
+        return ("<Variable '%s' on %s (%d)>" % 
+                (self.name, self.function.name, id(self)))
+    
+
+
+
+class Function(ShaderObject):
     """
     This class represents a single function in GLSL. Its *code* property 
     contains the entire GLSL code of the function as well as any program
@@ -34,23 +138,26 @@ class Function(object):
             All functions which may be called by this Function.
     """    
     def __init__(self, code=None, deps=()):
+        super(ShaderObject, self).__init__()
         if code is not None and not isinstance(code, basestring):
-            raise ValueError("code argument must be string or None (got %s)" % type(code))
+            raise ValueError("code argument must be string or None (got %s)" 
+                             % type(code))
         self._code = code
         self._deps = deps
         self._signature = None
+        self._anonymous = None
+        
+        # Variable instance assigned to each program variable.
+        self._variables = {}  # {'local_var_name': Variable}
         
         # Set of program variables defined in the program code
         # TODO: not implemented yet; for now all program variables are 
         # implemented as template variables.
-        self._program_vars = None  
+        #self._program_vars = None  
         
         # Set of template variables used in the program code 
         # (excluding the function name)
         self._template_vars = None 
-        
-        # VariableReference assigned to each program variable.
-        self._program_values = {}  # {'var_name': VariableReference}
         
         # List of (hook_name, function) pairs indicating functions that must
         # be installed on a particular hook to provide support for this 
@@ -74,8 +181,6 @@ class Function(object):
     def name(self):
         """
         Function name as given in the code.
-        
-        Anonymous functions have name starting with $
         """
         return self.signature[0]
 
@@ -84,7 +189,16 @@ class Function(object):
         """ Indicates whether this is an anonymous function (the function name
         begins with "$". Anonymous functions may be renamed when included in a
         ModularProgram."""
-        return self.name.startswith('$')
+        return self._anonymous
+    
+    @property
+    def dependencies(self):
+        """List of all Functions and Variables required by this 
+        Function."""
+        deps = list(self._deps)
+        for k in self.template_vars:
+            deps.append(self[k])
+        return deps
     
     @property
     def args(self):
@@ -121,21 +235,20 @@ class Function(object):
             self._parse_template_vars()
         return self._template_vars
     
-    @property
-    def program_vars(self):
-        """
-        dict of program variables declared statically by this code.
-        {var_name: (vtype, dtype)}
-        """
-        if self._program_vars is None:
-            self._parse_program_vars()
-        return self._program_vars
+    #@property
+    #def program_vars(self):
+        #"""
+        #dict of program variables declared statically by this code.
+        #{var_name: (vtype, dtype)}
+        #"""
+        #if self._program_vars is None:
+            #self._parse_program_vars()
+        #return self._program_vars
         
     @property
-    def deps(self):
+    def function_deps(self):
         """
-        List of dependencies for this function.
-        
+        List of Functions required by this function.
         """
         return self._deps
         
@@ -161,45 +274,54 @@ class Function(object):
     def _parse_signature(self):
         # Search code for function signature and template variables
         name, args, rtype = parsing.parse_function_signature(self.code)
+        anon = name.startswith('$')
+        if anon:
+            name = name[1:]
+        self._anonymous = anon
+            
         self._signature = (name, args, rtype)
         
     def _parse_template_vars(self):
         # find all template variables in self.code, excluding the function name.
         self._template_vars = set()
         for var in parsing.find_template_variables(self.code):
+            var = var.lstrip('$')
             if var == self.name:
                 continue
-            vname = var.lstrip('$')
-            self._template_vars.add(vname)
+            self._template_vars.add(var)
 
-    def _parse_program_vars(self):
-        # should find all statically-defined program variables and populate
-        # self._program_vars
-        raise NotImplementedError
+    #def _parse_program_vars(self):
+        ## should find all statically-defined program variables and populate
+        ## self._program_vars
+        #raise NotImplementedError
 
-    def compile(self, template_subs, dep_names):
+    def compile(self, obj_names):
         """
         Generate the final code for this function (excluding dependencies)
-        using the given template substitutions. *dep_names* contains {dep: name}
-        for each dependency and may be used by subclasses to modify the final 
-        code.
+        using the given name and object name mappings.
         """
-        if self.is_anonymous and self.name.lstrip('$') not in template_subs:
-            raise Exception("Cannot compile anonymous function %s; no function name specified." % self)
+        name = obj_names[self]
+        subs = {}
+        if self.is_anonymous:
+            subs[self.name] = name
+        elif name != self.name:
+            raise Exception("Cannot compile non-anonymous function %s with "
+                            "new name %s." % (self, name))
         
         for name in self.template_vars:
-            if name not in template_subs:
-                raise Exception("Cannot compile function %s; no global name given for variable %s" % (self, name))
-        
-        if len(template_subs) > 0:
+            var = self[name]
             try:
-                code = self._template.substitute(**template_subs)
-                return self.clean_code(code)
-            except KeyError as err:
-                raise KeyError("Must specify variable $%s in substitution" % 
-                            err.args[0])
-        else:
-            return self.clean_code(self.code)
+                subs[name] = obj_names[var]
+            except KeyError:
+                raise Exception("Cannot compile function %s; Variable %s has "
+                                "no name assignment." % (self, var))
+        
+        try:
+            code = self._template.substitute(**subs)
+            return self.clean_code(code)
+        except KeyError as err:
+            raise KeyError("Must specify variable $%s in substitution" % 
+                        err.args[0])
     
     def wrap(self, name=None, **kwds):
         """
@@ -239,18 +361,18 @@ class Function(object):
             raise NameError("Variable '%s' does not exist in this function." 
                             % name)
         
-        if isinstance(spec, VariableReference):
-            if name in self._program_values:
-                if self._program_values[name] is spec:
+        if isinstance(spec, Variable):
+            if name in self._variables:
+                if self._variables[name] is spec:
                     return
-                raise Exception("Cannot assign variable to %s; already assigned to %s." % (spec, self._program_values[name]))
-            self._program_values[name] = spec
+                raise Exception("Cannot assign variable to %s; already assigned to %s." % (spec, self._variables[name]))
+            self._variables[name] = spec
         else:
-            if name in self._program_values:
-                self._program_values[name].spec = spec
+            if name in self._variables:
+                self._variables[name].spec = spec
             else:
-                ref = VariableReference(self, name, spec, anonymous=anon)
-                self._program_values[name] = ref
+                ref = Variable(self, name, spec, anonymous=anon)
+                self._variables[name] = ref
 
     def __getitem__(self, name):
         """
@@ -265,9 +387,9 @@ class Function(object):
         program.
         """
         # create empty reference if needed
-        if name not in self._program_values:
-            self._program_values[name] = VariableReference(self, name)
-        return self._program_values[name]
+        if name not in self._variables:
+            self._variables[name] = Variable(self, name)
+        return self._variables[name]
 
     def __repr__(self):
         return "<%s %s %d>" % (self.__class__.__name__, self.name, id(self))
@@ -290,44 +412,6 @@ class Function(object):
         return code
             
 
-class VariableReference(object):
-    """
-    References a program variable from a function.
-    
-    """
-    def __init__(self, function, name, spec=None, anonymous=False):
-        self.function = function
-        self.name = name
-        self.spec = None  # (vtype, dtype, value)
-        if spec is not None:
-            self.spec = spec
-        self.anonymous = anonymous  # if True, variable may be renamed.
-        
-    @property
-    def vtype(self):
-        if self.spec is None:
-            raise Exception("Variable %s has not been assigned; cannot "
-                            "determine vtype." % self)
-        return self.spec[0]
-    
-    @property
-    def dtype(self):
-        if self.spec is None:
-            raise Exception("Variable %s has not been assigned; cannot "
-                            "determine dtype." % self)
-        return self.spec[1]
-
-    @property
-    def value(self):
-        if self.spec is None:
-            raise Exception("Variable %s has not been assigned; cannot "
-                            "determine value." % self)
-        return self.spec[2]
-
-    def __repr__(self):
-        return ("<VariableReference '%s' on %s (%d)>" % 
-                (self.name, self.function.name, id(self)))
-    
     
 class FunctionChain(Function):
     """
@@ -376,11 +460,12 @@ class FunctionChain(Function):
         }
     
     """
-    def __init__(self, name=None, funcs=()):
+    def __init__(self, name=None, funcs=(), anonymous=True):
         Function.__init__(self, code=None, deps=list(funcs))
         self._funcs = list(funcs)
-        self._name = name or "$chain"
+        self._name = name or "chain"
         self._update_signature()
+        self.anonymous = anonymous
         
     @property
     def name(self):
@@ -428,22 +513,23 @@ class FunctionChain(Function):
         self._deps.insert(index, function)
         self._update_signature()
 
-    def compile(self, subs, dep_names):
-        if self.is_anonymous:
-            name = subs[self.name.lstrip('$')]
-        else:
-            name = self.name
+    def compile(self, obj_names):
+        name = obj_names[self]
+        #if self.is_anonymous:
+            #name = subs[self.name.lstrip('$')]
+        #else:
+            #name = self.name
         
         args = ", ".join(["%s %s" % arg for arg in self.args])
         code = "%s %s(%s) {\n" % (self.rtype, name, args)
         
         if self.rtype == 'void':
             for fn in self._funcs:
-                code += "    %s();\n" % dep_names[fn]
+                code += "    %s();\n" % obj_names[fn]
         else:
             code += "    return "
             for fn in self._funcs[::-1]:
-                code += "%s(\n           " % dep_names[fn]
+                code += "%s(\n           " % obj_names[fn]
             code += "    %s%s;\n" % (self.args[0][1], ')'*len(self._funcs))
         
         code += "}\n"
