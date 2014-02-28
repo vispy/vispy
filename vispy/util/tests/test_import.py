@@ -100,6 +100,7 @@ def test_import_vispy_no_pyopengl():
     modnames = loaded_vispy_modules('vispy.gloo.gl.desktop', 2, True)
     assert_not_in('OpenGL', modnames)
 
+
 def test_import_vispy_pyopengl():
     """ Importing vispy.gloo.gl.pyopengl should import PyOpenGL. """
     modnames = loaded_vispy_modules('vispy.gloo.gl.pyopengl', 2, True)
