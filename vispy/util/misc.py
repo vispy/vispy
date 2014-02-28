@@ -261,7 +261,7 @@ def sys_info(fname=None, overwrite=False):
 
 # Adapted from Python's unittest2 (which is wrapped by nose)
 # http://docs.python.org/2/license.html
-def _safe_repr(obj, short=False):
+def _safe_rep(obj, short=False):
     """Helper for assert_* ports"""
     try:
         result = repr(obj)
@@ -293,20 +293,15 @@ def _format_msg(msg, std_msg):
 
 def assert_in(member, container, msg=None):
     """Backport for old nose.tools"""
-    try:
-        if member in container:
-            return
-    except:  # just in case there's something crazy
-        pass
-    # failed, deal with it
-    std_msg = '%s not found in %s' % (_safe_repr(member),
-                                      _safe_repr(container))
+    if member in container:
+        return
+    std_msg = '%s not found in %s' % (_safe_rep(member), _safe_rep(container))
     msg = _format_msg(msg, std_msg)
     raise AssertionError(msg)
 
 
 def assert_is(expr1, expr2, msg=None):
-    """Backpoprt for old nose.tools"""
+    """Backport for old nose.tools"""
     if expr1 is not expr2:
-        std_msg = '%s is not %s' % (_safe_repr(expr1), _safe_repr(expr2))
+        std_msg = '%s is not %s' % (_safe_rep(expr1), _safe_rep(expr2))
         raise AssertionError(_format_msg(msg, std_msg))
