@@ -2,11 +2,17 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+from __future__ import division  # just to be safe...
+
 import numpy as np
+from copy import deepcopy
 
 from ..util.six import string_types
 from ..util import logger
 
+
+###############################################################################
+# User-friendliness helpers
 
 def get_color_names():
     """Get the known color names
@@ -29,6 +35,9 @@ def _string_to_rgb(color):
     # hex color
     color = color[1:]
     lc = len(color)
+    if lc in (3, 4):
+        color = ''.join(c + c for c in color)
+        lc = len(color)
     if lc not in (6, 8):
         raise ValueError('Hex color must have exactly six or eight '
                          'elements following the # sign')
@@ -68,6 +77,17 @@ def _check_color_dim(val):
         raise RuntimeError('Value must have second dimension of size 3 or 4')
     return val, val.shape[1]
 
+
+def _array_clip_val(val):
+    """Helper to turn val into array and clip between 0 and 1"""
+    val = np.array(val)
+    if val.max() > 1 or val.min() < 0:
+        logger.warn('value will be clipped between 0 and 1')
+    val[...] = np.clip(val, 0, 1)
+    return val
+
+###############################################################################
+# HSV<->RGB conversion
 
 def _rgb_to_hsv(rgbs):
     """Convert Nx3 or Nx4 rgb to hsv"""
@@ -111,13 +131,13 @@ def _hsv_to_rgb(hsvs):
         x = c * (1 - abs(hp % 2 - 1))
         if 0 <= hp < 1:
             r, g, b = c, x, 0
-        elif 1 <= hp < 2:
+        elif hp < 2:
             r, g, b = x, c, 0
-        elif 2 <= hp < 3:
+        elif hp < 3:
             r, g, b = 0, c, x
-        elif 3 <= hp < 4:
+        elif hp < 4:
             r, g, b = 0, x, c
-        elif 4 <= hp < 5:
+        elif hp < 5:
             r, g, b = x, 0, c
         else:
             r, g, b = c, 0, x
@@ -129,7 +149,13 @@ def _hsv_to_rgb(hsvs):
     return rgbs
 
 
-# Let's build the white normalization that would happen into the matrix:
+###############################################################################
+# HSV<->CIELab conversion
+
+# These numbers are adapted from MIT-licensed MATLAB code for
+# Lab<->RGB conversion. They provide an XYZ<->RGB conversion matrices,
+# w/D65 white point normalization built in.
+
 #_rgb2xyz = np.array([[0.412453, 0.357580, 0.180423],
 #                     [0.212671, 0.715160, 0.072169],
 #                     [0.019334, 0.119193, 0.950227]])
@@ -139,6 +165,15 @@ def _hsv_to_rgb(hsvs):
 _rgb2xyz_norm = np.array([[0.43395276, 0.212671, 0.01775791],
                          [0.37621941, 0.71516, 0.10947652],
                          [0.18982783, 0.072169, 0.87276557]])
+
+#_xyz2rgb = np.array([[3.240479, -1.537150, -0.498535],
+#                     [-0.969256, 1.875992, 0.041556],
+#                     [0.055648, -0.204043, 1.057311]])
+#_white_norm = np.array([0.950456, 1., 1.088754])
+#_xyz2rgb *= _white_norm[np.newaxis, :]
+_xyz2rgb_norm = np.array([[3.07993271, -1.53715, -0.54278198],
+                          [-0.92123518, 1.875992, 0.04524426],
+                          [0.05289098, -0.204043, 1.15115158]])
 
 
 def _rgb_to_lab(rgbs):
@@ -163,17 +198,6 @@ def _rgb_to_lab(rgbs):
         labs.append(np.atleast1d(rgbs[:, 3]))
     labs = np.array(labs, order='F').T  # Becomes 'C' order b/c of .T
     return labs
-
-
-# XYZ to RGB conversion matrix, w/D65 white point normalization
-#_xyz2rgb = np.array([[3.240479, -1.537150, -0.498535],
-#                     [-0.969256, 1.875992, 0.041556],
-#                     [0.055648, -0.204043, 1.057311]])
-#_white_norm = np.array([0.950456, 1., 1.088754])
-#_xyz2rgb *= _white_norm[np.newaxis, :]
-_xyz2rgb_norm = np.array([[3.07993271, -1.53715, -0.54278198],
-                          [-0.92123518, 1.875992, 0.04524426],
-                          [0.05289098, -0.204043, 1.15115158]])
 
 
 def _lab_to_rgb(labs):
@@ -201,6 +225,9 @@ def _lab_to_rgb(labs):
     rgbs = np.clip(rgbs, 0., 1.)
     return rgbs
 
+
+###############################################################################
+# Now for the user-level classes
 
 class ColorArray(object):
     """An array of colors
@@ -257,11 +284,12 @@ class ColorArray(object):
     ###########################################################################
     # Builtins and utilities
     def copy(self):
-        """Return a copy of the Color instance"""
-        return ColorArray(self)
+        """Return a copy"""
+        return deepcopy(self)
 
     @classmethod
     def _name(cls):
+        """Helper to get the class name once it's been created"""
         return cls.__name__
 
     def __len__(self):
@@ -285,11 +313,13 @@ class ColorArray(object):
     # RGB(A)
     @property
     def rgba(self):
+        """Nx4 array of RGBA floats"""
         return self._rgba.copy()
 
     @rgba.setter
     def rgba(self, val):
-        """Note: all other attribute sets get routed here!"""
+        """Set the color using an Nx4 array of RGBA floats"""
+        # Note: all other attribute sets get routed here!
         # This method is meant to do the heavy lifting of setting data
         rgba = _user_to_rgba(val, expand=False)
         if self._rgba is None:
@@ -299,73 +329,109 @@ class ColorArray(object):
 
     @property
     def rgb(self):
+        """Nx3 array of RGB floats"""
         return self._rgba[:, :3].copy()
 
     @rgb.setter
     def rgb(self, val):
+        """Set the color using an Nx3 array of RGB floats"""
         self.rgba = val
 
     @property
     def RGBA(self):
-        return (self._rgba * 255).astype(int)
+        """Nx4 array of RGBA uint8s"""
+        return (self._rgba * 255).astype(np.uint8)
 
     @RGBA.setter
     def RGBA(self, val):
+        """Set the color using an Nx4 array of RGBA uint8 values"""
         # need to convert to normalized float
         val = np.atleast_1d(val).astype(np.float64) / 255
         self.rgba = val
 
     @property
     def RGB(self):
+        """Nx3 array of RGBA uint8s"""
         return np.round(self._rgba[:, :3] * 255).astype(int)
 
     @RGB.setter
     def RGB(self, val):
+        """Set the color using an Nx3 array of RGB uint8 values"""
         # need to convert to normalized float
         val = np.atleast_1d(val).astype(np.float64) / 255.
         self.rgba = val
 
     @property
     def alpha(self):
+        """Length-N array of alpha floats"""
         return self._rgba[:, 3]
 
     @alpha.setter
     def alpha(self, val):
-        self._rgba[:, 3] = val
+        """Set the color using alpha"""
+        self._rgba[:, 3] = _array_clip_val(val)
 
     ###########################################################################
     # HSV
     @property
     def hsv(self):
+        """Nx3 array of HSV floats"""
         return _rgb_to_hsv(self._rgba[:, :3])
 
     @hsv.setter
     def hsv(self, val):
+        """Set the color values using an Nx3 array of HSV floats"""
         self.rgba = _hsv_to_rgb(val)
 
     @property
     def value(self):
+        """Length-N array of color HSV values"""
         return self.hsv[:, 2]
 
     @value.setter
     def value(self, val):
+        """Set the color using length-N array of (from HSV)"""
         hsv = self.hsv
-        val = np.array(val)
-        if val.max() > 1 or val.min() < 0:
-            logger.warn('value will be clipped between 0 and 1')
-        val = np.clip(val, 0, 1)
-        hsv[:, 2] = val
+        hsv[:, 2] = _array_clip_val(val)
         self.rgba = _hsv_to_rgb(hsv)
 
-    def lighten(self):
-        """Lighten the color"""
-        # we might be able to do something perceptually nicer here...
-        self.value = (self.value + 1) / 2
+    def lighter(self, dv=0.1, copy=True):
+        """Produce a lighter color (if possible)
 
-    def darken(self):
-        """Darken the color"""
-        # we might be able to do something perceptually nicer here...
-        self.value /= 2
+        Parameters
+        ----------
+        dv : float
+            Amount to increase the color value by.
+        copy : bool
+            If False, operation will be carried out in-place.
+
+        Returns
+        -------
+        color : instance of ColorArray
+            The lightened Color.
+        """
+        color = self.copy() if copy else self
+        color.value += dv
+        return color
+
+    def darker(self, dv=0.1, copy=True):
+        """Produce a darker color (if possible)
+
+        Parameters
+        ----------
+        dv : float
+            Amount to decrease the color value by.
+        copy : bool
+            If False, operation will be carried out in-place.
+
+        Returns
+        -------
+        color : instance of ColorArray
+            The darkened Color.
+        """
+        color = self.copy() if copy else self
+        color.value -= dv
+        return color
 
     ###########################################################################
     # Lab

@@ -40,6 +40,8 @@ def test_color_interpretation():
     assert_raises(RuntimeError, ColorArray, ['r', np.eye(3)])  # can't nest
 
     # getting/setting properties
+    r = ColorArray('#ffff')
+    assert_equal(r, ColorArray('white'))
     r = ColorArray('#ff000000')
     assert_equal(r.alpha, 0)
     r.alpha = 1.0
@@ -60,10 +62,12 @@ def test_color_interpretation():
     w.rgb = ColorArray('r').rgb + ColorArray('g').rgb + ColorArray('b').rgb
     assert_equal(w, ColorArray('white'))
     w = ColorArray('white')
-    w.darken()
-    k = ColorArray('black')
-    k.lighten()
-    assert_equal(w, k)
+    assert_equal(w, w.darker().lighter())
+    assert_equal(w, w.darker(0.1).darker(-0.1))
+    w2 = w.darker()
+    assert_true(w != w2)
+    w.darker(copy=False)
+    assert_equal(w, w2)
     with use_log_level('warning', record=True) as w:
         w = ColorArray('white')
         w.value = 2
