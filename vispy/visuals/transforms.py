@@ -391,8 +391,8 @@ class ChainTransform(Transform):
                 #bound = tr.shader_map(tr_name)
             #bindings.append(bound)
             
-        name = "$transform_%s_chain" % ('imap' if imap else 'map')
-        return FunctionChain(name, funcs)
+        name = "transform_%s_chain" % ('imap' if imap else 'map')
+        return FunctionChain(name, funcs, anonymous=True)
 
 
     def inverse(self):

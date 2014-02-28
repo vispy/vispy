@@ -24,6 +24,7 @@ box = canvas.root.add_view()
 
 l1 = scenegraph.entities.Line(pos)
 l1.transform.scale((50, 50))
+l1._visual.set_data(color=(1,0,0,1))
 #l1.transform.translate((20, 100))
 box.add(l1)
 

@@ -225,28 +225,33 @@ class LinePosInputComponent(VisualComponent):
     
     """
     # generate local coordinate from xy (vec2) attribute and z (float) uniform
-    XYInputFunc = Function("""
+    XYInputCode = """
         vec4 $input_xy_pos() {
             return vec4($xy_pos, $z_pos, 1.0);
         }
-        """)
+        """
 
     # generate local coordinate from xyz (vec3) attribute
-    XYZInputFunc = Function("""
+    XYZInputCode = """
         vec4 $input_xyz_pos() {
             return vec4($xyz_pos, 1.0);
         }
-        """)
+        """
+    
+    def __init__(self, visual=None):
+        super(LinePosInputComponent, self).__init__(visual)
+        self.xy_input_func = Function(self.XYInputCode)
+        self.xyz_input_func = Function(self.XYZInputCode)
     
     def update(self):
         # select the correct shader function to read in vertex data based on 
         # position array shape
         if self.visual._data['pos'].shape[-1] == 2:
-            func = self.XYInputFunc
+            func = self.xy_input_func
             func['xy_pos'] = ('attribute', 'vec2', self.visual._vbo['pos'])
             func['z_pos'] = ('uniform', 'float', 0.0)
         else:
-            func = self.XYZInputFunc
+            func = self.xyz_input_func
             func['xyz_pos']=('attribute', 'vec3', self.visual._vbo)
             
         self.visual._program['local_position'] = func
