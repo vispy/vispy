@@ -86,6 +86,7 @@ def _array_clip_val(val):
     val[...] = np.clip(val, 0, 1)
     return val
 
+
 ###############################################################################
 # HSV<->RGB conversion
 
