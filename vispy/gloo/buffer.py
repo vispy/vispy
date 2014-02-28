@@ -11,7 +11,6 @@ import numpy as np
 from ..util import is_string, logger
 from . import gl
 from . import GLObject
-from .. import opencl
 
 
 # ------------------------------------------------------------ Buffer class ---
@@ -177,36 +176,6 @@ class Buffer(GLObject):
                     gl.glBufferData(self._target, nbytes, data, self._usage)
                 else:
                     raise
-
-    def get_ocl(self, ctx=None):
-        """
-        Retrieves an OpenCL view on the Buffer.
-
-        To use it you need to grab it using:
-        pyopencl.enqueue_acquire_gl_objects(queue, [ocl_buf])
-
-        Parameters
-        ----------
-        ctx : OpenCL Context
-            If None is provided, generate/reuse an existing one
-        """
-        if (opencl is None) or (opencl.pyopencl is None):
-            return
-        else:
-            cl = opencl.pyopencl
-        if ctx is None:
-            if opencl.context is None:
-                ctx = opencl.get_context()
-            else:
-                ctx = opencl.context
-            if ctx is None:
-                return
-        if self._handle == 0:
-            self.activate()
-
-        cl_buf = cl.GLBuffer(ctx, cl.mem_flags.READ_WRITE,
-                                   int(self.handle))
-        return cl_buf
 
 
 # ------------------------------------------------------ DataBuffer class ---
@@ -674,9 +643,9 @@ class VertexBuffer(DataBuffer):
             vsize = 1
             # Or ... We set the sun of all vsizes
             # No! because "stride = data.itemsize * vsize" will then fail!
-            #shapes = [dtype[name].shape for name in dtype.names]
-            #sizes = [int(np.prod(s)) for s in shapes]
-            #vsize = sum(sizes)
+            # shapes = [dtype[name].shape for name in dtype.names]
+            # sizes = [int(np.prod(s)) for s in shapes]
+            # vsize = sum(sizes)
 
         elif dtype.shape:
             # e.g. ('x', '<f4', 3):
