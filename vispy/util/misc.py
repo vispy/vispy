@@ -300,6 +300,15 @@ def assert_in(member, container, msg=None):
     raise AssertionError(msg)
 
 
+def assert_not_in(member, container, msg=None):
+    """Backport for old nose.tools"""
+    if member not in container:
+        return
+    std_msg = '%s found in %s' % (_safe_rep(member), _safe_rep(container))
+    msg = _format_msg(msg, std_msg)
+    raise AssertionError(msg)
+
+
 def assert_is(expr1, expr2, msg=None):
     """Backport for old nose.tools"""
     if expr1 is not expr2:
