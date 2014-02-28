@@ -699,11 +699,14 @@ class PyOpenGLApiGenrator(ApiGenerator):
             self.lines.append('def %s(%s):' % (des.apiname, argstr))
             self.lines.extend(ann_lines)
         else:
-            if des.es2.glname == des.apiname:
-                self.lines.append('from OpenGL.%s import %s' % (fullmod, des.apiname))
+            importname = des.es2.glname
+            if importname in ['glClearDepthf', 'glDepthRangef']:  # special case
+                importname = importname[:-1]
+            if importname == des.apiname:
+                self.lines.append('from OpenGL.%s import %s' % (fullmod, importname))
             else:
                 self.lines.append('from OpenGL.%s import %s as %s' % 
-                                  (fullmod, des.es2.glname, des.apiname))
+                                  (fullmod, importname, des.apiname))
     
     def _add_group_function(self, des, sig, es2func):
         funcname = apiname(sig.split('(')[0])

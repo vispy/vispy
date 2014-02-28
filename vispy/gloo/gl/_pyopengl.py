@@ -72,7 +72,7 @@ from OpenGL.GL import glClear
 from OpenGL.GL import glClearColor
 
 
-from OpenGL.GL import glClearDepthf as glClearDepth
+from OpenGL.GL import glClearDepth
 
 
 from OpenGL.GL import glClearStencil
@@ -138,7 +138,7 @@ from OpenGL.GL import glDepthFunc
 from OpenGL.GL import glDepthMask
 
 
-from OpenGL.GL import glDepthRangef as glDepthRange
+from OpenGL.GL import glDepthRange
 
 
 from OpenGL.GL import glDetachShader
