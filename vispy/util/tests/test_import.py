@@ -7,7 +7,7 @@ import sys
 import os
 import subprocess
 
-from nose.tools import assert_equal, assert_in, assert_not_in
+from nose.tools import assert_equal, assert_true
 
 import vispy
 
@@ -98,10 +98,10 @@ def test_import_vispy_gloo():
 def test_import_vispy_no_pyopengl():
     """ Importing vispy.gloo.gl.desktop should not import PyOpenGL. """
     modnames = loaded_vispy_modules('vispy.gloo.gl.desktop', 2, True)
-    assert_not_in('OpenGL', modnames)
+    assert_true('OpenGL' not in modnames)
 
 
 def test_import_vispy_pyopengl():
     """ Importing vispy.gloo.gl.pyopengl should import PyOpenGL. """
     modnames = loaded_vispy_modules('vispy.gloo.gl.pyopengl', 2, True)
-    assert_in('OpenGL', modnames)
+    assert_true('OpenGL' in modnames)
