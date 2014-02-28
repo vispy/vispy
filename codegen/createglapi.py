@@ -373,13 +373,17 @@ class ApiGenerator:
         self.lines = []
     
     def save(self):
+        # Remove too many whitespace
+        text = '\n'.join(self.lines) + '\n'
+        for i in range(10):
+            text = text.replace('\n\n\n\n', '\n\n\n')
+        # Write
         with open(self.filename, 'wb') as f:
             f.write((PREAMBLE % self.DESCRIPTION).encode('utf-8'))
             for line in self.PREAMBLE.splitlines():
                 f.write(line[4:].encode('utf-8')+b'\n')
             f.write(b'\n')
-            for line in self.lines:
-                f.write(line.encode('utf-8')+b'\n')
+            f.write(text.encode('utf-8'))
     
     def add_function(self, des):
         if des.es2.group:
@@ -681,12 +685,15 @@ class PyOpenGLApiGenrator(ApiGenerator):
     import OpenGL.GL.framebufferobjects as FBO
     """
     
+    def __init__(self):
+        ApiGenerator.__init__(self)
+        self._functions_to_import = []
+
     def _add_function(self, des):
         # Fix for FBO?
-        mod = fullmod = 'GL'
+        mod = 'GL'
         if 'renderbuffer' in des.name.lower() or 'framebuffer' in des.name.lower():
             mod = 'FBO'
-            fullmod = 'GL.framebufferobjects'
         # Get call line
         argstr = ', '.join(des.args)
         call_line = '    return %s.%s(%s)' % (mod, des.es2.glname, argstr)
@@ -699,25 +706,24 @@ class PyOpenGLApiGenrator(ApiGenerator):
             self.lines.append('def %s(%s):' % (des.apiname, argstr))
             self.lines.extend(ann_lines)
         else:
-            importname = des.es2.glname
-            if importname in ['glClearDepthf', 'glDepthRangef']:  # special case
-                importname = importname[:-1]
-            if importname == des.apiname:
-                self.lines.append('from OpenGL.%s import %s' % (fullmod, importname))
-            else:
-                self.lines.append('from OpenGL.%s import %s as %s' % 
-                                  (fullmod, importname, des.apiname))
+            # To be imported from OpenGL.GL
+            self._functions_to_import.append((des.es2.glname, des.apiname))
     
     def _add_group_function(self, des, sig, es2func):
+        # All group functions can be directly imported from OpenGL
         funcname = apiname(sig.split('(')[0])
-        self.lines.append('from OpenGL.GL import %s' % funcname)
-#         # Def function
-#         funcname = apiname(sig.split('(')[0])
-#         args = sig.split('(', 1)[1].split(')')[0]
-#         self.lines.append('def %s:' % sig)
-#         # Content
-#         self.lines.append('    return GL.%s' % sig)
-
+        self._functions_to_import.append((funcname, funcname))
+    
+    def save(self):
+        # Write remaining functions
+        self.lines.append('# List of functions that we should import from OpenGL.GL')
+        self.lines.append('_functions_to_import = [')
+        for name1, name2 in self._functions_to_import:
+            self.lines.append('    ("%s", "%s"),' % (name1, name2))
+        self.lines.append('    ]')
+        
+        # Really save
+        ApiGenerator.save(self)
 
 
 ## Generate

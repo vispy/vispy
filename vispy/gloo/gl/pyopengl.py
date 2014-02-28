@@ -6,6 +6,11 @@
 fallback and for testing.
 """
 
+from OpenGL import GL as _GL
+import OpenGL.GL.framebufferobjects as _FBO
+
+from ...util import logger
+
 from . import _copy_gl_functions
 from ._constants import *  # noqa
 
@@ -65,10 +70,61 @@ def _patch():
         _m.long = int
 
 
+# Patch OpenGL package
+_patch()
+
+
 ## Inject
+
+def _make_unavailable_func(funcname):
+    def cb(*args, **kwds):
+        raise RuntimeError('OpenGL API call "%s" is not available.' % funcname)
+    return cb
+
+
+def _get_function_from_pyopengl(funcname):
+    """ Try getting the given function from PyOpenGL, return
+    a dummy function (that shows a warning when called) if it
+    could not be found.
+    """
+    func = None
+    # Get function from GL
+    try:
+        func = getattr(_GL, funcname)
+    except AttributeError:
+        # Get function from FBO
+        try:
+            func = getattr(_FBO, funcname)
+        except AttributeError:
+            # Some functions are known by a slightly different name
+            # e.g. glDepthRangef, glDepthRangef
+            if funcname.endswith('f'):
+                try:
+                    func = getattr(_GL, funcname[:-1])
+                except AttributeError:
+                    pass
+
+    # Set dummy function if we could not find it
+    if func is None:
+        func = _make_unavailable_func(funcname)
+        logger.warn('warning: %s not available' % funcname)
+    return func
+
+
+def _inject():
+    """ Copy functions from OpenGL.GL into _pyopengl namespace.
+    """
+    NS = _pyopengl.__dict__
+    for glname, ourname in _pyopengl._functions_to_import:
+        func = _get_function_from_pyopengl(glname)
+        NS[ourname] = func
 
 
 from . import _pyopengl
-_copy_gl_functions(_pyopengl, globals())
 
-_patch()
+# Inject remaining functions from OpenGL.GL
+# copies name to _pyopengl namespace
+_inject()
+
+# Inject all function definitions in _pyopengl
+_copy_gl_functions(_pyopengl, globals())

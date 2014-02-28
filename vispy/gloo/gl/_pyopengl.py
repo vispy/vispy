@@ -11,40 +11,7 @@ from OpenGL import GL
 import OpenGL.GL.framebufferobjects as FBO
 
 
-from OpenGL.GL import glActiveTexture
 
-
-from OpenGL.GL import glAttachShader
-
-
-from OpenGL.GL import glBindAttribLocation
-
-
-from OpenGL.GL import glBindBuffer
-
-
-from OpenGL.GL.framebufferobjects import glBindFramebuffer
-
-
-from OpenGL.GL.framebufferobjects import glBindRenderbuffer
-
-
-from OpenGL.GL import glBindTexture
-
-
-from OpenGL.GL import glBlendColor
-
-
-from OpenGL.GL import glBlendEquation
-
-
-from OpenGL.GL import glBlendEquationSeparate
-
-
-from OpenGL.GL import glBlendFunc
-
-
-from OpenGL.GL import glBlendFuncSeparate
 
 
 def glBufferData(target, data, usage):
@@ -63,27 +30,6 @@ def glBufferSubData(target, offset, data):
     GL.glBufferSubData(target, offset, size, data)
 
 
-from OpenGL.GL.framebufferobjects import glCheckFramebufferStatus
-
-
-from OpenGL.GL import glClear
-
-
-from OpenGL.GL import glClearColor
-
-
-from OpenGL.GL import glClearDepth
-
-
-from OpenGL.GL import glClearStencil
-
-
-from OpenGL.GL import glColorMask
-
-
-from OpenGL.GL import glCompileShader
-
-
 def glCompressedTexImage2D(target, level, internalformat, width, height, border, data):
     # border = 0  # set in args
     size = data.size
@@ -95,21 +41,6 @@ def glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, fo
     GL.glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, size, data)
 
 
-from OpenGL.GL import glCopyTexImage2D
-
-
-from OpenGL.GL import glCopyTexSubImage2D
-
-
-from OpenGL.GL import glCreateProgram
-
-
-from OpenGL.GL import glCreateShader
-
-
-from OpenGL.GL import glCullFace
-
-
 def glDeleteBuffer(buffer):
     GL.glDeleteBuffers(1, [buffer])
 
@@ -118,63 +49,12 @@ def glDeleteFramebuffer(framebuffer):
     FBO.glDeleteFramebuffers(1, [framebuffer])
 
 
-from OpenGL.GL import glDeleteProgram
-
-
 def glDeleteRenderbuffer(renderbuffer):
     FBO.glDeleteRenderbuffers(1, [renderbuffer])
 
 
-from OpenGL.GL import glDeleteShader
-
-
 def glDeleteTexture(texture):
     GL.glDeleteTextures([texture])
-
-
-from OpenGL.GL import glDepthFunc
-
-
-from OpenGL.GL import glDepthMask
-
-
-from OpenGL.GL import glDepthRange
-
-
-from OpenGL.GL import glDetachShader
-
-
-from OpenGL.GL import glDisable
-
-
-from OpenGL.GL import glDisableVertexAttribArray
-
-
-from OpenGL.GL import glDrawArrays
-
-
-from OpenGL.GL import glDrawElements
-
-
-from OpenGL.GL import glEnable
-
-
-from OpenGL.GL import glEnableVertexAttribArray
-
-
-from OpenGL.GL import glFinish
-
-
-from OpenGL.GL import glFlush
-
-
-from OpenGL.GL.framebufferobjects import glFramebufferRenderbuffer
-
-
-from OpenGL.GL.framebufferobjects import glFramebufferTexture2D
-
-
-from OpenGL.GL import glFrontFace
 
 
 def glCreateBuffer():
@@ -191,9 +71,6 @@ def glCreateRenderbuffer():
 
 def glCreateTexture():
     return GL.glGenTextures(1)
-
-
-from OpenGL.GL import glGenerateMipmap
 
 
 def glGetActiveAttrib(program, index):
@@ -213,51 +90,9 @@ def glGetActiveUniform(program, index):
     return name.decode('utf-8'), size, type
 
 
-from OpenGL.GL import glGetAttachedShaders
-
-
 def glGetAttribLocation(program, name):
     name = name.encode('utf-8')
     return GL.glGetAttribLocation(program, name)
-
-
-from OpenGL.GL import glGetBooleanv as _glGetBooleanv
-
-
-from OpenGL.GL import glGetBufferParameteriv as glGetBufferParameter
-
-
-from OpenGL.GL import glGetError
-
-
-from OpenGL.GL import glGetFloatv as _glGetFloatv
-
-
-from OpenGL.GL.framebufferobjects import glGetFramebufferAttachmentParameteriv as glGetFramebufferAttachmentParameter
-
-
-from OpenGL.GL import glGetIntegerv as _glGetIntegerv
-
-
-from OpenGL.GL import glGetProgramInfoLog
-
-
-from OpenGL.GL import glGetProgramiv as glGetProgramParameter
-
-
-from OpenGL.GL.framebufferobjects import glGetRenderbufferParameteriv as glGetRenderbufferParameter
-
-
-from OpenGL.GL import glGetShaderInfoLog
-
-
-from OpenGL.GL import glGetShaderPrecisionFormat
-
-
-from OpenGL.GL import glGetShaderSource
-
-
-from OpenGL.GL import glGetShaderiv as glGetShaderParameter
 
 
 def glGetParameter(pname):
@@ -286,9 +121,6 @@ def glGetTexParameter(target, pname):
     return params[0]
 
 
-from OpenGL.GL import glGetUniformfv as glGetUniform
-
-
 def glGetUniformLocation(program, name):
     name = name.encode('utf-8')
     return GL.glGetUniformLocation(program, name)
@@ -306,57 +138,6 @@ def glGetVertexAttrib(program, location):
         return values
 
 
-from OpenGL.GL import glGetVertexAttribPointerv as glGetVertexAttribOffset
-
-
-from OpenGL.GL import glHint
-
-
-from OpenGL.GL import glIsBuffer
-
-
-from OpenGL.GL import glIsEnabled
-
-
-from OpenGL.GL.framebufferobjects import glIsFramebuffer
-
-
-from OpenGL.GL import glIsProgram
-
-
-from OpenGL.GL.framebufferobjects import glIsRenderbuffer
-
-
-from OpenGL.GL import glIsShader
-
-
-from OpenGL.GL import glIsTexture
-
-
-from OpenGL.GL import glLineWidth
-
-
-from OpenGL.GL import glLinkProgram
-
-
-from OpenGL.GL import glPixelStorei
-
-
-from OpenGL.GL import glPolygonOffset
-
-
-from OpenGL.GL import glReadPixels
-
-
-from OpenGL.GL.framebufferobjects import glRenderbufferStorage
-
-
-from OpenGL.GL import glSampleCoverage
-
-
-from OpenGL.GL import glScissor
-
-
 def glShaderSource(shader, source):
     # Some implementation do not like getting a list of single chars
     if isinstance(source, (tuple, list)):
@@ -364,24 +145,6 @@ def glShaderSource(shader, source):
     else:
         strings = [source]
     GL.glShaderSource(shader, strings)
-
-
-from OpenGL.GL import glStencilFunc
-
-
-from OpenGL.GL import glStencilFuncSeparate
-
-
-from OpenGL.GL import glStencilMask
-
-
-from OpenGL.GL import glStencilMaskSeparate
-
-
-from OpenGL.GL import glStencilOp
-
-
-from OpenGL.GL import glStencilOpSeparate
 
 
 def glTexImage2D(target, level, internalformat, format, type, pixels):
@@ -394,48 +157,9 @@ def glTexImage2D(target, level, internalformat, format, type, pixels):
     GL.glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
 
 
-from OpenGL.GL import glTexParameterf
-from OpenGL.GL import glTexParameteri
-
-
 def glTexSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
     height, width = pixels.shape[:2]
     GL.glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels)
-
-
-from OpenGL.GL import glUniform1f
-from OpenGL.GL import glUniform2f
-from OpenGL.GL import glUniform3f
-from OpenGL.GL import glUniform4f
-from OpenGL.GL import glUniform1i
-from OpenGL.GL import glUniform2i
-from OpenGL.GL import glUniform3i
-from OpenGL.GL import glUniform4i
-from OpenGL.GL import glUniform1fv
-from OpenGL.GL import glUniform2fv
-from OpenGL.GL import glUniform3fv
-from OpenGL.GL import glUniform4fv
-from OpenGL.GL import glUniform1iv
-from OpenGL.GL import glUniform2iv
-from OpenGL.GL import glUniform3iv
-from OpenGL.GL import glUniform4iv
-
-
-from OpenGL.GL import glUniformMatrix2fv
-from OpenGL.GL import glUniformMatrix3fv
-from OpenGL.GL import glUniformMatrix4fv
-
-
-from OpenGL.GL import glUseProgram
-
-
-from OpenGL.GL import glValidateProgram
-
-
-from OpenGL.GL import glVertexAttrib1f
-from OpenGL.GL import glVertexAttrib2f
-from OpenGL.GL import glVertexAttrib3f
-from OpenGL.GL import glVertexAttrib4f
 
 
 def glVertexAttribPointer(indx, size, type, normalized, stride, offset):
@@ -446,6 +170,114 @@ def glVertexAttribPointer(indx, size, type, normalized, stride, offset):
     return GL.glVertexAttribPointer(indx, size, type, normalized, stride, offset)
 
 
-from OpenGL.GL import glViewport
-
-
+# List of functions that we should import from OpenGL.GL
+_functions_to_import = [
+    ("glActiveTexture", "glActiveTexture"),
+    ("glAttachShader", "glAttachShader"),
+    ("glBindAttribLocation", "glBindAttribLocation"),
+    ("glBindBuffer", "glBindBuffer"),
+    ("glBindFramebuffer", "glBindFramebuffer"),
+    ("glBindRenderbuffer", "glBindRenderbuffer"),
+    ("glBindTexture", "glBindTexture"),
+    ("glBlendColor", "glBlendColor"),
+    ("glBlendEquation", "glBlendEquation"),
+    ("glBlendEquationSeparate", "glBlendEquationSeparate"),
+    ("glBlendFunc", "glBlendFunc"),
+    ("glBlendFuncSeparate", "glBlendFuncSeparate"),
+    ("glCheckFramebufferStatus", "glCheckFramebufferStatus"),
+    ("glClear", "glClear"),
+    ("glClearColor", "glClearColor"),
+    ("glClearDepthf", "glClearDepth"),
+    ("glClearStencil", "glClearStencil"),
+    ("glColorMask", "glColorMask"),
+    ("glCompileShader", "glCompileShader"),
+    ("glCopyTexImage2D", "glCopyTexImage2D"),
+    ("glCopyTexSubImage2D", "glCopyTexSubImage2D"),
+    ("glCreateProgram", "glCreateProgram"),
+    ("glCreateShader", "glCreateShader"),
+    ("glCullFace", "glCullFace"),
+    ("glDeleteProgram", "glDeleteProgram"),
+    ("glDeleteShader", "glDeleteShader"),
+    ("glDepthFunc", "glDepthFunc"),
+    ("glDepthMask", "glDepthMask"),
+    ("glDepthRangef", "glDepthRange"),
+    ("glDetachShader", "glDetachShader"),
+    ("glDisable", "glDisable"),
+    ("glDisableVertexAttribArray", "glDisableVertexAttribArray"),
+    ("glDrawArrays", "glDrawArrays"),
+    ("glDrawElements", "glDrawElements"),
+    ("glEnable", "glEnable"),
+    ("glEnableVertexAttribArray", "glEnableVertexAttribArray"),
+    ("glFinish", "glFinish"),
+    ("glFlush", "glFlush"),
+    ("glFramebufferRenderbuffer", "glFramebufferRenderbuffer"),
+    ("glFramebufferTexture2D", "glFramebufferTexture2D"),
+    ("glFrontFace", "glFrontFace"),
+    ("glGenerateMipmap", "glGenerateMipmap"),
+    ("glGetAttachedShaders", "glGetAttachedShaders"),
+    ("glGetBooleanv", "_glGetBooleanv"),
+    ("glGetBufferParameteriv", "glGetBufferParameter"),
+    ("glGetError", "glGetError"),
+    ("glGetFloatv", "_glGetFloatv"),
+    ("glGetFramebufferAttachmentParameteriv", "glGetFramebufferAttachmentParameter"),
+    ("glGetIntegerv", "_glGetIntegerv"),
+    ("glGetProgramInfoLog", "glGetProgramInfoLog"),
+    ("glGetProgramiv", "glGetProgramParameter"),
+    ("glGetRenderbufferParameteriv", "glGetRenderbufferParameter"),
+    ("glGetShaderInfoLog", "glGetShaderInfoLog"),
+    ("glGetShaderPrecisionFormat", "glGetShaderPrecisionFormat"),
+    ("glGetShaderSource", "glGetShaderSource"),
+    ("glGetShaderiv", "glGetShaderParameter"),
+    ("glGetUniformfv", "glGetUniform"),
+    ("glGetVertexAttribPointerv", "glGetVertexAttribOffset"),
+    ("glHint", "glHint"),
+    ("glIsBuffer", "glIsBuffer"),
+    ("glIsEnabled", "glIsEnabled"),
+    ("glIsFramebuffer", "glIsFramebuffer"),
+    ("glIsProgram", "glIsProgram"),
+    ("glIsRenderbuffer", "glIsRenderbuffer"),
+    ("glIsShader", "glIsShader"),
+    ("glIsTexture", "glIsTexture"),
+    ("glLineWidth", "glLineWidth"),
+    ("glLinkProgram", "glLinkProgram"),
+    ("glPixelStorei", "glPixelStorei"),
+    ("glPolygonOffset", "glPolygonOffset"),
+    ("glReadPixels", "glReadPixels"),
+    ("glRenderbufferStorage", "glRenderbufferStorage"),
+    ("glSampleCoverage", "glSampleCoverage"),
+    ("glScissor", "glScissor"),
+    ("glStencilFunc", "glStencilFunc"),
+    ("glStencilFuncSeparate", "glStencilFuncSeparate"),
+    ("glStencilMask", "glStencilMask"),
+    ("glStencilMaskSeparate", "glStencilMaskSeparate"),
+    ("glStencilOp", "glStencilOp"),
+    ("glStencilOpSeparate", "glStencilOpSeparate"),
+    ("glTexParameterf", "glTexParameterf"),
+    ("glTexParameteri", "glTexParameteri"),
+    ("glUniform1f", "glUniform1f"),
+    ("glUniform2f", "glUniform2f"),
+    ("glUniform3f", "glUniform3f"),
+    ("glUniform4f", "glUniform4f"),
+    ("glUniform1i", "glUniform1i"),
+    ("glUniform2i", "glUniform2i"),
+    ("glUniform3i", "glUniform3i"),
+    ("glUniform4i", "glUniform4i"),
+    ("glUniform1fv", "glUniform1fv"),
+    ("glUniform2fv", "glUniform2fv"),
+    ("glUniform3fv", "glUniform3fv"),
+    ("glUniform4fv", "glUniform4fv"),
+    ("glUniform1iv", "glUniform1iv"),
+    ("glUniform2iv", "glUniform2iv"),
+    ("glUniform3iv", "glUniform3iv"),
+    ("glUniform4iv", "glUniform4iv"),
+    ("glUniformMatrix2fv", "glUniformMatrix2fv"),
+    ("glUniformMatrix3fv", "glUniformMatrix3fv"),
+    ("glUniformMatrix4fv", "glUniformMatrix4fv"),
+    ("glUseProgram", "glUseProgram"),
+    ("glValidateProgram", "glValidateProgram"),
+    ("glVertexAttrib1f", "glVertexAttrib1f"),
+    ("glVertexAttrib2f", "glVertexAttrib2f"),
+    ("glVertexAttrib3f", "glVertexAttrib3f"),
+    ("glVertexAttrib4f", "glVertexAttrib4f"),
+    ("glViewport", "glViewport"),
+    ]
