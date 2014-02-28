@@ -3,6 +3,7 @@ from nose.tools import assert_is
 from vispy.gloo import gl
 
 
+@gl._requires_pyopengl()
 def test_use_desktop():
     """ Using that gl.use injects all names in gl namespace """
 

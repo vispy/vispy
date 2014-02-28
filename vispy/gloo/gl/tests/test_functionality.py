@@ -14,6 +14,7 @@ def test_functionality_desktop():
     _test_functonality('desktop')
 
 
+@gl._requires_pyopengl()
 def test_functionality_pypengl():
     """ Test that pyopengl GL backend functions appropriately. """
     _test_functonality('pyopengl')
