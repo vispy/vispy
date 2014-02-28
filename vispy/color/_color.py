@@ -90,7 +90,7 @@ def _array_clip_val(val):
 
 
 ###############################################################################
-# HSV<->RGB conversion
+# RGB<->HSV conversion
 
 def _rgb_to_hsv(rgbs):
     """Convert Nx3 or Nx4 rgb to hsv"""
@@ -153,7 +153,7 @@ def _hsv_to_rgb(hsvs):
 
 
 ###############################################################################
-# HSV<->CIELab conversion
+# RGB<->CIELab conversion
 
 # These numbers are adapted from MIT-licensed MATLAB code for
 # Lab<->RGB conversion. They provide an XYZ<->RGB conversion matrices,
