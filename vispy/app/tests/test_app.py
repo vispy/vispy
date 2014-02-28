@@ -11,6 +11,7 @@ from vispy.gloo.program import (Program, ProgramError, VertexBuffer,
                                 ElementBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader, ShaderError
 from vispy.gloo import _screenshot
+from vispy.util import assert_in
 
 
 def on_nonexist(self, *args):
@@ -68,7 +69,7 @@ def _test_application(backend):
     app.process_events()
     if backend is not None:
         # "in" b/c "qt" in "PySide (qt)"
-        assert_true(backend in app.backend_name)
+        assert_in(backend, app.backend_name)
     print(app)  # test __repr__
 
     # Canvas

@@ -257,3 +257,42 @@ def sys_info(fname=None, overwrite=False):
         with open(fname, 'w') as fid:
             fid.write(out)
     return out
+
+
+# Adapted from Python's unittest2 (which is wrapped by nose)
+# http://docs.python.org/2/license.html
+def _safe_repr(obj, short=False):
+    try:
+        result = repr(obj)
+    except Exception:
+        result = object.__repr__(obj)
+    if not short or len(result) < 80:
+        return result
+    return result[:80] + ' [truncated]...'
+
+
+def _safe_str(obj):
+    try:
+        return str(obj)
+    except Exception:
+        return object.__str__(obj)
+
+
+def assert_in(member, container, msg=None):
+    """Backport for old nose.tools"""
+    try:
+        if member in container:
+            return
+    except:  # just in case there's something crazy
+        pass
+    # failed, deal with it
+    std_msg = '%s not found in %s' % (_safe_repr(member),
+                                      _safe_repr(container))
+    if msg is None:
+        msg = std_msg
+    else:
+        try:
+            msg = '%s : %s' % (std_msg, msg)
+        except UnicodeDecodeError:
+            msg = '%s : %s' % (_safe_str(std_msg), _safe_str(msg))
+    raise AssertionError(msg)
