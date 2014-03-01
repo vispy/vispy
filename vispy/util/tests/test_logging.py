@@ -3,7 +3,8 @@ from os import path as op
 import logging
 
 from vispy import app
-from vispy.util import logger, use_log_level, sys_info, _TempDir
+from vispy.util import (logger, use_log_level, sys_info, _TempDir, assert_in,
+                        assert_not_in)
 
 temp_dir = _TempDir()
 
@@ -26,14 +27,14 @@ def test_debug_logging():
         a.use()
         a.quit()
     assert_equal(len(l), 1)
-    assert_true('vispy.app.application' in l[0])
+    assert_in('vispy.app.application', l[0])
 
     with use_log_level('debug', record=True) as l:
         a = app.Application()
         a.use()
         a.quit()
     assert_equal(len(l), 1)
-    assert_true('vispy.app.application' in l[0])
+    assert_in('vispy.app.application', l[0])
 
     with use_log_level('debug', 'foo', True) as l:
         a = app.Application()
@@ -46,7 +47,7 @@ def test_debug_logging():
         a.use()
         a.quit()
     assert_equal(len(l), 1)
-    assert_true('vispy.app.application' not in l[0])
+    assert_not_in('vispy.app.application', l[0])
 
 
 def test_sys_info():
