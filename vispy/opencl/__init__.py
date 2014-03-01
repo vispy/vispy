@@ -3,13 +3,21 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # Author: Jérôme Kieffer
 # -----------------------------------------------------------------------------
-""" Definition of OpenCL interaction using pyopencl """
+""" Definition of OpenCL interaction using PyOpenCL
+
+This module defines a class OpenCL which provides an method to retrieve an
+OpenCL context shared with OpenGL.
+
+A couple of classes are providing a get_ocl method to retrieve the OpenCL
+view on OpenGL textures or buffers.
+
+All exposed classes from gloo.buffer and gloo.texture are mixed using dual-
+inheritance to offer views.
+"""
 
 from __future__ import division, print_function
 import sys
-from ..gloo import gl
-from ..gloo import texture
-from ..gloo import buffer
+from ..gloo import gl, texture, buffer
 from ..util import logger
 from threading import Semaphore
 
@@ -81,7 +89,7 @@ def _make_context(platform_id=None, device_id=None):
             else:
                 for device_id, device in enumerate(platform.get_devices()):
                     if ctx.devices[0] == device:
-                        ids = (platform_id,device_id)
+                        ids = (platform_id, device_id)
                         break
                 break
             if ctx:
@@ -89,6 +97,10 @@ def _make_context(platform_id=None, device_id=None):
     return ctx, ids
 
 class OpenCL(object):
+    """
+    Provides a class method to retrieve an
+    OpenCL context shared with OpenGL.
+    """
     _ids = None
     _context = None
     _sem = Semaphore()
@@ -125,6 +137,9 @@ class OpenCL(object):
 
 
 class TextureOpenCL(OpenCL):
+    """
+    Mixing class to offer OpenCL view on the texture
+    """
     def get_ocl(self, ctx=None):
         """
         Retrieves an OpenCL view on the texture.
@@ -187,6 +202,10 @@ class TextureCubeMap(texture.TextureCubeMap, TextureOpenCL):
 
 
 class BufferOpenCL(OpenCL):
+    """
+    Mixing class to offer OpenCL view on the buffer
+    """
+
     def get_ocl(self, ctx=None):
         """
         Retrieves an OpenCL view on the Buffer.
@@ -218,7 +237,6 @@ class VertexBuffer(buffer.VertexBuffer, BufferOpenCL):
 
     """ The VertexBuffer represents any kind of vertex data, and can also
     represent an array-of-structures approach.
-    Inherits :class:`buffer.DataBuffer`.
 
     The shape of the given data is interpreted in the following way:
     If a normal array of one dimension is given, the vector-size (vsize)
