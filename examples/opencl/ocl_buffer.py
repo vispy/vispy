@@ -99,7 +99,6 @@ class Canvas(app.Canvas):
         self.maxi = self.queue = self.ocl_red = self.gl_buf = self.ctx = None
         self.ocl_buf = self.ocl_ary = self.colormap = None
 
-
     def init_gl(self):
         """
         Starts OpenGL
@@ -143,9 +142,14 @@ class Canvas(app.Canvas):
             self.gl_program.draw(gloo.gl.GL_TRIANGLE_STRIP)
         self.swap_buffers()
 
-    def init_openCL(self, platform=None, device=None):
+    def init_cl(self, platform_id=None, device_id=None):
+        """
+        Starts OpenCL
+
+
+        """
         self.gl_program.draw(gloo.gl.GL_TRIANGLE_STRIP)
-        self.ctx = opencl.OpenCL.get_context(platform, device)
+        self.ctx = opencl.OpenCL.get_context(platform_id, device_id)
         d = self.ctx.devices[0]
         print("OpenCL context on device: %s" % d.name)
         wg_float = min(d.max_work_group_size, self.tex_size)
@@ -178,7 +182,7 @@ class Canvas(app.Canvas):
         else:
             img = self.last_img
         if self.ocl_prg is None:
-            self.init_openCL()
+            self.init_cl()
         pyopencl.enqueue_copy(self.queue, self.ocl_ary.data, img)
         self.ocl_prg.u16_to_float(self.queue, self.shape, (8, 4),
                                 self.ocl_ary.data,
@@ -212,8 +216,8 @@ class Canvas(app.Canvas):
         This is run after pressing the "B" key on the picture
         to let the application initialize
         """
-        u16 = numpy.uint16
         print("Starting benchmark")
+        u16 = numpy.uint16
         y, x = numpy.ogrid[:self.tex_size, :self.tex_size]
         imgs = [numpy.zeros(self.shape, dtype=u16),
                 numpy.dot(y, numpy.ones_like(x)).astype(u16),
@@ -257,5 +261,5 @@ if __name__ == '__main__':
     c.show()
     c.init_gl()
     c.show()
-    c.init_openCL(platform_id, device_id)
+    c.init_cl(platform_id, device_id)
     app.run()

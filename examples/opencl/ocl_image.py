@@ -81,18 +81,22 @@ class Canvas(app.Canvas):
     def __init__(self, tex_size):
         app.Canvas.__init__(self)
         self.tex_size = tex_size
+        self.shape = (tex_size, tex_size)
         self.gl_program = None
         self.ocl_prg = None
         self.last_img = None
         self.logscale = 0
-        print('Press "L" to switch to log scale, "B" to benchmark and "Q" to quit')
-
+        print('Press "L" to switch to log scale, "B" to benchmark'
+              ' and "Q" to quit')
+        self.ary_float = self.mini = self.maxi_mini = self.red_size = None
+        self.maxi = self.queue = self.ocl_red = self.gl_buf = self.ctx = None
+        self.ocl_tex = self.ocl_ary = self.colormap, self.gl_tex = None
 
 
     def init_gl(self):
         # Create program
         self.gl_program = gloo.Program(vertex, fragment)
-        self.gl_tex = opencl.Texture2D(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5)  # initial color: plain gray
+        self.gl_tex = opencl.Texture2D(numpy.zeros(self.shape, dtype=numpy.float32) + 0.5)  # initial color: plain gray
         # Set uniforms and samplers
         positions = numpy.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
                           [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0, ]], numpy.float32)
@@ -128,24 +132,32 @@ class Canvas(app.Canvas):
         self.swap_buffers()
 
 
-    def init_openCL(self, platform=None, device=None):
+    def init_cl(self, platform_id=None, device_id=None):
         self.gl_program.draw(gloo.gl.GL_TRIANGLE_STRIP)
-        self.ctx = opencl.OpenCL.get_context(platform, device)
+        self.ctx = opencl.OpenCL.get_context(platform_id, device_id)
         d = self.ctx.devices[0]
         print("OpenCL context on device: %s" % d.name)
         wg_float = min(d.max_work_group_size, self.tex_size)
         self.red_size = 2 ** (int(numpy.ceil(numpy.log2(wg_float))))
         self.queue = pyopencl.CommandQueue(self.ctx)
         self.ocl_prg = pyopencl.Program(self.ctx, src).build()
-        reduction_src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "reductions.cl")).read()
-        self.ocl_red = pyopencl.Program(self.ctx, reduction_src).build("-D WORKGROUP_SIZE=%s" % self.red_size)
-        self.ary_float = pyopencl.array.empty(self.queue, shape=(self.tex_size, self.tex_size), dtype=numpy.float32)
-        self.maxi_mini = pyopencl.array.empty(self.queue, (self.red_size, 2), dtype=numpy.float32)
+        dirname = os.path.dirname(os.path.abspath(__file__))
+        reduction_file = os.path.join(dirname, "reductions.cl")
+        reduction_src = open(reduction_file).read()
+        self.ocl_red = pyopencl.Program(self.ctx, reduction_src)
+        self.ocl_red.build("-D WORKGROUP_SIZE=%s" % self.red_size)
+        self.ary_float = pyopencl.array.empty(self.queue,
+                                              shape=self.shape,
+                                              dtype=numpy.float32)
+        self.maxi_mini = pyopencl.array.empty(self.queue,
+                                              (self.red_size, 2),
+                                              dtype=numpy.float32)
         self.mini = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
         self.maxi = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
-        self.cl_colormap = pyopencl.array.to_device(self.queue, self.colormap)
         self.ocl_tex = self.gl_tex.get_ocl(self.ctx)
-        img = numpy.random.randint(0, 65000, self.tex_size ** 2).reshape((self.tex_size, self.tex_size)).astype(numpy.uint16)
+        img = numpy.random.randint(0, 65000, self.tex_size ** 2)
+        img = img.astype(numpy.uint16)
+        img.shape = self.shape
         self.ocl_ary = pyopencl.array.to_device(self.queue, img)
         self.new_image(img)
 
@@ -155,24 +167,26 @@ class Canvas(app.Canvas):
         else:
             img = self.last_img
         if self.ocl_prg is None:
-            self.init_openCL()
+            self.init_cl()
         pyopencl.enqueue_copy(self.queue, self.ocl_ary.data, img)
-        self.ocl_prg.u16_to_float(self.queue, (self.tex_size, self.tex_size), (8, 4),
+        self.ocl_prg.u16_to_float(self.queue, self.shape, (8, 4),
                                 self.ocl_ary.data,
                                 self.ary_float.data,
                                 numpy.int32(self.tex_size),
                                 numpy.int32(self.tex_size))
-        self.ocl_red.max_min_global_stage1(self.queue, (self.red_size * self.red_size,), (self.red_size,),
-                                                                   self.ary_float.data,
-                                                                   self.maxi_mini.data,
-                                                                   numpy.uint32(self.tex_size * self.tex_size))
+        self.ocl_red.max_min_global_stage1(self.queue,
+                                           (self.red_size * self.red_size,),
+                                           (self.red_size,),
+                                           self.ary_float.data,
+                                           self.maxi_mini.data,
+                                           numpy.uint32(self.tex_size ** 2))
         self.ocl_red.max_min_global_stage2(self.queue, (self.red_size,), (self.red_size,),
                                                                    self.maxi_mini.data,
                                                                    self.maxi.data,
                                                                    self.mini.data)
 
         pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_tex]).wait()
-        self.ocl_prg.buf_to_tex(self.queue, (self.tex_size, self.tex_size), (8, 4),
+        self.ocl_prg.buf_to_tex(self.queue, self.shape, (8, 4),
                                   self.ary_float.data, numpy.int32(self.tex_size), numpy.int32(self.tex_size),
                                   self.mini.data, self.maxi.data, numpy.int32(self.logscale),
                                   self.ocl_tex)
@@ -184,26 +198,29 @@ class Canvas(app.Canvas):
         This is run after clicking on the picture ... to let the application initialize
         """
         print("Starting benchmark")
+        u16 = numpy.uint16
         y, x = numpy.ogrid[:self.tex_size, :self.tex_size]
-        imgs = [numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.uint16),
-                numpy.dot(y, numpy.ones(self.tex_size, dtype=numpy.uint16).reshape(1, -1)).astype(numpy.uint16),
-                numpy.dot(numpy.ones(self.tex_size, dtype=numpy.uint16).reshape(-1, 1), x).astype(numpy.uint16),
-                numpy.dot(self.tex_size - y, numpy.ones(self.tex_size, dtype=numpy.uint16).reshape(1, -1)).astype(numpy.uint16),
-                numpy.dot(numpy.ones(self.tex_size, dtype=numpy.uint16).reshape(-1, 1), self.tex_size - x).astype(numpy.uint16),
-                (numpy.dot(y, x) / self.tex_size).astype(numpy.uint16),
-                (numpy.dot(self.tex_size - y, self.tex_size - x) / self.tex_size).astype(numpy.uint16),
-                (numpy.dot(y, x) // self.tex_size).astype(numpy.uint16),
-                (numpy.dot(self.tex_size - y, self.tex_size - x) / self.tex_size).astype(numpy.uint16),
-                numpy.random.randint(0, 65000, N ** 2).reshape((N, N)).astype(numpy.uint16)]
-
+        imgs = [numpy.zeros(self.shape, dtype=u16),
+                numpy.dot(y, numpy.ones_like(x)).astype(u16),
+                numpy.dot(numpy.ones_like(y), x).astype(u16),
+                numpy.dot(self.tex_size - y, numpy.ones_like(x)).astype(u16),
+                numpy.dot(numpy.ones_like(y), self.tex_size - x).astype(u16),
+                numpy.dot(y, x).astype(u16),
+                numpy.dot(self.tex_size - y, self.tex_size - x).astype(u16),
+                numpy.dot(y, x).astype(u16),
+                numpy.dot(self.tex_size - y, self.tex_size - x).astype(u16)]
+        img = numpy.random.randint(0, 65000, self.tex_size ** 2)
+        imgs.append(img.astype(u16).reshape(self.shape))
         number = len(imgs)
+
         t1 = time.time()
         for i in range(10):
             t0 = t1
             for i in imgs:
                 c.new_image(i)
             t1 = time.time()
-            print("Rendering at %4.2f fps (average of %i)" % (number / (t1 - t0), number))
+            print("Rendering at %4.2f fps (average of %i)" %
+                  (number / (t1 - t0), number))
 
 
     def on_key_release(self, ev):
@@ -218,14 +235,14 @@ class Canvas(app.Canvas):
 
 if __name__ == '__main__':
     if len(sys.argv) == 3:
-        platform = int(sys.argv[1])
-        device = int(sys.argv[2])
+        platform_id = int(sys.argv[1])
+        device_id = int(sys.argv[2])
     else:
-        platform = None
-        device = None
+        platform_id = None
+        device_id = None
     c = Canvas(N)
     c.show()
     c.init_gl()
     c.show()
-    c.init_openCL(platform, device)
+    c.init_cl(platform_id, device_id)
     app.run()
