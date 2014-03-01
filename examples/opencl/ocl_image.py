@@ -90,28 +90,30 @@ class Canvas(app.Canvas):
               ' and "Q" to quit')
         self.ary_float = self.mini = self.maxi_mini = self.red_size = None
         self.maxi = self.queue = self.ocl_red = self.gl_buf = self.ctx = None
-        self.ocl_tex = self.ocl_ary = self.colormap, self.gl_tex = None
+        self.ocl_tex = self.ocl_ary = self.colormap = self.gl_tex = None
 
 
     def init_gl(self):
         # Create program
         self.gl_program = gloo.Program(vertex, fragment)
-        self.gl_tex = opencl.Texture2D(numpy.zeros(self.shape, dtype=numpy.float32) + 0.5)  # initial color: plain gray
+        # initial color: plain gray
+        gray = numpy.zeros(self.shape, dtype=numpy.float32) + 0.5
+        self.gl_tex = opencl.Texture2D(gray)
         # Set uniforms and samplers
-        positions = numpy.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
-                          [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0, ]], numpy.float32)
+        positions = numpy.array([[-1, -1, 0], [+1, -1, 0],
+                          [-1, +1, 0], [+1, +1, 0, ]], numpy.float32)
         texcoords = numpy.array([[1.0, 1.0], [0.0, 1.0],
                           [1.0, 0.0], [0.0, 0.0]], numpy.float32)
         self.colormap = numpy.array([[0, 0, 0],
                                      [1, 0, 0],
                                      [1, 1, 0],
                                      [1, 1, 1]], dtype=numpy.float32)
-
+        self.colormap.shape = -1 , 1, 3
+        gl_colormap = gloo.Texture2D(self.colormap)
+        self.gl_program['u_colormap'] = gl_colormap
         self.gl_program['u_texture1'] = self.gl_tex
         self.gl_program['position'] = gloo.VertexBuffer(positions)
         self.gl_program['texcoord'] = gloo.VertexBuffer(texcoords)
-        gl_colormap = gloo.Texture2D(self.colormap.reshape((self.colormap.shape[0], 1, 3)))
-        self.gl_program['u_colormap'] = gl_colormap
 
 
     def on_initialize(self, event):
@@ -124,7 +126,8 @@ class Canvas(app.Canvas):
     def on_paint(self, event):
 
         # Clear
-        gloo.gl.glClear(gloo.gl.GL_COLOR_BUFFER_BIT | gloo.gl.GL_DEPTH_BUFFER_BIT)
+        gloo.gl.glClear(gloo.gl.GL_COLOR_BUFFER_BIT |
+                        gloo.gl.GL_DEPTH_BUFFER_BIT)
 
         # Draw shape with texture, nested context
         if self.gl_program:
@@ -180,22 +183,28 @@ class Canvas(app.Canvas):
                                            self.ary_float.data,
                                            self.maxi_mini.data,
                                            numpy.uint32(self.tex_size ** 2))
-        self.ocl_red.max_min_global_stage2(self.queue, (self.red_size,), (self.red_size,),
-                                                                   self.maxi_mini.data,
-                                                                   self.maxi.data,
-                                                                   self.mini.data)
+        self.ocl_red.max_min_global_stage2(self.queue, (self.red_size,),
+                                           (self.red_size,),
+                                           self.maxi_mini.data,
+                                           self.maxi.data,
+                                           self.mini.data)
 
-        pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_tex]).wait()
+        pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_tex])
         self.ocl_prg.buf_to_tex(self.queue, self.shape, (8, 4),
-                                  self.ary_float.data, numpy.int32(self.tex_size), numpy.int32(self.tex_size),
-                                  self.mini.data, self.maxi.data, numpy.int32(self.logscale),
+                                  self.ary_float.data,
+                                  numpy.int32(self.tex_size),
+                                  numpy.int32(self.tex_size),
+                                  self.mini.data,
+                                  self.maxi.data,
+                                  numpy.int32(self.logscale),
                                   self.ocl_tex)
         pyopencl.enqueue_release_gl_objects(self.queue, [self.ocl_tex]).wait()
         self.on_paint(None)
 
     def benchmark(self):
         """
-        This is run after clicking on the picture ... to let the application initialize
+        This is run after pressing the "B" key  ...
+        to let the application initialize
         """
         print("Starting benchmark")
         u16 = numpy.uint16
