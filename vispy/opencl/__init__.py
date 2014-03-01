@@ -35,6 +35,7 @@ if not pyopencl.have_gl():
                    " without OpenGL support.")
     pyopencl = None
 
+
 def _make_context(platform_id=None, device_id=None):
     """
     Actually creates a context and return its ids'
@@ -48,14 +49,14 @@ def _make_context(platform_id=None, device_id=None):
 
     """
     properties = get_gl_sharing_context_properties()
-    PLATFORM = pyopencl.context_properties.PLATFORM
+    enum_plat = pyopencl.context_properties.PLATFORM
     ids = None
     if (platform_id is not None) and (device_id is not None):
         platform = pyopencl.get_platforms()[platform_id]
         device = platform.get_devices()[device_id]
         try:
             ctx = pyopencl.Context(devices=[device],
-                                properties=[(PLATFORM, platform)]
+                                properties=[(enum_plat, platform)]
                                     + properties)
             ids = (platform_id, device_id)
         except:
@@ -74,13 +75,13 @@ def _make_context(platform_id=None, device_id=None):
         for platform_id, platform in enumerate(pyopencl.get_platforms()):
             try:
                 ctx = pyopencl.Context(properties=properties +
-                                       [(PLATFORM, platform)])
+                                       [(enum_plat, platform)])
             except:
                 for device_id, device in enumerate(platform.get_devices()):
                     try:
                         ctx = pyopencl.Context(devices=[device],
                                             properties=properties +
-                                            [(PLATFORM, platform)])
+                                            [(enum_plat, platform)])
                     except:
                         ctx = None
                     else:
@@ -95,6 +96,7 @@ def _make_context(platform_id=None, device_id=None):
             if ctx:
                 break
     return ctx, ids
+
 
 class OpenCL(object):
     """
@@ -128,11 +130,13 @@ class OpenCL(object):
         elif (cls._context is None) or (ids != cls._ids):
             with cls._sem:
                 if (cls._context is None) or (ids != cls._ids):
-                    cls._context, cls._ids = _make_context(platform_id, device_id)
+                    cls._context, cls._ids = _make_context(platform_id,
+                                                            device_id)
                     ctx = cls._context
                     ids = cls._ids
         if ctx is None:
-            raise RuntimeError("Unable to find suitable OpenCL platform to share data with OpenGL")
+            raise RuntimeError("Unable to find suitable OpenCL platform "
+                               "to share data with OpenGL")
         return ctx
 
 
@@ -162,9 +166,9 @@ class TextureOpenCL(OpenCL):
             ctx = self.get_context()
 
         # Get ndim
-        MAP = {gl.GL_TEXTURE_2D: 2,
+        texture_map = {gl.GL_TEXTURE_2D: 2,
                gl.ext.GL_TEXTURE_3D: 3}
-        ndim = MAP.get(self._target, 0)
+        ndim = texture_map.get(self._target, 0)
 
         ocl_img = pyopencl.GLTexture(ctx, pyopencl.mem_flags.READ_WRITE,
                         self._target, 0, int(self.handle), ndim)
@@ -188,7 +192,8 @@ class Texture3D(texture.Texture3D, TextureOpenCL):
     """
 
     def __init__(self, *args, **kwargs):
-        texture.Texture3D.__init__(self, gl.ext.GL_TEXTURE_3D, *args, **kwargs)
+        texture.Texture3D.__init__(self, gl.ext.GL_TEXTURE_3D, *args,
+                                   **kwargs)
 
 
 class TextureCubeMap(texture.TextureCubeMap, TextureOpenCL):
@@ -198,7 +203,8 @@ class TextureCubeMap(texture.TextureCubeMap, TextureOpenCL):
 
     """
     def __init__(self, *args, **kwargs):
-        texture.TextureCubeMap.__init__(self, gl.GL_TEXTURE_CUBE_MAP, *args, **kwargs)
+        texture.TextureCubeMap.__init__(self, gl.GL_TEXTURE_CUBE_MAP, *args,
+                                        **kwargs)
 
 
 class BufferOpenCL(OpenCL):
@@ -226,7 +232,6 @@ class BufferOpenCL(OpenCL):
 
         if ctx is None:
             ctx = self.get_context()
-
 
         cl_buf = pyopencl.GLBuffer(ctx, pyopencl.mem_flags.READ_WRITE,
                                    int(self.handle))

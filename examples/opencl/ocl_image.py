@@ -10,7 +10,9 @@
 Demo showing the sharing of a OpenGL texture <--> OpenCL image
 """
 
-import os, sys, time
+import os
+import sys
+import time
 import numpy
 from vispy import app
 from vispy import gloo
@@ -77,6 +79,7 @@ void main()
 }
 """
 
+
 class Canvas(app.Canvas):
     def __init__(self, tex_size):
         app.Canvas.__init__(self)
@@ -91,7 +94,6 @@ class Canvas(app.Canvas):
         self.ary_float = self.mini = self.maxi_mini = self.red_size = None
         self.maxi = self.queue = self.ocl_red = self.gl_buf = self.ctx = None
         self.ocl_tex = self.ocl_ary = self.colormap = self.gl_tex = None
-
 
     def init_gl(self):
         # Create program
@@ -108,13 +110,12 @@ class Canvas(app.Canvas):
                                      [1, 0, 0],
                                      [1, 1, 0],
                                      [1, 1, 1]], dtype=numpy.float32)
-        self.colormap.shape = -1 , 1, 3
+        self.colormap.shape = -1, 1, 3
         gl_colormap = gloo.Texture2D(self.colormap)
         self.gl_program['u_colormap'] = gl_colormap
         self.gl_program['u_texture1'] = self.gl_tex
         self.gl_program['position'] = gloo.VertexBuffer(positions)
         self.gl_program['texcoord'] = gloo.VertexBuffer(texcoords)
-
 
     def on_initialize(self, event):
         gloo.gl.glClearColor(1, 1, 1, 1)
@@ -133,7 +134,6 @@ class Canvas(app.Canvas):
         if self.gl_program:
             self.gl_program.draw(gloo.gl.GL_TRIANGLE_STRIP)
         self.swap_buffers()
-
 
     def init_cl(self, platform_id=None, device_id=None):
         self.gl_program.draw(gloo.gl.GL_TRIANGLE_STRIP)
@@ -230,7 +230,6 @@ class Canvas(app.Canvas):
             t1 = time.time()
             print("Rendering at %4.2f fps (average of %i)" %
                   (number / (t1 - t0), number))
-
 
     def on_key_release(self, ev):
         if ev.key.name == "L":
