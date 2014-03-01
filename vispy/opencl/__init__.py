@@ -128,8 +128,8 @@ class OpenCL(object):
         elif (cls._context is None) or (ids != cls._ids):
             with cls._sem:
                 if (cls._context is None) or (ids != cls._ids):
-                    cls._ctx, cls._ids = _make_context(platform_id, device_id)
-                    ctx = cls._ctx
+                    cls._context, cls._ids = _make_context(platform_id, device_id)
+                    ctx = cls._context
                     ids = cls._ids
         if ctx is None:
             raise RuntimeError("Unable to find suitable OpenCL platform to share data with OpenGL")
