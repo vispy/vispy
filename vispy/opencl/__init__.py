@@ -30,7 +30,7 @@ except ImportError:
         "Please install it from: http://pypi.python.org/pypi/pyopencl")
     pyopencl = None
 
-if not pyopencl.have_gl():
+if pyopencl and not pyopencl.have_gl():
     logger.warning("PyOpenCL is installed but was compiled"
                    " without OpenGL support.")
     pyopencl = None
