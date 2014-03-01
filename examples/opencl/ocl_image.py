@@ -144,8 +144,7 @@ class Canvas(app.Canvas):
         self.mini = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
         self.maxi = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
         self.cl_colormap = pyopencl.array.to_device(self.queue, self.colormap)
-        self.ocl_tex = self.gl_tex.get_ocl()
-        print self.gl_tex, self.ocl_tex
+        self.ocl_tex = self.gl_tex.get_ocl(self.ctx)
         img = numpy.random.randint(0, 65000, self.tex_size ** 2).reshape((self.tex_size, self.tex_size)).astype(numpy.uint16)
         self.ocl_ary = pyopencl.array.to_device(self.queue, img)
         self.new_image(img)

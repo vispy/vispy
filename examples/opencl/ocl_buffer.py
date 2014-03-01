@@ -20,12 +20,13 @@ N = 2048
 
 
 src = """
-__kernel void buf_to_buf( global float *ary,
+__kernel void buf_norm( global float *ary,
                           int width,
                           int height,
                           global const float *mini,
                           global const float *maxi,
-                          const int logscale)
+                          const int logscale,
+                          global float *output)
 {
     int x = get_global_id(0);
     int y = get_global_id(1);
@@ -38,7 +39,7 @@ __kernel void buf_to_buf( global float *ary,
         data = (ary[i] - mini[0])/(maxi[0]-mini[0]);
     if (logscale)
         data = log(data*(M_E_F-1.0f)+1.0f);
-    ary[i] = data;
+    output[i] = data;
 }
 __kernel void
 u16_to_float(global unsigned short  *array_int,
@@ -54,29 +55,28 @@ u16_to_float(global unsigned short  *array_int,
     }
 }//end kernel
 """
-# //uniform sampler1D u_colormap;
+vertex = """
 
-fragment = """ // buffer fragment shader
-attribute float u_ary;
-uniform vec2 u_size;
-uniform sampler2D u_colormap;
-varying vec2 v_texcoord;
+attribute vec2 a_view_pos;
+attribute float a_data;
+varying float v_data;
 void main()
 {
-    int i = gl_FragCoord.y*u_size.x+gl_FragCoord.x;
-    float data = u_ary[i];
-    gl_FragColor = vec4(texture2D(u_colormap,vec2(1.0f,data)).rgb, 1.0f);
+    gl_Position = ftransform();
+    //gl_Position = gl_Vertex;
+    //gl_Position = vec4(a_view_pos, 1.0f, 1.0f);
+    //v_data = a_data;
+    //gl_PointSize = 1.0f;
 }
 """
-vertex = """
-attribute vec3 position;
-attribute vec2 texcoord;
 
-varying vec2 v_texcoord;
+fragment = """ // buffer fragment shader
+uniform sampler2D u_colormap;
+varying float v_data;
+varying vec2 v_view_pos;
 void main()
 {
-            v_texcoord = texcoord;
-            gl_Position = vec4(position, 1);
+    gl_FragColor =  vec4(0.2,0.4,0.6,1.0);//texture2D(u_colormap,vec2(1.0f,v_data)).rgb, 1.0f);
 }
 """
 
@@ -95,23 +95,31 @@ class Canvas(app.Canvas):
     def init_gl(self):
         # Create program
         self.gl_program = gloo.Program(vertex, fragment)
-        self.gl_buf = gloo.VertexBuffer(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5)  # initial color: plain gray
+        y, x = numpy.ogrid[:self.tex_size, :self.tex_size]
+        x2 = numpy.outer(numpy.ones_like(y), x)
+        y2 = numpy.outer(y, numpy.ones_like(x))
+        xy = numpy.zeros((self.tex_size, self.tex_size, 2), dtype=numpy.float32)
+        xy[:, :, 0] = x2
+        xy[:, :, 1] = y2
+        self.gl_buf = opencl.VertexBuffer(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32) + 0.5)  # initial color: plain gray
+        self.gl_buf.activate()
         # Set uniforms and samplers
-        positions = numpy.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
-                          [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0, ]], numpy.float32)
-        texcoords = numpy.array([[1.0, 1.0], [0.0, 1.0],
-                          [1.0, 0.0], [0.0, 0.0]], numpy.float32)
+        positions = numpy.array([[0.0, 0.0, 0.0], [self.tex_size, 0.0, 0.0],
+                          [0, self.tex_size, 0.0], [self.tex_size, self.tex_size, 0.0, ]], numpy.float32)
+#        texcoords = numpy.array([[1.0, 1.0], [0.0, 1.0],
+#                          [1.0, 0.0], [0.0, 0.0]], numpy.float32)
         self.colormap = numpy.array([[0, 0, 0],
                                      [1, 0, 0],
                                      [1, 1, 0],
                                      [1, 1, 1]], dtype=numpy.float32)
 
-
-        self.gl_program['position'] = gloo.VertexBuffer(positions)
-        self.gl_program['texcoord'] = gloo.VertexBuffer(texcoords)
+        self.gl_program["a_view_pos"] = gloo.VertexBuffer(xy)
+#        self.gl_program['position'] = gloo.VertexBuffer(positions)
+#        self.gl_program['texcoord'] = gloo.VertexBuffer(texcoords)
         gl_colormap = gloo.Texture2D(self.colormap.reshape((self.colormap.shape[0], 1, 3)))
         self.gl_program['u_colormap'] = gl_colormap
-        self.gl_program['u_ary'] = self.gl_buf
+        self.gl_program['a_data'] = self.gl_buf
+#        self.gl_program['v_data'] = gloo.VertexBuffer(numpy.zeros((self.tex_size, self.tex_size), dtype=numpy.float32))
 
     def on_initialize(self, event):
         gloo.gl.glClearColor(1, 1, 1, 1)
@@ -133,7 +141,7 @@ class Canvas(app.Canvas):
 
     def init_openCL(self, platform=None, device=None):
         self.gl_program.draw(gloo.gl.GL_TRIANGLE_STRIP)
-        self.ctx = opencl.get_context(platform, device)
+        self.ctx = opencl.OpenCL.get_context(platform, device)
         d = self.ctx.devices[0]
         print("OpenCL context on device: %s" % d.name)
         wg_float = min(d.max_work_group_size, self.tex_size)
@@ -147,7 +155,7 @@ class Canvas(app.Canvas):
         self.mini = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
         self.maxi = pyopencl.array.empty(self.queue, (1), dtype=numpy.float32)
         self.cl_colormap = pyopencl.array.to_device(self.queue, self.colormap)
-        self.ocl_tex = self.gl_tex.get_ocl()
+        self.ocl_buf = self.gl_buf.get_ocl(self.ctx)
         img = numpy.random.randint(0, 65000, self.tex_size ** 2).reshape((self.tex_size, self.tex_size)).astype(numpy.uint16)
         self.ocl_ary = pyopencl.array.to_device(self.queue, img)
         self.new_image(img)
@@ -174,12 +182,12 @@ class Canvas(app.Canvas):
                                                                    self.maxi.data,
                                                                    self.mini.data)
 
-        pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_tex]).wait()
-        self.ocl_prg.buf_to_tex(self.queue, (self.tex_size, self.tex_size), (8, 4),
+        pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_buf]).wait()
+        self.ocl_prg.buf_norm(self.queue, (self.tex_size, self.tex_size), (8, 4),
                                   self.ary_float.data, numpy.int32(self.tex_size), numpy.int32(self.tex_size),
                                   self.mini.data, self.maxi.data, numpy.int32(self.logscale),
-                                  self.ocl_tex).wait()
-        pyopencl.enqueue_release_gl_objects(self.queue, [self.ocl_tex]).wait()
+                                  self.ocl_buf).wait()
+        pyopencl.enqueue_release_gl_objects(self.queue, [self.ocl_buf]).wait()
         self.on_paint(None)
 
     def benchmark(self):
