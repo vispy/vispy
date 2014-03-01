@@ -1,4 +1,4 @@
-from nose.tools import assert_is
+from vispy.util import assert_is
 
 from vispy.gloo import gl
 

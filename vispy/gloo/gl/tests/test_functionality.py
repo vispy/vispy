@@ -5,21 +5,31 @@ from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal
 from numpy.testing import assert_almost_equal
 
+from vispy.app.backends import requires_non_glut
+
 from vispy.gloo import gl
 from vispy import app
 
 
+# All these tests require a working backend. GLUT is not an option,
+# since there is no safe way to terminate the mainloop.
+# requires_non_glut works if there is a backend other then GLUT available.
+
+
+@requires_non_glut()
 def test_functionality_desktop():
     """ Test that desktop GL backend functions appropriately. """
     _test_functonality('desktop')
 
 
+@requires_non_glut()
 @gl._requires_pyopengl()
 def test_functionality_pypengl():
     """ Test that pyopengl GL backend functions appropriately. """
     _test_functonality('pyopengl')
 
 
+@requires_non_glut()
 def test_functionality_angle():
     """ Test that angle GL backend functions appropriately. """
     if True:

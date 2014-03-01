@@ -7,7 +7,8 @@ import sys
 import os
 import subprocess
 
-from nose.tools import assert_equal, assert_true
+from nose.tools import assert_equal
+from vispy.util import assert_in, assert_not_in
 
 import vispy
 
@@ -79,14 +80,21 @@ def test_import_vispy_util():
     """ Importing vispy.util should not pull in other vispy submodules. """
     modnames = loaded_vispy_modules('vispy.util', 2)
     assert_equal(modnames, set(['vispy', 'vispy.util']))
+    
 
-
-def test_import_vispy_app():
+def test_import_vispy_app1():
     """ Importing vispy.app should not pull in other vispy submodules. """
     modnames = loaded_vispy_modules('vispy.app', 2)
     assert_equal(modnames, set(['vispy', 'vispy.util', 'vispy.app']))
 
-    # todo: maybe also test that no backends are imported yet
+
+def test_import_vispy_app2():
+    """ Importing vispy.app should not pull in any backend toolkit. """
+    allmodnames = loaded_vispy_modules('vispy.app', 2, True)
+    assert_not_in('PySide', allmodnames)
+    assert_not_in('PyQt4', allmodnames)
+    assert_not_in('pyglet', allmodnames)
+    assert_not_in('OpenGL.GLUT', allmodnames)
 
 
 def test_import_vispy_gloo():
@@ -97,11 +105,11 @@ def test_import_vispy_gloo():
 
 def test_import_vispy_no_pyopengl():
     """ Importing vispy.gloo.gl.desktop should not import PyOpenGL. """
-    modnames = loaded_vispy_modules('vispy.gloo.gl.desktop', 2, True)
-    assert_true('OpenGL' not in modnames)
+    allmodnames = loaded_vispy_modules('vispy.gloo.gl.desktop', 2, True)
+    assert_not_in('OpenGL', allmodnames)
 
 
 def test_import_vispy_pyopengl():
     """ Importing vispy.gloo.gl.pyopengl should import PyOpenGL. """
-    modnames = loaded_vispy_modules('vispy.gloo.gl.pyopengl', 2, True)
-    assert_true('OpenGL' in modnames)
+    allmodnames = loaded_vispy_modules('vispy.gloo.gl.pyopengl', 2, True)
+    assert_in('OpenGL', allmodnames)
