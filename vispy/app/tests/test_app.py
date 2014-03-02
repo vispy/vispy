@@ -7,18 +7,11 @@ from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
 from vispy.app.backends import (requires_pyglet, requires_qt, requires_glfw,
                                 requires_non_glut)
 
-<<<<<<< HEAD
-from vispy.gloo.program import (Program, ProgramError, VertexBuffer,
-                                ElementBuffer)
-from vispy.gloo.shader import VertexShader, FragmentShader, ShaderError
-from vispy.gloo import _screenshot
-from vispy.util import assert_in, assert_is
-=======
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader
+from vispy.util import assert_in, assert_is
 #from vispy.gloo import _screenshot
 from vispy.gloo import gl
->>>>>>> Fixed (most) failed tests
 
 
 def on_nonexist(self, *args):
