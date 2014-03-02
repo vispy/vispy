@@ -10,6 +10,7 @@ from . import gl
 from .globject import GLObject
 from .buffer import VertexBuffer
 from .texture import Texture2D
+from .framebuffer import RenderBuffer
 from ..util import logger
 
 
@@ -168,6 +169,9 @@ class Uniform(Variable):
             if isinstance(self._data, Texture2D):
                 self._data.set_data(data)
 
+            elif isinstance(data, RenderBuffer):
+                self._data = data
+
             # Automatic texture creation if required
             elif not isinstance(data, Texture2D):
                 data = np.array(data, copy=False)
@@ -185,9 +189,9 @@ class Uniform(Variable):
     def _activate(self):
         # if self._gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
         if self._gtype in (gl.GL_SAMPLER_2D,):
+            logger.debug("GPU: Active texture is %d" % self._unit)
+            gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
             if self.data is not None:
-                logger.debug("GPU: Active texture is %d" % self._unit)
-                gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
                 self.data.activate()
 
     def _update(self):
@@ -289,6 +293,7 @@ class Attribute(Variable):
     def _activate(self):
         if isinstance(self.data, VertexBuffer):
             self.data.activate()
+        self._update()
 
     def _update(self):
         """ Actual upload of data to GPU memory  """
@@ -324,8 +329,8 @@ class Attribute(Variable):
 
         # Regular vertex buffer
         elif self._handle >= 0:
-            if self._need_update:
-                self.data.update()
+#            if self._need_update:
+#                self.data.update()
 
             # Get relevant information from gl_typeinfo
             size, gtype, dtype = gl_typeinfo[self._gtype]
@@ -335,7 +340,7 @@ class Attribute(Variable):
             offset = ctypes.c_void_p(self.data.offset)
 
             gl.glEnableVertexAttribArray(self.handle)
-            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.data.handle)
+            #gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.data.handle)
             gl.glVertexAttribPointer(
                 self.handle, size, gtype,  gl.GL_FALSE, stride, offset)
 

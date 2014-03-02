@@ -3,12 +3,16 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+
+#import OpenGL.GL as gl
 from . import gl
 from .globject import GLObject
 from .texture import Texture2D
 from ..util import logger
 
 # ------------------------------------------------------ RenderBuffer class ---
+
+
 class RenderBuffer(GLObject):
 
     """
@@ -83,7 +87,7 @@ class RenderBuffer(GLObject):
         gl.glDeleteRenderbuffers([self._handle])
 
     def _activate(self):
-        """ Activate texture on GPU """
+        """ Activate buffer on GPU """
 
         logger.debug("GPU: Activate render buffer")
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._handle)
@@ -114,7 +118,7 @@ class ColorBuffer(RenderBuffer):
     Encapsulation of color buffer object.
     """
 
-    def __init__(self, shape, format=gl.GL_RGB565, resizeable=True):
+    def __init__(self, shape, format=gl.GL_RGBA, resizeable=True):
         """
         Initialize the color buffer
 
@@ -128,11 +132,11 @@ class ColorBuffer(RenderBuffer):
             Buffer shape (always two dimensional)
 
         resizeable : boolean
-            Indicates whether texture can be resized
+            Indicates whether buffer can be resized
         """
 
-        if format not in (gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1):
-            raise ValueError("Format not allowed for color buffer")
+#        if format not in (gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1):
+#            raise ValueError("Format not allowed for color buffer")
 
         RenderBuffer.__init__(self, shape, format, resizeable)
 
@@ -145,7 +149,7 @@ class DepthBuffer(RenderBuffer):
     """
 
     def __init__(self, shape,
-                 format=gl.GL_DEPTH_COMPONENT16, resizeable=True):
+                 format=gl.GL_DEPTH_COMPONENT, resizeable=True):
         """
         Initialize the depth buffer
 
@@ -159,11 +163,11 @@ class DepthBuffer(RenderBuffer):
             gl.GL_DEPTH_COMPONENT16
 
         resizeable : boolean
-            Indicates whether texture can be resized
+            Indicates whether buffer can be resized
         """
 
-        if format not in (gl.GL_DEPTH_COMPONENT16,):
-            raise ValueError("Format not allowed for depth buffer")
+#        if format not in (gl.GL_DEPTH_COMPONENT16,):
+#            raise ValueError("Format not allowed for depth buffer")
 
         RenderBuffer.__init__(self, shape, format, resizeable)
 
@@ -190,11 +194,11 @@ class StencilBuffer(RenderBuffer):
             gl.GL_STENCIL_INDEX8
 
         resizeable : boolean
-            Indicates whether texture can be resized
+            Indicates whether buffer can be resized
         """
 
-        if format not in (gl.GL_STENCIL_INDEX8,):
-            raise ValueError("Format not allowed for color buffer")
+#        if format not in (gl.GL_STENCIL_INDEX,):
+#            raise ValueError("Format not allowed for color buffer")
 
         RenderBuffer.__init__(self, shape, format, resizeable)
 
@@ -233,7 +237,6 @@ class FrameBuffer(GLObject):
 
         return self._color_buffer
 
-
     @color_buffer.setter
     def color_buffer(self, buffer):
         """Color buffer attachment"""
@@ -245,7 +248,6 @@ class FrameBuffer(GLObject):
         else:
             raise ValueError(
                 "Buffer must be a ColorBuffer, Texture2D or None")
-
 
     @property
     def depth_buffer(self):
@@ -289,7 +291,6 @@ class FrameBuffer(GLObject):
 
         return self._shape
 
-
     def resize(self, shape):
         """ Resize the buffer (deferred operation)
 
@@ -313,13 +314,11 @@ class FrameBuffer(GLObject):
         if self.stencil is not None:
             self.stencil.resize(shape)
 
-
     def _create(self):
         """ Create framebuffer on GPU """
 
         logger.debug("GPU: Create framebuffer")
         self._handle = gl.glGenFramebuffers(1)
-
 
     def _delete(self):
         """ Delete buffer from GPU """
@@ -327,9 +326,8 @@ class FrameBuffer(GLObject):
         logger.debug("GPU: Delete framebuffer")
         gl.glDeleteFramebuffers([self._handle])
 
-
     def _activate(self):
-        """ Activate texture on GPU """
+        """ Activate framebuffer on GPU """
 
         logger.debug("GPU: Activate render framebuffer")
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
@@ -337,13 +335,11 @@ class FrameBuffer(GLObject):
             self._attach()
             self._need_attach = False
 
-
     def _deactivate(self):
-        """ Deactivate buffer on GPU """
+        """ Deactivate framebuffer on GPU """
 
         logger.debug("GPU: Deactivate render framebuffer")
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
-
 
     def _attach(self):
         """ Attach render buffers to framebuffer """
@@ -385,7 +381,7 @@ class FrameBuffer(GLObject):
                     'attachments do not have the same width and height.')
             elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS:
                 raise RuntimeError('Internal format of attachment '
-                                       'is not renderable.')
+                                   'is not renderable.')
             elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
                 raise RuntimeError('Combination of internal formats used '
-                                       'by attachments is not supported.')
+                                   'by attachments is not supported.')

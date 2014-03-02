@@ -473,7 +473,6 @@ class Texture(GLObject):
             self._resize()
             self._need_resize = False
 
-
     def _deactivate(self):
         """ Deactivate texture on GPU """
 
@@ -585,7 +584,7 @@ class Texture2D(Texture):
 
     """ """
 
-    def __init__(self, data=None, shape=None, dtype=None,
+    def __init__(self, data=None, shape=None, dtype=None, format=None,
                  store=True, copy=False, *args, **kwargs):
         """
         Initialize the texture.
@@ -637,7 +636,11 @@ class Texture2D(Texture):
                          resizeable=resizeable, store=store, copy=copy,
                          target=gl.GL_TEXTURE_2D, offset=offset)
 
-        self._format = Texture._formats.get(self.shape[-1], None)
+        if format is None:
+            self._format = Texture._formats.get(self.shape[-1], None)
+        else:
+            self._format = format
+
         if self._format is None:
             raise ValueError("Cannot convert data to texture")
 
