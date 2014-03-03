@@ -46,43 +46,16 @@ Example::
 
 from __future__ import division
 
-from ..util.six import string_types
-from . import gl
-
-
-def ext_available(extension_name):
-    """ Get whether an extension is available.
-    For now, this always returns True...
-    """
-    return True  # for now
-
-
-def convert_to_enum(param, allow_none=False):
-    """ Convert parameter (e.g. a string) to GL enum.
-    """
-    if isinstance(param, string_types):
-        param = param.upper()
-        if not param.startswith('GL'):
-            param = 'GL_' + param
-        try:
-            param = getattr(gl, param)
-        except AttributeError:
-            raise ValueError('Unknown GL enum: "%s".' % param)
-    elif isinstance(param, int):
-        pass  # We assume this is a valid enum
-    elif param is None and allow_none:
-        pass
-    else:
-        raise ValueError('Invalid type for GL enum: %r.' % type(param))
-    return param
-
-
-from .globject import GLObject  # noqa
-
-from .buffer import VertexBuffer, ElementBuffer  # noqa
-#from .buffer import ClientVertexBuffer, ClientElementBuffer
-from .texture import Texture2D, Texture3D, TextureCubeMap  # noqa
-from .shader import VertexShader, FragmentShader  # noqa
-from .framebuffer import FrameBuffer, RenderBuffer  # noqa
-from .program import Program  # noqa
-from .util import _screenshot  # noqa
+from . import gl                        # noqa
+from .globject import GLObject          # noqa
+from .buffer import VertexBuffer        # noqa
+from .buffer import IndexBuffer         # noqa
+from .texture import Texture1D          # noqa
+from .texture import Texture2D          # noqa
+from .shader import VertexShader        # noqa
+from .shader import FragmentShader      # noqa
+from .program import Program            # noqa
+from .framebuffer import FrameBuffer    # noqa
+from .framebuffer import ColorBuffer    # noqa
+from .framebuffer import DepthBuffer    # noqa
+from .framebuffer import StencilBuffer  # noqa

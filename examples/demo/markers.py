@@ -10,6 +10,8 @@ available marker function (marker_disc, marker_diamond, ...)
 
 
 vert = """
+#version 120
+
 // Uniforms
 // ------------------------------------
 uniform mat4 u_model;
@@ -48,6 +50,8 @@ void main (void) {
 
 
 frag = """
+#version 120
+
 // Constants
 // ------------------------------------
 
