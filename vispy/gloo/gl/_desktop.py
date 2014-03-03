@@ -417,9 +417,7 @@ def glDrawArrays(mode, first, count):
 
 # void = glDrawElements(GLenum mode, GLsizei count, GLenum type, GLvoid* indices)
 def glDrawElements(mode, count, type, offset):
-    if offset is None:
-        offset = ctypes.c_void_p(0)
-    elif isinstance(offset, c_void_p):
+    if isinstance(offset, ctypes.c_void_p):
         pass
     elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))
@@ -1183,7 +1181,7 @@ def glUniform4i(location, v1, v2, v3, v4):
         nativefunc = glUniform4i._native = _get_gl_func("glUniform4i", None, (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,))
     nativefunc(location, v1, v2, v3, v4)
 def glUniform1fv(location, count, values):
-    values = [val for val in values]
+    values = [float(val) for val in values]
     values = (ctypes.c_float*len(values))(*values)
     try:
         nativefunc = glUniform1fv._native
@@ -1191,7 +1189,7 @@ def glUniform1fv(location, count, values):
         nativefunc = glUniform1fv._native = _get_gl_func("glUniform1fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
     nativefunc(location, count, values)
 def glUniform2fv(location, count, values):
-    values = [val for val in values]
+    values = [float(val) for val in values]
     values = (ctypes.c_float*len(values))(*values)
     try:
         nativefunc = glUniform2fv._native
@@ -1199,7 +1197,7 @@ def glUniform2fv(location, count, values):
         nativefunc = glUniform2fv._native = _get_gl_func("glUniform2fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
     nativefunc(location, count, values)
 def glUniform3fv(location, count, values):
-    values = [val for val in values]
+    values = [float(val) for val in values]
     values = (ctypes.c_float*len(values))(*values)
     try:
         nativefunc = glUniform3fv._native
@@ -1207,7 +1205,7 @@ def glUniform3fv(location, count, values):
         nativefunc = glUniform3fv._native = _get_gl_func("glUniform3fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
     nativefunc(location, count, values)
 def glUniform4fv(location, count, values):
-    values = [val for val in values]
+    values = [float(val) for val in values]
     values = (ctypes.c_float*len(values))(*values)
     try:
         nativefunc = glUniform4fv._native
@@ -1215,7 +1213,7 @@ def glUniform4fv(location, count, values):
         nativefunc = glUniform4fv._native = _get_gl_func("glUniform4fv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),))
     nativefunc(location, count, values)
 def glUniform1iv(location, count, values):
-    values = [val for val in values]
+    values = [int(val) for val in values]
     values = (ctypes.c_int*len(values))(*values)
     try:
         nativefunc = glUniform1iv._native
@@ -1223,7 +1221,7 @@ def glUniform1iv(location, count, values):
         nativefunc = glUniform1iv._native = _get_gl_func("glUniform1iv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
     nativefunc(location, count, values)
 def glUniform2iv(location, count, values):
-    values = [val for val in values]
+    values = [int(val) for val in values]
     values = (ctypes.c_int*len(values))(*values)
     try:
         nativefunc = glUniform2iv._native
@@ -1231,7 +1229,7 @@ def glUniform2iv(location, count, values):
         nativefunc = glUniform2iv._native = _get_gl_func("glUniform2iv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
     nativefunc(location, count, values)
 def glUniform3iv(location, count, values):
-    values = [val for val in values]
+    values = [int(val) for val in values]
     values = (ctypes.c_int*len(values))(*values)
     try:
         nativefunc = glUniform3iv._native
@@ -1239,7 +1237,7 @@ def glUniform3iv(location, count, values):
         nativefunc = glUniform3iv._native = _get_gl_func("glUniform3iv", None, (ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),))
     nativefunc(location, count, values)
 def glUniform4iv(location, count, values):
-    values = [val for val in values]
+    values = [int(val) for val in values]
     values = (ctypes.c_int*len(values))(*values)
     try:
         nativefunc = glUniform4iv._native
@@ -1249,24 +1247,36 @@ def glUniform4iv(location, count, values):
 
 
 def glUniformMatrix2fv(location, count, transpose, values):
-    values = [val for val in values]
-    values = (ctypes.c_float*len(values))(*values)
+    if hasattr(values, "dtype"):  # np array
+        values_ = values.astype("float32", "C", copy=False)
+        values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+    else:
+        values = [float(val) for val in values]
+        values = (ctypes.c_float*len(values))(*values)
     try:
         nativefunc = glUniformMatrix2fv._native
     except AttributeError:
         nativefunc = glUniformMatrix2fv._native = _get_gl_func("glUniformMatrix2fv", None, (ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),))
     nativefunc(location, count, transpose, values)
 def glUniformMatrix3fv(location, count, transpose, values):
-    values = [val for val in values]
-    values = (ctypes.c_float*len(values))(*values)
+    if hasattr(values, "dtype"):  # np array
+        values_ = values.astype("float32", "C", copy=False)
+        values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+    else:
+        values = [float(val) for val in values]
+        values = (ctypes.c_float*len(values))(*values)
     try:
         nativefunc = glUniformMatrix3fv._native
     except AttributeError:
         nativefunc = glUniformMatrix3fv._native = _get_gl_func("glUniformMatrix3fv", None, (ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),))
     nativefunc(location, count, transpose, values)
 def glUniformMatrix4fv(location, count, transpose, values):
-    values = [val for val in values]
-    values = (ctypes.c_float*len(values))(*values)
+    if hasattr(values, "dtype"):  # np array
+        values_ = values.astype("float32", "C", copy=False)
+        values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+    else:
+        values = [float(val) for val in values]
+        values = (ctypes.c_float*len(values))(*values)
     try:
         nativefunc = glUniformMatrix4fv._native
     except AttributeError:
@@ -1320,9 +1330,7 @@ def glVertexAttrib4f(index, v1, v2, v3, v4):
 
 # void = glVertexAttribPointer(GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, GLvoid* ptr)
 def glVertexAttribPointer(indx, size, type, normalized, stride, offset):
-    if offset is None:
-        offset = ctypes.c_void_p(0)
-    elif isinstance(offset, ctypes.c_void_p):
+    if isinstance(offset, ctypes.c_void_p):
         pass
     elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))
