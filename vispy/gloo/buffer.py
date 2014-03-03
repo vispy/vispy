@@ -121,12 +121,11 @@ class Buffer(GLObject):
         self._pending_data.append((data, nbytes, offset))
         self._need_update = True
 
-
     def _create(self):
         """ Create buffer on GPU """
 
         logger.debug("GPU: Creating buffer")
-        self._handle = gl.glGenBuffers(1)
+        self._handle = gl.glCreateBuffer()
 
     def _delete(self):
         """ Delete buffer from GPU """

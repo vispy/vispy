@@ -455,13 +455,11 @@ class Texture(GLObject):
         logger.debug("GPU: Creating texture")
         self._handle = gl.glCreateTexture()
 
-
     def _delete(self):
         """ Delete texture from GPU """
 
         logger.debug("GPU: Deleting texture")
         gl.deleteTexture(self._handle)
-
 
     def _activate(self):
         """ Activate texture on GPU """

@@ -173,7 +173,7 @@ class Program(GLObject):
 
         # Link the program
         gl.glLinkProgram(self._handle)
-        if not gl.glGetProgramiv(self._handle, gl.GL_LINK_STATUS):
+        if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
             print(gl.glGetProgramInfoLog(self._handle))
             raise RuntimeError('Linking error')
 

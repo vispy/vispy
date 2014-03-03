@@ -102,7 +102,6 @@ class Shader(GLObject):
         status = gl.glGetShaderParameter(self._handle, gl.GL_COMPILE_STATUS)
         if not status:
             error = gl.glGetShaderInfoLog(self._handle)
-            error = error.decode('utf-8')
             lineno, mesg = self._parse_error(error)
             self._print_error(mesg, lineno - 1)
             raise RuntimeError("Shader compilation error")
@@ -122,10 +121,11 @@ class Shader(GLObject):
         error : str
             An error string as returned byt the compilation process
         """
+        error = str(error)
 
         # Nvidia
         # 0(7): error C1008: undefined variable "MV"
-        m = re.match('(\d+)\((\d+)\):\s(.*)', error)
+        m = re.match('(\d+)\((\d+)\) :\s(.*)', error)
         if m:
             return int(m.group(2)), m.group(3)
 
@@ -141,7 +141,7 @@ class Shader(GLObject):
         if m:
             return int(m.group(2)), m.group(4)
 
-        raise ValueError('Unknown GLSL error format')
+        return 0, ('Unknown GLSL error format:\n%s' % error)
 
     def _print_error(self, error, lineno):
         """
