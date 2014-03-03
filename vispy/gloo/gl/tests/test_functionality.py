@@ -8,7 +8,7 @@ from numpy.testing import assert_almost_equal
 from vispy.app.backends import requires_non_glut
 
 from vispy.gloo import gl
-from vispy import app
+from vispy.util import app_opengl_context
 
 
 # All these tests require a working backend. GLUT is not an option,
@@ -48,19 +48,11 @@ def _test_functonality(backend):
     gl.use(backend)
 
     # Create app and canvas to get an OpenGL context
-    app.create()
-    c = app.Canvas()
-    c.show()
-    app.process_events()
-    app.process_events()
-
-    try:
+    with app_opengl_context():
         _test_setting_parameters()
         _test_enabling_disabling()
         _test_setting_stuff()
         _test_object_creation_and_deletion()
-    finally:
-        c.close()
 
 
 def _test_setting_parameters():
