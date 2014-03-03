@@ -3,10 +3,10 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division, print_function
-import logging
+import re
 
 from ..gloo import Program, VertexShader, FragmentShader
-from .function import *
+from .function import Function, FunctionChain, Variable
 from . import parsing
 from ..util import logger
 
@@ -312,7 +312,7 @@ class ModularProgram(Program):
             self._set_object_name(func, hook_name)
 
         # 2) Add objects with fixed names to the namespace
-        anon = [] # keep track of all anonymous objects
+        anon = []  # keep track of all anonymous objects
         for obj in all_objs:
             if obj.is_anonymous:
                 anon.append(obj)
@@ -326,7 +326,7 @@ class ModularProgram(Program):
             
         # 3) Next, objects with cached names are added. If there are conflicts
         #    at this stage, we simply forget the cached name.
-        unnamed = [] # keep track of everything else that still needs a name
+        unnamed = []  # keep track of everything else that still needs a name
         
         for obj in anon:
             name = self._object_names.get(obj, None)

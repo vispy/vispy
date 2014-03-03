@@ -63,7 +63,7 @@ class Transform(object):
     All Transform subclasses define map() and imap() methods that map 
     an object through the forward or inverse transformation, respectively.
     
-    The two class variables GLSL_map and GLSL_imap are instances of 
+    The two class variables glsl_map and glsl_imap are instances of 
     shaders.composite.Function that
     define the forward- and inverse-mapping GLSL function code.
     
@@ -76,8 +76,8 @@ class Transform(object):
     
     
     """
-    GLSL_map = None  # Must be GLSL code
-    GLSL_imap = None
+    glsl_map = None  # Must be GLSL code
+    glsl_imap = None
     
     # Flags used to describe the transformation. Subclasses should define each
     # as True or False.
@@ -92,8 +92,8 @@ class Transform(object):
     
     
     def __init__(self):
-        self._shader_map = Function(self.GLSL_map)
-        self._shader_imap = Function(self.GLSL_imap)
+        self._shader_map = Function(self.glsl_map)
+        self._shader_imap = Function(self.glsl_imap)
     
     def map(self, obj):
         """
@@ -142,7 +142,7 @@ class Transform(object):
         ## * The first argument to the GLSL function should not be bound
         ## * All remaining arguments should be bound using self.property of the
         ##   same name to determine the value.
-        #function = self.GLSL_imap if imap else self.GLSL_map
+        #function = self.glsl_imap if imap else self.glsl_map
         
         #if var_prefix is None:
             #if name is None:
@@ -287,14 +287,14 @@ class ChainTransform(Transform):
     """
     Transform subclass that performs a sequence of transformations in order.
     Internally, this class uses shaders.composite.FunctionChain to generate
-    its GLSL_map and GLSL_imap functions.
+    its glsl_map and glsl_imap functions.
     
     Arguments:
     
     transforms : list of Transform instances
     """
-    GLSL_map = ""
-    GLSL_imap = ""
+    glsl_map = ""
+    glsl_imap = ""
     
     Linear = False
     Orthogonal = False
@@ -489,8 +489,8 @@ class ChainTransform(Transform):
 class NullTransform(Transform):
     """ Transform having no effect on coordinates (identity transform).
     """
-    GLSL_map = "vec4 $null_transform_map(vec4 pos) {return pos;}"
-    GLSL_imap = "vec4 $null_transform_imap(vec4 pos) {return pos;}"
+    glsl_map = "vec4 $null_transform_map(vec4 pos) {return pos;}"
+    glsl_imap = "vec4 $null_transform_imap(vec4 pos) {return pos;}"
     
     Linear = True
     Orthogonal = True
@@ -516,13 +516,13 @@ class NullTransform(Transform):
 class STTransform(Transform):
     """ Transform performing only scale and translate, in that order.
     """
-    GLSL_map = """
+    glsl_map = """
         vec4 $st_transform_map(vec4 pos) {
             return (pos * $scale) + $translate;
         }
     """
     
-    GLSL_imap = """
+    glsl_imap = """
         vec4 $st_transform_imap(vec4 pos) {
             return (pos - $translate) / $scale;
         }
@@ -614,13 +614,13 @@ class STTransform(Transform):
 
 
 class AffineTransform(Transform):
-    GLSL_map = """
+    glsl_map = """
         vec4 $affine_transform_map(vec4 pos) {
             return $matrix * pos;
         }
     """
     
-    GLSL_imap = """
+    glsl_imap = """
         vec4 $affine_transform_imap(vec4 pos) {
             return $inv_matrix * pos;
         }
@@ -776,7 +776,7 @@ class LogTransform(Transform):
     # TODO: Evaluate the performance costs of using conditionals. 
     # An alternative approach is to transpose the vector before log-transforming,
     # and then transpose back afterward.
-    GLSL_map = """
+    glsl_map = """
         vec4 $LogTransform_map(vec4 pos) {
             if($base.x > 1.0)
                 pos.x = log(pos.x) / log($base.x);
@@ -862,13 +862,13 @@ class PolarTransform(Transform):
     and `y = r*sin(theta)`.
     
     """
-    GLSL_map = """
+    glsl_map = """
         vec4 $polar_transform_map(vec4 pos) {
             return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1);
         }
         """
 
-    GLSL_imap = """
+    glsl_imap = """
         vec4 $polar_transform_map(vec4 pos) {
             // TODO: need some modulo math to handle larger theta values..?
             float theta = atan(pos.y, pos.x);
@@ -904,8 +904,8 @@ class PolarTransform(Transform):
         return InvPolarTransform()
     
 class InvPolarTransform(Transform):
-    GLSL_map = PolarTransform.GLSL_imap
-    GLSL_imap = PolarTransform.GLSL_map
+    glsl_map = PolarTransform.glsl_imap
+    glsl_imap = PolarTransform.glsl_map
     
     Linear = False
     Orthogonal = False

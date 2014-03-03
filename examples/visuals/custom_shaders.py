@@ -30,7 +30,7 @@ class SineTransform(Transform):
     """
     Add sine wave to y-value for wavy effect.
     """
-    GLSL_map = """
+    glsl_map = """
         vec4 $sineTransform(vec4 pos) {
             return vec4(pos.x, pos.y + sin(pos.x), pos.z, 1);
         }"""

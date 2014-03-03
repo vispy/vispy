@@ -70,12 +70,12 @@ class SineTransform(Transform):
     """
     Add sine wave to y-value for wavy effect.
     """
-    GLSL_map = """
+    glsl_map = """
         vec4 $sineTransform(vec4 pos) {
             return vec4(pos.x, pos.y + sin(pos.x), pos.z, 1);
         }"""
 
-    GLSL_imap = """
+    glsl_imap = """
         vec4 $sineTransform(vec4 pos) {
             return vec4(pos.x, pos.y - sin(pos.x), pos.z, 1);
         }"""
@@ -98,8 +98,8 @@ class SineTransform(Transform):
         return InvSineTransform()
     
 class InvSineTransform(Transform):
-    GLSL_map = SineTransform.GLSL_imap
-    GLSL_imap = SineTransform.GLSL_map
+    glsl_map = SineTransform.glsl_imap
+    glsl_imap = SineTransform.glsl_map
     
     Linear = False
     

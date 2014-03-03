@@ -4,8 +4,6 @@
 
 from __future__ import division
 import string
-import logging
-import re
 
 from . import parsing
 
@@ -321,7 +319,7 @@ class Function(ShaderObject):
             return self.clean_code(code)
         except KeyError as err:
             raise KeyError("Must specify variable $%s in substitution" % 
-                        err.args[0])
+                           err.args[0])
     
     def wrap(self, name=None, **kwds):
         """

@@ -40,11 +40,13 @@ else:
     raise Exception("Do not recognize Qt library '%s'. Options are "
                     "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
 
+
 # Properly log Qt messages
 # Also, ignore spam about tablet input
 def message_handler(msg_type, msg):
     if msg == ("QCocoaView handleTabletEvent: This tablet device is "
-               "unknown (received no proximity event for it). Discarding event."):
+               "unknown (received no proximity event for it). Discarding "
+               "event."):
         return
     else:
         logger.warning(msg)
