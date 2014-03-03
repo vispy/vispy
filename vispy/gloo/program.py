@@ -290,7 +290,7 @@ class Program(GLObject):
             name, size, gtype = gl.glGetActiveUniform(self.handle, i)
             # This checks if the uniform is an array
             # Name will be something like xxx[0] instead of xxx
-            m = regex.match(name.decode('utf-8'))
+            m = regex.match(name)
             # When uniform is an array, size corresponds to the highest used
             # index
             if m:
@@ -341,7 +341,7 @@ class Program(GLObject):
 
             # This checks if the attribute is an array
             # Name will be something like xxx[0] instead of xxx
-            m = regex.match(name.decode('utf-8'))
+            m = regex.match(name)
             # When attribute is an array, size corresponds to the highest used
             # index
             if m:
