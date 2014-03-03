@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from .. import gloo
-from . import Visual
+from .visual import Visual
 from .transforms import AffineTransform
 from ..shaders.composite import ModularProgram
 

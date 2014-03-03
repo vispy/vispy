@@ -8,7 +8,7 @@ import numpy as np
 
 from .. import gloo
 from ..gloo import gl
-from . import Visual, VisualComponent
+from .visual import Visual, VisualComponent
 from ..shaders.composite import (Function, ModularProgram, FunctionChain)
 from .transforms import NullTransform, STTransform
 
