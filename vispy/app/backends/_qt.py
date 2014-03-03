@@ -7,7 +7,7 @@ vispy backend for Qt (PySide and PyQt4).
 """
 
 from __future__ import division
-import logging
+from ...util import logger
 
 from ... import config
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
@@ -47,7 +47,7 @@ def message_handler(msg_type, msg):
                "unknown (received no proximity event for it). Discarding event."):
         return
     else:
-        logging.warning(msg)
+        logger.warning(msg)
 
 QtCore.qInstallMsgHandler(message_handler)
 
