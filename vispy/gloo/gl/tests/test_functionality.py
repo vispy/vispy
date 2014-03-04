@@ -30,7 +30,7 @@ from vispy import app
 # requires_non_glut works if there is a backend other then GLUT available.
 
 # Whether to sleep in order to show the result. True when running as script
-SLEEP = False
+SHOW = False
 
 
 @requires_non_glut()
@@ -57,60 +57,126 @@ def test_functionality_angle():
     _test_functonality('angle')
 
 
+def _clear_screen():
+    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+    gl.glFinish()
+
+
+# class OpenGLContext:
+#     def __init__(self):
+#         app.create()
+#         self.c = None
+#         self._painted = False
+#     
+#     def _paint_callback(self, event):
+#         self._painted = True
+#         app.quit()
+#     
+#     def paint(self, callback=None):
+#         self._painted = False
+#         self.c.update()
+#         app.run()
+#         while not self._painted:
+#             app.process_events()
+#         
+#         if callback is not None:
+#             return callback()
+#     
+#     def __enter__(self):
+#         if self.c is not None:
+#             raise RuntimeError('Already in context!')
+#         self.c = app.Canvas(size=(300, 200), autoswap=False)
+#         self.c.events.paint.connect(self._paint_callback)
+#         self.c.show()
+#         self._painted = False
+#         app.run()
+#         while not self._painted:
+#             app.process_events()
+#     
+#     def __exit__(self, type, value, traceback):
+#         self.c.close()
+#         self.c = None
+
+
+class OpenGLContext:
+    def __init__(self):
+        app.create()
+        self.c = None
+    
+    def __enter__(self):
+        if self.c is not None:
+            raise RuntimeError('Already in context!')
+        self.c = app.Canvas(size=(300, 200), autoswap=False)
+        self.c.show()
+        for i in range(3):
+            app.process_events()
+    
+    def __exit__(self, type, value, traceback):
+        self.c.close()
+        self.c = None
+
+
 def _test_functonality(backend):
     """ Create app and canvas so we have a context. Then run tests.
     """
 
     # use the backend
     gl.use(backend)
+    
+    context = OpenGLContext()
 
-    # Create app and canvas to get an OpenGL context
-    app.create()
-    c = app.Canvas()
-    c.show()
-    app.process_events(); app.process_events()
-
-    try:
+    with context:
+        
+        _clear_screen()
+        
         # General tests. Some variables are set though
-        _test_setting_parameters(c)
+        _test_setting_parameters()
         _test_enabling_disabling()
         _test_setting_stuff()
         _test_object_creation_and_deletion()
         
         # Prepare
-        _test_prepare_vis()
-        app.process_events(); app.process_events()
+        w, h = context.c.size
+        gl.glViewport(0, 0, w, h)
+        gl.glClearColor(0.0, 0.0, 0.0, 1.0)
+        
+        # Setup visualization
+        objects = _test_prepare_vis()
+        
+        _clear_screen()
         
         # Draw 1
         _draw1()
-        gl.glFinish()
-        app.process_events(); app.process_events()
         _test_result()
-        c.swap_buffers()
-        app.process_events(); app.process_events()
-        if SLEEP:  time.sleep(1.0)
+        if SHOW:
+            context.c.swap_buffers()
+            app.process_events(); app.process_events()
+            time.sleep(1.0)
+        
+        _clear_screen()
         
         # Draw 2
         _draw2()
-        gl.glFinish()
-        app.process_events(); app.process_events()
         _test_result()
-        c.swap_buffers()
-        app.process_events(); app.process_events()
-        if SLEEP:  time.sleep(1.0)
+        if SHOW:
+            context.c.swap_buffers()
+            app.process_events(); app.process_events()
+            time.sleep(1.0)
+        
+        _clear_screen()
         
         # Draw 3
         _draw3()
-        gl.glFinish()
-        app.process_events(); app.process_events()
         _test_result()
-        c.swap_buffers()
-        app.process_events(); app.process_events()
-        if SLEEP:  time.sleep(1.0)
+        if SHOW:
+            context.c.swap_buffers()
+            app.process_events(); app.process_events()
+            time.sleep(1.0)
         
-    
-    finally:
-        c.close()
+        # Clean up
+        for delete_func, handle in objects:
+            delete_func(handle)
+
 
 
 ## Create CPU data
@@ -214,12 +280,9 @@ helements = None  # the OpenGL object ref
 
 ## The actual tests
 
-def _test_setting_parameters(c):
+def _test_setting_parameters():
     # Set some parameters and get result
-    w, h = c.size
-    gl.glViewport(0, 0, w, h)
-    #
-    clr = 0.0, 0.0, 0.0, 1.0  # 1.0, 0.1, 0.2, 0.7
+    clr = 1.0, 0.1, 0.2, 0.7
     gl.glClearColor(*clr)
     assert_almost_equal(gl.glGetParameter(gl.GL_COLOR_CLEAR_VALUE), clr)
     #
@@ -263,7 +326,8 @@ def _test_object_creation_and_deletion():
     # Stuff that is originally glGenX
 
     # Create/delete texture
-    assert_equal(gl.glIsTexture(1), False)
+    # Stupid pygley secretly creates a texture ...
+    assert_equal(gl.glIsTexture(12), False)
     handle = gl.glCreateTexture()
     gl.glBindTexture(gl.GL_TEXTURE_2D, handle)
     assert_equal(gl.glIsTexture(handle), True)
@@ -271,7 +335,7 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsTexture(handle), False)
 
     # Create/delete buffer
-    assert_equal(gl.glIsBuffer(1), False)
+    assert_equal(gl.glIsBuffer(12), False)
     handle = gl.glCreateBuffer()
     gl.glBindBuffer(gl.GL_ARRAY_BUFFER, handle)
     assert_equal(gl.glIsBuffer(handle), True)
@@ -279,7 +343,7 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsBuffer(handle), False)
 
     # Create/delete framebuffer
-    assert_equal(gl.glIsFramebuffer(1), False)
+    assert_equal(gl.glIsFramebuffer(12), False)
     handle = gl.glCreateFramebuffer()
     gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, handle)
     assert_equal(gl.glIsFramebuffer(handle), True)
@@ -287,7 +351,7 @@ def _test_object_creation_and_deletion():
     assert_equal(gl.glIsFramebuffer(handle), False)
 
     # Create/delete renderbuffer
-    assert_equal(gl.glIsRenderbuffer(1), False)
+    assert_equal(gl.glIsRenderbuffer(12), False)
     handle = gl.glCreateRenderbuffer()
     gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, handle)
     assert_equal(gl.glIsRenderbuffer(handle), True)
@@ -297,14 +361,14 @@ def _test_object_creation_and_deletion():
     # Stuff that is originally called glCreate
 
     # Create/delete program
-    assert_equal(gl.glIsProgram(1), False)
+    assert_equal(gl.glIsProgram(12), False)
     handle = gl.glCreateProgram()
     assert_equal(gl.glIsProgram(handle), True)
     gl.glDeleteProgram(handle)
     assert_equal(gl.glIsProgram(handle), False)
 
     # Create/delete shader
-    assert_equal(gl.glIsShader(1), False)
+    assert_equal(gl.glIsShader(12), False)
     handle = gl.glCreateShader(gl.GL_VERTEX_SHADER)
     assert_equal(gl.glIsShader(handle), True)
     gl.glDeleteShader(handle)
@@ -316,12 +380,17 @@ def _test_object_creation_and_deletion():
 
 def _test_prepare_vis():
     
+    objects = []
+    
     # --- program and shaders
     
     # Create program and shaders
     hprog = gl.glCreateProgram()
     hvert = gl.glCreateShader(gl.GL_VERTEX_SHADER)
     hfrag = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
+    objects.append((gl.glDeleteProgram, hprog))
+    objects.append((gl.glDeleteShader, hvert))
+    objects.append((gl.glDeleteShader, hfrag))
     
     # Compile source code
     gl.glShaderSource_compat(hvert, VERT)
@@ -394,6 +463,7 @@ def _test_prepare_vis():
     
     # Create, bind, activate
     htex = gl.glCreateTexture()
+    objects.append((gl.glDeleteTexture, htex))
     gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
     gl.glBindTexture(gl.GL_TEXTURE_2D, htex)
     
@@ -429,6 +499,7 @@ def _test_prepare_vis():
     
     # Create buffer
     hbuf2 = gl.glCreateBuffer()
+    objects.append((gl.glDeleteBuffer,hbuf2))
     gl.glBindBuffer(gl.GL_ARRAY_BUFFER, hbuf2)
 
     # Allocate and set data
@@ -448,6 +519,7 @@ def _test_prepare_vis():
     
     # Create buffer
     hbuf3 = gl.glCreateBuffer()
+    objects.append((gl.glDeleteBuffer,hbuf3))
     gl.glBindBuffer(gl.GL_ARRAY_BUFFER, hbuf3)
 
     # Allocate and set data
@@ -482,11 +554,12 @@ def _test_prepare_vis():
     # Create buffer
     global helements
     helements = gl.glCreateBuffer()
+    objects.append((gl.glDeleteBuffer, helements))
     gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, helements)
 
     # Allocate and set data
     gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER, elements, gl.GL_DYNAMIC_DRAW)
-#     gl.glBufferSubData(gl.GL_ELEMENT_ARRAY_BUFFER, 0, elements)
+    gl.glBufferSubData(gl.GL_ELEMENT_ARRAY_BUFFER, 0, elements)
     
     # Turn off
     gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, 0)
@@ -538,27 +611,37 @@ def _test_prepare_vis():
     # Not really necessary, but we want to touch the functions
     gl.glFlush()
     gl.glFinish()
+    
+    #print([i[1] for i in objects])
+    return objects
 
 
 def _draw1():
     # Draw using arrays
     gl.glDrawArrays(gl.GL_TRIANGLES, 0, N)
+    gl.glFinish()
 
 
 def _draw2():
-    global helements
     # Draw using elements via buffer
     gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, helements)
     gl.glDrawElements(gl.GL_TRIANGLES, elements.size, gl.GL_UNSIGNED_BYTE, 0)
     gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, 0)
+    gl.glFinish()
 
 
 def _draw3():
     # Draw using elements via numpy array
     gl.glDrawElements(gl.GL_TRIANGLES, elements.size, gl.GL_UNSIGNED_BYTE, elements)
-    
+    gl.glFinish()
+
 
 def _test_result():
+    """ Test the color of each quadrant by picking the center pixel 
+    of each quadrant and comparing it with the reference color.
+    """
+    
+    # Take screenshot
     x, y, w, h = gl.glGetParameter(gl.GL_VIEWPORT)
     data = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
     im = np.frombuffer(data, np.uint8)
@@ -579,6 +662,6 @@ def _test_result():
 
 
 if __name__ == '__main__':
-    SLEEP = True
+    SHOW = True
     test_functionality_desktop()
     test_functionality_pypengl()
