@@ -10,22 +10,28 @@ import OpenGL.GLUT as glut
 from vispy.gloo import Program, VertexBuffer, IndexBuffer
 
 vertex = """
-    uniform float scale;
-    attribute vec4 color;
     attribute vec2 position;
-    varying vec4 v_color;
+    attribute vec2 texcoord;
+    varying vec2 v_texcoord;
     void main()
     {
-        gl_Position = vec4(scale*position, 0.0, 1.0);
-        v_color = color;
+        gl_Position = vec4(position, 0.0, 1.0);
+        v_texcoord = texcoord;
     } """
 
 fragment = """
-    varying vec4 v_color;
+    uniform sampler2D texture;
+    varying vec2 v_texcoord;
     void main()
     {
-        gl_FragColor = v_color;
+        gl_FragColor = texture2D(texture, v_texcoord);
     } """
+
+def checkerboard(grid_num=8, grid_size=32):
+    row_even = grid_num/2 * [0,1]
+    row_odd = grid_num/2 * [1,0]
+    Z = np.row_stack(grid_num/2*(row_even, row_odd)).astype(np.uint8)
+    return 255*Z.repeat(grid_size, axis = 0).repeat(grid_size, axis = 1)
 
 def display():
     gl.glClearColor(1,1,1,1)
@@ -44,7 +50,7 @@ def keyboard( key, x, y ):
 # --------------------------------------
 glut.glutInit(sys.argv)
 glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA)
-glut.glutCreateWindow('Hello world!')
+glut.glutCreateWindow('Textured quad')
 glut.glutReshapeWindow(512,512)
 glut.glutReshapeFunc(reshape)
 glut.glutKeyboardFunc(keyboard )
@@ -53,9 +59,9 @@ glut.glutDisplayFunc(display)
 # Build program & data
 # ----------------------------------------
 program = Program(vertex, fragment, count=4)
-program['color']    = [ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ]
 program['position'] = [ (-1,-1),   (-1,+1),   (+1,-1),   (+1,+1)   ]
-program['scale'] = 1.0
+program['texcoord'] = [ (0,0), (1,0), (0,1), (1,1) ]
+program['texture'] = checkerboard()
 
 # Enter mainloop
 # --------------------------------------
