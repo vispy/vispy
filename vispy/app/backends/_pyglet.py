@@ -12,9 +12,11 @@ from distutils.version import LooseVersion
 import pyglet
 version = pyglet.version
 
-if LooseVersion(version) < LooseVersion('1.2'):
-    raise ImportError('Pyglet version too old (%s), need >= 1.2'
-                      % pyglet.version)
+if LooseVersion(version) < LooseVersion('1.6'):
+    help = 'You can install the latest pyglet using:\n' 
+    help += '    pip install http://pyglet.googlecode.com/archive/tip.zip'
+    raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
+                      % (pyglet.version, help))
 
 import pyglet.window
 import pyglet.app
@@ -85,6 +87,7 @@ class ApplicationBackend(BaseApplicationBackend):
         return 'Pyglet'
 
     def _vispy_process_events(self):
+        # todo: note that this does not actually process paint events :(
         return pyglet.app.platform_event_loop.step(0.0)
 
     def _vispy_run(self):
