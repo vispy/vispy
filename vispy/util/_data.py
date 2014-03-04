@@ -51,7 +51,7 @@ def get_data_file(fname, directory=None, force_download=False):
     if op.isfile(fname) and not force_download:  # we're done
         return fname
     if not op.isdir(op.dirname(fname)):
-        os.makedirs(op.dirname(fname))
+        os.makedirs(os.abspath(op.dirname(fname)))
     # let's go get the file
     _fetch_file(url, fname)
     return fname
