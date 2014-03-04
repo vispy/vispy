@@ -300,7 +300,7 @@ _lib.glDrawElements.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctype
 def glDrawElements(mode, count, type, offset):
     if offset is None:
         offset = ctypes.c_void_p(0)
-    elif isinstance(offset, c_void_p):
+    elif isinstance(offset, ctypes.c_void_p):
         pass
     elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))
@@ -862,60 +862,72 @@ def glUniform4i(location, v1, v2, v3, v4):
     _lib.glUniform4i(location, v1, v2, v3, v4)
 _lib.glUniform1fv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),
 def glUniform1fv(location, count, values):
-    values = [val for val in values]
+    values = [float(val) for val in values]
     values = (ctypes.c_float*len(values))(*values)
     _lib.glUniform1fv(location, count, values)
 _lib.glUniform2fv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),
 def glUniform2fv(location, count, values):
-    values = [val for val in values]
+    values = [float(val) for val in values]
     values = (ctypes.c_float*len(values))(*values)
     _lib.glUniform2fv(location, count, values)
 _lib.glUniform3fv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),
 def glUniform3fv(location, count, values):
-    values = [val for val in values]
+    values = [float(val) for val in values]
     values = (ctypes.c_float*len(values))(*values)
     _lib.glUniform3fv(location, count, values)
 _lib.glUniform4fv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_float),
 def glUniform4fv(location, count, values):
-    values = [val for val in values]
+    values = [float(val) for val in values]
     values = (ctypes.c_float*len(values))(*values)
     _lib.glUniform4fv(location, count, values)
 _lib.glUniform1iv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),
 def glUniform1iv(location, count, values):
-    values = [val for val in values]
+    values = [int(val) for val in values]
     values = (ctypes.c_int*len(values))(*values)
     _lib.glUniform1iv(location, count, values)
 _lib.glUniform2iv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),
 def glUniform2iv(location, count, values):
-    values = [val for val in values]
+    values = [int(val) for val in values]
     values = (ctypes.c_int*len(values))(*values)
     _lib.glUniform2iv(location, count, values)
 _lib.glUniform3iv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),
 def glUniform3iv(location, count, values):
-    values = [val for val in values]
+    values = [int(val) for val in values]
     values = (ctypes.c_int*len(values))(*values)
     _lib.glUniform3iv(location, count, values)
 _lib.glUniform4iv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_int),
 def glUniform4iv(location, count, values):
-    values = [val for val in values]
+    values = [int(val) for val in values]
     values = (ctypes.c_int*len(values))(*values)
     _lib.glUniform4iv(location, count, values)
 
 
 _lib.glUniformMatrix2fv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),
 def glUniformMatrix2fv(location, count, transpose, values):
-    values = [val for val in values]
-    values = (ctypes.c_float*len(values))(*values)
+    if hasattr(values, "dtype"):  # np array
+        values_ = values.astype("float32", "C", copy=False)
+        values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+    else:
+        values = [float(val) for val in values]
+        values = (ctypes.c_float*len(values))(*values)
     _lib.glUniformMatrix2fv(location, count, transpose, values)
 _lib.glUniformMatrix3fv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),
 def glUniformMatrix3fv(location, count, transpose, values):
-    values = [val for val in values]
-    values = (ctypes.c_float*len(values))(*values)
+    if hasattr(values, "dtype"):  # np array
+        values_ = values.astype("float32", "C", copy=False)
+        values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+    else:
+        values = [float(val) for val in values]
+        values = (ctypes.c_float*len(values))(*values)
     _lib.glUniformMatrix3fv(location, count, transpose, values)
 _lib.glUniformMatrix4fv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),
 def glUniformMatrix4fv(location, count, transpose, values):
-    values = [val for val in values]
-    values = (ctypes.c_float*len(values))(*values)
+    if hasattr(values, "dtype"):  # np array
+        values_ = values.astype("float32", "C", copy=False)
+        values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+    else:
+        values = [float(val) for val in values]
+        values = (ctypes.c_float*len(values))(*values)
     _lib.glUniformMatrix4fv(location, count, transpose, values)
 
 

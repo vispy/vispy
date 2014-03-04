@@ -57,6 +57,14 @@ def glDeleteTexture(texture):
     GL.glDeleteTextures([texture])
 
 
+def glDrawElements(mode, count, type, offset):
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, (int, ctypes.c_int)):
+        offset = ctypes.c_void_p(int(offset))
+    return GL.glDrawElements(mode, count, type, offset)
+
+
 def glCreateBuffer():
     return GL.glGenBuffers(1)
 
@@ -93,6 +101,16 @@ def glGetActiveUniform(program, index):
 def glGetAttribLocation(program, name):
     name = name.encode('utf-8')
     return GL.glGetAttribLocation(program, name)
+
+
+def glGetProgramInfoLog(program):
+    res = GL.glGetProgramInfoLog(program)
+    return res.decode('utf-8')
+
+
+def glGetShaderInfoLog(shader):
+    res = GL.glGetShaderInfoLog(shader)
+    return res.decode('utf-8')
 
 
 def glGetParameter(pname):
@@ -205,7 +223,6 @@ _functions_to_import = [
     ("glDisable", "glDisable"),
     ("glDisableVertexAttribArray", "glDisableVertexAttribArray"),
     ("glDrawArrays", "glDrawArrays"),
-    ("glDrawElements", "glDrawElements"),
     ("glEnable", "glEnable"),
     ("glEnableVertexAttribArray", "glEnableVertexAttribArray"),
     ("glFinish", "glFinish"),
@@ -221,10 +238,8 @@ _functions_to_import = [
     ("glGetFloatv", "_glGetFloatv"),
     ("glGetFramebufferAttachmentParameteriv", "glGetFramebufferAttachmentParameter"),
     ("glGetIntegerv", "_glGetIntegerv"),
-    ("glGetProgramInfoLog", "glGetProgramInfoLog"),
     ("glGetProgramiv", "glGetProgramParameter"),
     ("glGetRenderbufferParameteriv", "glGetRenderbufferParameter"),
-    ("glGetShaderInfoLog", "glGetShaderInfoLog"),
     ("glGetShaderPrecisionFormat", "glGetShaderPrecisionFormat"),
     ("glGetShaderSource", "glGetShaderSource"),
     ("glGetShaderiv", "glGetShaderParameter"),

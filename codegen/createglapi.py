@@ -629,13 +629,17 @@ class DesktopApiGenerator(ApiGenerator):
             else:
                 t = {'f':'float', 'i':'int'}[funcname[-2]]
                 lines.append('def %s:' % sig)
-                lines.append('    values = [val for val in values]')
+                lines.append('    values = [%s(val) for val in values]' % t)
                 lines.append('    values = (ctypes.c_%s*len(values))(*values)' % t)
                 lines.append(call_line(funcname, es2func, 'location, count, values'))
         elif des.name == 'uniformMatrix':
             lines.append('def %s:' % sig)
-            lines.append('    values = [val for val in values]')
-            lines.append('    values = (ctypes.c_float*len(values))(*values)')
+            lines.append('    if hasattr(values, "dtype"):  # np array')
+            lines.append('        values_ = values.astype("float32", "C", copy=False)')
+            lines.append('        values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))')
+            lines.append('    else:')
+            lines.append('        values = [float(val) for val in values]')
+            lines.append('        values = (ctypes.c_float*len(values))(*values)')
             lines.append(call_line(funcname, es2func, 'location, count, transpose, values'))
         elif des.name == 'vertexAttrib':
             lines.append('def %s:' % sig)

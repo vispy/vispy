@@ -217,7 +217,7 @@ def drawElements(mode, count, type, offset):
     # --- desktop angle
     if offset is None:
         offset = ctypes.c_void_p(0)
-    elif isinstance(offset, c_void_p):
+    elif isinstance(offset, ctypes.c_void_p):
         pass
     elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))
@@ -228,7 +228,13 @@ def drawElements(mode, count, type, offset):
         offset = offset.ctypes.data
     indices = offset
     ()
-    
+    # --- pyopengl
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, (int, ctypes.c_int)):
+        offset = ctypes.c_void_p(int(offset))
+    ()
+
 
 def vertexAttribPointer(indx, size, type, normalized, stride, offset):
     # --- desktop angle
@@ -453,6 +459,9 @@ def getProgramInfoLog(program):
     infolog = ctypes.create_string_buffer(bufsize)
     ()
     return infolog[:length[0]].decode('utf-8')
+    # --- pyopengl
+    res = GL.glGetProgramInfoLog(program)
+    return res.decode('utf-8')
 
 def getShaderInfoLog(shader):
     # --- desktop angle
@@ -461,6 +470,9 @@ def getShaderInfoLog(shader):
     infolog = ctypes.create_string_buffer(bufsize)
     ()
     return infolog[:length[0]].decode('utf-8')
+    # --- pyopengl
+    res = GL.glGetShaderInfoLog(shader)
+    return res.decode('utf-8')
 
 def getProgramParameter(program, pname):
     # --- desktop angle
