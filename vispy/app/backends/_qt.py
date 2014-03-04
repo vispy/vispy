@@ -7,6 +7,7 @@ vispy backend for Qt (PySide and PyQt4).
 """
 
 from __future__ import division
+import signal
 
 from ... import config
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
@@ -88,6 +89,19 @@ KEYMAP = {
 BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 
+def _get_qt_app():
+    """Safely create Qt application"""
+    global qApp
+    if QtGui.QApplication.startingUp():
+        app = QtGui.QApplication.instance()
+        if app is None:
+            qApp = QtGui.QApplication([''])
+            qApp.lastWindowClosed.connect(qApp.quit)
+        else:
+            qApp = app
+    return qApp
+
+
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
@@ -109,25 +123,19 @@ class ApplicationBackend(BaseApplicationBackend):
         if hasattr(app, '_in_event_loop') and app._in_event_loop:
             pass  # Already in event loop
         else:
-            return app.exec_()
+            # allow KeyboardInterrupt exceptions to close the plot window.
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            app.exec_()
 
     def _vispy_quit(self):
         return self._vispy_get_native_app().quit()
 
     def _vispy_get_native_app(self):
-        # Get native app in save way. Taken from guisupport.py
-        app = QtGui.QApplication.instance()
-        if app is None:
-            app = QtGui.QApplication([''])
-        # Store so it won't be deleted, but not on a visvis object,
-        # or an application may produce error when closed
-        QtGui._qApp = app
-        # Return
-        return app
+        # Get native app in safe way. Taken from matplotlib
+        return _get_qt_app()
 
 
 class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
-
     """Qt backend for Canvas abstract class."""
 
     def __init__(self, *args, **kwargs):
@@ -301,9 +309,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 class TimerBackend(BaseTimerBackend, QtCore.QTimer):
 
     def __init__(self, vispy_timer):
-        if QtGui.QApplication.instance() is None:
-            global QAPP
-            QAPP = QtGui.QApplication([])
+        _get_qt_app()
         BaseTimerBackend.__init__(self, vispy_timer)
         QtCore.QTimer.__init__(self)
         self.timeout.connect(self._vispy_timeout)

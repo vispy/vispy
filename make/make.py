@@ -181,6 +181,7 @@ class Maker:
         except ImportError:
             print('Skipping flake8 test, flake8 not installed')
         else:
+            print('Running flake8...')
             main()
 
     def images(self, arg):
