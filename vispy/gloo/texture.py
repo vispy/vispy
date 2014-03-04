@@ -459,7 +459,7 @@ class Texture(GLObject):
         """ Delete texture from GPU """
 
         logger.debug("GPU: Deleting texture")
-        gl.deleteTexture(self._handle)
+        gl.glDeleteTexture(self._handle)
 
     def _activate(self):
         """ Activate texture on GPU """
@@ -549,10 +549,11 @@ class Texture1D(Texture):
         """ Texture resize on GPU """
 
         logger.debug("GPU: Resizing texture(%s)" % (self.width))
-        # gl.glTexImage1D(self.target, 0, self._format, self.width,
-        #                0, self._format, self._gtype, None)
-        gl.glTexImage2D(self.target, 0, self._format, self.width, 1,
-                        0, self._format, self._gtype, None)
+        # gl.glTexImage1D(self.target, 0, self._format, self._format, 
+        #                 self._gtype, (self._width,))
+        shape = self.height, self.width
+        gl.glTexImage2D(self.target, 0, self._format, self._format, 
+                        self._gtype, shape)
 
     def _update(self):
         """ Texture update on GPU """
@@ -571,10 +572,10 @@ class Texture1D(Texture):
             else:
                 x = offset[0]
             width = data.shape[0]
-            # gl.glTexSubImage1D(self.target, 0, x,
-            #                   width, self._format, self._gtype, data)
-            gl.glTexSubImage2D(self.target, 0, x, 0,
-                               width, 1, self._format, self._gtype, data)
+            # gl.glTexSubImage1D(self.target, 0, x, self._format, 
+            #                    self._gtype, data)
+            gl.glTexSubImage2D(self.target, 0, x, self._format, 
+                               self._gtype, data)
 
 
 # --------------------------------------------------------- Texture2D class ---
@@ -658,8 +659,9 @@ class Texture2D(Texture):
 
         logger.debug("GPU: Resizing texture(%sx%s)" %
                      (self.width, self.height))
-        gl.glTexImage2D(self.target, 0, self._format, self.width, self.height,
-                        0, self._format, self._gtype, None)
+        shape = self.height, self.width
+        gl.glTexImage2D(self.target, 0, self._format, self._format, 
+                        self._gtype, shape)
 
     def _update(self):
         """ Texture update on GPU """
@@ -680,8 +682,8 @@ class Texture2D(Texture):
             if offset is not None:
                 y, x = offset[0], offset[1]
             width, height = data.shape[1], data.shape[0]
-            gl.glTexSubImage2D(self.target, 0, x, y,
-                               width, height, self._format, self._gtype, data)
+            gl.glTexSubImage2D(self.target, 0, x, y, self._format, 
+                               self._gtype, data)
 
 
 # ---------------------------------------------------- TextureCubeMap class ---

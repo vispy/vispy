@@ -337,12 +337,13 @@ class Attribute(Variable):
             stride = self.data.stride
 
             # Make offset a pointer, or it will be interpreted as a small array
-            offset = ctypes.c_void_p(self.data.offset)
+            # Not needed with our new GL API
+            offset = self.data.offset  #ctypes.c_void_p(self.data.offset)
 
             gl.glEnableVertexAttribArray(self.handle)
             #gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.data.handle)
             gl.glVertexAttribPointer(
-                self.handle, size, gtype,  gl.GL_FALSE, stride, offset)
+                self.handle, size, gtype, gl.GL_FALSE, stride, offset)
 
     def _create(self):
         """ Create attribute on GPU (get handle) """

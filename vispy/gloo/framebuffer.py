@@ -78,13 +78,13 @@ class RenderBuffer(GLObject):
         """ Create buffer on GPU """
 
         logger.debug("GPU: Create render buffer")
-        self._handle = gl.glGenRenderbuffers(1)
+        self._handle = gl.glCreateRenderbuffer()
 
     def _delete(self):
         """ Delete buffer from GPU """
 
         logger.debug("GPU: Deleting render buffer")
-        gl.glDeleteRenderbuffers([self._handle])
+        gl.glDeleteRenderbuffer(self._handle)
 
     def _activate(self):
         """ Activate buffer on GPU """
@@ -105,7 +105,7 @@ class RenderBuffer(GLObject):
         """ Buffer resize on GPU """
 
         # WARNING: Shape should be checked against maximum size
-        # maxsize = gl.glGetIntegerv(gl.GL_MAX_RENDERBUFFER_SIZE)
+        # maxsize = gl.glGetParameter(gl.GL_MAX_RENDERBUFFER_SIZE)
         logger.debug("GPU: Resize render buffer")
         gl.glRenderbufferStorage(self._target, self._format,
                                  self._shape[1], self._shape[0])
@@ -318,13 +318,13 @@ class FrameBuffer(GLObject):
         """ Create framebuffer on GPU """
 
         logger.debug("GPU: Create framebuffer")
-        self._handle = gl.glGenFramebuffers(1)
+        self._handle = gl.glCreateFramebuffer()
 
     def _delete(self):
         """ Delete buffer from GPU """
 
         logger.debug("GPU: Delete framebuffer")
-        gl.glDeleteFramebuffers([self._handle])
+        gl.glDeleteFramebuffer(self._handle)
 
     def _activate(self):
         """ Activate framebuffer on GPU """
