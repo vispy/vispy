@@ -215,7 +215,9 @@ def bufferSubData(target, offset, data):
 
 def drawElements(mode, count, type, offset):
     # --- desktop angle
-    if isinstance(offset, ctypes.c_void_p):
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, ctypes.c_void_p):
         pass
     elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))
@@ -227,14 +229,18 @@ def drawElements(mode, count, type, offset):
     indices = offset
     ()
     # --- pyopengl
-    if isinstance(offset, (int, ctypes.c_int)):
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))
     ()
 
 
 def vertexAttribPointer(indx, size, type, normalized, stride, offset):
     # --- desktop angle
-    if isinstance(offset, ctypes.c_void_p):
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, ctypes.c_void_p):
         pass
     elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))
@@ -250,7 +256,9 @@ def vertexAttribPointer(indx, size, type, normalized, stride, offset):
     ptr = offset
     ()
     # --- pyopengl
-    if isinstance(offset, (int, ctypes.c_int)):
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))
     ()
 

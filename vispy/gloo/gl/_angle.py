@@ -298,7 +298,9 @@ def glDrawArrays(mode, first, count):
 _lib.glDrawElements.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctypes.c_void_p,
 # void = glDrawElements(GLenum mode, GLsizei count, GLenum type, GLvoid* indices)
 def glDrawElements(mode, count, type, offset):
-    if isinstance(offset, ctypes.c_void_p):
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, ctypes.c_void_p):
         pass
     elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))
@@ -958,7 +960,9 @@ def glVertexAttrib4f(index, v1, v2, v3, v4):
 _lib.glVertexAttribPointer.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.c_uint, ctypes.c_bool, ctypes.c_int, ctypes.c_void_p,
 # void = glVertexAttribPointer(GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, GLvoid* ptr)
 def glVertexAttribPointer(indx, size, type, normalized, stride, offset):
-    if isinstance(offset, ctypes.c_void_p):
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, ctypes.c_void_p):
         pass
     elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))

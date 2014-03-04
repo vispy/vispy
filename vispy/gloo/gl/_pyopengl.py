@@ -58,7 +58,9 @@ def glDeleteTexture(texture):
 
 
 def glDrawElements(mode, count, type, offset):
-    if isinstance(offset, (int, ctypes.c_int)):
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))
     return GL.glDrawElements(mode, count, type, offset)
 
@@ -179,7 +181,9 @@ def glTexSubImage2D(target, level, xoffset, yoffset, format, type, pixels):
 
 
 def glVertexAttribPointer(indx, size, type, normalized, stride, offset):
-    if isinstance(offset, (int, ctypes.c_int)):
+    if offset is None:
+        offset = ctypes.c_void_p(0)
+    elif isinstance(offset, (int, ctypes.c_int)):
         offset = ctypes.c_void_p(int(offset))
     return GL.glVertexAttribPointer(indx, size, type, normalized, stride, offset)
 
