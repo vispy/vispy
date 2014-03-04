@@ -14,7 +14,7 @@ import numpy as np
 
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
-BACKENDS = [('Qt', '_qt', None),  # Meta backend
+BACKENDS = [('Qt', '_qt', None),  # Meta backend 
             ('PySide', '_qt', 'PySide'),
             ('PyQt4', '_qt', 'PyQt4'),
             ('Pyglet', '_pyglet', 'pyglet'),
