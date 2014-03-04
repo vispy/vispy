@@ -111,12 +111,13 @@ class Config(object):
     changes.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.events = EmitterGroup(source=self)
         self.events['changed'] = EventEmitter(
             event_class=ConfigEvent,
             source=self)
         self._config = {}
+        self.update(**kwargs)
 
     def __getitem__(self, item):
         return self._config[item]
@@ -126,22 +127,15 @@ class Config(object):
         # inform any listeners that a configuration option has changed
         self.events.changed(changes={item: val})
 
-    def update(self, **kwds):
-        self._config.update(kwds)
-        self.events.changed(changes=kwds)
+    def update(self, **kwargs):
+        self._config.update(kwargs)
+        self.events.changed(changes=kwargs)
 
     def __repr__(self):
         return repr(self._config)
 
-config = Config()
-config.update(
-    default_backend='qt',
-    qt_lib='any',  # options are 'pyqt', 'pyside', or 'any'
-    show_warnings=False,
-    gl_debug=False,
-    logging_level='info',
-)
-
+config = Config(default_backend='qt', qt_lib='any',
+                gl_debug=False, logging_level='info')
 set_log_level(config['logging_level'])
 
 

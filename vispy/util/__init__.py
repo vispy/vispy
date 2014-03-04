@@ -10,3 +10,4 @@ from .misc import (parse_command_line_arguments, config)  # noqa
 from ._logging import logger, set_log_level, use_log_level  # noqa
 from ._testing import (_TempDir, sys_info, assert_in, assert_not_in,  # noqa
                        assert_is, app_opengl_context)  # noqa
+from ._data import get_data_file  # noqa
