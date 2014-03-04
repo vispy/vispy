@@ -49,7 +49,11 @@ before_install:
     - git init && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git
     - git fetch origin ${GIT_SOURCE_EXTRA} && git checkout -qf FETCH_HEAD && cd ..
     - SOURCE_SIZE=`du -s source-size-clone | sed -e "s/\t.*//"`
-    - SIZE_DIFF=`expr ${SOURCE_SIZE} - ${TARGET_SIZE}`
+    - if [ "${SOURCE_SIZE}" != "${TARGET_SIZE}" ]; then
+        SIZE_DIFF=`expr ${SOURCE_SIZE} - ${TARGET_SIZE}`;
+      else
+        SIZE_DIFF=0
+      fi;
     - cd ${SRC_DIR}
 
 install:
