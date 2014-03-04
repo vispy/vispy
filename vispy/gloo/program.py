@@ -193,11 +193,9 @@ class Program(GLObject):
             else:
                 attribute.active = False
     
-    
     def _delete(self):
         logger.debug("GPU: Deleting program")
         gl.glDeleteProgram(self._handle)
-    
     
     def _build_uniforms(self):
         """ Build the uniform objects """

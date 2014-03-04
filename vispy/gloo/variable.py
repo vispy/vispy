@@ -3,7 +3,6 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-import ctypes
 import numpy as np
 
 from . import gl
@@ -338,7 +337,7 @@ class Attribute(Variable):
 
             # Make offset a pointer, or it will be interpreted as a small array
             # Not needed with our new GL API
-            offset = self.data.offset  #ctypes.c_void_p(self.data.offset)
+            offset = self.data.offset  # ctypes.c_void_p(self.data.offset)
 
             gl.glEnableVertexAttribArray(self.handle)
             #gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.data.handle)

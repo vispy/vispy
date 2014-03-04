@@ -571,7 +571,6 @@ class Texture1D(Texture):
                 x = 0
             else:
                 x = offset[0]
-            width = data.shape[0]
             # gl.glTexSubImage1D(self.target, 0, x, self._format, 
             #                    self._gtype, data)
             gl.glTexSubImage2D(self.target, 0, x, self._format, 
