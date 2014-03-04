@@ -150,7 +150,7 @@ def _test_functonality(backend):
         _test_result()
         if SHOW:
             context.c.swap_buffers()
-            app.process_events(); app.process_events()
+            app.process_events()
             time.sleep(1.0)
         
         _clear_screen()
@@ -160,7 +160,7 @@ def _test_functonality(backend):
         _test_result()
         if SHOW:
             context.c.swap_buffers()
-            app.process_events(); app.process_events()
+            app.process_events()
             time.sleep(1.0)
         
         _clear_screen()
@@ -170,13 +170,12 @@ def _test_functonality(backend):
         _test_result()
         if SHOW:
             context.c.swap_buffers()
-            app.process_events(); app.process_events()
+            app.process_events()
             time.sleep(1.0)
         
         # Clean up
         for delete_func, handle in objects:
             delete_func(handle)
-
 
 
 ## Create CPU data
@@ -248,13 +247,14 @@ im1[texquad:, texquad:, 1] = 128
 im1[:texquad, texquad:, 2] = 128
 
 # Grayscale texture (uploaded but not used)
-im2 = im1[:,:,0]  # A non-contiguous view
-assert im2.flags['C_CONTIGUOUS'] == False
+im2 = im1[:, :, 0]  # A non-contiguous view
+assert im2.flags['C_CONTIGUOUS'] is False
 
 # Vertex Buffers
 
 # Create coordinates for upper left quad
-quad = np.array([[0, 0, 0], [-1, 0, 0], [-1, -1, 0], [0, 0, 0], [-1, -1, 0], [0, -1, 0]], np.float32)
+quad = np.array([[0, 0, 0], [-1, 0, 0], [-1, -1, 0], 
+                 [0, 0, 0], [-1, -1, 0], [0, -1, 0]], np.float32)
 N = quad.shape[0] * 4
 
 # buf3 contains coordinates in device coordinates for four quadrants
@@ -262,8 +262,8 @@ buf3 = np.row_stack([quad + (0, 0, 0), quad + (0, 1, 0),
                      quad + (1, 1, 0), quad + (1, 0, 0)]).astype(np.float32)
 
 # buf2 is texture coords. Note that this is a view on buf2
-buf2 = ((buf3+1.0)*0.5)[:,:2]    # not C-contiguous
-assert buf2.flags['C_CONTIGUOUS'] == False
+buf2 = ((buf3+1.0)*0.5)[:, :2]   # not C-contiguous
+assert buf2.flags['C_CONTIGUOUS'] is False
 
 # Array of colors
 buf4 = np.zeros((N, 4), np.float32)
@@ -419,7 +419,6 @@ def _test_prepare_vis():
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
     
-    
     # --- get information on attributes and uniforms
     
     # Count attribbutes and uniforms
@@ -458,7 +457,6 @@ def _test_prepare_vis():
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
     
-    
     # --- texture
     
     # Create, bind, activate
@@ -494,12 +492,11 @@ def _test_prepare_vis():
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
     
-    
     # --- buffer vec2 (contiguous VBO)
     
     # Create buffer
     hbuf2 = gl.glCreateBuffer()
-    objects.append((gl.glDeleteBuffer,hbuf2))
+    objects.append((gl.glDeleteBuffer, hbuf2))
     gl.glBindBuffer(gl.GL_ARRAY_BUFFER, hbuf2)
 
     # Allocate and set data
@@ -514,12 +511,11 @@ def _test_prepare_vis():
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
     
-    
     # --- buffer vec3 (non-contiguous VBO)
     
     # Create buffer
     hbuf3 = gl.glCreateBuffer()
-    objects.append((gl.glDeleteBuffer,hbuf3))
+    objects.append((gl.glDeleteBuffer, hbuf3))
     gl.glBindBuffer(gl.GL_ARRAY_BUFFER, hbuf3)
 
     # Allocate and set data
@@ -534,7 +530,6 @@ def _test_prepare_vis():
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
     
-    
     # --- buffer vec4 (client vertex data)
     
     # Select no FBO
@@ -547,7 +542,6 @@ def _test_prepare_vis():
     
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
-    
     
     # --- element buffer
     
@@ -566,7 +560,6 @@ def _test_prepare_vis():
     
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
-    
     
     # --- uniforms
     
@@ -605,7 +598,6 @@ def _test_prepare_vis():
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
     
-    
     # --- flush and finish
     
     # Not really necessary, but we want to touch the functions
@@ -632,7 +624,8 @@ def _draw2():
 
 def _draw3():
     # Draw using elements via numpy array
-    gl.glDrawElements(gl.GL_TRIANGLES, elements.size, gl.GL_UNSIGNED_BYTE, elements)
+    gl.glDrawElements(gl.GL_TRIANGLES, 
+                      elements.size, gl.GL_UNSIGNED_BYTE, elements)
     gl.glFinish()
 
 
@@ -654,10 +647,10 @@ def _test_result():
     pix4 = tuple(im[int(1*h/4), int(3*w/4)])
     
     # Test their value
-    assert_equal(pix1, (0,0,0))
-    assert_equal(pix2, (255,0,0))
-    assert_equal(pix3, (0,255,0))
-    assert_equal(pix4, (0,0,255))
+    assert_equal(pix1, (0, 0, 0))
+    assert_equal(pix2, (255, 0, 0))
+    assert_equal(pix3, (0, 255, 0))
+    assert_equal(pix4, (0, 0, 255))
     #print(pix1, pix2, pix3, pix4)
 
 
