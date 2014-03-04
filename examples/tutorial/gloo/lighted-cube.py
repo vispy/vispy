@@ -84,39 +84,42 @@ def display():
     gl.glDisable(gl.GL_BLEND)
     gl.glEnable(gl.GL_DEPTH_TEST)
     gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
-    program['u_color'] = 1,1,1,1
+    program['u_color'] = 1, 1, 1, 1
     program.draw(gl.GL_TRIANGLES, faces)
 
     # Outlined cube
     gl.glDisable(gl.GL_POLYGON_OFFSET_FILL)
     gl.glEnable(gl.GL_BLEND)
     gl.glDepthMask(gl.GL_FALSE)
-    program['u_color'] = 0,0,0,1
+    program['u_color'] = 0, 0, 0, 1
     program.draw(gl.GL_LINES, outline)
     gl.glDepthMask(gl.GL_TRUE)
 
-
     glut.glutSwapBuffers()
 
-def reshape(width,height):
+
+def reshape(width, height):
     gl.glViewport(0, 0, width, height)
-    projection = perspective( 45.0, width/float(height), 2.0, 10.0 )
+    projection = perspective(45.0, width / float(height), 2.0, 10.0)
     program['u_projection'] = projection
 
+
 def keyboard(key, x, y):
-    if key == '\033': sys.exit( )
+    if key == '\033':
+        sys.exit()
+
 
 def timer(fps):
     global theta, phi
     theta += .5
     phi += .5
     model = np.eye(4, dtype=np.float32)
-    rotate(model, theta, 0,0,1)
-    rotate(model, phi, 0,1,0)
-    normal = np.array(np.matrix(np.dot(view,model)).I.T)
+    rotate(model, theta, 0, 0, 1)
+    rotate(model, phi, 0, 1, 0)
+    normal = np.array(np.matrix(np.dot(view, model)).I.T)
     program['u_model'] = model
     program['u_normal'] = normal
-    glut.glutTimerFunc(1000/fps, timer, fps)
+    glut.glutTimerFunc(1000 / fps, timer, fps)
     glut.glutPostRedisplay()
 
 
@@ -125,37 +128,37 @@ def timer(fps):
 glut.glutInit(sys.argv)
 glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_DEPTH)
 glut.glutCreateWindow('Lighted Cube')
-glut.glutReshapeWindow(512,512)
+glut.glutReshapeWindow(512, 512)
 glut.glutReshapeFunc(reshape)
-glut.glutKeyboardFunc(keyboard )
+glut.glutKeyboardFunc(keyboard)
 glut.glutDisplayFunc(display)
-glut.glutTimerFunc(1000/60, timer, 60)
+glut.glutTimerFunc(1000 / 60, timer, 60)
 
 # Build cube data
 # --------------------------------------
-V,F,O = cube()
+V, F, O = cube()
 vertices = VertexBuffer(V)
 faces = IndexBuffer(F)
 outline = IndexBuffer(O)
 
 # Build view, model, projection & normal
 # --------------------------------------
-view = np.eye(4,dtype=np.float32)
-model = np.eye(4,dtype=np.float32)
-projection = np.eye(4,dtype=np.float32)
-translate(view, 0,0,-5)
-normal = np.array(np.matrix(np.dot(view,model)).I.T)
+view = np.eye(4, dtype=np.float32)
+model = np.eye(4, dtype=np.float32)
+projection = np.eye(4, dtype=np.float32)
+translate(view, 0, 0, -5)
+normal = np.array(np.matrix(np.dot(view, model)).I.T)
 
 # Build program
 # --------------------------------------
 program = Program(vertex, fragment)
 program.bind(vertices)
-program["u_light_position"] = 2,2,2
-program["u_light_intensity"] = 1,1,1
+program["u_light_position"] = 2, 2, 2
+program["u_light_intensity"] = 1, 1, 1
 program["u_model"] = model
 program["u_view"] = view
 program["u_normal"] = normal
-phi, theta = 0,0
+phi, theta = 0, 0
 
 # OpenGL initalization
 # --------------------------------------

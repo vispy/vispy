@@ -14,12 +14,12 @@ import OpenGL.GL as gl
 import OpenGL.GLUT as glut
 
 
-
 def checkerboard(grid_num=8, grid_size=32):
-    row_even = grid_num/2 * [0,1]
-    row_odd = grid_num/2 * [1,0]
-    Z = np.row_stack(grid_num/2*(row_even, row_odd)).astype(np.uint8)
-    return 255*Z.repeat(grid_size, axis = 0).repeat(grid_size, axis = 1)
+    row_even = grid_num / 2 * [0, 1]
+    row_odd = grid_num / 2 * [1, 0]
+    Z = np.row_stack(grid_num / 2 * (row_even, row_odd)).astype(np.uint8)
+    return 255 * Z.repeat(grid_size, axis=0).repeat(grid_size, axis=1)
+
 
 def rotate(M, angle, x, y, z, point=None):
     angle = math.pi * angle / 180
@@ -36,6 +36,7 @@ def rotate(M, angle, x, y, z, point=None):
     M[...] = np.dot(M, R)
     return M
 
+
 def translate(M, x, y=None, z=None):
     y = x if y is None else y
     z = x if z is None else z
@@ -45,6 +46,7 @@ def translate(M, x, y=None, z=None):
                   [0.0, 0.0, 0.0, 1.0]], dtype=M.dtype).T
     M[...] = np.dot(M, T)
     return M
+
 
 def frustum(left, right, bottom, top, znear, zfar):
     M = np.zeros((4, 4), dtype=np.float32)
@@ -56,6 +58,7 @@ def frustum(left, right, bottom, top, znear, zfar):
     M[3, 2] = -2.0 * znear * zfar / (zfar - znear)
     M[2, 3] = -1.0
     return M
+
 
 def perspective(fovy, aspect, znear, zfar):
     h = math.tan(fovy / 360.0 * math.pi) * znear
@@ -71,21 +74,24 @@ def makecube():
     itype = np.uint32
 
     # Vertices positions
-    p = np.array([[ 1, 1, 1], [-1, 1, 1], [-1,-1, 1], [ 1,-1, 1],
-                  [ 1,-1,-1], [ 1, 1,-1], [-1, 1,-1], [-1,-1,-1]])
+    p = np.array([[1, 1, 1], [-1, 1, 1], [-1, -1, 1], [1, -1, 1],
+                  [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, -1]])
 
     # Texture coords
     t = np.array([[0, 0], [0, 1], [1, 1], [1, 0]])
 
-    faces_p = [0,1,2,3, 0,3,4,5, 0,5,6,1, 1,6,7,2, 7,4,3,2, 4,7,6,5]
-    faces_t = [0,1,2,3, 0,1,2,3, 0,1,2,3, 0,1,2,3, 0,1,2,3, 0,1,2,3]
+    faces_p = [0, 1, 2, 3, 0, 3, 4, 5, 0, 5, 6,
+               1, 1, 6, 7, 2, 7, 4, 3, 2, 4, 7, 6, 5]
+    faces_t = [0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2,
+               3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3]
 
-    vertices = np.zeros(24,vtype)
+    vertices = np.zeros(24, vtype)
     vertices['a_position'] = p[faces_p]
     vertices['a_texcoord'] = t[faces_t]
 
-    indices = np.resize( np.array([0,1,2,0,2,3], dtype=np.uint32), 6*(2*3))
-    indices += np.repeat( 4*np.arange(6), 6)
+    indices = np.resize(
+        np.array([0, 1, 2, 0, 2, 3], dtype=itype), 6 * (2 * 3))
+    indices += np.repeat(4 * np.arange(6), 6)
 
     return vertices, indices
 
@@ -113,30 +119,36 @@ void main()
 }
 """
 
+
 def display():
     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-    gl.glDrawElements(gl.GL_TRIANGLES, icube_data.size, gl.GL_UNSIGNED_INT, None)
+    gl.glDrawElements(
+        gl.GL_TRIANGLES, icube_data.size, gl.GL_UNSIGNED_INT, None)
     glut.glutSwapBuffers()
 
-def reshape(width,height):
+
+def reshape(width, height):
     gl.glViewport(0, 0, width, height)
-    projection = perspective( 35.0, width/float(height), 2.0, 10.0 )
+    projection = perspective(35.0, width / float(height), 2.0, 10.0)
     loc = gl.glGetUniformLocation(cube, "u_projection")
     gl.glUniformMatrix4fv(loc, 1, False, projection)
 
+
 def keyboard(key, x, y):
-    if key == '\033': sys.exit( )
+    if key == '\033':
+        sys.exit()
+
 
 def timer(fps):
     global theta, phi
     theta += .5
     phi += .5
     model = np.eye(4, dtype=np.float32)
-    rotate(model, theta, 0,0,1)
-    rotate(model, phi, 0,1,0)
+    rotate(model, theta, 0, 0, 1)
+    rotate(model, phi, 0, 1, 0)
     loc = gl.glGetUniformLocation(cube, "u_model")
     gl.glUniformMatrix4fv(loc, 1, False, model)
-    glut.glutTimerFunc(1000/fps, timer, fps)
+    glut.glutTimerFunc(1000 / fps, timer, fps)
     glut.glutPostRedisplay()
 
 
@@ -145,11 +157,11 @@ def timer(fps):
 glut.glutInit()
 glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_DEPTH)
 glut.glutCreateWindow('Rotating cube (GL version)')
-glut.glutReshapeWindow(512,512)
+glut.glutReshapeWindow(512, 512)
 glut.glutReshapeFunc(reshape)
 glut.glutDisplayFunc(display)
 glut.glutKeyboardFunc(keyboard)
-glut.glutTimerFunc(1000/60, timer, 60)
+glut.glutTimerFunc(1000 / 60, timer, 60)
 
 # Build & activate cube program
 # --------------------------------------
@@ -172,10 +184,12 @@ gl.glUseProgram(cube)
 vcube_data, icube_data = makecube()
 vcube = gl.glGenBuffers(1)
 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vcube)
-gl.glBufferData(gl.GL_ARRAY_BUFFER, vcube_data.nbytes, vcube_data, gl.GL_STATIC_DRAW)
+gl.glBufferData(
+    gl.GL_ARRAY_BUFFER, vcube_data.nbytes, vcube_data, gl.GL_STATIC_DRAW)
 icube = gl.glGenBuffers(1)
 gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, icube)
-gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER, icube_data.nbytes, icube_data, gl.GL_STATIC_DRAW)
+gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER,
+                icube_data.nbytes, icube_data, gl.GL_STATIC_DRAW)
 
 # Bind cube attributes
 # --------------------------------------
@@ -198,7 +212,8 @@ gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
 gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
 gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
 gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
-gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_INTENSITY, crate.shape[1], crate.shape[0],
+gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_INTENSITY,
+                crate.shape[1], crate.shape[0],
                 0, gl.GL_RED, gl.GL_UNSIGNED_BYTE, crate)
 loc = gl.glGetUniformLocation(cube, "u_texture")
 gl.glUniform1i(loc, texture)
@@ -206,13 +221,13 @@ gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
 # Create & bind cube matrices
 # --------------------------------------
-view = np.eye(4,dtype=np.float32)
-model = np.eye(4,dtype=np.float32)
-projection = np.eye(4,dtype=np.float32)
-translate(view, 0,0,-7)
-phi, theta = 60,20
-rotate(model, theta, 0,0,1)
-rotate(model, phi, 0,1,0)
+view = np.eye(4, dtype=np.float32)
+model = np.eye(4, dtype=np.float32)
+projection = np.eye(4, dtype=np.float32)
+translate(view, 0, 0, -7)
+phi, theta = 60, 20
+rotate(model, theta, 0, 0, 1)
+rotate(model, phi, 0, 1, 0)
 loc = gl.glGetUniformLocation(cube, "u_model")
 gl.glUniformMatrix4fv(loc, 1, False, model)
 loc = gl.glGetUniformLocation(cube, "u_view")

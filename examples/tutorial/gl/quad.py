@@ -30,17 +30,20 @@ fragment_code = """
         gl_FragColor = v_color;
     } """
 
+
 def display():
     gl.glClear(gl.GL_COLOR_BUFFER_BIT)
     gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
     glut.glutSwapBuffers()
 
-def reshape(width,height):
+
+def reshape(width, height):
     gl.glViewport(0, 0, width, height)
 
-def keyboard( key, x, y ):
+
+def keyboard(key, x, y):
     if key == '\033':
-        sys.exit( )
+        sys.exit()
 
 
 # GLUT init
@@ -48,7 +51,7 @@ def keyboard( key, x, y ):
 glut.glutInit()
 glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA)
 glut.glutCreateWindow('Hello world!')
-glut.glutReshapeWindow(512,512)
+glut.glutReshapeWindow(512, 512)
 glut.glutReshapeFunc(reshape)
 glut.glutDisplayFunc(display)
 glut.glutKeyboardFunc(keyboard)
@@ -57,15 +60,15 @@ glut.glutKeyboardFunc(keyboard)
 # --------------------------------------
 data = np.zeros(4, [("position", np.float32, 2),
                     ("color",    np.float32, 4)])
-data['color']    = [ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ]
-data['position'] = [ (-1,-1),   (-1,+1),   (+1,-1),   (+1,+1)   ]
+data['color'] = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (1, 1, 0, 1)]
+data['position'] = [(-1, -1),   (-1, +1),   (+1, -1),   (+1, +1)]
 
 # Build & activate program
 # --------------------------------------
 
 # Request a program and shader slots from GPU
-program  = gl.glCreateProgram()
-vertex   = gl.glCreateShader(gl.GL_VERTEX_SHADER)
+program = gl.glCreateProgram()
+vertex = gl.glCreateShader(gl.GL_VERTEX_SHADER)
 fragment = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
 
 # Set shaders source

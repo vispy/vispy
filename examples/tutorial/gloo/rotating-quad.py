@@ -7,10 +7,9 @@
 # Date:   04/03/2014
 # -----------------------------------------------------------------------------
 import sys
-import numpy as np
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
-from vispy.gloo import Program, VertexBuffer, IndexBuffer
+from vispy.gloo import Program
 
 vertex = """
     uniform float theta;
@@ -34,23 +33,28 @@ fragment = """
         gl_FragColor = v_color;
     } """
 
+
 def display():
-    gl.glClearColor(1,1,1,1)
+    gl.glClearColor(1, 1, 1, 1)
     gl.glClear(gl.GL_COLOR_BUFFER_BIT)
     program.draw(gl.GL_TRIANGLE_STRIP)
     glut.glutSwapBuffers()
 
-def reshape(width,height):
+
+def reshape(width, height):
     gl.glViewport(0, 0, width, height)
 
-def keyboard( key, x, y ):
-    if key == '\033': sys.exit( )
+
+def keyboard(key, x, y):
+    if key == '\033':
+        sys.exit()
+
 
 def timer(fps):
     global clock
-    clock += 0.001 * 1000.0/fps
+    clock += 0.001 * 1000.0 / fps
     program['theta'] = clock
-    glut.glutTimerFunc(1000/fps, timer, fps)
+    glut.glutTimerFunc(1000 / fps, timer, fps)
     glut.glutPostRedisplay()
 
 # Glut init
@@ -58,17 +62,17 @@ def timer(fps):
 glut.glutInit(sys.argv)
 glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA)
 glut.glutCreateWindow('Hello world!')
-glut.glutReshapeWindow(512,512)
+glut.glutReshapeWindow(512, 512)
 glut.glutReshapeFunc(reshape)
-glut.glutKeyboardFunc(keyboard )
+glut.glutKeyboardFunc(keyboard)
 glut.glutDisplayFunc(display)
-glut.glutTimerFunc(1000/60, timer, 60)
+glut.glutTimerFunc(1000 / 60, timer, 60)
 
 # Build program & data
 # ----------------------------------------
 program = Program(vertex, fragment, count=4)
-program['color']    = [ (1,0,0,1), (0,1,0,1), (0,0,1,1), (1,1,0,1) ]
-program['position'] = [ (-1,-1),   (-1,+1),   (+1,-1),   (+1,+1)   ]
+program['color'] = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (1, 1, 0, 1)]
+program['position'] = [(-1, -1),   (-1, +1),   (+1, -1),   (+1, +1)]
 clock = 0
 
 # Enter mainloop
