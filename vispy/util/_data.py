@@ -11,72 +11,12 @@ from os import path as op
 import sys
 import shutil
 
-from .six import string_types
 from .six.moves import urllib
+from ._config import config
 
 
 ###############################################################################
-# Vispy prefs and data directory
-
-def _get_data_dir(directory=None):
-    if directory is None:
-        directory = _get_vispy_app_dir()
-        if directory is None:
-            raise RuntimeError('default directory could not be determined, '
-                               'please pass directory manually')
-        if not op.isdir(directory):
-            os.mkdir(directory)
-        directory = op.join(directory, 'data')
-        if not op.isdir(directory):
-            os.mkdir(directory)
-    if not isinstance(directory, string_types):
-        raise TypeError('directory must be string or None, not "%s"'
-                        % directory)
-    if not op.isdir(directory):
-        raise IOError('directory "%s" does not exist' % directory)
-    return directory
-
-
-# Adapted from pyzolib/paths.py:
-# https://bitbucket.org/pyzo/pyzolib/src/tip/paths.py
-def _get_vispy_app_dir():
-    """Helper to get the default directory for storing vispy data"""
-    # Define default user directory
-    user_dir = os.path.expanduser('~')
-
-    # Get system app data dir
-    path = None
-    if sys.platform.startswith('win'):
-        path1, path2 = os.getenv('LOCALAPPDATA'), os.getenv('APPDATA')
-        path = path1 or path2
-    elif sys.platform.startswith('darwin'):
-        path = os.path.join(user_dir, 'Library', 'Application Support')
-    # On Linux and as fallback
-    if not (path and os.path.isdir(path)):
-        path = user_dir
-
-    # Maybe we should store things local to the executable (in case of a
-    # portable distro or a frozen application that wants to be portable)
-    prefix = sys.prefix
-    if getattr(sys, 'frozen', None):  # See application_dir() function
-        prefix = os.path.abspath(os.path.dirname(sys.path[0]))
-    for reldir in ('settings', '../settings'):
-        localpath = os.path.abspath(os.path.join(prefix, reldir))
-        if os.path.isdir(localpath):
-            try:
-                open(os.path.join(localpath, 'test.write'), 'wb').close()
-                os.remove(os.path.join(localpath, 'test.write'))
-            except IOError:
-                pass  # We cannot write in this directory
-            else:
-                path = localpath
-                break
-
-    # Get path specific for this app
-    appname = '.vispy' if path == user_dir else 'vispy'
-    path = os.path.join(path, appname)
-    return path
-
+# Vispy data directory
 
 def get_data_file(fname, directory=None, force_download=False):
     """Get a standard vispy demo data file
@@ -102,13 +42,16 @@ def get_data_file(fname, directory=None, force_download=False):
     _url_root = 'https://github.com/vispy/demo-data/raw/master/'
     url = _url_root + fname
     if directory is None:
-        directory = op.join(_get_vispy_app_dir(), 'data')
+        directory = config['data_path']
+        if directory is None:
+            raise ValueError('config["data_path"] is not defined, '
+                             'so directory must be supplied')
 
     fname = op.join(directory, op.normcase(fname))  # convert to native
     if op.isfile(fname) and not force_download:  # we're done
         return fname
     if not op.isdir(op.dirname(fname)):
-        os.mkdir(op.dirname(fname))
+        os.makedirs(op.dirname(fname))
     # let's go get the file
     _fetch_file(url, fname)
     return fname

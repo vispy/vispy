@@ -6,11 +6,6 @@
 """
 
 import numpy as np
-import sys
-import getopt
-
-from .event import EmitterGroup, EventEmitter, Event
-from ._logging import logger, set_log_level
 
 
 ###############################################################################
@@ -83,79 +78,3 @@ def _calculate_normals(rr, tris):
     size[size == 0] = 1.0  # prevent ugly divide-by-zero
     nn /= size[:, np.newaxis]
     return nn
-
-
-###############################################################################
-# CONFIG
-
-class ConfigEvent(Event):
-
-    """ Event indicating a configuration change.
-
-    This class has a 'changes' attribute which is a dict of all name:value
-    pairs that have changed in the configuration.
-    """
-
-    def __init__(self, changes):
-        Event.__init__(self, type='config_change')
-        self.changes = changes
-
-
-class Config(object):
-
-    """ Container for global settings used application-wide in vispy.
-
-    Events:
-    -------
-    Config.events.changed - Emits ConfigEvent whenever the configuration
-    changes.
-    """
-
-    def __init__(self, **kwargs):
-        self.events = EmitterGroup(source=self)
-        self.events['changed'] = EventEmitter(
-            event_class=ConfigEvent,
-            source=self)
-        self._config = {}
-        self.update(**kwargs)
-
-    def __getitem__(self, item):
-        return self._config[item]
-
-    def __setitem__(self, item, val):
-        self._config[item] = val
-        # inform any listeners that a configuration option has changed
-        self.events.changed(changes={item: val})
-
-    def update(self, **kwargs):
-        self._config.update(kwargs)
-        self.events.changed(changes=kwargs)
-
-    def __repr__(self):
-        return repr(self._config)
-
-config = Config(default_backend='qt', qt_lib='any',
-                gl_debug=False, logging_level='info')
-set_log_level(config['logging_level'])
-
-
-def parse_command_line_arguments():
-    """ Transform vispy specific command line args to vispy config.
-    Put into a function so that any variables dont leak in the vispy namespace.
-    """
-    # Get command line args for vispy
-    argnames = ['vispy-backend', 'vispy-gl-debug']
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], '', argnames)
-    except getopt.GetoptError:
-        opts = []
-    # Use them to set the config values
-    for o, a in opts:
-        if o.startswith('--vispy'):
-            if o == '--vispy-backend':
-                config['default_backend'] = a
-                logger.info('backend', a)
-            elif o == '--vispy-gl-debug':
-                config['gl_debug'] = True
-            else:
-                logger.warning("Unsupported vispy flag: %s" % o)
