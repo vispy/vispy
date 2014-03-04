@@ -52,7 +52,7 @@ before_install:
     - if [ "${SOURCE_SIZE}" != "${TARGET_SIZE}" ]; then
         SIZE_DIFF=`expr ${SOURCE_SIZE} - ${TARGET_SIZE}`;
       else
-        SIZE_DIFF=0
+        SIZE_DIFF=0;
       fi;
     - cd ${SRC_DIR}
 
