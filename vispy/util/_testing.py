@@ -155,7 +155,7 @@ class app_opengl_context(object):
     def __exit__(self, type, value, traceback):
         try:
             self.c.close()
-        except:
+        except Exception:
             logger.warn('Failed to close canvas')
         return
 

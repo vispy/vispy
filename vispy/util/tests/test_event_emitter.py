@@ -106,7 +106,7 @@ class TestEmitters(unittest.TestCase):
             self.assert_result()  # checks event type
             assert False, \
                 "Should not be able to construct emitter with non-Event class"
-        except:
+        except Exception:
             pass
 
     def test_event_kwargs(self):
@@ -433,10 +433,10 @@ class TestEmitters(unittest.TestCase):
             else:
                 try:
                     attrs[name] = copy.deepcopy(val)
-                except:
+                except Exception:
                     try:
                         attrs[name] = copy.copy(val)
-                    except:
+                    except Exception:
                         attrs[name] = val
         if key is None:
             self.result = ev, attrs
