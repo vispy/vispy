@@ -113,7 +113,7 @@ class ApplicationBackend(BaseApplicationBackend):
                     argNames=())
                 text = ctypes.c_char_p("rgba stencil double samples=8 hidpi")
                 glutInitDisplayString(text)
-            except:
+            except Exception:
                 pass
         if not self._initialized:
             glut.glutInit()  # todo: maybe allow user to give args?
