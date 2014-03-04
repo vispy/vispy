@@ -63,7 +63,7 @@ def has_qt(requires_uic=False, return_which=False):
 def has_pyglet(return_which=False):
     try:
         from . import _pyglet  # noqa
-    except:
+    except Exception:
         which = None
         has = False
     else:
@@ -104,7 +104,7 @@ def has_glfw(return_why=False, return_which=False):
 def has_glut(return_which=False):
     try:
         from OpenGL import GLUT  # noqa
-    except:
+    except Exception:
         has = False
         which = None
     else:

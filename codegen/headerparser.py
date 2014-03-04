@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# Copyright (c) 2013, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" Code to parse a header file.
+""" Code to parse a header file and create a list of constants,
+functions (with arguments). This information can then be used to
+autogenerate our OpenGL API.
 """
 
 import os
 import sys
-
-
-TYPEMAP = {
-    'GLenum': 'int (GLenum)',
-}
 
 
 def getwords(line):
@@ -21,13 +18,15 @@ def getwords(line):
     return [w for w in line.split(' ') if w]
 
 
-# Keep track of all constants in case they are "reused" in a header file
+# Keep track of all constants in case they are "reused" (i.e. aliases)
 CONSTANTS = {}
 
 
 class Parser:
-
-    """ Class to parse header files.
+    """ Class to parse header files. It can deal with gl2.h and webgl.idl,
+    as well as some desktop OpenGL header files. It produces a list of
+    ConstantDefition objects and FunctionDefinition objects, which can 
+    be accessed via a dict.
     """
 
     def __init__(self, header_file, parse_now=True):
@@ -35,12 +34,15 @@ class Parser:
         self._c_fname = c_fname = os.path.split(header_file)[1]
 
         # Get absolute filenames
-        self._c_filename = header_file  # os.path.join(SCRIPT_DIR, c_fname)
+        self._c_filename = header_file
+
+        # Init intermediate results
+        self._functionDefs = []
+        self._constantDefs = []
 
         # Init output
-        self.definitions = []
-        self.functionDefs = []
-        self.constantDefs = []
+        self._functions = {}
+        self._constants = {}
 
         # We are aware of the line number
         self._linenr = 0
@@ -57,12 +59,10 @@ class Parser:
         # Create comment
         definition.comment = 'line %i of %s' % (self._linenr, self._c_fname)
         # Add to lists
-        self.definitions.append(definition)
         if isinstance(definition, FunctionDefinition):
-            self.functionDefs.append(definition)
+            self._functionDefs.append(definition)
         elif isinstance(definition, ConstantDefinition):
-            self.constantDefs.append(definition)
-
+            self._constantDefs.append(definition)
         return self
 
     def _get_line(self):
@@ -92,76 +92,100 @@ class Parser:
         for line in self._get_lines():
             if line.startswith('#define'):
                 self += ConstantDefinition(line)
-            elif (line.startswith('GLAPI') or
-                    line.startswith('GL_APICALL') or
-                    line.startswith('WINGDIAPI')):
+            elif line.startswith('const GLenum'):
+                self += ConstantDefinition(line)
+            elif '(' in line:
                 while ')' not in line:
                     line += self._get_line()
-                #self += self.handle_function(line)
-                self += FunctionDefinition(line)
+                if line.endswith(');'):
+                    self += FunctionDefinition(line)
 
         # Remove invalid defs
-        self.definitions = [d for d in self.definitions if d.isvalid]
-        self.functionDefs = [d for d in self.functionDefs if d.isvalid]
-        self.constantDefs = [d for d in self.constantDefs if d.isvalid]
+        self._functionDefs = [d for d in self._functionDefs if d.isvalid]
+        self._constantDefs = [d for d in self._constantDefs if d.isvalid]
 
-        # Resolve multipe functions that are really the same
-        self.functionDefs.sort(key=lambda x: x.cname)
+        # Collect multipe similar functions in groups
+        self._functionDefs.sort(key=lambda x: x.glname)
         keyDef = None
-        for funcDef in self.functionDefs:
-            if keyDef is not None:
-                extrachars = funcDef.matchKeyName(keyDef.keyname)
-                if extrachars:
-                    funcDef.group = True
-                    if not keyDef.group:
-                        keyDef.group = [keyDef]
-                    keyDef.group.append(funcDef)
-                    continue
+        keyDefs = []
+        for funcDef in [f for f in self._functionDefs]:
+            # Check if we need a new keydef
             if funcDef.extrachars:
-                # This may be a key def
-                keyDef = funcDef
-            else:
-                keyDef = None
+                # Create new keydef or use old one?
+                if keyDef and keyDef.glname == funcDef.keyname:
+                    pass  # Keep same keydef
+                else:
+                    keyDef = FunctionGroup(funcDef.line)  # New keydef
+                    keyDef._set_name(funcDef.keyname)
+                    keyDefs.append(keyDef)
+                # Add to group
+                keyDef.group.append(funcDef)
+        # Process function groups
+        for keyDef in keyDefs:
+            if len(keyDef.group) > 1:
+                self._functionDefs.append(keyDef)
+                for d in keyDef.group:
+                    self._functionDefs.remove(d)
 
-        # Process all definitions
-        for definition in self.definitions:
-            if definition.isvalid:
-                definition.process()
+        # Sort constants and functions
+        self._functionDefs.sort(key=lambda x: x.glname)
+        self._constantDefs.sort(key=lambda x: x.glname)
+
+        # Get dicts
+        for definition in self._functionDefs:
+            self._functions[definition.shortname] = definition
+        for definition in self._constantDefs:
+            self._constants[definition.shortname] = definition
 
         # Get some stats
-        for funcDef in self.functionDefs:
+        for funcDef in self._functionDefs:
             for arg in funcDef.args:
                 self.stat_types.add(arg.ctype)
 
         # Show stats
-        n1 = len([d for d in self.constantDefs])
-        n2 = len([d for d in self.functionDefs if d.group is not True])
-        n3 = len([d for d in self.functionDefs if isinstance(d.group, list)])
-        n4 = len([d for d in self.functionDefs if d.group is True])
-        print(
-            'Found %i constants and %i unique functions (%i groups contain %i functions)").' %
-            (n1, n2, n3, n4))
+        n1 = len([d for d in self._constantDefs])
+        n2 = len([d for d in self._functionDefs])
+        n3 = len([d for d in self._functionDefs if d.group])
+        n4 = sum([len(d.group) for d in self._functionDefs if d.group])
+        print('Found %i constants and %i unique functions (%i groups contain %i functions)").' % (
+            n1, n2, n3, n4))
 
         print('C-types found in args:', self.stat_types)
 
     @property
     def constant_names(self):
-        return set([d.cname for d in self.constantDefs])
+        """ Sorted list of constant names.
+        """
+        return [d.shortname for d in self._constantDefs]
 
     @property
     def function_names(self):
-        return set([d.cname for d in self.functionDefs])
+        """ Sorted list of function names.
+        """
+        return [d.shortname for d in self._functionDefs]
+
+    @property
+    def constants(self):
+        """ Dict with all the constants.
+        """
+        return self._constants
+
+    @property
+    def functions(self):
+        """ Dict witj all the functions.
+        """
+        return self._functions
 
     def show_groups(self):
-        for d in self.functionDefs:
+        for d in self._functionDefs:
             if isinstance(d.group, list):
                 print(d.keyname)
                 for d2 in d.group:
-                    print('  ', d2.cname)
+                    print('  ', d2.glname)
+
 
 
 class Definition:
-
     """ Abstract class to represent a constant or function definition.
     """
 
@@ -169,17 +193,31 @@ class Definition:
         self.line = line
         self.isvalid = True
         self.comment = ''
-        self.cname = ''
+        self.oname = ''  # original name
+        self.shortname = self.glname = ''  # short and long name
         self.parse_line(line)
 
     def parse_line(self, line):
         # Do initial parsing of the incoming line
-        # (which may be multiline actually)
+        # (which may be multiline, actually)
         pass
 
-    def process(self):
-        # Do more parsing of this definition
-        pass
+    def _set_name(self, name):
+        # Store original name
+        self.oname = name
+        # Store plain name
+        if name.startswith('GL_'):
+            name = name[3:]
+        elif name.startswith('gl'):
+            name = name[2].lower() + name[3:]
+        self.shortname = name
+        # Store gl name
+        if name.upper() == name:
+            name = 'GL_' + name
+        else:
+            name = 'gl' + name[0].upper() + name[1:]
+        self.glname = name
+
 
 
 class ConstantDefinition(Definition):
@@ -195,33 +233,47 @@ class ConstantDefinition(Definition):
             pass
         elif len(args) == 2:
             # Set name
-            self.cname, val = args
-            self.isvalid = bool(self.cname)
-            # Set value
-            if val.startswith('0x'):
-                self.value = int(val[2:].rstrip('ul'), 16)
-            elif val[0] in '0123456789':
-                self.value = int(val)
-            elif val.startswith("'"):
-                self.value = val
-            elif val in CONSTANTS:
-                self.value = CONSTANTS[val]
-            else:
-                print('Warning: Dont know what to do with "%s"' % line)
+            name, val = args
+            self.isvalid = bool(name)
+            self._set_name(name)
+            self._set_value_from_string(val)
+        elif '=' in args:
+            name, val = args[-3], args[-1]
+            self.isvalid = bool(name)
+            self._set_name(name)
+            self._set_value_from_string(val)
         else:
             print('Dont know what to do with "%s"' % line)
 
+        # For when this constant is reused to set another constant
         if self.value is not None:
-            CONSTANTS[self.cname] = self.value
+            CONSTANTS[self.oname] = self.value
 
-    def process(self):
-        pass  # We did all that we needed to do
+    def _set_value_from_string(self, val):
+        # Set value
+        val = val.strip(';')
+        if val.startswith('0x'):
+            self.value = int(val[2:].rstrip('ul'), 16)
+        elif val[0] in '0123456789':
+            self.value = int(val)
+        elif val.startswith("'"):
+            self.value = val
+        elif val in CONSTANTS:
+            self.value = CONSTANTS[val]
+        else:
+            print('Warning: Dont know what to do with "%s"' % line)
+
 
 
 class FunctionDefinition(Definition):
-
+    
+    SKIPTYPECHARS = 'if'  # 'bsifd'
+    ALLSKIPCHARS = SKIPTYPECHARS + 'v1234'
+    
     def parse_line(self, line):
         """ Set cname, keyname, cargs attributes.
+        The list of args always has one entry and the first entry is always
+        the output (can be void).
         """
         # Parse components
         beforeBrace, args = line.split('(', 1)
@@ -229,13 +281,13 @@ class FunctionDefinition(Definition):
         *prefix, name = getwords(beforeBrace)
 
         # Store name
-        self.cname = name
+        self._set_name(name)
 
         # Possibly, this function belongs to a collection of similar functions,
         # which we are going to replace with one function in Python.
-        self.keyname = self.cname.rstrip('v').rstrip('bsifd').rstrip('1234')
+        self.keyname = self.glname.rstrip('v').rstrip(self.SKIPTYPECHARS).rstrip('1234')
         self.extrachars = self.matchKeyName(self.keyname)
-
+        
         # If this is a list, this instance represents the group
         # If this is True, this instance is in a group (but not the
         # representative)
@@ -252,60 +304,42 @@ class FunctionDefinition(Definition):
                 self.args.append(Argument(arg))
 
     def matchKeyName(self, keyname):
-        if self.cname.startswith(keyname):
-            extrachars = self.cname[len(keyname):]
-            if all([(c in 'vbsuifd1234') for c in extrachars]):
+        if self.glname.startswith(keyname):
+            extrachars = self.glname[len(keyname):]
+            if all([(c in self.ALLSKIPCHARS) for c in extrachars]):
                 return extrachars
 
-    def count_input_args(self):
-        return len([arg for arg in self.args if arg.pyinput])
 
-    def count_output_args(self):
-        return len([arg for arg in self.args if (not arg.pyinput)])
 
-    def process(self):
+class FunctionGroup(FunctionDefinition):
 
-        # Is one of the inputs really an output?
-        if self.cname.lower().startswith('glget'):
-            if not self.count_output_args():
-                args = [arg for arg in args if arg.isptr]
-                if len(args) == 1:
-                    args[0].pyinput = False
-                else:
-                    print(
-                        'Warning: cannot determine py-output for %s' %
-                        self.name)
+    def parse_line(self, line):
+        FunctionDefinition.parse_line(self, line)
+        self.group = []
 
-        # Build Python function signature
-        pyargs = ', '.join([arg.name for arg in self.args if arg.pyinput])
-        #defline = 'def %s(%s):' % (self.pyname, pyargs)
-        # ... not here
 
 
 class Argument:
-
-    """ Input or output argument.
-    """
 
     def __init__(self, argAsString, cinput=True):
         # Parse string
         components = [c for c in argAsString.split(' ') if c]
         if len(components) == 1:
-            name = components[0]
-            type = 'unknown'
+            name = 'unknown_name'
+            type = components[0]
         else:
             name = components[-1]
             type = components[-2]
+            if 'const' in type:
+                type = components[-3]  # glShaderSource has "const GLchar* const* string"
         # Store stuff
         self.orig = tuple(components)
         self.name = name.lstrip('*')
-        self.isptr = len(name) - len(self.name)  # Number of stars
-        self.ctype = type
-        self.typedes = TYPEMAP.get(type, type)
-        self.pytype = self.typedes.split(' ')[0]
+        self.isptr = argAsString.count('*')  # Number of stars
+        self.ctype = type.strip('*') + '*'*self.isptr
         # Status flags
         self.cinput = cinput
-        self.pyinput = cinput  # May be modified
+
 
 
 if __name__ == '__main__':
@@ -314,18 +348,22 @@ if __name__ == '__main__':
     # Some tests ...
     gl2 = Parser(os.path.join(THISDIR, 'headers', 'gl2.h'))
     import OpenGL.GL
-    pygl = set(dir(OpenGL.GL))
+    pygl = set([name for name in dir(OpenGL.GL)])
 
     # Test if all functions are in pyopengl
-    print('Not in pyopengl:', gl2.function_names.difference(pygl))
+    for keyfunc in gl2._functionDefs:
+        group = keyfunc.group or [keyfunc]
+        for f in group:
+            if f.glname not in pygl:
+                print('Not in pyopengl:', f.glname)
 
     # Test if constant match with these in pyopengl
-    for d in gl2.constantDefs:
+    for d in gl2._constantDefs:
         v1 = d.value
         try:
-            v2 = getattr(OpenGL.GL, d.cname)
+            v2 = getattr(OpenGL.GL, d.glname)
         except AttributeError:
-            print(d.cname, 'is not in pyopengl')
+            print(d.glname, 'is not in pyopengl')
         else:
             if v1 != v2:
-                print(d.cname, 'does not match: %r vs %r' % (v1, int(v2)))
+                print(d.glname, 'does not match: %r vs %r' % (v1, int(v2)))

@@ -30,6 +30,8 @@ u_size = 1
 
 
 vert = """
+#version 120
+
 // Uniforms
 // ------------------------------------
 uniform mat4 u_model;
@@ -66,6 +68,8 @@ void main (void) {
 """
 
 frag = """
+#version 120
+
 // Constants
 // ------------------------------------
 
@@ -223,6 +227,12 @@ void main()
 }
 """
 
+# HACK: True OpenGL ES does not need to enable point sprite and does not define
+# these two constants. Desktop OpenGL needs to enable these two modes but we do
+# not have these two constants because our GL namespace pretends to be ES.
+GL_VERTEX_PROGRAM_POINT_SIZE = 34370
+GL_POINT_SPRITE = 34913
+
 
 # ------------------------------------------------------------ Canvas class ---
 class Canvas(app.Canvas):
@@ -238,7 +248,7 @@ class Canvas(app.Canvas):
         self.translate = 5
         translate(self.view, 0, 0, -self.translate)
 
-        self.program.set_vars(gloo.VertexBuffer(data))
+        self.program.bind(gloo.VertexBuffer(data))
         self.program['u_linewidth'] = u_linewidth
         self.program['u_antialias'] = u_antialias
         self.program['u_model'] = self.model
@@ -257,6 +267,8 @@ class Canvas(app.Canvas):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+        gl.glEnable(GL_POINT_SPRITE)
 
     def on_key_press(self, event):
         if event.text == ' ':

@@ -136,11 +136,11 @@ class Canvas(app.Canvas):
         self.translate = 5
         translate(self.view, 0, 0, -self.translate)
 
-        self.program.set_vars(gloo.VertexBuffer(data),
-                              u_colormap=gloo.Texture2D(cmap),
-                              u_size=5. / self.translate,
-                              u_model=self.model,
-                              u_view=self.view)
+        self.program.bind(gloo.VertexBuffer(data))
+        self.program['u_colormap'] = gloo.Texture2D(cmap)
+        self.program['u_size'] = 5. / self.translate
+        self.program['u_model'] = self.model
+        self.program['u_view'] = self.view
 
         self.timer = app.Timer(1.0 / 60)
         self.timer.connect(self.on_timer)

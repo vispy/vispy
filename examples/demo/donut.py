@@ -103,7 +103,7 @@ class Canvas(app.Canvas):
         translate(self.view, 0, 0, -self.translate)
 
         self.vbo = gloo.VertexBuffer(data)
-        self.program.set_vars(self.vbo)
+        self.program.bind(self.vbo)
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
         self.program['u_size'] = u_size

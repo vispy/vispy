@@ -57,21 +57,21 @@ class Canvas(app.Canvas):
         self.position = 50, 50
         
         self.vbo = gloo.VertexBuffer(data)
-        self.index = gloo.ElementBuffer(edges)
+        self.index = gloo.IndexBuffer(edges)
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
 
         self.program = gloo.Program(markers.vert, markers.frag + markers.disc)
-        self.program.set_vars(self.vbo,
-                              u_size=1,
-                              u_antialias=u_antialias,
-                              u_model=self.model,
-                              u_view=self.view,
-                              u_projection=self.projection)
+        self.program.bind(self.vbo)
+        self.program['u_size'] = 1
+        self.program['u_antialias'] = u_antialias
+        self.program['u_model'] = self.model
+        self.program['u_view'] = self.view
+        self.program['u_projection'] = self.projection
 
         self.program_e = gloo.Program(vs, fs)
-        self.program_e.set_vars(self.vbo)
+        self.program_e.bind(self.vbo)
 
         # self.timer = app.Timer(.01)
         # self.timer.connect(self.on_timer)

@@ -97,7 +97,7 @@ class Canvas(app.Canvas):
 
         # Creat FBO
         self._fbo = gloo.FrameBuffer()
-        self._fbo.attach_depth(gloo.RenderBuffer(im1.shape))
+        self._fbo.depth_buffer = gloo.DepthBuffer(im1.shape)
 
         # Create vbo
         self._vbo = gloo.VertexBuffer(vertex_data)
@@ -109,7 +109,7 @@ class Canvas(app.Canvas):
             tex.set_filter('NEAREST', 'NEAREST')
 
         # Set uniforms and attributes
-        self._program.set_vars(self._vbo)
+        self._program.bind(self._vbo)
         self._program['u_texsize'] = im1.shape[1], im1.shape[0]
 
     def on_initialize(self, event):
@@ -119,7 +119,7 @@ class Canvas(app.Canvas):
 
         # Set framebuffer input output
         self._program['u_texture'] = self._tex1
-        self._fbo.attach_color(self._tex2)
+        self._fbo.color_buffer = self._tex2
 
         with self._fbo:
             # Init
