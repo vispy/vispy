@@ -198,10 +198,10 @@ class TestGroups(unittest.TestCase):
             else:
                 try:
                     attrs[name] = copy.deepcopy(val)
-                except:
+                except Exception:
                     try:
                         attrs[name] = copy.copy(val)
-                    except:
+                    except Exception:
                         attrs[name] = val
         if key is None:
             self.result = ev, attrs
