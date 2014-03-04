@@ -12,7 +12,7 @@ from distutils.version import LooseVersion
 import pyglet
 version = pyglet.version
 
-if LooseVersion(version) < LooseVersion('1.6'):
+if LooseVersion(version) < LooseVersion('1.2'):
     help = 'You can install the latest pyglet using:\n' 
     help += '    pip install http://pyglet.googlecode.com/archive/tip.zip'
     raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
