@@ -1,0 +1,289 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+"""Vispy configuration functions
+"""
+
+import os
+from os import path as op
+import json
+import sys
+import platform
+import getopt
+import traceback
+
+from .event import EmitterGroup, EventEmitter, Event
+from .six import string_types
+from ._logging import logger, set_log_level, use_log_level
+from .misc import _TempDir
+
+
+###############################################################################
+# CONFIG
+
+# Adapted from pyzolib/paths.py:
+# https://bitbucket.org/pyzo/pyzolib/src/tip/paths.py
+def _get_vispy_app_dir():
+    """Helper to get the default directory for storing vispy data"""
+    # Define default user directory
+    user_dir = os.path.expanduser('~')
+
+    # Get system app data dir
+    path = None
+    if sys.platform.startswith('win'):
+        path1, path2 = os.getenv('LOCALAPPDATA'), os.getenv('APPDATA')
+        path = path1 or path2
+    elif sys.platform.startswith('darwin'):
+        path = os.path.join(user_dir, 'Library', 'Application Support')
+    # On Linux and as fallback
+    if not (path and os.path.isdir(path)):
+        path = user_dir
+
+    # Maybe we should store things local to the executable (in case of a
+    # portable distro or a frozen application that wants to be portable)
+    prefix = sys.prefix
+    if getattr(sys, 'frozen', None):  # See application_dir() function
+        prefix = os.path.abspath(os.path.dirname(sys.path[0]))
+    for reldir in ('settings', '../settings'):
+        localpath = os.path.abspath(os.path.join(prefix, reldir))
+        if os.path.isdir(localpath):
+            try:
+                open(os.path.join(localpath, 'test.write'), 'wb').close()
+                os.remove(os.path.join(localpath, 'test.write'))
+            except IOError:
+                pass  # We cannot write in this directory
+            else:
+                path = localpath
+                break
+
+    # Get path specific for this app
+    appname = '.vispy' if path == user_dir else 'vispy'
+    path = os.path.join(path, appname)
+    return path
+
+
+class ConfigEvent(Event):
+
+    """ Event indicating a configuration change.
+
+    This class has a 'changes' attribute which is a dict of all name:value
+    pairs that have changed in the configuration.
+    """
+
+    def __init__(self, changes):
+        Event.__init__(self, type='config_change')
+        self.changes = changes
+
+
+class Config(object):
+
+    """ Container for global settings used application-wide in vispy.
+
+    Events:
+    -------
+    Config.events.changed - Emits ConfigEvent whenever the configuration
+    changes.
+    """
+
+    def __init__(self, **kwargs):
+        self.events = EmitterGroup(source=self)
+        self.events['changed'] = EventEmitter(
+            event_class=ConfigEvent,
+            source=self)
+        self._config = {}
+        self.update(**kwargs)
+        self._known_keys = get_config_keys()
+
+    def __getitem__(self, item):
+        return self._config[item]
+
+    def __setitem__(self, item, val):
+        self._check_key_val(item, val)
+        self._config[item] = val
+        # inform any listeners that a configuration option has changed
+        self.events.changed(changes={item: val})
+
+    def _check_key_val(self, key, val):
+        # check values against acceptable ones
+        known_keys = get_config_keys()
+        if key not in known_keys:
+            raise KeyError('key "%s" not in known keys: "%s"'
+                           % (key, known_keys))
+        if not isinstance(val, (string_types, bool)):
+            raise TypeError('Values must be str or bool, not %s'
+                            % type(val))
+
+    def update(self, **kwargs):
+        for key, val in kwargs.items():
+            self._check_key_val(key, val)
+        self._config.update(kwargs)
+        self.events.changed(changes=kwargs)
+
+    def __repr__(self):
+        return repr(self._config)
+
+
+def get_config_keys():
+    """The config keys known by vispy
+
+    Returns
+    -------
+    keys : tuple
+        List of known config keys.
+    """
+    return ('data_path', 'default_backend', 'gl_debug', 'logging_level',
+            'qt_lib')
+
+
+def _get_config_fname():
+    """Helper for the vispy config file"""
+    directory = _get_vispy_app_dir()
+    if directory is None:
+        return None
+    fname = op.join(directory, 'vispy.json')
+    if os.environ.get('_VISPY_CONFIG_TESTING', None) is not None:
+        fname = op.join(_TempDir(), 'vispy.json')
+    return fname
+
+
+def _load_config():
+    """Helper to load prefs from ~/.vispy/vispy.json"""
+    fname = _get_config_fname()
+    if fname is None or not op.isfile(fname):
+        return dict()
+    with open(fname, 'r') as fid:
+        config = json.load(fid)
+    return config
+
+
+def save_config(**kwargs):
+    """Save configuration keys to vispy config file
+
+    Parameters
+    ----------
+    **kwargs : keyword arguments
+        Key/value pairs to save to the config file.
+    """
+    if kwargs == {}:
+        kwargs = config._config
+    current_config = _load_config()
+    current_config.update(**kwargs)
+    # write to disk
+    fname = _get_config_fname()
+    if fname is None:
+        raise RuntimeError('config filename could not be determined')
+    if not op.isdir(op.dirname(fname)):
+        os.mkdir(op.dirname(fname))
+    with open(fname, 'w') as fid:
+        json.dump(current_config, fid, sort_keys=True, indent=0)
+
+
+_data_path = _get_vispy_app_dir()
+if _data_path is not None:
+    _data_path = op.join(_data_path, 'data')
+config = Config(default_backend='qt', qt_lib='any',
+                gl_debug=False, logging_level='info',
+                data_path=_data_path)
+config.update(**_load_config())
+set_log_level(config['logging_level'])
+
+
+def set_data_dir(directory=None, create=False, save=False):
+    """Set vispy data download directory"""
+    if directory is None:
+        directory = _data_path
+        if _data_path is None:
+            raise IOError('default path cannot be determined, please '
+                          'set it manually (directory != None)')
+    if not op.isdir(directory):
+        if not create:
+            raise IOError('directory "%s" does not exist, perhaps try '
+                          'create=True to create it?')
+        os.mkdir(directory)
+    config.update(data_path=directory)
+    if save:
+        save_config(dict(data_path=directory))
+
+
+###############################################################################
+# System information and parsing
+
+def _parse_command_line_arguments():
+    """ Transform vispy specific command line args to vispy config.
+    Put into a function so that any variables dont leak in the vispy namespace.
+    """
+    # Get command line args for vispy
+    argnames = ['vispy-backend', 'vispy-gl-debug']
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], '', argnames)
+    except getopt.GetoptError:
+        opts = []
+    # Use them to set the config values
+    for o, a in opts:
+        if o.startswith('--vispy'):
+            if o == '--vispy-backend':
+                config['default_backend'] = a
+                logger.info('backend', a)
+            elif o == '--vispy-gl-debug':
+                config['gl_debug'] = True
+            else:
+                logger.warning("Unsupported vispy flag: %s" % o)
+
+
+def sys_info(fname=None, overwrite=False):
+    """Get relevant system and debugging information
+
+    Parameters
+    ----------
+    fname : str | None
+        Filename to dump info to. Use None to simply print.
+    overwrite : bool
+        If True, overwrite file (if it exists).
+
+    Returns
+    -------
+    out : str
+        The system information as a string.
+    """
+    if fname is not None and op.isfile(fname) and not overwrite:
+        raise IOError('file exists, use overwrite=True to overwrite')
+
+    out = ''
+    try:
+        # Nest all imports here to avoid any circular imports
+        from ..app import Application, Canvas, backends
+        from ..gloo import gl
+        # get default app
+        this_app = Application()
+        with use_log_level('warning'):
+            this_app.use()  # suppress unnecessary messages
+        out += 'Platform: %s\n' % platform.platform()
+        out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
+        out += 'Backend:  %s\n' % this_app.backend_name
+        out += 'Qt:       %s\n' % backends.has_qt(return_which=True)[1]
+        out += 'Pyglet:   %s\n' % backends.has_pyglet(return_which=True)[1]
+        out += 'glfw:     %s\n' % backends.has_glfw(return_which=True)[1]
+        out += 'glut:     %s\n' % backends.has_glut(return_which=True)[1]
+        out += '\n'
+        # We need an OpenGL context to get GL info
+        if 'glut' in this_app.backend_name.lower():
+            # glut causes problems
+            out += 'OpenGL information omitted for glut backend\n'
+        else:
+            canvas = Canvas('Test', (10, 10), show=False, app=this_app)
+            canvas._backend._vispy_set_current()
+            out += 'GL version:  %s\n' % gl.glGetString(gl.GL_VERSION)
+            x_ = gl.GL_MAX_TEXTURE_SIZE
+            out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetIntegerv(x_)
+            x_ = gl.ext.GL_MAX_3D_TEXTURE_SIZE
+            out += 'MAX_3D_TEXTURE_SIZE: %d\n\n' % gl.glGetIntegerv(x_)
+            out += 'Extensions: %s\n' % gl.glGetString(gl.GL_EXTENSIONS)
+            canvas.close()
+    except Exception:  # don't stop printing info
+        out += '\nInfo-gathering error:\n%s' % traceback.format_exc()
+        pass
+    if fname is not None:
+        with open(fname, 'w') as fid:
+            fid.write(out)
+    return out

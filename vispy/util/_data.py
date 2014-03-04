@@ -257,7 +257,4 @@ def sizeof_fmt(num):
         num_decimals = decimals[exponent]
         format_string = '{0:.%sf} {1}' % (num_decimals)
         return format_string.format(quotient, unit)
-    if num == 0:
-        return '0 bytes'
-    if num == 1:
-        return '1 byte'
+    return '0 bytes' if num == 0 else '1 byte'
