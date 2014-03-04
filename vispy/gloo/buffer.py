@@ -131,11 +131,11 @@ class Buffer(GLObject):
     def _create(self):
         """ Create buffer on GPU """
         if not self._handle:
-            self._handle = gl.glGenBuffers(1)
+            self._handle = gl.glCreateBuffer()
 
     def _delete(self):
         """ Delete buffer from GPU """
-        gl.glDeleteBuffers(1, [self._handle])
+        gl.glDeleteBuffer(self._handle)
 
     def _activate(self):
         """ Bind the buffer to some target """
@@ -155,7 +155,8 @@ class Buffer(GLObject):
         if self._need_resize:
             # This will only allocate the buffer on GPU
             # WARNING: we should check if this operation is ok
-            gl.glBufferData(self._target, self._nbytes, None, self._usage)
+            #gl.glBufferData(self._target, self._nbytes, None, self._usage)
+            gl.glBufferData(self._target, self._nbytes, self._usage)
             logger.debug("Creating a new buffer (%d) of %d bytes"
                          % (self._handle, self._nbytes))
             self._need_resize = False
@@ -166,14 +167,18 @@ class Buffer(GLObject):
             logger.debug("Uploading %d bytes at offset %d to buffer (%d)"
                          % (nbytes, offset, self._handle))
             try:
-                gl.glBufferSubData(self._target, offset, nbytes, data)
+                #gl.glBufferSubData(self._target, offset, nbytes, data)
+                gl.glBufferSubData(self._target, offset, data)
+                if gl.current_backend is gl.desktop:
+                    gl.check_error('glBufferSubData')
             except Exception as error:
                 # This might be due to a driver error (seen on ATI), issue #64.
                 # We try to detect this, and if we can use glBufferData instead
                 if (hasattr(error, 'err') and
                         error.err == gl.GL_INVALID_VALUE and
                         offset == 0 and nbytes == self._nbytes):
-                    gl.glBufferData(self._target, nbytes, data, self._usage)
+                    #gl.glBufferData(self._target, nbytes, data, self._usage)
+                    gl.glBufferData(self._target, data, self._usage)
                 else:
                     raise
 
@@ -561,7 +566,8 @@ class VertexBuffer(DataBuffer):
                    'uint16': gl.GL_UNSIGNED_SHORT,
                    'int16': gl.GL_SHORT,
                    'float32': gl.GL_FLOAT,
-                   'float16': gl.ext.GL_HALF_FLOAT,
+                   # vertex_half_float extension not in webgl
+                   #'float16': gl.ext.GL_HALF_FLOAT,
                    }
 
     def __new__(cls, *args, **kwargs):

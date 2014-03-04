@@ -25,6 +25,12 @@ from . import GLObject, ext_available, convert_to_enum
 from ..util import logger
 
 
+# For forward compatibility
+GL_TEXTURE_3D = 32879
+GL_SAMPLER_3D = 35679
+GL_TEXTURE_WRAP_R = 0x8072
+
+
 class TextureError(RuntimeError):
 
     """ Raised when something goes wrong that depens on state that was set
@@ -71,17 +77,15 @@ class Texture(GLObject):
     # We use strings to be more failsafe; e.g. np.float128 does not always
     # exist
     DTYPE2GTYPE = {'uint8': gl.GL_UNSIGNED_BYTE,
-                   # Needs GL_OES_texture_half_float:
-                   'float16': gl.ext.GL_HALF_FLOAT,
-                   # Needs GL_OES_texture_float:
-                   'float32': gl.GL_FLOAT,
+                   #'float16': gl.GL_HALF_FLOAT,  # Need texture_half_float
+                   'float32': gl.GL_FLOAT,  # Need texture_float extension
                    }
 
     def __init__(self, target, data=None, format=None, clim=None):
         GLObject.__init__(self)
 
         # Store target (i.e. the texture type)
-        if target not in [gl.GL_TEXTURE_2D, gl.ext.GL_TEXTURE_3D]:
+        if target not in [gl.GL_TEXTURE_2D, GL_TEXTURE_3D]:
             raise ValueError('Unsupported target "%r"' % target)
         self._target = target
 
@@ -107,7 +111,7 @@ class Texture(GLObject):
         # Also, in OpenGL ES 2.0, wrapping must be CLAMP_TO_EDGE if
         # textures are not a power of two, unless the texture_npot extension
         # is available.
-        if self._target == gl.ext.GL_TEXTURE_3D:
+        if self._target == GL_TEXTURE_3D:
             self.set_wrapping(gl.GL_CLAMP_TO_EDGE, gl.GL_CLAMP_TO_EDGE,
                               gl.GL_CLAMP_TO_EDGE)
         else:
@@ -211,8 +215,8 @@ class Texture(GLObject):
             self._pending_params[gl.GL_TEXTURE_WRAP_T] = wrapy
             self._texture_params[gl.GL_TEXTURE_WRAP_T] = wrapy
         if wrapz is not None:
-            self._pending_params[gl.ext.GL_TEXTURE_WRAP_R] = wrapz
-            self._texture_params[gl.ext.GL_TEXTURE_WRAP_R] = wrapz
+            self._pending_params[GL_TEXTURE_WRAP_R] = wrapz
+            self._texture_params[GL_TEXTURE_WRAP_R] = wrapz
 
         self._need_update = True
 
@@ -244,7 +248,7 @@ class Texture(GLObject):
             texLevel = self._levels[level] = TextureLevel(level)
 
         # Get ndim
-        MAP = {gl.GL_TEXTURE_2D: 2, gl.ext.GL_TEXTURE_3D: 3}
+        MAP = {gl.GL_TEXTURE_2D: 2, GL_TEXTURE_3D: 3}
         ndim = MAP.get(self._target, 0)
 
         # Check shape
@@ -300,7 +304,7 @@ class Texture(GLObject):
             texLevel = self._levels[level] = TextureLevel(level)
 
         # Get ndim
-        MAP = {gl.GL_TEXTURE_2D: 2, gl.ext.GL_TEXTURE_3D: 3}
+        MAP = {gl.GL_TEXTURE_2D: 2, GL_TEXTURE_3D: 3}
         ndim = MAP.get(self._target, 0)
 
         # Check data
@@ -370,7 +374,7 @@ class Texture(GLObject):
                                'texture allocated yet.')
 
         # Get ndim
-        MAP = {gl.GL_TEXTURE_2D: 2, gl.ext.GL_TEXTURE_3D: 3}
+        MAP = {gl.GL_TEXTURE_2D: 2, GL_TEXTURE_3D: 3}
         ndim = MAP.get(self._target, 0)
 
         # Check data
@@ -411,10 +415,10 @@ class Texture(GLObject):
         self._need_update = True
 
     def _create(self):
-        self._handle = gl.glGenTextures(1)
+        self._handle = gl.glCreateTexture()
 
     def _delete(self):
-        gl.glDeleteTextures([self._handle])
+        gl.deleteTexture(self._handle)
 
     def _activate(self):
         gl.glBindTexture(self._target, self._handle)
@@ -425,7 +429,9 @@ class Texture(GLObject):
     def _update(self):
 
         # If we use a 3D texture, we need an extension
-        if self._target == gl.ext.GL_TEXTURE_3D:
+        if self._target == GL_TEXTURE_3D:
+            # todo: we're probably going to support it via a non-gles interface
+            # since webgl does not have it even in ext
             if not ext_available('GL_texture_3D'):
                 raise TextureError('3D Texture not available.')
 
@@ -444,9 +450,7 @@ class Texture(GLObject):
                     self.delete()
                     self._create()
                 # Allocate texture on GPU
-                gl.glBindTexture(
-                    self._target,
-                    self._handle)  # self._activate()
+                gl.glBindTexture(self._target, self._handle)  # _activate()
                 self._allocate_shape(texLevel)
                 # If not ok, warn (one time)
                 if not gl.glIsTexture(self._handle):
@@ -456,7 +460,7 @@ class Texture(GLObject):
                 if new_texture_created:
                     # We have a new texture: apply all parameters that were set
                     for param, value in self._texture_params.items():
-                        gl.glTexParameter(self._target, param, value)
+                        gl.glTexParameterf(self._target, param, value)
                         self._pending_params = {}  # We just applied all
 
             # Need to update some data?
@@ -465,9 +469,7 @@ class Texture(GLObject):
                 # Apply clim and convert data type to one supported by OpenGL
                 data = convert_data(data, clim)
                 # Upload
-                gl.glBindTexture(
-                    self._target,
-                    self._handle)  # self._activate()
+                gl.glBindTexture(self._target, self._handle)  # _activate()
                 self._upload_data(data, texLevel, offset)
 
         # Check
@@ -478,7 +480,7 @@ class Texture(GLObject):
         gl.glBindTexture(self._target, self._handle)  # self._activate()
         while self._pending_params:
             param, value = self._pending_params.popitem()
-            gl.glTexParameter(self._target, param, value)
+            gl.glTexParameterf(self._target, param, value)
 
     def _allocate_shape(self, texLevel):
         """ Allocate space for the current texture object.
@@ -490,17 +492,22 @@ class Texture(GLObject):
         shape, format, level = texLevel.shape, texLevel.format, texLevel.level
 
         # Determine function and target from texType
-        D = {  # gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),
-            gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
-            gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)}
+        # todo: define this map on the class and define the Texture3D in
+        # a separate module which uses goo.glplus or something
+        D = {   # gl.GL_TEXTURE_1D: (gl.glTexImage1D, 1),  # not in ES 2.0
+                #gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
+                gl.GL_TEXTURE_2D: (gl.glTexImage2D, 2),
+                #gl.ext.GL_TEXTURE_3D: (gl.ext.glTexImage3D, 3)
+        }
         uploadFun, ndim = D[target]
 
         # Determine type
         gltype = gl.GL_UNSIGNED_BYTE
 
         # Build args list
-        size = [i for i in reversed(shape[:ndim])]
-        args = [target, level, format] + size + [0, format, gltype, None]
+        #size = [i for i in reversed(shape[:ndim])]
+        #args = [target, level, format] + size + [0, format, gltype, None]
+        args = [target, level, format, format, gltype, shape[:ndim]]
 
         # Call
         uploadFun(*tuple(args))
@@ -516,9 +523,11 @@ class Texture(GLObject):
         alignment = self._get_alignment(data.shape[-1])
 
         # Determine function and target from texType
-        D = {  # gl.GL_TEXTURE_1D: (gl.glTexSubImage1D, 1),
-            gl.GL_TEXTURE_2D: (gl.glTexSubImage2D, 2),
-            gl.ext.GL_TEXTURE_3D: (gl.ext.glTexSubImage3D, 3)}
+        # todo: define this map on the class
+        D = {   # gl.GL_TEXTURE_1D: (gl.glTexSubImage1D, 1),
+                gl.GL_TEXTURE_2D: (gl.glTexSubImage2D, 2),
+                #gl.ext.GL_TEXTURE_3D: (gl.ext.glTexSubImage3D, 3)
+        }
         uploadFun, ndim = D[target]
 
         # Reverse and check offset
@@ -533,8 +542,9 @@ class Texture(GLObject):
         gltype = self.DTYPE2GTYPE[thetype]
 
         # Build args list
-        size = [i for i in reversed(data.shape[:ndim])]
-        args = [target, level] + offset + size + [format, gltype, data]
+        #size = [i for i in reversed(data.shape[:ndim])]
+        #args = [target, level] + offset + size + [format, gltype, data]
+        args = [target, level] + offset + [format, gltype, data]
 
         # Check the alignment of the texture
         if alignment != 4:
@@ -586,7 +596,7 @@ class Texture3D(Texture):
     """
 
     def __init__(self, *args, **kwargs):
-        Texture.__init__(self, gl.ext.GL_TEXTURE_3D, *args, **kwargs)
+        Texture.__init__(self, GL_TEXTURE_3D, *args, **kwargs)
 
 
 class TextureCubeMap(Texture):
@@ -628,7 +638,7 @@ def get_formats(shape, target):
                 "Cannot determine format for %s texture from shape %s." %
                 ('2D', shapestr))
 
-    elif target == gl.ext.GL_TEXTURE_3D:
+    elif target == GL_TEXTURE_3D:
         if len(shape) == 3:
             return gl.GL_LUMINANCE, gl.GL_ALPHA
         elif len(shape) == 4 and shape[3] == 1:

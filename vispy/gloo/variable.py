@@ -16,7 +16,7 @@ import numpy as np
 
 from . import gl
 from .buffer import ClientVertexBuffer, VertexBuffer
-from .texture import Texture, Texture2D, TextureCubeMap, Texture3D
+from .texture import Texture, Texture2D, TextureCubeMap, Texture3D  # noqa
 from ..util import logger
 
 
@@ -39,7 +39,8 @@ gl_typeinfo = {
     gl.GL_FLOAT_MAT3: (9, gl.GL_FLOAT, np.float32),
     gl.GL_FLOAT_MAT4: (16, gl.GL_FLOAT, np.float32),
     gl.GL_SAMPLER_2D: (1, gl.GL_UNSIGNED_INT, np.uint32),
-    gl.ext.GL_SAMPLER_3D: (1, gl.GL_UNSIGNED_INT, np.uint32),
+    # todo: !!
+    #gl.ext.GL_SAMPLER_3D: (1, gl.GL_UNSIGNED_INT, np.uint32),
     gl.GL_SAMPLER_CUBE: (1, gl.GL_UNSIGNED_INT, np.uint32), }
 
 
@@ -154,7 +155,7 @@ class Uniform(Variable):
         gl.GL_FLOAT_MAT4: (gl.glUniformMatrix4fv, 16),
         gl.GL_SAMPLER_2D: (gl.glUniform1i, 1),
         gl.GL_SAMPLER_CUBE: (gl.glUniform1i, 1),
-        gl.ext.GL_SAMPLER_3D: (gl.glUniform1i, 1),
+        #gl.ext.GL_SAMPLER_3D: (gl.glUniform1i, 1),
     }
 
     def __init__(self, name, gtype):
@@ -168,7 +169,7 @@ class Uniform(Variable):
         self._textureClass = {
             gl.GL_SAMPLER_2D: Texture2D,
             gl.GL_SAMPLER_CUBE: TextureCubeMap,
-            gl.ext.GL_SAMPLER_3D: Texture3D,
+            #gl.ext.GL_SAMPLER_3D: Texture3D,
         }.get(
             gtype,
             None)
@@ -186,7 +187,8 @@ class Uniform(Variable):
         """
 
         if self._gtype in (gl.GL_SAMPLER_2D, gl.GL_SAMPLER_CUBE,
-                           gl.ext.GL_SAMPLER_3D):
+                           #gl.ext.GL_SAMPLER_3D
+                           ):
             # Textures need special handling
             if isinstance(data, Texture):
                 self._data = data
@@ -251,6 +253,7 @@ class Uniform(Variable):
             # Upload uniform only of needed
             if not self._dirty:
                 return
+            #gl.glUniform1i(self._loc, unit)
             gl.glUniform1i(self._loc, unit)
 
         # Regular uniform
@@ -394,13 +397,8 @@ class Attribute(Variable):
             stride = self._data.stride
 
             # Apply (first disable any previous VertexBuffer)
-            gl.glVertexAttribPointer(
-                self._loc,
-                size,
-                gtype,
-                False,
-                stride,
-                data)
+            gl.glVertexAttribPointer(self._loc, size, gtype,
+                                     False, stride, data)
 
         # Regular vertex buffer or vertex buffer view
         else:
@@ -433,13 +431,8 @@ class Attribute(Variable):
             offset = ctypes.c_void_p(offset)
 
             # Apply
-            gl.glVertexAttribPointer(
-                self._loc,
-                size,
-                gtype,
-                False,
-                stride,
-                offset)
+            gl.glVertexAttribPointer(self._loc, size, gtype,
+                                     False, stride, offset)
 
         # Mark as uploaded
         self._dirty = False

@@ -243,12 +243,10 @@ def sys_info(fname=None, overwrite=False):
         else:
             canvas = Canvas('Test', (10, 10), show=False, app=this_app)
             canvas._backend._vispy_set_current()
-            out += 'GL version:  %s\n' % gl.glGetString(gl.GL_VERSION)
+            out += 'GL version:  %s\n' % gl.glGetParameter(gl.GL_VERSION)
             x_ = gl.GL_MAX_TEXTURE_SIZE
-            out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetIntegerv(x_)
-            x_ = gl.ext.GL_MAX_3D_TEXTURE_SIZE
-            out += 'MAX_3D_TEXTURE_SIZE: %d\n\n' % gl.glGetIntegerv(x_)
-            out += 'Extensions: %s\n' % gl.glGetString(gl.GL_EXTENSIONS)
+            out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetParameter(x_)
+            out += 'Extensions: %s\n' % gl.glGetParameter(gl.GL_EXTENSIONS)
             canvas.close()
     except Exception:  # don't stop printing info
         out += '\nInfo-gathering error:\n%s' % traceback.format_exc()
