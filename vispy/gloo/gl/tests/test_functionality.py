@@ -1,4 +1,8 @@
-"""
+""" Test to verify the functionality of the OpenGL backends. This test
+sets up a real visualization with shaders and all. This tests setting
+source code, setting texture and buffer data, and we touch many other
+functions of the API too. The end result is an image with four colored
+quads. The result is tested for pixel color.
 
 The visualization
 -----------------
@@ -17,7 +21,8 @@ import time
 import numpy as np
 
 from nose.plugins.skip import SkipTest
-from nose.tools import assert_equal
+from nose.tools import assert_equal, assert_true
+from vispy.util import app_opengl_context, assert_in
 from numpy.testing import assert_almost_equal
 from vispy.app.backends import requires_non_glut
 
@@ -33,22 +38,24 @@ from vispy import app
 SHOW = False
 
 
+## High level tests
+
 @requires_non_glut()
 def test_functionality_desktop():
-    """ Test that desktop GL backend functions appropriately. """
+    """ Test desktop GL backend for full functionality. """
     _test_functonality('desktop')
 
 
 @requires_non_glut()
 @gl._requires_pyopengl()
 def test_functionality_pypengl():
-    """ Test that pyopengl GL backend functions appropriately. """
+    """ Test pyopengl GL backend for full functionality. """
     _test_functonality('pyopengl')
 
 
 @requires_non_glut()
 def test_functionality_angle():
-    """ Test that angle GL backend functions appropriately. """
+    """ Test angle GL backend for full functionality. """
     if True:
         raise SkipTest('Skip Angle functionality test for now.')
     if sys.platform.startswith('win'):
@@ -62,60 +69,6 @@ def _clear_screen():
     gl.glFinish()
 
 
-# class OpenGLContext:
-#     def __init__(self):
-#         app.create()
-#         self.c = None
-#         self._painted = False
-#     
-#     def _paint_callback(self, event):
-#         self._painted = True
-#         app.quit()
-#     
-#     def paint(self, callback=None):
-#         self._painted = False
-#         self.c.update()
-#         app.run()
-#         while not self._painted:
-#             app.process_events()
-#         
-#         if callback is not None:
-#             return callback()
-#     
-#     def __enter__(self):
-#         if self.c is not None:
-#             raise RuntimeError('Already in context!')
-#         self.c = app.Canvas(size=(300, 200), autoswap=False)
-#         self.c.events.paint.connect(self._paint_callback)
-#         self.c.show()
-#         self._painted = False
-#         app.run()
-#         while not self._painted:
-#             app.process_events()
-#     
-#     def __exit__(self, type, value, traceback):
-#         self.c.close()
-#         self.c = None
-
-
-class OpenGLContext:
-    def __init__(self):
-        app.create()
-        self.c = None
-    
-    def __enter__(self):
-        if self.c is not None:
-            raise RuntimeError('Already in context!')
-        self.c = app.Canvas(size=(300, 200), autoswap=False)
-        self.c.show()
-        for i in range(3):
-            app.process_events()
-    
-    def __exit__(self, type, value, traceback):
-        self.c.close()
-        self.c = None
-
-
 def _test_functonality(backend):
     """ Create app and canvas so we have a context. Then run tests.
     """
@@ -123,31 +76,24 @@ def _test_functonality(backend):
     # use the backend
     gl.use(backend)
     
-    context = OpenGLContext()
-
-    with context:
+    with app_opengl_context() as context:
         
         _clear_screen()
-        
-        # General tests. Some variables are set though
-        _test_setting_parameters()
-        _test_enabling_disabling()
-        _test_setting_stuff()
-        _test_object_creation_and_deletion()
         
         # Prepare
         w, h = context.c.size
         gl.glViewport(0, 0, w, h)
+        gl.glScissor(0, 0, w, h)  # touch
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         
         # Setup visualization
-        objects = _test_prepare_vis()
+        objects = _prepare_vis()
         
         _clear_screen()
         
         # Draw 1
         _draw1()
-        _test_result()
+        _check_result()
         if SHOW:
             context.c.swap_buffers()
             app.process_events()
@@ -157,7 +103,7 @@ def _test_functonality(backend):
         
         # Draw 2
         _draw2()
-        _test_result()
+        _check_result()
         if SHOW:
             context.c.swap_buffers()
             app.process_events()
@@ -167,7 +113,7 @@ def _test_functonality(backend):
         
         # Draw 3
         _draw3()
-        _test_result()
+        _check_result()
         if SHOW:
             context.c.swap_buffers()
             app.process_events()
@@ -185,6 +131,7 @@ def _test_functonality(backend):
 # Most variables are nullified however, but we must make sure we do this
 # in a way that the compiler won't optimize out :)
 VERT = """
+attribute float a_1;
 attribute vec2 a_2;
 attribute vec3 a_3;
 attribute vec4 a_4;
@@ -217,7 +164,7 @@ void main()
     vec4 u4 = u_f4 + vec4(u_i4);
     
     // Set varyings (use every 2D and 4D variable, and u1)
-    v_2 = a_2 + zero*u_m2 * a_2 * u2 * u1;
+    v_2 = a_1 * a_2 + zero*u_m2 * a_2 * u2 * u1;
     v_4 = u_m4 * a_4 * u4;
     
     // Set position (use 3D variables)
@@ -278,107 +225,10 @@ elements = np.arange(N, dtype=np.uint8)
 helements = None  # the OpenGL object ref
 
 
-## The actual tests
-
-def _test_setting_parameters():
-    # Set some parameters and get result
-    clr = 1.0, 0.1, 0.2, 0.7
-    gl.glClearColor(*clr)
-    assert_almost_equal(gl.glGetParameter(gl.GL_COLOR_CLEAR_VALUE), clr)
-    #
-    gl.glCullFace(gl.GL_FRONT)
-    assert_equal(gl.glGetParameter(gl.GL_CULL_FACE_MODE), gl.GL_FRONT)
-    gl.glCullFace(gl.GL_BACK)
-    assert_equal(gl.glGetParameter(gl.GL_CULL_FACE_MODE), gl.GL_BACK)
-    #
-    gl.glDepthFunc(gl.GL_NOTEQUAL)
-    assert_equal(gl.glGetParameter(gl.GL_DEPTH_FUNC), gl.GL_NOTEQUAL)
-    #
-    val = 0.2, 0.3
-    gl.glDepthRange(*val)
-    assert_almost_equal(gl.glGetParameter(gl.GL_DEPTH_RANGE), val)
+## The GL calls
 
 
-def _test_enabling_disabling():
-    # Enabling/disabling
-    gl.glEnable(gl.GL_DEPTH_TEST)
-    assert_equal(gl.glIsEnabled(gl.GL_DEPTH_TEST), True)
-    assert_equal(gl.glGetParameter(gl.GL_DEPTH_TEST), 1)
-    gl.glDisable(gl.GL_DEPTH_TEST)
-    assert_equal(gl.glIsEnabled(gl.GL_DEPTH_TEST), False)
-    assert_equal(gl.glGetParameter(gl.GL_DEPTH_TEST), 0)
-    #
-    gl.glEnable(gl.GL_BLEND)
-    assert_equal(gl.glIsEnabled(gl.GL_BLEND), True)
-    assert_equal(gl.glGetParameter(gl.GL_BLEND), 1)
-    gl.glDisable(gl.GL_BLEND)
-    assert_equal(gl.glIsEnabled(gl.GL_BLEND), False)
-    assert_equal(gl.glGetParameter(gl.GL_BLEND), 0)
-
-
-def _test_setting_stuff():
-    # Just do some actions
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-
-
-def _test_object_creation_and_deletion():
-
-    # Stuff that is originally glGenX
-
-    # Create/delete texture
-    # Stupid pygley secretly creates a texture ...
-    #assert_equal(gl.glIsTexture(12), False)
-    handle = gl.glCreateTexture()
-    gl.glBindTexture(gl.GL_TEXTURE_2D, handle)
-    assert_equal(gl.glIsTexture(handle), True)
-    gl.glDeleteTexture(handle)
-    assert_equal(gl.glIsTexture(handle), False)
-
-    # Create/delete buffer
-    #assert_equal(gl.glIsBuffer(12), False)
-    handle = gl.glCreateBuffer()
-    gl.glBindBuffer(gl.GL_ARRAY_BUFFER, handle)
-    assert_equal(gl.glIsBuffer(handle), True)
-    gl.glDeleteBuffer(handle)
-    assert_equal(gl.glIsBuffer(handle), False)
-
-    # Create/delete framebuffer
-    #assert_equal(gl.glIsFramebuffer(12), False)
-    handle = gl.glCreateFramebuffer()
-    gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, handle)
-    assert_equal(gl.glIsFramebuffer(handle), True)
-    gl.glDeleteFramebuffer(handle)
-    assert_equal(gl.glIsFramebuffer(handle), False)
-
-    # Create/delete renderbuffer
-    #assert_equal(gl.glIsRenderbuffer(12), False)
-    handle = gl.glCreateRenderbuffer()
-    gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, handle)
-    assert_equal(gl.glIsRenderbuffer(handle), True)
-    gl.glDeleteRenderbuffer(handle)
-    assert_equal(gl.glIsRenderbuffer(handle), False)
-
-    # Stuff that is originally called glCreate
-
-    # Create/delete program
-    #assert_equal(gl.glIsProgram(12), False)
-    handle = gl.glCreateProgram()
-    assert_equal(gl.glIsProgram(handle), True)
-    gl.glDeleteProgram(handle)
-    assert_equal(gl.glIsProgram(handle), False)
-
-    # Create/delete shader
-    #assert_equal(gl.glIsShader(12), False)
-    handle = gl.glCreateShader(gl.GL_VERTEX_SHADER)
-    assert_equal(gl.glIsShader(handle), True)
-    gl.glDeleteShader(handle)
-    assert_equal(gl.glIsShader(handle), False)
-    
-    # Check if all is ok
-    assert_equal(gl.glGetError(), 0)
-
-
-def _test_prepare_vis():
+def _prepare_vis():
     
     objects = []
     
@@ -407,24 +257,36 @@ def _test_prepare_vis():
     # Attach and link
     gl.glAttachShader(hprog, hvert)
     gl.glAttachShader(hprog, hfrag)
+    # touch glDetachShader
+    gl.glDetachShader(hprog, hvert)
+    gl.glAttachShader(hprog, hvert)
     gl.glLinkProgram(hprog)
     
     # Check
     assert_equal(gl.glGetProgramInfoLog(hprog), '')
     assert_equal(gl.glGetProgramParameter(hprog, gl.GL_LINK_STATUS), 1)
+    gl.glValidateProgram(hprog)
+    assert_equal(gl.glGetProgramParameter(hprog, gl.GL_VALIDATE_STATUS), 1)
     
     # Use it!
     gl.glUseProgram(hprog)
     
+    # Bind one attribute
+    gl.glBindAttribLocation(hprog, 1, 'a_2')
+    
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
+    
+    # Check source
+    vert_source = gl.glGetShaderSource(hvert)
+    assert_true('attribute vec2 a_2;' in vert_source)
     
     # --- get information on attributes and uniforms
     
     # Count attribbutes and uniforms
     natt = gl.glGetProgramParameter(hprog, gl.GL_ACTIVE_ATTRIBUTES)
     nuni = gl.glGetProgramParameter(hprog, gl.GL_ACTIVE_UNIFORMS)
-    assert_equal(natt, 3)
+    assert_equal(natt, 4)
     assert_equal(nuni, 4+4+3+1)
     
     # Get names
@@ -439,6 +301,7 @@ def _test_prepare_vis():
         assert_equal(count, 1)
     
     # Check
+    assert_equal(names['a_1'], gl.GL_FLOAT)
     assert_equal(names['a_2'], gl.GL_FLOAT_VEC2)
     assert_equal(names['a_3'], gl.GL_FLOAT_VEC3)
     assert_equal(names['a_4'], gl.GL_FLOAT_VEC4)
@@ -468,13 +331,15 @@ def _test_prepare_vis():
     # Allocate data and upload
     # This data is luminance and not C-contiguous
     gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_LUMINANCE, gl.GL_LUMINANCE, 
+                    gl.GL_UNSIGNED_BYTE, im2.copy())  # touch
+    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_LUMINANCE, gl.GL_LUMINANCE, 
                     gl.GL_UNSIGNED_BYTE, im2.shape[:2])
     gl.glTexSubImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, gl.GL_LUMINANCE,
                        gl.GL_UNSIGNED_BYTE, im2)
     
-    # Set texture parameters
+    # Set texture parameters (use f and i to touch both)
     T = gl.GL_TEXTURE_2D
-    gl.glTexParameteri(T, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+    gl.glTexParameterf(T, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
     gl.glTexParameteri(T, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
     
     # Re-allocate data and upload 
@@ -488,6 +353,13 @@ def _test_prepare_vis():
     unit = 0
     gl.glActiveTexture(gl.GL_TEXTURE0+unit)
     gl.glUniform1i(loc, unit) 
+    
+    # Mipmaps (just to touch this function)
+    gl.glGenerateMipmap(gl.GL_TEXTURE_2D)
+    
+    # Check min filter (touch getTextParameter)
+    min_filter = gl.glGetTexParameter(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER)
+    assert_equal(min_filter, gl.GL_LINEAR)
     
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
@@ -505,8 +377,18 @@ def _test_prepare_vis():
     
     # Attach!
     loc = gl.glGetAttribLocation(hprog, 'a_2')
+    gl.glDisableVertexAttribArray(loc)  # touch
     gl.glEnableVertexAttribArray(loc)
     gl.glVertexAttribPointer(loc, 2, gl.GL_FLOAT, False, 2*4, 0)
+    
+    # Check (touch glGetBufferParameter, glGetVertexAttrib and
+    # glGetVertexAttribOffset)
+    size = gl.glGetBufferParameter(gl.GL_ARRAY_BUFFER, gl.GL_BUFFER_SIZE)
+    assert_equal(size, buf2.nbytes)
+    stride = gl.glGetVertexAttrib(loc, gl.GL_VERTEX_ATTRIB_ARRAY_STRIDE)
+    assert_equal(stride, 2*4)
+    offset = gl.glGetVertexAttribOffset(loc, gl.GL_VERTEX_ATTRIB_ARRAY_POINTER)
+    assert_equal(offset, 0)
     
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
@@ -589,14 +471,37 @@ def _test_prepare_vis():
     
     # Set matrix uniforms
     loc = gl.glGetUniformLocation(hprog, 'u_m2')
-    gl.glUniformMatrix2fv(loc, 1, False, np.eye(2, dtype='float32'))
+    m = np.eye(2, dtype='float32')
+    gl.glUniformMatrix2fv(loc, 1, False, m)
+    #
     loc = gl.glGetUniformLocation(hprog, 'u_m3')
-    gl.glUniformMatrix3fv(loc, 1, False, np.eye(3, dtype='float32'))
+    m = np.eye(3, dtype='float32')
+    gl.glUniformMatrix3fv(loc, 1, False, m)
+    #
     loc = gl.glGetUniformLocation(hprog, 'u_m4')
-    gl.glUniformMatrix4fv(loc, 1, False, np.eye(4, dtype='float32'))
+    m = np.eye(4, dtype='float32')
+    gl.glUniformMatrix4fv(loc, 1, False, m)
+    
+    # Check some uniforms
+    loc = gl.glGetUniformLocation(hprog, 'u_i2')
+    assert_equal(gl.glGetUniform(hprog, loc), (0, 0))
+    loc = gl.glGetUniformLocation(hprog, 'u_f2')
+    assert_equal(gl.glGetUniform(hprog, loc), (1.0, 1.0))
     
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
+    
+    # --- attributes 
+    
+    # Constant values for attributes. We do not even use this ...
+    loc = gl.glGetAttribLocation(hprog, 'a_1')
+    gl.glVertexAttrib1f(loc, 1.0)
+    loc = gl.glGetAttribLocation(hprog, 'a_2')
+    gl.glVertexAttrib2f(loc, 1.0, 1.0)
+    loc = gl.glGetAttribLocation(hprog, 'a_3')
+    gl.glVertexAttrib3f(loc, 1.0, 1.0, 1.0)
+    loc = gl.glGetAttribLocation(hprog, 'a_4')
+    gl.glVertexAttrib4f(loc, 1.0, 1.0, 1.0, 1.0)
     
     # --- flush and finish
     
@@ -629,7 +534,7 @@ def _draw3():
     gl.glFinish()
 
 
-def _test_result():
+def _check_result(assert_result=True):
     """ Test the color of each quadrant by picking the center pixel 
     of each quadrant and comparing it with the reference color.
     """
@@ -645,16 +550,17 @@ def _test_result():
     pix2 = tuple(im[int(3*h/4), int(1*w/4)])
     pix3 = tuple(im[int(3*h/4), int(3*w/4)])
     pix4 = tuple(im[int(1*h/4), int(3*w/4)])
-    
-    # Test their value
-    assert_equal(pix1, (0, 0, 0))
-    assert_equal(pix2, (255, 0, 0))
-    assert_equal(pix3, (0, 255, 0))
-    assert_equal(pix4, (0, 0, 255))
     #print(pix1, pix2, pix3, pix4)
+   
+    if assert_result:
+         # Test their value
+        assert_equal(pix1, (0, 0, 0))
+        assert_equal(pix2, (255, 0, 0))
+        assert_equal(pix3, (0, 255, 0))
+        assert_equal(pix4, (0, 0, 255))
 
 
 if __name__ == '__main__':
-    SHOW = True
+    #SHOW = True
     test_functionality_desktop()
     test_functionality_pypengl()

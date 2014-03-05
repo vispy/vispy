@@ -1,3 +1,6 @@
+""" Test the use function.
+"""
+
 from vispy.util import assert_is
 
 from vispy.gloo import gl

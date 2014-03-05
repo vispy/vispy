@@ -1,3 +1,7 @@
+""" Tests to verify that all ES 2.0 function names are defined in all
+backends, and no more than that.
+"""
+
 from nose.tools import assert_equal
 
 from vispy.gloo import gl
