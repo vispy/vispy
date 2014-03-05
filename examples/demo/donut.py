@@ -17,17 +17,17 @@ from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
 # Create vertices
-n,p = 50,40
-data = np.zeros(p*n, [('a_position', np.float32, 2),
-                      ('a_bg_color', np.float32, 4),
-                      ('a_fg_color', np.float32, 4),
-                      ('a_size',     np.float32, 1)])
-data['a_position'][:,0] = np.resize(np.linspace(0,2*np.pi,n),p*n)
-data['a_position'][:,1] = np.repeat(np.linspace(0,2*np.pi,p),n)
-data['a_bg_color'] = np.random.uniform(0.75, 1.00, (n*p, 4))
-data['a_bg_color'][:,3] = 1
-data['a_fg_color'] = 0,0,0,1
-data['a_size'] = np.random.uniform(8, 8, n*p)
+n, p = 50, 40
+data = np.zeros(p * n, [('a_position', np.float32, 2),
+                        ('a_bg_color', np.float32, 4),
+                        ('a_fg_color', np.float32, 4),
+                        ('a_size',     np.float32, 1)])
+data['a_position'][:, 0] = np.resize(np.linspace(0, 2 * np.pi, n), p * n)
+data['a_position'][:, 1] = np.repeat(np.linspace(0, 2 * np.pi, p), n)
+data['a_bg_color'] = np.random.uniform(0.75, 1.00, (n * p, 4))
+data['a_bg_color'][:, 3] = 1
+data['a_fg_color'] = 0, 0, 0, 1
+data['a_size'] = np.random.uniform(8, 8, n * p)
 u_linewidth = 1.0
 u_antialias = 1.0
 u_size = 1
@@ -172,7 +172,7 @@ class Canvas(app.Canvas):
             rotate(self.model, self.theta, 0, 0, 1)
             rotate(self.model, self.phi, 0, 1, 0)
             self.program['u_model'] = self.model
-        self.clock += np.pi/1000
+        self.clock += np.pi / 1000
         self.program['u_clock'] = self.clock
         self.update()
 
