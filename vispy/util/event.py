@@ -296,7 +296,7 @@ class EventEmitter(object):
 
                 try:
                     cb(event)
-                except:
+                except Exception:
                     # get traceback and store (so we can do postmortem
                     # debugging)
                     type, value, tb = sys.exc_info()
