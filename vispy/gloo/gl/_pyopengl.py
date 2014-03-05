@@ -14,6 +14,11 @@ import OpenGL.GL.framebufferobjects as FBO
 
 
 
+def glBindAttribLocation(program, index, name):
+    name = name.encode('utf-8')
+    return GL.glBindAttribLocation(program, index, name)
+
+
 def glBufferData(target, data, usage):
     """ Data can be numpy array or the size of data to allocate.
     """
@@ -103,13 +108,32 @@ def glGetAttribLocation(program, name):
     return GL.glGetAttribLocation(program, name)
 
 
+def glGetFramebufferAttachmentParameter(target, attachment, pname):
+    d = -2**31  # smallest 32bit integer
+    params = (ctypes.c_int*1)(d)
+    GL.glGetFramebufferAttachmentParameteriv(target, attachment, pname, params)
+    return params[0]
+
+
 def glGetProgramInfoLog(program):
     res = GL.glGetProgramInfoLog(program)
     return res.decode('utf-8')
 
 
+def glGetRenderbufferParameter(target, pname):
+    d = -2**31  # smallest 32bit integer
+    params = (ctypes.c_int*1)(d)
+    GL.glGetRenderbufferParameteriv(target, pname, params)
+    return params[0]
+
+
 def glGetShaderInfoLog(shader):
     res = GL.glGetShaderInfoLog(shader)
+    return res.decode('utf-8')
+
+
+def glGetShaderSource(shader):
+    res = GL.glGetShaderSource(shader)
     return res.decode('utf-8')
 
 
@@ -131,12 +155,16 @@ def glGetParameter(pname):
     return GL.glGetString(pname)
 
 
-def glGetTexParameter(target, pname):
-    n = 1
+def glGetUniform(program, location):
+    n = 16
     d = float('Inf')
     params = (ctypes.c_float*n)(*[d for i in range(n)])
-    return GL.glGetTexParameterfv(target, pname)
-    return params[0]
+    GL.glGetUniformfv(program, location, params)
+    params = [p for p in params if p!=d]
+    if len(params) == 1:
+        return params[0]
+    else:
+        return tuple(params)
 
 
 def glGetUniformLocation(program, name):
@@ -144,16 +172,28 @@ def glGetUniformLocation(program, name):
     return GL.glGetUniformLocation(program, name)
 
 
-def glGetVertexAttrib(program, location):
-    n = 4
-    d = float('Inf')
-    values = (ctypes.c_float*n)(*[d for i in range(n)])
-    return GL.glGetVertexAttribfv(program, location)
-    values = [p for p in values if p!=d]
-    if len(values) == 1:
-        return values[0]
-    else:
-        return values
+def glGetVertexAttrib(index, pname):
+    try:  # maybe they will fix it
+        return GL.glGetVertexAttribfv(index, pname)
+    except TypeError:
+        n = 4
+        d = float('Inf')
+        params = (ctypes.c_float*n)(*[d for i in range(n)])
+        GL.glGetVertexAttribfv(index, pname, params)
+        params = [p for p in params if p!=d]
+        if len(params) == 1:
+            return params[0]
+        else:
+            return tuple(params)
+
+
+def glGetVertexAttribOffset(index, pname):
+    try:  # maybe the fixed it
+        return GL.glGetVertexAttribPointerv(index, pname)
+    except TypeError:
+        pointer = (ctypes.c_void_p*1)()
+        GL.glGetVertexAttribPointerv(index, pname, pointer)
+        return pointer[0] or 0
 
 
 def glShaderSource(shader, source):
@@ -192,7 +232,6 @@ def glVertexAttribPointer(indx, size, type, normalized, stride, offset):
 _functions_to_import = [
     ("glActiveTexture", "glActiveTexture"),
     ("glAttachShader", "glAttachShader"),
-    ("glBindAttribLocation", "glBindAttribLocation"),
     ("glBindBuffer", "glBindBuffer"),
     ("glBindFramebuffer", "glBindFramebuffer"),
     ("glBindRenderbuffer", "glBindRenderbuffer"),
@@ -236,15 +275,11 @@ _functions_to_import = [
     ("glGetBufferParameteriv", "glGetBufferParameter"),
     ("glGetError", "glGetError"),
     ("glGetFloatv", "_glGetFloatv"),
-    ("glGetFramebufferAttachmentParameteriv", "glGetFramebufferAttachmentParameter"),
     ("glGetIntegerv", "_glGetIntegerv"),
     ("glGetProgramiv", "glGetProgramParameter"),
-    ("glGetRenderbufferParameteriv", "glGetRenderbufferParameter"),
     ("glGetShaderPrecisionFormat", "glGetShaderPrecisionFormat"),
-    ("glGetShaderSource", "glGetShaderSource"),
     ("glGetShaderiv", "glGetShaderParameter"),
-    ("glGetUniformfv", "glGetUniform"),
-    ("glGetVertexAttribPointerv", "glGetVertexAttribOffset"),
+    ("glGetTexParameterfv", "glGetTexParameter"),
     ("glHint", "glHint"),
     ("glIsBuffer", "glIsBuffer"),
     ("glIsEnabled", "glIsEnabled"),

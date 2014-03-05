@@ -453,9 +453,10 @@ def _glGetBooleanv(pname):
 _lib.glGetBufferParameteriv.argtypes = ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),
 # void = glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params)
 def glGetBufferParameter(target, pname):
-    data = (ctypes.c_int*1)()
+    d = -2**31  # smallest 32bit integer
+    params = (ctypes.c_int*1)(d)
     res = _lib.glGetBufferParameteriv(target, pname, params)
-    return data[0]
+    return params[0]
 
 
 _lib.glGetError.argtypes = ()
@@ -476,13 +477,14 @@ def _glGetFloatv(pname):
     if len(params) == 1:
         return params[0]
     else:
-        return params
+        return tuple(params)
 
 
 _lib.glGetFramebufferAttachmentParameteriv.argtypes = ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),
 # void = glGetFramebufferAttachmentParameteriv(GLenum target, GLenum attachment, GLenum pname, GLint* params)
 def glGetFramebufferAttachmentParameter(target, attachment, pname):
-    params = (ctypes.c_int*1)()
+    d = -2**31  # smallest 32bit integer
+    params = (ctypes.c_int*1)(d)
     res = _lib.glGetFramebufferAttachmentParameteriv(target, attachment, pname, params)
     return params[0]
 
@@ -498,7 +500,7 @@ def _glGetIntegerv(pname):
     if len(params) == 1:
         return params[0]
     else:
-        return params
+        return tuple(params)
 
 
 _lib.glGetProgramInfoLog.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_char_p,
@@ -522,7 +524,8 @@ def glGetProgramParameter(program, pname):
 _lib.glGetRenderbufferParameteriv.argtypes = ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_int),
 # void = glGetRenderbufferParameteriv(GLenum target, GLenum pname, GLint* params)
 def glGetRenderbufferParameter(target, pname):
-    params = (ctypes.c_int*1)()
+    d = -2**31  # smallest 32bit integer
+    params = (ctypes.c_int*1)(d)
     res = _lib.glGetRenderbufferParameteriv(target, pname, params)
     return params[0]
 
@@ -549,7 +552,7 @@ def glGetShaderPrecisionFormat(shadertype, precisiontype):
 _lib.glGetShaderSource.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_char_p,
 # void = glGetShaderSource(GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* source)
 def glGetShaderSource(shader):
-    bufSize = 1024*1024
+    bufsize = 1024*1024
     length = (ctypes.c_int*1)()
     source = (ctypes.c_char*bufsize)()
     res = _lib.glGetShaderSource(shader, bufsize, length, source)
@@ -589,9 +592,8 @@ def glGetParameter(pname):
 _lib.glGetTexParameterfv.argtypes = ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),
 # void = glGetTexParameterfv(GLenum target, GLenum pname, GLfloat* params)
 def glGetTexParameter(target, pname):
-    n = 1
     d = float('Inf')
-    params = (ctypes.c_float*n)(*[d for i in range(n)])
+    params = (ctypes.c_float*1)(d)
     res = _lib.glGetTexParameterfv(target, pname, params)
     return params[0]
 
@@ -601,13 +603,13 @@ _lib.glGetUniformfv.argtypes = ctypes.c_uint, ctypes.c_int, ctypes.POINTER(ctype
 def glGetUniform(program, location):
     n = 16
     d = float('Inf')
-    values = (ctypes.c_float*n)(*[d for i in range(n)])
+    params = (ctypes.c_float*n)(*[d for i in range(n)])
     res = _lib.glGetUniformfv(program, location, params)
-    values = [p for p in values if p!=d]
-    if len(values) == 1:
-        return values[0]
+    params = [p for p in params if p!=d]
+    if len(params) == 1:
+        return params[0]
     else:
-        return values
+        return tuple(params)
 
 
 _lib.glGetUniformLocation.argtypes = ctypes.c_uint, ctypes.c_char_p,
@@ -621,16 +623,16 @@ def glGetUniformLocation(program, name):
 
 _lib.glGetVertexAttribfv.argtypes = ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),
 # void = glGetVertexAttribfv(GLuint index, GLenum pname, GLfloat* params)
-def glGetVertexAttrib(program, location):
+def glGetVertexAttrib(index, pname):
     n = 4
     d = float('Inf')
-    values = (ctypes.c_float*n)(*[d for i in range(n)])
+    params = (ctypes.c_float*n)(*[d for i in range(n)])
     res = _lib.glGetVertexAttribfv(index, pname, params)
-    values = [p for p in values if p!=d]
-    if len(values) == 1:
-        return values[0]
+    params = [p for p in params if p!=d]
+    if len(params) == 1:
+        return params[0]
     else:
-        return values
+        return tuple(params)
 
 
 _lib.glGetVertexAttribPointerv.argtypes = ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_void_p),
@@ -638,7 +640,7 @@ _lib.glGetVertexAttribPointerv.argtypes = ctypes.c_uint, ctypes.c_uint, ctypes.P
 def glGetVertexAttribOffset(index, pname):
     pointer = (ctypes.c_void_p*1)()
     res = _lib.glGetVertexAttribPointerv(index, pname, pointer)
-    return pointer[0]
+    return pointer[0] or 0
 
 
 _lib.glHint.argtypes = ctypes.c_uint, ctypes.c_uint,
@@ -904,30 +906,27 @@ def glUniform4iv(location, count, values):
 
 _lib.glUniformMatrix2fv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),
 def glUniformMatrix2fv(location, count, transpose, values):
-    if hasattr(values, "dtype"):  # np array
-        values_ = values.astype("float32", "C", copy=False)
-        values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-    else:
-        values = [float(val) for val in values]
-        values = (ctypes.c_float*len(values))(*values)
+    if not values.flags["C_CONTIGUOUS"]:
+        values = values.copy()
+    assert values.dtype.name == "float32"
+    values_ = values
+    values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
     _lib.glUniformMatrix2fv(location, count, transpose, values)
 _lib.glUniformMatrix3fv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),
 def glUniformMatrix3fv(location, count, transpose, values):
-    if hasattr(values, "dtype"):  # np array
-        values_ = values.astype("float32", "C", copy=False)
-        values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-    else:
-        values = [float(val) for val in values]
-        values = (ctypes.c_float*len(values))(*values)
+    if not values.flags["C_CONTIGUOUS"]:
+        values = values.copy()
+    assert values.dtype.name == "float32"
+    values_ = values
+    values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
     _lib.glUniformMatrix3fv(location, count, transpose, values)
 _lib.glUniformMatrix4fv.argtypes = ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.POINTER(ctypes.c_float),
 def glUniformMatrix4fv(location, count, transpose, values):
-    if hasattr(values, "dtype"):  # np array
-        values_ = values.astype("float32", "C", copy=False)
-        values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-    else:
-        values = [float(val) for val in values]
-        values = (ctypes.c_float*len(values))(*values)
+    if not values.flags["C_CONTIGUOUS"]:
+        values = values.copy()
+    assert values.dtype.name == "float32"
+    values_ = values
+    values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
     _lib.glUniformMatrix4fv(location, count, transpose, values)
 
 

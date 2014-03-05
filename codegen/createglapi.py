@@ -634,12 +634,11 @@ class DesktopApiGenerator(ApiGenerator):
                 lines.append(call_line(funcname, es2func, 'location, count, values'))
         elif des.name == 'uniformMatrix':
             lines.append('def %s:' % sig)
-            lines.append('    if hasattr(values, "dtype"):  # np array')
-            lines.append('        values_ = values.astype("float32", "C", copy=False)')
-            lines.append('        values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))')
-            lines.append('    else:')
-            lines.append('        values = [float(val) for val in values]')
-            lines.append('        values = (ctypes.c_float*len(values))(*values)')
+            lines.append('    if not values.flags["C_CONTIGUOUS"]:')
+            lines.append('        values = values.copy()')
+            lines.append('    assert values.dtype.name == "float32"')
+            lines.append('    values_ = values')
+            lines.append('    values = values_.ctypes.data_as(ctypes.POINTER(ctypes.c_float))')
             lines.append(call_line(funcname, es2func, 'location, count, transpose, values'))
         elif des.name == 'vertexAttrib':
             lines.append('def %s:' % sig)

@@ -267,6 +267,9 @@ def bindAttribLocation(program, index, name):
     # --- desktop angle
     name = ctypes.c_char_p(name.encode('utf-8'))
     ()
+    # --- pyopengl
+    name = name.encode('utf-8')
+    ()
 
 
 ## Setters
@@ -305,7 +308,7 @@ def _getIntegerv(pname):
     if len(params) == 1:
         return params[0]
     else:
-        return params
+        return tuple(params)
 
 def _getFloatv(pname):
     # --- desktop angle
@@ -317,7 +320,7 @@ def _getFloatv(pname):
     if len(params) == 1:
         return params[0]
     else:
-        return params
+        return tuple(params)
 
 # def _getString(pname):
 #     # --- desktop angle
@@ -351,31 +354,55 @@ def getUniform(program, location):
     # --- desktop angle
     n = 16
     d = float('Inf')
-    values = (ctypes.c_float*n)(*[d for i in range(n)])
+    params = (ctypes.c_float*n)(*[d for i in range(n)])
     ()
-    values = [p for p in values if p!=d]
-    if len(values) == 1:
-        return values[0]
+    params = [p for p in params if p!=d]
+    if len(params) == 1:
+        return params[0]
     else:
-        return values
+        return tuple(params)
+    # --- pyopengl
+    n = 16
+    d = float('Inf')
+    params = (ctypes.c_float*n)(*[d for i in range(n)])
+    GL.glGetUniformfv(program, location, params)
+    params = [p for p in params if p!=d]
+    if len(params) == 1:
+        return params[0]
+    else:
+        return tuple(params)
 
 
-def getVertexAttrib(program, location):
+def getVertexAttrib(index, pname):
+    # --- desktop angle
     n = 4
     d = float('Inf')
-    values = (ctypes.c_float*n)(*[d for i in range(n)])
+    params = (ctypes.c_float*n)(*[d for i in range(n)])
     ()
-    values = [p for p in values if p!=d]
-    if len(values) == 1:
-        return values[0]
+    params = [p for p in params if p!=d]
+    if len(params) == 1:
+        return params[0]
     else:
-        return values
+        return tuple(params)
+    # --- pyopengl
+    try:  # maybe they will fix it
+        ()
+    except TypeError:
+        n = 4
+        d = float('Inf')
+        params = (ctypes.c_float*n)(*[d for i in range(n)])
+        GL.glGetVertexAttribfv(index, pname, params)
+        params = [p for p in params if p!=d]
+        if len(params) == 1:
+            return params[0]
+        else:
+            return tuple(params)
 
 
 def getTexParameter(target, pname):
-    n = 1
+    # --- desktop angle
     d = float('Inf')
-    params = (ctypes.c_float*n)(*[d for i in range(n)])
+    params = (ctypes.c_float*1)(d)
     ()
     return params[0]
 
@@ -404,7 +431,14 @@ def getVertexAttribOffset(index, pname):
     # --- desktop angle
     pointer = (ctypes.c_void_p*1)()
     ()
-    return pointer[0]
+    return pointer[0] or 0
+    # --- pyopengl
+    try:  # maybe the fixed it
+        ()
+    except TypeError:
+        pointer = (ctypes.c_void_p*1)()
+        GL.glGetVertexAttribPointerv(index, pname, pointer)
+        return pointer[0] or 0
     # --- mock
     return 0
 
@@ -495,31 +529,48 @@ def getShaderPrecisionFormat(shadertype, precisiontype):
 
 def getShaderSource(shader):
     # --- desktop angle
-    bufSize = 1024*1024
+    bufsize = 1024*1024
     length = (ctypes.c_int*1)()
     source = (ctypes.c_char*bufsize)()
     ()
     return source.value[:length[0]].decode('utf-8')
+    # --- pyopengl
+    res = GL.glGetShaderSource(shader)
+    return res.decode('utf-8')
+    
 
 def getBufferParameter(target, pname):
     # --- desktop angle
-    data = (ctypes.c_int*1)()
+    d = -2**31  # smallest 32bit integer
+    params = (ctypes.c_int*1)(d)
     ()
-    return data[0]
+    return params[0]
 
 
 def getFramebufferAttachmentParameter(target, attachment, pname):
     # --- desktop angle
-    params = (ctypes.c_int*1)()
+    d = -2**31  # smallest 32bit integer
+    params = (ctypes.c_int*1)(d)
     ()
     return params[0]
+    # --- pyopengl
+    d = -2**31  # smallest 32bit integer
+    params = (ctypes.c_int*1)(d)
+    GL.glGetFramebufferAttachmentParameteriv(target, attachment, pname, params)
+    return params[0]
+
 
 def getRenderbufferParameter(target, pname):
     # --- desktop angle
-    params = (ctypes.c_int*1)()
+    d = -2**31  # smallest 32bit integer
+    params = (ctypes.c_int*1)(d)
     ()
     return params[0]
-
+    # --- pyopengl
+    d = -2**31  # smallest 32bit integer
+    params = (ctypes.c_int*1)(d)
+    GL.glGetRenderbufferParameteriv(target, pname, params)
+    return params[0]
 
 
 
@@ -548,7 +599,8 @@ class FunctionAnnotation:
                 continue
             if backend in backend_selector:
                 if line.strip() == '()':
-                    line = call
+                    indent = line.split('(')[0][4:]
+                    line = indent + call
                 lines.append(line)
         return lines
     

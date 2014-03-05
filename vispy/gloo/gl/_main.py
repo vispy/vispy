@@ -310,8 +310,8 @@ def glGetUniformLocation(program, name):
     return PROXY["glGetUniformLocation"](program, name)
 
 
-def glGetVertexAttrib(program, location):
-    return PROXY["glGetVertexAttrib"](program, location)
+def glGetVertexAttrib(index, pname):
+    return PROXY["glGetVertexAttrib"](index, pname)
 
 
 def glGetVertexAttribOffset(index, pname):

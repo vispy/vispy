@@ -68,6 +68,13 @@ def _patch():
             buffersubdatafunc = buffersubdatafunc.wrapperFunction
         _m = sys.modules[buffersubdatafunc.__module__]
         _m.long = int
+    
+    # Fix missing enum
+    try:
+        from OpenGL.GL.VERSION import GL_2_0
+        GL_2_0.GL_OBJECT_SHADER_SOURCE_LENGTH = GL_2_0.GL_SHADER_SOURCE_LENGTH
+    except Exception:
+        pass
 
 
 # Patch OpenGL package

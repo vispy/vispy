@@ -2,7 +2,7 @@
 much more in the test_functionality. Together, these two tests should
 touch *all* ES 2.0 API calls.
 
-The only exception is glCompressedTexImage2D() and glCompressedTexSubImage2D.
+The only exception is glCompressedTexImage2D and glCompressedTexSubImage2D.
 """
 
 import sys
