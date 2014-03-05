@@ -147,10 +147,11 @@ class app_opengl_context(object):
     def __enter__(self):
         from .. import app  # nest to avoid circular imports
         app.create()
-        self.c = app.Canvas()
+        self.c = app.Canvas(size=(300, 200), autoswap=False)
         self.c.show()
         app.process_events()
         app.process_events()
+        return self
 
     def __exit__(self, type, value, traceback):
         try:
