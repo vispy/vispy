@@ -129,8 +129,13 @@ def _test_setting_stuff():
     gl.glSampleCoverage(1.0, False)
     
     # And getting stuff
-    range, precision = gl.glGetShaderPrecisionFormat(gl.GL_FRAGMENT_SHADER, 
-                                                     gl.GL_HIGH_FLOAT)
+    try:
+        range, precision = gl.glGetShaderPrecisionFormat(gl.GL_FRAGMENT_SHADER, 
+                                                         gl.GL_HIGH_FLOAT)
+    except RuntimeError:
+        pass  # accept if the function is not there ...
+        # On Travis this function was not there on one machine according
+        # to PyOpenGL, but our desktop backend worked fine ...
     
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
