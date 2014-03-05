@@ -6,18 +6,14 @@ The only exception is glCompressedTexImage2D and glCompressedTexSubImage2D.
 """
 
 import sys
-import time
-
-import numpy as np
 
 from nose.plugins.skip import SkipTest
-from nose.tools import assert_equal, assert_true
-from vispy.util import app_opengl_context, assert_in
+from nose.tools import assert_equal, assert_true  # noqa
+from vispy.util import app_opengl_context, assert_in  # noqa
 from numpy.testing import assert_almost_equal
 from vispy.app.backends import requires_non_glut
 
 from vispy.gloo import gl
-from vispy import app
 
 
 @requires_non_glut()
@@ -51,7 +47,7 @@ def _test_basics(backend):
     # use the backend
     gl.use(backend)
     
-    with app_opengl_context() as context:
+    with app_opengl_context():
         _test_setting_parameters()
         _test_enabling_disabling()
         _test_setting_stuff()
@@ -228,11 +224,12 @@ def _test_fbo():
     assert_equal(status, gl.GL_FRAMEBUFFER_COMPLETE)
     
     # Tests renderbuffer params
-    name = gl.glGetFramebufferAttachmentParameter(gl.GL_FRAMEBUFFER, 
-        gl.GL_DEPTH_ATTACHMENT, gl.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME)
+    name = gl.glGetFramebufferAttachmentParameter(
+        gl.GL_FRAMEBUFFER, gl.GL_DEPTH_ATTACHMENT, 
+        gl.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME)
     assert_equal(name, hrenderbuf)
     #
-    width = gl.glGetRenderbufferParameter(gl.GL_RENDERBUFFER, 
+    width = gl.glGetRenderbufferParameter(gl.GL_RENDERBUFFER,
                                           gl.GL_RENDERBUFFER_WIDTH)
     assert_equal(width, w)
     

@@ -22,8 +22,8 @@ import numpy as np
 
 from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true
-from vispy.util import app_opengl_context, assert_in
-from numpy.testing import assert_almost_equal
+from vispy.util import app_opengl_context, assert_in  # noqa
+from numpy.testing import assert_almost_equal  # noqa
 from vispy.app.backends import requires_non_glut
 
 from vispy.gloo import gl
@@ -358,8 +358,8 @@ def _prepare_vis():
     gl.glGenerateMipmap(gl.GL_TEXTURE_2D)
     
     # Check min filter (touch getTextParameter)
-    min_filter = gl.glGetTexParameter(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER)
-    assert_equal(min_filter, gl.GL_LINEAR)
+    minfilt = gl.glGetTexParameter(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER)
+    assert_equal(minfilt, gl.GL_LINEAR)
     
     # Check if all is ok
     assert_equal(gl.glGetError(), 0)
