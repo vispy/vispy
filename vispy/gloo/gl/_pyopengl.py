@@ -123,7 +123,7 @@ def glGetProgramInfoLog(program):
 def glGetRenderbufferParameter(target, pname):
     d = -2**31  # smallest 32bit integer
     params = (ctypes.c_int*1)(d)
-    GL.glGetRenderbufferParameteriv(target, pname, params)
+    FBO.glGetRenderbufferParameteriv(target, pname, params)
     return params[0]
 
 
