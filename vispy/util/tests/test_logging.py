@@ -2,10 +2,7 @@ from nose.tools import assert_equal
 import logging
 
 from vispy import app
-from vispy.util import (logger, use_log_level, _TempDir, assert_in,
-                        assert_not_in)
-
-temp_dir = _TempDir()
+from vispy.util import logger, use_log_level, assert_in, assert_not_in
 
 
 def test_logging():

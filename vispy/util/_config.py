@@ -16,7 +16,7 @@ import traceback
 from .event import EmitterGroup, EventEmitter, Event
 from .six import string_types
 from ._logging import logger, set_log_level, use_log_level
-from .misc import _TempDir
+from ._testing import _TempDir
 
 
 ###############################################################################
