@@ -85,7 +85,7 @@ setup(
         'vispy.app', 'vispy.app.tests',
         'vispy.app.backends',
         'vispy.gloo', 'vispy.gloo.tests',
-        'vispy.gloo.gl',
+        'vispy.gloo.gl', 'vispy.gloo.gl.tests',
         'vispy.scene', 'vispy.scene.tests',
         'vispy.scene.systems',
         'vispy.scene.entities',

@@ -51,6 +51,13 @@ for i in range(40):
     data['a_linewidth'][500 + i] = thickness
 
 
+# HACK: True OpenGL ES does not need to enable point sprite and does not define
+# these two constants. Desktop OpenGL needs to enable these two modes but we do
+# not have these two constants because our GL namespace pretends to be ES.
+GL_VERTEX_PROGRAM_POINT_SIZE = 34370
+GL_POINT_SPRITE = 34913
+
+
 class Canvas(app.Canvas):
 
     def __init__(self):
@@ -77,12 +84,12 @@ class Canvas(app.Canvas):
             Program(markers.vert, markers.frag + markers.ring)]
 
         for program in self.programs:
-            program.set_vars(self.vbo,
-                             u_antialias=u_antialias,
-                             u_size=1,
-                             u_model=self.model,
-                             u_view=self.view,
-                             u_projection=self.projection)
+            program.bind(self.vbo)
+            program["u_antialias"] = u_antialias,
+            program["u_size"] = 1
+            program["u_model"] = self.model
+            program["u_view"] = self.view
+            program["u_projection"] = self.projection
         self.index = 0
         self.program = self.programs[self.index]
 
@@ -91,6 +98,8 @@ class Canvas(app.Canvas):
         gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+        gl.glEnable(GL_POINT_SPRITE)
 
     def on_key_press(self, event):
         if event.text == ' ':

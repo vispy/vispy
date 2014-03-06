@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_array_equal
+
 from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
@@ -7,11 +7,11 @@ from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
 from vispy.app.backends import (requires_pyglet, requires_qt, requires_glfw,
                                 requires_non_glut)
 
-from vispy.gloo.program import (Program, ProgramError, VertexBuffer,
-                                ElementBuffer)
-from vispy.gloo.shader import VertexShader, FragmentShader, ShaderError
-from vispy.gloo import _screenshot
+from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
+from vispy.gloo.shader import VertexShader, FragmentShader
 from vispy.util import assert_in, assert_is
+#from vispy.gloo import _screenshot
+from vispy.gloo import gl
 
 
 def on_nonexist(self, *args):
@@ -92,43 +92,44 @@ def _test_application(backend):
         assert_raises(ValueError, canvas.connect, on_nonexist)
 
         # screenshots
-        ss = _screenshot()
-        assert_array_equal(ss.shape[2], 3)  # XXX other dimensions not correct?
+        #ss = _screenshot()
+        #assert_array_equal(ss.shape[2], 3) # XXX other dimensions not correct?
         # XXX it would be good to do real checks, but sometimes the
         # repositionings don't "take" (i.e., lead to random errors)
-        assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
-        assert_equal(len(canvas.size), 2)
-        assert_equal(len(canvas.position), 2)
+        #assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
+        #assert_equal(len(canvas.size), 2)
+        #assert_equal(len(canvas.position), 2)
 
         # GLOO: should have an OpenGL context already, so these should work
         vert = VertexShader("void main (void) {gl_Position = pos;}")
         frag = FragmentShader("void main (void) {gl_FragColor = pos;}")
         program = Program(vert, frag)
-        assert_raises(ShaderError, program.activate)
+        assert_raises(RuntimeError, program.activate)
 
         vert = VertexShader("uniform vec4 pos;"
                             "void main (void) {gl_Position = pos;}")
         frag = FragmentShader("uniform vec4 pos;"
                               "void main (void) {gl_FragColor = pos;}")
         program = Program(vert, frag)
-        uniform = program.uniforms[0]
-        uniform.set_data([1, 2, 3, 4])
+        #uniform = program.uniforms[0]
+        program['pos'] = [1, 2, 3, 4]
         program.activate()  # should print
-        uniform.upload(program)
-        program.detach(vert, frag)
-        assert_raises(ShaderError, program.detach, vert)
-        assert_raises(ShaderError, program.detach, frag)
+        #uniform.upload(program)
+        program.detach(vert)
+        program.detach(frag)
+        assert_raises(RuntimeError, program.detach, vert)
+        assert_raises(RuntimeError, program.detach, frag)
 
         vert = VertexShader("attribute vec4 pos;"
                             "void main (void) {gl_Position = pos;}")
         frag = FragmentShader("void main (void) {}")
         program = Program(vert, frag)
-        attribute = program.attributes[0]
-        attribute.set_data([1, 2, 3, 4])
+        #attribute = program.attributes[0]
+        program["pos"] = [1, 2, 3, 4]
         program.activate()
-        attribute.upload(program)
+        #attribute.upload(program)
         # cannot get element count
-        assert_raises(ProgramError, program.draw, 'POINTS')
+        #assert_raises(RuntimeError, program.draw, 'POINTS')
 
         # use a real program
         vert = ("uniform mat4 u_model;"
@@ -150,19 +151,20 @@ def _test_application(backend):
         data['a_color'] = np.repeat(color, p, axis=0)
 
         program = Program(vert, frag)
-        program.set_vars(VertexBuffer(data))
+        program.bind(VertexBuffer(data))
         program['u_model'] = np.eye(4, dtype=np.float32)
-        program.draw('POINTS')  # different codepath if no call to activate()
-        subset = ElementBuffer(np.arange(10, dtype=np.uint32))
-        program.draw('POINTS', subset=subset)
+        # different codepath if no call to activate()
+        program.draw(gl.GL_POINTS)
+        subset = IndexBuffer(np.arange(10, dtype=np.uint32))
+        program.draw(gl.GL_POINTS, subset)
 
         # bad programs
         frag_bad = ("varying vec4 v_colors")  # no semicolon
         program = Program(vert, frag_bad)
-        assert_raises(ShaderError, program.activate)
+        assert_raises(RuntimeError, program.activate)
         frag_bad = None  # no fragment code. no main is not always enough
         program = Program(vert, frag_bad)
-        assert_raises(ProgramError, program.activate)
+        assert_raises(ValueError, program.activate)
 
         # Timer
         timer = Timer(interval=0.001, connect=on_mouse_move, iterations=2,
