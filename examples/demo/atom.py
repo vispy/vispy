@@ -1,10 +1,13 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vispy: gallery 60
-
-"""
-Particles orbiting around a central point (with traces)
-"""
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+# Author: Nicolas P .Rougier
+# Date:   06/03/2014
+# Abstract: Fake electrons orbiting
+# Keywords: Sprites, atom, particles
+# -----------------------------------------------------------------------------
 
 import numpy as np
 from vispy import gloo
@@ -12,47 +15,40 @@ from vispy import app
 from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
+# Create vertices
+n, p = 100, 150
+data = np.zeros(p * n, [('a_position', np.float32, 2),
+                        ('a_color',    np.float32, 4),
+                        ('a_rotation', np.float32, 4)])
+trail = .5 * np.pi
+data['a_position'][:, 0] = np.resize(np.linspace(0, trail, n), p * n)
+data['a_position'][:, 0] += np.repeat(np.random.uniform(0, 2 * np.pi, p), n)
+data['a_position'][:, 1] = np.repeat(np.linspace(0, 2 * np.pi, p), n)
 
-n, p = 250, 50
-T = np.random.uniform(0, 2 * np.pi, n)
-dT = np.random.uniform(50, 100, n) / 3000
-position = np.zeros((n, 2), dtype=np.float32)
-position[:, 0] = np.cos(T)
-position[:, 1] = np.sin(T)
-rot = np.random.uniform(0, 2 * np.pi, (n, 4)).astype(np.float32)
-color = np.ones((n, 4), dtype=np.float32) * (1, 1, 1, 1)
-u_size = 6
+data['a_color'] = 1, 1, 1, 1
+data['a_color'] = np.repeat(
+    np.random.uniform(0.75, 1.00, (p, 4)).astype(np.float32), n, axis=0)
+data['a_color'][:, 3] = np.resize(np.linspace(0, 1, n), p * n)
 
-data = np.zeros(n * p, [('a_position', np.float32, 2),
-                        ('a_color', np.float32, 4),
-                        ('a_rot', np.float32, 4)])
-data['a_position'] = np.repeat(position, p, axis=0)
-data['a_color'] = np.repeat(color, p, axis=0)
-data['a_rot'] = np.repeat(rot, p, axis=0)
+data['a_rotation'] = np.repeat(
+    np.random.uniform(0, 2 * np.pi, (p, 4)).astype(np.float32), n, axis=0)
 
 
-VERT_SHADER = """
+vert = """
 #version 120
-// Uniforms
-// --------
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
 uniform float u_size;
+uniform float u_clock;
 
-// Attributes
-// ----------
-attribute vec2  a_position;
-attribute vec4  a_rot;
-attribute vec4  a_color;
-attribute mat4  a_model;
-
-// Varyings
-// --------
+attribute vec2 a_position;
+attribute vec4 a_color;
+attribute vec4 a_rotation;
 varying vec4 v_color;
-varying float v_size;
 
-mat4 rotation(vec3 axis, float angle) {
+mat4 build_rotation(vec3 axis, float angle)
+{
     axis = normalize(axis);
     float s = sin(angle);
     float c = cos(angle);
@@ -72,27 +68,28 @@ mat4 rotation(vec3 axis, float angle) {
                 0.0, 0.0, 0.0, 1.0);
 }
 
+
 void main (void) {
-    v_size = u_size;
     v_color = a_color;
 
-    mat4 R = rotation(a_rot.xyz, a_rot.w);
-    gl_Position = u_projection * u_view * u_model * R
-        * vec4(a_position, 0.0, 1.0);
-    gl_PointSize = v_size;
+    float x0 = 1.5;
+    float z0 = 0.0;
+
+    float theta = a_position.x + u_clock;
+    float x1 = x0*cos(theta) + z0*sin(theta);
+    float y1 = 0.0;
+    float z1 = (z0*cos(theta) - x0*sin(theta))/2.0;
+
+    mat4 R = build_rotation(a_rotation.xyz, a_rotation.w);
+    gl_Position = u_projection * u_view * u_model * R * vec4(x1,y1,z1,1);
+    gl_PointSize = 8.0 * u_size * sqrt(v_color.a);
 }
 """
 
-FRAG_SHADER = """
+frag = """
 #version 120
-
-// Varyings
-// ------------------------------------
 varying vec4 v_color;
 varying float v_size;
-
-// Main
-// ------------------------------------
 void main()
 {
     float d = 2*(length(gl_PointCoord.xy - vec2(0.5,0.5)));
@@ -107,56 +104,57 @@ GL_VERTEX_PROGRAM_POINT_SIZE = 34370
 GL_POINT_SPRITE = 34913
 
 
+# ------------------------------------------------------------ Canvas class ---
 class Canvas(app.Canvas):
 
-    def __init__(self, **kwargs):
+    def __init__(self):
+        app.Canvas.__init__(self)
+        self.size = 800, 800
+        self.title = "Atom [zoom with mouse scroll"
 
-        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
+        self.program = gloo.Program(vert, frag)
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        self.translate = 3
+        self.translate = 6.5
         translate(self.view, 0, 0, -self.translate)
 
-        self.vbo = gloo.VertexBuffer(data)
-        self.program.bind(self.vbo)
+        self.program.bind(gloo.VertexBuffer(data))
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
-        self.program['u_size'] = u_size
+        self.program['u_size'] = 5 / self.translate
 
         self.theta = 0
         self.phi = 0
-        self.index = 0
+        self.clock = 0
+        self.stop_rotation = False
 
-        self.timer = app.Timer(1.0 / 400)
+        self.timer = app.Timer(1.0 / 60)
         self.timer.connect(self.on_timer)
         self.timer.start()
 
-        # Initialize the canvas for real
-        app.Canvas.__init__(self, **kwargs)
-
     def on_initialize(self, event):
         gl.glClearColor(0, 0, 0, 1)
-        gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL_POINT_SPRITE)
         gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+        gl.glEnable(GL_POINT_SPRITE)
 
     def on_key_press(self, event):
         if event.text == ' ':
-            if self.timer.running:
-                self.timer.stop()
-            else:
-                self.timer.start()
+            self.stop_rotation = not self.stop_rotation
 
     def on_timer(self, event):
-        self.theta += .017
-        self.phi += .013
-        self.model = np.eye(4, dtype=np.float32)
-        rotate(self.model, self.theta, 0, 0, 1)
-        rotate(self.model, self.phi, 0, 1, 0)
-        self.program['u_model'] = self.model
+        if not self.stop_rotation:
+            self.theta += .05
+            self.phi += .05
+            self.model = np.eye(4, dtype=np.float32)
+            rotate(self.model, self.theta, 0, 0, 1)
+            rotate(self.model, self.phi, 0, 1, 0)
+            self.program['u_model'] = self.model
+        self.clock += np.pi / 100
+        self.program['u_clock'] = self.clock
         self.update()
 
     def on_resize(self, event):
@@ -166,31 +164,21 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
 
     def on_mouse_wheel(self, event):
-        global u_size
-
         self.translate += event.delta[1]
         self.translate = max(2, self.translate)
         self.view = np.eye(4, dtype=np.float32)
         translate(self.view, 0, 0, -self.translate)
+
         self.program['u_view'] = self.view
+        self.program['u_size'] = 5 / self.translate
         self.update()
 
     def on_paint(self, event):
-        global T, dT, p, n
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-
-        T += dT
-        self.index = (self.index + 1) % p
-        data['a_position'][self.index::p, 0] = np.cos(T)
-        data['a_position'][self.index::p, 1] = .5 * np.sin(T)
-        data['a_color'][:, 3] -= 1.0 / p
-        data['a_color'][self.index::p, 3] = 1
-        self.vbo.set_data(data)
         self.program.draw(gl.GL_POINTS)
 
 
 if __name__ == '__main__':
-    c = Canvas(show=True, size=(600, 600),
-               title="Atom [zoom with mouse scroll]")
-    # c.show()
+    c = Canvas()
+    c.show()
     app.run()
