@@ -5,8 +5,8 @@
 # -----------------------------------------------------------------------------
 # Author:   Nicolas P .Rougier
 # Date:     06/03/2014
-# Abstract: GPU computing usingthe framebuffer
-# Keywords: framebuffer, GPU computing, reaction-diffusion
+# Abstract: GPU computing using the framebuffer
+# Keywords: framebuffer, GPU computing, cellular automata
 # -----------------------------------------------------------------------------
 import sys
 import numpy as np
