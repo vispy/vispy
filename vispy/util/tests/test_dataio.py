@@ -5,7 +5,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from vispy.util.dataio import (write_mesh, read_mesh, _check_img_lib, crate,
                                imsave, imread)
-from vispy.util.misc import _fast_cross_3d
+from vispy.util._geom import _fast_cross_3d
 from vispy.util import _TempDir
 
 temp_dir = _TempDir()
