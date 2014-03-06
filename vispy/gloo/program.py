@@ -192,11 +192,11 @@ class Program(GLObject):
                 attribute.active = True
             else:
                 attribute.active = False
-    
+
     def _delete(self):
         logger.debug("GPU: Deleting program")
         gl.glDeleteProgram(self._handle)
-    
+
     def _build_uniforms(self):
         """ Build the uniform objects """
 
@@ -228,6 +228,8 @@ class Program(GLObject):
             for name in data.dtype.names:
                 if name in self._attributes.keys():
                     self._attributes[name].set_data(data[name])
+                else:
+                    logger.warn("%s has not been bound" % name)
 
     def __setitem__(self, name, data):
         if name in self._uniforms.keys():
