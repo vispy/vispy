@@ -5,8 +5,8 @@
 # -----------------------------------------------------------------------------
 # Author:   Nicolas P .Rougier
 # Date:     06/03/2014
-# Abstract: Show antiliased linear grid
-# Keywords: grid, antialias, linear
+# Abstract: Show antialiased logarithmic grid
+# Keywords: grid, antialias, log, linear
 # -----------------------------------------------------------------------------
 import sys
 import numpy as np
