@@ -98,7 +98,7 @@ install:
           travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging;
         fi;
       fi;
-    
+
     # Install vispy
     - python setup.py build
     - python setup.py install
@@ -144,7 +144,7 @@ script:
     - cd ${SRC_DIR}
     - make flake
     - echo "Size difference ${SIZE_DIFF} kB"
-    - test ${SIZE_DIFF} -lt 200
+    - test ${SIZE_DIFF} -lt 100
 
 
 after_success:
