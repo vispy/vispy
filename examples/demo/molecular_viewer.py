@@ -142,7 +142,7 @@ class MolecularViewerCanvas(app.Canvas):
         data['a_color'] = self.atomsColours
         data['a_radius'] = self.atomsScales
 
-        self.program.set_vars(gloo.VertexBuffer(data))
+        self.program.bind(gloo.VertexBuffer(data))
 
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
