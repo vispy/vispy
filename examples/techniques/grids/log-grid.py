@@ -63,10 +63,10 @@ fragment = """
         float x = v_texcoord.x * u_size.x; // - u_translate.x;
         float y = v_texcoord.y * u_size.y; // - u_translate.y;
 
-        float Mx = abs(x - texture2D(u_grid, vec2(v_texcoord.x,0.5)).x - 0.315);
-        float My = abs(y - texture2D(u_grid, vec2(v_texcoord.y,0.5)).y - 0.315);
-        float mx = abs(x - texture2D(u_grid, vec2(v_texcoord.x,0.5)).z - 0.315);
-        float my = abs(y - texture2D(u_grid, vec2(v_texcoord.y,0.5)).w - 0.315);
+        float Mx = abs(x-texture2D(u_grid, vec2(v_texcoord.x,0.5)).x - 0.315);
+        float My = abs(y-texture2D(u_grid, vec2(v_texcoord.y,0.5)).y - 0.315);
+        float mx = abs(x-texture2D(u_grid, vec2(v_texcoord.x,0.5)).z - 0.315);
+        float my = abs(y-texture2D(u_grid, vec2(v_texcoord.y,0.5)).w - 0.315);
 
         // Major grid
         float M = min(Mx,My);
@@ -181,44 +181,35 @@ fragment = """
 def find_closest(A, target):
     # A must be sorted
     idx = A.searchsorted(target)
-    idx = np.clip(idx, 1, len(A)-1)
-    left = A[idx-1]
+    idx = np.clip(idx, 1, len(A) - 1)
+    left = A[idx - 1]
     right = A[idx]
     idx -= target - left < right - target
     return idx
 
-def update_grid(w,h):
+
+def update_grid(w, h):
 
     n = Z.shape[1]
-    t1 = major_grid[0]*scale
-    t2 = minor_grid[0]*scale
-    t3 = major_grid[1]*scale
-    t4 = minor_grid[1]*scale
-
-    # Linear grid
-    # I1 = np.arange(np.fmod(translate[0],t1), np.fmod(translate[0],t1)+w+t1,t1)
-    # I2 = np.arange(np.fmod(translate[0],t2), np.fmod(translate[0],t2)+w+t2,t2)
-    # I3 = np.arange(np.fmod(translate[1],t3), np.fmod(translate[1],t3)+h+t3,t3)
-    # I4 = np.arange(np.fmod(translate[1],t4), np.fmod(translate[1],t4)+h+t4,t4)
 
     # Logarithmic grid
-    I1 = np.logspace(np.log10(1), np.log10(2*w), 5)*scale
-    I2 = np.logspace(np.log10(1), np.log10(2*w), 50)*scale
-    I3 = np.logspace(np.log10(1), np.log10(2*h), 5)*scale
-    I4 = np.logspace(np.log10(1), np.log10(2*h), 50)*scale
+    I1 = np.logspace(np.log10(1), np.log10(2 * w), 5) * scale
+    I2 = np.logspace(np.log10(1), np.log10(2 * w), 50) * scale
+    I3 = np.logspace(np.log10(1), np.log10(2 * h), 5) * scale
+    I4 = np.logspace(np.log10(1), np.log10(2 * h), 50) * scale
 
     # We are here in screen space and we want integer coordinates
-    np.floor(I1,out=I1)
-    np.floor(I2,out=I2)
-    np.floor(I3,out=I3)
-    np.floor(I4,out=I4)
+    np.floor(I1, out=I1)
+    np.floor(I2, out=I2)
+    np.floor(I3, out=I3)
+    np.floor(I4, out=I4)
 
-    L = np.linspace(0,w,n)
-    Z[...,0] = I1[find_closest(I1,L)]
-    Z[...,2] = I2[find_closest(I2,L)]
-    L = np.linspace(0,h,n)
-    Z[...,1] = I3[find_closest(I3,L)]
-    Z[...,3] = I4[find_closest(I4,L)]
+    L = np.linspace(0, w, n)
+    Z[..., 0] = I1[find_closest(I1, L)]
+    Z[..., 2] = I2[find_closest(I2, L)]
+    L = np.linspace(0, h, n)
+    Z[..., 1] = I3[find_closest(I3, L)]
+    Z[..., 3] = I4[find_closest(I4, L)]
 
     program['u_grid'][...] = Z
     program['u_size'] = w, h
@@ -229,48 +220,55 @@ def display():
     program.draw(gl.GL_TRIANGLE_STRIP)
     glut.glutSwapBuffers()
 
-def reshape(width,height):
+
+def reshape(width, height):
     gl.glViewport(0, 0, width, height)
     update_grid(width, height)
 
-def keyboard( key, x, y ):
-    if key == '\033': sys.exit( )
 
-def on_motion( x, y ):
-    global mouse,translate,scale
-    _,_,w,h = gl.glGetIntegerv(gl.GL_VIEWPORT)
-    y = h-y
-    dx,dy = x-mouse[0], y-mouse[1]
-    translate = [translate[0]+dx,translate[1]+dy]
-    mouse = x,y
+def keyboard(key, x, y):
+    if key == '\033':
+        sys.exit()
+
+
+def on_motion(x, y):
+    global mouse, translate, scale
+    _, _, w, h = gl.glGetIntegerv(gl.GL_VIEWPORT)
+    y = h - y
+    dx, dy = x - mouse[0], y - mouse[1]
+    translate = [translate[0] + dx, translate[1] + dy]
+    mouse = x, y
     program['u_translate'] = translate
-    update_grid(w,h)
+    update_grid(w, h)
     glut.glutPostRedisplay()
 
-def on_passive_motion( x, y ):
+
+def on_passive_motion(x, y):
     global mouse
-    _,_,w,h = gl.glGetIntegerv(gl.GL_VIEWPORT)
-    mouse = x, h-y
+    _, _, w, h = gl.glGetIntegerv(gl.GL_VIEWPORT)
+    mouse = x, h - y
+
 
 def on_scroll(dx, dy):
-    global mouse,translate,scale
-    x,y = mouse
-    s = min(max(0.25,scale+.001*dy*scale), 200)
-    translate[0] = x-s*(x-translate[0])/scale
-    translate[1] = y-s*(y-translate[1])/scale
+    global mouse, translate, scale
+    x, y = mouse
+    s = min(max(0.25, scale + .001 * dy * scale), 200)
+    translate[0] = x - s * (x - translate[0]) / scale
+    translate[1] = y - s * (y - translate[1]) / scale
     translate = [translate[0], translate[1]]
     scale = s
     program['u_translate'] = translate
     program['u_scale'] = scale
-    _,_,w,h = gl.glGetIntegerv(gl.GL_VIEWPORT)
-    update_grid(w,h)
+    _, _, w, h = gl.glGetIntegerv(gl.GL_VIEWPORT)
+    update_grid(w, h)
     glut.glutPostRedisplay()
+
 
 def on_mouse(button, state, x, y):
     if button == 3:
-        on_scroll(0,+3)
+        on_scroll(0, +3)
     elif button == 4:
-        on_scroll(0,-3)
+        on_scroll(0, -3)
     else:
         return
 
@@ -279,9 +277,9 @@ def on_mouse(button, state, x, y):
 glut.glutInit(sys.argv)
 glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA)
 glut.glutCreateWindow('Infinite grid')
-glut.glutReshapeWindow(512,512)
+glut.glutReshapeWindow(512, 512)
 glut.glutReshapeFunc(reshape)
-glut.glutKeyboardFunc(keyboard )
+glut.glutKeyboardFunc(keyboard)
 glut.glutDisplayFunc(display)
 glut.glutMotionFunc(on_motion)
 glut.glutMouseFunc(on_mouse)
@@ -290,35 +288,35 @@ glut.glutPassiveMotionFunc(on_passive_motion)
 # Build program & data
 # --------------------------------------
 program = Program(vertex, fragment, 4)
-program['a_position'] = (-1,-1), (-1,+1), (+1,-1), (+1,+1)
-program['a_texcoord'] = ( 0, 0), ( 0,+1), (+1, 0), (+1,+1)
+program['a_position'] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
+program['a_texcoord'] = (0, 0), (0, +1), (+1, 0), (+1, +1)
 program['u_major_grid_width'] = 1.0
 program['u_minor_grid_width'] = 1.0
 program['u_major_grid_color'] = 0, 0, 0, .75
 program['u_minor_grid_color'] = 0, 0, 0, .25
-program['u_major_tick_size']  = 10, 10
-program['u_minor_tick_size']  = 5, 5
+program['u_major_tick_size'] = 10, 10
+program['u_minor_tick_size'] = 5, 5
 program['u_major_tick_width'] = 2.0
 program['u_minor_tick_width'] = 1.1
-program['u_major_tick_color'] = 0,0,0,1
-program['u_minor_tick_color'] = 0,0,0,1
+program['u_major_tick_color'] = 0, 0, 0, 1
+program['u_minor_tick_color'] = 0, 0, 0, 1
 program['u_antialias'] = 1.0
-program['u_translate'] = 0,0
+program['u_translate'] = 0, 0
 program['u_scale'] = 1.0
-program['u_size'] = 512,512
-major_grid = np.array([64,64])
-minor_grid = np.array([8,8])
-Z = np.zeros((1,2*1024,4),dtype=np.float32)
+program['u_size'] = 512, 512
+major_grid = np.array([64, 64])
+minor_grid = np.array([8, 8])
+Z = np.zeros((1, 2 * 1024, 4), dtype=np.float32)
 program['u_grid'] = Z
 program['u_grid'].interpolation = gl.GL_NEAREST
 
-mouse     = 256, 256
-translate = [0,0]
-scale     = 1
+mouse = 256, 256
+translate = [0, 0]
+scale = 1
 
 # OpenGL initalization
 # --------------------------------------
-gl.glClearColor(1,1,1,1)
+gl.glClearColor(1, 1, 1, 1)
 gl.glEnable(gl.GL_BLEND)
 gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 

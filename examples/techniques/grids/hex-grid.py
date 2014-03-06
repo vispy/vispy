@@ -5,7 +5,6 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 import sys
-import numpy as np
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
 
@@ -67,7 +66,8 @@ fragment = """
         float X = abs(x-cx0);
         float Y = abs(y-cy0);
         float d0 = abs(Y-H/2.);
-        float d1 = distance_to_line( vec2(W/4.,H/2.), vec2(W/2., 0.0), vec2(X,Y));
+        float d1 = distance_to_line(
+               vec2(W/4.,H/2.), vec2(W/2., 0.0), vec2(X,Y));
         if (X > (W-S))
         {
             d0=2.*d1;
@@ -105,45 +105,52 @@ def display():
     program.draw(gl.GL_TRIANGLE_STRIP)
     glut.glutSwapBuffers()
 
-def reshape(width,height):
+
+def reshape(width, height):
     gl.glViewport(0, 0, width, height)
     program['u_size'] = width, height
 
-def keyboard( key, x, y ):
-    if key == '\033': sys.exit( )
 
-def on_motion( x, y ):
-    global mouse,translate,scale
-    _,_,w,h = gl.glGetIntegerv(gl.GL_VIEWPORT)
-    y = h-y
-    dx,dy = x-mouse[0], y-mouse[1]
-    translate = [translate[0]+dx,translate[1]+dy]
-    mouse = x,y
+def keyboard(key, x, y):
+    if key == '\033':
+        sys.exit()
+
+
+def on_motion(x, y):
+    global mouse, translate, scale
+    _, _, w, h = gl.glGetIntegerv(gl.GL_VIEWPORT)
+    y = h - y
+    dx, dy = x - mouse[0], y - mouse[1]
+    translate = [translate[0] + dx, translate[1] + dy]
+    mouse = x, y
     program['u_translate'] = translate
     glut.glutPostRedisplay()
 
-def on_passive_motion( x, y ):
+
+def on_passive_motion(x, y):
     global mouse
-    _,_,w,h = gl.glGetIntegerv(gl.GL_VIEWPORT)
-    mouse = x, h-y
+    _, _, w, h = gl.glGetIntegerv(gl.GL_VIEWPORT)
+    mouse = x, h - y
+
 
 def on_scroll(dx, dy):
-    global mouse,translate,scale
-    x,y = mouse
-    s = min(max(0.25,scale+.001*dy*scale), 200)
-    translate[0] = x-s*(x-translate[0])/scale
-    translate[1] = y-s*(y-translate[1])/scale
+    global mouse, translate, scale
+    x, y = mouse
+    s = min(max(0.25, scale + .001 * dy * scale), 200)
+    translate[0] = x - s * (x - translate[0]) / scale
+    translate[1] = y - s * (y - translate[1]) / scale
     translate = [translate[0], translate[1]]
     scale = s
     program['u_translate'] = translate
     program['u_scale'] = scale
     glut.glutPostRedisplay()
 
+
 def on_mouse(button, state, x, y):
     if button == 3:
-        on_scroll(0,+3)
+        on_scroll(0, +3)
     elif button == 4:
-        on_scroll(0,-3)
+        on_scroll(0, -3)
     else:
         return
 
@@ -153,9 +160,9 @@ def on_mouse(button, state, x, y):
 glut.glutInit(sys.argv)
 glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA)
 glut.glutCreateWindow('Infinite hexagonal grid')
-glut.glutReshapeWindow(512,512)
+glut.glutReshapeWindow(512, 512)
 glut.glutReshapeFunc(reshape)
-glut.glutKeyboardFunc(keyboard )
+glut.glutKeyboardFunc(keyboard)
 glut.glutDisplayFunc(display)
 glut.glutMotionFunc(on_motion)
 glut.glutMouseFunc(on_mouse)
@@ -164,22 +171,22 @@ glut.glutPassiveMotionFunc(on_passive_motion)
 # Build program & data
 # --------------------------------------
 program = Program(vertex, fragment, 4)
-program['a_position'] = (-1,-1), (-1,+1), (+1,-1), (+1,+1)
-program['a_texcoord'] = ( 0, 0), ( 0,+1), (+1, 0), (+1,+1)
-program['u_grid_color'] = 0,0,0,1
+program['a_position'] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
+program['a_texcoord'] = (0, 0), (0, +1), (+1, 0), (+1, +1)
+program['u_grid_color'] = 0, 0, 0, 1
 program['u_grid_thickness'] = 1
 program['u_grid_antialias'] = .75
-program['u_translate'] = 0,0
+program['u_translate'] = 0, 0
 program['u_scale'] = 1.0
-program['u_size'] = 512,512
+program['u_size'] = 512, 512
 
-mouse     = 400,400
-translate = [0,0]
-scale     = 1
+mouse = 400, 400
+translate = [0, 0]
+scale = 1
 
 # OpenGL initalization
 # --------------------------------------
-gl.glClearColor(1,1,1,1)
+gl.glClearColor(1, 1, 1, 1)
 gl.glEnable(gl.GL_BLEND)
 gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 

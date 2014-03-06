@@ -60,17 +60,21 @@ void main()
 }
 """
 
+
 def display():
     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
     gl.glDrawArrays(gl.GL_POINTS, 0, len(data))
     glut.glutSwapBuffers()
 
+
 def reshape(width, height):
     gl.glViewport(0, 0, width, height)
+
 
 def keyboard(key, x, y):
     if key == '\033':
         sys.exit()
+
 
 def new_explosion():
     n = len(data)
@@ -85,15 +89,15 @@ def new_explosion():
     gl.glUniform3f(loc, *center)
 
     data['lifetime'] = np.random.normal(2.0, 0.5, (n,))
-    data['start']    = np.random.normal(0.0, 0.2, (n, 3))
-    data['end']      = np.random.normal(0.0, 1.2, (n, 3))
+    data['start'] = np.random.normal(0.0, 0.2, (n, 3))
+    data['end'] = np.random.normal(0.0, 1.2, (n, 3))
     gl.glBufferData(gl.GL_ARRAY_BUFFER, data.nbytes, data, gl.GL_DYNAMIC_DRAW)
 
 
 def timer(fps):
     global elapsed_time
 
-    elapsed_time += 1.0/fps
+    elapsed_time += 1.0 / fps
     if elapsed_time > 1.5:
         new_explosion()
         elapsed_time = 0.0

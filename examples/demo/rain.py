@@ -13,7 +13,7 @@ import numpy as np
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
 
-from vispy.gloo import Program, VertexBuffer, IndexBuffer
+from vispy.gloo import Program, VertexBuffer
 from vispy.util.transforms import ortho
 
 vertex = """
@@ -91,28 +91,33 @@ def display():
     program.draw(gl.GL_POINTS)
     glut.glutSwapBuffers()
 
-def reshape(width,height):
+
+def reshape(width, height):
     gl.glViewport(0, 0, width, height)
     projection = ortho(0, width, 0, height, -1, +1)
     program['u_projection'] = projection
 
+
 def keyboard(key, x, y):
-    if key == '\033': sys.exit( )
+    if key == '\033':
+        sys.exit()
+
 
 def timer(fps):
-    glut.glutTimerFunc(1000/fps, timer, fps)
-    data['a_fg_color'][...,3] -= 0.01
+    glut.glutTimerFunc(1000 / fps, timer, fps)
+    data['a_fg_color'][..., 3] -= 0.01
     data['a_size'] += 1.0
     vdata.set_data(data)
     glut.glutPostRedisplay()
 
+
 def on_passive_motion(x, y):
     global index
-    _,_,_,h = gl.glGetIntegerv( gl.GL_VIEWPORT )
-    data['a_position'][index] = x,h-y
+    _, _, _, h = gl.glGetIntegerv(gl.GL_VIEWPORT)
+    data['a_position'][index] = x, h - y
     data['a_size'][index] = 5
-    data['a_fg_color'][index] = 0,0,0,1
-    index = (index+1) % 500
+    data['a_fg_color'][index] = 0, 0, 0, 1
+    index = (index + 1) % 500
     glut.glutPostRedisplay()
 
 
@@ -123,17 +128,17 @@ glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_DEPTH)
 glut.glutCreateWindow('Rain [Move mouse]')
 glut.glutReshapeWindow(512, 512)
 glut.glutReshapeFunc(reshape)
-glut.glutKeyboardFunc(keyboard )
+glut.glutKeyboardFunc(keyboard)
 glut.glutDisplayFunc(display)
 glut.glutPassiveMotionFunc(on_passive_motion)
-glut.glutTimerFunc(1000/60, timer, 60)
+glut.glutTimerFunc(1000 / 60, timer, 60)
 
 # Build data
 # --------------------------------------
 n = 500
-data = np.zeros(n, [ ('a_position', np.float32, 2),
-                     ('a_fg_color', np.float32, 4),
-                     ('a_size',     np.float32, 1)])
+data = np.zeros(n, [('a_position', np.float32, 2),
+                    ('a_fg_color', np.float32, 4),
+                    ('a_size',     np.float32, 1)])
 index = 0
 
 # Build program
@@ -146,8 +151,8 @@ program['u_linewidth'] = 1.00
 
 # Build view, model, projection
 # --------------------------------------
-program['u_model'] = np.eye(4,dtype=np.float32)
-program['u_view'] = np.eye(4,dtype=np.float32)
+program['u_model'] = np.eye(4, dtype=np.float32)
+program['u_view'] = np.eye(4, dtype=np.float32)
 
 # OpenGL initalization
 # --------------------------------------
