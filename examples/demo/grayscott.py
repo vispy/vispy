@@ -4,7 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 # Author:   Nicolas P .Rougier
-# Date:     07/03/2014
+# Date:     06/03/2014
 # Abstract: GPU computing usingthe framebuffer
 # Keywords: framebuffer, GPU computing, reaction-diffusion
 # -----------------------------------------------------------------------------
@@ -32,7 +32,7 @@ varying vec2 v_texcoord;
 void main()
 {
     float r = texture2D(texture, v_texcoord).r;
-    gl_FragColor = vec4(1,r,r,1);
+    gl_FragColor = vec4(r,r,r,1);
 }
 """
 
@@ -96,19 +96,25 @@ void main(void)
 
 
 def display():
+    global comp_w, comp_h, disp_w, disp_h
+
     framebuffer.activate()
-    gl.glViewport(0, 0, 256, 256)
+    gl.glViewport(0, 0, comp_w, comp_h)
+    compute["texture"].interpolation = gl.GL_NEAREST
     compute.draw(gl.GL_TRIANGLE_STRIP)
     framebuffer.deactivate()
 
     gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-    gl.glViewport(0, 0, 512, 512)
+    gl.glViewport(0, 0, disp_w, disp_h)
+    render["texture"].interpolation = gl.GL_LINEAR
     render.draw(gl.GL_TRIANGLE_STRIP)
     glut.glutSwapBuffers()
 
 
 def reshape(width, height):
+    global disp_w, disp_h
     gl.glViewport(0, 0, width, height)
+    disp_w, disp_h = width, height
 
 
 def keyboard(key, x, y):
@@ -135,7 +141,8 @@ glut.glutIdleFunc(idle)
 # Parameters
 # ----------
 scale = 4
-width, height = 256, 256
+comp_w, comp_h = 256, 256
+disp_w, disp_h = 512, 512
 dt = 1.0
 dd = 1.5
 species = {
@@ -152,15 +159,15 @@ species = {
     'Worms 2': [0.16, 0.08, 0.054, 0.063],
     'Zebrafish': [0.16, 0.08, 0.035, 0.060]
 }
-P = np.zeros((height, width, 4), dtype=np.float32)
-P[:, :] = species['Bacteria 1']
+P = np.zeros((comp_h, comp_w, 4), dtype=np.float32)
+P[:, :] = species['Unstable']
 
-UV = np.zeros((height, width, 4), dtype=np.float32)
+UV = np.zeros((comp_h, comp_w, 4), dtype=np.float32)
 UV[:, :, 0] = 1.0
 r = 32
-UV[height / 2 - r:height / 2 + r, width / 2 - r:width / 2 + r, 0] = 0.50
-UV[height / 2 - r:height / 2 + r, width / 2 - r:width / 2 + r, 1] = 0.25
-UV += np.random.uniform(0.0, 0.01, (height, width, 4))
+UV[comp_h / 2 - r:comp_h / 2 + r, comp_w / 2 - r:comp_w / 2 + r, 0] = 0.50
+UV[comp_h / 2 - r:comp_h / 2 + r, comp_w / 2 - r:comp_w / 2 + r, 1] = 0.25
+UV += np.random.uniform(0.0, 0.01, (comp_h, comp_w, 4))
 
 
 compute = Program(compute_vertex, compute_fragment, 4)
@@ -169,8 +176,8 @@ compute["texture"] = UV
 compute["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
 compute["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
 compute['dt'] = dt
-compute['dx'] = 1.0 / width
-compute['dy'] = 1.0 / height
+compute['dx'] = 1.0 / comp_w
+compute['dy'] = 1.0 / comp_h
 compute['dd'] = dd
 
 render = Program(render_vertex, render_fragment, 4)
@@ -179,7 +186,7 @@ render["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
 render["texture"] = compute["texture"]
 
 framebuffer = FrameBuffer(color=compute["texture"],
-                          depth=DepthBuffer((width, height)))
+                          depth=DepthBuffer((comp_w, comp_h)))
 
 # OpenGL initialization
 # --------------------------------------
