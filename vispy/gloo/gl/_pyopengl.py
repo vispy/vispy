@@ -111,7 +111,7 @@ def glGetAttribLocation(program, name):
 def glGetFramebufferAttachmentParameter(target, attachment, pname):
     d = -2**31  # smallest 32bit integer
     params = (ctypes.c_int*1)(d)
-    GL.glGetFramebufferAttachmentParameteriv(target, attachment, pname, params)
+    FBO.glGetFramebufferAttachmentParameteriv(target, attachment, pname, params)
     return params[0]
 
 
@@ -123,7 +123,7 @@ def glGetProgramInfoLog(program):
 def glGetRenderbufferParameter(target, pname):
     d = -2**31  # smallest 32bit integer
     params = (ctypes.c_int*1)(d)
-    GL.glGetRenderbufferParameteriv(target, pname, params)
+    FBO.glGetRenderbufferParameteriv(target, pname, params)
     return params[0]
 
 
