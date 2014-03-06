@@ -345,8 +345,11 @@ def getParameter(pname):
     else:
         return _glGetIntegerv(pname)
     name = pname
-    ()
     # --- desktop angle
+    ()
+    return res.decode('utf-8')
+    # --- pyopengl
+    res = GL.glGetString(pname)
     return res.decode('utf-8')
 
 

@@ -27,7 +27,10 @@ def test_use_desktop():
             val1 = getattr(gl, name)
             val2 = getattr(gl.pyopengl, name)
             assert_is(val1, val2)
-
+    
+    # Touch debug wrapper stuff
+    gl.use('desktop debug')
+    
     # Use desktop again
     gl.use('desktop')
     #

@@ -152,7 +152,8 @@ def glGetParameter(pname):
     else:
         return _glGetIntegerv(pname)
     name = pname
-    return GL.glGetString(pname)
+    res = GL.glGetString(pname)
+    return res.decode('utf-8')
 
 
 def glGetUniform(program, location):

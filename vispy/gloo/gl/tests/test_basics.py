@@ -12,6 +12,7 @@ from nose.tools import assert_equal, assert_true  # noqa
 from vispy.util import app_opengl_context, assert_in  # noqa
 from numpy.testing import assert_almost_equal
 from vispy.app.backends import requires_non_glut
+from vispy.util.six import string_types
 
 from vispy.gloo import gl
 
@@ -73,8 +74,7 @@ def _test_setting_parameters():
     gl.glDepthRange(*val)
     assert_almost_equal(gl.glGetParameter(gl.GL_DEPTH_RANGE), val)
     
-    # Check if all is ok
-    assert_equal(gl.glGetError(), 0)
+    gl.check_error()
 
 
 def _test_enabling_disabling():
@@ -93,8 +93,7 @@ def _test_enabling_disabling():
     assert_equal(gl.glIsEnabled(gl.GL_BLEND), False)
     assert_equal(gl.glGetParameter(gl.GL_BLEND), 0)
     
-    # Check if all is ok
-    assert_equal(gl.glGetError(), 0)
+    gl.check_error()
 
 
 def _test_setting_stuff():
@@ -136,9 +135,11 @@ def _test_setting_stuff():
         pass  # accept if the function is not there ...
         # On Travis this function was not there on one machine according
         # to PyOpenGL, but our desktop backend worked fine ...
+    #
+    v = gl.glGetParameter(gl.GL_VERSION)
+    assert_true(isinstance(v, string_types))
     
-    # Check if all is ok
-    assert_equal(gl.glGetError(), 0)
+    gl.check_error()
 
 
 def _test_object_creation_and_deletion():
@@ -197,8 +198,7 @@ def _test_object_creation_and_deletion():
     gl.glDeleteShader(handle)
     assert_equal(gl.glIsShader(handle), False)
     
-    # Check if all is ok
-    assert_equal(gl.glGetError(), 0)
+    gl.check_error()
 
 
 def _test_fbo():
@@ -242,16 +242,14 @@ def _test_fbo():
     gl.glCopyTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, 0, 0, 30, 30,  0)
     gl.glCopyTexSubImage2D(gl.GL_TEXTURE_2D, 0,  20, 20,  0, 0, 10, 10)
     
-    # Check if all is ok
-    assert_equal(gl.glGetError(), 0)
+    gl.check_error()
     
     # Clean up
     gl.glDeleteTexture(htex)
     gl.glDeleteRenderbuffer(hrenderbuf)
     gl.glDeleteFramebuffer(hframebuf)
     
-    # Check if all is ok
-    assert_equal(gl.glGetError(), 0)
+    gl.check_error()
 
     
 if __name__ == '__main__':

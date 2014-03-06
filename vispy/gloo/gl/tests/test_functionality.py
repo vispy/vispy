@@ -213,15 +213,16 @@ buf2 = ((buf3+1.0)*0.5)[:, :2]   # not C-contiguous
 assert buf2.flags['C_CONTIGUOUS'] is False
 
 # Array of colors
-buf4 = np.zeros((N, 4), np.float32)
+buf4 = np.zeros((N, 5), np.float32)
 buf4[6:12, 0] = 0.5
 buf4[12:18, 1] = 0.5
 buf4[18:24, 2] = 0.5
 buf4[:, 3] = 1.0  # alpha
-
+buf4 = buf4[:, :4]  # make non-contiguous
 
 # Element buffer
-elements = np.arange(N, dtype=np.uint8)
+# elements = np.arange(N, dtype=np.uint8)  # C-contiguous
+elements = np.arange(0, N, 0.5).astype(np.uint8)[::2]  # not C-contiguous
 helements = None  # the OpenGL object ref
 
 
@@ -261,6 +262,10 @@ def _prepare_vis():
     gl.glDetachShader(hprog, hvert)
     gl.glAttachShader(hprog, hvert)
     gl.glLinkProgram(hprog)
+    
+    # Test that indeed these shaders are attached
+    attached_shaders = gl.glGetAttachedShaders(hprog)
+    assert_equal(set(attached_shaders), set([hvert, hfrag]))
     
     # Check
     assert_equal(gl.glGetProgramInfoLog(hprog), '')
@@ -331,7 +336,7 @@ def _prepare_vis():
     # Allocate data and upload
     # This data is luminance and not C-contiguous
     gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_LUMINANCE, gl.GL_LUMINANCE, 
-                    gl.GL_UNSIGNED_BYTE, im2.copy())  # touch
+                    gl.GL_UNSIGNED_BYTE, im2)  # touch
     gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_LUMINANCE, gl.GL_LUMINANCE, 
                     gl.GL_UNSIGNED_BYTE, im2.shape[:2])
     gl.glTexSubImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, gl.GL_LUMINANCE,
@@ -470,19 +475,21 @@ def _prepare_vis():
         fun2(loc, 1, value)  # e.g. glUniform4fv
     
     # Set matrix uniforms
+    m = np.eye(5, dtype='float32')
     loc = gl.glGetUniformLocation(hprog, 'u_m2')
-    m = np.eye(2, dtype='float32')
-    gl.glUniformMatrix2fv(loc, 1, False, m)
+    gl.glUniformMatrix2fv(loc, 1, False, m[:2, :2])
     #
     loc = gl.glGetUniformLocation(hprog, 'u_m3')
     m = np.eye(3, dtype='float32')
-    gl.glUniformMatrix3fv(loc, 1, False, m)
+    gl.glUniformMatrix3fv(loc, 1, False, m[:3, :3])
     #
     loc = gl.glGetUniformLocation(hprog, 'u_m4')
     m = np.eye(4, dtype='float32')
-    gl.glUniformMatrix4fv(loc, 1, False, m)
+    gl.glUniformMatrix4fv(loc, 1, False, m[:4, :4])
     
     # Check some uniforms
+    loc = gl.glGetUniformLocation(hprog, 'u_i1')
+    assert_equal(gl.glGetUniform(hprog, loc), 0)
     loc = gl.glGetUniformLocation(hprog, 'u_i2')
     assert_equal(gl.glGetUniform(hprog, loc), (0, 0))
     loc = gl.glGetUniformLocation(hprog, 'u_f2')
