@@ -89,14 +89,13 @@ def _test_functonality(backend):
         gl.glScissor(0, 0, w, h)  # touch
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         
-        # Setup visualization
-        objects = _prepare_vis()
+        # Setup visualization, ensure to do it in a paint event
+        objects = context.test(_prepare_vis)
         
         _clear_screen()
         
         # Draw 1
-        _draw1()
-        _check_result()
+        context.test(_draw1)
         if SHOW:
             context.c.swap_buffers()
             app.process_events()
@@ -105,8 +104,7 @@ def _test_functonality(backend):
         _clear_screen()
         
         # Draw 2
-        _draw2()
-        _check_result()
+        context.test(_draw2)
         if SHOW:
             context.c.swap_buffers()
             app.process_events()
@@ -115,8 +113,7 @@ def _test_functonality(backend):
         _clear_screen()
         
         # Draw 3
-        _draw3()
-        _check_result()
+        context.test(_draw3)
         if SHOW:
             context.c.swap_buffers()
             app.process_events()
@@ -527,6 +524,7 @@ def _draw1():
     # Draw using arrays
     gl.glDrawArrays(gl.GL_TRIANGLES, 0, N)
     gl.glFinish()
+    _check_result()
 
 
 def _draw2():
@@ -535,6 +533,7 @@ def _draw2():
     gl.glDrawElements(gl.GL_TRIANGLES, elements.size, gl.GL_UNSIGNED_BYTE, 0)
     gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, 0)
     gl.glFinish()
+    _check_result()
 
 
 def _draw3():
@@ -542,6 +541,7 @@ def _draw3():
     gl.glDrawElements(gl.GL_TRIANGLES, 
                       elements.size, gl.GL_UNSIGNED_BYTE, elements)
     gl.glFinish()
+    _check_result()
 
 
 def _check_result(assert_result=True):
