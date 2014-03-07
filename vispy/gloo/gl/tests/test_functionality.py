@@ -24,7 +24,7 @@ from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true
 from vispy.util import app_opengl_context, assert_in  # noqa
 from numpy.testing import assert_almost_equal  # noqa
-from vispy.app.backends import requires_pyglet
+from vispy.app.backends import requires_pyglet, requires_qt  # noqa
 
 from vispy.gloo import gl
 from vispy import app
@@ -40,20 +40,20 @@ SHOW = False
 
 ## High level tests
 
-@requires_pyglet()
+@requires_qt()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
     _test_functonality('desktop')
 
 
-@requires_pyglet()
+@requires_qt()
 @gl._requires_pyopengl()
 def test_functionality_pypengl():
     """ Test pyopengl GL backend for full functionality. """
     _test_functonality('pyopengl')
 
 
-@requires_pyglet()
+@requires_qt()
 def test_functionality_angle():
     """ Test angle GL backend for full functionality. """
     if True:
@@ -79,7 +79,7 @@ def _test_functonality(backend):
     # Note that we explicitly use pyglet because with Qt we seem
     # to get errors for this test
     
-    with app_opengl_context('pyglet') as context:
+    with app_opengl_context('qt') as context:
         
         _clear_screen()
         

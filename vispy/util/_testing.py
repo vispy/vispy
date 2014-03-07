@@ -136,8 +136,10 @@ def assert_is(expr1, expr2, msg=None):
 ###############################################################################
 # Testing helpers
 
+
 class app_opengl_context(object):
     """Context manager that provides an active OpenGL context"""
+
     # This method mostly wraps to set_log_level, but also takes
     # care of enabling/disabling message recording in the formatter.
     def __init__(self, backend=None):
@@ -147,16 +149,52 @@ class app_opengl_context(object):
 
     def __enter__(self):
         from .. import app  # nest to avoid circular imports
-        self._app = app.Application()
-        self._app.use(self.backend)
-        self._app.create()
-        self.c = app.Canvas(size=(300, 200), autoswap=False, app=self._app)
+
+        # Create app
+        self.app = app.Application()
+        self.app.use(self.backend)
+        self.app.create()
+
+        # Create canvas
+        self.c = app.Canvas(size=(300, 200), autoswap=False, app=self.app)
+        self.c.events.paint.connect(self._on_paint)
         self.c.show()
-        #self._app.process_events()
-        #self._app.process_events()
+
+        # Create timer
+        self.timer = app.Timer(0.1, app=self.app, iterations=1)
+        self.timer.connect(self._on_timer)
+
+        # Make sure we are initialized, painted, etc.
+        if self.backend == 'qt':
+            # pyglet gets stuck
+            self.paint()
+            self.wait()
+
         return self
 
+    def _on_paint(self, event):
+        self._paintflag = True
+
+    def _on_timer(self, event):
+        self._timerflag = True
+
+    def paint(self):
+        self._paintflag = False
+        self.c.update()
+        while not self._paintflag:
+            self.app.process_events()
+
+    def wait(self):
+        """ Wait a tiny bit for the event loop.
+        """
+        self._timerflag = False
+        self.timer.start()
+        while not self._timerflag:
+            self.app.process_events()
+
     def __exit__(self, type, value, traceback):
+        if self.backend == 'qt':
+            self.wait()
         try:
             self.c.close()
         except Exception:
