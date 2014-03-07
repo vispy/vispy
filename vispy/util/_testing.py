@@ -152,8 +152,8 @@ class app_opengl_context(object):
         self._app.create()
         self.c = app.Canvas(size=(300, 200), autoswap=False, app=self._app)
         self.c.show()
-        self._app.process_events()
-        self._app.process_events()
+        #self._app.process_events()
+        #self._app.process_events()
         return self
 
     def __exit__(self, type, value, traceback):
