@@ -729,6 +729,7 @@ class PyOpenGLApiGenrator(ApiGenerator):
     def __init__(self):
         ApiGenerator.__init__(self)
         self._functions_to_import = []
+        self._used_functions = []
 
     def _add_function(self, des):
         # Fix for FBO?
@@ -746,6 +747,7 @@ class PyOpenGLApiGenrator(ApiGenerator):
         if ann_lines:
             self.lines.append('def %s(%s):' % (des.apiname, argstr))
             self.lines.extend(ann_lines)
+            self._used_functions.append(des.es2.glname)
         else:
             # To be imported from OpenGL.GL
             self._functions_to_import.append((des.es2.glname, des.apiname))
@@ -761,6 +763,15 @@ class PyOpenGLApiGenrator(ApiGenerator):
         self.lines.append('_functions_to_import = [')
         for name1, name2 in self._functions_to_import:
             self.lines.append('    ("%s", "%s"),' % (name1, name2))
+        self.lines.append('    ]')
+        
+        self.lines.append('')
+        
+        # Write used functions
+        self.lines.append('# List of functions in OpenGL.GL that we use')
+        self.lines.append('_used_functions = [')
+        for name in self._used_functions:
+            self.lines.append('    "%s",' % name)
         self.lines.append('    ]')
         
         # Really save
