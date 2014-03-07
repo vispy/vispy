@@ -51,6 +51,11 @@ class Program(GLObject):
 
         self._count = count
         self._buffer = None
+        
+        # Calling __setitem__ before all shaders are attached causes 
+        # this dict to accumulate items. It is cleared when the program is 
+        # activated.
+        self._deferred_item_set = {}
 
         # Get all vertex shaders
         self._verts = []
@@ -139,6 +144,16 @@ class Program(GLObject):
 
     def _create(self):
         """
+        Create the GL program object if needed.
+        """
+        # Check if program has been created
+        if self._handle <= 0:
+            self._handle = gl.glCreateProgram()
+            if not self._handle:
+                raise RuntimeError("Cannot create program object")
+        
+    def _update(self):
+        """
         Build (link) the program and checks everything's ok.
 
         A GL context must be available to be able to build (link)
@@ -149,12 +164,6 @@ class Program(GLObject):
             raise ValueError("No vertex shader has been given")
         if not self._frags:
             raise ValueError("No fragment shader has been given")
-
-        # Check if program has been created
-        if self._handle <= 0:
-            self._handle = gl.glCreateProgram()
-            if not self._handle:
-                raise RuntimeError("Cannot create program object")
 
         # Detach any attached shaders
         attached = gl.glGetAttachedShaders(self._handle)
@@ -237,13 +246,15 @@ class Program(GLObject):
         elif name in self._attributes.keys():
             self._attributes[name].set_data(data)
         else:
-            raise ValueError("Unknown uniform or attribute")
+            self._deferred_item_set[name] = data
 
     def __getitem__(self, name):
         if name in self._uniforms.keys():
             return self._uniforms[name].data
         elif name in self._attributes.keys():
             return self._attributes[name].data
+        elif name in self._deferred_item_set:
+            return self._deferred_item_set[name]
         else:
             raise IndexError("Unknown uniform or attribute")
 
@@ -251,6 +262,11 @@ class Program(GLObject):
         """Activate the program as part of current rendering state."""
 
         logger.debug("GPU: Activating program")
+        
+        # try offloading all deferred program variables here
+        for name, value in self._deferred_item_set.items():
+            self[name] = value
+        
         gl.glUseProgram(self.handle)
 
         for uniform in self._uniforms.values():
@@ -260,6 +276,8 @@ class Program(GLObject):
         for attribute in self._attributes.values():
             if attribute.active:
                 attribute.activate()
+                
+                
 
     def _deactivate(self):
         """Deactivate the program."""

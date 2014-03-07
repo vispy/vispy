@@ -250,7 +250,7 @@ class ModularProgram(Program):
         
         vs = VertexShader(self.vert_code)
         fs = FragmentShader(self.frag_code)
-        self.attach(vs, fs)
+        self.attach([vs, fs])
         self.vshader = vs
         self.fshader = fs
         

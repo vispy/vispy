@@ -210,7 +210,7 @@ class LineVisual(Visual):
         self._program['map_local_to_nd'] = self.transform.shader_map()
             
         gl.glLineWidth(self._opts['width'])
-        self._program.draw('LINE_STRIP')
+        self._program.draw(gl.GL_LINE_STRIP)
 
 
 

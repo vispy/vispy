@@ -166,7 +166,7 @@ class ImageVisual(Visual):
             
         
         self._texture = gloo.Texture2D(self._data)
-        self._texture.set_filter('NEAREST', 'NEAREST')
+        self._texture.interpolation = gl.GL_NEAREST
         
         
     def _build_program(self):
@@ -214,5 +214,5 @@ class ImageVisual(Visual):
         if self._program is None:
             self._build_program()
             
-        self._program.draw('TRIANGLES')
+        self._program.draw(gl.GL_TRIANGLES)
 

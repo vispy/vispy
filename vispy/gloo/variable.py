@@ -165,21 +165,22 @@ class Uniform(Variable):
         #     else:
         #         self._data = data
         if self._gtype == gl.GL_SAMPLER_2D:
-            if isinstance(self._data, Texture2D):
+            if isinstance(data, Texture2D):
+                self._data = data
+
+            elif isinstance(self._data, Texture2D):
                 self._data.set_data(data)
 
             elif isinstance(data, RenderBuffer):
                 self._data = data
 
             # Automatic texture creation if required
-            elif not isinstance(data, Texture2D):
+            else:
                 data = np.array(data, copy=False)
                 if data.dtype in [np.float16, np.float32, np.float64]:
                     self._data = Texture2D(data=data.astype(np.float32))
                 else:
                     self._data = Texture2D(data=data.astype(np.uint8))
-            else:
-                self._data = data
         else:
             self._data[...] = np.array(data, copy=False).ravel()
 
