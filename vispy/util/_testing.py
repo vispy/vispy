@@ -140,17 +140,20 @@ class app_opengl_context(object):
     """Context manager that provides an active OpenGL context"""
     # This method mostly wraps to set_log_level, but also takes
     # care of enabling/disabling message recording in the formatter.
-    def __init__(self):
+    def __init__(self, backend=None):
+        self.backend = backend
         self.c = None
         return
 
     def __enter__(self):
         from .. import app  # nest to avoid circular imports
-        app.create()
-        self.c = app.Canvas(size=(300, 200), autoswap=False)
+        self._app = app.Application()
+        self._app.use(self.backend)
+        self._app.create()
+        self.c = app.Canvas(size=(300, 200), autoswap=False, app=self._app)
         self.c.show()
-        app.process_events()
-        app.process_events()
+        self._app.process_events()
+        self._app.process_events()
         return self
 
     def __exit__(self, type, value, traceback):
