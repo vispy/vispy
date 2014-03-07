@@ -31,6 +31,30 @@ before_install:
         travis_retry sudo apt-get -qq -y install libgl1-mesa-dri;
       fi;
 
+    # file size checks
+    - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
+        GIT_TARGET_EXTRA="+refs/heads/${TRAVIS_BRANCH}";
+        GIT_SOURCE_EXTRA="+refs/pull/${TRAVIS_PULL_REQUEST}/merge";
+      else
+        GIT_TARGET_EXTRA="";
+        GIT_SOURCE_EXTRA="";
+      fi;
+    - SRC_DIR=$(pwd)
+    - cd ~
+    - mkdir target-size-clone && cd target-size-clone
+    - git init && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git
+    - git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD && cd ..
+    - TARGET_SIZE=`du -s target-size-clone | sed -e "s/\t.*//"`
+    - mkdir source-size-clone && cd source-size-clone
+    - git init && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git
+    - git fetch origin ${GIT_SOURCE_EXTRA} && git checkout -qf FETCH_HEAD && cd ..
+    - SOURCE_SIZE=`du -s source-size-clone | sed -e "s/\t.*//"`
+    - if [ "${SOURCE_SIZE}" != "${TARGET_SIZE}" ]; then
+        SIZE_DIFF=`expr ${SOURCE_SIZE} - ${TARGET_SIZE}`;
+      else
+        SIZE_DIFF=0;
+      fi;
+    - cd ${SRC_DIR}
 
 install:
     # Install numpy, nose, flake
@@ -74,7 +98,7 @@ install:
           travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging;
         fi;
       fi;
-    
+
     # Install vispy
     - python setup.py build
     - python setup.py install
@@ -119,6 +143,8 @@ script:
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - cd ${SRC_DIR}
     - make flake
+    - echo "Size difference ${SIZE_DIFF} kB"
+    - test ${SIZE_DIFF} -lt 100
 
 
 after_success:
