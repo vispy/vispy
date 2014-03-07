@@ -80,5 +80,5 @@ class PointsVisual(Visual):
             self._build_vbo()
         self._program['a_position'] = self._vbo
         
-        self._program.draw('POINTS')
+        self._program.draw(gloo.gl.GL_POINTS)
         

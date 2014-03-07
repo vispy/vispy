@@ -261,7 +261,10 @@ class Attribute(Variable):
 
         # Data is a tuple with size <= 4, we assume this designates a generate
         # vertex attribute.
-        if (type(data) in (float, int) or
+        if isinstance(data, VertexBuffer):
+            self._data = data
+        
+        elif (type(data) in (float, int) or
             (type(data) in (tuple, list)
              and len(data) in [1, 2, 3, 4] and data[0] in (float, int))):
 
@@ -279,15 +282,13 @@ class Attribute(Variable):
 
         # For array-like, we need to build a proper VertexBuffer to be able to
         # upload it later to GPU memory.
-        elif not isinstance(data, VertexBuffer):
+        else:
             name, base, count = self.dtype
             data = np.array(data, dtype=base, copy=False)
             data = data.ravel().view([self.dtype])
             # WARNING : transform data with the right type
             # data = np.array(data,copy=False)
             self._data = VertexBuffer(data)
-        else:
-            self._data = data
         self._generic = False
 
     def _activate(self):
