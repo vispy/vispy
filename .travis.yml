@@ -112,7 +112,7 @@ script:
     - cd ${VISPY_DIR}/../
     - # Nose-timer has bugs on 3+ as of Jan 2014
     - if [ "${PYTHON}" == "2.7" ]; then
-        nosetests -x --with-timer --timer-top-n 10;
+        nosetests --with-timer --timer-top-n 10;
       else
         nosetests;
       fi
