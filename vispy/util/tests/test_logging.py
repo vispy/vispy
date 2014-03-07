@@ -1,11 +1,8 @@
-from nose.tools import assert_equal, assert_true
-from os import path as op
+from nose.tools import assert_equal
 import logging
 
 from vispy import app
-from vispy.util import logger, use_log_level, sys_info, _TempDir
-
-temp_dir = _TempDir()
+from vispy.util import logger, use_log_level, assert_in, assert_not_in
 
 
 def test_logging():
@@ -26,14 +23,14 @@ def test_debug_logging():
         a.use()
         a.quit()
     assert_equal(len(l), 1)
-    assert_true('vispy.app.application' in l[0])
+    assert_in('vispy.app.application', l[0])
 
     with use_log_level('debug', record=True) as l:
         a = app.Application()
         a.use()
         a.quit()
     assert_equal(len(l), 1)
-    assert_true('vispy.app.application' in l[0])
+    assert_in('vispy.app.application', l[0])
 
     with use_log_level('debug', 'foo', True) as l:
         a = app.Application()
@@ -46,15 +43,4 @@ def test_debug_logging():
         a.use()
         a.quit()
     assert_equal(len(l), 1)
-    assert_true('vispy.app.application' not in l[0])
-
-
-def test_sys_info():
-    """Test printing of system information"""
-    fname = op.join(temp_dir, 'info.txt')
-    sys_info(fname)
-    with open(fname, 'r') as fid:
-        out = ''.join(fid.readlines())
-    keys = ['Python', 'Backend', 'Pyglet']  # 'GL version' only for non-GLUT
-    for key in keys:
-        assert_true(key in out)
+    assert_not_in('vispy.app.application', l[0])

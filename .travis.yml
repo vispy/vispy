@@ -5,16 +5,20 @@ language: python
 # it for 2.7, but the Ubuntu system has installable 2.7 Qt4-GL, which
 # allows for more complete testing.
 
+
 virtualenv:
     system_site_packages: true
 
+
 env:
     # Enable python 2 and python 3 builds
-    - PYTHON=2.6 DEPS=full    OGL=stable
-    - PYTHON=2.7 DEPS=full    OGL=stable
-    - PYTHON=2.7 DEPS=full    OGL=beta
-    - PYTHON=2.7 DEPS=minimal OGL=stable
-    - PYTHON=3.3 DEPS=full    OGL=stable
+    # Note that the 2.6 build doesn't get flake8, and runs old versions of
+    # Pyglet and GLFW to make sure we deal with those correctly
+    - PYTHON=2.6 DEPS=full
+    - PYTHON=2.7 DEPS=full
+    - PYTHON=2.7 DEPS=minimal
+    - PYTHON=3.3 DEPS=full
+
 
 before_install:
     - travis_retry sudo apt-get -qq update;
@@ -27,7 +31,33 @@ before_install:
         travis_retry sudo apt-get -qq -y install libgl1-mesa-dri;
       fi;
 
+    # file size checks
+    - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
+        GIT_TARGET_EXTRA="+refs/heads/${TRAVIS_BRANCH}";
+        GIT_SOURCE_EXTRA="+refs/pull/${TRAVIS_PULL_REQUEST}/merge";
+      else
+        GIT_TARGET_EXTRA="";
+        GIT_SOURCE_EXTRA="";
+      fi;
+    - SRC_DIR=$(pwd)
+    - cd ~
+    - mkdir target-size-clone && cd target-size-clone
+    - git init && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git
+    - git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD && cd ..
+    - TARGET_SIZE=`du -s target-size-clone | sed -e "s/\t.*//"`
+    - mkdir source-size-clone && cd source-size-clone
+    - git init && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git
+    - git fetch origin ${GIT_SOURCE_EXTRA} && git checkout -qf FETCH_HEAD && cd ..
+    - SOURCE_SIZE=`du -s source-size-clone | sed -e "s/\t.*//"`
+    - if [ "${SOURCE_SIZE}" != "${TARGET_SIZE}" ]; then
+        SIZE_DIFF=`expr ${SOURCE_SIZE} - ${TARGET_SIZE}`;
+      else
+        SIZE_DIFF=0;
+      fi;
+    - cd ${SRC_DIR}
+
 install:
+    # Install numpy, nose, flake
     - if [ "${PYTHON}" != "2.7" ]; then
         conda create -n testenv --yes --quiet pip python=$PYTHON;
         source activate testenv;
@@ -35,11 +65,14 @@ install:
       else
         travis_retry sudo apt-get -qq -y install python-numpy python-nose;
       fi;
-    - pip install -q coveralls nose-timer flake8
-    - if [ "${OGL}" == "beta" ]; then
-        echo "Using OpenGL beta version (pip)";
-        pip install -q https://pypi.python.org/packages/source/P/PyOpenGL/PyOpenGL-3.1.0b1.tar.gz;
-      else
+    - pip install -q coveralls nose-timer
+    # Dont install flake8 on 2.6 to make sure tests still run without it
+    - if [ "${PYTHON}" != "2.6" ]; then
+        pip install -q flake8;
+      fi
+
+    # Install PyOpenGL
+    - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" == "2.7" ]; then
           echo "Using OpenGL stable version (repos)";
           travis_retry sudo apt-get -qq -y install python-opengl;
@@ -50,8 +83,13 @@ install:
       fi;
 
     # Use Pyglet alpha to get Py3.3 support
+    # Test old (insufficient) version of Pyglet on 2.6
     - if [ "${DEPS}" == "full" ]; then
-        pip install -q http://pyglet.googlecode.com/archive/tip.zip;
+        if [ "${PYTHON}" == "2.6" ]; then
+          pip install -q pyglet;
+        else
+          pip install -q http://pyglet.googlecode.com/archive/tip.zip;
+        fi;
         if [ "${PYTHON}" == "3.3" ]; then
           conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo;
           conda install --yes --quiet pillow;
@@ -60,10 +98,13 @@ install:
           travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging;
         fi;
       fi;
+
+    # Install vispy
     - python setup.py build
     - python setup.py install
     - SRC_DIR=$(pwd)
     - cd ~
+
     # GLFW: version 2 shouldn't work (so let's try on Py2.6), version 3 will
     - if [ "${PYTHON}" == "2.6" ] && [ "${DEPS}" == "full" ]; then
         travis_retry sudo apt-get -qq install libglfw2;
@@ -76,6 +117,7 @@ install:
         sudo make install;
       fi
     - sudo ldconfig
+
     # We will run tests from vispy dir to test our install worked
     - VISPY_DIR=$(python -c 'import vispy;print(vispy.__path__[0])')
     - ln -s ${SRC_DIR}/.coveragerc ${VISPY_DIR}/../.coveragerc
@@ -83,10 +125,12 @@ install:
     # Link coverage to src dir, coveralls should be run from there (needs git calls)
     - ln -s ${VISPY_DIR}/../.coverage ${SRC_DIR}/.coverage
 
+
 before_script:
     # We need to create a (fake) display on Travis, let's use a funny resolution
     - export DISPLAY=:99.0
     - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+
 
 script:
     - cd ${VISPY_DIR}/../
@@ -98,15 +142,15 @@ script:
       fi
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - cd ${SRC_DIR}
-    # Don't run on 2.6 because it has some silly (unimportant) error
-    - if [ "${PYTHON}" != "2.6" ]; then
-        make flake;
-      fi;
+    - make flake
+    - echo "Size difference ${SIZE_DIFF} kB"
+    - test ${SIZE_DIFF} -lt 100
+
 
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
     # Let's use the "full" test case for coveralls, best case for coverage
-    - if [ "${PYTHON}" == "2.7" ] && [ "${DEPS}" == "full" ] && [ "${OGL}" != "beta" ]; then
+    - if [ "${PYTHON}" == "2.7" ] && [ "${DEPS}" == "full" ]; then
         echo "Running coveralls";
         cd ${SRC_DIR};
         coveralls;

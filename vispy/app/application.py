@@ -70,6 +70,7 @@ class Application(object):
     def create(self):
         """ Create the native application.
         """
+        self.use()  # Ensure it exists
         self.native
 
     def run(self):
