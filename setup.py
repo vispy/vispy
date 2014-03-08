@@ -86,7 +86,6 @@ setup(
         'vispy.app.backends',
         'vispy.gloo', 'vispy.gloo.tests',
         'vispy.gloo.gl', 'vispy.gloo.gl.tests',
-        'vispy.shaders',
         'vispy.util', 'vispy.util.tests',
         'vispy.util.dataio',
         'vispy.visuals',
