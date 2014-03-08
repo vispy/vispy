@@ -33,10 +33,7 @@ varying vec2 v_texcoord;
 void main()
 {
     float v;
-    if( pingpong == 0 )
-        v = texture2D(texture, v_texcoord).r;
-    else
-        v = texture2D(texture, v_texcoord).g;
+    v = texture2D(texture, v_texcoord)[pingpong];
     gl_FragColor = vec4(1.0-v, 1.0-v, 1.0-v, 1.0);
 }
 """
@@ -63,27 +60,15 @@ void main(void)
     vec2  p = v_texcoord;
     float old_state, new_state, count;
 
-    if( pingpong == 0 ) {
-        old_state = texture2D(texture, p).r;
-        count = texture2D(texture, p + vec2(-dx,-dy)).r
-              + texture2D(texture, p + vec2( dx,-dy)).r
-              + texture2D(texture, p + vec2(-dx, dy)).r
-              + texture2D(texture, p + vec2( dx, dy)).r
-              + texture2D(texture, p + vec2(-dx, 0.0)).r
-              + texture2D(texture, p + vec2( dx, 0.0)).r
-              + texture2D(texture, p + vec2(0.0,-dy)).r
-              + texture2D(texture, p + vec2(0.0, dy)).r;
-    } else {
-        old_state = texture2D(texture, p).g;
-        count = texture2D(texture, p + vec2(-dx,-dy)).g
-              + texture2D(texture, p + vec2( dx,-dy)).g
-              + texture2D(texture, p + vec2(-dx, dy)).g
-              + texture2D(texture, p + vec2( dx, dy)).g
-              + texture2D(texture, p + vec2(-dx, 0.0)).g
-              + texture2D(texture, p + vec2( dx, 0.0)).g
-              + texture2D(texture, p + vec2(0.0,-dy)).g
-              + texture2D(texture, p + vec2(0.0, dy)).g;
-    }
+    old_state = texture2D(texture, p)[pingpong];
+    count = texture2D(texture, p + vec2(-dx,-dy))[pingpong]
+            + texture2D(texture, p + vec2( dx,-dy))[pingpong]
+            + texture2D(texture, p + vec2(-dx, dy))[pingpong]
+            + texture2D(texture, p + vec2( dx, dy))[pingpong]
+            + texture2D(texture, p + vec2(-dx, 0.0))[pingpong]
+            + texture2D(texture, p + vec2( dx, 0.0))[pingpong]
+            + texture2D(texture, p + vec2(0.0,-dy))[pingpong]
+            + texture2D(texture, p + vec2(0.0, dy))[pingpong];
 
     new_state = old_state;
     if( old_state > 0.5 ) {
@@ -106,13 +91,8 @@ void main(void)
            new_state = 1.0;
     }
 
-    if( pingpong == 1 ) {
-        gl_FragColor.r = new_state;
-        gl_FragColor.g = old_state;
-    } else {
-        gl_FragColor.r = new_state;
-        gl_FragColor.g = old_state;
-    }
+    gl_FragColor[1-pingpong] = new_state;
+    gl_FragColor[pingpong] = old_state;
 }
 """
 
