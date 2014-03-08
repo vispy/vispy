@@ -13,8 +13,8 @@ import numpy as np
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
 
-import cube
-from transforms import perspective, translate, rotate
+from vispy.util.cube import cube
+from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import Program, VertexBuffer, IndexBuffer, Texture2D
 from vispy.gloo import FrameBuffer, DepthBuffer
 
@@ -128,7 +128,7 @@ glut.glutTimerFunc(1000 / 60, timer, 60)
 
 # Build cube data
 # --------------------------------------
-vertices, indices, _ = cube.cube()
+vertices, indices, _ = cube()
 vertices = VertexBuffer(vertices)
 indices = IndexBuffer(indices)
 
