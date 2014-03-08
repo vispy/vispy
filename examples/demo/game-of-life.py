@@ -27,12 +27,17 @@ void main()
 """
 
 render_fragment = """
+uniform int pingpong;
 uniform sampler2D texture;
 varying vec2 v_texcoord;
 void main()
 {
-    float r = texture2D(texture, v_texcoord).r;
-    gl_FragColor = vec4(1.-r,1.-r,1.-r,1.);
+    float v;
+    if( pingpong == 0 )
+        v = texture2D(texture, v_texcoord).r;
+    else
+        v = texture2D(texture, v_texcoord).g;
+    gl_FragColor = vec4(1.0-v, 1.0-v, 1.0-v, 1.0);
 }
 """
 
@@ -48,30 +53,44 @@ void main()
 """
 
 compute_fragment = """
+uniform int pingpong;
 uniform sampler2D texture;
 uniform float dx;          // horizontal distance between texels
 uniform float dy;          // vertical distance between texels
-uniform float dd;          // unit of distance
-uniform float dt;          // unit of time
 varying vec2 v_texcoord;
 void main(void)
 {
     vec2  p = v_texcoord;
-    float state = texture2D(texture, p).r;
-    float count = texture2D(texture, p + vec2(-dx,-dy)).r
-                + texture2D(texture, p + vec2( dx,-dy)).r
-                + texture2D(texture, p + vec2(-dx, dy)).r
-                + texture2D(texture, p + vec2( dx, dy)).r
-                + texture2D(texture, p + vec2(-dx, 0.0)).r
-                + texture2D(texture, p + vec2( dx, 0.0)).r
-                + texture2D(texture, p + vec2(0.0,-dy)).r
-                + texture2D(texture, p + vec2(0.0, dy)).r;
+    float old_state, new_state, count;
 
-    if( state > 0.5 ) {
+    if( pingpong == 0 ) {
+        old_state = texture2D(texture, p).r;
+        count = texture2D(texture, p + vec2(-dx,-dy)).r
+              + texture2D(texture, p + vec2( dx,-dy)).r
+              + texture2D(texture, p + vec2(-dx, dy)).r
+              + texture2D(texture, p + vec2( dx, dy)).r
+              + texture2D(texture, p + vec2(-dx, 0.0)).r
+              + texture2D(texture, p + vec2( dx, 0.0)).r
+              + texture2D(texture, p + vec2(0.0,-dy)).r
+              + texture2D(texture, p + vec2(0.0, dy)).r;
+    } else {
+        old_state = texture2D(texture, p).g;
+        count = texture2D(texture, p + vec2(-dx,-dy)).g
+              + texture2D(texture, p + vec2( dx,-dy)).g
+              + texture2D(texture, p + vec2(-dx, dy)).g
+              + texture2D(texture, p + vec2( dx, dy)).g
+              + texture2D(texture, p + vec2(-dx, 0.0)).g
+              + texture2D(texture, p + vec2( dx, 0.0)).g
+              + texture2D(texture, p + vec2(0.0,-dy)).g
+              + texture2D(texture, p + vec2(0.0, dy)).g;
+    }
+
+    new_state = old_state;
+    if( old_state > 0.5 ) {
         // Any live cell with fewer than two live neighbours dies
         // as if caused by under-population.
         if( count  < 1.5 )
-            state = 0.0;
+            new_state = 0.0;
 
         // Any live cell with two or three live neighbours
         // lives on to the next generation.
@@ -79,14 +98,21 @@ void main(void)
         // Any live cell with more than three live neighbours dies,
         //  as if by overcrowding.
         else if( count > 3.5 )
-            state = 0.0;
+            new_state = 0.0;
     } else {
         // Any dead cell with exactly three live neighbours becomes
         //  a live cell, as if by reproduction.
        if( (count > 2.5) && (count < 3.5) )
-           state = 1.0;
+           new_state = 1.0;
     }
-    gl_FragColor = vec4(vec3(state),1);
+
+    if( pingpong == 1 ) {
+        gl_FragColor.r = new_state;
+        gl_FragColor.g = old_state;
+    } else {
+        gl_FragColor.r = new_state;
+        gl_FragColor.g = old_state;
+    }
 }
 """
 
@@ -119,6 +145,10 @@ def keyboard(key, x, y):
 
 
 def idle():
+    global pingpong
+    pingpong = 1 - pingpong
+    compute["pingpong"] = pingpong
+    render["pingpong"] = pingpong
     glut.glutPostRedisplay()
 
 
@@ -138,19 +168,42 @@ glut.glutIdleFunc(idle)
 # --------------
 comp_w, comp_h = 512, 512
 disp_w, disp_h = 512, 512
-Z = np.zeros((comp_h, comp_w, 4))
-Z[..., 0] = np.random.randint(0, 2, (comp_h, comp_w))
+Z = np.zeros((comp_h, comp_w, 4),dtype=np.float32)
+Z[...] = np.random.randint(0, 2, (comp_h, comp_w,4))
+Z[:256,:256,:] = 0
+gun = """
+........................O...........
+......................O.O...........
+............OO......OO............OO
+...........O...O....OO............OO
+OO........O.....O...OO..............
+OO........O...O.OO....O.O...........
+..........O.....O.......O...........
+...........O...O....................
+............OO......................"""
+x,y = 0,0
+for i in range(len(gun)):
+    if gun[i] == '\n':
+        y += 1
+        x = 0
+    elif gun[i] == 'O':
+        Z[y,x] = 1
+    x += 1
+
+pingpong = 1
 compute = Program(compute_vertex, compute_fragment, 4)
 compute["texture"] = Z
 compute["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
 compute["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
 compute['dx'] = 1.0 / comp_w
 compute['dy'] = 1.0 / comp_h
+compute['pingpong'] = pingpong
 
 render = Program(render_vertex, render_fragment, 4)
 render["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
 render["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
 render["texture"] = compute["texture"]
+render['pingpong'] = pingpong
 
 framebuffer = FrameBuffer(color=compute["texture"],
                           depth=DepthBuffer((comp_w, comp_h)))
