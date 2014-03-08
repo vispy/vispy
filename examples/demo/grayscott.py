@@ -198,8 +198,8 @@ r = 32
 UV[comp_h / 2 - r:comp_h / 2 + r, comp_w / 2 - r:comp_w / 2 + r, 0] = 0.50
 UV[comp_h / 2 - r:comp_h / 2 + r, comp_w / 2 - r:comp_w / 2 + r, 1] = 0.25
 UV += np.random.uniform(0.0, 0.01, (comp_h, comp_w, 4))
-UV[:,:,2] = UV[:,:,0]
-UV[:,:,3] = UV[:,:,1]
+UV[:, :, 2] = UV[:, :, 0]
+UV[:, :, 3] = UV[:, :, 1]
 
 pingpong = 1
 compute = Program(compute_vertex, compute_fragment, 4)

@@ -168,9 +168,9 @@ glut.glutIdleFunc(idle)
 # --------------
 comp_w, comp_h = 512, 512
 disp_w, disp_h = 512, 512
-Z = np.zeros((comp_h, comp_w, 4),dtype=np.float32)
-Z[...] = np.random.randint(0, 2, (comp_h, comp_w,4))
-Z[:256,:256,:] = 0
+Z = np.zeros((comp_h, comp_w, 4), dtype=np.float32)
+Z[...] = np.random.randint(0, 2, (comp_h, comp_w, 4))
+Z[:256, :256, :] = 0
 gun = """
 ........................O...........
 ......................O.O...........
@@ -181,13 +181,13 @@ OO........O...O.OO....O.O...........
 ..........O.....O.......O...........
 ...........O...O....................
 ............OO......................"""
-x,y = 0,0
+x, y = 0, 0
 for i in range(len(gun)):
     if gun[i] == '\n':
         y += 1
         x = 0
     elif gun[i] == 'O':
-        Z[y,x] = 1
+        Z[y, x] = 1
     x += 1
 
 pingpong = 1
