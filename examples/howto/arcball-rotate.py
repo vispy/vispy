@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 50
 """
-Show spinning cube using VBO's, and transforms, and texturing.
+Show spinning cube using VBO's, and transforms, and texturing along with 
+mouse arcball interaction.
 """
 
 import math
@@ -102,16 +103,17 @@ class Canvas(app.Canvas):
             start = event.last_event.pos
             end = event.pos
 
-            if start==end: return
+            if start == end:
+                return
 
             start = self.get_arcball_vector(start)
             end = self.get_arcball_vector(end)
-            self.theta = math.acos(min(1.0, np.dot(start,end)))/5
-            axis_camera = np.cross(start,end)
-            rotate(self.model, self.theta*180/math.pi, axis_camera[0], axis_camera[1], axis_camera[2])
+            self.theta = math.acos(min(1.0, np.dot(start, end)))/5
+            axis_camera = np.cross(start, end)
+            rotate(self.model, self.theta*180/math.pi, axis_camera[0],
+                   axis_camera[1], axis_camera[2])
             self.program['u_model'] = self.model
             self.update()
-
 
     def get_arcball_vector(self, vec):
         """
@@ -120,18 +122,16 @@ class Canvas(app.Canvas):
         compute the z coordinate
         """
         result = np.array([float(vec[0])/self.size[0]*2.0 - 1.0,
-                            -float(vec[1])/self.size[1]*2.0 + 1.0, 0.0],
-                            dtype=np.float32)
+                          -float(vec[1])/self.size[1]*2.0 + 1.0, 0.0],
+                          dtype=np.float32)
         result2 = np.linalg.norm(result)
 
-        if result2<=1:
+        if result2 <= 1:
             result[2] = math.sqrt(1 - result2)
         else:
             result = result/result2
 
         return result
-
-                
 
 
 if __name__ == '__main__':
