@@ -13,8 +13,8 @@ import numpy as np
 import OpenGL.GL as gl
 import OpenGL.GLUT as glut
 
-import cube
-from transforms import perspective, translate, rotate
+from vispy.util.cube import cube
+from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import Program, VertexBuffer, IndexBuffer, Texture2D
 from vispy.gloo import FrameBuffer, DepthBuffer
 
@@ -79,12 +79,10 @@ def checkerboard(grid_num=8, grid_size=32):
 
 def display():
     framebuffer.activate()
-    gl.glDrawBuffer(gl.GL_COLOR_ATTACHMENT0)
     gl.glViewport(0, 0, 512, 512)
     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
     gl.glEnable(gl.GL_DEPTH_TEST)
     cube.draw(gl.GL_TRIANGLES, indices)
-    gl.glDrawBuffer(gl.GL_NONE)
     framebuffer.deactivate()
     gl.glClear(gl.GL_COLOR_BUFFER_BIT)
     gl.glDisable(gl.GL_DEPTH_TEST)
@@ -128,7 +126,7 @@ glut.glutTimerFunc(1000 / 60, timer, 60)
 
 # Build cube data
 # --------------------------------------
-vertices, indices, _ = cube.cube()
+vertices, indices, _ = cube()
 vertices = VertexBuffer(vertices)
 indices = IndexBuffer(indices)
 
