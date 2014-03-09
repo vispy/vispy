@@ -47,7 +47,8 @@ def has_qt(requires_uic=False, return_which=False):
             which = 'PySide ' + str(PySide.__version__)
             has = True
     else:
-        which = 'PyQt4 ' + str(QtOpenGL.__file__)
+        which = ('PyQt4 ' + QtCore.PYQT_VERSION_STR + 
+                 ' Qt ' + QtCore.QT_VERSION_STR)
         has = True
         has_uic = True
 

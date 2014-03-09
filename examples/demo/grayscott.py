@@ -27,12 +27,17 @@ void main()
 """
 
 render_fragment = """
+uniform int pingpong;
 uniform sampler2D texture;
 varying vec2 v_texcoord;
 void main()
 {
-    float r = texture2D(texture, v_texcoord).r;
-    gl_FragColor = vec4(r,r,r,1);
+    float v;
+    if( pingpong == 0 )
+        v = texture2D(texture, v_texcoord).r;
+    else
+        v = texture2D(texture, v_texcoord).b;
+    gl_FragColor = vec4(1.0-v, 1.0-v, 1.0-v, 1.0);
 }
 """
 
@@ -48,6 +53,7 @@ void main()
 """
 
 compute_fragment = """
+uniform int pingpong;
 uniform sampler2D texture; // U,V:= r,g, other channels ignored
 uniform sampler2D params;  // rU,rV,f,k := r,g,b,a
 uniform float dx;          // horizontal distance between texels
@@ -60,17 +66,33 @@ void main(void)
     float center = -(4.0+4.0/sqrt(2.0));  // -1 * other weights
     float diag   = 1.0/sqrt(2.0);         // weight for diagonals
     vec2 p = v_texcoord;                  // center coordinates
-    vec2 c = texture2D(texture, p).rg;    // center value
-    vec2 l                                // compute Laplacian
-        = ( texture2D(texture, p + vec2(-dx,-dy)).rg
-          + texture2D(texture, p + vec2( dx,-dy)).rg
-          + texture2D(texture, p + vec2(-dx, dy)).rg
-          + texture2D(texture, p + vec2( dx, dy)).rg) * diag
-        + texture2D(texture, p + vec2(-dx, 0.0)).rg
-        + texture2D(texture, p + vec2( dx, 0.0)).rg
-        + texture2D(texture, p + vec2(0.0,-dy)).rg
-        + texture2D(texture, p + vec2(0.0, dy)).rg
-        + c.rg * center;
+
+    vec2 c,l;
+    if( pingpong == 0 ) {
+        c = texture2D(texture, p).rg;    // central value
+        // Compute Laplacian
+        l = ( texture2D(texture, p + vec2(-dx,-dy)).rg
+            + texture2D(texture, p + vec2( dx,-dy)).rg
+            + texture2D(texture, p + vec2(-dx, dy)).rg
+            + texture2D(texture, p + vec2( dx, dy)).rg) * diag
+            + texture2D(texture, p + vec2(-dx, 0.0)).rg
+            + texture2D(texture, p + vec2( dx, 0.0)).rg
+            + texture2D(texture, p + vec2(0.0,-dy)).rg
+            + texture2D(texture, p + vec2(0.0, dy)).rg
+            + c * center;
+    } else {
+        c = texture2D(texture, p).ba;    // central value
+        // Compute Laplacian
+        l = ( texture2D(texture, p + vec2(-dx,-dy)).ba
+            + texture2D(texture, p + vec2( dx,-dy)).ba
+            + texture2D(texture, p + vec2(-dx, dy)).ba
+            + texture2D(texture, p + vec2( dx, dy)).ba) * diag
+            + texture2D(texture, p + vec2(-dx, 0.0)).ba
+            + texture2D(texture, p + vec2( dx, 0.0)).ba
+            + texture2D(texture, p + vec2(0.0,-dy)).ba
+            + texture2D(texture, p + vec2(0.0, dy)).ba
+            + c * center;
+    }
 
     float u = c.r;           // compute some temporary
     float v = c.g;           // values which might save
@@ -89,8 +111,12 @@ void main(void)
 
     u += du * dt;
     v += dv * dt;
-    gl_FragColor = vec4(clamp(u, 0.0, 1.0), clamp(v, 0.0, 1.0),
-                        0.0, 1.0); // output new (u,v)
+
+    if( pingpong == 1 ) {
+        gl_FragColor = vec4(clamp(u, 0.0, 1.0), clamp(v, 0.0, 1.0), c);
+    } else {
+        gl_FragColor = vec4(c, clamp(u, 0.0, 1.0), clamp(v, 0.0, 1.0));
+    }
 }
 """
 
@@ -123,6 +149,10 @@ def keyboard(key, x, y):
 
 
 def idle():
+    global pingpong
+    pingpong = 1 - pingpong
+    compute["pingpong"] = pingpong
+    render["pingpong"] = pingpong
     glut.glutPostRedisplay()
 
 
@@ -168,8 +198,10 @@ r = 32
 UV[comp_h / 2 - r:comp_h / 2 + r, comp_w / 2 - r:comp_w / 2 + r, 0] = 0.50
 UV[comp_h / 2 - r:comp_h / 2 + r, comp_w / 2 - r:comp_w / 2 + r, 1] = 0.25
 UV += np.random.uniform(0.0, 0.01, (comp_h, comp_w, 4))
+UV[:, :, 2] = UV[:, :, 0]
+UV[:, :, 3] = UV[:, :, 1]
 
-
+pingpong = 1
 compute = Program(compute_vertex, compute_fragment, 4)
 compute["params"] = P
 compute["texture"] = UV
@@ -179,11 +211,13 @@ compute['dt'] = dt
 compute['dx'] = 1.0 / comp_w
 compute['dy'] = 1.0 / comp_h
 compute['dd'] = dd
+compute['pingpong'] = pingpong
 
 render = Program(render_vertex, render_fragment, 4)
 render["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
 render["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
 render["texture"] = compute["texture"]
+render['pingpong'] = pingpong
 
 framebuffer = FrameBuffer(color=compute["texture"],
                           depth=DepthBuffer((comp_w, comp_h)))

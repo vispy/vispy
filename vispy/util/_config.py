@@ -111,8 +111,8 @@ class Config(object):
             raise KeyError('key "%s" not in known keys: "%s"'
                            % (key, known_keys))
         if not isinstance(val, (string_types, bool)):
-            raise TypeError('Values must be str or bool, not %s'
-                            % type(val))
+            raise TypeError('Value for key "%s" must be str or bool, not %s'
+                            % (key, type(val)))
 
     def update(self, **kwargs):
         for key, val in kwargs.items():
@@ -185,7 +185,11 @@ if _data_path is not None:
 config = Config(default_backend='qt', qt_lib='any',
                 gl_debug=False, logging_level='info',
                 data_path=_data_path)
-config.update(**_load_config())
+try:
+    config.update(**_load_config())
+except Exception as err:
+    raise Exception('Error while reading vispy config file "%s":\n  %s' % 
+                    (_get_config_fname(), err.message))
 set_log_level(config['logging_level'])
 
 
@@ -262,12 +266,14 @@ def sys_info(fname=None, overwrite=False):
         # Nest all imports here to avoid any circular imports
         from ..app import Application, Canvas, backends
         from ..gloo import gl
+        from .. import __version__
         # get default app
         this_app = Application()
         with use_log_level('warning'):
             this_app.use()  # suppress unnecessary messages
         out += 'Platform: %s\n' % platform.platform()
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
+        out += 'VisPy:    %s\n' % __version__
         out += 'Backend:  %s\n' % this_app.backend_name
         out += 'Qt:       %s\n' % backends.has_qt(return_which=True)[1]
         out += 'Pyglet:   %s\n' % backends.has_pyglet(return_which=True)[1]

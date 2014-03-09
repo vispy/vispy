@@ -12,8 +12,8 @@ import OpenGL.GL as gl
 import OpenGL.GLUT as glut
 
 from vispy.gloo import Program, VertexBuffer, IndexBuffer
-from transforms import perspective, translate, rotate
-from cube import cube
+from vispy.util.transforms import perspective, translate, rotate
+from vispy.util.cube import cube
 
 vertex = """
 uniform mat4 u_model;
