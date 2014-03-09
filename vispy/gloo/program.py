@@ -110,6 +110,7 @@ class Program(GLObject):
 
         self._need_create = True
         self._need_build = True
+        self._need_update = True
 
         # Build uniforms and attributes
         self._build_uniforms()
@@ -139,6 +140,7 @@ class Program(GLObject):
                 else:
                     raise RuntimeError("Shader is not attached to the program")
         self._need_build = True
+        self._need_update = True
 
         # Build uniforms and attributes
         self._build_uniforms()
