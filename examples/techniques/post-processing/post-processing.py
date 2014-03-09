@@ -79,12 +79,10 @@ def checkerboard(grid_num=8, grid_size=32):
 
 def display():
     framebuffer.activate()
-    gl.glDrawBuffer(gl.GL_COLOR_ATTACHMENT0)
     gl.glViewport(0, 0, 512, 512)
     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
     gl.glEnable(gl.GL_DEPTH_TEST)
     cube.draw(gl.GL_TRIANGLES, indices)
-    gl.glDrawBuffer(gl.GL_NONE)
     framebuffer.deactivate()
     gl.glClear(gl.GL_COLOR_BUFFER_BIT)
     gl.glDisable(gl.GL_DEPTH_TEST)
