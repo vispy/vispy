@@ -53,6 +53,7 @@ def generate_terrain(r_min, r_max, c_min, c_max, disp):
 
 
 def generate_points(length=3):
+<<<<<<< HEAD
     """Generates points via recursive function and generate triangles using
     Scipy Delaunay triangulation
 
@@ -63,6 +64,14 @@ def generate_points(length=3):
 
     """
     print("Points are being generated...")
+=======
+    """
+    Generates points via recursive function and generate triangles using
+    Scipy Delaunay triangulation
+    Arguments:
+    length - (2**length+1 by 2**length+1) number of points is generated
+    """
+>>>>>>> b92d56c6b3effd9cc54f9eff7abcc6b84fe4dda1
     global points, triangles, height
     size = 2**(length) + 1
     points = np.zeros((size, size, 3)).astype(np.float32)
@@ -77,7 +86,10 @@ def generate_points(length=3):
     tri = Delaunay(points2)
     triangles = points[tri.simplices]
     triangles = np.vstack(triangles)
+<<<<<<< HEAD
     print("Points successfully generated.")
+=======
+>>>>>>> b92d56c6b3effd9cc54f9eff7abcc6b84fe4dda1
 
 VERT_SHADER = """
 uniform   float u_height;
@@ -112,7 +124,11 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self)
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
+<<<<<<< HEAD
         #Sets the view to an appropriate position over the terrain
+=======
+
+>>>>>>> b92d56c6b3effd9cc54f9eff7abcc6b84fe4dda1
         self.default_view = np.array([[0.8, 0.2, -0.48, 0],
                                      [-0.5, 0.3, -0.78, 0],
                                      [-0.01, 0.9, -0.3, 0],
@@ -199,7 +215,15 @@ class Canvas(app.Canvas):
     def on_paint(self, event):
         # Clear
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+<<<<<<< HEAD
         # Draw
+=======
+        # Correct way to draw the terrain
+        #self.program.draw(gl.GL_TRIANGLES)
+        """Drawing as line strip is wrong as the VB represents triangles but
+        it gives better visualization of the terrain with minor mistakes
+        """
+>>>>>>> b92d56c6b3effd9cc54f9eff7abcc6b84fe4dda1
         self.program.draw(gl.GL_TRIANGLES)
 
 
