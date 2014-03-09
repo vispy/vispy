@@ -171,5 +171,4 @@ def _requires_pyopengl():
 # *after* gloo is loaded
 
 from . import desktop as default_backend
-# from . import desktop as default_backend
 _main.PROXY = default_backend.__dict__
