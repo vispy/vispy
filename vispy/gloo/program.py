@@ -52,6 +52,8 @@ class Program(GLObject):
         self._count = count
         self._buffer = None
         
+        self._need_build = True
+        
         # Calling __setitem__ before all shaders are attached causes 
         # this dict to accumulate items. It is cleared when the program is 
         # activated.
@@ -107,7 +109,7 @@ class Program(GLObject):
         self._frags = list(set(self._frags))
 
         self._need_create = True
-        self._need_update = True
+        self._need_build = True
 
         # Build uniforms and attributes
         self._build_uniforms()
@@ -136,7 +138,7 @@ class Program(GLObject):
                     self._frags.remove(shader)
                 else:
                     raise RuntimeError("Shader is not attached to the program")
-        self._need_update = True
+        self._need_build = True
 
         # Build uniforms and attributes
         self._build_uniforms()
@@ -152,7 +154,7 @@ class Program(GLObject):
             if not self._handle:
                 raise RuntimeError("Cannot create program object")
         
-    def _update(self):
+    def _build(self):
         """
         Build (link) the program and checks everything's ok.
 
@@ -186,6 +188,9 @@ class Program(GLObject):
             print(gl.glGetProgramInfoLog(self._handle))
             raise RuntimeError('Linking error')
 
+        self._need_build = False
+
+    def _update(self):
         # Activate uniforms
         active_uniforms = [name for (name, gtype) in self.active_uniforms]
         for uniform in self._uniforms.values():
@@ -201,7 +206,7 @@ class Program(GLObject):
                 attribute.active = True
             else:
                 attribute.active = False
-
+    
     def _delete(self):
         logger.debug("GPU: Deleting program")
         gl.glDeleteProgram(self._handle)
@@ -218,7 +223,7 @@ class Program(GLObject):
                 uniform._unit = count
                 count += 1
             self._uniforms[name] = uniform
-        self._need_update = True
+        self._need_udpate = True
 
     def _build_attributes(self):
         """ Build the attribute objects """
@@ -260,7 +265,9 @@ class Program(GLObject):
 
     def _activate(self):
         """Activate the program as part of current rendering state."""
-
+        if self._need_build:
+            self._build()
+        
         logger.debug("GPU: Activating program")
         
         # try offloading all deferred program variables here

@@ -123,9 +123,6 @@ class ModularProgram(Program):
         self._hook_defs = {}  # {'hook_name': Function}
         
         self._find_hooks()
-        
-        # force _update to be called when the program is activated.
-        self._need_update = True
 
     def add_chain(self, hook, chain=None):
         """ 
@@ -162,7 +159,7 @@ class ModularProgram(Program):
             
         # TODO: remove or resurrect
         #self._install_dep_callbacks(function)
-        self._need_update = True
+        self._need_build = True
             
     def __setitem__(self, name, value):
         if name in self._hooks:
@@ -206,7 +203,7 @@ class ModularProgram(Program):
             function = FunctionChain(hook_name, function, anonymous=False)
         
         self._hook_defs[hook_name] = function
-        self._need_update = True
+        self._need_build = True
 
     def unset_hook(self, hook_name):
         func = self._hook_defs[hook_name]
@@ -214,7 +211,7 @@ class ModularProgram(Program):
         # a purpose here..
         self._forget_object(func)
         self._hook_defs[hook_name] = None
-        self._need_update = True
+        self._need_build = True
                
     def _forget_object(self, obj):
         # Remove obj from namespaces, forget any cached information about it,
@@ -240,12 +237,12 @@ class ModularProgram(Program):
             #for hook_name, cb in dep.callbacks:
                 #self.add_callback(hook_name, cb)
         
-    def _update(self):
+    def _build(self):
         # generate all code..
         self._compile()
         
         if self.vshader is not None:
-            self.detach(self.vshader, self.fshader)
+            self.detach([self.vshader, self.fshader])
             self.vshader = self.fshader = None
         
         vs = VertexShader(self.vert_code)
@@ -258,7 +255,7 @@ class ModularProgram(Program):
         self._apply_variables()
         
         # and continue.
-        super(ModularProgram, self)._update()
+        super(ModularProgram, self)._build()
 
     def _find_hooks(self):
         # Locate all undefined function prototypes in both shaders
