@@ -51,8 +51,8 @@ varying vec2 image_pos;
 
 void main(void) {
     vec4 tex_coord = map_local_to_tex(vec4(image_pos,0,1));
-    if(tex_coord.x < 0 || tex_coord.x > 1 || 
-       tex_coord.y < 0 || tex_coord.y > 1) {
+    if(tex_coord.x < 0.0 || tex_coord.x > 1.0 || 
+       tex_coord.y < 0.0 || tex_coord.y > 1.0) {
         discard;
     }
     gl_FragColor = texture2D(tex, tex_coord.xy);
