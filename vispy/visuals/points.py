@@ -11,6 +11,13 @@ from .visual import Visual
 from .transforms import AffineTransform
 from ..shaders.composite import ModularProgram
 
+
+# HACK: True OpenGL ES does not need to enable point sprite and does not define
+# these two constants. Desktop OpenGL needs to enable these two modes but we do
+# not have these two constants because our GL namespace pretends to be ES.
+GL_VERTEX_PROGRAM_POINT_SIZE = 34370
+GL_POINT_SPRITE = 34913
+
 class PointsVisual(Visual):
 
     """ PointsVisual(N=1000)
@@ -79,6 +86,12 @@ class PointsVisual(Visual):
         if self._vbo is None:
             self._build_vbo()
         self._program['a_position'] = self._vbo
+        
+        # HACK: True OpenGL ES does not need to enable point sprite and does not define
+        # these two constants. Desktop OpenGL needs to enable these two modes but we do
+        # not have these two constants because our GL namespace pretends to be ES.
+        gloo.gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+        gloo.gl.glEnable(GL_POINT_SPRITE)
         
         self._program.draw(gloo.gl.GL_POINTS)
         
