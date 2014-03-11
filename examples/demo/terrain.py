@@ -65,7 +65,8 @@ def generate_points(length=3):
     print("Points are being generated...")
     global points, triangles, height
     size = 2**(length) + 1
-    points = np.indices((size, size, 1)).T[0].astype(np.float32).transpose((1,0,2))
+    points = np.indices((size, size, 1)).T[0].transpose((1, 0, 2))
+    points = points.astype(np.float32)
     generate_terrain(0, size-1, 0, size-1, length)
     height = length
     points = np.resize(points, (size*size, 3))
