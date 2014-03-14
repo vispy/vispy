@@ -11,6 +11,7 @@ from .buffer import VertexBuffer
 from .texture import Texture2D
 from .framebuffer import RenderBuffer
 from ..util import logger
+from .util import check_variable
 
 
 # ------------------------------------------------------------- gl_typeinfo ---
@@ -64,6 +65,10 @@ class Variable(GLObject):
 
         # Name of this variable in the program
         self._name = name
+        check = check_variable(name) 
+        if check:
+            logger.warn('Invalid variable name "%s". (%s)' 
+                        % (name, check))
 
         # Build dtype
         size, _, base = gl_typeinfo[gtype]
