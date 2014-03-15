@@ -8,7 +8,7 @@ import numpy as np
 
 from .. import gloo
 from .visual import Visual
-from .transforms import AffineTransform
+from .transforms import NullTransform
 from ..shaders.composite import ModularProgram
 from ..util.meshdata import MeshData
 
@@ -92,7 +92,7 @@ class MeshVisual(Visual):
             'compute_normals': True,
         }
         
-        self._program = ModularProgram(vertex_shader, fragment_shader)
+        self._program = ModularProgram(VERTEX_SHADER, FRAGMENT_SHADER)
         
         self.transform = NullTransform()
         
@@ -114,15 +114,15 @@ class MeshVisual(Visual):
         self.set_mesh_data(**kwds)
         
         ## storage for data compiled from MeshData object
-        self.vertexes = None
-        self.normals = None
-        self.colors = None
-        self.faces = None
+        #self.vertexes = None
+        #self.normals = None
+        #self.colors = None
+        #self.faces = None
         
     def set_color(self, c):
         """Set the default color to use when no vertex or face colors are specified."""
         self._opts['color'] = c
-        self.update()
+        self.events.update()
         
     def set_mesh_data(self, **kwds):
         """
@@ -144,73 +144,74 @@ class MeshVisual(Visual):
         self._opts['meshdata'] = md
         self._opts.update(kwds)
         self.mesh_data_changed()
-        self.update()
+        self.events.update()
         
     
     def mesh_data_changed(self):
         """
-        This method must be called to inform the item that the MeshData object
+        This method must be called to inform the item that its MeshData object
         has been altered.
         """
         
-        self.vertexes = None
-        self.faces = None
-        self.normals = None
-        self.colors = None
-        self.edges = None
-        self.edge_colors = None
-        self.update()
+        self._vbo = None
+        #self.vertexes = None
+        #self.faces = None
+        #self.normals = None
+        #self.colors = None
+        #self.edges = None
+        #self.edge_colors = None
+        self.events.update()
 
 
     
-    def parse_mesh_data(self):
-        ## interpret vertex / normal data before drawing
-        ## This can:
-        ##   - automatically generate normals if they were not specified
-        ##   - pull vertexes/noormals/faces from MeshData if that was specified
+    #def parse_mesh_data(self):
+        ### interpret vertex / normal data before drawing
+        ### This can:
+        ###   - automatically generate normals if they were not specified
+        ###   - pull vertexes/noormals/faces from MeshData if that was specified
         
-        if self.vertexes is not None and self.normals is not None:
-            return
-        #if self._opts['normals'] is None:
-            #if self._opts['meshdata'] is None:
-                #self._opts['meshdata'] = MeshData(vertexes=self._opts['vertexes'], faces=self._opts['faces'])
-        if self._opts['meshdata'] is not None:
-            md = self._opts['meshdata']
-            if self._opts['smooth'] and not md.has_face_indexed_data():
-                self.vertexes = md.vertexes()
-                if self._opts['compute_normals']:
-                    self.normals = md.vertex_normals()
-                self.faces = md.faces()
-                if md.has_vertex_color():
-                    self.colors = md.vertex_colors()
-                if md.has_face_color():
-                    self.colors = md.face_colors()
-            else:
-                self.vertexes = md.vertexes(indexed='faces')
-                if self._opts['compute_normals']:
-                    if self._opts['smooth']:
-                        self.normals = md.vertex_normals(indexed='faces')
-                    else:
-                        self.normals = md.face_normals(indexed='faces')
-                self.faces = None
-                if md.has_vertex_color():
-                    self.colors = md.vertex_colors(indexed='faces')
-                elif md.has_face_color():
-                    self.colors = md.face_colors(indexed='faces')
+        #if self.vertexes is not None and self.normals is not None:
+            #return
+        ##if self._opts['normals'] is None:
+            ##if self._opts['meshdata'] is None:
+                ##self._opts['meshdata'] = MeshData(vertexes=self._opts['vertexes'], faces=self._opts['faces'])
+        #if self._opts['meshdata'] is not None:
+            #md = self._opts['meshdata']
+            #if self._opts['smooth'] and not md.has_face_indexed_data():
+                #self.vertexes = md.vertexes()
+                #if self._opts['compute_normals']:
+                    #self.normals = md.vertex_normals()
+                #self.faces = md.faces()
+                #if md.has_vertex_color():
+                    #self.colors = md.vertex_colors()
+                #if md.has_face_color():
+                    #self.colors = md.face_colors()
+            #else:
+                #self.vertexes = md.vertexes(indexed='faces')
+                #if self._opts['compute_normals']:
+                    #if self._opts['smooth']:
+                        #self.normals = md.vertex_normals(indexed='faces')
+                    #else:
+                        #self.normals = md.face_normals(indexed='faces')
+                #self.faces = None
+                #if md.has_vertex_color():
+                    #self.colors = md.vertex_colors(indexed='faces')
+                #elif md.has_face_color():
+                    #self.colors = md.face_colors(indexed='faces')
                     
-            if self._opts['draw_edges']:
-                if not md.has_face_indexed_data():
-                    self.edges = md.edges()
-                    self.edge_verts = md.vertexes()
-                else:
-                    self.edges = md.edges()
-                    self.edge_verts = md.vertexes(indexed='faces')
-            return
+            #if self._opts['draw_edges']:
+                #if not md.has_face_indexed_data():
+                    #self.edges = md.edges()
+                    #self.edge_verts = md.vertexes()
+                #else:
+                    #self.edges = md.edges()
+                    #self.edge_verts = md.vertexes(indexed='faces')
+            #return
 
     def _build_vbo(self):
         # Construct complete data array with position and optionally color
         
-        pos = self._opts['pos']
+        pos = self._opts['meshdata'].vertexes(indexed='faces')
         typ = [('pos', np.float32, pos.shape[-1])]
         color = self._opts['color']
         color_is_array = isinstance(color, np.ndarray) and color.ndim > 1
@@ -227,70 +228,70 @@ class MeshVisual(Visual):
 
 
     
-    def paint(self):
+    #def paint(self):
         
         
-        if self._opts['draw_faces']:
-            with self.shader():
-                verts = self.vertexes
-                norms = self.normals
-                color = self.colors
-                faces = self.faces
-                if verts is None:
-                    return
-                glEnableClientState(GL_VERTEX_ARRAY)
-                try:
-                    glVertexPointerf(verts)
+        #if self._opts['draw_faces']:
+            #with self.shader():
+                #verts = self.vertexes
+                #norms = self.normals
+                #color = self.colors
+                #faces = self.faces
+                #if verts is None:
+                    #return
+                #glEnableClientState(GL_VERTEX_ARRAY)
+                #try:
+                    #glVertexPointerf(verts)
                     
-                    if self.colors is None:
-                        color = self._opts['color']
-                        if isinstance(color, QtGui.QColor):
-                            glColor4f(*fn.glColor(color))
-                        else:
-                            glColor4f(*color)
-                    else:
-                        glEnableClientState(GL_COLOR_ARRAY)
-                        glColorPointerf(color)
+                    #if self.colors is None:
+                        #color = self._opts['color']
+                        #if isinstance(color, QtGui.QColor):
+                            #glColor4f(*fn.glColor(color))
+                        #else:
+                            #glColor4f(*color)
+                    #else:
+                        #glEnableClientState(GL_COLOR_ARRAY)
+                        #glColorPointerf(color)
                     
                     
-                    if norms is not None:
-                        glEnableClientState(GL_NORMAL_ARRAY)
-                        glNormalPointerf(norms)
+                    #if norms is not None:
+                        #glEnableClientState(GL_NORMAL_ARRAY)
+                        #glNormalPointerf(norms)
                     
-                    if faces is None:
-                        glDrawArrays(GL_TRIANGLES, 0, np.product(verts.shape[:-1]))
-                    else:
-                        faces = faces.astype(np.uint).flatten()
-                        glDrawElements(GL_TRIANGLES, faces.shape[0], GL_UNSIGNED_INT, faces)
-                finally:
-                    glDisableClientState(GL_NORMAL_ARRAY)
-                    glDisableClientState(GL_VERTEX_ARRAY)
-                    glDisableClientState(GL_COLOR_ARRAY)
+                    #if faces is None:
+                        #glDrawArrays(GL_TRIANGLES, 0, np.product(verts.shape[:-1]))
+                    #else:
+                        #faces = faces.astype(np.uint).flatten()
+                        #glDrawElements(GL_TRIANGLES, faces.shape[0], GL_UNSIGNED_INT, faces)
+                #finally:
+                    #glDisableClientState(GL_NORMAL_ARRAY)
+                    #glDisableClientState(GL_VERTEX_ARRAY)
+                    #glDisableClientState(GL_COLOR_ARRAY)
             
-        if self._opts['draw_edges']:
-            verts = self.edge_verts
-            edges = self.edges
-            glEnableClientState(GL_VERTEX_ARRAY)
-            try:
-                glVertexPointerf(verts)
+        #if self._opts['draw_edges']:
+            #verts = self.edge_verts
+            #edges = self.edges
+            #glEnableClientState(GL_VERTEX_ARRAY)
+            #try:
+                #glVertexPointerf(verts)
                 
-                if self.edge_colors is None:
-                    color = self._opts['edge_color']
-                    if isinstance(color, QtGui.QColor):
-                        glColor4f(*fn.glColor(color))
-                    else:
-                        glColor4f(*color)
-                else:
-                    glEnableClientState(GL_COLOR_ARRAY)
-                    glColorPointerf(color)
-                edges = edges.flatten()
-                glDrawElements(GL_LINES, edges.shape[0], GL_UNSIGNED_INT, edges)
-            finally:
-                glDisableClientState(GL_VERTEX_ARRAY)
-                glDisableClientState(GL_COLOR_ARRAY)
+                #if self.edge_colors is None:
+                    #color = self._opts['edge_color']
+                    #if isinstance(color, QtGui.QColor):
+                        #glColor4f(*fn.glColor(color))
+                    #else:
+                        #glColor4f(*color)
+                #else:
+                    #glEnableClientState(GL_COLOR_ARRAY)
+                    #glColorPointerf(color)
+                #edges = edges.flatten()
+                #glDrawElements(GL_LINES, edges.shape[0], GL_UNSIGNED_INT, edges)
+            #finally:
+                #glDisableClientState(GL_VERTEX_ARRAY)
+                #glDisableClientState(GL_COLOR_ARRAY)
             
     def paint(self):
-        super(PointsVisual, self).paint()
+        super(MeshVisual, self).paint()
         
         if self._vbo is None:
             self._build_vbo()
