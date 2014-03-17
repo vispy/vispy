@@ -48,6 +48,8 @@ def _make_context(platform_id=None, device_id=None):
         int
 
     """
+    if not pyopencl:
+        raise RuntimeError("PyOpenCL not installed on the system !")
     properties = get_gl_sharing_context_properties()
     enum_plat = pyopencl.context_properties.PLATFORM
     ids = None
