@@ -40,6 +40,10 @@ SHOW = False
 
 ## High level tests
 
+def teardown_module():
+    gl.use()  # Reset to default
+
+
 @requires_qt()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
