@@ -169,7 +169,7 @@ class app_opengl_context(object):
         # Make sure we are initialized, painted, etc.
         if self.backend == 'qt':
             # pyglet gets stuck
-            for i in range(4):
+            for i in range(1):
                 self.paint()
         return self
 
@@ -186,7 +186,7 @@ class app_opengl_context(object):
         self._timerflag = True
 
     def paint(self, callback=None):
-        """ Run a callback in a paint event, then return result or 
+        """ Run a callback in a paint event, then return result or
         raise error.
         """
         # Prepare
@@ -201,8 +201,8 @@ class app_opengl_context(object):
         if self._callback_error is not None:
             raise self._callback_error
         return self._callback_result
-    
-    def test(self, callback=None, n=5):
+
+    def test(self, callback=None, n=1):
         """ Run a callback in a paint event, but try at most n times.
         If one try went well, all is well. This is necessary because
         readpixels sometimes produces bogus one or two times during
