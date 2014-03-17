@@ -126,7 +126,7 @@ class MeshVisual(Visual):
         if kwds:
             self.set_data(**kwds)
 
-    def set_data(self, pos, faces=None, z=0.0, color=(1,1,1,1)):
+    def set_data(self, pos=None, faces=None, z=0.0, color=(1,1,1,1)):
         """
         *pos* must be array of shape (..., 2) or (..., 3).
         *z* is only used in the former case.
@@ -137,17 +137,21 @@ class MeshVisual(Visual):
             raise NotImplementedError  # stub
       
         # select input component based on pos.shape
-        if pos.shape[-1] == 2:
-            if not isinstance(self.pos_component, XYPosComponent):
-                self.pos_component = XYPosComponent()
-            self.pos_component.set_data(xy=pos, z=z)
-        elif pos.shape[-1] == 3:
-            if not isinstance(self.pos_component, XYZPosComponent):
-                self.pos_component = XYZPosComponent()
-            self.pos_component.set_data(pos=pos)
+        if pos is not None:
+            if pos.shape[-1] == 2:
+                if not isinstance(self.pos_component, XYPosComponent):
+                    self.pos_component = XYPosComponent()
+                self.pos_component.set_data(xy=pos, z=z)
+            elif pos.shape[-1] == 3:
+                if not isinstance(self.pos_component, XYZPosComponent):
+                    self.pos_component = XYZPosComponent()
+                self.pos_component.set_data(pos=pos)
             
         if isinstance(color, tuple):
             self.color_component = UniformColorComponent(color)
+        elif isinstance(color, np.ndarray):
+            self.color_component = VertexColorComponent(color)
+            
 
     def paint(self):
         super(MeshVisual, self).paint()
@@ -429,37 +433,55 @@ class UniformColorComponent(MeshComponent):
         return (self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED)
 
 
-class MeshColorInputComponent(VisualComponent):
-    def __init__(self, visual):
-        super(MeshColorInputComponent, self).__init__(visual)
-        self.frag_func = Function("""
-            vec4 $colorInput() {
-                return $rgba;
-            }
-            """)
-        
-        self.support_func = Function("""
-            void $colorInputSupport() {
-                $output_color = $input_color;
-            }
-            """)
+class VertexColorComponent(MeshComponent):
+    FRAG_CODE = """
+        vec4 $colorInput() {
+            return $rgba;
+        }
+        """
     
-    def update(self):
-        # Select uniform- or attribute-input 
-        program = self.visual._program
-        if 'color' in self.visual._data.dtype.fields:
-            # explicitly declare a new variable (to be shared)
-            # TODO: does this need to be explicit?
-            self.frag_func['rgba'] = ('varying', 'vec4')   
-            
-            program['frag_color'] = self.frag_func
-            
-            program.add_callback('vert_post_hook', self.support_func)
-            self.support_func['input_color'] = ('attribute', 'vec4', self.visual._vbo['color'])
-            self.support_func['output_color'] = self.frag_func['rgba'] # automatically assign same variable to both
-            
-        else:
-            self.frag_func['rgba'] = ('uniform', 'vec4', np.array(self.visual._opts['color']))
-            program['frag_color'] = self.frag_func
-            
+    VERT_CODE = """
+        void $colorInputSupport() {
+            $output_color = $input_color;
+        }
+        """
+    
+    def __init__(self, color=None):
+        self.frag_func = Function(self.FRAG_CODE)
+        self.vert_func = Function(self.VERT_CODE)
+        self._color = color
+        self._vbo = None
+        
+    @property
+    def color(self):
+        return self._color
+    
+    @color.setter
+    def color(self, c):
+        self._color = c
+        
+    @property
+    def vbo(self):
+        if self._vbo is None:
+            self._vbo = gloo.VertexBuffer(self._color)
+        return self._vbo
+        
+    def activate(self, program, mode):
+        # explicitly declare a new variable (to be shared)
+        # TODO: does this need to be explicit?
+        self.frag_func['rgba'] = ('varying', 'vec4')   
+        
+        program['frag_color'] = self.frag_func
+        
+        program.add_callback('vert_post_hook', self.vert_func)
+        self.vert_func['input_color'] = ('attribute', 'vec4', self.vbo)
+        
+        # automatically assign same variable to both
+        self.vert_func['output_color'] = self.frag_func['rgba']
+
+    @property
+    def supported_draw_modes(self):
+        return (self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED)
+
+
     

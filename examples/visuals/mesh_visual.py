@@ -11,12 +11,21 @@ import vispy.app
 from vispy.gloo import gl
 from vispy.visuals.mesh import MeshVisual
 from vispy.util.meshdata import MeshData
+from vispy.visuals.transforms import STTransform
 
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
-        mdata = MeshData.sphere(10, 20, 0.5)
-        self.mesh = MeshVisual(pos=mdata.vertexes(indexed='faces'))
+        mdata = MeshData.sphere(10, 20, 0.3)
+        verts = mdata.vertexes(indexed='faces')
+        self.mesh1 = MeshVisual(pos=verts)
+        
+        nv = verts.size//3
+        color = np.ones((nv, 4), dtype=np.float32)
+        color[:,0] = np.linspace(0, 1, nv)
+        color[:,1] = np.linspace(1, 0, nv)
+        self.mesh2 = MeshVisual(pos=verts, color=color)
+        self.mesh2.transform = STTransform(translate=(0.5, 0.5))
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)
@@ -26,7 +35,8 @@ class Canvas(vispy.app.Canvas):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glViewport(0, 0, *self.size)
-        self.mesh.paint()
+        self.mesh1.paint()
+        self.mesh2.paint()
         
 
 if __name__ == '__main__':
