@@ -25,6 +25,8 @@ from ...util import keys
 
 from . import _libglfw as glfw
 
+glfw.glfwInit()  # only ever call once
+
 
 # Map native keys to vispy keys
 KEYMAP = {
@@ -77,25 +79,20 @@ BUTTONMAP = {glfw.GLFW_MOUSE_BUTTON_LEFT: 1,
              glfw.GLFW_MOUSE_BUTTON_MIDDLE: 3
              }
 
-
-ALL_WINDOWS = []
-
+_VP_GLFW_ALL_WINDOWS = []
+_VP_GLFW_DO_DRAW = False
 
 MOD_KEYS = [keys.SHIFT, keys.ALT, keys.CONTROL, keys.META]
 
 
 def _get_glfw_windows(check=False):
     wins = list()
-    global ALL_WINDOWS
-    for win in ALL_WINDOWS:
+    for win in _VP_GLFW_ALL_WINDOWS:
         if isinstance(win, CanvasBackend):
             wins.append(win)
     if check and len(wins) != 1:
         raise RuntimeError('Can only use a single window')
     return wins
-
-
-_do_draw = False
 
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -118,9 +115,9 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_run(self):
         win = _get_glfw_windows(check=True)[0]
-        global _do_draw
+        global _VP_GLFW_DO_DRAW
         while win._id is not None and not glfw.glfwWindowShouldClose(win._id):
-            if _do_draw:
+            if _VP_GLFW_DO_DRAW:
                 win._on_draw()
             glfw.glfwPollEvents()
         self._vispy_quit()
@@ -145,7 +142,6 @@ class CanvasBackend(BaseCanvasBackend):
     def __init__(self, name='glut window', *args, **kwargs):
         BaseCanvasBackend.__init__(self)
         # Init GLFW, add window hints, and create window
-        glfw.glfwInit()
         glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)
         glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, True)
         glfw.glfwWindowHint(glfw.GLFW_DEPTH_BITS, 24)
@@ -159,8 +155,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._id = glfw.glfwCreateWindow(title=name)
         glfw.glfwMakeContextCurrent(self._id)
         glfw.glfwHideWindow(self._id)  # Start hidden, like the other backends
-        global ALL_WINDOWS
-        ALL_WINDOWS.append(self)
+        _VP_GLFW_ALL_WINDOWS.append(self)
         self._mod = list()
 
         # Register callbacks
@@ -233,18 +228,17 @@ class CanvasBackend(BaseCanvasBackend):
         if self._vispy_canvas is None or self._id is None:
             return
         # XXX HACKISH SOLUTION
-        global _do_draw
-        _do_draw = True
+        global _VP_GLFW_DO_DRAW
+        _VP_GLFW_DO_DRAW = True
         #self._on_draw(self._id)
 
     def _vispy_close(self):
         # Force the window or widget to shut down
         self._vispy_set_visible(False)  # Destroying doesn't hide!
-        global ALL_WINDOWS
-        if self in ALL_WINDOWS and self._id is not None:
-            ALL_WINDOWS.pop(ALL_WINDOWS.index(self))
-            glfw.glfwDestroyWindow(self._id)
-            self._id = None
+        #if self in _VP_GLFW_ALL_WINDOWS and self._id is not None:
+        #    _VP_GLFW_ALL_WINDOWS.pop(_VP_GLFW_ALL_WINDOWS.index(self))
+        #    glfw.glfwDestroyWindow(self._id)
+        self._id = None
 
     def _vispy_get_size(self):
         if self._id is None:

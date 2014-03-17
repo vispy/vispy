@@ -6,4 +6,6 @@ omit =
     */setup.py
     */vispy/util/six.py
     */vispy/util/_py24_ordereddict.py
+    */vispy/gloo/gl/angle.py
+    */vispy/gloo/gl/_angle.py
 

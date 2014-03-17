@@ -21,7 +21,7 @@ The classes are written with compatibility of Python3 in mind.
 import numpy as np
 import time
 
-from ..misc import _calculate_normals
+from .._geom import _calculate_normals
 from .._logging import logger
 
 

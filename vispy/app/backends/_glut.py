@@ -72,7 +72,7 @@ BUTTONMAP = {glut.GLUT_LEFT_BUTTON: 1,
              }
 
 
-ALL_WINDOWS = []
+_VP_GLUT_ALL_WINDOWS = []
 
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -93,8 +93,8 @@ class ApplicationBackend(BaseApplicationBackend):
         return glut.glutMainLoop()
 
     def _vispy_quit(self):
-        global ALL_WINDOWS
-        for win in ALL_WINDOWS:
+        global _VP_GLUT_ALL_WINDOWS
+        for win in _VP_GLUT_ALL_WINDOWS:
             win._vispy_close()
 
     def _vispy_get_native_app(self):
@@ -113,7 +113,7 @@ class ApplicationBackend(BaseApplicationBackend):
                     argNames=())
                 text = ctypes.c_char_p("rgba stencil double samples=8 hidpi")
                 glutInitDisplayString(text)
-            except:
+            except Exception:
                 pass
         if not self._initialized:
             glut.glutInit()  # todo: maybe allow user to give args?
@@ -132,8 +132,8 @@ class CanvasBackend(BaseCanvasBackend):
     def __init__(self, name='glut window', *args, **kwargs):
         BaseCanvasBackend.__init__(self)
         self._id = glut.glutCreateWindow(name)
-        global ALL_WINDOWS
-        ALL_WINDOWS.append(self)
+        global _VP_GLUT_ALL_WINDOWS
+        _VP_GLUT_ALL_WINDOWS.append(self)
 
         # Cache of modifiers so we can send modifiers along with mouse motion
         self._modifiers_cache = ()

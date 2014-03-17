@@ -14,10 +14,10 @@ import numpy as np
 
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
-BACKENDS = [('Qt', '_qt', None),  # Meta backend
-            ('Pyglet', '_pyglet', 'pyglet'),
+BACKENDS = [('Qt', '_qt', None),  # Meta backend 
             ('PySide', '_qt', 'PySide'),
             ('PyQt4', '_qt', 'PyQt4'),
+            ('Pyglet', '_pyglet', 'pyglet'),
             ('Glfw', '_glfw', 'vispy.app.backends._libglfw'),
             ('Glut', '_glut', 'OpenGL.GLUT'),
             #('Test', 'nonexistent', 'foo.bar.lalalala'),  # For testing
@@ -47,7 +47,8 @@ def has_qt(requires_uic=False, return_which=False):
             which = 'PySide ' + str(PySide.__version__)
             has = True
     else:
-        which = 'PyQt4 ' + str(QtOpenGL.__file__)
+        which = ('PyQt4 ' + QtCore.PYQT_VERSION_STR + 
+                 ' Qt ' + QtCore.QT_VERSION_STR)
         has = True
         has_uic = True
 
@@ -63,7 +64,7 @@ def has_qt(requires_uic=False, return_which=False):
 def has_pyglet(return_which=False):
     try:
         from . import _pyglet  # noqa
-    except:
+    except Exception:
         which = None
         has = False
     else:
@@ -104,7 +105,7 @@ def has_glfw(return_why=False, return_which=False):
 def has_glut(return_which=False):
     try:
         from OpenGL import GLUT  # noqa
-    except:
+    except Exception:
         has = False
         which = None
     else:

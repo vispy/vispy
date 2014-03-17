@@ -70,6 +70,7 @@ class Application(object):
     def create(self):
         """ Create the native application.
         """
+        self.use()  # Ensure it exists
         self.native
 
     def run(self):
@@ -116,8 +117,9 @@ class Application(object):
 
         # Check if already selected
         if self._backend is not None:
-            if backend_name and \
-                    backend_name.lower() != self.backend_name.lower():
+            names = self.backend_name.lower().replace('(', ' ').strip(') ')
+            names = [name for name in names.split(' ') if name]
+            if backend_name and backend_name.lower() not in names:
                 raise RuntimeError('Can only select a backend once.')
             return
 

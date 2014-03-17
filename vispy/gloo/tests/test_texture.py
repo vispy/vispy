@@ -1,252 +1,388 @@
+# -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Vispy Development Team.
-# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
+# Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 import unittest
 import numpy as np
-from nose.tools import assert_equal
-from vispy.gloo import gl
-from vispy.gloo.texture import Texture2D, Texture3D, convert_data
+
+from vispy.gloo.texture import Texture, Texture1D, Texture2D
 
 
-class TextureBasetests:
+# ----------------------------------------------------------------- Texture ---
+class TextureTest(unittest.TestCase):
 
+    # No data, no dtype : forbidden
+    # ---------------------------------
+    def test_init_none(self):
+        # with self.assertRaises(ValueError):
+        #    T = Texture()
+        self.assertRaises(ValueError, Texture)
+
+    # Data only
+    # ---------------------------------
+    def test_init_data(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        assert T._shape == (10, 10)
+        assert T._dtype == np.uint8
+        assert T._offset == (0, 0)
+        assert T._store is True
+        assert T._copy is False
+        assert T._need_resize is True
+        assert T._need_update is True
+        assert T._data is data
+        assert len(T._pending_data) == 1
+
+    # Non contiguous data
+    # ---------------------------------
+    def test_init_non_contiguous_data(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data[::2, ::2])
+        assert T._shape == (5, 5)
+        assert T._dtype == np.uint8
+        assert T._offset == (0, 0)
+        assert T._store is True
+        assert T._copy is True
+        assert T._need_resize is True
+        assert T._need_update is True
+        assert T._data is not data
+        assert len(T._pending_data) == 1
+
+    # Dtype and shape
+    # ---------------------------------
+    def test_init_dtype_shape(self):
+        T = Texture(shape=(10, 10), dtype=np.uint8)
+        assert T._shape == (10, 10)
+        assert T._dtype == np.uint8
+        assert T._offset == (0, 0)
+        assert T._store is True
+        assert T._copy is False
+        assert T._need_resize is True
+        assert T._need_update is False
+        assert T._data is not None
+        assert T._data.shape == (10, 10)
+        assert T._data.dtype == np.uint8
+        assert len(T._pending_data) == 0
+
+    # Dtype only
+    # ---------------------------------
+    def test_init_dtype(self):
+        T = Texture(dtype=np.uint8)
+        assert T._shape == ()
+        assert T._dtype == np.uint8
+        assert T._offset == ()
+        assert T._store is True
+        assert T._copy is False
+        assert T._need_resize is False
+        assert T._need_update is False
+        assert T._data is not None
+        assert len(T._pending_data) == 0
+
+    # Data and dtype: dtype prevails
+    # ---------------------------------
+    def test_init_data_dtype(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data, dtype=np.uint16)
+        assert T._shape == (10, 10)
+        assert T._dtype == np.uint16
+        assert T._offset == (0, 0)
+        assert T._store is True
+        assert T._copy is False
+        assert T._need_resize is True
+        assert T._need_update is True
+        assert T._data is not data
+        assert len(T._pending_data) == 1
+
+    # Data, store but no copy
+    # ---------------------------------
+    def test_init_data_store(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data, store=True, copy=False)
+        assert T._data is data
+
+    # Data, store and copy
+    # ---------------------------------
+    def test_init_data_store_copy(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data, store=True, copy=True)
+        assert T._data is not data
+        assert T._data is not None
+
+    # Set undersized data
+    # ---------------------------------
+    def test_set_undersized_data(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        T.set_data(np.ones((5, 5)))
+        assert T.shape == (5, 5)
+        assert len(T._pending_data) == 1
+
+    # Set misplaced data
+    # ---------------------------------
+    def test_set_misplaced_data(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        # with self.assertRaises(ValueError):
+        #    T.set_data(np.ones((5, 5)), offset=(8, 8))
+        self.assertRaises(ValueError, T.set_data,
+                          np.ones((5, 5)), offset=(8, 8))
+
+    # Set misshaped data
+    # ---------------------------------
+    def test_set_misshaped_data(self):
+        data = np.zeros(10, dtype=np.uint8)
+        T = Texture(data=data)
+        # with self.assertRaises(ValueError):
+        #    T.set_data(np.ones((10, 10)))
+        self.assertRaises(ValueError, T.set_data, np.ones((10, 10)))
+
+    # Set whole data (clear pending data)
+    # ---------------------------------
+    def test_set_whole_data(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        T.set_data(np.ones((10, 10)))
+        assert T.shape == (10, 10)
+        assert len(T._pending_data) == 1
+
+    # Set oversized data (-> resize)
+    # ---------------------------------
+    def test_set_oversized_data(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        T.set_data(np.ones((20, 20)))
+        assert T.shape == (20, 20)
+        assert T._data.shape == (20, 20)
+        assert len(T._pending_data) == 1
+
+    # Resize
+    # ---------------------------------
+    def test_resize(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        T.resize((5, 5))
+        assert T.shape == (5, 5)
+        assert T._data.shape == (5, 5)
+        assert T._need_resize is True
+        assert T._need_update is False
+        assert len(T._pending_data) == 0
+
+    # Resize with bad shape
+    # ---------------------------------
+    def test_resize_bad_shape(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        # with self.assertRaises(ValueError):
+        #    T.resize((5, 5, 5))
+        self.assertRaises(ValueError, T.resize, (5, 5, 5))
+
+    # Resize view (forbidden)
+    # ---------------------------------
+    def test_resize_view(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        # with self.assertRaises(RuntimeError):
+        #    T[...].resize((5, 5))
+        Z = T[...]
+        self.assertRaises(RuntimeError, Z.resize, (5, 5))
+
+    # Resize not resizeable
+    # ---------------------------------
+    def test_resize_unresizeable(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data, resizeable=False)
+        # with self.assertRaises(RuntimeError):
+        #    T.resize((5, 5))
+        self.assertRaises(RuntimeError, T.resize, (5, 5))
+
+    # Get a view of the whole texture
+    # ---------------------------------
+    def test_getitem_ellipsis(self):
+
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        Z = T[...]
+        assert Z._base is T
+        assert Z._data.base is T._data
+        assert Z._shape == (10, 10)
+        assert Z._resizeable is False
+        assert len(Z._pending_data) == 0
+
+    # Get a view using ellipsis at start
+    # ---------------------------------
+    def test_getitem_ellipsis_start(self):
+
+        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        Z = T[..., 0]
+        assert Z._base is T
+        assert Z._data.base is T._data
+        assert Z._shape == (10, 10, 1)
+        assert Z._resizeable is False
+        assert len(Z._pending_data) == 0
+
+    # Get a view using ellipsis at end
+    # ---------------------------------
+    def test_getitem_ellipsis_end(self):
+
+        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        Z = T[0, ...]
+        assert Z._base is T
+        assert Z._data.base is T._data
+        assert Z._shape == (1, 10, 10)
+        assert Z._resizeable is False
+        assert len(Z._pending_data) == 0
+
+    # Get a single item
+    # ---------------------------------
+    def test_getitem_single(self):
+
+        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        Z = T[0, 0, 0]
+        assert Z._base is T
+        assert Z._data.base is T._data
+        assert Z._shape == (1, 1, 1)
+        assert Z._resizeable is False
+        assert len(Z._pending_data) == 0
+
+    # Get a partial view
+    # ---------------------------------
+    def test_getitem_partial(self):
+
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        Z = T[2:5, 2:5]
+        assert Z._base is T
+        assert Z._data.base is T._data
+        assert Z._shape == (3, 3)
+        assert Z._offset == (2, 2)
+        assert Z._resizeable is False
+        assert len(Z._pending_data) == 0
+
+    # Get non contiguous view : forbidden
+    # ---------------------------------
+    def test_getitem_non_contiguous(self):
+
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        # with self.assertRaises(ValueError):
+        #    Z = T[::2, ::2]
+        #    print(Z)
+        s = slice(None, None, 2)
+        self.assertRaises(ValueError, T.__getitem__, (s, s))
+
+    # Set data with store
+    # ---------------------------------
+    def test_setitem_all(self):
+
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        T[...] = np.ones((10, 10))
+        assert len(T._pending_data) == 1
+        assert np.allclose(data, np.ones((10, 10)))
+
+    # Set data without store
+    # ---------------------------------
+    def test_setitem_all_no_store(self):
+
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data, store=False)
+        T[...] = np.ones((10, 10))
+        assert len(T._pending_data) == 1
+        assert np.allclose(data, np.zeros((10, 10)))
+
+    # Set a single data
+    # ---------------------------------
+    def test_setitem_single(self):
+
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        T[0, 0] = 1
+        assert len(T._pending_data) == 2
+        assert data[0, 0] == 1, 1
+
+    # Set some data
+    # ---------------------------------
+    def test_setitem_partial(self):
+
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        T[5:, 5:] = 1
+        assert len(T._pending_data) == 2
+        assert np.allclose(data[5:, 5:], np.ones((5, 5)))
+
+    # Set non contiguous data
+    # ---------------------------------
+    def test_setitem_wrong(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        # with self.assertRaises(ValueError):
+        #    T[::2, ::2] = 1
+        s = slice(None, None, 2)
+        self.assertRaises(ValueError, T.__setitem__, (s, s), 1)
+
+    # Set via get (pending data on base)
+    # ---------------------------------
+    def test_getitem_setitem(self):
+
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        Z = T[5:, 5:]
+        Z[...] = 1
+        assert len(Z._pending_data) == 0
+        assert len(T._pending_data) == 2
+        assert np.allclose(data[5:, 5:], np.ones((5, 5)))
+
+    # Test view get invalidated when base is resized
+    # ----------------------------------------------
+    def test_invalid_views(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture(data=data)
+        Z = T[5:, 5:]
+        T.resize((5, 5))
+        assert Z._valid is False
+
+
+# --------------------------------------------------------------- Texture1D ---
+class Texture1DTest(unittest.TestCase):
+
+    # Shape extension
+    # ---------------------------------
     def test_init(self):
+        data = np.zeros(10, dtype=np.uint8)
+        T = Texture1D(data=data)
+        assert T._shape == (10, 1)
 
-        data = np.zeros(self._shape0, np.float32)
-        tex = self._klass(data)
-        self.assertEqual(tex._levels[0].format, gl.GL_LUMINANCE)
-        self.assertEqual(tex._levels[0].shape, data.shape)
-
-    def test_allocating_data(self):
-
-        tex = self._klass()
-
-        # Luminance
-        tex.set_shape(self._shape0)
-        self.assertEqual(tex._levels[0].format, gl.GL_LUMINANCE)
-        self.assertEqual(tex._levels[0].shape, self._shape0)
-
-        # Luminance again, but now an explicit color channel
-        tex.set_shape(self._shape1)
-        self.assertEqual(tex._levels[0].format, gl.GL_LUMINANCE)
-        self.assertEqual(tex._levels[0].shape, self._shape1)
-
-        # Luminance + alpha
-        tex.set_shape(self._shape2)
-        self.assertEqual(tex._levels[0].format, gl.GL_LUMINANCE_ALPHA)
-        self.assertEqual(tex._levels[0].shape, self._shape2)
-
-        # RGB
-        tex.set_shape(self._shape3)
-        self.assertEqual(tex._levels[0].format, gl.GL_RGB)
-        self.assertEqual(tex._levels[0].shape, self._shape3)
-
-        # RGBA
-        tex.set_shape(self._shape4)
-        self.assertEqual(tex._levels[0].format, gl.GL_RGBA)
-        self.assertEqual(tex._levels[0].shape, self._shape4)
-
-        # Alpha
-        tex.set_shape(self._shape0, format=gl.GL_ALPHA)
-        self.assertEqual(tex._levels[0].format, gl.GL_ALPHA)
-        self.assertEqual(tex._levels[0].shape, self._shape0)
-
-    def test_setting_data(self):
-
-        tex = self._klass()
-
-        # Luminance
-        data = np.zeros(self._shape0, np.float32)
-        tex.set_data(data)
-        self.assertEqual(tex._levels[0].format, gl.GL_LUMINANCE)
-        self.assertEqual(tex._levels[0].shape, data.shape)
-
-        # Luminance again, but now an explicit color channel
-        data = np.zeros(self._shape1, np.float32)
-        tex.set_data(data)
-        self.assertEqual(tex._levels[0].format, gl.GL_LUMINANCE)
-        self.assertEqual(tex._levels[0].shape, data.shape)
-
-        # Luminance + alpha
-        data = np.zeros(self._shape2, np.float32)
-        tex.set_data(data)
-        self.assertEqual(tex._levels[0].format, gl.GL_LUMINANCE_ALPHA)
-        self.assertEqual(tex._levels[0].shape, data.shape)
-
-        # RGB
-        data = np.zeros(self._shape3, np.float32)
-        tex.set_data(data)
-        self.assertEqual(tex._levels[0].format, gl.GL_RGB)
-        self.assertEqual(tex._levels[0].shape, data.shape)
-
-        # RGBA
-        data = np.zeros(self._shape4, np.float32)
-        tex.set_data(data)
-        self.assertEqual(tex._levels[0].format, gl.GL_RGBA)
-        self.assertEqual(tex._levels[0].shape, data.shape)
-
-        # Alpha
-        data = np.zeros(self._shape0, np.float32)
-        tex.set_data(data, format=gl.GL_ALPHA)
-        self.assertEqual(tex._levels[0].format, gl.GL_ALPHA)
-        self.assertEqual(tex._levels[0].shape, data.shape)
-
-    def test_invalid_shape(self):
-
-        tex = self._klass()
-
-        data = np.zeros(self._shape5, np.float32)
-        self.assertRaises(ValueError, tex.set_data, data)
-
-        # Format and shape mismatch
-        data = np.zeros(self._shape1, np.float32)
-        self.assertRaises(ValueError, tex.set_data, data, format=gl.GL_RGB)
-
-        # Format and shape mismatch
-        data = np.zeros(self._shape3, np.float32)
-        self.assertRaises(ValueError, tex.set_data, data, format=gl.GL_RGBA)
-
-        # Format and shape mismatch
-        data = np.zeros(self._shape4, np.float32)
-        self.assertRaises(ValueError, tex.set_data, data, format=gl.GL_RGB)
-
-        # Format and shape mismatch
-        data = np.zeros(self._shape3, np.float32)
-        self.assertRaises(ValueError, tex.set_data, data, format=gl.GL_ALPHA)
-
-    def test_dtype(self):
-        pass  # No use, we convert dtype if necessary
-
-    def test_subdata(self):
-
-        tex = self._klass()
-        data = np.zeros(self._shape0, np.float32)
-        offset1 = [0 for i in self._shape0]
-
-        # No pending data now
-        self.assertEqual(len(tex._levels), 0)
-
-        # No data allocated yet
-        self.assertRaises(RuntimeError, tex.set_subdata, offset1, data)
-
-        # Allocate data
-        tex.set_shape(data.shape)
-
-        # Pending data
-        self.assertEqual(tex._levels[0].need_resize, True)
-        self.assertEqual(len(tex._levels[0].pending_data), 0)
-
-        # Now it should work
-        tex.set_subdata(offset1, data)
-        self.assertEqual(len(tex._levels[0].pending_data), 1)
-        #
-        tex.set_subdata(offset1, data)
-        self.assertEqual(len(tex._levels[0].pending_data), 2)
-
-        # Reset using set_shape  (no pending data)
-        tex.set_shape(data.shape)
-        self.assertEqual(len(tex._levels[0].pending_data), 0)
-
-        # Again
-        tex.set_subdata(offset1, data)
-        tex.set_subdata(offset1, data)
-        self.assertEqual(len(tex._levels[0].pending_data), 2)
-
-        # Reset using set_data (1 pending data)
-        tex.set_data(data)
-        self.assertEqual(len(tex._levels[0].pending_data), 1)
-
-    def test_subdata_shape_and_format(self):
-
-        tex = self._klass()
-        data = np.zeros(self._shape0, np.float32)
-        offset1 = [0 for i in self._shape0]
-        offset2 = [9 for i in self._shape0]
-        offset3 = [-1 for i in self._shape0]
-        offset4 = [11 for i in self._shape0]
-
-        # Allocate data
-        tex.set_shape([i + 10 for i in self._shape0])
-
-        # Some stuff that should work
-        tex.set_subdata(offset1, data)
-        tex.set_subdata(offset2, data)
-
-        # Some stuff that should not (shape)
-        self.assertRaises(ValueError, tex.set_subdata, offset3, data)
-        self.assertRaises(ValueError, tex.set_subdata, offset4, data)
-
-        # More stuff that should not (format)
-        self.assertRaises(ValueError, tex.set_subdata, offset1,
-                          data, format=gl.GL_RGB)
-        self.assertRaises(ValueError, tex.set_subdata, offset1,
-                          data, format=gl.GL_LUMINANCE_ALPHA)
-        self.assertRaises(ValueError, tex.set_subdata, offset1,
-                          data, format=gl.GL_LUMINANCE_ALPHA)
-
-        # But this should work
-        tex.set_shape([i + 10 for i in self._shape0], format=gl.GL_ALPHA)
-        tex.set_subdata(offset1, data)
-
-    def test_levels(self):
-
-        # Create tex
-        tex = self._klass()
-        self.assertEqual(len(tex._levels), 0)
-
-        # Create level 0
-        tex.set_shape(self._shape3)
-        self.assertEqual(len(tex._levels), 1)
-        self.assertTrue(0 in tex._levels)
-
-        # Create level 2
-        tex.set_shape(self._shape3, 2)
-        self.assertEqual(len(tex._levels), 2)
-        self.assertTrue(0 in tex._levels)
-        self.assertTrue(2 in tex._levels)
-
-        # Create level 4
-        tex.set_shape(self._shape3, 4)
-        self.assertEqual(len(tex._levels), 3)
-        self.assertTrue(0 in tex._levels)
-        self.assertTrue(2 in tex._levels)
-        self.assertTrue(4 in tex._levels)
+    # Width
+    # ---------------------------------
+    def test_width(self):
+        data = np.zeros(10, dtype=np.uint8)
+        T = Texture1D(data=data)
+        assert T.width == 10
 
 
-class Texture2DTest(TextureBasetests, unittest.TestCase):
+# --------------------------------------------------------------- Texture2D ---
+class Texture2DTest(unittest.TestCase):
 
-    def setUp(self):
-        self._klass = Texture2D
-        self._shape0 = 100, 100
-        self._shape1 = 100, 100, 1
-        self._shape2 = 100, 100, 2
-        self._shape3 = 100, 100, 3
-        self._shape4 = 100, 100, 4
-        self._shape5 = 100, 100, 5
+    # Shape extension
+    # ---------------------------------
+    def test_init(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture2D(data=data)
+        assert T._shape == (10, 10, 1)
 
-
-class Texture3DTest(TextureBasetests, unittest.TestCase):
-
-    def setUp(self):
-        self._klass = Texture3D
-        self._shape0 = 10, 10, 10
-        self._shape1 = 10, 10, 10, 1
-        self._shape2 = 10, 10, 10, 2
-        self._shape3 = 10, 10, 10, 3
-        self._shape4 = 10, 10, 10, 4
-        self._shape5 = 10, 10, 10, 5
+    # Width & height
+    # ---------------------------------
+    def test_width_height(self):
+        data = np.zeros((10, 20), dtype=np.uint8)
+        T = Texture2D(data=data)
+        assert T.width == 20
+        assert T.height == 10
 
 
-def test_convert_data():
-    """Test conversion of data"""
-    assert_equal(convert_data(np.ones(10, dtype=bool)).max(), 1)
-    assert_equal(convert_data(np.ones(10, dtype=np.uint8),
-                              clim=(0, 1)).max(), 1)
-    assert_equal(convert_data(1e5 * np.ones(10, dtype=np.float16)).max(), 1e5)
-    assert_equal(convert_data(1e5 * np.ones(10, dtype=np.float32)).max(), 1e5)
-    assert_equal(convert_data(1e5 * np.ones(10, dtype=np.float32),
-                              clim=(0, 10)).max(), 1e4)  # XXX IS THIS CORRECT?
-    assert_equal(convert_data(1e5 * np.ones(10, dtype=np.float64)).max(), 1e5)
-    assert_equal(convert_data(np.zeros(10, dtype=np.int32)).max(), 0.5)
-    assert_equal(convert_data(np.zeros(10, dtype=np.uint32)).max(), 0.0)
+# -----------------------------------------------------------------------------
+if __name__ == "__main__":
+    unittest.main()
