@@ -169,7 +169,7 @@ class app_opengl_context(object):
         # Make sure we are initialized, painted, etc.
         if self.backend == 'qt':
             # pyglet gets stuck
-            for i in range(1):
+            for i in range(4):
                 self.paint()
         return self
 
