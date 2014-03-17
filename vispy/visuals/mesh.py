@@ -133,19 +133,16 @@ class MeshVisual(Visual):
         
         *faces* is not supported yet.
         """
-        if faces is not None:
-            raise NotImplementedError  # stub
-      
         # select input component based on pos.shape
         if pos is not None:
             if pos.shape[-1] == 2:
                 if not isinstance(self.pos_component, XYPosComponent):
                     self.pos_component = XYPosComponent()
-                self.pos_component.set_data(xy=pos, z=z)
+                self.pos_component.set_data(xy=pos, z=z, faces=faces)
             elif pos.shape[-1] == 3:
                 if not isinstance(self.pos_component, XYZPosComponent):
                     self.pos_component = XYZPosComponent()
-                self.pos_component.set_data(pos=pos)
+                self.pos_component.set_data(pos=pos, faces=faces)
             
         if isinstance(color, tuple):
             self.color_component = UniformColorComponent(color)
@@ -241,25 +238,31 @@ class XYPosComponent(MeshComponent):
         }
         """
 
-    def __init__(self, xy=None, z=0.0):
+    def __init__(self, xy=None, z=0.0, faces=None):
         super(XYPosComponent, self).__init__()
         self.shader_func = Function(self.CODE)
         self._xy = None
         self._z = 0.0
+        self._faces = False
         self._vbo = None
-        self.set_data(xy, z)
+        self._ibo = None
+        self.set_data(xy, z, faces)
         
     @property
     def supported_draw_modes(self):
-        # TODO: add support for unindexed data
-        # (possibly here, possibly in another component class?)
-        return (self.DRAW_PRE_INDEXED,)
+        # TODO: Add support for converting between pre-indexed and unindexed
+        if self._faces is False:
+            return (self.DRAW_PRE_INDEXED,)
+        else:
+            return (self.DRAW_UNINDEXED,)
 
-    def set_data(self, xy=None, z=None):
+    def set_data(self, xy=None, z=None, faces=None):
         if xy is not None:
             self._xy = xy
         if z is not None:
             self._z = z
+        if faces is not None:
+            self._faces = faces
         # TODO: might be better to re-upload data rather than creating
         # a new VB, if possible.
         self._vbo = None
@@ -271,6 +274,12 @@ class XYPosComponent(MeshComponent):
             self._vbo = gloo.VertexBuffer(self._xy)
         return self._vbo
 
+    @property
+    def ibo(self):
+        if self._ibo is None:
+            self._ibo = gloo.IndexBuffer(self._faces)
+        return self._ibo
+
     def activate(self, program, draw_mode):
         self.shader_func['xy_pos'] = ('attribute', 'vec2', self.vbo)
         self.shader_func['z_pos'] = ('uniform', 'float', self._z)
@@ -278,9 +287,12 @@ class XYPosComponent(MeshComponent):
 
     @property
     def index(self):
-        # no indexes supported yet.
-        return None
+        if self._faces is False:
+            return None
+        else:
+            return self.ibo
 
+    
 
 class XYZPosComponent(MeshComponent):
     """
@@ -292,22 +304,28 @@ class XYZPosComponent(MeshComponent):
         }
         """
 
-    def __init__(self, pos=None):
+    def __init__(self, pos=None, faces=None):
         super(XYZPosComponent, self).__init__()
         self.shader_func = Function(self.CODE)
         self._pos = None
+        self._faces = False
         self._vbo = None
-        if pos is not None:
-            self.set_data(pos)
+        self._ibo = None
+        self.set_data(pos, faces)
 
     @property
     def supported_draw_modes(self):
-        # TODO: add support for unindexed data
-        # (possibly here, possibly in another component class?)
-        return (self.DRAW_PRE_INDEXED,)
+        # TODO: Add support for converting between pre-indexed and unindexed
+        if self._faces is False:
+            return (self.DRAW_PRE_INDEXED,)
+        else:
+            return (self.DRAW_UNINDEXED,)
 
-    def set_data(self, pos):
-        self._pos = pos
+    def set_data(self, pos=None, faces=None):
+        if pos is not None:
+            self._pos = pos
+        if faces is not None:
+            self._faces = faces
         # TODO: might be better to re-upload data rather than creating
         # a new VB, if possible.
         self._vbo = None
@@ -319,14 +337,22 @@ class XYZPosComponent(MeshComponent):
             self._vbo = gloo.VertexBuffer(self._pos)
         return self._vbo
 
+    @property
+    def ibo(self):
+        if self._ibo is None:
+            self._ibo = gloo.IndexBuffer(self._faces)
+        return self._ibo
+    
     def activate(self, program, draw_mode):
         self.shader_func['xyz_pos']=('attribute', 'vec3', self.vbo)
         program['local_position'] = self.shader_func
         
     @property
     def index(self):
-        # no indexes supported yet.
-        return None
+        if self._faces is False:
+            return None
+        else:
+            return self.ibo
 
 
 class SurfacePosComponent(MeshComponent):

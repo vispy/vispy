@@ -452,7 +452,7 @@ class MeshData(object):
         verts = verts.reshape((rows+1)*cols, 3)[cols-1:-(cols-1)]  ## remove redundant vertexes from top and bottom
         
         ## compute faces
-        faces = np.empty((rows*cols*2, 3), dtype=np.uint)
+        faces = np.empty((rows*cols*2, 3), dtype=np.uint32)
         rowtemplate1 = ((np.arange(cols).reshape(cols, 1) + np.array([[0, 1, 0]])) % cols) + np.array([[0, 0, cols]])
         rowtemplate2 = ((np.arange(cols).reshape(cols, 1) + np.array([[0, 1, 1]])) % cols) + np.array([[cols, 0, cols]])
         for row in range(rows):
