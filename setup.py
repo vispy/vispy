@@ -88,7 +88,6 @@ setup(
         'vispy.gloo.gl', 'vispy.gloo.gl.tests',
         'vispy.util', 'vispy.util.tests',
         'vispy.util.dataio',
-        'vispy.visuals',
         'vispy.opencl',
     ],
     package_dir={
