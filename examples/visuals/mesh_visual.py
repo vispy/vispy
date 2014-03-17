@@ -19,11 +19,11 @@ class Canvas(vispy.app.Canvas):
         # Generate some data to work with
         mdata = MeshData.sphere(10, 20, 0.3)
         
-        # Mesh with pre-indexed vertexes, uniform color
+        # Center: Mesh with pre-indexed vertexes, uniform color
         verts = mdata.vertexes(indexed='faces')
         self.mesh1 = MeshVisual(pos=verts, color=(1, 0, 0, 1))
         
-        # Mesh with pre-indexed vertexes, per-vertex color
+        # Top-left: Mesh with pre-indexed vertexes, per-vertex color
         #   Because vertexes are pre-indexed, we get a different color
         #   every time a vertex is visited, resulting in sharp color differences
         #   between edges.
@@ -33,9 +33,9 @@ class Canvas(vispy.app.Canvas):
         vcolor[:,1] = np.linspace(1, 0, nv)
         vcolor[:,2] = np.random.normal(size=nv)
         self.mesh2 = MeshVisual(pos=verts, color=vcolor)
-        self.mesh2.transform = STTransform(translate=(0.5, 0.5))
+        self.mesh2.transform = STTransform(translate=(-0.5, 0.5))
 
-        # Mesh with unindexed vertexes, per-vertex color
+        # Top-right: Mesh with unindexed vertexes, per-vertex color
         #   Because vertexes are unindexed, we get the same color
         #   every time a vertex is visited, resulting in no color differences
         #   between edges.
@@ -47,7 +47,7 @@ class Canvas(vispy.app.Canvas):
         vcolor[:,1] = np.linspace(1, 0, nv)
         vcolor[:,2] = np.random.normal(size=nv)
         self.mesh3 = MeshVisual(pos=verts, faces=faces, color=vcolor)
-        self.mesh3.transform = STTransform(translate=(-0.5, 0.5))
+        self.mesh3.transform = STTransform(translate=(0.5, 0.5))
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)
