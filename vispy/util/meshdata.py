@@ -438,7 +438,7 @@ class MeshData(object):
         Return a MeshData instance with vertexes and faces computed
         for a spherical surface.
         """
-        verts = np.empty((rows+1, cols, 3), dtype=float)
+        verts = np.empty((rows+1, cols, 3), dtype=np.float32)
         
         ## compute vertexes
         phi = (np.arange(rows+1) * np.pi / rows).reshape(rows+1, 1)

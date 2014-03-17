@@ -16,7 +16,7 @@ from vispy.util.meshdata import MeshData
 class Canvas(vispy.app.Canvas):
     def __init__(self):
         mdata = MeshData.sphere(10, 20, 0.5)
-        self.line = MeshVisual(meshdata=mdata)
+        self.mesh = MeshVisual(pos=mdata.vertexes(indexed='faces'))
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)
@@ -26,7 +26,7 @@ class Canvas(vispy.app.Canvas):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glViewport(0, 0, *self.size)
-        self.line.paint()
+        self.mesh.paint()
         
 
 if __name__ == '__main__':
