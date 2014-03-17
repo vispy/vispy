@@ -76,8 +76,15 @@ def _make_context(platform_id=None, device_id=None):
             try:
                 ctx = pyopencl.Context(properties=properties +
                                        [(enum_plat, platform)])
+                device = ctx.devices[0]
+                if device.type != pyopencl.device_type.GPU:
+                    #Wrongly selected non GPU device
+                    ctx = None
+                    raise
             except:
                 for device_id, device in enumerate(platform.get_devices()):
+                    if device.type != pyopencl.device_type.GPU:
+                        continue
                     try:
                         ctx = pyopencl.Context(devices=[device],
                                             properties=properties +
@@ -165,14 +172,20 @@ class TextureOpenCL(OpenCL):
         if ctx is None:
             ctx = self.get_context()
 
-        # Get ndim
-        texture_map = {gl.GL_TEXTURE_2D: 2,
-               gl.ext.GL_TEXTURE_3D: 3}
-        ndim = texture_map.get(self._target, 0)
-
+#       Currently only ndim=2 looks possible:
+        ndim = 2
         ocl_img = pyopencl.GLTexture(ctx, pyopencl.mem_flags.READ_WRITE,
                         self._target, 0, int(self.handle), ndim)
         return ocl_img
+
+
+class Texture1D(texture.Texture1D, TextureOpenCL):
+
+    """ Representation of a 2D texture with OpenCL exchange capabilities.
+    """
+
+    def __init__(self, *args, **kwargs):
+        texture.Texture1D.__init__(self, *args, **kwargs)
 
 
 class Texture2D(texture.Texture2D, TextureOpenCL):
@@ -182,18 +195,6 @@ class Texture2D(texture.Texture2D, TextureOpenCL):
 
     def __init__(self, *args, **kwargs):
         texture.Texture2D.__init__(self, *args, **kwargs)
-
-
-class Texture3D(texture.Texture3D, TextureOpenCL):
-
-    """ Representation of a 3D texture with OpenCL exchange capabilities.
-    Note that for this the
-    GL_texture_3D extension needs to be available.
-    """
-
-    def __init__(self, *args, **kwargs):
-        texture.Texture3D.__init__(self, gl.ext.GL_TEXTURE_3D, *args,
-                                   **kwargs)
 
 
 class TextureCubeMap(texture.TextureCubeMap, TextureOpenCL):
