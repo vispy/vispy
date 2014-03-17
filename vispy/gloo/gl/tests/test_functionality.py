@@ -24,7 +24,7 @@ from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true
 from vispy.util import app_opengl_context, assert_in  # noqa
 from numpy.testing import assert_almost_equal  # noqa
-from vispy.app.backends import requires_pyglet, requires_qt  # noqa
+from vispy.app.backends import requires_qt, requires_non_glut  # noqa
 
 from vispy.gloo import gl
 from vispy import app
@@ -44,20 +44,20 @@ def teardown_module():
     gl.use()  # Reset to default
 
 
-@requires_qt()
+@requires_non_glut()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
     _test_functonality('desktop')
 
 
-@requires_qt()
+@requires_non_glut()
 @gl._requires_pyopengl()
 def test_functionality_pypengl():
     """ Test pyopengl GL backend for full functionality. """
     _test_functonality('pyopengl')
 
 
-@requires_qt()
+@requires_non_glut()
 def test_functionality_angle():
     """ Test angle GL backend for full functionality. """
     if True:
