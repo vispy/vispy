@@ -312,4 +312,3 @@ class LineColorInputComponent(VisualComponent):
             self.frag_func['rgba'] = ('uniform', 'vec4', np.array(self.visual._opts['color']))
             program['frag_color'] = self.frag_func
             
-    
