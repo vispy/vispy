@@ -160,6 +160,26 @@ class ModularProgram(Program):
         # TODO: remove or resurrect
         #self._install_dep_callbacks(function)
         self._need_build = True
+
+    def remove_callback(self, hook, function):
+        """
+        Remove *function* from the chain attached to *hook*.
+        """
+        if hook not in self._hooks:
+            raise Exception('This program has no hook named "%s"' % hook)
+        hook_def = self._hook_defs.get(hook, None)
+        
+        if (hook_def is None or not isinstance(hook_def, FunctionChain)):
+            raise TypeError("Cannot remove callback from hook '%s'; not a "
+                            "FunctionChain. (%s)" % (hook, type(hook_def)))
+                            
+        hook_def.remove(function)
+            
+        # TODO: remove or resurrect
+        #self._remove_dep_callbacks(function)
+        self._need_build = True
+        
+        
             
     def __setitem__(self, name, value):
         if name in self._hooks:

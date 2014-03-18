@@ -511,6 +511,13 @@ class FunctionChain(Function):
         self._deps.insert(index, function)
         self._update_signature()
 
+    def remove(self, function):
+        """ Remove a function from the chain.
+        """
+        self._funcs.remove(function)
+        self._deps.remove(function)
+        self._update_signature()
+
     def compile(self, obj_names):
         name = obj_names.get(self, self.name)
         if not self.is_anonymous and name != self.name:
@@ -523,14 +530,47 @@ class FunctionChain(Function):
         args = ", ".join(["%s %s" % arg for arg in self.args])
         code = "%s %s(%s) {\n" % (self.rtype, name, args)
         
-        if self.rtype == 'void':
-            for fn in self._funcs:
-                code += "    %s();\n" % obj_names[fn]
+        #if self.rtype == 'void':
+            #for fn in self._funcs:
+                #code += "    %s();\n" % obj_names[fn]
+        #else:
+            #code += "    return "
+            #for fn in self._funcs[::-1]:
+                #code += "%s(\n           " % obj_names[fn]
+            #code += "    %s%s;\n" % (self.args[0][1], ')'*len(self._funcs))
+        result_index = 0
+        if len(self.args) == 0:
+            last_rtype = 'void'
+            last_result = ''
         else:
-            code += "    return "
-            for fn in self._funcs[::-1]:
-                code += "%s(\n           " % obj_names[fn]
-            code += "    %s%s;\n" % (self.args[0][1], ')'*len(self._funcs))
+            last_rtype, last_result = self.args[0][:2]
+        
+        for fn in self._funcs:
+            # Use previous return value as an argument to the next function
+            if last_rtype == 'void':
+                args = ''
+            else:
+                args = last_result
+                if len(fn.args) != 1 or last_rtype != fn.args[0][0]:
+                    raise Exception("Cannot chain output '%s' of function to "
+                                    "input of '%s'" % 
+                                    (last_rtype, fn.signature))
+            last_rtype = fn.rtype
+                
+            # Store the return value of this function 
+            if fn.rtype == 'void':
+                set_str = ''
+            else:
+                result_index += 1;
+                result = 'result_%d' % result_index
+                set_str = '%s %s = ' % (fn.rtype, result)
+                last_result = result
+            
+            code += "    %s%s(%s);\n" % (set_str, obj_names[fn], args)
+        
+        # return the last function's output
+        if self.rtype != 'void':
+            code += "    return result_%d;\n" % result_index
         
         code += "}\n"
         return code

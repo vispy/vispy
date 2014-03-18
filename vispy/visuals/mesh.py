@@ -46,6 +46,31 @@ Notes:
            that they could probably share most of the same machinery..
            
 
+    => Color chain   \
+                      ===>  Material chain
+    => Normal chain  /
+
+    Examples:
+        Color input / filters:
+            uniform color
+            color by vertex, color by face
+            texture color
+            float texture + colormap
+            color by height
+            grid contours
+            wireframe
+        
+        Normal input:
+            normal per vertex
+            normal per face
+            texture bump map
+            texture normal map
+        
+        Material composition:
+            shaded / facets
+            shaded / smooth
+            phong shading
+
 """
 
 
@@ -82,18 +107,13 @@ void main(void) {
 """
 
 FRAGMENT_SHADER = """
-// Must return the color for this fragment
-// or discard.
+// Fragment shader consists of only a single hook that is usually defined 
+// by a chain of functions, each which sets or modifies the current fragment
+// color, or discards it.
 vec4 frag_color();
-
-// Generic hook for executing code after the fragment color has been set
-// Functions in this hook may modify glFragColor or discard.
-void frag_post_hook();
 
 void main(void) {
     gl_FragColor = frag_color();
-    
-    frag_post_hook();
 }
 """
 
@@ -112,13 +132,14 @@ class MeshVisual(Visual):
         
         # Generic chains for attaching post-processing functions
         self._program.add_chain('vert_post_hook')
-        self._program.add_chain('frag_post_hook')
+        self._program.add_chain('frag_color')
         
         # Components for plugging different types of position and color input.
         self._pos_component = None
         self._color_component = None
         self.pos_component = XYZPosComponent()
-        self.color_component = UniformColorComponent()
+        self._frag_components = []
+        self.fragment_components = [UniformColorComponent()]
         
         glopts = kwds.pop('gl_options', 'opaque')
         self.set_gl_options(glopts)
@@ -145,16 +166,18 @@ class MeshVisual(Visual):
                 self.pos_component.set_data(pos=pos, faces=faces)
             
         if isinstance(color, tuple):
-            self.color_component = UniformColorComponent(color)
+            self.fragment_components = [UniformColorComponent(color)]
         elif isinstance(color, np.ndarray):
-            self.color_component = VertexColorComponent(color)
+            self.fragment_components = [VertexColorComponent(color)]
             
 
     def paint(self):
         super(MeshVisual, self).paint()
         
         modes = set(self.pos_component.supported_draw_modes)
-        modes &= set(self.color_component.supported_draw_modes)
+        for comp in self._frag_components:
+            modes &= set(comp.supported_draw_modes)
+        
         if len(modes) == 0:
             raise Exception("Visual cannot paint--no mutually supported "
                             "draw modes between components.")
@@ -162,9 +185,10 @@ class MeshVisual(Visual):
         #TODO: pick most efficient draw mode!
         mode = list(modes)[0]
             
+        # activate all components
         self.pos_component.activate(self._program, mode)
-        self.color_component.activate(self._program, mode)
-        
+        for comp in self._frag_components:
+            comp.activate(self._program, mode)
         
         # TODO: this must be optimized.
         self._program['map_local_to_nd'] = self.transform.shader_map()
@@ -172,31 +196,45 @@ class MeshVisual(Visual):
         self._program.draw(gloo.gl.GL_TRIANGLES, self.pos_component.index)
 
     @property
-    def pos_input_component(self):
-        return self._pos_input_component
+    def pos_component(self):
+        return self._pos_component
 
-    @pos_input_component.setter
-    def pos_input_component(self, component):
-        if self._pos_input_component is not None:
-            self._pos_input_component._detach(self)
-            self._pos_input_component = None
+    @pos_component.setter
+    def pos_component(self, component):
+        if self._pos_component is not None:
+            self._pos_component._detach(self)
+            self._pos_component = None
         component._attach(self)
-        self._pos_input_component = component
+        self._pos_component = component
         self.events.update()
         
-    # TODO: Allow multiple color components to be added in series
-    @property
-    def color_input_component(self):
-        return self._color_input_component
+    ## TODO: Allow multiple color components to be added in series
+    #@property
+    #def color_input_component(self):
+        #return self._color_input_component
 
-    @color_input_component.setter
-    def color_input_component(self, component):
-        if self._color_input_component is not None:
-            self._color_input_component._detach(self)
-            self._color_input_component = None
-        component._attach(self)
-        self._color_input_component = component
+    #@color_input_component.setter
+    #def color_input_component(self, component):
+        #if self._color_input_component is not None:
+            #self._color_input_component._detach(self)
+            #self._color_input_component = None
+        #component._attach(self)
+        #self._color_input_component = component
+        #self.events.update()
+
+    @property
+    def fragment_components(self):
+        return self._frag_components[:]
+    
+    @fragment_components.setter
+    def fragment_components(self, comps):
+        for comp in self._frag_components:
+            comp._detach()
+        self._frag_components = comps
+        for comp in self._frag_components:
+            comp._attach(self)
         self.events.update()
+        
 
 class MeshComponent(VisualComponent):
     
@@ -219,7 +257,7 @@ class MeshComponent(VisualComponent):
         Inform visual that this component has changed.
         """
         if self.visual is not None:
-            self.visual.update()
+            self.visual.events.update()
 
     def activate(self, program):
         """
@@ -280,10 +318,17 @@ class XYPosComponent(MeshComponent):
             self._ibo = gloo.IndexBuffer(self._faces)
         return self._ibo
 
+    def _attach(self, visual):
+        super(XYPosComponent, self)._attach(visual)
+        visual._program['local_position'] = self.shader_func
+        
+    def _detach(self, visual):
+        super(XYPosComponent, self)._detach(visual)
+        visual._program['local_position'] = None
+        
     def activate(self, program, draw_mode):
         self.shader_func['xy_pos'] = ('attribute', 'vec2', self.vbo)
         self.shader_func['z_pos'] = ('uniform', 'float', self._z)
-        program['local_position'] = self.shader_func
 
     @property
     def index(self):
@@ -343,9 +388,16 @@ class XYZPosComponent(MeshComponent):
             self._ibo = gloo.IndexBuffer(self._faces)
         return self._ibo
     
+    def _attach(self, visual):
+        super(XYZPosComponent, self)._attach(visual)
+        visual._program['local_position'] = self.shader_func
+        
+    def _detach(self, visual):
+        super(XYZPosComponent, self)._detach(visual)
+        visual._program['local_position'] = None
+        
     def activate(self, program, draw_mode):
-        self.shader_func['xyz_pos']=('attribute', 'vec3', self.vbo)
-        program['local_position'] = self.shader_func
+        self.shader_func['xyz_pos'] = ('attribute', 'vec3', self.vbo)
         
     @property
     def index(self):
@@ -405,9 +457,16 @@ class SurfacePosComponent(MeshComponent):
             self._index = gloo.VertexBuffer(np.arange(self._z.size))
         return self._vbo
 
+    def _attach(self, visual):
+        super(SurfacePosComponent, self)._attach(visual)
+        visual._program['local_position'] = self.shader_func
+        
+    def _detach(self, visual):
+        super(SurfacePosComponent, self)._detach(visual)
+        visual._program['local_position'] = None
+        
     def activate(self, program, draw_mode):
-        self.shader_func['z_pos']=('attribute', 'vec3', self.vbo)
-        program['local_position'] = self.shader_func
+        self.shader_func['z_pos'] = ('attribute', 'vec3', self.vbo)
         
     @property
     def index(self):
@@ -450,9 +509,16 @@ class UniformColorComponent(MeshComponent):
     def color(self, c):
         self._color = c
         
+    def _attach(self, visual):
+        super(UniformColorComponent, self)._attach(visual)
+        visual._program.add_callback('frag_color', self.shader_func)
+        
+    def _detach(self):
+        self.visual._program.remove_callback('frag_color', self.shader_func)
+        super(UniformColorComponent, self)._detach()
+        
     def activate(self, program, mode):
         self.shader_func['rgba'] = ('uniform', 'vec4', np.array(self._color))
-        program['frag_color'] = self.shader_func
 
     @property
     def supported_draw_modes(self):
@@ -492,14 +558,20 @@ class VertexColorComponent(MeshComponent):
             self._vbo = gloo.VertexBuffer(self._color)
         return self._vbo
         
+    def _attach(self, visual):
+        super(VertexColorComponent, self)._attach(visual)
+        visual._program.add_callback('frag_color', self.frag_func)
+        visual._program.add_callback('vert_post_hook', self.vert_func)
+        
+    def _detach(self, visual):
+        self.visual._program.remove_callback('frag_color', self.frag_func)
+        self.visual._program.remove_callback('vert_post_hook', self.vert_func)
+        super(VertexColorComponent, self)._detach()
+        
     def activate(self, program, mode):
         # explicitly declare a new variable (to be shared)
         # TODO: does this need to be explicit?
         self.frag_func['rgba'] = ('varying', 'vec4')   
-        
-        program['frag_color'] = self.frag_func
-        
-        program.add_callback('vert_post_hook', self.vert_func)
         self.vert_func['input_color'] = ('attribute', 'vec4', self.vbo)
         
         # automatically assign same variable to both
@@ -510,4 +582,58 @@ class VertexColorComponent(MeshComponent):
         return (self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED)
 
 
+
+class GridContourComponent(MeshComponent):
+    FRAG_CODE = """
+        vec4 $grid_contour(vec4 color) {
+            if ( mod($pos.x, 0.1) < 0.005 ||
+                 mod($pos.y, 0.1) < 0.005 || 
+                 mod($pos.z, 0.1) < 0.005 ) {
+               return vec4(1,1,1,1);
+            }
+            else {
+                return color;
+            }
+        }
+        """
     
+    VERT_CODE = """
+        void $grid_contour_support() {
+            $output_pos = gl_Position;
+        }
+        """
+    
+    def __init__(self, spacing):
+        self.frag_func = Function(self.FRAG_CODE)
+        self.vert_func = Function(self.VERT_CODE)
+        self.spacing = spacing
+        
+    @property
+    def color(self):
+        return self._color
+    
+    @color.setter
+    def color(self, c):
+        self._color = c
+        
+    def _attach(self, visual):
+        super(GridContourComponent, self)._attach(visual)
+        visual._program.add_callback('frag_color', self.frag_func)
+        visual._program.add_callback('vert_post_hook', self.vert_func)
+        
+    def _detach(self, visual):
+        self.visual._program.remove_callback('frag_color', self.frag_func)
+        self.visual._program.remove_callback('vert_post_hook', self.vert_func)
+        super(GridContourComponent, self)._detach()
+        
+    def activate(self, program, mode):
+        self.frag_func['pos'] = ('varying', 'vec4')
+        
+        # automatically assign same variable to both
+        self.vert_func['output_pos'] = self.frag_func['pos']
+
+    @property
+    def supported_draw_modes(self):
+        return (self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED)
+
+
