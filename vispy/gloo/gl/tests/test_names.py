@@ -61,11 +61,14 @@ def test_pyopengl():
     _test_contant_names(pyopengl)
 
 
-def test_main():
-    """ Main backend should have all ES 2.0 names. No more, no less. """
-    _test_function_names(gl._main)
+def test_proxy():
+    """ GLProxy class should have all ES 2.0 names. No more, no less. """
+    _test_function_names(gl.proxy)
     _test_contant_names(gl._constants)
-    #
+
+
+def test_main():
+    """ Main gl namespace should have all ES 2.0 names. No more, no less. """
     _test_function_names(gl)
     _test_contant_names(gl)
 
@@ -74,6 +77,7 @@ def _main():
     """ For testing this test suite :)
     """
     test_main()
+    test_proxy()
     test_destop()
     test_angle()
     test_pyopengl()
@@ -214,3 +218,6 @@ function_names = [n.strip() for n in function_names.split(' ')]
 function_names = set([n for n in function_names if n])
 constant_names = [n.strip() for n in constant_names.split(' ')]
 constant_names = set([n for n in constant_names if n])
+
+if __name__ == '__main__':
+    _main()

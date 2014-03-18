@@ -12,7 +12,7 @@ def teardown_module():
 
 @gl._requires_pyopengl()
 def test_use_desktop():
-    """ Using that gl.use injects all names in gl namespace """
+    """ Testing that gl.use injects all names in gl namespace """
 
     # Use desktop
     gl.use('desktop')

@@ -30,12 +30,73 @@ from __future__ import division
 from ...util import config, logger
 
 from ._constants import *  # noqa
-from . import _main
-from ._main import *  # noqa
+from ._proxy import BaseGLProxy
 
 
 # Variable that will hold the module corresponding to the current backend
-current_backend = _main
+# This variable is used in our proxy classes to call the right functions.
+current_backend = None
+
+
+class MainProxy(BaseGLProxy):
+    """ Main proxy for the GL ES 2.0 API. 
+    
+    The functions in this namespace always call into the correct GL
+    backend. Therefore these function objects can be safely stored for
+    reuse. However, for efficienty it would probably be better to store the
+    function name and then do ``func = getattr(gloo.gl, funcname)``.
+    """
+    
+    def __call__(self, funcname, returns, *args, **kwargs):
+        func = getattr(current_backend, funcname)
+        return func(*args, **kwargs)
+
+
+class DebugProxy(BaseGLProxy):
+    """ Proxy for debug version of the GL ES 2.0 API. 
+    
+    This proxy calls the functions of the currently selected backend.
+    In addition it logs debug information, and it runs check_error()
+    on each API call. Intended for internal use.
+    """
+    
+    def _arg_repr(self, arg):
+        """ Get a useful (and not too large) represetation of an argument.
+        """
+        r = repr(arg)
+        max = 40
+        if len(r) > max:
+            if hasattr(arg, 'shape'):
+                r = 'array:' + 'x'.join([repr(s) for s in arg.shape])
+            else:
+                r = r[:max-3] + '...'
+        return r
+    
+    def __call__(self, funcname, returns, *args, **kwargs):
+        # Avoid recursion for glGetError
+        if funcname == 'glGetError':
+            func = getattr(current_backend, funcname)
+            return func()
+        # Log function call
+        argstr = ', '.join(list(map(self._arg_repr, args)) +
+                           ['%s=%s' % (key, self._arg_repr(val))
+                            for (key, val) in kwargs.items()])
+        logger.debug("%s(%s)" % (funcname, argstr))
+        # Call function
+        func = getattr(current_backend, funcname)
+        ret = func(*args, **kwargs)
+        # Log return value
+        if returns:
+            logger.debug(" <= %s" % repr(ret))
+        # Check for errors (raises if an error occured)
+        check_error(funcname)
+        # Return
+        return ret
+
+
+# Instantiate proxy objects
+proxy = MainProxy()
+_debug_proxy = DebugProxy()
 
 
 # todo: we need a vispy.use(), e.g. webgl needs action both here and in app
@@ -72,59 +133,30 @@ def use(target='desktop'):
     # Apply
     global current_backend
     current_backend = mod
-    _main.PROXY = mod.__dict__
-    _copy_gl_functions(mod, globals(), debug)
+    if debug:
+        _copy_gl_functions(_debug_proxy, globals())
+    else:
+        _copy_gl_functions(mod, globals())
 
 
-def _copy_gl_functions(source, dest, debug=False):
+def _copy_gl_functions(source, dest):
     """ Inject all objects that start with 'gl' from the source
-    into the dest. source and dest can be dicts or modules.
+    into the dest. source and dest can be dicts, modules or BaseGLProxy's.
     """
     # Get dicts
-    if not isinstance(source, dict):
+    if isinstance(source, BaseGLProxy):
+        s = {}
+        for key in dir(source):
+            s[key] = getattr(source, key)
+        source = s
+    elif not isinstance(source, dict):
         source = source.__dict__
     if not isinstance(dest, dict):
         dest = dest.__dict__
     # Make selection of names
     funcnames = [name for name in source.keys() if name.startswith('gl')]
     for name in funcnames:
-        func = source[name]
-        if debug and name != 'glGetError':
-            func = _make_debug_wrapper(name, func)
-        dest[name] = func
-
-
-def _arg_repr(arg):
-    """ Get a useful (and not too large) represetation of an argument.
-    """
-    r = repr(arg)
-    max = 40
-    if len(r) > max:
-        if hasattr(arg, 'shape'):
-            r = 'array:' + 'x'.join([repr(s) for s in arg.shape])
-        else:
-            r = r[:max-3] + '...'
-    return r
-
-
-def _make_debug_wrapper(funcname, func):
-    """ Create a wrapper function around the given function. For debug
-    purposes.
-    """
-    def cb(*args, **kwds):
-        argstr = ', '.join(list(map(_arg_repr, args)) +
-                           ['%s=%s' % (key, _arg_repr(val))
-                            for (key, val) in kwds.items()])
-        logger.debug("%s(%s)" % (funcname, argstr))
-        ret = func(*args, **kwds)
-        logger.debug(" <= %s" % repr(ret))
-        try:
-            check_error(funcname)
-        except Exception:
-            print("%s(%s)" % (funcname, argstr))
-            raise
-        return ret
-    return cb
+        dest[name] = source[name]
 
 
 def check_error(when='periodic check'):
@@ -166,10 +198,7 @@ def _requires_pyopengl():
 
 
 # Load default gl backend
-# todo: this would be a slow version, but gloo keeps some function
-# objects when importing and we need to be able to switch gl backend
-# *after* gloo is loaded
+from . import desktop as default_backend  # noqa
 
-from . import desktop as default_backend
-# from . import desktop as default_backend
-_main.PROXY = default_backend.__dict__
+# Call use to start using our default backend
+use()
