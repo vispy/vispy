@@ -23,7 +23,6 @@ class OpenCLTest(unittest.TestCase):
 
     def tearDown(self):
         self.app.close()
-#        self.app.show()
         del self.app
 
     def test_opencl_context_free(self):
@@ -37,7 +36,6 @@ class OpenCLTest(unittest.TestCase):
                 pass
             else:
                 raise AssertionError
-
 
     def test_opencl_buffer(self):
         if not pyopencl: return

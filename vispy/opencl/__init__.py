@@ -26,8 +26,8 @@ try:
     import pyopencl.array
     from pyopencl.tools import get_gl_sharing_context_properties
 except ImportError:
-    logger.warning("Unable to import PyOpenCL. "
-        "Please install it from: http://pypi.python.org/pypi/pyopencl")
+    logger.warning("Unable to import PyOpenCL. " + \
+    "Please install it from: http://pypi.python.org/pypi/pyopencl")
     pyopencl = None
 
 if pyopencl and not pyopencl.have_gl():
