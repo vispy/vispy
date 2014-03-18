@@ -44,11 +44,11 @@ class OpenCLTest(unittest.TestCase):
         ary = numpy.arange(100).reshape((10, 10)).astype("float32")
         buf = vispy.opencl.VertexBuffer(ary)
         buf.activate()
-        cl_buffer = buf.get_ocl()
+        buf.get_ocl()
 
     def test_opencl_texture(self):
         if not pyopencl: return
         ary = numpy.arange(100).reshape((10, 10)).astype("float32")
         tex = vispy.opencl.Texture2D(ary)
         tex.activate()
-        cl_image = tex.get_ocl()
+        tex.get_ocl()
