@@ -1,9 +1,18 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vispy: gallery 60
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+# Author:   Per Rosengren
+# Date:     18/03/2014
+# Abstract: Unstructured2D canvas example
+# Keywords: 
+# ----------------------------------------------------------------------------
+"""Unstructured2D canvas example.
 
-"""
-Dynamic planar graph layout.
+Takes unstructured 2D locations, with corresponding 1 or 2 dimensional
+scalar "values". Plots the values looked up from colormaps and
+interpolated between the locations.
 """
 
 import numpy as np
@@ -21,11 +30,7 @@ class Unstructured2d(app.Canvas):
             colormap=None, data_lim=None, 
             dir_x_right=True, dir_y_top=True, 
             **kwargs):
-        # Initialize the canvas for real
         app.Canvas.__init__(self, **kwargs)
-#         self.size = 512, 512
-#         self.position = 50, 50
-        
         self.create_shader(colormap)
         self.create_mesh(x, y, u, v)
         self.program.bind(self.vbo)
@@ -35,12 +40,6 @@ class Unstructured2d(app.Canvas):
             self._data_lim = [[x.min(), x.max()], [y.min(), y.max()]]
         self._dir_x_right = dir_x_right
         self._dir_y_top = dir_y_top
-
-
-        # self.timer = app.Timer(.01)
-        # self.timer.connect(self.on_timer)
-        # self.timer.start()
-#         self.resize(*self.size)
 
     def create_shader(self, colormap):
         if len(colormap.shape) == 2:
@@ -116,16 +115,6 @@ class Unstructured2d(app.Canvas):
         gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-
-    def on_key_press(self, event):
-        if event.text == ' ':
-            if self.timer.running:
-                self.timer.stop()
-            else:
-                self.timer.start()
-
-    def on_timer(self, event):
-        self.update()
 
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
