@@ -47,9 +47,9 @@ class MainProxy(BaseGLProxy):
     function name and then do ``func = getattr(gloo.gl, funcname)``.
     """
     
-    def __call__(self, funcname, returns, *args, **kwargs):
+    def __call__(self, funcname, returns, *args):
         func = getattr(current_backend, funcname)
-        return func(*args, **kwargs)
+        return func(*args)
 
 
 class DebugProxy(BaseGLProxy):
@@ -72,19 +72,17 @@ class DebugProxy(BaseGLProxy):
                 r = r[:max-3] + '...'
         return r
     
-    def __call__(self, funcname, returns, *args, **kwargs):
+    def __call__(self, funcname, returns, *args):
         # Avoid recursion for glGetError
         if funcname == 'glGetError':
             func = getattr(current_backend, funcname)
             return func()
         # Log function call
-        argstr = ', '.join(list(map(self._arg_repr, args)) +
-                           ['%s=%s' % (key, self._arg_repr(val))
-                            for (key, val) in kwargs.items()])
+        argstr = ', '.join(map(self._arg_repr, args))
         logger.debug("%s(%s)" % (funcname, argstr))
         # Call function
         func = getattr(current_backend, funcname)
-        ret = func(*args, **kwargs)
+        ret = func(*args)
         # Log return value
         if returns:
             logger.debug(" <= %s" % repr(ret))

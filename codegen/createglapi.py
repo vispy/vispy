@@ -467,7 +467,7 @@ class ProxyApiGenerator(ApiGenerator):
         implement __call__ to process the API calls.
         """
        
-        def __call__(self, funcname, returns, *args, **kwargs):
+        def __call__(self, funcname, returns, *args):
             raise NotImplementedError()
         
         
