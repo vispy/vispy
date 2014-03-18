@@ -14,7 +14,9 @@ pyopencl = vispy.opencl.pyopencl
 # How can I test if I have OpenCL with GL support but no driver for the GPU ?
 # -----------------------------------------------------------------------------
 
+
 class OpenCLTest(unittest.TestCase):
+
     def setUp(self):
         self.app = vispy.app.Canvas()
         self.app.show()
@@ -38,14 +40,16 @@ class OpenCLTest(unittest.TestCase):
                 raise AssertionError
 
     def test_opencl_buffer(self):
-        if not pyopencl: return
+        if not pyopencl:
+            return
         ary = numpy.arange(100).reshape((10, 10)).astype("float32")
         buf = vispy.opencl.VertexBuffer(ary)
         buf.activate()
         buf.get_ocl()
 
     def test_opencl_texture(self):
-        if not pyopencl: return
+        if not pyopencl:
+            return
         ary = numpy.arange(100).reshape((10, 10)).astype("float32")
         tex = vispy.opencl.Texture2D(ary)
         tex.activate()

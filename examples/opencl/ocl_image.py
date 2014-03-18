@@ -81,6 +81,7 @@ void main()
 
 
 class Canvas(app.Canvas):
+
     def __init__(self, tex_size):
         app.Canvas.__init__(self)
         self.tex_size = tex_size
@@ -103,9 +104,9 @@ class Canvas(app.Canvas):
         self.gl_tex = opencl.Texture2D(gray)
         # Set uniforms and samplers
         positions = numpy.array([[-1, -1, 0], [+1, -1, 0],
-                          [-1, +1, 0], [+1, +1, 0, ]], numpy.float32)
+                                 [-1, +1, 0], [+1, +1, 0, ]], numpy.float32)
         texcoords = numpy.array([[1.0, 1.0], [0.0, 1.0],
-                          [1.0, 0.0], [0.0, 0.0]], numpy.float32)
+                                 [1.0, 0.0], [0.0, 0.0]], numpy.float32)
         self.colormap = numpy.array([[0, 0, 0],
                                      [1, 0, 0],
                                      [1, 1, 0],
@@ -173,10 +174,10 @@ class Canvas(app.Canvas):
             self.init_cl()
         pyopencl.enqueue_copy(self.queue, self.ocl_ary.data, img)
         self.ocl_prg.u16_to_float(self.queue, self.shape, (8, 4),
-                                self.ocl_ary.data,
-                                self.ary_float.data,
-                                numpy.int32(self.tex_size),
-                                numpy.int32(self.tex_size))
+                                  self.ocl_ary.data,
+                                  self.ary_float.data,
+                                  numpy.int32(self.tex_size),
+                                  numpy.int32(self.tex_size))
         self.ocl_red.max_min_global_stage1(self.queue,
                                            (self.red_size * self.red_size,),
                                            (self.red_size,),
@@ -191,13 +192,13 @@ class Canvas(app.Canvas):
 
         pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_tex])
         self.ocl_prg.buf_to_tex(self.queue, self.shape, (8, 4),
-                                  self.ary_float.data,
-                                  numpy.int32(self.tex_size),
-                                  numpy.int32(self.tex_size),
-                                  self.mini.data,
-                                  self.maxi.data,
-                                  numpy.int32(self.logscale),
-                                  self.ocl_tex)
+                                self.ary_float.data,
+                                numpy.int32(self.tex_size),
+                                numpy.int32(self.tex_size),
+                                self.mini.data,
+                                self.maxi.data,
+                                numpy.int32(self.logscale),
+                                self.ocl_tex)
         pyopencl.enqueue_release_gl_objects(self.queue, [self.ocl_tex]).wait()
         self.on_paint(None)
 

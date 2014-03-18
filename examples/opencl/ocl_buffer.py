@@ -85,6 +85,7 @@ void main()
 
 
 class Canvas(app.Canvas):
+
     def __init__(self, tex_size):
         app.Canvas.__init__(self)
         self.tex_size = tex_size
@@ -185,29 +186,29 @@ class Canvas(app.Canvas):
             self.init_cl()
         pyopencl.enqueue_copy(self.queue, self.ocl_ary.data, img)
         self.ocl_prg.u16_to_float(self.queue, self.shape, (8, 4),
-                                self.ocl_ary.data,
-                                self.ary_float.data,
-                                numpy.int32(self.tex_size),
-                                numpy.int32(self.tex_size))
+                                  self.ocl_ary.data,
+                                  self.ary_float.data,
+                                  numpy.int32(self.tex_size),
+                                  numpy.int32(self.tex_size))
         self.ocl_red.max_min_global_stage1(self.queue, (self.red_size ** 2,),
                                            (self.red_size,),
-                                               self.ary_float.data,
-                                               self.maxi_mini.data,
-                                               numpy.uint32(self.tex_size ** 2))
+                                           self.ary_float.data,
+                                           self.maxi_mini.data,
+                                           numpy.uint32(self.tex_size ** 2))
         self.ocl_red.max_min_global_stage2(self.queue, (self.red_size,),
                                            (self.red_size,),
-                                               self.maxi_mini.data,
-                                               self.maxi.data,
-                                               self.mini.data)
+                                           self.maxi_mini.data,
+                                           self.maxi.data,
+                                           self.mini.data)
 
         pyopencl.enqueue_acquire_gl_objects(self.queue, [self.ocl_buf])
         self.ocl_prg.buf_norm(self.queue, self.shape, (8, 4),
-                                  self.ary_float.data,
-                                  numpy.int32(self.tex_size),
-                                  numpy.int32(self.tex_size),
-                                  self.mini.data, self.maxi.data,
-                                  numpy.int32(self.logscale),
-                                  self.ocl_buf)
+                              self.ary_float.data,
+                              numpy.int32(self.tex_size),
+                              numpy.int32(self.tex_size),
+                              self.mini.data, self.maxi.data,
+                              numpy.int32(self.logscale),
+                              self.ocl_buf)
         pyopencl.enqueue_release_gl_objects(self.queue, [self.ocl_buf]).wait()
         self.on_paint(None)
 

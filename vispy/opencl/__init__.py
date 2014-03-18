@@ -26,8 +26,9 @@ try:
     import pyopencl.array
     from pyopencl.tools import get_gl_sharing_context_properties
 except ImportError:
-    logger.warning("Unable to import PyOpenCL. " + \
-    "Please install it from: http://pypi.python.org/pypi/pyopencl")
+    logger.warning("Unable to import PyOpenCL. "
+                   "Please install it from:"
+                   " http://pypi.python.org/pypi/pyopencl")
     pyopencl = None
 
 if pyopencl and not pyopencl.have_gl():
@@ -58,8 +59,8 @@ def _make_context(platform_id=None, device_id=None):
         device = platform.get_devices()[device_id]
         try:
             ctx = pyopencl.Context(devices=[device],
-                                properties=[(enum_plat, platform)]
-                                    + properties)
+                                   properties=[(enum_plat, platform)]
+                                   + properties)
             ids = (platform_id, device_id)
         except:
             ctx = None
@@ -80,7 +81,7 @@ def _make_context(platform_id=None, device_id=None):
                                        [(enum_plat, platform)])
                 device = ctx.devices[0]
                 if device.type != pyopencl.device_type.GPU:
-                    #Wrongly selected non GPU device
+                    # Wrongly selected non GPU device
                     ctx = None
                     raise
             except:
@@ -89,8 +90,8 @@ def _make_context(platform_id=None, device_id=None):
                         continue
                     try:
                         ctx = pyopencl.Context(devices=[device],
-                                            properties=properties +
-                                            [(enum_plat, platform)])
+                                               properties=properties +
+                                               [(enum_plat, platform)])
                     except:
                         ctx = None
                     else:
@@ -108,6 +109,7 @@ def _make_context(platform_id=None, device_id=None):
 
 
 class OpenCL(object):
+
     """
     Provides a class method to retrieve an
     OpenCL context shared with OpenGL.
@@ -140,7 +142,7 @@ class OpenCL(object):
             with cls._sem:
                 if (cls._context is None) or (ids != cls._ids):
                     cls._context, cls._ids = _make_context(platform_id,
-                                                            device_id)
+                                                           device_id)
                     ctx = cls._context
                     ids = cls._ids
         if ctx is None:
@@ -150,9 +152,11 @@ class OpenCL(object):
 
 
 class TextureOpenCL(OpenCL):
+
     """
     Mixing class to offer OpenCL view on the texture
     """
+
     def get_ocl(self, ctx=None):
         """
         Retrieves an OpenCL view on the texture.
@@ -177,7 +181,7 @@ class TextureOpenCL(OpenCL):
 #       Currently only ndim=2 looks possible:
         ndim = 2
         ocl_img = pyopencl.GLTexture(ctx, pyopencl.mem_flags.READ_WRITE,
-                        self._target, 0, int(self.handle), ndim)
+                                     self._target, 0, int(self.handle), ndim)
         return ocl_img
 
 
@@ -200,17 +204,20 @@ class Texture2D(texture.Texture2D, TextureOpenCL):
 
 
 class TextureCubeMap(texture.TextureCubeMap, TextureOpenCL):
+
     """ Representation of a cube map, to store texture data for the
     6 sided of a cube. Used for instance to create environment mappings.
     Inherits :class:`texture.Texture`.
 
     """
+
     def __init__(self, *args, **kwargs):
         texture.TextureCubeMap.__init__(self, gl.GL_TEXTURE_CUBE_MAP, *args,
                                         **kwargs)
 
 
 class BufferOpenCL(OpenCL):
+
     """
     Mixing class to offer OpenCL view on the buffer
     """
