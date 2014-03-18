@@ -6,7 +6,8 @@
 # Author:   Per Rosengren
 # Date:     18/03/2014
 # Abstract: Unstructured2D canvas example
-# Keywords: 
+# Keywords: unstructured
+# Require: scipy colormap
 # ----------------------------------------------------------------------------
 """Unstructured2D canvas example.
 
@@ -23,13 +24,14 @@ from vispy.util.transforms import ortho
 
 import scipy.spatial
 
+
 class Unstructured2d(app.Canvas):
 
     def __init__(self, 
-            x=None, y=None, u=None, v=None, 
-            colormap=None, data_lim=None, 
-            dir_x_right=True, dir_y_top=True, 
-            **kwargs):
+                 x=None, y=None, u=None, v=None, 
+                 colormap=None, data_lim=None, 
+                 dir_x_right=True, dir_y_top=True, 
+                 **kwargs):
         app.Canvas.__init__(self, **kwargs)
         self.create_shader(colormap)
         self.create_mesh(x, y, u, v)
@@ -99,16 +101,16 @@ class Unstructured2d(app.Canvas):
                 c = c.astype('f4')
                 c = .5 + .5 * c / np.abs(c).max()
                 uv.append(c)
-        data = np.column_stack([
+        data = np.column_stack(
+            [
                 x.astype('f4'), 
-                y.astype('f4')] + uv
-            ).view(
-            dtype = [('position', 'f4', 2),
-                     ('texcoord', 'f4', 2 if v is not None else 1),
-                    ])
+                y.astype('f4')
+            ] + uv
+        ).view(dtype=[('position', 'f4', 2),
+                      ('texcoord', 'f4', 2 if v is not None else 1),
+                      ])
         self.vbo = gloo.VertexBuffer(data)
         self.index = gloo.IndexBuffer(edges)
-
 
     def on_initialize(self, event):
         gl.glClearColor(1, 1, 1, 1)
@@ -148,6 +150,7 @@ class Unstructured2d(app.Canvas):
         args_ortho += -1000, 1000   
         self.program['projection'] = ortho(*args_ortho)
 
+
 def create_colormap2d_hsv(size=512):
     import matplotlib.colors
     import math
@@ -157,6 +160,7 @@ def create_colormap2d_hsv(size=512):
     hsv[:, :, 1] = np.minimum(1., np.sqrt(u**2 + v**2))
     rgb = matplotlib.colors.hsv_to_rgb(hsv)
     return rgb
+
 
 def create_colormap2d_4dirs(size=512):
     rgb = np.ones((size, size, 3), dtype=np.float32)
@@ -180,6 +184,7 @@ def create_colormap2d_4dirs(size=512):
     rgb = np.minimum(1., rgb)
     return rgb
 
+
 def create_colormap1d_hot(size=512):
     rgb = np.ones((size, 3), dtype=np.float32)
     hs = size / 2
@@ -192,16 +197,21 @@ def create_colormap1d_hot(size=512):
     return rgb
     
 if __name__ == '__main__':
-    loc = np.meshgrid(np.linspace(0, 1, 10), np.linspace(0, 1, 10))
-    loc = np.column_stack([v.flat for v in loc])
+    loc = np.random.random_sample(size=(100, 2))
     np.random.shuffle(loc)
-    vec = loc - .5
+    vec = np.empty_like(loc)
+    vec[:, 0] = np.cos(loc[:, 0] * 10)
+    vec[:, 1] = np.cos(loc[:, 1] * 13)
     width = 500
     height = 500
-    c1 = Unstructured2d(title="Unstructured 2D - 2D colormap", size=(width, height), position=(0, 0),
-        x=loc[:, 0], y=loc[:, 1], u=vec[:, 0], v=vec[:, 1], colormap=create_colormap2d_4dirs(size=128))
-    c2 = Unstructured2d(title="Unstructured 2D - 1D colormap", size=(width, height), position=(width + 20, 0),
-        x=loc[:, 0], y=loc[:, 1], u=vec[:, 0], colormap=create_colormap1d_hot(size=128))
+    c1 = Unstructured2d(title="Unstructured 2D - 2D colormap", 
+                        size=(width, height), position=(0, 0),
+                        x=loc[:, 0], y=loc[:, 1], u=vec[:, 0], v=vec[:, 1], 
+                        colormap=create_colormap2d_4dirs(size=128))
+    c2 = Unstructured2d(title="Unstructured 2D - 1D colormap", 
+                        size=(width, height), position=(width + 20, 0),
+                        x=loc[:, 0], y=loc[:, 1], u=vec[:, 0], 
+                        colormap=create_colormap1d_hot(size=128))
     c1.show()
     c2.show()
     app.run()
