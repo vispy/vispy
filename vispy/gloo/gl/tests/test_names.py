@@ -73,6 +73,13 @@ def test_main():
     _test_contant_names(gl)
 
 
+def test_webgl():
+    """ Webgl backend should have all ES 2.0 names. No more, no less. """
+    from vispy.gloo.gl import webgl
+    _test_function_names(webgl)
+    _test_contant_names(webgl)
+
+
 def _main():
     """ For testing this test suite :)
     """
@@ -81,6 +88,7 @@ def _main():
     test_destop()
     test_angle()
     test_pyopengl()
+    test_webgl()
 
 
 # Note: I took these names below from _main and _constants, which is a
