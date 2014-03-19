@@ -6,8 +6,8 @@
 # Author:   Per Rosengren
 # Date:     18/03/2014
 # Abstract: Unstructured2D canvas example
-# Keywords: unstructured
-# Require: scipy colormap
+# Keywords: unstructured delaunay colormap
+# Require: scipy
 # ----------------------------------------------------------------------------
 """Unstructured2D canvas example.
 
