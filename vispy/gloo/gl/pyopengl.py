@@ -106,12 +106,8 @@ def _get_function_from_pyopengl(funcname):
         except AttributeError:
             func = None
     
-    # Test if function is really there
-    if not bool(func):
-        func = None
-    
     # Try using "alias"
-    if not func:
+    if not bool(func):
         # Some functions are known by a slightly different name
         # e.g. glDepthRangef, glDepthRangef
         if funcname.endswith('f'):
