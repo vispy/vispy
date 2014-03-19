@@ -29,7 +29,6 @@ Generate and upload package (preferably on Windows)
 Announcing:
   * It can be worth waiting a day for eager users to report critical bugs
   * Announce in scipy-user, vispy mailing list, G+
-
 """
 
 import os
