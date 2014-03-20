@@ -24,7 +24,7 @@ class Canvas(vispy.app.Canvas):
         
         # Generate some data to work with
         global mdata
-        mdata = MeshData.sphere(10, 20, 0.3)
+        mdata = MeshData.sphere(20, 40, 0.3)
         
         # Center: Mesh with pre-indexed vertexes, uniform color
         verts = mdata.vertexes(indexed='faces')
@@ -73,7 +73,7 @@ class Canvas(vispy.app.Canvas):
                                          ], simplify=False)
         mesh.fragment_components = [VertexColorComponent(vcolor), 
                                     GridContourComponent(
-                                        spacing=(0.1, 0.1, 0.1))]
+                                        spacing=(0.13, 0.13, 0.13))]
         self.meshes.append(mesh)
         
         # Bottom-right: Phong shaded mesh
@@ -84,6 +84,8 @@ class Canvas(vispy.app.Canvas):
         normal_comp = VertexNormalComponent(mdata)
         mesh.fragment_components = [VertexColorComponent(vcolor), 
                                     normal_comp, # TODO: should the shading component take care of this?
+                                    GridContourComponent(
+                                        spacing=(0.1, 0.1, 0.1)),
                                     ShadingComponent(
                                         normal_comp,
                                         lights=[((-1, 1, -1), (1.0, 1.0, 1.0))],

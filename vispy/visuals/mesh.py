@@ -586,10 +586,10 @@ class VertexColorComponent(MeshComponent):
 class GridContourComponent(MeshComponent):
     FRAG_CODE = """
         vec4 $grid_contour(vec4 color) {
-            if ( mod($pos.x, 0.1) < 0.005 ||
-                 mod($pos.y, 0.1) < 0.005 || 
-                 mod($pos.z, 0.1) < 0.005 ) {
-               return vec4(1,1,1,1);
+            if ( mod($pos.x, $spacing.x) < 0.005 ||
+                 mod($pos.y, $spacing.y) < 0.005 || 
+                 mod($pos.z, $spacing.z) < 0.005 ) {
+               return color + 0.7 * (vec4(1,1,1,1) - color);
             }
             else {
                 return color;
@@ -628,6 +628,7 @@ class GridContourComponent(MeshComponent):
         
     def activate(self, program, mode):
         self.frag_func['pos'] = ('varying', 'vec4')
+        self.frag_func['spacing'] = ('uniform', 'vec3', self.spacing)
         
         # automatically assign same variable to both
         self.vert_func['output_pos'] = self.frag_func['pos']
@@ -650,7 +651,7 @@ class ShadingComponent(MeshComponent):
             if (p < 0.0) {
                 p = 0.0;
             }
-            vec4 specular = $light_color * 5.0 * pow(p, 50.);
+            vec4 specular = $light_color * 5.0 * pow(p, 100.);
             return color * ($ambient + diffuse) + specular;
         }
         """
@@ -693,9 +694,9 @@ class VertexNormalComponent(MeshComponent):
     
     VERT_CODE = """
         void $normal_support() {
-            vec4 o = vec4(0,0,0,1);
-            vec4 i = o + $input_normal;
-            $output_normal = map_local_to_nd(i) - map_local_to_nd(o);
+            vec3 o = vec3(0,0,0);
+            vec3 i = o + $input_normal.xyz;
+            $output_normal = map_local_to_nd(vec4(i,1)) - map_local_to_nd(vec4(o,1));
         }
         """
     
