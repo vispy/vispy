@@ -6,7 +6,7 @@ from __future__ import division
 import string
 
 from . import parsing
-
+from ..util.event import EmitterGroup, Event
 
 class ShaderObject(object):
     """
@@ -14,6 +14,9 @@ class ShaderObject(object):
     variables). This class defines the interface used by ModularProgram to
     compile multiple objects together into a single program.
     """
+    def __init__(self):
+        self.events = EmitterGroup(source=self, update=Event)
+    
     @property
     def is_anonymous(self):
         """
@@ -47,7 +50,13 @@ class ShaderObject(object):
         
         """
         raise NotImplementedError
-
+    
+    def update(self):
+        """
+        Inform the object (and all listeners of events.update) that this
+        object has changed.
+        """
+        self.events.update()
 
 
 class Variable(ShaderObject):
@@ -57,7 +66,7 @@ class Variable(ShaderObject):
     Created by Function.__getitem__
     """
     def __init__(self, function, name, spec=None, anonymous=False):
-        super(ShaderObject, self).__init__()
+        super(Variable, self).__init__()
         self.function = function
         self._name = name  # local name within the function
         self.spec = None  # (vtype, dtype, value)
@@ -136,7 +145,7 @@ class Function(ShaderObject):
             All functions which may be called by this Function.
     """    
     def __init__(self, code=None, deps=()):
-        super(ShaderObject, self).__init__()
+        super(Function, self).__init__()
         if code is not None and not isinstance(code, basestring):
             raise ValueError("code argument must be string or None (got %s)" 
                              % type(code))
@@ -359,7 +368,7 @@ class Function(ShaderObject):
             raise NameError("Variable '%s' does not exist in this function." 
                             % name)
         
-        if isinstance(spec, Variable):
+        if isinstance(spec, ShaderObject):
             if name in self._variables:
                 if self._variables[name] is spec:
                     return

@@ -443,6 +443,60 @@ FRAGMENT = program.frag_code
 '''),
 
 
+('Sub-hooks', '''
+"""
+"""
+
+from vispy.shaders.composite import (ModularProgram, Function, FunctionChain)
+from vispy.gloo import VertexBuffer
+import numpy as np
+
+vertex_shader = """
+void vert_post_hook();
+
+void main() {
+    gl_Position = vec4(0,0,0,0);
+    vert_post_hook();
+}
+"""
+
+fragment_shader = """
+void main() {
+}
+"""
+
+program = ModularProgram(vertex_shader, fragment_shader)
+
+# Create a function that calls another function
+vert_func = Function("""
+void $vert_func() {
+    $some_other_function();
+}
+""")
+
+
+# Create the second function:
+other_func = Function("""
+void $other_func() {
+    gl_Position.w = 1;
+}
+""")
+
+# Assign other_func to the anonymous function call in vert_func:
+vert_func['some_other_function'] = other_func
+
+# The name assigned to other_func will be inserted in place of 
+# the function call in vert_func
+
+program['vert_post_hook'] = vert_func
+
+# obligatory: these variables are used to fill the text fields on the right.
+program._compile() 
+VERTEX = program.vert_code
+FRAGMENT = program.frag_code
+'''),
+
+
 ]
 
 

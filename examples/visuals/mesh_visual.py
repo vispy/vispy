@@ -10,21 +10,28 @@ import numpy as np
 import vispy.app
 from vispy.gloo import gl
 from vispy.visuals.mesh import (MeshVisual, VertexColorComponent, 
-                                GridContourComponent)
+                                GridContourComponent, VertexNormalComponent,
+                                ShadingComponent)
 from vispy.util.meshdata import MeshData
-from vispy.visuals.transforms import STTransform
+from vispy.visuals.transforms import (STTransform, AffineTransform, 
+                                      ChainTransform)
 
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
         self.meshes = []
+        self.rotation = AffineTransform()
         
         # Generate some data to work with
+        global mdata
         mdata = MeshData.sphere(10, 20, 0.3)
         
         # Center: Mesh with pre-indexed vertexes, uniform color
         verts = mdata.vertexes(indexed='faces')
         mesh = MeshVisual(pos=verts, color=(1, 0, 0, 1))
+        mesh.transform = ChainTransform([self.rotation,
+                                         STTransform(translate=(0.0, 0.0)),
+                                         ], simplify=False)
         self.meshes.append(mesh)
         
         # Top-left: Mesh with pre-indexed vertexes, per-face color
@@ -37,7 +44,9 @@ class Canvas(vispy.app.Canvas):
         fcolor[...,1] = np.linspace(1, 0, nf)[:, np.newaxis]
         fcolor[...,2] = np.random.normal(size=nf)[:, np.newaxis]
         mesh = MeshVisual(pos=verts, color=fcolor)
-        mesh.transform = STTransform(translate=(-0.5, 0.5))
+        mesh.transform = ChainTransform([self.rotation,
+                                         STTransform(translate=(-0.5, 0.5)),
+                                         ], simplify=False)
         self.meshes.append(mesh)        
 
         # Top-right: Mesh with unindexed vertexes, per-vertex color
@@ -52,22 +61,48 @@ class Canvas(vispy.app.Canvas):
         vcolor[:,1] = np.linspace(1, 0, nv)
         vcolor[:,2] = np.random.normal(size=nv)
         mesh = MeshVisual(pos=verts, faces=faces, color=vcolor)
-        mesh.transform = STTransform(translate=(0.5, 0.5))
+        mesh.transform = ChainTransform([self.rotation,
+                                         STTransform(translate=(0.5, 0.5)),
+                                         ], simplify=False)
         self.meshes.append(mesh)
         
         # Bottom-left: Mesh colored by vertexes + grid contours
         mesh = MeshVisual(pos=verts, faces=faces)
-        mesh.transform = STTransform(translate=(-0.5, -0.5))
+        mesh.transform = ChainTransform([self.rotation,
+                                         STTransform(translate=(-0.5, -0.5)),
+                                         ], simplify=False)
         mesh.fragment_components = [VertexColorComponent(vcolor), 
                                     GridContourComponent(
                                         spacing=(0.1, 0.1, 0.1))]
         self.meshes.append(mesh)
         
-        
+        # Bottom-right: Phong shaded mesh
+        mesh = MeshVisual(pos=verts, faces=faces)
+        mesh.transform = ChainTransform([self.rotation,
+                                         STTransform(translate=(0.5, -0.5)),
+                                         ], simplify=False)
+        normal_comp = VertexNormalComponent(mdata)
+        mesh.fragment_components = [VertexColorComponent(vcolor), 
+                                    normal_comp, # TODO: should the shading component take care of this?
+                                    ShadingComponent(
+                                        normal_comp,
+                                        lights=[((-1, 1, -1), (1.0, 1.0, 1.0))],
+                                        ambient=0.2)]
+        self.meshes.append(mesh)
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)
         self.show()
+        
+        self.timer = vispy.app.Timer(connect=self.rotate)
+        self.timer.start(0.016)
+        
+    def rotate(self, event):
+        self.rotation.rotate(1, (0,1,0))
+        # TODO: altering rotation should trigger this automatically.
+        for m in self.meshes:
+            m._program._need_build = True
+        self.update()
         
     def on_paint(self, ev):
         gl.glClearColor(0, 0, 0, 1)

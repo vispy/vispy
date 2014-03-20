@@ -204,7 +204,7 @@ class MeshData(object):
         if self._vertexNormals is None:
             faceNorms = self.faceNormals()
             vertFaces = self.vertexFaces()
-            self._vertexNormals = np.empty(self._vertexes.shape, dtype=float)
+            self._vertexNormals = np.empty(self._vertexes.shape, dtype=np.float32)
             for vindex in xrange(self._vertexes.shape[0]):
                 faces = vertFaces[vindex]
                 if len(faces) == 0:
@@ -329,7 +329,7 @@ class MeshData(object):
                     verts[pt2] = index
                 self._vertexFaces[index].append(i)  # keep track of which vertexes belong to which faces
                 self._faces[i,j] = index
-        self._vertexes = np.array(self._vertexes, dtype=float)
+        self._vertexes = np.array(self._vertexes, dtype=np.float32)
     
     #def _setUnindexedFaces(self, faces, vertexes, vertexColors=None, faceColors=None):
         #self._vertexes = vertexes #[QtGui.QVector3D(*v) for v in vertexes]
@@ -453,8 +453,8 @@ class MeshData(object):
         
         ## compute faces
         faces = np.empty((rows*cols*2, 3), dtype=np.uint32)
-        rowtemplate1 = ((np.arange(cols).reshape(cols, 1) + np.array([[0, 1, 0]])) % cols) + np.array([[0, 0, cols]])
-        rowtemplate2 = ((np.arange(cols).reshape(cols, 1) + np.array([[0, 1, 1]])) % cols) + np.array([[cols, 0, cols]])
+        rowtemplate1 = ((np.arange(cols).reshape(cols, 1) + np.array([[1, 0, 0]])) % cols) + np.array([[0, 0, cols]])
+        rowtemplate2 = ((np.arange(cols).reshape(cols, 1) + np.array([[1, 0, 1]])) % cols) + np.array([[0, cols, cols]])
         for row in range(rows):
             start = row * cols * 2 
             faces[start:start+cols] = rowtemplate1 + row * cols
@@ -477,7 +477,7 @@ class MeshData(object):
         for a cylindrical surface.
         The cylinder may be tapered with different radii at each end (truncated cone)
         """
-        verts = np.empty((rows+1, cols, 3), dtype=float)
+        verts = np.empty((rows+1, cols, 3), dtype=np.float32)
         if isinstance(radius, int):
             radius = [radius, radius] # convert to list
         ## compute vertexes

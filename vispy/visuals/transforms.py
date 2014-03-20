@@ -137,6 +137,13 @@ class Transform(object):
         #return self._resolve(name, var_prefix, imap=True)
         return self._shader_imap
 
+    def update(self):
+        """
+        Called to inform any listeners that this Transform has changed.        
+        """
+        self._shader_map.update()
+        self._shader_imap.update()
+
     #def _resolve(self, name, var_prefix, imap):
         ## The default implemntation assumes the following:
         ## * The first argument to the GLSL function should not be bound
@@ -366,13 +373,17 @@ class ChainTransform(Transform):
     def shader_map(self):
         if self._shader_map is None:
             self._shader_map = self._make_shader_map(imap=False)
-            
+        else:
+            for tr in self._transforms:
+                tr.shader_map()  # force transform to update its shader
         return self._shader_map
     
     def shader_imap(self):
         if self._shader_imap is None:
             self._shader_imap = self._make_shader_map(imap=True)
-            
+        else:
+            for tr in self._transforms:
+                tr.shader_imap()  # force transform to update its shader
         return self._shader_imap
     
     def _make_shader_map(self, imap):
@@ -675,6 +686,7 @@ class AffineTransform(Transform):
     def matrix(self, m):
         self._matrix = m
         self._inv_matrix = None
+        self.update()
 
     @property
     def inv_matrix(self):
