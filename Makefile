@@ -35,3 +35,7 @@ nose:
 
 test: clean
 	python make test
+
+lineendings: clean
+	python make lineendings
+
