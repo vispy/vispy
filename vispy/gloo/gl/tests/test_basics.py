@@ -24,7 +24,7 @@ def teardown_module():
 @requires_non_glut()
 def test_basics_desktop():
     """ Test desktop GL backend for basic functionality. """
-    _test_basics('desktop')
+    _test_basics('desktop debug')  # Get better error reporting
 
 
 @requires_non_glut()
