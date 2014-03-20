@@ -109,7 +109,7 @@ def _get_function_from_pyopengl(funcname):
     # Try using "alias"
     if not bool(func):
         # Some functions are known by a slightly different name
-        # e.g. glDepthRangef, glDepthRangef
+        # e.g. glDepthRangef, glClearDepthf
         if funcname.endswith('f'):
             try:
                 func = getattr(_GL, funcname[:-1])
