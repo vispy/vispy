@@ -60,6 +60,7 @@ before_install:
       fi;
     - cd ${SRC_DIR}
 
+
 install:
     # Install numpy, nose, flake
     - if [ "${PYTHON}" != "2.7" ]; then
