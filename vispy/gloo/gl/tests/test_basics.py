@@ -24,7 +24,7 @@ def teardown_module():
 @requires_non_glut()
 def test_basics_desktop():
     """ Test desktop GL backend for basic functionality. """
-    _test_basics('desktop debug')  # Get better error reporting
+    _test_basics('desktop')
 
 
 @requires_non_glut()
@@ -135,12 +135,14 @@ def _test_setting_stuff():
     try:
         range, precision = gl.glGetShaderPrecisionFormat(gl.GL_FRAGMENT_SHADER, 
                                                          gl.GL_HIGH_FLOAT)
+        gl.check_error()  # Sometimes the func is there but OpenGL yields error
     except Exception:  
         pass  # accept if the function is not there ...
         # We should catch RuntimeError and GL.error.NullFunctionError,
         # but PyOpenGL may not be available.
         # On Travis this function was not there on one machine according
         # to PyOpenGL, but our desktop backend worked fine ...
+        
     #
     v = gl.glGetParameter(gl.GL_VERSION)
     assert_true(isinstance(v, string_types))
