@@ -6,12 +6,9 @@
 
 from __future__ import division
 
-import numpy as np
-
-from .. import gloo
+#from .. import gloo
 from .visual import Visual
-from ..util.meshdata import MeshData
-
+#from ..util.meshdata import MeshData
 
 class MeshVisual(Visual):
     """

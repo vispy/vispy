@@ -3,6 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
+import numpy as np
 
 from .. import gloo
 from ..util import event
@@ -306,7 +307,11 @@ class Visual(object):
     @fragment_components.setter
     def fragment_components(self, comps):
         for comp in self._frag_components:
-            comp._detach()
+            try:
+                comp._detach()
+            except:
+                print comp
+                raise
         self._frag_components = comps
         for comp in self._frag_components:
             comp._attach(self)

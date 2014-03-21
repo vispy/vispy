@@ -75,7 +75,7 @@ class XYPosComponent(VisualComponent):
         super(XYPosComponent, self)._attach(visual)
         visual._program['local_position'] = self.shader_func
         
-    def _detach(self, visual):
+    def _detach(self):
         super(XYPosComponent, self)._detach(visual)
         visual._program['local_position'] = None
         
@@ -145,7 +145,7 @@ class XYZPosComponent(VisualComponent):
         super(XYZPosComponent, self)._attach(visual)
         visual._program['local_position'] = self.shader_func
         
-    def _detach(self, visual):
+    def _detach(self):
         super(XYZPosComponent, self)._detach(visual)
         visual._program['local_position'] = None
         
@@ -214,7 +214,7 @@ class HeightFieldComponent(VisualComponent):
         super(SurfacePosComponent, self)._attach(visual)
         visual._program['local_position'] = self.shader_func
         
-    def _detach(self, visual):
+    def _detach(self):
         super(SurfacePosComponent, self)._detach(visual)
         visual._program['local_position'] = None
         

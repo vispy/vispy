@@ -13,6 +13,7 @@ from vispy.visuals.line import LineVisual
 from vispy.visuals.transforms import Transform, STTransform, arg_to_array
 from vispy.shaders.composite import Function
 from vispy.visuals import VisualComponent
+from vispy.visuals.components import VertexColorComponent
 
 # vertex positions of data to draw
 N = 50
@@ -47,56 +48,81 @@ class SineTransform(Transform):
         ret[...,1] -= np.sin(ret[...,0])
         return ret
 
-class Dasher(VisualComponent):
+        
+        
+class DashComponent(VisualComponent):
     """
     VisualComponent that adds dashing to an attached LineVisual.
     """
-    def __init__(self, visual):
-        super(Dasher, self).__init__(visual)
+    
+    FRAG_CODE = """
+        vec4 $dash(vec4 color) {
+            float mod = $distance / $dash_len;
+            mod = mod - int(mod);
+            color.a = 0.5 * sin(mod*3.141593*2) + 0.5;
+            return color;
+        }
+        """
+    
+    VERT_CODE = """
+        void $dashSup() {
+            $output_dist = $distance_attr;
+        }
+        """
+    
+    def __init__(self, pos):
+        self.frag_func = Function(self.FRAG_CODE)
+        self.vert_func = Function(self.VERT_CODE)
+        self._vbo = None
+        self.pos = pos
         
-        # measure distance along line
-        # TODO: this should be recomputed if the line data changes.
-        pixel_tr = STTransform(scale=(400,400)) * visual.transform
-        pixel_pos = pixel_tr.map(pos)
-        dist = np.empty(pos.shape[0], dtype=np.float32)
-        diff = ((pixel_pos[1:] - pixel_pos[:-1]) ** 2).sum(axis=1) ** 0.5
-        dist[0] = 0.0
-        dist[1:] = np.cumsum(diff)
+    def _make_vbo(self):
+        if self._vbo is None:
+            # measure distance along line
+            # TODO: this should be recomputed if the line data changes.
+            pixel_tr = STTransform(scale=(400,400)) * self.visual.transform
+            pixel_pos = pixel_tr.map(self.pos)
+            dist = np.empty(pos.shape[0], dtype=np.float32)
+            diff = ((pixel_pos[1:] - pixel_pos[:-1]) ** 2).sum(axis=1) ** 0.5
+            dist[0] = 0.0
+            dist[1:] = np.cumsum(diff)
+            self._vbo = gloo.VertexBuffer(dist)
+        return self._vbo
         
-        # define GLSL needed to add dashing
-        self.dasher = Function("""
-            void $dash() {
-                float mod = $distance / $dash_len;
-                mod = mod - int(mod);
-                gl_FragColor.a = 0.5 * sin(mod*3.141593*2) + 0.5;
-            }
-            """)
+    def _attach(self, visual):
+        super(DashComponent, self)._attach(visual)
+        visual._program.add_callback('vert_post_hook', self.vert_func)
+        visual._program.add_callback('frag_color', self.frag_func)
         
-        self.dasher_support = Function("""
-            void $dashSup() {
-                $output_dist = $distance_attr;
-            }
-            """)
+    def _detach(self):
+        self.visual._program.remove_callback('vert_post_hook', self.vert_func)
+        self.visual._program.remove_callback('frag_color', self.frag_func)
+        super(DashComponent, self)._detach()
         
-        # install on the visual's program.
-        self.dasher_support['distance_attr'] = ('attribute', 'float', gloo.VertexBuffer(dist))
-        self.dasher_support['output_dist'] = ('varying', 'float')
-        self.dasher['dash_len'] = ('uniform', 'float', 20.)
-        self.dasher['distance'] = self.dasher_support['output_dist']
-        visual.add_fragment_callback(self.dasher)
-        visual.add_vertex_callback(self.dasher_support)
-        
+    def activate(self, program, mode):
+        self.vert_func['distance_attr'] = ('attribute', 
+                                                'float', 
+                                                self._make_vbo())
+        self.vert_func['output_dist'] = ('varying', 'float')
+        self.frag_func['dash_len'] = ('uniform', 'float', 20.)
+        self.frag_func['distance'] = self.vert_func['output_dist']
+
+    @property
+    def supported_draw_modes(self):
+        return (self.DRAW_PRE_INDEXED,)
+
 
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
         
-        self.line = LineVisual(pos, color=color)
+        self.line = LineVisual(pos)
         self.line.transform = (STTransform(scale=(0.1,.3)) * 
                                SineTransform() * 
                                STTransform(scale=(10,3)))
         
-        dasher = Dasher(self.line)
+        dasher = DashComponent(pos)
+        self.line.fragment_components = [VertexColorComponent(color), dasher]
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)

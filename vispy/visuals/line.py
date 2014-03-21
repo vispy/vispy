@@ -40,12 +40,12 @@ class LineVisual(Visual):
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
         
-        if kwds:
+        if pos is not None or kwds:
             self.set_data(pos, **kwds)
 
-    def set_data(self, **kwds):
+    def set_data(self, pos=None, **kwds):
         kwds['index'] = kwds.pop('edges', kwds.get('index', None))
-        super(MeshVisual, self).set_data(**kwds)
+        super(LineVisual, self).set_data(pos, **kwds)
     #def set_data(self, pos=None, edges=None, z=0.0, color=(1,1,1,1)):
         #"""
         #*pos* must be array of shape (..., 2) or (..., 3).

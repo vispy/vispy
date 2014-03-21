@@ -66,7 +66,7 @@ class VertexNormalComponent(VisualComponent):
         # don't attach the fragment function now; other components 
         # will call it.
         
-    def _detach(self, visual):
+    def _detach(self):
         self.visual._program.remove_callback('vert_post_hook', self.vert_func)
         super(VertexNormalComponent, self)._detach()
         

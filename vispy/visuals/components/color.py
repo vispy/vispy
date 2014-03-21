@@ -100,7 +100,7 @@ class VertexColorComponent(VisualComponent):
         visual._program.add_callback('frag_color', self.frag_func)
         visual._program.add_callback('vert_post_hook', self.vert_func)
         
-    def _detach(self, visual):
+    def _detach(self):
         self.visual._program.remove_callback('frag_color', self.frag_func)
         self.visual._program.remove_callback('vert_post_hook', self.vert_func)
         super(VertexColorComponent, self)._detach()
