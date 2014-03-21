@@ -138,6 +138,13 @@ class Visual(object):
         """
         return self._gl_options.copy()
 
+    def update(self):
+        """
+        This method is called whenever the Visual must be repainted.
+        
+        """
+        self.events.update()
+
 
 class VisualComponent(object):
     """
@@ -150,6 +157,10 @@ class VisualComponent(object):
     to; often they will need to access internal data structures of the Visual
     to make decisions about constructing shader components.
     """
+    
+    DRAW_PRE_INDEXED = 1
+    DRAW_UNINDEXED = 2
+    
     def __init__(self, visual=None):
         self._visual = None
         if visual is not None:
@@ -171,10 +182,37 @@ class VisualComponent(object):
         """
         self._visual = None
         
+    @property
+    def supported_draw_modes(self):
+        """
+        A tuple of the draw modes (either DRAW_PRE_INDEXED, DRAW_UNINDEXED, or
+        both) currently supported by this component.
+        
+        DRAW_PRE_INDEXED indicates that the component may be used when the 
+        program uses an array of indexes do determine the order of elements to
+        draw from its vertex buffers (using glDrawElements).
+        
+        DRAW_UNINDEXED indicates that the component may be used when the
+        program will not use an array of indexes; rather, vertex buffers are
+        processed in the order they appear in the buffer (using glDrawArrays).
+        
+        By default, this method returns a tuple with both values. Components 
+        that only support one mode must override this method.
+        """
+        # TODO: This should be expanded to include other questions, such as
+        # whether the visual supports geometry shaders.
+        return DRAW_PRE_INDEXED, DRAW_UNINDEXED
+
     def update(self):
         """
-        Called by the Visual immediately before drawing; this method should be
-        overridden to handle any changes to the visual that have teken place.
+        Inform the attached visual that this component has changed.
+        """
+        if self.visual is not None:
+            self.visual.update()
+
+    def activate(self, program):
+        """
+        *program* is about to paint; attach to *program* all functions and 
+        data required by this component.
         """
         raise NotImplementedError
-

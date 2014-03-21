@@ -9,7 +9,9 @@ Simple demonstration of LineVisual.
 import numpy as np
 import vispy.app
 from vispy.gloo import gl
-from vispy.visuals.mesh import (MeshVisual, VertexColorComponent, 
+from vispy.visuals.mesh import MeshVisual
+from vispy.visuals.components import (
+                                VertexColorComponent, 
                                 GridContourComponent, VertexNormalComponent,
                                 ShadingComponent)
 from vispy.util.meshdata import MeshData
