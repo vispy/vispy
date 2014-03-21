@@ -188,6 +188,7 @@ class Visual(object):
         self._program = ModularProgram(self.VERTEX_SHADER, 
                                        self.FRAGMENT_SHADER)
         
+        self._transform = None
         self.transform = NullTransform()
         
         # Generic chains for attaching post-processing functions
@@ -200,6 +201,15 @@ class Visual(object):
         #self.pos_component = XYZPosComponent()
         self._frag_components = []
         #self.fragment_components = [UniformColorComponent()]
+        
+    @property
+    def transform(self):
+        return self._transform
+    
+    @transform.setter
+    def transform(self, tr):
+        self._transform = tr
+        self.update()
 
     @property
     def primitive(self):

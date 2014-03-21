@@ -29,31 +29,31 @@ class XYPosComponent(VisualComponent):
         }
         """
 
-    def __init__(self, xy=None, z=0.0, faces=None):
+    def __init__(self, xy=None, z=0.0, index=None):
         super(XYPosComponent, self).__init__()
         self.shader_func = Function(self.CODE)
         self._xy = None
         self._z = 0.0
-        self._faces = False
+        self._index = False
         self._vbo = None
         self._ibo = None
-        self.set_data(xy, z, faces)
+        self.set_data(xy, z, index)
         
     @property
     def supported_draw_modes(self):
         # TODO: Add support for converting between pre-indexed and unindexed
-        if self._faces is False:
+        if self._index is False:
             return (self.DRAW_PRE_INDEXED,)
         else:
             return (self.DRAW_UNINDEXED,)
 
-    def set_data(self, xy=None, z=None, faces=None):
+    def set_data(self, xy=None, z=None, index=None):
         if xy is not None:
             self._xy = xy
         if z is not None:
             self._z = z
-        if faces is not None:
-            self._faces = faces
+        if index is not None:
+            self._index = index
         # TODO: might be better to re-upload data rather than creating
         # a new VB, if possible.
         self._vbo = None
@@ -68,7 +68,7 @@ class XYPosComponent(VisualComponent):
     @property
     def ibo(self):
         if self._ibo is None:
-            self._ibo = gloo.IndexBuffer(self._faces)
+            self._ibo = gloo.IndexBuffer(self._index)
         return self._ibo
 
     def _attach(self, visual):
@@ -85,7 +85,7 @@ class XYPosComponent(VisualComponent):
 
     @property
     def index(self):
-        if self._faces is False:
+        if self._index is False:
             return None
         else:
             return self.ibo
@@ -102,28 +102,28 @@ class XYZPosComponent(VisualComponent):
         }
         """
 
-    def __init__(self, pos=None, faces=None):
+    def __init__(self, pos=None, index=None):
         super(XYZPosComponent, self).__init__()
         self.shader_func = Function(self.CODE)
         self._pos = None
-        self._faces = False
+        self._index = False
         self._vbo = None
         self._ibo = None
-        self.set_data(pos, faces)
+        self.set_data(pos, index)
 
     @property
     def supported_draw_modes(self):
         # TODO: Add support for converting between pre-indexed and unindexed
-        if self._faces is False:
+        if self._index is False:
             return (self.DRAW_PRE_INDEXED,)
         else:
             return (self.DRAW_UNINDEXED,)
 
-    def set_data(self, pos=None, faces=None):
+    def set_data(self, pos=None, index=None):
         if pos is not None:
             self._pos = pos
-        if faces is not None:
-            self._faces = faces
+        if index is not None:
+            self._index = index
         # TODO: might be better to re-upload data rather than creating
         # a new VB, if possible.
         self._vbo = None
@@ -138,7 +138,7 @@ class XYZPosComponent(VisualComponent):
     @property
     def ibo(self):
         if self._ibo is None:
-            self._ibo = gloo.IndexBuffer(self._faces)
+            self._ibo = gloo.IndexBuffer(self._index)
         return self._ibo
     
     def _attach(self, visual):
@@ -154,7 +154,7 @@ class XYZPosComponent(VisualComponent):
         
     @property
     def index(self):
-        if self._faces is False:
+        if self._index is False:
             return None
         else:
             return self.ibo
