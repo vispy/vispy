@@ -88,7 +88,7 @@ setup(
         'vispy.gloo.gl', 'vispy.gloo.gl.tests',
         'vispy.util', 'vispy.util.tests',
         'vispy.util.dataio',
-        'vispy.opencl',
+        'vispy.opencl', 'vispy.opencl.tests',
     ],
     package_dir={
         'vispy': 'vispy'},
