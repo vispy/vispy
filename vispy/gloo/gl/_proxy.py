@@ -6,12 +6,12 @@ Base proxy API for GL ES 2.0.
 
 """
 
-class BaseGLProxy:
+class BaseGLProxy(object):
     """ Base proxy class for the GL ES 2.0 API. Subclasses should
     implement __call__ to process the API calls.
     """
    
-    def __call__(self, funcname, returns, *args, **kwargs):
+    def __call__(self, funcname, returns, *args):
         raise NotImplementedError()
     
     

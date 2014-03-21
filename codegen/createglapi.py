@@ -462,7 +462,7 @@ class ProxyApiGenerator(ApiGenerator):
     filename = os.path.join(GLDIR, '_proxy.py')
     DESCRIPTION = 'Base proxy API for GL ES 2.0.'
     PREAMBLE = '''
-    class BaseGLProxy:
+    class BaseGLProxy(object):
         """ Base proxy class for the GL ES 2.0 API. Subclasses should
         implement __call__ to process the API calls.
         """
