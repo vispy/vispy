@@ -10,7 +10,7 @@ from .. import gloo
 from .visual import Visual
 from .components import (XYPosComponent, XYZPosComponent, 
                          UniformColorComponent, VertexColorComponent)
-
+from ..shaders.composite import Function
 
 class PointVisual(Visual):
     """
@@ -22,7 +22,7 @@ class PointVisual(Visual):
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
         
-        if kwds:
+        if pos is not None or kwds:
             self.set_data(pos, **kwds)
             
         # TODO: turn this into a proper component.
@@ -33,32 +33,41 @@ class PointVisual(Visual):
         """
         self._program.add_callback('vert_post_hook', Function(code))
 
-    def set_data(self, pos=None, z=0.0, color=(1,1,1,1)):
-        """
-        *pos* must be array of shape (..., 2) or (..., 3).
-        *z* is only used in the former case.
-        """
-        # select input component based on pos.shape
-        if pos is not None:
-            if pos.shape[-1] == 2:
-                if not isinstance(self.pos_component, XYPosComponent):
-                    self.pos_component = XYPosComponent()
-                self.pos_component.set_data(xy=pos, z=z)
-            elif pos.shape[-1] == 3:
-                if not isinstance(self.pos_component, XYZPosComponent):
-                    self.pos_component = XYZPosComponent()
-                self.pos_component.set_data(pos=pos)
+    #def set_data(self, pos=None, z=0.0, color=(1,1,1,1)):
+        #"""
+        #*pos* must be array of shape (..., 2) or (..., 3).
+        #*z* is only used in the former case.
+        #"""
+        ## select input component based on pos.shape
+        #if pos is not None:
+            #if pos.shape[-1] == 2:
+                #if not isinstance(self.pos_component, XYPosComponent):
+                    #self.pos_component = XYPosComponent()
+                #self.pos_component.set_data(xy=pos, z=z)
+            #elif pos.shape[-1] == 3:
+                #if not isinstance(self.pos_component, XYZPosComponent):
+                    #self.pos_component = XYZPosComponent()
+                #self.pos_component.set_data(pos=pos)
+            #else:
+                #raise Exception("Can't handle position data: %s" % pos)
             
-        if isinstance(color, tuple):
-            self.fragment_components = [UniformColorComponent(color)]
-        elif isinstance(color, np.ndarray):
-            self.fragment_components = [VertexColorComponent(color)]
+        #if isinstance(color, tuple):
+            #self.fragment_components = [UniformColorComponent(color)]
+        #elif isinstance(color, np.ndarray):
+            #self.fragment_components = [VertexColorComponent(color)]
+        #else:
+            #raise Exception("Can't handle color data:")
             
     @property
     def primitive(self):
         return gloo.gl.GL_POINTS
 
     def paint(self):
+        # HACK: True OpenGL ES does not need to enable point sprite and does not define
+        # these two constants. Desktop OpenGL needs to enable these two modes but we do
+        # not have these two constants because our GL namespace pretends to be ES.
+        GL_VERTEX_PROGRAM_POINT_SIZE = 34370
+        GL_POINT_SPRITE = 34913
         gloo.gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
         gloo.gl.glEnable(GL_POINT_SPRITE)
         super(PointVisual, self).paint()
@@ -78,11 +87,6 @@ class PointVisual(Visual):
 #from ..shaders.composite import ModularProgram
 
 
-## HACK: True OpenGL ES does not need to enable point sprite and does not define
-## these two constants. Desktop OpenGL needs to enable these two modes but we do
-## not have these two constants because our GL namespace pretends to be ES.
-#GL_VERTEX_PROGRAM_POINT_SIZE = 34370
-#GL_POINT_SPRITE = 34913
 
 #class PointsVisual(Visual):
 

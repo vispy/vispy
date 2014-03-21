@@ -8,7 +8,7 @@ from .. import gloo
 from ..util import event
 from ..shaders.composite import ModularProgram
 from .transforms import NullTransform
-
+# components imported at bottom.
 
 """
 API Issues to work out:
@@ -225,6 +225,32 @@ class Visual(object):
         this Visual.        
         """
         return self.pos_component.index
+
+    def set_data(self, pos=None, index=None, z=0.0, color=(1,1,1,1)):
+        """
+        Default set_data implementation is only used for a few visuals..
+        *pos* must be array of shape (..., 2) or (..., 3).
+        *z* is only used in the former case.
+        """
+        # select input component based on pos.shape
+        if pos is not None:
+            if pos.shape[-1] == 2:
+                if not isinstance(self.pos_component, XYPosComponent):
+                    self.pos_component = XYPosComponent()
+                self.pos_component.set_data(xy=pos, z=z, index=index)
+            elif pos.shape[-1] == 3:
+                if not isinstance(self.pos_component, XYZPosComponent):
+                    self.pos_component = XYZPosComponent()
+                self.pos_component.set_data(pos=pos, index=index)
+            else:
+                raise Exception("Can't handle position data: %s" % pos)
+            
+        if isinstance(color, tuple):
+            self.fragment_components = [UniformColorComponent(color)]
+        elif isinstance(color, np.ndarray):
+            self.fragment_components = [VertexColorComponent(color)]
+        else:
+            raise Exception("Can't handle color data:")
         
     def set_gl_options(self, default=None, **opts):
         """
@@ -422,3 +448,7 @@ class VisualComponent(object):
         data required by this component.
         """
         raise NotImplementedError
+
+
+from .components import (XYPosComponent, XYZPosComponent, 
+                         UniformColorComponent, VertexColorComponent)
