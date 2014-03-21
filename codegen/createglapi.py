@@ -557,7 +557,7 @@ class DesktopApiGenerator(ApiGenerator):
         
         # Write arg types
         if self.define_argtypes_in_module:
-            self._write_argtypes(des.es2)
+            self._write_argtypes(es2func)
         
         # Get names and types of C-API
         ce_arg_types = [arg.ctype for arg in es2func.args[1:]]
@@ -583,7 +583,7 @@ class DesktopApiGenerator(ApiGenerator):
             prefix = 'res = '
             # Annotation available
             functions_anno.add(des.name)
-            callline = self._native_call_line(des.name, des.es2, prefix=prefix)
+            callline = self._native_call_line(des.name, es2func, prefix=prefix)
             lines.extend( des.ann.get_lines(callline, 'desktop') )
         
         elif es2func.group:
@@ -608,6 +608,22 @@ class DesktopApiGenerator(ApiGenerator):
             # Set string
             callline = self._native_call_line(des.name, des.es2, prefix=prefix)
             lines.append(callline)
+        
+        
+        if 'desktop' in self.__class__.__name__.lower():
+            # Post-fix special cases for desktop gl. See discussion in #201
+            # glDepthRangef and glClearDepthf are not always available,
+            # and sometimes they do not work if they are
+            if es2func.oname in ('glDepthRangef', 'glClearDepthf'):
+                for i in range(1,10):
+                    line = lines[-i]
+                    if not line.strip() or line.startswith('#'):
+                        break
+                    line = line.replace('c_float', 'c_double')
+                    line = line.replace('glDepthRangef', 'glDepthRange')
+                    line = line.replace('glClearDepthf', 'glClearDepth')
+                    lines[-i] = line
+    
     
     def _add_group_function(self, des, sig, es2func):
         lines = self.lines
