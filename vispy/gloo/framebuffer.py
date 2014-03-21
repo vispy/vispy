@@ -247,7 +247,8 @@ class FrameBuffer(GLObject):
             self._pending_attachments.append((target, buffer))
         else:
             raise ValueError(
-                "Buffer must be a ColorBuffer, Texture2D or None")
+                "Buffer must be a ColorBuffer, Texture2D or None. (got %s)"
+                % type(buffer))
 
     @property
     def depth_buffer(self):
@@ -265,7 +266,8 @@ class FrameBuffer(GLObject):
             self._pending_attachments.append((target, buffer))
         else:
             raise ValueError(
-                "Buffer must be a DepthBuffer, Texture2D or None")
+                "Buffer must be a DepthBuffer, Texture2D or None. (got %s)"
+                % type(buffer))
 
     @property
     def stencil_buffer(self):
@@ -283,7 +285,8 @@ class FrameBuffer(GLObject):
             self._pending_attachments.append((target, buffer))
         else:
             raise ValueError(
-                "Buffer must be a StencilBuffer, Texture2D or None")
+                "Buffer must be a StencilBuffer, Texture2D or None. (got %s)"
+                % type(buffer))
 
     @property
     def shape(self):
@@ -362,7 +365,7 @@ class FrameBuffer(GLObject):
                                           buffer.target, buffer.handle, 0)
                 buffer.deactivate()
             else:
-                raise ValueError("Invalid attachment")
+                raise ValueError("Invalid attachment: %s" % type(buffer))
 
         if 1:
             res = gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER)

@@ -270,8 +270,8 @@ class Attribute(Variable):
             self._data = data
         
         elif (type(data) in (float, int) or
-            (type(data) in (tuple, list)
-             and len(data) in [1, 2, 3, 4] and data[0] in (float, int))):
+              (type(data) in (tuple, list)
+               and len(data) in [1, 2, 3, 4] and data[0] in (float, int))):
 
             # Let numpy convert the data for us
             _, _, dtype = gl_typeinfo[self._gtype]

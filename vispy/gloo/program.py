@@ -286,8 +286,6 @@ class Program(GLObject):
             if attribute.active:
                 attribute.activate()
                 
-                
-
     def _deactivate(self):
         """Deactivate the program."""
 
