@@ -39,7 +39,7 @@ else:
         _fname = ctypes.util.find_library('GL')
     if not _fname:
         raise RuntimeError('Could not load OpenGL library.')
-    # Load lib!
+    # Load lib
     _lib = ctypes.cdll.LoadLibrary(_fname)
 
 
