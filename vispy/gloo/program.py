@@ -54,11 +54,6 @@ class Program(GLObject):
         
         self._need_build = True
         
-        # Calling __setitem__ before all shaders are attached causes 
-        # this dict to accumulate items. It is cleared when the program is 
-        # activated.
-        self._deferred_item_set = {}
-
         # Get all vertex shaders
         self._verts = []
         if type(verts) in [str, VertexShader]:
@@ -253,17 +248,15 @@ class Program(GLObject):
         elif name in self._attributes.keys():
             self._attributes[name].set_data(data)
         else:
-            self._deferred_item_set[name] = data
+            raise KeyError("Unknown uniform or attribute %s" % name)
 
     def __getitem__(self, name):
         if name in self._uniforms.keys():
             return self._uniforms[name].data
         elif name in self._attributes.keys():
             return self._attributes[name].data
-        elif name in self._deferred_item_set:
-            return self._deferred_item_set[name]
         else:
-            raise IndexError("Unknown uniform or attribute")
+            raise IndexError("Unknown uniform or attribute %s" % name)
 
     def _activate(self):
         """Activate the program as part of current rendering state."""
@@ -271,10 +264,6 @@ class Program(GLObject):
             self._build()
         
         logger.debug("GPU: Activating program")
-        
-        # try offloading all deferred program variables here
-        for name, value in self._deferred_item_set.items():
-            self[name] = value
         
         gl.glUseProgram(self.handle)
 
