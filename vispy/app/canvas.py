@@ -225,8 +225,8 @@ class Canvas(object):
 
     def close(self):
         """ Close the canvas """
-
-        self._backend._vispy_close()
+        if self._backend is not None:
+            self._backend._vispy_close()
 
     def _update_fps(self, event):
         """ Updates the fps after every window and resets the basetime

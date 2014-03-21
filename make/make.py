@@ -154,6 +154,14 @@ class Maker:
     def nose(self, arg):
         """ Run all unit tests using nose. """
         os.chdir(ROOT_DIR)
+        # faulthandler helps debugging hard crashes, it is included in py3.3
+        try:
+            if sys.executable.lower().endswith('pythonw.exe'):
+                raise ImportError('Dont use faulthandler in pythonw.exe')
+            import faulthandler
+            faulthandler.enable()
+        except ImportError:
+            pass
         # Clear coverage: rm -f .coverage
         try:
             os.remove('.coverage')
@@ -173,6 +181,7 @@ class Maker:
         except ImportError:
             print('Skipping flake8 test, flake8 not installed')
         else:
+            print('Running flake8...')
             main()
 
     def images(self, arg):
