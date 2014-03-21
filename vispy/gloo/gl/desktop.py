@@ -15,7 +15,11 @@ from ._constants import *  # noqa
 ## Ctypes stuff
 
 
+# Load the OpenGL library. We more or less follow the same approach
+# as PyOpenGL does internally
+
 if sys.platform.startswith('win'):
+    # Windows
     _lib = ctypes.windll.opengl32
     try:
         wglGetProcAddress = _lib.wglGetProcAddress
@@ -26,9 +30,17 @@ if sys.platform.startswith('win'):
     except AttributeError:
         _have_get_proc_address = False
 else:
+    # Unix-ish
     _have_get_proc_address = False
-    fname = ctypes.util.find_library('GL')
-    _lib = ctypes.cdll.LoadLibrary(fname)
+    # Get filename
+    if sys.platform.startswith('darwin'):
+        _fname = ctypes.util.find_library('OpenGL')
+    else:
+        _fname = ctypes.util.find_library('GL')
+    if not _fname:
+        raise RuntimeError('Could not load OpenGL library.')
+    # Load lib!
+    _lib = ctypes.cdll.LoadLibrary(_fname)
 
 
 def _have_context():
