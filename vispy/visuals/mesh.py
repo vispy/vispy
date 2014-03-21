@@ -179,6 +179,8 @@ class MeshVisual(Visual):
             modes &= set(comp.supported_draw_modes)
         
         if len(modes) == 0:
+            for c in self._frag_components:
+                print(c, c.supported_draw_modes)
             raise Exception("Visual cannot paint--no mutually supported "
                             "draw modes between components.")
         
@@ -700,19 +702,27 @@ class VertexNormalComponent(MeshComponent):
         }
         """
     
-    def __init__(self, meshdata):
+    def __init__(self, meshdata, smooth=True):
         self.frag_func = Function(self.FRAG_CODE)
         self.vert_func = Function(self.VERT_CODE)
         self._meshdata = meshdata
+        self.smooth = smooth
         self._vbo = None
         self._vbo_mode = None
         
     def _make_vbo(self, mode):
         if self._vbo is None or self._vbo_mode != mode:
             if mode is self.DRAW_PRE_INDEXED:
-                norm = self._meshdata.vertexNormals(indexed='faces')
+                index = 'faces'
             else:
-                norm = self._meshdata.vertexNormals()
+                index = None
+            if self.smooth:
+                norm = self._meshdata.vertexNormals(indexed=index)
+            else:
+                if index != 'faces':
+                    raise Exception("Not possible to draw faceted mesh without"
+                                    "pre-indexing.")
+                norm = self._meshdata.faceNormals(indexed=index)
             self._vbo = gloo.VertexBuffer(norm)
             self._vbo_mode = mode
         return self._vbo
@@ -745,5 +755,9 @@ class VertexNormalComponent(MeshComponent):
 
     @property
     def supported_draw_modes(self):
-        return (self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED)
+        if self.smooth:
+            return (self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED)
+        else:
+            # not possible to draw faceted mesh without pre-indexing.
+            return (self.DRAW_PRE_INDEXED,)
 

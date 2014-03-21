@@ -187,7 +187,7 @@ class MeshData(object):
             return self._faceNormals
         elif indexed == 'faces':
             if self._faceNormalsIndexedByFaces is None:
-                norms = np.empty((self._faceNormals.shape[0], 3, 3))
+                norms = np.empty((self._faceNormals.shape[0], 3, 3), dtype=np.float32)
                 norms[:] = self._faceNormals[:,np.newaxis,:]
                 self._faceNormalsIndexedByFaces = norms
             return self._faceNormalsIndexedByFaces

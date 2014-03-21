@@ -76,6 +76,19 @@ class Canvas(vispy.app.Canvas):
                                         lights=[((-1, 1, -1), (1.0, 1.0, 1.0))],
                                         ambient=0.2)]
         self.meshes.append(mesh)
+        
+        # Phong shaded mesh, flat faces
+        mesh = MeshVisual(pos=mdata.vertexes(indexed='faces'))
+        normal_comp = VertexNormalComponent(mdata, smooth=False)
+        mesh.fragment_components = [VertexColorComponent(vcolor[mdata.faces()]), 
+                                    normal_comp, # TODO: should the shading component take care of this?
+                                    GridContourComponent(
+                                        spacing=(0.1, 0.1, 0.1)),
+                                    ShadingComponent(
+                                        normal_comp,
+                                        lights=[((-1, 1, -1), (1.0, 1.0, 1.0))],
+                                        ambient=0.2)]
+        self.meshes.append(mesh)
 
 
         # Lay out meshes in a grid
