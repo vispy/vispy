@@ -6,6 +6,10 @@ from vispy.util import assert_is
 from vispy.gloo import gl
 
 
+def teardown_module():
+    gl.use()  # Reset to default
+
+
 @gl._requires_pyopengl()
 def test_use_desktop():
     """ Using that gl.use injects all names in gl namespace """
