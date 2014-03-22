@@ -129,18 +129,19 @@ class Uniform(Variable):
 
     """ A Uniform represents a program uniform variable. """
 
+    # todo: store function names instead of GL proxy function (faster)
     _ufunctions = {
-        gl.GL_FLOAT:        gl.glUniform1fv,
-        gl.GL_FLOAT_VEC2:   gl.glUniform2fv,
-        gl.GL_FLOAT_VEC3:   gl.glUniform3fv,
-        gl.GL_FLOAT_VEC4:   gl.glUniform4fv,
-        gl.GL_INT:          gl.glUniform1iv,
-        gl.GL_BOOL:         gl.glUniform1iv,
-        gl.GL_FLOAT_MAT2:   gl.glUniformMatrix2fv,
-        gl.GL_FLOAT_MAT3:   gl.glUniformMatrix3fv,
-        gl.GL_FLOAT_MAT4:   gl.glUniformMatrix4fv,
-        #        gl.GL_SAMPLER_1D:   gl.glUniform1i,
-        gl.GL_SAMPLER_2D:   gl.glUniform1i,
+        gl.GL_FLOAT:        gl.proxy.glUniform1fv,
+        gl.GL_FLOAT_VEC2:   gl.proxy.glUniform2fv,
+        gl.GL_FLOAT_VEC3:   gl.proxy.glUniform3fv,
+        gl.GL_FLOAT_VEC4:   gl.proxy.glUniform4fv,
+        gl.GL_INT:          gl.proxy.glUniform1iv,
+        gl.GL_BOOL:         gl.proxy.glUniform1iv,
+        gl.GL_FLOAT_MAT2:   gl.proxy.glUniformMatrix2fv,
+        gl.GL_FLOAT_MAT3:   gl.proxy.glUniformMatrix3fv,
+        gl.GL_FLOAT_MAT4:   gl.proxy.glUniformMatrix4fv,
+        #        gl.GL_SAMPLER_1D:   gl.proxy.glUniform1i,
+        gl.GL_SAMPLER_2D:   gl.proxy.glUniform1i,
     }
 
     def __init__(self, program, name, gtype):
@@ -243,10 +244,10 @@ class Attribute(Variable):
     """ An Attribute represents a program attribute variable """
 
     _afunctions = {
-        gl.GL_FLOAT:      gl.glVertexAttrib1f,
-        gl.GL_FLOAT_VEC2: gl.glVertexAttrib2f,
-        gl.GL_FLOAT_VEC3: gl.glVertexAttrib3f,
-        gl.GL_FLOAT_VEC4: gl.glVertexAttrib4f
+        gl.GL_FLOAT:      gl.proxy.glVertexAttrib1f,
+        gl.GL_FLOAT_VEC2: gl.proxy.glVertexAttrib2f,
+        gl.GL_FLOAT_VEC3: gl.proxy.glVertexAttrib3f,
+        gl.GL_FLOAT_VEC4: gl.proxy.glVertexAttrib4f
     }
 
     def __init__(self, program, name, gtype):

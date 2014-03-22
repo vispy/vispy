@@ -51,6 +51,13 @@ def test_functionality_desktop():
 
 
 @requires_non_glut()
+def test_functionality_proxy():
+    """ Test GL proxy class for full functionality. """
+    # By using debug mode, we are using the proxy class
+    _test_functonality('desktop debug')
+
+
+@requires_non_glut()
 @gl._requires_pyopengl()
 def test_functionality_pypengl():
     """ Test pyopengl GL backend for full functionality. """

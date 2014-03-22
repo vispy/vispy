@@ -12,7 +12,7 @@ def teardown_module():
 
 @gl._requires_pyopengl()
 def test_use_desktop():
-    """ Using that gl.use injects all names in gl namespace """
+    """ Testing that gl.use injects all names in gl namespace """
 
     # Use desktop
     gl.use('desktop')
@@ -32,6 +32,15 @@ def test_use_desktop():
             val2 = getattr(gl.pyopengl, name)
             assert_is(val1, val2)
     
+    # Use webgl
+    gl.use('webgl')
+    #
+    for name in dir(gl.desktop):
+        if name.lower().startswith('gl'):
+            val1 = getattr(gl, name)
+            val2 = getattr(gl.webgl, name)
+            assert_is(val1, val2)
+    
     # Touch debug wrapper stuff
     gl.use('desktop debug')
     
@@ -43,3 +52,7 @@ def test_use_desktop():
             val1 = getattr(gl, name)
             val2 = getattr(gl.desktop, name)
             assert_is(val1, val2)
+
+
+if __name__ == '__main__':
+    test_use_desktop()

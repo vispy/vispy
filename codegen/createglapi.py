@@ -455,27 +455,52 @@ class ApiGenerator:
 
 
 
-class MainApiGenerator(ApiGenerator):
-    """ Generator for the main proxy that will be loaded into gloo.gl.
+class ProxyApiGenerator(ApiGenerator):
+    """ Generator for the general proxy class that will be loaded into gloo.gl.
     """
     
-    filename = os.path.join(GLDIR, '_main.py')
-    DESCRIPTION = 'Main proxy API for GL ES 2.0.'
-    PREAMBLE = """
-    def glShaderSource_compat(handle, code):
-        return PROXY["glShaderSource_compat"](handle, code)
-    """
+    filename = os.path.join(GLDIR, '_proxy.py')
+    DESCRIPTION = 'Base proxy API for GL ES 2.0.'
+    PREAMBLE = '''
+    class BaseGLProxy(object):
+        """ Base proxy class for the GL ES 2.0 API. Subclasses should
+        implement __call__ to process the API calls.
+        """
+       
+        def __call__(self, funcname, returns, *args):
+            raise NotImplementedError()
+        
+        
+        def glShaderSource_compat(self, handle, code):
+            return self("glShaderSource_compat", True, handle, code)
+    '''
+    
+    def _returns(self, des):
+        shortame = des.name
+        for prefix in ("get", "is", "check", "create", "read"):
+            if shortame.startswith(prefix):
+                return True
+        else:
+            return False
+    
     
     def _add_function(self, des):
+        ret = self._returns(des)
+        prefix = 'return ' if ret else ''
         argstr = ', '.join(des.args)
-        self.lines.append('def %s(%s):' % (des.apiname, argstr))
-        self.lines.append('    return PROXY["%s"](%s)' % (apiname(des.name), argstr))
+        self.lines.append('    def %s(self, %s):' % (des.apiname, argstr))
+        self.lines.append('        %sself("%s", %r, %s)' % 
+                          (prefix, apiname(des.name),ret, argstr))
     
     def _add_group_function(self, des, sig, es2func):
+        ret = self._returns(des)
+        prefix = 'return ' if ret else ''
         funcname = apiname(sig.split('(')[0])
         args = sig.split('(', 1)[1].split(')')[0]
-        self.lines.append('def %s:' % sig)
-        self.lines.append('    return PROXY["%s"](%s)' % (funcname, args))
+        #self.lines.append('    def %s:' % sig)
+        self.lines.append('    def %s(self, %s):' % (funcname, args))
+        self.lines.append('        %sself("%s", %r, %s)' % 
+                          (prefix, funcname, ret, args))
 
 
 
@@ -748,7 +773,7 @@ class PyOpenGLApiGenrator(ApiGenerator):
 ## Generate
 
 # Generate
-for Gen in [MainApiGenerator, DesktopApiGenerator, AngleApiGenrator, 
+for Gen in [ProxyApiGenerator, DesktopApiGenerator, AngleApiGenrator, 
             PyOpenGLApiGenrator]:
     gen = Gen()
     for des in functions:
