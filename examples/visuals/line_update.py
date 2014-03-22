@@ -52,6 +52,12 @@ if __name__ == '__main__':
     timer = vispy.app.Timer()
     timer.connect(update)
     timer.start(0)
+    #update(0)
+    #vispy.app.process_events()
+    #update(0)
+    #vispy.app.process_events()
+    
+    
     
     import sys
     if sys.flags.interactive != 1:

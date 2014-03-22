@@ -234,7 +234,7 @@ class Visual(object):
         # generate the index?
         return self.pos_components[0].index
 
-    def set_data(self, pos=None, index=None, z=0.0, color=(1,1,1,1)):
+    def set_data(self, pos=None, index=None, z=0.0, color=None):
         """
         Default set_data implementation is only used for a few visuals..
         *pos* must be array of shape (..., 2) or (..., 3).
@@ -250,13 +250,14 @@ class Visual(object):
                 self.pos_components = [comp]
             else:
                 raise Exception("Can't handle position data: %s" % pos)
-            
-        if isinstance(color, tuple):
-            self.color_components = [UniformColorComponent(color)]
-        elif isinstance(color, np.ndarray):
-            self.color_components = [VertexColorComponent(color)]
-        else:
-            raise Exception("Can't handle color data:")
+        
+        if color is not None:
+            if isinstance(color, tuple):
+                self.color_components = [UniformColorComponent(color)]
+            elif isinstance(color, np.ndarray):
+                self.color_components = [VertexColorComponent(color)]
+            else:
+                raise Exception("Can't handle color data:")
         
     def set_gl_options(self, default=None, **opts):
         """
@@ -400,7 +401,7 @@ class Visual(object):
             comp = comps.pop(0)
             comps.extend(comp._deps)
             all_comps |= set(comp._deps)
-            
+        
         for comp in all_comps:
             comp.activate(self._program, mode)
             
