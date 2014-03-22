@@ -43,9 +43,9 @@ class XYPosComponent(VisualComponent):
     def supported_draw_modes(self):
         # TODO: Add support for converting between pre-indexed and unindexed
         if self._index is False:
-            return (self.DRAW_PRE_INDEXED,)
+            return set([self.DRAW_PRE_INDEXED])
         else:
-            return (self.DRAW_UNINDEXED,)
+            return set([self.DRAW_UNINDEXED])
 
     def set_data(self, xy=None, z=None, index=None):
         if xy is not None:
@@ -108,9 +108,9 @@ class XYZPosComponent(VisualComponent):
     def supported_draw_modes(self):
         # TODO: Add support for converting between pre-indexed and unindexed
         if self._index is False:
-            return (self.DRAW_PRE_INDEXED,)
+            return set([self.DRAW_PRE_INDEXED])
         else:
-            return (self.DRAW_UNINDEXED,)
+            return set([self.DRAW_UNINDEXED])
 
     def set_data(self, pos=None, index=None):
         if pos is not None:
@@ -153,7 +153,7 @@ class HeightFieldComponent(VisualComponent):
     range.
     """
     SHADERS = dict(
-        """
+        local_position="""
             vec4 $input_z_pos() {
                 int xind = int($index % $x_size);
                 float x = $x_min + (xind * $x_step);
@@ -174,7 +174,7 @@ class HeightFieldComponent(VisualComponent):
     def supported_draw_modes(self):
         # TODO: add support for pre-indexed data
         # (possibly here, possibly in another component class?)
-        return (self.DRAW_UNINDEXED,)
+        return set([self.DRAW_UNINDEXED])
 
     def set_data(self, z):
         if self._z is None or self._z.shape != z.shape:

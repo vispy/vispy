@@ -44,6 +44,7 @@ class GridContourComponent(VisualComponent):
         """)
     
     def __init__(self, spacing):
+        super(GridContourComponent, self).__init__()
         self.spacing = spacing
         
     @property
@@ -85,6 +86,7 @@ class ShadingComponent(VisualComponent):
         """)
     
     def __init__(self, normal_comp, lights, ambient=0.2):
+        super(ShadingComponent, self).__init__()
         self.normal_comp = normal_comp
         self.lights = lights
         self.ambient = ambient

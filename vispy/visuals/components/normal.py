@@ -36,6 +36,7 @@ class VertexNormalComponent(VisualComponent):
         """)
     
     def __init__(self, meshdata, smooth=True):
+        super(VertexNormalComponent, self).__init__()
         self._meshdata = meshdata
         self.smooth = smooth
         self._vbo = None
@@ -75,8 +76,8 @@ class VertexNormalComponent(VisualComponent):
     @property
     def supported_draw_modes(self):
         if self.smooth:
-            return (self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED)
+            return set([self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED])
         else:
             # not possible to draw faceted mesh without pre-indexing.
-            return (self.DRAW_PRE_INDEXED,)
+            return set([self.DRAW_PRE_INDEXED])
 

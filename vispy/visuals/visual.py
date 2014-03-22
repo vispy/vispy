@@ -7,7 +7,7 @@ import numpy as np
 
 from .. import gloo
 from ..util import event
-from .shaders import ModularProgram
+from .shaders import ModularProgram, Function
 from .transforms import NullTransform
 # components imported at bottom.
 
@@ -202,11 +202,11 @@ class Visual(object):
         self._program.add_chain('frag_color')
         
         # Components for plugging different types of position and color input.
-        self._pos_components = None
+        self._pos_components = []
         #self._color_component = None
         #self.pos_component = XYZPosComponent()
-        self._frag_components = []
-        #self.fragment_components = [UniformColorComponent()]
+        self._color_components = []
+        #self.color_components = [UniformColorComponent()]
         
     @property
     def transform(self):
@@ -247,14 +247,14 @@ class Visual(object):
                 self.pos_components = [comp]
             elif pos.shape[-1] == 3:
                 comp = XYZPosComponent(pos=pos, index=index)
-                self.pos_component = [comp]
+                self.pos_components = [comp]
             else:
                 raise Exception("Can't handle position data: %s" % pos)
             
         if isinstance(color, tuple):
-            self.fragment_components = [UniformColorComponent(color)]
+            self.color_components = [UniformColorComponent(color)]
         elif isinstance(color, np.ndarray):
-            self.fragment_components = [VertexColorComponent(color)]
+            self.color_components = [VertexColorComponent(color)]
         else:
             raise Exception("Can't handle color data:")
         
@@ -310,19 +310,19 @@ class Visual(object):
         self.events.update()
 
     @property
-    def frag_components(self):
-        return self._frag_components[:]
+    def color_components(self):
+        return self._color_components[:]
     
-    @frag_components.setter
-    def frag_components(self, comps):
-        for comp in self._frag_components:
+    @color_components.setter
+    def color_components(self, comps):
+        for comp in self._color_components:
             try:
                 comp._detach()
             except:
                 print comp
                 raise
-        self._frag_components = comps
-        for comp in self._frag_components:
+        self._color_components = comps
+        for comp in self._color_components:
             comp._attach(self)
         self.events.update()
 
@@ -351,12 +351,13 @@ class Visual(object):
         Return the mode that should be used to paint this visual
         (DRAW_PRE_INDEXED or DRAW_UNINDEXED)
         """
-        modes = self.pos_component.supported_draw_modes
-        for comp in self._frag_components:
+        modes = set([VisualComponent.DRAW_PRE_INDEXED, 
+                     VisualComponent.DRAW_UNINDEXED])
+        for comp in self._color_components + self.pos_components:
             modes &= comp.supported_draw_modes
         
         if len(modes) == 0:
-            for c in self._frag_components:
+            for c in self._color_components:
                 print(c, c.supported_draw_modes)
             raise Exception("Visual cannot paint--no mutually supported "
                             "draw modes between components.")
@@ -387,12 +388,18 @@ class Visual(object):
         that a paint is about to occur and to let them assign program
         variables.
         """
-        comps = self._pos_components + self._frag_components
-        all_comps = set()
+        if len(self._pos_components) == 0:
+            raise Exception("Cannot draw visual %s; no position components" 
+                            % self)
+        if len(self._color_components) == 0:
+            raise Exception("Cannot draw visual %s; no color components"
+                            % self)
+        comps = self._pos_components + self._color_components
+        all_comps = set(comps)
         while len(comps) > 0:
             comp = comps.pop(0)
             comps.extend(comp._deps)
-            all_comps += set(comp._deps)
+            all_comps |= set(comp._deps)
             
         for comp in all_comps:
             comp.activate(self._program, mode)
@@ -444,7 +451,7 @@ class VisualComponent(object):
         """Attach this component to a Visual. This should be called by the 
         Visual itself.
         """
-        if visual is not self._visual:
+        if visual is not self._visual and self._visual is not None:
             raise Exception("Cannot attach component %s to %s; already "
                             "attached to %s" % (self, visual, self._visual))
         self._visual = visual
@@ -487,7 +494,7 @@ class VisualComponent(object):
         """
         # TODO: This should be expanded to include other questions, such as
         # whether the visual supports geometry shaders.
-        return set(DRAW_PRE_INDEXED, DRAW_UNINDEXED)
+        return set([self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED])
 
     def update(self):
         """

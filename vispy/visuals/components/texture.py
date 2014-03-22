@@ -40,6 +40,7 @@ class TextureComponent(VisualComponent):
         """)
     
     def __init__(self, texture, tex_coord_comp):
+        super(TextureComponent, self).__init__()
         self.tex_coord_comp = tex_coord_comp
         self.texture = texture
         
@@ -68,6 +69,7 @@ class VertexTextureCoordinateComponent(VisualComponent):
         """)
     
     def __init__(self, transform):
+        super(VertexTextureCoordinateComponent, self).__init__()
         self.transform = transform
         
     def coord_shader(self):
@@ -102,6 +104,7 @@ class TextureCoordinateComponent(VisualComponent):
         """)
     
     def __init__(self, coords):
+        super(TextureCoordinateComponent, self).__init__()
         self.coords = coords
         
     def coord_shader(self):

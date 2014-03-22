@@ -32,6 +32,7 @@ class UniformColorComponent(VisualComponent):
         """)
     
     def __init__(self, color=(1,1,1,1)):
+        super(UniformColorComponent, self).__init__()
         self._color = color
         
     @property
@@ -65,6 +66,7 @@ class VertexColorComponent(VisualComponent):
         )
     
     def __init__(self, color=None):
+        super(VertexColorComponent, self).__init__()
         self._color = color
         self._vbo = None
         
