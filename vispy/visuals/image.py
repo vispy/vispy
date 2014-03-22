@@ -8,7 +8,7 @@ import numpy as np
 
 from .. import gloo
 from ..gloo import gl
-from .transforms import STTransform
+from .transforms import STTransform, NullTransform
 from .mesh import MeshVisual
 from .components import (TextureComponent, VertexTextureCoordinateComponent,
                          TextureCoordinateComponent)
@@ -86,6 +86,8 @@ class ImageVisual(MeshVisual):
             MeshVisual.set_data(self, pos=vertexes)
             
             tex_coord_comp = TextureCoordinateComponent(tex_coords)
+            
+            self._program['map_local_to_nd'] = self.transform.shader_map()
         
         elif method == 'impostor':
             # quad covers entire view; frag. shader will deal with image shape
@@ -95,7 +97,11 @@ class ImageVisual(MeshVisual):
             MeshVisual.set_data(self, pos=quad)
             
             self._tex_transform.scale = (1./self._data.shape[0], 1./self._data.shape[1])
-            tex_coord_comp = VertexTextureCoordinateComponent(self._tex_transform)
+            total_transform = self._tex_transform * self.transform.inverse()
+            tex_coord_comp = VertexTextureCoordinateComponent(total_transform)
+            
+            self._program['map_local_to_nd'] = NullTransform().shader_map()
+            
         else:
             raise NotImplementedError
             
@@ -103,21 +109,12 @@ class ImageVisual(MeshVisual):
         self._texture.interpolation = gl.GL_NEAREST
         
         self.color_components = [TextureComponent(self._texture, tex_coord_comp)]
-        
-        #if self.method == 'subdivide':
-            ## Attach transformation functions
-            #program['map_local_to_nd'] = self.transform.shader_map()
 
-            #program['map_local_to_tex'] = self._tex_transform.shader_map()
-        #elif self.method == 'impostor':
-            #program['map_local_to_nd'] = NullTransform().shader_map()
-            #program['map_local_to_tex'] = (self._tex_transform * self.transform.inverse()).shader_map()
-            
-        #else:
-            #raise NotImplementedError
-        
-        
-        
+    
+    def _activate_transform(self):
+        # this is handled in _build_data instead.
+        pass
+    
     def paint(self):
         if self._data is None:
             return

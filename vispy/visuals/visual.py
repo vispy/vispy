@@ -403,7 +403,10 @@ class Visual(object):
             
         for comp in all_comps:
             comp.activate(self._program, mode)
+            
+        self._activate_transform()
         
+    def _activate_transform(self):
         # TODO: this must be optimized.
         self._program['map_local_to_nd'] = self.transform.shader_map()
 

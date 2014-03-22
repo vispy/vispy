@@ -67,8 +67,8 @@ class VertexTextureCoordinateComponent(VisualComponent):
         """,
         texture_coord="""
             vec2 $vertex_tex_coord() {
-                vec4 tex_coord = map_local_to_tex($tex_local_pos));
-                return $tex_coord.xy;
+                vec4 tex_coord = $map_local_to_tex($tex_local_pos);
+                return tex_coord.xy;
             }
         """)
     
@@ -89,8 +89,10 @@ class VertexTextureCoordinateComponent(VisualComponent):
         
     def activate(self, program, mode):
         ff = self.coord_shader()
-        ff['tex_local_pos'] = ('varying', 'vec4')   
+        ff['tex_local_pos'] = ('varying', 'vec4')
+        ff['map_local_to_tex'] = self.transform.shader_map()
         self._funcs['vert_post_hook']['tex_local_pos'] = ff['tex_local_pos']
+        
 
 
 
