@@ -5,7 +5,7 @@
 from __future__ import division
 
 import numpy as np
-from ..shaders.composite import Function, FunctionChain
+from .shaders import Function, FunctionChain
 from ..util.ordereddict import OrderedDict
 from ..util import transforms
 

@@ -10,7 +10,7 @@ from .. import gloo
 from .visual import Visual
 from .components import (XYPosComponent, XYZPosComponent, 
                          UniformColorComponent, VertexColorComponent)
-from ..shaders.composite import Function
+from .shaders import Function
 
 class PointVisual(Visual):
     """

@@ -17,7 +17,7 @@ from __future__ import division
 import numpy as np
 
 from ..visual import VisualComponent
-from ...shaders.composite import Function
+from ..shaders import Function
 from ... import gloo
 
 

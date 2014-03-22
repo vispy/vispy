@@ -6,7 +6,7 @@ from __future__ import division
 import string
 
 from . import parsing
-from ..util.event import EmitterGroup, Event
+from ...util.event import EmitterGroup, Event
 
 class ShaderObject(object):
     """

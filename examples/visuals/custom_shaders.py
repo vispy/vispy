@@ -11,7 +11,7 @@ from vispy.gloo import gl
 import vispy.gloo as gloo
 from vispy.visuals.line import LineVisual
 from vispy.visuals.transforms import Transform, STTransform, arg_to_array
-from vispy.shaders.composite import Function
+from vispy.visuals.shaders import Function
 from vispy.visuals import VisualComponent
 from vispy.visuals.components import VertexColorComponent
 

@@ -5,10 +5,10 @@
 from __future__ import division, print_function
 import re
 
-from ..gloo import Program, VertexShader, FragmentShader
+from ...gloo import Program, VertexShader, FragmentShader
 from .function import Function, FunctionChain, Variable
 from . import parsing
-from ..util import logger
+from ...util import logger
 
 
 

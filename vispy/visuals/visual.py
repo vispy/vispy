@@ -7,7 +7,7 @@ import numpy as np
 
 from .. import gloo
 from ..util import event
-from ..shaders.composite import ModularProgram
+from .shaders import ModularProgram
 from .transforms import NullTransform
 # components imported at bottom.
 
