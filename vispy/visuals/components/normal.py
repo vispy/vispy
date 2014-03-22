@@ -22,7 +22,7 @@ from ... import gloo
 
 class VertexNormalComponent(VisualComponent):
     SHADERS = dict(
-        frag_normal="""            # What to do here?? 
+        frag_normal="""
             vec4 $normal() {
                 return $norm;
             }
@@ -34,6 +34,11 @@ class VertexNormalComponent(VisualComponent):
                 $output_normal = map_local_to_nd(vec4(i,1)) - map_local_to_nd(vec4(o,1));
             }
         """)
+
+    # exclude frag_normal when auto-attaching shaders because the visual
+    # does not have a 'frag_normal' hook; instead this function will be called
+    # by another component.
+    AUTO_ATTACH = ['vert_post_hook']
     
     def __init__(self, meshdata, smooth=True):
         super(VertexNormalComponent, self).__init__()
@@ -63,7 +68,7 @@ class VertexNormalComponent(VisualComponent):
         """
         Return the fragment shader function that returns a normal vector.        
         """
-        return self.frag_func
+        return self._funcs['frag_normal']
         
     def activate(self, program, mode):
         ff = self._funcs['frag_normal']

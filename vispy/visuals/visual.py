@@ -427,6 +427,10 @@ class VisualComponent(object):
     # Maps {'program_hook': 'GLSL code'}
     SHADERS = {}
     
+    # List of shaders to automatically attach to the visual's program.
+    # If None, then all shaders are attached.
+    AUTO_ATTACH = None
+    
     def __init__(self, visual=None):
         self._visual = None
         if visual is not None:
@@ -456,7 +460,8 @@ class VisualComponent(object):
                             "attached to %s" % (self, visual, self._visual))
         self._visual = visual
         self._attach_count += 1
-        for hook, func in self._funcs.items():
+        for hook in self._auto_attach_shaders():
+            func = self._funcs[hook]
             visual._program.add_callback(hook, func)
         for comp in self._deps:
             comp._attach(visual)
@@ -469,12 +474,22 @@ class VisualComponent(object):
         
         self._attach_count -= 1
         if self._attach_count == 0:
+            for hook in self._auto_attach_shaders():
+                func = self._funcs[hook]
+                self._visual._program.remove_callback(hook, func)
             self._visual = None
-            for hook, func in self._funcs.items():
-                visual._program.remove_callback(hook, func)
             for comp in self._deps:
                 comp._detach()
-        
+
+    def _auto_attach_shaders(self):
+        """
+        Return a list of shaders to automatically attach/detach        
+        """
+        if self.AUTO_ATTACH is None:
+            return self._funcs.keys()
+        else:
+            return self.AUTO_ATTACH
+    
     @property
     def supported_draw_modes(self):
         """
