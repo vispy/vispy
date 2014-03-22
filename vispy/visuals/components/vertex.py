@@ -23,15 +23,15 @@ class XYPosComponent(VisualComponent):
     """
     generate local coordinate from xy (vec2) attribute and z (float) uniform
     """
-    CODE = """
-        vec4 $input_xy_pos() {
-            return vec4($xy_pos, $z_pos, 1.0);
-        }
-        """
+    SHADERS = dict(
+        local_position="""
+            vec4 $input_xy_pos() {
+                return vec4($xy_pos, $z_pos, 1.0);
+            }
+        """)
 
     def __init__(self, xy=None, z=0.0, index=None):
         super(XYPosComponent, self).__init__()
-        self.shader_func = Function(self.CODE)
         self._xy = None
         self._z = 0.0
         self._index = False
@@ -71,17 +71,10 @@ class XYPosComponent(VisualComponent):
             self._ibo = gloo.IndexBuffer(self._index)
         return self._ibo
 
-    def _attach(self, visual):
-        super(XYPosComponent, self)._attach(visual)
-        visual._program['local_position'] = self.shader_func
-        
-    def _detach(self):
-        super(XYPosComponent, self)._detach(visual)
-        visual._program['local_position'] = None
-        
     def activate(self, program, draw_mode):
-        self.shader_func['xy_pos'] = ('attribute', 'vec2', self.vbo)
-        self.shader_func['z_pos'] = ('uniform', 'float', self._z)
+        fn = self._funcs['local_position']
+        fn['xy_pos'] = ('attribute', 'vec2', self.vbo)
+        fn['z_pos'] = ('uniform', 'float', self._z)
 
     @property
     def index(self):
@@ -96,15 +89,15 @@ class XYZPosComponent(VisualComponent):
     """
     generate local coordinate from xyz (vec3) attribute
     """
-    CODE = """
-        vec4 $input_xyz_pos() {
-            return vec4($xyz_pos, 1.0);
-        }
-        """
+    SHADERS = dict(
+        local_position="""
+            vec4 $input_xyz_pos() {
+                return vec4($xyz_pos, 1.0);
+            }
+        """)
 
     def __init__(self, pos=None, index=None):
         super(XYZPosComponent, self).__init__()
-        self.shader_func = Function(self.CODE)
         self._pos = None
         self._index = False
         self._vbo = None
@@ -141,16 +134,8 @@ class XYZPosComponent(VisualComponent):
             self._ibo = gloo.IndexBuffer(self._index)
         return self._ibo
     
-    def _attach(self, visual):
-        super(XYZPosComponent, self)._attach(visual)
-        visual._program['local_position'] = self.shader_func
-        
-    def _detach(self):
-        super(XYZPosComponent, self)._detach(visual)
-        visual._program['local_position'] = None
-        
     def activate(self, program, draw_mode):
-        self.shader_func['xyz_pos'] = ('attribute', 'vec3', self.vbo)
+        self._funcs['local_position']['xyz_pos'] = ('attribute', 'vec3', self.vbo)
         
     @property
     def index(self):
@@ -167,19 +152,19 @@ class HeightFieldComponent(VisualComponent):
     x,y will be generated in the vertex shader using uniforms that specify the
     range.
     """
-    CODE = """
-        vec4 $input_z_pos() {
-            int xind = int($index % $x_size);
-            float x = $x_min + (xind * $x_step);
-            int yind = int($index % $y_size);
-            float y = $y_min + (yind * $y_step);
-            return vec4(x, y, $z_pos, 1.0);
-        }
+    SHADERS = dict(
         """
+            vec4 $input_z_pos() {
+                int xind = int($index % $x_size);
+                float x = $x_min + (xind * $x_step);
+                int yind = int($index % $y_size);
+                float y = $y_min + (yind * $y_step);
+                return vec4(x, y, $z_pos, 1.0);
+            }
+        """)
 
     def __init__(self, z=None):
         super(SurfacePosComponent, self).__init__()
-        self.shader_func = Function(self.CODE)
         self._z = None
         self._vbo = None
         if z is not None:
@@ -210,16 +195,8 @@ class HeightFieldComponent(VisualComponent):
             self._index = gloo.VertexBuffer(np.arange(self._z.size))
         return self._vbo
 
-    def _attach(self, visual):
-        super(SurfacePosComponent, self)._attach(visual)
-        visual._program['local_position'] = self.shader_func
-        
-    def _detach(self):
-        super(SurfacePosComponent, self)._detach(visual)
-        visual._program['local_position'] = None
-        
     def activate(self, program, draw_mode):
-        self.shader_func['z_pos'] = ('attribute', 'vec3', self.vbo)
+        self._funcs['local_position']['z_pos'] = ('attribute', 'vec3', self.vbo)
         
     @property
     def index(self):

@@ -21,23 +21,21 @@ from ..shaders import Function
 from ... import gloo
 
 class VertexNormalComponent(VisualComponent):
-    FRAG_CODE = """
-        vec4 $normal() {
-            return $norm;
-        }
-        """
-    
-    VERT_CODE = """
-        void $normal_support() {
-            vec3 o = vec3(0,0,0);
-            vec3 i = o + $input_normal.xyz;
-            $output_normal = map_local_to_nd(vec4(i,1)) - map_local_to_nd(vec4(o,1));
-        }
-        """
+    SHADERS = dict(
+        frag_normal="""            # What to do here?? 
+            vec4 $normal() {
+                return $norm;
+            }
+        """,
+        vert_post_hook="""
+            void $normal_support() {
+                vec3 o = vec3(0,0,0);
+                vec3 i = o + $input_normal.xyz;
+                $output_normal = map_local_to_nd(vec4(i,1)) - map_local_to_nd(vec4(o,1));
+            }
+        """)
     
     def __init__(self, meshdata, smooth=True):
-        self.frag_func = Function(self.FRAG_CODE)
-        self.vert_func = Function(self.VERT_CODE)
         self._meshdata = meshdata
         self.smooth = smooth
         self._vbo = None
@@ -60,16 +58,6 @@ class VertexNormalComponent(VisualComponent):
             self._vbo_mode = mode
         return self._vbo
         
-    def _attach(self, visual):
-        super(VertexNormalComponent, self)._attach(visual)
-        visual._program.add_callback('vert_post_hook', self.vert_func)
-        # don't attach the fragment function now; other components 
-        # will call it.
-        
-    def _detach(self):
-        self.visual._program.remove_callback('vert_post_hook', self.vert_func)
-        super(VertexNormalComponent, self)._detach()
-        
     def normal_shader(self):
         """
         Return the fragment shader function that returns a normal vector.        
@@ -77,14 +65,12 @@ class VertexNormalComponent(VisualComponent):
         return self.frag_func
         
     def activate(self, program, mode):
-        # explicitly declare a new variable (to be shared)
-        # TODO: does this need to be explicit?
-        self.frag_func['norm'] = ('varying', 'vec4')   
-        self.vert_func['input_normal'] = ('attribute', 'vec4', 
-                                          self._make_vbo(mode))
+        ff = self._funcs['frag_normal']
+        ff['norm'] = ('varying', 'vec4')
         
-        # automatically assign same variable to both
-        self.vert_func['output_normal'] = self.frag_func['norm']
+        vf = self._funcs['vert_post_hook']
+        vf['input_normal'] = ('attribute', 'vec4', self._make_vbo(mode))
+        vf['output_normal'] = ff['norm']
 
     @property
     def supported_draw_modes(self):

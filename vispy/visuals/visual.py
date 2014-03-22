@@ -34,6 +34,10 @@ API Issues to work out:
         Textures - color, bump map, spec map, etc
         Wireframe rendering (note this might require vertex modification)
         
+  - Make base shaders look like:
+       vertex_input => vertex_adjustment, transform_to_nd, post_hook
+       color_input => color_adjustment
+        
   - For efficiency, the vertex inputs should allow both pre-index and 
     unindexed arrays. However, many fragment shaders may require pre-indexed
     arrays. For example, drawing faceted surfaces is not possible with 
@@ -193,12 +197,13 @@ class Visual(object):
         self.transform = NullTransform()
         
         # Generic chains for attaching post-processing functions
+        self._program.add_chain('local_position')
         self._program.add_chain('vert_post_hook')
         self._program.add_chain('frag_color')
         
         # Components for plugging different types of position and color input.
-        self._pos_component = None
-        self._color_component = None
+        self._pos_components = None
+        #self._color_component = None
         #self.pos_component = XYZPosComponent()
         self._frag_components = []
         #self.fragment_components = [UniformColorComponent()]
@@ -225,7 +230,9 @@ class Visual(object):
         Returns the IndexBuffer (or None) that should be used when drawing 
         this Visual.        
         """
-        return self.pos_component.index
+        # TODO: What to do here? How do we decide which component should 
+        # generate the index?
+        return self.pos_components[0].index
 
     def set_data(self, pos=None, index=None, z=0.0, color=(1,1,1,1)):
         """
@@ -236,13 +243,11 @@ class Visual(object):
         # select input component based on pos.shape
         if pos is not None:
             if pos.shape[-1] == 2:
-                if not isinstance(self.pos_component, XYPosComponent):
-                    self.pos_component = XYPosComponent()
-                self.pos_component.set_data(xy=pos, z=z, index=index)
+                comp = XYPosComponent(xy=pos, z=z, index=index)
+                self.pos_components = [comp]
             elif pos.shape[-1] == 3:
-                if not isinstance(self.pos_component, XYZPosComponent):
-                    self.pos_component = XYZPosComponent()
-                self.pos_component.set_data(pos=pos, index=index)
+                comp = XYZPosComponent(pos=pos, index=index)
+                self.pos_component = [comp]
             else:
                 raise Exception("Can't handle position data: %s" % pos)
             
@@ -288,24 +293,28 @@ class Visual(object):
         return self._gl_options.copy()
 
     @property
-    def pos_component(self):
-        return self._pos_component
-
-    @pos_component.setter
-    def pos_component(self, component):
-        if self._pos_component is not None:
-            self._pos_component._detach(self)
-            self._pos_component = None
-        component._attach(self)
-        self._pos_component = component
+    def pos_components(self):
+        return self._pos_components[:]
+    
+    @pos_components.setter
+    def pos_components(self, comps):
+        for comp in self._pos_components:
+            try:
+                comp._detach()
+            except:
+                print comp
+                raise
+        self._pos_components = comps
+        for comp in self._pos_components:
+            comp._attach(self)
         self.events.update()
-        
+
     @property
-    def fragment_components(self):
+    def frag_components(self):
         return self._frag_components[:]
     
-    @fragment_components.setter
-    def fragment_components(self, comps):
+    @frag_components.setter
+    def frag_components(self, comps):
         for comp in self._frag_components:
             try:
                 comp._detach()
@@ -342,9 +351,9 @@ class Visual(object):
         Return the mode that should be used to paint this visual
         (DRAW_PRE_INDEXED or DRAW_UNINDEXED)
         """
-        modes = set(self.pos_component.supported_draw_modes)
+        modes = self.pos_component.supported_draw_modes
         for comp in self._frag_components:
-            modes &= set(comp.supported_draw_modes)
+            modes &= comp.supported_draw_modes
         
         if len(modes) == 0:
             for c in self._frag_components:
@@ -373,9 +382,19 @@ class Visual(object):
                 func(*args)
                 
     def _activate_components(self, mode):
-        # activate all components
-        self.pos_component.activate(self._program, mode)
-        for comp in self._frag_components:
+        """
+        This is called immediately before painting to inform all components
+        that a paint is about to occur and to let them assign program
+        variables.
+        """
+        comps = self._pos_components + self._frag_components
+        all_comps = set()
+        while len(comps) > 0:
+            comp = comps.pop(0)
+            comps.extend(comp._deps)
+            all_comps += set(comp._deps)
+            
+        for comp in all_comps:
             comp.activate(self._program, mode)
         
         # TODO: this must be optimized.
@@ -398,10 +417,23 @@ class VisualComponent(object):
     DRAW_PRE_INDEXED = 1
     DRAW_UNINDEXED = 2
     
+    # Maps {'program_hook': 'GLSL code'}
+    SHADERS = {}
+    
     def __init__(self, visual=None):
         self._visual = None
         if visual is not None:
             self._attach(visual)
+            
+        self._funcs = dict([(name,Function(code)) 
+                            for name,code in self.SHADERS.items()])
+            
+        # components that are required by this component
+        self._deps = []
+        
+        # only detach when count drops to 0; 
+        # this is like a reference count for component dependencies.
+        self._attach_count = 0
         
     @property
     def visual(self):
@@ -412,17 +444,34 @@ class VisualComponent(object):
         """Attach this component to a Visual. This should be called by the 
         Visual itself.
         """
+        if visual is not self._visual:
+            raise Exception("Cannot attach component %s to %s; already "
+                            "attached to %s" % (self, visual, self._visual))
         self._visual = visual
+        self._attach_count += 1
+        for hook, func in self._funcs.items():
+            visual._program.add_callback(hook, func)
+        for comp in self._deps:
+            comp._attach(visual)
 
     def _detach(self):
         """Detach this component from its Visual.
         """
-        self._visual = None
+        if self._attach_count == 0:
+            raise Exception("Cannot detach component %s; not attached." % self)
+        
+        self._attach_count -= 1
+        if self._attach_count == 0:
+            self._visual = None
+            for hook, func in self._funcs.items():
+                visual._program.remove_callback(hook, func)
+            for comp in self._deps:
+                comp._detach()
         
     @property
     def supported_draw_modes(self):
         """
-        A tuple of the draw modes (either DRAW_PRE_INDEXED, DRAW_UNINDEXED, or
+        A set of the draw modes (either DRAW_PRE_INDEXED, DRAW_UNINDEXED, or
         both) currently supported by this component.
         
         DRAW_PRE_INDEXED indicates that the component may be used when the 
@@ -438,7 +487,7 @@ class VisualComponent(object):
         """
         # TODO: This should be expanded to include other questions, such as
         # whether the visual supports geometry shaders.
-        return DRAW_PRE_INDEXED, DRAW_UNINDEXED
+        return set(DRAW_PRE_INDEXED, DRAW_UNINDEXED)
 
     def update(self):
         """

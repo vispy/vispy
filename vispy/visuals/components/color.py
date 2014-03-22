@@ -24,14 +24,14 @@ class UniformColorComponent(VisualComponent):
     Generates a uniform color for all vertexes.
     """
     
-    CODE = """
-        vec4 $colorInput() {
-            return $rgba;
-        }
-        """
+    SHADERS = dict(
+        frag_color="""
+            vec4 $colorInput() {
+                return $rgba;
+            }
+        """)
     
     def __init__(self, color=(1,1,1,1)):
-        self.shader_func = Function(self.CODE)
         self._color = color
         
     @property
@@ -42,20 +42,8 @@ class UniformColorComponent(VisualComponent):
     def color(self, c):
         self._color = c
         
-    def _attach(self, visual):
-        super(UniformColorComponent, self)._attach(visual)
-        visual._program.add_callback('frag_color', self.shader_func)
-        
-    def _detach(self):
-        self.visual._program.remove_callback('frag_color', self.shader_func)
-        super(UniformColorComponent, self)._detach()
-        
     def activate(self, program, mode):
-        self.shader_func['rgba'] = ('uniform', 'vec4', np.array(self._color))
-
-    @property
-    def supported_draw_modes(self):
-        return (self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED)
+        self._funcs['frag_color']['rgba'] = ('uniform', 'vec4', np.array(self._color))
 
 
 class VertexColorComponent(VisualComponent):
@@ -63,21 +51,20 @@ class VertexColorComponent(VisualComponent):
     Reads color in from (N,4) array or vertex buffer.
     """
     
-    FRAG_CODE = """
-        vec4 $colorInput() {
-            return $rgba;
-        }
+    SHADERS = dict(
+        frag_color="""
+            vec4 $colorInput() {
+                return $rgba;
+            }
+        """,
+        vert_post_hook="""
+            void $colorInputSupport() {
+                $output_color = $input_color;
+            }
         """
-    
-    VERT_CODE = """
-        void $colorInputSupport() {
-            $output_color = $input_color;
-        }
-        """
+        )
     
     def __init__(self, color=None):
-        self.frag_func = Function(self.FRAG_CODE)
-        self.vert_func = Function(self.VERT_CODE)
         self._color = color
         self._vbo = None
         
@@ -95,26 +82,11 @@ class VertexColorComponent(VisualComponent):
             self._vbo = gloo.VertexBuffer(self._color)
         return self._vbo
         
-    def _attach(self, visual):
-        super(VertexColorComponent, self)._attach(visual)
-        visual._program.add_callback('frag_color', self.frag_func)
-        visual._program.add_callback('vert_post_hook', self.vert_func)
-        
-    def _detach(self):
-        self.visual._program.remove_callback('frag_color', self.frag_func)
-        self.visual._program.remove_callback('vert_post_hook', self.vert_func)
-        super(VertexColorComponent, self)._detach()
-        
     def activate(self, program, mode):
-        # explicitly declare a new variable (to be shared)
-        # TODO: does this need to be explicit?
-        self.frag_func['rgba'] = ('varying', 'vec4')   
-        self.vert_func['input_color'] = ('attribute', 'vec4', self.vbo)
+        ff = self._funcs['frag_color']
+        ff['rgba'] = ('varying', 'vec4')   
         
-        # automatically assign same variable to both
-        self.vert_func['output_color'] = self.frag_func['rgba']
-
-    @property
-    def supported_draw_modes(self):
-        return (self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED)
+        vf = self._funcs['vert_post_hook']
+        vf['output_color'] = ff['rgba']
+        vf['input_color'] = ('attribute', 'vec4', self.vbo)
 
