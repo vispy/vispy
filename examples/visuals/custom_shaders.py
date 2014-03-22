@@ -13,7 +13,7 @@ from vispy.visuals.line import LineVisual
 from vispy.visuals.transforms import Transform, STTransform, arg_to_array
 from vispy.visuals.shaders import Function
 from vispy.visuals import VisualComponent
-from vispy.visuals.components import VertexColorComponent
+from vispy.visuals.components import VertexColorComponent, XYPosComponent
 
 # vertex positions of data to draw
 N = 50
@@ -49,30 +49,29 @@ class SineTransform(Transform):
         return ret
 
         
-        
+# Custom color component        
 class DashComponent(VisualComponent):
     """
     VisualComponent that adds dashing to an attached LineVisual.
     """
     
-    FRAG_CODE = """
-        vec4 $dash(vec4 color) {
-            float mod = $distance / $dash_len;
-            mod = mod - int(mod);
-            color.a = 0.5 * sin(mod*3.141593*2) + 0.5;
-            return color;
-        }
-        """
-    
-    VERT_CODE = """
-        void $dashSup() {
-            $output_dist = $distance_attr;
-        }
-        """
+    SHADERS = dict(
+        frag_color="""
+            vec4 $dash(vec4 color) {
+                float mod = $distance / $dash_len;
+                mod = mod - int(mod);
+                color.a = 0.5 * sin(mod*3.141593*2) + 0.5;
+                return color;
+            }
+        """,
+        vert_post_hook="""
+            void $dashSup() {
+                $output_dist = $distance_attr;
+            }
+        """)
     
     def __init__(self, pos):
-        self.frag_func = Function(self.FRAG_CODE)
-        self.vert_func = Function(self.VERT_CODE)
+        super(DashComponent, self).__init__()
         self._vbo = None
         self.pos = pos
         
@@ -89,44 +88,74 @@ class DashComponent(VisualComponent):
             self._vbo = gloo.VertexBuffer(dist)
         return self._vbo
         
-    def _attach(self, visual):
-        super(DashComponent, self)._attach(visual)
-        visual._program.add_callback('vert_post_hook', self.vert_func)
-        visual._program.add_callback('frag_color', self.frag_func)
-        
-    def _detach(self):
-        self.visual._program.remove_callback('vert_post_hook', self.vert_func)
-        self.visual._program.remove_callback('frag_color', self.frag_func)
-        super(DashComponent, self)._detach()
-        
     def activate(self, program, mode):
-        self.vert_func['distance_attr'] = ('attribute', 
-                                                'float', 
-                                                self._make_vbo())
-        self.vert_func['output_dist'] = ('varying', 'float')
-        self.frag_func['dash_len'] = ('uniform', 'float', 20.)
-        self.frag_func['distance'] = self.vert_func['output_dist']
+        vf = self._funcs['vert_post_hook']
+        ff = self._funcs['frag_color']
+        vf['distance_attr'] = ('attribute', 'float', self._make_vbo())
+        vf['output_dist'] = ('varying', 'float')
+        ff['dash_len'] = ('uniform', 'float', 20.)
+        ff['distance'] = vf['output_dist']
 
     @property
     def supported_draw_modes(self):
-        return (self.DRAW_PRE_INDEXED,)
+        return set((self.DRAW_PRE_INDEXED,))
+
+
+# custom position component
+class WobbleComponent(VisualComponent):
+    """
+    Give all vertexes a wobble with random phase.
+    """
+    SHADERS = dict(
+        local_position="""
+            vec4 $wobble(vec4 pos) {
+                float x = pos.x + 0.01 * cos($theta + $phase);
+                float y = pos.y + 0.01 * sin($theta + $phase);
+                return vec4(x, y, pos.z, pos.w);
+            }
+        """)
+
+    def __init__(self, pos):
+        super(WobbleComponent, self).__init__()
+        self._vbo = None
+        self.pos = pos
+        self.theta = (np.random.random(size=pos.shape[:-1]).astype(np.float32) 
+                      * (2. * np.pi))
+        self.phase = 0
+        
+    def activate(self, program, mode):
+        if self._vbo is None:
+            self._vbo = gloo.VertexBuffer(self.theta)
+            
+        pf = self._funcs['local_position']
+        pf['theta'] = ('attribute', 'float', self._vbo)
+        pf['phase'] = ('uniform', 'float', self.phase)
+        
+        # TODO: make this automatic
+        self._visual._program._need_build = True
+        
 
 
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
         
-        self.line = LineVisual(pos)
+        self.line = LineVisual()
         self.line.transform = (STTransform(scale=(0.1,.3)) * 
                                SineTransform() * 
                                STTransform(scale=(10,3)))
-        
+        self.wobbler = WobbleComponent(pos)
+        self.line.pos_components = [XYPosComponent(pos), self.wobbler]
         dasher = DashComponent(pos)
-        self.line.fragment_components = [VertexColorComponent(color), dasher]
+        self.line.color_components = [VertexColorComponent(color), dasher]
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)
         self.show()
+        
+        self.timer = vispy.app.Timer(connect=self.wobble,
+                                     interval=0.02, 
+                                     start=True)
         
     def on_paint(self, ev):
         gl.glClearColor(0, 0, 0, 1)
@@ -134,6 +163,10 @@ class Canvas(vispy.app.Canvas):
         gl.glViewport(0, 0, *self.size)
         
         self.line.paint()
+        
+    def wobble(self, ev):
+        self.wobbler.phase += 0.1
+        self.update()
         
 
 if __name__ == '__main__':
