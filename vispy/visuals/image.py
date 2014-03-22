@@ -63,7 +63,7 @@ class ImageVisual(MeshVisual):
             grid = self.grid
         
         # TODO: subdivision and impostor modes should be handled by new components?
-        if self.method == 'subdivide':
+        if method == 'subdivide':
             # quads cover area of image as closely as possible
             w = 1.0 / grid[1]
             h = 1.0 / grid[0]
@@ -87,7 +87,7 @@ class ImageVisual(MeshVisual):
             
             tex_coord_comp = TextureCoordinateComponent(tex_coords)
         
-        elif self.method == 'impostor':
+        elif method == 'impostor':
             # quad covers entire view; frag. shader will deal with image shape
             quad = np.array([[-1,-1,0], [1,-1,0], [1,1,0], 
                              [-1,-1,0], [1,1,0], [-1,1,0]],
@@ -102,7 +102,7 @@ class ImageVisual(MeshVisual):
         self._texture = gloo.Texture2D(self._data)
         self._texture.interpolation = gl.GL_NEAREST
         
-        self.fragment_components = [TextureComponent(self._texture, tex_coord_comp)]
+        self.color_components = [TextureComponent(self._texture, tex_coord_comp)]
         
         #if self.method == 'subdivide':
             ## Attach transformation functions
