@@ -44,7 +44,7 @@ before_install:
         fi;
         cd ~;
         mkdir target-size-clone && cd target-size-clone;
-        git init && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git;
+        git init && git remote add -t ${TRAVIS_BRANC} origin git://github.com/${TRAVIS_REPO_SLUG}.git;
         git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD && cd ..;
         TARGET_SIZE=`du -s target-size-clone | sed -e "s/\t.*//"`;
         mkdir source-size-clone && cd source-size-clone;
