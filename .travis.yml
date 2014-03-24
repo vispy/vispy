@@ -149,7 +149,7 @@ script:
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - cd ${SRC_DIR}
     - if [ "${TEST}" == "extra" ]; then
-        - echo "IFTEST TRUE"
+    - echo "IFTEST TRUE"
     - fi
     - if [ "${TEST}" == "extra" ]; then
         cwd=`pwd`;
