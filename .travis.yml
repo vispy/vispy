@@ -152,10 +152,10 @@ script:
         cwd=`pwd`;
         mkdir ../flake_test;
         cd ../flake_test;
-        git clone $cwd;
+        git init;
         git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git;
         git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD;
-        git merge --no-ff --no-commit ..
+        git merge --no-ff --no-commit $cwd
         make flake_diff;
         cd $cwd;        
         make lineendings;
