@@ -289,3 +289,60 @@ def perspective(fovy, aspect, znear, zfar):
     h = math.tan(fovy / 360.0 * math.pi) * znear
     w = h * aspect
     return frustum(-w, w, -h, h, znear, zfar)
+
+
+def quaternion(theta=0.0, axis=[1., 0., 0.]):
+    """Creates quaternion from angle and axis of rotation
+
+    Parameters
+    ----------
+    theta : float
+        The angle of rotation
+    axis : array
+        Axis of rotation (1x3)
+    """
+    w = math.cos(theta/2)
+    x, y, z = (a*math.sin(theta/2.) for a in axis)
+    return np.array([w, x, y, z])
+
+
+def qmultiply(q1, q2):
+    """Multiplies two quaternions to produce another quaternion
+
+    Parameters
+    ----------
+    q1 : array
+        First quaternion (1x4)
+    q2 : array
+        Second quaternion (1x4)
+    """
+
+    return np.dot(q1, np.array([[q2[0], q2[1], q2[2], q2[3]],
+                                [-q2[1], q2[0], -q2[3], q2[2]],
+                                [-q2[2], q2[3], q2[0], -q2[1]],
+                                [-q2[3], -q2[2], q2[1], q2[0]]]))
+
+
+def qproduct(p=quaternion(), *qs):
+    """ Returns sequential product of quaternions
+
+    Parameters
+    ----------
+    p : array
+        First quaternion (1x4)
+    *qs : arrays
+        Quaternions
+    """
+    for q in qs:
+        p = qmultiply(p, q)
+    return p
+
+
+def qmatrix(Q):
+    return np.array(([1.-2.*(Q[2]*Q[2]+Q[3]*Q[3]), 2.*(Q[1]*Q[2]+Q[0]*Q[3]), 
+                      2.*(Q[1]*Q[3]-Q[0]*Q[2]), 0.],
+                     [2.*(Q[1]*Q[2]-Q[0]*Q[3]), 1.-2.*(Q[1]*Q[1]+Q[3]*Q[3]),
+                      2.*(Q[2]*Q[3]+Q[0]*Q[1]), 0.],
+                     [2.*(Q[1]*Q[3]+Q[0]*Q[2]), 2.*(Q[2]*Q[3]-Q[0]*Q[1]),
+                      1.-2.*(Q[1]*Q[1]+Q[2]*Q[2]), 0.],
+                     [0., 0., 0., 1.]))
