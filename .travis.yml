@@ -155,7 +155,8 @@ script:
         git init;
         git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git;
         git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD;
-        git merge --no-ff --no-commit $cwd
+        git fetch origin ${GIT_SOURCE_EXTRA};
+        git merge --no-ff --no-commit FETCH_HEAD;
         make flake_diff;
         cd $cwd;        
         make lineendings;
