@@ -158,7 +158,7 @@ script:
         git fetch origin ${GIT_SOURCE_EXTRA} &&
         git merge --no-ff --no-commit FETCH_HEAD &&
         make flake_diff &&
-        cd $cwd &&
+        cd $cwd
       fi; 
       
     - if [ "${TEST}" == "extra" ]; then
