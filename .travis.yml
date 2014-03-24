@@ -148,6 +148,10 @@ script:
       fi;
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - cd ${SRC_DIR}
+    - echo ${TRAVIS_BRANCH}
+    - echo ${TRAVIS_REPO_SLUG}
+    - echo ${GIT_TARGET_EXTRA}
+    - echo ${GIT_SOURCE_EXTRA}
     - if [ "${TEST}" == "extra" ]; then
         cwd=`pwd` &&
         mkdir ../flake_test &&
@@ -158,7 +162,7 @@ script:
         git fetch origin ${GIT_SOURCE_EXTRA} &&
         git merge --no-ff --no-commit FETCH_HEAD &&
         make flake_diff &&
-        cd $cwd
+        cd $cwd;
       fi; 
       
     - if [ "${TEST}" == "extra" ]; then
