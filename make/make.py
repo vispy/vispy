@@ -44,6 +44,8 @@ PAGES_REPO = 'git@github.com:vispy/vispy.github.com.git'
 IMAGES_DIR = os.path.join(ROOT_DIR, '_images')
 IMAGES_REPO = 'git@github.com:vispy/images.git'
 
+# Paths that are checked for style by flake and flake_diff
+FLAKE_CHECK_PATHS = ['vispy', 'examples', 'make']
 
 class Maker:
 
@@ -176,7 +178,7 @@ class Maker:
     def flake(self, arg):
         """ Run flake8 to find style inconsistencies. """
         os.chdir(ROOT_DIR)
-        sys.argv[1:] = ['vispy', 'examples', 'make']
+        sys.argv[1:] = FLAKE_CKECK_PATHS
         try:
             from flake8.main import main
         except ImportError:
@@ -191,6 +193,27 @@ class Maker:
                     raise  # raises SystemExit again
                 else:
                     print('flake8 test passed.')
+
+    def flake_diff(self, arg):
+        """ Run flake8, checking only lines that are modified since the last
+        git commit. """
+        test = [ 1,2,3 ]
+        print('flake8 test running...')
+        diff = subprocess.check_output(['git', 'diff'])
+        proc = subprocess.Popen(['flake8', '--diff', '--statistics', ] +
+                                [],#FLAKE_CHECK_PATHS, 
+                                stdin=subprocess.PIPE, 
+                                stdout=subprocess.PIPE)
+        proc.stdin.write(diff)
+        proc.stdin.close()
+        ret = proc.wait()
+        output = proc.stdout.read()
+        print(output)
+        if ret == 0:
+            print('flake8 test passed.')
+        else:
+            print('flake8 test failed: %d' % ret)
+            sys.exit(ret)
 
     def images(self, arg):
         """ Create images (screenshots). Subcommands:

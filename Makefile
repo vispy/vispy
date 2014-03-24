@@ -25,6 +25,9 @@ clean: clean-build clean-pyc clean-so clean-ctags
 flake:
 	python make flake
 
+flake_diff:
+	python make flake_diff
+
 in: inplace # just a shortcut
 inplace:
 	$(PYTHON) setup.py build_ext -i
