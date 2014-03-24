@@ -149,20 +149,23 @@ script:
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - cd ${SRC_DIR}
     - if [ "${TEST}" == "extra" ]; then
-    - echo "IFTEST TRUE"
-    - fi
+        cwd=`pwd` &&
+        mkdir ../flake_test &&
+        cd ../flake_test &&
+        git init &&
+        git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &&
+        git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD &&
+        git fetch origin ${GIT_SOURCE_EXTRA} &&
+        git merge --no-ff --no-commit FETCH_HEAD &&
+        make flake_diff &&
+        cd $cwd &&
+      fi; 
+      
     - if [ "${TEST}" == "extra" ]; then
-        cwd=`pwd`;
-        mkdir ../flake_test;
-        cd ../flake_test;
-        git init;
-        git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git;
-        git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD;
-        git fetch origin ${GIT_SOURCE_EXTRA};
-        git merge --no-ff --no-commit FETCH_HEAD;
-        make flake_diff;
-        cd $cwd;        
         make lineendings;
+      fi;
+      
+    - if [ "${TEST}" == "extra" ]; then
         echo "Size difference ${SIZE_DIFF} kB";
         test ${SIZE_DIFF} -lt 100;
       fi;
