@@ -43,21 +43,29 @@ before_install:
           GIT_SOURCE_EXTRA="";
         fi;
         cd ~;
-        mkdir target-size-clone && cd target-size-clone;
-        git init && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git;
-        git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD && cd ..;
-        TARGET_SIZE=`du -s target-size-clone | sed -e "s/\t.*//"`;
-        mkdir source-size-clone && cd source-size-clone;
-        git init && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git;
-        git fetch origin ${GIT_SOURCE_EXTRA} && git checkout -qf FETCH_HEAD && cd ..;
-        SOURCE_SIZE=`du -s source-size-clone | sed -e "s/\t.*//"`;
+        mkdir target-size-clone && cd target-size-clone &&
+        git init && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &&
+        git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD && 
+        TARGET_SIZE=`du -s . | sed -e "s/\t.*//"` &&
+        git pull origin ${GIT_SOURCE_EXTRA} && 
+        SOURCE_SIZE=`du -s . | sed -e "s/\t.*//"`;
+      fi;
+    
+    - if [ "${TEST}" == "extra" ]; then
         if [ "${SOURCE_SIZE}" != "${TARGET_SIZE}" ]; then
           SIZE_DIFF=`expr ${SOURCE_SIZE} - ${TARGET_SIZE}`;
         else
           SIZE_DIFF=0;
         fi;
       fi;
+      
     - cd ${SRC_DIR}
+    
+    # to aid in debugging
+    - echo ${TRAVIS_BRANCH}
+    - echo ${TRAVIS_REPO_SLUG}
+    - echo ${GIT_TARGET_EXTRA}
+    - echo ${GIT_SOURCE_EXTRA}
 
 
 install:
@@ -148,19 +156,16 @@ script:
       fi;
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - cd ${SRC_DIR}
-    - echo ${TRAVIS_BRANCH}
-    - echo ${TRAVIS_REPO_SLUG}
-    - echo ${GIT_TARGET_EXTRA}
-    - echo ${GIT_SOURCE_EXTRA}
     - if [ "${TEST}" == "extra" ]; then
         cwd=`pwd` &&
         mkdir ../flake_test &&
         cd ../flake_test &&
         git init &&
         git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &&
-        git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD &&
+        git fetch origin ${GIT_TARGET_EXTRA} &&
         git fetch origin ${GIT_SOURCE_EXTRA} &&
-        git merge --no-ff --no-commit FETCH_HEAD &&
+        git checkout -qf FETCH_HEAD &&
+        git reset origin/${GIT_TARGET_EXTRA} &&
         make flake_diff &&
         cd $cwd;
       fi; 
