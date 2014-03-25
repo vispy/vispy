@@ -1,10 +1,11 @@
-from nose.tools import assert_raises, assert_true, assert_equal
+from nose.tools import assert_raises, assert_equal
 from os import path as op
 import os
 
 from vispy.util import (config, sys_info, _TempDir, get_data_file,
                         set_data_dir, save_config)
 
+from vispy.util.testing import assert_in
 temp_dir = _TempDir()
 
 
@@ -15,9 +16,10 @@ def test_sys_info():
     assert_raises(IOError, sys_info, fname)  # no overwrite
     with open(fname, 'r') as fid:
         out = ''.join(fid.readlines())
-    keys = ['Python', 'Backend', 'Pyglet']  # 'GL version' only for non-GLUT
+    # Note: 'GL version' only for non-GLUT
+    keys = ['Python', 'Backend', 'Pyglet', 'Platform:']
     for key in keys:
-        assert_true(key in out)
+        assert_in(key, out)
 
 
 def test_config():

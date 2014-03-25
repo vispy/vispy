@@ -181,20 +181,6 @@ def check_error(when='periodic check'):
         raise err
 
 
-def _has_pyopengl():
-    try:
-        from OpenGL import GL  # noqa
-    except Exception:
-        return False
-    else:
-        return True
-
-
-def _requires_pyopengl():
-    import numpy as np
-    return np.testing.dec.skipif(not _has_pyopengl(), 'Requires PyOpenGL')
-
-
 # Load default gl backend
 from . import desktop as default_backend  # noqa
 

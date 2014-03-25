@@ -3,6 +3,7 @@ backends, and no more than that.
 """
 
 from nose.tools import assert_equal
+from vispy.util.testing import requires_pyopengl
 
 from vispy.gloo import gl
 
@@ -53,7 +54,7 @@ def test_angle():
     _test_contant_names(angle)
 
 
-@gl._requires_pyopengl()
+@requires_pyopengl()
 def test_pyopengl():
     """ Pyopengl backend should have all ES 2.0 names. No more, no less. """
     from vispy.gloo.gl import pyopengl
