@@ -7,7 +7,7 @@ from os import path as op
 import OpenGL.GL as gl
 
 from vispy.app import Canvas
-from vispy.app.backends import requires_qt
+from vispy.util.testing import requires_qt
 
 
 @requires_qt(requires_uic=True)

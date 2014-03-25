@@ -2,7 +2,8 @@ from nose.tools import assert_equal
 import logging
 
 from vispy import app
-from vispy.util import logger, use_log_level, assert_in, assert_not_in
+from vispy.util import logger, use_log_level
+from vispy.util.testing import assert_in, assert_not_in
 
 
 def test_logging():

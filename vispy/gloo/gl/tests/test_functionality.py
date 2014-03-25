@@ -22,9 +22,11 @@ import numpy as np
 
 from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true
-from vispy.util import app_opengl_context, assert_in  # noqa
+from vispy .app import app_opengl_context
+from vispy.util.testing import assert_in  # noqa
 from numpy.testing import assert_almost_equal  # noqa
-from vispy.app.backends import requires_qt, requires_non_glut  # noqa
+from vispy.util.testing import requires_qt, requires_non_glut  # noqa
+from vispy.util.testing import requires_pyopengl
 
 from vispy.gloo import gl
 from vispy import app
@@ -58,7 +60,7 @@ def test_functionality_proxy():
 
 
 @requires_non_glut()
-@gl._requires_pyopengl()
+@requires_pyopengl()
 def test_functionality_pypengl():
     """ Test pyopengl GL backend for full functionality. """
     _test_functonality('pyopengl')

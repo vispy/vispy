@@ -10,7 +10,7 @@ implementation is corect.
 
 import vispy
 from vispy import keys
-from vispy.app.backends import requires_pyglet, requires_qt, requires_glfw
+from vispy.util.testing import requires_pyglet, requires_qt, requires_glfw
 
 
 class BaseTestmodule:

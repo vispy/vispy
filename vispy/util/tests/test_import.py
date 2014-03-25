@@ -8,7 +8,7 @@ import os
 import subprocess
 
 from nose.tools import assert_equal
-from vispy.util import assert_in, assert_not_in
+from vispy.util.testing import assert_in, assert_not_in
 
 import vispy
 

@@ -9,9 +9,10 @@ import sys
 
 from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true  # noqa
-from vispy.util import app_opengl_context, assert_in  # noqa
+from vispy.app import app_opengl_context
+from vispy.util.testing import assert_in  # noqa
 from numpy.testing import assert_almost_equal
-from vispy.app.backends import requires_non_glut
+from vispy.util.testing import requires_non_glut, requires_pyopengl
 from vispy.util.six import string_types
 
 from vispy.gloo import gl
@@ -35,7 +36,7 @@ def test_functionality_proxy():
 
 
 @requires_non_glut()
-@gl._requires_pyopengl()
+@requires_pyopengl()
 def test_basics_pypengl():
     """ Test pyopengl GL backend for basic functionality. """
     _test_basics('pyopengl')
@@ -59,7 +60,8 @@ def _test_basics(backend):
     # use the backend
     gl.use(backend)
     
-    with app_opengl_context():
+    with app_opengl_context() as context:
+        context.wait()
         _test_setting_parameters()
         _test_enabling_disabling()
         _test_setting_stuff()
@@ -153,6 +155,7 @@ def _test_setting_stuff():
     #
     v = gl.glGetParameter(gl.GL_VERSION)
     assert_true(isinstance(v, string_types))
+    assert_true(len(v) > 0)
     
     gl.check_error()
 

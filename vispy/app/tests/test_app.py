@@ -4,12 +4,12 @@ from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
                        MouseEvent, KeyEvent)
-from vispy.app.backends import (requires_pyglet, requires_qt, requires_glfw,
+from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,
                                 requires_non_glut)
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader
-from vispy.util import assert_in, assert_is
+from vispy.util.testing import assert_in, assert_is
 #from vispy.gloo import _screenshot
 from vispy.gloo import gl
 

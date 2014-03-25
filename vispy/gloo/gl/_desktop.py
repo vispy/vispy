@@ -796,7 +796,7 @@ def glGetParameter(pname):
     except AttributeError:
         nativefunc = glGetParameter._native = _get_gl_func("glGetString", ctypes.c_char_p, (ctypes.c_uint,))
     res = nativefunc(name)
-    return res.decode('utf-8')
+    return res.decode('utf-8') if res else ''
 
 
 # void = glGetTexParameterfv(GLenum target, GLenum pname, GLfloat* params)
