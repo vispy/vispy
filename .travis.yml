@@ -194,10 +194,10 @@ script:
         mkdir ../flake_test &&
         cd ../flake_test &&
         git init -q&&
-        git remote -q add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &&
+        git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &&
         git fetch -q origin ${GIT_TARGET_EXTRA} &&
         git checkout -qf FETCH_HEAD &&
-        git tag -q travis_flake_target &&
+        git tag travis_flake_target &&
         git fetch -q origin ${GIT_SOURCE_EXTRA} &&
         git checkout -qf FETCH_HEAD &&
         git reset -q travis_flake_target &&
