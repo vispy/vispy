@@ -45,15 +45,21 @@ before_install:
         cd ~;
         mkdir target-size-clone && cd target-size-clone &&
         git init && git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &&
-        git fetch origin ${GIT_TARGET_EXTRA} && git checkout -qf FETCH_HEAD && 
+        git fetch origin ${GIT_TARGET_EXTRA} && 
+        git checkout -qf FETCH_HEAD && 
+        git tag travis-merge-target &&
         TARGET_SIZE=`du -s . | sed -e "s/\t.*//"` &&
         git pull origin ${GIT_SOURCE_EXTRA} && 
-        SOURCE_SIZE=`du -s . | sed -e "s/\t.*//"`;
+        MERGE_SIZE=`du -s . | sed -e "s/\t.*//"` &&
+        MERGE_COMMIT_COUNT=`git log --pretty=oneline travis-merge-target..HEAD | wc -l`;
       fi;
     
     - if [ "${TEST}" == "extra" ]; then
-        if [ "${SOURCE_SIZE}" != "${TARGET_SIZE}" ]; then
-          SIZE_DIFF=`expr ${SOURCE_SIZE} - ${TARGET_SIZE}`;
+        if [ "${MERGE_SIZE}" != "${TARGET_SIZE}" ]; then
+          # Approximate the amount of content added as the size difference 
+          # after merging, less the number of commits * 21
+          # (where 21 kB is approximately the per-commit overhead)
+          SIZE_DIFF=`expr (${MERGE_SIZE} - ${TARGET_SIZE}) - (${MERGE_COMMIT_COUNT} * 21)`;
         else
           SIZE_DIFF=0;
         fi;
@@ -163,9 +169,11 @@ script:
         git init &&
         git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &&
         git fetch origin ${GIT_TARGET_EXTRA} &&
+        git checkout -qf FETCH_HEAD &&
+        git tag target &&
         git fetch origin ${GIT_SOURCE_EXTRA} &&
         git checkout -qf FETCH_HEAD &&
-        git reset origin/${GIT_TARGET_EXTRA} &&
+        git reset target &&
         make flake_diff &&
         cd $cwd;
       fi; 
@@ -175,7 +183,10 @@ script:
       fi;
       
     - if [ "${TEST}" == "extra" ]; then
-        echo "Size difference ${SIZE_DIFF} kB";
+        echo "Branch size before merge = ${TARGET_SIZE} kB";
+        echo "Branch size after merge = ${MERGE_SIZE} kB";
+        echo "Commits in merge = ${MERGE_COMMIT_COUNT}";
+        echo "Estimated content size difference = ${SIZE_DIFF} kB";
         test ${SIZE_DIFF} -lt 100;
       fi;
 
