@@ -146,21 +146,48 @@ before_script:
     # We need to create a (fake) display on Travis, let's use a funny resolution
     - export DISPLAY=:99.0
     - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render
+    
+    # Help color output from each test
+    - RESET='\033[0m';
+      RED='\033[00;31m';
+      GREEN='\033[00;32m';
+      YELLOW='\033[00;33m';
+      BLUE='\033[00;34m';
+      PURPLE='\033[00;35m';
+      CYAN='\033[00;36m';
+      WHITE='\033[00;37m';
+      start_test() {
+        echo -e "${BLUE}======== Starting $1 ========${RESET}";
+      }
+      check_output() {
+        ret=$?;
+        if [ $ret == 0 ]; then
+            echo -e "${GREEN}>>>>    $1 passed    <<<<${RESET}";
+        else
+            echo -e "${RED}>>>>    $1 FAILED    <<<<${RESET}";
+        fi;
+        return $ret;
+      }
+    
 
 
 script:
-    - cd ${VISPY_DIR}/../
     - # Nose-timer has bugs on 3+ as of Jan 2014
-    - if [ "${TEST}" != "extra" ]; then
+    - start_test "unit tests";
+      cd ${VISPY_DIR}/../;
+      if [ "${TEST}" != "extra" ]; then
         if [ "${PYTHON}" == "2.7" ]; then
           nosetests --with-timer --timer-top-n 10;
         else
           nosetests;
         fi;
       fi;
+      check_output "unit tests"
+      
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
-    - cd ${SRC_DIR}
-    - if [ "${TEST}" == "extra" ]; then
+    - start_test "style tests";
+      cd ${SRC_DIR};
+      if [ "${TEST}" == "extra" ]; then
         cwd=`pwd` &&
         mkdir ../flake_test &&
         cd ../flake_test &&
@@ -175,41 +202,29 @@ script:
         make flake_diff &&
         cd $cwd;
       fi; 
+      check_output "style tests";
       
-    - if [ "${TEST}" == "extra" ]; then
+    - start_test "line endings check";
+      if [ "${TEST}" == "extra" ]; then
         make lineendings;
       fi;
+      check_output "line endings check";
       
-    - if [ "${TEST}" == "extra" ]; then
+    - start_test "repository size test";
+      if [ "${TEST}" == "extra" ]; then
         echo -e "\033[1;34mEstimated content size difference = ${SIZE_DIFF} kB";
         test ${SIZE_DIFF} -lt 100;
       fi;
+      check_output "repository size test";
       
-    - RESET='\033[0m';
-      RED='\033[00;31m';
-      GREEN='\033[00;32m';
-      YELLOW='\033[00;33m';
-      BLUE='\033[00;34m';
-      PURPLE='\033[00;35m';
-      CYAN='\033[00;36m';
-      GRAY='\033[00;37m';
-      LRED='\033[01;31m';
-      LGREEN='\033[01;32m';
-      LYELLOW='\033[01;33m';
-      LBLUE='\033[01;34m';
-      LPURPLE='\033[01;35m';
-      LCYAN='\033[01;36m';
-      WHITE='\033[01;37m';
-      echo -e "Color test \n${RED}RED\n ${GREEN}GREEN\n ${YELLOW}YELLOW\n ${BLUE}BLUE\n ${PURPLE}PURPLE\n ${CYAN}CYAN\n ${GRAY}GRAY";
-      echo -e "Color test \n${LRED}RED\n ${LGREEN}GREEN\n ${LYELLOW}YELLOW\n ${LBLUE}BLUE\n ${LPURPLE}PURPLE\n ${LCYAN}CYAN\n ${WHITE}WHITE";
-      echo -e "Color test ${RESET}RESET";
 
 
 
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
     # Let's use the "full" test case for coveralls, best case for coverage
-    - if [ "${PYTHON}" == "2.7" ] && [ "${DEPS}" == "full" ] && [ "${TEST}" != "extra" ]; then
+    - start_test "coverage test";
+      if [ "${PYTHON}" == "2.7" ] && [ "${DEPS}" == "full" ] && [ "${TEST}" != "extra" ]; then
         echo "Running coveralls";
         cd ${SRC_DIR};
         coveralls;
