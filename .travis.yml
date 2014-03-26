@@ -158,7 +158,7 @@ before_script:
       WHITE='\033[00;37m';
       start_test() {
         echo -e "${BLUE}======== Starting $1 ========${RESET}";
-      }
+      };
       check_output() {
         ret=$?;
         if [ $ret == 0 ]; then
@@ -167,7 +167,7 @@ before_script:
             echo -e "${RED}>>>>    $1 FAILED    <<<<${RESET}";
         fi;
         return $ret;
-      }
+      };
     
 
 
@@ -202,20 +202,20 @@ script:
         make flake_diff &&
         cd $cwd;
       fi; 
-      check_output "style tests";
+      check_output "style tests"
       
     - start_test "line endings check";
       if [ "${TEST}" == "extra" ]; then
         make lineendings;
       fi;
-      check_output "line endings check";
+      check_output "line endings check"
       
     - start_test "repository size test";
       if [ "${TEST}" == "extra" ]; then
         echo -e "\033[1;34mEstimated content size difference = ${SIZE_DIFF} kB";
         test ${SIZE_DIFF} -lt 100;
       fi;
-      check_output "repository size test";
+      check_output "repository size test"
       
 
 
