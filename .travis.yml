@@ -55,11 +55,11 @@ before_install:
       fi;
     
     # Approximate the amount of content added as the size difference 
-    # after merging, less the number of commits * 21
+    # after merging, less the number of commits * 22
     # (where 21 kB is approximately the per-commit overhead)
     - if [ "${TEST}" == "extra" ]; then
         if [ "${MERGE_SIZE}" != "${TARGET_SIZE}" ]; then
-          SIZE_DIFF=`expr \( ${MERGE_SIZE} - ${TARGET_SIZE} \) - \( ${MERGE_COMMIT_COUNT} \* 21 \)`;
+          SIZE_DIFF=`expr \( ${MERGE_SIZE} - ${TARGET_SIZE} \) - \( ${MERGE_COMMIT_COUNT} \* 22 \)`;
         else
           SIZE_DIFF=0;
         fi;

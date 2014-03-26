@@ -208,7 +208,7 @@ class Maker:
         proc.stdin.close()
         ret = proc.wait()
         output = proc.stdout.read()
-        print(output)
+        print(output.decode('utf-8'))
         if ret == 0:
             print('flake8 test passed.')
         else:
