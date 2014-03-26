@@ -54,11 +54,11 @@ before_install:
         MERGE_COMMIT_COUNT=`git log --pretty=oneline travis-merge-target..HEAD | wc -l`;
       fi;
     
+    # Approximate the amount of content added as the size difference 
+    # after merging, less the number of commits * 21
+    # (where 21 kB is approximately the per-commit overhead)
     - if [ "${TEST}" == "extra" ]; then
         if [ "${MERGE_SIZE}" != "${TARGET_SIZE}" ]; then
-          # Approximate the amount of content added as the size difference 
-          # after merging, less the number of commits * 21
-          # (where 21 kB is approximately the per-commit overhead)
           SIZE_DIFF=`expr (${MERGE_SIZE} - ${TARGET_SIZE}) - (${MERGE_COMMIT_COUNT} * 21)`;
         else
           SIZE_DIFF=0;
