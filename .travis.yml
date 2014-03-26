@@ -184,6 +184,26 @@ script:
         echo -e "\033[1;34mEstimated content size difference = ${SIZE_DIFF} kB";
         test ${SIZE_DIFF} -lt 100;
       fi;
+      
+    - RESET='\033[0m';
+      RED='\033[00;31m';
+      GREEN='\033[00;32m';
+      YELLOW='\033[00;33m';
+      BLUE='\033[00;34m';
+      PURPLE='\033[00;35m';
+      CYAN='\033[00;36m';
+      GRAY='\033[00;37m';
+      LRED='\033[01;31m';
+      LGREEN='\033[01;32m';
+      LYELLOW='\033[01;33m';
+      LBLUE='\033[01;34m';
+      LPURPLE='\033[01;35m';
+      LCYAN='\033[01;36m';
+      WHITE='\033[01;37m';
+      echo -e "Color test:\n${RED}RED\n${GREEN}GREEN\n${YELLOW}YELLOW\n${BLUE}BLUE\n${PURPLE}PURPLE\n${CYAN}CYAN\n${GRAY}GRAY"
+      echo -e "Color test:\n${LRED}RED\n${LGREEN}GREEN\n${LYELLOW}YELLOW\n${LBLUE}BLUE\n${LPURPLE}PURPLE\n${LCYAN}CYAN\n${WHITE}WHITE"
+      echo -e "Color test: ${RESET}RESET"
+
 
 
 after_success:
