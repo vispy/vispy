@@ -47,6 +47,17 @@ IMAGES_REPO = 'git@github.com:vispy/images.git'
 # Paths that are checked for style by flake and flake_diff
 FLAKE_CHECK_PATHS = ['vispy', 'examples', 'make']
 
+# Optional style checks
+FLAKE_OPTIONAL = set('E121 E123 E126 E127 E128 E201 E202 E203 E221 E222'
+                     'E225 E226 E227 E228 E231 E241 E251 E301 E302 E303'
+                     'E401 E701 W291 W293 W391'.split(' '))
+
+FLAKE_MANDATORY = set('E101 E111 E112 E113 E122 E124 E125 E133 E211 E223'
+                      'E224 E242 E261 E262 E271 E272 E273 E274 E304 E501'
+                      'E502 E702 E703 E711 E712 E721 E901 E902'
+                      'W191 W292 W601 W602 W603 W604'.split(' '))
+
+
 class Maker:
 
     """ Collection of make commands.
@@ -200,15 +211,25 @@ class Maker:
         test = [ 1,2,3 ]
         print('flake8 test running...')
         diff = subprocess.check_output(['git', 'diff'])
-        proc = subprocess.Popen(['flake8', '--diff', '--statistics', ] +
+        proc = subprocess.Popen(['flake8', '--diff', ] +
                                 [],#FLAKE_CHECK_PATHS, 
                                 stdin=subprocess.PIPE, 
                                 stdout=subprocess.PIPE)
         proc.stdin.write(diff)
         proc.stdin.close()
         ret = proc.wait()
-        output = proc.stdout.read()
-        print(output.decode('utf-8'))
+        for line in proc.stdout.read().decode('utf-8').split('\n'):
+            m = re.match(r'[^\:]+\:\d+\:\d+\: (\w+) .*', line)
+            if m is None:
+                print(line)
+            else:
+                error = m.group(1)
+                if error in FLAKE_MANDATORY:
+                    print("\033[0;31m" + line + "\033[0m")
+                elif error in FLAKE_OPTIONAL:
+                    print("\033[0;33m" + line + "\033[0m")
+                else:
+                    print("\033[0;36m" + line + "\033[0m")
         if ret == 0:
             print('flake8 test passed.')
         else:
