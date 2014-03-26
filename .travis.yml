@@ -52,7 +52,7 @@ before_install:
         TARGET_SIZE=`du -s . | sed -e "s/\t.*//"` &&
         git pull origin ${GIT_SOURCE_EXTRA} && 
         git gc --aggressive &&
-        MERGE_SIZE=`du -s . | sed -e "s/\t.*//"` &&
+        MERGE_SIZE=`du -s . | sed -e "s/\t.*//"`;
       fi;
     
     - if [ "${TEST}" == "extra" ]; then
