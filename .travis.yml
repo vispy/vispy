@@ -164,9 +164,9 @@ before_script:
       check_output() {
         ret=$?;
         if [ $ret == 0 ]; then
-            echo -e "${GREEN}>>>>    $1 passed    <<<<${RESET}";
+            echo -e "${GREEN}>>>>>>    $1 passed    <<<<<<${RESET}";
         else
-            echo -e "${RED}>>>>    $1 FAILED    <<<<${RESET}";
+            echo -e "${RED}>>>>>>    $1 FAILED    <<<<<<${RESET}";
         fi;
         return $ret;
       };
@@ -175,16 +175,16 @@ before_script:
 
 script:
     - # Nose-timer has bugs on 3+ as of Jan 2014
-    - start_test "unit tests";
-      cd ${VISPY_DIR}/../;
+    - cd ${VISPY_DIR}/../;
       if [ "${TEST}" != "extra" ]; then
+        start_test "unit tests";
         if [ "${PYTHON}" == "2.7" ]; then
           nosetests --with-timer --timer-top-n 10;
         else
           nosetests;
         fi;
+        check_output "unit tests"
       fi;
-      check_output "unit tests"
       
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - start_test "style tests";
