@@ -140,6 +140,8 @@ install:
     - ln -s ${SRC_DIR}/setup.cfg ${VISPY_DIR}/../setup.cfg
     # Link coverage to src dir, coveralls should be run from there (needs git calls)
     - ln -s ${VISPY_DIR}/../.coverage ${SRC_DIR}/.coverage
+    - echo ${VISPY_DIR}
+    - echo ${SRC_DIR}
 
 
 before_script:
@@ -191,14 +193,14 @@ script:
         cwd=`pwd` &&
         mkdir ../flake_test &&
         cd ../flake_test &&
-        git init &&
-        git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &&
-        git fetch origin ${GIT_TARGET_EXTRA} &&
+        git init -q&&
+        git remote -q add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &&
+        git fetch -q origin ${GIT_TARGET_EXTRA} &&
         git checkout -qf FETCH_HEAD &&
-        git tag target &&
-        git fetch origin ${GIT_SOURCE_EXTRA} &&
+        git tag -q travis_flake_target &&
+        git fetch -q origin ${GIT_SOURCE_EXTRA} &&
         git checkout -qf FETCH_HEAD &&
-        git reset target &&
+        git reset -q travis_flake_target &&
         make flake_diff &&
         cd $cwd;
       fi; 
@@ -212,7 +214,7 @@ script:
       
     - start_test "repository size test";
       if [ "${TEST}" == "extra" ]; then
-        echo -e "\033[1;34mEstimated content size difference = ${SIZE_DIFF} kB";
+        echo -e "Estimated content size difference = ${SIZE_DIFF} kB";
         test ${SIZE_DIFF} -lt 100;
       fi;
       check_output "repository size test"
