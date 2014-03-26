@@ -187,13 +187,13 @@ script:
       fi;
       
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
-    - start_test "style tests";
-      cd ${SRC_DIR};
+    - cd ${SRC_DIR};
       if [ "${TEST}" == "extra" ]; then
+        start_test "style tests";
         cwd=`pwd` &&
         mkdir ../flake_test &&
         cd ../flake_test &&
-        git init -q&&
+        git init -q &&
         git remote add -t ${TRAVIS_BRANCH} origin git://github.com/${TRAVIS_REPO_SLUG}.git &&
         git fetch -q origin ${GIT_TARGET_EXTRA} &&
         git checkout -qf FETCH_HEAD &&
@@ -203,21 +203,21 @@ script:
         git reset -q travis_flake_target &&
         make flake_diff &&
         cd $cwd;
+        check_output "style tests";
       fi; 
-      check_output "style tests"
       
-    - start_test "line endings check";
-      if [ "${TEST}" == "extra" ]; then
+    - if [ "${TEST}" == "extra" ]; then
+        start_test "line endings check";
         make lineendings;
+        check_output "line endings check";
       fi;
-      check_output "line endings check"
       
-    - start_test "repository size test";
-      if [ "${TEST}" == "extra" ]; then
+    - if [ "${TEST}" == "extra" ]; then
+        start_test "repository size test";
         echo -e "Estimated content size difference = ${SIZE_DIFF} kB";
         test ${SIZE_DIFF} -lt 100;
+        check_output "repository size test";
       fi;
-      check_output "repository size test"
       
 
 
