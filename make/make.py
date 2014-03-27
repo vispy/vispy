@@ -124,10 +124,10 @@ FLAKE_OPTIONAL = set([
     'E221',  #  multiple spaces before operator
     'E222',  #  multiple spaces after operator
     'E225',  #  missing whitespace around operator
-    #'E226',  #  missing whitespace around arithmetic operator
     'E227',  #  missing whitespace around bitwise or shift operator
+    'E226',  #  missing whitespace around arithmetic operator
     'E228',  #  missing whitespace around modulo operator
-    #'E241',  #  multiple spaces after ‘,’
+    'E241',  #  multiple spaces after ‘,’
     'E251',  #  unexpected spaces around keyword / parameter equals
     'E262',  #  inline comment should start with ‘# ‘     
         
@@ -139,13 +139,11 @@ FLAKE_OPTIONAL = set([
 
     'E701',  #  multiple statements on one line (colon)
         
-    #'W291',  #  trailing whitespace
-    #'W293',  #  blank line contains whitespace
+    'W291',  #  trailing whitespace
+    'W293',  #  blank line contains whitespace
         
     'W391',  #  blank line at end of file
     ])
-
-
 
 
 class Maker:
@@ -303,7 +301,8 @@ class Maker:
         # First check _all_ code against mandatory error codes
         print('flake8: check all code against mandatory error set...')
         errors = ','.join(FLAKE_MANDATORY)
-        proc = subprocess.Popen(['flake8', '--select=' + errors] +
+        proc = subprocess.Popen(['flake8', #'--show-source', 
+                                 '--select=' + errors] +
                                 FLAKE_CHECK_PATHS, 
                                 stdout=subprocess.PIPE)
         ret = proc.wait()
@@ -313,8 +312,8 @@ class Maker:
         # Next check new code with optional error codes
         print('flake8: check new code against recommended error set...')
         diff = subprocess.check_output(['git', 'diff'])
-        errors = ','.join(FLAKE_OPTIONAL | FLAKE_RECOMMENDED)
-        proc = subprocess.Popen(['flake8', '--diff', '--select=' + errors],
+        proc = subprocess.Popen(['flake8', '--diff', #'--show-source',
+                                 '--ignore=' + errors],
                                 stdin=subprocess.PIPE, 
                                 stdout=subprocess.PIPE)
         proc.stdin.write(diff)
