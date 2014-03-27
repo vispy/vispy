@@ -410,6 +410,7 @@ class Texture(GLObject):
         """ Paramaterize texture """
 
         if self._need_parameterization:
+            self._need_parameterization = False
             if isinstance(self._interpolation, tuple):
                 min_filter = self._interpolation[0]
                 mag_filter = self._interpolation[1]
@@ -429,7 +430,6 @@ class Texture(GLObject):
                 wrap_t = self._wrapping
             gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S, wrap_s)
             gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrap_t)
-        self._need_parameterization = True
 
     def _create(self):
         """ Create texture on GPU """
