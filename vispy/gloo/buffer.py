@@ -3,6 +3,9 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+
+import sys
+
 import numpy as np
 
 from . import gl
@@ -43,7 +46,10 @@ class Buffer(GLObject):
         self._resizeable = resizeable
         self._views = []
         self._valid = True
-
+        
+        # For ATI bug
+        self._bufferSubDataOk = False
+        
         # Store and check target
         if target not in (gl.GL_ARRAY_BUFFER, gl.GL_ELEMENT_ARRAY_BUFFER):
             raise ValueError("Invalid target for buffer object")
@@ -155,14 +161,20 @@ class Buffer(GLObject):
         while self._pending_data:
             data, nbytes, offset = self._pending_data.pop(0)
             
+            # Determine whether to check errors to try handling the ATI bug
+            check_ati_bug = ((not self._bufferSubDataOk) and
+                             (gl.current_backend is gl.desktop) and
+                             sys.platform.startswith('win'))
+            
             # flush any pending errors
-            if gl.current_backend is gl.desktop:
+            if check_ati_bug:
                 gl.check_error('periodic check')
             
             try:
                 gl.glBufferSubData(self._target, offset, data)
-                if gl.current_backend is gl.desktop:
+                if check_ati_bug:
                     gl.check_error('glBufferSubData')
+                self._bufferSubDataOk = True  # glBufferSubData seems to work
             except Exception:
                 # This might be due to a driver error (seen on ATI), issue #64.
                 # We try to detect this, and if we can use glBufferData instead
