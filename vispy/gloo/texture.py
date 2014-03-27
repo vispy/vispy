@@ -253,7 +253,9 @@ class Texture(GLObject):
         if self.base is not None:
             self.base.set_data(data, offset=self.offset, copy=copy)
             return
-
+        
+        data = np.array(data, copy=copy)
+        
         # Check data has the right shape
         # if len(data.shape) != len(self.shape):
         #  raise ValueError("Data has wrong shape")
@@ -274,12 +276,6 @@ class Texture(GLObject):
         for i in range(len(data.shape)):
             if offset[i] + data.shape[i] > self.shape[i]:
                 raise ValueError("Data is too large")
-
-        # Make sure data is contiguous
-        if not data.flags["C_CONTIGUOUS"]:
-            data = np.array(data, copy=True)
-        else:
-            data = np.array(data, copy=copy)
 
         self._pending_data.append((data, offset))
         self._need_update = True

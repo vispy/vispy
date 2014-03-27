@@ -58,9 +58,8 @@ class Buffer(GLObject):
         # Set data
         self._pending_data = []
         if data is not None:
-            data = np.array(data, copy=True)
             self._nbytes = data.nbytes
-            self.set_data(data, copy=True)
+            self.set_data(data, copy=False)
 
     @property
     def nbytes(self):
@@ -84,10 +83,7 @@ class Buffer(GLObject):
             Asking explicitly for a copy will prevent this behavior.
         """
 
-        if not data.flags["C_CONTIGUOUS"]:
-            data = np.array(data, copy=True)
-        else:
-            data = np.array(data, copy=copy)
+        data = np.array(data, copy=copy)
         nbytes = data.nbytes
 
         if offset < 0:
@@ -552,7 +548,7 @@ class VertexBuffer(DataBuffer):
     
     Parameters
     ----------
-        
+    
     data : ndarray
         Buffer data (optional)
     dtype : dtype
