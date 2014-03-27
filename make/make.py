@@ -47,15 +47,105 @@ IMAGES_REPO = 'git@github.com:vispy/images.git'
 # Paths that are checked for style by flake and flake_diff
 FLAKE_CHECK_PATHS = ['vispy', 'examples', 'make']
 
-# Optional style checks
-FLAKE_OPTIONAL = set('E121 E123 E126 E127 E128 E201 E202 E203 E221 E222'
-                     'E225 E226 E227 E228 E231 E241 E251 E301 E302 E303'
-                     'E401 E701 W291 W293 W391'.split(' '))
+# Flake style checks -- mandatory, recommended, optional
+# See: http://pep8.readthedocs.org/en/1.4.6/intro.html
+# and  https://flake8.readthedocs.org/en/2.0/warnings.html
+FLAKE_MANDATORY = set([
+    'E101',  #  indentation contains mixed spaces and tabs
+    'E111',  #  indentation is not a multiple of four
+    'E112',  #  expected an indented block
+    'E113',  #  unexpected indentation
+    'E122',  #  continuation line missing indentation or outdented
+    'E124',  #  closing bracket does not match visual indentation
+    'E125',  #  continuation line does not distinguish itself from next line
+    'E133',  #  closing bracket is missing indentation
 
-FLAKE_MANDATORY = set('E101 E111 E112 E113 E122 E124 E125 E133 E211 E223'
-                      'E224 E242 E261 E262 E271 E272 E273 E274 E304 E501'
-                      'E502 E702 E703 E711 E712 E721 E901 E902'
-                      'W191 W292 W601 W602 W603 W604'.split(' '))
+    'E211',  #  whitespace before ‘(‘
+    'E223',  #  tab before operator
+    'E224',  #  tab after operator
+    'E242',  #  tab after ‘,’
+    'E261',  #  at least two spaces before inline comment
+    'E271',  #  multiple spaces after keyword
+    'E272',  #  multiple spaces before keyword
+    'E273',  #  tab after keyword
+    'E274',  #  tab before keyword
+        
+    'E304',  #  blank lines found after function decorator
+
+    'E501',  #  line too long (82 > 79 characters)
+    'E502',  #  the backslash is redundant between brackets
+
+    'E702',  #  multiple statements on one line (semicolon)
+    'E703',  #  statement ends with a semicolon
+    'E711',  #  comparison to None should be ‘if cond is None:’
+    'E712',  #  comparison to True should be ‘if cond is True:’ or ‘if cond:’
+    'E721',  #  do not compare types, use ‘isinstance()’
+
+    'E901',  #  SyntaxError or IndentationError
+    'E902',  #  IOError
+        
+    'W191',  #  indentation contains tabs
+        
+    'W292',  #  no newline at end of file
+
+    'W601',  #  .has_key() is deprecated, use ‘in’
+    'W602',  #  deprecated form of raising exception
+    'W603',  #  ‘<>’ is deprecated, use ‘!=’
+    'W604',  #  backticks are deprecated, use ‘repr()’    
+    ])
+
+FLAKE_RECOMMENDED = set([
+    'E231',  #  missing whitespace after ‘,’
+    
+    'F401',  #  module imported but unused
+    'F402',  #  import module from line N shadowed by loop variable
+    'F403',  #  ‘from module import *’ used; unable to detect undefined names
+    'F404',  #  future import(s) name after other statements
+        
+    'F811',  #  redefinition of unused name from line N
+    'F812',  #  list comprehension redefines name from line N
+    'F821',  #  undefined name name
+    'F822',  #  undefined name name in __all__
+    'F823',  #  local variable name ... referenced before assignment
+    'F831',  #  duplicate argument name in function definition
+    'F841',  #  local variable name is assigned to but never used
+    ])
+
+FLAKE_OPTIONAL = set([
+    'E121',  #  continuation line indentation is not a multiple of four
+    'E123',  #  closing bracket does not match indentation of opening bracket
+    'E126',  #  continuation line over-indented for hanging indent
+    'E127',  #  continuation line over-indented for visual indent
+    'E128',  #  continuation line under-indented for visual indent
+        
+    'E201',  #  whitespace after ‘(‘
+    'E202',  #  whitespace before ‘)’
+    'E203',  #  whitespace before ‘:’
+    'E221',  #  multiple spaces before operator
+    'E222',  #  multiple spaces after operator
+    'E225',  #  missing whitespace around operator
+    #'E226',  #  missing whitespace around arithmetic operator
+    'E227',  #  missing whitespace around bitwise or shift operator
+    'E228',  #  missing whitespace around modulo operator
+    #'E241',  #  multiple spaces after ‘,’
+    'E251',  #  unexpected spaces around keyword / parameter equals
+    'E262',  #  inline comment should start with ‘# ‘     
+        
+    'E301',  #  expected 1 blank line, found 0
+    'E302',  #  expected 2 blank lines, found 0
+    'E303',  #  too many blank lines (3)
+        
+    'E401',  #  multiple imports on one line
+
+    'E701',  #  multiple statements on one line (colon)
+        
+    #'W291',  #  trailing whitespace
+    #'W293',  #  blank line contains whitespace
+        
+    'W391',  #  blank line at end of file
+    ])
+
+
 
 
 class Maker:
@@ -209,16 +299,43 @@ class Maker:
         """ Run flake8, checking only lines that are modified since the last
         git commit. """
         test = [ 1,2,3 ]
-        print('flake8 test running...')
+        
+        # First check _all_ code against mandatory error codes
+        print('flake8: check all code against mandatory error set...')
+        errors = ','.join(FLAKE_MANDATORY)
+        proc = subprocess.Popen(['flake8', '--select=' + errors] +
+                                FLAKE_CHECK_PATHS, 
+                                stdout=subprocess.PIPE)
+        ret = proc.wait()
+        output = proc.stdout.read().decode('utf-8')
+        self._print_flake_output(output)
+        
+        # Next check new code with optional error codes
+        print('flake8: check new code against recommended error set...')
         diff = subprocess.check_output(['git', 'diff'])
-        proc = subprocess.Popen(['flake8', '--diff', ] +
-                                [],#FLAKE_CHECK_PATHS, 
+        errors = ','.join(FLAKE_OPTIONAL | FLAKE_RECOMMENDED)
+        proc = subprocess.Popen(['flake8', '--diff', '--select=' + errors],
                                 stdin=subprocess.PIPE, 
                                 stdout=subprocess.PIPE)
         proc.stdin.write(diff)
         proc.stdin.close()
-        ret = proc.wait()
-        for line in proc.stdout.read().decode('utf-8').split('\n'):
+        output = proc.stdout.read().decode('utf-8')
+        ret |= self._print_flake_output(output)
+        
+        if ret == 0:
+            print('flake8 test passed.')
+        else:
+            print('flake8 test failed: %d' % ret)
+            sys.exit(ret)
+
+    def _print_flake_output(self, text):
+        """ Print flake output, colored by error category.
+        Return 2 if there were any mandatory errors,
+        1 if only recommended / optional errors, and
+        0 if only optional errors.
+        """
+        ret = 0
+        for line in text.split('\n'):
             m = re.match(r'[^\:]+\:\d+\:\d+\: (\w+) .*', line)
             if m is None:
                 print(line)
@@ -226,15 +343,15 @@ class Maker:
                 error = m.group(1)
                 if error in FLAKE_MANDATORY:
                     print("\033[0;31m" + line + "\033[0m")
-                elif error in FLAKE_OPTIONAL:
+                    ret |= 2
+                elif error in FLAKE_RECOMMENDED:
                     print("\033[0;33m" + line + "\033[0m")
+                    ret |= 1
+                elif error in FLAKE_OPTIONAL:
+                    print("\033[0;32m" + line + "\033[0m")
                 else:
                     print("\033[0;36m" + line + "\033[0m")
-        if ret == 0:
-            print('flake8 test passed.')
-        else:
-            print('flake8 test failed: %d' % ret)
-            sys.exit(ret)
+        return ret
 
     def images(self, arg):
         """ Create images (screenshots). Subcommands:
