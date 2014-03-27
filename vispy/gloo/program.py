@@ -185,8 +185,14 @@ class Program(GLObject):
         gl.glLinkProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
             print(gl.glGetProgramInfoLog(self._handle))
-            raise RuntimeError('Linking error')
-
+            raise RuntimeError('Program linking error')
+        
+        # Validate
+        gl.glValidateProgram(self._handle)
+        if not gl.glGetProgramParameter(self._handle, gl.GL_VALIDATE_STATUS):
+            print(gl.glGetProgramInfoLog(self._handle))
+            raise RuntimeError('Program validation error')
+        
         # Activate uniforms
         active_uniforms = [name for (name, gtype) in self.active_uniforms]
         for uniform in self._uniforms.values():
