@@ -102,11 +102,11 @@ class Canvas(app.Canvas):
         self.size = 800, 600
 
         self.vertices, self.filled, self.outline = cube()
-        self.filled_buf = gloo.ElementBuffer(self.filled)
-        self.outline_buf = gloo.ElementBuffer(self.outline)
+        self.filled_buf = gloo.IndexBuffer(self.filled)
+        self.outline_buf = gloo.IndexBuffer(self.outline)
 
         self.program = gloo.Program(vert, frag)
-        self.program.set_vars(gloo.VertexBuffer(self.vertices))
+        self.program.bind(gloo.VertexBuffer(self.vertices))
 
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
@@ -151,21 +151,21 @@ class Canvas(app.Canvas):
     def on_paint(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-        with self.program as prog:
-            # Filled cube
-            gl.glDisable(gl.GL_BLEND)
-            gl.glEnable(gl.GL_DEPTH_TEST)
-            gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
-            prog['u_color'] = 1, 1, 1, 1
-            prog.draw(gl.GL_TRIANGLES, self.filled_buf)
+        # Filled cube
+        
+        gl.glDisable(gl.GL_BLEND)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
+        self.program['u_color'] = 1, 1, 1, 1
+        self.program.draw(gl.GL_TRIANGLES, self.filled_buf)
 
-            # Outline
-            gl.glDisable(gl.GL_POLYGON_OFFSET_FILL)
-            gl.glEnable(gl.GL_BLEND)
-            gl.glDepthMask(gl.GL_FALSE)
-            prog['u_color'] = 0, 0, 0, 1
-            prog.draw(gl.GL_LINES, self.outline_buf)
-            gl.glDepthMask(gl.GL_TRUE)
+        # Outline
+        gl.glDisable(gl.GL_POLYGON_OFFSET_FILL)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glDepthMask(gl.GL_FALSE)
+        self.program['u_color'] = 0, 0, 0, 1
+        self.program.draw(gl.GL_LINES, self.outline_buf)
+        gl.glDepthMask(gl.GL_TRUE)
 
 
 # -----------------------------------------------------------------------------
