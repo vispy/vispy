@@ -188,21 +188,19 @@ class Uniform(Variable):
         #     else:
         #         self._data = data
         if self._gtype == gl.GL_SAMPLER_2D:
-            if isinstance(self._data, Texture2D):
+            if isinstance(data, Texture2D):
+                self._data = data
+            elif isinstance(self._data, Texture2D):
                 self._data.set_data(data)
-
             elif isinstance(data, RenderBuffer):
                 self._data = data
-
-            # Automatic texture creation if required
-            elif not isinstance(data, Texture2D):
+            else:
+                # Automatic texture creation if required
                 data = np.array(data, copy=False)
                 if data.dtype in [np.float16, np.float32, np.float64]:
                     self._data = Texture2D(data=data.astype(np.float32))
                 else:
                     self._data = Texture2D(data=data.astype(np.uint8))
-            else:
-                self._data = data
         else:
             self._data[...] = np.array(data, copy=False).ravel()
 
@@ -282,13 +280,20 @@ class Attribute(Variable):
 
     def set_data(self, data):
         """ Set data (deferred operation) """
-
-        # Data is a tuple with size <= 4, we assume this designates a generate
-        # vertex attribute.
-        if (type(data) in (float, int) or
-            (type(data) in (tuple, list)
-             and len(data) in [1, 2, 3, 4] and data[0] in (float, int))):
-
+        
+        isnumeric = isinstance(data, (float, int))
+        
+        if isinstance(data, VertexBuffer):
+            # New vertex buffer
+            self._data = data
+        elif isinstance(self._data, VertexBuffer):
+            # We already have a vertex buffer
+            self._data[...] = data
+        elif (isnumeric or (isinstance(data, (tuple, list)) and
+                            len(data) in (1, 2, 3, 4) and
+                            isinstance(data[0], (float, int)))):
+            # Data is a tuple with size <= 4, we assume this designates
+            # a generate vertex attribute.
             # Let numpy convert the data for us
             _, _, dtype = gl_typeinfo[self._gtype]
             self._data = np.array(data).astype(dtype)
@@ -296,22 +301,16 @@ class Attribute(Variable):
             self._need_update = True
             self._afunction = Attribute._afunctions[self._gtype]
             return
-
-        # If we already have a VertexBuffer
-        elif isinstance(self._data, VertexBuffer):
-            self._data[...] = data
-
-        # For array-like, we need to build a proper VertexBuffer to be able to
-        # upload it later to GPU memory.
-        elif not isinstance(data, VertexBuffer):
+        else:
+            # For array-like, we need to build a proper VertexBuffer
+            # to be able to upload it later to GPU memory.
             name, base, count = self.dtype
             data = np.array(data, dtype=base, copy=False)
             data = data.ravel().view([self.dtype])
             # WARNING : transform data with the right type
             # data = np.array(data,copy=False)
             self._data = VertexBuffer(data)
-        else:
-            self._data = data
+        
         self._generic = False
 
     def _activate(self):
