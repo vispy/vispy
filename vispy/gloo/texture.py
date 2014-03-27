@@ -14,6 +14,29 @@ from ..util import logger
 class Texture(GLObject):
     """
     A Texture is used to represent a topological set of scalar values.
+    
+    Parameters
+    ----------
+
+    target : GLEnum
+        gl.GL_TEXTURE2D
+        gl.GL_TEXTURE_CUBE_MAP
+    data : ndarray
+        Texture data (optional)
+    dtype : dtype
+        Texture data type (optional)
+    shape : tuple of integers
+        Texture shape
+    base : Texture
+        Base texture of this texture
+    offset : tuple of integers
+        Offset of this texture relative to base texture
+    store : bool
+        Indicate whether to use an intermediate CPU storage
+    copy : bool
+        Indicate whether to use given data as CPU storage
+    resizeable : bool
+        Indicates whether texture can be resized
     """
 
     _formats = {
@@ -37,41 +60,6 @@ class Texture(GLObject):
 
     def __init__(self, data=None, shape=(), dtype=None, base=None, target=None,
                  offset=None, store=True, copy=False, resizeable=True):
-        """
-        Initialize the texture
-
-        Parameters
-        ----------
-
-        target : GLEnum
-            gl.GL_TEXTURE2D
-            gl.GL_TEXTURE_CUBE_MAP
-
-        data : np.ndarray
-            Texture data (optional)
-
-        dtype : np.dtype
-            Texture data type (optional)
-
-        shape : tuple of integers
-            Texture shape
-
-        base : Texture
-           Base texture of this texture
-
-        offset : tuple of integers
-           Offset of this texture relative to base texture
-
-        store : boolean
-           Indicate whether to use an intermediate CPU storage
-
-        copy : boolean
-           Indicate whether to use given data as CPU storage
-
-        resizeable : boolean
-            Indicates whether texture can be resized
-        """
-
         GLObject.__init__(self)
         self._data = None
         self._base = base
@@ -243,13 +231,11 @@ class Texture(GLObject):
         Parameters
         ----------
 
-        data : np.array
+        data : ndarray
             Data to be uploaded
-
         offset: int or tuple of ints
             Offset in texture where to start copying data
-
-        copy: boolean
+        copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
@@ -481,32 +467,33 @@ class Texture(GLObject):
 
 # --------------------------------------------------------- Texture1D class ---
 class Texture1D(Texture):
-    """ """
+    """ One dimensional texture
+    
+    Parameters
+    ----------
+
+    data : ndarray
+        Texture data (optional)
+    dtype : dtype
+        Texture data type (optional)
+    shape : tuple of integers
+        Texture shape
+    store : bool
+        Indicate whether to use an intermediate CPU storage
+    copy : bool
+        Indicate whether to use given data as CPU storage
+    
+    Note
+    ----
+    
+    Under water this is really a 2D texture (1D textures are not
+    supported in GL ES 2.0).
+    
+    """
 
     def __init__(self, data=None, shape=None, dtype=None,
                  store=True, copy=False, *args, **kwargs):
-        """
-        Initialize the texture.
-
-        Parameters
-        ----------
-
-        data : np.ndarray
-            Texture data (optional)
-
-        dtype : np.dtype
-            Texture data type (optional)
-
-        shape : tuple of integers
-            Texture shape
-
-        store : boolean
-           Indicate whether to use an intermediate CPU storage
-
-        copy : boolean
-           Indicate whether to use given data as CPU storage
-        """
-
+        
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
         offset = kwargs.get("offset", None)
@@ -579,31 +566,25 @@ class Texture1D(Texture):
 
 # --------------------------------------------------------- Texture2D class ---
 class Texture2D(Texture):
-    """ """
+    """ Two dimensional texture
+    
+    Parameters
+    ----------
+
+    data : ndarray
+        Texture data (optional)
+    dtype : dtype
+        Texture data type (optional)
+    shape : tuple of integers
+        Texture shape
+    store : bool
+        Indicate whether to use an intermediate CPU storage
+    copy : bool
+        Indicate whether to use given data as CPU storage
+    """
 
     def __init__(self, data=None, shape=None, dtype=None, format=None,
                  store=True, copy=False, *args, **kwargs):
-        """
-        Initialize the texture.
-
-        Parameters
-        ----------
-
-        data : np.ndarray
-            Texture data (optional)
-
-        dtype : np.dtype
-            Texture data type (optional)
-
-        shape : tuple of integers
-            Texture shape
-
-        store : boolean
-           Indicate whether to use an intermediate CPU storage
-
-        copy : boolean
-           Indicate whether to use given data as CPU storage
-        """
 
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
@@ -687,34 +668,26 @@ class Texture2D(Texture):
 
 # ---------------------------------------------------- TextureCubeMap class ---
 class TextureCubeMap(Texture):
-    """
-    A TextureCubeMap is a set of 6 2D Textures.
+    """ A TextureCubeMap represents a set of 6 2D Textures
+    
+    Parameters
+    ----------
+
+    data : ndarray
+        Texture data (optional)
+    dtype : dtype
+        Texture data type (optional)
+    shape : tuple of integers
+        Texture shape
+    store : bool
+        Indicate whether to use an intermediate CPU storage
+    copy : bool
+        Indicate whether to use given data as CPU storage
     """
 
     def __init__(self, data=None, shape=None, dtype=None,
                  store=True, copy=False, *args, **kwargs):
-        """
-        Initialize the texture.
-
-        Parameters
-        ----------
-
-        data : np.ndarray
-            Texture data (optional)
-
-        dtype : np.dtype
-            Texture data type (optional)
-
-        shape : tuple of integers
-            Texture shape
-
-        store : boolean
-           Indicate whether to use an intermediate CPU storage
-
-        copy : boolean
-           Indicate whether to use given data as CPU storage
-        """
-
+        
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
         offset = kwargs.get("offset", None)

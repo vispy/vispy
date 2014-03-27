@@ -38,8 +38,23 @@ gl_typeinfo = {
 
 # ---------------------------------------------------------- Variable class ---
 class Variable(GLObject):
-
-    """ A variable is an interface between a program and some data """
+    """ A variable is an interface between a program and some data 
+    
+    For internal use
+    
+    Parameters
+    ----------
+    
+    program : Program
+        The Program instance to which the data applies
+    name : str
+        The variable name
+    gtype : ENUM
+        The type of the variable: GL_FLOAT, GL_FLOAT_VEC2, GL_FLOAT_VEC3,
+        GL_FLOAT_VEC4, GL_INT, GL_BOOL, GL_FLOAT_MAT2, GL_FLOAT_MAT3,
+        GL_FLOAT_MAT4, or gl.GL_SAMPLER_2D
+    
+    """
 
     def __init__(self, program, name, gtype):
         """ Initialize the data into default state """
@@ -126,8 +141,10 @@ class Variable(GLObject):
 
 # ----------------------------------------------------------- Uniform class ---
 class Uniform(Variable):
-
-    """ A Uniform represents a program uniform variable. """
+    """ A Uniform represents a program uniform variable. 
+    
+    See Variable.
+    """
 
     # todo: store function names instead of GL proxy function (faster)
     _ufunctions = {
@@ -240,8 +257,10 @@ class Uniform(Variable):
 
 # --------------------------------------------------------- Attribute class ---
 class Attribute(Variable):
-
-    """ An Attribute represents a program attribute variable """
+    """ An Attribute represents a program attribute variable 
+    
+    See Variable.
+    """
 
     _afunctions = {
         gl.GL_FLOAT:      gl.proxy.glVertexAttrib1f,

@@ -6,8 +6,8 @@
 
 
 class GLObject(object):
-
-    """ Generic GL object that may live both on CPU and GPU """
+    """ Generic GL object that may live both on CPU and GPU 
+    """
 
     # Internal id counter to keep track of GPU objects
     _idcount = 0

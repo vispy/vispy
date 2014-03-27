@@ -13,7 +13,14 @@ from .globject import GLObject
 
 # ------------------------------------------------------------ Shader class ---
 class Shader(GLObject):
-    """Abstract shader class."""
+    """ Abstract shader class
+    
+    Parameters
+    ----------
+
+    code: str
+        code can be a filename or the actual code
+    """
 
     _gtypes = {
         'float':       gl.GL_FLOAT,
@@ -37,16 +44,6 @@ class Shader(GLObject):
     }
 
     def __init__(self, target, code=None):
-        """
-        Initialize the shader and get code if possible.
-
-        Parameters
-        ----------
-
-        code: str
-            code can be a filename or the actual code
-        """
-
         GLObject.__init__(self)
         if target not in [gl.GL_VERTEX_SHADER, gl.GL_FRAGMENT_SHADER]:
             raise ValueError("Shader target must be vertex or fragment")
@@ -151,7 +148,6 @@ class Shader(GLObject):
         ----------
         error : str
             An error string as returned byt the compilation process
-
         lineno: int
             Line where error occurs
         """
@@ -217,7 +213,14 @@ class Shader(GLObject):
 
 # ------------------------------------------------------ VertexShader class ---
 class VertexShader(Shader):
-    """ Vertex shader class """
+    """ Vertex shader object
+    
+    Parameters
+    ----------
+
+    code: str
+        code can be a filename or the actual code
+    """
 
     def __init__(self, code=None):
         Shader.__init__(self, gl.GL_VERTEX_SHADER, code)
@@ -228,7 +231,14 @@ class VertexShader(Shader):
 
 # ---------------------------------------------------- FragmentShader class ---
 class FragmentShader(Shader):
-    """ Fragment shader class """
+    """ Fragment shader object
+    
+    Parameters
+    ----------
+
+    code: str
+        code can be a filename or the actual code
+    """
 
     def __init__(self, code=None):
         Shader.__init__(self, gl.GL_FRAGMENT_SHADER, code)

@@ -16,37 +16,31 @@ from ..util import logger
 
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
-    """
-    A program is an object to which shaders can be attached and linked to
-    create the program.
+    """ Shader program object
+    
+    A Program is an object to which shaders can be attached and linked to
+    create the final program.
+    
+    Parameters
+    ----------
+
+    verts : list of vertex shaders
+        Vertex shaders to be used by this program
+    frags : list of fragment shaders
+        Fragment shaders to be used by this program
+    count : int
+        Number of vertices this program will use
+
+    Notes
+    -----
+    
+    If several vertex shaders are specified, only one can contain the main
+    function. If several fragment shaders are specified, only one can
+    contain the main function.
     """
 
     # ---------------------------------
     def __init__(self, verts=[], frags=[], count=0):
-        """
-        Initialize the program and register shaders to be linked.
-
-        Parameters
-        ----------
-
-        verts : list of vertex shaders
-            Vertex shaders to be used by this program
-
-        frags : list of fragment shaders
-            Fragment shaders to be used by this program
-
-        count : int
-            Number of vertices this program will use
-
-        Note
-        ----
-        If several vertex shaders are specified, only one can contain the main
-        function.
-
-        If several fragment shaders are specified, only one can contain the
-        main function.
-        """
-
         GLObject.__init__(self)
 
         self._count = count
@@ -87,7 +81,17 @@ class Program(GLObject):
             self.bind(self._buffer)
 
     def attach(self, shaders):
-        """ Attach one or several vertex/fragment shaders to the program. """
+        """ Attach one or several vertex/fragment shaders to the program
+        
+        Note that GL ES 2.0 only supports one vertex and one fragment 
+        shader.
+        
+        Parameters
+        ----------
+        
+        shaders : list of shade objects
+            The shaders to attach.
+        """
 
         if type(shaders) in [VertexShader, FragmentShader]:
             shaders = [shaders]
@@ -110,7 +114,13 @@ class Program(GLObject):
 
     def detach(self, shaders):
         """Detach one or several vertex/fragment shaders from the program.
-
+    
+        Parameters
+        ----------
+        
+        shaders : list of shade objects
+            The shaders to detach.
+        
         Note
         ----
 
@@ -118,7 +128,7 @@ class Program(GLObject):
         takes care of that.
         """
 
-        if type(shaders) in [VertexShader, FragmentShader]:
+        if isinstance(shaders, (VertexShader, FragmentShader)):
             shaders = [shaders]
         for shader in shaders:
             if type(shader) is VertexShader:
@@ -389,10 +399,8 @@ class Program(GLObject):
         mode : GL_ENUM
             GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP,
             GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
-
         first : int
             The starting vertex index in the vertex array. Default 0.
-
         count : int
             The number of vertices to draw. Default all.
         """
