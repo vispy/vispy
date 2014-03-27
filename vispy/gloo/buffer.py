@@ -166,9 +166,24 @@ class Buffer(GLObject):
                      len(self._pending_data))
         while self._pending_data:
             data, nbytes, offset = self._pending_data.pop(0)
-            gl.glBufferSubData(self._target, offset, data)
+            
+            # flush any pending errors
             if gl.current_backend is gl.desktop:
-                gl.check_error('glBufferSubData')
+                gl.check_error('periodic check')
+            
+            try:
+                gl.glBufferSubData(self._target, offset, data)
+                if gl.current_backend is gl.desktop:
+                    gl.check_error('glBufferSubData')
+            except Exception:
+                # This might be due to a driver error (seen on ATI), issue #64.
+                # We try to detect this, and if we can use glBufferData instead
+                if offset == 0 and nbytes == self._nbytes:
+                    gl.glBufferData(self._target, data, self._usage)
+                    logger.debug("Using glBufferData instead of " +
+                                 "glBufferSubData (known ATI bug).")
+                else:
+                    raise
 
 
 # -------------------------------------------------------- DataBuffer class ---
