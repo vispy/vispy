@@ -205,24 +205,25 @@ class DataBuffer(Buffer):
         Base buffer of this buffer
     offset : int
         Byte offset of this buffer relative to base buffer
-    store : bool
-        Indicate whether to use a intermediate CPU storage
-    copy : bool
-        Indicate whether to use given data as CPU storage
+    store : {False, True, 'copy'}
+        How to store the data. If False the data is not stored (except
+        for on the GPU). If True this object keeps a reference to
+        the data, allowing updating even strided parts of the data.
+        If 'copy' a reference to a *copy* of the data is kept. 
+        Default True.
     resizeable : bool
         Indicates whether buffer is resizeable
     """
 
     def __init__(self, data=None, dtype=None, target=gl.GL_ARRAY_BUFFER,
-                 size=0, base=None, offset=0, store=True, copy=False,
-                 resizeable=True):
+                 size=0, base=None, offset=0, store=True, resizeable=True):
         
         Buffer.__init__(self, target=target, resizeable=resizeable)
         self._base = base
         self._offset = offset
         self._data = None
         self._store = store
-        self._copy = copy
+        self._copy = False  # flag to indicate that a copy is made
         self._size = size
 
         # This buffer is a view on another
@@ -243,16 +244,18 @@ class DataBuffer(Buffer):
             self._size = data.size
             self._stride = data.strides[-1]
             self._nbytes = data.nbytes
-            if self._store:
+            # Handle storage
+            if self._store == 'copy':
+                self._copy = True
+                self._data = data = data.copy().ravel()
+            elif self._store:
                 if not data.flags["C_CONTIGUOUS"]:
-                    if self._copy is False:
-                        logger.warning(
-                            "Cannot use non contiguous data as CPU storage")
+                    logger.warning("Copying discontiguous data as CPU storage")
                     self._copy = True
-                self._data = np.array(data, copy=self._copy).ravel()
-                self.set_data(self._data, copy=False)
-            else:
-                self.set_data(data, copy=True)
+                    data = data.copy()
+                self._data = data.ravel()
+            # Set data
+            self.set_data(data, copy=False)
 
         # Create buffer from dtype and size
         elif dtype is not None:
@@ -559,16 +562,18 @@ class VertexBuffer(DataBuffer):
         Buffer data type (optional)
     size : int
         Buffer size (optional)
-    store : bool
-        Indicate whether to use an intermediate CPU storage
-    copy : bool
-        Indicate whether to use given data as CPU storage
+    store : {False, True, 'copy'}
+        How to store the data. If False the data is not stored (except
+        for on the GPU). If True this object keeps a reference to
+        the data, allowing updating even strided parts of the data.
+        If 'copy' a reference to a *copy* of the data is kept. 
+        Default True.
     resizeable : bool
         Indicates whether buffer is resizeable
     """
 
     def __init__(self, data=None, dtype=None, size=0, store=True,
-                 copy=False, resizeable=True, *args, **kwargs):
+                 resizeable=True, *args, **kwargs):
 
         # We don't want these two parameters to be seen from outside
         # (because they are used internally only)
@@ -595,7 +600,7 @@ class VertexBuffer(DataBuffer):
 
         DataBuffer.__init__(self, data=data, dtype=dtype, size=size, base=base,
                             offset=offset, target=gl.GL_ARRAY_BUFFER,
-                            store=store, copy=copy, resizeable=resizeable)
+                            store=store, resizeable=resizeable)
 
         # Check base type and count for each dtype fields (if buffer is a base)
         if base is None:
@@ -631,16 +636,18 @@ class IndexBuffer(DataBuffer):
         Buffer data type (optional)
     size : int
         Buffer size (optional)
-    store : bool
-        Indicate whether to use a intermediate CPU storage
-    copy : bool
-        Indicate whether to use given data as CPU storage
+    store : {False, True, 'copy'}
+        How to store the data. If False the data is not stored (except
+        for on the GPU). If True this object keeps a reference to
+        the data, allowing updating even strided parts of the data.
+        If 'copy' a reference to a *copy* of the data is kept. 
+        Default True.
     resizeable : bool
         Indicates whether buffer is resizeable
     """
 
     def __init__(self, data=None, dtype=np.uint32, size=0, store=True,
-                 copy=False, resizeable=True, *args, **kwargs):
+                 resizeable=True, *args, **kwargs):
        
         # We don't want these two parameters to be seen from outside
         # (because they are used internally only)
@@ -660,4 +667,4 @@ class IndexBuffer(DataBuffer):
 
         DataBuffer.__init__(self, data=data, dtype=dtype, size=size, base=base,
                             offset=offset, target=gl.GL_ELEMENT_ARRAY_BUFFER,
-                            store=store, copy=copy, resizeable=resizeable)
+                            store=store, resizeable=resizeable)

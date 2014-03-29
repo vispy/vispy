@@ -167,14 +167,14 @@ class DataBufferTest(unittest.TestCase):
     # ------------
     def test_storage(self):
         data = np.ones(100)
-        B = DataBuffer(data, store=True, copy=False)
+        B = DataBuffer(data, store=True)
         assert B.data.base is data
 
     # Use CPU storage but make a local copy for storage
     # -------------------------------------------------
     def test_storage_copy(self):
         data = np.ones(100)
-        B = DataBuffer(data, store=True, copy=True)
+        B = DataBuffer(data, store='copy')
         assert B.data is not None
         assert B.data is not data
 
@@ -198,8 +198,9 @@ class DataBufferTest(unittest.TestCase):
         # Ask to have CPU storage and to use data as storage
         # Not possible since data[::2] is not contiguous
         data = np.ones(100)
-        B = DataBuffer(data[::2], store=True, copy=False)
-        assert B._copy is True
+        data_given = data[::2]
+        B = DataBuffer(data_given, store=True)
+        assert B._data is not data_given
 
     # Get buffer field
     # ----------------
@@ -281,7 +282,7 @@ class DataBufferTest(unittest.TestCase):
                           ('texcoord', np.float32, 2),
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
-        B = DataBuffer(data, store=True, copy=False)
+        B = DataBuffer(data, store=True)
         B.set_data(data)
         assert len(B._pending_data) == 1
 
@@ -292,7 +293,7 @@ class DataBufferTest(unittest.TestCase):
                           ('texcoord', np.float32, 2),
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
-        B = DataBuffer(data, store=True, copy=False)
+        B = DataBuffer(data, store=True)
         # set_data on field is not allowed because set_data
         # can result in a buffer resize
 
@@ -308,7 +309,7 @@ class DataBufferTest(unittest.TestCase):
                           ('texcoord', np.float32, 2),
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
-        B = DataBuffer(data, store=True, copy=False)
+        B = DataBuffer(data, store=True)
         B['position'] = 1, 2, 3
         assert np.allclose(data['position'].ravel(), np.resize([1, 2, 3], 30))
 
@@ -320,7 +321,7 @@ class DataBufferTest(unittest.TestCase):
                           ('color',    np.float32, 4)])
         data1 = np.zeros(10, dtype=dtype)
         data2 = np.ones(10, dtype=dtype)
-        B = DataBuffer(data1, store=True, copy=False)
+        B = DataBuffer(data1, store=True)
         B[...] = data2
         assert np.allclose(data1['position'], data2['position'])
         assert np.allclose(data1['texcoord'], data2['texcoord'])
@@ -334,7 +335,7 @@ class DataBufferTest(unittest.TestCase):
                           ('color',    np.float32, 4)])
         data1 = np.zeros(10, dtype=dtype)
         data2 = np.ones(10, dtype=dtype)
-        B = DataBuffer(data1, store=True, copy=False)
+        B = DataBuffer(data1, store=True)
         B[::2] = data2[::2]
         assert np.allclose(data1['position'][::2], data2['position'][::2])
         assert np.allclose(data1['texcoord'][::2], data2['texcoord'][::2])
@@ -348,7 +349,7 @@ class DataBufferTest(unittest.TestCase):
                           ('color',    np.float32, 4)])
         data1 = np.zeros(10, dtype=dtype)
         data2 = np.ones(10, dtype=dtype)
-        B = DataBuffer(data1, store=True, copy=False)
+        B = DataBuffer(data1, store=True)
         B[:5] = data2[:5]
         assert np.allclose(data1['position'][:5], data2['position'][:5])
         assert np.allclose(data1['texcoord'][:5], data2['texcoord'][:5])
@@ -362,7 +363,7 @@ class DataBufferTest(unittest.TestCase):
                           ('texcoord', np.float32, 2),
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
-        B = DataBuffer(data, store=False, copy=False)
+        B = DataBuffer(data, store=False)
         # with self.assertRaises(ValueError):
         #    B['position'] = 1, 2, 3
         self.assertRaises(ValueError,  B.__setitem__, 'position', (1, 2, 3))

@@ -31,10 +31,12 @@ class Texture(GLObject):
         Base texture of this texture
     offset : tuple of integers
         Offset of this texture relative to base texture
-    store : bool
-        Indicate whether to use an intermediate CPU storage
-    copy : bool
-        Indicate whether to use given data as CPU storage
+    store : {False, True, 'copy'}
+        How to store the data. If False the data is not stored (except
+        for on the GPU). If True this object keeps a reference to
+        the data, allowing updating even strided parts of the data.
+        If 'copy' a reference to a *copy* of the data is kept. 
+        Default True.
     resizeable : bool
         Indicates whether texture can be resized
     """
@@ -59,13 +61,12 @@ class Texture(GLObject):
     }
 
     def __init__(self, data=None, shape=None, dtype=None, base=None, 
-                 target=None, offset=None, store=True, copy=False, 
-                 resizeable=True):
+                 target=None, offset=None, store=True, resizeable=True):
         GLObject.__init__(self)
         self._data = None
         self._base = base
         self._store = store
-        self._copy = copy
+        self._copy = False  # flag to indicate that a copy is made
         self._target = target
         self._offset = offset
         self._pending_data = []
@@ -93,13 +94,17 @@ class Texture(GLObject):
                 raise ValueError('Texture needs data or shape, nor both.')
             self._shape = data.shape
             # Handle storage
-            if self._store:
-                if base is None and not data.flags["C_CONTIGUOUS"]:
+            if self._store == 'copy':
+                self._copy = True
+                self._data = data = data.copy()
+            elif self._store:
+                if not data.flags["C_CONTIGUOUS"]:
+                    logger.warning("Copying discontiguous data as CPU storage")
                     self._copy = True
-                self._data = np.array(data, copy=self._copy)
-                self.set_data(self.data, copy=False)
-            else:
-                self.set_data(data, copy=True)
+                    data = data.copy()
+                self._data = data
+            # Set data
+            self.set_data(data, copy=False)
         elif dtype is not None:
             if shape is not None:
                 self._need_resize = True
@@ -107,7 +112,6 @@ class Texture(GLObject):
             self._dtype = dtype
             if self._store:
                 self._data = np.empty(self._shape, dtype=self._dtype)
-
         else:
             raise ValueError("Either data or dtype must be given")
 
@@ -489,10 +493,12 @@ class Texture1D(Texture):
         Texture shape (optional)
     dtype : dtype
         Texture data type (optional)
-    store : bool
-        Indicate whether to use an intermediate CPU storage
-    copy : bool
-        Indicate whether to use given data as CPU storage
+    store : {False, True, 'copy'}
+        How to store the data. If False the data is not stored (except
+        for on the GPU). If True this object keeps a reference to
+        the data, allowing updating even strided parts of the data.
+        If 'copy' a reference to a *copy* of the data is kept. 
+        Default True.
     
     Note
     ----
@@ -503,7 +509,7 @@ class Texture1D(Texture):
     """
 
     def __init__(self, data=None, shape=None, dtype=None,
-                 store=True, copy=False, *args, **kwargs):
+                 store=True, *args, **kwargs):
         
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
@@ -513,7 +519,7 @@ class Texture1D(Texture):
         
         Texture.__init__(self, data=data, shape=shape, dtype=dtype,
                          base=base, resizeable=resizeable, store=store,
-                         copy=copy, target=gl.GL_TEXTURE_2D, offset=offset)
+                         target=gl.GL_TEXTURE_2D, offset=offset)
 
         self._format = Texture._formats.get(self.shape[-1], None)
         if self._format is None:
@@ -585,14 +591,16 @@ class Texture2D(Texture):
         Texture shape (optional)
     dtype : dtype
         Texture data type (optional)
-    store : bool
-        Indicate whether to use an intermediate CPU storage
-    copy : bool
-        Indicate whether to use given data as CPU storage
+    store : {False, True, 'copy'}
+        How to store the data. If False the data is not stored (except
+        for on the GPU). If True this object keeps a reference to
+        the data, allowing updating even strided parts of the data.
+        If 'copy' a reference to a *copy* of the data is kept. 
+        Default True.
     """
 
     def __init__(self, data=None, shape=None, dtype=None, format=None,
-                 store=True, copy=False, *args, **kwargs):
+                 store=True, *args, **kwargs):
 
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
@@ -601,7 +609,7 @@ class Texture2D(Texture):
         resizeable = kwargs.get("resizeable", True)
 
         Texture.__init__(self, data=data, shape=shape, dtype=dtype, base=base,
-                         resizeable=resizeable, store=store, copy=copy,
+                         resizeable=resizeable, store=store,
                          target=gl.GL_TEXTURE_2D, offset=offset)
 
         if format is None:
@@ -684,14 +692,16 @@ class TextureCubeMap(Texture):
         Texture shape (optional)
     dtype : dtype
         Texture data type (optional)
-    store : bool
-        Indicate whether to use an intermediate CPU storage
-    copy : bool
-        Indicate whether to use given data as CPU storage
+    store : {False, True, 'copy'}
+        How to store the data. If False the data is not stored (except
+        for on the GPU). If True this object keeps a reference to
+        the data, allowing updating even strided parts of the data.
+        If 'copy' a reference to a *copy* of the data is kept. 
+        Default True.
     """
 
     def __init__(self, data=None, shape=None, dtype=None,
-                 store=True, copy=False, *args, **kwargs):
+                 store=True, *args, **kwargs):
         
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
@@ -700,7 +710,7 @@ class TextureCubeMap(Texture):
         resizeable = kwargs.get("resizeable", True)
         
         Texture.__init__(self, data=data, shape=shape, dtype=dtype, base=base,
-                         store=store, copy=copy, target=gl.GL_TEXTURE_CUBE_MAP,
+                         store=store, target=gl.GL_TEXTURE_CUBE_MAP,
                          offset=offset, resizeable=resizeable)
 
         self._format = Texture._formats.get(self.shape[-1], None)
@@ -712,11 +722,11 @@ class TextureCubeMap(Texture):
         for i in range(6):
             if data is not None:
                 T = Texture2D(data=data[i], base=base,
-                              resizeable=False, store=store, copy=copy,
+                              resizeable=False, store=store,
                               target=target + i, offset=offset)
             else:
                 T = Texture2D(dtype=dtype, shape=shape[1:], base=base,
-                              resizeable=False, store=store, copy=copy,
+                              resizeable=False, store=store,
                               target=target + i, offset=offset)
             self._textures.append(T)
     
