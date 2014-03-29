@@ -305,14 +305,6 @@ class DataBuffer(Buffer):
         else:
             GLObject.deactivate(self)
 
-    def update(self):
-        """ Update the object in GPU """
-
-        if self._base is not None:
-            self._base.update()
-        else:
-            GLObject.update(self)
-
     def set_data(self, data, offset=0, copy=False):
         """ Set data (deferred operation)
 

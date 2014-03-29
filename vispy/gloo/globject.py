@@ -62,16 +62,6 @@ class GLObject(object):
 
         self._deactivate()
 
-    def update(self):
-        """ Update the object in GPU """
-
-        if not self._need_update:
-            return
-        self.activate()
-        self._update()
-        self._need_update = False
-        self.deactivate()
-
     @property
     def handle(self):
         """ Name of this object on the GPU """

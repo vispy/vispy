@@ -353,7 +353,8 @@ class Attribute(Variable):
         # Regular vertex buffer
         elif self._handle >= 0:
 #            if self._need_update:
-#                self.data.update()
+#                self.data._update()
+#                self._need_update = False
 
             # Get relevant information from gl_typeinfo
             size, gtype, dtype = gl_typeinfo[self._gtype]
