@@ -205,12 +205,11 @@ class DataBuffer(Buffer):
         Base buffer of this buffer
     offset : int
         Byte offset of this buffer relative to base buffer
-    store : {False, True, 'copy'}
-        How to store the data. If False the data is not stored (except
-        for on the GPU). If True this object keeps a reference to
-        the data, allowing updating even strided parts of the data.
-        If 'copy' a reference to a *copy* of the data is kept. 
-        Default True.
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
     resizeable : bool
         Indicates whether buffer is resizeable
     """
@@ -245,10 +244,7 @@ class DataBuffer(Buffer):
             self._stride = data.strides[-1]
             self._nbytes = data.nbytes
             # Handle storage
-            if self._store == 'copy':
-                self._copy = True
-                self._data = data = data.copy().ravel()
-            elif self._store:
+            if self._store:
                 if not data.flags["C_CONTIGUOUS"]:
                     logger.warning("Copying discontiguous data as CPU storage")
                     self._copy = True
@@ -562,12 +558,11 @@ class VertexBuffer(DataBuffer):
         Buffer data type (optional)
     size : int
         Buffer size (optional)
-    store : {False, True, 'copy'}
-        How to store the data. If False the data is not stored (except
-        for on the GPU). If True this object keeps a reference to
-        the data, allowing updating even strided parts of the data.
-        If 'copy' a reference to a *copy* of the data is kept. 
-        Default True.
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
     resizeable : bool
         Indicates whether buffer is resizeable
     """
@@ -636,12 +631,11 @@ class IndexBuffer(DataBuffer):
         Buffer data type (optional)
     size : int
         Buffer size (optional)
-    store : {False, True, 'copy'}
-        How to store the data. If False the data is not stored (except
-        for on the GPU). If True this object keeps a reference to
-        the data, allowing updating even strided parts of the data.
-        If 'copy' a reference to a *copy* of the data is kept. 
-        Default True.
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
     resizeable : bool
         Indicates whether buffer is resizeable
     """

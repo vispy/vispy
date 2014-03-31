@@ -31,12 +31,11 @@ class Texture(GLObject):
         Base texture of this texture
     offset : tuple of integers
         Offset of this texture relative to base texture
-    store : {False, True, 'copy'}
-        How to store the data. If False the data is not stored (except
-        for on the GPU). If True this object keeps a reference to
-        the data, allowing updating even strided parts of the data.
-        If 'copy' a reference to a *copy* of the data is kept. 
-        Default True.
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
     resizeable : bool
         Indicates whether texture can be resized
     """
@@ -94,10 +93,7 @@ class Texture(GLObject):
                 raise ValueError('Texture needs data or shape, nor both.')
             self._shape = data.shape
             # Handle storage
-            if self._store == 'copy':
-                self._copy = True
-                self._data = data = data.copy()
-            elif self._store:
+            if self._store:
                 if not data.flags["C_CONTIGUOUS"]:
                     logger.warning("Copying discontiguous data as CPU storage")
                     self._copy = True
@@ -493,12 +489,11 @@ class Texture1D(Texture):
         Texture shape (optional)
     dtype : dtype
         Texture data type (optional)
-    store : {False, True, 'copy'}
-        How to store the data. If False the data is not stored (except
-        for on the GPU). If True this object keeps a reference to
-        the data, allowing updating even strided parts of the data.
-        If 'copy' a reference to a *copy* of the data is kept. 
-        Default True.
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
     format : ENUM
         The format of the texture: GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA, 
         or GL_RGB, GL_RGBA. If not given the format is chosen automatically 
@@ -600,12 +595,11 @@ class Texture2D(Texture):
         Texture shape (optional)
     dtype : dtype
         Texture data type (optional)
-    store : {False, True, 'copy'}
-        How to store the data. If False the data is not stored (except
-        for on the GPU). If True this object keeps a reference to
-        the data, allowing updating even strided parts of the data.
-        If 'copy' a reference to a *copy* of the data is kept. 
-        Default True.
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
     format : ENUM
         The format of the texture: GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA, 
         or GL_RGB, GL_RGBA. If not given the format is chosen automatically 
@@ -706,12 +700,11 @@ class TextureCubeMap(Texture):
         Texture shape (optional)
     dtype : dtype
         Texture data type (optional)
-    store : {False, True, 'copy'}
-        How to store the data. If False the data is not stored (except
-        for on the GPU). If True this object keeps a reference to
-        the data, allowing updating even strided parts of the data.
-        If 'copy' a reference to a *copy* of the data is kept. 
-        Default True.
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
     format : ENUM
         The format of the texture: GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA, 
         or GL_RGB, GL_RGBA. If not given the format is chosen automatically 

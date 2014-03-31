@@ -105,7 +105,7 @@ class TextureTest(unittest.TestCase):
     # ---------------------------------
     def test_init_data_store_copy(self):
         data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture(data=data, store='copy')
+        T = Texture(data=data.copy(), store=True)
         assert T._data is not data
         assert T._data is not None
 

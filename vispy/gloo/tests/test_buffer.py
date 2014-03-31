@@ -174,7 +174,7 @@ class DataBufferTest(unittest.TestCase):
     # -------------------------------------------------
     def test_storage_copy(self):
         data = np.ones(100)
-        B = DataBuffer(data, store='copy')
+        B = DataBuffer(data.copy(), store=True)  # we got rid of copy arg
         assert B.data is not None
         assert B.data is not data
 
