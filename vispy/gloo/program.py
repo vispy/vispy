@@ -166,11 +166,10 @@ class Program(GLObject):
     def _create(self):
         """ create the program object on the GPU """
         
-        # Check if program has been created
-        if self._handle <= 0:
-            self._handle = gl.glCreateProgram()
-            if not self._handle:
-                raise RuntimeError("Cannot create program object")
+        # Create and check if program has been created:
+        self._handle = gl.glCreateProgram()
+        if not self._handle:
+            raise RuntimeError("Cannot create program object")
     
     def _update(self):
         """ Build (link) the program and checks everything's ok """

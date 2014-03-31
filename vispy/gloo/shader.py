@@ -89,11 +89,10 @@ class Shader(GLObject):
         if not self._code:
             raise RuntimeError("No code has been given")
 
-        # Check that shader object has been created
+        # Create and check that shader object has been created
+        self._handle = gl.glCreateShader(self._target)
         if self._handle <= 0:
-            self._handle = gl.glCreateShader(self._target)
-            if self._handle <= 0:
-                raise RuntimeError("Cannot create shader object")
+            raise RuntimeError("Cannot create shader object")
 
     def _update(self):
         """ Compile the source and checks everything's ok """
