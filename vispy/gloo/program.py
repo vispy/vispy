@@ -173,7 +173,7 @@ class Program(GLObject):
     
     def _update(self):
         """ Build (link) the program and checks everything's ok """
-        
+
         # Check if we have something to link
         if not self._verts:
             raise ValueError("No vertex shader has been given")
