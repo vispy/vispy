@@ -87,12 +87,12 @@ class GLObject(object):
     def _activate(self):
         """ Dummy activate method """
 
-        pass
+        pass  # todo: raise error to force subclasses to implement it
 
     def _deactivate(self):
         """ Dummy deactivate method """
 
-        pass
+        pass  # todo: raise error to force subclasses to implement it
 
     def _update(self):
         """ Dummy update method """
