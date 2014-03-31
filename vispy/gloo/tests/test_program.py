@@ -75,11 +75,11 @@ class ProgramTest(unittest.TestCase):
         frag = FragmentShader("B")
 
         program = Program(vert=vert)
-        program._need_create = 1  # fool program that it already exists
+        program._need_create = False  # fool program that it already exists
         self.assertRaises(ValueError, program.activate)
 
         program = Program(frag=frag)
-        program._need_create = 1  # fool program that it already exists
+        program._need_create = False  # fool program that it already exists
         self.assertRaises(ValueError, program.activate)
 
     def test_setitem(self):
