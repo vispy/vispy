@@ -77,25 +77,20 @@ class GLObject(object):
 
     def _create(self):
         """ Dummy create method """
-
-        pass
+        raise NotImplementedError()
 
     def _delete(self):
         """ Dummy delete method """
-
-        pass
+        raise NotImplementedError()
 
     def _activate(self):
         """ Dummy activate method """
-
-        pass  # todo: raise error to force subclasses to implement it
+        raise NotImplementedError()
 
     def _deactivate(self):
         """ Dummy deactivate method """
-
-        pass  # todo: raise error to force subclasses to implement it
+        raise NotImplementedError()
 
     def _update(self):
         """ Dummy update method """
-
-        pass
+        raise NotImplementedError()

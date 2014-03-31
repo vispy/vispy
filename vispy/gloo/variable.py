@@ -214,6 +214,12 @@ class Uniform(Variable):
             if self.data is not None:
                 self.data.activate()
 
+    def _deactivate(self):
+        if self._gtype in (gl.GL_SAMPLER_2D,):
+            #gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
+            if self.data is not None:
+                self.data.deactivate()
+
     def _update(self):
 
         # Check active status (mandatory)
@@ -318,8 +324,11 @@ class Attribute(Variable):
     def _activate(self):
         if isinstance(self.data, VertexBuffer):
             self.data.activate()
-        self._update()
-
+    
+    def _deactivate(self):
+        if isinstance(self.data, VertexBuffer):
+            self.data.deactivate()
+    
     def _update(self):
         """ Actual upload of data to GPU memory  """
 

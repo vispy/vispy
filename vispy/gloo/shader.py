@@ -75,7 +75,13 @@ class Shader(GLObject):
     def source(self):
         """ Shader source (string or filename) """
         return self._source
-
+    
+    def _activate(self):
+        pass  # shaders do not need any kind of (de)activation
+    
+    def _deactivate(self):
+        pass  # shaders do not need any kind of (de)activation
+    
     def _create(self):
         """ Create the shader object on the GPU """
 
