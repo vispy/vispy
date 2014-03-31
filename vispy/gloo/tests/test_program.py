@@ -74,12 +74,12 @@ class ProgramTest(unittest.TestCase):
         vert = VertexShader("A")
         frag = FragmentShader("B")
 
-        program = Program(verts=vert)
+        program = Program(vert=vert)
         #with self.assertRaises(ValueError):
         #    program.activate()
         self.assertRaises(ValueError, program.activate)
 
-        program = Program(frags=frag)
+        program = Program(frag=frag)
         #with self.assertRaises(ValueError):
         #    program.activate()
         self.assertRaises(ValueError, program.activate)

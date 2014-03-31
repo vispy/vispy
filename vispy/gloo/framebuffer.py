@@ -321,7 +321,9 @@ class FrameBuffer(GLObject):
 
     def _attach(self):
         """ Attach render buffers to framebuffer """
-
+        
+        # todo: this can currently only attach to texture mipmap level 0
+        
         logger.debug("GPU: Attach render buffers")
         while self._pending_attachments:
             attachment, buffer = self._pending_attachments.pop(0)

@@ -62,8 +62,8 @@ class Shader(GLObject):
     @code.setter
     def code(self, code):
         """ Shader source code """
-        if os.path.exists(code):
-            with open(code) as file:
+        if os.path.isfile(code):
+            with open(code, 'rt') as file:
                 self._code = file.read()
                 self._source = os.path.basename(code)
         else:

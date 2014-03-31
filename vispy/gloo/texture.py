@@ -42,7 +42,7 @@ class Texture(GLObject):
     """
 
     _formats = {
-        1: gl.GL_LUMINANCE,  # //ALPHA,
+        1: gl.GL_LUMINANCE,  # or ALPHA,
         2: gl.GL_LUMINANCE_ALPHA,
         3: gl.GL_RGB,
         4: gl.GL_RGBA
@@ -306,7 +306,7 @@ class Texture(GLObject):
             raise ValueError("Can only access data from a base texture")
 
         # Make sure key is a tuple
-        if type(key) in [int, slice] or key == Ellipsis:
+        if isinstance(key, (int, slice)) or key == Ellipsis:
             key = (key,)
 
         # Default is to access the whole texture
@@ -362,7 +362,7 @@ class Texture(GLObject):
             raise ValueError("This texture view has been invalited")
 
         # Make sure key is a tuple
-        if type(key) in [int, slice] or key == Ellipsis:
+        if isinstance(key, (int, slice)) or key == Ellipsis:
             key = (key,)
 
         # Default is to access the whole texture
@@ -499,6 +499,11 @@ class Texture1D(Texture):
         the data, allowing updating even strided parts of the data.
         If 'copy' a reference to a *copy* of the data is kept. 
         Default True.
+    format : ENUM
+        The format of the texture: GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA, 
+        or GL_RGB, GL_RGBA. If not given the format is chosen automatically 
+        based on the number of channels. When the data has one channel,
+        GL_LUMINANCE is assumed.
     
     Note
     ----
@@ -508,8 +513,8 @@ class Texture1D(Texture):
     
     """
 
-    def __init__(self, data=None, shape=None, dtype=None,
-                 store=True, *args, **kwargs):
+    def __init__(self, data=None, shape=None, dtype=None, store=True, 
+                 format=None, **kwargs):
         
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
@@ -521,10 +526,14 @@ class Texture1D(Texture):
                          base=base, resizeable=resizeable, store=store,
                          target=gl.GL_TEXTURE_2D, offset=offset)
 
-        self._format = Texture._formats.get(self.shape[-1], None)
+        # Get and check format
+        if format is None:
+            self._format = Texture._formats.get(self.shape[-1], None)
+        else:
+            self._format = format
         if self._format is None:
             raise ValueError("Cannot convert data to texture")
-    
+
     def _check_shape(self):
         shape = self._shape
         if shape:
@@ -597,10 +606,15 @@ class Texture2D(Texture):
         the data, allowing updating even strided parts of the data.
         If 'copy' a reference to a *copy* of the data is kept. 
         Default True.
+    format : ENUM
+        The format of the texture: GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA, 
+        or GL_RGB, GL_RGBA. If not given the format is chosen automatically 
+        based on the number of channels. When the data has one channel,
+        GL_LUMINANCE is assumed.
     """
 
-    def __init__(self, data=None, shape=None, dtype=None, format=None,
-                 store=True, *args, **kwargs):
+    def __init__(self, data=None, shape=None, dtype=None, store=True, 
+                 format=None, **kwargs):
 
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
@@ -612,11 +626,11 @@ class Texture2D(Texture):
                          resizeable=resizeable, store=store,
                          target=gl.GL_TEXTURE_2D, offset=offset)
 
+        # Get and check format
         if format is None:
             self._format = Texture._formats.get(self.shape[-1], None)
         else:
             self._format = format
-
         if self._format is None:
             raise ValueError("Cannot convert data to texture")
     
@@ -698,10 +712,15 @@ class TextureCubeMap(Texture):
         the data, allowing updating even strided parts of the data.
         If 'copy' a reference to a *copy* of the data is kept. 
         Default True.
+    format : ENUM
+        The format of the texture: GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA, 
+        or GL_RGB, GL_RGBA. If not given the format is chosen automatically 
+        based on the number of channels. When the data has one channel,
+        GL_LUMINANCE is assumed.
     """
 
-    def __init__(self, data=None, shape=None, dtype=None,
-                 store=True, *args, **kwargs):
+    def __init__(self, data=None, shape=None, dtype=None, store=True,
+                 format=None, **kwargs):
         
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
@@ -713,10 +732,15 @@ class TextureCubeMap(Texture):
                          store=store, target=gl.GL_TEXTURE_CUBE_MAP,
                          offset=offset, resizeable=resizeable)
 
-        self._format = Texture._formats.get(self.shape[-1], None)
+        # Get and check format
+        if format is None:
+            self._format = Texture._formats.get(self.shape[-1], None)
+        else:
+            self._format = format
         if self._format is None:
             raise ValueError("Cannot convert data to texture")
 
+        # Create sub-textures
         self._textures = []
         target = gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X
         for i in range(6):

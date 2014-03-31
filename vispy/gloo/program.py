@@ -24,23 +24,23 @@ class Program(GLObject):
     Parameters
     ----------
 
-    verts : list of vertex shaders
-        Vertex shaders to be used by this program
-    frags : list of fragment shaders
-        Fragment shaders to be used by this program
-    count : int
-        Number of vertices this program will use
+    vert : str, VertexShader, or list
+        The vertex shader to be used by this program
+    frag : str, FragmentShader, or list
+        The fragment shader to be used by this program
+    count : int (optional)
+        Number of vertices this program will use. This can be given to
+        initialize a VertexBuffer during Program initialization.
 
     Notes
     -----
     
-    If several vertex shaders are specified, only one can contain the main
-    function. If several fragment shaders are specified, only one can
-    contain the main function.
+    If several shaders are specified, only one can contain the main
+    function. OpenGL ES 2.0 does not support a list of shaders.
     """
 
     # ---------------------------------
-    def __init__(self, verts=[], frags=[], count=0):
+    def __init__(self, vert=None, frag=None, count=0):
         GLObject.__init__(self)
 
         self._count = count
@@ -48,25 +48,41 @@ class Program(GLObject):
 
         # Get all vertex shaders
         self._verts = []
-        if type(verts) in [str, VertexShader]:
-            verts = [verts]
-        if verts is not None:
-            for shader in verts:
-                if type(shader) is str:
-                    self._verts.append(VertexShader(shader))
-                elif shader not in self._verts:
+        if isinstance(vert, (str, VertexShader)):
+            verts = [vert]
+        elif isinstance(vert, (type(None), tuple, list)):
+            verts = vert or []
+        else:
+            raise ValueError('Vert must be str, VertexShader or list')
+        # Apply
+        for shader in verts:
+            if isinstance(shader, str):
+                self._verts.append(VertexShader(shader))
+            elif isinstance(shader, VertexShader):
+                if shader not in self._verts:
                     self._verts.append(shader)
+            else:
+                T = type(shader)
+                raise ValueError('Cannot make a VertexShader of %r.' % T)
 
         # Get all fragment shaders
         self._frags = []
-        if type(frags) in [str, FragmentShader]:
-            frags = [frags]
-        if frags is not None:
-            for shader in frags:
-                if type(shader) is str:
-                    self._frags.append(FragmentShader(shader))
-                elif shader not in self._frags:
+        if isinstance(frag, (str, FragmentShader)):
+            frags = [frag]
+        elif isinstance(frag, (type(None), tuple, list)):
+            frags = frag or []
+        else:
+            raise ValueError('Frag must be str, FragmentShader or list')
+        # Apply
+        for shader in frags:
+            if isinstance(shader, str):
+                self._frags.append(FragmentShader(shader))
+            elif isinstance(shader, FragmentShader):
+                if shader not in self._frags:
                     self._frags.append(shader)
+            else:
+                T = type(shader)
+                raise ValueError('Cannot make a FragmentShader of %r.' % T)
 
         # Build uniforms and attributes
         self._build_uniforms()
@@ -93,10 +109,10 @@ class Program(GLObject):
             The shaders to attach.
         """
 
-        if type(shaders) in [VertexShader, FragmentShader]:
+        if isinstance(shaders, (VertexShader, FragmentShader)):
             shaders = [shaders]
         for shader in shaders:
-            if type(shader) is VertexShader:
+            if isinstance(shader, VertexShader):
                 self._verts.append(shader)
             else:
                 self._frags.append(shader)
@@ -131,12 +147,12 @@ class Program(GLObject):
         if isinstance(shaders, (VertexShader, FragmentShader)):
             shaders = [shaders]
         for shader in shaders:
-            if type(shader) is VertexShader:
+            if isinstance(shader, VertexShader):
                 if shader in self._verts:
                     self._verts.remove(shader)
                 else:
                     raise RuntimeError("Shader is not attached to the program")
-            if type(shader) is FragmentShader:
+            if isinstance(shader, FragmentShader):
                 if shader in self._frags:
                     self._frags.remove(shader)
                 else:
