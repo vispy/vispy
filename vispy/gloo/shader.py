@@ -77,7 +77,7 @@ class Shader(GLObject):
         return self._source
 
     def _create(self):
-        """ Compile the source and checks eveyrthing's ok """
+        """ Create the shader object on the GPU """
 
         # Check if we have something to compile
         if not self._code:
@@ -89,6 +89,8 @@ class Shader(GLObject):
             if self._handle <= 0:
                 raise RuntimeError("Cannot create shader object")
 
+    def _update(self):
+        """ Compile the source and checks everything's ok """
         # Set shader source
         gl.glShaderSource(self._handle, self._code)
 
@@ -102,7 +104,7 @@ class Shader(GLObject):
             errormsg = self._get_error(errors, 4)
             raise RuntimeError("Shader compilation error in %r:\n%s" % 
                                (self, errormsg))
-    
+
     def _delete(self):
         """ Delete shader from GPU memory (if it was present). """
 

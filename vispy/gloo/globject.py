@@ -56,7 +56,8 @@ class GLObject(object):
         if self._need_update:
             self._update()
             self._need_update = False
-
+            self._activate()
+    
     def deactivate(self):
         """ Deactivate the object on GPU """
 

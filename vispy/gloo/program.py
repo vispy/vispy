@@ -164,23 +164,22 @@ class Program(GLObject):
         self._build_attributes()
 
     def _create(self):
-        """
-        Build (link) the program and checks everything's ok.
-
-        A GL context must be available to be able to build (link)
-        """
-
-        # Check if we have something to link
-        if not self._verts:
-            raise ValueError("No vertex shader has been given")
-        if not self._frags:
-            raise ValueError("No fragment shader has been given")
-
+        """ create the program object on the GPU """
+        
         # Check if program has been created
         if self._handle <= 0:
             self._handle = gl.glCreateProgram()
             if not self._handle:
                 raise RuntimeError("Cannot create program object")
+    
+    def _update(self):
+        """ Build (link) the program and checks everything's ok """
+        
+        # Check if we have something to link
+        if not self._verts:
+            raise ValueError("No vertex shader has been given")
+        if not self._frags:
+            raise ValueError("No fragment shader has been given")
 
         # Detach any attached shaders
         attached = gl.glGetAttachedShaders(self._handle)
@@ -216,7 +215,7 @@ class Program(GLObject):
                 uniform.active = True
             else:
                 uniform.active = False
-
+        
         # Activate attributes
         active_attributes = [name for (name, gtype) in self.active_attributes]
         for attribute in self._attributes.values():
@@ -282,6 +281,11 @@ class Program(GLObject):
     def _activate(self):
         """Activate the program as part of current rendering state."""
 
+        if self._need_update:
+            # We cannot use the program if its not yet linked etc.
+            # _activate will get called after _update again
+            return
+        
         logger.debug("GPU: Activating program")
         gl.glUseProgram(self.handle)
 

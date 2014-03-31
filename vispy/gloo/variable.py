@@ -130,7 +130,7 @@ class Variable(GLObject):
     @active.setter
     def active(self, active):
         """ Whether this variable is active in the program """
-        self._active = active
+        self._active = bool(active)
 
     @property
     def data(self):
@@ -219,7 +219,9 @@ class Uniform(Variable):
         # Check active status (mandatory)
         if not self._active:
             raise RuntimeError("Uniform variable is not active")
-
+        if self._data is None:
+            raise RuntimeError("Uniform variable data is not set")
+        
         # WARNING : Uniform are supposed to keep their value between program
         #           activation/deactivation (from the GL documentation). It has
         #           been tested on some machines but if it is not the case on
@@ -322,7 +324,13 @@ class Attribute(Variable):
         """ Actual upload of data to GPU memory  """
 
         logger.debug("GPU: Updating %s" % self.name)
-
+        
+        # Check active status (mandatory)
+        if not self._active:
+            raise RuntimeError("Attribute variable is not active")
+        if self._data is None:
+            raise RuntimeError("Attribute variable data is not set")
+        
         # Generic vertex attribute (all vertices receive the same value)
         if self._generic:
             if self._handle >= 0:
