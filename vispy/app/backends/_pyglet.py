@@ -88,6 +88,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_process_events(self):
         # todo: note that this does not actually process paint events :(
+        # todo: new work will come here (wrote this to tickle Travis)
         return pyglet.app.platform_event_loop.step(0.0)
 
     def _vispy_run(self):
