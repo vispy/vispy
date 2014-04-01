@@ -86,16 +86,29 @@ class ApplicationBackend(BaseApplicationBackend):
         return 'Glut'
 
     def _vispy_process_events(self):
-        pass  # not possible?
-
+        # Determine what function to use, if any
+        if hasattr(glut, 'glutMainLoopEvent'):
+            func = glut.glutMainLoopEvent
+        elif hasattr(glut, 'glutCheckLoop'):
+            func = glut.glutCheckLoop
+        else:
+            self._vispy_process_events =  lambda: None
+            raise RuntimeError('Your implementation of GLUT does not allow ' +
+                               'interactivity. Consider installing freeglut.')
+        # Set for future use, and call!
+        self._vispy_process_events = func
+        func()
+    
     def _vispy_run(self):
         self._vispy_get_native_app()  # Force exist
         return glut.glutMainLoop()
 
     def _vispy_quit(self):
-        global _VP_GLUT_ALL_WINDOWS
-        for win in _VP_GLUT_ALL_WINDOWS:
-            win._vispy_close()
+        if hasattr(glut, 'glutLeaveMainLoop'):
+            glut.glutLeaveMainLoop()
+        else:
+            for win in _VP_GLUT_ALL_WINDOWS:
+                win._vispy_close()
 
     def _vispy_get_native_app(self):
         # HiDPI support for retina display
@@ -121,6 +134,11 @@ class ApplicationBackend(BaseApplicationBackend):
                                      glut.GLUT_DOUBLE |
                                      glut.GLUT_STENCIL |
                                      glut.GLUT_DEPTH)
+            # Prevent exit when closing window
+            try:
+                glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE, glut.GLUT_ACTION_CONTINUE_EXECUTION)
+            except Exception:
+                pass
             self._initialized = True
         return glut
 
@@ -137,7 +155,8 @@ class CanvasBackend(BaseCanvasBackend):
 
         # Cache of modifiers so we can send modifiers along with mouse motion
         self._modifiers_cache = ()
-
+        self._closed = False  # Keep track whether the widget is closed
+        
         # Note: this seems to cause the canvas to ignore calls to show()
         # about half of the time.
         # glut.glutHideWindow()  # Start hidden, like the other backends
@@ -221,6 +240,8 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_close(self):
         # Force the window or widget to shut down
+        if self._closed:
+            return
         glut.glutDestroyWindow(self._id)
 
     def _vispy_get_size(self):
@@ -240,11 +261,12 @@ class CanvasBackend(BaseCanvasBackend):
             return
         self._vispy_canvas.events.resize(size=(w, h))
 
-    def on_close(self):
+    def on_close(self, arg=None):
         if self._vispy_canvas is None:
             return
+        self._closed = True
         self._vispy_canvas.events.close()
-
+        
     def on_draw(self, dummy=None):
         if self._vispy_canvas is None:
             return
