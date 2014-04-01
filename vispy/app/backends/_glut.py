@@ -87,10 +87,10 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_process_events(self):
         # Determine what function to use, if any
-        if hasattr(glut, 'glutMainLoopEvent'):
+        if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
             func = glut.glutMainLoopEvent
-        elif hasattr(glut, 'glutCheckLoop'):
-            func = glut.glutCheckLoop
+        elif hasattr(glut, 'glutCheckLoop') and bool(glut.glutCheckLoop):
+            func = glut.glutCheckLoop  # Darwin
         else:
             self._vispy_process_events = lambda: None
             raise RuntimeError('Your implementation of GLUT does not allow ' +
@@ -262,7 +262,7 @@ class CanvasBackend(BaseCanvasBackend):
             return
         self._vispy_canvas.events.resize(size=(w, h))
 
-    def on_close(self, arg=None):
+    def on_close(self):
         if self._vispy_canvas is None:
             return
         self._closed = True
