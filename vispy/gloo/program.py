@@ -253,13 +253,23 @@ class Program(GLObject):
             dtype.append(attribute.dtype)
 
     def bind(self, data):
-        """ """
-        if isinstance(data, VertexBuffer):
-            for name in data.dtype.names:
-                if name in self._attributes.keys():
-                    self._attributes[name].set_data(data[name])
-                else:
-                    logger.warn("%s has not been bound" % name)
+        """ Bind a VertexBuffer that has structured data
+        
+        Pamareters
+        ----------
+        data : VertexBuffer
+            The vertex buffer to bind. The field names of the array
+            are mapped to attribute names in GLSL.
+        """
+        # Check
+        if not isinstance(data, VertexBuffer):
+            raise ValueError('Program.bind() requires a VertexBuffer.')
+        # Apply
+        for name in data.dtype.names:
+            if name in self._attributes.keys():
+                self._attributes[name].set_data(data[name])
+            else:
+                logger.warn("%s has not been bound" % name)
 
     def __setitem__(self, name, data):
         if name in self._uniforms.keys():
@@ -303,9 +313,11 @@ class Program(GLObject):
         gl.glUseProgram(0)
 
         for uniform in self._uniforms.values():
-            uniform.deactivate()
+            if uniform.active:
+                uniform.deactivate()
         for attribute in self._attributes.values():
-            attribute.deactivate()
+            if attribute.active:
+                attribute.deactivate()
 
     @property
     def all_uniforms(self):
