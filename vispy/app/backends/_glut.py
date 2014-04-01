@@ -92,7 +92,7 @@ class ApplicationBackend(BaseApplicationBackend):
         elif hasattr(glut, 'glutCheckLoop'):
             func = glut.glutCheckLoop
         else:
-            self._vispy_process_events =  lambda: None
+            self._vispy_process_events = lambda: None
             raise RuntimeError('Your implementation of GLUT does not allow ' +
                                'interactivity. Consider installing freeglut.')
         # Set for future use, and call!
@@ -104,7 +104,7 @@ class ApplicationBackend(BaseApplicationBackend):
         return glut.glutMainLoop()
 
     def _vispy_quit(self):
-        if hasattr(glut, 'glutLeaveMainLoop'):
+        if hasattr(glut, 'glutLeaveMainLoop') and bool(glut.glutLeaveMainLoop):
             glut.glutLeaveMainLoop()
         else:
             for win in _VP_GLUT_ALL_WINDOWS:
@@ -136,7 +136,8 @@ class ApplicationBackend(BaseApplicationBackend):
                                      glut.GLUT_DEPTH)
             # Prevent exit when closing window
             try:
-                glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE, glut.GLUT_ACTION_CONTINUE_EXECUTION)
+                glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE, 
+                                   glut.GLUT_ACTION_CONTINUE_EXECUTION)
             except Exception:
                 pass
             self._initialized = True
