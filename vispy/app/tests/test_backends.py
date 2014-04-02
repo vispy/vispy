@@ -134,7 +134,7 @@ class Test_GlfwBackend(BaseTestmodule):
 
 class Test_GlutBackend(BaseTestmodule):
 
-    @requires_glut
+    @requires_glut()
     def __init__(self):
         from vispy.app.backends import _glut
         BaseTestmodule.__init__(self, _glut)
