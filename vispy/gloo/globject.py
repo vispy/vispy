@@ -6,8 +6,8 @@
 
 
 class GLObject(object):
-
-    """ Generic GL object that may live both on CPU and GPU """
+    """ Generic GL object that may live both on CPU and GPU 
+    """
 
     # Internal id counter to keep track of GPU objects
     _idcount = 0
@@ -23,6 +23,18 @@ class GLObject(object):
 
         GLObject._idcount += 1
         self._id = GLObject._idcount
+    
+    def __del__(self):
+        # You never know when this is goint to happen. The window might
+        # already be closed and no OpenGL context might be available.
+        # Worse, there might be multiple contexts and calling delete()
+        # at the wrong moment might remove other gl objects, leading to
+        # very strange and hard to debug behavior.
+        # 
+        # So we don't do anything. If each GLObject was aware of the
+        # context in which it resides, we could do auto-cleanup though...
+        # todo: it's not very Pythonic to have to delete an object.
+        pass
 
     def delete(self):
         """ Delete the object from GPU memory """
@@ -44,21 +56,12 @@ class GLObject(object):
         if self._need_update:
             self._update()
             self._need_update = False
-
+            self._activate()
+    
     def deactivate(self):
         """ Deactivate the object on GPU """
 
         self._deactivate()
-
-    def update(self):
-        """ Update the object in GPU """
-
-        if not self._need_update:
-            return
-        self.activate()
-        self._update()
-        self._need_update = False
-        self.deactivate()
 
     @property
     def handle(self):
@@ -74,25 +77,20 @@ class GLObject(object):
 
     def _create(self):
         """ Dummy create method """
-
-        pass
+        raise NotImplementedError()
 
     def _delete(self):
         """ Dummy delete method """
-
-        pass
+        raise NotImplementedError()
 
     def _activate(self):
         """ Dummy activate method """
-
-        pass
+        raise NotImplementedError()
 
     def _deactivate(self):
         """ Dummy deactivate method """
-
-        pass
+        raise NotImplementedError()
 
     def _update(self):
         """ Dummy update method """
-
-        pass
+        raise NotImplementedError()

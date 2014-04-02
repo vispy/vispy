@@ -13,6 +13,8 @@ from vispy.util.testing import assert_in, assert_is
 #from vispy.gloo import _screenshot
 from vispy.gloo import gl
 
+gl.use('desktop debug')
+
 
 def on_nonexist(self, *args):
     return

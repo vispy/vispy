@@ -74,14 +74,12 @@ class ProgramTest(unittest.TestCase):
         vert = VertexShader("A")
         frag = FragmentShader("B")
 
-        program = Program(verts=vert)
-        #with self.assertRaises(ValueError):
-        #    program.activate()
+        program = Program(vert=vert)
+        program._need_create = False  # fool program that it already exists
         self.assertRaises(ValueError, program.activate)
 
-        program = Program(frags=frag)
-        #with self.assertRaises(ValueError):
-        #    program.activate()
+        program = Program(frag=frag)
+        program._need_create = False  # fool program that it already exists
         self.assertRaises(ValueError, program.activate)
 
     def test_setitem(self):
