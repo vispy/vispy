@@ -80,7 +80,7 @@ BUTTONMAP = {glfw.GLFW_MOUSE_BUTTON_LEFT: 1,
              }
 
 _VP_GLFW_ALL_WINDOWS = []
-_VP_GLFW_DO_DRAW = False
+_VP_GLFW_DO_DRAW = []
 
 MOD_KEYS = [keys.SHIFT, keys.ALT, keys.CONTROL, keys.META]
 
@@ -100,6 +100,7 @@ class ApplicationBackend(BaseApplicationBackend):
     def __init__(self):
         BaseApplicationBackend.__init__(self)
         self._timers = list()
+        self._running = False
 
     def _add_timer(self, timer):
         if timer not in self._timers:
@@ -109,20 +110,27 @@ class ApplicationBackend(BaseApplicationBackend):
         return 'Glfw'
 
     def _vispy_process_events(self):
-        wins = _get_glfw_windows()
-        for win in wins:
-            glfw.glfwPollEvents(win._id)
-
+        #wins = _get_glfw_windows()
+        #for win in wins:
+        #    glfw.glfwPollEvents(win._id)
+        glfw.glfwPollEvents()
+        while _VP_GLFW_DO_DRAW:
+            win = _VP_GLFW_DO_DRAW.pop(0)
+            win._on_draw()
+    
     def _vispy_run(self):
         win = _get_glfw_windows(check=True)[0]
-        global _VP_GLFW_DO_DRAW
-        while win._id is not None and not glfw.glfwWindowShouldClose(win._id):
-            if _VP_GLFW_DO_DRAW:
-                win._on_draw()
-            glfw.glfwPollEvents()
-        self._vispy_quit()
+        self._running = True
+        while (self._running and 
+               win._id is not None and 
+               not glfw.glfwWindowShouldClose(win._id)):
+            self._vispy_process_events()
+        self._vispy_quit()  # to clean up
 
     def _vispy_quit(self):
+        # Mark as quit
+        self._running = False
+        # Close windows
         wins = _get_glfw_windows()
         for win in wins:
             win._vispy_close()
@@ -227,10 +235,9 @@ class CanvasBackend(BaseCanvasBackend):
         # Invoke a redraw, passing it on to the canvas
         if self._vispy_canvas is None or self._id is None:
             return
-        # XXX HACKISH SOLUTION
-        global _VP_GLFW_DO_DRAW
-        _VP_GLFW_DO_DRAW = True
-        #self._on_draw(self._id)
+        # Mark that this window wants to be painted on the next loop iter
+        if self not in _VP_GLFW_DO_DRAW:
+            _VP_GLFW_DO_DRAW.append(self)
 
     def _vispy_close(self):
         # Force the window or widget to shut down
