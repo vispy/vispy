@@ -108,7 +108,7 @@ class ApplicationBackend(BaseApplicationBackend):
         return 'Glfw'
 
     def _vispy_process_events(self):
-        print('proc')
+        print( 'proc' )
         #wins = _get_glfw_windows()
         #for win in wins:
         #    glfw.glfwPollEvents(win._id)

@@ -151,7 +151,11 @@ script:
     - cd ${SRC_DIR}
     - if [ "${TEST}" == "extra" ]; then
         make flake;
+      fi;
+    - if [ "${TEST}" == "extra" ]; then
         make lineendings;
+      fi;
+    - if [ "${TEST}" == "extra" ]; then
         echo "Size difference ${SIZE_DIFF} kB";
         test ${SIZE_DIFF} -lt 100;
       fi;
