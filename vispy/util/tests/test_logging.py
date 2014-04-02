@@ -17,7 +17,7 @@ def test_logging():
     assert_equal(logger.level, ll)
 
 
-@requires_application
+@requires_application()
 def test_debug_logging():
     """Test advanced debugging logging"""
     with use_log_level('debug', 'Selected', True) as l:

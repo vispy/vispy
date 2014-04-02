@@ -462,23 +462,28 @@ glfwExtensionSupported         = _glfw.glfwExtensionSupported
 glfwGetProcAddress             = _glfw.glfwGetProcAddress
 
 
-
 # --- Pythonizer --------------------------------------------------------------
 
 # This keeps track of current windows
 __windows__ = []
+__destroyed__ = []
 
 # This is to prevent garbage collection on callbacks
 __c_callbacks__ = dict()
 __py_callbacks__ = dict()
 
 
+def glfwGetWindows():
+    return list(w for w, d in zip(__windows__, __destroyed__) if not d)
+
+
 def glfwCreateWindow(width=640, height=480, title="GLFW Window",
                      monitor=None, share=None):
     _glfw.glfwCreateWindow.restype = POINTER(GLFWwindow)
-    window = _glfw.glfwCreateWindow(width,height,title,monitor,share)
+    window = _glfw.glfwCreateWindow(width, height, title, monitor, share)
     assert window not in __windows__
     __windows__.append(window)
+    __destroyed__.append(False)
     index = __windows__.index(window)
     __c_callbacks__[index] = {}
     __py_callbacks__[index] = { 'errorfun'           : None,
@@ -500,14 +505,14 @@ def glfwCreateWindow(width=640, height=480, title="GLFW Window",
 
 
 def glfwDestroyWindow(window):
-    if window not in __windows__:
-        return
-    glfwHideWindow(window)
     index = __windows__.index(window)
-    __windows__.pop(index)
+    if __destroyed__[index]:
+        return
+    __destroyed__[index] = True
+    glfwHideWindow(window)
     _glfw.glfwDestroyWindow(window)
-    del __c_callbacks__[index]
-    del __py_callbacks__[index]
+    #del __c_callbacks__[index]  # save segfault?
+    #del __py_callbacks__[index]
 
 
 def glfwGetWindowPos(window):
@@ -621,7 +626,7 @@ def %(callback)s(window, callback = None):
         callback = %(fun)s(callback)
     __c_callbacks__[index]['%(fun)s'] = callback
     _glfw.%(callback)s(window, callback)
-    return old_callback"""  % {'callback': callback, 'fun': fun}
+    return old_callback""" % {'callback': callback, 'fun': fun}
     return code
 
 exec(__callback__('Error'))

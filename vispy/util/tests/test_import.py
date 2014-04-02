@@ -80,7 +80,7 @@ def test_import_vispy_util():
     """ Importing vispy.util should not pull in other vispy submodules. """
     modnames = loaded_vispy_modules('vispy.util', 2)
     assert_equal(modnames, set(['vispy', 'vispy.util']))
-    
+
 
 def test_import_vispy_app1():
     """ Importing vispy.app should not pull in other vispy submodules. """
@@ -109,7 +109,7 @@ def test_import_vispy_no_pyopengl():
     assert_not_in('OpenGL', allmodnames)
 
 
-@requires_pyopengl
+@requires_pyopengl()
 def test_import_vispy_pyopengl():
     """ Importing vispy.gloo.gl.pyopengl should import PyOpenGL. """
     allmodnames = loaded_vispy_modules('vispy.gloo.gl.pyopengl', 2, True)

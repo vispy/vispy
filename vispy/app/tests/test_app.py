@@ -286,7 +286,7 @@ def test_pyglet():
 def test_glfw():
     """Test Glfw application"""
     _test_application('Glfw')
-    #_test_multiple_windows('Glfw')  # XXX failing
+    _test_multiple_windows('Glfw')
     _test_run('Glfw')
 
 
