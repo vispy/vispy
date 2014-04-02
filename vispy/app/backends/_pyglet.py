@@ -13,10 +13,10 @@ import pyglet
 version = pyglet.version
 
 if LooseVersion(version) < LooseVersion('1.2'):
-    help = 'You can install the latest pyglet using:\n' 
-    help += '    pip install http://pyglet.googlecode.com/archive/tip.zip'
+    help_ = ('You can install the latest pyglet using:\n'
+             '    pip install http://pyglet.googlecode.com/archive/tip.zip')
     raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
-                      % (pyglet.version, help))
+                      % (pyglet.version, help_))
 
 import pyglet.window
 import pyglet.app

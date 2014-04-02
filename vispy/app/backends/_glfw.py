@@ -85,13 +85,11 @@ _VP_GLFW_DO_DRAW = []
 MOD_KEYS = [keys.SHIFT, keys.ALT, keys.CONTROL, keys.META]
 
 
-def _get_glfw_windows(check=False):
+def _get_glfw_windows():
     wins = list()
     for win in _VP_GLFW_ALL_WINDOWS:
         if isinstance(win, CanvasBackend):
             wins.append(win)
-    if check and len(wins) != 1:
-        raise RuntimeError('Can only use a single window')
     return wins
 
 
@@ -117,22 +115,23 @@ class ApplicationBackend(BaseApplicationBackend):
         while _VP_GLFW_DO_DRAW:
             win = _VP_GLFW_DO_DRAW.pop(0)
             win._on_draw()
-    
+
     def _vispy_run(self):
-        win = _get_glfw_windows(check=True)[0]
+        wins = _get_glfw_windows()
         self._running = True
-        while (self._running and 
-               win._id is not None and 
-               not glfw.glfwWindowShouldClose(win._id)):
+        cont = True
+        while cont:
             self._vispy_process_events()
+            if all(w._id is None or glfw.glfwWindowShouldClose(w._id)
+                   for w in wins):
+                cont = False
         self._vispy_quit()  # to clean up
 
     def _vispy_quit(self):
         # Mark as quit
         self._running = False
         # Close windows
-        wins = _get_glfw_windows()
-        for win in wins:
+        for win in _get_glfw_windows():
             win._vispy_close()
         # tear down timers
         for timer in self._timers:
@@ -242,10 +241,11 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_close(self):
         # Force the window or widget to shut down
         self._vispy_set_visible(False)  # Destroying doesn't hide!
-        #if self in _VP_GLFW_ALL_WINDOWS and self._id is not None:
-        #    _VP_GLFW_ALL_WINDOWS.pop(_VP_GLFW_ALL_WINDOWS.index(self))
-        #    glfw.glfwDestroyWindow(self._id)
-        self._id = None
+        if self in _VP_GLFW_ALL_WINDOWS and self._id is not None:
+            id_ = self._id
+            self._id = None
+            _VP_GLFW_ALL_WINDOWS.pop(_VP_GLFW_ALL_WINDOWS.index(self))
+            glfw.glfwDestroyWindow(id_)
 
     def _vispy_get_size(self):
         if self._id is None:

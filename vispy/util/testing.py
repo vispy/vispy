@@ -100,7 +100,7 @@ def has_qt(requires_uic=False, return_which=False):
             which = 'PySide ' + str(PySide.__version__)
             has = True
     else:
-        which = ('PyQt4 ' + QtCore.PYQT_VERSION_STR + 
+        which = ('PyQt4 ' + QtCore.PYQT_VERSION_STR +
                  ' Qt ' + QtCore.QT_VERSION_STR)
         has = True
         has_uic = True
@@ -187,6 +187,11 @@ def requires_glfw():
     return np.testing.dec.skipif(not has, 'Requires Glfw: %s' % why)
 
 
-def requires_non_glut():
-    return np.testing.dec.skipif(not has_pyglet() and not has_qt(),
-                                 'Requires non-Glut backend')
+def requires_glut():
+    return np.testing.dec.skipif(not has_glut(), 'Requires Glut')
+
+
+def requires_application():
+    return np.testing.dec.skipif(not any([has_pyglet(), has_qt(),
+                                          has_glfw(), has_glut()]),
+                                 'Requires application backend')

@@ -2,13 +2,15 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+import time
+
 from . import Application, Canvas, Timer
 from ..util._logging import logger
 
 
 class app_opengl_context(object):
     """ Context manager that provides an active OpenGL context
-    
+
     Used mostly for testing or taking screenshots.
     """
 
@@ -35,12 +37,6 @@ class app_opengl_context(object):
         # Create timer
         self.timer = Timer(0.1, app=self.app, iterations=1)
         self.timer.connect(self._on_timer)
-
-        # Make sure we are initialized, painted, etc.
-        if self.backend == 'qt':
-            # pyglet gets stuck
-            for i in range(4):
-                self.paint()
         return self
 
     def _on_paint(self, event):
@@ -56,7 +52,7 @@ class app_opengl_context(object):
         self._timerflag = True
 
     def paint(self, callback=None):
-        """ Run a callback in a paint event, then return result or 
+        """ Run a callback in a paint event, then return result or
         raise error.
         """
         # Prepare
@@ -71,7 +67,7 @@ class app_opengl_context(object):
         if self._callback_error is not None:
             raise self._callback_error
         return self._callback_result
-    
+
     def test(self, callback=None, n=5):
         """ Run a callback in a paint event, but try at most n times.
         If one try went well, all is well. This is necessary because
@@ -94,7 +90,10 @@ class app_opengl_context(object):
         """
         self._timerflag = False
         self.timer.start()
+        timeout = time.time() + 1.0
         while not self._timerflag:
+            if time.time() > timeout:
+                raise RuntimeError('timer never triggered')
             self.app.process_events()
 
     def __exit__(self, type, value, traceback):

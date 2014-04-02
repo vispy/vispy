@@ -682,7 +682,7 @@ class Texture2D(Texture):
             x, y = 0, 0
             if offset is not None:
                 y, x = offset[0], offset[1]
-            width, height = data.shape[1], data.shape[0]
+            #width, height = data.shape[1], data.shape[0]
             gl.glTexSubImage2D(self.target, 0, x, y, self._format, 
                                self._gtype, data)
 

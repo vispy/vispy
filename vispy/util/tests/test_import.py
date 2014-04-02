@@ -55,7 +55,7 @@ def loaded_vispy_modules(import_module, depth=None, all_modules=False):
     # Get only vispy modules at the given depth
     vispy_modules = set()
     for m in loaded_modules:
-        if m.startswith('vispy') and not '__future__' in m:
+        if m.startswith('vispy') and '__future__' not in m:
             if depth:
                 parts = m.split('.')
                 m = '.'.join(parts[:depth])

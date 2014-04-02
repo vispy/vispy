@@ -25,16 +25,13 @@ from nose.tools import assert_equal, assert_true
 from vispy .app import app_opengl_context
 from vispy.util.testing import assert_in  # noqa
 from numpy.testing import assert_almost_equal  # noqa
-from vispy.util.testing import requires_qt, requires_non_glut  # noqa
-from vispy.util.testing import requires_pyopengl
+from vispy.util.testing import requires_application, requires_pyopengl
 
 from vispy.gloo import gl
 from vispy import app
 
 
-# All these tests require a working backend. GLUT is not an option,
-# since there is no safe way to terminate the mainloop.
-# requires_non_glut works if there is a backend other then GLUT available.
+# All these tests require a working backend.
 
 # Whether to sleep in order to show the result. True when running as script
 SHOW = False
@@ -46,27 +43,27 @@ def teardown_module():
     gl.use()  # Reset to default
 
 
-@requires_non_glut()
+@requires_application()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
     _test_functonality('desktop')
 
 
-@requires_non_glut()
+@requires_application()
 def test_functionality_proxy():
     """ Test GL proxy class for full functionality. """
     # By using debug mode, we are using the proxy class
     _test_functonality('desktop debug')
 
 
-@requires_non_glut()
+@requires_application()
 @requires_pyopengl()
 def test_functionality_pypengl():
     """ Test pyopengl GL backend for full functionality. """
     _test_functonality('pyopengl')
 
 
-@requires_non_glut()
+@requires_application()
 def test_functionality_angle():
     """ Test angle GL backend for full functionality. """
     if True:
@@ -92,7 +89,7 @@ def _test_functonality(backend):
     # Note that we explicitly use pyglet because with Qt we seem
     # to get errors for this test
     
-    with app_opengl_context('qt') as context:
+    with app_opengl_context() as context:
         
         _clear_screen()
         
@@ -576,7 +573,7 @@ def _check_result(assert_result=True):
     #print(pix1, pix2, pix3, pix4)
    
     if assert_result:
-         # Test their value
+        # Test their value
         assert_equal(pix1, (0, 0, 0))
         assert_equal(pix2, (255, 0, 0))
         assert_equal(pix3, (0, 255, 0))

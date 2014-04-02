@@ -282,21 +282,18 @@ class Canvas(object):
         #"""Called when the user touches the screen over a Canvas.
 
         # Event properties:
-
-            # event.touches
-                #[ (x,y,pressure), ... ]
+        #     event.touches
+        #     [ (x,y,pressure), ... ]
         #"""
 
     # def stylus_event(self, event):
         #"""Called when a stylus has been used to interact with the Canvas.
 
         # Event properties:
-
-            # event.device
-            #event.pos  (x,y)
-            # event.pressure
-            # event.angle
-
+        #     event.device
+        #     event.pos  (x,y)
+        #     event.pressure
+        #     event.angle
         #"""
 
 
@@ -308,16 +305,14 @@ class Canvas(object):
         #"""Called when the Canvas is resized.
 
         # Event properties:
-
-            #event.size  (w,h)
+        #     event.size  (w,h)
         #"""
 
     # def paint_event(self, event):
         #"""Called when all or part of the Canvas needs to be repainted.
 
         # Event properties:
-
-            # event.region  (x,y,w,h) region of Canvas requiring repaint
+        #     event.region  (x,y,w,h) region of Canvas requiring repaint
         #"""
 
 

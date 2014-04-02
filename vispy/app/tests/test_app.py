@@ -1,11 +1,12 @@
 import numpy as np
 
 from nose.tools import assert_equal, assert_true, assert_raises
+import time
 
 from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
                        MouseEvent, KeyEvent)
 from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,
-                                requires_non_glut)
+                                requires_glut, requires_application)
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader
@@ -57,8 +58,82 @@ def _test_callbacks(canvas):
     elif 'qt' in backend_name.lower():
         # constructing fake Qt events is too hard :(
         pass
+    elif 'glut' in backend_name.lower():
+        backend.on_mouse_action(0, 0, 0, 0)
+        backend.on_mouse_action(0, 1, 0, 0)
+        backend.on_mouse_action(3, 0, 0, 0)
+        backend.on_draw()
+        backend.on_mouse_motion(1, 1)
+        backend.on_key_press(100, 0, 0)
+        backend.on_key_release(100, 0, 0)
+        backend.on_key_press('a', 0, 0)
+        backend.on_key_release('a', 0, 0)
     else:
         raise ValueError
+
+
+def _test_multiple_windows(backend):
+    n_check = 3
+    a = Application(backend)
+    sz = (100, 100)
+    c0, c1 = Canvas(app=a, size=sz), Canvas(app=a, size=sz)
+    count = [0, 0]
+
+    @c0.events.paint.connect
+    def paint(event):
+        count[0] += 1
+        c0.update()
+        if count[0] > 2 * n_check:
+            a.quit()
+
+    @c1.events.paint.connect  # noqa, analysis:ignore
+    def paint(event):
+        count[1] += 1
+        c1.update()
+        if count[0] > 2 * n_check:
+            a.quit()
+
+    c0.show()
+    c1.show()
+    timeout = time.time() + 1.0
+    while (count[0] < n_check or count[1] < n_check) and time.time() < timeout:
+        a.process_events()
+    print(count)
+    print(n_check)
+    assert_true(n_check <= count[0] <= n_check + 1)
+    assert_true(n_check <= count[1] <= n_check + 1)
+
+    # check timer
+    timer = Timer(0.1, app=a, iterations=1)
+    global timer_ran
+    timer_ran = False
+
+    def on_timer(_):
+        global timer_ran
+        timer_ran = True
+    timer.connect(on_timer)
+    timer.start()
+    timeout = time.time() - 1.0
+    while not timer_ran and not time.time() < timeout:
+        a.process_events()
+    assert_true(timer_ran)
+
+    c0.close()
+    c1.close()
+
+
+def _test_run(backend):
+    for _ in range(2):
+        a = Application(backend)
+        c = Canvas(app=a, size=(100, 100))
+        c.show()
+
+        @c.events.paint.connect
+        def paint(event):
+            a.quit()
+
+        a.run()
+        c.close()
 
 
 def _test_application(backend):
@@ -193,9 +268,7 @@ def _test_application(backend):
     app.quit()  # make sure it doesn't break if a user does something silly
 
 
-# XXX We cannot test GLUT, since there is no safe, cross-platform method for
-# closing the main loop!
-@requires_non_glut()  # b/c we can't use GLUT, the other option
+@requires_application()
 def test_none():
     """Test default application choosing"""
     _test_application(None)
@@ -205,18 +278,32 @@ def test_none():
 def test_pyglet():
     """Test Pyglet application"""
     _test_application('Pyglet')
+    _test_multiple_windows('Pyglet')
+    _test_run('Pyglet')
 
 
 @requires_glfw()
 def test_glfw():
     """Test Glfw application"""
     _test_application('Glfw')
+    #_test_multiple_windows('Glfw')  # XXX failing
+    _test_run('Glfw')
 
 
 @requires_qt()
 def test_qt():
     """Test Qt application"""
     _test_application('qt')
+    _test_multiple_windows('qt')
+    _test_run('qt')
+
+
+@requires_glut()
+def test_glut():
+    """Test Glut application"""
+    _test_application('Glut')
+    _test_multiple_windows('Glut')
+    #_test_run('Glut')  # can't do this for GLUT b/c of mainloop
 
 
 def test_abstract():

@@ -12,7 +12,7 @@ from nose.tools import assert_equal, assert_true  # noqa
 from vispy.app import app_opengl_context
 from vispy.util.testing import assert_in  # noqa
 from numpy.testing import assert_almost_equal
-from vispy.util.testing import requires_non_glut, requires_pyopengl
+from vispy.util.testing import requires_application, requires_pyopengl
 from vispy.util.six import string_types
 
 from vispy.gloo import gl
@@ -22,27 +22,27 @@ def teardown_module():
     gl.use()  # Reset to default
 
 
-@requires_non_glut()
+@requires_application()
 def test_basics_desktop():
     """ Test desktop GL backend for basic functionality. """
     _test_basics('desktop')
 
 
-@requires_non_glut()
+@requires_application()
 def test_functionality_proxy():
     """ Test GL proxy class for basic functionality. """
     # By using debug mode, we are using the proxy class
     _test_basics('desktop debug')
 
 
-@requires_non_glut()
+@requires_application()
 @requires_pyopengl()
 def test_basics_pypengl():
     """ Test pyopengl GL backend for basic functionality. """
     _test_basics('pyopengl')
 
 
-@requires_non_glut()
+@requires_application()
 def test_functionality_angle():
     """ Test angle GL backend for basic functionality. """
     if True:
