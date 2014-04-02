@@ -3,7 +3,7 @@ import logging
 
 from vispy import app
 from vispy.util import logger, use_log_level
-from vispy.util.testing import assert_in, assert_not_in
+from vispy.util.testing import assert_in, assert_not_in, requires_application
 
 
 def test_logging():
@@ -17,6 +17,7 @@ def test_logging():
     assert_equal(logger.level, ll)
 
 
+@requires_application
 def test_debug_logging():
     """Test advanced debugging logging"""
     with use_log_level('debug', 'Selected', True) as l:

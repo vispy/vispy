@@ -39,6 +39,7 @@ def _format_msg(msg, std_msg):
             msg = '%s : %s' % (std_msg, msg)
         except UnicodeDecodeError:
             msg = '%s : %s' % (_safe_str(std_msg), _safe_str(msg))
+    return msg
 
 
 def assert_in(member, container, msg=None):

@@ -4,10 +4,10 @@
 # This is a strange test: vispy does not need designer or uic stuff to run!
 
 from os import path as op
-import OpenGL.GL as gl
 
 from vispy.app import Canvas
 from vispy.util.testing import requires_qt
+from vispy.gloo import gl
 
 
 @requires_qt(requires_uic=True)
