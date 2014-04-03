@@ -158,7 +158,7 @@ def has_glfw(return_why=False, return_which=False):
 
 def has_glut(return_which=False, require_interactive=False):
     try:
-        from ..app.backends import _glut # noqa
+        from ..app.backends import _glut  # noqa
     except Exception:
         has = False
         which = None
