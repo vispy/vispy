@@ -2,7 +2,6 @@
 
 import numpy as np
 from numpy.testing import assert_allclose
-from time import sleep
 
 from vispy.app import Application, Canvas
 from vispy.util.testing import (has_pyglet, has_qt, has_glfw, has_glut)  # noqa
@@ -34,6 +33,7 @@ def test_multiple_backends():
         pos = [bi * 200, 0]
         canvas = Canvas(app=Application(backend), size=_win_size, position=pos,
                         title=backend, show=True)
+        canvas._warmup()
         canvases[backend] = canvas
         bgcolor[backend] = [0.5, 0.5, 0.5, 1.0]
 
@@ -43,12 +43,6 @@ def test_multiple_backends():
             gl.glClearColor(*bgcolor[backend])
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glFinish()
-
-        # XXX all backends need a warmup???
-        for _ in range(10):
-            sleep(0.02)
-            gl.glFinish()
-            canvas.app.process_events()
 
         gl.glViewport(0, 0, *list(_win_size))
         _up_proc_check(canvas, 127)

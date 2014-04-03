@@ -20,7 +20,6 @@ class app_opengl_context(object):
         self.backend = backend
         self.c = None
         self._callback = None
-        self._callback_error = None
         self._callback_result = None
 
     def __enter__(self):
@@ -33,6 +32,7 @@ class app_opengl_context(object):
         self.c = Canvas(size=(300, 200), autoswap=False, app=self.app)
         self.c.events.paint.connect(self._on_paint)
         self.c.show()
+        self.c._warmup()
 
         # Create timer
         self.timer = Timer(0.1, app=self.app, iterations=1)
@@ -43,10 +43,7 @@ class app_opengl_context(object):
         self._paintflag = True
         self._callback_result = None
         if self._callback is not None:
-            try:
-                self._callback_result = self._callback()
-            except Exception as err:
-                self._callback_error = err
+            self._callback_result = self._callback()
 
     def _on_timer(self, event):
         self._timerflag = True
@@ -57,33 +54,22 @@ class app_opengl_context(object):
         """
         # Prepare
         self._callback = callback
-        self._callback_error = None
         self._paintflag = False
         # Force redraw and wait for it to finish
         self.c.update()
-        while not self._paintflag:
-            self.app.process_events()
-        # Raise if there was an error
-        if self._callback_error is not None:
-            raise self._callback_error
+        self.app.process_events()
+        if not self._paintflag:
+            raise RuntimeError('error in app framework')
         return self._callback_result
 
-    def test(self, callback=None, n=5):
+    def test(self, callback=None):
         """ Run a callback in a paint event, but try at most n times.
         If one try went well, all is well. This is necessary because
         readpixels sometimes produces bogus one or two times during
         warmup or something.
         """
-        for iter in range(n):
-            try:
-                res = self.paint(callback)
-                if iter > 0:
-                    print('it took %i tests' % (iter+1))
-                return res  # if success, we return
-            except Exception:
-                pass
-        else:
-            raise self._callback_error
+        res = self.paint(callback)
+        return res  # if success, we return
 
     def wait(self):
         """ Wait a tiny bit for the event loop.

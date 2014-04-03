@@ -5,6 +5,7 @@
 from __future__ import division, print_function
 
 import numpy as np
+from time import sleep
 
 from ._default_app import default_app
 from ..util.event import EmitterGroup, Event
@@ -132,6 +133,14 @@ class Canvas(object):
             self.events.paint.callbacks.append(fun)  # Append callback to end
         if self._our_kwargs['show']:
             self.show()
+
+    def _warmup(self):
+        """Hack workaround for slow startup"""
+        from vispy.gloo import gl
+        for _ in range(10):
+            sleep(0.02)
+            gl.glFinish()
+            self.app.process_events()
 
     @property
     def app(self):
