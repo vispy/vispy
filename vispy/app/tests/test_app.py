@@ -5,7 +5,7 @@ import time
 
 from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
                        MouseEvent, KeyEvent)
-from vispy.util.testing import (requires_pyglet, requires_qt,  # noqa
+from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,  # noqa
                                 requires_glut, requires_application)
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
@@ -262,6 +262,7 @@ def _test_application(backend):
         # cleanup
         canvas.swap_buffers()
         canvas.update()
+        app.process_events()
         # put this in even though __exit__ will call it to make sure we don't
         # have problems calling it multiple times
         canvas.close()

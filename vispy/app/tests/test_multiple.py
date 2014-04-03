@@ -1,51 +1,41 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_allclose
+from time import sleep
 
 from vispy.app import Application, Canvas
 from vispy.util.testing import (has_pyglet, has_qt, has_glfw, has_glut)  # noqa
 from vispy.gloo import gl
 from vispy.gloo.util import _screenshot
 
-
 _win_size = (100, 50)
 
 
-def _check_ss(val):
+def _up_proc_check(canvas, val):
+    """Update, process, and check result"""
+    canvas.update()
+    canvas.app.process_events()
     # check screenshot to see if it's all one color
     ss = _screenshot()
-    assert_array_equal(ss.shape[:2], _win_size[::-1])
-    goal = np.ones_like(ss)
-    goal.fill(val)
-    assert_array_equal(ss, goal)
-
-
-def _up_proc(a, c):
-    c.update()
-    a.process_events()
-    c.swap_buffers()
+    assert_allclose(ss.shape[:2], _win_size[::-1])
+    goal = val * np.ones(ss.shape)
+    assert_allclose(ss, goal, atol=1)  # can be off by 1 due to rounding
 
 
 def test_multiple_backends():
     """Test running multiple backends simultaneously"""
-    checks = (has_qt, has_pyglet, has_glut)  # XXX GLFW is broken
-    names = ('qt', 'pyglet', 'glut')
+    checks = (has_qt, has_pyglet, has_glut, has_glfw)
+    names = ('qt', 'pyglet', 'glut')  # , 'glfw') has issues XXX
     backends = [name for name, check in zip(names, checks) if check()]
-    apps = dict()
     canvases = dict()
     bgcolor = dict()
     for bi, backend in enumerate(backends):
         pos = [bi * 200, 0]
-        apps[backend] = Application(backend)
-        canvas = Canvas(app=apps[backend], size=_win_size, position=pos,
-                        title=backend)
+        canvas = Canvas(app=Application(backend), size=_win_size, position=pos,
+                        title=backend, show=True)
         canvases[backend] = canvas
         bgcolor[backend] = [0.5, 0.5, 0.5, 1.0]
-
-        @canvas.events.resize.connect
-        def resize(event):
-            gl.glViewport(0, 0, *event.size)
 
         @canvas.events.paint.connect
         def paint(event):
@@ -54,22 +44,20 @@ def test_multiple_backends():
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glFinish()
 
-        canvas.show()
-        t = 0.1 if backend == 'glut' else 0  # XXX Glut needs some time :(
-        import time
-        for _ in range(5):  # XXX all backends need a warmup???
-            time.sleep(t)
-            _up_proc(apps[backend], canvas)
-        _check_ss(127)
+        # XXX all backends need a warmup???
+        for _ in range(10):
+            sleep(0.02)
+            gl.glFinish()
+            canvas.app.process_events()
+
+        gl.glViewport(0, 0, *list(_win_size))
+        _up_proc_check(canvas, 127)
 
     for backend in backends:
         print('test %s' % backend)
-        _up_proc(apps[backend], canvases[backend])
-        _check_ss(127)
+        _up_proc_check(canvases[backend], 127.5)
         bgcolor[backend] = [1., 1., 1., 1.]
-        _up_proc(apps[backend], canvases[backend])
-        _check_ss(255)
+        _up_proc_check(canvases[backend], 255)
         bgcolor[backend] = [0.25, 0.25, 0.25, 0.25]
-        _up_proc(apps[backend], canvases[backend])
-        _check_ss(64)
+        _up_proc_check(canvases[backend], 64)
         canvases[backend].close()

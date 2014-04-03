@@ -97,6 +97,8 @@ class _WindowRegistry(object):
 
     def get_draw(self, win):
         """If a draw is needed, the canvas is returned, else None"""
+        if win not in self._window_list:
+            return False
         idx = self._window_list.index(win)
         if self._draw_dict.get(idx, False):
             return self._canvas_dict[idx]
@@ -105,6 +107,8 @@ class _WindowRegistry(object):
 
     def set_draw(self, win, val):
         """Set window as needing a redraw, or not (if canvas is None)"""
+        if win not in self._window_list:
+            return
         self._draw_dict[self._window_list.index(win)] = val
 
     def get_canvas(self, win):
@@ -112,7 +116,16 @@ class _WindowRegistry(object):
         return self._canvas_dict[self._window_list.index(win)]
 
     def __len__(self):
-        return len(self._window_list)
+        return len(self.windows())
+
+    def pop(self, win):
+        assert win in self._window_list
+        idx = self._window_list.index(win)
+        self._window_list[idx] = None
+
+    def windows(self):
+        return [win for win in self._window_list if win is not None]
+
 
 _VP_GLFW_REGISTRY = _WindowRegistry()
 
@@ -134,7 +147,7 @@ class ApplicationBackend(BaseApplicationBackend):
         return 'Glfw'
 
     def _vispy_process_events(self):
-        wins = glfw.glfwGetWindows()
+        wins = _VP_GLFW_REGISTRY.windows()
         if len(wins) > 0:
             glfw.glfwPollEvents()
         for win in wins:
@@ -148,7 +161,7 @@ class ApplicationBackend(BaseApplicationBackend):
         cont = True
         while cont:
             self._vispy_process_events()
-            wins = glfw.glfwGetWindows()
+            wins = _VP_GLFW_REGISTRY.windows()
             if all(glfw.glfwWindowShouldClose(w) for w in wins):
                 cont = False
         self._vispy_quit()  # to clean up
@@ -157,7 +170,7 @@ class ApplicationBackend(BaseApplicationBackend):
         # Mark as quit
         self._running = False
         # Close windows
-        for win in glfw.glfwGetWindows():
+        for win in _VP_GLFW_REGISTRY.windows():
             _VP_GLFW_REGISTRY.get_canvas(win)._vispy_close()
         # tear down timers
         for timer in self._timers:
@@ -186,9 +199,9 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwWindowHint(glfw.GLFW_DECORATED, True)
         glfw.glfwWindowHint(glfw.GLFW_VISIBLE, True)
         self._id = glfw.glfwCreateWindow(title=name)
+        _VP_GLFW_REGISTRY.register(self)
         if not self._id:
             raise RuntimeError('Could not create window')
-        _VP_GLFW_REGISTRY.register(self)
         glfw.glfwMakeContextCurrent(self._id)
         glfw.glfwHideWindow(self._id)  # Start hidden, like the other backends
         self._mod = list()
@@ -273,7 +286,10 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is not None:
             id_ = self._id
             self._id = None
-            glfw.glfwDestroyWindow(id_)
+            glfw.glfwHideWindow(id_)
+            glfw.glfwPollEvents()
+            #glfw.glfwDestroyWindow(id_)
+            _VP_GLFW_REGISTRY.pop(id_)
 
     def _vispy_get_size(self):
         if self._id is None:
