@@ -19,6 +19,7 @@ vispy backend for glfw.
 from __future__ import division
 
 from threading import Timer
+import atexit
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
@@ -27,7 +28,7 @@ from . import _libglfw as glfw
 
 if not glfw.glfwInit():  # only ever call once
     raise OSError('Could not init glfw')
-
+atexit.register(glfw.glfwTerminate)
 
 # Map native keys to vispy keys
 KEYMAP = {
@@ -200,7 +201,7 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSetScrollCallback(self._id, self._on_mouse_scroll)
         glfw.glfwSetCursorPosCallback(self._id, self._on_mouse_motion)
         glfw.glfwSetWindowCloseCallback(self._id, self._on_close)
-        glfw.glfwSwapInterval(0)  # avoid tearing
+        glfw.glfwSwapInterval(1)  # avoid tearing
         self._vispy_canvas_ = None
         self._vispy_name = 'glfw'
 

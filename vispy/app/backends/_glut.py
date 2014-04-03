@@ -246,8 +246,6 @@ class CanvasBackend(BaseCanvasBackend):
         # Set size of the widget or window
         glut.glutSetWindow(self._id)
         glut.glutReshapeWindow(w, h)
-        func = _get_glut_process_func()
-        func() if func is not None else None
 
     def _vispy_set_position(self, x, y):
         # Set position of the widget or window. May have no effect for widgets

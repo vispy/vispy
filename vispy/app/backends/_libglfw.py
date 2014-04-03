@@ -469,12 +469,8 @@ __windows__ = []
 __destroyed__ = []
 
 # This is to prevent garbage collection on callbacks
-__c_callbacks__ = dict()
-__py_callbacks__ = dict()
-
-
-def glfwGetWindows():
-    return list(w for w, d in zip(__windows__, __destroyed__) if not d)
+__c_callbacks__ = {}
+__py_callbacks__ = {}
 
 
 def glfwCreateWindow(width=640, height=480, title="GLFW Window",
@@ -506,13 +502,12 @@ def glfwCreateWindow(width=640, height=480, title="GLFW Window",
 
 def glfwDestroyWindow(window):
     index = __windows__.index(window)
-    if __destroyed__[index]:
-        return
-    __destroyed__[index] = True
-    glfwHideWindow(window)
-    _glfw.glfwDestroyWindow(window)
-    #del __c_callbacks__[index]  # save segfault?
-    #del __py_callbacks__[index]
+    if not __destroyed__[index]:
+        __destroyed__[index] = True
+        _glfw.glfwDestroyWindow(window)
+        # We do not delete window from the list (or it would impact numbering)
+        del __c_callbacks__[index]
+        del __py_callbacks__[index]
 
 
 def glfwGetWindowPos(window):
@@ -622,8 +617,7 @@ def %(callback)s(window, callback = None):
     index = __windows__.index(window)
     old_callback = __py_callbacks__[index]['%(fun)s']
     __py_callbacks__[index]['%(fun)s'] = callback
-    if callback:
-        callback = %(fun)s(callback)
+    if callback: callback = %(fun)s(callback)
     __c_callbacks__[index]['%(fun)s'] = callback
     _glfw.%(callback)s(window, callback)
     return old_callback""" % {'callback': callback, 'fun': fun}
