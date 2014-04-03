@@ -156,6 +156,7 @@ def _test_application(backend):
     with Canvas(title='me', app=app, show=True, position=pos) as canvas:
         assert_is(canvas.app, app)
         assert_true(canvas.native)
+        print(canvas)  # __repr__
         print(canvas.size >= (1, 1))
         canvas.resize(90, 90)
         canvas.move(1, 1)

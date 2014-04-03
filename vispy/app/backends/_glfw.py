@@ -25,7 +25,8 @@ from ...util import keys
 
 from . import _libglfw as glfw
 
-glfw.glfwInit()  # only ever call once
+if not glfw.glfwInit():  # only ever call once
+    raise OSError('Could not init glfw')
 
 
 # Map native keys to vispy keys
@@ -170,7 +171,7 @@ class CanvasBackend(BaseCanvasBackend):
 
     """ GLUT backend for Canvas abstract class."""
 
-    def __init__(self, name='glut window', *args, **kwargs):
+    def __init__(self, name='glfw window', *args, **kwargs):
         BaseCanvasBackend.__init__(self)
         # Init GLFW, add window hints, and create window
         glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)
@@ -184,6 +185,8 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwWindowHint(glfw.GLFW_DECORATED, True)
         glfw.glfwWindowHint(glfw.GLFW_VISIBLE, True)
         self._id = glfw.glfwCreateWindow(title=name)
+        if not self._id:
+            raise RuntimeError('Could not create window')
         _VP_GLFW_REGISTRY.register(self)
         glfw.glfwMakeContextCurrent(self._id)
         glfw.glfwHideWindow(self._id)  # Start hidden, like the other backends
@@ -197,8 +200,9 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSetScrollCallback(self._id, self._on_mouse_scroll)
         glfw.glfwSetCursorPosCallback(self._id, self._on_mouse_motion)
         glfw.glfwSetWindowCloseCallback(self._id, self._on_close)
-        glfw.glfwSwapInterval(1)  # avoid tearing
+        glfw.glfwSwapInterval(0)  # avoid tearing
         self._vispy_canvas_ = None
+        self._vispy_name = 'glfw'
 
     ###########################################################################
     # Deal with events we get from vispy

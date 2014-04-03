@@ -135,6 +135,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
+        self._vispy_name = 'qt'
 
     def _vispy_set_current(self):
         # Make this the current context

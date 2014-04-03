@@ -261,6 +261,11 @@ class Canvas(object):
         else:
             self._fps_callback = None
 
+    def __repr__(self):
+        backend = self._backend
+        name = 'no' if backend is None else backend._vispy_name
+        return ('<Vispy canvas (%s backend) at %s>' % (name, hex(id(self))))
+
     def __enter__(self):
         return self
 
