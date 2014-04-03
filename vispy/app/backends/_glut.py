@@ -193,8 +193,9 @@ class CanvasBackend(BaseCanvasBackend):
     def __init__(self, name='glut window', *args, **kwargs):
         BaseCanvasBackend.__init__(self)
         self._id = glut.glutCreateWindow(name.encode('ASCII'))
+        if not self._id:
+            raise RuntimeError('could not create window')
         glut.glutSetWindow(self._id)
-        global _VP_GLUT_ALL_WINDOWS
         _VP_GLUT_ALL_WINDOWS.append(self)
 
         # Cache of modifiers so we can send modifiers along with mouse motion
