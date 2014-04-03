@@ -269,7 +269,11 @@ class CanvasBackend(BaseCanvasBackend):
         # Force the window or widget to shut down
         if self._closed:
             return
-        _set_close_fun(self._id, None)  # prevent segfaults during garbage col
+        try:
+            # prevent segfaults during garbage col
+            _set_close_fun(self._id, None)
+        except Exception:
+            pass  # sometimes fails when context is already destroyed
         self._closed = True
         self._vispy_set_visible(False)
         glut.glutDestroyWindow(self._id)
