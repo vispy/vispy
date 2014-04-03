@@ -67,12 +67,8 @@ class app_opengl_context(object):
             raise self._callback_error
         return self._callback_result
 
-    def test(self, callback=None, n=5):
-        """ Run a callback in a paint event, but try at most n times.
-        If one try went well, all is well. This is necessary because
-        readpixels sometimes produces bogus one or two times during
-        warmup or something.
-        """
+    def test(self, callback=None):
+        """ Run a callback in a paint event """
         try:
             res = self.paint(callback)
         except Exception:
