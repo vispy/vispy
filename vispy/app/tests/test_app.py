@@ -168,6 +168,7 @@ def _test_application(backend):
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
         canvas.show()
         assert_raises(ValueError, canvas.connect, on_nonexist)
+        canvas._warmup()
 
         # screenshots
         #ss = _screenshot()
