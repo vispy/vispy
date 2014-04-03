@@ -76,6 +76,16 @@ _VP_GLUT_ALL_WINDOWS = []
 _GLUT_INIT = None
 
 
+def _get_glut_process_func():
+    if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
+        func = glut.glutMainLoopEvent
+    elif hasattr(glut, 'glutCheckLoop') and bool(glut.glutCheckLoop):
+        func = glut.glutCheckLoop  # Darwin
+    else:
+        func = None
+    return func
+
+
 def _init_glut():
     global _GLUT_INIT
     # HiDPI support for retina display
@@ -123,11 +133,8 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_process_events(self):
         # Determine what function to use, if any
-        if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
-            func = glut.glutMainLoopEvent
-        elif hasattr(glut, 'glutCheckLoop') and bool(glut.glutCheckLoop):
-            func = glut.glutCheckLoop  # Darwin
-        else:
+        func = _get_glut_process_func()
+        if func is None:
             self._vispy_process_events = lambda: None
             raise RuntimeError('Your implementation of GLUT does not allow '
                                'interactivity. Consider installing freeglut.')

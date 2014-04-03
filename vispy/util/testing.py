@@ -156,16 +156,20 @@ def has_glfw(return_why=False, return_which=False):
     return out
 
 
-def has_glut(return_which=False):
+def has_glut(return_which=False, require_interactive=False):
     try:
-        from OpenGL import GLUT  # noqa
+        from ..app.backends import _glut # noqa
     except Exception:
         has = False
         which = None
+        has_interactive = False
     else:
         import OpenGL
         has = True
         which = 'from OpenGL %s' % OpenGL.__version__
+        has_interactive = (_glut._get_glut_process_func() is not None)
+    if require_interactive:
+        has = (has and has_interactive)
     if return_which:
         out = (has, which)
     else:
@@ -189,10 +193,11 @@ def requires_glfw():
 
 
 def requires_glut():
-    return np.testing.dec.skipif(not has_glut(), 'Requires Glut')
+    return np.testing.dec.skipif(not has_glut(require_interactive=True),
+                                 'Requires Glut')
 
 
 def requires_application():
-    return np.testing.dec.skipif(not any([has_pyglet(), has_qt(),
-                                          has_glfw(), has_glut()]),
+    return np.testing.dec.skipif(not any([has_pyglet(), has_qt(), has_glfw(),
+                                          has_glut(require_interactive=True)]),
                                  'Requires application backend')

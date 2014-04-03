@@ -132,8 +132,10 @@ class ApplicationBackend(BaseApplicationBackend):
         return 'Glfw'
 
     def _vispy_process_events(self):
-        glfw.glfwPollEvents()
-        for win in glfw.glfwGetWindows():
+        wins = glfw.glfwGetWindows()
+        if len(wins) > 0:
+            glfw.glfwPollEvents()
+        for win in wins:
             canvas = _VP_GLFW_REGISTRY.get_draw(win)
             if canvas is not None:
                 _VP_GLFW_REGISTRY.set_draw(win, False)
