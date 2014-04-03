@@ -59,9 +59,8 @@ def _test_basics(backend):
 
     # use the backend
     gl.use(backend)
-    
-    with app_opengl_context() as context:
-        context.wait()
+
+    with app_opengl_context():
         _test_setting_parameters()
         _test_enabling_disabling()
         _test_setting_stuff()
