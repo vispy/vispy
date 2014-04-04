@@ -143,7 +143,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 class CanvasBackend(BaseCanvasBackend):
 
-    """ GLUT backend for Canvas abstract class."""
+    """ Glfw backend for Canvas abstract class."""
 
     def __init__(self, name='glfw window', *args, **kwargs):
         BaseCanvasBackend.__init__(self)
