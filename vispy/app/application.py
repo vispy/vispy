@@ -34,11 +34,11 @@ class Application(object):
     There are multiple stages for an Application object:
         * Backend-less - the state when it is just initialized
         * Backend selected - use() has been successfully called. Note that
-            the Canvas calls use() without arguments right before creating
-            its backend widget.
+          the Canvas calls use() without arguments right before creating
+          its backend widget.
         * Native application is created - the Canvas probes the
-            Application.native property to ensure that there is a native
-            application right before a native widget is created.
+          Application.native property to ensure that there is a native
+          application right before a native widget is created.
     """
 
     def __init__(self, backend=None):
