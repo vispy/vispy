@@ -307,7 +307,6 @@ class Canvas(object):
         #     event.angle
         #"""
 
-
     # def initialize_event(self, event):
         #"""Called when the OpenGL context is initialy made available for this
         # Canvas."""
