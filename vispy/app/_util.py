@@ -2,6 +2,8 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+import time
+
 from . import Application, Canvas, Timer
 
 
@@ -67,13 +69,17 @@ class app_opengl_context(object):
             raise self._callback_error
         return self._callback_result
 
-    def test(self, callback=None):
+    def test(self, callback=None, show=False):
         """ Run a callback in a paint event """
         try:
             res = self.paint(callback)
         except Exception:
             raise self._callback_error
         else:
+            if show:
+                self.c.swap_buffers()
+                self.c.app.process_events()
+                time.sleep(1.0)
             return res  # if success, we return
 
     def __exit__(self, type, value, traceback):

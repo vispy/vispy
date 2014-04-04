@@ -18,11 +18,12 @@ vispy backend for glfw.
 
 from __future__ import division
 
-from threading import Timer
+import numpy as np
 import atexit
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
+from ...util.ptime import time
 
 from . import _libglfw as glfw
 
@@ -111,6 +112,8 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_process_events(self):
         glfw.glfwPollEvents()
+        for timer in self._timers:
+            timer._tick()
         wins = _get_glfw_windows()
         for win in wins:
             if win._needs_draw:
@@ -347,26 +350,17 @@ class TimerBackend(BaseTimerBackend):
 
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
-        # tell application instance about existence
         vispy_timer._app._backend._add_timer(self)
+        self._vispy_stop()
 
     def _vispy_start(self, interval):
-        self._timer = None
-        self.interval = interval
-        self.is_running = False
-        self._start()
+        self._interval = interval
+        self._next_time = time() + self._interval
 
     def _vispy_stop(self):
-        self._timer.cancel()
-        self.is_running = False
+        self._next_time = np.inf
 
-    def _run(self):
-        self.is_running = False
-        self._start()
-        self._vispy_timer._timeout()
-
-    def _start(self):
-        if not self.is_running:
-            self._timer = Timer(self.interval, self._run)
-            self._timer.start()
-            self.is_running = True
+    def _tick(self):
+        if time() >= self._next_time:
+            self._vispy_timer._timeout()
+            self._next_time = time() + self._interval

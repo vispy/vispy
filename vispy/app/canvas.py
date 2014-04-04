@@ -195,6 +195,7 @@ class Canvas(object):
 
     @position.setter
     def position(self, position):
+        assert len(position) == 2
         return self._backend._vispy_set_position(position[0], position[1])
 
     # --------------------------------------------------------------- title ---

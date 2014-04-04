@@ -1,7 +1,7 @@
 import numpy as np
 
+from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
-import time
 
 from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
                        MouseEvent, KeyEvent)
@@ -11,7 +11,8 @@ from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,  # 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader
 from vispy.util.testing import assert_in, assert_is
-#from vispy.gloo import _screenshot
+from vispy.util.ptime import time
+from vispy.gloo.util import _screenshot
 from vispy.gloo import gl
 
 gl.use('desktop debug')
@@ -83,38 +84,31 @@ def _test_multiple_windows(backend):
     def paint(event):
         count[0] += 1
         c0.update()
-        if count[0] > 2 * n_check:
-            a.quit()
 
     @c1.events.paint.connect  # noqa, analysis:ignore
     def paint(event):
         count[1] += 1
         c1.update()
-        if count[0] > 2 * n_check:
-            a.quit()
 
     c0.show()
     c1.show()
-    timeout = time.time() + 1.0
-    while (count[0] < n_check or count[1] < n_check) and time.time() < timeout:
+    timeout = time() + 2.0
+    while (count[0] < n_check or count[1] < n_check) and time() < timeout:
         a.process_events()
-    print(count)
-    print(n_check)
+    print((count, n_check))
     assert_true(n_check <= count[0] <= n_check + 1)
     assert_true(n_check <= count[1] <= n_check + 1)
 
     # check timer
-    timer = Timer(0.1, app=a, iterations=1)
     global timer_ran
     timer_ran = False
 
     def on_timer(_):
         global timer_ran
         timer_ran = True
-    timer.connect(on_timer)
-    timer.start()
-    timeout = time.time() - 1.0
-    while not timer_ran and not time.time() < timeout:
+    timeout = time() + 2.0
+    Timer(0.1, app=a, connect=on_timer, iterations=1, start=True)
+    while not timer_ran and time() < timeout:
         a.process_events()
     assert_true(timer_ran)
 
@@ -130,6 +124,7 @@ def _test_run(backend):
 
         @c.events.paint.connect
         def paint(event):
+            print(event)  # test event __repr__
             a.quit()
 
         a.run()
@@ -150,7 +145,8 @@ def _test_application(backend):
     print(app)  # test __repr__
 
     # Canvas
-    pos = [0, 0, 1, 1]
+    pos = [0, 0]
+    size = (100, 100)
     # Use "with" statement so failures don't leave open window
     # (and test context manager behavior)
     with Canvas(title='me', app=app, show=True, position=pos) as canvas:
@@ -162,8 +158,8 @@ def _test_application(backend):
         canvas.move(1, 1)
         assert_equal(canvas.title, 'me')
         canvas.title = 'you'
-        canvas.position = (0, 0)
-        canvas.size = (100, 100)
+        canvas.position = pos
+        canvas.size = size
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
         canvas.show()
@@ -171,13 +167,12 @@ def _test_application(backend):
         canvas._warmup()
 
         # screenshots
-        #ss = _screenshot()
-        #assert_array_equal(ss.shape[2], 3) # XXX other dimensions not correct?
-        # XXX it would be good to do real checks, but sometimes the
-        # repositionings don't "take" (i.e., lead to random errors)
-        #assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
-        #assert_equal(len(canvas.size), 2)
-        #assert_equal(len(canvas.position), 2)
+        gl.glViewport(0, 0, *size)
+        ss = _screenshot()
+        assert_array_equal(ss.shape, size + (3,))
+        assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
+        assert_array_equal(canvas.size, size)
+        assert_equal(len(canvas.position), 2)  # XXX pos doesn't "take"
 
         # GLOO: should have an OpenGL context already, so these should work
         vert = VertexShader("void main (void) {gl_Position = pos;}")
@@ -289,7 +284,7 @@ def test_pyglet():
 def test_glfw():
     """Test Glfw application"""
     _test_application('Glfw')
-    #_test_multiple_windows('Glfw')  # This gets stuck in a loop sometimes (!)
+    _test_multiple_windows('Glfw')
     _test_run('Glfw')
 
 

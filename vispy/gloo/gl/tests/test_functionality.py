@@ -16,7 +16,6 @@ Remember: the bottom left is (-1, -1) and the first quadrant.
 
 """
 import sys
-import time
 
 import numpy as np
 
@@ -28,7 +27,6 @@ from numpy.testing import assert_almost_equal  # noqa
 from vispy.util.testing import requires_application, requires_pyopengl
 
 from vispy.gloo import gl
-from vispy import app
 
 
 # All these tests require a working backend.
@@ -105,29 +103,15 @@ def _test_functonality(backend):
         _clear_screen()
         
         # Draw 1
-        context.test(_draw1)
-        if SHOW:
-            context.c.swap_buffers()
-            app.process_events()
-            time.sleep(1.0)
-        
+        context.test(_draw1, show=SHOW)
         _clear_screen()
         
         # Draw 2
-        context.test(_draw2)
-        if SHOW:
-            context.c.swap_buffers()
-            app.process_events()
-            time.sleep(1.0)
-        
+        context.test(_draw2, show=SHOW)
         _clear_screen()
         
         # Draw 3
-        context.test(_draw3)
-        if SHOW:
-            context.c.swap_buffers()
-            app.process_events()
-            time.sleep(1.0)
+        context.test(_draw3, show=SHOW)
         
         # Clean up
         for delete_func, handle in objects:
