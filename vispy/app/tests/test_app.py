@@ -118,16 +118,14 @@ def _test_multiple_windows(backend):
 
 def _test_run(backend):
     for _ in range(2):
-        a = Application(backend)
-        c = Canvas(app=a, size=(100, 100))
-        c.show()
+        c = Canvas(app=Application(backend), size=(100, 100), show=True)
 
         @c.events.paint.connect
         def paint(event):
             print(event)  # test event __repr__
-            a.quit()
+            c.app.quit()
 
-        a.run()
+        c.app.run()
         c.close()
 
 
@@ -300,7 +298,7 @@ def test_qt():
 def test_glut():
     """Test Glut application"""
     _test_application('Glut')
-    #_test_multiple_windows('Glut')  # fails on Travis
+    #_test_multiple_windows('Glut')  # fails on Travis XXX
     #_test_run('Glut')  # can't do this for GLUT b/c of mainloop
 
 
