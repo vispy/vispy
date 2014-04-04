@@ -504,8 +504,9 @@ def glfwDestroyWindow(window):
     index = __windows__.index(window)
     if not __destroyed__[index]:
         __destroyed__[index] = True
-        _glfw.glfwDestroyWindow(window)
         # We do not delete window from the list (or it would impact numbering)
+        __windows__[index] = None
+        _glfw.glfwDestroyWindow(window)
         del __c_callbacks__[index]
         del __py_callbacks__[index]
 
