@@ -101,7 +101,6 @@ class ApplicationBackend(BaseApplicationBackend):
     def __init__(self):
         BaseApplicationBackend.__init__(self)
         self._timers = list()
-        self._running = False
 
     def _add_timer(self, timer):
         if timer not in self._timers:
@@ -121,7 +120,6 @@ class ApplicationBackend(BaseApplicationBackend):
                 win._on_draw()
 
     def _vispy_run(self):
-        self._running = True
         wins = _get_glfw_windows()
         while all(w._id is not None and glfw.glfwWindowShouldClose(w._id)
                   for w in wins):
@@ -129,8 +127,6 @@ class ApplicationBackend(BaseApplicationBackend):
         self._vispy_quit()  # to clean up
 
     def _vispy_quit(self):
-        # Mark as quit
-        self._running = False
         # Close windows
         wins = _get_glfw_windows()
         for win in wins:
