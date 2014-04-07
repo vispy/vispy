@@ -210,6 +210,7 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         if not self._draw_ok or self._vispy_canvas is None:
             return
         # (0, 0, self.width, self.height))
+        self._vispy_set_current()
         self._vispy_canvas.events.paint(region=None)
 
     def on_mouse_press(self, x, y, button, modifiers=None):

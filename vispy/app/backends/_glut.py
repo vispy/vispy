@@ -313,6 +313,7 @@ class CanvasBackend(BaseCanvasBackend):
 
         #w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
         #h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
+        self._vispy_set_current()
         self._vispy_canvas.events.paint(region=None)  # (0, 0, w, h))
 
     def on_mouse_action(self, button, state, x, y):

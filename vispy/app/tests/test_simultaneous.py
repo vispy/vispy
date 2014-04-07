@@ -22,7 +22,7 @@ def _up_proc_check(canvas, val):
     assert_allclose(ss, goal, atol=1)  # can be off by 1 due to rounding
 
 
-def test_multiple_backends():
+def test_simultaneous_backends():
     """Test running multiple backends simultaneously"""
     checks = (has_qt, has_pyglet, has_glut, has_glfw)
     names = ('qt', 'pyglet', 'glut', 'glfw')
