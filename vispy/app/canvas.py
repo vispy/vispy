@@ -138,7 +138,8 @@ class Canvas(object):
         """Hack workaround for slow startup"""
         from vispy.gloo import gl
         for _ in range(10):
-            sleep(0.02)
+            sleep(0.05)
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glFinish()
             self.app.process_events()
 
@@ -272,9 +273,8 @@ class Canvas(object):
             self._fps_callback = None
 
     def __repr__(self):
-        backend = self._backend
-        name = 'no' if backend is None else backend._vispy_name
-        return ('<Vispy canvas (%s backend) at %s>' % (name, hex(id(self))))
+        return ('<Vispy canvas (%s backend) at %s>'
+                % (self.app.backend_name, hex(id(self))))
 
     def __enter__(self):
         return self

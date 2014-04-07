@@ -121,7 +121,6 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         #self._buttons_accepted = 0
         self._draw_ok = False  # whether it is ok to draw yet
         self._pending_position = None
-        self._vispy_name = 'pyglet'
 
     # Override these ...
     def flip(self):

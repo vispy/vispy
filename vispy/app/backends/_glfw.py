@@ -18,7 +18,6 @@ vispy backend for glfw.
 
 from __future__ import division
 
-import numpy as np
 import atexit
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
@@ -175,7 +174,6 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSetWindowCloseCallback(self._id, self._on_close)
         glfw.glfwSwapInterval(1)  # avoid tearing
         self._vispy_canvas_ = None
-        self._vispy_name = 'glfw'
         self._needs_draw = False
 
     ###########################################################################
@@ -357,7 +355,7 @@ class TimerBackend(BaseTimerBackend):
         self._next_time = time() + self._interval
 
     def _vispy_stop(self):
-        self._next_time = np.inf
+        self._next_time = float('inf')
 
     def _tick(self):
         if time() >= self._next_time:

@@ -198,6 +198,6 @@ def requires_glut():
 
 
 def requires_application():
-    return np.testing.dec.skipif(not any([has_pyglet(), has_qt(), has_glfw(),
-                                          has_glut(require_interactive=True)]),
-                                 'Requires application backend')
+    ok = (has_pyglet() or has_qt() or has_glfw() or
+          has_glut(require_interactive=True))
+    return np.testing.dec.skipif(not ok, 'Requires application backend')

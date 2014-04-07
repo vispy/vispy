@@ -222,7 +222,6 @@ class CanvasBackend(BaseCanvasBackend):
         # backends
         self._initialized = False
         glut.glutTimerFunc(0, self._emit_initialize, None)
-        self._vispy_name = 'glut'
 
     def _emit_initialize(self, _=None):
         if not self._initialized:
