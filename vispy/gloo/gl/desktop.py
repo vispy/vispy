@@ -15,7 +15,11 @@ from ...util import config
 ## Ctypes stuff
 
 
+# Load the OpenGL library. We more or less follow the same approach
+# as PyOpenGL does internally
+
 if sys.platform.startswith('win'):
+    # Windows
     _lib = ctypes.windll.opengl32
     try:
         wglGetProcAddress = _lib.wglGetProcAddress
@@ -26,11 +30,17 @@ if sys.platform.startswith('win'):
     except AttributeError:
         _have_get_proc_address = False
 else:
+    # Unix-ish
     _have_get_proc_address = False
-    fname = ctypes.util.find_library('GL')
-    _lib = ctypes.cdll.LoadLibrary(fname)
-
-del sys
+    # Get filename
+    if sys.platform.startswith('darwin'):
+        _fname = ctypes.util.find_library('OpenGL')
+    else:
+        _fname = ctypes.util.find_library('GL')
+    if not _fname:
+        raise RuntimeError('Could not load OpenGL library.')
+    # Load lib
+    _lib = ctypes.cdll.LoadLibrary(_fname)
 
 
 def _have_context():
@@ -46,19 +56,20 @@ def _get_gl_func(name, restype, argtypes):
         func.argtypes = argtypes
         return func
     except AttributeError:
-        # Ask for a pointer to the function, this is the approach
-        # for OpenGL extensions on Windows
-        fargs = (restype,) + argtypes
-        ftype = ctypes.WINFUNCTYPE(*fargs)
-        if not _have_get_proc_address:
-            raise RuntimeError('Function %s not available.' % name)
-        if not _have_context():
-            raise RuntimeError('Using %s with no OpenGL context.' % name)
-        address = wglGetProcAddress(name.encode('utf-8'))
-        if address:
-            return ctypes.cast(address, ftype)
-        else:
-            raise RuntimeError('Function %s not present in context.' % name)
+        if sys.platform.startswith('win'):
+            # Ask for a pointer to the function, this is the approach
+            # for OpenGL extensions on Windows
+            fargs = (restype,) + argtypes
+            ftype = ctypes.WINFUNCTYPE(*fargs)
+            if not _have_get_proc_address:
+                raise RuntimeError('Function %s not available.' % name)
+            if not _have_context():
+                raise RuntimeError('Using %s with no OpenGL context.' % name)
+            address = wglGetProcAddress(name.encode('utf-8'))
+            if address:
+                return ctypes.cast(address, ftype)
+        # If not Windows or if we did not return function object on Windows:
+        raise RuntimeError('Function %s not present in context.' % name)
 
 
 ## Compatibility
@@ -108,4 +119,4 @@ def glShaderSource_compat(handle, code):
 
 
 from . import _desktop
-_copy_gl_functions(_desktop, globals(), debug=config['gl_debug'])
+_copy_gl_functions(_desktop, globals())

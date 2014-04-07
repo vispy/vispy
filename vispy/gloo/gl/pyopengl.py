@@ -95,6 +95,7 @@ def _get_function_from_pyopengl(funcname):
     could not be found.
     """
     func = None
+    
     # Get function from GL
     try:
         func = getattr(_GL, funcname)
@@ -103,13 +104,17 @@ def _get_function_from_pyopengl(funcname):
         try:
             func = getattr(_FBO, funcname)
         except AttributeError:
-            # Some functions are known by a slightly different name
-            # e.g. glDepthRangef, glDepthRangef
-            if funcname.endswith('f'):
-                try:
-                    func = getattr(_GL, funcname[:-1])
-                except AttributeError:
-                    pass
+            func = None
+    
+    # Try using "alias"
+    if not bool(func):
+        # Some functions are known by a slightly different name
+        # e.g. glDepthRangef, glClearDepthf
+        if funcname.endswith('f'):
+            try:
+                func = getattr(_GL, funcname[:-1])
+            except AttributeError:
+                pass
 
     # Set dummy function if we could not find it
     if func is None:

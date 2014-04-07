@@ -185,7 +185,7 @@ def glClearDepth(depth):
     try:
         nativefunc = glClearDepth._native
     except AttributeError:
-        nativefunc = glClearDepth._native = _get_gl_func("glClearDepthf", None, (ctypes.c_float,))
+        nativefunc = glClearDepth._native = _get_gl_func("glClearDepth", None, (ctypes.c_double,))
     nativefunc(depth)
 
 
@@ -375,7 +375,7 @@ def glDepthRange(zNear, zFar):
     try:
         nativefunc = glDepthRange._native
     except AttributeError:
-        nativefunc = glDepthRange._native = _get_gl_func("glDepthRangef", None, (ctypes.c_float, ctypes.c_float,))
+        nativefunc = glDepthRange._native = _get_gl_func("glDepthRange", None, (ctypes.c_double, ctypes.c_double,))
     nativefunc(zNear, zFar)
 
 
