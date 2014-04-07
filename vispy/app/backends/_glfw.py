@@ -29,6 +29,7 @@ from . import _libglfw as glfw
 if not glfw.glfwInit():  # only ever call once
     raise OSError('Could not init glfw')
 atexit.register(glfw.glfwTerminate)
+raise ImportError  # XXX FOR TESTING ONLY
 
 # Map native keys to vispy keys
 KEYMAP = {
