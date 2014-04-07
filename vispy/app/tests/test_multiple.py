@@ -25,7 +25,7 @@ def _up_proc_check(canvas, val):
 def test_multiple_backends():
     """Test running multiple backends simultaneously"""
     checks = (has_qt, has_pyglet, has_glut, has_glfw)
-    names = ('qt', 'pyglet', 'glut')  # , 'glfw') has issues XXX
+    names = ('qt', 'pyglet', 'glut', 'glfw')
     backends = [name for name, check in zip(names, checks) if check()]
     canvases = dict()
     bgcolor = dict()
@@ -54,4 +54,6 @@ def test_multiple_backends():
         _up_proc_check(canvases[backend], 255)
         bgcolor[backend] = [0.25, 0.25, 0.25, 0.25]
         _up_proc_check(canvases[backend], 64)
+
+    for backend in backends:
         canvases[backend].close()

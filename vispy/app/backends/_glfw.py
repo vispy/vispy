@@ -275,6 +275,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_draw(self, _id=None):
         if self._vispy_canvas is None or self._id is None:
             return
+        self._vispy_set_current()
         self._vispy_canvas.events.paint(region=None)  # (0, 0, w, h))
 
     def _on_mouse_button(self, _id, button, action, mod):
