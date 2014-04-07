@@ -138,6 +138,7 @@ class Canvas(object):
         """Hack workaround for slow startup"""
         from vispy.gloo import gl
         for _ in range(10):
+            self._backend._vispy_set_current()
             sleep(0.05)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glFinish()
