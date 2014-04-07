@@ -138,7 +138,7 @@ class Canvas(object):
         """Hack workaround for slow startup"""
         from vispy.gloo import gl
         for _ in range(10):
-            self._backend._vispy_set_current()
+            self.update()
             sleep(0.02)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glFinish()
@@ -246,7 +246,6 @@ class Canvas(object):
         """ Close the canvas """
         if self._backend is not None:
             self._backend._vispy_close()
-            self.app.process_events()
 
     def _update_fps(self, event):
         """ Updates the fps after every window and resets the basetime

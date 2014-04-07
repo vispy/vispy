@@ -11,7 +11,7 @@ from vispy.gloo.util import _screenshot
 _win_size = (100, 50)
 
 
-def _up_proc_check(canvas, val):
+def _update_process_check(canvas, val):
     """Update, process, and check result"""
     canvas.update()
     canvas.app.process_events()
@@ -35,7 +35,6 @@ def test_simultaneous_backends():
                         title=backend, show=True)
         canvas._warmup()
         canvases[backend] = canvas
-        bgcolor[backend] = [0.5, 0.5, 0.5, 1.0]
 
         @canvas.events.paint.connect
         def paint(event):
@@ -44,16 +43,17 @@ def test_simultaneous_backends():
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glFinish()
 
+        bgcolor[backend] = [0.5, 0.5, 0.5, 1.0]
         gl.glViewport(0, 0, *list(_win_size))
-        _up_proc_check(canvas, 127)
+        _update_process_check(canvases[backend], 127)
 
     for backend in backends:
         print('test %s' % backend)
-        _up_proc_check(canvases[backend], 127.5)
+        _update_process_check(canvases[backend], 127.5)
         bgcolor[backend] = [1., 1., 1., 1.]
-        _up_proc_check(canvases[backend], 255)
+        _update_process_check(canvases[backend], 255)
         bgcolor[backend] = [0.25, 0.25, 0.25, 0.25]
-        _up_proc_check(canvases[backend], 64)
+        _update_process_check(canvases[backend], 64)
 
     for backend in backends:
         canvases[backend].close()
