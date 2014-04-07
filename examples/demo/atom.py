@@ -134,10 +134,9 @@ class Canvas(app.Canvas):
         self.timer.start()
 
     def on_initialize(self, event):
-        gl.glClearColor(0, 0, 0, 1)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gloo.set_clear_color((0, 0, 0, 1))
+        gloo.set_options(depth_test=False, blend=True,
+                         blend_func=('src_alpha', 'one_minus_src_alpha'))
         gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
         gl.glEnable(GL_POINT_SPRITE)
 
@@ -159,7 +158,7 @@ class Canvas(app.Canvas):
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
         self.program['u_projection'] = self.projection
 
@@ -174,7 +173,7 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_paint(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gloo.clear()
         self.program.draw(gl.GL_POINTS)
 
 
