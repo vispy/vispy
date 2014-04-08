@@ -18,10 +18,6 @@ if LooseVersion(version) < LooseVersion('1.2'):
     raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
                       % (pyglet.version, help_))
 
-import pyglet.window
-import pyglet.app
-import pyglet.clock
-
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 
@@ -114,13 +110,13 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         kwargs['visible'] = kwargs.get('visible', False)
         kwargs['resizable'] = kwargs.get('resizable', True)
         kwargs['vsync'] = kwargs.get('vsync', 0)
-        pyglet.window.Window.__init__(self, *args, **kwargs)
 
         # We keep track of modifier keys so we can pass them to mouse_motion
         self._current_modifiers = set()
         #self._buttons_accepted = 0
         self._draw_ok = False  # whether it is ok to draw yet
         self._pending_position = None
+        pyglet.window.Window.__init__(self, *args, **kwargs)
 
     # Override these ...
     def flip(self):
