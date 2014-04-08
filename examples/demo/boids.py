@@ -66,6 +66,12 @@ void main()
 
 """
 
+# HACK: True OpenGL ES does not need to enable point sprite and does not define
+# these two constants. Desktop OpenGL needs to enable these two modes but we do
+# not have these two constants because our GL namespace pretends to be ES.
+GL_VERTEX_PROGRAM_POINT_SIZE = 34370
+GL_POINT_SPRITE = 34913
+
 
 class Canvas(app.Canvas):
 
@@ -94,7 +100,9 @@ class Canvas(app.Canvas):
         gl.glClearColor(0, 0, 0, 1)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-
+        gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+        gl.glEnable(GL_POINT_SPRITE)
+        
     def on_resize(self, event):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
