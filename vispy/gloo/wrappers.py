@@ -4,11 +4,11 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from copy import deepcopy
 import numpy as np
+from copy import deepcopy
 
-from ..util.six import string_types
 from . import gl
+from ..util.six import string_types
 
 
 # Helpers that are needed for efficient wrapping
@@ -248,7 +248,8 @@ def set_blend_func(sfactor, dfactor):
 # glEnable/Disable
 #
 
-# Put user-space accessible preset names here, nest gl calls
+# NOTE: If these are updated to have things beyond glEnable/glBlendFunc
+# calls, set_preset_state will need to be updated to deal with it.
 _gl_presets = dict(
     opaque=dict(depth_test=True, cull_face=False, blend=False),
     translucent=dict(depth_test=True, cull_face=False, blend=True,
@@ -291,7 +292,6 @@ def set_preset_state(preset, **kwargs):
         # only overwrite user's input with preset if user's input is None
         if key not in kwargs:
             kwargs[key] = val
-    # XXX should expand below if things are added to presets
     # Deal with pesky non-glEnable/glDisable args
     if 'blend_func' in kwargs:
         set_blend_func(*kwargs.pop('blend_func'))

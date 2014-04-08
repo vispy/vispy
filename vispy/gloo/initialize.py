@@ -12,7 +12,7 @@ def gl_initialize():
     """Initialize GL values
 
     This method helps standardize GL across desktop and mobile, e.g.
-    by setting ``GL_VERTEX_PROGRAM_POINT_SIZE`` and ``GL_POINT_SPRITE``.
+    by enabling ``GL_VERTEX_PROGRAM_POINT_SIZE`` and ``GL_POINT_SPRITE``.
     """
     gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
     gl.glEnable(GL_POINT_SPRITE)
