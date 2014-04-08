@@ -88,24 +88,26 @@ def requires_pyopengl():
 
 def has_qt(requires_uic=False, return_which=False):
     try:
-        from PyQt4 import QtCore, QtGui, QtOpenGL, uic  # noqa
-    except ImportError:
-        has_uic = False
-        try:
-            from PySide import QtCore, QtGui, QtOpenGL  # noqa
-        except ImportError:
-            which = None
-            has = False
-        else:
-            import PySide
-            which = 'PySide ' + str(PySide.__version__)
-            has = True
+        from ..app.backends import _qt  # noqa
+    except Exception:
+        which = None
+        has = False
     else:
-        which = ('PyQt4 ' + QtCore.PYQT_VERSION_STR +
-                 ' Qt ' + QtCore.QT_VERSION_STR)
         has = True
-        has_uic = True
-
+        QtCore = _qt.QtCore
+        if hasattr(QtCore, 'PYQT_VERSION_STR'):
+            has_uic = True
+            qtWrapper = 'PyQt4'
+            qtVersion = QtCore.QT_VERSION_STR
+            qtWrapperVersion = QtCore.PYQT_VERSION_STR
+        else:
+            has_uic = False
+            import PySide
+            qtWrapper = 'PySide'
+            qtVersion = QtCore.__version__
+            qtWrapperVersion = PySide.__version__
+        which = '%s: %s, qt: %s' % (qtWrapper, qtWrapperVersion, qtVersion)
+    
     if requires_uic:
         has = (has and has_uic)
     if return_which:

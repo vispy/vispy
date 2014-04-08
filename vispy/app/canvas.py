@@ -136,13 +136,9 @@ class Canvas(object):
 
     def _warmup(self):
         """Hack workaround for slow startup"""
-        from vispy.gloo import gl
-        for _ in range(10):
-            self.update()
-            sleep(0.02)
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-            gl.glFinish()
-            self.app.process_events()
+        self.update();  self.app.process_events()  # paint
+        sleep(0.25)
+        self.app.process_events()
 
     @property
     def app(self):

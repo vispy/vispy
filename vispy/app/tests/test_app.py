@@ -298,7 +298,7 @@ def test_qt():
 def test_glut():
     """Test Glut application"""
     _test_application('Glut')
-    #_test_multiple_windows('Glut')  # fails on Travis XXX
+    _test_multiple_windows('Glut')  # fails on Travis XXX
     #_test_run('Glut')  # can't do this for GLUT b/c of mainloop
 
 
@@ -322,3 +322,4 @@ def test_mouse_key_events():
     ke.key
     ke.text
     ke.modifiers
+

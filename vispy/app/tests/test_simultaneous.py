@@ -25,7 +25,8 @@ def _update_process_check(canvas, val):
 def test_simultaneous_backends():
     """Test running multiple backends simultaneously"""
     checks = (has_qt, has_pyglet, has_glut, has_glfw)
-    names = ('qt', 'pyglet', 'glut', 'glfw')
+    #names = ('qt', 'pyglet', 'glut', 'glfw')
+    names = ('qt', 'pyglet', 'glut')
     backends = [name for name, check in zip(names, checks) if check()]
     canvases = dict()
     bgcolor = dict()

@@ -30,57 +30,58 @@ class app_opengl_context(object):
 
         # Create canvas
         self.c = Canvas(size=(300, 200), autoswap=False, app=self.app)
-        self.c.events.paint.connect(self._on_paint)
+#         self.c.events.paint.connect(self._on_paint)
         self.c.show()
         self.c._warmup()
 
-        # Create timer
-        self.timer = Timer(0.1, app=self.app, iterations=1)
-        self.timer.connect(self._on_timer)
+#         # Create timer
+#         self.timer = Timer(0.1, app=self.app, iterations=1)
+#         self.timer.connect(self._on_timer)
         return self
 
-    def _on_paint(self, event):
-        self._paintflag = True
-        self._callback_result = None
-        if self._callback is not None:
-            try:
-                self._callback_result = self._callback()
-            except Exception as err:
-                self._callback_error = err
-
-    def _on_timer(self, event):
-        self._timerflag = True
-
-    def paint(self, callback=None):
-        """ Run a callback in a paint event, then return result or
-        raise error.
-        """
-        # Prepare
-        self._callback = callback
-        self._callback_error = None
-        self._paintflag = False
-        # Force redraw and wait for it to finish
-        self.c.update()
-        self.app.process_events()
-        if not self._paintflag:
-            raise RuntimeError('app framework error, not painted')
-        # Raise if there was an error
-        if self._callback_error is not None:
-            raise self._callback_error
-        return self._callback_result
+#     def _on_paint(self, event):
+#         self._paintflag = True
+#         self._callback_result = None
+#         if self._callback is not None:
+#             try:
+#                 self._callback_result = self._callback()
+#             except Exception as err:
+#                 self._callback_error = err
+# 
+#     def _on_timer(self, event):
+#         self._timerflag = True
+# 
+#     def paint(self, callback=None):
+#         """ Run a callback in a paint event, then return result or
+#         raise error.
+#         """
+#         # Prepare
+#         self._callback = callback
+#         self._callback_error = None
+#         self._paintflag = False
+#         # Force redraw and wait for it to finish
+#         self.c.update()
+#         self.app.process_events()
+#         if not self._paintflag:
+#             raise RuntimeError('app framework error, not painted')
+#         # Raise if there was an error
+#         if self._callback_error is not None:
+#             raise self._callback_error
+#         return self._callback_result
 
     def test(self, callback=None, show=False):
         """ Run a callback in a paint event """
-        try:
-            res = self.paint(callback)
-        except Exception:
-            raise self._callback_error
-        else:
-            if show:
-                self.c.swap_buffers()
-                self.c.app.process_events()
-                time.sleep(1.0)
-            return res  # if success, we return
+        return callback()
+#         try:
+#             res = self.paint(callback)
+#         except Exception:
+#             raise self._callback_error
+#         else:
+#             if show:
+#                 self.c.swap_buffers()
+#                 self.c.app.process_events()
+#                 time.sleep(1.0)
+#             return res  # if success, we return
 
     def __exit__(self, type, value, traceback):
         self.c.close()
