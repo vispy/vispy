@@ -59,4 +59,8 @@ from .framebuffer import FrameBuffer    # noqa
 from .framebuffer import ColorBuffer    # noqa
 from .framebuffer import DepthBuffer    # noqa
 from .framebuffer import StencilBuffer  # noqa
-from .wrappers import set_options, clear, set_clear_color, set_viewport  # noqa
+from .wrappers import (get_state_presets, get_state_names, set_state,  # noqa
+                       finish, flush, get_param,  # noqa
+                       clear, set_clear_color,   # noqa
+                       set_clear_depth, set_clear_stencil,  # noqa
+                       set_viewport)  # noqa

@@ -134,9 +134,7 @@ class Canvas(app.Canvas):
         self.timer.start()
 
     def on_initialize(self, event):
-        gloo.set_clear_color((0, 0, 0, 1))
-        gloo.set_options(depth_test=False, blend=True,
-                         blend_func=('src_alpha', 'one_minus_src_alpha'))
+        gloo.set_state('translucent', depth_test=False)
         gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
         gl.glEnable(GL_POINT_SPRITE)
 
@@ -173,7 +171,7 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_paint(self, event):
-        gloo.clear()
+        gloo.clear((0, 0, 0, 1))
         self.program.draw(gl.GL_POINTS)
 
 
