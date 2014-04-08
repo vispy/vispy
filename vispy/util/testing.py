@@ -72,7 +72,7 @@ def assert_is(expr1, expr2, msg=None):
 
 def _has_pyopengl():
     try:
-        from OpenGL import GL  # noqa
+        from OpenGL import GL  # noqa, analysis:ignore
     except Exception:
         return False
     else:
@@ -107,7 +107,7 @@ def has_qt(requires_uic=False, return_which=False):
             qtVersion = QtCore.__version__
             qtWrapperVersion = PySide.__version__
         which = '%s: %s, qt: %s' % (qtWrapper, qtWrapperVersion, qtVersion)
-    
+
     if requires_uic:
         has = (has and has_uic)
     if return_which:

@@ -11,7 +11,6 @@ from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,  # 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader
 from vispy.util.testing import assert_in, assert_is
-from vispy.util.ptime import time
 from vispy.gloo.util import _screenshot
 from vispy.gloo import gl
 
@@ -73,52 +72,10 @@ def _test_callbacks(canvas):
         raise ValueError
 
 
-def _test_multiple_windows(backend):
-    n_check = 3
-    a = Application(backend)
-    sz = (100, 100)
-    c0, c1 = Canvas(app=a, size=sz), Canvas(app=a, size=sz)
-    count = [0, 0]
-
-    @c0.events.paint.connect
-    def paint(event):
-        count[0] += 1
-        c0.update()
-
-    @c1.events.paint.connect  # noqa, analysis:ignore
-    def paint(event):
-        count[1] += 1
-        c1.update()
-
-    c0.show()
-    c1.show()
-    timeout = time() + 2.0
-    while (count[0] < n_check or count[1] < n_check) and time() < timeout:
-        a.process_events()
-    print((count, n_check))
-    assert_true(n_check <= count[0] <= n_check + 1)
-    assert_true(n_check <= count[1] <= n_check + 1)
-
-    # check timer
-    global timer_ran
-    timer_ran = False
-
-    def on_timer(_):
-        global timer_ran
-        timer_ran = True
-    timeout = time() + 2.0
-    Timer(0.1, app=a, connect=on_timer, iterations=1, start=True)
-    while not timer_ran and time() < timeout:
-        a.process_events()
-    assert_true(timer_ran)
-
-    c0.close()
-    c1.close()
-
-
 def _test_run(backend):
     for _ in range(2):
-        c = Canvas(app=Application(backend), size=(100, 100), show=True)
+        c = Canvas(app=Application(backend), size=(100, 100), show=True,
+                   title=backend + ' run')
 
         @c.events.paint.connect
         def paint(event):
@@ -147,14 +104,15 @@ def _test_application(backend):
     size = (100, 100)
     # Use "with" statement so failures don't leave open window
     # (and test context manager behavior)
-    with Canvas(title='me', app=app, show=True, position=pos) as canvas:
+    title = 'default' if backend is None else backend
+    with Canvas(title=title, app=app, show=True, position=pos) as canvas:
         assert_is(canvas.app, app)
         assert_true(canvas.native)
         print(canvas)  # __repr__
         print(canvas.size >= (1, 1))
         canvas.resize(90, 90)
         canvas.move(1, 1)
-        assert_equal(canvas.title, 'me')
+        assert_equal(canvas.title, title)
         canvas.title = 'you'
         canvas.position = pos
         canvas.size = size
@@ -274,7 +232,6 @@ def test_none():
 def test_pyglet():
     """Test Pyglet application"""
     _test_application('Pyglet')
-    _test_multiple_windows('Pyglet')
     _test_run('Pyglet')
 
 
@@ -282,7 +239,6 @@ def test_pyglet():
 def test_glfw():
     """Test Glfw application"""
     _test_application('Glfw')
-    _test_multiple_windows('Glfw')
     _test_run('Glfw')
 
 
@@ -290,7 +246,6 @@ def test_glfw():
 def test_qt():
     """Test Qt application"""
     _test_application('qt')
-    _test_multiple_windows('qt')
     _test_run('qt')
 
 
@@ -298,7 +253,6 @@ def test_qt():
 def test_glut():
     """Test Glut application"""
     _test_application('Glut')
-    _test_multiple_windows('Glut')  # fails on Travis XXX
     #_test_run('Glut')  # can't do this for GLUT b/c of mainloop
 
 
@@ -322,4 +276,3 @@ def test_mouse_key_events():
     ke.key
     ke.text
     ke.modifiers
-
