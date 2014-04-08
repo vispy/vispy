@@ -29,12 +29,14 @@ class app_opengl_context(object):
         # Create canvas
         self.c = Canvas(size=(300, 200), autoswap=False, app=self.app,
                         show=True, title='test app')
-        self.c._warmup()
         return self
 
     def test(self, callback=None, show=False):
         """ Run a callback in a paint event """
-        return callback()
+        out = callback()
+        from vispy.gloo import gl
+        gl.glFinish()
+        return out
 
     def __exit__(self, type, value, traceback):
         self.c.close()

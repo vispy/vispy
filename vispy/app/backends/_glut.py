@@ -11,12 +11,13 @@ from __future__ import division
 import sys
 import ctypes
 from OpenGL import platform
+from time import sleep
 
 import OpenGL.error
 import OpenGL.GLUT as glut
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
-from ...util import ptime, keys
+from ...util import ptime, keys, logger
 
 
 # glut.GLUT_ACTIVE_SHIFT: keys.SHIFT,
@@ -76,13 +77,17 @@ _VP_GLUT_ALL_WINDOWS = []
 _GLUT_INIT = None
 
 
-def _get_glut_process_func():
+def _get_glut_process_func(missing='error'):
     if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
         func = glut.glutMainLoopEvent
     elif hasattr(glut, 'glutCheckLoop') and bool(glut.glutCheckLoop):
         func = glut.glutCheckLoop  # Darwin
     else:
-        func = None
+        msg = ('Your implementation of GLUT does not allow '
+               'interactivity. Consider installing freeglut.')
+        if missing == 'log':
+            logger.info(msg)
+        raise RuntimeError(msg)
     return func
 
 
@@ -133,11 +138,11 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_process_events(self):
         # Determine what function to use, if any
-        func = _get_glut_process_func()
-        if func is None:
+        try:
+            func = _get_glut_process_func()
+        except RuntimeError:
             self._vispy_process_events = lambda: None
-            raise RuntimeError('Your implementation of GLUT does not allow '
-                               'interactivity. Consider installing freeglut.')
+            raise
         # Set for future use, and call!
         self._proc_fun = func
         self._vispy_process_events = self._process_events_and_timer
@@ -202,10 +207,6 @@ class CanvasBackend(BaseCanvasBackend):
         self._modifiers_cache = ()
         self._closed = False  # Keep track whether the widget is closed
 
-        # Note: this seems to cause the canvas to ignore calls to show()
-        # about half of the time.
-        glut.glutHideWindow()  # Start hidden, like the other backends
-
         # Register callbacks
         glut.glutDisplayFunc(self.on_draw)
         glut.glutReshapeFunc(self.on_resize)
@@ -216,16 +217,30 @@ class CanvasBackend(BaseCanvasBackend):
         glut.glutMouseFunc(self.on_mouse_action)
         glut.glutMotionFunc(self.on_mouse_motion)
         glut.glutPassiveMotionFunc(self.on_mouse_motion)
+        glut.glutShowWindow()
         _set_close_fun(self._id, self.on_close)
+        self._vispy_canvas_ = None
 
-        # LC: I think initializing here makes it more consistent with other
-        # backends
-        self._initialized = False
-        glut.glutTimerFunc(0, self._emit_initialize, None)
+    def _vispy_warmup(self):
+        try:
+            _get_glut_process_func(missing='log')
+        except RuntimeError:
+            pass
+        else:
+            for _ in range(5):
+                sleep(0.01)
+                self._vispy_canvas.app.process_events()
 
-    def _emit_initialize(self, _=None):
-        if not self._initialized:
-            self._initialized = True
+    @property
+    def _vispy_canvas(self):
+        """ The parent canvas/window """
+        return self._vispy_canvas_
+
+    @_vispy_canvas.setter
+    def _vispy_canvas(self, vc):
+        # Init events when the property is set by Canvas
+        self._vispy_canvas_ = vc
+        if vc is not None:
             self._vispy_canvas.events.initialize()
 
     def _vispy_set_current(self):
@@ -307,10 +322,6 @@ class CanvasBackend(BaseCanvasBackend):
     def on_draw(self, dummy=None):
         if self._vispy_canvas is None:
             return
-        if not self._initialized:
-            # The timer that we set may not have fired just yet
-            self._emit_initialize()
-
         #w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
         #h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
         self._vispy_set_current()

@@ -160,7 +160,6 @@ class CanvasBackend(BaseCanvasBackend):
         if not self._id:
             raise RuntimeError('Could not create window')
         _VP_GLFW_ALL_WINDOWS.append(self)
-        glfw.glfwMakeContextCurrent(self._id)
         glfw.glfwHideWindow(self._id)  # Start hidden, like the other backends
         self._mod = list()
 
@@ -180,7 +179,7 @@ class CanvasBackend(BaseCanvasBackend):
     # Deal with events we get from vispy
     @property
     def _vispy_canvas(self):
-        """ The size of canvas/window """
+        """ The parent canvas/window """
         return self._vispy_canvas_
 
     @_vispy_canvas.setter
@@ -190,6 +189,16 @@ class CanvasBackend(BaseCanvasBackend):
         if vc is not None:
             self._vispy_canvas.events.initialize()
         return self._vispy_canvas
+
+    def _vispy_warmup(self):
+        from ...gloo import gl
+        from time import sleep
+        for _ in range(5):
+            self._vispy_set_current()
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+            gl.glFinish()
+            sleep(0.01)
+            self._vispy_swap_buffers()
 
     def _vispy_set_current(self):
         if self._id is None:

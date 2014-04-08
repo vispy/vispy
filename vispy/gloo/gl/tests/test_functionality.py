@@ -56,7 +56,7 @@ def test_functionality_proxy():
 
 @requires_application()
 @requires_pyopengl()
-def test_functionality_pypengl():
+def test_functionality_pyopengl():
     """ Test pyopengl GL backend for full functionality. """
     _test_functonality('pyopengl')
 
@@ -80,15 +80,10 @@ def _clear_screen():
 def _test_functonality(backend):
     """ Create app and canvas so we have a context. Then run tests.
     """
-
     # use the backend
     gl.use(backend)
     
-    # Note that we explicitly use pyglet because with Qt we seem
-    # to get errors for this test
-    
     with app_opengl_context() as context:
-        
         _clear_screen()
         
         # Prepare
@@ -99,7 +94,6 @@ def _test_functonality(backend):
         
         # Setup visualization, ensure to do it in a paint event
         objects = context.test(_prepare_vis)
-        
         _clear_screen()
         
         # Draw 1
@@ -567,4 +561,4 @@ def _check_result(assert_result=True):
 if __name__ == '__main__':
     #SHOW = True
     test_functionality_desktop()
-    test_functionality_pypengl()
+    test_functionality_pyopengl()

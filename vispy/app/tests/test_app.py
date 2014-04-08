@@ -74,16 +74,13 @@ def _test_callbacks(canvas):
 
 def _test_run(backend):
     for _ in range(2):
-        c = Canvas(app=Application(backend), size=(100, 100), show=True,
-                   title=backend + ' run')
-
-        @c.events.paint.connect
-        def paint(event):
-            print(event)  # test event __repr__
-            c.app.quit()
-
-        c.app.run()
-        c.close()
+        with Canvas(app=Application(backend), size=(100, 100), show=True,
+                    title=backend + ' run') as c:
+            @c.events.paint.connect
+            def paint(event):
+                print(event)  # test event __repr__
+                c.app.quit()
+            c.app.run()
 
 
 def _test_application(backend):
@@ -105,11 +102,12 @@ def _test_application(backend):
     # Use "with" statement so failures don't leave open window
     # (and test context manager behavior)
     title = 'default' if backend is None else backend
-    with Canvas(title=title, app=app, show=True, position=pos) as canvas:
+    with Canvas(title=title, size=size, app=app, show=True,
+                position=pos) as canvas:
         assert_is(canvas.app, app)
         assert_true(canvas.native)
         print(canvas)  # __repr__
-        print(canvas.size >= (1, 1))
+        assert_array_equal(canvas.size, size)
         assert_equal(canvas.title, title)
         canvas.title = 'you'
         canvas.position = pos
@@ -117,8 +115,8 @@ def _test_application(backend):
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
         canvas.show()
+        app.process_events()
         assert_raises(ValueError, canvas.connect, on_nonexist)
-        canvas._warmup()
 
         # screenshots
         gl.glViewport(0, 0, *size)
@@ -226,6 +224,13 @@ def test_none():
     _test_application(None)
 
 
+@requires_qt()
+def test_qt():
+    """Test Qt application"""
+    _test_application('qt')
+    _test_run('qt')
+
+
 @requires_pyglet()
 def test_pyglet():
     """Test Pyglet application"""
@@ -238,13 +243,6 @@ def test_glfw():
     """Test Glfw application"""
     _test_application('Glfw')
     _test_run('Glfw')
-
-
-@requires_qt()
-def test_qt():
-    """Test Qt application"""
-    _test_application('qt')
-    _test_run('qt')
 
 
 @requires_glut()

@@ -5,7 +5,6 @@
 from __future__ import division, print_function
 
 import numpy as np
-from time import sleep
 
 from ._default_app import default_app
 from ..util.event import EmitterGroup, Event
@@ -56,7 +55,7 @@ class Canvas(object):
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
-                 show=False, autoswap=True, app=None, create_native=True,
+                 show=True, autoswap=True, app=None, create_native=True,
                  init_gloo=True, native_args=None, native_kwargs=None):
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
@@ -77,7 +76,6 @@ class Canvas(object):
         self._backend = None
         if init_gloo:
             self.events.initialize.connect(_gloo_initialize)
-        self._init_gloo = init_gloo
         self._native_args = native_args or ()
         self._native_kwargs = native_kwargs or {}
 
@@ -107,21 +105,20 @@ class Canvas(object):
         """ Create the native widget if not already done so. If the widget
         is already created, this function does nothing.
         """
-        if self._backend is None:
-            # Make sure that the app is active
-            self._app.use()
-            self._app.native
-            # Instantiate the backend with the right class
-            self._set_backend(
-                self._app.backend_module.CanvasBackend(*self._native_args,
-                                                       **self._native_kwargs))
+        if self._backend is not None:
+            return
+        # Make sure that the app is active
+        self._app.use()
+        assert self._app.native
+        # Instantiate the backend with the right class
+        self._set_backend(
+            self._app.backend_module.CanvasBackend(*self._native_args,
+                                                   **self._native_kwargs))
 
     def _set_backend(self, backend):
+        assert backend is not None  # should never happen
         self._backend = backend
-        if backend is not None:
-            backend._vispy_canvas = self
-        else:
-            return
+        self._backend._vispy_canvas = self
 
         # Initialize it
         self.title = self._our_kwargs['title']
@@ -131,19 +128,8 @@ class Canvas(object):
         if self._our_kwargs['autoswap']:
             fun = lambda x: self._backend._vispy_swap_buffers()
             self.events.paint.callbacks.append(fun)  # Append callback to end
-        if self._our_kwargs['show']:
-            self.show()
-
-    def _warmup(self):
-        """Hack workaround for slow startup"""
-        from ..gloo import gl
-        # looping helps to ensure GLUT window size takes effect
-        for _ in range(10):
-            self.update()
-            sleep(0.025)
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-            gl.glFinish()
-            self.app.process_events()
+        self._backend._vispy_warmup()
+        self.show(self._our_kwargs['show'])
 
     @property
     def app(self):

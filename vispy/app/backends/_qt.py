@@ -7,6 +7,7 @@ vispy backend for Qt (PySide and PyQt4).
 """
 
 from __future__ import division
+from time import sleep
 
 from ... import config
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
@@ -28,13 +29,13 @@ else:
 # Import PySide or PyQt4
 if qt_lib in ('any', 'qt'):
     try:
-        from PyQt4 import QtGui, QtCore, QtOpenGL
+        from PyQt4 import QtGui, QtCore, QtOpenGL, QtTest
     except ImportError:
-        from PySide import QtGui, QtCore, QtOpenGL
+        from PySide import QtGui, QtCore, QtOpenGL, QtTest
 elif qt_lib in ('pyqt', 'pyqt4'):
-    from PyQt4 import QtGui, QtCore, QtOpenGL
+    from PyQt4 import QtGui, QtCore, QtOpenGL, QtTest
 elif qt_lib == 'pyside':
-    from PySide import QtGui, QtCore, QtOpenGL
+    from PySide import QtGui, QtCore, QtOpenGL, QtTest
 else:
     raise Exception("Do not recognize Qt library '%s'. Options are "
                     "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
@@ -135,6 +136,16 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
+        self.show()
+
+    def _vispy_warmup(self):
+        QtTest.QTest.qWaitForWindowShown(self)
+        from ...gloo import gl
+        for _ in range(5):
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+            gl.glFinish()
+            self._vispy_swap_buffers()
+            sleep(0.05)
 
     def _vispy_set_current(self):
         # Make this the current context

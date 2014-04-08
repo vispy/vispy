@@ -107,7 +107,7 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
         # Initialize native widget, but default hidden and resizable
-        kwargs['visible'] = kwargs.get('visible', False)
+        kwargs['visible'] = kwargs.get('visible', True)
         kwargs['resizable'] = kwargs.get('resizable', True)
         kwargs['vsync'] = kwargs.get('vsync', 0)
 
@@ -117,6 +117,9 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         self._draw_ok = False  # whether it is ok to draw yet
         self._pending_position = None
         pyglet.window.Window.__init__(self, *args, **kwargs)
+
+    def _vispy_warmup(self):
+        pass  # pyglet takes care of making sure the window is actually ready
 
     # Override these ...
     def flip(self):
