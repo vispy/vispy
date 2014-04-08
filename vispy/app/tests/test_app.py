@@ -110,8 +110,6 @@ def _test_application(backend):
         assert_true(canvas.native)
         print(canvas)  # __repr__
         print(canvas.size >= (1, 1))
-        canvas.resize(90, 90)
-        canvas.move(1, 1)
         assert_equal(canvas.title, title)
         canvas.title = 'you'
         canvas.position = pos

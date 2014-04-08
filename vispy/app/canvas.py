@@ -224,14 +224,6 @@ class Canvas(object):
         """
         self._backend._vispy_swap_buffers()
 
-    def resize(self, w, h):
-        """ Resize the canvas given size """
-        return self._backend._vispy_set_size(w, h)
-
-    def move(self, x, y):
-        """ Move the widget or window to the given position """
-        self._backend._vispy_set_position(x, y)
-
     def show(self, visible=True):
         """ Show (or hide) the canvas """
         return self._backend._vispy_set_visible(visible)
