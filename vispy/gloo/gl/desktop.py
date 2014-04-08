@@ -10,7 +10,6 @@ import ctypes.util
 
 from . import _copy_gl_functions
 from ._constants import *  # noqa
-from ...util import config
 
 ## Ctypes stuff
 

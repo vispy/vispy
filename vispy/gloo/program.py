@@ -252,7 +252,7 @@ class Program(GLObject):
                 uniform._unit = count
                 count += 1
             self._uniforms[name] = uniform
-        self._need_udpate = True
+        self._need_update = True
 
     def _build_attributes(self):
         """ Build the attribute objects """
