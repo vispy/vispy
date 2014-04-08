@@ -5,17 +5,24 @@
 # -----------------------------------------------------------------------------
 
 from copy import deepcopy
+import numpy as np
 
 from ..util import logger
+from ..util.six import string_types
 from . import gl
+
+
+def _check_valid(key, val, valid):
+    if val not in valid:
+        raise ValueError('%s must be one of %s, not "%s"'
+                         % (key, valid, val))
 
 
 ###############################################################################
 # PRIMITIVE/VERTEX
 
 #
-# glViewport, XXX glDepthRangef, glCullFace, glFrontFace,
-# XXX glLineWidth, glPolygonOffset
+# Viewport, DepthRangef, CullFace, FrontFace, LineWidth, PolygonOffset
 #
 
 def set_viewport(x, y, w, h):
@@ -37,6 +44,73 @@ def set_viewport(x, y, w, h):
     if not all(isinstance(v, int) for v in (x, y, w, h)):
         raise ValueError('All parameters must be integers')
     gl.glViewport(x, y, w, h)
+
+
+def set_depth_range(near, far):
+    """Set depth values
+
+    Parameters
+    ----------
+    near : float
+        Near clipping plane.
+    far : float
+        Far clipping plane.
+    """
+    near = float(near)
+    far = float(far)
+    gl.glDepthRangef(near, far)
+
+
+def set_front_face(mode):
+    """Set which faces are front-facing
+
+    Parameters
+    ----------
+    mode : str
+        Can be 'cw' for clockwise or 'ccw' for counter-clockwise.
+    """
+    _check_valid('mode', mode, ('cw', 'ccw'))
+    gl.glFrontFace(getattr(gl, 'GL_' + mode.upper()))
+
+
+def set_cull_face(mode):
+    """Set front, back, or both faces to be culled
+
+    Parameters
+    ----------
+    mode : str
+        Culling mode. Can be "front", "back", or "front_and_back".
+    """
+    _check_valid('mode', mode, ('front', 'back', 'front_and_back'))
+    gl.glCullFace(getattr(gl, 'GL_' + mode.upper()))
+
+
+def set_line_width(width):
+    """Set line width
+
+    Parameters
+    ----------
+    width : float
+        The line width.
+    """
+    width = float(width)
+    gl.glLineWidth(width)
+
+
+def set_polygon_offset(factor, units):
+    """Set the scale and units used to calculate depth values
+
+    Parameters
+    ----------
+    factor : float
+        Scale factor used to create a variable depth offset for each polygon.
+    units : float
+        Multiplied by an implementation-specific value to create a constant
+        depth offset.
+    """
+    factor = float(factor)
+    units = float(units)
+    gl.glPolygonOffset(factor, units)
 
 
 ###############################################################################
@@ -124,11 +198,40 @@ def set_clear_stencil(index=0):
         raise TypeError('index must be an integer')
     gl.glClearStencil(index)
 
+
 #
-# XXX glBlendColor, glBlendEquation, glBlendEquationSeparate, glBlendFunc,
+# glBlendFunc, XXX glBlendColor, glBlendEquation, glBlendEquationSeparate,
 # XXX glBlendFuncSeparate, glScissor, glStencilFunc, glStencilFuncSeparate
 # XXX glStencilMask, glStencilMaskSeparate, glStencilOp, glStencilOpSeparate,
 # XXX glDepthFunc, glDepthMask, glColorMask, glSampleCoverage
+#
+
+_gl_blend_list = ['src_color', 'one_minus_src_color', 'zero', 'one',
+                  'dst_color', 'one_minus_dst_color',
+                  'src_alpha', 'one_minus_src_alpha',
+                  'dst_alpha', 'one_minus_dst_alpha',
+                  'constant_color', 'one_minus_constant_color',
+                  'constant_alpha', 'one_minus_constant_alpha']
+
+
+def set_blend_func(sfactor, dfactor):
+    """Set blend function
+
+    Parameters
+    ----------
+    sfactor : str
+        Source factor.
+    dfactor : str
+        Destination factor.
+    """
+    # check vals and translate to GL
+    for fact, name in zip((sfactor, dfactor), ('sfactor', 'dfactor')):
+        _check_valid(name, fact, _gl_blend_list)
+    gl_sfactor = getattr(gl, 'GL_' + sfactor.upper())
+    gl_dfactor = getattr(gl, 'GL_' + dfactor.upper())
+    res = gl.glBlendFunc(gl_sfactor, gl_dfactor)
+    if res in (gl.GL_INVALID_ENUM, gl.GL_INVALID_VALUE):
+        raise RuntimeError('could not set blend functions')
 
 
 ###############################################################################
@@ -140,10 +243,10 @@ def set_clear_stencil(index=0):
 
 # Put user-space accessible preset names here, nest gl calls
 _gl_presets = dict(
-    opaque=dict(depth_test=True, cull=False, blend=False),
-    translucent=dict(depth_test=True, cull=False, blend=True,
+    opaque=dict(depth_test=True, cull_face=False, blend=False),
+    translucent=dict(depth_test=True, cull_face=False, blend=True,
                      blend_func=('src_alpha', 'one_minus_src_alpha')),
-    additive=dict(depth_test=False, cull=False, blend=True,
+    additive=dict(depth_test=False, cull_face=False, blend=True,
                   blend_func=('src_alpha', 'one'),)
 )
 
@@ -162,87 +265,55 @@ def get_state_presets():
 _known_state_names = ('depth_test', 'blend', 'blend_func')
 
 
-def get_state_names():
+def set_preset_state(preset, **kwargs):
+    """Set OpenGL rendering state using a preset
+
+    Parameters
+    ----------
+    preset : str
+        Can be one of ('opaque', 'translucent', 'additive') to use
+        use reasonable defaults for these typical use cases.
+    **kwargs : bool
+        Other supplied keyword arguments will override any preset defaults.
+        These will be passed to ``set_state``.
     """
-    depth_test : bool | None
-        Perform depth testing. None will not change the current state.
-    blend : bool | None
-        Blend. None will not change the current state.
-    blend_func : tuple | None
-        Blend functions to use. None will not change the current state.
-        If tuple, must contain two string elements from:
-        ('src_alpha', 'one_minus_src_alpha', 'one').
-    cull : bool | None
-        Perform face culling. None will not change the current state.
-    """
-    # XXX organize this somehow, integrate with _known_names and set_state
-    raise NotImplementedError
+    kwargs = deepcopy(kwargs)
+    # Load preset, if supplied
+    _check_valid('preset', preset, tuple(list(_gl_presets.keys())))
+    for key, val in _gl_presets[preset].items():
+        # only overwrite user's input with preset if user's input is None
+        if key not in kwargs:
+            kwargs[key] = val
+    # XXX should expand below if things are added to presets
+    # Deal with pesky non-glEnable/glDisable args
+    if 'blend_func' in kwargs:
+        set_blend_func(*kwargs.pop('blend_func'))
+    # Pass to set_state
+    set_state(**kwargs)
 
 
-def set_state(preset=None, **kwargs):
+def set_state(**kwargs):
     """Set OpenGL rendering state options
 
     Parameters
     ----------
-    preset : str | None
-        If str, can be one of ('opaque', 'translucent', 'additive') to
-        use reasonable defaults for these typical use cases. Other supplied
-        keyword arguments following this will override any preset defaults.
     **kwargs : bool
-        Boolean values to enable or disable. See ``get_state_names``
-        for valid keyword arguments.
+        Boolean values to enable or disable.
     """
-    # XXX FIX THIS
+    # check values and translate
+    kwargs = deepcopy(kwargs)
     for key, val in kwargs.items():
-        if key not in _known_state_names:
+        if not isinstance(val, bool):
+            raise TypeError('All inputs to set_state must be boolean')
+        gl_key = getattr(gl, 'GL_' + key.upper(), None)
+        if gl_key is None:
             raise KeyError('argument %s unknown' % key)
-
-    # Load preset, if supplied
-    _valid_presets = tuple(list(_gl_presets.keys()))
-    if preset is not None:
-        if preset not in _valid_presets:
-            raise ValueError('preset must be one of %s, not "%s"'
-                             % (_valid_presets, preset))
-        for key, val in _gl_presets[preset].items():
-            # only overwrite user's input with preset if user's input is None
-            if key not in kwargs:
-                kwargs[key] = val
-
-    # nest these to ensure we get up-to-date "gl" namespace
-    _gl_dict = dict(depth_test=gl.GL_DEPTH_TEST,
-                    blend=gl.GL_BLEND,
-                    cull=gl.GL_CULL_FACE)
-    _gl_blend_dict = dict(src_alpha=gl.GL_SRC_ALPHA,
-                          one=gl.GL_ONE,
-                          one_minus_src_alpha=gl.GL_ONE_MINUS_SRC_ALPHA)
-
-    # check vals and translate to GL
-    blend_funcs = kwargs['blend_func']
-    _valid_blend_funcs = tuple(list(_gl_blend_dict.keys()))
-    if blend_funcs is not None:
-        if not isinstance(blend_funcs, (list, tuple)) or len(blend_funcs) != 2:
-            raise ValueError('blend_func must be 2-element list or tuple')
-        blend_funs = list(kwargs['blend_func'])
-        for bi, bf in enumerate(blend_funs):
-            if bf not in _valid_blend_funcs:
-                raise ValueError('blend_func "%s" must be one of %s"'
-                                 % (bf, _valid_blend_funcs))
-            blend_funs[bi] = _gl_blend_dict[bf]
-    for key, val in kwargs.items():
-        if val is not None:
-            logger.debug('Setting state %s: %s' % (key, val))
-            if key == 'blend_func':
-                gl.glBlendFunc(*blend_funs)
-            else:  # everything else
-                flag = _gl_dict[key]
-                if val:
-                    gl.glEnable(flag)
-                else:
-                    gl.glDisable(flag)
+        func = gl.glEnable if val else gl.glDisable
+        func(gl_key)
 
 
 #
-# glFinish, glFlush, XXX glHint, glReadPixels, glGetParam
+# glFinish, glFlush, glGetParameter, glReadPixels, glHint
 #
 
 def finish():
@@ -261,7 +332,7 @@ def flush():
     gl.glFlush()
 
 
-def get_param(name):
+def get_parameter(name):
     """Get OpenGL parameter value
 
     Parameters
@@ -269,6 +340,63 @@ def get_param(name):
     name : str
         The name of the parameter to get.
     """
-    # XXX need to make str->enum dict, check name, etc
-    raise NotImplementedError
-    gl.glGetParameter(name)
+    if not isinstance(name, string_types):
+        raise TypeError('name bust be a string')
+    gl_parameter = getattr(gl, 'GL_' + name.upper(), None)
+    if gl_parameter is None:
+        raise ValueError('gl has no attribute corresponding to name %s' % name)
+    return gl.glGetParameter(gl_parameter)
+
+
+def read_pixels(viewport=None):
+    """Read pixels from the front buffer
+
+    Parameters
+    ----------
+    viewport : array-like | None
+        4-element list of x, y, w, h parameters. If None (default),
+        the current GL viewport will be queried and used.
+
+    Returns
+    -------
+    pixels : array
+        2D array of pixels in np.uint8 format.
+    """
+    if viewport is None:
+        viewport = get_parameter('viewport')
+    else:
+        viewport = np.array(viewport, int)
+        if viewport.ndim != 1 or viewport.size != 4:
+            raise ValueError('viewport must be 1D 4-element array-like')
+    x, y, w, h = viewport
+    gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)  # PACK, not UNPACK
+    im = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
+    gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
+    # reshape, flip, and return
+    if not isinstance(im, np.ndarray):
+        im = np.frombuffer(im, np.uint8)
+    im.shape = h, w, 3
+    return im
+
+
+def hint(target, mode):
+    """Set OpenGL drawing hint
+
+    Parameters
+    ----------
+    target : str
+        The target (e.g., 'fog', 'line_smooth', 'point_smooth').
+    mode : str
+        The mode to set (e.g., 'fastest', 'nicest', 'dont_care').
+    """
+    if not all(isinstance(tm, string_types) for tm in (target, mode)):
+        raise TypeError('target and mode must both be strings')
+    gl_target = getattr(gl, 'GL_' + target.upper() + '_HINT', None)
+    gl_mode = getattr(gl, 'GL_' + mode.upper(), None)
+    for tm, gl_tm, name in zip((target, mode), (gl_target, gl_mode),
+                               ('target', 'mode')):
+        if gl_tm is None:
+            raise ValueError('gl has no hint %s %s' % (name, tm))
+    val = gl.glHint()
+    if val in (gl.GL_INVALID_ENUM, gl.GL_INVALID_OPERATION):
+        raise RuntimeError('hint could not be set')

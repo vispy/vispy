@@ -127,7 +127,7 @@ class Canvas(app.Canvas):
         self.timer.start()
 
     def on_initialize(self, event):
-        gloo.set_state('translucent', depth_test=False)
+        gloo.set_preset_state('translucent', depth_test=False)
 
     def on_key_press(self, event):
         if event.text == ' ':

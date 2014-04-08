@@ -50,6 +50,7 @@ from . import gl                        # noqa
 from .globject import GLObject          # noqa
 from .buffer import VertexBuffer        # noqa
 from .buffer import IndexBuffer         # noqa
+from .initialize import gl_initialize   # noqa
 from .texture import Texture1D          # noqa
 from .texture import Texture2D          # noqa
 from .shader import VertexShader        # noqa
@@ -59,8 +60,10 @@ from .framebuffer import FrameBuffer    # noqa
 from .framebuffer import ColorBuffer    # noqa
 from .framebuffer import DepthBuffer    # noqa
 from .framebuffer import StencilBuffer  # noqa
-from .wrappers import (get_state_presets, get_state_names, set_state,  # noqa
-                       finish, flush, get_param,  # noqa
-                       clear, set_clear_color,   # noqa
-                       set_clear_depth, set_clear_stencil,  # noqa
-                       set_viewport)  # noqa
+from .wrappers import (set_viewport, set_depth_range, set_front_face,  # noqa
+                       set_cull_face, set_line_width, set_polygon_offset)  # noqa
+from .wrappers import (clear, set_clear_color,   # noqa
+                       set_clear_depth, set_clear_stencil)  # noqa
+from .wrappers import (get_state_presets, set_state, set_preset_state,  # noqa
+                       set_blend_func, 
+                       finish, flush, get_parameter, read_pixels, hint)  # noqa
