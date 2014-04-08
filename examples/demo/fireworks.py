@@ -16,7 +16,6 @@ import time
 import numpy as np
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 
 # Create a texture
 radius = 32
@@ -80,12 +79,6 @@ void main()
 }
 """
 
-# HACK: True OpenGL ES does not need to enable point sprite and does not define
-# these two constants. Desktop OpenGL needs to enable these two modes but we do
-# not have these two constants because our GL namespace pretends to be ES.
-GL_VERTEX_PROGRAM_POINT_SIZE = 34370
-GL_POINT_SPRITE = 34913
-
 
 class Canvas(app.Canvas):
 
@@ -102,26 +95,22 @@ class Canvas(app.Canvas):
         self._new_explosion()
 
     def on_initialize(self, event):
-        gl.glClearColor(0, 0, 0, 1)
-
+        gloo.set_clear_color((0, 0, 0, 1))
         # Enable blending
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-        gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL_POINT_SPRITE)
+        gloo.set_state(blend=True, blend_func=('src_alpha', 'one'))
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
 
     def on_paint(self, event):
 
         # Clear
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gloo.clear()
 
         # Draw
         self._program['u_time'] = time.time() - self._starttime
-        self._program.draw(gl.GL_POINTS)
+        self._program.draw('points')
 
         # Invoke a new draw
         self.update()

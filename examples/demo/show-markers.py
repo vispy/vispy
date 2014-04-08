@@ -9,12 +9,11 @@ import os
 import sys
 
 import numpy as np
-from vispy.gloo import gl
 
 from vispy import app
 from vispy.util.transforms import ortho
-from vispy.gloo import Program
-from vispy.gloo import VertexBuffer
+from vispy.gloo import Program, VertexBuffer
+from vispy import gloo
 
 sys.path.insert(0, os.path.dirname(__file__))
 import markers
@@ -49,13 +48,6 @@ for i in range(40):
     data['a_position'][500 + i] = x, y, 0
     data['a_size'][500 + i] = 2 * r
     data['a_linewidth'][500 + i] = thickness
-
-
-# HACK: True OpenGL ES does not need to enable point sprite and does not define
-# these two constants. Desktop OpenGL needs to enable these two modes but we do
-# not have these two constants because our GL namespace pretends to be ES.
-GL_VERTEX_PROGRAM_POINT_SIZE = 34370
-GL_POINT_SPRITE = 34913
 
 
 class Canvas(app.Canvas):
@@ -94,12 +86,9 @@ class Canvas(app.Canvas):
         self.program = self.programs[self.index]
 
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL_POINT_SPRITE)
+        gloo.set_clear_color((1, 1, 1, 1))
+        gloo.set_state(depth_test=False, blend=True,
+                       blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def on_key_press(self, event):
         if event.text == ' ':
@@ -111,15 +100,15 @@ class Canvas(app.Canvas):
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         self.projection = ortho(0, width, 0, height, -100, 100)
         self.u_size = width / 512.0
         self.program['u_projection'] = self.projection
         self.program['u_size'] = self.u_size
 
     def on_paint(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        self.program.draw(gl.GL_POINTS)
+        gloo.clear()
+        self.program.draw('points')
 
 if __name__ == '__main__':
     canvas = Canvas()

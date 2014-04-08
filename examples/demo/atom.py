@@ -12,7 +12,6 @@
 import numpy as np
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
 # Create vertices
@@ -97,12 +96,6 @@ void main()
 }
 """
 
-# HACK: True OpenGL ES does not need to enable point sprite and does not define
-# these two constants. Desktop OpenGL needs to enable these two modes but we do
-# not have these two constants because our GL namespace pretends to be ES.
-GL_VERTEX_PROGRAM_POINT_SIZE = 34370
-GL_POINT_SPRITE = 34913
-
 
 # ------------------------------------------------------------ Canvas class ---
 class Canvas(app.Canvas):
@@ -135,8 +128,6 @@ class Canvas(app.Canvas):
 
     def on_initialize(self, event):
         gloo.set_state('translucent', depth_test=False)
-        gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL_POINT_SPRITE)
 
     def on_key_press(self, event):
         if event.text == ' ':
@@ -172,7 +163,7 @@ class Canvas(app.Canvas):
 
     def on_paint(self, event):
         gloo.clear((0, 0, 0, 1))
-        self.program.draw(gl.GL_POINTS)
+        self.program.draw('points')
 
 
 if __name__ == '__main__':
