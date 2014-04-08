@@ -3,6 +3,9 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+
+import sys
+
 import numpy as np
 
 from . import gl
@@ -12,8 +15,7 @@ from ..util import logger
 
 # ------------------------------------------------------------ Buffer class ---
 class Buffer(GLObject):
-    """
-    Generic GPU buffer.
+    """ Generic GPU buffer.
 
     A generic buffer is an interface used to upload data to a GPU array buffer
     (GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER). It keeps tracks of buffer
@@ -22,34 +24,32 @@ class Buffer(GLObject):
     The `set_data` is a deferred operation: you can call it even if an OpenGL
     context is not available. The `update` function is responsible to upload
     pending data to GPU memory and requires an active GL context.
+    
+    Parameters
+    ----------
+
+    target : GLenum
+        gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER
+    data : ndarray
+        Buffer data
+    nbytes : int
+        Buffer byte size
+    resizeable : bool
+        Indicates whether buffer is resizeable
     """
 
     def __init__(self, data=None, target=gl.GL_ARRAY_BUFFER, nbytes=0,
                  resizeable=True):
-        """ Initialize buffer
-
-        Parameters
-        ----------
-
-        target : GLenum
-            gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER
-
-        data : ndarray
-            Buffer data
-
-        nbytes : int
-            Buffer byte size
-
-        resizeable : boolean
-            Indicates whether buffer is resizeable
-        """
-
+        
         GLObject.__init__(self)
         self._need_resize = True
         self._resizeable = resizeable
         self._views = []
         self._valid = True
-
+        
+        # For ATI bug
+        self._bufferSubDataOk = False
+        
         # Store and check target
         if target not in (gl.GL_ARRAY_BUFFER, gl.GL_ELEMENT_ARRAY_BUFFER):
             raise ValueError("Invalid target for buffer object")
@@ -64,9 +64,8 @@ class Buffer(GLObject):
         # Set data
         self._pending_data = []
         if data is not None:
-            data = np.array(data, copy=True)
             self._nbytes = data.nbytes
-            self.set_data(data, copy=True)
+            self.set_data(data, copy=False)
 
     @property
     def nbytes(self):
@@ -80,22 +79,17 @@ class Buffer(GLObject):
         Parameters
         ----------
 
-        data : np.array
+        data : ndarray
             Data to be uploaded
-
         offset: int
             Offset in buffer where to start copying data
-
-        copy: boolean
+        copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         """
 
-        if not data.flags["C_CONTIGUOUS"]:
-            data = np.array(data, copy=True)
-        else:
-            data = np.array(data, copy=copy)
+        data = np.array(data, copy=copy)
         nbytes = data.nbytes
 
         if offset < 0:
@@ -166,58 +160,69 @@ class Buffer(GLObject):
                      len(self._pending_data))
         while self._pending_data:
             data, nbytes, offset = self._pending_data.pop(0)
-            gl.glBufferSubData(self._target, offset, data)
-            if gl.current_backend is gl.desktop:
-                gl.check_error('glBufferSubData')
+            
+            # Determine whether to check errors to try handling the ATI bug
+            check_ati_bug = ((not self._bufferSubDataOk) and
+                             (gl.current_backend is gl.desktop) and
+                             sys.platform.startswith('win'))
+            
+            # flush any pending errors
+            if check_ati_bug:
+                gl.check_error('periodic check')
+            
+            try:
+                gl.glBufferSubData(self._target, offset, data)
+                if check_ati_bug:
+                    gl.check_error('glBufferSubData')
+                self._bufferSubDataOk = True  # glBufferSubData seems to work
+            except Exception:
+                # This might be due to a driver error (seen on ATI), issue #64.
+                # We try to detect this, and if we can use glBufferData instead
+                if offset == 0 and nbytes == self._nbytes:
+                    gl.glBufferData(self._target, data, self._usage)
+                    logger.debug("Using glBufferData instead of " +
+                                 "glBufferSubData (known ATI bug).")
+                else:
+                    raise
 
 
 # -------------------------------------------------------- DataBuffer class ---
 class DataBuffer(Buffer):
-    """ GPU data buffer """
+    """ GPU data buffer 
+    
+    Parameters
+    ----------
+
+    target : GLENUM
+        gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER
+    data : ndarray
+        Buffer data (optional)
+    dtype : dtype
+        Buffer data type (optional)
+    size : int
+        Buffer element size
+    base : DataBuffer
+        Base buffer of this buffer
+    offset : int
+        Byte offset of this buffer relative to base buffer
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
+    resizeable : bool
+        Indicates whether buffer is resizeable
+    """
 
     def __init__(self, data=None, dtype=None, target=gl.GL_ARRAY_BUFFER,
-                 size=0, base=None, offset=0, store=True, copy=False,
-                 resizeable=True):
-        """
-        Initialize the buffer
-
-        Parameters
-        ----------
-
-        target : GLENUM
-            gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER
-
-        data : ndarray
-            Buffer data (optional)
-
-        dtype : np.dtype
-           Buffer data type (optional)
-
-        size : int
-           Buffer element size
-
-        base : DataBuffer
-           Base buffer of this buffer
-
-        offset : int
-           Byte offset of this buffer relative to base buffer
-
-        store : boolean
-           Indicate whether to use a intermediate CPU storage
-
-        copy : boolean
-           Indicate whether to use given data as CPU storage
-
-        resizeable : boolean
-            Indicates whether buffer is resizeable
-        """
-
+                 size=0, base=None, offset=0, store=True, resizeable=True):
+        
         Buffer.__init__(self, target=target, resizeable=resizeable)
         self._base = base
         self._offset = offset
         self._data = None
         self._store = store
-        self._copy = copy
+        self._copy = False  # flag to indicate that a copy is made
         self._size = size
 
         # This buffer is a view on another
@@ -238,16 +243,15 @@ class DataBuffer(Buffer):
             self._size = data.size
             self._stride = data.strides[-1]
             self._nbytes = data.nbytes
+            # Handle storage
             if self._store:
                 if not data.flags["C_CONTIGUOUS"]:
-                    if self._copy is False:
-                        logger.warning(
-                            "Cannot use non contiguous data as CPU storage")
+                    logger.warning("Copying discontiguous data as CPU storage")
                     self._copy = True
-                self._data = np.array(data, copy=self._copy).ravel()
-                self.set_data(self._data, copy=False)
-            else:
-                self.set_data(data, copy=True)
+                    data = data.copy()
+                self._data = data.ravel()
+            # Set data
+            self.set_data(data, copy=False)
 
         # Create buffer from dtype and size
         elif dtype is not None:
@@ -300,27 +304,17 @@ class DataBuffer(Buffer):
         else:
             GLObject.deactivate(self)
 
-    def update(self):
-        """ Update the object in GPU """
-
-        if self._base is not None:
-            self._base.update()
-        else:
-            GLObject.update(self)
-
     def set_data(self, data, offset=0, copy=False):
         """ Set data (deferred operation)
 
         Parameters
         ----------
 
-        data : np.array
+        data : ndarray
             Data to be uploaded
-
         offset: int
             Offset in buffer where to start copying data
-
-        copy: boolean
+        copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
@@ -553,36 +547,28 @@ class DataBuffer(Buffer):
 
 # ------------------------------------------------------ VertexBuffer class ---
 class VertexBuffer(DataBuffer):
-    """
-    VertexBuffer represents vertex data that can be uploaded to GPU memory.
+    """ Buffer for vertex attribute data
+    
+    Parameters
+    ----------
+    
+    data : ndarray
+        Buffer data (optional)
+    dtype : dtype
+        Buffer data type (optional)
+    size : int
+        Buffer size (optional)
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
+    resizeable : bool
+        Indicates whether buffer is resizeable
     """
 
     def __init__(self, data=None, dtype=None, size=0, store=True,
-                 copy=False, resizeable=True, *args, **kwargs):
-        """
-        Initialize the buffer
-
-        Parameters
-        ----------
-
-        data : ndarray
-            Buffer data (optional)
-
-        dtype : np.dtype
-           Buffer data type (optional)
-
-        size : int
-           Buffer size (optional)
-
-        store : boolean
-           Indicate whether to use an intermediate CPU storage
-
-        copy : boolean
-           Indicate whether to use given data as CPU storage
-
-        resizeable : boolean
-            Indicates whether buffer is resizeable
-        """
+                 resizeable=True, *args, **kwargs):
 
         # We don't want these two parameters to be seen from outside
         # (because they are used internally only)
@@ -609,7 +595,7 @@ class VertexBuffer(DataBuffer):
 
         DataBuffer.__init__(self, data=data, dtype=dtype, size=size, base=base,
                             offset=offset, target=gl.GL_ARRAY_BUFFER,
-                            store=store, copy=copy, resizeable=resizeable)
+                            store=store, resizeable=resizeable)
 
         # Check base type and count for each dtype fields (if buffer is a base)
         if base is None:
@@ -636,37 +622,29 @@ class VertexBuffer(DataBuffer):
 
 # ------------------------------------------------------- IndexBuffer class ---
 class IndexBuffer(DataBuffer):
-    """
-    IndexBuffer represents indices data that can be uploaded to GPU memory.
+    """ Buffer for index data 
+    
+    Parameters
+    ----------
+
+    data : ndarray
+        Buffer data (optional)
+    dtype : dtype
+        Buffer data type (optional)
+    size : int
+        Buffer size (optional)
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
+    resizeable : bool
+        Indicates whether buffer is resizeable
     """
 
     def __init__(self, data=None, dtype=np.uint32, size=0, store=True,
-                 copy=False, resizeable=True, *args, **kwargs):
-        """
-        Initialize the buffer
-
-        Parameters
-        ----------
-
-        data : ndarray
-            Buffer data (optional)
-
-        dtype : np.dtype
-           Buffer data type (optional)
-
-        size : int
-           Buffer size (optional)
-
-        store : boolean
-           Indicate whether to use a intermediate CPU storage
-
-        copy : boolean
-           Indicate whether to use given data as CPU storage
-
-        resizeable : boolean
-            Indicates whether buffer is resizeable
-        """
-
+                 resizeable=True, *args, **kwargs):
+       
         # We don't want these two parameters to be seen from outside
         # (because they are used internally only)
         offset = kwargs.get("offset", 0)
@@ -685,4 +663,4 @@ class IndexBuffer(DataBuffer):
 
         DataBuffer.__init__(self, data=data, dtype=dtype, size=size, base=base,
                             offset=offset, target=gl.GL_ELEMENT_ARRAY_BUFFER,
-                            store=store, copy=copy, resizeable=resizeable)
+                            store=store, resizeable=resizeable)

@@ -119,7 +119,7 @@ class MolecularViewerCanvas(app.Canvas):
         self.timer.start()
 
     def load_molecule(self, fname):
-        molecule = np.load(fname)
+        molecule = np.load(fname)['molecule']
         self._nAtoms = molecule.shape[0]
 
         # The x,y,z values store in one array
@@ -202,5 +202,5 @@ def main(fname):
     app.run()
 
 if __name__ == '__main__':
-    fname = get_data_file('molecular_viewer/micelle.npy')
+    fname = get_data_file('molecular_viewer/micelle.npz')
     main(fname)

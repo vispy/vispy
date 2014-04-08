@@ -1,7 +1,7 @@
 """ Test the use function.
 """
 
-from vispy.util import assert_is
+from vispy.util.testing import assert_is, requires_pyopengl
 
 from vispy.gloo import gl
 
@@ -10,7 +10,7 @@ def teardown_module():
     gl.use()  # Reset to default
 
 
-@gl._requires_pyopengl()
+@requires_pyopengl()
 def test_use_desktop():
     """ Testing that gl.use injects all names in gl namespace """
 

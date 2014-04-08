@@ -14,30 +14,21 @@ from ..util import logger
 
 
 class RenderBuffer(GLObject):
+    """ Base class for render buffer object
+    
+    Parameters
+    ----------
 
-    """
-    Encapsulation of render buffer objects.
+    format : GLEnum
+        The buffer format: gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1, 
+        gl.GL_DEPTH_COMPONENT16, or gl.GL_STENCIL_INDEX8
+    shape : tuple of 2 ints
+        Buffer shape (always two dimensional)
+    resizeable : bool
+        Indicates whether texture can be resized
     """
 
     def __init__(self, shape=None, format=None, resizeable=True):
-        """
-        Initialize the texture
-
-        Parameters
-        ----------
-
-        format : GLEnum
-            gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1
-            gl.GL_DEPTH_COMPONENT16
-            gl.GL_STENCIL_INDEX8
-
-        shape : tuple of 2 integers
-            Buffer shape (always two dimensional)
-
-        resizeable : boolean
-            Indicates whether texture can be resized
-        """
-
         GLObject.__init__(self)
         self._shape = shape
         self._target = gl.GL_RENDERBUFFER
@@ -113,28 +104,20 @@ class RenderBuffer(GLObject):
 
 # ------------------------------------------------------- ColorBuffer class ---
 class ColorBuffer(RenderBuffer):
+    """ Color buffer object
+    
+    Parameters
+    ----------
 
-    """
-    Encapsulation of color buffer object.
+    format : GLEnum
+        gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1
+    shape : tuple of 2 integers
+        Buffer shape (always two dimensional)
+    resizeable : bool
+        Indicates whether buffer can be resized
     """
 
     def __init__(self, shape, format=gl.GL_RGBA, resizeable=True):
-        """
-        Initialize the color buffer
-
-        Parameters
-        ----------
-
-        format : GLEnum
-            gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1
-
-        shape : tuple of 2 integers
-            Buffer shape (always two dimensional)
-
-        resizeable : boolean
-            Indicates whether buffer can be resized
-        """
-
 #        if format not in (gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1):
 #            raise ValueError("Format not allowed for color buffer")
 
@@ -143,29 +126,21 @@ class ColorBuffer(RenderBuffer):
 
 # ------------------------------------------------------- DepthBuffer class ---
 class DepthBuffer(RenderBuffer):
+    """ Depth buffer object
+    
+    Parameters
+    ----------
 
-    """
-    Encapsulation of depth buffer object.
+    shape : tuple of 2 integers
+        Buffer shape (always two dimensional)
+    format : GLEnum
+        gl.GL_DEPTH_COMPONENT16
+    resizeable : bool
+        Indicates whether buffer can be resized
     """
 
     def __init__(self, shape,
                  format=gl.GL_DEPTH_COMPONENT, resizeable=True):
-        """
-        Initialize the depth buffer
-
-        Parameters
-        ----------
-
-        shape : tuple of 2 integers
-            Buffer shape (always two dimensional)
-
-        format : GLEnum
-            gl.GL_DEPTH_COMPONENT16
-
-        resizeable : boolean
-            Indicates whether buffer can be resized
-        """
-
 #        if format not in (gl.GL_DEPTH_COMPONENT16,):
 #            raise ValueError("Format not allowed for depth buffer")
 
@@ -174,29 +149,21 @@ class DepthBuffer(RenderBuffer):
 
 # ----------------------------------------------------- StencilBuffer class ---
 class StencilBuffer(RenderBuffer):
+    """ Stencil buffer object
+    
+    Parameters
+    ----------
 
-    """
-    Encapsulation of stencil buffer object.
+    shape : tuple of 2 integers
+        Buffer shape (always two dimensional)
+    format : GLEnum
+        gl.GL_STENCIL_INDEX8
+    resizeable : bool
+        Indicates whether buffer can be resized
     """
 
     def __init__(self, shape,
                  format=gl.GL_STENCIL_INDEX8, resizeable=True):
-        """
-        Initialize the stencil buffer
-
-        Parameters
-        ----------
-
-        shape : tuple of 2 integers
-            Buffer shape (always two dimensional)
-
-        format : GLEnum
-            gl.GL_STENCIL_INDEX8
-
-        resizeable : boolean
-            Indicates whether buffer can be resized
-        """
-
 #        if format not in (gl.GL_STENCIL_INDEX,):
 #            raise ValueError("Format not allowed for color buffer")
 
@@ -205,8 +172,19 @@ class StencilBuffer(RenderBuffer):
 
 # ------------------------------------------------------- FrameBuffer class ---
 class FrameBuffer(GLObject):
-
-    """
+    """ Frame buffer object
+    
+    Parameters
+    ----------
+    
+    color : ColorBuffer (optional)
+        The color buffer to attach to this frame buffer
+    depth : DepthBuffer (optional)
+        The depth buffer to attach to this frame buffer
+    stencil : StencilBuffer (optional)
+        The stencil buffer to attach to this frame buffer
+    resizable : bool
+        Whether the buffers are resizable (default True)
     """
 
     def __init__(self, color=None, depth=None, stencil=None, resizeable=True):
@@ -346,7 +324,9 @@ class FrameBuffer(GLObject):
 
     def _attach(self):
         """ Attach render buffers to framebuffer """
-
+        
+        # todo: this can currently only attach to texture mipmap level 0
+        
         logger.debug("GPU: Attach render buffers")
         while self._pending_attachments:
             attachment, buffer = self._pending_attachments.pop(0)

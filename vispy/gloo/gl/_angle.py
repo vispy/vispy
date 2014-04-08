@@ -586,7 +586,7 @@ def glGetParameter(pname):
         return _glGetIntegerv(pname)
     name = pname
     res = _lib.glGetString(name)
-    return res.decode('utf-8')
+    return res.decode('utf-8') if res else ''
 
 
 _lib.glGetTexParameterfv.argtypes = ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_float),

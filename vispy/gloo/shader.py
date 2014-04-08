@@ -13,7 +13,14 @@ from .globject import GLObject
 
 # ------------------------------------------------------------ Shader class ---
 class Shader(GLObject):
-    """Abstract shader class."""
+    """ Abstract shader class
+    
+    Parameters
+    ----------
+
+    code: str
+        code can be a filename or the actual code
+    """
 
     _gtypes = {
         'float':       gl.GL_FLOAT,
@@ -37,16 +44,6 @@ class Shader(GLObject):
     }
 
     def __init__(self, target, code=None):
-        """
-        Initialize the shader and get code if possible.
-
-        Parameters
-        ----------
-
-        code: str
-            code can be a filename or the actual code
-        """
-
         GLObject.__init__(self)
         if target not in [gl.GL_VERTEX_SHADER, gl.GL_FRAGMENT_SHADER]:
             raise ValueError("Shader target must be vertex or fragment")
@@ -65,8 +62,8 @@ class Shader(GLObject):
     @code.setter
     def code(self, code):
         """ Shader source code """
-        if os.path.exists(code):
-            with open(code) as file:
+        if os.path.isfile(code):
+            with open(code, 'rt') as file:
                 self._code = file.read()
                 self._source = os.path.basename(code)
         else:
@@ -78,20 +75,27 @@ class Shader(GLObject):
     def source(self):
         """ Shader source (string or filename) """
         return self._source
-
+    
+    def _activate(self):
+        pass  # shaders do not need any kind of (de)activation
+    
+    def _deactivate(self):
+        pass  # shaders do not need any kind of (de)activation
+    
     def _create(self):
-        """ Compile the source and checks eveyrthing's ok """
+        """ Create the shader object on the GPU """
 
         # Check if we have something to compile
         if not self._code:
             raise RuntimeError("No code has been given")
 
-        # Check that shader object has been created
+        # Create and check that shader object has been created
+        self._handle = gl.glCreateShader(self._target)
         if self._handle <= 0:
-            self._handle = gl.glCreateShader(self._target)
-            if self._handle <= 0:
-                raise RuntimeError("Cannot create shader object")
+            raise RuntimeError("Cannot create shader object")
 
+    def _update(self):
+        """ Compile the source and checks everything's ok """
         # Set shader source
         gl.glShaderSource(self._handle, self._code)
 
@@ -101,10 +105,10 @@ class Shader(GLObject):
         gl.glCompileShader(self._handle)
         status = gl.glGetShaderParameter(self._handle, gl.GL_COMPILE_STATUS)
         if not status:
-            error = gl.glGetShaderInfoLog(self._handle)
-            lineno, mesg = self._parse_error(error)
-            self._print_error(mesg, lineno - 1)
-            raise RuntimeError("Shader compilation error")
+            errors = gl.glGetShaderInfoLog(self._handle)
+            errormsg = self._get_error(errors, 4)
+            raise RuntimeError("Shader compilation error in %r:\n%s" % 
+                               (self, errormsg))
 
     def _delete(self):
         """ Delete shader from GPU memory (if it was present). """
@@ -122,57 +126,61 @@ class Shader(GLObject):
             An error string as returned byt the compilation process
         """
         error = str(error)
-
+        
         # Nvidia
         # 0(7): error C1008: undefined variable "MV"
-        m = re.match('(\d+)\((\d+)\) :\s(.*)', error)
+        m = re.match(r'(\d+)\((\d+)\)\s*:\s(.*)', error)
         if m:
             return int(m.group(2)), m.group(3)
 
         # ATI / Intel
         # ERROR: 0:131: '{' : syntax error parse error
-        m = re.match('ERROR:\s(\d+):(\d+):\s(.*)', error)
+        m = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error)
         if m:
             return int(m.group(2)), m.group(3)
 
         # Nouveau
         # 0:28(16): error: syntax error, unexpected ')', expecting '('
-        m = re.match('(\d+):(\d+)\((\d+)\):\s(.*)', error)
+        m = re.match(r'(\d+):(\d+)\((\d+)\):\s(.*)', error)
         if m:
             return int(m.group(2)), m.group(4)
 
-        return 0, ('Unknown GLSL error format:\n%s' % error)
+        # Other ...
+        return None, error
 
-    def _print_error(self, error, lineno):
-        """
-        Print error and show the faulty line + some context
+    def _get_error(self, errors, indentation=0):
+        """Get error and show the faulty line + some context
 
         Parameters
         ----------
         error : str
-            An error string as returned byt the compilation process
-
-        lineno: int
-            Line where error occurs
+            An error string as returned by the compilation process
+        indentation : int
+            Number of spaces to indent the found error.
         """
-        lines = self._code.split('\n')
-        start = max(0, lineno - 2)
-        end = min(len(lines), lineno + 1)
+        # Init
+        results = []
+        lines = None
+        if self._code:
+            lines = [line.strip() for line in self._code.split('\n')]
 
-        print('Error in %s' % (repr(self)))
-        print(' -> %s' % error)
-        print()
-        if start > 0:
-            print(' ...')
-        for i, line in enumerate(lines[start:end]):
-            if (i + start) == lineno:
-                print(' %03d %s' % (i + start, line))
+        for error in errors.split('\n'):
+            # Strip; skip empy lines
+            error = error.strip()
+            if not error:
+                continue
+            # Separate line number from description (if we can)
+            linenr, error = self._parse_error(error)
+            if None in (linenr, lines):
+                results.append('%s' % error)
             else:
-                if len(line):
-                    print(' %03d %s' % (i + start, line))
-        if end < len(lines):
-            print(' ...')
-        print()
+                results.append('on line %i: %s' % (linenr, error))
+                if linenr > 0 and linenr < len(lines):
+                    results.append('  %s' % lines[linenr - 1])
+
+        # Add indentation and return
+        results = [' ' * indentation + r for r in results]
+        return '\n'.join(results)
 
     @property
     def uniforms(self):
@@ -217,7 +225,14 @@ class Shader(GLObject):
 
 # ------------------------------------------------------ VertexShader class ---
 class VertexShader(Shader):
-    """ Vertex shader class """
+    """ Vertex shader object
+    
+    Parameters
+    ----------
+
+    code: str
+        code can be a filename or the actual code
+    """
 
     def __init__(self, code=None):
         Shader.__init__(self, gl.GL_VERTEX_SHADER, code)
@@ -228,7 +243,14 @@ class VertexShader(Shader):
 
 # ---------------------------------------------------- FragmentShader class ---
 class FragmentShader(Shader):
-    """ Fragment shader class """
+    """ Fragment shader object
+    
+    Parameters
+    ----------
+
+    code: str
+        code can be a filename or the actual code
+    """
 
     def __init__(self, code=None):
         Shader.__init__(self, gl.GL_FRAGMENT_SHADER, code)

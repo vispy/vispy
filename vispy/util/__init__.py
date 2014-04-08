@@ -7,11 +7,10 @@ one or more Vispy sub-packages.
 """
 
 from ._logging import logger, set_log_level, use_log_level  # noqa
-from ._testing import (_TempDir, sys_info, assert_in, assert_not_in,  # noqa
-                       assert_is, app_opengl_context)  # noqa
 from ._data import get_data_file  # noqa
 from ._config import (_parse_command_line_arguments, config, sys_info,  # noqa
-                      save_config, get_config_keys, set_data_dir)  # noqa
+                      save_config, get_config_keys, set_data_dir,  # noqa
+                      _TempDir)  # noqa
 
 from . import cube        # noqa
 from . import transforms  # noqa

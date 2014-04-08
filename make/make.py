@@ -182,15 +182,16 @@ class Maker:
         except ImportError:
             print('Skipping flake8 test, flake8 not installed')
         else:
-            print('Running flake8... ', end='')
+            print('Running flake8... ')  # if end='', first error gets ugly
             sys.stdout.flush()
             try:
                 main()
             except SystemExit as ex:
-                if ex.code not in (None, 0):
-                    raise  # raises SystemExit again
+                if ex.code in (None, 0):
+                    pass  # do not exit yet, we want to print a success msg
                 else:
-                    print('flake8 test passed.')
+                    raise  # raises SystemExit again
+            print('Hooray! flake8 test passed.')
 
     def images(self, arg):
         """ Create images (screenshots). Subcommands:

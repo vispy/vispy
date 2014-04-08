@@ -12,11 +12,34 @@ import sys
 import platform
 import getopt
 import traceback
+import tempfile
+import atexit
+from shutil import rmtree
 
 from .event import EmitterGroup, EventEmitter, Event
 from .six import string_types
 from ._logging import logger, set_log_level, use_log_level
-from ._testing import _TempDir
+
+
+class _TempDir(str):
+    """Class for creating and auto-destroying temp dir
+
+    This is designed to be used with testing modules.
+
+    We cannot simply use __del__() method for cleanup here because the rmtree
+    function may be cleaned up before this object, so we use the atexit module
+    instead.
+    """
+    def __new__(self):
+        new = str.__new__(self, tempfile.mkdtemp())
+        return new
+
+    def __init__(self):
+        self._path = self.__str__()
+        atexit.register(self.cleanup)
+
+    def cleanup(self):
+        rmtree(self._path, ignore_errors=True)
 
 
 ###############################################################################
@@ -264,21 +287,20 @@ def sys_info(fname=None, overwrite=False):
     out = ''
     try:
         # Nest all imports here to avoid any circular imports
-        from ..app import Application, Canvas, backends
+        from ..app import Application, Canvas
         from ..gloo import gl
-        from .. import __version__
+        from . import testing
         # get default app
         this_app = Application()
         with use_log_level('warning'):
             this_app.use()  # suppress unnecessary messages
         out += 'Platform: %s\n' % platform.platform()
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
-        out += 'VisPy:    %s\n' % __version__
         out += 'Backend:  %s\n' % this_app.backend_name
-        out += 'Qt:       %s\n' % backends.has_qt(return_which=True)[1]
-        out += 'Pyglet:   %s\n' % backends.has_pyglet(return_which=True)[1]
-        out += 'glfw:     %s\n' % backends.has_glfw(return_which=True)[1]
-        out += 'glut:     %s\n' % backends.has_glut(return_which=True)[1]
+        out += 'Qt:       %s\n' % testing.has_qt(return_which=True)[1]
+        out += 'Pyglet:   %s\n' % testing.has_pyglet(return_which=True)[1]
+        out += 'glfw:     %s\n' % testing.has_glfw(return_which=True)[1]
+        out += 'glut:     %s\n' % testing.has_glut(return_which=True)[1]
         out += '\n'
         # We need an OpenGL context to get GL info
         if 'glut' in this_app.backend_name.lower():
@@ -287,12 +309,10 @@ def sys_info(fname=None, overwrite=False):
         else:
             canvas = Canvas('Test', (10, 10), show=False, app=this_app)
             canvas._backend._vispy_set_current()
-            out += 'GL version:  %s\n' % gl.glGetString(gl.GL_VERSION)
+            out += 'GL version:  %s\n' % gl.glGetParameter(gl.GL_VERSION)
             x_ = gl.GL_MAX_TEXTURE_SIZE
-            out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetIntegerv(x_)
-            x_ = gl.ext.GL_MAX_3D_TEXTURE_SIZE
-            out += 'MAX_3D_TEXTURE_SIZE: %d\n\n' % gl.glGetIntegerv(x_)
-            out += 'Extensions: %s\n' % gl.glGetString(gl.GL_EXTENSIONS)
+            out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetParameter(x_)
+            out += 'Extensions: %s\n' % gl.glGetParameter(gl.GL_EXTENSIONS)
             canvas.close()
     except Exception:  # don't stop printing info
         out += '\nInfo-gathering error:\n%s' % traceback.format_exc()

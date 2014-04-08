@@ -347,7 +347,7 @@ def getParameter(pname):
     name = pname
     # --- desktop angle
     ()
-    return res.decode('utf-8')
+    return res.decode('utf-8') if res else ''
     # --- pyopengl
     res = GL.glGetString(pname)
     return res.decode('utf-8')

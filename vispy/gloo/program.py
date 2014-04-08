@@ -16,37 +16,31 @@ from ..util import logger
 
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
-    """
-    A program is an object to which shaders can be attached and linked to
-    create the program.
+    """ Shader program object
+    
+    A Program is an object to which shaders can be attached and linked to
+    create the final program.
+    
+    Parameters
+    ----------
+
+    vert : str, VertexShader, or list
+        The vertex shader to be used by this program
+    frag : str, FragmentShader, or list
+        The fragment shader to be used by this program
+    count : int (optional)
+        Number of vertices this program will use. This can be given to
+        initialize a VertexBuffer during Program initialization.
+
+    Notes
+    -----
+    
+    If several shaders are specified, only one can contain the main
+    function. OpenGL ES 2.0 does not support a list of shaders.
     """
 
     # ---------------------------------
-    def __init__(self, verts=[], frags=[], count=0):
-        """
-        Initialize the program and register shaders to be linked.
-
-        Parameters
-        ----------
-
-        verts : list of vertex shaders
-            Vertex shaders to be used by this program
-
-        frags : list of fragment shaders
-            Fragment shaders to be used by this program
-
-        count : int
-            Number of vertices this program will use
-
-        Note
-        ----
-        If several vertex shaders are specified, only one can contain the main
-        function.
-
-        If several fragment shaders are specified, only one can contain the
-        main function.
-        """
-
+    def __init__(self, vert=None, frag=None, count=0):
         GLObject.__init__(self)
 
         self._count = count
@@ -56,25 +50,41 @@ class Program(GLObject):
         
         # Get all vertex shaders
         self._verts = []
-        if type(verts) in [str, VertexShader]:
-            verts = [verts]
-        if verts is not None:
-            for shader in verts:
-                if type(shader) is str:
-                    self._verts.append(VertexShader(shader))
-                elif shader not in self._verts:
+        if isinstance(vert, (str, VertexShader)):
+            verts = [vert]
+        elif isinstance(vert, (type(None), tuple, list)):
+            verts = vert or []
+        else:
+            raise ValueError('Vert must be str, VertexShader or list')
+        # Apply
+        for shader in verts:
+            if isinstance(shader, str):
+                self._verts.append(VertexShader(shader))
+            elif isinstance(shader, VertexShader):
+                if shader not in self._verts:
                     self._verts.append(shader)
+            else:
+                T = type(shader)
+                raise ValueError('Cannot make a VertexShader of %r.' % T)
 
         # Get all fragment shaders
         self._frags = []
-        if type(frags) in [str, FragmentShader]:
-            frags = [frags]
-        if frags is not None:
-            for shader in frags:
-                if type(shader) is str:
-                    self._frags.append(FragmentShader(shader))
-                elif shader not in self._frags:
+        if isinstance(frag, (str, FragmentShader)):
+            frags = [frag]
+        elif isinstance(frag, (type(None), tuple, list)):
+            frags = frag or []
+        else:
+            raise ValueError('Frag must be str, FragmentShader or list')
+        # Apply
+        for shader in frags:
+            if isinstance(shader, str):
+                self._frags.append(FragmentShader(shader))
+            elif isinstance(shader, FragmentShader):
+                if shader not in self._frags:
                     self._frags.append(shader)
+            else:
+                T = type(shader)
+                raise ValueError('Cannot make a FragmentShader of %r.' % T)
 
         # Build uniforms and attributes
         self._build_uniforms()
@@ -89,12 +99,22 @@ class Program(GLObject):
             self.bind(self._buffer)
 
     def attach(self, shaders):
-        """ Attach one or several vertex/fragment shaders to the program. """
+        """ Attach one or several vertex/fragment shaders to the program
+        
+        Note that GL ES 2.0 only supports one vertex and one fragment 
+        shader.
+        
+        Parameters
+        ----------
+        
+        shaders : list of shade objects
+            The shaders to attach.
+        """
 
-        if type(shaders) in [VertexShader, FragmentShader]:
+        if isinstance(shaders, (VertexShader, FragmentShader)):
             shaders = [shaders]
         for shader in shaders:
-            if type(shader) is VertexShader:
+            if isinstance(shader, VertexShader):
                 self._verts.append(shader)
             else:
                 self._frags.append(shader)
@@ -113,7 +133,13 @@ class Program(GLObject):
 
     def detach(self, shaders):
         """Detach one or several vertex/fragment shaders from the program.
-
+    
+        Parameters
+        ----------
+        
+        shaders : list of shade objects
+            The shaders to detach.
+        
         Note
         ----
 
@@ -121,15 +147,15 @@ class Program(GLObject):
         takes care of that.
         """
 
-        if type(shaders) in [VertexShader, FragmentShader]:
+        if isinstance(shaders, (VertexShader, FragmentShader)):
             shaders = [shaders]
         for shader in shaders:
-            if type(shader) is VertexShader:
+            if isinstance(shader, VertexShader):
                 if shader in self._verts:
                     self._verts.remove(shader)
                 else:
                     raise RuntimeError("Shader is not attached to the program")
-            if type(shader) is FragmentShader:
+            if isinstance(shader, FragmentShader):
                 if shader in self._frags:
                     self._frags.remove(shader)
                 else:
@@ -183,7 +209,7 @@ class Program(GLObject):
         gl.glLinkProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
             print(gl.glGetProgramInfoLog(self._handle))
-            raise RuntimeError('Linking error')
+            raise RuntimeError('Program linking error')
 
         self._need_build = False
 
@@ -195,7 +221,7 @@ class Program(GLObject):
                 uniform.active = True
             else:
                 uniform.active = False
-
+        
         # Activate attributes
         active_attributes = [name for (name, gtype) in self.active_attributes]
         for attribute in self._attributes.values():
@@ -204,6 +230,12 @@ class Program(GLObject):
             else:
                 attribute.active = False
     
+        # Validate
+        gl.glValidateProgram(self._handle)
+        if not gl.glGetProgramParameter(self._handle, gl.GL_VALIDATE_STATUS):
+            print(gl.glGetProgramInfoLog(self._handle))
+            raise RuntimeError('Program validation error')
+        
     def _delete(self):
         logger.debug("GPU: Deleting program")
         gl.glDeleteProgram(self._handle)
@@ -234,13 +266,23 @@ class Program(GLObject):
             dtype.append(attribute.dtype)
 
     def bind(self, data):
-        """ """
-        if isinstance(data, VertexBuffer):
-            for name in data.dtype.names:
-                if name in self._attributes.keys():
-                    self._attributes[name].set_data(data[name])
-                else:
-                    logger.warn("%s has not been bound" % name)
+        """ Bind a VertexBuffer that has structured data
+        
+        Pamareters
+        ----------
+        data : VertexBuffer
+            The vertex buffer to bind. The field names of the array
+            are mapped to attribute names in GLSL.
+        """
+        # Check
+        if not isinstance(data, VertexBuffer):
+            raise ValueError('Program.bind() requires a VertexBuffer.')
+        # Apply
+        for name in data.dtype.names:
+            if name in self._attributes.keys():
+                self._attributes[name].set_data(data[name])
+            else:
+                logger.warn("%s has not been bound" % name)
 
     def __setitem__(self, name, data):
         if name in self._uniforms.keys():
@@ -282,9 +324,11 @@ class Program(GLObject):
         gl.glUseProgram(0)
 
         for uniform in self._uniforms.values():
-            uniform.deactivate()
+            if uniform.active:
+                uniform.deactivate()
         for attribute in self._attributes.values():
-            attribute.deactivate()
+            if attribute.active:
+                attribute.deactivate()
 
     @property
     def all_uniforms(self):
@@ -403,10 +447,8 @@ class Program(GLObject):
         mode : GL_ENUM
             GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP,
             GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
-
         first : int
             The starting vertex index in the vertex array. Default 0.
-
         count : int
             The number of vertices to draw. Default all.
         """
