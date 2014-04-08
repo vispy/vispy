@@ -241,7 +241,7 @@ def _parse_command_line_arguments():
     Put into a function so that any variables dont leak in the vispy namespace.
     """
     # Get command line args for vispy
-    argnames = ['vispy-backend', 'vispy-gl-debug']
+    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-log=']
     try:
         opts, args = getopt.getopt(sys.argv[1:], '', argnames)
     except getopt.GetoptError:
@@ -254,6 +254,14 @@ def _parse_command_line_arguments():
                 logger.info('backend', a)
             elif o == '--vispy-gl-debug':
                 config['gl_debug'] = True
+            elif o == '--vispy-log':
+                if ',' in a:
+                    verbose, match = a.split(',')
+                else:
+                    verbose = a
+                    match = None
+                config['logging_level'] = a
+                set_log_level(verbose, match)
             else:
                 logger.warning("Unsupported vispy flag: %s" % o)
 
