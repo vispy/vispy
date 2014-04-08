@@ -7,15 +7,31 @@
 from copy import deepcopy
 import numpy as np
 
-from ..util import logger
 from ..util.six import string_types
 from . import gl
 
+
+# Helpers that are needed for efficient wrapping
 
 def _check_valid(key, val, valid):
     if val not in valid:
         raise ValueError('%s must be one of %s, not "%s"'
                          % (key, valid, val))
+
+
+def _get_gl_attr(x):
+    """Helper to return gl.GL_x"""
+    x = getattr(gl, 'GL_' + x.upper(), None)
+    if x is None:
+        raise ValueError('gl has no attribute corresponding to name %s' % x)
+    return x
+
+
+def _result(val):
+    """Helper to make sure methods worked"""
+    if val in (gl.GL_INVALID_VALUE, gl.GL_INVALID_ENUM,
+               gl.GL_INVALID_OPERATION):
+        raise RuntimeError('GL parameter could not be set')
 
 
 ###############################################################################
@@ -41,9 +57,8 @@ def set_viewport(x, y, w, h):
     h : int
         Viewport height.
     """
-    if not all(isinstance(v, int) for v in (x, y, w, h)):
-        raise ValueError('All parameters must be integers')
-    gl.glViewport(x, y, w, h)
+    x, y, w, h = int(x), int(y), int(w), int(h)
+    _result(gl.glViewport(x, y, w, h))
 
 
 def set_depth_range(near, far):
@@ -56,8 +71,7 @@ def set_depth_range(near, far):
     far : float
         Far clipping plane.
     """
-    near = float(near)
-    far = float(far)
+    near, far = float(near), float(far)
     gl.glDepthRangef(near, far)
 
 
@@ -70,7 +84,7 @@ def set_front_face(mode):
         Can be 'cw' for clockwise or 'ccw' for counter-clockwise.
     """
     _check_valid('mode', mode, ('cw', 'ccw'))
-    gl.glFrontFace(getattr(gl, 'GL_' + mode.upper()))
+    _result(gl.glFrontFace(_get_gl_attr(mode)))
 
 
 def set_cull_face(mode):
@@ -82,7 +96,7 @@ def set_cull_face(mode):
         Culling mode. Can be "front", "back", or "front_and_back".
     """
     _check_valid('mode', mode, ('front', 'back', 'front_and_back'))
-    gl.glCullFace(getattr(gl, 'GL_' + mode.upper()))
+    _result(gl.glCullFace(_get_gl_attr(mode)))
 
 
 def set_line_width(width):
@@ -94,7 +108,7 @@ def set_line_width(width):
         The line width.
     """
     width = float(width)
-    gl.glLineWidth(width)
+    _result(gl.glLineWidth(width))
 
 
 def set_polygon_offset(factor, units):
@@ -108,8 +122,7 @@ def set_polygon_offset(factor, units):
         Multiplied by an implementation-specific value to create a constant
         depth offset.
     """
-    factor = float(factor)
-    units = float(units)
+    factor, units = float(factor), float(units)
     gl.glPolygonOffset(factor, units)
 
 
@@ -148,7 +161,7 @@ def clear(color=True, depth=True, stencil=True):
         bits |= gl.GL_DEPTH_BUFFER_BIT
     if stencil:
         bits |= gl.GL_STENCIL_BUFFER_BIT
-    gl.glClear(bits)
+    _result(gl.glClear(bits))
 
 
 def set_clear_color(color=(0., 0., 0., 1.)):
@@ -179,8 +192,7 @@ def set_clear_depth(depth=1.0):
     depth : float
         The depth to use.
     """
-    if not isinstance(depth, float):
-        raise TypeError('depth must be a float')
+    depth = float(depth)
     gl.glClearDepthf(depth)
 
 
@@ -194,8 +206,7 @@ def set_clear_stencil(index=0):
     index : int
         The index to use when the stencil buffer is cleared.
     """
-    if not isinstance(index, int):
-        raise TypeError('index must be an integer')
+    index = int(index)
     gl.glClearStencil(index)
 
 
@@ -227,11 +238,7 @@ def set_blend_func(sfactor, dfactor):
     # check vals and translate to GL
     for fact, name in zip((sfactor, dfactor), ('sfactor', 'dfactor')):
         _check_valid(name, fact, _gl_blend_list)
-    gl_sfactor = getattr(gl, 'GL_' + sfactor.upper())
-    gl_dfactor = getattr(gl, 'GL_' + dfactor.upper())
-    res = gl.glBlendFunc(gl_sfactor, gl_dfactor)
-    if res in (gl.GL_INVALID_ENUM, gl.GL_INVALID_VALUE):
-        raise RuntimeError('could not set blend functions')
+    _result(gl.glBlendFunc(_get_gl_attr(sfactor), _get_gl_attr(dfactor)))
 
 
 ###############################################################################
@@ -305,11 +312,8 @@ def set_state(**kwargs):
     for key, val in kwargs.items():
         if not isinstance(val, bool):
             raise TypeError('All inputs to set_state must be boolean')
-        gl_key = getattr(gl, 'GL_' + key.upper(), None)
-        if gl_key is None:
-            raise KeyError('argument %s unknown' % key)
         func = gl.glEnable if val else gl.glDisable
-        func(gl_key)
+        _result(func(_get_gl_attr(key)))
 
 
 #
@@ -342,10 +346,7 @@ def get_parameter(name):
     """
     if not isinstance(name, string_types):
         raise TypeError('name bust be a string')
-    gl_parameter = getattr(gl, 'GL_' + name.upper(), None)
-    if gl_parameter is None:
-        raise ValueError('gl has no attribute corresponding to name %s' % name)
-    return gl.glGetParameter(gl_parameter)
+    return gl.glGetParameter(_get_gl_attr(name))
 
 
 def read_pixels(viewport=None):
@@ -369,9 +370,9 @@ def read_pixels(viewport=None):
         if viewport.ndim != 1 or viewport.size != 4:
             raise ValueError('viewport must be 1D 4-element array-like')
     x, y, w, h = viewport
-    gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)  # PACK, not UNPACK
+    _result(gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1))  # PACK, not UNPACK
     im = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
-    gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
+    _result(gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4))
     # reshape, flip, and return
     if not isinstance(im, np.ndarray):
         im = np.frombuffer(im, np.uint8)
@@ -391,12 +392,4 @@ def hint(target, mode):
     """
     if not all(isinstance(tm, string_types) for tm in (target, mode)):
         raise TypeError('target and mode must both be strings')
-    gl_target = getattr(gl, 'GL_' + target.upper() + '_HINT', None)
-    gl_mode = getattr(gl, 'GL_' + mode.upper(), None)
-    for tm, gl_tm, name in zip((target, mode), (gl_target, gl_mode),
-                               ('target', 'mode')):
-        if gl_tm is None:
-            raise ValueError('gl has no hint %s %s' % (name, tm))
-    val = gl.glHint()
-    if val in (gl.GL_INVALID_ENUM, gl.GL_INVALID_OPERATION):
-        raise RuntimeError('hint could not be set')
+    _result(gl.glHint(_get_gl_attr(target + '_HINT', _get_gl_attr(mode))))
