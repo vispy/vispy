@@ -18,4 +18,3 @@ from .canvas import Canvas, MouseEvent, KeyEvent  # noqa
 from .timer import Timer  # noqa
 from ._default_app import (default_app, use, create, run, quit,  # noqa
                            process_events)  # noqa
-from ._util import app_opengl_context  # noqa

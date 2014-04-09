@@ -55,7 +55,7 @@ class Canvas(object):
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
-                 show=True, autoswap=True, app=None, create_native=True,
+                 show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, native_args=None, native_kwargs=None):
         self.events = EmitterGroup(source=self,
                                    initialize=Event,

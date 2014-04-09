@@ -21,7 +21,7 @@ import numpy as np
 
 from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true
-from vispy.app import app_opengl_context
+from vispy.app import Canvas
 from vispy.util.testing import assert_in  # noqa
 from numpy.testing import assert_almost_equal  # noqa
 from vispy.util.testing import requires_application, requires_pyopengl
@@ -29,9 +29,6 @@ from vispy.util.testing import requires_application, requires_pyopengl
 from vispy.gloo import gl
 
 # All these tests require a working backend.
-
-# Whether to sleep in order to show the result. True when running as script
-SHOW = False
 
 
 ## High level tests
@@ -82,30 +79,24 @@ def _test_functonality(backend):
     # use the backend
     gl.use(backend)
     
-    with app_opengl_context() as context:
+    with Canvas() as canvas:
         _clear_screen()
         
         # Prepare
-        w, h = context.c.size
+        w, h = canvas.size
         gl.glViewport(0, 0, w, h)
         gl.glScissor(0, 0, w, h)  # touch
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         
         # Setup visualization, ensure to do it in a paint event
-        objects = context.test(_prepare_vis)
+        objects = _prepare_vis()
         _clear_screen()
-        
-        # Draw 1
-        context.test(_draw1, show=SHOW)
+        _draw1()
         _clear_screen()
-        
-        # Draw 2
-        context.test(_draw2, show=SHOW)
+        _draw2()
         _clear_screen()
-        
-        # Draw 3
-        context.test(_draw3, show=SHOW)
-        
+        _draw3()
+
         # Clean up
         for delete_func, handle in objects:
             delete_func(handle)
@@ -558,7 +549,6 @@ def _check_result(assert_result=True):
 
 
 if __name__ == '__main__':
-    #SHOW = True
     test_functionality_desktop()
     test_functionality_pyopengl()
     test_functionality_proxy()

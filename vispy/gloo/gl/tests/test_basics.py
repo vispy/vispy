@@ -9,7 +9,7 @@ import sys
 
 from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true  # noqa
-from vispy.app import app_opengl_context
+from vispy.app import Canvas
 from vispy.util.testing import assert_in  # noqa
 from numpy.testing import assert_almost_equal
 from vispy.util.testing import requires_application, requires_pyopengl
@@ -60,7 +60,7 @@ def _test_basics(backend):
     # use the backend
     gl.use(backend)
 
-    with app_opengl_context():
+    with Canvas():
         _test_setting_parameters()
         _test_enabling_disabling()
         _test_setting_stuff()
