@@ -9,6 +9,8 @@ import numpy as np
 from ._default_app import default_app
 from ..util.event import EmitterGroup, Event
 from ..util.ptime import time
+from ..util.six import string_types
+from .application import Application
 from .base import BaseCanvasBackend as CanvasBackend  # noqa
 
 # todo: add functions for asking about current mouse/keyboard state
@@ -41,9 +43,11 @@ class Canvas(object):
     autoswap : bool
         Whether to swap the buffers automatically after a paint event.
         Default True.
-    app : Application
+    app : Application | str
         Give vispy Application instance to use as a backend.
-        (vispy.app is used by default.)
+        (vispy.app is used by default.) If str, then an application
+        using the chosen backend (e.g., 'pyglet') will be created.
+        Note the canvas application can be accessed at ``canvas.app``.
     create_native : bool
         Whether to create the widget immediately. Default True.
     init_gloo : bool
@@ -95,6 +99,8 @@ class Canvas(object):
         self._fps_callback = None
 
         # Get app instance
+        if isinstance(app, string_types):
+            app = Application(app)
         self._app = default_app if app is None else app
 
         # Create widget now

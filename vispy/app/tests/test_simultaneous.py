@@ -54,7 +54,7 @@ def _disabled_test_simultaneous_backends():
     bgcolor = dict()
     try:
         for bi, backend in enumerate(backends):
-            canvas = Canvas(app=Application(backend), size=_win_size,
+            canvas = Canvas(app=backend, size=_win_size,
                             title=backend + ' simul', autoswap=False)
             canvas.__enter__()  # invoke warmup
             canvases[backend] = canvas

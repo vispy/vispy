@@ -74,7 +74,7 @@ def _test_callbacks(canvas):
 
 def _test_run(backend):
     for _ in range(2):
-        with Canvas(app=Application(backend), size=(100, 100), show=True,
+        with Canvas(app=backend, size=(100, 100), show=True,
                     title=backend + ' run') as c:
             @c.events.paint.connect
             def paint(event):
