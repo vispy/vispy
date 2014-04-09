@@ -182,11 +182,11 @@ def test_qt():
     _test_multiple_canvas_same_backend('qt')
 
 
-# @requires_pyglet()
-# def test_pyglet():
-#     """Test multiple Pyglet windows"""
-#     _test_multiple_canvases('Pyglet')
-#     _test_multiple_canvas_same_backend('Pyglet')
+@requires_pyglet()
+def test_pyglet():
+    """Test multiple Pyglet windows"""
+    _test_multiple_canvases('Pyglet')
+    _test_multiple_canvas_same_backend('Pyglet')
 
 
 @requires_glfw()
