@@ -228,7 +228,8 @@ class CanvasBackend(BaseCanvasBackend):
             pass
         else:
             for _ in range(5):
-                sleep(0.01)
+                sleep(0.02)
+                self._vispy_set_current()
                 self._vispy_canvas.app.process_events()
 
     @property

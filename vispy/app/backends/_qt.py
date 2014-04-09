@@ -29,13 +29,13 @@ else:
 # Import PySide or PyQt4
 if qt_lib in ('any', 'qt'):
     try:
-        from PyQt4 import QtGui, QtCore, QtOpenGL, QtTest
+        from PyQt4 import QtGui, QtCore, QtOpenGL
     except ImportError:
-        from PySide import QtGui, QtCore, QtOpenGL, QtTest
+        from PySide import QtGui, QtCore, QtOpenGL
 elif qt_lib in ('pyqt', 'pyqt4'):
-    from PyQt4 import QtGui, QtCore, QtOpenGL, QtTest
+    from PyQt4 import QtGui, QtCore, QtOpenGL
 elif qt_lib == 'pyside':
-    from PySide import QtGui, QtCore, QtOpenGL, QtTest
+    from PySide import QtGui, QtCore, QtOpenGL
 else:
     raise Exception("Do not recognize Qt library '%s'. Options are "
                     "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
@@ -120,7 +120,7 @@ class ApplicationBackend(BaseApplicationBackend):
         app = QtGui.QApplication.instance()
         if app is None:
             app = QtGui.QApplication([''])
-        # Store so it won't be deleted, but not on a visvis object,
+        # Store so it won't be deleted, but not on a vispy object,
         # or an application may produce error when closed
         QtGui._qApp = app
         # Return
@@ -139,9 +139,9 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         self.show()
 
     def _vispy_warmup(self):
-        QtTest.QTest.qWaitForWindowShown(self)
         from ...gloo import gl
         for _ in range(5):
+            self._vispy_set_current()
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             gl.glFinish()
             self._vispy_swap_buffers()
