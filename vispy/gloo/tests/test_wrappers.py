@@ -10,8 +10,10 @@ from nose.tools import assert_true, assert_equal, assert_raises
 from vispy import gloo
 from vispy.gloo import gl
 from vispy.app import app_opengl_context
+from vispy.util.testing import requires_non_glut
 
 
+@requires_non_glut
 def test_wrappers():
     """Test gloo wrappers"""
     with app_opengl_context():
