@@ -264,6 +264,7 @@ class Program(GLObject):
             attribute = Attribute(self, name, gtype)
             self._attributes[name] = attribute
             dtype.append(attribute.dtype)
+        self._need_update = True
 
     def bind(self, data):
         """ Bind a VertexBuffer that has structured data
