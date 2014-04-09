@@ -45,16 +45,20 @@ def _update_process_check(canvas, val, paint=True):
 
 def _disabled_test_simultaneous_backends():
     """Test running multiple backends simultaneously"""
-    checks = (has_qt, has_pyglet, has_glfw, has_glut)
-    names = ('qt', 'glfw', 'glut')  # 'pyglet'
-    backends = [name for name, check in zip(names, checks) if check()]
+    names = {#'qt': has_qt, 
+             #'pyglet': has_pyglet, 
+             'glfw': has_glfw, 
+             'glut': has_glut
+            }
+    backends = [name for name, check in names.items() if check()]
     canvases = dict()
     bgcolor = dict()
     try:
         for bi, backend in enumerate(backends):
             pos = [bi * 200, 0]
             canvas = Canvas(app=Application(backend), size=_win_size,
-                            position=pos, title=backend + ' simul', show=True)
+                            title=backend + ' simul', autoswap=False)
+            canvas.__enter__()  # invoke warmup
             canvases[backend] = canvas
 
             @canvas.events.paint.connect
@@ -64,7 +68,7 @@ def _disabled_test_simultaneous_backends():
                 gl.glClearColor(*bgcolor[backend])
                 gl.glClear(gl.GL_COLOR_BUFFER_BIT)
                 gl.glFinish()
-
+            
             bgcolor[backend] = [0.5, 0.5, 0.5, 1.0]
             _update_process_check(canvases[backend], 127)
 
@@ -75,7 +79,6 @@ def _disabled_test_simultaneous_backends():
             _update_process_check(canvases[backend], 255)
             bgcolor[backend] = [0.25, 0.25, 0.25, 0.25]
             _update_process_check(canvases[backend], 64)
-            canvases[backend].close()
 
         # now we do the same thing, but with sequential close() calls
         for backend in backends:
@@ -84,8 +87,7 @@ def _disabled_test_simultaneous_backends():
             bgcolor[backend] = [1., 1., 1., 1.]
             _update_process_check(canvases[backend], 255)
             bgcolor[backend] = [0.25, 0.25, 0.25, 0.25]
-            _update_process_check(canvases[backend], 127)
-            canvases[backend].close()
+            _update_process_check(canvases[backend], 64)
     finally:
         for canvas in canvases.values():
             canvas.close()
@@ -203,4 +205,4 @@ def test_glut():
     _test_multiple_canvas_same_backend('Glut')
 
 if __name__ == '__main__':
-    test_qt()
+    _disabled_test_simultaneous_backends()

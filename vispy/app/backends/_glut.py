@@ -290,6 +290,7 @@ class CanvasBackend(BaseCanvasBackend):
             pass
         self._closed = True
         self._vispy_set_visible(False)
+        # Try destroying the widget. Not in close event, because it isnt called
         try:
             glut.glutDestroyWindow(self._id)
         except Exception:

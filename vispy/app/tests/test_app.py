@@ -234,7 +234,7 @@ def test_qt():
 @requires_pyglet()
 def test_pyglet():
     """Test Pyglet application"""
-    #_test_application('Pyglet')
+    _test_application('Pyglet')
     _test_run('Pyglet')
 
 

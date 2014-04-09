@@ -249,9 +249,9 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_close(self):
         # Force the window or widget to shut down
         if self._id is not None:
+            #glfw.glfwSetWindowShouldClose()  # Does not really cause a close
             self._vispy_set_visible(False)
-            id_ = self._id
-            self._id = None
+            self._id, id_ = None, self._id
             glfw.glfwPollEvents()
             glfw.glfwDestroyWindow(id_)
 
