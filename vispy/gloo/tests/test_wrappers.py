@@ -13,7 +13,7 @@ from vispy.app import app_opengl_context
 from vispy.util.testing import requires_non_glut
 
 
-@requires_non_glut
+@requires_non_glut()
 def test_wrappers():
     """Test gloo wrappers"""
     with app_opengl_context():
