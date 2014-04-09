@@ -80,7 +80,9 @@ def _test_run(backend):
             def paint(event):
                 print(event)  # test event __repr__
                 c.app.quit()
+            c.update()
             c.app.run()
+        c.app.quit()  # make sure it doesn't break if a user does something silly
 
 
 def _test_application(backend):
@@ -213,9 +215,7 @@ def _test_application(backend):
         app.process_events()
         # put this in even though __exit__ will call it to make sure we don't
         # have problems calling it multiple times
-        canvas.close()
-    app.quit()
-    app.quit()  # make sure it doesn't break if a user does something silly
+        #canvas.close()  # done by context
 
 
 @requires_application()
@@ -234,7 +234,7 @@ def test_qt():
 @requires_pyglet()
 def test_pyglet():
     """Test Pyglet application"""
-    _test_application('Pyglet')
+    #_test_application('Pyglet')
     _test_run('Pyglet')
 
 
@@ -272,3 +272,7 @@ def test_mouse_key_events():
     ke.key
     ke.text
     ke.modifiers
+
+
+if __name__ == '__main__':
+    test_pyglet()

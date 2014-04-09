@@ -128,7 +128,6 @@ class Canvas(object):
         if self._our_kwargs['autoswap']:
             fun = lambda x: self._backend._vispy_swap_buffers()
             self.events.paint.callbacks.append(fun)  # Append callback to end
-        self._backend._vispy_warmup()
         self.show(self._our_kwargs['show'])
 
     @property
@@ -257,6 +256,7 @@ class Canvas(object):
                 % (self.app.backend_name, hex(id(self))))
 
     def __enter__(self):
+        self._backend._vispy_warmup()
         return self
 
     def __exit__(self, type, value, traceback):

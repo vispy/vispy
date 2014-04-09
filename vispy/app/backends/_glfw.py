@@ -191,14 +191,12 @@ class CanvasBackend(BaseCanvasBackend):
         return self._vispy_canvas
 
     def _vispy_warmup(self):
-        from ...gloo import gl
-        from time import sleep
-        for _ in range(5):
+        import time
+        etime = time.time() + 0.25
+        while time.time() < etime:
+            time.sleep(0.01)
             self._vispy_set_current()
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-            gl.glFinish()
-            sleep(0.01)
-            self._vispy_swap_buffers()
+            self._vispy_canvas.app.process_events()
 
     def _vispy_set_current(self):
         if self._id is None:

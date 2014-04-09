@@ -222,15 +222,12 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas_ = None
 
     def _vispy_warmup(self):
-        try:
-            _get_glut_process_func(missing='log')
-        except RuntimeError:
-            pass
-        else:
-            for _ in range(5):
-                sleep(0.02)
-                self._vispy_set_current()
-                self._vispy_canvas.app.process_events()
+        import time
+        etime = time.time() + 0.25
+        while time.time() < etime:
+            time.sleep(0.01)
+            self._vispy_set_current()
+            self._vispy_canvas.app.process_events()
 
     @property
     def _vispy_canvas(self):

@@ -29,6 +29,7 @@ class app_opengl_context(object):
         # Create canvas
         self.c = Canvas(size=(300, 200), autoswap=False, app=self.app,
                         show=True, title='test app')
+        self.c._backend._vispy_warmup()
         return self
 
     def test(self, callback=None, show=False):

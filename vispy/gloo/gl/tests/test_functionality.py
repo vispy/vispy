@@ -21,13 +21,12 @@ import numpy as np
 
 from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true
-from vispy .app import app_opengl_context
+from vispy.app import app_opengl_context
 from vispy.util.testing import assert_in  # noqa
 from numpy.testing import assert_almost_equal  # noqa
 from vispy.util.testing import requires_application, requires_pyopengl
 
 from vispy.gloo import gl
-
 
 # All these tests require a working backend.
 
@@ -562,3 +561,5 @@ if __name__ == '__main__':
     #SHOW = True
     test_functionality_desktop()
     test_functionality_pyopengl()
+    test_functionality_proxy()
+    

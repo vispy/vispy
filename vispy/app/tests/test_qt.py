@@ -32,6 +32,7 @@ def test_qt_designer():
     try:
         win.show()
         canvas = Canvas(create_native=False)
+        canvas.app.use()  # Make sure the app exists (not done if create_native=False)
         canvas._set_backend(win.ui.canvas)
         canvas.create_native()
 

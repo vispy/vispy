@@ -139,13 +139,12 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         self.show()
 
     def _vispy_warmup(self):
-        from ...gloo import gl
-        for _ in range(5):
+        import time
+        etime = time.time() + 0.25
+        while time.time() < etime:
+            time.sleep(0.01)
             self._vispy_set_current()
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-            gl.glFinish()
-            self._vispy_swap_buffers()
-            sleep(0.05)
+            self._vispy_canvas.app.process_events()
 
     def _vispy_set_current(self):
         # Make this the current context

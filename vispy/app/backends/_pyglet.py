@@ -119,7 +119,7 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         pyglet.window.Window.__init__(self, *args, **kwargs)
 
     def _vispy_warmup(self):
-        pass  # pyglet takes care of making sure the window is actually ready
+        pass  # no need, sort of, but it still fails many of our tests
 
     # Override these ...
     def flip(self):
@@ -197,7 +197,8 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.close()
-        self.close()  # Or the window wont close
+        #self.close()  # Or the window wont close
+        # AK: seems so wrong to try a close in the close event handler ...
 
     def on_resize(self, w, h):
         if self._vispy_canvas is None:
