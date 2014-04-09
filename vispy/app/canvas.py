@@ -256,6 +256,7 @@ class Canvas(object):
                 % (self.app.backend_name, hex(id(self))))
 
     def __enter__(self):
+        self.show()
         self._backend._vispy_warmup()
         return self
 
