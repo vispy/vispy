@@ -562,4 +562,3 @@ if __name__ == '__main__':
     test_functionality_desktop()
     test_functionality_pyopengl()
     test_functionality_proxy()
-    

@@ -191,7 +191,7 @@ class CanvasBackend(BaseCanvasBackend):
         return self._vispy_canvas
 
     def _vispy_warmup(self):
-        import time
+        import time  # noqa
         etime = time.time() + 0.25
         while time.time() < etime:
             time.sleep(0.01)

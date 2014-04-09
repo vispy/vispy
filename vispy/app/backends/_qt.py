@@ -7,7 +7,6 @@ vispy backend for Qt (PySide and PyQt4).
 """
 
 from __future__ import division
-from time import sleep
 
 from ... import config
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend

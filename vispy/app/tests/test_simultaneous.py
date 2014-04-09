@@ -45,17 +45,15 @@ def _update_process_check(canvas, val, paint=True):
 
 def _disabled_test_simultaneous_backends():
     """Test running multiple backends simultaneously"""
-    names = {#'qt': has_qt, 
-             #'pyglet': has_pyglet, 
-             'glfw': has_glfw, 
-             'glut': has_glut
-            }
+    names = {   # 'qt': has_qt, 
+                # 'pyglet': has_pyglet, 
+                'glfw': has_glfw, 
+                'glut': has_glut}
     backends = [name for name, check in names.items() if check()]
     canvases = dict()
     bgcolor = dict()
     try:
         for bi, backend in enumerate(backends):
-            pos = [bi * 200, 0]
             canvas = Canvas(app=Application(backend), size=_win_size,
                             title=backend + ' simul', autoswap=False)
             canvas.__enter__()  # invoke warmup

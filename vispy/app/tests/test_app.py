@@ -82,7 +82,7 @@ def _test_run(backend):
                 c.app.quit()
             c.update()
             c.app.run()
-        c.app.quit()  # make sure it doesn't break if a user does something silly
+        c.app.quit()  # make sure it doesn't break if a user quits twice
 
 
 def _test_application(backend):

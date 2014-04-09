@@ -11,7 +11,6 @@ from __future__ import division
 import sys
 import ctypes
 from OpenGL import platform
-from time import sleep
 
 import OpenGL.error
 import OpenGL.GLUT as glut
