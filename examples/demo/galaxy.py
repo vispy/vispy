@@ -147,9 +147,9 @@ class Canvas(app.Canvas):
         self.timer.connect(self.on_timer)
 
     def on_initialize(self, event):
-        gloo.set_clear_color((0, 0, 0, 1))
         gloo.set_state(depth_test=False, blend=True,
-                       blend_func=('src_alpha', 'one'))
+                       blend_func=('src_alpha', 'one'),
+                       clear_color=(0, 0, 0, 1))
         # Start the timer upon initialization.
         self.timer.start()
 
