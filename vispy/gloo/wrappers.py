@@ -563,13 +563,17 @@ def set_state(preset=None, **kwargs):
         >>> from vispy import gloo
         >>> gloo.set_state('translucent', depth_test=False, clear_color=(1, 1, 1, 1))  # noqa, doctest:+SKIP
 
-    Or another example:
-
-        >>> gloo.set_state(clear_color=(0, 0, 0, 1), blend=True, blend_func=('src_alpha', 'one'))  # noqa, doctest:+SKIP
-
     This would take the preset defaults for 'translucent', turn depth testing
     off (which would normally be on for that preset), and additionally
     set the glClearColor parameter to be white.
+
+    Or here's another example:
+
+        >>> gloo.set_state(clear_color=(0, 0, 0, 1), blend=True, blend_func=('src_alpha', 'one'))  # noqa, doctest:+SKIP
+
+    Thus arbitrary GL state components can be set directly using ``set_state``.
+    Note that individual functions are exposed e.g., as ``set_clear_color``,
+    with some more informative docstrings about those particular functions.
     """
     kwargs = deepcopy(kwargs)
     # Load preset, if supplied
