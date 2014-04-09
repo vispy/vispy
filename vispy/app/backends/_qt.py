@@ -210,6 +210,9 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.close()
+        # Destroy if this is a toplevel widget
+        if self.parent() is None:
+            self.destroy()
 
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
