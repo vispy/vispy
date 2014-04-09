@@ -11,27 +11,59 @@ from . import gl
 from ..util.six import string_types
 
 
+__all__ = ('set_viewport', 'set_depth_range', 'set_front_face',
+           'set_cull_face', 'set_line_width', 'set_polygon_offset',
+           'clear', 'set_clear_color', 'set_clear_depth', 'set_clear_stencil',
+           'set_blend_func', 'set_blend_func_separate', 'set_blend_color',
+           'set_blend_equation', 'set_blend_equation_separate',
+           'set_scissor', 'set_stencil_func', 'set_stencil_func_separate',
+           'set_stencil_mask', 'set_stencil_mask_separate', 'set_stencil_op',
+           'set_stencil_op_separate', 'set_depth_func', 'set_depth_mask',
+           'set_color_mask', 'set_sample_coverage',
+           'get_state_presets', 'set_state', 'finish', 'flush',
+           'get_parameter', 'read_pixels', 'set_hint')
+_setters = [s[4:] for s in __all__
+            if s.startswith('set_') and s != 'set_state']
+
+
 # Helpers that are needed for efficient wrapping
 
 def _check_valid(key, val, valid):
+    """Helper to check valid options"""
     if val not in valid:
         raise ValueError('%s must be one of %s, not "%s"'
                          % (key, valid, val))
 
 
-def _get_gl_attr(x):
-    """Helper to return gl.GL_x"""
+def _gl_attr(x):
+    """Helper to return gl.GL_x enum"""
     x = getattr(gl, 'GL_' + x.upper(), None)
     if x is None:
         raise ValueError('gl has no attribute corresponding to name %s' % x)
     return x
 
 
+def _gl_bool(x):
+    """Helper to convert to GL boolean"""
+    return gl.GL_TRUE if x else gl.GL_FALSE
+
+
 def _result(val):
-    """Helper to make sure methods worked"""
+    """Helper to check GL commands worked"""
     if val in (gl.GL_INVALID_VALUE, gl.GL_INVALID_ENUM,
                gl.GL_INVALID_OPERATION):
         raise RuntimeError('GL parameter could not be set')
+
+
+def _check_color(color):
+    """Check and validate color"""
+    # XXX this should eventually go in vispy.colors
+    color = np.array(color, float)
+    if color.ndim != 1 and color.shape not in (3, 4):
+        raise ValueError('color must be a 3- or 4-element array-like')
+    if len(color) == 3:
+        color = np.concatenate((color, [1.]))
+    return color
 
 
 ###############################################################################
@@ -57,11 +89,10 @@ def set_viewport(x, y, w, h):
     h : int
         Viewport height.
     """
-    x, y, w, h = int(x), int(y), int(w), int(h)
-    _result(gl.glViewport(x, y, w, h))
+    _result(gl.glViewport(int(x), int(y), int(w), int(h)))
 
 
-def set_depth_range(near, far):
+def set_depth_range(near=0., far=1.):
     """Set depth values
 
     Parameters
@@ -71,11 +102,10 @@ def set_depth_range(near, far):
     far : float
         Far clipping plane.
     """
-    near, far = float(near), float(far)
-    gl.glDepthRangef(near, far)
+    gl.glDepthRangef(float(near), float(far))
 
 
-def set_front_face(mode):
+def set_front_face(mode='ccw'):
     """Set which faces are front-facing
 
     Parameters
@@ -83,11 +113,10 @@ def set_front_face(mode):
     mode : str
         Can be 'cw' for clockwise or 'ccw' for counter-clockwise.
     """
-    _check_valid('mode', mode, ('cw', 'ccw'))
-    _result(gl.glFrontFace(_get_gl_attr(mode)))
+    _result(gl.glFrontFace(_gl_attr(mode)))
 
 
-def set_cull_face(mode):
+def set_cull_face(mode='back'):
     """Set front, back, or both faces to be culled
 
     Parameters
@@ -95,11 +124,10 @@ def set_cull_face(mode):
     mode : str
         Culling mode. Can be "front", "back", or "front_and_back".
     """
-    _check_valid('mode', mode, ('front', 'back', 'front_and_back'))
-    _result(gl.glCullFace(_get_gl_attr(mode)))
+    _result(gl.glCullFace(_gl_attr(mode)))
 
 
-def set_line_width(width):
+def set_line_width(width=1.):
     """Set line width
 
     Parameters
@@ -107,11 +135,10 @@ def set_line_width(width):
     width : float
         The line width.
     """
-    width = float(width)
-    _result(gl.glLineWidth(width))
+    _result(gl.glLineWidth(float(width)))
 
 
-def set_polygon_offset(factor, units):
+def set_polygon_offset(factor=0., units=0.):
     """Set the scale and units used to calculate depth values
 
     Parameters
@@ -122,8 +149,7 @@ def set_polygon_offset(factor, units):
         Multiplied by an implementation-specific value to create a constant
         depth offset.
     """
-    factor, units = float(factor), float(units)
-    gl.glPolygonOffset(factor, units)
+    gl.glPolygonOffset(float(factor), float(units))
 
 
 ###############################################################################
@@ -174,12 +200,7 @@ def set_clear_color(color=(0., 0., 0., 1.)):
     color : 4-element tuple
         Color to use. Defaults to black.
     """
-    # XXX Eventually we can make this better with vispy.color
-    if not isinstance(color, (tuple)) or len(color) != 4:
-        raise ValueError('color must be a 4-element tuple')
-    if not all(isinstance(c, (int, float)) for c in color):
-        raise ValueError('all elements in color must be integers')
-    gl.glClearColor(*color)
+    gl.glClearColor(*_check_color(color))
 
 
 def set_clear_depth(depth=1.0):
@@ -192,8 +213,7 @@ def set_clear_depth(depth=1.0):
     depth : float
         The depth to use.
     """
-    depth = float(depth)
-    gl.glClearDepthf(depth)
+    gl.glClearDepthf(float(depth))
 
 
 def set_clear_stencil(index=0):
@@ -206,26 +226,13 @@ def set_clear_stencil(index=0):
     index : int
         The index to use when the stencil buffer is cleared.
     """
-    index = int(index)
-    gl.glClearStencil(index)
+    gl.glClearStencil(int(index))
 
 
-#
-# glBlendFunc, XXX glBlendColor, glBlendEquation, glBlendEquationSeparate,
-# XXX glBlendFuncSeparate, glScissor, glStencilFunc, glStencilFuncSeparate
-# XXX glStencilMask, glStencilMaskSeparate, glStencilOp, glStencilOpSeparate,
-# XXX glDepthFunc, glDepthMask, glColorMask, glSampleCoverage
-#
+# glBlendFunc, glBlendFuncSeparate, glBlendColor,
+# glBlendEquation, glBlendEquationSeparate
 
-_gl_blend_list = ['src_color', 'one_minus_src_color', 'zero', 'one',
-                  'dst_color', 'one_minus_dst_color',
-                  'src_alpha', 'one_minus_src_alpha',
-                  'dst_alpha', 'one_minus_dst_alpha',
-                  'constant_color', 'one_minus_constant_color',
-                  'constant_alpha', 'one_minus_constant_alpha']
-
-
-def set_blend_func(sfactor, dfactor):
+def set_blend_func(sfactor='one', dfactor='zero'):
     """Set blend function
 
     Parameters
@@ -235,10 +242,241 @@ def set_blend_func(sfactor, dfactor):
     dfactor : str
         Destination factor.
     """
-    # check vals and translate to GL
-    for fact, name in zip((sfactor, dfactor), ('sfactor', 'dfactor')):
-        _check_valid(name, fact, _gl_blend_list)
-    _result(gl.glBlendFunc(_get_gl_attr(sfactor), _get_gl_attr(dfactor)))
+    _result(gl.glBlendFunc(_gl_attr(sfactor), _gl_attr(dfactor)))
+
+
+def set_blend_func_separate(srgb='one', drgb='zero',
+                            salpha='one', dalpha='zero'):
+    """Specify pixel arithmetic for RGB and alpha separately
+
+    Parameters
+    ----------
+    srgb : str
+        Source RGB factor.
+    drgb : str
+        Destination RGB factor.
+    salpha : str
+        Source alpha factor.
+    dalpha : str
+        Destination alpha factor.
+    """
+    _result(gl.glBlendFuncSeparate(_gl_attr(srgb), _gl_attr(drgb),
+                                   _gl_attr(salpha), _gl_attr(dalpha)))
+
+
+def set_blend_color(color):
+    """Set the blend color
+
+    Parameters
+    ----------
+    color : array-like
+        3- or 4-element array-like specifying float RGB(A) values.
+    """
+    _result(gl.glBlendColor(*_check_color(color)))
+
+
+def set_blend_equation(mode):
+    """Specify the equation for RGBA blending
+
+    Parameters
+    ----------
+    mode : str
+        Can be one of 'func_add', 'func_subtract', or 'func_reverse_subtract'.
+    """
+    _result(gl.glBlendEquation(_gl_attr(mode)))
+
+
+def set_blend_equation_separate(mode_rgb, mode_alpha):
+    """Specify the equation for RGB and alpha blending separately
+
+    Parameters
+    ----------
+    mode_rgb : str
+        Mode for RGB.
+    mode_alpha : str
+        Mode for Alpha.
+
+    Notes
+    -----
+    See ``set_blend_equation`` for valide modes.
+    """
+    _result(gl.glBlendEquation(_gl_attr(mode_rgb), _gl_attr(mode_alpha)))
+
+
+# glScissor, glStencilFunc, glStencilFuncSeparate, glStencilMask,
+# glStencilMaskSeparate, glStencilOp, glStencilOpSeparate,
+
+def set_scissor(x, y, w, h):
+    """Define the scissor box
+
+    Parameters
+    ----------
+    x : int
+        Left corner of the box.
+    y : int
+        Lower corner of the box.
+    w : int
+        The width of the box.
+    h : int
+        The height of the box.
+    """
+    _result(gl.glScissor(int(x), int(y), int(w), int(h)))
+
+
+def set_stencil_func(func='always', ref=0, mask=8):
+    """Set front and back function and reference value
+
+    Parameters
+    ----------
+    func : str
+        Must be one of 'never', 'less', 'lequal', 'greater', 'gequal',
+        'equal', 'notequal', 'always'.
+    ref : int
+        Reference value for the stencil test.
+    mask : int
+        Mask that is ANDed with ref and stored stencil value.
+    """
+    _result(gl.glStencilFunc(_gl_attr(func), int(ref), int(mask)))
+
+
+def set_stencil_func_separate(face, func='always', ref=0, mask=8):
+    """Set front or back function and reference value
+
+    Parameters
+    ----------
+    face : str
+        Can be 'front', 'back', or 'front_and_back'.
+    func : str
+        See set_stencil_func.
+    ref : int
+        Reference value for the stencil test.
+    mask : int
+        Mask that is ANDed with ref and stored stencil value.
+    """
+    _result(gl.glStencilFuncSeparate(_gl_attr(face), _gl_attr(func),
+                                     int(ref), int(mask)))
+
+
+def set_stencil_mask(mask=8):
+    """Control the front and back writing of individual bits in the stencil
+
+    Parameters
+    ----------
+    mask : int
+        Mask that is ANDed with ref and stored stencil value.
+    """
+    gl.glStencilMask(int(mask))
+
+
+def set_stencil_mask_separate(face, mask=8):
+    """Control the front or back writing of individual bits in the stencil
+
+    Parameters
+    ----------
+    face : str
+        Can be 'front', 'back', or 'front_and_back'.
+    mask : int
+        Mask that is ANDed with ref and stored stencil value.
+    """
+    _result(gl.glStencilMaskSeparate(_gl_attr(face), int(mask)))
+
+
+def set_stencil_op(sfail='keep', dpfail='keep', dppass='keep'):
+    """Set front and back stencil test actions
+
+    Parameters
+    ----------
+    sfail : str
+        Action to take when the stencil fails. Must be one of
+        'keep', 'zero', 'replace', 'incr', 'incr_wrap',
+        'decr', 'decr_wrap', or 'invert'.
+    dpfail : str
+        Action to take when the stencil passes.
+    dppass : str
+        Action to take when both the stencil and depth tests pass,
+        or when the stencil test passes and either there is no depth
+        buffer or depth testing is not enabled.
+    """
+    _result(gl.glStencilOp(_gl_attr(sfail), _gl_attr(dpfail),
+                           _gl_attr(dppass)))
+
+
+def set_stencil_op_separate(face, sfail='keep', dpfail='keep', dppass='keep'):
+    """Set front or back stencil test actions
+
+    Parameters
+    ----------
+    face : str
+        Can be 'front', 'back', or 'front_and_back'.
+    sfail : str
+        Action to take when the stencil fails. Must be one of
+        'keep', 'zero', 'replace', 'incr', 'incr_wrap',
+        'decr', 'decr_wrap', or 'invert'.
+    dpfail : str
+        Action to take when the stencil passes.
+    dppass : str
+        Action to take when both the stencil and depth tests pass,
+        or when the stencil test passes and either there is no depth
+        buffer or depth testing is not enabled.
+    """
+    _result(gl.glStencilOpSeparate(_gl_attr(face), _gl_attr(sfail),
+                                   _gl_attr(dpfail), _gl_attr(dppass)))
+
+
+# glDepthFunc, glDepthMask, glColorMask, glSampleCoverage
+
+def set_depth_func(func='less'):
+    """Specify the value used for depth buffer comparisons
+
+    Parameters
+    ----------
+    func : str
+        The depth comparison function. Must be one of 'never', 'less', 'equal',
+        'lequal', 'greater', 'gequal', 'notequal', or 'always'.
+    """
+    _result(gl.glDepthFunc(_gl_attr(func)))
+
+
+def set_depth_mask(flag):
+    """Toggle writing into the depth buffer
+
+    Parameters
+    ----------
+    flag : bool
+        Whether depth writing should be enabled.
+    """
+    gl.glDepthMask(_gl_bool(flag))
+
+
+def set_color_mask(red, green, blue, alpha):
+    """Toggle writing of frame buffer color components
+
+    Parameters
+    ----------
+    red : bool
+        Red toggle.
+    green : bool
+        Green toggle.
+    blue : bool
+        Blue toggle.
+    alpha : bool
+        Alpha toggle.
+    """
+    gl.glColorMask(_gl_bool(red), _gl_bool(green), _gl_bool(blue),
+                   _gl_bool(alpha))
+
+
+def set_sample_coverage(value=1.0, invert=False):
+    """Specify multisample coverage parameters
+
+    Parameters
+    ----------
+    value : float
+        Sample coverage value (will be clamped between 0. and 1.).
+    invert : bool
+        Specify if the coverage masks should be inverted.
+    """
+    gl.glSampleCoverage(float(value), _gl_bool(invert))
 
 
 ###############################################################################
@@ -273,12 +511,12 @@ def get_state_presets():
 _known_state_names = ('depth_test', 'blend', 'blend_func')
 
 
-def set_preset_state(preset, **kwargs):
+def set_state(preset=None, **kwargs):
     """Set OpenGL rendering state using a preset
 
     Parameters
     ----------
-    preset : str
+    preset : str | None
         Can be one of ('opaque', 'translucent', 'additive') to use
         use reasonable defaults for these typical use cases.
     **kwargs : bool
@@ -287,33 +525,31 @@ def set_preset_state(preset, **kwargs):
     """
     kwargs = deepcopy(kwargs)
     # Load preset, if supplied
-    _check_valid('preset', preset, tuple(list(_gl_presets.keys())))
-    for key, val in _gl_presets[preset].items():
-        # only overwrite user's input with preset if user's input is None
-        if key not in kwargs:
-            kwargs[key] = val
-    # Deal with pesky non-glEnable/glDisable args
-    if 'blend_func' in kwargs:
-        set_blend_func(*kwargs.pop('blend_func'))
-    # Pass to set_state
-    set_state(**kwargs)
+    if preset is not None:
+        _check_valid('preset', preset, tuple(list(_gl_presets.keys())))
+        for key, val in _gl_presets[preset].items():
+            # only overwrite user's input with preset if user's input is None
+            if key not in kwargs:
+                kwargs[key] = val
 
+    # cull_face is an exception because GL_CULL_FACE and glCullFace both exist
+    if 'cull_face' in kwargs:
+        cull_face = kwargs.pop('cull_face')
+        if isinstance(cull_face, bool):
+            func = gl.glEnable if val else gl.glDisable
+            _result(func(_gl_attr('cull_face')))
+        else:
+            set_cull_face(*cull_face)
 
-def set_state(**kwargs):
-    """Set OpenGL rendering state options
+    # Now deal with other non-glEnable/glDisable args
+    for s in _setters:
+        if s in kwargs:
+            globals()['set_' + s](*kwargs.pop(s))
 
-    Parameters
-    ----------
-    **kwargs : bool
-        Boolean values to enable or disable.
-    """
     # check values and translate
-    kwargs = deepcopy(kwargs)
     for key, val in kwargs.items():
-        if not isinstance(val, bool):
-            raise TypeError('All inputs to set_state must be boolean')
         func = gl.glEnable if val else gl.glDisable
-        _result(func(_get_gl_attr(key)))
+        _result(func(_gl_attr(key)))
 
 
 #
@@ -346,7 +582,7 @@ def get_parameter(name):
     """
     if not isinstance(name, string_types):
         raise TypeError('name bust be a string')
-    return gl.glGetParameter(_get_gl_attr(name))
+    return gl.glGetParameter(_gl_attr(name))
 
 
 def read_pixels(viewport=None):
@@ -380,16 +616,16 @@ def read_pixels(viewport=None):
     return im
 
 
-def hint(target, mode):
+def set_hint(target, mode):
     """Set OpenGL drawing hint
 
     Parameters
     ----------
     target : str
-        The target (e.g., 'fog', 'line_smooth', 'point_smooth').
+        The target (e.g., 'fog_hint', 'line_smooth_hint', 'point_smooth_hint').
     mode : str
         The mode to set (e.g., 'fastest', 'nicest', 'dont_care').
     """
     if not all(isinstance(tm, string_types) for tm in (target, mode)):
         raise TypeError('target and mode must both be strings')
-    _result(gl.glHint(_get_gl_attr(target + '_HINT', _get_gl_attr(mode))))
+    _result(gl.glHint(_gl_attr(target), _gl_attr(mode)))

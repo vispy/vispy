@@ -60,10 +60,4 @@ from .framebuffer import FrameBuffer    # noqa
 from .framebuffer import ColorBuffer    # noqa
 from .framebuffer import DepthBuffer    # noqa
 from .framebuffer import StencilBuffer  # noqa
-from .wrappers import (set_viewport, set_depth_range, set_front_face,  # noqa
-                       set_cull_face, set_line_width, set_polygon_offset)  # noqa
-from .wrappers import (clear, set_clear_color,   # noqa
-                       set_clear_depth, set_clear_stencil)  # noqa
-from .wrappers import (get_state_presets, set_state, set_preset_state,  # noqa
-                       set_blend_func, 
-                       finish, flush, get_parameter, read_pixels, hint)  # noqa
+from .wrappers import *                 # noqa
