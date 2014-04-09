@@ -19,6 +19,7 @@ vispy backend for glfw.
 from __future__ import division
 
 import atexit
+from time import sleep
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
@@ -191,10 +192,9 @@ class CanvasBackend(BaseCanvasBackend):
         return self._vispy_canvas
 
     def _vispy_warmup(self):
-        import time  # noqa
-        etime = time.time() + 0.25
-        while time.time() < etime:
-            time.sleep(0.01)
+        etime = time() + 0.25
+        while time() < etime:
+            sleep(0.01)
             self._vispy_set_current()
             self._vispy_canvas.app.process_events()
 

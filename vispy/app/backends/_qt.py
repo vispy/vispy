@@ -7,6 +7,7 @@ vispy backend for Qt (PySide and PyQt4).
 """
 
 from __future__ import division
+from time import sleep, time
 
 from ... import config
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
@@ -137,10 +138,9 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         self.setMouseTracking(True)
 
     def _vispy_warmup(self):
-        import time
-        etime = time.time() + 0.25
-        while time.time() < etime:
-            time.sleep(0.01)
+        etime = time() + 0.25
+        while time() < etime:
+            sleep(0.01)
             self._vispy_set_current()
             self._vispy_canvas.app.process_events()
 

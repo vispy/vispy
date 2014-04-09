@@ -11,6 +11,7 @@ from __future__ import division
 import sys
 import ctypes
 from OpenGL import platform
+from time import sleep, time
 
 import OpenGL.error
 import OpenGL.GLUT as glut
@@ -221,10 +222,9 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas_ = None
 
     def _vispy_warmup(self):
-        import time
-        etime = time.time() + 0.25
-        while time.time() < etime:
-            time.sleep(0.01)
+        etime = time() + 0.25
+        while time() < etime:
+            sleep(0.01)
             self._vispy_set_current()
             self._vispy_canvas.app.process_events()
 
