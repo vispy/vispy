@@ -212,6 +212,12 @@ class Program(GLObject):
             print(gl.glGetProgramInfoLog(self._handle))
             raise RuntimeError('Program linking error')
 
+        # Validate
+        gl.glValidateProgram(self._handle)
+        if not gl.glGetProgramParameter(self._handle, gl.GL_VALIDATE_STATUS):
+            print(gl.glGetProgramInfoLog(self._handle))
+            raise RuntimeError('Program validation error')
+        
         self._need_build = False
 
     def _update(self):
@@ -230,12 +236,6 @@ class Program(GLObject):
                 attribute.active = True
             else:
                 attribute.active = False
-    
-        # Validate
-        gl.glValidateProgram(self._handle)
-        if not gl.glGetProgramParameter(self._handle, gl.GL_VALIDATE_STATUS):
-            print(gl.glGetProgramInfoLog(self._handle))
-            raise RuntimeError('Program validation error')
         
     def _delete(self):
         logger.debug("GPU: Deleting program")
