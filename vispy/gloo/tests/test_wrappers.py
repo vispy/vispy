@@ -9,14 +9,14 @@ from nose.tools import assert_true, assert_equal, assert_raises
 
 from vispy import gloo
 from vispy.gloo import gl
-from vispy.app import app_opengl_context
-from vispy.util.testing import requires_non_glut
+from vispy.app import Canvas
+from vispy.util.testing import requires_application
 
 
-@requires_non_glut()
+@requires_application()
 def test_wrappers():
     """Test gloo wrappers"""
-    with app_opengl_context():
+    with Canvas():
         gl.use('desktop debug')
         # check presets
         assert_raises(ValueError, gloo.set_state, preset='foo')
