@@ -15,7 +15,7 @@ import OpenGL.GL as gl
 
 from vispy import gloo
 from vispy import app
-from vispy.util.transforms import perspective, translate, rotate  # noqa
+from vispy.util.transforms import perspective
 
 
 vertex = """
@@ -41,7 +41,8 @@ void main (void) {
     // stackoverflow.com/questions/8608844/...
     //  ... resizing-point-sprites-based-on-distance-from-the-camera
     float radius = 1;
-    vec4  proj_corner = u_projection * vec4(radius, radius, v_eye_position.z, v_eye_position.w);  // # noqa
+    vec4 corner = vec4(radius, radius, v_eye_position.z, v_eye_position.w);
+    vec4  proj_corner = u_projection * corner;
     gl_PointSize = 100.0 * proj_corner.x / proj_corner.w;
     v_pointsize = gl_PointSize;
 }
