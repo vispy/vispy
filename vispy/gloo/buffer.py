@@ -591,8 +591,7 @@ class VertexBuffer(DataBuffer):
                 data = data.view(dtype=[('f0', data.dtype.base, c)])
             else:
                 data = data.view(dtype=[('f0', data.dtype.base, 1)])
-            
-
+        
         elif dtype is not None:
             dtype = np.dtype(dtype)
             if dtype.isbuiltin:
