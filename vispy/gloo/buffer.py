@@ -239,17 +239,18 @@ class DataBuffer(Buffer):
                 data = np.array(data, dtype=dtype, copy=False)
             else:
                 data = np.array(data, copy=False)
-            self._dtype = data.dtype
-            self._size = data.size
-            self._stride = data.strides[-1]
-            self._nbytes = data.nbytes
             # Handle storage
             if self._store:
                 if not data.flags["C_CONTIGUOUS"]:
                     logger.warning("Copying discontiguous data as CPU storage")
                     self._copy = True
                     data = data.copy()
-                self._data = data.ravel()
+                self._data = data.ravel()  # Makes a copy if not contiguous
+            # Store meta data (AFTER flattening, or stride would be wrong)
+            self._dtype = data.dtype
+            self._size = data.size
+            self._stride = data.strides[-1]
+            self._nbytes = data.nbytes
             # Set data
             self.set_data(data, copy=False)
 
@@ -584,10 +585,13 @@ class VertexBuffer(DataBuffer):
                 data = data.view(dtype=[('f0', data.dtype.base, 1)])
             elif data.shape[-1] in [1, 2, 3, 4]:
                 c = data.shape[-1]
+                if not data.flags['C_CONTIGUOUS']:
+                    logger.warn("Copying discontiguous data for struct dtype")
+                    data = data.copy()
                 data = data.view(dtype=[('f0', data.dtype.base, c)])
             else:
                 data = data.view(dtype=[('f0', data.dtype.base, 1)])
-
+        
         elif dtype is not None:
             dtype = np.dtype(dtype)
             if dtype.isbuiltin:
