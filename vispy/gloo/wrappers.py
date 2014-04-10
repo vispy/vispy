@@ -14,11 +14,9 @@ from ..util.six import string_types
 __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',
            'set_cull_face', 'set_line_width', 'set_polygon_offset',
            'clear', 'set_clear_color', 'set_clear_depth', 'set_clear_stencil',
-           'set_blend_func', 'set_blend_func_separate', 'set_blend_color',
-           'set_blend_equation', 'set_blend_equation_separate',
-           'set_scissor', 'set_stencil_func', 'set_stencil_func_separate',
-           'set_stencil_mask', 'set_stencil_mask_separate', 'set_stencil_op',
-           'set_stencil_op_separate', 'set_depth_func', 'set_depth_mask',
+           'set_blend_func', 'set_blend_color', 'set_blend_equation',
+           'set_scissor', 'set_stencil_func', 'set_stencil_mask',
+           'set_stencil_op', 'set_depth_func', 'set_depth_mask',
            'set_color_mask', 'set_sample_coverage',
            'get_state_presets', 'set_state', 'finish', 'flush',
            'get_parameter', 'read_pixels', 'set_hint')
@@ -233,25 +231,11 @@ def set_clear_stencil(index=0):
     gl.glClearStencil(int(index))
 
 
-# glBlendFunc, glBlendFuncSeparate, glBlendColor,
-# glBlendEquation, glBlendEquationSeparate
+# glBlendFunc(Separate), glBlendColor, glBlendEquation(Separate)
 
-def set_blend_func(sfactor='one', dfactor='zero'):
-    """Set blend function
-
-    Parameters
-    ----------
-    sfactor : str
-        Source factor.
-    dfactor : str
-        Destination factor.
-    """
-    gl.glBlendFunc(_gl_attr(sfactor), _gl_attr(dfactor))
-
-
-def set_blend_func_separate(srgb='one', drgb='zero',
-                            salpha='one', dalpha='zero'):
-    """Specify pixel arithmetic for RGB and alpha separately
+def set_blend_func(srgb='one', drgb='zero',
+                   salpha=None, dalpha=None):
+    """Specify pixel arithmetic for RGB and alpha
 
     Parameters
     ----------
@@ -259,11 +243,13 @@ def set_blend_func_separate(srgb='one', drgb='zero',
         Source RGB factor.
     drgb : str
         Destination RGB factor.
-    salpha : str
-        Source alpha factor.
+    salpha : str | None
+        Source alpha factor. If None, ``srgb`` is used.
     dalpha : str
-        Destination alpha factor.
+        Destination alpha factor. If None, ``drgb`` is used.
     """
+    salpha = srgb if salpha is None else salpha
+    dalpha = drgb if dalpha is None else dalpha
     gl.glBlendFuncSeparate(_gl_attr(srgb), _gl_attr(drgb),
                            _gl_attr(salpha), _gl_attr(dalpha))
 
@@ -279,37 +265,27 @@ def set_blend_color(color):
     gl.glBlendColor(*_check_color(color))
 
 
-def set_blend_equation(mode):
-    """Specify the equation for RGBA blending
-
-    Parameters
-    ----------
-    mode : str
-        Can be one of 'func_add', 'func_subtract', or 'func_reverse_subtract'.
-    """
-    gl.glBlendEquation(_gl_attr(mode))
-
-
-def set_blend_equation_separate(mode_rgb, mode_alpha):
-    """Specify the equation for RGB and alpha blending separately
+def set_blend_equation(mode_rgb, mode_alpha=None):
+    """Specify the equation for RGB and alpha blending
 
     Parameters
     ----------
     mode_rgb : str
         Mode for RGB.
-    mode_alpha : str
-        Mode for Alpha.
+    mode_alpha : str | None
+        Mode for Alpha. If None, ``mode_rgb`` is used.
 
     Notes
     -----
     See ``set_blend_equation`` for valide modes.
     """
+    mode_alpha = mode_rgb if mode_alpha is None else mode_alpha
     gl.glBlendEquationSeparate(_gl_attr(mode_rgb),
                                _gl_attr(mode_alpha))
 
 
-# glScissor, glStencilFunc, glStencilFuncSeparate, glStencilMask,
-# glStencilMaskSeparate, glStencilOp, glStencilOpSeparate,
+# glScissor, glStencilFunc(Separate), glStencilMask(Separate),
+# glStencilOp(Separate),
 
 def set_scissor(x, y, w, h):
     """Define the scissor box
@@ -328,90 +304,43 @@ def set_scissor(x, y, w, h):
     gl.glScissor(int(x), int(y), int(w), int(h))
 
 
-def set_stencil_func(func='always', ref=0, mask=8):
-    """Set front and back function and reference value
-
-    Parameters
-    ----------
-    func : str
-        Must be one of 'never', 'less', 'lequal', 'greater', 'gequal',
-        'equal', 'notequal', 'always'.
-    ref : int
-        Reference value for the stencil test.
-    mask : int
-        Mask that is ANDed with ref and stored stencil value.
-    """
-    gl.glStencilFunc(_gl_attr(func), int(ref), int(mask))
-
-
-def set_stencil_func_separate(face, func='always', ref=0, mask=8):
+def set_stencil_func(func='always', ref=0, mask=8, face='front_and_back'):
     """Set front or back function and reference value
 
     Parameters
     ----------
-    face : str
-        Can be 'front', 'back', or 'front_and_back'.
     func : str
         See set_stencil_func.
     ref : int
         Reference value for the stencil test.
     mask : int
         Mask that is ANDed with ref and stored stencil value.
+    face : str
+        Can be 'front', 'back', or 'front_and_back'.
     """
     gl.glStencilFuncSeparate(_gl_attr(face), _gl_attr(func),
                              int(ref), int(mask))
 
 
-def set_stencil_mask(mask=8):
-    """Control the front and back writing of individual bits in the stencil
-
-    Parameters
-    ----------
-    mask : int
-        Mask that is ANDed with ref and stored stencil value.
-    """
-    gl.glStencilMask(int(mask))
-
-
-def set_stencil_mask_separate(face, mask=8):
+def set_stencil_mask(mask=8, face='front_and_back'):
     """Control the front or back writing of individual bits in the stencil
 
     Parameters
     ----------
-    face : str
-        Can be 'front', 'back', or 'front_and_back'.
     mask : int
         Mask that is ANDed with ref and stored stencil value.
+    face : str
+        Can be 'front', 'back', or 'front_and_back'.
     """
     gl.glStencilMaskSeparate(_gl_attr(face), int(mask))
 
 
-def set_stencil_op(sfail='keep', dpfail='keep', dppass='keep'):
-    """Set front and back stencil test actions
-
-    Parameters
-    ----------
-    sfail : str
-        Action to take when the stencil fails. Must be one of
-        'keep', 'zero', 'replace', 'incr', 'incr_wrap',
-        'decr', 'decr_wrap', or 'invert'.
-    dpfail : str
-        Action to take when the stencil passes.
-    dppass : str
-        Action to take when both the stencil and depth tests pass,
-        or when the stencil test passes and either there is no depth
-        buffer or depth testing is not enabled.
-    """
-    gl.glStencilOp(_gl_attr(sfail), _gl_attr(dpfail), _gl_attr(dppass))
-
-
-def set_stencil_op_separate(face, sfail='keep', dpfail='keep', dppass='keep'):
+def set_stencil_op(sfail='keep', dpfail='keep', dppass='keep',
+                   face='front_and_back'):
     """Set front or back stencil test actions
 
     Parameters
     ----------
-    face : str
-        Can be 'front', 'back', or 'front_and_back'.
     sfail : str
         Action to take when the stencil fails. Must be one of
         'keep', 'zero', 'replace', 'incr', 'incr_wrap',
@@ -422,6 +351,8 @@ def set_stencil_op_separate(face, sfail='keep', dpfail='keep', dppass='keep'):
         Action to take when both the stencil and depth tests pass,
         or when the stencil test passes and either there is no depth
         buffer or depth testing is not enabled.
+    face : str
+        Can be 'front', 'back', or 'front_and_back'.
     """
     gl.glStencilOpSeparate(_gl_attr(face), _gl_attr(sfail),
                            _gl_attr(dpfail), _gl_attr(dppass))
@@ -523,9 +454,12 @@ def set_state(preset=None, **kwargs):
     preset : str | None
         Can be one of ('opaque', 'translucent', 'additive') to use
         use reasonable defaults for these typical use cases.
-    **kwargs : bool
+    **kwargs : keyword arguments
         Other supplied keyword arguments will override any preset defaults.
-        These will be passed to ``set_state``.
+        Options to be enabled or disabled should be supplied as booleans
+        (e.g., ``'depth_test=True'``, ``cull_face=False``), non-boolean
+        entries will be passed as arguments to ``set_*`` functions (e.g.,
+        ``blend_func=('src_alpha', 'one')`` will call ``set_blend_func``).
 
     Notes
     -----
