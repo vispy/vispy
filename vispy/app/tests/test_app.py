@@ -116,6 +116,7 @@ def _test_application(backend):
         canvas.size = size
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
+        canvas.show(False)
         canvas.show()
         app.process_events()
         assert_raises(ValueError, canvas.connect, on_nonexist)
