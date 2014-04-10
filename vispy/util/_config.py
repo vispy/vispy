@@ -254,6 +254,7 @@ VisPy command line arguments:
 
 """
 
+
 def _parse_command_line_arguments():
     """ Transform vispy specific command line args to vispy config.
     Put into a function so that any variables dont leak in the vispy namespace.
