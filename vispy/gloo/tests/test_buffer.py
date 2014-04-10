@@ -310,6 +310,17 @@ class DataBufferTest(unittest.TestCase):
         Z = B['position']
         self.assertRaises(ValueError, Z.set_data, data)
 
+    # Check set_data using offset in data buffer
+    # ------------------------------------------
+    def test_set_data_offset(self):
+        data = np.zeros(100, np.float32)
+        subdata = data[:10]
+        
+        B = DataBuffer(data)
+        B.set_data(subdata, offset=10)
+        offset = B._pending_data[-1][2]
+        assert offset == 10*4
+
     # Setitem + broadcast
     # ------------------------------------------------------
     def test_setitem_broadcast(self):
