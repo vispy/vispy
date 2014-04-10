@@ -16,6 +16,11 @@ from .base import BaseCanvasBackend as CanvasBackend  # noqa
 # todo: add focus events
 
 
+def _gloo_initialize(event):
+    from ..gloo import gl_initialize
+    gl_initialize()
+
+
 class Canvas(object):
     """Representation of a GUI element with an OpenGL context
 
@@ -41,6 +46,8 @@ class Canvas(object):
         (vispy.app is used by default.)
     create_native : bool
         Whether to create the widget immediately. Default True.
+    init_gloo : bool
+        Initialize standard values in gloo (e.g., ``GL_POINT_SPRITE``).
     native_args : iterable
         Extra arguments to use when creating the native widget.
     native_kwargs : dict
@@ -49,7 +56,7 @@ class Canvas(object):
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
-                 native_args=None, native_kwargs=None):
+                 init_gloo=True, native_args=None, native_kwargs=None):
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
                                    resize=ResizeEvent,
@@ -67,6 +74,9 @@ class Canvas(object):
 
         # Initialize backend attribute
         self._backend = None
+        if init_gloo:
+            self.events.initialize.connect(_gloo_initialize)
+        self._init_gloo = init_gloo
         self._native_args = native_args or ()
         self._native_kwargs = native_kwargs or {}
 

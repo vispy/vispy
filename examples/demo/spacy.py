@@ -11,7 +11,6 @@
 import time
 
 import numpy as np
-import OpenGL.GL as gl
 
 from vispy import gloo
 from vispy import app
@@ -98,13 +97,9 @@ class Canvas(app.Canvas):
         self._timeout = time.time() + SPEED
     
     def on_initialize(self, event):
-        gl.glClearColor(0.0, 0.0, 0.0, 0.0)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendEquation(gl.GL_FUNC_ADD)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        gl.glEnable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(gl.GL_POINT_SPRITE)
+        gloo.set_state(clear_color=(0.0, 0.0, 0.0, 0.0), depth_test=False,
+                       blend=True, blend_equation='func_add',
+                       blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def on_key_press(self, event):
         if event.text == ' ':
@@ -115,21 +110,20 @@ class Canvas(app.Canvas):
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         far = SIZE*(NBLOCKS-2)
         self.projection = perspective(25.0, width / float(height), 1.0, far)
         self.program['u_projection'] = self.projection
 
     def on_paint(self, event):
-        
         # Set time offset. Factor runs from 1 to 0
         # the time offset goes from 0 to size
         factor = (self._timeout - time.time()) / SPEED
         self.program['u_time_offset'] = -(1-factor) * SIZE
         
         # Draw
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        self.program.draw(gl.GL_POINTS)
+        gloo.clear()
+        self.program.draw('points')
         
         # Build new starts if the first block is fully behind us
         if factor < 0:
