@@ -5,10 +5,11 @@ import os
 from vispy.util import (config, sys_info, _TempDir, get_data_file,
                         set_data_dir, save_config)
 
-from vispy.util.testing import assert_in
+from vispy.util.testing import assert_in, requires_application
 temp_dir = _TempDir()
 
 
+@requires_application()
 def test_sys_info():
     """Test printing of system information"""
     fname = op.join(temp_dir, 'info.txt')

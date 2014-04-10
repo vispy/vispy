@@ -18,15 +18,18 @@ vispy backend for glfw.
 
 from __future__ import division
 
-from threading import Timer
+import atexit
+from time import sleep
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
+from ...util.ptime import time
 
 from . import _libglfw as glfw
 
-glfw.glfwInit()  # only ever call once
-
+if not glfw.glfwInit():  # only ever call once
+    raise OSError('Could not init glfw')
+atexit.register(glfw.glfwTerminate)
 
 # Map native keys to vispy keys
 KEYMAP = {
@@ -79,19 +82,17 @@ BUTTONMAP = {glfw.GLFW_MOUSE_BUTTON_LEFT: 1,
              glfw.GLFW_MOUSE_BUTTON_MIDDLE: 3
              }
 
+
 _VP_GLFW_ALL_WINDOWS = []
-_VP_GLFW_DO_DRAW = []
 
 MOD_KEYS = [keys.SHIFT, keys.ALT, keys.CONTROL, keys.META]
 
 
-def _get_glfw_windows(check=False):
+def _get_glfw_windows():
     wins = list()
     for win in _VP_GLFW_ALL_WINDOWS:
         if isinstance(win, CanvasBackend):
             wins.append(win)
-    if check and len(wins) != 1:
-        raise RuntimeError('Can only use a single window')
     return wins
 
 
@@ -100,7 +101,6 @@ class ApplicationBackend(BaseApplicationBackend):
     def __init__(self):
         BaseApplicationBackend.__init__(self)
         self._timers = list()
-        self._running = False
 
     def _add_timer(self, timer):
         if timer not in self._timers:
@@ -110,26 +110,23 @@ class ApplicationBackend(BaseApplicationBackend):
         return 'Glfw'
 
     def _vispy_process_events(self):
-        #wins = _get_glfw_windows()
-        #for win in wins:
-        #    glfw.glfwPollEvents(win._id)
         glfw.glfwPollEvents()
-        while _VP_GLFW_DO_DRAW:
-            win = _VP_GLFW_DO_DRAW.pop(0)
-            win._on_draw()
-    
+        for timer in self._timers:
+            timer._tick()
+        wins = _get_glfw_windows()
+        for win in wins:
+            if win._needs_draw:
+                win._needs_draw = False
+                win._on_draw()
+
     def _vispy_run(self):
-        win = _get_glfw_windows(check=True)[0]
-        self._running = True
-        while (self._running and 
-               win._id is not None and 
-               not glfw.glfwWindowShouldClose(win._id)):
+        wins = _get_glfw_windows()
+        while all(w._id is not None and glfw.glfwWindowShouldClose(w._id)
+                  for w in wins):
             self._vispy_process_events()
         self._vispy_quit()  # to clean up
 
     def _vispy_quit(self):
-        # Mark as quit
-        self._running = False
         # Close windows
         wins = _get_glfw_windows()
         for win in wins:
@@ -145,9 +142,9 @@ class ApplicationBackend(BaseApplicationBackend):
 
 class CanvasBackend(BaseCanvasBackend):
 
-    """ GLUT backend for Canvas abstract class."""
+    """ Glfw backend for Canvas abstract class."""
 
-    def __init__(self, name='glut window', *args, **kwargs):
+    def __init__(self, name='glfw window', *args, **kwargs):
         BaseCanvasBackend.__init__(self)
         # Init GLFW, add window hints, and create window
         glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)
@@ -161,9 +158,10 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwWindowHint(glfw.GLFW_DECORATED, True)
         glfw.glfwWindowHint(glfw.GLFW_VISIBLE, True)
         self._id = glfw.glfwCreateWindow(title=name)
-        glfw.glfwMakeContextCurrent(self._id)
-        glfw.glfwHideWindow(self._id)  # Start hidden, like the other backends
+        if not self._id:
+            raise RuntimeError('Could not create window')
         _VP_GLFW_ALL_WINDOWS.append(self)
+        glfw.glfwHideWindow(self._id)  # Start hidden, like the other backends
         self._mod = list()
 
         # Register callbacks
@@ -176,12 +174,13 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSetWindowCloseCallback(self._id, self._on_close)
         glfw.glfwSwapInterval(1)  # avoid tearing
         self._vispy_canvas_ = None
+        self._needs_draw = False
 
     ###########################################################################
     # Deal with events we get from vispy
     @property
     def _vispy_canvas(self):
-        """ The size of canvas/window """
+        """ The parent canvas/window """
         return self._vispy_canvas_
 
     @_vispy_canvas.setter
@@ -191,6 +190,13 @@ class CanvasBackend(BaseCanvasBackend):
         if vc is not None:
             self._vispy_canvas.events.initialize()
         return self._vispy_canvas
+
+    def _vispy_warmup(self):
+        etime = time() + 0.25
+        while time() < etime:
+            sleep(0.01)
+            self._vispy_set_current()
+            self._vispy_canvas.app.process_events()
 
     def _vispy_set_current(self):
         if self._id is None:
@@ -228,6 +234,8 @@ class CanvasBackend(BaseCanvasBackend):
             return
         if visible:
             glfw.glfwShowWindow(self._id)
+            # this ensures that the show takes effect
+            self._vispy_update()
         else:
             glfw.glfwHideWindow(self._id)
 
@@ -236,16 +244,16 @@ class CanvasBackend(BaseCanvasBackend):
         if self._vispy_canvas is None or self._id is None:
             return
         # Mark that this window wants to be painted on the next loop iter
-        if self not in _VP_GLFW_DO_DRAW:
-            _VP_GLFW_DO_DRAW.append(self)
+        self._needs_draw = True
 
     def _vispy_close(self):
         # Force the window or widget to shut down
-        self._vispy_set_visible(False)  # Destroying doesn't hide!
-        #if self in _VP_GLFW_ALL_WINDOWS and self._id is not None:
-        #    _VP_GLFW_ALL_WINDOWS.pop(_VP_GLFW_ALL_WINDOWS.index(self))
-        #    glfw.glfwDestroyWindow(self._id)
-        self._id = None
+        if self._id is not None:
+            #glfw.glfwSetWindowShouldClose()  # Does not really cause a close
+            self._vispy_set_visible(False)
+            self._id, id_ = None, self._id
+            glfw.glfwPollEvents()
+            glfw.glfwDestroyWindow(id_)
 
     def _vispy_get_size(self):
         if self._id is None:
@@ -274,6 +282,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_draw(self, _id=None):
         if self._vispy_canvas is None or self._id is None:
             return
+        self._vispy_set_current()
         self._vispy_canvas.events.paint(region=None)  # (0, 0, w, h))
 
     def _on_mouse_button(self, _id, button, action, mod):
@@ -346,26 +355,17 @@ class TimerBackend(BaseTimerBackend):
 
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
-        # tell application instance about existence
         vispy_timer._app._backend._add_timer(self)
+        self._vispy_stop()
 
     def _vispy_start(self, interval):
-        self._timer = None
-        self.interval = interval
-        self.is_running = False
-        self._start()
+        self._interval = interval
+        self._next_time = time() + self._interval
 
     def _vispy_stop(self):
-        self._timer.cancel()
-        self.is_running = False
+        self._next_time = float('inf')
 
-    def _run(self):
-        self.is_running = False
-        self._start()
-        self._vispy_timer._timeout()
-
-    def _start(self):
-        if not self.is_running:
-            self._timer = Timer(self.interval, self._run)
-            self._timer.start()
-            self.is_running = True
+    def _tick(self):
+        if time() >= self._next_time:
+            self._vispy_timer._timeout()
+            self._next_time = time() + self._interval

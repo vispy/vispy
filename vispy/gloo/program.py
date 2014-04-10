@@ -445,7 +445,7 @@ class Program(GLObject):
         _known_modes = ('points', 'lines', 'line_strip', 'line_loop',
                         'triangles', 'triangle_strip', 'triangle_fan')
         if isinstance(mode, string_types):
-            if not mode in _known_modes:
+            if mode not in _known_modes:
                 raise ValueError('mode must be one of %s, not "%s"'
                                  % (_known_modes, mode))
             mode = getattr(gl, 'GL_%s' % mode.upper())
