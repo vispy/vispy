@@ -25,7 +25,7 @@ def test_wrappers():
         assert_raises(ValueError, gloo.set_blend_color, (0., 0.))  # bad color
         assert_raises(TypeError, gloo.set_hint, 1, 2)  # need strs
         assert_raises(TypeError, gloo.get_parameter, 1)  # need str
-        # XXX we don't have these in the namespace...?
+        # this doesn't exist in ES 2.0 namespace
         assert_raises(ValueError, gloo.set_hint, 'fog_hint', 'nicest')
         # test bad enum
         assert_raises(RuntimeError, gloo.set_line_width, -1)
@@ -39,6 +39,7 @@ def test_wrappers():
         viewport = (0, 0, 1, 1)
         blend_color = (0., 0., 0.)
         _funs = dict(viewport=viewport,  # checked
+                     hint=('generate_mipmap_hint', 'nicest'),
                      depth_range=(1., 2.),
                      front_face='cw',  # checked
                      cull_face='front',
