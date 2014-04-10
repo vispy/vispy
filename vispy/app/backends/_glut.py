@@ -217,7 +217,7 @@ class CanvasBackend(BaseCanvasBackend):
         glut.glutMouseFunc(self.on_mouse_action)
         glut.glutMotionFunc(self.on_mouse_motion)
         glut.glutPassiveMotionFunc(self.on_mouse_motion)
-        glut.glutShowWindow()
+        glut.glutHideWindow()
         _set_close_fun(self._id, self.on_close)
         self._vispy_canvas_ = None
 

@@ -107,7 +107,7 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
         # Initialize native widget, but default hidden and resizable
-        kwargs['visible'] = kwargs.get('visible', True)
+        kwargs['visible'] = kwargs.get('visible', False)
         kwargs['resizable'] = kwargs.get('resizable', True)
         kwargs['vsync'] = kwargs.get('vsync', 0)
 
