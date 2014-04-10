@@ -300,7 +300,7 @@ class Program(GLObject):
         elif name in self._attributes.keys():
             return self._attributes[name].data
         else:
-            raise IndexError("Unknown uniform or attribute %s" % name)
+            raise KeyError("Unknown uniform or attribute %s" % name)
 
     def _activate(self):
         """Activate the program as part of current rendering state."""
