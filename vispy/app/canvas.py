@@ -134,7 +134,10 @@ class Canvas(object):
         if self._our_kwargs['autoswap']:
             fun = lambda x: self._backend._vispy_swap_buffers()
             self.events.paint.callbacks.append(fun)  # Append callback to end
-        self.show(self._our_kwargs['show'])
+        # Don't just always call this -- explicitly calling "hide" on a
+        # QWidget changes the behavior, so only call "show" if it's requested
+        if self._our_kwargs['show']:
+            self.show()
 
     @property
     def app(self):
