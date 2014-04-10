@@ -15,7 +15,7 @@ import OpenGL.GL as gl
 
 from vispy import gloo
 from vispy import app
-from vispy.util.transforms import perspective, translate, rotate
+from vispy.util.transforms import perspective, translate, rotate  # noqa
 
 
 vertex = """
@@ -60,7 +60,7 @@ void main()
 }
 """
 
-N = 100000 # Number of stars 
+N = 100000  # Number of stars 
 SIZE = 100
 SPEED = 4.0  # time in seconds to go through one block
 NBLOCKS = 10
@@ -78,7 +78,7 @@ class Canvas(app.Canvas):
         self.projection = np.eye(4, dtype=np.float32)
         
         self.timer = app.Timer(1.0 / 30)  # change rendering speed here
-        self.timer.connect(lambda x:self.update())
+        self.timer.connect(lambda x: self.update())
         self.timer.start()
         
         # Set uniforms (some are set later)
@@ -86,7 +86,7 @@ class Canvas(app.Canvas):
         self.program['u_view'] = self.view
         
         # Set attributes
-        self.program['a_position'] = np.zeros((N,3), np.float32)
+        self.program['a_position'] = np.zeros((N, 3), np.float32)
         self.program['a_offset'] = np.zeros((N,), np.float32)
         
         # Init
@@ -115,7 +115,8 @@ class Canvas(app.Canvas):
     def on_resize(self, event):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
-        self.projection = perspective(25.0, width / float(height), 1.0, SIZE*(NBLOCKS-2))
+        far = SIZE*(NBLOCKS-2)
+        self.projection = perspective(25.0, width / float(height), 1.0, far)
         self.program['u_projection'] = self.projection
 
     def on_paint(self, event):
@@ -131,9 +132,7 @@ class Canvas(app.Canvas):
         
         # Build new starts if the first block is fully behind us
         if factor < 0:
-            t0 = time.time()
             self._generate_stars()
-            #print(time.time()-t0)
     
     def on_close(self, event):
         self.timer.stop()
@@ -149,10 +148,9 @@ class Canvas(app.Canvas):
             self._active_block = 0
         
         # Create new position data for the active block
-        #pos = np.random.uniform(-SIZE/2, SIZE/2, (blocksize, 3)).astype('float32')
         pos = np.zeros((blocksize, 3), 'float32') 
-        pos[:,:2] = np.random.normal(0.0, SIZE/2, (blocksize, 2))  # x-y
-        pos[:,2] = np.random.uniform(0, SIZE, (blocksize,))  # z
+        pos[:, :2] = np.random.normal(0.0, SIZE/2, (blocksize, 2))  # x-y
+        pos[:, 2] = np.random.uniform(0, SIZE, (blocksize,))  # z
         start_index = self._active_block * blocksize
         self.program['a_position'].set_data(pos, offset=start_index) 
         

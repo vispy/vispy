@@ -275,7 +275,7 @@ class DataBuffer(Buffer):
         # We need a minimum amount of information
         else:
             raise ValueError("data/dtype/base cannot be all set to None")
-    
+
     @property
     def handle(self):
         """ Name of this object on the GPU """
@@ -319,7 +319,7 @@ class DataBuffer(Buffer):
         data : ndarray
             Data to be uploaded
         offset: int
-            Offset in buffer where to start copying data (in number of vertices)
+            Offset in buffer to start copying data (in number of vertices)
         copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
