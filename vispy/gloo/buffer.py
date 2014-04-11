@@ -25,6 +25,9 @@ class Buffer(GLObject):
     context is not available. The `update` function is responsible to upload
     pending data to GPU memory and requires an active GL context.
     
+    The Buffer class only deals with data in terms of bytes; it is not 
+    aware of data type or element size.
+    
     Parameters
     ----------
 
@@ -82,7 +85,7 @@ class Buffer(GLObject):
         data : ndarray
             Data to be uploaded
         offset: int
-            Offset in buffer where to start copying data
+            Offset in buffer where to start copying data (in bytes)
         copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
@@ -188,7 +191,7 @@ class Buffer(GLObject):
 
 # -------------------------------------------------------- DataBuffer class ---
 class DataBuffer(Buffer):
-    """ GPU data buffer 
+    """ GPU data buffer that is aware of data type and elements size
     
     Parameters
     ----------
@@ -232,6 +235,8 @@ class DataBuffer(Buffer):
                 self._dtype = dtype
             self._stride = base.stride
             #self._size = size or base.size
+            self._itemsize = self._dtype.itemsize
+            self._nbytes = self._size * self._itemsize
 
         # Create buffer from data
         elif data is not None:
@@ -239,25 +244,29 @@ class DataBuffer(Buffer):
                 data = np.array(data, dtype=dtype, copy=False)
             else:
                 data = np.array(data, copy=False)
-            self._dtype = data.dtype
-            self._size = data.size
-            self._stride = data.strides[-1]
-            self._nbytes = data.nbytes
             # Handle storage
             if self._store:
                 if not data.flags["C_CONTIGUOUS"]:
                     logger.warning("Copying discontiguous data as CPU storage")
                     self._copy = True
                     data = data.copy()
-                self._data = data.ravel()
+                self._data = data.ravel()  # Makes a copy if not contiguous
+            # Store meta data (AFTER flattening, or stride would be wrong)
+            self._dtype = data.dtype
+            self._size = data.size
+            self._stride = data.strides[-1]
+            self._nbytes = data.nbytes
+            self._itemsize = self._dtype.itemsize
             # Set data
             self.set_data(data, copy=False)
-
+        
         # Create buffer from dtype and size
         elif dtype is not None:
             self._dtype = np.dtype(dtype)
             self._size = size
             self._stride = self._dtype.itemsize
+            self._itemsize = self._dtype.itemsize
+            self._nbytes = self._size * self._itemsize
             if self._store:
                 self._data = np.empty(self._size, dtype=self._dtype)
             # else:
@@ -266,9 +275,6 @@ class DataBuffer(Buffer):
         # We need a minimum amount of information
         else:
             raise ValueError("data/dtype/base cannot be all set to None")
-
-        self._itemsize = self._dtype.itemsize
-        self._nbytes = self._size * self._itemsize
 
     @property
     def handle(self):
@@ -313,7 +319,7 @@ class DataBuffer(Buffer):
         data : ndarray
             Data to be uploaded
         offset: int
-            Offset in buffer where to start copying data
+            Offset in buffer to start copying data (in number of vertices)
         copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
@@ -322,6 +328,7 @@ class DataBuffer(Buffer):
         if self.base is not None:
             raise ValueError("Cannot set data on a non-base buffer")
         else:
+            offset = offset * self.itemsize
             Buffer.set_data(self, data=data, offset=offset, copy=copy)
 
     @property
@@ -584,10 +591,13 @@ class VertexBuffer(DataBuffer):
                 data = data.view(dtype=[('f0', data.dtype.base, 1)])
             elif data.shape[-1] in [1, 2, 3, 4]:
                 c = data.shape[-1]
+                if not data.flags['C_CONTIGUOUS']:
+                    logger.warn("Copying discontiguous data for struct dtype")
+                    data = data.copy()
                 data = data.view(dtype=[('f0', data.dtype.base, c)])
             else:
                 data = data.view(dtype=[('f0', data.dtype.base, 1)])
-
+        
         elif dtype is not None:
             dtype = np.dtype(dtype)
             if dtype.isbuiltin:

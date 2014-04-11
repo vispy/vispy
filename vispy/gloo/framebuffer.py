@@ -118,9 +118,8 @@ class ColorBuffer(RenderBuffer):
     """
 
     def __init__(self, shape, format=gl.GL_RGBA, resizeable=True):
-#        if format not in (gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1):
-#            raise ValueError("Format not allowed for color buffer")
-
+        # if format not in (gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1):
+        #     raise ValueError("Format not allowed for color buffer")
         RenderBuffer.__init__(self, shape, format, resizeable)
 
 
@@ -141,9 +140,8 @@ class DepthBuffer(RenderBuffer):
 
     def __init__(self, shape,
                  format=gl.GL_DEPTH_COMPONENT, resizeable=True):
-#        if format not in (gl.GL_DEPTH_COMPONENT16,):
-#            raise ValueError("Format not allowed for depth buffer")
-
+        #if format not in (gl.GL_DEPTH_COMPONENT16,):
+        #    raise ValueError("Format not allowed for depth buffer")
         RenderBuffer.__init__(self, shape, format, resizeable)
 
 
@@ -164,9 +162,8 @@ class StencilBuffer(RenderBuffer):
 
     def __init__(self, shape,
                  format=gl.GL_STENCIL_INDEX8, resizeable=True):
-#        if format not in (gl.GL_STENCIL_INDEX,):
-#            raise ValueError("Format not allowed for color buffer")
-
+        # if format not in (gl.GL_STENCIL_INDEX,):
+        #     raise ValueError("Format not allowed for color buffer")
         RenderBuffer.__init__(self, shape, format, resizeable)
 
 

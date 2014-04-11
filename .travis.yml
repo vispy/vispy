@@ -82,6 +82,7 @@ install:
 
     # Install PyOpenGL
     - if [ "${DEPS}" == "full" ]; then
+        travis_retry sudo apt-get -qq -y install freeglut3;
         if [ "${PYTHON}" == "2.7" ]; then
           echo "Using OpenGL stable version (repos)";
           travis_retry sudo apt-get -qq -y install python-opengl;
@@ -155,7 +156,11 @@ script:
     - cd ${SRC_DIR}
     - if [ "${TEST}" == "extra" ]; then
         make flake;
+      fi;
+    - if [ "${TEST}" == "extra" ]; then
         make lineendings;
+      fi;
+    - if [ "${TEST}" == "extra" ]; then
         echo "Size difference ${SIZE_DIFF} kB";
         test ${SIZE_DIFF} -lt 100;
       fi;

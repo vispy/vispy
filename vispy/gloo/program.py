@@ -12,6 +12,7 @@ from . buffer import VertexBuffer, IndexBuffer
 from . shader import VertexShader, FragmentShader
 from . variable import Uniform, Attribute
 from ..util import logger
+from ..util.six import string_types
 
 
 # ----------------------------------------------------------- Program class ---
@@ -211,6 +212,12 @@ class Program(GLObject):
             print(gl.glGetProgramInfoLog(self._handle))
             raise RuntimeError('Program linking error')
 
+        # Validate
+        gl.glValidateProgram(self._handle)
+        if not gl.glGetProgramParameter(self._handle, gl.GL_VALIDATE_STATUS):
+            print(gl.glGetProgramInfoLog(self._handle))
+            raise RuntimeError('Program validation error')
+        
         self._need_build = False
 
     def _update(self):
@@ -229,12 +236,6 @@ class Program(GLObject):
                 attribute.active = True
             else:
                 attribute.active = False
-    
-        # Validate
-        gl.glValidateProgram(self._handle)
-        if not gl.glGetProgramParameter(self._handle, gl.GL_VALIDATE_STATUS):
-            print(gl.glGetProgramInfoLog(self._handle))
-            raise RuntimeError('Program validation error')
         
     def _delete(self):
         logger.debug("GPU: Deleting program")
@@ -299,7 +300,7 @@ class Program(GLObject):
         elif name in self._attributes.keys():
             return self._attributes[name].data
         else:
-            raise IndexError("Unknown uniform or attribute %s" % name)
+            raise KeyError("Unknown uniform or attribute %s" % name)
 
     def _activate(self):
         """Activate the program as part of current rendering state."""
@@ -445,7 +446,7 @@ class Program(GLObject):
 
         Parameters
         ----------
-        mode : GL_ENUM
+        mode : str | GL_ENUM
             GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP,
             GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
         first : int
@@ -453,7 +454,13 @@ class Program(GLObject):
         count : int
             The number of vertices to draw. Default all.
         """
-
+        _known_modes = ('points', 'lines', 'line_strip', 'line_loop',
+                        'triangles', 'triangle_strip', 'triangle_fan')
+        if isinstance(mode, string_types):
+            if mode not in _known_modes:
+                raise ValueError('mode must be one of %s, not "%s"'
+                                 % (_known_modes, mode))
+            mode = getattr(gl, 'GL_%s' % mode.upper())
         self.activate()
 
         # WARNING: The "list" of values from a dict is not a list (py3k)

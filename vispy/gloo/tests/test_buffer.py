@@ -173,17 +173,19 @@ class DataBufferTest(unittest.TestCase):
     # Use CPU storage but make a local copy for storage
     # -------------------------------------------------
     def test_storage_copy(self):
-        data = np.ones(100)
+        data = np.ones(100, np.float32)
         B = DataBuffer(data.copy(), store=True)  # we got rid of copy arg
         assert B.data is not None
         assert B.data is not data
+        assert B.stride == 4
 
     # No CPU storage
     # --------------
     def test_no_storage_copy(self):
-        data = np.ones(100)
+        data = np.ones(100, np.float32)
         B = DataBuffer(data, store=False)
         assert B.data is None
+        assert B.stride == 4
 
     # Empty init (not allowed)
     # ------------------------
@@ -197,10 +199,16 @@ class DataBufferTest(unittest.TestCase):
     def test_non_contiguous_storage(self):
         # Ask to have CPU storage and to use data as storage
         # Not possible since data[::2] is not contiguous
-        data = np.ones(100)
+        data = np.ones(100, np.float32)
         data_given = data[::2]
+        
         B = DataBuffer(data_given, store=True)
         assert B._data is not data_given
+        assert B.stride == 4
+        
+        B = DataBuffer(data_given, store=False)
+        assert B._data is not data_given
+        assert B.stride == 4*2
 
     # Get buffer field
     # ----------------
@@ -301,6 +309,17 @@ class DataBufferTest(unittest.TestCase):
         #    B['position'].set_data(data)
         Z = B['position']
         self.assertRaises(ValueError, Z.set_data, data)
+
+    # Check set_data using offset in data buffer
+    # ------------------------------------------
+    def test_set_data_offset(self):
+        data = np.zeros(100, np.float32)
+        subdata = data[:10]
+        
+        B = DataBuffer(data)
+        B.set_data(subdata, offset=10)
+        offset = B._pending_data[-1][2]
+        assert offset == 10*4
 
     # Setitem + broadcast
     # ------------------------------------------------------

@@ -9,11 +9,18 @@ import numpy as np
 from ._default_app import default_app
 from ..util.event import EmitterGroup, Event
 from ..util.ptime import time
+from ..util.six import string_types
+from .application import Application
 from .base import BaseCanvasBackend as CanvasBackend  # noqa
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
 # todo: add focus events
+
+
+def _gloo_initialize(event):
+    from ..gloo import gl_initialize
+    gl_initialize()
 
 
 class Canvas(object):
@@ -36,11 +43,15 @@ class Canvas(object):
     autoswap : bool
         Whether to swap the buffers automatically after a paint event.
         Default True.
-    app : Application
+    app : Application | str
         Give vispy Application instance to use as a backend.
-        (vispy.app is used by default.)
+        (vispy.app is used by default.) If str, then an application
+        using the chosen backend (e.g., 'pyglet') will be created.
+        Note the canvas application can be accessed at ``canvas.app``.
     create_native : bool
         Whether to create the widget immediately. Default True.
+    init_gloo : bool
+        Initialize standard values in gloo (e.g., ``GL_POINT_SPRITE``).
     native_args : iterable
         Extra arguments to use when creating the native widget.
     native_kwargs : dict
@@ -49,7 +60,7 @@ class Canvas(object):
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
-                 native_args=None, native_kwargs=None):
+                 init_gloo=True, native_args=None, native_kwargs=None):
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
                                    resize=ResizeEvent,
@@ -67,6 +78,8 @@ class Canvas(object):
 
         # Initialize backend attribute
         self._backend = None
+        if init_gloo:
+            self.events.initialize.connect(_gloo_initialize)
         self._native_args = native_args or ()
         self._native_kwargs = native_kwargs or {}
 
@@ -86,6 +99,8 @@ class Canvas(object):
         self._fps_callback = None
 
         # Get app instance
+        if isinstance(app, string_types):
+            app = Application(app)
         self._app = default_app if app is None else app
 
         # Create widget now
@@ -96,21 +111,20 @@ class Canvas(object):
         """ Create the native widget if not already done so. If the widget
         is already created, this function does nothing.
         """
-        if self._backend is None:
-            # Make sure that the app is active
-            self._app.use()
-            self._app.native
-            # Instantiate the backend with the right class
-            self._set_backend(
-                self._app.backend_module.CanvasBackend(*self._native_args,
-                                                       **self._native_kwargs))
+        if self._backend is not None:
+            return
+        # Make sure that the app is active
+        self._app.use()
+        assert self._app.native
+        # Instantiate the backend with the right class
+        self._set_backend(
+            self._app.backend_module.CanvasBackend(*self._native_args,
+                                                   **self._native_kwargs))
 
     def _set_backend(self, backend):
+        assert backend is not None  # should never happen
         self._backend = backend
-        if backend is not None:
-            backend._vispy_canvas = self
-        else:
-            return
+        self._backend._vispy_canvas = self
 
         # Initialize it
         self.title = self._our_kwargs['title']
@@ -120,6 +134,8 @@ class Canvas(object):
         if self._our_kwargs['autoswap']:
             fun = lambda x: self._backend._vispy_swap_buffers()
             self.events.paint.callbacks.append(fun)  # Append callback to end
+        # Don't just always call this -- explicitly calling "hide" on a
+        # QWidget changes the behavior, so only call "show" if it's requested
         if self._our_kwargs['show']:
             self.show()
 
@@ -176,6 +192,7 @@ class Canvas(object):
 
     @position.setter
     def position(self, position):
+        assert len(position) == 2
         return self._backend._vispy_set_position(position[0], position[1])
 
     # --------------------------------------------------------------- title ---
@@ -201,19 +218,8 @@ class Canvas(object):
         """
         self._backend._vispy_swap_buffers()
 
-    def resize(self, w, h):
-        """ Resize the canvas given size """
-
-        return self._backend._vispy_set_size(w, h)
-
-    def move(self, x, y):
-        """ Move the widget or window to the given position """
-
-        self._backend._vispy_set_position(x, y)
-
     def show(self, visible=True):
         """ Show (or hide) the canvas """
-
         return self._backend._vispy_set_visible(visible)
 
     def update(self):
@@ -224,7 +230,13 @@ class Canvas(object):
             return
 
     def close(self):
-        """ Close the canvas """
+        """ Close the canvas
+
+        Note: This will usually destroy the GL context. For Qt, the context
+        (and widget) will be destroyed only if the widget is top-level.
+        To avoid having the widget destroyed (more like standard Qt
+        behavior), consider making the widget a sub-widget.
+        """
         if self._backend is not None:
             self._backend._vispy_close()
 
@@ -254,7 +266,13 @@ class Canvas(object):
         else:
             self._fps_callback = None
 
+    def __repr__(self):
+        return ('<Vispy canvas (%s backend) at %s>'
+                % (self.app.backend_name, hex(id(self))))
+
     def __enter__(self):
+        self.show()
+        self._backend._vispy_warmup()
         return self
 
     def __exit__(self, type, value, traceback):
@@ -272,23 +290,19 @@ class Canvas(object):
         #"""Called when the user touches the screen over a Canvas.
 
         # Event properties:
-
-            # event.touches
-                #[ (x,y,pressure), ... ]
+        #     event.touches
+        #     [ (x,y,pressure), ... ]
         #"""
 
     # def stylus_event(self, event):
         #"""Called when a stylus has been used to interact with the Canvas.
 
         # Event properties:
-
-            # event.device
-            #event.pos  (x,y)
-            # event.pressure
-            # event.angle
-
+        #     event.device
+        #     event.pos  (x,y)
+        #     event.pressure
+        #     event.angle
         #"""
-
 
     # def initialize_event(self, event):
         #"""Called when the OpenGL context is initialy made available for this
@@ -298,16 +312,14 @@ class Canvas(object):
         #"""Called when the Canvas is resized.
 
         # Event properties:
-
-            #event.size  (w,h)
+        #     event.size  (w,h)
         #"""
 
     # def paint_event(self, event):
         #"""Called when all or part of the Canvas needs to be repainted.
 
         # Event properties:
-
-            # event.region  (x,y,w,h) region of Canvas requiring repaint
+        #     event.region  (x,y,w,h) region of Canvas requiring repaint
         #"""
 
 

@@ -77,9 +77,7 @@ setup(
     long_description=__doc__,
     platforms='any',
     provides=['vispy'],
-    install_requires=[
-        'numpy',
-        'PyOpenGl'],
+    install_requires=['numpy'],
     packages=[
         'vispy',
         'vispy.app', 'vispy.app.tests',
