@@ -8,7 +8,6 @@ You should see a colored outlined spinning cube.
 
 import numpy as np
 from vispy import app, gloo
-from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
 
@@ -125,9 +124,9 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glPolygonOffset(1, 1)
+        gloo.set_clear_color((1, 1, 1, 1))
+        gloo.set_state('opaque')
+        gloo.set_polygon_offset(1, 1)
         # gl.glEnable( gl.GL_LINE_SMOOTH )
 
     # ---------------------------------
@@ -143,29 +142,28 @@ class Canvas(app.Canvas):
     # ---------------------------------
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(45.0, width / float(height), 2.0, 10.0)
         self.program['u_projection'] = self.projection
 
     # ---------------------------------
     def on_paint(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gloo.clear()
 
         # Filled cube
         
-        gl.glDisable(gl.GL_BLEND)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
+        gloo.set_state(blend=False, depth_test=True, )
+        gloo.set_state(polygon_offset_fill=True)
         self.program['u_color'] = 1, 1, 1, 1
-        self.program.draw(gl.GL_TRIANGLES, self.filled_buf)
+        self.program.draw('triangles', self.filled_buf)
 
         # Outline
-        gl.glDisable(gl.GL_POLYGON_OFFSET_FILL)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glDepthMask(gl.GL_FALSE)
+        gloo.set_state(blend=True, depth_test=True, )
+        gloo.set_state(polygon_offset_fill=False)
+        gloo.set_depth_mask(False)
         self.program['u_color'] = 0, 0, 0, 1
-        self.program.draw(gl.GL_LINES, self.outline_buf)
-        gl.glDepthMask(gl.GL_TRUE)
+        self.program.draw('lines', self.outline_buf)
+        gloo.set_depth_mask(True)
 
 
 # -----------------------------------------------------------------------------

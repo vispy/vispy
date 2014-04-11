@@ -467,6 +467,7 @@ def set_state(preset=None, **kwargs):
       1. Set GL state using reasonable presets.
       2. Wrapping glEnable/glDisable functionality.
       3. Convienence wrapping of other ``gloo.set_*`` functions.
+
     For example, one could do the following:
 
         >>> from vispy import gloo
@@ -475,6 +476,17 @@ def set_state(preset=None, **kwargs):
     This would take the preset defaults for 'translucent', turn depth testing
     off (which would normally be on for that preset), and additionally
     set the glClearColor parameter to be white.
+
+    Another example to showcase glEnable/glDisable wrapping:
+
+        >>> gloo.set_state(blend=True, depth_test=True, polygon_offset_fill=False)  # noqa, doctest:+SKIP
+
+    This would be equivalent to calling 
+
+        >>> from vispy.gloo import gl
+        >>> gl.glDisable(gl.GL_BLEND)
+        >>> gl.glEnable(gl.GL_DEPTH_TEST)
+        >>> gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
 
     Or here's another example:
 

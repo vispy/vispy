@@ -13,7 +13,6 @@ import numpy as np
 
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 
 
 # Create a texture
@@ -83,23 +82,23 @@ class Canvas(app.Canvas):
         #self._program['a_texcoords'] = self._vbo['a_texcoords']
 
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
+        gloo.set_clear_color((1, 1, 1, 1))
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
 
     def on_paint(self, event):
 
         # Clear
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gloo.clear()
 
         # Draw
         self._program['sizeFactor'] = 0.5 + np.sin(time.time() * 3) * 0.2
 
         # Draw (pick one!)
         # self._program.draw(gl.GL_TRIANGLE_STRIP)
-        self._program.draw(gl.GL_TRIANGLES, indices_buffer)
+        self._program.draw('triangles', indices_buffer)
         # self._program.draw(gl.GL_TRIANGLES, client_indices_buffer)  # Not
         # recommended
 
