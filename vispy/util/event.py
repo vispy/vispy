@@ -118,8 +118,9 @@ class Event(object):
     def __repr__(self):
         # Try to generate a nice string representation of the event that
         # includes the interesting properties.
-        global _event_repr_depth  # need to keep track of depth because it is
-                                 # very difficult to avoid excessive recursion.
+        # need to keep track of depth because it is
+        # very difficult to avoid excessive recursion.
+        global _event_repr_depth
         _event_repr_depth += 1
         try:
             if _event_repr_depth > 2:
@@ -408,9 +409,8 @@ class EmitterGroup(EventEmitter):
         self.auto_connect = auto_connect
         self.auto_connect_format = "on_%s"
         self._emitters = OrderedDict()
-        self._emitters_connected = False  # whether the sub-emitters have
-                                          # been connected to the group
-
+        # whether the sub-emitters have been connected to the group:
+        self._emitters_connected = False
         self.add(**emitters)
 
     def __getitem__(self, name):

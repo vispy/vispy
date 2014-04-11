@@ -10,9 +10,9 @@
 # -----------------------------------------------------------------------------
 import sys
 import numpy as np
-import OpenGL.GL as gl
 import OpenGL.GLUT as glut
 
+from vispy import gloo
 from vispy.gloo import Program, VertexBuffer
 from vispy.util.transforms import ortho
 
@@ -87,13 +87,13 @@ void main()
 
 
 def display():
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-    program.draw(gl.GL_POINTS)
+    gloo.clear()
+    program.draw('points')
     glut.glutSwapBuffers()
 
 
 def reshape(width, height):
-    gl.glViewport(0, 0, width, height)
+    gloo.set_viewport(0, 0, width, height)
     projection = ortho(0, width, 0, height, -1, +1)
     program['u_projection'] = projection
 
@@ -113,7 +113,7 @@ def timer(fps):
 
 def on_passive_motion(x, y):
     global index
-    _, _, _, h = gl.glGetIntegerv(gl.GL_VIEWPORT)
+    _, _, _, h = gloo.get_parameter('viewport')
     data['a_position'][index] = x, h - y
     data['a_size'][index] = 5
     data['a_fg_color'][index] = 0, 0, 0, 1
@@ -156,11 +156,9 @@ program['u_view'] = np.eye(4, dtype=np.float32)
 
 # OpenGL initalization
 # --------------------------------------
-gl.glClearColor(1.0, 1.0, 1.0, 1.0)
-gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-gl.glEnable(gl.GL_BLEND)
-gl.glEnable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
-gl.glEnable(gl.GL_POINT_SPRITE)
+gloo.set_clear_color((1.0, 1.0, 1.0, 1.0))
+gloo.set_state(blend=True, blend_func=('src_alpha', 'one_minus_src_alpha'))
+gloo.gl_initialize()
 
 # Start
 # --------------------------------------

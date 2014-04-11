@@ -1,17 +1,20 @@
 import numpy as np
 
+from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
                        MouseEvent, KeyEvent)
-from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,
-                                requires_non_glut)
+from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,  # noqa
+                                requires_glut, requires_application)
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader
 from vispy.util.testing import assert_in, assert_is
-#from vispy.gloo import _screenshot
+from vispy.gloo.util import _screenshot
 from vispy.gloo import gl
+
+gl.use('desktop debug')
 
 
 def on_nonexist(self, *args):
@@ -55,8 +58,31 @@ def _test_callbacks(canvas):
     elif 'qt' in backend_name.lower():
         # constructing fake Qt events is too hard :(
         pass
+    elif 'glut' in backend_name.lower():
+        backend.on_mouse_action(0, 0, 0, 0)
+        backend.on_mouse_action(0, 1, 0, 0)
+        backend.on_mouse_action(3, 0, 0, 0)
+        backend.on_draw()
+        backend.on_mouse_motion(1, 1)
+        backend.on_key_press(100, 0, 0)
+        backend.on_key_release(100, 0, 0)
+        backend.on_key_press('a', 0, 0)
+        backend.on_key_release('a', 0, 0)
     else:
         raise ValueError
+
+
+def _test_run(backend):
+    for _ in range(2):
+        with Canvas(app=backend, size=(100, 100), show=True,
+                    title=backend + ' run') as c:
+            @c.events.paint.connect
+            def paint(event):
+                print(event)  # test event __repr__
+                c.app.quit()
+            c.update()
+            c.app.run()
+        c.app.quit()  # make sure it doesn't break if a user quits twice
 
 
 def _test_application(backend):
@@ -73,32 +99,35 @@ def _test_application(backend):
     print(app)  # test __repr__
 
     # Canvas
-    pos = [0, 0, 1, 1]
+    pos = [0, 0]
+    size = (100, 100)
     # Use "with" statement so failures don't leave open window
     # (and test context manager behavior)
-    with Canvas(title='me', app=app, show=True, position=pos) as canvas:
+    title = 'default' if backend is None else backend
+    with Canvas(title=title, size=size, app=app, show=True,
+                position=pos) as canvas:
         assert_is(canvas.app, app)
         assert_true(canvas.native)
-        print(canvas.size >= (1, 1))
-        canvas.resize(90, 90)
-        canvas.move(1, 1)
-        assert_equal(canvas.title, 'me')
+        print(canvas)  # __repr__
+        assert_array_equal(canvas.size, size)
+        assert_equal(canvas.title, title)
         canvas.title = 'you'
-        canvas.position = (0, 0)
-        canvas.size = (100, 100)
+        canvas.position = pos
+        canvas.size = size
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
+        canvas.show(False)
         canvas.show()
+        app.process_events()
         assert_raises(ValueError, canvas.connect, on_nonexist)
 
         # screenshots
-        #ss = _screenshot()
-        #assert_array_equal(ss.shape[2], 3) # XXX other dimensions not correct?
-        # XXX it would be good to do real checks, but sometimes the
-        # repositionings don't "take" (i.e., lead to random errors)
-        #assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
-        #assert_equal(len(canvas.size), 2)
-        #assert_equal(len(canvas.position), 2)
+        gl.glViewport(0, 0, *size)
+        ss = _screenshot()
+        assert_array_equal(ss.shape, size + (3,))
+        assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
+        assert_array_equal(canvas.size, size)
+        assert_equal(len(canvas.position), 2)  # XXX pos doesn't "take"
 
         # GLOO: should have an OpenGL context already, so these should work
         vert = VertexShader("void main (void) {gl_Position = pos;}")
@@ -184,37 +213,44 @@ def _test_application(backend):
         # cleanup
         canvas.swap_buffers()
         canvas.update()
+        app.process_events()
         # put this in even though __exit__ will call it to make sure we don't
         # have problems calling it multiple times
-        canvas.close()
-    app.quit()
-    app.quit()  # make sure it doesn't break if a user does something silly
+        #canvas.close()  # done by context
 
 
-# XXX We cannot test GLUT, since there is no safe, cross-platform method for
-# closing the main loop!
-@requires_non_glut()  # b/c we can't use GLUT, the other option
+@requires_application()
 def test_none():
     """Test default application choosing"""
     _test_application(None)
-
-
-@requires_pyglet()
-def test_pyglet():
-    """Test Pyglet application"""
-    _test_application('Pyglet')
-
-
-@requires_glfw()
-def test_glfw():
-    """Test Glfw application"""
-    _test_application('Glfw')
 
 
 @requires_qt()
 def test_qt():
     """Test Qt application"""
     _test_application('qt')
+    _test_run('qt')
+
+
+@requires_pyglet()
+def test_pyglet():
+    """Test Pyglet application"""
+    _test_application('Pyglet')
+    _test_run('Pyglet')
+
+
+@requires_glfw()
+def test_glfw():
+    """Test Glfw application"""
+    _test_application('Glfw')
+    _test_run('Glfw')
+
+
+@requires_glut()
+def test_glut():
+    """Test Glut application"""
+    _test_application('Glut')
+    #_test_run('Glut')  # can't do this for GLUT b/c of mainloop
 
 
 def test_abstract():
@@ -237,3 +273,7 @@ def test_mouse_key_events():
     ke.key
     ke.text
     ke.modifiers
+
+
+if __name__ == '__main__':
+    test_pyglet()

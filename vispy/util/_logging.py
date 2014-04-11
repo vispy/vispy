@@ -156,7 +156,7 @@ def set_log_level(verbose, match=None, return_old=False):
         verbose = 'info' if verbose else 'warning'
     if isinstance(verbose, string_types):
         verbose = verbose.lower()
-        if not verbose in logging_types:
+        if verbose not in logging_types:
             raise ValueError('verbose must be of a valid type')
         verbose = logging_types[verbose]
     else:

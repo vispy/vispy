@@ -39,6 +39,7 @@ def _format_msg(msg, std_msg):
             msg = '%s : %s' % (std_msg, msg)
         except UnicodeDecodeError:
             msg = '%s : %s' % (_safe_str(std_msg), _safe_str(msg))
+    return msg
 
 
 def assert_in(member, container, msg=None):
@@ -71,7 +72,7 @@ def assert_is(expr1, expr2, msg=None):
 
 def _has_pyopengl():
     try:
-        from OpenGL import GL  # noqa
+        from OpenGL import GL  # noqa, analysis:ignore
     except Exception:
         return False
     else:
@@ -87,23 +88,25 @@ def requires_pyopengl():
 
 def has_qt(requires_uic=False, return_which=False):
     try:
-        from PyQt4 import QtCore, QtGui, QtOpenGL, uic  # noqa
-    except ImportError:
-        has_uic = False
-        try:
-            from PySide import QtCore, QtGui, QtOpenGL  # noqa
-        except ImportError:
-            which = None
-            has = False
-        else:
-            import PySide
-            which = 'PySide ' + str(PySide.__version__)
-            has = True
+        from ..app.backends import _qt  # noqa
+    except Exception:
+        which = None
+        has = False
     else:
-        which = ('PyQt4 ' + QtCore.PYQT_VERSION_STR + 
-                 ' Qt ' + QtCore.QT_VERSION_STR)
         has = True
-        has_uic = True
+        QtCore = _qt.QtCore
+        if hasattr(QtCore, 'PYQT_VERSION_STR'):
+            has_uic = True
+            qtWrapper = 'PyQt4'
+            qtVersion = QtCore.QT_VERSION_STR
+            qtWrapperVersion = QtCore.PYQT_VERSION_STR
+        else:
+            has_uic = False
+            import PySide
+            qtWrapper = 'PySide'
+            qtVersion = QtCore.__version__
+            qtWrapperVersion = PySide.__version__
+        which = '%s: %s, qt: %s' % (qtWrapper, qtWrapperVersion, qtVersion)
 
     if requires_uic:
         has = (has and has_uic)
@@ -155,16 +158,20 @@ def has_glfw(return_why=False, return_which=False):
     return out
 
 
-def has_glut(return_which=False):
+def has_glut(return_which=False, require_interactive=False):
     try:
-        from OpenGL import GLUT  # noqa
+        from ..app.backends import _glut  # noqa
     except Exception:
         has = False
         which = None
+        has_interactive = False
     else:
         import OpenGL
         has = True
         which = 'from OpenGL %s' % OpenGL.__version__
+        has_interactive = (_glut._get_glut_process_func() is not None)
+    if require_interactive:
+        has = (has and has_interactive)
     if return_which:
         out = (has, which)
     else:
@@ -187,6 +194,12 @@ def requires_glfw():
     return np.testing.dec.skipif(not has, 'Requires Glfw: %s' % why)
 
 
-def requires_non_glut():
-    return np.testing.dec.skipif(not has_pyglet() and not has_qt(),
-                                 'Requires non-Glut backend')
+def requires_glut():
+    return np.testing.dec.skipif(not has_glut(require_interactive=True),
+                                 'Requires Glut')
+
+
+def requires_application():
+    ok = (has_qt() or has_pyglet() or has_glfw() or
+          has_glut(require_interactive=True))
+    return np.testing.dec.skipif(not ok, 'Requires application backend')

@@ -6,8 +6,6 @@
 # -----------------------------------------------------------------------------
 import numpy as np
 
-import OpenGL.GL as gl
-
 from vispy import gloo
 from vispy import app
 from vispy.util.transforms import perspective, translate, rotate
@@ -119,7 +117,7 @@ class MolecularViewerCanvas(app.Canvas):
         self.timer.start()
 
     def load_molecule(self, fname):
-        molecule = np.load(fname)
+        molecule = np.load(fname)['molecule']
         self._nAtoms = molecule.shape[0]
 
         # The x,y,z values store in one array
@@ -150,10 +148,7 @@ class MolecularViewerCanvas(app.Canvas):
         self.program['u_light_spec_position'] = -5., 5., -5.
 
     def on_initialize(self, event):
-        gl.glClearColor(0, 0, 0, 1)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(gl.GL_POINT_SPRITE)
+        gloo.set_state(depth_test=True, clear_color=(0, 0, 0, 1))
 
     def on_key_press(self, event):
         if event.text == ' ':
@@ -177,7 +172,7 @@ class MolecularViewerCanvas(app.Canvas):
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(25.0, width / float(height), 2.0, 100.0)
         self.program['u_projection'] = self.projection
 
@@ -192,8 +187,8 @@ class MolecularViewerCanvas(app.Canvas):
         self.update()
 
     def on_paint(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        self.program.draw(gl.GL_POINTS)
+        gloo.clear()
+        self.program.draw('points')
 
 
 def main(fname):
@@ -202,5 +197,5 @@ def main(fname):
     app.run()
 
 if __name__ == '__main__':
-    fname = get_data_file('molecular_viewer/micelle.npy')
+    fname = get_data_file('molecular_viewer/micelle.npz')
     main(fname)

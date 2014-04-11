@@ -14,10 +14,34 @@ from ..util import logger
 class Texture(GLObject):
     """
     A Texture is used to represent a topological set of scalar values.
+    
+    Parameters
+    ----------
+
+    target : GLEnum
+        gl.GL_TEXTURE2D
+        gl.GL_TEXTURE_CUBE_MAP
+    data : ndarray
+        Texture data (optional)
+    shape : tuple of integers
+        Texture shape (optional)
+    dtype : dtype
+        Texture data type (optional)
+    base : Texture
+        Base texture of this texture
+    offset : tuple of integers
+        Offset of this texture relative to base texture
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
+    resizeable : bool
+        Indicates whether texture can be resized
     """
 
     _formats = {
-        1: gl.GL_LUMINANCE,  # //ALPHA,
+        1: gl.GL_LUMINANCE,  # or ALPHA,
         2: gl.GL_LUMINANCE_ALPHA,
         3: gl.GL_RGB,
         4: gl.GL_RGBA
@@ -35,48 +59,13 @@ class Texture(GLObject):
         # np.dtype(np.float64) : gl.GL_DOUBLE
     }
 
-    def __init__(self, data=None, shape=(), dtype=None, base=None, target=None,
-                 offset=None, store=True, copy=False, resizeable=True):
-        """
-        Initialize the texture
-
-        Parameters
-        ----------
-
-        target : GLEnum
-            gl.GL_TEXTURE2D
-            gl.GL_TEXTURE_CUBE_MAP
-
-        data : np.ndarray
-            Texture data (optional)
-
-        dtype : np.dtype
-            Texture data type (optional)
-
-        shape : tuple of integers
-            Texture shape
-
-        base : Texture
-           Base texture of this texture
-
-        offset : tuple of integers
-           Offset of this texture relative to base texture
-
-        store : boolean
-           Indicate whether to use an intermediate CPU storage
-
-        copy : boolean
-           Indicate whether to use given data as CPU storage
-
-        resizeable : boolean
-            Indicates whether texture can be resized
-        """
-
+    def __init__(self, data=None, shape=None, dtype=None, base=None, 
+                 target=None, offset=None, store=True, resizeable=True):
         GLObject.__init__(self)
         self._data = None
         self._base = base
         self._store = store
-        self._copy = copy
+        self._copy = False  # flag to indicate that a copy is made
         self._target = target
         self._offset = offset
         self._pending_data = []
@@ -93,23 +82,29 @@ class Texture(GLObject):
         # Do we have data to build texture upon ?
         if data is not None:
             self._need_resize = True
+            # Handle dtype
             if dtype is not None:
                 data = np.array(data, dtype=dtype, copy=False)
             else:
                 data = np.array(data, copy=False)
             self._dtype = data.dtype
+            # Handle shape
+            if shape is not None:
+                raise ValueError('Texture needs data or shape, nor both.')
             self._shape = data.shape
+            # Handle storage
             if self._store:
-                if base is None and not data.flags["C_CONTIGUOUS"]:
+                if not data.flags["C_CONTIGUOUS"]:
+                    logger.warning("Copying discontiguous data as CPU storage")
                     self._copy = True
-                self._data = np.array(data, copy=self._copy)
-                self.set_data(self.data, copy=False)
-            else:
-                self.set_data(data, copy=True)
+                    data = data.copy()
+                self._data = data
+            # Set data
+            self.set_data(data, copy=False)
         elif dtype is not None:
-            if shape:
+            if shape is not None:
                 self._need_resize = True
-            self._shape = shape
+            self._shape = shape or ()
             self._dtype = dtype
             if self._store:
                 self._data = np.empty(self._shape, dtype=self._dtype)
@@ -120,11 +115,19 @@ class Texture(GLObject):
             self._offset = (0,) * len(self._shape)
         else:
             self._offset = offset
+        
+        # Check shape and dtype
+        self._check_shape()
+        if hasattr(self._dtype, 'fields') and self._dtype.fields:
+            raise ValueError("Texture dtype cannot be structured")
 
         self._gtype = Texture._types.get(np.dtype(self.dtype), None)
         if self._gtype is None:
             raise ValueError("Type not allowed for texture")
 
+    def _check_shape(self):
+        pass
+    
     @property
     def shape(self):
         """ Texture shape """
@@ -243,13 +246,11 @@ class Texture(GLObject):
         Parameters
         ----------
 
-        data : np.array
+        data : ndarray
             Data to be uploaded
-
         offset: int or tuple of ints
             Offset in texture where to start copying data
-
-        copy: boolean
+        copy: bool
             Since the operation is deferred, data may change before
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
@@ -267,7 +268,9 @@ class Texture(GLObject):
         if self.base is not None:
             self.base.set_data(data, offset=self.offset, copy=copy)
             return
-
+        
+        data = np.array(data, copy=copy)
+        
         # Check data has the right shape
         # if len(data.shape) != len(self.shape):
         #  raise ValueError("Data has wrong shape")
@@ -289,12 +292,6 @@ class Texture(GLObject):
             if offset[i] + data.shape[i] > self.shape[i]:
                 raise ValueError("Data is too large")
 
-        # Make sure data is contiguous
-        if not data.flags["C_CONTIGUOUS"]:
-            data = np.array(data, copy=True)
-        else:
-            data = np.array(data, copy=copy)
-
         self._pending_data.append((data, offset))
         self._need_update = True
 
@@ -305,7 +302,7 @@ class Texture(GLObject):
             raise ValueError("Can only access data from a base texture")
 
         # Make sure key is a tuple
-        if type(key) in [int, slice] or key == Ellipsis:
+        if isinstance(key, (int, slice)) or key == Ellipsis:
             key = (key,)
 
         # Default is to access the whole texture
@@ -361,7 +358,7 @@ class Texture(GLObject):
             raise ValueError("This texture view has been invalited")
 
         # Make sure key is a tuple
-        if type(key) in [int, slice] or key == Ellipsis:
+        if isinstance(key, (int, slice)) or key == Ellipsis:
             key = (key,)
 
         # Default is to access the whole texture
@@ -428,6 +425,7 @@ class Texture(GLObject):
         """ Paramaterize texture """
 
         if self._need_parameterization:
+            self._need_parameterization = False
             if isinstance(self._interpolation, tuple):
                 min_filter = self._interpolation[0]
                 mag_filter = self._interpolation[1]
@@ -447,7 +445,6 @@ class Texture(GLObject):
                 wrap_t = self._wrapping
             gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S, wrap_s)
             gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrap_t)
-        self._need_parameterization = True
 
     def _create(self):
         """ Create texture on GPU """
@@ -481,64 +478,72 @@ class Texture(GLObject):
 
 # --------------------------------------------------------- Texture1D class ---
 class Texture1D(Texture):
-    """ """
+    """ One dimensional texture
+    
+    Parameters
+    ----------
 
-    def __init__(self, data=None, shape=None, dtype=None,
-                 store=True, copy=False, *args, **kwargs):
-        """
-        Initialize the texture.
+    data : ndarray
+        Texture data (optional)
+    shape : tuple of integers
+        Texture shape (optional)
+    dtype : dtype
+        Texture data type (optional)
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
+    format : ENUM
+        The format of the texture: GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA, 
+        or GL_RGB, GL_RGBA. If not given the format is chosen automatically 
+        based on the number of channels. When the data has one channel,
+        GL_LUMINANCE is assumed.
+    
+    Note
+    ----
+    
+    Under water this is really a 2D texture (1D textures are not
+    supported in GL ES 2.0).
+    
+    """
 
-        Parameters
-        ----------
-
-        data : np.ndarray
-            Texture data (optional)
-
-        dtype : np.dtype
-            Texture data type (optional)
-
-        shape : tuple of integers
-            Texture shape
-
-        store : boolean
-           Indicate whether to use an intermediate CPU storage
-
-        copy : boolean
-           Indicate whether to use given data as CPU storage
-        """
-
+    def __init__(self, data=None, shape=None, dtype=None, store=True, 
+                 format=None, **kwargs):
+        
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
         offset = kwargs.get("offset", None)
         base = kwargs.get("base", None)
         resizeable = kwargs.get("resizeable", True)
-
-        if data is not None:
-            dtype = data.dtype
-            shape = data.shape
-
-        if dtype.fields:
-            raise ValueError("Texture dtype cannot be structured")
-        elif len(shape) < 1:
-            raise ValueError("Too few dimensions for texture")
-        elif len(shape) > 2:
-            raise ValueError("Too many dimensions for texture")
-        elif len(shape) == 1:
-            if data is not None:
-                data = data.reshape((shape[0], 1))
-            shape = (shape[0], 1)
-        elif len(shape) == 2:
-            if shape[-1] > 4:
-                raise ValueError("Too many channels for texture")
-
-        Texture.__init__(self, data=data, shape=(1, shape[0]), dtype=dtype,
+        
+        Texture.__init__(self, data=data, shape=shape, dtype=dtype,
                          base=base, resizeable=resizeable, store=store,
-                         copy=copy, target=gl.GL_TEXTURE_2D, offset=offset)
+                         target=gl.GL_TEXTURE_2D, offset=offset)
 
-        self._format = Texture._formats.get(self.shape[-1], None)
+        # Get and check format
+        if format is None:
+            self._format = Texture._formats.get(self.shape[-1], None)
+        else:
+            self._format = format
         if self._format is None:
             raise ValueError("Cannot convert data to texture")
 
+    def _check_shape(self):
+        shape = self._shape
+        if shape:
+            if len(shape) < 1:
+                raise ValueError("Too few dimensions for texture")
+            elif len(shape) > 2:
+                raise ValueError("Too many dimensions for texture")
+            elif len(shape) == 1:
+                if self._data is not None:
+                    self._data = self._data.reshape((shape[0], 1))
+                self._shape = (shape[0], 1)
+            elif len(shape) == 2:
+                if shape[-1] > 4:
+                    raise ValueError("Too many channels for texture")
+    
     @property
     def width(self):
         """ Texture width """
@@ -579,31 +584,31 @@ class Texture1D(Texture):
 
 # --------------------------------------------------------- Texture2D class ---
 class Texture2D(Texture):
-    """ """
+    """ Two dimensional texture
+    
+    Parameters
+    ----------
 
-    def __init__(self, data=None, shape=None, dtype=None, format=None,
-                 store=True, copy=False, *args, **kwargs):
-        """
-        Initialize the texture.
+    data : ndarray
+        Texture data (optional)
+    shape : tuple of integers
+        Texture shape (optional)
+    dtype : dtype
+        Texture data type (optional)
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
+    format : ENUM
+        The format of the texture: GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA, 
+        or GL_RGB, GL_RGBA. If not given the format is chosen automatically 
+        based on the number of channels. When the data has one channel,
+        GL_LUMINANCE is assumed.
+    """
 
-        Parameters
-        ----------
-
-        data : np.ndarray
-            Texture data (optional)
-
-        dtype : np.dtype
-            Texture data type (optional)
-
-        shape : tuple of integers
-            Texture shape
-
-        store : boolean
-           Indicate whether to use an intermediate CPU storage
-
-        copy : boolean
-           Indicate whether to use given data as CPU storage
-        """
+    def __init__(self, data=None, shape=None, dtype=None, store=True, 
+                 format=None, **kwargs):
 
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
@@ -611,35 +616,32 @@ class Texture2D(Texture):
         base = kwargs.get("base", None)
         resizeable = kwargs.get("resizeable", True)
 
-        if data is not None:
-            dtype = data.dtype
-            shape = data.shape
-
-        if dtype.fields:
-            raise ValueError("Texture dtype cannot be structured")
-        elif len(shape) < 2:
-            raise ValueError("Too few dimensions for texture")
-        elif len(shape) > 3:
-            raise ValueError("Too many dimensions for texture")
-        elif len(shape) == 2:
-            if data is not None:
-                data = data.reshape((shape[0], shape[1], 1))
-            shape = (shape[0], shape[1], 1)
-        elif len(shape) == 3:
-            if shape[-1] > 4:
-                raise ValueError("Too many channels for texture")
-
         Texture.__init__(self, data=data, shape=shape, dtype=dtype, base=base,
-                         resizeable=resizeable, store=store, copy=copy,
+                         resizeable=resizeable, store=store,
                          target=gl.GL_TEXTURE_2D, offset=offset)
 
+        # Get and check format
         if format is None:
             self._format = Texture._formats.get(self.shape[-1], None)
         else:
             self._format = format
-
         if self._format is None:
             raise ValueError("Cannot convert data to texture")
+    
+    def _check_shape(self):
+        shape = self._shape
+        if shape:
+            if len(shape) < 2:
+                raise ValueError("Too few dimensions for texture")
+            elif len(shape) > 3:
+                raise ValueError("Too many dimensions for texture")
+            elif len(shape) == 2:
+                if self._data is not None:
+                    self._data = self._data.reshape((shape[0], shape[1], 1))
+                self._shape = (shape[0], shape[1], 1)
+            elif len(shape) == 3:
+                if shape[-1] > 4:
+                    raise ValueError("Too many channels for texture")
 
     @property
     def height(self):
@@ -680,89 +682,89 @@ class Texture2D(Texture):
             x, y = 0, 0
             if offset is not None:
                 y, x = offset[0], offset[1]
-            width, height = data.shape[1], data.shape[0]
+            #width, height = data.shape[1], data.shape[0]
             gl.glTexSubImage2D(self.target, 0, x, y, self._format, 
                                self._gtype, data)
 
 
 # ---------------------------------------------------- TextureCubeMap class ---
 class TextureCubeMap(Texture):
+    """ A TextureCubeMap represents a set of 6 2D Textures
+    
+    Parameters
+    ----------
+
+    data : ndarray
+        Texture data (optional)
+    shape : tuple of integers
+        Texture shape (optional)
+    dtype : dtype
+        Texture data type (optional)
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
+    format : ENUM
+        The format of the texture: GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA, 
+        or GL_RGB, GL_RGBA. If not given the format is chosen automatically 
+        based on the number of channels. When the data has one channel,
+        GL_LUMINANCE is assumed.
     """
-    A TextureCubeMap is a set of 6 2D Textures.
-    """
 
-    def __init__(self, data=None, shape=None, dtype=None,
-                 store=True, copy=False, *args, **kwargs):
-        """
-        Initialize the texture.
-
-        Parameters
-        ----------
-
-        data : np.ndarray
-            Texture data (optional)
-
-        dtype : np.dtype
-            Texture data type (optional)
-
-        shape : tuple of integers
-            Texture shape
-
-        store : boolean
-           Indicate whether to use an intermediate CPU storage
-
-        copy : boolean
-           Indicate whether to use given data as CPU storage
-        """
-
+    def __init__(self, data=None, shape=None, dtype=None, store=True,
+                 format=None, **kwargs):
+        
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
         offset = kwargs.get("offset", None)
         base = kwargs.get("base", None)
         resizeable = kwargs.get("resizeable", True)
+        
+        Texture.__init__(self, data=data, shape=shape, dtype=dtype, base=base,
+                         store=store, target=gl.GL_TEXTURE_CUBE_MAP,
+                         offset=offset, resizeable=resizeable)
 
-        if data is not None:
-            dtype = data.dtype
-            shape = data.shape
+        # Get and check format
+        if format is None:
+            self._format = Texture._formats.get(self.shape[-1], None)
+        else:
+            self._format = format
+        if self._format is None:
+            raise ValueError("Cannot convert data to texture")
 
-        if dtype.fields:
-            raise ValueError("Texture dtype cannot be structured")
-        elif len(shape) < 3:
+        # Create sub-textures
+        self._textures = []
+        target = gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X
+        for i in range(6):
+            if data is not None:
+                T = Texture2D(data=data[i], base=base,
+                              resizeable=False, store=store,
+                              target=target + i, offset=offset)
+            else:
+                T = Texture2D(dtype=dtype, shape=shape[1:], base=base,
+                              resizeable=False, store=store,
+                              target=target + i, offset=offset)
+            self._textures.append(T)
+    
+    def _check_shape(self):
+        shape = self._shape
+        if len(shape) < 3:
             raise ValueError("Too few dimensions for texture")
         elif len(shape) > 4:
             raise ValueError("Too many dimensions for texture")
         elif len(shape) == 3:
             if shape[0] != 6:
                 raise ValueError("First dimension must be 6 for texture cube")
-            if data is not None:
-                data = data.reshape((shape[0], shape[1], shape[2], 1))
-            shape = (shape[0], shape[1], shape[2], 1)
+            if self._data is not None:
+                self._data = self._data.reshape((shape[0], shape[1], 
+                                                 shape[2], 1))
+            self._shape = (shape[0], shape[1], shape[2], 1)
         elif len(shape) == 4:
             if shape[0] != 6:
                 raise ValueError("First dimension must be 6 for texture cube")
             if shape[-1] > 4:
                 raise ValueError("Too many channels for texture")
-
-        Texture.__init__(self, data=data, shape=shape, dtype=dtype, base=base,
-                         store=store, copy=copy, target=gl.GL_TEXTURE_CUBE_MAP,
-                         offset=offset, resizeable=resizeable)
-
-        self._format = Texture._formats.get(self.shape[-1], None)
-        if self._format is None:
-            raise ValueError("Cannot convert data to texture")
-
-        self._textures = []
-        target = gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X
-        for i in range(6):
-            if data is not None:
-                T = Texture2D(data=data[i], base=base,
-                              resizeable=False, store=store, copy=copy,
-                              target=target + i, offset=offset)
-            else:
-                T = Texture2D(dtype=dtype, shape=shape[1:], base=base,
-                              resizeable=False, store=store, copy=copy,
-                              target=target + i, offset=offset)
-            self._textures.append(T)
 
     def activate(self):
         """ Activate the object on GPU """

@@ -38,7 +38,6 @@ import os
 import ctypes.util
 from ctypes import (Structure, POINTER, CFUNCTYPE, byref, c_char_p, c_int,
                     c_uint, c_double, c_float, c_ushort)
-from ...util._logging import logger  # noqa
 
 
 _glfw_file = None
@@ -74,7 +73,7 @@ version = glfwGetVersion()
 
 if version[0] != 3:
     version = '.'.join([str(v) for v in version])
-    raise OSError('Need GLFW library version 3, found version %s' % version)
+    raise OSError('Need GLFW v3, found %s' % version)
 
 
 # --- Version -----------------------------------------------------------------
@@ -463,7 +462,6 @@ glfwExtensionSupported         = _glfw.glfwExtensionSupported
 glfwGetProcAddress             = _glfw.glfwGetProcAddress
 
 
-
 # --- Pythonizer --------------------------------------------------------------
 
 # This keeps track of current windows
@@ -478,7 +476,8 @@ __py_callbacks__ = {}
 def glfwCreateWindow(width=640, height=480, title="GLFW Window",
                      monitor=None, share=None):
     _glfw.glfwCreateWindow.restype = POINTER(GLFWwindow)
-    window = _glfw.glfwCreateWindow(width,height,title,monitor,share)
+    window = _glfw.glfwCreateWindow(width, height, title, monitor, share)
+    assert window not in __windows__
     __windows__.append(window)
     __destroyed__.append(False)
     index = __windows__.index(window)
@@ -504,12 +503,12 @@ def glfwCreateWindow(width=640, height=480, title="GLFW Window",
 def glfwDestroyWindow(window):
     index = __windows__.index(window)
     if not __destroyed__[index]:
-        _glfw.glfwDestroyWindow(window)
+        __destroyed__[index] = True
         # We do not delete window from the list (or it would impact numbering)
+        __windows__[index] = None
+        _glfw.glfwDestroyWindow(window)
         del __c_callbacks__[index]
         del __py_callbacks__[index]
-        # del __windows__[index]
-    __destroyed__[index] = True
 
 
 def glfwGetWindowPos(window):
@@ -618,12 +617,11 @@ def __callback__(name):
 def %(callback)s(window, callback = None):
     index = __windows__.index(window)
     old_callback = __py_callbacks__[index]['%(fun)s']
-    logger.debug(old_callback)
     __py_callbacks__[index]['%(fun)s'] = callback
     if callback: callback = %(fun)s(callback)
     __c_callbacks__[index]['%(fun)s'] = callback
     _glfw.%(callback)s(window, callback)
-    return old_callback"""  % {'callback': callback, 'fun': fun}
+    return old_callback""" % {'callback': callback, 'fun': fun}
     return code
 
 exec(__callback__('Error'))

@@ -11,12 +11,13 @@ from __future__ import division
 import sys
 import ctypes
 from OpenGL import platform
+from time import sleep, time
 
 import OpenGL.error
 import OpenGL.GLUT as glut
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
-from ...util import ptime, keys
+from ...util import ptime, keys, logger
 
 
 # glut.GLUT_ACTIVE_SHIFT: keys.SHIFT,
@@ -73,56 +74,121 @@ BUTTONMAP = {glut.GLUT_LEFT_BUTTON: 1,
 
 
 _VP_GLUT_ALL_WINDOWS = []
+_GLUT_INIT = None
+
+
+def _get_glut_process_func(missing='error'):
+    if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
+        func = glut.glutMainLoopEvent
+    elif hasattr(glut, 'glutCheckLoop') and bool(glut.glutCheckLoop):
+        func = glut.glutCheckLoop  # Darwin
+    else:
+        msg = ('Your implementation of GLUT does not allow '
+               'interactivity. Consider installing freeglut.')
+        if missing == 'log':
+            logger.info(msg)
+        raise RuntimeError(msg)
+    return func
+
+
+def _init_glut():
+    global _GLUT_INIT
+    # HiDPI support for retina display
+    # This requires glut from
+    # http://iihm.imag.fr/blanch/software/glut-macosx/
+    if _GLUT_INIT is not None:
+        return
+    if sys.platform == 'darwin':
+        try:
+            glutInitDisplayString = platform.createBaseFunction(
+                'glutInitDisplayString', dll=platform.GLUT,
+                resultType=None, argTypes=[ctypes.c_char_p],
+                doc='glutInitDisplayString(  ) -> None', argNames=())
+            text = ctypes.c_char_p("rgba stencil double samples=8 hidpi")
+            glutInitDisplayString(text)
+        except Exception:
+            pass
+    glut.glutInit(['vispy'.encode('ASCII')])  # todo: allow user to give args?
+    mode = (glut.GLUT_RGBA | glut.GLUT_DOUBLE |
+            glut.GLUT_STENCIL | glut.GLUT_DEPTH)
+    if bool(glut.glutInitDisplayMode):
+        glut.glutInitDisplayMode(mode)
+    # Prevent exit when closing window
+    try:
+        glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE,
+                           glut.GLUT_ACTION_CONTINUE_EXECUTION)
+    except Exception:
+        pass
+    _GLUT_INIT = glut
 
 
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
-        self._initialized = False
-        self._windows = []
+        _init_glut()
+        self._timers = []
+
+    def _add_timer(self, timer):
+        if timer not in self._timers:
+            self._timers.append(timer)
 
     def _vispy_get_backend_name(self):
         return 'Glut'
 
     def _vispy_process_events(self):
-        pass  # not possible?
+        # Determine what function to use, if any
+        try:
+            func = _get_glut_process_func()
+        except RuntimeError:
+            self._vispy_process_events = lambda: None
+            raise
+        # Set for future use, and call!
+        self._proc_fun = func
+        self._vispy_process_events = self._process_events_and_timer
+        self._process_events_and_timer()
+
+    def _process_events_and_timer(self):
+        # helper to both call glutMainLoopEvent and tick the timers
+        self._proc_fun()
+        for timer in self._timers:
+            timer._idle_callback()
 
     def _vispy_run(self):
         self._vispy_get_native_app()  # Force exist
         return glut.glutMainLoop()
 
     def _vispy_quit(self):
-        global _VP_GLUT_ALL_WINDOWS
-        for win in _VP_GLUT_ALL_WINDOWS:
-            win._vispy_close()
+        for timer in self._timers:
+            timer._vispy_stop()
+        self._timers = []
+        if hasattr(glut, 'glutLeaveMainLoop') and bool(glut.glutLeaveMainLoop):
+            glut.glutLeaveMainLoop()
+        else:
+            for win in _VP_GLUT_ALL_WINDOWS:
+                win._vispy_close()
 
     def _vispy_get_native_app(self):
-        # HiDPI support for retina display
-        # This requires glut from
-        # http://iihm.imag.fr/blanch/software/glut-macosx/
-        if sys.platform == 'darwin':
-            try:
-                glutInitDisplayString = platform.createBaseFunction(
-                    'glutInitDisplayString',
-                    dll=platform.GLUT,
-                    resultType=None,
-                    argTypes=[
-                        ctypes.c_char_p],
-                    doc='glutInitDisplayString(  ) -> None',
-                    argNames=())
-                text = ctypes.c_char_p("rgba stencil double samples=8 hidpi")
-                glutInitDisplayString(text)
-            except Exception:
-                pass
-        if not self._initialized:
-            glut.glutInit()  # todo: maybe allow user to give args?
-            glut.glutInitDisplayMode(glut.GLUT_RGBA |
-                                     glut.GLUT_DOUBLE |
-                                     glut.GLUT_STENCIL |
-                                     glut.GLUT_DEPTH)
-            self._initialized = True
-        return glut
+        return _GLUT_INIT
+
+
+def _set_close_fun(id_, fun):
+    # Set close function. See issue #10. For some reason, the function
+    # can still not exist even if we checked its boolean status.
+    glut.glutSetWindow(id_)
+    closeFuncSet = False
+    if bool(glut.glutWMCloseFunc):  # OSX specific test
+        try:
+            glut.glutWMCloseFunc(fun)
+            closeFuncSet = True
+        except OpenGL.error.NullFunctionError:
+            pass
+    if not closeFuncSet:
+        try:
+            glut.glutCloseFunc(fun)
+            closeFuncSet = True
+        except OpenGL.error.NullFunctionError:
+            pass
 
 
 class CanvasBackend(BaseCanvasBackend):
@@ -131,16 +197,15 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, name='glut window', *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        self._id = glut.glutCreateWindow(name)
-        global _VP_GLUT_ALL_WINDOWS
+        self._id = glut.glutCreateWindow(name.encode('ASCII'))
+        if not self._id:
+            raise RuntimeError('could not create window')
+        glut.glutSetWindow(self._id)
         _VP_GLUT_ALL_WINDOWS.append(self)
 
         # Cache of modifiers so we can send modifiers along with mouse motion
         self._modifiers_cache = ()
-
-        # Note: this seems to cause the canvas to ignore calls to show()
-        # about half of the time.
-        # glut.glutHideWindow()  # Start hidden, like the other backends
+        self._closed = False  # Keep track whether the widget is closed
 
         # Register callbacks
         glut.glutDisplayFunc(self.on_draw)
@@ -152,34 +217,27 @@ class CanvasBackend(BaseCanvasBackend):
         glut.glutMouseFunc(self.on_mouse_action)
         glut.glutMotionFunc(self.on_mouse_motion)
         glut.glutPassiveMotionFunc(self.on_mouse_motion)
+        glut.glutHideWindow()
+        _set_close_fun(self._id, self.on_close)
+        self._vispy_canvas_ = None
 
-        # Set close function. See issue #10. For some reason, the function
-        # can still not exist even if we checked its boolean status.
-        closeFuncSet = False
-        if bool(glut.glutWMCloseFunc):  # OSX specific test
-            try:
-                glut.glutWMCloseFunc(self.on_close)
-                closeFuncSet = True
-            except OpenGL.error.NullFunctionError:
-                pass
-        if not closeFuncSet:
-            try:
-                glut.glutCloseFunc(self.on_close)
-                closeFuncSet = True
-            except OpenGL.error.NullFunctionError:
-                pass
+    def _vispy_warmup(self):
+        etime = time() + 0.4  # empirically determined :(
+        while time() < etime:
+            sleep(0.01)
+            self._vispy_set_current()
+            self._vispy_canvas.app.process_events()
 
-        # glut.glutFunc(self.on_)
+    @property
+    def _vispy_canvas(self):
+        """ The parent canvas/window """
+        return self._vispy_canvas_
 
-        self._initialized = False
-
-        # LC: I think initializing here makes it more consistent with other
-        # backends
-        glut.glutTimerFunc(0, self._emit_initialize, None)
-
-    def _emit_initialize(self, _=None):
-        if not self._initialized:
-            self._initialized = True
+    @_vispy_canvas.setter
+    def _vispy_canvas(self, vc):
+        # Init events when the property is set by Canvas
+        self._vispy_canvas_ = vc
+        if vc is not None:
             self._vispy_canvas.events.initialize()
 
     def _vispy_set_current(self):
@@ -194,7 +252,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_set_title(self, title):
         # Set the window title. Has no effect for widgets
         glut.glutSetWindow(self._id)
-        glut.glutSetWindowTitle(title)
+        glut.glutSetWindowTitle(title.encode('ASCII'))
 
     def _vispy_set_size(self, w, h):
         # Set size of the widget or window
@@ -221,7 +279,21 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_close(self):
         # Force the window or widget to shut down
-        glut.glutDestroyWindow(self._id)
+        if self._closed:
+            return
+        # sometimes the context is already destroyed
+        try:
+            # prevent segfaults during garbage col
+            _set_close_fun(self._id, None)
+        except Exception:
+            pass
+        self._closed = True
+        self._vispy_set_visible(False)
+        # Try destroying the widget. Not in close event, because it isnt called
+        try:
+            glut.glutDestroyWindow(self._id)
+        except Exception:
+            pass
 
     def _vispy_get_size(self):
         glut.glutSetWindow(self._id)
@@ -248,12 +320,9 @@ class CanvasBackend(BaseCanvasBackend):
     def on_draw(self, dummy=None):
         if self._vispy_canvas is None:
             return
-        if not self._initialized:
-            # The timer that we set may not have fired just yet
-            self._emit_initialize()
-
         #w = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
         #h = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
+        self._vispy_set_current()
         self._vispy_canvas.events.paint(region=None)  # (0, 0, w, h))
 
     def on_mouse_action(self, button, state, x, y):
@@ -322,98 +391,32 @@ class CanvasBackend(BaseCanvasBackend):
         return self._modifiers_cache
 
 
-#import weakref
-
-
-def _glut_callback(id):
-    # Get weakref wrapper for timer
-    timer = TimerBackend._timers.get(id, None)
-    if timer is None:
-        return
-    # Get timer object
-    timer = timer()
-    if timer is None:
-        return
-    # Kick it!
-    if timer._vispy_timer._running:
-        timer._vispy_timer._timeout()
-        ms = int(timer._vispy_timer._interval * 1000)
-        glut.glutTimerFunc(ms, _glut_callback, timer._id)
-
-
-# class TimerBackend(BaseTimerBackend):
-    #_counter = 0
-    #_timers = {}
-
-    # def __init__(self, vispy_timer):
-        #BaseTimerBackend.__init__(self, vispy_timer)
-        # Give this timer a unique id
-        #TimerBackend._counter += 1
-        #self._id = TimerBackend._counter
-        # Store this timer (using a weak ref)
-        #self._timers[self._id] = weakref.ref(self)
-
-    #@classmethod
-    # def _glut_callback(cls, id):
-        # Get weakref wrapper for timer
-        #timer = cls._timers.get(id, None)
-        # if timer is None:
-            # return
-        # Get timer object
-        #timer = timer()
-        # if timer is None:
-            # return
-        # Kick it!
-        # if timer._vispy_timer._running:
-            # timer._vispy_timer._timeout()
-            #ms = int(timer._vispy_timer._interval*1000)
-            #glut.glutTimerFunc(ms, TimerBackend._glut_callback, timer._id)
-
-    # def _vispy_start(self, interval):
-        ##glut.glutTimerFunc(int(interval*1000), TimerBackend._glut_callback,
-        ##                   self._id)
-        #glut.glutTimerFunc(int(interval*1000), _glut_callback, self._id)
-
-    # def _vispy_stop(self):
-        # pass
-
-    # def _vispy_get_native_timer(self):
-        # return glut # or self?
-
 # Note: we could also build a timer using glutTimerFunc, but this causes
 # trouble because timer callbacks appear to take precedence over all others.
 # Thus, a fast timer can block new display events.
 class TimerBackend(BaseTimerBackend):
-    _initialized = False
-    _schedule = []
-
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
-        self._init_class()
+        self._schedule = list()
+        glut.glutIdleFunc(self._idle_callback)
+        # tell application instance about existence
+        vispy_timer._app._backend._add_timer(self)
 
-    @classmethod
-    def _init_class(cls):
-        if cls._initialized:
-            return
-        glut.glutIdleFunc(cls._idle_callback)
-        cls._initialized = True
-
-    @classmethod
-    def _idle_callback(cls):
+    def _idle_callback(self):
         now = ptime.time()
         new_schedule = []
 
         # see whether there are any timers ready
-        while len(cls._schedule) > 0 and cls._schedule[0][0] <= now:
-            timer = cls._schedule.pop(0)[1]
+        while len(self._schedule) > 0 and self._schedule[0][0] <= now:
+            timer = self._schedule.pop(0)[1]
             timer._vispy_timer._timeout()
             if timer._vispy_timer.running:
                 new_schedule.append((now + timer._vispy_timer.interval, timer))
 
         # schedule next round of timeouts
         if len(new_schedule) > 0:
-            cls._schedule.extend(new_schedule)
-            cls._schedule.sort()
+            self._schedule.extend(new_schedule)
+            self._schedule.sort()
 
     def _vispy_start(self, interval):
         now = ptime.time()
@@ -423,4 +426,4 @@ class TimerBackend(BaseTimerBackend):
         pass
 
     def _vispy_get_native_timer(self):
-        return None  # glut has no native timer objects.
+        return True  # glut has no native timer objects.

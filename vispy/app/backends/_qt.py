@@ -7,6 +7,7 @@ vispy backend for Qt (PySide and PyQt4).
 """
 
 from __future__ import division
+from time import sleep, time
 
 from ... import config
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
@@ -119,7 +120,7 @@ class ApplicationBackend(BaseApplicationBackend):
         app = QtGui.QApplication.instance()
         if app is None:
             app = QtGui.QApplication([''])
-        # Store so it won't be deleted, but not on a visvis object,
+        # Store so it won't be deleted, but not on a vispy object,
         # or an application may produce error when closed
         QtGui._qApp = app
         # Return
@@ -135,6 +136,13 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
+
+    def _vispy_warmup(self):
+        etime = time() + 0.25
+        while time() < etime:
+            sleep(0.01)
+            self._vispy_set_current()
+            self._vispy_canvas.app.process_events()
 
     def _vispy_set_current(self):
         # Make this the current context
@@ -193,12 +201,16 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         # (0, 0, self.width(), self.height()))
+        self._vispy_set_current()
         self._vispy_canvas.events.paint(region=None)
 
     def closeEvent(self, ev):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.close()
+        # Destroy if this is a toplevel widget
+        if self.parent() is None:
+            self.destroy()
 
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
