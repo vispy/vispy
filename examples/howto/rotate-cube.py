@@ -152,14 +152,12 @@ class Canvas(app.Canvas):
 
         # Filled cube
         
-        gloo.set_state(blend=False, depth_test=True, )
-        gloo.set_state(polygon_offset_fill=True)
+        gloo.set_state(blend=False, depth_test=True, polygon_offset_fill=True)
         self.program['u_color'] = 1, 1, 1, 1
         self.program.draw('triangles', self.filled_buf)
 
         # Outline
-        gloo.set_state(blend=True, depth_test=True, )
-        gloo.set_state(polygon_offset_fill=False)
+        gloo.set_state(blend=True, depth_test=True, polygon_offset_fill=False)
         gloo.set_depth_mask(False)
         self.program['u_color'] = 0, 0, 0, 1
         self.program.draw('lines', self.outline_buf)
