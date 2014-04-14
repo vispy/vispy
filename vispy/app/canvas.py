@@ -11,7 +11,6 @@ from ..util.event import EmitterGroup, Event
 from ..util.ptime import time
 from ..util.six import string_types
 from .application import Application
-from .base import BaseCanvasBackend as CanvasBackend  # noqa
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -73,26 +72,31 @@ class Canvas(object):
                                    key_release=KeyEvent,
                                    stylus=Event,
                                    touch=Event,
-                                   close=Event,
-                                   )
+                                   close=Event)
+
+        size = np.array(size, int)
+        if size.ndim != 1 or size.size != 2:
+            raise ValueError('size must be a 2-element list')
+        size = list(size)
+        title = str(title)
 
         # Initialize backend attribute
         self._backend = None
         if init_gloo:
             self.events.initialize.connect(_gloo_initialize)
-        self._native_args = native_args or ()
-        self._native_kwargs = native_kwargs or {}
+        self._backend_args = native_args or ()
+        self._backend_kwargs = native_kwargs or {}
 
-        # Collect arguments that we will use later
-        self._our_kwargs = {}
-        self._our_kwargs['title'] = title
-        self._our_kwargs['size'] = size
-        self._our_kwargs['position'] = position
-        self._our_kwargs['show'] = show
-        self._our_kwargs['autoswap'] = autoswap
+        # change arguments that get set on Canvas init
+        # XXX eventually we can add Context-related kwargs here
+        self._backend_kwargs['_vispy_title'] = title
+        self._backend_kwargs['_vispy_size'] = size
+        self._backend_kwargs['_vispy_show'] = show
+        self._backend_kwargs['_vispy_position'] = position
 
         # Initialise some values
-        self._title = ''
+        self._autoswap = autoswap
+        self._title = title
         self._frame_count = 0
         self._fps = 0
         self._basetime = time()
@@ -117,27 +121,19 @@ class Canvas(object):
         self._app.use()
         assert self._app.native
         # Instantiate the backend with the right class
-        self._set_backend(
-            self._app.backend_module.CanvasBackend(*self._native_args,
-                                                   **self._native_kwargs))
+        be = self._app.backend_module.CanvasBackend(*self._backend_args,
+                                                    **self._backend_kwargs)
+        self._set_backend(be)
 
     def _set_backend(self, backend):
+        """ Set backend<->canvas references and autoswap
+        """
         assert backend is not None  # should never happen
         self._backend = backend
         self._backend._vispy_canvas = self
-
-        # Initialize it
-        self.title = self._our_kwargs['title']
-        self.size = self._our_kwargs['size']
-        if self._our_kwargs['position']:
-            self.position = self._our_kwargs['position']
-        if self._our_kwargs['autoswap']:
-            fun = lambda x: self._backend._vispy_swap_buffers()
-            self.events.paint.callbacks.append(fun)  # Append callback to end
-        # Don't just always call this -- explicitly calling "hide" on a
-        # QWidget changes the behavior, so only call "show" if it's requested
-        if self._our_kwargs['show']:
-            self.show()
+        if self._autoswap:
+            autoswap = lambda x: self._backend._vispy_swap_buffers()
+            self.events.paint.connect(autoswap, after=True)  # Append to end
 
     @property
     def app(self):

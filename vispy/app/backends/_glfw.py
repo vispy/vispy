@@ -21,7 +21,8 @@ from __future__ import division
 import atexit
 from time import sleep
 
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, _process_backend_kwargs)
 from ...util import keys
 from ...util.ptime import time
 
@@ -144,8 +145,9 @@ class CanvasBackend(BaseCanvasBackend):
 
     """ Glfw backend for Canvas abstract class."""
 
-    def __init__(self, name='glfw window', *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
+        title, size, show, position = _process_backend_kwargs(kwargs)
         # Init GLFW, add window hints, and create window
         glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)
         glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, True)
@@ -154,14 +156,13 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwWindowHint(glfw.GLFW_GREEN_BITS, 8)
         glfw.glfwWindowHint(glfw.GLFW_BLUE_BITS, 8)
         glfw.glfwWindowHint(glfw.GLFW_ALPHA_BITS, 8)
-        glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, True)
         glfw.glfwWindowHint(glfw.GLFW_DECORATED, True)
         glfw.glfwWindowHint(glfw.GLFW_VISIBLE, True)
-        self._id = glfw.glfwCreateWindow(title=name)
+        self._id = glfw.glfwCreateWindow(width=size[0], height=size[1],
+                                         title=title)
         if not self._id:
             raise RuntimeError('Could not create window')
         _VP_GLFW_ALL_WINDOWS.append(self)
-        glfw.glfwHideWindow(self._id)  # Start hidden, like the other backends
         self._mod = list()
 
         # Register callbacks
@@ -175,6 +176,10 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSwapInterval(1)  # avoid tearing
         self._vispy_canvas_ = None
         self._needs_draw = False
+        if position is not None:
+            self._vispy_set_position(*position)
+        if not show:
+            glfw.glfwHideWindow(self._id)
 
     ###########################################################################
     # Deal with events we get from vispy

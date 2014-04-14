@@ -16,7 +16,9 @@ from time import sleep, time
 import OpenGL.error
 import OpenGL.GLUT as glut
 
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, _process_backend_kwargs)
+
 from ...util import ptime, keys, logger
 
 
@@ -195,9 +197,11 @@ class CanvasBackend(BaseCanvasBackend):
 
     """ GLUT backend for Canvas abstract class."""
 
-    def __init__(self, name='glut window', *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        title, size, show, position = _process_backend_kwargs(kwargs)
         BaseCanvasBackend.__init__(self)
-        self._id = glut.glutCreateWindow(name.encode('ASCII'))
+        glut.glutInitWindowSize(size[0], size[1])
+        self._id = glut.glutCreateWindow(title.encode('ASCII'))
         if not self._id:
             raise RuntimeError('could not create window')
         glut.glutSetWindow(self._id)
@@ -217,12 +221,15 @@ class CanvasBackend(BaseCanvasBackend):
         glut.glutMouseFunc(self.on_mouse_action)
         glut.glutMotionFunc(self.on_mouse_motion)
         glut.glutPassiveMotionFunc(self.on_mouse_motion)
-        glut.glutHideWindow()
         _set_close_fun(self._id, self.on_close)
         self._vispy_canvas_ = None
+        if position is not None:
+            self._vispy_set_position(*position)
+        if not show:
+            glut.glutHideWindow()
 
     def _vispy_warmup(self):
-        etime = time() + 0.4  # empirically determined :(
+        etime = time() + 0.3  # empirically determined :(
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()

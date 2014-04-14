@@ -1,3 +1,4 @@
+from nose.tools import assert_raises, assert_equal
 import unittest
 import copy
 import functools
@@ -468,3 +469,34 @@ class TestEmitters(unittest.TestCase):
                 attr = event_attrs[name]
                 assert (attr == val), "Event.%s != %s  (%s)" % (
                     name, str(val), str(attr))
+
+
+def test_event_connect_order():
+    """Test event connection order"""
+    a = lambda x: x
+    b = lambda x: x
+    c = lambda x: x
+    d = lambda x: x
+    e = lambda x: x
+    f = lambda x: x
+    em = EventEmitter(type='test_event')
+    assert_raises(ValueError, em.connect, c, after=True, before=True)
+    em.connect(c)
+    assert_equal((c,), tuple(em.callbacks))
+    em.connect(c)
+    assert_equal((c,), tuple(em.callbacks))
+    em.connect(d, after=True)
+    assert_equal((c, d), tuple(em.callbacks))
+    em.connect(b, before=True)
+    assert_equal((b, c, d), tuple(em.callbacks))
+    assert_raises(RuntimeError, em.connect, a, before=c, after=d)  # impossible
+    em.connect(a, before=[c, d])  # first possible pos == 0
+    assert_equal((a, b, c, d), tuple(em.callbacks))
+    em.connect(f, after=[c, d])
+    assert_equal((a, b, c, d, f), tuple(em.callbacks))
+    em.connect(e, after=d, before=f)
+    assert_equal((a, b, c, d, e, f), tuple(em.callbacks))
+
+
+if __name__ == '__main__':
+    test_event_connect_order()

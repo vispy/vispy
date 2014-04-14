@@ -10,7 +10,8 @@ from __future__ import division
 from time import sleep, time
 
 from ... import config
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, _process_backend_kwargs)
 from ...util import keys
 from . import ATTEMPTED_BACKENDS
 from ...util.six import text_type
@@ -133,9 +134,16 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
+        title, size, show, position = _process_backend_kwargs(kwargs)
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
+        self._vispy_set_title(title)
+        self._vispy_set_size(*size)
+        if position is not None:
+            self._vispy_set_position(*position)
+        if show:
+            self._vispy_set_visible(True)
 
     def _vispy_warmup(self):
         etime = time() + 0.25
@@ -166,10 +174,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
-        if visible:
-            self.show()
-        else:
-            self.hide()
+        self.show() if visible else self.hide()
 
     def _vispy_update(self):
         # Invoke a redraw
