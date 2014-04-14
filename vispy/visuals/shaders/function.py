@@ -7,6 +7,8 @@ import string
 
 from . import parsing
 from ...util.event import EmitterGroup, Event
+from ...util.six import string_types
+
 
 class ShaderObject(object):
     """
@@ -146,7 +148,7 @@ class Function(ShaderObject):
     """    
     def __init__(self, code=None, deps=()):
         super(Function, self).__init__()
-        if code is not None and not isinstance(code, basestring):
+        if code is not None and not isinstance(code, string_types):
             raise ValueError("code argument must be string or None (got %s)" 
                              % type(code))
         self._code = code

@@ -1,4 +1,9 @@
+import sys
 import numpy as np
+
+if sys.version_info >= (3,):
+    xrange = range
+
 
 class MeshData(object):
     """
