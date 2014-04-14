@@ -3,8 +3,8 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
 
-from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
-                       MouseEvent, KeyEvent)
+from vispy.app import (Application, Canvas, Timer, MouseEvent, KeyEvent)
+from vispy.app.base import BaseApplicationBackend
 from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,  # noqa
                                 requires_glut, requires_application)
 
@@ -255,7 +255,7 @@ def test_glut():
 
 def test_abstract():
     """Test app abstract template"""
-    app = ApplicationBackend()
+    app = BaseApplicationBackend()
     for fun in (app._vispy_get_backend_name, app._vispy_process_events,
                 app._vispy_run, app._vispy_quit):
         assert_raises(NotImplementedError, fun)

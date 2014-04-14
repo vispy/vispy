@@ -481,6 +481,8 @@ def test_event_connect_order():
     f = lambda x: x
     em = EventEmitter(type='test_event')
     assert_raises(ValueError, em.connect, c, after=True, before=True)
+    assert_raises(ValueError, em.connect, c, after=True, before=c)
+    assert_raises(ValueError, em.connect, c, before=[c, 'foo'])
     em.connect(c)
     assert_equal((c,), tuple(em.callbacks))
     em.connect(c)

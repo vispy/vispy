@@ -18,7 +18,6 @@ import OpenGL.GLUT as glut
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, _process_backend_kwargs)
-
 from ...util import ptime, keys, logger
 
 

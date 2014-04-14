@@ -43,7 +43,7 @@ class BaseTestmodule:
             '_vispy_get_geometry')  # defined in base class
 
         Klass = self._module.CanvasBackend
-        KlassRef = vispy.app.CanvasBackend
+        KlassRef = vispy.app.base.BaseCanvasBackend
         for key in dir(KlassRef):
             if not key.startswith('__'):
                 method = getattr(Klass, key)
