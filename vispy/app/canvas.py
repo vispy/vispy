@@ -41,7 +41,8 @@ class Canvas(object):
         Whether to show the widget immediately. Default False.
     autoswap : bool
         Whether to swap the buffers automatically after a paint event.
-        Default True.
+        Default True. If True, the ``(self, 'swap_buffers')`` callback will
+        be called last (by default) by the ``canvas.paint`` event handler.
     app : Application | str
         Give vispy Application instance to use as a backend.
         (vispy.app is used by default.) If str, then an application
@@ -130,8 +131,8 @@ class Canvas(object):
         self._backend = backend
         self._backend._vispy_canvas = self
         if self._autoswap:
-            autoswap = lambda x: self._backend._vispy_swap_buffers()
-            self.events.paint.connect(autoswap, after=True)  # Append to end
+            # append to the end
+            self.events.paint.connect((self, 'swap_buffers'), after=True)
 
     @property
     def app(self):
@@ -207,7 +208,7 @@ class Canvas(object):
         is emitted. """
         return self._fps
 
-    def swap_buffers(self):
+    def swap_buffers(self, event=None):
         """ Swap GL buffers such that the offscreen buffer becomes visible.
         """
         self._backend._vispy_swap_buffers()
