@@ -12,7 +12,7 @@ canvas = scenegraph.SceneCanvas()
 canvas.size = 600, 600
 canvas.show()
 
-pos = np.empty((1000,2))
+pos = np.empty((1000,2), np.float32)
 pos[:,0] = np.linspace(-10, 10, 1000)
 pos[:,1] = np.random.normal(size=1000)
 pos[0] = (0, 0)

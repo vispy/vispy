@@ -108,7 +108,7 @@ class Box(Entity):
             [right, bottom],
             [right, top],
             [left, top],
-            [left, bottom]])
+            [left, bottom]]).astype(np.float32)
         self._visual.set_data(pos=pos)
         
     def on_paint(self, event):

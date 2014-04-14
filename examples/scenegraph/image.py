@@ -16,4 +16,5 @@ img_data = np.random.normal(size=(100, 100, 3), loc=128, scale=50).astype(np.uby
 image = scenegraph.entities.Image(img_data, parents=[canvas.root])
 image.transform.translate((100, 100))
 
+
 app.run()

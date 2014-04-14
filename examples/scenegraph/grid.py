@@ -19,11 +19,16 @@ b3 = grid.add_view(row=1, col=1)
 
 
 # Add one line to all three boxes
-pos = np.empty((1000,2))
-pos[:,0] = np.linspace(0, 10, 1000)
-pos[:,1] = np.random.normal(size=1000)
+N = 10000
+pos = np.empty((N,2), dtype=np.float32)
+pos[:,0] = np.linspace(0, 10, N)
+pos[:,1] = np.random.normal(size=N)
+#
+color = np.ones((N, 4), dtype=np.float32)
+color[:, 0] = np.linspace(0, 1, N)
+color[:, 1] = color[::-1, 0]
 
-l1 = scenegraph.entities.Line(pos)
+l1 = scenegraph.entities.Line(pos, color=color)
 l1.transform.scale((10, 1))
 l1.transform.translate((20, 100))
 

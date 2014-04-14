@@ -9,7 +9,7 @@ from ...gloo import Program, VertexShader, FragmentShader
 from .function import Function, FunctionChain, Variable
 from . import parsing
 from ...util import logger
-
+from ...util.six import string_types
 
 
 """
@@ -370,7 +370,7 @@ class ModularProgram(Program):
             code = shader_code[shader]
             names = set()
             for obj in obj_list:
-                if isinstance(obj, str):
+                if isinstance(obj, string_types):
                     code.append(obj)
                 else:
                     name = self._object_names[obj]
