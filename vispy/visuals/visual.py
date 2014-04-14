@@ -2,11 +2,12 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import division
+from __future__ import division, print_function
 import numpy as np
 
 from .. import gloo
 from ..util import event
+from ..util.six import string_types
 from .shaders import ModularProgram, Function
 from .transforms import NullTransform
 # components imported at bottom.
@@ -303,7 +304,7 @@ class Visual(object):
             try:
                 comp._detach()
             except:
-                print comp
+                print(comp)
                 raise
         self._pos_components = comps
         for comp in self._pos_components:
@@ -320,7 +321,7 @@ class Visual(object):
             try:
                 comp._detach()
             except:
-                print comp
+                print(comp)
                 raise
         self._color_components = comps
         for comp in self._color_components:
@@ -377,7 +378,7 @@ class Visual(object):
             else:
                 args = []
                 for arg in val:
-                    if isinstance(arg, str):
+                    if isinstance(arg, string_types):
                         arg = getattr(gloo.gl, arg)
                     args.append(arg)
                 func = getattr(gloo.gl, name)

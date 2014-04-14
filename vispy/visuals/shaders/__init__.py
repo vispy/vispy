@@ -1,1 +1,1 @@
-from composite import ModularProgram, Function, FunctionChain
+from .composite import ModularProgram, Function, FunctionChain

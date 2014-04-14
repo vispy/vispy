@@ -45,6 +45,7 @@ class LineVisual(Visual):
 
     def set_data(self, pos=None, **kwds):
         kwds['index'] = kwds.pop('edges', kwds.get('index', None))
+        width = kwds.pop('width', 1)  # todo: do something with width
         super(LineVisual, self).set_data(pos, **kwds)
         
     @property
