@@ -73,11 +73,9 @@ class Canvas(object):
                                    stylus=Event,
                                    touch=Event,
                                    close=Event)
-
-        size = np.array(size, int)
-        if size.ndim != 1 or size.size != 2:
+        size = [int(s) for s in size]
+        if len(size) != 2:
             raise ValueError('size must be a 2-element list')
-        size = list(size)
         title = str(title)
 
         # Initialize backend attribute
