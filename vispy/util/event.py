@@ -264,11 +264,11 @@ class EventEmitter(object):
             *callback* may be either a callable object or a tuple
             (object, attr_name) where object.attr_name will point to a
             callable object.
-        before : callback | list of callback | None
+        before : callback | list of callbacks | None
             List of callbacks that the current callback should precede.
             Can be True to put at the start of the list. Can be None
             if no before-criteria should be used.
-        after : callback | list of callback | True | None
+        after : callback | list of callbacks | True | None
             List of callbacks that the current callback should follow.
             Can be True to put at the end of the list. Can be None if
             no after-criteria should be used.
