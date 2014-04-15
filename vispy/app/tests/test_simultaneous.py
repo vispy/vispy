@@ -148,6 +148,10 @@ def _test_multiple_canvas_same_backend(backend):
     kwargs = dict(app=a, autoswap=False, size=_win_size)
     with Canvas(title=backend + '_0', **kwargs) as c0:
         with Canvas(title=backend + '_1', **kwargs) as c1:
+            for canvas, pos in zip((c0, c1), ((0, 0), (_win_size[0], 0))):
+                canvas.show()
+                canvas.position = pos
+                canvas.app.process_events()
             bgcolors = [None] * 2
 
             @c0.events.paint.connect
