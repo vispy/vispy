@@ -41,7 +41,7 @@ class Canvas(object):
         Whether to show the widget immediately. Default False.
     autoswap : bool
         Whether to swap the buffers automatically after a paint event.
-        Default True. If True, the ``(self, 'swap_buffers')`` callback will
+        Default True. If True, the ``swap_buffers`` Canvas method will
         be called last (by default) by the ``canvas.paint`` event handler.
     app : Application | str
         Give vispy Application instance to use as a backend.

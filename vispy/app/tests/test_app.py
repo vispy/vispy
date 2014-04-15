@@ -109,6 +109,7 @@ def _test_application(backend):
                 position=pos) as canvas:
         assert_is(canvas.app, app)
         assert_true(canvas.native)
+        assert_equal('swap_buffers', canvas.events.paint.callback_names[-1])
         print(canvas)  # __repr__
         assert_array_equal(canvas.size, size)
         assert_equal(canvas.title, title)

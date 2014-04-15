@@ -474,14 +474,26 @@ class TestEmitters(unittest.TestCase):
 
 def test_event_connect_order():
     """Test event connection order"""
-    a = lambda x: x
-    b = lambda x: x
-    c = lambda x: x
-    d = lambda x: x
-    e = lambda x: x
-    f = lambda x: x
+    def a():
+        return
+
+    def b():
+        return
+
+    def c():
+        return
+
+    def d():
+        return
+
+    def e():
+        return
+
+    def f():
+        return
+
     em = EventEmitter(type='test_event')
-    assert_raises(ValueError, em.connect, c, before=[c, 'foo'])
+    assert_raises(ValueError, em.connect, c, before=['c', 'foo'])
     assert_raises(ValueError, em.connect, c, position='foo')
     em.connect(c)
     assert_equal((c,), tuple(em.callbacks))
@@ -491,10 +503,10 @@ def test_event_connect_order():
     assert_equal((c, d), tuple(em.callbacks))
     em.connect(b)  # position='first'
     assert_equal((b, c, d), tuple(em.callbacks))
-    assert_raises(RuntimeError, em.connect, a, before=c, after=d)  # impossible
-    em.connect(a, before=[c, d])  # first possible pos == 0
+    assert_raises(RuntimeError, em.connect, a, before='c', after='d')  # can't
+    em.connect(a, before=['c', 'd'])  # first possible pos == 0
     assert_equal((a, b, c, d), tuple(em.callbacks))
-    em.connect(f, after=[c, d])
+    em.connect(f, after=['c', 'd'])
     assert_equal((a, b, c, d, f), tuple(em.callbacks))
-    em.connect(e, after=d, before=f)
-    assert_equal((a, b, c, d, e, f), tuple(em.callbacks))
+    em.connect(e, after='d', before='f')
+    assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_names))
