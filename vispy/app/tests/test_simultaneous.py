@@ -25,9 +25,7 @@ def _update_process_check(canvas, val, paint=True, ignore_fail=False):
         canvas.update()
         canvas.app.process_events()
         canvas.app.process_events()
-        canvas._backend._vispy_set_current()
-    else:
-        canvas._backend._vispy_set_current()
+    canvas._backend._vispy_set_current()
     print('           check %s' % val)
     # check screenshot to see if it's all one color
     ss = _screenshot()
@@ -42,7 +40,7 @@ def _update_process_check(canvas, val, paint=True, ignore_fail=False):
     try:
         assert_allclose(ss, goal, atol=1)  # can be off by 1 due to rounding
     except Exception:
-        print('!!!!!!!!!! FAIL  %s' % ss[0, 0, 0])
+        print('!!!!!!!!!! FAIL  %s' % np.unique(ss))
         sleep(_err_sleep_time)
         if not ignore_fail:
             raise
@@ -147,19 +145,17 @@ def _test_multiple_canvases(backend):
 def _test_multiple_canvas_same_backend(backend):
     """Helper to test using multiple windows for the same backend"""
     a = Application(backend)
-    with Canvas(app=a, size=_win_size, title=backend + '_0') as c0:
-        with Canvas(app=a, size=_win_size, title=backend + '_1') as c1:
-            for canvas, pos in zip((c0, c1), ((0, 0), (_win_size[0], 0))):
-                canvas.show()
-                canvas.position = pos
-                canvas.app.process_events()
+    kwargs = dict(app=a, autoswap=False, size=_win_size)
+    with Canvas(title=backend + '_0', **kwargs) as c0:
+        with Canvas(title=backend + '_1', **kwargs) as c1:
             bgcolors = [None] * 2
 
             @c0.events.paint.connect
             def paint0(event):
                 print('  {0:7}: {1}'.format(backend + '_0', bgcolors[0]))
                 gl.glViewport(0, 0, *list(_win_size))
-                gl.glClearColor(*bgcolors[0])
+                if bgcolors[0] is not None:
+                    gl.glClearColor(*bgcolors[0])
                 gl.glClear(gl.GL_COLOR_BUFFER_BIT)
                 gl.glFinish()
 
@@ -167,11 +163,13 @@ def _test_multiple_canvas_same_backend(backend):
             def paint1(event):
                 print('  {0:7}: {1}'.format(backend + '_1', bgcolors[1]))
                 gl.glViewport(0, 0, *list(_win_size))
-                gl.glClearColor(*bgcolors[1])
+                if bgcolors[1] is not None:
+                    gl.glClearColor(*bgcolors[1])
                 gl.glClear(gl.GL_COLOR_BUFFER_BIT)
                 gl.glFinish()
 
             for ci, canvas in enumerate((c0, c1)):
+                print('paint %s' % canvas.title)
                 bgcolors[ci] = [0.5, 0.5, 0.5, 1.0]
                 _update_process_check(canvas, 127)
 
