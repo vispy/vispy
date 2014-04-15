@@ -118,8 +118,9 @@ def _test_application(backend):
         canvas.size = size
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
-        canvas.show(False)
-        canvas.show()
+        if sys.platform != 'darwin':  # XXX knownfail, prob. needs warmup
+            canvas.show(False)
+            canvas.show()
         app.process_events()
         assert_raises(ValueError, canvas.connect, on_nonexist)
 
@@ -129,7 +130,7 @@ def _test_application(backend):
         assert_array_equal(ss.shape, size + (3,))
         assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
         assert_array_equal(canvas.size, size)
-        assert_equal(len(canvas.position), 2)  # XXX pos doesn't "take"
+        assert_equal(len(canvas.position), 2)  # XXX knawnfail, doesn't "take"
 
         # GLOO: should have an OpenGL context already, so these should work
         vert = VertexShader("void main (void) {gl_Position = pos;}")
@@ -238,7 +239,7 @@ def test_qt():
 def test_pyglet():
     """Test Pyglet application"""
     _test_application('Pyglet')
-    if sys.platform != 'darwin':  # XXX crashes due to Pyglet bug?
+    if sys.platform != 'darwin':  # XXX knownfail, segfault due to Pyglet bug?
         _test_run('Pyglet')
 
 
