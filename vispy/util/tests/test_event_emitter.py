@@ -498,7 +498,3 @@ def test_event_connect_order():
     assert_equal((a, b, c, d, f), tuple(em.callbacks))
     em.connect(e, after=d, before=f)
     assert_equal((a, b, c, d, e, f), tuple(em.callbacks))
-
-
-if __name__ == '__main__':
-    test_event_connect_order()
