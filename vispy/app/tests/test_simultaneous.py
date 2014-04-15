@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import sys
 from numpy.testing import assert_allclose
 from nose.tools import assert_true
 from time import sleep
@@ -208,7 +209,8 @@ def test_glfw():
 def test_glut():
     """Test multiple Glut windows"""
     #_test_multiple_canvases('Glut')  # XXX Fails on Travis for some reason
-    _test_multiple_canvas_same_backend('Glut')
+    if sys.platform != 'darwin':
+        _test_multiple_canvas_same_backend('Glut')
 
 if __name__ == '__main__':
     _ig_fail = False

@@ -21,8 +21,7 @@ from __future__ import division
 import atexit
 from time import sleep
 
-from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, _process_backend_kwargs)
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 from ...util.ptime import time
 
@@ -147,7 +146,7 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        title, size, show, position = _process_backend_kwargs(kwargs)
+        title, size, show, position = self._process_backend_kwargs(kwargs)
         # Init GLFW, add window hints, and create window
         glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)
         glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, True)

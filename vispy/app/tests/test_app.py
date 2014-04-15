@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
@@ -236,7 +237,8 @@ def test_qt():
 def test_pyglet():
     """Test Pyglet application"""
     _test_application('Pyglet')
-    _test_run('Pyglet')
+    if sys.platform != 'darwin':  # XXX crashes due to Pyglet bug?
+        _test_run('Pyglet')
 
 
 @requires_glfw()

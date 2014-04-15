@@ -10,8 +10,7 @@ from __future__ import division
 from time import sleep, time
 
 from ... import config
-from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, _process_backend_kwargs)
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 from . import ATTEMPTED_BACKENDS
 from ...util.six import text_type
@@ -134,7 +133,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        title, size, show, position = _process_backend_kwargs(kwargs)
+        title, size, show, position = self._process_backend_kwargs(kwargs)
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)

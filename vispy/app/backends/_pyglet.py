@@ -18,8 +18,7 @@ if LooseVersion(version) < LooseVersion('1.2'):
     raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
                       % (pyglet.version, help_))
 
-from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, _process_backend_kwargs)
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 
 
@@ -107,7 +106,7 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        title, size, show, position = _process_backend_kwargs(kwargs)
+        title, size, show, position = self._process_backend_kwargs(kwargs)
         # Initialize native widget, but default hidden and resizable
         kwargs['resizable'] = kwargs.get('resizable', True)
         kwargs['vsync'] = kwargs.get('vsync', 0)

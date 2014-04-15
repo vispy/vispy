@@ -143,24 +143,6 @@ class Event(object):
 _event_repr_depth = 0
 
 
-def _check_ba(criteria, callbacks, loc):
-    """Helper to find valid placements"""
-    assert loc in ['before', 'after']
-    if criteria is None:
-        if loc == 'before':
-            return len(callbacks)  # even the last position works
-        else:  # loc == after
-            return -1  # even the first position worksS
-    if not isinstance(criteria, list):
-        criteria = [criteria]
-    if not all([c in callbacks for c in criteria]):
-        raise ValueError('not all callbacks "%s" are '
-                         'in current callback list: %s'
-                         % (criteria, callbacks))
-    matches = [ci for ci, c in enumerate(callbacks) if c in criteria]
-    return matches[0] if loc == 'before' else matches[-1]
-
-
 class EventEmitter(object):
 
     """Encapsulates a list of event callbacks.
@@ -255,6 +237,23 @@ class EventEmitter(object):
         else:
             self._source = weakref.ref(s)
 
+    def _check_ba(self, criteria, loc):
+        """Helper to find valid placements"""
+        assert loc in ['before', 'after']
+        if criteria is None:
+            if loc == 'before':
+                return len(self.callbacks)  # even the last position works
+            else:  # loc == after
+                return -1  # even the first position worksS
+        if not isinstance(criteria, list):
+            criteria = [criteria]
+        if not all([c in self.callbacks for c in criteria]):
+            raise ValueError('not all callbacks "%s" are '
+                             'in current callback list: %s'
+                             % (criteria, self.callbacks))
+        matches = [ci for ci, c in enumerate(self.callbacks) if c in criteria]
+        return matches[0] if loc == 'before' else matches[-1]
+
     def connect(self, callback, before=None, after=None):
         """Connect this emitter to a new callback.
 
@@ -297,8 +296,8 @@ class EventEmitter(object):
                 raise ValueError('before must be None if after is True')
             self.callbacks.append(callback)
         else:  # specific position
-            bidx = _check_ba(before, self.callbacks, 'before')
-            aidx = _check_ba(after, self.callbacks, 'after')
+            bidx = self._check_ba(before, 'before')
+            aidx = self._check_ba(after, 'after')
             if aidx >= bidx:
                 raise RuntimeError('cannot place callback before "%s" '
                                    'and after "%s" for callbacks:\n%s'
