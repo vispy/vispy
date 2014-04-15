@@ -157,20 +157,20 @@ def _test_multiple_canvas_same_backend(backend):
             @c0.events.paint.connect
             def paint0(event):
                 print('  {0:7}: {1}'.format(backend + '_0', bgcolors[0]))
-                gl.glViewport(0, 0, *list(_win_size))
                 if bgcolors[0] is not None:
+                    gl.glViewport(0, 0, *list(_win_size))
                     gl.glClearColor(*bgcolors[0])
-                gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-                gl.glFinish()
+                    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+                    gl.glFinish()
 
             @c1.events.paint.connect
             def paint1(event):
                 print('  {0:7}: {1}'.format(backend + '_1', bgcolors[1]))
-                gl.glViewport(0, 0, *list(_win_size))
                 if bgcolors[1] is not None:
+                    gl.glViewport(0, 0, *list(_win_size))
                     gl.glClearColor(*bgcolors[1])
-                gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-                gl.glFinish()
+                    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+                    gl.glFinish()
 
             for ci, canvas in enumerate((c0, c1)):
                 print('paint %s' % canvas.title)
