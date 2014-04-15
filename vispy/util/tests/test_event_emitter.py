@@ -171,6 +171,7 @@ class TestEmitters(unittest.TestCase):
         em.connect(cb2)
         self.result = None
         em.disconnect(cb2)
+        em.disconnect(cb2)  # should pass silently
         ev = em()
         self.assert_result(event=ev)
 
@@ -480,16 +481,15 @@ def test_event_connect_order():
     e = lambda x: x
     f = lambda x: x
     em = EventEmitter(type='test_event')
-    assert_raises(ValueError, em.connect, c, after=True, before=True)
-    assert_raises(ValueError, em.connect, c, after=True, before=c)
     assert_raises(ValueError, em.connect, c, before=[c, 'foo'])
+    assert_raises(ValueError, em.connect, c, position='foo')
     em.connect(c)
     assert_equal((c,), tuple(em.callbacks))
     em.connect(c)
     assert_equal((c,), tuple(em.callbacks))
-    em.connect(d, after=True)
+    em.connect(d, position='last')
     assert_equal((c, d), tuple(em.callbacks))
-    em.connect(b, before=True)
+    em.connect(b)  # position='first'
     assert_equal((b, c, d), tuple(em.callbacks))
     assert_raises(RuntimeError, em.connect, a, before=c, after=d)  # impossible
     em.connect(a, before=[c, d])  # first possible pos == 0

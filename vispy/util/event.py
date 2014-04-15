@@ -237,24 +237,7 @@ class EventEmitter(object):
         else:
             self._source = weakref.ref(s)
 
-    def _check_ba(self, criteria, loc):
-        """Helper to find valid placements"""
-        assert loc in ['before', 'after']
-        if criteria is None:
-            if loc == 'before':
-                return len(self.callbacks)  # even the last position works
-            else:  # loc == after
-                return -1  # even the first position worksS
-        if not isinstance(criteria, list):
-            criteria = [criteria]
-        if not all([c in self.callbacks for c in criteria]):
-            raise ValueError('not all callbacks "%s" are '
-                             'in current callback list: %s'
-                             % (criteria, self.callbacks))
-        matches = [ci for ci, c in enumerate(self.callbacks) if c in criteria]
-        return matches[0] if loc == 'before' else matches[-1]
-
-    def connect(self, callback, before=None, after=None):
+    def connect(self, callback, position='first', before=None, after=None):
         """Connect this emitter to a new callback.
 
         Parameters
@@ -263,11 +246,15 @@ class EventEmitter(object):
             *callback* may be either a callable object or a tuple
             (object, attr_name) where object.attr_name will point to a
             callable object.
+        position : str
+            If ``'first'``, the first eligible position is used (that
+            meets the before and after criteria), ``'last'`` will use
+            the last position.
         before : callback | list of callbacks | None
             List of callbacks that the current callback should precede.
             Can be True to put at the start of the list. Can be None
             if no before-criteria should be used.
-        after : callback | list of callbacks | True | None
+        after : callback | list of callbacks | None
             List of callbacks that the current callback should follow.
             Can be True to put at the end of the list. Can be None if
             no after-criteria should be used.
@@ -278,32 +265,35 @@ class EventEmitter(object):
         ignored.
 
         If before is None and after is None (default), the new callback will
-        be added to the beginning of the callback list. (This is why there
-        is no "before=True" option -- it is the default behavior). Thus the
+        be added to the beginning of the callback list. Thus the
         callback that is connected _last_ will be the _first_ to receive
-        events from the emitter. Similarly, when using "before" and "after"
-        arguments simultaneously, the earliest slot in the list that
-        satisfies both conditions will be used.
+        events from the emitter.
         """
         if callback in self.callbacks:
             return
-        if (before is None and after is None) or before is True:  # at start
-            if after is not None:
-                raise ValueError('after must be None if before is True')
-            self.callbacks.insert(0, callback)
-        elif after is True:  # at end
-            if before is not None:
-                raise ValueError('before must be None if after is True')
-            self.callbacks.append(callback)
-        else:  # specific position
-            bidx = self._check_ba(before, 'before')
-            aidx = self._check_ba(after, 'after')
-            if aidx >= bidx:
-                raise RuntimeError('cannot place callback before "%s" '
-                                   'and after "%s" for callbacks:\n%s'
-                                   % (before, after, self.callbacks))
-            # use earliest possible slot
-            self.callbacks.insert(aidx + 1, callback)
+        if position not in ('first', 'last'):
+            raise ValueError('position must be "first" or "last", not %s'
+                             % position)
+        bounds = list()  # upper & lower bnds (inclusive) of possible cb locs
+        for ci, criteria in enumerate((before, after)):
+            if criteria is None:
+                bounds.append(len(self.callbacks) if ci == 0 else 0)
+            else:
+                if not isinstance(criteria, list):
+                    criteria = [criteria]
+                if not all([c in self.callbacks for c in criteria]):
+                    raise ValueError('not all callbacks "%s" are '
+                                     'in current callback list: %s'
+                                     % (criteria, self.callbacks))
+                matches = [ci for ci, c in enumerate(self.callbacks)
+                           if c in criteria]
+                bounds.append(matches[0] if ci == 0 else matches[-1] + 1)
+        if bounds[0] < bounds[1]:  # i.e., "place before" < "place after"
+            raise RuntimeError('cannot place callback before "%s" '
+                               'and after "%s" for callbacks: %s'
+                               % (before, after, self.callbacks))
+        idx = bounds[1] if position == 'first' else bounds[0]  # 'last'
+        self.callbacks.insert(idx, callback)
         return callback  # allows connect to be used as a decorator
 
     def disconnect(self, callback=None):
@@ -579,7 +569,7 @@ class EmitterGroup(EventEmitter):
         for em in self._emitters.values():
             em.unblock()
 
-    def connect(self, callback, before=None, after=None):
+    def connect(self, callback, position='first', before=None, after=None):
         """ Connect the callback to the event group. The callback will receive
         events from *all* of the emitters in the group.
 
@@ -587,7 +577,7 @@ class EmitterGroup(EventEmitter):
         for arguments.
         """
         self._connect_emitters(True)
-        return EventEmitter.connect(self, callback, before, after)
+        return EventEmitter.connect(self, position, callback, before, after)
 
     def disconnect(self, callback=None):
         """ Disconnect the callback from this group. See

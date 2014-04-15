@@ -132,7 +132,7 @@ class Canvas(object):
         self._backend._vispy_canvas = self
         if self._autoswap:
             # append to the end
-            self.events.paint.connect((self, 'swap_buffers'), after=True)
+            self.events.paint.connect((self, 'swap_buffers'), position='last')
 
     @property
     def app(self):
