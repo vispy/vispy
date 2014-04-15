@@ -252,12 +252,10 @@ class EventEmitter(object):
             the last position.
         before : callback | list of callbacks | None
             List of callbacks that the current callback should precede.
-            Can be True to put at the start of the list. Can be None
-            if no before-criteria should be used.
+            Can be None if no before-criteria should be used.
         after : callback | list of callbacks | None
             List of callbacks that the current callback should follow.
-            Can be True to put at the end of the list. Can be None if
-            no after-criteria should be used.
+            Can be None if no after-criteria should be used.
 
         Notes
         -----

@@ -4,7 +4,7 @@ import sys
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
 
-from vispy.app import (Application, Canvas, Timer, MouseEvent, KeyEvent)
+from vispy.app import Application, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
 from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,  # noqa
                                 requires_glut, requires_application)
