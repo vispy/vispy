@@ -577,7 +577,7 @@ class EmitterGroup(EventEmitter):
         for arguments.
         """
         self._connect_emitters(True)
-        return EventEmitter.connect(self, position, callback, before, after)
+        return EventEmitter.connect(self, callback, position, before, after)
 
     def disconnect(self, callback=None):
         """ Disconnect the callback from this group. See

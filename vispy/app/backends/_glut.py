@@ -224,7 +224,7 @@ class CanvasBackend(BaseCanvasBackend):
             glut.glutHideWindow()
 
     def _vispy_warmup(self):
-        etime = time() + 0.3  # empirically determined :(
+        etime = time() + 0.4  # empirically determined :(
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()
