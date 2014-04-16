@@ -30,7 +30,6 @@ class Buffer(GLObject):
     
     Parameters
     ----------
-
     target : GLenum
         gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER
     data : ndarray
@@ -378,13 +377,11 @@ class DataBuffer(Buffer):
 
         Parameters
         ----------
-
         size : integer
             New buffer size
 
-        Note
+        Notes
         ----
-
         This clears any pending operations.
         """
 

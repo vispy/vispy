@@ -53,9 +53,6 @@ def main():
     for name in sorted(gl_const_names):
         lines.append('  * %s' % name)
 
-    # Write class header
-    lines.append('**vispy.gloo.gl.ext**\n')
-
     # Write file
     with open(os.path.join(DOCSDIR, 'gl.rst'), 'w') as f:
         f.write('\n'.join(lines))

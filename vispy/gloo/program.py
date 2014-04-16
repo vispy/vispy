@@ -35,7 +35,6 @@ class Program(GLObject):
 
     Notes
     -----
-    
     If several shaders are specified, only one can contain the main
     function. OpenGL ES 2.0 does not support a list of shaders.
     """
@@ -134,13 +133,11 @@ class Program(GLObject):
     
         Parameters
         ----------
-        
         shaders : list of shade objects
             The shaders to detach.
         
-        Note
-        ----
-
+        Notes
+        -----
         We don't need to defer attach/detach shaders since shader deletion
         takes care of that.
         """
@@ -256,7 +253,7 @@ class Program(GLObject):
     def bind(self, data):
         """ Bind a VertexBuffer that has structured data
         
-        Pamareters
+        Parameters
         ----------
         data : VertexBuffer
             The vertex buffer to bind. The field names of the array
