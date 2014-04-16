@@ -136,7 +136,7 @@ class Event(object):
                 attr = getattr(self, name)
 
                 attrs.append("%s=%s" % (name, attr))
-            return "<%s %s>" % (type(self).__name__, " ".join(attrs))
+            return "<%s %s>" % (self.__class__.__name__, " ".join(attrs))
         finally:
             _event_repr_depth -= 1
 
