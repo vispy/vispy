@@ -464,9 +464,11 @@ def set_state(preset=None, **kwargs):
     Notes
     -----
     This serves three purposes:
+
       1. Set GL state using reasonable presets.
       2. Wrapping glEnable/glDisable functionality.
       3. Convienence wrapping of other ``gloo.set_*`` functions.
+
     For example, one could do the following:
 
         >>> from vispy import gloo

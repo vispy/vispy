@@ -30,8 +30,8 @@ class Canvas(object):
     initialize, resize, paint, mouse_press, mouse_release, mouse_move,
     mouse_wheel, key_press, key_release, stylus, touch, close
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     title : str
         The widget title
     size : (width, height)
@@ -253,9 +253,18 @@ class Canvas(object):
             self._fps_callback(self.fps)
 
     def measure_fps(self, window=1, callback=print):
-        """ Sets the update window, connects the paint event to
+        """Measure the current FPS
+
+        Sets the update window, connects the paint event to
         update_fps and sets the callback function
-        If no callback is passed, measurement stops
+        If no callback is passed, measurement stops.
+
+        Parameters
+        ----------
+        window : int
+            The window number.
+        callback : function
+            The function to call with the FPS. Default is ``print``.
         """
         # Connect update_fps function to paint
         self.events.paint.disconnect(self._update_fps)
@@ -326,13 +335,13 @@ class Canvas(object):
 # Event subclasses specific to the Canvas
 class MouseEvent(Event):
 
-    """ Class describing mouse events.
+    """Mouse event class
 
     Note that each event object has an attribute for each of the input
     arguments listed below.
 
-    Input arguments
-    ---------------
+    Parameters
+    ----------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
     pos : (int, int)
@@ -450,13 +459,13 @@ class MouseEvent(Event):
 
 class KeyEvent(Event):
 
-    """ Class describing mouse events.
+    """Key event class
 
     Note that each event object has an attribute for each of the input
     arguments listed below.
 
-    Input arguments
-    ---------------
+    Parameters
+    ----------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
     key : vispy.keys.Key instance
@@ -493,13 +502,13 @@ class KeyEvent(Event):
 
 class ResizeEvent(Event):
 
-    """ Class describing canvas resize events.
+    """ Resize event class
 
     Note that each event object has an attribute for each of the input
     arguments listed below.
 
-    Input arguments
-    ---------------
+    Parameters
+    ----------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
     size : (int, int)
@@ -521,15 +530,16 @@ class ResizeEvent(Event):
 
 class PaintEvent(Event):
 
-    """ Class describing canvas paint events.
+    """ Paint event class
+
     This type of event is sent to Canvas.events.paint when a repaint
     is required.
 
     Note that each event object has an attribute for each of the input
     arguments listed below.
 
-    Input arguments
-    ---------------
+    Parameters
+    ----------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
     region : (int, int, int, int) or None

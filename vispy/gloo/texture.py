@@ -207,9 +207,8 @@ class Texture(GLObject):
         shape : tuple of integers
             New texture shape
 
-        Note
-        ----
-
+        Notes
+        -----
         This clears any pending operations.
         """
 
@@ -255,9 +254,8 @@ class Texture(GLObject):
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
 
-        Note
-        ----
-
+        Notes
+        -----
         This operation implicitely resizes the texture to the shape of the data
         if given offset is None.
         """
@@ -500,9 +498,8 @@ class Texture1D(Texture):
         based on the number of channels. When the data has one channel,
         GL_LUMINANCE is assumed.
     
-    Note
-    ----
-    
+    Notes
+    -----
     Under water this is really a 2D texture (1D textures are not
     supported in GL ES 2.0).
     
@@ -686,7 +683,7 @@ class Texture2D(Texture):
             gl.glTexSubImage2D(self.target, 0, x, y, self._format, 
                                self._gtype, data)
 
-
+'''
 # ---------------------------------------------------- TextureCubeMap class ---
 class TextureCubeMap(Texture):
     """ A TextureCubeMap represents a set of 6 2D Textures
@@ -815,3 +812,4 @@ class TextureCubeMap(Texture):
 #    data = np.zeros((6,128,128), dtype=np.uint32)
 #    T = TextureCubeMap(data=data)
 #    T.activate()
+'''
