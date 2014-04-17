@@ -262,17 +262,22 @@ class EventEmitter(object):
             If ``'first'``, the first eligible position is used (that
             meets the before and after criteria), ``'last'`` will use
             the last position.
-        before : str | list of str | None
+        before : str | callback | list of str or callback | None
             List of callbacks that the current callback should precede.
             Can be None if no before-criteria should be used.
-        after : str | list of str | None
+        after : str | callback | list of str or callback | None
             List of callbacks that the current callback should follow.
             Can be None if no after-criteria should be used.
 
         Notes
         -----
         The current list of callback names can be obtained using
-        ``event.callback_names``.
+        ``event.callback_names``. Callbacks can be referred to by either
+        their string representation, or by the actual callback that was
+        attached (e.g., ``(canvas, 'swap_buffers')``). String names can
+        only be used when they are unique in the list, so we recommend
+        naming callback functions using unique names if ``before`` and
+        ``after`` will be heavily used.
 
         If the specified callback is already connected, then the request is
         ignored.
@@ -282,26 +287,32 @@ class EventEmitter(object):
         callback that is connected _last_ will be the _first_ to receive
         events from the emitter.
         """
-        if callback in self.callbacks:
+        callbacks = self.callbacks
+        if callback in callbacks:
             return
         callback_names = self.callback_names
         if position not in ('first', 'last'):
             raise ValueError('position must be "first" or "last", not %s'
                              % position)
         bounds = list()  # upper & lower bnds (inclusive) of possible cb locs
-        for ci, criteria in enumerate((before, after)):
-            if criteria is None:
-                bounds.append(len(callback_names) if ci == 0 else 0)
+        for ri, criteria in enumerate((before, after)):
+            if criteria is None or criteria == []:
+                bounds.append(len(callback_names) if ri == 0 else 0)
             else:
                 if not isinstance(criteria, list):
                     criteria = [criteria]
-                if not all([c in callback_names for c in criteria]):
-                    raise ValueError('not all callbacks "%s" are '
-                                     'in current callback list: %s'
-                                     % (criteria, callback_names))
-                matches = [ci for ci, c in enumerate(callback_names)
-                           if c in criteria]
-                bounds.append(matches[0] if ci == 0 else matches[-1] + 1)
+                for c in criteria:
+                    count = sum([(c == cn or c == cc) for cn, cc
+                                 in zip(callback_names, callbacks)])
+                    if count != 1:
+                        raise ValueError('criteria "%s" is in the current '
+                                         'callback list %s times:\n%s\n%s'
+                                         % (criteria, count,
+                                            callback_names, callbacks))
+                matches = [ci for ci, (cn, cc) in enumerate(zip(callback_names,
+                                                                callbacks))
+                           if (cc in criteria or cn in criteria)]
+                bounds.append(matches[0] if ri == 0 else (matches[-1] + 1))
         if bounds[0] < bounds[1]:  # i.e., "place before" < "place after"
             raise RuntimeError('cannot place callback before "%s" '
                                'and after "%s" for callbacks: %s'

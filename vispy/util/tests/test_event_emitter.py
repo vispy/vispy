@@ -510,3 +510,31 @@ def test_event_connect_order():
     assert_equal((a, b, c, d, f), tuple(em.callbacks))
     em.connect(e, after='d', before='f')
     assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_names))
+    em.disconnect(e)
+    em.connect(e, after='a', before='f', position='last')
+    assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_names))
+    em.disconnect(e)
+    em.connect(e, after='d', before='f', position='last')
+    assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_names))
+    em.disconnect(e)
+    em.connect(e, after='d', before='f', position='first')
+    assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_names))
+    em.disconnect(e)
+    em.connect(e, after=[], before='f', position='last')
+    assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_names))
+
+    # duplicate protection and handling
+    old_e = e
+
+    def e():
+        return
+
+    def g():
+        return
+
+    em.connect(e, after='f')
+    assert_equal(('a', 'b', 'c', 'd', 'e', 'f', 'e'), tuple(em.callback_names))
+    assert_raises(ValueError, em.connect, g, after='e')
+    em.connect(g, after=old_e)
+    assert_equal(('a', 'b', 'c', 'd', 'e', 'g', 'f', 'e'),
+                 tuple(em.callback_names))
