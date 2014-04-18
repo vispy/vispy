@@ -18,8 +18,8 @@ class Buffer(GLObject):
     """ Generic GPU buffer.
 
     A generic buffer is an interface used to upload data to a GPU array buffer
-    (gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER). It keeps tracks of
-    buffer size but do not have any CPU storage. You can consider it as
+    (gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER). It keeps track of
+    buffer size but does not have any CPU storage. You can consider it as
     write-only.
 
     The `set_data` is a deferred operation: you can call it even if an OpenGL
@@ -43,16 +43,16 @@ class Buffer(GLObject):
 
     def __init__(self, data=None, target=gl.GL_ARRAY_BUFFER, nbytes=0,
                  resizeable=True):
-        
+
         GLObject.__init__(self)
         self._need_resize = True
         self._resizeable = resizeable
         self._views = []
         self._valid = True
-        
+
         # For ATI bug
         self._bufferSubDataOk = False
-        
+
         # Store and check target
         if target not in (gl.GL_ARRAY_BUFFER, gl.GL_ELEMENT_ARRAY_BUFFER):
             raise ValueError("Invalid target for buffer object")
@@ -163,16 +163,16 @@ class Buffer(GLObject):
                      len(self._pending_data))
         while self._pending_data:
             data, nbytes, offset = self._pending_data.pop(0)
-            
+
             # Determine whether to check errors to try handling the ATI bug
             check_ati_bug = ((not self._bufferSubDataOk) and
                              (gl.current_backend is gl.desktop) and
                              sys.platform.startswith('win'))
-            
+
             # flush any pending errors
             if check_ati_bug:
                 gl.check_error('periodic check')
-            
+
             try:
                 gl.glBufferSubData(self._target, offset, data)
                 if check_ati_bug:
@@ -192,7 +192,7 @@ class Buffer(GLObject):
 # -------------------------------------------------------- DataBuffer class ---
 class DataBuffer(Buffer):
     """ GPU data buffer that is aware of data type and elements size
-    
+
     Parameters
     ----------
 
@@ -219,7 +219,7 @@ class DataBuffer(Buffer):
 
     def __init__(self, data=None, dtype=None, target=gl.GL_ARRAY_BUFFER,
                  size=0, base=None, offset=0, store=True, resizeable=True):
-        
+
         Buffer.__init__(self, target=target, resizeable=resizeable)
         self._base = base
         self._offset = offset
@@ -259,7 +259,7 @@ class DataBuffer(Buffer):
             self._itemsize = self._dtype.itemsize
             # Set data
             self.set_data(data, copy=False)
-        
+
         # Create buffer from dtype and size
         elif dtype is not None:
             self._dtype = np.dtype(dtype)
@@ -553,10 +553,10 @@ class DataBuffer(Buffer):
 # ------------------------------------------------------ VertexBuffer class ---
 class VertexBuffer(DataBuffer):
     """ Buffer for vertex attribute data
-    
+
     Parameters
     ----------
-    
+
     data : ndarray
         Buffer data (optional)
     dtype : dtype
@@ -595,7 +595,7 @@ class VertexBuffer(DataBuffer):
                 data = data.view(dtype=[('f0', data.dtype.base, c)])
             else:
                 data = data.view(dtype=[('f0', data.dtype.base, 1)])
-        
+
         elif dtype is not None:
             dtype = np.dtype(dtype)
             if dtype.isbuiltin:
@@ -628,8 +628,8 @@ class VertexBuffer(DataBuffer):
 
 # ------------------------------------------------------- IndexBuffer class ---
 class IndexBuffer(DataBuffer):
-    """ Buffer for index data 
-    
+    """ Buffer for index data
+
     Parameters
     ----------
 
@@ -650,7 +650,7 @@ class IndexBuffer(DataBuffer):
 
     def __init__(self, data=None, dtype=np.uint32, size=0, store=True,
                  resizeable=True, *args, **kwargs):
-       
+
         # We don't want these two parameters to be seen from outside
         # (because they are used internally only)
         offset = kwargs.get("offset", 0)

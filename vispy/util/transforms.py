@@ -3,8 +3,8 @@
 """
 Very simple transformation library that is needed for some examples.
 
-Note
-----
+Notes
+-----
 
 Functions that take a matrix as input generally operate on that matrix in
 place.
