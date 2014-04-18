@@ -276,8 +276,8 @@ class EventEmitter(object):
         their string representation, or by the actual callback that was
         attached (e.g., ``(canvas, 'swap_buffers')``). String names can
         only be used when they are unique in the list, so we recommend
-        naming callback functions using unique names if ``before`` and
-        ``after`` will be heavily used.
+        using the actual callbacks (as attached) if duplicate names are
+        expected.
 
         If the specified callback is already connected, then the request is
         ignored.
