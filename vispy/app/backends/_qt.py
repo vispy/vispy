@@ -208,9 +208,6 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.close()
-        # Destroy if this is a toplevel widget
-        if self.parent() is None:
-            self.destroy()
 
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
@@ -299,6 +296,12 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if QtCore.Qt.MetaModifier & qtmod:
             mod += keys.META,
         return mod
+
+    def __del__(self):
+        # Destroy if this is a toplevel widget
+        if self.parent() is None:
+            self.destroy()
+        QtOpenGL.QGLWidget.__del__(self)
 
 
 # class QtMouseEvent(MouseEvent):
