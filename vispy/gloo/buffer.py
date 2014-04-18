@@ -18,16 +18,17 @@ class Buffer(GLObject):
     """ Generic GPU buffer.
 
     A generic buffer is an interface used to upload data to a GPU array buffer
-    (GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER). It keeps tracks of buffer
-    size but do not have any CPU storage. You can consider it as write-only.
+    (gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER). It keeps tracks of
+    buffer size but do not have any CPU storage. You can consider it as
+    write-only.
 
     The `set_data` is a deferred operation: you can call it even if an OpenGL
     context is not available. The `update` function is responsible to upload
     pending data to GPU memory and requires an active GL context.
-    
-    The Buffer class only deals with data in terms of bytes; it is not 
+
+    The Buffer class only deals with data in terms of bytes; it is not
     aware of data type or element size.
-    
+
     Parameters
     ----------
     target : GLenum
@@ -381,7 +382,7 @@ class DataBuffer(Buffer):
             New buffer size
 
         Notes
-        ----
+        -----
         This clears any pending operations.
         """
 

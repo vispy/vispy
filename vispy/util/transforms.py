@@ -2,6 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 Very simple transformation library that is needed for some examples.
+
+Note
+----
+
+Functions that take a matrix as input generally operate on that matrix in
+place.
 """
 
 # Note: we use functions (e.g. sin) from math module because they're faster
@@ -198,7 +204,7 @@ def ortho(left, right, bottom, top, znear, zfar):
     left : float
         Left coordinate of the field of view.
     right : float
-        Left coordinate of the field of view.
+        Right coordinate of the field of view.
     bottom : float
         Bottom coordinate of the field of view.
     top : float
@@ -236,7 +242,7 @@ def frustum(left, right, bottom, top, znear, zfar):
     left : float
         Left coordinate of the field of view.
     right : float
-        Left coordinate of the field of view.
+        Right coordinate of the field of view.
     bottom : float
         Bottom coordinate of the field of view.
     top : float
