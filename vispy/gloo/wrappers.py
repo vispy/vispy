@@ -208,7 +208,7 @@ def set_clear_color(color=(0., 0., 0., 1.)):
 def set_clear_depth(depth=1.0):
     """Set the clear value for the depth buffer
 
-    This is a wrapper for gl.glClearDepthf.
+    This is a wrapper for gl.glClearDepth.
 
     Parameters
     ----------
@@ -277,7 +277,7 @@ def set_blend_equation(mode_rgb, mode_alpha=None):
 
     Notes
     -----
-    See ``set_blend_equation`` for valide modes.
+    See ``set_blend_equation`` for valid modes.
     """
     mode_alpha = mode_rgb if mode_alpha is None else mode_alpha
     gl.glBlendEquationSeparate(_gl_attr(mode_rgb),

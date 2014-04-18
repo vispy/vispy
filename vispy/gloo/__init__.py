@@ -5,9 +5,9 @@
 """
 Object oriented interface to OpenGL.
 
-This module implements classes for the things that are "objetcs" in
+This module implements classes for the things that are "objects" in
 OpenGL, such as textures, FBO's, VBO's and shaders. Further, some
-convenience classes are implemented (like the collection class?).
+convenience classes are implemented (like the collection class).
 
 This set of classes provides a friendly (Pythonic) interface
 to OpenGL, and is designed to provide OpenGL's full functionality.
@@ -34,12 +34,12 @@ Example::
 
     With vispy.gloo we strive to offer a Python interface that provides
     the full functionality of OpenGL. However, this layer is a work in
-    progress and there are yet a few known limitations. Most notably:
+    progress and there are still a few known limitations. Most notably:
 
     * TextureCubeMap is not yet implemented
     * FBO's can only do 2D textures (not 3D textures or cube maps)
     * Sharing of Shaders and RenderBuffers (between multiple Program's and
-      FrameBuffers, respecitively) is not well supported.
+      FrameBuffers, respectively) is not well supported.
     * No support for compressed textures.
 
 """
