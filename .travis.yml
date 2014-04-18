@@ -143,11 +143,7 @@ script:
     - cd ${SRC_DIR}
     - # Nose-timer has bugs on 3+ as of Jan 2014
     - if [ "${TEST}" != "extra" ]; then
-        if [ "${PYTHON}" == "2.7" ]; then
-          nosetests --with-timer --timer-top-n 10;
-        else
-          nosetests;
-        fi;
+        nosetests --with-timer --timer-top-n 10;
       fi;
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     # XXX cd ${SRC_DIR}

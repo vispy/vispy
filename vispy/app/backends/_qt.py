@@ -305,7 +305,8 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         # Destroy if this is a toplevel widget
         if self.parent() is None:
             self.destroy()
-        QtOpenGL.QGLWidget.__del__(self)
+        if hasattr(QtOpenGL.QGLWidget, '__del__'):
+            QtOpenGL.QGLWidget.__del__(self)
 
 
 # class QtMouseEvent(MouseEvent):
