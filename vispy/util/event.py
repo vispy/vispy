@@ -260,9 +260,8 @@ class EventEmitter(object):
             callable object.
         name : bool | str
             Name used to identify the callback in ``before`` and ``after``.
-            If True, the callback name will be derived using the
-            ``__name__`` (or ``__class__.__name__``) attribute.
-            If False, the callback cannot be referred to by name.
+            If True, the callback name will automatically determined (see
+            Notes). If False, the callback cannot be referred to by name.
             If str, the given string will be used. Note that if ``name``
             is not unique in ``callback_names``, an error will be thrown.
         position : str
@@ -278,6 +277,12 @@ class EventEmitter(object):
 
         Notes
         -----
+        If ``name=True``, the callback name will be determined from:
+
+            1. If ``callback`` is ``tuple``, the secend element in the tuple.
+            2. The ``__name__`` attribute.
+            3. The ``__class__.__name__`` attribute.
+
         The current list of callback names can be obtained using
         ``event.callback_names``. Callbacks can be referred to by either
         their string representation, or by the actual callback that was
@@ -301,7 +306,9 @@ class EventEmitter(object):
         # deal with the name
         if isinstance(name, bool):
             if name:
-                if hasattr(callback, '__name__'):  # function
+                if isinstance(callback, tuple):
+                    name = callback[1]
+                elif hasattr(callback, '__name__'):  # function
                     name = callback.__name__
                 else:  # Method, or other
                     name = callback.__class__.__name__

@@ -134,7 +134,7 @@ class Canvas(object):
         if self._autoswap:
             # append to the end
             self.events.paint.connect((self, 'swap_buffers'),
-                                      name='swap_buffers', position='last')
+                                      name=True, position='last')
 
     @property
     def app(self):
