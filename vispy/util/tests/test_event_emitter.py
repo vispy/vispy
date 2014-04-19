@@ -495,46 +495,44 @@ def test_event_connect_order():
     em = EventEmitter(type='test_event')
     assert_raises(ValueError, em.connect, c, before=['c', 'foo'])
     assert_raises(ValueError, em.connect, c, position='foo')
-    em.connect(c)
+    assert_raises(TypeError, em.connect, c, name=dict())
+    em.connect(c, name=True)
     assert_equal((c,), tuple(em.callbacks))
     em.connect(c)
     assert_equal((c,), tuple(em.callbacks))
-    em.connect(d, position='last')
+    em.connect(d, name=True, position='last')
     assert_equal((c, d), tuple(em.callbacks))
-    em.connect(b)  # position='first'
+    em.connect(b, name=True)  # position='first'
     assert_equal((b, c, d), tuple(em.callbacks))
     assert_raises(RuntimeError, em.connect, a, before='c', after='d')  # can't
-    em.connect(a, before=['c', 'd'])  # first possible pos == 0
+    em.connect(a, name=True, before=['c', 'd'])  # first possible pos == 0
     assert_equal((a, b, c, d), tuple(em.callbacks))
-    em.connect(f, after=['c', 'd'])
+    em.connect(f, name=True, after=['c', 'd'])
     assert_equal((a, b, c, d, f), tuple(em.callbacks))
-    em.connect(e, after='d', before='f')
+    em.connect(e, name=True, after='d', before='f')
     assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_names))
     em.disconnect(e)
-    em.connect(e, after='a', before='f', position='last')
+    em.connect(e, name=True, after='a', before='f', position='last')
     assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_names))
     em.disconnect(e)
-    em.connect(e, after='d', before='f', position='last')
+    em.connect(e, name='e', after='d', before='f', position='last')
     assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_names))
     em.disconnect(e)
-    em.connect(e, after='d', before='f', position='first')
-    assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_names))
+    em.connect(e, after='d', before='f', position='first')  # no name
+    assert_equal(('a', 'b', 'c', 'd', None, 'f'), tuple(em.callback_names))
     em.disconnect(e)
-    em.connect(e, after=[], before='f', position='last')
+    assert_raises(ValueError, em.connect, e, name='d')  # duplicate name
+    em.connect(e, name=True, after=[], before='f', position='last')
     assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_names))
+    assert_equal((a, b, c, d, e, f), tuple(em.callbacks))
 
-    # duplicate protection and handling
     old_e = e
 
     def e():
         return
 
-    def g():
-        return
-
-    em.connect(e, after='f')
-    assert_equal(('a', 'b', 'c', 'd', 'e', 'f', 'e'), tuple(em.callback_names))
-    assert_raises(ValueError, em.connect, g, after='e')
-    em.connect(g, after=old_e)
-    assert_equal(('a', 'b', 'c', 'd', 'e', 'g', 'f', 'e'),
+    assert_raises(ValueError, em.connect, e, name=True)  # duplicate name
+    em.connect(e)
+    assert_equal((None, 'a', 'b', 'c', 'd', 'e', 'f'),
                  tuple(em.callback_names))
+    assert_equal((e, a, b, c, d, old_e, f), tuple(em.callbacks))

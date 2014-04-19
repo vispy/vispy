@@ -82,7 +82,8 @@ class Canvas(object):
         # Initialize backend attribute
         self._backend = None
         if init_gloo:
-            self.events.initialize.connect(_gloo_initialize)
+            self.events.initialize.connect(_gloo_initialize,
+                                           name='gloo_initialize')
         self._backend_args = native_args or ()
         self._backend_kwargs = native_kwargs or {}
 
@@ -132,7 +133,8 @@ class Canvas(object):
         self._backend._vispy_canvas = self
         if self._autoswap:
             # append to the end
-            self.events.paint.connect((self, 'swap_buffers'), position='last')
+            self.events.paint.connect((self, 'swap_buffers'),
+                                      name='swap_buffers', position='last')
 
     @property
     def app(self):
