@@ -74,7 +74,6 @@ BUTTONMAP = {glut.GLUT_LEFT_BUTTON: 1,
 
 
 _VP_GLUT_ALL_WINDOWS = []
-_GLUT_INIT = None
 
 
 def _get_glut_process_func(missing='error'):
@@ -92,12 +91,9 @@ def _get_glut_process_func(missing='error'):
 
 
 def _init_glut():
-    global _GLUT_INIT
     # HiDPI support for retina display
     # This requires glut from
     # http://iihm.imag.fr/blanch/software/glut-macosx/
-    if _GLUT_INIT is not None:
-        return
     if sys.platform == 'darwin':
         try:
             glutInitDisplayString = platform.createBaseFunction(
@@ -119,14 +115,15 @@ def _init_glut():
                            glut.GLUT_ACTION_CONTINUE_EXECUTION)
     except Exception:
         pass
-    _GLUT_INIT = glut
+    return glut
+
+_GLUT_INIT = _init_glut()  # only ever call once!
 
 
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
-        _init_glut()
         self._timers = []
 
     def _add_timer(self, timer):
@@ -195,9 +192,11 @@ class CanvasBackend(BaseCanvasBackend):
 
     """ GLUT backend for Canvas abstract class."""
 
-    def __init__(self, name='glut window', *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        self._id = glut.glutCreateWindow(name.encode('ASCII'))
+        title, size, show, position = self._process_backend_kwargs(kwargs)
+        glut.glutInitWindowSize(size[0], size[1])
+        self._id = glut.glutCreateWindow(title.encode('ASCII'))
         if not self._id:
             raise RuntimeError('could not create window')
         glut.glutSetWindow(self._id)
@@ -217,9 +216,12 @@ class CanvasBackend(BaseCanvasBackend):
         glut.glutMouseFunc(self.on_mouse_action)
         glut.glutMotionFunc(self.on_mouse_motion)
         glut.glutPassiveMotionFunc(self.on_mouse_motion)
-        glut.glutHideWindow()
         _set_close_fun(self._id, self.on_close)
         self._vispy_canvas_ = None
+        if position is not None:
+            self._vispy_set_position(*position)
+        if not show:
+            glut.glutHideWindow()
 
     def _vispy_warmup(self):
         etime = time() + 0.4  # empirically determined :(

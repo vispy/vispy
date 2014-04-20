@@ -9,7 +9,7 @@ should be emitted.
 
 from __future__ import division
 
-from ... import app
+from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 
 # Map native keys to vispy keys
@@ -53,10 +53,10 @@ KEYMAP = {
 }
 
 
-class ApplicationBackend(app.ApplicationBackend):
+class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
-        app.ApplicationBackend.__init__(self)
+        BaseApplicationBackend.__init__(self)
 
     def _vispy_get_backend_name(self):
         return 'ThisBackendsName'
@@ -75,11 +75,11 @@ class ApplicationBackend(app.ApplicationBackend):
 
 
 # You can mix this class with the native widget
-class CanvasBackend(app.CanvasBackend):
+class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, vispy_canvas, *args, **kwargs):
         #NativeWidgetClass.__init__(self, *args, **kwargs)
-        app.CanvasBackend.__init__(self, vispy_canvas)
+        BaseCanvasBackend.__init__(self, vispy_canvas)
 
     def _vispy_set_current(self):
         # Make this the current context
@@ -163,10 +163,10 @@ class CanvasBackend(app.CanvasBackend):
         """
 
 
-class TimerBackend(app.TimerBackend):  # Can be mixed with native timer class
+class TimerBackend(BaseTimerBackend):  # Can be mixed with native timer class
 
     def __init__(self, vispy_timer):
-        app.TimerBackend.__init__(self, vispy_timer)
+        BaseTimerBackend.__init__(self, vispy_timer)
 
     def _vispy_start(self, interval):
         raise NotImplementedError()

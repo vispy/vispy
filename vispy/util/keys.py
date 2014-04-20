@@ -14,31 +14,13 @@ intended as a compatibility measure.
 
 """
 
-from __future__ import division
-
 from .six import string_types
 
 
-# class Key(str):
-#     """ A string that can only be compared to another string.
-#     More strict that a simple string to avoid bugs trying to compare to int.
-#     """
-#     def __new__(cls, s, *alternatives):
-#         if not isinstance(s, string_types):
-#             raise ValueError('KeyConsant must be a string')
-#         s = str.__new__(cls, s)
-#         s._alternatives = alternatives
-#         return s
-#     def __eq__(self, other):
-#         if not isinstance(other, string_types):
-#             raise ValueError('Key constants can only be compared to '
-#                              'strings.')
-#         return XX.__eq__(self, other) or other in self._alternatives
+class Key(object):
+    """ Represent the identity of a certain key.
 
-class Key:
-
-    """ A Key object represents the identity of a certain key. It
-    represents one or more names that the key in question is known by.
+    This represents one or more names that the key in question is known by.
 
     A Key object can be compared to one of its string names (case
     insensitive), to the integer ordinal of the key (only for keys that
@@ -51,7 +33,7 @@ class Key:
 
     @property
     def name(self):
-        """ The name of the key.
+        """ The primary name of the key.
         """
         return self._names[0]
 
@@ -68,8 +50,7 @@ class Key:
         elif other is None:
             return False
         else:
-            raise ValueError(
-                'Key constants can only be compared to str, int and Key.')
+            raise ValueError('Key can only be compared to str, int and Key.')
 
 
 SHIFT = Key('Shift')

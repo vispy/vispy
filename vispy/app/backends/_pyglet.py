@@ -106,8 +106,8 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
+        title, size, show, position = self._process_backend_kwargs(kwargs)
         # Initialize native widget, but default hidden and resizable
-        kwargs['visible'] = kwargs.get('visible', False)
         kwargs['resizable'] = kwargs.get('resizable', True)
         kwargs['vsync'] = kwargs.get('vsync', 0)
 
@@ -116,7 +116,11 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         #self._buttons_accepted = 0
         self._draw_ok = False  # whether it is ok to draw yet
         self._pending_position = None
-        pyglet.window.Window.__init__(self, *args, **kwargs)
+        pyglet.window.Window.__init__(self, width=size[0], height=size[1],
+                                      caption=title, visible=show,
+                                      *args, **kwargs)
+        if position is not None:
+            self._vispy_set_position(*position)
 
     def _vispy_warmup(self):
         pass  # no need, sort of, but it still fails many of our tests

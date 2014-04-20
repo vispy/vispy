@@ -40,10 +40,11 @@ class BaseTestmodule:
             '_vispy_mouse_move',
             '_vispy_mouse_press',
             '_vispy_mouse_release',
-            '_vispy_get_geometry')  # defined in base class
+            '_vispy_get_geometry',
+            '_process_backend_kwargs')  # defined in base class
 
         Klass = self._module.CanvasBackend
-        KlassRef = vispy.app.canvas.CanvasBackend
+        KlassRef = vispy.app.base.BaseCanvasBackend
         for key in dir(KlassRef):
             if not key.startswith('__'):
                 method = getattr(Klass, key)
