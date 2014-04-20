@@ -184,7 +184,7 @@ class EventEmitter(object):
 
     def __init__(self, source=None, type=None, event_class=Event):
         self._callbacks = []
-        self._callback_names = []
+        self._callback_refs = []
         self.blocked = 0
         self._emitting = False  # used to detect emitter loops
         self.source = source
@@ -226,9 +226,9 @@ class EventEmitter(object):
         self._print_callback_errors = val
 
     @property
-    def callback_names(self):
-        """The set of callback names"""
-        return tuple(self._callback_names)
+    def callback_refs(self):
+        """The set of callback references"""
+        return tuple(self._callback_refs)
 
     @property
     def callbacks(self):
@@ -248,7 +248,7 @@ class EventEmitter(object):
         else:
             self._source = weakref.ref(s)
 
-    def connect(self, callback, name=False, position='first',
+    def connect(self, callback, ref=False, position='first',
                 before=None, after=None):
         """Connect this emitter to a new callback.
 
@@ -258,12 +258,12 @@ class EventEmitter(object):
             *callback* may be either a callable object or a tuple
             (object, attr_name) where object.attr_name will point to a
             callable object.
-        name : bool | str
-            Name used to identify the callback in ``before`` and ``after``.
-            If True, the callback name will automatically determined (see
-            Notes). If False, the callback cannot be referred to by name.
-            If str, the given string will be used. Note that if ``name``
-            is not unique in ``callback_names``, an error will be thrown.
+        ref : bool | str
+            Reference used to identify the callback in ``before``/``after``.
+            If True, the callback ref will automatically determined (see
+            Notes). If False, the callback cannot be referred to by a string.
+            If str, the given string will be used. Note that if ``ref``
+            is not unique in ``callback_refs``, an error will be thrown.
         position : str
             If ``'first'``, the first eligible position is used (that
             meets the before and after criteria), ``'last'`` will use
@@ -277,19 +277,16 @@ class EventEmitter(object):
 
         Notes
         -----
-        If ``name=True``, the callback name will be determined from:
+        If ``ref=True``, the callback reference will be determined from:
 
             1. If ``callback`` is ``tuple``, the secend element in the tuple.
             2. The ``__name__`` attribute.
             3. The ``__class__.__name__`` attribute.
 
-        The current list of callback names can be obtained using
-        ``event.callback_names``. Callbacks can be referred to by either
-        their string representation, or by the actual callback that was
-        attached (e.g., ``(canvas, 'swap_buffers')``). String names can
-        only be used when they are unique in the list, so we recommend
-        using the actual callbacks (as attached) if duplicate names are
-        expected.
+        The current list of callback refs can be obtained using
+        ``event.callback_refs``. Callbacks can be referred to by either
+        their string reference (if given), or by the actual callback that
+        was attached (e.g., ``(canvas, 'swap_buffers')``).
 
         If the specified callback is already connected, then the request is
         ignored.
@@ -300,24 +297,24 @@ class EventEmitter(object):
         events from the emitter.
         """
         callbacks = self.callbacks
-        callback_names = self.callback_names
+        callback_refs = self.callback_refs
         if callback in callbacks:
             return
-        # deal with the name
-        if isinstance(name, bool):
-            if name:
+        # deal with the ref
+        if isinstance(ref, bool):
+            if ref:
                 if isinstance(callback, tuple):
-                    name = callback[1]
+                    ref = callback[1]
                 elif hasattr(callback, '__name__'):  # function
-                    name = callback.__name__
+                    ref = callback.__name__
                 else:  # Method, or other
-                    name = callback.__class__.__name__
+                    ref = callback.__class__.__name__
             else:
-                name = None
-        elif not isinstance(name, string_types):
-            raise TypeError('name must be a bool or string')
-        if name is not None and name in self._callback_names:
-            raise ValueError('name "%s" is not unique' % name)
+                ref = None
+        elif not isinstance(ref, string_types):
+            raise TypeError('ref must be a bool or string')
+        if ref is not None and ref in self._callback_refs:
+            raise ValueError('ref "%s" is not unique' % ref)
 
         # positions
         if position not in ('first', 'last'):
@@ -328,31 +325,31 @@ class EventEmitter(object):
         bounds = list()  # upper & lower bnds (inclusive) of possible cb locs
         for ri, criteria in enumerate((before, after)):
             if criteria is None or criteria == []:
-                bounds.append(len(callback_names) if ri == 0 else 0)
+                bounds.append(len(callback_refs) if ri == 0 else 0)
             else:
                 if not isinstance(criteria, list):
                     criteria = [criteria]
                 for c in criteria:
                     count = sum([(c == cn or c == cc) for cn, cc
-                                 in zip(callback_names, callbacks)])
+                                 in zip(callback_refs, callbacks)])
                     if count != 1:
                         raise ValueError('criteria "%s" is in the current '
                                          'callback list %s times:\n%s\n%s'
                                          % (criteria, count,
-                                            callback_names, callbacks))
-                matches = [ci for ci, (cn, cc) in enumerate(zip(callback_names,
+                                            callback_refs, callbacks))
+                matches = [ci for ci, (cn, cc) in enumerate(zip(callback_refs,
                                                                 callbacks))
                            if (cc in criteria or cn in criteria)]
                 bounds.append(matches[0] if ri == 0 else (matches[-1] + 1))
         if bounds[0] < bounds[1]:  # i.e., "place before" < "place after"
             raise RuntimeError('cannot place callback before "%s" '
                                'and after "%s" for callbacks: %s'
-                               % (before, after, callback_names))
+                               % (before, after, callback_refs))
         idx = bounds[1] if position == 'first' else bounds[0]  # 'last'
 
         # actually add the callback
         self._callbacks.insert(idx, callback)
-        self._callback_names.insert(idx, name)
+        self._callback_refs.insert(idx, ref)
         return callback  # allows connect to be used as a decorator
 
     def disconnect(self, callback=None):
@@ -363,12 +360,12 @@ class EventEmitter(object):
         """
         if callback is None:
             self._callbacks = []
-            self._callback_names = []
+            self._callback_refs = []
         else:
             if callback in self._callbacks:
                 idx = self._callbacks.index(callback)
                 self._callbacks.pop(idx)
-                self._callback_names.pop(idx)
+                self._callback_refs.pop(idx)
 
     def __call__(self, *args, **kwds):
         """ __call__(**kwds)
@@ -629,7 +626,7 @@ class EmitterGroup(EventEmitter):
         for em in self._emitters.values():
             em.unblock()
 
-    def connect(self, callback, name=False, position='first',
+    def connect(self, callback, ref=False, position='first',
                 before=None, after=None):
         """ Connect the callback to the event group. The callback will receive
         events from *all* of the emitters in the group.
@@ -638,7 +635,7 @@ class EmitterGroup(EventEmitter):
         for arguments.
         """
         self._connect_emitters(True)
-        return EventEmitter.connect(self, callback, name, position,
+        return EventEmitter.connect(self, callback, ref, position,
                                     before, after)
 
     def disconnect(self, callback=None):
