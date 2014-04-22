@@ -1,9 +1,9 @@
 """
 The vispy.scene.visuals namespace provides a wide range of visuals.
-A visuals is an Entity that displays something.
+A Visual is an Entity that displays something.
 
-Visuals do not have to be used in a scenegraph per see; they can also 
-be used stand-alone e.g. from a vispy.app.Canvas.
+Visuals do not have to be used in a scenegraph per se; they can also 
+be used stand-alone e.g. from a vispy.app.Canvas, or using Glut.
 """
 
 from .visual import Visual
