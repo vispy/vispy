@@ -12,8 +12,8 @@ information, but different transformations.
 import numpy as np
 import vispy.app
 from vispy.gloo import gl
-from vispy.visuals.line import LineVisual
-from vispy.visuals.transforms import STTransform, LogTransform, AffineTransform, PolarTransform
+from vispy.scene import visuals
+from vispy.scene.transforms import STTransform, LogTransform, AffineTransform, PolarTransform
 
 import vispy.util
 vispy.util.use_log_level('debug')
@@ -38,7 +38,7 @@ class Canvas(vispy.app.Canvas):
         colors = [color, (1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1),
                   (1, 1, 0, 1), (1, 1, 1, 1)]
         
-        self.lines = [LineVisual(pos, color=colors[i]) for i in range(6)]
+        self.lines = [visuals.Line(pos, color=colors[i]) for i in range(6)]
         
         self.lines[1].transform = STTransform(scale=(1, 0.1, 1))
         

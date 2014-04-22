@@ -9,7 +9,7 @@ Demonstration of animated LineVisual.
 import numpy as np
 import vispy.app
 from vispy.gloo import gl
-from vispy.visuals.line import LineVisual
+from vispy.scene import visuals
 
 # vertex positions of data to draw
 N = 200
@@ -25,7 +25,7 @@ color[:, 1] = color[::-1, 0]
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
-        self.line = LineVisual(pos, color=color)
+        self.line = visuals.Line(pos, color=color)
         self.line.events.update.connect(self.line_changed)
         
         vispy.app.Canvas.__init__(self)

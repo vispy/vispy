@@ -9,8 +9,8 @@ Simple demonstration of ImageVisual.
 import numpy as np
 import vispy.app
 from vispy.gloo import gl
-from vispy.visuals import ImageVisual
-from vispy.visuals.transforms import *
+from vispy.scene import visuals
+from vispy.scene.transforms import *  # bah!
 
 image = np.random.normal(size=(100, 100, 3))
 image[20:80, 20:80] += 3.
@@ -20,12 +20,9 @@ image[:,50] += 3.
 image = ((image-image.min()) * (253. / (image.max()-image.min()))).astype(np.ubyte)
 
 
-
-
-
 class Canvas(vispy.app.Canvas):
     def __init__(self):
-        self.images = [ImageVisual(image, method='impostor') for i in range(4)]
+        self.images = [visuals.Image(image, method='impostor') for i in range(4)]
         base = STTransform(scale=(0.009, 0.009), translate=(-0.45, -0.45))
         self.images[0].transform = (STTransform(scale=(0.06, 0.06),
                                                 translate=(-0.5, -0.5)) * 

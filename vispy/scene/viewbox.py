@@ -3,13 +3,14 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
+
 import numpy as np
 
-from ..entity import Entity
-from .box import Box
-from ...visuals.transforms import STTransform, PerspectiveTransform
+from .entity import Entity
+from .transforms import STTransform, PerspectiveTransform
 
-class ViewBox(Box):
+
+class ViewBox(Entity):
     """
     Box class that provides an interactive (pan/zoom) view on its children.    
     """
@@ -58,6 +59,27 @@ class ViewBox(Box):
         event.pop_viewport()
 
 
+
+class Document(Entity):
+    """
+    Box that represents the area of a rectangular document with 
+    physical dimensions. 
+    """
+    def __init__(self, *args, **kwds):
+        self._dpi = 100  # will be used to relate other units to pixels
+        super(Document, self).__init__(*args, **kwds)
+        
+    @property
+    def dpi(self):
+        return self._dpi
+    
+    @dpi.setter
+    def dpi(self, d):
+        self._dpi = dpi
+        # TODO: inform tree that resolution has changed..
+
+
+
 class Camera(Entity):
     """ The Camera class defines the viewpoint from which a scene is
     visualized. It is itself an Entity (with transformations) but by
@@ -81,7 +103,7 @@ class Camera(Entity):
 class TwoDCamera(Camera):
 
     def __init__(self, parent=None):
-        super(Camera, self).__init__(parent)
+        super(TwoDCamera, self).__init__(parent)
         self.transform = STTransform()
 
     ## xlim and ylim are convenience methods to set the view using limits
@@ -143,7 +165,7 @@ class PerspectiveCamera(Camera):
     
     """
     def __init__(self, parent=None):
-        super(Camera, self).__init__(parent)
+        super(PerspectiveCamera, self).__init__(parent)
         self.transform = PerspectiveTransform()
         # TODO: allow self.look to be derived from an Anchor
         self._perspective = {

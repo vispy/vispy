@@ -9,7 +9,7 @@ Simple demonstration of LineVisual.
 import numpy as np
 import vispy.app
 from vispy.gloo import gl
-from vispy.visuals.line import LineVisual
+from vispy.scene import visuals
 
 # vertex positions of data to draw
 N = 200
@@ -25,7 +25,7 @@ color[:, 1] = color[::-1, 0]
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
-        self.line = LineVisual(pos, color=color)
+        self.line = visuals.Line(pos, color=color)
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)

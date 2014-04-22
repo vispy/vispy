@@ -6,15 +6,15 @@ from __future__ import division
 
 import numpy as np
 
-from .. import gloo
-from ..gloo import gl
-from .transforms import STTransform, NullTransform
-from .mesh import MeshVisual
-from .components import (TextureComponent, VertexTextureCoordinateComponent,
+from ... import gloo
+from ...gloo import gl
+from ..transforms import STTransform, NullTransform
+from .mesh import Mesh
+from ..components import (TextureComponent, VertexTextureCoordinateComponent,
                          TextureCoordinateComponent)
 
 
-class ImageVisual(MeshVisual):
+class Image(Mesh):
     """
     Visual subclass displaying an image. 
     
@@ -35,7 +35,7 @@ class ImageVisual(MeshVisual):
             columns in the image grid.
     """
     def __init__(self, data, method='subdivide', grid=(10,10)):
-        super(ImageVisual, self).__init__()
+        super(Image, self).__init__()
         
         self._data = None
         
@@ -83,7 +83,7 @@ class ImageVisual(MeshVisual):
             vertexes = tex_coords.copy()
             vertexes[...,0] *= self._data.shape[1]
             vertexes[...,1] *= self._data.shape[0]
-            MeshVisual.set_data(self, pos=vertexes)
+            Mesh.set_data(self, pos=vertexes)
             
             tex_coord_comp = TextureCoordinateComponent(tex_coords)
             
@@ -94,7 +94,7 @@ class ImageVisual(MeshVisual):
             quad = np.array([[-1,-1,0], [1,-1,0], [1,1,0], 
                              [-1,-1,0], [1,1,0], [-1,1,0]],
                             dtype=np.float32)
-            MeshVisual.set_data(self, pos=quad)
+            Mesh.set_data(self, pos=quad)
             
             self._tex_transform.scale = (1./self._data.shape[0], 1./self._data.shape[1])
             total_transform = self._tex_transform * self.transform.inverse()
@@ -122,4 +122,4 @@ class ImageVisual(MeshVisual):
         if self._texture is None:
             self._build_data()
         
-        super(ImageVisual, self).paint()
+        super(Image, self).paint()
