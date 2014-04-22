@@ -4,12 +4,12 @@
 
 from __future__ import division
 
-from ..visuals import transforms
+from . import transforms
 from ..util.event import EmitterGroup, Event
 from .events import ScenePaintEvent, SceneMouseEvent
 
-class Entity(object):
 
+class Entity(object):
     """ Base class to represent a citizen of a scene. Typically an
     Entity is used to visualize something, although this is not strictly
     necessary. It may for instance also be used as a container to apply
@@ -112,7 +112,7 @@ class Entity(object):
 
     def __iter__(self):
         return self._children.__iter__()
-
+    
     @property
     def transform(self):
         """ The user-accessible transform for this entity.

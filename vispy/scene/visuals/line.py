@@ -10,7 +10,7 @@ Simple visual based on GL_LINE_STRIP / GL_LINES
 API issues to work out:
 
   * Currently this only uses GL_LINE_STRIP. Should add a 'method' argument like
-    ImageVisual.method that can be used to select higher-quality triangle 
+    Image.method that can be used to select higher-quality triangle 
     methods.
     
   * Add a few different position input components:
@@ -24,18 +24,18 @@ from __future__ import division
 
 import numpy as np
 
-from .. import gloo
+from ... import gloo
 from .visual import Visual
-from .components import (XYPosComponent, XYZPosComponent, 
+from ..components import (XYPosComponent, XYZPosComponent, 
                          UniformColorComponent, VertexColorComponent)
 
 
-class LineVisual(Visual):
+class Line(Visual):
     """
     Displays multiple line segments.
     """
     def __init__(self, pos=None, **kwds):
-        super(LineVisual, self).__init__()
+        super(Line, self).__init__()
         
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
@@ -46,7 +46,7 @@ class LineVisual(Visual):
     def set_data(self, pos=None, **kwds):
         kwds['index'] = kwds.pop('edges', kwds.get('index', None))
         width = kwds.pop('width', 1)  # todo: do something with width
-        super(LineVisual, self).set_data(pos, **kwds)
+        super(Line, self).set_data(pos, **kwds)
         
     @property
     def primitive(self):

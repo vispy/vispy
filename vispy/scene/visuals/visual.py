@@ -3,14 +3,18 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division, print_function
+
 import numpy as np
 
-from .. import gloo
-from ..util import event
-from ..util.six import string_types
-from .shaders import ModularProgram, Function
-from .transforms import NullTransform
-# components imported at bottom.
+from ... import gloo
+from ...util import event
+from ...util.six import string_types
+
+from ..shaders import ModularProgram, Function
+from ..transforms import NullTransform
+from ..entity import Entity
+from ..components import (VisualComponent, XYPosComponent, XYZPosComponent, 
+                         UniformColorComponent, VertexColorComponent)
 
 """
 API Issues to work out:
@@ -117,7 +121,7 @@ GLOptions = {
 }    
 
 
-class Visual(object):
+class Visual(Entity):
     """ 
     Abstract class representing a drawable object. Visuals implement the 
     following interfaces:
@@ -175,7 +179,8 @@ class Visual(object):
 
     
     
-    def __init__(self):
+    def __init__(self, parents=None):
+        Entity.__init__(self, parents)
         
         # Dict of {'GL_FLAG': bool} and {'glFunctionName': (args)} 
         # specifications. By default, these are enabled whenever the Visual 
@@ -187,15 +192,11 @@ class Visual(object):
         # 
         self._gl_options = {}
         
-        self.events = event.EmitterGroup(source=self,
-                                         update=event.Event,
-                                         bounds_change=event.Event)
-
+        # Add event for bounds changing
+        self.events.add(bounds_change=event.Event)
+        
         self._program = ModularProgram(self.VERTEX_SHADER, 
                                        self.FRAGMENT_SHADER)
-        
-        self._transform = None
-        self.transform = NullTransform()
         
         # Generic chains for attaching post-processing functions
         self._program.add_chain('local_position')
@@ -209,15 +210,7 @@ class Visual(object):
         self._color_components = []
         #self.color_components = [UniformColorComponent()]
         
-    @property
-    def transform(self):
-        return self._transform
     
-    @transform.setter
-    def transform(self, tr):
-        self._transform = tr
-        self.update()
-
     @property
     def primitive(self):
         """
@@ -413,123 +406,3 @@ class Visual(object):
         self._program['map_local_to_nd'] = self.transform.shader_map()
 
 
-
-class VisualComponent(object):
-    """
-    Base for classes that encapsulate some modular component of a Visual.
-    
-    These define Functions for extending the shader code as well as an 
-    activate() method that inserts these Functions into a program.
-    
-    VisualComponents may be considered friends of the Visual they are attached
-    to; often they will need to access internal data structures of the Visual
-    to make decisions about constructing shader components.
-    """
-    
-    DRAW_PRE_INDEXED = 1
-    DRAW_UNINDEXED = 2
-    
-    # Maps {'program_hook': 'GLSL code'}
-    SHADERS = {}
-    
-    # List of shaders to automatically attach to the visual's program.
-    # If None, then all shaders are attached.
-    AUTO_ATTACH = None
-    
-    def __init__(self, visual=None):
-        self._visual = None
-        if visual is not None:
-            self._attach(visual)
-            
-        self._funcs = dict([(name,Function(code)) 
-                            for name,code in self.SHADERS.items()])
-            
-        # components that are required by this component
-        self._deps = []
-        
-        # only detach when count drops to 0; 
-        # this is like a reference count for component dependencies.
-        self._attach_count = 0
-        
-    @property
-    def visual(self):
-        """The Visual that this component is attached to."""
-        return self._visual
-
-    def _attach(self, visual):
-        """Attach this component to a Visual. This should be called by the 
-        Visual itself.
-        """
-        if visual is not self._visual and self._visual is not None:
-            raise Exception("Cannot attach component %s to %s; already "
-                            "attached to %s" % (self, visual, self._visual))
-        self._visual = visual
-        self._attach_count += 1
-        for hook in self._auto_attach_shaders():
-            func = self._funcs[hook]
-            visual._program.add_callback(hook, func)
-        for comp in self._deps:
-            comp._attach(visual)
-
-    def _detach(self):
-        """Detach this component from its Visual.
-        """
-        if self._attach_count == 0:
-            raise Exception("Cannot detach component %s; not attached." % self)
-        
-        self._attach_count -= 1
-        if self._attach_count == 0:
-            for hook in self._auto_attach_shaders():
-                func = self._funcs[hook]
-                self._visual._program.remove_callback(hook, func)
-            self._visual = None
-            for comp in self._deps:
-                comp._detach()
-
-    def _auto_attach_shaders(self):
-        """
-        Return a list of shaders to automatically attach/detach        
-        """
-        if self.AUTO_ATTACH is None:
-            return self._funcs.keys()
-        else:
-            return self.AUTO_ATTACH
-    
-    @property
-    def supported_draw_modes(self):
-        """
-        A set of the draw modes (either DRAW_PRE_INDEXED, DRAW_UNINDEXED, or
-        both) currently supported by this component.
-        
-        DRAW_PRE_INDEXED indicates that the component may be used when the 
-        program uses an array of indexes do determine the order of elements to
-        draw from its vertex buffers (using glDrawElements).
-        
-        DRAW_UNINDEXED indicates that the component may be used when the
-        program will not use an array of indexes; rather, vertex buffers are
-        processed in the order they appear in the buffer (using glDrawArrays).
-        
-        By default, this method returns a tuple with both values. Components 
-        that only support one mode must override this method.
-        """
-        # TODO: This should be expanded to include other questions, such as
-        # whether the visual supports geometry shaders.
-        return set([self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED])
-
-    def update(self):
-        """
-        Inform the attached visual that this component has changed.
-        """
-        if self.visual is not None:
-            self.visual.update()
-
-    def activate(self, program):
-        """
-        *program* is about to paint; attach to *program* all functions and 
-        data required by this component.
-        """
-        raise NotImplementedError
-
-
-from .components import (XYPosComponent, XYZPosComponent, 
-                         UniformColorComponent, VertexColorComponent)

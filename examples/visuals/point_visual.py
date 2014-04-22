@@ -9,7 +9,7 @@ Simple demonstration of PointsVisual.
 import numpy as np
 import vispy.app
 from vispy.gloo import gl
-from vispy.visuals.point import PointVisual
+from vispy.scene import visuals
 
 # vertex positions of data to draw
 N = 200
@@ -20,7 +20,7 @@ pos[:, 1] = np.random.normal(size=N, scale=0.2).astype(np.float32)
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
-        self.points = PointVisual(pos, color=(0,1,0,1))
+        self.points = visuals.Point(pos, color=(0,1,0,1))
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)
         self.show()
@@ -37,6 +37,3 @@ if __name__ == '__main__':
     import sys
     if sys.flags.interactive != 1:
         vispy.app.run()
-    
-
-
