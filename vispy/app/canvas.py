@@ -7,15 +7,15 @@ from __future__ import division, print_function
 import numpy as np
 
 from ._default_app import default_app
-from ..util.event import EmitterGroup, Event
+from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..util.six import string_types
-from ..util import logger
 from .application import Application
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
 # todo: add focus events
+
 
 def _gloo_initialize(event):
     from ..gloo import gl_initialize
@@ -61,6 +61,22 @@ class Canvas(object):
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, native_args=None, native_kwargs=None):
+        
+        size = [int(s) for s in size]
+        if len(size) != 2:
+            raise ValueError('size must be a 2-element list')
+        title = str(title)
+        
+        # Initialise some values
+        self._autoswap = autoswap
+        self._title = title
+        self._frame_count = 0
+        self._fps = 0
+        self._basetime = time()
+        self._fps_callback = None
+        self._app = None
+
+        # Create events
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
                                    resize=ResizeEvent,
@@ -75,14 +91,15 @@ class Canvas(object):
                                    touch=Event,
                                    close=Event)
         
-        # deprecation warning for on_paint
-        self.events.draw.connect(self._on_paint)
+        # Deprecated paint emitter
+        emitter = WarningEmitter('Canvas.events.paint and Canvas.on_paint are '
+                                 'deprecated; use Canvas.events.draw and '
+                                 'Canvas.on_draw instead.',
+                                 source=self, type='draw', 
+                                 event_class=DrawEvent)
+        self.events.add(paint=emitter)
+        self.events.draw.connect(self.events.paint)
         
-        size = [int(s) for s in size]
-        if len(size) != 2:
-            raise ValueError('size must be a 2-element list')
-        title = str(title)
-
         # Initialize backend attribute
         self._backend = None
         if init_gloo:
@@ -97,14 +114,6 @@ class Canvas(object):
         self._backend_kwargs['_vispy_size'] = size
         self._backend_kwargs['_vispy_show'] = show
         self._backend_kwargs['_vispy_position'] = position
-
-        # Initialise some values
-        self._autoswap = autoswap
-        self._title = title
-        self._frame_count = 0
-        self._fps = 0
-        self._basetime = time()
-        self._fps_callback = None
 
         # Get app instance
         if isinstance(app, string_types):
@@ -277,8 +286,10 @@ class Canvas(object):
             self._fps_callback = None
 
     def __repr__(self):
+        app = self.app
+        backend = "no" if app is None else app.backend_name
         return ('<Vispy canvas (%s backend) at %s>'
-                % (self.app.backend_name, hex(id(self))))
+                % (backend, hex(id(self))))
 
     def __enter__(self):
         self.show()
@@ -287,13 +298,6 @@ class Canvas(object):
 
     def __exit__(self, type, value, traceback):
         self.close()
-        
-    def _on_paint(self, ev):
-        if hasattr(self, 'on_paint'):
-            if not hasattr(self, '_on_paint_warning_shown'):
-                logger.warn("Canvas.on_paint is deprecated; use Canvas.on_draw instead.")
-                self._on_paint_warning_shown = True
-            return self.on_paint(ev)
 
     # def mouse_event(self, event):
         #"""Called when a mouse input event has occurred (the mouse has moved,

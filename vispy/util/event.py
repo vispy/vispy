@@ -17,6 +17,7 @@ from __future__ import division
 import sys
 import inspect
 import weakref
+import traceback
 
 from .ordereddict import OrderedDict
 from ._logging import logger
@@ -402,30 +403,7 @@ class EventEmitter(object):
                 return event
 
             for cb in self._callbacks:
-                if isinstance(cb, tuple):
-                    cb = getattr(cb[0], cb[1], None)
-                    if cb is None:
-                        continue
-
-                try:
-                    cb(event)
-                except Exception:
-                    # get traceback and store (so we can do postmortem
-                    # debugging)
-                    type, value, tb = sys.exc_info()
-                    tb = tb.tb_next  # Skip *this* frame
-                    sys.last_type = type
-                    sys.last_value = value
-                    sys.last_traceback = tb
-                    # Handle
-                    if self.ignore_callback_errors:
-                        if self.print_callback_errors:
-                            sys.excepthook(type, value, tb)
-                            logger.warning("Error invoking callback for "
-                                           "event: %s" % str(event))
-                    else:
-                        raise
-
+                self._invoke_callback(cb, event)
                 if event.blocked:
                     break
         finally:
@@ -434,6 +412,31 @@ class EventEmitter(object):
                 raise RuntimeError("Event source-stack mismatch.")
 
         return event
+
+    def _invoke_callback(self, cb, event):
+        if isinstance(cb, tuple):
+            cb = getattr(cb[0], cb[1], None)
+            if cb is None:
+                return
+
+        try:
+            cb(event)
+        except Exception:
+            # get traceback and store (so we can do postmortem
+            # debugging)
+            type, value, tb = sys.exc_info()
+            tb = tb.tb_next  # Skip *this* frame
+            sys.last_type = type
+            sys.last_value = value
+            sys.last_traceback = tb
+            # Handle
+            if self.ignore_callback_errors:
+                if self.print_callback_errors:
+                    sys.excepthook(type, value, tb)
+                    logger.warning("Error invoking callback for "
+                                    "event: %s" % str(event))
+            else:
+                raise
 
     def _prepare_event(self, *args, **kwds):
         # When emitting, this method is called to create or otherwise alter
@@ -478,6 +481,39 @@ class EventEmitter(object):
         """
         return EventBlocker(self)
 
+
+class WarningEmitter(EventEmitter):
+    """
+    EventEmitter subclass used to allow deprecated events to be used with a
+    warning message.
+    """
+    def __init__(self, message, *args, **kwds):
+        self._message = message
+        self._warned = False
+        EventEmitter.__init__(self, *args, **kwds)
+        
+    def connect(self, cb, *args, **kwds):
+        self._warn(cb)
+        return EventEmitter.connect(self, cb, *args, **kwds)
+
+    def _invoke_callback(self, cb, event):
+        self._warn(cb)
+        return EventEmitter._invoke_callback(self, cb, event)
+        
+    def _warn(self, cb):
+        if self._warned:
+            return
+        
+        # don't warn about unimplemented connections 
+        if isinstance(cb, tuple) and getattr(cb[0], cb[1], None) is None:
+            return
+        
+        traceback.print_stack()
+        logger.warn(self._message)
+        self._warned = True
+            
+        
+        
 
 class EmitterGroup(EventEmitter):
 
