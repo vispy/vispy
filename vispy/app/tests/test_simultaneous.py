@@ -19,9 +19,9 @@ _err_sleep_time = 0.
 _ig_fail = True
 
 
-def _update_process_check(canvas, val, paint=True, ignore_fail=False):
+def _update_process_check(canvas, val, draw=True, ignore_fail=False):
     """Update, process, and check result"""
-    if paint:
+    if draw:
         canvas.update()
         canvas.app.process_events()
         canvas.app.process_events()
@@ -68,8 +68,8 @@ def test_simultaneous_backends():
             canvas.__enter__()  # invoke warmup
             canvases[backend] = canvas
 
-            @canvas.events.paint.connect
-            def paint(event):
+            @canvas.events.draw.connect
+            def draw(event):
                 print('  {0:7}: {1}'.format(backend, bgcolor[backend]))
                 gl.glViewport(0, 0, *list(_win_size))
                 gl.glClearColor(*bgcolor[backend])
@@ -108,19 +108,19 @@ def _test_multiple_canvases(backend):
         with Canvas(app=a, size=_win_size, title=backend + ' same_1') as c1:
             ct = [0, 0]
 
-            @c0.events.paint.connect
-            def paint0(event):
+            @c0.events.draw.connect
+            def draw0(event):
                 ct[0] += 1
                 c0.update()
 
-            @c1.events.paint.connect  # noqa, analysis:ignore
-            def paint1(event):
+            @c1.events.draw.connect  # noqa, analysis:ignore
+            def draw1(event):
                 ct[1] += 1
                 c1.update()
 
             c0.show()  # ensure visible
             c1.show()
-            c0.update()  # force first paint
+            c0.update()  # force first draw
             c1.update()
 
             timeout = time() + 2.0
@@ -156,8 +156,8 @@ def _test_multiple_canvas_same_backend(backend):
                 canvas.app.process_events()
             bgcolors = [None] * 2
 
-            @c0.events.paint.connect
-            def paint0(event):
+            @c0.events.draw.connect
+            def draw0(event):
                 print('  {0:7}: {1}'.format(backend + '_0', bgcolors[0]))
                 if bgcolors[0] is not None:
                     gl.glViewport(0, 0, *list(_win_size))
@@ -165,8 +165,8 @@ def _test_multiple_canvas_same_backend(backend):
                     gl.glClear(gl.GL_COLOR_BUFFER_BIT)
                     gl.glFinish()
 
-            @c1.events.paint.connect
-            def paint1(event):
+            @c1.events.draw.connect
+            def draw1(event):
                 print('  {0:7}: {1}'.format(backend + '_1', bgcolors[1]))
                 if bgcolors[1] is not None:
                     gl.glViewport(0, 0, *list(_win_size))
@@ -175,13 +175,13 @@ def _test_multiple_canvas_same_backend(backend):
                     gl.glFinish()
 
             for ci, canvas in enumerate((c0, c1)):
-                print('paint %s' % canvas.title)
+                print('draw %s' % canvas.title)
                 bgcolors[ci] = [0.5, 0.5, 0.5, 1.0]
                 _update_process_check(canvas, 127)
 
             for ci, canvas in enumerate((c0, c1)):
                 print('test %s' % backend)
-                _update_process_check(canvas, 127, paint=False)
+                _update_process_check(canvas, 127, draw=False)
                 bgcolors[ci] = [1., 1., 1., 1.]
                 _update_process_check(canvas, 255)
                 bgcolors[ci] = [0.25, 0.25, 0.25, 0.25]

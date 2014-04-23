@@ -41,7 +41,7 @@ vispy.util.event
 .. autoclass:: vispy.app.canvas.ResizeEvent
     :members:
 
-.. autoclass:: vispy.app.canvas.PaintEvent
+.. autoclass:: vispy.app.canvas.DrawEvent
     :members:
 
 

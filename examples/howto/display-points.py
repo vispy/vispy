@@ -90,7 +90,7 @@ class Canvas(app.Canvas):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         # Clear
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         # Draw
