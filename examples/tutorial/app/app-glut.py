@@ -7,8 +7,8 @@ You should see a black window and any mouse or keyboard event should be
 detected. A timer is also run every second and it should print "tick !"
 every second.
 
-Note:
-====
+Notes
+-----
 Depending on on your glut implementation (native or freeglut), the mouse wheel
 event may or may not be detected. Furthermore, glut has no utf-8 support and
 non ascii-key will most likely produces garbage.

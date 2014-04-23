@@ -1,10 +1,11 @@
 import numpy as np
+import sys
 
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
 
-from vispy.app import (Application, Canvas, Timer, ApplicationBackend,
-                       MouseEvent, KeyEvent)
+from vispy.app import Application, Canvas, Timer, MouseEvent, KeyEvent
+from vispy.app.base import BaseApplicationBackend
 from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,  # noqa
                                 requires_glut, requires_application)
 
@@ -108,6 +109,7 @@ def _test_application(backend):
                 position=pos) as canvas:
         assert_is(canvas.app, app)
         assert_true(canvas.native)
+        assert_equal('swap_buffers', canvas.events.paint.callback_refs[-1])
         print(canvas)  # __repr__
         assert_array_equal(canvas.size, size)
         assert_equal(canvas.title, title)
@@ -116,8 +118,9 @@ def _test_application(backend):
         canvas.size = size
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
-        canvas.show(False)
-        canvas.show()
+        if sys.platform != 'darwin':  # XXX knownfail, prob. needs warmup
+            canvas.show(False)
+            canvas.show()
         app.process_events()
         assert_raises(ValueError, canvas.connect, on_nonexist)
 
@@ -127,7 +130,7 @@ def _test_application(backend):
         assert_array_equal(ss.shape, size + (3,))
         assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
         assert_array_equal(canvas.size, size)
-        assert_equal(len(canvas.position), 2)  # XXX pos doesn't "take"
+        assert_equal(len(canvas.position), 2)  # XXX knawnfail, doesn't "take"
 
         # GLOO: should have an OpenGL context already, so these should work
         vert = VertexShader("void main (void) {gl_Position = pos;}")
@@ -236,7 +239,8 @@ def test_qt():
 def test_pyglet():
     """Test Pyglet application"""
     _test_application('Pyglet')
-    _test_run('Pyglet')
+    if sys.platform != 'darwin':  # XXX knownfail, segfault due to Pyglet bug?
+        _test_run('Pyglet')
 
 
 @requires_glfw()
@@ -255,7 +259,7 @@ def test_glut():
 
 def test_abstract():
     """Test app abstract template"""
-    app = ApplicationBackend()
+    app = BaseApplicationBackend()
     for fun in (app._vispy_get_backend_name, app._vispy_process_events,
                 app._vispy_run, app._vispy_quit):
         assert_raises(NotImplementedError, fun)

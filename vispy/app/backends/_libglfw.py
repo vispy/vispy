@@ -476,7 +476,8 @@ __py_callbacks__ = {}
 def glfwCreateWindow(width=640, height=480, title="GLFW Window",
                      monitor=None, share=None):
     _glfw.glfwCreateWindow.restype = POINTER(GLFWwindow)
-    window = _glfw.glfwCreateWindow(width, height, title, monitor, share)
+    window = _glfw.glfwCreateWindow(int(width), int(height),
+                                    title.encode('ASCII'), monitor, share)
     assert window not in __windows__
     __windows__.append(window)
     __destroyed__.append(False)

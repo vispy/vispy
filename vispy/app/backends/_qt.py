@@ -148,9 +148,16 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
+        title, size, show, position = self._process_backend_kwargs(kwargs)
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
+        self._vispy_set_title(title)
+        self._vispy_set_size(*size)
+        if position is not None:
+            self._vispy_set_position(*position)
+        if show:
+            self._vispy_set_visible(True)
 
     def _vispy_warmup(self):
         etime = time() + 0.25
@@ -181,10 +188,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
-        if visible:
-            self.show()
-        else:
-            self.hide()
+        self.show() if visible else self.hide()
 
     def _vispy_update(self):
         # Invoke a redraw
@@ -223,9 +227,6 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.close()
-        # Destroy if this is a toplevel widget
-        if self.parent() is None:
-            self.destroy()
 
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
@@ -314,6 +315,13 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if QtCore.Qt.MetaModifier & qtmod:
             mod += keys.META,
         return mod
+
+    def __del__(self):
+        # Destroy if this is a toplevel widget
+        if self.parent() is None:
+            self.destroy()
+        if hasattr(QtOpenGL.QGLWidget, '__del__'):
+            QtOpenGL.QGLWidget.__del__(self)
 
 
 # class QtMouseEvent(MouseEvent):

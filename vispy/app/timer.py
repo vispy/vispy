@@ -12,7 +12,20 @@ from .base import BaseTimerBackend as TimerBackend  # noqa
 
 class Timer(object):
 
-    """Timer used to schedule events in the future or on a repeating schedule.
+    """Timer used to schedule events in the future or on a repeating schedule
+
+    Parameters
+    ----------
+    interval : float
+        Time between events.
+    connect : function | None
+        The function to call.
+    iterations : int
+        Number of iterations. Can be -1 for infinite.
+    start : bool
+        Whether to start the timer.
+    app : instance of vispy.app.Application
+        The application to attach the timer to.
     """
 
     def __init__(

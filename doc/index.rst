@@ -19,11 +19,9 @@ Contents:
 .. toctree::
    :maxdepth: 2
    
-   vispy.util - Utilities <util>
    vispy.app - Application API <app>
    vispy.gloo - object oriented GL API <gloo>
-   vispy.visuals <visuals>
-   vispy.scene <scene>
+   vispy.util - Utilities <util>
    
    examples
    releasenotes

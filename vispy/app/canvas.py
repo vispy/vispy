@@ -11,7 +11,6 @@ from ..util.event import EmitterGroup, Event
 from ..util.ptime import time
 from ..util.six import string_types
 from .application import Application
-from .base import BaseCanvasBackend as CanvasBackend  # noqa
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -30,8 +29,8 @@ class Canvas(object):
     initialize, resize, paint, mouse_press, mouse_release, mouse_move,
     mouse_wheel, key_press, key_release, stylus, touch, close
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     title : str
         The widget title
     size : (width, height)
@@ -42,7 +41,8 @@ class Canvas(object):
         Whether to show the widget immediately. Default False.
     autoswap : bool
         Whether to swap the buffers automatically after a paint event.
-        Default True.
+        Default True. If True, the ``swap_buffers`` Canvas method will
+        be called last (by default) by the ``canvas.paint`` event handler.
     app : Application | str
         Give vispy Application instance to use as a backend.
         (vispy.app is used by default.) If str, then an application
@@ -73,26 +73,30 @@ class Canvas(object):
                                    key_release=KeyEvent,
                                    stylus=Event,
                                    touch=Event,
-                                   close=Event,
-                                   )
+                                   close=Event)
+        size = [int(s) for s in size]
+        if len(size) != 2:
+            raise ValueError('size must be a 2-element list')
+        title = str(title)
 
         # Initialize backend attribute
         self._backend = None
         if init_gloo:
-            self.events.initialize.connect(_gloo_initialize)
-        self._native_args = native_args or ()
-        self._native_kwargs = native_kwargs or {}
+            self.events.initialize.connect(_gloo_initialize,
+                                           ref='gloo_initialize')
+        self._backend_args = native_args or ()
+        self._backend_kwargs = native_kwargs or {}
 
-        # Collect arguments that we will use later
-        self._our_kwargs = {}
-        self._our_kwargs['title'] = title
-        self._our_kwargs['size'] = size
-        self._our_kwargs['position'] = position
-        self._our_kwargs['show'] = show
-        self._our_kwargs['autoswap'] = autoswap
+        # change arguments that get set on Canvas init
+        # XXX eventually we can add Context-related kwargs here
+        self._backend_kwargs['_vispy_title'] = title
+        self._backend_kwargs['_vispy_size'] = size
+        self._backend_kwargs['_vispy_show'] = show
+        self._backend_kwargs['_vispy_position'] = position
 
         # Initialise some values
-        self._title = ''
+        self._autoswap = autoswap
+        self._title = title
         self._frame_count = 0
         self._fps = 0
         self._basetime = time()
@@ -117,27 +121,20 @@ class Canvas(object):
         self._app.use()
         assert self._app.native
         # Instantiate the backend with the right class
-        self._set_backend(
-            self._app.backend_module.CanvasBackend(*self._native_args,
-                                                   **self._native_kwargs))
+        be = self._app.backend_module.CanvasBackend(*self._backend_args,
+                                                    **self._backend_kwargs)
+        self._set_backend(be)
 
     def _set_backend(self, backend):
+        """ Set backend<->canvas references and autoswap
+        """
         assert backend is not None  # should never happen
         self._backend = backend
         self._backend._vispy_canvas = self
-
-        # Initialize it
-        self.title = self._our_kwargs['title']
-        self.size = self._our_kwargs['size']
-        if self._our_kwargs['position']:
-            self.position = self._our_kwargs['position']
-        if self._our_kwargs['autoswap']:
-            fun = lambda x: self._backend._vispy_swap_buffers()
-            self.events.paint.callbacks.append(fun)  # Append callback to end
-        # Don't just always call this -- explicitly calling "hide" on a
-        # QWidget changes the behavior, so only call "show" if it's requested
-        if self._our_kwargs['show']:
-            self.show()
+        if self._autoswap:
+            # append to the end
+            self.events.paint.connect((self, 'swap_buffers'),
+                                      ref=True, position='last')
 
     @property
     def app(self):
@@ -213,7 +210,7 @@ class Canvas(object):
         is emitted. """
         return self._fps
 
-    def swap_buffers(self):
+    def swap_buffers(self, event=None):
         """ Swap GL buffers such that the offscreen buffer becomes visible.
         """
         self._backend._vispy_swap_buffers()
@@ -253,9 +250,18 @@ class Canvas(object):
             self._fps_callback(self.fps)
 
     def measure_fps(self, window=1, callback=print):
-        """ Sets the update window, connects the paint event to
+        """Measure the current FPS
+
+        Sets the update window, connects the paint event to
         update_fps and sets the callback function
-        If no callback is passed, measurement stops
+        If no callback is passed, measurement stops.
+
+        Parameters
+        ----------
+        window : int
+            The window number.
+        callback : function
+            The function to call with the FPS. Default is ``print``.
         """
         # Connect update_fps function to paint
         self.events.paint.disconnect(self._update_fps)
@@ -326,13 +332,13 @@ class Canvas(object):
 # Event subclasses specific to the Canvas
 class MouseEvent(Event):
 
-    """ Class describing mouse events.
+    """Mouse event class
 
     Note that each event object has an attribute for each of the input
     arguments listed below.
 
-    Input arguments
-    ---------------
+    Parameters
+    ----------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
     pos : (int, int)
@@ -450,13 +456,13 @@ class MouseEvent(Event):
 
 class KeyEvent(Event):
 
-    """ Class describing mouse events.
+    """Key event class
 
     Note that each event object has an attribute for each of the input
     arguments listed below.
 
-    Input arguments
-    ---------------
+    Parameters
+    ----------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
     key : vispy.keys.Key instance
@@ -493,13 +499,13 @@ class KeyEvent(Event):
 
 class ResizeEvent(Event):
 
-    """ Class describing canvas resize events.
+    """ Resize event class
 
     Note that each event object has an attribute for each of the input
     arguments listed below.
 
-    Input arguments
-    ---------------
+    Parameters
+    ----------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
     size : (int, int)
@@ -521,15 +527,16 @@ class ResizeEvent(Event):
 
 class PaintEvent(Event):
 
-    """ Class describing canvas paint events.
+    """ Paint event class
+
     This type of event is sent to Canvas.events.paint when a repaint
     is required.
 
     Note that each event object has an attribute for each of the input
     arguments listed below.
 
-    Input arguments
-    ---------------
+    Parameters
+    ----------
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
     region : (int, int, int, int) or None

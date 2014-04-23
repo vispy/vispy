@@ -1,3 +1,4 @@
+from nose.tools import assert_raises, assert_equal
 import unittest
 import copy
 import functools
@@ -170,6 +171,7 @@ class TestEmitters(unittest.TestCase):
         em.connect(cb2)
         self.result = None
         em.disconnect(cb2)
+        em.disconnect(cb2)  # should pass silently
         ev = em()
         self.assert_result(event=ev)
 
@@ -468,3 +470,69 @@ class TestEmitters(unittest.TestCase):
                 attr = event_attrs[name]
                 assert (attr == val), "Event.%s != %s  (%s)" % (
                     name, str(val), str(attr))
+
+
+def test_event_connect_order():
+    """Test event connection order"""
+    def a():
+        return
+
+    def b():
+        return
+
+    def c():
+        return
+
+    def d():
+        return
+
+    def e():
+        return
+
+    def f():
+        return
+
+    em = EventEmitter(type='test_event')
+    assert_raises(ValueError, em.connect, c, before=['c', 'foo'])
+    assert_raises(ValueError, em.connect, c, position='foo')
+    assert_raises(TypeError, em.connect, c, ref=dict())
+    em.connect(c, ref=True)
+    assert_equal((c,), tuple(em.callbacks))
+    em.connect(c)
+    assert_equal((c,), tuple(em.callbacks))
+    em.connect(d, ref=True, position='last')
+    assert_equal((c, d), tuple(em.callbacks))
+    em.connect(b, ref=True)  # position='first'
+    assert_equal((b, c, d), tuple(em.callbacks))
+    assert_raises(RuntimeError, em.connect, a, before='c', after='d')  # can't
+    em.connect(a, ref=True, before=['c', 'd'])  # first possible pos == 0
+    assert_equal((a, b, c, d), tuple(em.callbacks))
+    em.connect(f, ref=True, after=['c', 'd'])
+    assert_equal((a, b, c, d, f), tuple(em.callbacks))
+    em.connect(e, ref=True, after='d', before='f')
+    assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_refs))
+    em.disconnect(e)
+    em.connect(e, ref=True, after='a', before='f', position='last')
+    assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_refs))
+    em.disconnect(e)
+    em.connect(e, ref='e', after='d', before='f', position='last')
+    assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_refs))
+    em.disconnect(e)
+    em.connect(e, after='d', before='f', position='first')  # no name
+    assert_equal(('a', 'b', 'c', 'd', None, 'f'), tuple(em.callback_refs))
+    em.disconnect(e)
+    assert_raises(ValueError, em.connect, e, ref='d')  # duplicate name
+    em.connect(e, ref=True, after=[], before='f', position='last')
+    assert_equal(('a', 'b', 'c', 'd', 'e', 'f'), tuple(em.callback_refs))
+    assert_equal((a, b, c, d, e, f), tuple(em.callbacks))
+
+    old_e = e
+
+    def e():
+        return
+
+    assert_raises(ValueError, em.connect, e, ref=True)  # duplicate name
+    em.connect(e)
+    assert_equal((None, 'a', 'b', 'c', 'd', 'e', 'f'),
+                 tuple(em.callback_refs))
+    assert_equal((e, a, b, c, d, old_e, f), tuple(em.callbacks))

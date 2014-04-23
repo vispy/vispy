@@ -14,10 +14,10 @@ def use(backend_name=None):
     ----------
     name : str | None
         If None (default), a suitable backend will be chosen automatically.
-        It is an error to try to select a particular backend if one is
-        already selected. Available backends:
-        'PySide', 'PyQt4', 'Glut', 'Pyglet', 'qt'. 'qt' will use PySide
-        or PyQt4, whichever works.
+        Trying to select a particular backend when one is already selected
+        will raise an error. Available backends:
+        'PySide', 'PyQt4', 'Glut', 'Glfw', 'Pyglet', 'qt'. 'qt' will use
+        PySide or PyQt4, whichever works.
 
     Notes
     -----

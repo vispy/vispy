@@ -109,7 +109,7 @@ def create_examples(examples):
         output_filename = os.path.join(OUTPUT_DIR, name + '.rst')
         output_dir = os.path.dirname(output_filename)
         if not os.path.isdir(output_dir):
-            os.mkdir(output_dir)
+            os.makedirs(output_dir)
         with open(output_filename, 'w') as f:
             f.write('\n'.join(lines))
 

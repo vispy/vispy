@@ -56,9 +56,9 @@ def generate_points(length=3):
     """Generates points via recursive function and generate triangles using
     Scipy Delaunay triangulation
 
-    Input arguments
-    ---------------
-    length : int 
+    Parameters
+    ----------
+    length : int
         (2 ** length + 1 by 2 ** length + 1) number of points is generated
 
     """
