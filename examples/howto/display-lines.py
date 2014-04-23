@@ -10,7 +10,6 @@ using one call, by discarting some fragments.
 import numpy as np
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
 # app.use('glut')
@@ -79,10 +78,8 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gloo.set_clear_color((1, 1, 1, 1))
+        gloo.set_state('translucent')
 
     # ---------------------------------
     def on_key_press(self, event):
@@ -105,7 +102,7 @@ class Canvas(app.Canvas):
     # ---------------------------------
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
         self.program['u_projection'] = self.projection
 
@@ -120,8 +117,8 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_paint(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        self.program.draw(gl.GL_LINE_STRIP)
+        gloo.clear()
+        self.program.draw('line_strip')
 
 
 if __name__ == '__main__':

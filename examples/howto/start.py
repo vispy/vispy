@@ -4,15 +4,15 @@
 """
 
 from vispy import app
-from vispy.gloo import gl
+from vispy import gloo
 
 c = app.Canvas(show=True)
 
 
 @c.connect
 def on_paint(event):
-    gl.glClearColor(0.2, 0.4, 0.6, 1.0)
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+    gloo.set_clear_color((0.2, 0.4, 0.6, 1.0))
+    gloo.clear()
 
 if __name__ == '__main__':
     app.run()

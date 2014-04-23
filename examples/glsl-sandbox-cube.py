@@ -8,7 +8,6 @@ or PyQt4.
 import numpy as np
 from vispy import app, gloo, dataio
 from vispy.util.transforms import perspective, translate, rotate
-from vispy.gloo import gl
 
 # Force using qt and take QtCore+QtGui from backend module,
 # since we do not know whether PySide or PyQt4 is used
@@ -45,6 +44,7 @@ void main()
     float ty = v_texcoord.y;
     float tx = sin(ty*50.0)*0.01 + v_texcoord.x;
     gl_FragColor = texture2D(u_texture, vec2(tx, ty));
+    
 }
 """
 
@@ -53,7 +53,7 @@ void main()
 positions, faces, normals, texcoords = dataio.read_mesh('cube.obj')
 colors = np.random.uniform(0, 1, positions.shape).astype('float32')
 
-faces_buffer = gloo.ElementBuffer(faces.astype(np.uint16))
+faces_buffer = gloo.IndexBuffer(faces.astype(np.uint16))
 
 
 class Canvas(app.Canvas):
@@ -78,19 +78,19 @@ class Canvas(app.Canvas):
         self.timer.start()
 
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
-        gl.glEnable(gl.GL_DEPTH_TEST)
+        gloo.set_clear_color((1, 1, 1, 1))
+        gloo.set_state(depth=True)
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(45.0, width / float(height), 2.0, 10.0)
         self.program['u_projection'] = self.projection
 
     def on_paint(self, event):
 
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        self.program.draw(gl.GL_TRIANGLES, faces_buffer)
+        gloo.clear()
+        self.program.draw('triangles', faces_buffer)
 
     def init_transforms(self):
         self.view = np.eye(4, dtype=np.float32)
@@ -166,8 +166,8 @@ class MainWindow(QtGui.QWidget):
     def on_compile(self):
         vert_code = str(self.vertEdit.toPlainText())
         frag_code = str(self.fragEdit.toPlainText())
-        self.canvas.program.shaders[0].set_code(vert_code)
-        self.canvas.program.shaders[1].set_code(frag_code)
+        self.canvas.program.shaders[0].code = vert_code
+        self.canvas.program.shaders[1].code = frag_code
 
 
 if __name__ == '__main__':
