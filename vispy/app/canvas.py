@@ -7,7 +7,7 @@ from __future__ import division, print_function
 import numpy as np
 
 from ._default_app import default_app
-from ..util.event import EmitterGroup, Event
+from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..ext.six import string_types
 from .application import Application
@@ -91,8 +91,14 @@ class Canvas(object):
                                    touch=Event,
                                    close=Event)
         
-        # deprecation warning for on_paint
-        self.events.draw.connect(self._on_paint)
+        # Deprecated paint emitter
+        emitter = WarningEmitter('Canvas.events.paint and Canvas.on_paint are '
+                                 'deprecated; use Canvas.events.draw and '
+                                 'Canvas.on_draw instead.',
+                                 source=self, type='draw', 
+                                 event_class=DrawEvent)
+        self.events.add(paint=emitter)
+        self.events.draw.connect(self.events.paint)
         
         size = [int(s) for s in size]
         if len(size) != 2:
