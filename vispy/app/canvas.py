@@ -90,6 +90,10 @@ class Canvas(object):
                                    stylus=Event,
                                    touch=Event,
                                    close=Event)
+        
+        # deprecation warning for on_paint
+        self.events.draw.connect(self._on_paint)
+        
         size = [int(s) for s in size]
         if len(size) != 2:
             raise ValueError('size must be a 2-element list')
