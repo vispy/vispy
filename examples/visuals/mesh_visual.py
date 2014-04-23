@@ -9,13 +9,13 @@ Simple demonstration of LineVisual.
 import numpy as np
 import vispy.app
 from vispy.gloo import gl
-from vispy.visuals.mesh import MeshVisual
-from vispy.visuals.components import (
+from vispy.scene import visuals
+from vispy.scene.components import (
                                 VertexColorComponent, 
                                 GridContourComponent, VertexNormalComponent,
                                 ShadingComponent)
 from vispy.util.meshdata import MeshData
-from vispy.visuals.transforms import (STTransform, AffineTransform, 
+from vispy.scene.transforms import (STTransform, AffineTransform, 
                                       ChainTransform)
 
 
@@ -30,7 +30,7 @@ class Canvas(vispy.app.Canvas):
         
         # Mesh with pre-indexed vertexes, uniform color
         verts = mdata.vertexes(indexed='faces')
-        mesh = MeshVisual(pos=verts, color=(1, 0, 0, 1))
+        mesh = visuals.Mesh(pos=verts, color=(1, 0, 0, 1))
         self.meshes.append(mesh)
         
         # Mesh with pre-indexed vertexes, per-face color
@@ -42,7 +42,7 @@ class Canvas(vispy.app.Canvas):
         fcolor[...,0] = np.linspace(1, 0, nf)[:, np.newaxis]
         fcolor[...,1] = np.random.normal(size=nf)[:, np.newaxis]
         fcolor[...,2] = np.linspace(0, 1, nf)[:, np.newaxis]
-        mesh = MeshVisual(pos=verts, color=fcolor)
+        mesh = visuals.Mesh(pos=verts, color=fcolor)
         self.meshes.append(mesh)        
 
         # Mesh with unindexed vertexes, per-vertex color
@@ -56,18 +56,18 @@ class Canvas(vispy.app.Canvas):
         vcolor[:,0] = np.linspace(1, 0, nv)
         vcolor[:,1] = np.random.normal(size=nv)
         vcolor[:,2] = np.linspace(0, 1, nv)
-        mesh = MeshVisual(pos=verts, faces=faces, color=vcolor)
+        mesh = visuals.Mesh(pos=verts, faces=faces, color=vcolor)
         self.meshes.append(mesh)
         
         # Mesh colored by vertexes + grid contours
-        mesh = MeshVisual(pos=verts, faces=faces)
+        mesh = visuals.Mesh(pos=verts, faces=faces)
         mesh.color_components = [VertexColorComponent(vcolor),
                                     GridContourComponent(
                                         spacing=(0.13, 0.13, 0.13))]
         self.meshes.append(mesh)
         
         # Phong shaded mesh
-        mesh = MeshVisual(pos=verts, faces=faces)
+        mesh = visuals.Mesh(pos=verts, faces=faces)
         normal_comp = VertexNormalComponent(mdata)
         mesh.color_components = [VertexColorComponent(vcolor), 
                                     GridContourComponent(
@@ -79,7 +79,7 @@ class Canvas(vispy.app.Canvas):
         self.meshes.append(mesh)
         
         # Phong shaded mesh, flat faces
-        mesh = MeshVisual(pos=mdata.vertexes(indexed='faces'))
+        mesh = visuals.Mesh(pos=mdata.vertexes(indexed='faces'))
         normal_comp = VertexNormalComponent(mdata, smooth=False)
         mesh.color_components = [VertexColorComponent(vcolor[mdata.faces()]),
                                     GridContourComponent(

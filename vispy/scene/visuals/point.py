@@ -6,18 +6,18 @@ from __future__ import division
 
 import numpy as np
 
-from .. import gloo
+from ... import gloo
 from .visual import Visual
-from .components import (XYPosComponent, XYZPosComponent, 
+from ..components import (XYPosComponent, XYZPosComponent, 
                          UniformColorComponent, VertexColorComponent)
-from .shaders import Function
+from ..shaders import Function
 
-class PointVisual(Visual):
+class Point(Visual):
     """
     Displays multiple point sprites.
     """
     def __init__(self, pos=None, **kwds):
-        super(PointVisual, self).__init__()
+        super(Point, self).__init__()
         
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
@@ -45,4 +45,4 @@ class PointVisual(Visual):
         GL_POINT_SPRITE = 34913
         gloo.gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
         gloo.gl.glEnable(GL_POINT_SPRITE)
-        super(PointVisual, self).paint()
+        super(Point, self).paint()

@@ -9,11 +9,10 @@ import numpy as np
 import vispy.app
 from vispy.gloo import gl
 import vispy.gloo as gloo
-from vispy.visuals.line import LineVisual
-from vispy.visuals.transforms import Transform, STTransform, arg_to_array
-from vispy.visuals.shaders import Function
-from vispy.visuals import VisualComponent
-from vispy.visuals.components import VertexColorComponent, XYPosComponent
+from vispy.scene import visuals
+from vispy.scene.transforms import Transform, STTransform, arg_to_array
+from vispy.scene.shaders import Function
+from vispy.scene.components import VisualComponent, VertexColorComponent, XYPosComponent
 
 # vertex positions of data to draw
 N = 50
@@ -140,7 +139,7 @@ class WobbleComponent(VisualComponent):
 class Canvas(vispy.app.Canvas):
     def __init__(self):
         
-        self.line = LineVisual()
+        self.line = visuals.Line()
         self.line.transform = (STTransform(scale=(0.1,.3)) * 
                                SineTransform() * 
                                STTransform(scale=(10,3)))

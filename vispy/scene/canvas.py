@@ -1,11 +1,17 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+from __future__ import division
+
 from ..gloo import gl
 from .. import app
-from .entities import Document
-from ..visuals.transforms import STTransform
+from .viewbox import Document
+from .transforms import STTransform
 from .events import ScenePaintEvent, SceneMouseEvent
 
-class SceneCanvas(app.Canvas):
 
+class SceneCanvas(app.Canvas):
     """ SceneCanvas provides a Canvas that automatically draws the contents
     of a scene.
     

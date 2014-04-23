@@ -5,12 +5,12 @@
 from __future__ import division
 from .visual import Visual
 
-class MeshVisual(Visual):
+class Mesh(Visual):
     """
     Displays a 3D triangle mesh.
     """
     def __init__(self, **kwds):
-        super(MeshVisual, self).__init__()
+        super(Mesh, self).__init__()
         
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
@@ -20,4 +20,4 @@ class MeshVisual(Visual):
 
     def set_data(self, **kwds):
         kwds['index'] = kwds.pop('faces', kwds.get('index', None))
-        super(MeshVisual, self).set_data(**kwds)
+        super(Mesh, self).set_data(**kwds)

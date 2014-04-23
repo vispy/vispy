@@ -5,8 +5,9 @@
 from __future__ import division
 
 from ..util.event import Event
-from ..visuals.transforms import STTransform, ChainTransform
+from .transforms import STTransform, ChainTransform
 from ..gloo import gl
+
 
 class SceneEvent(Event):
     """
