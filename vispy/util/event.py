@@ -434,7 +434,7 @@ class EventEmitter(object):
                 if self.print_callback_errors:
                     sys.excepthook(type, value, tb)
                     logger.warning("Error invoking callback for "
-                                    "event: %s" % str(event))
+                                   "event: %s" % str(event))
             else:
                 raise
 
@@ -511,8 +511,6 @@ class WarningEmitter(EventEmitter):
         traceback.print_stack()
         logger.warn(self._message)
         self._warned = True
-            
-        
         
 
 class EmitterGroup(EventEmitter):

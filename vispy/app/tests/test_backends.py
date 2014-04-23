@@ -102,7 +102,7 @@ def _test_module_properties(_module=None):
     canvas = vispy.app.Canvas(create_native=False)
     # Stylus and touch are ignored because they are not yet implemented.
     # Mouse events are emitted from the CanvasBackend base class.
-    ignore = set(['stylus', 'touch', 'mouse_press',
+    ignore = set(['stylus', 'touch', 'mouse_press', 'paint',
                   'mouse_move', 'mouse_release'])
     eventNames = set(canvas.events._emitters.keys()) - ignore
     
