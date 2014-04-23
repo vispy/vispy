@@ -33,7 +33,7 @@ class BaseCanvasBackend(object):
     Each backend must implement a subclass of CanvasBackend, and
     implement all its _vispy_xxx methods. Also, also a backend must
     make sure to generate the following events: 'initialize', 'resize',
-    'paint', 'mouse_press', 'mouse_release', 'mouse_move',
+    'draw', 'mouse_press', 'mouse_release', 'mouse_move',
     'mouse_wheel', 'key_press', 'key_release', 'close'.
     """
 
@@ -60,7 +60,7 @@ class BaseCanvasBackend(object):
     def _vispy_set_current(self):
         # todo: this is currently not used internally
         # --> I think the backends should call this themselves before
-        #     emitting the paint event
+        #     emitting the draw event
         # Make this the current context
         raise NotImplementedError()
 

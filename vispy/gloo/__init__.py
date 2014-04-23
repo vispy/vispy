@@ -26,7 +26,7 @@ Example::
     program['s_texture'] = gloo.Texture2D(my_image)
     ...
 
-    # Paint event handler
+    # Draw event handler
     program['u_color'] = 0.0, 1.0, 0.0
     program.draw(gl.GL_TRIANGLES)
 

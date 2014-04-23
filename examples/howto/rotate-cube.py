@@ -147,7 +147,7 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
 
     # ---------------------------------
-    def on_paint(self, event):
+    def on_draw(self, event):
         gloo.clear()
 
         # Filled cube

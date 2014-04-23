@@ -116,7 +116,7 @@ class Canvas(app.Canvas):
         self.update()
 
     # ---------------------------------
-    def on_paint(self, event):
+    def on_draw(self, event):
         gloo.clear()
         self.program.draw('line_strip')
 

@@ -16,7 +16,7 @@ canvas = app.Canvas(size=(512, 512), title = "Do nothing benchmark (vispy)")
 
 
 @canvas.connect
-def on_paint(event):
+def on_draw(event):
     global t, t0, frames
     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 

@@ -87,7 +87,7 @@ class Canvas(app.Canvas):
         self.projection = perspective(45.0, width / float(height), 2.0, 10.0)
         self.program['u_projection'] = self.projection
 
-    def on_paint(self, event):
+    def on_draw(self, event):
 
         gloo.clear()
         self.program.draw('triangles', faces_buffer)

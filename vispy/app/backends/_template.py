@@ -137,7 +137,7 @@ class CanvasBackend(BaseCanvasBackend):
 
         self._vispy_canvas.events.initialize()
         self._vispy_canvas.events.resize(size=(w, h))
-        self._vispy_canvas.events.paint(region=None)
+        self._vispy_canvas.events.draw(region=None)
         self._vispy_canvas.events.close()
 
         self._vispy_canvas.events.mouse_press(

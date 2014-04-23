@@ -186,7 +186,7 @@ class MolecularViewerCanvas(app.Canvas):
         self.program['u_view'] = self.view
         self.update()
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         gloo.clear()
         self.program.draw('points')
 

@@ -10,7 +10,7 @@ c = app.Canvas(show=True)
 
 
 @c.connect
-def on_paint(event):
+def on_draw(event):
     gloo.set_clear_color((0.2, 0.4, 0.6, 1.0))
     gloo.clear()
 
