@@ -10,12 +10,12 @@ from ._default_app import default_app
 from ..util.event import EmitterGroup, Event
 from ..util.ptime import time
 from ..util.six import string_types
+from ..util import logger
 from .application import Application
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
 # todo: add focus events
-
 
 def _gloo_initialize(event):
     from ..gloo import gl_initialize
@@ -74,6 +74,10 @@ class Canvas(object):
                                    stylus=Event,
                                    touch=Event,
                                    close=Event)
+        
+        # deprecation warning for on_paint
+        self.events.draw.connect(self._on_paint)
+        
         size = [int(s) for s in size]
         if len(size) != 2:
             raise ValueError('size must be a 2-element list')
@@ -283,6 +287,13 @@ class Canvas(object):
 
     def __exit__(self, type, value, traceback):
         self.close()
+        
+    def _on_paint(self, ev):
+        if hasattr(self, 'on_paint'):
+            if not hasattr(self, '_on_paint_warning_shown'):
+                logger.warn("Canvas.on_paint is deprecated; use Canvas.on_draw instead.")
+                self._on_paint_warning_shown = True
+            return self.on_paint(ev)
 
     # def mouse_event(self, event):
         #"""Called when a mouse input event has occurred (the mouse has moved,
