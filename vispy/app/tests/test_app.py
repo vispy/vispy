@@ -38,7 +38,7 @@ def _test_callbacks(canvas):
     if backend_name.lower() == 'pyglet':
         # Test Pyglet callbacks can take reasonable args
         backend.on_resize(100, 100)
-        backend.our_paint_func()
+        backend.our_draw_func()
         backend.on_mouse_press(10, 10, 1)
         backend.on_mouse_release(10, 11, 1)
         backend.on_mouse_motion(10, 12, 0, 1)
@@ -119,8 +119,8 @@ def test_run():
         raise SkipTest('cannot test running glut')  # knownfail
     for _ in range(2):
         with Canvas(size=(100, 100), show=True, title=' run') as c:
-            @c.events.paint.connect
-            def paint(event):
+            @c.events.draw.connect
+            def draw(event):
                 print(event)  # test event __repr__
                 c.app.quit()
             c.update()
@@ -175,7 +175,7 @@ def test_application():
         assert_true(canvas.create_native() is None)  # should be done already
         assert_is(canvas.app, app)
         assert_true(canvas.native)
-        assert_equal('swap_buffers', canvas.events.paint.callback_refs[-1])
+        assert_equal('swap_buffers', canvas.events.draw.callback_refs[-1])
 
         # FPS
         canvas.measure_fps(0.001)

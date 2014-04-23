@@ -105,7 +105,7 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
         self.program['u_size'] = self.u_size
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         gloo.clear()
         self.program.draw('points')
 

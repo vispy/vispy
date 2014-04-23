@@ -38,8 +38,8 @@ def test_qt_designer():
         canvas._set_backend(win.ui.canvas)
         canvas.create_native()
 
-        @canvas.events.paint.connect
-        def on_paint(ev):
+        @canvas.events.draw.connect
+        def on_draw(ev):
             gl.glClearColor(0.0, 0.0, 0.0, 0.0)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             canvas.swap_buffers()

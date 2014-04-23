@@ -254,7 +254,7 @@ class Maker:
                 if not frames:
                     m.done = True
             c = m.Canvas()
-            c.events.paint.connect(grabscreenshot)
+            c.events.draw.connect(grabscreenshot)
             c.show()
             while not m.done:
                 m.app.process_events()

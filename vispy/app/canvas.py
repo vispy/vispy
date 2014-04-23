@@ -27,7 +27,7 @@ class Canvas(object):
     """Representation of a GUI element with an OpenGL context
 
     Receives the following events:
-    initialize, resize, paint, mouse_press, mouse_release, mouse_move,
+    initialize, resize, draw, mouse_press, mouse_release, mouse_move,
     mouse_wheel, key_press, key_release, stylus, touch, close
 
     Parameters
@@ -41,9 +41,9 @@ class Canvas(object):
     show : bool
         Whether to show the widget immediately. Default False.
     autoswap : bool
-        Whether to swap the buffers automatically after a paint event.
+        Whether to swap the buffers automatically after a draw event.
         Default True. If True, the ``swap_buffers`` Canvas method will
-        be called last (by default) by the ``canvas.paint`` event handler.
+        be called last (by default) by the ``canvas.draw`` event handler.
     app : Application | str
         Give vispy Application instance to use as a backend.
         (vispy.app is used by default.) If str, then an application
@@ -80,7 +80,7 @@ class Canvas(object):
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
                                    resize=ResizeEvent,
-                                   paint=PaintEvent,
+                                   draw=DrawEvent,
                                    mouse_press=MouseEvent,
                                    mouse_release=MouseEvent,
                                    mouse_move=MouseEvent,
@@ -158,8 +158,8 @@ class Canvas(object):
         self._backend._vispy_canvas = self
         if self._autoswap:
             # append to the end
-            self.events.paint.connect((self, 'swap_buffers'),
-                                      ref=True, position='last')
+            self.events.draw.connect((self, 'swap_buffers'),
+                                     ref=True, position='last')
 
     @property
     def context(self):
@@ -181,7 +181,7 @@ class Canvas(object):
 
     def connect(self, fun):
         """ Connect a function to an event. The name of the function
-        should be on_X, with X the name of the event (e.g. 'on_paint').
+        should be on_X, with X the name of the event (e.g. 'on_draw').
 
         This method is typically used as a decorater on a function
         definition for an event handler.
@@ -237,7 +237,7 @@ class Canvas(object):
     # ----------------------------------------------------------------- fps ---
     @property
     def fps(self):
-        """ The fps of canvas/window, measured as the rate that events.paint
+        """ The fps of canvas/window, measured as the rate that events.draw
         is emitted. """
         return self._fps
 
@@ -251,7 +251,7 @@ class Canvas(object):
         return self._backend._vispy_set_visible(visible)
 
     def update(self):
-        """ Inform the backend that the Canvas needs to be repainted """
+        """ Inform the backend that the Canvas needs to be redrawn """
         if self._backend is not None:
             return self._backend._vispy_update()
         else:
@@ -284,7 +284,7 @@ class Canvas(object):
     def measure_fps(self, window=1, callback=print):
         """Measure the current FPS
 
-        Sets the update window, connects the paint event to
+        Sets the update window, connects the draw event to
         update_fps and sets the callback function
         If no callback is passed, measurement stops.
 
@@ -295,11 +295,11 @@ class Canvas(object):
         callback : function
             The function to call with the FPS. Default is ``print``.
         """
-        # Connect update_fps function to paint
-        self.events.paint.disconnect(self._update_fps)
+        # Connect update_fps function to draw
+        self.events.draw.disconnect(self._update_fps)
         if callback:
             self._fps_window = window
-            self.events.paint.connect(self._update_fps)
+            self.events.draw.connect(self._update_fps)
             self._fps_callback = callback
         else:
             self._fps_callback = None
@@ -355,11 +355,11 @@ class Canvas(object):
         #     event.size  (w,h)
         #"""
 
-    # def paint_event(self, event):
-        #"""Called when all or part of the Canvas needs to be repainted.
+    # def draw_event(self, event):
+        #"""Called when all or part of the Canvas needs to be redrawn.
 
         # Event properties:
-        #     event.region  (x,y,w,h) region of Canvas requiring repaint
+        #     event.region  (x,y,w,h) region of Canvas requiring redraw
         #"""
 
 
@@ -559,11 +559,11 @@ class ResizeEvent(Event):
         return self._size
 
 
-class PaintEvent(Event):
+class DrawEvent(Event):
 
-    """ Paint event class
+    """ Draw event class
 
-    This type of event is sent to Canvas.events.paint when a repaint
+    This type of event is sent to Canvas.events.draw when a redraw
     is required.
 
     Note that each event object has an attribute for each of the input
@@ -574,8 +574,8 @@ class PaintEvent(Event):
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
     region : (int, int, int, int) or None
-        The region of the canvas which needs to be repainted (x, y, w, h).
-        If None, the entire canvas must be repainted.
+        The region of the canvas which needs to be redrawn (x, y, w, h).
+        If None, the entire canvas must be redrawn.
     native : object (optional)
        The native GUI event object
     **kwds : extra keyword arguments

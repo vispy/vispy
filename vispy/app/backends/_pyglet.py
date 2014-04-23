@@ -227,7 +227,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         # Is called by event loop after each event, whatever event ... really
         if not self._draw_ok:
             self._draw_ok = True
-            self.our_paint_func()
+            self.our_draw_func()
 
     def draw_mouse_cursor(self):
         # Prevent legacy OpenGL
@@ -262,7 +262,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
 
     def _vispy_update(self):
         # Invoke a redraw
-        pyglet.clock.schedule_once(self.our_paint_func, 0.0)
+        pyglet.clock.schedule_once(self.our_draw_func, 0.0)
 
     def _vispy_close(self):
         # Force the window or widget to shut down
@@ -305,12 +305,12 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         self._vispy_canvas.events.resize(size=(w, h))
         # self._vispy_update()
 
-    def our_paint_func(self, dummy=None):
+    def our_draw_func(self, dummy=None):
         if not self._draw_ok or self._vispy_canvas is None:
             return
         # (0, 0, self.width, self.height))
         self._vispy_set_current()
-        self._vispy_canvas.events.paint(region=None)
+        self._vispy_canvas.events.draw(region=None)
 
     def on_mouse_press(self, x, y, button, modifiers=None):
         if self._vispy_canvas is None:

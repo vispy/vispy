@@ -24,7 +24,7 @@ class Canvas(app.Canvas):
         timer.start()
         self.tick = 0
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
     def on_timer(self, event):

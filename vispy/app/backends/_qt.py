@@ -298,7 +298,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
             return
         # (0, 0, self.width(), self.height()))
         self._vispy_set_current()
-        self._vispy_canvas.events.paint(region=None)
+        self._vispy_canvas.events.draw(region=None)
 
     def closeEvent(self, ev):
         if self._vispy_canvas is None:

@@ -102,7 +102,7 @@ class Canvas(app.Canvas):
         width, height = event.size
         gl.glViewport(0, 0, width, height)
 
-    def on_paint(self, event):
+    def on_draw(self, event):
 
         # Set geometry (is no-op if the size does not change)
         self._fbo.set_size(*self.size)

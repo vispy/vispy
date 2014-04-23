@@ -8,8 +8,8 @@ The visualization
 -----------------
 
 We create a visualization where the screen is divided in 4 quadrants,
-and each quadrant is painted a different color (black, red, green,
-blue). The painting is done for 50% using attribute data, and 50%
+and each quadrant is drawn a different color (black, red, green,
+blue). The drawing is done for 50% using attribute data, and 50%
 using a texture. The end result should be fully saturated colors.
 
 Remember: the bottom left is (-1, -1) and the first quadrant. 
@@ -90,7 +90,7 @@ def _test_functonality(backend):
         gl.glScissor(0, 0, w, h)  # touch
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         
-        # Setup visualization, ensure to do it in a paint event
+        # Setup visualization, ensure to do it in a draw event
         objects = _prepare_vis()
         _clear_screen()
         _draw1()

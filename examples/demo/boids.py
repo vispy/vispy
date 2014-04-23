@@ -118,7 +118,7 @@ class Canvas(app.Canvas):
         elif self._button == 2:
             predator['position'][:] = sx, sy, 0
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         gloo.clear()
 
         # Draw
