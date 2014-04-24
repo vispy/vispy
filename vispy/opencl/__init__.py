@@ -203,19 +203,6 @@ class Texture2D(texture.Texture2D, TextureOpenCL):
         texture.Texture2D.__init__(self, *args, **kwargs)
 
 
-class TextureCubeMap(texture.TextureCubeMap, TextureOpenCL):
-
-    """ Representation of a cube map, to store texture data for the
-    6 sided of a cube. Used for instance to create environment mappings.
-    Inherits :class:`texture.Texture`.
-
-    """
-
-    def __init__(self, *args, **kwargs):
-        texture.TextureCubeMap.__init__(self, gl.GL_TEXTURE_CUBE_MAP, *args,
-                                        **kwargs)
-
-
 class BufferOpenCL(OpenCL):
 
     """
