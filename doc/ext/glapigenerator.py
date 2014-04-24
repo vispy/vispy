@@ -2,7 +2,6 @@
 """
 
 import os
-import sys
 from vispy.gloo import gl
 
 THISDIR = os.path.dirname(os.path.abspath(__file__))
@@ -33,7 +32,6 @@ def main():
 
     # Get info
     gl_const_names, gl_func_names = parse_api(gl)
-    glext_const_names, glext_func_names = parse_api(gl.ext)
 
     # Write title
     lines.append('OpenGL ES 2.0 API')
@@ -45,12 +43,6 @@ def main():
         'The ``vispy.gloo.gl`` namespace provides the OpenGL ES 2.0 API,')
     lines.append('Consisting of %i constants and %i functions ' %
                  (len(gl_const_names), len(gl_func_names)))
-    lines.append('(with %i and %i more in the extensions) ' %
-                 (len(glext_const_names), len(glext_func_names)))
-
-    lines.append(
-        'At this moment, the functions are taken from OpenGL.GL (provided by the PyOpenGL package).')
-    lines.append('')
 
     # Write class header
     lines.append('**vispy.gloo.gl**\n')
@@ -59,15 +51,6 @@ def main():
     for name in sorted(gl_func_names):
         lines.append('  * %s()' % name)
     for name in sorted(gl_const_names):
-        lines.append('  * %s' % name)
-
-    # Write class header
-    lines.append('**vispy.gloo.gl.ext**\n')
-
-    # Write constants and functions
-    for name in sorted(glext_func_names):
-        lines.append('  * %s()' % name)
-    for name in sorted(glext_const_names):
         lines.append('  * %s' % name)
 
     # Write file

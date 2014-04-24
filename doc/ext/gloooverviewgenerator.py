@@ -59,15 +59,8 @@ def generate_overview_docs():
     lines = []
     lines.append('Overview')
     lines.append('=' * len(lines[-1]))
-
-    for klasses in [(gloo.GLObject,),
-                    (gloo.Program,),
-                    (gloo.VertexShader, gloo.FragmentShader),
-                    (gloo.VertexBuffer, gloo.ElementBuffer),
-                    (gloo.Texture2D, gloo.Texture3D, gloo.TextureCubeMap),
-                    (gloo.RenderBuffer,),
-                    (gloo.FrameBuffer,),
-                    ]:
+    klasseses = ((getattr(gloo, d),) for d in dir(gloo) if d[0].isupper())
+    for klasses in klasseses:
         # Init line
         line = '*'
         for klass in klasses:

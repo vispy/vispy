@@ -49,6 +49,14 @@ class BaseCanvasBackend(object):
             'last_event': None,
         }
 
+    def _process_backend_kwargs(self, kwargs):
+        """Removes vispy-specific kwargs for CanvasBackend"""
+        title = kwargs.pop('_vispy_title', 'vispy window')
+        size = kwargs.pop('_vispy_size', [640, 480])
+        show = kwargs.pop('_vispy_show', True)
+        position = kwargs.pop('_vispy_position', None)
+        return title, size, show, position
+
     def _vispy_set_current(self):
         # todo: this is currently not used internally
         # --> I think the backends should call this themselves before

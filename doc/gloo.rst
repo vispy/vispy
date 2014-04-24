@@ -8,10 +8,8 @@ The object oriented OpenGL API (gloo)
 Base class
 ==========
 
-
 .. autoclass:: vispy.gloo.GLObject
     :members:
-
 
 
 Classes related to shaders
@@ -31,15 +29,13 @@ Classes related to shaders
     :members:
 
 
-
 Buffer classes
 ==============
-
 
 .. autoclass:: vispy.gloo.VertexBuffer
     :members:
 
-.. autoclass:: vispy.gloo.ElementBuffer
+.. autoclass:: vispy.gloo.IndexBuffer
     :members:
 
 .. autoclass:: vispy.gloo.buffer.DataBuffer
@@ -52,11 +48,9 @@ Buffer classes
 Texture classes
 ===============
 
+.. autoclass:: vispy.gloo.Texture1D
+
 .. autoclass:: vispy.gloo.Texture2D
-
-.. autoclass:: vispy.gloo.Texture3D
-
-.. autoclass:: vispy.gloo.TextureCubeMap
 
 .. autoclass:: vispy.gloo.texture.Texture
     :members:
@@ -68,16 +62,18 @@ Classes related to FBO
 .. autoclass:: vispy.gloo.FrameBuffer
     :members:
 
-.. autoclass:: vispy.gloo.RenderBuffer
+
+State methods
+=============
+
+.. automodule:: vispy.gloo.wrappers
     :members:
 
 
 vispy.gloo.gl - low level GL API
 ================================
 
-Vispy also exposes a (low level) functional GL API. At this point gloo
-is not yet fully independenat since it does not cover functions like
-glClear().
+Vispy also exposes a (low level) functional GL API.
 
  `vispy.gloo.gl docs <gl.html>`_
  

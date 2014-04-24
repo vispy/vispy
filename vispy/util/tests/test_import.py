@@ -8,7 +8,7 @@ import os
 import subprocess
 
 from nose.tools import assert_equal
-from vispy.util import assert_in, assert_not_in
+from vispy.util.testing import assert_in, assert_not_in, requires_pyopengl
 
 import vispy
 
@@ -55,7 +55,7 @@ def loaded_vispy_modules(import_module, depth=None, all_modules=False):
     # Get only vispy modules at the given depth
     vispy_modules = set()
     for m in loaded_modules:
-        if m.startswith('vispy') and not '__future__' in m:
+        if m.startswith('vispy') and '__future__' not in m:
             if depth:
                 parts = m.split('.')
                 m = '.'.join(parts[:depth])
@@ -80,7 +80,7 @@ def test_import_vispy_util():
     """ Importing vispy.util should not pull in other vispy submodules. """
     modnames = loaded_vispy_modules('vispy.util', 2)
     assert_equal(modnames, set(['vispy', 'vispy.util']))
-    
+
 
 def test_import_vispy_app1():
     """ Importing vispy.app should not pull in other vispy submodules. """
@@ -109,6 +109,7 @@ def test_import_vispy_no_pyopengl():
     assert_not_in('OpenGL', allmodnames)
 
 
+@requires_pyopengl()
 def test_import_vispy_pyopengl():
     """ Importing vispy.gloo.gl.pyopengl should import PyOpenGL. """
     allmodnames = loaded_vispy_modules('vispy.gloo.gl.pyopengl', 2, True)

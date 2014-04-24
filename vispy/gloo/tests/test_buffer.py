@@ -167,23 +167,25 @@ class DataBufferTest(unittest.TestCase):
     # ------------
     def test_storage(self):
         data = np.ones(100)
-        B = DataBuffer(data, store=True, copy=False)
+        B = DataBuffer(data, store=True)
         assert B.data.base is data
 
     # Use CPU storage but make a local copy for storage
     # -------------------------------------------------
     def test_storage_copy(self):
-        data = np.ones(100)
-        B = DataBuffer(data, store=True, copy=True)
+        data = np.ones(100, np.float32)
+        B = DataBuffer(data.copy(), store=True)  # we got rid of copy arg
         assert B.data is not None
         assert B.data is not data
+        assert B.stride == 4
 
     # No CPU storage
     # --------------
     def test_no_storage_copy(self):
-        data = np.ones(100)
+        data = np.ones(100, np.float32)
         B = DataBuffer(data, store=False)
         assert B.data is None
+        assert B.stride == 4
 
     # Empty init (not allowed)
     # ------------------------
@@ -197,9 +199,16 @@ class DataBufferTest(unittest.TestCase):
     def test_non_contiguous_storage(self):
         # Ask to have CPU storage and to use data as storage
         # Not possible since data[::2] is not contiguous
-        data = np.ones(100)
-        B = DataBuffer(data[::2], store=True, copy=False)
-        assert B._copy is True
+        data = np.ones(100, np.float32)
+        data_given = data[::2]
+        
+        B = DataBuffer(data_given, store=True)
+        assert B._data is not data_given
+        assert B.stride == 4
+        
+        B = DataBuffer(data_given, store=False)
+        assert B._data is not data_given
+        assert B.stride == 4*2
 
     # Get buffer field
     # ----------------
@@ -281,7 +290,7 @@ class DataBufferTest(unittest.TestCase):
                           ('texcoord', np.float32, 2),
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
-        B = DataBuffer(data, store=True, copy=False)
+        B = DataBuffer(data, store=True)
         B.set_data(data)
         assert len(B._pending_data) == 1
 
@@ -292,7 +301,7 @@ class DataBufferTest(unittest.TestCase):
                           ('texcoord', np.float32, 2),
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
-        B = DataBuffer(data, store=True, copy=False)
+        B = DataBuffer(data, store=True)
         # set_data on field is not allowed because set_data
         # can result in a buffer resize
 
@@ -301,6 +310,17 @@ class DataBufferTest(unittest.TestCase):
         Z = B['position']
         self.assertRaises(ValueError, Z.set_data, data)
 
+    # Check set_data using offset in data buffer
+    # ------------------------------------------
+    def test_set_data_offset(self):
+        data = np.zeros(100, np.float32)
+        subdata = data[:10]
+        
+        B = DataBuffer(data)
+        B.set_data(subdata, offset=10)
+        offset = B._pending_data[-1][2]
+        assert offset == 10*4
+
     # Setitem + broadcast
     # ------------------------------------------------------
     def test_setitem_broadcast(self):
@@ -308,7 +328,7 @@ class DataBufferTest(unittest.TestCase):
                           ('texcoord', np.float32, 2),
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
-        B = DataBuffer(data, store=True, copy=False)
+        B = DataBuffer(data, store=True)
         B['position'] = 1, 2, 3
         assert np.allclose(data['position'].ravel(), np.resize([1, 2, 3], 30))
 
@@ -320,7 +340,7 @@ class DataBufferTest(unittest.TestCase):
                           ('color',    np.float32, 4)])
         data1 = np.zeros(10, dtype=dtype)
         data2 = np.ones(10, dtype=dtype)
-        B = DataBuffer(data1, store=True, copy=False)
+        B = DataBuffer(data1, store=True)
         B[...] = data2
         assert np.allclose(data1['position'], data2['position'])
         assert np.allclose(data1['texcoord'], data2['texcoord'])
@@ -334,7 +354,7 @@ class DataBufferTest(unittest.TestCase):
                           ('color',    np.float32, 4)])
         data1 = np.zeros(10, dtype=dtype)
         data2 = np.ones(10, dtype=dtype)
-        B = DataBuffer(data1, store=True, copy=False)
+        B = DataBuffer(data1, store=True)
         B[::2] = data2[::2]
         assert np.allclose(data1['position'][::2], data2['position'][::2])
         assert np.allclose(data1['texcoord'][::2], data2['texcoord'][::2])
@@ -348,7 +368,7 @@ class DataBufferTest(unittest.TestCase):
                           ('color',    np.float32, 4)])
         data1 = np.zeros(10, dtype=dtype)
         data2 = np.ones(10, dtype=dtype)
-        B = DataBuffer(data1, store=True, copy=False)
+        B = DataBuffer(data1, store=True)
         B[:5] = data2[:5]
         assert np.allclose(data1['position'][:5], data2['position'][:5])
         assert np.allclose(data1['texcoord'][:5], data2['texcoord'][:5])
@@ -362,7 +382,7 @@ class DataBufferTest(unittest.TestCase):
                           ('texcoord', np.float32, 2),
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
-        B = DataBuffer(data, store=False, copy=False)
+        B = DataBuffer(data, store=False)
         # with self.assertRaises(ValueError):
         #    B['position'] = 1, 2, 3
         self.assertRaises(ValueError,  B.__setitem__, 'position', (1, 2, 3))

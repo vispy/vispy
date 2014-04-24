@@ -13,11 +13,10 @@ import numpy as np
 
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 
 
 # Create a texture
-im1 = np.zeros((100, 100, 3), 'float64')
+im1 = np.zeros((100, 100, 3), 'float32')
 im1[:50, :, 0] = 1.0
 im1[:, :50, 1] = 1.0
 im1[50:, 50:, 2] = 1.0
@@ -32,8 +31,8 @@ vertex_data['a_texcoord'] = np.array([[0.0, 0.0], [0.0, 1.0],
 
 # Create indices and an ElementBuffer for it
 indices = np.array([0, 1, 2, 1, 2, 3], np.uint16)
-indices_buffer = gloo.ElementBuffer(indices)
-client_indices_buffer = gloo.ElementBuffer(indices, client=True)
+indices_buffer = gloo.IndexBuffer(indices)
+client_indices_buffer = gloo.IndexBuffer(indices, client=True)
 
 
 VERT_SHADER = """ // simple vertex shader
@@ -78,28 +77,28 @@ class Canvas(app.Canvas):
         # We create one VBO with all vertex data (array of structures)
         # and create two views from it for the attributes.
         self._program['texture1'] = gloo.Texture2D(im1)
-        self._program.set_vars(self._vbo)  # This does:
+        self._program.bind(self._vbo)  # This does:
         #self._program['a_position'] = self._vbo['a_position']
         #self._program['a_texcoords'] = self._vbo['a_texcoords']
 
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
+        gloo.set_clear_color((1, 1, 1, 1))
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
 
     def on_paint(self, event):
 
         # Clear
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gloo.clear()
 
         # Draw
         self._program['sizeFactor'] = 0.5 + np.sin(time.time() * 3) * 0.2
 
         # Draw (pick one!)
         # self._program.draw(gl.GL_TRIANGLE_STRIP)
-        self._program.draw(gl.GL_TRIANGLES, indices_buffer)
+        self._program.draw('triangles', indices_buffer)
         # self._program.draw(gl.GL_TRIANGLES, client_indices_buffer)  # Not
         # recommended
 

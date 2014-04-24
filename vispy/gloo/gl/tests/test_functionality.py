@@ -16,26 +16,19 @@ Remember: the bottom left is (-1, -1) and the first quadrant.
 
 """
 import sys
-import time
 
 import numpy as np
 
 from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true
-from vispy.util import app_opengl_context, assert_in  # noqa
+from vispy.app import Canvas
+from vispy.util.testing import assert_in  # noqa
 from numpy.testing import assert_almost_equal  # noqa
-from vispy.app.backends import requires_qt, requires_non_glut  # noqa
+from vispy.util.testing import requires_application, requires_pyopengl
 
 from vispy.gloo import gl
-from vispy import app
 
-
-# All these tests require a working backend. GLUT is not an option,
-# since there is no safe way to terminate the mainloop.
-# requires_non_glut works if there is a backend other then GLUT available.
-
-# Whether to sleep in order to show the result. True when running as script
-SHOW = False
+# All these tests require a working backend.
 
 
 ## High level tests
@@ -44,20 +37,27 @@ def teardown_module():
     gl.use()  # Reset to default
 
 
-@requires_non_glut()
+@requires_application()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
     _test_functonality('desktop')
 
 
-@requires_non_glut()
-@gl._requires_pyopengl()
-def test_functionality_pypengl():
+@requires_application()
+def test_functionality_proxy():
+    """ Test GL proxy class for full functionality. """
+    # By using debug mode, we are using the proxy class
+    _test_functonality('desktop debug')
+
+
+@requires_application()
+@requires_pyopengl()
+def test_functionality_pyopengl():
     """ Test pyopengl GL backend for full functionality. """
     _test_functonality('pyopengl')
 
 
-@requires_non_glut()
+@requires_application()
 def test_functionality_angle():
     """ Test angle GL backend for full functionality. """
     if True:
@@ -76,53 +76,27 @@ def _clear_screen():
 def _test_functonality(backend):
     """ Create app and canvas so we have a context. Then run tests.
     """
-
     # use the backend
     gl.use(backend)
     
-    # Note that we explicitly use pyglet because with Qt we seem
-    # to get errors for this test
-    
-    with app_opengl_context('qt') as context:
-        
+    with Canvas() as canvas:
         _clear_screen()
         
         # Prepare
-        w, h = context.c.size
+        w, h = canvas.size
         gl.glViewport(0, 0, w, h)
         gl.glScissor(0, 0, w, h)  # touch
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         
         # Setup visualization, ensure to do it in a paint event
-        objects = context.test(_prepare_vis)
-        
+        objects = _prepare_vis()
         _clear_screen()
-        
-        # Draw 1
-        context.test(_draw1)
-        if SHOW:
-            context.c.swap_buffers()
-            app.process_events()
-            time.sleep(1.0)
-        
+        _draw1()
         _clear_screen()
-        
-        # Draw 2
-        context.test(_draw2)
-        if SHOW:
-            context.c.swap_buffers()
-            app.process_events()
-            time.sleep(1.0)
-        
+        _draw2()
         _clear_screen()
-        
-        # Draw 3
-        context.test(_draw3)
-        if SHOW:
-            context.c.swap_buffers()
-            app.process_events()
-            time.sleep(1.0)
-        
+        _draw3()
+
         # Clean up
         for delete_func, handle in objects:
             delete_func(handle)
@@ -567,7 +541,7 @@ def _check_result(assert_result=True):
     #print(pix1, pix2, pix3, pix4)
    
     if assert_result:
-         # Test their value
+        # Test their value
         assert_equal(pix1, (0, 0, 0))
         assert_equal(pix2, (255, 0, 0))
         assert_equal(pix3, (0, 255, 0))
@@ -575,6 +549,6 @@ def _check_result(assert_result=True):
 
 
 if __name__ == '__main__':
-    #SHOW = True
     test_functionality_desktop()
-    test_functionality_pypengl()
+    test_functionality_pyopengl()
+    test_functionality_proxy()

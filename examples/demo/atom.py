@@ -12,7 +12,6 @@
 import numpy as np
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
 # Create vertices
@@ -97,12 +96,6 @@ void main()
 }
 """
 
-# HACK: True OpenGL ES does not need to enable point sprite and does not define
-# these two constants. Desktop OpenGL needs to enable these two modes but we do
-# not have these two constants because our GL namespace pretends to be ES.
-GL_VERTEX_PROGRAM_POINT_SIZE = 34370
-GL_POINT_SPRITE = 34913
-
 
 # ------------------------------------------------------------ Canvas class ---
 class Canvas(app.Canvas):
@@ -134,12 +127,7 @@ class Canvas(app.Canvas):
         self.timer.start()
 
     def on_initialize(self, event):
-        gl.glClearColor(0, 0, 0, 1)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(GL_POINT_SPRITE)
+        gloo.set_state('translucent', depth_test=False)
 
     def on_key_press(self, event):
         if event.text == ' ':
@@ -159,7 +147,7 @@ class Canvas(app.Canvas):
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(45.0, width / float(height), 1.0, 1000.0)
         self.program['u_projection'] = self.projection
 
@@ -174,8 +162,8 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_paint(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        self.program.draw(gl.GL_POINTS)
+        gloo.clear((0, 0, 0, 1))
+        self.program.draw('points')
 
 
 if __name__ == '__main__':

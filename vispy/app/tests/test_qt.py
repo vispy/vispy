@@ -4,10 +4,10 @@
 # This is a strange test: vispy does not need designer or uic stuff to run!
 
 from os import path as op
-import OpenGL.GL as gl
 
 from vispy.app import Canvas
-from vispy.app.backends import requires_qt
+from vispy.util.testing import requires_qt
+from vispy.gloo import gl
 
 
 @requires_qt(requires_uic=True)
@@ -32,6 +32,7 @@ def test_qt_designer():
     try:
         win.show()
         canvas = Canvas(create_native=False)
+        canvas.app.use()  # Make sure the app exists (because create_native=0)
         canvas._set_backend(win.ui.canvas)
         canvas.create_native()
 

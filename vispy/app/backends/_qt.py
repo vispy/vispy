@@ -7,6 +7,7 @@ vispy backend for Qt (PySide and PyQt4).
 """
 
 from __future__ import division
+from time import sleep, time
 
 from ... import config
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
@@ -119,7 +120,7 @@ class ApplicationBackend(BaseApplicationBackend):
         app = QtGui.QApplication.instance()
         if app is None:
             app = QtGui.QApplication([''])
-        # Store so it won't be deleted, but not on a visvis object,
+        # Store so it won't be deleted, but not on a vispy object,
         # or an application may produce error when closed
         QtGui._qApp = app
         # Return
@@ -132,9 +133,23 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
+        title, size, show, position = self._process_backend_kwargs(kwargs)
         QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
+        self._vispy_set_title(title)
+        self._vispy_set_size(*size)
+        if position is not None:
+            self._vispy_set_position(*position)
+        if show:
+            self._vispy_set_visible(True)
+
+    def _vispy_warmup(self):
+        etime = time() + 0.25
+        while time() < etime:
+            sleep(0.01)
+            self._vispy_set_current()
+            self._vispy_canvas.app.process_events()
 
     def _vispy_set_current(self):
         # Make this the current context
@@ -158,10 +173,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
-        if visible:
-            self.show()
-        else:
-            self.hide()
+        self.show() if visible else self.hide()
 
     def _vispy_update(self):
         # Invoke a redraw
@@ -193,6 +205,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         # (0, 0, self.width(), self.height()))
+        self._vispy_set_current()
         self._vispy_canvas.events.paint(region=None)
 
     def closeEvent(self, ev):
@@ -287,6 +300,13 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if QtCore.Qt.MetaModifier & qtmod:
             mod += keys.META,
         return mod
+
+    def __del__(self):
+        # Destroy if this is a toplevel widget
+        if self.parent() is None:
+            self.destroy()
+        if hasattr(QtOpenGL.QGLWidget, '__del__'):
+            QtOpenGL.QGLWidget.__del__(self)
 
 
 # class QtMouseEvent(MouseEvent):

@@ -24,6 +24,13 @@ class Application(object):
     This wraps a native GUI application instance. Vispy has a default
     instance of this class at vispy.app.default_app.
 
+    Parameters
+    ----------
+    backend : str | None
+        Backend to use. See ``use()`` for details.
+
+    Notes
+    -----
     There are multiple stages for an Application object:
         * Backend-less - the state when it is just initialized
         * Backend selected - use() has been successfully called. Note that
@@ -34,9 +41,11 @@ class Application(object):
           application right before a native widget is created.
     """
 
-    def __init__(self):
+    def __init__(self, backend=None):
         self._backend_module = None
         self._backend = None
+        if backend is not None:
+            self.use(backend)
 
     def __repr__(self):
         name = self.backend_name
@@ -90,11 +99,13 @@ class Application(object):
         return self._backend._vispy_get_native_app()
 
     def use(self, backend_name=None):
-        """ Select a backend by name. If the backend name is omitted,
-        will chose a suitable backend automatically. It is an error to
-        try to select a particular backend if one is already selected.
-        Available backends: 'PySide', 'PyQt4', 'Glut', 'Pyglet', 'qt'.
-        The latter will use PySide or PyQt4, whichever works.
+        """Select a backend by name.
+
+        If the backend name is omitted, will choose a suitable backend
+        automatically. It is an error to try to select a particular backend
+        if one is already selected. Available backends: 'PySide', 'PyQt4',
+        'Glut', 'Glfw', 'Pyglet', 'qt'. The latter will use PySide or
+        PyQt4, whichever works.
 
         If a backend name is provided, and that backend could not be
         loaded, an error is raised.

@@ -40,6 +40,8 @@ void main (void) {
 """
 
 FRAG_SHADER = """
+#version 120
+
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
 varying float v_radius;
@@ -47,7 +49,7 @@ varying float v_linewidth;
 varying float v_antialias;
 void main()
 {
-    float size = 2*(v_radius + v_linewidth + 1.5*v_antialias);
+    float size = 2.0*(v_radius + v_linewidth + 1.5*v_antialias);
     float t = v_linewidth/2.0-v_antialias;
     float r = length((gl_PointCoord.xy - vec2(0.5,0.5))*size);
     float d = abs(r - v_radius) - t;

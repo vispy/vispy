@@ -13,14 +13,10 @@ import pyglet
 version = pyglet.version
 
 if LooseVersion(version) < LooseVersion('1.2'):
-    help = 'You can install the latest pyglet using:\n' 
-    help += '    pip install http://pyglet.googlecode.com/archive/tip.zip'
+    help_ = ('You can install the latest pyglet using:\n'
+             '    pip install http://pyglet.googlecode.com/archive/tip.zip')
     raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
-                      % (pyglet.version, help))
-
-import pyglet.window
-import pyglet.app
-import pyglet.clock
+                      % (pyglet.version, help_))
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
@@ -87,8 +83,12 @@ class ApplicationBackend(BaseApplicationBackend):
         return 'Pyglet'
 
     def _vispy_process_events(self):
-        # todo: note that this does not actually process paint events :(
-        return pyglet.app.platform_event_loop.step(0.0)
+        # pyglet.app.platform_event_loop.step(0.0)
+        pyglet.clock.tick()
+        for window in pyglet.app.windows:
+            window.switch_to()
+            window.dispatch_events()
+            window.dispatch_event('on_draw')
 
     def _vispy_run(self):
         return pyglet.app.run()
@@ -106,17 +106,24 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
+        title, size, show, position = self._process_backend_kwargs(kwargs)
         # Initialize native widget, but default hidden and resizable
-        kwargs['visible'] = kwargs.get('visible', False)
         kwargs['resizable'] = kwargs.get('resizable', True)
         kwargs['vsync'] = kwargs.get('vsync', 0)
-        pyglet.window.Window.__init__(self, *args, **kwargs)
 
         # We keep track of modifier keys so we can pass them to mouse_motion
         self._current_modifiers = set()
         #self._buttons_accepted = 0
         self._draw_ok = False  # whether it is ok to draw yet
         self._pending_position = None
+        pyglet.window.Window.__init__(self, width=size[0], height=size[1],
+                                      caption=title, visible=show,
+                                      *args, **kwargs)
+        if position is not None:
+            self._vispy_set_position(*position)
+
+    def _vispy_warmup(self):
+        pass  # no need, sort of, but it still fails many of our tests
 
     # Override these ...
     def flip(self):
@@ -166,6 +173,7 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
 
     def _vispy_close(self):
         # Force the window or widget to shut down
+        # In Pyglet close is equivalent to destroy (window becomes invalid)
         self.close()
 
     def _vispy_get_size(self):
@@ -194,7 +202,8 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.close()
-        self.close()  # Or the window wont close
+        #self.close()  # Or the window wont close
+        # AK: seems so wrong to try a close in the close event handler ...
 
     def on_resize(self, w, h):
         if self._vispy_canvas is None:
@@ -206,6 +215,7 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
         if not self._draw_ok or self._vispy_canvas is None:
             return
         # (0, 0, self.width, self.height))
+        self._vispy_set_current()
         self._vispy_canvas.events.paint(region=None)
 
     def on_mouse_press(self, x, y, button, modifiers=None):

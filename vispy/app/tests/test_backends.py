@@ -10,7 +10,8 @@ implementation is corect.
 
 import vispy
 from vispy import keys
-from vispy.app.backends import requires_pyglet, requires_qt, requires_glfw
+from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,
+                                requires_glut)
 
 
 class BaseTestmodule:
@@ -39,10 +40,11 @@ class BaseTestmodule:
             '_vispy_mouse_move',
             '_vispy_mouse_press',
             '_vispy_mouse_release',
-            '_vispy_get_geometry')  # defined in base class
+            '_vispy_get_geometry',
+            '_process_backend_kwargs')  # defined in base class
 
         Klass = self._module.CanvasBackend
-        KlassRef = vispy.app.canvas.CanvasBackend
+        KlassRef = vispy.app.base.BaseCanvasBackend
         for key in dir(KlassRef):
             if not key.startswith('__'):
                 method = getattr(Klass, key)
@@ -133,6 +135,7 @@ class Test_GlfwBackend(BaseTestmodule):
 
 class Test_GlutBackend(BaseTestmodule):
 
+    @requires_glut()
     def __init__(self):
         from vispy.app.backends import _glut
         BaseTestmodule.__init__(self, _glut)

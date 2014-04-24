@@ -10,7 +10,7 @@ Convenience tools for vispy developers
 
 """
 
-from __future__ import division
+from __future__ import division, print_function
 
 import sys
 import os
@@ -149,7 +149,8 @@ class Maker:
     def test(self, arg):
         """ Run all tests. """
         self.nose(arg)
-        self.flake(arg)
+        self.lineendings(arg)
+        self.flake(arg)  # must go last b/c raises SystemExit
 
     def nose(self, arg):
         """ Run all unit tests using nose. """
@@ -181,8 +182,16 @@ class Maker:
         except ImportError:
             print('Skipping flake8 test, flake8 not installed')
         else:
-            print('Running flake8...')
-            main()
+            print('Running flake8... ')  # if end='', first error gets ugly
+            sys.stdout.flush()
+            try:
+                main()
+            except SystemExit as ex:
+                if ex.code in (None, 0):
+                    pass  # do not exit yet, we want to print a success msg
+                else:
+                    raise  # raises SystemExit again
+            print('Hooray! flake8 test passed.')
 
     def images(self, arg):
         """ Create images (screenshots). Subcommands:
@@ -348,7 +357,11 @@ class Maker:
     def lineendings(self, args):
         """ Check that all lineendings are LF """
         from vispy.util.codequality import check_line_endings
-        check_line_endings()
+        print('Running line endings check... ', end='')
+        sys.stdout.flush()
+        nfiles = check_line_endings()
+        if nfiles > 0:
+            raise SystemExit(1)
 
 
 # Functions used by the maker
