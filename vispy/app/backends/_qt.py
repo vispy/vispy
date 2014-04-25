@@ -26,65 +26,87 @@ if len(ATTEMPTED_BACKENDS):
 else:
     qt_lib = 'any'
 
-# Import PySide or PyQt4
-if qt_lib in ('any', 'qt'):
-    try:
+try:
+    # Import PySide or PyQt4
+    if qt_lib in ('any', 'qt'):
+        try:
+            from PyQt4 import QtGui, QtCore, QtOpenGL
+        except ImportError:
+            from PySide import QtGui, QtCore, QtOpenGL
+    elif qt_lib in ('pyqt', 'pyqt4'):
         from PyQt4 import QtGui, QtCore, QtOpenGL
-    except ImportError:
+    elif qt_lib == 'pyside':
         from PySide import QtGui, QtCore, QtOpenGL
-elif qt_lib in ('pyqt', 'pyqt4'):
-    from PyQt4 import QtGui, QtCore, QtOpenGL
-elif qt_lib == 'pyside':
-    from PySide import QtGui, QtCore, QtOpenGL
+    else:
+        raise Exception("Do not recognize Qt library '%s'. Options are "
+                        "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
+
+    # todo: add support for distinguishing left and right shift/ctrl/alt keys.
+    # Linux scan codes:  (left, right)
+    #   Shift  50, 62
+    #   Ctrl   37, 105
+    #   Alt    64, 108
+    KEYMAP = {
+        QtCore.Qt.Key_Shift: keys.SHIFT,
+        QtCore.Qt.Key_Control: keys.CONTROL,
+        QtCore.Qt.Key_Alt: keys.ALT,
+        QtCore.Qt.Key_AltGr: keys.ALT,
+        QtCore.Qt.Key_Meta: keys.META,
+
+        QtCore.Qt.Key_Left: keys.LEFT,
+        QtCore.Qt.Key_Up: keys.UP,
+        QtCore.Qt.Key_Right: keys.RIGHT,
+        QtCore.Qt.Key_Down: keys.DOWN,
+        QtCore.Qt.Key_PageUp: keys.PAGEUP,
+        QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
+
+        QtCore.Qt.Key_Insert: keys.INSERT,
+        QtCore.Qt.Key_Delete: keys.DELETE,
+        QtCore.Qt.Key_Home: keys.HOME,
+        QtCore.Qt.Key_End: keys.END,
+
+        QtCore.Qt.Key_Escape: keys.ESCAPE,
+        QtCore.Qt.Key_Backspace: keys.BACKSPACE,
+
+        QtCore.Qt.Key_F1: keys.F1,
+        QtCore.Qt.Key_F2: keys.F2,
+        QtCore.Qt.Key_F3: keys.F3,
+        QtCore.Qt.Key_F4: keys.F4,
+        QtCore.Qt.Key_F5: keys.F5,
+        QtCore.Qt.Key_F6: keys.F6,
+        QtCore.Qt.Key_F7: keys.F7,
+        QtCore.Qt.Key_F8: keys.F8,
+        QtCore.Qt.Key_F9: keys.F9,
+        QtCore.Qt.Key_F10: keys.F10,
+        QtCore.Qt.Key_F11: keys.F11,
+        QtCore.Qt.Key_F12: keys.F12,
+
+        QtCore.Qt.Key_Space: keys.SPACE,
+        QtCore.Qt.Key_Enter: keys.ENTER,
+        QtCore.Qt.Key_Return: keys.ENTER,
+        QtCore.Qt.Key_Tab: keys.TAB,
+    }
+except Exception as exp:
+    available = False
+    why_not = str(exp)
+
+    class _QGLWidget(object):
+        pass
+
+    class _QTimer(object):
+        pass
 else:
-    raise Exception("Do not recognize Qt library '%s'. Options are "
-                    "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
-
-# todo: add support for distinguishing left and right shift/ctrl/alt keys.
-# Linux scan codes:  (left, right)
-#   Shift  50, 62
-#   Ctrl   37, 105
-#   Alt    64, 108
-KEYMAP = {
-    QtCore.Qt.Key_Shift: keys.SHIFT,
-    QtCore.Qt.Key_Control: keys.CONTROL,
-    QtCore.Qt.Key_Alt: keys.ALT,
-    QtCore.Qt.Key_AltGr: keys.ALT,
-    QtCore.Qt.Key_Meta: keys.META,
-
-    QtCore.Qt.Key_Left: keys.LEFT,
-    QtCore.Qt.Key_Up: keys.UP,
-    QtCore.Qt.Key_Right: keys.RIGHT,
-    QtCore.Qt.Key_Down: keys.DOWN,
-    QtCore.Qt.Key_PageUp: keys.PAGEUP,
-    QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
-
-    QtCore.Qt.Key_Insert: keys.INSERT,
-    QtCore.Qt.Key_Delete: keys.DELETE,
-    QtCore.Qt.Key_Home: keys.HOME,
-    QtCore.Qt.Key_End: keys.END,
-
-    QtCore.Qt.Key_Escape: keys.ESCAPE,
-    QtCore.Qt.Key_Backspace: keys.BACKSPACE,
-
-    QtCore.Qt.Key_F1: keys.F1,
-    QtCore.Qt.Key_F2: keys.F2,
-    QtCore.Qt.Key_F3: keys.F3,
-    QtCore.Qt.Key_F4: keys.F4,
-    QtCore.Qt.Key_F5: keys.F5,
-    QtCore.Qt.Key_F6: keys.F6,
-    QtCore.Qt.Key_F7: keys.F7,
-    QtCore.Qt.Key_F8: keys.F8,
-    QtCore.Qt.Key_F9: keys.F9,
-    QtCore.Qt.Key_F10: keys.F10,
-    QtCore.Qt.Key_F11: keys.F11,
-    QtCore.Qt.Key_F12: keys.F12,
-
-    QtCore.Qt.Key_Space: keys.SPACE,
-    QtCore.Qt.Key_Enter: keys.ENTER,
-    QtCore.Qt.Key_Return: keys.ENTER,
-    QtCore.Qt.Key_Tab: keys.TAB,
-}
+    available = True
+    why_not = None
+    _QGLWidget = QtOpenGL.QGLWidget
+    _QTimer = QtCore.QTimer
+    if hasattr(QtCore, 'PYQT_VERSION_STR'):
+        has_uic = True
+        which = ('PyQt4', QtCore.PYQT_VERSION_STR, QtCore.QT_VERSION_STR)
+    else:
+        has_uic = False
+        import PySide
+        which = ('PySide', PySide.__version__, QtCore.__version__)
 
 BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
@@ -127,7 +149,7 @@ class ApplicationBackend(BaseApplicationBackend):
         return app
 
 
-class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
+class CanvasBackend(_QGLWidget, BaseCanvasBackend):
 
     """Qt backend for Canvas abstract class."""
 
@@ -318,7 +340,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 #             self.qt_event.accept()
 #         else:
 #             self.qt_event.ignore()
-class TimerBackend(BaseTimerBackend, QtCore.QTimer):
+class TimerBackend(BaseTimerBackend, _QTimer):
 
     def __init__(self, vispy_timer):
         if QtGui.QApplication.instance() is None:

@@ -6,11 +6,11 @@
 from os import path as op
 
 from vispy.app import Canvas
-from vispy.util.testing import requires_qt
+from vispy.util.testing import requires_application
 from vispy.gloo import gl
 
 
-@requires_qt(requires_uic=True)
+@requires_application('qt', require=['uic'])
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
     from PyQt4 import QtGui, uic

@@ -160,35 +160,21 @@ class Application(object):
 
         # Now try each one
         for key in backends_to_try:
-            # Get info for this backend
-            try:
-                name, module_name, native_module_name = BACKENDMAP[key]
-            except KeyError:
-                logger.warn('This should not happen, unknown backend: "".'
-                            % key)
-                continue
-            # Try to import it ...
-
-            try:
-                ATTEMPTED_BACKENDS.append(name)
-                mod_name = 'backends.' + module_name
-                __import__(mod_name, globals(), level=1)
-            except ImportError as err:
-                msg = 'Could not import backend "%s":\n%s' % (name, str(err))
+            name, module_name, native_module_name = BACKENDMAP[key]
+            ATTEMPTED_BACKENDS.append(name)
+            mod_name = 'backends.' + module_name
+            __import__(mod_name, globals(), level=1)
+            mod = getattr(backends, module_name)
+            if not mod.available:
+                msg = ('Could not import backend "%s":\n%s'
+                       % (name, str(mod.why_not)))
                 if not try_others:
-                    logger.error(msg)
-                    raise
-            except Exception as err:
-                msg = ('Error while importing backend "%s":\n%s'
-                       % (name, str(err)))
-                if not try_others:
-                    logger.error(msg)
-                    raise
+                    raise RuntimeError(msg)
                 else:
                     logger.info(msg)
             else:
                 # Success!
-                self._backend_module = getattr(backends, module_name)
+                self._backend_module = mod
                 logger.info('Selected backend %s' % module_name)
                 break
         else:

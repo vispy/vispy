@@ -281,7 +281,7 @@ def sys_info(fname=None, overwrite=False):
         # Nest all imports here to avoid any circular imports
         from ..app import Application, Canvas
         from ..gloo import gl
-        from . import testing
+        from .testing import has_backend
         # get default app
         this_app = Application()
         with use_log_level('warning'):
@@ -289,10 +289,9 @@ def sys_info(fname=None, overwrite=False):
         out += 'Platform: %s\n' % platform.platform()
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
         out += 'Backend:  %s\n' % this_app.backend_name
-        out += 'Qt:       %s\n' % testing.has_qt(return_which=True)[1]
-        out += 'Pyglet:   %s\n' % testing.has_pyglet(return_which=True)[1]
-        out += 'glfw:     %s\n' % testing.has_glfw(return_which=True)[1]
-        out += 'glut:     %s\n' % testing.has_glut(return_which=True)[1]
+        for backend in ['qt', 'pyglet', 'glfw', 'glut']:  # XXX pull from app?
+            which = has_backend(backend, out=['which'])[1]
+            out += '{0:<9} {1}\n'.format(backend + ':', which)
         out += '\n'
         # We need an OpenGL context to get GL info
         if 'glut' in this_app.backend_name.lower():

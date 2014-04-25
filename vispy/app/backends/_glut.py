@@ -10,87 +10,67 @@ from __future__ import division
 
 import sys
 import ctypes
-from OpenGL import platform
 from time import sleep, time
-
-import OpenGL.error
-import OpenGL.GLUT as glut
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import ptime, keys, logger
 
+try:
+    from OpenGL import platform
+    import OpenGL.error
+    import OpenGL.GLUT as glut
 
-# glut.GLUT_ACTIVE_SHIFT: keys.SHIFT,
-# glut.GLUT_ACTIVE_CTRL: keys.CONTROL,
-# glut.GLUT_ACTIVE_ALT: keys.ALT,
-# -1: keys.META,
+    # glut.GLUT_ACTIVE_SHIFT: keys.SHIFT,
+    # glut.GLUT_ACTIVE_CTRL: keys.CONTROL,
+    # glut.GLUT_ACTIVE_ALT: keys.ALT,
+    # -1: keys.META,
 
-# Map native keys to vispy keys
-KEYMAP = {
-    -1: keys.SHIFT,
-    -2: keys.CONTROL,
-    -3: keys.ALT,
-    -4: keys.META,
+    # Map native keys to vispy keys
+    KEYMAP = {
+        -1: keys.SHIFT,
+        -2: keys.CONTROL,
+        -3: keys.ALT,
+        -4: keys.META,
 
-    glut.GLUT_KEY_LEFT: keys.LEFT,
-    glut.GLUT_KEY_UP: keys.UP,
-    glut.GLUT_KEY_RIGHT: keys.RIGHT,
-    glut.GLUT_KEY_DOWN: keys.DOWN,
-    glut.GLUT_KEY_PAGE_UP: keys.PAGEUP,
-    glut.GLUT_KEY_PAGE_DOWN: keys.PAGEDOWN,
+        glut.GLUT_KEY_LEFT: keys.LEFT,
+        glut.GLUT_KEY_UP: keys.UP,
+        glut.GLUT_KEY_RIGHT: keys.RIGHT,
+        glut.GLUT_KEY_DOWN: keys.DOWN,
+        glut.GLUT_KEY_PAGE_UP: keys.PAGEUP,
+        glut.GLUT_KEY_PAGE_DOWN: keys.PAGEDOWN,
 
-    glut.GLUT_KEY_INSERT: keys.INSERT,
-    chr(127): keys.DELETE,
-    glut.GLUT_KEY_HOME: keys.HOME,
-    glut.GLUT_KEY_END: keys.END,
+        glut.GLUT_KEY_INSERT: keys.INSERT,
+        chr(127): keys.DELETE,
+        glut.GLUT_KEY_HOME: keys.HOME,
+        glut.GLUT_KEY_END: keys.END,
 
-    chr(27): keys.ESCAPE,
-    chr(8): keys.BACKSPACE,
+        chr(27): keys.ESCAPE,
+        chr(8): keys.BACKSPACE,
 
-    glut.GLUT_KEY_F1: keys.F1,
-    glut.GLUT_KEY_F2: keys.F2,
-    glut.GLUT_KEY_F3: keys.F3,
-    glut.GLUT_KEY_F4: keys.F4,
-    glut.GLUT_KEY_F5: keys.F5,
-    glut.GLUT_KEY_F6: keys.F6,
-    glut.GLUT_KEY_F7: keys.F7,
-    glut.GLUT_KEY_F8: keys.F8,
-    glut.GLUT_KEY_F9: keys.F9,
-    glut.GLUT_KEY_F10: keys.F10,
-    glut.GLUT_KEY_F11: keys.F11,
-    glut.GLUT_KEY_F12: keys.F12,
+        glut.GLUT_KEY_F1: keys.F1,
+        glut.GLUT_KEY_F2: keys.F2,
+        glut.GLUT_KEY_F3: keys.F3,
+        glut.GLUT_KEY_F4: keys.F4,
+        glut.GLUT_KEY_F5: keys.F5,
+        glut.GLUT_KEY_F6: keys.F6,
+        glut.GLUT_KEY_F7: keys.F7,
+        glut.GLUT_KEY_F8: keys.F8,
+        glut.GLUT_KEY_F9: keys.F9,
+        glut.GLUT_KEY_F10: keys.F10,
+        glut.GLUT_KEY_F11: keys.F11,
+        glut.GLUT_KEY_F12: keys.F12,
 
-    ' ': keys.SPACE,
-    '\r': keys.ENTER,
-    '\n': keys.ENTER,
-    '\t': keys.TAB,
-}
+        ' ': keys.SPACE,
+        '\r': keys.ENTER,
+        '\n': keys.ENTER,
+        '\t': keys.TAB,
+    }
 
+    BUTTONMAP = {glut.GLUT_LEFT_BUTTON: 1,
+                 glut.GLUT_RIGHT_BUTTON: 2,
+                 glut.GLUT_MIDDLE_BUTTON: 3
+                 }
 
-BUTTONMAP = {glut.GLUT_LEFT_BUTTON: 1,
-             glut.GLUT_RIGHT_BUTTON: 2,
-             glut.GLUT_MIDDLE_BUTTON: 3
-             }
-
-
-_VP_GLUT_ALL_WINDOWS = []
-
-
-def _get_glut_process_func(missing='error'):
-    if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
-        func = glut.glutMainLoopEvent
-    elif hasattr(glut, 'glutCheckLoop') and bool(glut.glutCheckLoop):
-        func = glut.glutCheckLoop  # Darwin
-    else:
-        msg = ('Your implementation of GLUT does not allow '
-               'interactivity. Consider installing freeglut.')
-        if missing == 'log':
-            logger.info(msg)
-        raise RuntimeError(msg)
-    return func
-
-
-def _init_glut():
     # HiDPI support for retina display
     # This requires glut from
     # http://iihm.imag.fr/blanch/software/glut-macosx/
@@ -115,9 +95,33 @@ def _init_glut():
                            glut.GLUT_ACTION_CONTINUE_EXECUTION)
     except Exception:
         pass
-    return glut
+    _GLUT_INIT = glut
 
-_GLUT_INIT = _init_glut()  # only ever call once!
+    def _get_glut_process_func(missing='error'):
+        if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
+            func = glut.glutMainLoopEvent
+        elif hasattr(glut, 'glutCheckLoop') and bool(glut.glutCheckLoop):
+            func = glut.glutCheckLoop  # Darwin
+        else:
+            msg = ('Your implementation of GLUT does not allow '
+                   'interactivity. Consider installing freeglut.')
+            if missing == 'log':
+                logger.info(msg)
+            raise RuntimeError(msg)
+        return func
+except Exception as exp:
+    available = False
+    why_not = str(exp)
+    has_interactive = False
+    which = None
+else:
+    available = True
+    why_not = None
+    has_interactive = (_get_glut_process_func() is not None)
+    which = 'from OpenGL %s' % OpenGL.__version__
+
+
+_VP_GLUT_ALL_WINDOWS = []
 
 
 class ApplicationBackend(BaseApplicationBackend):

@@ -10,8 +10,7 @@ implementation is corect.
 
 import vispy
 from vispy import keys
-from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,
-                                requires_glut)
+from vispy.util.testing import requires_application
 
 
 class BaseTestmodule:
@@ -111,7 +110,7 @@ class Test_TemplateBackend(BaseTestmodule):
 
 class Test_QtBackend(BaseTestmodule):
 
-    @requires_qt()
+    @requires_application('qt')
     def __init__(self):
         from vispy.app.backends import _qt
         BaseTestmodule.__init__(self, _qt)
@@ -119,7 +118,7 @@ class Test_QtBackend(BaseTestmodule):
 
 class Test_PygletBackend(BaseTestmodule):
 
-    @requires_pyglet()
+    @requires_application('pyglet')
     def __init__(self):
         from vispy.app.backends import _pyglet
         BaseTestmodule.__init__(self, _pyglet)
@@ -127,7 +126,7 @@ class Test_PygletBackend(BaseTestmodule):
 
 class Test_GlfwBackend(BaseTestmodule):
 
-    @requires_glfw()
+    @requires_application('glfw')
     def __init__(self):
         from vispy.app.backends import _glfw
         BaseTestmodule.__init__(self, _glfw)
@@ -135,7 +134,7 @@ class Test_GlfwBackend(BaseTestmodule):
 
 class Test_GlutBackend(BaseTestmodule):
 
-    @requires_glut()
+    @requires_application('glut')
     def __init__(self):
         from vispy.app.backends import _glut
         BaseTestmodule.__init__(self, _glut)

@@ -7,9 +7,7 @@ from nose.tools import assert_true
 from time import sleep
 
 from vispy.app import Application, Canvas, Timer
-from vispy.util.testing import (has_pyglet, has_qt, has_glfw, has_glut,  # noqa
-                                requires_pyglet, requires_qt,
-                                requires_glfw, requires_glut)  # noqa
+from vispy.util.testing import has_backend, requires_application
 from vispy.util.ptime import time
 from vispy.gloo import gl
 from vispy.gloo.util import _screenshot
@@ -52,13 +50,10 @@ def test_simultaneous_backends():
     # been crippled here because they don't work 100% of the time
     # depending on backend order, etc. This is not critical for
     # the software currently, so we let it slide for now.
-    names = dict(qt=has_qt,
-                 pyglet=has_pyglet,
-                 glfw=has_glfw,
-                 glut=has_glut)
-    if sys.platform == 'darwin':
-        names.pop('glut')  # XXX knownfail, fails for unknown reason...
-    backends = [name for name, check in names.items() if check()]
+    names = ['qt', 'pyglet', 'glfw']
+    if sys.platform != 'darwin':
+        names.append('glut')  # XXX knownfail, fails for unknown reason...
+    backends = [name for name in names if has_backend(name)]
     canvases = dict()
     bgcolor = dict()
     try:
@@ -188,7 +183,7 @@ def _test_multiple_canvas_same_backend(backend):
                 _update_process_check(canvas, 64)
 
 
-@requires_qt()
+@requires_application('qt')
 def test_qt():
     """Test multiple Qt windows"""
     _test_multiple_canvases('qt')
@@ -197,21 +192,21 @@ def test_qt():
         _test_multiple_canvas_same_backend('qt')  # XXX knownfail
 
 
-@requires_pyglet()
+@requires_application('pyglet')
 def test_pyglet():
     """Test multiple Pyglet windows"""
     _test_multiple_canvases('Pyglet')
     _test_multiple_canvas_same_backend('Pyglet')
 
 
-@requires_glfw()
+@requires_application('glfw')
 def test_glfw():
     """Test multiple Glfw windows"""
     _test_multiple_canvases('Glfw')
     _test_multiple_canvas_same_backend('Glfw')
 
 
-@requires_glut()
+@requires_application('glut', require=['interactive'])
 def test_glut():
     """Test multiple Glut windows"""
     #_test_multiple_canvases('Glut')  # XXX knownfail, fails on OSX and Travis

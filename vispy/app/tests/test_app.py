@@ -6,8 +6,7 @@ from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import Application, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
-from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,  # noqa
-                                requires_glut, requires_application)
+from vispy.util.testing import requires_application
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader
@@ -228,14 +227,14 @@ def test_none():
     _test_application(None)
 
 
-@requires_qt()
+@requires_application('qt')
 def test_qt():
     """Test Qt application"""
     _test_application('qt')
     _test_run('qt')
 
 
-@requires_pyglet()
+@requires_application('pyglet')
 def test_pyglet():
     """Test Pyglet application"""
     _test_application('Pyglet')
@@ -243,14 +242,14 @@ def test_pyglet():
         _test_run('Pyglet')
 
 
-@requires_glfw()
+@requires_application('glfw')
 def test_glfw():
     """Test Glfw application"""
     _test_application('Glfw')
     _test_run('Glfw')
 
 
-@requires_glut()
+@requires_application('glut', require=['interactive'])
 def test_glut():
     """Test Glut application"""
     _test_application('Glut')

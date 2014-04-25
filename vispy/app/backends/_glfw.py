@@ -25,63 +25,68 @@ from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 from ...util.ptime import time
 
-from . import _libglfw as glfw
+try:
+    from . import _libglfw as glfw
+    if not glfw.glfwInit():  # only ever call once
+        raise OSError('Could not init glfw')
+    atexit.register(glfw.glfwTerminate)
 
-if not glfw.glfwInit():  # only ever call once
-    raise OSError('Could not init glfw')
-atexit.register(glfw.glfwTerminate)
+    # Map native keys to vispy keys
+    KEYMAP = {
+        glfw.GLFW_KEY_LEFT_SHIFT: keys.SHIFT,
+        glfw.GLFW_KEY_RIGHT_SHIFT: keys.SHIFT,
+        glfw.GLFW_KEY_LEFT_CONTROL: keys.CONTROL,
+        glfw.GLFW_KEY_RIGHT_CONTROL: keys.CONTROL,
+        glfw.GLFW_KEY_LEFT_ALT: keys.ALT,
+        glfw.GLFW_KEY_RIGHT_ALT: keys.ALT,
+        glfw.GLFW_KEY_LEFT_SUPER: keys.META,
+        glfw.GLFW_KEY_RIGHT_SUPER: keys.META,
 
-# Map native keys to vispy keys
-KEYMAP = {
-    glfw.GLFW_KEY_LEFT_SHIFT: keys.SHIFT,
-    glfw.GLFW_KEY_RIGHT_SHIFT: keys.SHIFT,
-    glfw.GLFW_KEY_LEFT_CONTROL: keys.CONTROL,
-    glfw.GLFW_KEY_RIGHT_CONTROL: keys.CONTROL,
-    glfw.GLFW_KEY_LEFT_ALT: keys.ALT,
-    glfw.GLFW_KEY_RIGHT_ALT: keys.ALT,
-    glfw.GLFW_KEY_LEFT_SUPER: keys.META,
-    glfw.GLFW_KEY_RIGHT_SUPER: keys.META,
+        glfw.GLFW_KEY_LEFT: keys.LEFT,
+        glfw.GLFW_KEY_UP: keys.UP,
+        glfw.GLFW_KEY_RIGHT: keys.RIGHT,
+        glfw.GLFW_KEY_DOWN: keys.DOWN,
+        glfw.GLFW_KEY_PAGE_UP: keys.PAGEUP,
+        glfw.GLFW_KEY_PAGE_DOWN: keys.PAGEDOWN,
 
-    glfw.GLFW_KEY_LEFT: keys.LEFT,
-    glfw.GLFW_KEY_UP: keys.UP,
-    glfw.GLFW_KEY_RIGHT: keys.RIGHT,
-    glfw.GLFW_KEY_DOWN: keys.DOWN,
-    glfw.GLFW_KEY_PAGE_UP: keys.PAGEUP,
-    glfw.GLFW_KEY_PAGE_DOWN: keys.PAGEDOWN,
+        glfw.GLFW_KEY_INSERT: keys.INSERT,
+        glfw.GLFW_KEY_DELETE: keys.DELETE,
+        glfw.GLFW_KEY_HOME: keys.HOME,
+        glfw.GLFW_KEY_END: keys.END,
 
-    glfw.GLFW_KEY_INSERT: keys.INSERT,
-    glfw.GLFW_KEY_DELETE: keys.DELETE,
-    glfw.GLFW_KEY_HOME: keys.HOME,
-    glfw.GLFW_KEY_END: keys.END,
+        glfw.GLFW_KEY_ESCAPE: keys.ESCAPE,
+        glfw.GLFW_KEY_BACKSPACE: keys.BACKSPACE,
 
-    glfw.GLFW_KEY_ESCAPE: keys.ESCAPE,
-    glfw.GLFW_KEY_BACKSPACE: keys.BACKSPACE,
+        glfw.GLFW_KEY_F1: keys.F1,
+        glfw.GLFW_KEY_F2: keys.F2,
+        glfw.GLFW_KEY_F3: keys.F3,
+        glfw.GLFW_KEY_F4: keys.F4,
+        glfw.GLFW_KEY_F5: keys.F5,
+        glfw.GLFW_KEY_F6: keys.F6,
+        glfw.GLFW_KEY_F7: keys.F7,
+        glfw.GLFW_KEY_F8: keys.F8,
+        glfw.GLFW_KEY_F9: keys.F9,
+        glfw.GLFW_KEY_F10: keys.F10,
+        glfw.GLFW_KEY_F11: keys.F11,
+        glfw.GLFW_KEY_F12: keys.F12,
 
-    glfw.GLFW_KEY_F1: keys.F1,
-    glfw.GLFW_KEY_F2: keys.F2,
-    glfw.GLFW_KEY_F3: keys.F3,
-    glfw.GLFW_KEY_F4: keys.F4,
-    glfw.GLFW_KEY_F5: keys.F5,
-    glfw.GLFW_KEY_F6: keys.F6,
-    glfw.GLFW_KEY_F7: keys.F7,
-    glfw.GLFW_KEY_F8: keys.F8,
-    glfw.GLFW_KEY_F9: keys.F9,
-    glfw.GLFW_KEY_F10: keys.F10,
-    glfw.GLFW_KEY_F11: keys.F11,
-    glfw.GLFW_KEY_F12: keys.F12,
+        glfw.GLFW_KEY_SPACE: keys.SPACE,
+        glfw.GLFW_KEY_ENTER: keys.ENTER,
+        '\r': keys.ENTER,
+        glfw.GLFW_KEY_TAB: keys.TAB,
+    }
 
-    glfw.GLFW_KEY_SPACE: keys.SPACE,
-    glfw.GLFW_KEY_ENTER: keys.ENTER,
-    '\r': keys.ENTER,
-    glfw.GLFW_KEY_TAB: keys.TAB,
-}
-
-
-BUTTONMAP = {glfw.GLFW_MOUSE_BUTTON_LEFT: 1,
-             glfw.GLFW_MOUSE_BUTTON_RIGHT: 2,
-             glfw.GLFW_MOUSE_BUTTON_MIDDLE: 3
-             }
-
+    BUTTONMAP = {glfw.GLFW_MOUSE_BUTTON_LEFT: 1,
+                 glfw.GLFW_MOUSE_BUTTON_RIGHT: 2,
+                 glfw.GLFW_MOUSE_BUTTON_MIDDLE: 3
+                 }
+except Exception as exp:
+    available = False
+    why_not = str(exp)
+else:
+    available = True
+    why_not = None
+    which = 'glfw ' + str(glfw.__version__)
 
 _VP_GLFW_ALL_WINDOWS = []
 

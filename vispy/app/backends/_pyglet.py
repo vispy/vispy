@@ -9,69 +9,81 @@ vispy backend for pyglet.
 from __future__ import division
 
 from distutils.version import LooseVersion
-import pyglet
-version = pyglet.version
-
-if LooseVersion(version) < LooseVersion('1.2'):
-    help_ = ('You can install the latest pyglet using:\n'
-             '    pip install http://pyglet.googlecode.com/archive/tip.zip')
-    raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
-                      % (pyglet.version, help_))
 
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 
 
-# Map native keys to vispy keys
-KEYMAP = {
-    pyglet.window.key.LSHIFT: keys.SHIFT,
-    pyglet.window.key.RSHIFT: keys.SHIFT,
-    pyglet.window.key.LCTRL: keys.CONTROL,
-    pyglet.window.key.RCTRL: keys.CONTROL,
-    pyglet.window.key.LALT: keys.ALT,
-    pyglet.window.key.RALT: keys.ALT,
-    pyglet.window.key.LMETA: keys.META,
-    pyglet.window.key.RMETA: keys.META,
+try:
+    import pyglet
+    version = pyglet.version
+    if LooseVersion(version) < LooseVersion('1.2'):
+        help_ = ('You can install the latest pyglet using:\n    '
+                 'pip install http://pyglet.googlecode.com/archive/tip.zip')
+        raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
+                          % (version, help_))
 
-    pyglet.window.key.LEFT: keys.LEFT,
-    pyglet.window.key.UP: keys.UP,
-    pyglet.window.key.RIGHT: keys.RIGHT,
-    pyglet.window.key.DOWN: keys.DOWN,
-    pyglet.window.key.PAGEUP: keys.PAGEUP,
-    pyglet.window.key.PAGEDOWN: keys.PAGEDOWN,
+    # Map native keys to vispy keys
+    KEYMAP = {
+        pyglet.window.key.LSHIFT: keys.SHIFT,
+        pyglet.window.key.RSHIFT: keys.SHIFT,
+        pyglet.window.key.LCTRL: keys.CONTROL,
+        pyglet.window.key.RCTRL: keys.CONTROL,
+        pyglet.window.key.LALT: keys.ALT,
+        pyglet.window.key.RALT: keys.ALT,
+        pyglet.window.key.LMETA: keys.META,
+        pyglet.window.key.RMETA: keys.META,
 
-    pyglet.window.key.INSERT: keys.INSERT,
-    pyglet.window.key.DELETE: keys.DELETE,
-    pyglet.window.key.HOME: keys.HOME,
-    pyglet.window.key.END: keys.END,
+        pyglet.window.key.LEFT: keys.LEFT,
+        pyglet.window.key.UP: keys.UP,
+        pyglet.window.key.RIGHT: keys.RIGHT,
+        pyglet.window.key.DOWN: keys.DOWN,
+        pyglet.window.key.PAGEUP: keys.PAGEUP,
+        pyglet.window.key.PAGEDOWN: keys.PAGEDOWN,
 
-    pyglet.window.key.ESCAPE: keys.ESCAPE,
-    pyglet.window.key.BACKSPACE: keys.BACKSPACE,
+        pyglet.window.key.INSERT: keys.INSERT,
+        pyglet.window.key.DELETE: keys.DELETE,
+        pyglet.window.key.HOME: keys.HOME,
+        pyglet.window.key.END: keys.END,
 
-    pyglet.window.key.F1: keys.F1,
-    pyglet.window.key.F2: keys.F2,
-    pyglet.window.key.F3: keys.F3,
-    pyglet.window.key.F4: keys.F4,
-    pyglet.window.key.F5: keys.F5,
-    pyglet.window.key.F6: keys.F6,
-    pyglet.window.key.F7: keys.F7,
-    pyglet.window.key.F8: keys.F8,
-    pyglet.window.key.F9: keys.F9,
-    pyglet.window.key.F10: keys.F10,
-    pyglet.window.key.F11: keys.F11,
-    pyglet.window.key.F12: keys.F12,
+        pyglet.window.key.ESCAPE: keys.ESCAPE,
+        pyglet.window.key.BACKSPACE: keys.BACKSPACE,
 
-    pyglet.window.key.SPACE: keys.SPACE,
-    pyglet.window.key.ENTER: keys.ENTER,  # == pyglet.window.key.RETURN
-    pyglet.window.key.NUM_ENTER: keys.ENTER,
-    pyglet.window.key.TAB: keys.TAB,
-}
+        pyglet.window.key.F1: keys.F1,
+        pyglet.window.key.F2: keys.F2,
+        pyglet.window.key.F3: keys.F3,
+        pyglet.window.key.F4: keys.F4,
+        pyglet.window.key.F5: keys.F5,
+        pyglet.window.key.F6: keys.F6,
+        pyglet.window.key.F7: keys.F7,
+        pyglet.window.key.F8: keys.F8,
+        pyglet.window.key.F9: keys.F9,
+        pyglet.window.key.F10: keys.F10,
+        pyglet.window.key.F11: keys.F11,
+        pyglet.window.key.F12: keys.F12,
 
+        pyglet.window.key.SPACE: keys.SPACE,
+        pyglet.window.key.ENTER: keys.ENTER,  # == pyglet.window.key.RETURN
+        pyglet.window.key.NUM_ENTER: keys.ENTER,
+        pyglet.window.key.TAB: keys.TAB,
+    }
 
-BUTTONMAP = {pyglet.window.mouse.LEFT: 1,
-             pyglet.window.mouse.RIGHT: 2,
-             pyglet.window.mouse.MIDDLE: 3
-             }
+    BUTTONMAP = {pyglet.window.mouse.LEFT: 1,
+                 pyglet.window.mouse.RIGHT: 2,
+                 pyglet.window.mouse.MIDDLE: 3
+                 }
+except Exception as exp:
+    available = False
+    why_not = str(exp)
+    which = None
+
+    class _Window(object):
+        pass
+else:
+    available = True
+    why_not = None
+    which = 'pyglet ' + str(pyglet.version)
+    _Window = pyglet.window.Window
 
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -100,7 +112,7 @@ class ApplicationBackend(BaseApplicationBackend):
         return pyglet.app
 
 
-class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
+class CanvasBackend(_Window, BaseCanvasBackend):
 
     """ Pyglet backend for Canvas abstract class."""
 

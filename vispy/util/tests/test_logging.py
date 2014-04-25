@@ -31,6 +31,7 @@ def test_debug_logging():
         a = app.Application()
         a.use()
         a.quit()
+    print(l)
     assert_equal(len(l), 1)
     assert_in('vispy.app.application', l[0])
 
