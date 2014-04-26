@@ -47,20 +47,25 @@ class Entity(object):
 
     @property
     def children(self):
-        """ The list of children of this entity.
+        """ The list of children of this entity. The children are in 
+        arbitrary order.
         """
         return list(self._children)
 
     @property
     def parents(self):
-        """ Get/set the list of parents. Typically the tuple will have
+        """ Get/set a tuple of parents. Typically the tuple will have
         one element.
         """
-        return list(self._parents)
+        # todo: ak: I don't like plural "parents", since 99% of the time it 
+        # will be singular
+        return tuple(self._parents)
 
     @parents.setter
     def parents(self, parents):
         # Test input
+        if isinstance(parents, Entity):
+            parents = (parents,)
         if not hasattr(parents, '__iter__'):
             raise ValueError("Entity.parents must be iterable (got %s)" % type(parents))
 
@@ -78,7 +83,6 @@ class Entity(object):
             # Remove from parents
             for parent in prev - parents:
                 self.remove_parent(parent)
-                
             # Add new
             for parent in parents - prev:
                 self.add_parent(parent)
@@ -151,7 +155,7 @@ class Entity(object):
     
     def _process_paint_event(self, event):
         """
-        Paint the entire tree of Entities beginnging here.            
+        Paint the entire tree of Entities beginning here.            
         """
         for enter, path in self.walk():
             event._set_path(path)

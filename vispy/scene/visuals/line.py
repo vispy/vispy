@@ -34,8 +34,8 @@ class Line(Visual):
     """
     Displays multiple line segments.
     """
-    def __init__(self, pos=None, **kwds):
-        super(Line, self).__init__()
+    def __init__(self, parents=None, pos=None, **kwds):
+        super(Line, self).__init__(parents)
         
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)

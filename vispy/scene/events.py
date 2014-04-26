@@ -59,6 +59,9 @@ class SceneEvent(Event):
         
         Most entities should use this transform when painting.
         """
+        # todo: ak: I am not sure how this works
+        # I suspect it is related to our difference in views on the
+        # role of cameras
         viewport = self._viewport_stack[-1]
         csize = self.canvas.size
         scale = csize[0]/viewport[2], csize[1]/viewport[3]

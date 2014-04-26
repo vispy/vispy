@@ -6,7 +6,8 @@ from __future__ import division
 
 from ..gloo import gl
 from .. import app
-from .viewbox import Document
+
+from .viewbox import Document, ViewBox
 from .transforms import STTransform
 from .events import ScenePaintEvent, SceneMouseEvent
 
@@ -19,16 +20,18 @@ class SceneCanvas(app.Canvas):
     """
 
     def __init__(self, *args, **kwargs):
+        
         app.Canvas.__init__(self, *args, **kwargs)
         self.events.mouse_press.connect(self._process_mouse_event)
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
         
-        root = Document()
-        root.transform = STTransform()
         self._root = None
+        #root = Document()
+        root = ViewBox()
+        root.transform = STTransform()
         self.root = root
-
+        
     @property
     def root(self):
         """ The root entity of the scene graph to be displayed.
@@ -64,15 +67,18 @@ class SceneCanvas(app.Canvas):
         
 
         # Draw viewbox
-        scene_event = ScenePaintEvent(canvas=self, event=event)
-        scene_event.push_viewport(0, 0, *self.size)
+        self._process_entity_count = 0  # for debugging
+        self._root.process_system(self, 'draw')  # process drawing system
+        #scene_event = ScenePaintEvent(canvas=self, event=event)
+        #scene_event.push_viewport(0, 0, *self.size)
 
-        self._root._process_paint_event(scene_event)
-        
+        #self._root._process_paint_event(scene_event)
 
     def _process_mouse_event(self, event):
         scene_event = SceneMouseEvent(canvas=self, event=event)
-        self._root._process_mouse_event(scene_event)
+        # todo: ak: I disabled this for now. I have a feeling that we should also
+        # do this via a system
+        #self._root._process_mouse_event(scene_event)
         
         # If something in the scene handled the scene_event, then we mark
         # the original event accordingly.
