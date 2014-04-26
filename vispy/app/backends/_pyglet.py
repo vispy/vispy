@@ -14,6 +14,8 @@ from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 
 
+# -------------------------------------------------------------------- init ---
+
 try:
     import pyglet
     version = pyglet.version
@@ -86,6 +88,49 @@ else:
     _Window = pyglet.window.Window
 
 
+# -------------------------------------------------------------- capability ---
+
+capability = dict(
+    position=True,
+    size=True,
+    multi_window=True,
+    scroll=True,
+    no_decoration=True,
+    no_sizing=True,
+    fullscreen=True,
+    unicode=True,
+    gl_version=False,
+    gl_profile=False,
+    share_context=True,
+)
+
+
+# ------------------------------------------------------- set_configuration ---
+
+def _set_config(config):
+    """Set gl configuration"""
+    pyglet_config = pyglet.gl.Config()
+
+    pyglet_config.red_size = config['red_size']
+    pyglet_config.green_size = config['green_size']
+    pyglet_config.blue_size = config['blue_size']
+    pyglet_config.alpha_size = config['alpha_size']
+
+    pyglet_config.accum_red_size = 0
+    pyglet_config.accum_green_size = 0
+    pyglet_config.accum_blue_size = 0
+    pyglet_config.accum_alpha_size = 0
+
+    pyglet_config.depth_size = config['depth_size']
+    pyglet_config.stencil_size = config['stencil_size']
+    pyglet_config.double_buffer = config['double_buffer']
+    pyglet_config.stereo = config['stereo']
+    pyglet_config.samples = config['samples']
+    return pyglet_config
+
+
+# ------------------------------------------------------------- application ---
+
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
@@ -112,13 +157,17 @@ class ApplicationBackend(BaseApplicationBackend):
         return pyglet.app
 
 
+# ------------------------------------------------------------------ canvas ---
+
 class CanvasBackend(_Window, BaseCanvasBackend):
 
     """ Pyglet backend for Canvas abstract class."""
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        title, size, show, position = self._process_backend_kwargs(kwargs)
+        title, size, show, position, config = \
+            self._process_backend_kwargs(kwargs)
+        config = _set_config(config)  # transform to Pyglet config
         # Initialize native widget, but default hidden and resizable
         kwargs['resizable'] = kwargs.get('resizable', True)
         kwargs['vsync'] = kwargs.get('vsync', 0)
@@ -130,7 +179,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         self._pending_position = None
         pyglet.window.Window.__init__(self, width=size[0], height=size[1],
                                       caption=title, visible=show,
-                                      *args, **kwargs)
+                                      config=config, *args, **kwargs)
         if position is not None:
             self._vispy_set_position(*position)
 
@@ -334,6 +383,8 @@ class CanvasBackend(_Window, BaseCanvasBackend):
                 mod += keys.ALT,
         return mod
 
+
+# ------------------------------------------------------------------- timer ---
 
 class TimerBackend(BaseTimerBackend):
 

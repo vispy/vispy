@@ -15,6 +15,8 @@ from time import sleep, time
 from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import ptime, keys, logger
 
+# -------------------------------------------------------------------- init ---
+
 try:
     from OpenGL import platform
     import OpenGL.error
@@ -123,6 +125,53 @@ else:
 
 _VP_GLUT_ALL_WINDOWS = []
 
+# -------------------------------------------------------------- capability ---
+
+capability = dict(
+    position=True,
+    size=True,
+    multi_window=False,
+    scroll=False,
+    no_decoration=True,
+    no_sizing=False,
+    fullscreen=True,
+    unicode=False,
+    gl_version=False,
+    gl_profile=False,
+    share_context=False,
+)
+
+
+# ------------------------------------------------------- set_configuration ---
+
+def _set_config(config):
+    """Set gl configuration"""
+    s = ""
+    if sys.platform == 'darwin':
+        s += "acca=0 "  # No accum buffer
+        s += "red>=%d " % config['red_size']
+        s += "green>=%d " % config['green_size']
+        s += "blue>=%d " % config['blue_size']
+        s += "alpha>=%d " % config['alpha_size']
+        s += "depth>=%d " % config['depth_size']
+        s += "stencil~%d " % config['stencil_size']
+        s += "double=1 " if config['double_buffer'] else "single=1 "
+        s += "stereo=%d " % config['stereo']
+        s += "samples~%d " % config['samples']
+    else:  # freeglut
+        s += "red=%d " % config['red_size']
+        s += "green=%d " % config['green_size']
+        s += "blue=%d " % config['blue_size']
+        s += "alpha=%d " % config['alpha_size']
+        s += "depth=%d " % config['depth_size']
+        s += "stencil=%d " % config['stencil_size']
+        s += "double " if config['double_buffer'] else "single "
+        s += "stereo " if config['stereo'] else ""
+        s += "samples=%d " % config['samples'] if config['samples'] else ""
+    return s.encode('ASCII')
+
+
+# ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
 
@@ -192,13 +241,18 @@ def _set_close_fun(id_, fun):
             pass
 
 
+# ------------------------------------------------------------------ canvas ---
+
 class CanvasBackend(BaseCanvasBackend):
 
     """ GLUT backend for Canvas abstract class."""
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        title, size, show, position = self._process_backend_kwargs(kwargs)
+        title, size, show, position, config = \
+            self._process_backend_kwargs(kwargs)
+        config = _set_config(config)
+        glut.glutInitDisplayString(config)
         glut.glutInitWindowSize(size[0], size[1])
         self._id = glut.glutCreateWindow(title.encode('ASCII'))
         if not self._id:
@@ -396,6 +450,8 @@ class CanvasBackend(BaseCanvasBackend):
             self._modifiers_cache = mod
         return self._modifiers_cache
 
+
+# ------------------------------------------------------------------- timer ---
 
 # Note: we could also build a timer using glutTimerFunc, but this causes
 # trouble because timer callbacks appear to take precedence over all others.

@@ -26,6 +26,8 @@ if len(ATTEMPTED_BACKENDS):
 else:
     qt_lib = 'any'
 
+# -------------------------------------------------------------------- init ---
+
 try:
     # Import PySide or PyQt4
     if qt_lib in ('any', 'qt'):
@@ -110,6 +112,46 @@ else:
 
 BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
+# -------------------------------------------------------------- capability ---
+
+capability = dict(
+    position=True,
+    size=True,
+    multi_window=True,
+    scroll=True,
+    no_decoration=True,
+    no_sizing=True,
+    fullscreen=True,
+    unicode=True,
+    gl_version=True,
+    gl_profile=True,
+    share_context=True,
+)
+
+
+# ------------------------------------------------------- set_configuration ---
+def _set_config(c):
+    """Set the OpenGL configuration"""
+    glformat = QtOpenGL.QGLFormat()
+    glformat.setRedBufferSize(c['red_size'])
+    glformat.setGreenBufferSize(c['green_size'])
+    glformat.setBlueBufferSize(c['blue_size'])
+    glformat.setAlphaBufferSize(c['alpha_size'])
+    glformat.setAccum(False)
+    glformat.setRgba(True)
+    glformat.setDoubleBuffer(True if c['double_buffer'] else False)
+    glformat.setDepth(True if c['depth_size'] else False)
+    glformat.setDepthBufferSize(c['depth_size'] if c['depth_size'] else 0)
+    glformat.setStencil(True if c['stencil_size'] else False)
+    glformat.setStencilBufferSize(c['stencil_size'] if c['stencil_size']
+                                  else 0)
+    glformat.setSampleBuffers(True if c['samples'] else False)
+    glformat.setSamples(c['samples'] if c['samples'] else 0)
+    glformat.setStereo(c['stereo'])
+    return glformat
+
+
+# ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
 
@@ -149,14 +191,19 @@ class ApplicationBackend(BaseApplicationBackend):
         return app
 
 
+# ------------------------------------------------------------------ canvas ---
+
 class CanvasBackend(_QGLWidget, BaseCanvasBackend):
 
     """Qt backend for Canvas abstract class."""
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        title, size, show, position = self._process_backend_kwargs(kwargs)
-        QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
+        title, size, show, position, config = \
+            self._process_backend_kwargs(kwargs)
+        glformat = _set_config(config)
+        glformat.setSwapInterval(0)
+        QtOpenGL.QGLWidget.__init__(self, glformat, *args, **kwargs)
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
         self._vispy_set_title(title)
@@ -331,15 +378,8 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
             QtOpenGL.QGLWidget.__del__(self)
 
 
-# class QtMouseEvent(MouseEvent):
-# special subclass of MouseEvent for propagating acceptance info back to Qt.
-#     @MouseEvent.handled.setter
-#     def handled(self, val):
-#         self._handled = val
-#         if val:
-#             self.qt_event.accept()
-#         else:
-#             self.qt_event.ignore()
+# ------------------------------------------------------------------- timer ---
+
 class TimerBackend(BaseTimerBackend, _QTimer):
 
     def __init__(self, vispy_timer):

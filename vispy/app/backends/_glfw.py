@@ -25,6 +25,9 @@ from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
 from ...util import keys
 from ...util.ptime import time
 
+
+# -------------------------------------------------------------------- init ---
+
 try:
     from . import _libglfw as glfw
     if not glfw.glfwInit():  # only ever call once
@@ -101,6 +104,48 @@ def _get_glfw_windows():
     return wins
 
 
+# -------------------------------------------------------------- capability ---
+
+capability = dict(
+    position=True,
+    size=True,
+    multi_window=True,
+    scroll=True,
+    no_decoration=True,
+    no_sizing=True,
+    fullscreen=True,
+    unicode=True,
+    gl_version=True,
+    gl_profile=True,
+    share_context=True,
+)
+
+
+# ------------------------------------------------------- set_configuration ---
+
+def _set_config(c):
+    """Set gl configuration for GLFW """
+    glfw.glfwWindowHint(glfw.GLFW_RED_BITS, c['red_size'])
+    glfw.glfwWindowHint(glfw.GLFW_GREEN_BITS, c['green_size'])
+    glfw.glfwWindowHint(glfw.GLFW_BLUE_BITS, c['blue_size'])
+    glfw.glfwWindowHint(glfw.GLFW_ALPHA_BITS, c['alpha_size'])
+
+    glfw.glfwWindowHint(glfw.GLFW_ACCUM_RED_BITS, 0)
+    glfw.glfwWindowHint(glfw.GLFW_ACCUM_GREEN_BITS, 0)
+    glfw.glfwWindowHint(glfw.GLFW_ACCUM_BLUE_BITS, 0)
+    glfw.glfwWindowHint(glfw.GLFW_ACCUM_ALPHA_BITS, 0)
+
+    glfw.glfwWindowHint(glfw.GLFW_DEPTH_BITS, c['depth_size'])
+    glfw.glfwWindowHint(glfw.GLFW_STENCIL_BITS, c['stencil_size'])
+    glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MAJOR, c['major_version'])
+    glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, c['minor_version'])
+    glfw.glfwWindowHint(glfw.GLFW_SRGB_CAPABLE, c['srgb'])
+    glfw.glfwWindowHint(glfw.GLFW_SAMPLES, c['samples'])
+    glfw.glfwWindowHint(glfw.GLFW_STEREO, c['stereo'])
+
+
+# ------------------------------------------------------------- application ---
+
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
@@ -145,21 +190,21 @@ class ApplicationBackend(BaseApplicationBackend):
         return glfw
 
 
+# ------------------------------------------------------------------ canvas ---
+
 class CanvasBackend(BaseCanvasBackend):
 
     """ Glfw backend for Canvas abstract class."""
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        title, size, show, position = self._process_backend_kwargs(kwargs)
+        title, size, show, position, config = \
+            self._process_backend_kwargs(kwargs)
         # Init GLFW, add window hints, and create window
+        _set_config(config)
         glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)
+        glfw.glfwSwapInterval(0)
         glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, True)
-        glfw.glfwWindowHint(glfw.GLFW_DEPTH_BITS, 24)
-        glfw.glfwWindowHint(glfw.GLFW_RED_BITS, 8)
-        glfw.glfwWindowHint(glfw.GLFW_GREEN_BITS, 8)
-        glfw.glfwWindowHint(glfw.GLFW_BLUE_BITS, 8)
-        glfw.glfwWindowHint(glfw.GLFW_ALPHA_BITS, 8)
         glfw.glfwWindowHint(glfw.GLFW_DECORATED, True)
         glfw.glfwWindowHint(glfw.GLFW_VISIBLE, True)
         self._id = glfw.glfwCreateWindow(width=size[0], height=size[1],
@@ -177,7 +222,6 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSetScrollCallback(self._id, self._on_mouse_scroll)
         glfw.glfwSetCursorPosCallback(self._id, self._on_mouse_motion)
         glfw.glfwSetWindowCloseCallback(self._id, self._on_close)
-        glfw.glfwSwapInterval(1)  # avoid tearing
         self._vispy_canvas_ = None
         self._needs_draw = False
         if position is not None:
@@ -185,7 +229,7 @@ class CanvasBackend(BaseCanvasBackend):
         if not show:
             glfw.glfwHideWindow(self._id)
 
-    ###########################################################################
+    ####################################
     # Deal with events we get from vispy
     @property
     def _vispy_canvas(self):
@@ -276,7 +320,7 @@ class CanvasBackend(BaseCanvasBackend):
         x, y = glfw.glfwGetWindowPos(self._id)
         return x, y
 
-    ###########################################################################
+    ##########################################
     # Notify vispy of events triggered by GLFW
     def _on_resize(self, _id, w, h):
         if self._vispy_canvas is None:
@@ -359,6 +403,8 @@ class CanvasBackend(BaseCanvasBackend):
                 self._mod.pop(self._mod.index(key))
         return self._mod
 
+
+# ------------------------------------------------------------------- timer ---
 
 class TimerBackend(BaseTimerBackend):
 

@@ -19,7 +19,8 @@ __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',
            'set_stencil_op', 'set_depth_func', 'set_depth_mask',
            'set_color_mask', 'set_sample_coverage',
            'get_state_presets', 'set_state', 'finish', 'flush',
-           'get_parameter', 'read_pixels', 'set_hint')
+           'get_parameter', 'read_pixels', 'set_hint',
+           'get_gl_configuration')
 _setters = [s[4:] for s in __all__
             if s.startswith('set_') and s != 'set_state']
 
@@ -607,3 +608,70 @@ def set_hint(target, mode):
     if not all(isinstance(tm, string_types) for tm in (target, mode)):
         raise TypeError('target and mode must both be strings')
     gl.glHint(_gl_attr(target), _gl_attr(mode))
+
+
+###############################################################################
+# Current OpenGL configuration
+
+def get_gl_configuration():
+    """Read the current gl configuration
+
+    Returns
+    -------
+    config : dict
+        The currently active OpenGL configuration.
+    """
+    config = dict()
+
+    """
+    gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+    value = ctypes.c_int()
+    gl.glGetFramebufferAttachmentParameteriv(
+        gl.GL_FRAMEBUFFER, gl.GL_FRONT_LEFT,
+        gl.GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE, value )
+    config['red_size'] = value.value
+
+    gl.glGetFramebufferAttachmentParameteriv(
+        gl.GL_FRAMEBUFFER, gl.GL_FRONT_LEFT,
+        gl.GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE, value )
+    config['green_size'] = value.value
+
+    gl.glGetFramebufferAttachmentParameteriv(
+        gl.GL_FRAMEBUFFER, gl.GL_FRONT_LEFT,
+        gl.GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE, value )
+    config['blue_size'] = value.value
+
+    gl.glGetFramebufferAttachmentParameteriv(
+        gl.GL_FRAMEBUFFER, gl.GL_FRONT_LEFT,
+        gl.GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE, value )
+    config['alpha_size'] = value.value
+
+    gl.glGetFramebufferAttachmentParameteriv(
+        gl.GL_FRAMEBUFFER, gl.GL_DEPTH,
+        gl.GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE, value )
+    config['depth_size'] = value.value
+
+    gl.glGetFramebufferAttachmentParameteriv(
+        gl.GL_FRAMEBUFFER, gl.GL_STENCIL,
+        gl.GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE, value )
+    config['stencil_size'] = value.value
+
+    gl.glGetFramebufferAttachmentParameteriv(
+        gl.GL_FRAMEBUFFER, gl.GL_FRONT_LEFT,
+        gl.GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, value )
+    if value.value == gl.GL_LINEAR:
+        config['srgb'] = False
+    elif value.value == gl.GL_SRGB:
+        config['srgb'] = True
+    else:
+        raise RuntimeError('unknown value for SRGB')
+    config['stereo'] = gl.glGetParameter(gl.GL_STEREO)
+    config['double_buffer'] = gl.glGetParameter(gl.GL_DOUBLEBUFFER)
+    """
+    config['samples'] = gl.glGetParameter(gl.GL_SAMPLES)
+
+    # Dumb parsing of the GL_VERSION string
+    major, minor = gl.glGetParameter(gl.GL_VERSION).split(' ')[0].split('.')
+    config['major_version'] = int(major)
+    config['minor_version'] = int(minor)
+    return config

@@ -11,6 +11,7 @@ from ..util.event import EmitterGroup, Event
 from ..util.ptime import time
 from ..util.six import string_types
 from .application import Application
+from .configuration import get_default_config
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -88,11 +89,12 @@ class Canvas(object):
         self._backend_kwargs = native_kwargs or {}
 
         # change arguments that get set on Canvas init
-        # XXX eventually we can add Context-related kwargs here
         self._backend_kwargs['_vispy_title'] = title
         self._backend_kwargs['_vispy_size'] = size
         self._backend_kwargs['_vispy_show'] = show
         self._backend_kwargs['_vispy_position'] = position
+        gl_config = get_default_config()
+        self._backend_kwargs['_vispy_gl_config'] = gl_config
 
         # Initialise some values
         self._autoswap = autoswap
