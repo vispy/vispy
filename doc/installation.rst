@@ -249,6 +249,13 @@ Hello World !
 
 .. code-block:: python
 
-   import vispy
-   vispy.app.Canvas(visible=True)
-   vispy.app.run()
+   import vispy.app as app
+   import vispy.gloo as gloo
+
+   canvas = app.Canvas('Hello World !', visible=True)
+
+   @canvas.events.paint.connect
+   def on_paint(event):
+       gloo.clear(color=(0,0,0,1))
+
+   app.run()
