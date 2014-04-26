@@ -98,6 +98,7 @@ capability = dict(
     no_decoration=True,
     no_sizing=True,
     fullscreen=True,
+    vsync=True,
     unicode=True,
     gl_version=False,
     gl_profile=False,
@@ -165,13 +166,11 @@ class CanvasBackend(_Window, BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        title, size, show, position, config = \
+        title, size, show, position, config, vsync, resizable, decorated = \
             self._process_backend_kwargs(kwargs)
         config = _set_config(config)  # transform to Pyglet config
-        # Initialize native widget, but default hidden and resizable
-        kwargs['resizable'] = kwargs.get('resizable', True)
-        kwargs['vsync'] = kwargs.get('vsync', 0)
-
+        style = (pyglet.window.Window.WINDOW_STYLE_DEFAULT if decorated else
+                 pyglet.window.Window.WINDOW_STYLE_BORDERLESS)
         # We keep track of modifier keys so we can pass them to mouse_motion
         self._current_modifiers = set()
         #self._buttons_accepted = 0
@@ -179,7 +178,9 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         self._pending_position = None
         pyglet.window.Window.__init__(self, width=size[0], height=size[1],
                                       caption=title, visible=show,
-                                      config=config, *args, **kwargs)
+                                      config=config, vsync=vsync,
+                                      resizable=resizable, style=style,
+                                      *args, **kwargs)
         if position is not None:
             self._vispy_set_position(*position)
 

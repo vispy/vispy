@@ -135,6 +135,7 @@ capability = dict(
     no_decoration=True,
     no_sizing=False,
     fullscreen=True,
+    vsync=False,
     unicode=False,
     gl_version=False,
     gl_profile=False,
@@ -249,7 +250,7 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        title, size, show, position, config = \
+        title, size, show, position, config, vsync, resizable, decorated = \
             self._process_backend_kwargs(kwargs)
         config = _set_config(config)
         glut.glutInitDisplayString(config)

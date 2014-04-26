@@ -53,6 +53,12 @@ class Canvas(object):
         Whether to create the widget immediately. Default True.
     init_gloo : bool
         Initialize standard values in gloo (e.g., ``GL_POINT_SPRITE``).
+    vsync : bool
+        Enable vertical synchronization.
+    resizable : bool
+        Allow the window to be resized.
+    decorated : bool
+        Decorate the window.
     native_args : iterable
         Extra arguments to use when creating the native widget.
     native_kwargs : dict
@@ -61,7 +67,8 @@ class Canvas(object):
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
-                 init_gloo=True, native_args=None, native_kwargs=None):
+                 init_gloo=True, vsync=False, resizable=True, decorated=True,
+                 native_args=None, native_kwargs=None):
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
                                    resize=ResizeEvent,
@@ -95,6 +102,9 @@ class Canvas(object):
         self._backend_kwargs['_vispy_position'] = position
         gl_config = get_default_config()
         self._backend_kwargs['_vispy_gl_config'] = gl_config
+        self._backend_kwargs['_vispy_vsync'] = vsync
+        self._backend_kwargs['_vispy_resizable'] = resizable
+        self._backend_kwargs['_vispy_decorated'] = decorated
 
         # Initialise some values
         self._autoswap = autoswap

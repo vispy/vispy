@@ -53,13 +53,17 @@ class BaseCanvasBackend(object):
 
     def _process_backend_kwargs(self, kwargs):
         """Removes vispy-specific kwargs for CanvasBackend"""
-        title = kwargs.pop('_vispy_title', 'vispy window')
-        size = kwargs.pop('_vispy_size', [640, 480])
-        show = kwargs.pop('_vispy_show', True)
-        position = kwargs.pop('_vispy_position', None)
         default_config = get_default_config()
-        config = kwargs.pop('_vispy_gl_config', default_config)
-        return title, size, show, position, config
+        out = (kwargs.pop('_vispy_title', 'vispy window'),
+               kwargs.pop('_vispy_size', [640, 480]),
+               kwargs.pop('_vispy_show', True),
+               kwargs.pop('_vispy_position', None),
+               kwargs.pop('_vispy_gl_config', default_config),
+               kwargs.pop('_vispy_vsync', False),
+               kwargs.pop('_vispy_resizable', True),
+               kwargs.pop('_vispy_decorated', True),
+               )
+        return out
 
     def _vispy_set_current(self):
         # todo: this is currently not used internally

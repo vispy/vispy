@@ -114,6 +114,7 @@ capability = dict(
     no_decoration=True,
     no_sizing=True,
     fullscreen=True,
+    vsync=True,
     unicode=True,
     gl_version=True,
     gl_profile=True,
@@ -137,9 +138,9 @@ def _set_config(c):
 
     glfw.glfwWindowHint(glfw.GLFW_DEPTH_BITS, c['depth_size'])
     glfw.glfwWindowHint(glfw.GLFW_STENCIL_BITS, c['stencil_size'])
-    glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MAJOR, c['major_version'])
-    glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, c['minor_version'])
-    glfw.glfwWindowHint(glfw.GLFW_SRGB_CAPABLE, c['srgb'])
+    #glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MAJOR, c['major_version'])
+    #glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, c['minor_version'])
+    #glfw.glfwWindowHint(glfw.GLFW_SRGB_CAPABLE, c['srgb'])
     glfw.glfwWindowHint(glfw.GLFW_SAMPLES, c['samples'])
     glfw.glfwWindowHint(glfw.GLFW_STEREO, c['stereo'])
 
@@ -198,15 +199,15 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        title, size, show, position, config = \
+        title, size, show, position, config, vsync, resizable, decorated = \
             self._process_backend_kwargs(kwargs)
         # Init GLFW, add window hints, and create window
         _set_config(config)
-        glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)
-        glfw.glfwSwapInterval(0)
-        glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, True)
-        glfw.glfwWindowHint(glfw.GLFW_DECORATED, True)
-        glfw.glfwWindowHint(glfw.GLFW_VISIBLE, True)
+        glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)  # highest possible
+        glfw.glfwSwapInterval(1 if vsync else 0)
+        glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, int(resizable))
+        glfw.glfwWindowHint(glfw.GLFW_DECORATED, int(decorated))
+        glfw.glfwWindowHint(glfw.GLFW_VISIBLE, 1)  # start out showing
         self._id = glfw.glfwCreateWindow(width=size[0], height=size[1],
                                          title=title)
         if not self._id:

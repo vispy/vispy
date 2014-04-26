@@ -122,6 +122,7 @@ capability = dict(
     no_decoration=True,
     no_sizing=True,
     fullscreen=True,
+    vsync=True,
     unicode=True,
     gl_version=True,
     gl_profile=True,
@@ -199,11 +200,15 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
 
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self)
-        title, size, show, position, config = \
+        title, size, show, position, config, vsync, resizable, decorated = \
             self._process_backend_kwargs(kwargs)
         glformat = _set_config(config)
-        glformat.setSwapInterval(0)
-        QtOpenGL.QGLWidget.__init__(self, glformat, *args, **kwargs)
+        glformat.setSwapInterval(1 if vsync else 0)
+        f = QtCore.Qt.Widget if decorated else QtCore.Qt.FramelessWindowHint
+        parent = kwargs.pop('parent', None)
+        widget = kwargs.pop('shareWidget', None)
+        # first arg can be glformat, or a shared context
+        QtOpenGL.QGLWidget.__init__(self, glformat, parent, widget, f)
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
         self._vispy_set_title(title)
