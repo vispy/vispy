@@ -117,16 +117,16 @@ developing games and other visually-rich applications for Windows, Mac OS X
 and Linux.
 
 
-GTK2 (not yet done)
+GTK 2.x (not yet done)
 -------------------------------------------------------------------------------
 
-GTK3 (not yet done)
+GTK 3.x (not yet done)
 -------------------------------------------------------------------------------
 
-WX2 (not yet done)
+WX 2.x (not yet done)
 -------------------------------------------------------------------------------
 
-WX3 (not yet done)
+WX 3.x (not yet done)
 -------------------------------------------------------------------------------
 
 PyGame (a.k.a. SDL)
