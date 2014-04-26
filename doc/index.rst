@@ -30,7 +30,7 @@ create beautiful visualizations in a few lines of code. Stay tuned!
 
 
 About us
--------------------------------------------------------------------------------
+--------
 
 The core development team consists of Luke Campagnola, Almar Klein, Nicolas
 Rougier, Cyrille Rossant. We have each written our own Python visualization
@@ -45,19 +45,6 @@ expect vispy to have all the features of our respective toolkits combined, and
 more.
 
 
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-
-   installation.rst
-   vispy.app - Application API <app>
-   vispy.gloo - object oriented GL API <gloo>
-   vispy.util - Utilities <util>
-
-   examples
-   releasenotes
-
-
 
 More information
 -------------------------------------------------------------------------------
@@ -66,6 +53,24 @@ More information
   * Mailing list is at https://groups.google.com/d/forum/vispy
   * API documentation at http://vispy.readthedocs.org
   * Gallery of examples at http://vispy.org/gallery.html
+
+
+Table of Contents
+-----------------
+
+.. toctree::
+   :maxdepth: 1
+
+   installation.rst
+   opengl.rst
+   gloo-interface.rst
+
+   vispy.app - Application API <app>
+   vispy.gloo - object oriented GL API <gloo>
+   vispy.util - Utilities <util>
+
+   examples
+   releasenotes
 
 
 

@@ -32,8 +32,7 @@ sys.path.append(os.path.abspath('ext'))
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath',
               'sphinx.ext.autosummary',  # 'plot2rst',
               'sphinx.ext.intersphinx',
-              'numpydoc',
-              'vispy_ext', ]  # 'scriptnamemangler',]
+              'numpydoc', 'vispy_ext', ]  # 'scriptnamemangler',]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -107,6 +106,8 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages. Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
 # html_theme = 'scikit-image'
+# html_theme = 'default'
+# html_theme = 'default'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further. For a list of options available for each theme, see the
@@ -114,11 +115,11 @@ pygments_style = 'sphinx'
 # html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-# html_theme_path = ['themes']
+# html_theme_path = ['_themes']
+
 
 # on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-
 # only import and set the theme if we're building docs locally
 if not on_rtd:
     import sphinx_rtd_theme
