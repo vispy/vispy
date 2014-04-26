@@ -1,4 +1,4 @@
-from nose.tools import assert_equal
+from nose.tools import assert_equal, assert_true
 import logging
 
 from vispy import app
@@ -31,8 +31,7 @@ def test_debug_logging():
         a = app.Application()
         a.use()
         a.quit()
-    print(l)
-    assert_equal(len(l), 1)
+    assert_true(len(l) >= 1)  # some might be skipped
     assert_in('vispy.app.application', l[0])
 
     with use_log_level('debug', 'foo', True) as l:
@@ -45,5 +44,5 @@ def test_debug_logging():
         a = app.Application()
         a.use()
         a.quit()
-    assert_equal(len(l), 1)
+    assert_true(len(l) >= 1)  # some might be skipped
     assert_not_in('vispy.app.application', l[0])
