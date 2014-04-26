@@ -37,7 +37,13 @@ Multiple windows       ✓   ✓     ✓     ✓    ✓    ✓
 --------------------- --- ---- ------ ---- ---- ---
 Non-decorated windows  ✓   ✓     ✓     ✓    ✓    ✓
 --------------------- --- ---- ------ ---- ---- ---
+Resize windows         ✓   ✓     ✓     ✓    ✓    ✓
+--------------------- --- ---- ------ ---- ---- ---
+Move windows           ✓   ✓     ✓     ✓    ✓    ✓
+--------------------- --- ---- ------ ---- ---- ---
 Set GL API             ✓   ✓    —      ✓    ✓    ✓
+--------------------- --- ---- ------ ---- ---- ---
+Set GL Profile         ✓   ✓    —      ✓    ✓    ✓
 --------------------- --- ---- ------ ---- ---- ---
 Share GL Context       ✓   ✓     ✓     ✓    ✓    ✓
 --------------------- --- ---- ------ ---- ---- ---
@@ -53,7 +59,13 @@ Multiple windows          ✓   —      —       —      ✓
 ------------------------ --- ---- -------- ------ -------
 Non-decorated windows     ✓   ✓      ✓       ✓      ✓
 ------------------------ --- ---- -------- ------ -------
+Resize windows            ✓   ✓      ✓       —      ✓
+------------------------ --- ---- -------- ------ -------
+Move windows              ✓   ✓      ✓       —      ✓
+------------------------ --- ---- -------- ------ -------
 Set GL API                —   —      —       —      —
+------------------------ --- ---- -------- ------ -------
+Set GL Profile            —   —      —       —      —
 ------------------------ --- ---- -------- ------ -------
 Share GL Context          —   —      —       ✓      ✓
 ------------------------ --- ---- -------- ------ -------
@@ -63,19 +75,6 @@ Unicode handling          ✓   —      —       ✓      ✓
 ------------------------ --- ---- -------- ------ -------
 Scroll event              ✓   —      ✓       —      ✓
 ======================== === ==== ======== ====== =======
-
-
-    "Window position get/set" : True,
-    "Window size get/set"     : True,
-    "Multiple windows"        : False,
-    "Mouse scroll events"     : False,
-    "Non-decorated window"    : True,
-    "Non-sizeable window"     : False,
-    "Fullscreen mode"         : True,
-    "Unicode processing"      : False,
-    "Set GL version"          : False,
-    "Set GL profile"          : False,
-    "Share GL context"        : False,
 
 
 Qt
