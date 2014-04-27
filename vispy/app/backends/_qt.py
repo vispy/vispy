@@ -10,10 +10,12 @@ from __future__ import division
 from time import sleep, time
 
 from ... import config
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, BaseSharedContext)
 from ...util import keys
 from . import ATTEMPTED_BACKENDS
 from ...util.six import text_type
+from ...util import logger
 
 # Get what qt lib to try
 if len(ATTEMPTED_BACKENDS):
@@ -115,18 +117,16 @@ BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 # -------------------------------------------------------------- capability ---
 
 capability = dict(
-    position=True,
+    title=True,
     size=True,
+    position=True,
+    show=True,
     multi_window=True,
     scroll=True,
     no_decoration=True,
     no_sizing=True,
-    fullscreen=True,
     vsync=True,
-    unicode=True,
-    gl_version=True,
-    gl_profile=True,
-    share_context=True,
+    context=True,
 )
 
 
@@ -150,6 +150,10 @@ def _set_config(c):
     glformat.setSamples(c['samples'] if c['samples'] else 0)
     glformat.setStereo(c['stereo'])
     return glformat
+
+
+class SharedContext(BaseSharedContext):
+    _backend = 'qt'
 
 
 # ------------------------------------------------------------- application ---
@@ -199,24 +203,43 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
     """Qt backend for Canvas abstract class."""
 
     def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self)
-        title, size, show, position, config, vsync, resizable, decorated = \
+        BaseCanvasBackend.__init__(self, capability, SharedContext)
+        title, size, position, show, vsync, resize, dec, fs, context = \
             self._process_backend_kwargs(kwargs)
-        glformat = _set_config(config)
-        glformat.setSwapInterval(1 if vsync else 0)
-        f = QtCore.Qt.Widget if decorated else QtCore.Qt.FramelessWindowHint
+        if isinstance(context, dict):
+            glformat = _set_config(context)
+            glformat.setSwapInterval(1 if vsync else 0)
+        else:
+            glformat = context.value
+        f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
         parent = kwargs.pop('parent', None)
         widget = kwargs.pop('shareWidget', None)
         # first arg can be glformat, or a shared context
         QtOpenGL.QGLWidget.__init__(self, glformat, parent, widget, f)
+        if not self.isValid():
+            raise RuntimeError('context could not be created')
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
         self._vispy_set_title(title)
         self._vispy_set_size(*size)
+        if fs:
+            if not isinstance(fs, bool):
+                logger.warn('Cannot specify monitor for Qt fullscreen, '
+                            'using default')
+            self._fs = True
+        else:
+            self._fs = False
+        if not resize:
+            self.setFixedSize(self.size())
         if position is not None:
             self._vispy_set_position(*position)
         if show:
             self._vispy_set_visible(True)
+
+    @property
+    def _vispy_context(self):
+        """Context to return for sharing"""
+        return SharedContext(self.context())
 
     def _vispy_warmup(self):
         etime = time() + 0.25
@@ -247,7 +270,10 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
-        self.show() if visible else self.hide()
+        if visible:
+            self.showFullScreen() if self._fs else self.show()
+        else:
+            self.hide()
 
     def _vispy_update(self):
         # Invoke a redraw

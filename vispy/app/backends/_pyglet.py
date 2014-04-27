@@ -10,7 +10,8 @@ from __future__ import division
 
 from distutils.version import LooseVersion
 
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, BaseSharedContext)
 from ...util import keys
 
 
@@ -91,18 +92,16 @@ else:
 # -------------------------------------------------------------- capability ---
 
 capability = dict(
-    position=True,
+    title=True,
     size=True,
+    position=True,
+    show=True,
     multi_window=True,
     scroll=True,
     no_decoration=True,
     no_sizing=True,
-    fullscreen=True,
     vsync=True,
-    unicode=True,
-    gl_version=False,
-    gl_profile=False,
-    share_context=True,
+    context=True,
 )
 
 
@@ -128,6 +127,10 @@ def _set_config(config):
     pyglet_config.stereo = config['stereo']
     pyglet_config.samples = config['samples']
     return pyglet_config
+
+
+class SharedContext(BaseSharedContext):
+    _backend = 'pyglet'
 
 
 # ------------------------------------------------------------- application ---
@@ -164,25 +167,49 @@ class CanvasBackend(_Window, BaseCanvasBackend):
 
     """ Pyglet backend for Canvas abstract class."""
 
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self)
-        title, size, show, position, config, vsync, resizable, decorated = \
+    def __init__(self, **kwargs):
+        BaseCanvasBackend.__init__(self, capability, SharedContext)
+        title, size, position, show, vsync, resize, dec, fs, context = \
             self._process_backend_kwargs(kwargs)
-        config = _set_config(config)  # transform to Pyglet config
-        style = (pyglet.window.Window.WINDOW_STYLE_DEFAULT if decorated else
+        if not isinstance(context, (dict, SharedContext)):
+            raise TypeError('context must be a dict or pyglet SharedContext')
+        if not isinstance(context, SharedContext):
+            config = _set_config(context)  # transform to Pyglet config
+        else:
+            # contexts are shared by default in Pyglet, so we shouldn't need
+            # to do anything to share them...
+            pass
+        style = (pyglet.window.Window.WINDOW_STYLE_DEFAULT if dec else
                  pyglet.window.Window.WINDOW_STYLE_BORDERLESS)
         # We keep track of modifier keys so we can pass them to mouse_motion
         self._current_modifiers = set()
         #self._buttons_accepted = 0
         self._draw_ok = False  # whether it is ok to draw yet
         self._pending_position = None
+        if fs:
+            screen = pyglet.window.get_platform().get_default_display()
+            if fs == 'default':
+                screen = screen.get_default_screen()
+            else:
+                screen = fs.get_screens()
+                if fs >= len(screen):
+                    raise RuntimeError('fullscreen must be < %s'
+                                       % len(screen))
+                screen = screen[fs]
+        else:
+            screen = None
         pyglet.window.Window.__init__(self, width=size[0], height=size[1],
                                       caption=title, visible=show,
                                       config=config, vsync=vsync,
-                                      resizable=resizable, style=style,
-                                      *args, **kwargs)
+                                      resizable=resize, style=style,
+                                      screen=screen)
         if position is not None:
             self._vispy_set_position(*position)
+
+    @property
+    def _vispy_context(self):
+        """Context to return for sharing"""
+        return 'auto-share'
 
     def _vispy_warmup(self):
         pass  # no need, sort of, but it still fails many of our tests

@@ -12,7 +12,8 @@ import sys
 import ctypes
 from time import sleep, time
 
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, BaseSharedContext)
 from ...util import ptime, keys, logger
 
 # -------------------------------------------------------------------- init ---
@@ -128,18 +129,16 @@ _VP_GLUT_ALL_WINDOWS = []
 # -------------------------------------------------------------- capability ---
 
 capability = dict(
-    position=True,
+    title=True,
     size=True,
+    position=True,
+    show=True,
     multi_window=False,
     scroll=False,
-    no_decoration=True,
+    no_decoration=False,
     no_sizing=False,
-    fullscreen=True,
     vsync=False,
-    unicode=False,
-    gl_version=False,
-    gl_profile=False,
-    share_context=False,
+    context=False,
 )
 
 
@@ -169,7 +168,11 @@ def _set_config(config):
         s += "double " if config['double_buffer'] else "single "
         s += "stereo " if config['stereo'] else ""
         s += "samples=%d " % config['samples'] if config['samples'] else ""
-    return s.encode('ASCII')
+    glut.glutInitDisplayString(s.encode('ASCII'))
+
+
+class SharedContext(BaseSharedContext):
+    _backend = 'glut'
 
 
 # ------------------------------------------------------------- application ---
@@ -248,18 +251,22 @@ class CanvasBackend(BaseCanvasBackend):
 
     """ GLUT backend for Canvas abstract class."""
 
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self)
-        title, size, show, position, config, vsync, resizable, decorated = \
+    def __init__(self, **kwargs):
+        BaseCanvasBackend.__init__(self, capability, SharedContext)
+        title, size, position, show, vsync, resize, dec, fs, context = \
             self._process_backend_kwargs(kwargs)
-        config = _set_config(config)
-        glut.glutInitDisplayString(config)
+        _set_config(context)
         glut.glutInitWindowSize(size[0], size[1])
         self._id = glut.glutCreateWindow(title.encode('ASCII'))
         if not self._id:
             raise RuntimeError('could not create window')
         glut.glutSetWindow(self._id)
         _VP_GLUT_ALL_WINDOWS.append(self)
+        if fs:
+            if not isinstance(fs, bool):
+                logger.warn('Cannot specify monitor for glut fullscreen, '
+                            'using default')
+            glut.glutFullScreen()
 
         # Cache of modifiers so we can send modifiers along with mouse motion
         self._modifiers_cache = ()
@@ -281,6 +288,11 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_set_position(*position)
         if not show:
             glut.glutHideWindow()
+
+    @property
+    def _vispy_context(self):
+        """Context to return for sharing"""
+        return SharedContext(None)  # cannot share in GLUT
 
     def _vispy_warmup(self):
         etime = time() + 0.4  # empirically determined :(

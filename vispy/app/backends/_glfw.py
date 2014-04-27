@@ -21,7 +21,8 @@ from __future__ import division
 import atexit
 from time import sleep
 
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, BaseSharedContext)
 from ...util import keys
 from ...util.ptime import time
 
@@ -107,18 +108,16 @@ def _get_glfw_windows():
 # -------------------------------------------------------------- capability ---
 
 capability = dict(
-    position=True,
+    title=True,
     size=True,
+    position=True,
+    show=True,
     multi_window=True,
     scroll=True,
     no_decoration=True,
     no_sizing=True,
-    fullscreen=True,
     vsync=True,
-    unicode=True,
-    gl_version=True,
-    gl_profile=True,
-    share_context=True,
+    context=True,
 )
 
 
@@ -143,6 +142,10 @@ def _set_config(c):
     #glfw.glfwWindowHint(glfw.GLFW_SRGB_CAPABLE, c['srgb'])
     glfw.glfwWindowHint(glfw.GLFW_SAMPLES, c['samples'])
     glfw.glfwWindowHint(glfw.GLFW_STEREO, c['stereo'])
+
+
+class SharedContext(BaseSharedContext):
+    _backend = 'glfw'
 
 
 # ------------------------------------------------------------- application ---
@@ -197,19 +200,35 @@ class CanvasBackend(BaseCanvasBackend):
 
     """ Glfw backend for Canvas abstract class."""
 
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self)
-        title, size, show, position, config, vsync, resizable, decorated = \
+    def __init__(self, **kwargs):
+        BaseCanvasBackend.__init__(self, capability, SharedContext)
+        title, size, position, show, vsync, resize, dec, fs, context = \
             self._process_backend_kwargs(kwargs)
         # Init GLFW, add window hints, and create window
-        _set_config(config)
+        if isinstance(context, dict):
+            _set_config(context)
+            share = None
+        else:
+            share = context.value
         glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)  # highest possible
         glfw.glfwSwapInterval(1 if vsync else 0)
-        glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, int(resizable))
-        glfw.glfwWindowHint(glfw.GLFW_DECORATED, int(decorated))
+        glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, int(resize))
+        glfw.glfwWindowHint(glfw.GLFW_DECORATED, int(dec))
         glfw.glfwWindowHint(glfw.GLFW_VISIBLE, 1)  # start out showing
+        if fs:
+            if fs == 'default':
+                monitor = glfw.glfwGetPrimaryMonitor()
+            else:
+                monitor = glfw.glfwGetMonitors()
+                if fs >= len(monitor):
+                    raise RuntimeError('fullscreen must be <= %s'
+                                       % len(monitor))
+                monitor = monitor[fs]
+        else:
+            monitor = None
         self._id = glfw.glfwCreateWindow(width=size[0], height=size[1],
-                                         title=title)
+                                         title=title, monitor=monitor,
+                                         share=share)
         if not self._id:
             raise RuntimeError('Could not create window')
         _VP_GLFW_ALL_WINDOWS.append(self)
@@ -229,6 +248,11 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_set_position(*position)
         if not show:
             glfw.glfwHideWindow(self._id)
+
+    @property
+    def _vispy_context(self):
+        """Context to return for sharing"""
+        return SharedContext(self._id)
 
     ####################################
     # Deal with events we get from vispy

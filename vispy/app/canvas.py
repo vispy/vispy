@@ -11,7 +11,8 @@ from ..util.event import EmitterGroup, Event
 from ..util.ptime import time
 from ..util.six import string_types
 from .application import Application
-from .configuration import get_default_config
+from ._config import get_default_config
+from .base import BaseSharedContext
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -59,16 +60,22 @@ class Canvas(object):
         Allow the window to be resized.
     decorated : bool
         Decorate the window.
-    native_args : iterable
-        Extra arguments to use when creating the native widget.
-    native_kwargs : dict
-        The keyword arguments to use when creaing the native widget.
+    fullscreen : bool | int
+        If False, windowed mode is used (default). If True, the default
+        monitor is used. If int, the given monitor number is used.
+    context : dict | instance SharedContext | None
+        OpenGL configuration to use when creating the context for the canvas,
+        or a context to share. If None, ``vispy.app.get_default_config`` will
+        be used to set the OpenGL context parameters. Alternatively, the
+        ``canvas.context`` property from an existing canvas (using the
+        same backend) will return a ``SharedContext`` that can be used,
+        thereby sharing the existing context.
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, vsync=False, resizable=True, decorated=True,
-                 native_args=None, native_kwargs=None):
+                 fullscreen=False, context=None):
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
                                    resize=ResizeEvent,
@@ -86,25 +93,25 @@ class Canvas(object):
         if len(size) != 2:
             raise ValueError('size must be a 2-element list')
         title = str(title)
+        if not isinstance(fullscreen, bool):
+            fullscreen = int(fullscreen)
+        if context is None:
+            context = get_default_config()
+        if not isinstance(context, (dict, BaseSharedContext)):
+            raise TypeError('context must be a dict, SharedContext, or '
+                            'None')
 
         # Initialize backend attribute
         self._backend = None
         if init_gloo:
             self.events.initialize.connect(_gloo_initialize,
                                            ref='gloo_initialize')
-        self._backend_args = native_args or ()
-        self._backend_kwargs = native_kwargs or {}
 
-        # change arguments that get set on Canvas init
-        self._backend_kwargs['_vispy_title'] = title
-        self._backend_kwargs['_vispy_size'] = size
-        self._backend_kwargs['_vispy_show'] = show
-        self._backend_kwargs['_vispy_position'] = position
-        gl_config = get_default_config()
-        self._backend_kwargs['_vispy_gl_config'] = gl_config
-        self._backend_kwargs['_vispy_vsync'] = vsync
-        self._backend_kwargs['_vispy_resizable'] = resizable
-        self._backend_kwargs['_vispy_decorated'] = decorated
+        # store arguments that get set on Canvas init
+        kwargs = dict(title=title, size=size, position=position, show=show,
+                      vsync=vsync, resizable=resizable, decorated=decorated,
+                      fullscreen=fullscreen, context=context)
+        self._backend_kwargs = kwargs
 
         # Initialise some values
         self._autoswap = autoswap
@@ -133,8 +140,7 @@ class Canvas(object):
         self._app.use()
         assert self._app.native
         # Instantiate the backend with the right class
-        be = self._app.backend_module.CanvasBackend(*self._backend_args,
-                                                    **self._backend_kwargs)
+        be = self._app.backend_module.CanvasBackend(**self._backend_kwargs)
         self._set_backend(be)
 
     def _set_backend(self, backend):
@@ -147,6 +153,12 @@ class Canvas(object):
             # append to the end
             self.events.paint.connect((self, 'swap_buffers'),
                                       ref=True, position='last')
+
+    @property
+    def context(self):
+        """ The OpenGL context of the native widget
+        """
+        return self._backend._vispy_context
 
     @property
     def app(self):
