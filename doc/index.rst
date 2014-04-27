@@ -52,6 +52,7 @@ User Documentation
 
     user-quickstart
     user-install
+    user-tutorial
     user-howto
     user-faq
     user-support
@@ -66,8 +67,8 @@ Developer Documentation
 .. toctree::
     :maxdepth: 2
 
-    dev-install
     dev-modern-gl
+    dev-gloo
     dev-api
 
 .. _tech-docs:
