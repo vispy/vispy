@@ -68,6 +68,7 @@ Developer Documentation
     :maxdepth: 2
 
     dev-modern-gl
+    dev-architecture
     dev-gloo
     dev-api
 
