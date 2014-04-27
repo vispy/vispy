@@ -1,6 +1,6 @@
-==============
-The app module
-==============
+========================
+Application module (app)
+========================
 
 .. automodule:: vispy.app
 

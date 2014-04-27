@@ -1,6 +1,6 @@
-=====================================
-The object oriented OpenGL API (gloo)
-=====================================
+===================================
+GL object oriented interface (gloo)
+===================================
 
 .. automodule:: vispy.gloo
 
@@ -76,4 +76,3 @@ vispy.gloo.gl - low level GL API
 Vispy also exposes a (low level) functional GL API.
 
  `vispy.gloo.gl docs <gl.html>`_
- 

@@ -1,6 +1,6 @@
-===============
-The util module
-===============
+================
+Utilities (util)
+================
 
 .. automodule:: vispy.util
 
@@ -49,7 +49,7 @@ vispy.util.event
 
 .. autoclass:: vispy.util.event.EventEmitter
     :members:
-    
+
     .. automethod:: vispy.util.event.EventEmitter.__call__
 
 ----
