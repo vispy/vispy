@@ -19,8 +19,12 @@ BACKENDS = [
     ('Pyglet', '_pyglet', 'pyglet'),
     ('Glfw', '_glfw', 'vispy.app.backends._libglfw'),
     ('Glut', '_glut', 'OpenGL.GLUT'),
-    #('Test', 'nonexistent', 'foo.bar.lalalala'),  # For testing
 ]
+
+BACKEND_NAMES = []
+for backend in BACKENDS:
+    if backend[1][1:] not in BACKEND_NAMES:  # remove redundant qt entries
+        BACKEND_NAMES.append(backend[1][1:])
 
 # Map of the lowercase backend names to the backend descriptions above
 # so that we can look up its properties if we only have a name.

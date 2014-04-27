@@ -616,62 +616,41 @@ def set_hint(target, mode):
 def get_gl_configuration():
     """Read the current gl configuration
 
+    This function uses constants that are not in the OpenGL ES 2.1
+    namespace, so only use this on desktop systems.
+
     Returns
     -------
     config : dict
         The currently active OpenGL configuration.
     """
+    # XXX eventually maybe we can ask `gl` whether or not we can access these
     config = dict()
-
-    """
     gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
-    value = ctypes.c_int()
-    gl.glGetFramebufferAttachmentParameteriv(
-        gl.GL_FRAMEBUFFER, gl.GL_FRONT_LEFT,
-        gl.GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE, value )
-    config['red_size'] = value.value
-
-    gl.glGetFramebufferAttachmentParameteriv(
-        gl.GL_FRAMEBUFFER, gl.GL_FRONT_LEFT,
-        gl.GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE, value )
-    config['green_size'] = value.value
-
-    gl.glGetFramebufferAttachmentParameteriv(
-        gl.GL_FRAMEBUFFER, gl.GL_FRONT_LEFT,
-        gl.GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE, value )
-    config['blue_size'] = value.value
-
-    gl.glGetFramebufferAttachmentParameteriv(
-        gl.GL_FRAMEBUFFER, gl.GL_FRONT_LEFT,
-        gl.GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE, value )
-    config['alpha_size'] = value.value
-
-    gl.glGetFramebufferAttachmentParameteriv(
-        gl.GL_FRAMEBUFFER, gl.GL_DEPTH,
-        gl.GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE, value )
-    config['depth_size'] = value.value
-
-    gl.glGetFramebufferAttachmentParameteriv(
-        gl.GL_FRAMEBUFFER, gl.GL_STENCIL,
-        gl.GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE, value )
-    config['stencil_size'] = value.value
-
-    gl.glGetFramebufferAttachmentParameteriv(
-        gl.GL_FRAMEBUFFER, gl.GL_FRONT_LEFT,
-        gl.GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, value )
-    if value.value == gl.GL_LINEAR:
-        config['srgb'] = False
-    elif value.value == gl.GL_SRGB:
-        config['srgb'] = True
-    else:
+    fb_param = gl.glGetFramebufferAttachmentParameter
+    # copied since they aren't in ES:
+    GL_FRONT_LEFT = 1024
+    GL_DEPTH = 6145
+    GL_STENCIL = 6146
+    GL_SRGB = 35904
+    GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING = 33296
+    GL_STEREO = 3123
+    GL_DOUBLEBUFFER = 3122
+    sizes = dict(red=(GL_FRONT_LEFT, 33298),
+                 green=(GL_FRONT_LEFT, 33299),
+                 blue=(GL_FRONT_LEFT, 33300),
+                 alpha=(GL_FRONT_LEFT, 33301),
+                 depth=(GL_DEPTH, 33302),
+                 stencil=(GL_STENCIL, 33303))
+    for key, val in sizes.items():
+        config[key + '_size'] = fb_param(gl.GL_FRAMEBUFFER, val[0], val[1])
+    val = fb_param(gl.GL_FRAMEBUFFER, GL_FRONT_LEFT,
+                   GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING)
+    if val not in (gl.GL_LINEAR, GL_SRGB):
         raise RuntimeError('unknown value for SRGB')
-    config['stereo'] = gl.glGetParameter(gl.GL_STEREO)
-    config['double_buffer'] = gl.glGetParameter(gl.GL_DOUBLEBUFFER)
-    """
+    config['srgb'] = True if val == GL_SRGB else False  # GL_LINEAR
+    config['stereo'] = True if gl.glGetParameter(GL_STEREO) else False
+    config['double_buffer'] = (True if gl.glGetParameter(GL_DOUBLEBUFFER)
+                               else False)
     config['samples'] = gl.glGetParameter(gl.GL_SAMPLES)
-
-    # Dumb parsing of the GL_VERSION string
-    major, minor = gl.glGetParameter(gl.GL_VERSION).split(' ')[0].split('.')
-    config['major_version'] = int(major)
-    config['minor_version'] = int(minor)
     return config

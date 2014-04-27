@@ -280,6 +280,7 @@ def sys_info(fname=None, overwrite=False):
     try:
         # Nest all imports here to avoid any circular imports
         from ..app import Application, Canvas
+        from ..app.backends import BACKEND_NAMES
         from ..gloo import gl
         from .testing import has_backend
         # get default app
@@ -289,7 +290,7 @@ def sys_info(fname=None, overwrite=False):
         out += 'Platform: %s\n' % platform.platform()
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
         out += 'Backend:  %s\n' % this_app.backend_name
-        for backend in ['qt', 'pyglet', 'glfw', 'glut']:  # XXX pull from app?
+        for backend in BACKEND_NAMES:
             which = has_backend(backend, out=['which'])[1]
             out += '{0:<9} {1}\n'.format(backend + ':', which)
         out += '\n'

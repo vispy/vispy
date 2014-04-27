@@ -116,17 +116,17 @@ BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 # -------------------------------------------------------------- capability ---
 
-capability = dict(
+capability = dict(  # things that can be set by the backend
     title=True,
     size=True,
     position=True,
     show=True,
+    decorate=True,
+    resizable=True,
+    vsync=True,
+    context=False,  # XXX causes segfaults currently :(
     multi_window=True,
     scroll=True,
-    no_decoration=True,
-    no_sizing=True,
-    vsync=True,
-    context=True,
 )
 
 
@@ -216,6 +216,7 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
         widget = kwargs.pop('shareWidget', None)
         # first arg can be glformat, or a shared context
         QtOpenGL.QGLWidget.__init__(self, glformat, parent, widget, f)
+        self.__del__ = self._check_destroy  # only set __del__ once init'ed
         if not self.isValid():
             raise RuntimeError('context could not be created')
         self.setAutoBufferSwap(False)  # to make consistent with other backends
@@ -401,7 +402,7 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
             mod += keys.META,
         return mod
 
-    def __del__(self):
+    def _check_destroy(self):
         # Destroy if this is a toplevel widget
         if self.parent() is None:
             self.destroy()

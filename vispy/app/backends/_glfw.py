@@ -107,17 +107,17 @@ def _get_glfw_windows():
 
 # -------------------------------------------------------------- capability ---
 
-capability = dict(
+capability = dict(  # things that can be set by the backend
     title=True,
     size=True,
     position=True,
     show=True,
-    multi_window=True,
-    scroll=True,
-    no_decoration=True,
-    no_sizing=True,
+    decorate=True,
+    resizable=True,
     vsync=True,
     context=True,
+    multi_window=True,
+    scroll=True,
 )
 
 

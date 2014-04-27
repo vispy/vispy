@@ -206,7 +206,7 @@ def test_glfw():
     _test_multiple_canvas_same_backend('Glfw')
 
 
-@requires_application('glut', require=['interactive'])
+@requires_application('glut', has=['interactive'])
 def test_glut():
     """Test multiple Glut windows"""
     #_test_multiple_canvases('Glut')  # XXX knownfail, fails on OSX and Travis

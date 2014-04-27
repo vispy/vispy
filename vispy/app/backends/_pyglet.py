@@ -91,17 +91,17 @@ else:
 
 # -------------------------------------------------------------- capability ---
 
-capability = dict(
+capability = dict(  # things that can be set by the backend
     title=True,
     size=True,
     position=True,
     show=True,
-    multi_window=True,
-    scroll=True,
-    no_decoration=True,
-    no_sizing=True,
+    decorate=True,
+    resizable=True,
     vsync=True,
     context=True,
+    multi_window=True,
+    scroll=True,
 )
 
 
@@ -178,7 +178,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         else:
             # contexts are shared by default in Pyglet, so we shouldn't need
             # to do anything to share them...
-            pass
+            config = None
         style = (pyglet.window.Window.WINDOW_STYLE_DEFAULT if dec else
                  pyglet.window.Window.WINDOW_STYLE_BORDERLESS)
         # We keep track of modifier keys so we can pass them to mouse_motion
@@ -209,7 +209,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
     @property
     def _vispy_context(self):
         """Context to return for sharing"""
-        return 'auto-share'
+        return SharedContext(None)
 
     def _vispy_warmup(self):
         pass  # no need, sort of, but it still fails many of our tests

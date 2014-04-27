@@ -128,17 +128,17 @@ _VP_GLUT_ALL_WINDOWS = []
 
 # -------------------------------------------------------------- capability ---
 
-capability = dict(
+capability = dict(  # things that can be set by the backend
     title=True,
     size=True,
     position=True,
     show=True,
-    multi_window=False,
-    scroll=False,
-    no_decoration=False,
-    no_sizing=False,
+    decorate=False,
+    resizable=False,
     vsync=False,
     context=False,
+    multi_window=False,
+    scroll=False,
 )
 
 

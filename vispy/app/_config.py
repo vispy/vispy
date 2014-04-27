@@ -5,8 +5,8 @@
 from copy import deepcopy
 
 _default_dict = dict(red_size=8, green_size=8, blue_size=8, alpha_size=8,
-                     double_buffer=True, depth_size=16, stencil_size=0,
-                     samples=0, stereo=False)
+                     depth_size=16, stencil_size=0, double_buffer=True,
+                     stereo=False, samples=0)
 
 
 def get_default_config():

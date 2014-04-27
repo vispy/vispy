@@ -8,6 +8,9 @@ implementation is corect.
 
 """
 
+from nose.tools import assert_raises
+from inspect import getargspec
+
 import vispy
 from vispy import keys
 from vispy.util.testing import requires_application
@@ -44,10 +47,15 @@ class BaseTestmodule:
 
         Klass = self._module.CanvasBackend
         KlassRef = vispy.app.base.BaseCanvasBackend
+        base = KlassRef(None, None)
         for key in dir(KlassRef):
             if not key.startswith('__'):
                 method = getattr(Klass, key)
                 if key not in exceptions:
+                    print(key)
+                    args = [None] * (len(getargspec(method).args) - 1)
+                    assert_raises(NotImplementedError, getattr(base, key),
+                                  *args)
                     if hasattr(method, '__module__'):
                         mod_str = method.__module__  # Py3k
                     else:

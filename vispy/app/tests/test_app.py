@@ -85,6 +85,30 @@ def _test_run(backend):
         c.app.quit()  # make sure it doesn't break if a user quits twice
 
 
+def _test_capability(backend):
+    """Test application capability enumeration"""
+    non_default_vals = dict(title='foo', size=[100, 100], position=[0, 0],
+                            show=True, decorate=False, resizable=False,
+                            vsync=True)  # context is tested elsewhere
+    good_kwargs = dict()
+    bad_kwargs = dict()
+    with Canvas(app=backend) as c:
+        for key, val in c._backend._vispy_capability.items():
+            if key in non_default_vals:
+                if val:
+                    good_kwargs[key] = non_default_vals[key]
+                else:
+                    bad_kwargs[key] = non_default_vals[key]
+    # ensure all settable values can be set
+    with Canvas(app=backend, **good_kwargs):
+        # some of these are hard to test, and the ones that are easy are
+        # tested elsewhere, so let's just make sure it runs here
+        pass  
+    # ensure that *any* bad argument gets caught
+    for key, val in bad_kwargs.items():
+        assert_raises(RuntimeError, Canvas, app=backend, **{key: val})
+
+
 def _test_application(backend):
     """Test application running"""
     app = Application()
@@ -95,7 +119,7 @@ def _test_application(backend):
     app.process_events()
     if backend is not None:
         # "in" b/c "qt" in "PySide (qt)"
-        assert_in(backend, app.backend_name)
+        assert_in(backend, app.backend_name.lower())
     print(app)  # test __repr__
 
     # Canvas
@@ -218,13 +242,14 @@ def _test_application(backend):
         app.process_events()
         # put this in even though __exit__ will call it to make sure we don't
         # have problems calling it multiple times
-        #canvas.close()  # done by context
+        canvas.close()  # done by context
 
 
 @requires_application()
 def test_none():
     """Test default application choosing"""
     _test_application(None)
+    _test_capability(None)
 
 
 @requires_application('qt')
@@ -232,28 +257,32 @@ def test_qt():
     """Test Qt application"""
     _test_application('qt')
     _test_run('qt')
+    _test_capability('qt')
 
 
 @requires_application('pyglet')
 def test_pyglet():
     """Test Pyglet application"""
-    _test_application('Pyglet')
-    if sys.platform != 'darwin':  # XXX knownfail, segfault due to Pyglet bug?
-        _test_run('Pyglet')
+    _test_application('pyglet')
+    if sys.platform != 'darwin':  # XXX knownfail, segfault due to Pyglet bug
+        _test_run('pyglet')
+    _test_capability('pyglet')
 
 
 @requires_application('glfw')
 def test_glfw():
     """Test Glfw application"""
-    _test_application('Glfw')
-    _test_run('Glfw')
+    _test_application('glfw')
+    _test_run('glfw')
+    _test_capability('glfw')
 
 
-@requires_application('glut', require=['interactive'])
+@requires_application('glut', has=['interactive'])
 def test_glut():
     """Test Glut application"""
-    _test_application('Glut')
+    _test_application('glut')
     #_test_run('Glut')  # can't do this for GLUT b/c of mainloop
+    _test_capability('glut')
 
 
 def test_abstract():

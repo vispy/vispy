@@ -12,7 +12,6 @@ from ..util.ptime import time
 from ..util.six import string_types
 from .application import Application
 from ._config import get_default_config
-from .base import BaseSharedContext
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -58,7 +57,7 @@ class Canvas(object):
         Enable vertical synchronization.
     resizable : bool
         Allow the window to be resized.
-    decorated : bool
+    decorate : bool
         Decorate the window.
     fullscreen : bool | int
         If False, windowed mode is used (default). If True, the default
@@ -74,7 +73,7 @@ class Canvas(object):
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
-                 init_gloo=True, vsync=False, resizable=True, decorated=True,
+                 init_gloo=True, vsync=False, resizable=True, decorate=True,
                  fullscreen=False, context=None):
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
@@ -97,9 +96,6 @@ class Canvas(object):
             fullscreen = int(fullscreen)
         if context is None:
             context = get_default_config()
-        if not isinstance(context, (dict, BaseSharedContext)):
-            raise TypeError('context must be a dict, SharedContext, or '
-                            'None')
 
         # Initialize backend attribute
         self._backend = None
@@ -109,7 +105,7 @@ class Canvas(object):
 
         # store arguments that get set on Canvas init
         kwargs = dict(title=title, size=size, position=position, show=show,
-                      vsync=vsync, resizable=resizable, decorated=decorated,
+                      vsync=vsync, resizable=resizable, decorate=decorate,
                       fullscreen=fullscreen, context=context)
         self._backend_kwargs = kwargs
 

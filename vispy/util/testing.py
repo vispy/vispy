@@ -86,28 +86,31 @@ def requires_pyopengl():
 ###############################################################################
 # App stuff
 
-def has_backend(backend, require=(), out=()):
+def has_backend(backend, has=(), capable=(), out=()):
     mod = __import__('app.backends._%s' % backend, globals(), level=2)
     mod = getattr(mod.backends, '_%s' % backend)
-    has = mod.available
-    for req in require:
-        has = (has and getattr(mod, 'has_%s' % req))
-    ret = (has,) if len(out) > 0 else has
+    good = mod.available
+    for h in has:
+        good = (good and getattr(mod, 'has_%s' % h))
+    for cap in capable:
+        good = (good and mod.capability[cap])
+    ret = (good,) if len(out) > 0 else good
     for o in out:
         ret += (getattr(mod, o),)
     return ret
 
 
-def requires_application(backend=None, require=()):
+def requires_application(backend=None, has=(), capable=()):
+    from ..app.backends import BACKEND_NAMES
     if backend is None:
-        has = False
-        backends = ['qt', 'pyglet', 'glfw', 'glut']  # should pull from app!
-        for backend in backends:
-            if has_backend(backend, require=require):
-                has = True
+        good = False
+        for backend in BACKEND_NAMES:
+            if has_backend(backend, has=has, capable=capable):
+                good = True
                 break
-        return np.testing.dec.skipif(not has, 'Requires application backend')
+        return np.testing.dec.skipif(not good, 'Requires application backend')
     else:
-        has, why = has_backend(backend, require=require, out=['why_not'])
-        return np.testing.dec.skipif(not has, 'Requires %s: %s'
+        good, why = has_backend(backend, has=has, capable=capable,
+                                out=['why_not'])
+        return np.testing.dec.skipif(not good, 'Requires %s: %s'
                                      % (backend, why))

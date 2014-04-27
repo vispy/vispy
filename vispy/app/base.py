@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from inspect import getargspec
+from copy import deepcopy
 
 from ._config import get_default_config
 
@@ -59,7 +60,7 @@ class BaseCanvasBackend(object):
         """Removes vispy-specific kwargs for CanvasBackend"""
         # these are the output arguments
         keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
-                'decorated', 'fullscreen']
+                'decorate', 'fullscreen']
         from .canvas import Canvas
         outs = list()
         spec = getargspec(Canvas.__init__)
@@ -76,14 +77,12 @@ class BaseCanvasBackend(object):
         context = kwargs.get('context', default_config)
         can_share = self._vispy_capability['context']
         # check the type
-        if isinstance(out, self._vispy_context_type) and not can_share:
-            raise RuntimeError('Cannot share context with this backend')
-        elif not isinstance(context, dict):
-            raise TypeError('context must be a dict or SharedContext from '
-                            'a Canvas with the same backend')
-        # for dict, we should check the types
-        if isinstance(context, dict):
+        if isinstance(context, self._vispy_context_type):
+            if not can_share:
+                raise RuntimeError('Cannot share context with this backend')
+        elif isinstance(context, dict):
             # first, fill in context with any missing entries
+            context = deepcopy(context)
             for key, val in default_config.items():
                 context[key] = context.get(key, default_config[key])
             # now make sure everything is of the proper type
@@ -94,6 +93,10 @@ class BaseCanvasBackend(object):
                 if not isinstance(val, needed):
                     raise TypeError('context["%s"] is of incorrect type (got '
                                     '%s need %s)' % (key, type(val), needed))
+        else:
+            raise TypeError('context must be a dict or SharedContext from '
+                            'a Canvas with the same backend, not %s'
+                            % type(context))
         outs.append(context)
         return outs
 
