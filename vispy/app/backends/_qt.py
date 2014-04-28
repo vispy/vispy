@@ -226,7 +226,6 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
         self.setMouseTracking(True)
         self._vispy_set_title(title)
         self._vispy_set_size(*size)
-        print(fs)
         if fs is not False:
             if isinstance(fs, int):
                 logger.warn('Cannot specify monitor number for Qt fullscreen, '

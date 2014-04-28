@@ -8,8 +8,8 @@ vispy backend for sdl2.
 from __future__ import division
 
 import atexit
-from time import sleep
 import ctypes
+from time import sleep
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
@@ -196,7 +196,7 @@ class CanvasBackend(BaseCanvasBackend):
 
         sdl2.SDL_GL_SetSwapInterval(1 if vsync else 0)
         flags = sdl2.SDL_WINDOW_OPENGL
-        flags |= sdl2.SDL_WINDOW_HIDDEN  # start out hidden
+        flags |= sdl2.SDL_WINDOW_SHOWN  # start out shown
         flags |= sdl2.SDL_WINDOW_ALLOW_HIGHDPI
         flags |= sdl2.SDL_WINDOW_RESIZABLE if resize else 0
         flags |= sdl2.SDL_WINDOW_BORDERLESS if not dec else 0
@@ -221,8 +221,9 @@ class CanvasBackend(BaseCanvasBackend):
         _VP_SDL2_ALL_WINDOWS[self._sdl_id] = self
         self._vispy_canvas_ = None
         self._needs_draw = False
-        if show:
-            self._vispy_set_visible(True)
+        self._vispy_set_current()
+        if not show:
+            self._vispy_set_visible(False)
 
     @property
     def _vispy_context(self):
@@ -241,6 +242,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Init events when the property is set by Canvas
         self._vispy_canvas_ = vc
         if vc is not None:
+            self._vispy_set_current()
             self._vispy_canvas.events.initialize()
         return self._vispy_canvas
 

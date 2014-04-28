@@ -280,6 +280,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
     def on_show(self):
         if self._vispy_canvas is None:
             return
+        self._vispy_set_current()
         self._vispy_canvas.events.initialize()
         # Set location now if we must. For some reason we get weird
         # offsets in viewport if set_location is called before the

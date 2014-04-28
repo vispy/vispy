@@ -174,7 +174,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_run(self):
         wins = _get_glfw_windows()
-        while all(w._id is not None and glfw.glfwWindowShouldClose(w._id)
+        while all(w._id is not None and not glfw.glfwWindowShouldClose(w._id)
                   for w in wins):
             self._vispy_process_events()
         self._vispy_quit()  # to clean up
@@ -243,6 +243,7 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSetWindowCloseCallback(self._id, self._on_close)
         self._vispy_canvas_ = None
         self._needs_draw = False
+        self._vispy_set_current()
         if position is not None:
             self._vispy_set_position(*position)
         if show:
@@ -265,11 +266,12 @@ class CanvasBackend(BaseCanvasBackend):
         # Init events when the property is set by Canvas
         self._vispy_canvas_ = vc
         if vc is not None:
+            self._vispy_set_current()
             self._vispy_canvas.events.initialize()
         return self._vispy_canvas
 
     def _vispy_warmup(self):
-        etime = time() + 0.25
+        etime = time() + 0.1
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()

@@ -337,7 +337,7 @@ def test_sdl2():
     _test_application(backend)
     _test_run(backend)
     _test_capability(backend)
-    _test_fs(backend)
+    #_test_fs(backend)  # blanks entire screen, which isn't very nice
 
 
 @requires_application('glut')
