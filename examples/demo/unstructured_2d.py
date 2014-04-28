@@ -32,7 +32,7 @@ class Unstructured2d(app.Canvas):
                  colormap=None, data_lim=None,
                  dir_x_right=True, dir_y_top=True,
                  **kwargs):
-        app.Canvas.__init__(self, **kwargs)
+        app.Canvas.__init__(self, close_keys=['escape'], **kwargs)
         self.create_shader(colormap)
         self.create_mesh(x, y, u, v)
         self.program.bind(self.vbo)

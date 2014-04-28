@@ -69,7 +69,7 @@ NBLOCKS = 10
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, title='Spacy')
+        app.Canvas.__init__(self, title='Spacy', close_keys=['escape'])
         self.size = 800, 600
         
         self.program = gloo.Program(vertex, fragment)

@@ -52,7 +52,7 @@ class Canvas(app.Canvas):
 
     def __init__(self, **kwargs):
         # Initialize the canvas for real
-        app.Canvas.__init__(self, **kwargs)
+        app.Canvas.__init__(self, close_keys=['escape'], **kwargs)
         self.size = 512, 512
         self.position = 50, 50
         

@@ -69,7 +69,7 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self)
+        app.Canvas.__init__(self, close_keys=['escape'])
 
         # Time
         self._t = time.time()

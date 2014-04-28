@@ -69,14 +69,14 @@ class Canvas(object):
         ``canvas.context`` property from an existing canvas (using the
         same backend) will return a ``SharedContext`` that can be used,
         thereby sharing the existing context.
-    close_key : str | list of str
-        Key(s) to use that will cause the canvas to be closed.
+    close_keys : list of str
+        Key to use that will cause the canvas to be closed.
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, vsync=False, resizable=True, decorate=True,
-                 fullscreen=False, context=None, close_key='ESCAPE'):
+                 fullscreen=False, context=None, close_keys=()):
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
                                    resize=ResizeEvent,
@@ -127,17 +127,12 @@ class Canvas(object):
         # Create widget now
         if create_native:
             self.create_native()
+        self.close_keys = close_keys
 
-        # by default let's make it easy to quit
-        if isinstance(close_key, string_types):
-            close_key = [close_key]
-
-        def canvas_close_key(event):
-            if event.key in close_key:
+        def close_keys_check(event):
+            if event.key in self.close_keys:
                 self.close()
-
-        if len(close_key) > 0:
-            self.events.key_press.connect(canvas_close_key, ref=True)
+        self.events.key_press.connect(close_keys_check, ref=True)
 
     def create_native(self):
         """ Create the native widget if not already done so. If the widget

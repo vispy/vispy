@@ -101,7 +101,7 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self)
+        app.Canvas.__init__(self, close_keys=['escape'])
         self.size = 800, 800
         self.title = "Atom [zoom with mouse scroll"
 
