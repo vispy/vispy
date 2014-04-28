@@ -58,6 +58,9 @@ def _test_callbacks(canvas):
     elif 'qt' in backend_name.lower():
         # constructing fake Qt events is too hard :(
         pass
+    elif 'sdl2' in backend_name.lower():
+        # constructing fake SDL2 events is too hard :(
+        pass
     elif 'glut' in backend_name.lower():
         backend.on_mouse_action(0, 0, 0, 0)
         backend.on_mouse_action(0, 1, 0, 0)
@@ -248,41 +251,55 @@ def _test_application(backend):
 @requires_application()
 def test_none():
     """Test default application choosing"""
-    _test_application(None)
-    _test_capability(None)
+    backend = None
+    _test_application(backend)
+    _test_capability(backend)
 
 
 @requires_application('qt')
 def test_qt():
     """Test Qt application"""
-    _test_application('qt')
-    _test_run('qt')
-    _test_capability('qt')
+    backend = 'qt'
+    _test_application(backend)
+    _test_run(backend)
+    _test_capability(backend)
 
 
 @requires_application('pyglet')
 def test_pyglet():
     """Test Pyglet application"""
-    _test_application('pyglet')
+    backend = 'pyglet'
+    _test_application(backend)
     if sys.platform != 'darwin':  # XXX knownfail, segfault due to Pyglet bug
-        _test_run('pyglet')
-    _test_capability('pyglet')
+        _test_run(backend)
+    _test_capability(backend)
 
 
 @requires_application('glfw')
 def test_glfw():
     """Test Glfw application"""
-    _test_application('glfw')
-    _test_run('glfw')
-    _test_capability('glfw')
+    backend = 'glfw'
+    _test_application(backend)
+    _test_run(backend)
+    _test_capability(backend)
+
+
+@requires_application('sdl2')
+def test_sdl2():
+    """Test SDL2 application"""
+    backend = 'sdl2'
+    _test_application(backend)
+    _test_run(backend)
+    _test_capability(backend)
 
 
 @requires_application('glut', has=['interactive'])
 def test_glut():
     """Test Glut application"""
-    _test_application('glut')
-    #_test_run('Glut')  # can't do this for GLUT b/c of mainloop
-    _test_capability('glut')
+    backend = 'glut'
+    _test_application(backend)
+    #_test_run(backend)  # can't do this for GLUT b/c of mainloop
+    _test_capability(backend)
 
 
 def test_abstract():

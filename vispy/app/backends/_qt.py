@@ -225,7 +225,7 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
         self._vispy_set_size(*size)
         if fs:
             if not isinstance(fs, bool):
-                logger.warn('Cannot specify monitor for Qt fullscreen, '
+                logger.warn('Cannot specify monitor number for Qt fullscreen, '
                             'using default')
             self._fs = True
         else:

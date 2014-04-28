@@ -216,7 +216,7 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwWindowHint(glfw.GLFW_DECORATED, int(dec))
         glfw.glfwWindowHint(glfw.GLFW_VISIBLE, 1)  # start out showing
         if fs:
-            if fs == 'default':
+            if fs is True:
                 monitor = glfw.glfwGetPrimaryMonitor()
             else:
                 monitor = glfw.glfwGetMonitors()

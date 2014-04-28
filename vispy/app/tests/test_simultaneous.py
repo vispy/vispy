@@ -7,6 +7,7 @@ from nose.tools import assert_true
 from time import sleep
 
 from vispy.app import Application, Canvas, Timer
+from vispy.app.backends import BACKEND_NAMES
 from vispy.util.testing import has_backend, requires_application
 from vispy.util.ptime import time
 from vispy.gloo import gl
@@ -50,9 +51,9 @@ def test_simultaneous_backends():
     # been crippled here because they don't work 100% of the time
     # depending on backend order, etc. This is not critical for
     # the software currently, so we let it slide for now.
-    names = ['qt', 'pyglet', 'glfw']
-    if sys.platform != 'darwin':
-        names.append('glut')  # XXX knownfail, fails for unknown reason...
+    names = BACKEND_NAMES
+    if sys.platform == 'darwin':
+        names.pop(names.index('glut'))  # XXX knownfail, for unknown reason...
     backends = [name for name in names if has_backend(name)]
     canvases = dict()
     bgcolor = dict()
@@ -195,15 +196,22 @@ def test_qt():
 @requires_application('pyglet')
 def test_pyglet():
     """Test multiple Pyglet windows"""
-    _test_multiple_canvases('Pyglet')
-    _test_multiple_canvas_same_backend('Pyglet')
+    _test_multiple_canvases('pyglet')
+    _test_multiple_canvas_same_backend('pyglet')
 
 
 @requires_application('glfw')
 def test_glfw():
     """Test multiple Glfw windows"""
-    _test_multiple_canvases('Glfw')
-    _test_multiple_canvas_same_backend('Glfw')
+    _test_multiple_canvases('glfw')
+    _test_multiple_canvas_same_backend('glfw')
+
+
+@requires_application('sdl2')
+def test_sdl2():
+    """Test multiple SDL2 windows"""
+    _test_multiple_canvases('sdl2')
+    _test_multiple_canvas_same_backend('sdl2')
 
 
 @requires_application('glut', has=['interactive'])
@@ -211,7 +219,7 @@ def test_glut():
     """Test multiple Glut windows"""
     #_test_multiple_canvases('Glut')  # XXX knownfail, fails on OSX and Travis
     if sys.platform != 'darwin':
-        _test_multiple_canvas_same_backend('Glut')
+        _test_multiple_canvas_same_backend('glut')
 
 if __name__ == '__main__':
     _ig_fail = False

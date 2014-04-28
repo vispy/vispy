@@ -88,6 +88,7 @@ install:
       fi;
 
     # Use Pyglet alpha to get Py3.3 support
+    # Also install PyQt4 and imaging (PIL or pillow)
     # Test old (insufficient) version of Pyglet on 2.6
     - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" == "2.6" ]; then
@@ -121,6 +122,24 @@ install:
         cmake -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .;
         sudo make install;
       fi
+
+    # Install SDL2 (on 2.6, let's only install sdl2-python to test handling)
+    - if [ "${DEPS}" == "full" ]; then
+        if [ "${PYTHON}" != "2.6" ]; then
+          cd ~;
+          travis_retry sudo apt-get -qq -y install mercurial libdbus-1-dev libgl1-mesa-dev libglu1-mesa-dev libpulse-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev libxrandr-dev libxss-dev libxt-dev libxv-dev libxxf86vm-dev libasound2-dev libts-dev libudev-dev;
+          wget http://www.libsdl.org/release/SDL2-2.0.3.tar.gz;
+          tar xzf SDL2-2.0.3.tar.gz;
+          cd SDL2-2.0.3;
+          mkdir build;
+          cd build;
+          ../configure --disable-audio --disable-render --disable-joystick --disable-haptic --disable-power --disable-cpuinfo;
+          make -j 2;
+          sudo make install;
+        fi;
+        pip install -q PySDL2;
+      fi;
+    # after manual builds we need to update .so search
     - sudo ldconfig
 
     # XXX For now, don't run from install dir since coveralls can't handle it
@@ -161,9 +180,7 @@ script:
 
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
-    # Let's use the "full" test case for coveralls, best case for coverage
-    - if [ "${PYTHON}" == "2.7" ] && [ "${DEPS}" == "full" ] && [ "${TEST}" != "extra" ]; then
-        echo "Running coveralls";
+    - if [ "${TEST}" != "extra" ]; then
         cd ${SRC_DIR};
         coveralls;
       fi;

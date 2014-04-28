@@ -188,7 +188,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         self._pending_position = None
         if fs:
             screen = pyglet.window.get_platform().get_default_display()
-            if fs == 'default':
+            if fs is True:
                 screen = screen.get_default_screen()
             else:
                 screen = fs.get_screens()

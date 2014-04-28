@@ -140,6 +140,14 @@ class Test_GlfwBackend(BaseTestmodule):
         BaseTestmodule.__init__(self, _glfw)
 
 
+class Test_SDL2Backend(BaseTestmodule):
+
+    @requires_application('sdl2')
+    def __init__(self):
+        from vispy.app.backends import _sdl2
+        BaseTestmodule.__init__(self, _sdl2)
+
+
 class Test_GlutBackend(BaseTestmodule):
 
     @requires_application('glut')
