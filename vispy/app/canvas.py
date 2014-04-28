@@ -301,7 +301,7 @@ class Canvas(object):
     def close_keys_check(self, event):
         """Event handler to check for close keys
 
-        This gets connected to ``canvas.events.key_press`` in initialization,
+        This gets connected to ``canvas.events.key_press`` on initialization,
         and checks to see if the key pressed is in ``canvas.close_keys``.
         """
         if event.key in self.close_keys:
