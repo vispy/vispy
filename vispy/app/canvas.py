@@ -129,10 +129,7 @@ class Canvas(object):
             self.create_native()
         self.close_keys = close_keys
 
-        def close_keys_check(event):
-            if event.key in self.close_keys:
-                self.close()
-        self.events.key_press.connect(close_keys_check, ref=True)
+        self.events.key_press.connect((self, 'close_keys_check'), ref=True)
 
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
@@ -231,7 +228,7 @@ class Canvas(object):
         self._title = title
         self._backend._vispy_set_title(title)
 
-    # --------------------------------------------------------------- fps ---
+    # ----------------------------------------------------------------- fps ---
     @property
     def fps(self):
         """ The fps of canvas/window, measured as the rate that events.paint
@@ -299,6 +296,16 @@ class Canvas(object):
             self._fps_callback = callback
         else:
             self._fps_callback = None
+
+    # ---------------------------------------------------------------- misc ---
+    def close_keys_check(self, event):
+        """Event handler to check for close keys
+
+        This gets connected to ``canvas.events.key_press`` in initialization,
+        and checks to see if the key pressed is in ``canvas.close_keys``.
+        """
+        if event.key in self.close_keys:
+            self.close()
 
     def __repr__(self):
         return ('<Vispy canvas (%s backend) at %s>'
