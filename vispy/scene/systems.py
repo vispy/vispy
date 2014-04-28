@@ -67,7 +67,7 @@ class DrawingSystem(System):
         self._viewbox, self._root = viewbox, root
         # Camera transform and projection are the same for the
         # entire scene
-        self._camtransform = viewbox.camera.get_camera_transform()
+        self._camtransform = self._get_camera_transform(viewbox.camera)
         self._projection = viewbox.camera.get_projection(viewbox)
         # Prepare the viewbox (e.g. set up glViewport)
         self._prepare_viewbox(viewbox)
@@ -116,3 +116,28 @@ class DrawingSystem(System):
             # Draw bgcolor
             gl.glClearColor(*viewbox.bgcolor)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+    
+    
+    def _get_camera_transform(self, camera):
+        """ Calculate the transform from the camera to the viewbox.
+        This is the inverse of the transform chain *to* the camera.
+        """
+        from .viewbox import ViewBox
+        
+        # Get total transform of the camera
+        object = camera
+        camtransform = object.transform
+        
+        while True:
+            # todo: does it make sense to have a camera in a multi-path scene?
+            object = object.parents[0]
+            if object is None:
+                break  # Root viewbox
+            elif isinstance(object, ViewBox):
+                break  # Go until the any parent ViewBox
+            assert isinstance(object, Entity)
+            if object.transform is not None:
+                camtransform = camtransform * object.transform
+        
+        # Return inverse!
+        return camtransform.inverse()

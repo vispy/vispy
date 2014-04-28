@@ -72,19 +72,25 @@ class ViewBox(Entity):
         """ The camera associated with this viewbox. Can be None if there
         are no cameras in the scene.
         """
-        if self._camera is None:
-            cams = self.get_cameras()
-            if cams:
-                self._camera = cams[0]
         return self._camera
     
     @camera.setter
     def camera(self, cam):
-        if cam not in self.get_cameras():
-            if not cam.parents:
-                cam.parents = self  # convenience: set parent if it's an orphan
-            else:
-                raise ValueError('Given camera is not in the scene of the ViewBox.')
+        # convenience: set parent if it's an orphan
+        if not cam.parents:
+            cam.parents = self
+        # Test that self is a parent of the camera
+        object = cam
+        while object is not None:
+            # todo: ignoring multi-parentin here, we need Entity.isparent()
+            object = object.parents[0]  
+            if isinstance(object, ViewBox):
+                break
+        if object is not self:
+            raise ValueError('Given camera is not in the scene of the ViewBox.')
+        # Set and (dis)connect events
+        if self._camera is not None:
+            self._camera.events.update.disconnect(self._camera_update)
         self._camera = cam
         cam.events.update.connect(self._camera_update)
     
@@ -159,131 +165,164 @@ class Document(Entity):
 
 
 from .systems import DrawingSystem
-from .cameras import Camera, NDCCamera, PixelCamera
 
-# 
-# class Camera(Entity):
-#     """ The Camera class defines the viewpoint from which a scene is
-#     visualized. It is itself an Entity (with transformations) but by
-#     default does not draw anything.
-# 
-#     By convention, the unit cube in the local coordinate system of the camera
-#     contains everything that will be visible to a ViewBox using this camera.
-#     """
-#     def __init__(self, parent):
-#         super(Camera, self).__init__(parent)
-#         
-#     def view_mouse_event(self, event):
-#         """
-#         An attached ViewBox received a mouse event; update the camera 
-#         transform as needed.
-#         """
-#         raise NotImplementedError()
-# 
-# 
-# 
-# class TwoDCamera(Camera):
-# 
-#     def __init__(self, parent=None):
-#         super(TwoDCamera, self).__init__(parent)
-#         self.transform = STTransform()
-# 
-#     ## xlim and ylim are convenience methods to set the view using limits
-#     #@property
-#     #def xlim(self):
-#         #x = self.transform[-1, 0]
-#         #dx = self.fov[0] / 2.0
-#         #return x - dx, x + dx
-# 
-#     #@property
-#     #def ylim(self):
-#         #y = self.transform[-1, 1]
-#         #dy = self.fov[1] / 2.0
-#         #return y - dy, y + dy
-# 
-#     #@xlim.setter
-#     #def xlim(self, value):
-#         #x = 0.5 * (value[0] + value[1])
-#         #rx = max(value) - min(value)
-#         #self.fov = rx, self.fov[1]
-#         #self.transform[-1, 0] = x
-# 
-#     #@ylim.setter
-#     #def ylim(self, value):
-#         #y = 0.5 * (value[0] + value[1])
-#         #ry = max(value) - min(value)
-#         #self.fov = self.fov[0], ry
-#         #self.transform[-1, 1] = y
-# 
-#     def view_mouse_event(self, event):
-#         """
-#         An attached ViewBox received a mouse event; 
-#         
-#         """
-#         if 1 in event.buttons:
-#             p1 = np.array(event.last_event.pos)
-#             p2 = np.array(event.pos)
-#             self.transform = self.transform * STTransform(translate=p1-p2)
-#             self.update()
-#             event.handled = True
-#         elif 2 in event.buttons:
-#             p1 = np.array(event.last_event.pos)[:2]
-#             p2 = np.array(event.pos)[:2]
-#             s = 0.97 ** ((p2-p1) * np.array([1, 1]))
-#             center = event.press_event.pos
-#             # TODO: would be nice if STTransform had a nice scale(s, center) 
-#             # method like AffineTransform.
-#             self.transform = (self.transform *
-#                               STTransform(translate=center) * 
-#                               STTransform(scale=s) * 
-#                               STTransform(translate=-center))
-#             self.update()        
-#             event.handled = True
-# 
-# 
-# class PerspectiveCamera(Camera):
-#     """
-#     In progress.
-#     
-#     """
-#     def __init__(self, parent=None):
-#         super(PerspectiveCamera, self).__init__(parent)
-#         self.transform = PerspectiveTransform()
-#         # TODO: allow self.look to be derived from an Anchor
-#         self._perspective = {
-#             'look': np.array([0., 0., 0., 1.]),
-#             'near': 1e-6,
-#             'far': 1e6,
-#             'fov': 60,
-#             'top': np.array([0., 0., 1., 1.])
-#             }
-# 
-#     def _update_transform(self):
-#         # create transform based on look, near, far, fov, and top.
-#         self.transform.set_perspective(origin=(0,0,0), **self.perspective)
-#         
-#     def view_mouse_event(self, event):
-#         """
-#         An attached ViewBox received a mouse event; 
-#         
-#         """
-#         if 1 in event.buttons:
-#             p1 = np.array(event.last_event.pos)
-#             p2 = np.array(event.pos)
-#             self.transform = self.transform * STTransform(translate=p1-p2)
-#             self.update()
-#             event.handled = True
-#         elif 2 in event.buttons:
-#             p1 = np.array(event.last_event.pos)[:2]
-#             p2 = np.array(event.pos)[:2]
-#             s = 0.97 ** ((p2-p1) * np.array([1, -1]))
-#             center = event.press_event.pos
-#             # TODO: would be nice if STTransform had a nice scale(s, center) 
-#             # method like AffineTransform.
-#             self.transform = (self.transform *
-#                               STTransform(translate=center) * 
-#                               STTransform(scale=s) * 
-#                               STTransform(translate=-center))
-#             self.update()        
-#             event.handled = True
+
+
+from . import transforms  # Needed by cameras
+
+
+class Camera(Entity):
+    """ The Camera class defines the viewpoint from which a scene is
+    visualized. It is itself an Entity (with transformations) but by
+    default does not draw anything.
+    
+    Next to the normal transformation, a camera also defines a
+    projection tranformation that defines the camera view. This can for
+    instance be orthographic, perspective, log, polar, etc.
+    """
+    
+    def __init__(self, parent=None):
+        Entity.__init__(self, parent)
+        
+        # Can be orthograpic, perspective, log, polar, map, etc.
+        # Default unit
+        self._projection = transforms.NullTransform()
+    
+    
+    def get_projection(self, viewbox):
+        """ Get the projection matrix. Should be overloaded by camera
+        classes to define the projection of view.
+        """
+        return self._projection
+
+
+
+class NDCCamera(Camera):
+    """ Camera that presents a view on the world in normalized device
+    coordinates (-1..1).
+    """
+    pass
+
+
+
+class PixelCamera(Camera):
+    """ Camera that presents a view on the world in pixel coordinates.
+    The coordinates map directly to the viewbox coordinates. The origin
+    is in the upper left.
+    """
+    def get_projection(self, viewbox):
+        w, h = viewbox.resolution
+        from vispy.util import transforms as trans
+        projection = np.eye(4)
+        trans.scale(projection, 2.0/w, 2.0/h)
+        trans.translate(projection, -1, -1)
+        trans.scale(projection, 1, -1)  # Flip y-axis
+        return transforms.AffineTransform(projection)
+
+
+
+class TwoDCamera(Camera):
+
+    def __init__(self, parent=None):
+        super(TwoDCamera, self).__init__(parent)
+        self.transform = STTransform()
+
+    ## xlim and ylim are convenience methods to set the view using limits
+    #@property
+    #def xlim(self):
+        #x = self.transform[-1, 0]
+        #dx = self.fov[0] / 2.0
+        #return x - dx, x + dx
+
+    #@property
+    #def ylim(self):
+        #y = self.transform[-1, 1]
+        #dy = self.fov[1] / 2.0
+        #return y - dy, y + dy
+
+    #@xlim.setter
+    #def xlim(self, value):
+        #x = 0.5 * (value[0] + value[1])
+        #rx = max(value) - min(value)
+        #self.fov = rx, self.fov[1]
+        #self.transform[-1, 0] = x
+
+    #@ylim.setter
+    #def ylim(self, value):
+        #y = 0.5 * (value[0] + value[1])
+        #ry = max(value) - min(value)
+        #self.fov = self.fov[0], ry
+        #self.transform[-1, 1] = y
+
+    def view_mouse_event(self, event):
+        """
+        An attached ViewBox received a mouse event; 
+        
+        """
+        if 1 in event.buttons:
+            p1 = np.array(event.last_event.pos)
+            p2 = np.array(event.pos)
+            self.transform = self.transform * STTransform(translate=p1-p2)
+            self.update()
+            event.handled = True
+        elif 2 in event.buttons:
+            p1 = np.array(event.last_event.pos)[:2]
+            p2 = np.array(event.pos)[:2]
+            s = 0.97 ** ((p2-p1) * np.array([1, 1]))
+            center = event.press_event.pos
+            # TODO: would be nice if STTransform had a nice scale(s, center) 
+            # method like AffineTransform.
+            self.transform = (self.transform *
+                              STTransform(translate=center) * 
+                              STTransform(scale=s) * 
+                              STTransform(translate=-center))
+            self.update()        
+            event.handled = True
+
+
+class PerspectiveCamera(Camera):
+    """
+    In progress.
+    
+    """
+    def __init__(self, parent=None):
+        super(PerspectiveCamera, self).__init__(parent)
+        self.transform = PerspectiveTransform()
+        # TODO: allow self.look to be derived from an Anchor
+        self._perspective = {
+            'look': np.array([0., 0., 0., 1.]),
+            'near': 1e-6,
+            'far': 1e6,
+            'fov': 60,
+            'top': np.array([0., 0., 1., 1.])
+            }
+
+    def _update_transform(self):
+        # create transform based on look, near, far, fov, and top.
+        self.transform.set_perspective(origin=(0,0,0), **self.perspective)
+        
+    def view_mouse_event(self, event):
+        """
+        An attached ViewBox received a mouse event; 
+        
+        """
+        if 1 in event.buttons:
+            p1 = np.array(event.last_event.pos)
+            p2 = np.array(event.pos)
+            self.transform = self.transform * STTransform(translate=p1-p2)
+            self.update()
+            event.handled = True
+        elif 2 in event.buttons:
+            p1 = np.array(event.last_event.pos)[:2]
+            p2 = np.array(event.pos)[:2]
+            s = 0.97 ** ((p2-p1) * np.array([1, -1]))
+            center = event.press_event.pos
+            # TODO: would be nice if STTransform had a nice scale(s, center) 
+            # method like AffineTransform.
+            self.transform = (self.transform *
+                              STTransform(translate=center) * 
+                              STTransform(scale=s) * 
+                              STTransform(translate=-center))
+            self.update()        
+            event.handled = True
 

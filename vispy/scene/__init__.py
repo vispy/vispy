@@ -7,3 +7,4 @@ from .entity import Entity
 from .canvas import SceneCanvas
 from . import visuals
 from . import widgets
+from . import cameras
