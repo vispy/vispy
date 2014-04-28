@@ -33,13 +33,11 @@ def test_context_properties():
 def test_context_sharing():
     """Test context sharing"""
     can = list()
-    cannot = list()
     for backend in BACKEND_NAMES:
-        if has_backend(backend):
-            if has_backend(backend, capable=['context']):
-                can.append(backend)
-            else:
-                cannot.append(backend)
+        if has_backend(backend, capable=['context']):
+            can.append(backend)
+    # We could also test backends that can't share contexts, but that's only
+    # GLUT and it doesn't test well :(
     for backend in can:
         with Canvas(app=backend) as c1:
             vert = VertexShader("uniform vec4 pos;"
@@ -59,7 +57,3 @@ def test_context_sharing():
                     assert_raises(RuntimeError, check)
             with Canvas(app=backend, context=c1.context):
                 check()
-    for backend in cannot:
-        with Canvas(app=backend) as c1:
-            assert_raises(RuntimeError, Canvas, app=backend,
-                          context=c1.context)
