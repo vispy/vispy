@@ -230,9 +230,9 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
             if isinstance(fs, int):
                 logger.warn('Cannot specify monitor number for Qt fullscreen, '
                             'using default')
-            self._fs = True
+            self._vispy_show_func = self.showFullScreen
         else:
-            self._fs = False
+            self._vispy_show_func = self.show
         if not resize:
             self.setFixedSize(self.size())
         if position is not None:
@@ -274,10 +274,7 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
-        if visible:
-            self.showFullScreen() if self._fs else self.show()
-        else:
-            self.hide()
+        self._vispy_show_func() if visible else self.hide()
 
     def _vispy_update(self):
         # Invoke a redraw
@@ -407,11 +404,12 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
 
     def __del__(self):
         # Destroy if this is a toplevel widget
-        if self._initialized:
-            if self.parent() is None:
-                self.destroy()
-            if hasattr(QtOpenGL.QGLWidget, '__del__'):
-                QtOpenGL.QGLWidget.__del__(self)
+        if not self._initialized:
+            return
+        if self.parent() is None:
+            self.destroy()
+        if hasattr(QtOpenGL.QGLWidget, '__del__'):
+            QtOpenGL.QGLWidget.__del__(self)
 
 
 # ------------------------------------------------------------------- timer ---

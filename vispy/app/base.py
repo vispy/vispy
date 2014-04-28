@@ -32,7 +32,7 @@ class BaseApplicationBackend(object):
 
 
 class BaseCanvasBackend(object):
-    """BaseCanvasBackend(vispy_canvas, capability)
+    """BaseCanvasBackend(vispy_canvas, capability, context_type)
 
     Abstract class that provides an interface between backends and Canvas.
     Each backend must implement a subclass of CanvasBackend, and
