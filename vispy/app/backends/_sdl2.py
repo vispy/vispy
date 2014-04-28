@@ -75,11 +75,9 @@ try:
                  sdl2.SDL_BUTTON_RIGHT: 3
                  }
 except Exception as exp:
-    available = False
-    why_not = str(exp)
+    available, testable, why_not, which = False, False, str(exp), None
 else:
-    available = True
-    why_not = None
+    available, testable, why_not = True, True, None
     which = 'sdl2 %d.%d.%d' % sdl2.version_info[:3]
 
 _VP_SDL2_ALL_WINDOWS = {}
@@ -96,9 +94,10 @@ capability = dict(  # things that can be set by the backend
     size=True,
     position=True,
     show=True,
-    decorate=True,
-    resizable=True,
     vsync=True,
+    resizable=True,
+    decorate=True,
+    fullscreen=True,
     context=True,
     multi_window=True,
     scroll=True,
@@ -194,15 +193,15 @@ class CanvasBackend(BaseCanvasBackend):
             share = context.value
             sdl2.SDL_GL_MakeCurrent(*share)  # old window must be current
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
-            
+
         sdl2.SDL_GL_SetSwapInterval(1 if vsync else 0)
         flags = sdl2.SDL_WINDOW_OPENGL
-        flags |= sdl2.SDL_WINDOW_SHOWN  # start out shown
+        flags |= sdl2.SDL_WINDOW_HIDDEN  # start out hidden
         flags |= sdl2.SDL_WINDOW_ALLOW_HIGHDPI
         flags |= sdl2.SDL_WINDOW_RESIZABLE if resize else 0
         flags |= sdl2.SDL_WINDOW_BORDERLESS if not dec else 0
-        if fs:
-            if not isinstance(fs, bool):
+        if fs is not False:
+            if isinstance(fs, int):
                 logger.warn('Cannot specify monitor number for SDL2 '
                             'fullscreen, using default')
             flags |= sdl2.SDL_WINDOW_FULLSCREEN
@@ -222,8 +221,8 @@ class CanvasBackend(BaseCanvasBackend):
         _VP_SDL2_ALL_WINDOWS[self._sdl_id] = self
         self._vispy_canvas_ = None
         self._needs_draw = False
-        if not show:
-            self._vispy_set_visible(False)
+        if show:
+            self._vispy_set_visible(True)
 
     @property
     def _vispy_context(self):
@@ -246,7 +245,7 @@ class CanvasBackend(BaseCanvasBackend):
         return self._vispy_canvas
 
     def _vispy_warmup(self):
-        etime = time() + 0.25
+        etime = time() + 0.1
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()
@@ -268,7 +267,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         # Set the window title. Has no effect for widgets
-        sdl2.SDL_SetWindowTitle(self._id, title)
+        sdl2.SDL_SetWindowTitle(self._id, title.encode('UTF-8'))
 
     def _vispy_set_size(self, w, h):
         if self._id is None:
@@ -339,7 +338,7 @@ class CanvasBackend(BaseCanvasBackend):
             return
         self._vispy_set_current()
         self._vispy_canvas.events.paint(region=None)  # (0, 0, w, h))
-    
+
     def _on_event(self, event):
         if self._vispy_canvas is None:
             return
@@ -383,14 +382,14 @@ class CanvasBackend(BaseCanvasBackend):
                     fun = self._vispy_canvas.events.key_press
                 else:
                     fun = self._vispy_canvas.events.key_release
-                fun(key=key, text='', modifiers=mods)
+                fun(key=key, text='', modifiers=self._mods)
 
     def _process_mod(self, key, down):
         _modifiers = list()
         if key & (sdl2.SDLK_LSHIFT | sdl2.SDLK_RSHIFT):
             _modifiers.append(keys.SHIFT)
         if key & (sdl2.SDLK_LCTRL | sdl2.SDLK_RCTRL):
-            _modifiers.append(keys.CTRL)
+            _modifiers.append(keys.CONTROL)
         if key & (sdl2.SDLK_LALT | sdl2.SDLK_RALT):
             _modifiers.append(keys.ALT)
         if key & (sdl2.SDLK_LGUI | sdl2.SDLK_RGUI):

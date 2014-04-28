@@ -89,7 +89,7 @@ def requires_pyopengl():
 def has_backend(backend, has=(), capable=(), out=()):
     mod = __import__('app.backends._%s' % backend, globals(), level=2)
     mod = getattr(mod.backends, '_%s' % backend)
-    good = mod.available
+    good = mod.testable
     for h in has:
         good = (good and getattr(mod, 'has_%s' % h))
     for cap in capable:

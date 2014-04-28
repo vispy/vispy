@@ -20,7 +20,7 @@ __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',
            'set_color_mask', 'set_sample_coverage',
            'get_state_presets', 'set_state', 'finish', 'flush',
            'get_parameter', 'read_pixels', 'set_hint',
-           'get_gl_configuration')
+           'get_gl_configuration', 'check_error')
 _setters = [s[4:] for s in __all__
             if s.startswith('set_') and s != 'set_state']
 
@@ -625,6 +625,7 @@ def get_gl_configuration():
         The currently active OpenGL configuration.
     """
     # XXX eventually maybe we can ask `gl` whether or not we can access these
+    gl.check_error('pre-config check')
     config = dict()
     gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
     fb_param = gl.glGetFramebufferAttachmentParameter
@@ -653,4 +654,14 @@ def get_gl_configuration():
     config['double_buffer'] = (True if gl.glGetParameter(GL_DOUBLEBUFFER)
                                else False)
     config['samples'] = gl.glGetParameter(gl.GL_SAMPLES)
+    gl.check_error('post-config check')
     return config
+
+
+def check_error():
+    """Check for OpenGL errors
+
+    For efficiency, errors are only checked periodically. This forces
+    a check for OpenGL errors.
+    """
+    gl.check_error('gloo check')

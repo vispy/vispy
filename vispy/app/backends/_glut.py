@@ -113,14 +113,10 @@ try:
             raise RuntimeError(msg)
         return func
 except Exception as exp:
-    available = False
-    why_not = str(exp)
-    has_interactive = False
-    which = None
+    available, testable, why_not, which = False, False, str(exp), None
 else:
-    available = True
-    why_not = None
-    has_interactive = (_get_glut_process_func() is not None)
+    available, why_not = True, None
+    testable = (_get_glut_process_func() is not None)
     which = 'from OpenGL %s' % OpenGL.__version__
 
 
@@ -133,9 +129,10 @@ capability = dict(  # things that can be set by the backend
     size=True,
     position=True,
     show=True,
-    decorate=False,
-    resizable=False,
     vsync=False,
+    resizable=False,
+    decorate=False,
+    fullscreen=True,
     context=False,
     multi_window=False,
     scroll=False,
@@ -262,8 +259,8 @@ class CanvasBackend(BaseCanvasBackend):
             raise RuntimeError('could not create window')
         glut.glutSetWindow(self._id)
         _VP_GLUT_ALL_WINDOWS.append(self)
-        if fs:
-            if not isinstance(fs, bool):
+        if fs is not False:
+            if isinstance(fs, int):
                 logger.warn('Cannot specify monitor for glut fullscreen, '
                             'using default')
             glut.glutFullScreen()

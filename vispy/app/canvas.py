@@ -94,8 +94,8 @@ class Canvas(object):
         if len(size) != 2:
             raise ValueError('size must be a 2-element list')
         title = str(title)
-        if not isinstance(fullscreen, bool):
-            fullscreen = int(fullscreen)
+        if not isinstance(fullscreen, (bool, int)):
+            raise TypeError('fullscreen must be bool or int')
         if context is None:
             context = get_default_config()
 
@@ -132,7 +132,7 @@ class Canvas(object):
         def canvas_close_keys(event):
             if event.key in close_keys:
                 self.close()
-        
+
         if len(close_keys) > 0:
             self.events.key_press.connect(canvas_close_keys, ref=True)
 

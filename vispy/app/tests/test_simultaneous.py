@@ -214,7 +214,7 @@ def test_sdl2():
     _test_multiple_canvas_same_backend('sdl2')
 
 
-@requires_application('glut', has=['interactive'])
+@requires_application('glut')
 def test_glut():
     """Test multiple Glut windows"""
     #_test_multiple_canvases('Glut')  # XXX knownfail, fails on OSX and Travis

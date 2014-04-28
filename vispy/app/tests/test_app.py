@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+from collections import namedtuple
 
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
@@ -59,8 +60,41 @@ def _test_callbacks(canvas):
         # constructing fake Qt events is too hard :(
         pass
     elif 'sdl2' in backend_name.lower():
-        # constructing fake SDL2 events is too hard :(
-        pass
+        event = namedtuple('event', ['type', 'window', 'motion', 'button',
+                                     'wheel', 'key'])
+        event.type = 512  # WINDOWEVENT
+        event.window = namedtuple('window', ['event', 'data1', 'data2'])
+        event.motion = namedtuple('motion', ['x', 'y'])
+        event.button = namedtuple('button', ['x', 'y', 'button'])
+        event.wheel = namedtuple('wheel', ['x', 'y'])
+        event.key = namedtuple('key', ['keysym'])
+        event.key.keysym = namedtuple('keysym', ['mod', 'sym'])
+
+        event.window.event = 5  # WINDOWEVENT_RESIZED
+        event.window.data1 = 10
+        event.window.data2 = 20
+        backend._on_event(event)
+
+        event.type = 1024  # SDL_MOUSEMOTION
+        event.motion.x, event.motion.y = 1, 1
+        backend._on_event(event)
+
+        event.type = 1025  # MOUSEBUTTONDOWN
+        event.button.x, event.button.y, event.button.button = 1, 1, 1
+        backend._on_event(event)
+        event.type = 1026  # MOUSEBUTTONUP
+        backend._on_event(event)
+
+        event.type = 1027  # sdl2.SDL_MOUSEWHEEL
+        event.wheel.x, event.wheel.y = 0, 1
+        backend._on_event(event)
+
+        event.type = 768  # SDL_KEYDOWN
+        event.key.keysym.mod = 1073742049  # SLDK_LSHIFT
+        event.key.keysym.sym = 1073741906  # SDLK_UP
+        backend._on_event(event)
+        event.type = 769  # SDL_KEYUP
+        backend._on_event(event)
     elif 'glut' in backend_name.lower():
         backend.on_mouse_action(0, 0, 0, 0)
         backend.on_mouse_action(0, 1, 0, 0)
@@ -106,7 +140,7 @@ def _test_capability(backend):
     with Canvas(app=backend, **good_kwargs):
         # some of these are hard to test, and the ones that are easy are
         # tested elsewhere, so let's just make sure it runs here
-        pass  
+        pass
     # ensure that *any* bad argument gets caught
     for key, val in bad_kwargs.items():
         assert_raises(RuntimeError, Canvas, app=backend, **{key: val})
@@ -248,12 +282,21 @@ def _test_application(backend):
         canvas.close()  # done by context
 
 
+def _test_fs(backend):
+    c = Canvas(app=backend, fullscreen=True)
+    c.close()
+    c = Canvas(app=backend, fullscreen=0)
+    c.close()
+    assert_raises(TypeError, Canvas, app=backend, fullscreen='foo')
+
+
 @requires_application()
 def test_none():
     """Test default application choosing"""
     backend = None
     _test_application(backend)
     _test_capability(backend)
+    _test_fs(backend)
 
 
 @requires_application('qt')
@@ -263,6 +306,7 @@ def test_qt():
     _test_application(backend)
     _test_run(backend)
     _test_capability(backend)
+    _test_fs(backend)
 
 
 @requires_application('pyglet')
@@ -273,6 +317,7 @@ def test_pyglet():
     if sys.platform != 'darwin':  # XXX knownfail, segfault due to Pyglet bug
         _test_run(backend)
     _test_capability(backend)
+    _test_fs(backend)
 
 
 @requires_application('glfw')
@@ -282,6 +327,7 @@ def test_glfw():
     _test_application(backend)
     _test_run(backend)
     _test_capability(backend)
+    #_test_fs(backend)  # blanks entire screen, which isn't very nice
 
 
 @requires_application('sdl2')
@@ -291,15 +337,17 @@ def test_sdl2():
     _test_application(backend)
     _test_run(backend)
     _test_capability(backend)
+    _test_fs(backend)
 
 
-@requires_application('glut', has=['interactive'])
+@requires_application('glut')
 def test_glut():
     """Test Glut application"""
     backend = 'glut'
     _test_application(backend)
     #_test_run(backend)  # can't do this for GLUT b/c of mainloop
     _test_capability(backend)
+    _test_fs(backend)
 
 
 def test_abstract():
@@ -311,6 +359,7 @@ def test_abstract():
 
 
 def test_mouse_key_events():
+    """Test mouse and key events"""
     me = MouseEvent('mouse_press')
     for fun in (me.pos, me.button, me.buttons, me.modifiers, me.delta,
                 me.press_event, me.last_event, me.is_dragging):

@@ -91,17 +91,14 @@ try:
         QtCore.Qt.Key_Tab: keys.TAB,
     }
 except Exception as exp:
-    available = False
-    why_not = str(exp)
+    available, testable, why_not, which = False, False, str(exp), None
 
     class _QGLWidget(object):
         pass
 
-    class _QTimer(object):
-        pass
+    _QTimer = _QGLWidget
 else:
-    available = True
-    why_not = None
+    available, testable, why_not = True, True, None
     _QGLWidget = QtOpenGL.QGLWidget
     _QTimer = QtCore.QTimer
     if hasattr(QtCore, 'PYQT_VERSION_STR'):
@@ -121,10 +118,11 @@ capability = dict(  # things that can be set by the backend
     size=True,
     position=True,
     show=True,
-    decorate=True,
-    resizable=True,
     vsync=True,
-    context=False,  # XXX causes segfaults currently :(
+    resizable=True,
+    decorate=True,
+    fullscreen=True,
+    context=True,
     multi_window=True,
     scroll=True,
 )
@@ -203,28 +201,34 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
     """Qt backend for Canvas abstract class."""
 
     def __init__(self, *args, **kwargs):
+        self._initialized = False
         BaseCanvasBackend.__init__(self, capability, SharedContext)
         title, size, position, show, vsync, resize, dec, fs, context = \
             self._process_backend_kwargs(kwargs)
         if isinstance(context, dict):
             glformat = _set_config(context)
             glformat.setSwapInterval(1 if vsync else 0)
+            widget = kwargs.pop('shareWidget', None)
         else:
-            glformat = context.value
+            glformat = QtOpenGL.QGLFormat.defaultFormat()
+            if 'shareWidget' in kwargs:
+                raise RuntimeError('cannot use vispy to share context and '
+                                   'use built-in shareWidget')
+            widget = context.value
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
         parent = kwargs.pop('parent', None)
-        widget = kwargs.pop('shareWidget', None)
         # first arg can be glformat, or a shared context
         QtOpenGL.QGLWidget.__init__(self, glformat, parent, widget, f)
-        self.__del__ = self._check_destroy  # only set __del__ once init'ed
+        self._initialized = True
         if not self.isValid():
             raise RuntimeError('context could not be created')
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
         self._vispy_set_title(title)
         self._vispy_set_size(*size)
-        if fs:
-            if not isinstance(fs, bool):
+        print(fs)
+        if fs is not False:
+            if isinstance(fs, int):
                 logger.warn('Cannot specify monitor number for Qt fullscreen, '
                             'using default')
             self._fs = True
@@ -240,7 +244,7 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
     @property
     def _vispy_context(self):
         """Context to return for sharing"""
-        return SharedContext(self.context())
+        return SharedContext(self)
 
     def _vispy_warmup(self):
         etime = time() + 0.25
@@ -402,12 +406,13 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
             mod += keys.META,
         return mod
 
-    def _check_destroy(self):
+    def __del__(self):
         # Destroy if this is a toplevel widget
-        if self.parent() is None:
-            self.destroy()
-        if hasattr(QtOpenGL.QGLWidget, '__del__'):
-            QtOpenGL.QGLWidget.__del__(self)
+        if self._initialized:
+            if self.parent() is None:
+                self.destroy()
+            if hasattr(QtOpenGL.QGLWidget, '__del__'):
+                QtOpenGL.QGLWidget.__del__(self)
 
 
 # ------------------------------------------------------------------- timer ---

@@ -85,11 +85,9 @@ try:
                  glfw.GLFW_MOUSE_BUTTON_MIDDLE: 3
                  }
 except Exception as exp:
-    available = False
-    why_not = str(exp)
+    available, testable, why_not, which = False, False, str(exp), None
 else:
-    available = True
-    why_not = None
+    available, testable, why_not = True, True, None
     which = 'glfw ' + str(glfw.__version__)
 
 _VP_GLFW_ALL_WINDOWS = []
@@ -112,9 +110,10 @@ capability = dict(  # things that can be set by the backend
     size=True,
     position=True,
     show=True,
-    decorate=True,
-    resizable=True,
     vsync=True,
+    resizable=True,
+    decorate=True,
+    fullscreen=True,
     context=True,
     multi_window=True,
     scroll=True,
@@ -214,15 +213,15 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSwapInterval(1 if vsync else 0)
         glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, int(resize))
         glfw.glfwWindowHint(glfw.GLFW_DECORATED, int(dec))
-        glfw.glfwWindowHint(glfw.GLFW_VISIBLE, 1)  # start out showing
-        if fs:
+        glfw.glfwWindowHint(glfw.GLFW_VISIBLE, 0)  # start out hidden
+        if fs is not False:
             if fs is True:
                 monitor = glfw.glfwGetPrimaryMonitor()
             else:
                 monitor = glfw.glfwGetMonitors()
                 if fs >= len(monitor):
-                    raise RuntimeError('fullscreen must be <= %s'
-                                       % len(monitor))
+                    raise ValueError('fullscreen must be <= %s'
+                                     % len(monitor))
                 monitor = monitor[fs]
         else:
             monitor = None
@@ -246,8 +245,8 @@ class CanvasBackend(BaseCanvasBackend):
         self._needs_draw = False
         if position is not None:
             self._vispy_set_position(*position)
-        if not show:
-            glfw.glfwHideWindow(self._id)
+        if show:
+            glfw.glfwShowWindow(self._id)
 
     @property
     def _vispy_context(self):

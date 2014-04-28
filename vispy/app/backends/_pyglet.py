@@ -9,10 +9,12 @@ vispy backend for pyglet.
 from __future__ import division
 
 from distutils.version import LooseVersion
+from time import sleep
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
 from ...util import keys
+from ...util.ptime import time
 
 
 # -------------------------------------------------------------------- init ---
@@ -76,15 +78,12 @@ try:
                  pyglet.window.mouse.MIDDLE: 3
                  }
 except Exception as exp:
-    available = False
-    why_not = str(exp)
-    which = None
+    available, testable, why_not, which = False, False, str(exp), None
 
     class _Window(object):
         pass
 else:
-    available = True
-    why_not = None
+    available, testable, why_not = True, True, None
     which = 'pyglet ' + str(pyglet.version)
     _Window = pyglet.window.Window
 
@@ -96,9 +95,10 @@ capability = dict(  # things that can be set by the backend
     size=True,
     position=True,
     show=True,
-    decorate=True,
-    resizable=True,
     vsync=True,
+    resizable=True,
+    decorate=True,
+    fullscreen=True,
     context=True,
     multi_window=True,
     scroll=True,
@@ -186,12 +186,12 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         #self._buttons_accepted = 0
         self._draw_ok = False  # whether it is ok to draw yet
         self._pending_position = None
-        if fs:
+        if fs is not False:
             screen = pyglet.window.get_platform().get_default_display()
             if fs is True:
                 screen = screen.get_default_screen()
             else:
-                screen = fs.get_screens()
+                screen = screen.get_screens()
                 if fs >= len(screen):
                     raise RuntimeError('fullscreen must be < %s'
                                        % len(screen))
@@ -212,7 +212,11 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         return SharedContext(None)
 
     def _vispy_warmup(self):
-        pass  # no need, sort of, but it still fails many of our tests
+        etime = time() + 0.1
+        while time() < etime:
+            sleep(0.01)
+            self._vispy_set_current()
+            self._vispy_canvas.app.process_events()
 
     # Override these ...
     def flip(self):
