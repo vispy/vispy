@@ -97,7 +97,7 @@ class MolecularViewerCanvas(app.Canvas):
 
     def __init__(self, fname):
         app.Canvas.__init__(self, title='Molecular viewer',
-                            close_keys=['escape'])
+                            close_keys='escape')
         self.size = 1200, 800
 
         self.program = gloo.Program(vertex, fragment)

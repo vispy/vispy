@@ -34,6 +34,6 @@ class Canvas(app.Canvas):
         self.update()
 
 if __name__ == '__main__':
-    canvas = Canvas()
+    canvas = Canvas(close_keys='escape')
     canvas.show()
     app.run()

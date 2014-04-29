@@ -69,7 +69,7 @@ class Canvas(object):
         ``canvas.context`` property from an existing canvas (using the
         same backend) will return a ``SharedContext`` that can be used,
         thereby sharing the existing context.
-    close_keys : list of str
+    close_keys : str | list of str
         Key to use that will cause the canvas to be closed.
     """
 
@@ -127,9 +127,15 @@ class Canvas(object):
         # Create widget now
         if create_native:
             self.create_native()
+        
+        # Close keys
+        def close_keys_check(event):
+            if event.key in self.close_keys:
+                self.close()
+        if isinstance(close_keys, string_types):
+            close_keys = [close_keys]
         self.close_keys = close_keys
-
-        self.events.key_press.connect((self, 'close_keys_check'), ref=True)
+        self.events.key_press.connect(close_keys_check, ref=True)
 
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
@@ -298,15 +304,6 @@ class Canvas(object):
             self._fps_callback = None
 
     # ---------------------------------------------------------------- misc ---
-    def close_keys_check(self, event):
-        """Event handler to check for close keys
-
-        This gets connected to ``canvas.events.key_press`` on initialization,
-        and checks to see if the key pressed is in ``canvas.close_keys``.
-        """
-        if event.key in self.close_keys:
-            self.close()
-
     def __repr__(self):
         return ('<Vispy canvas (%s backend) at %s>'
                 % (self.app.backend_name, hex(id(self))))
