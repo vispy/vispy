@@ -6,86 +6,8 @@
 # Author: John David Reaver
 # Date:   04/29/2014
 # -----------------------------------------------------------------------------
-import OpenGL.GL as gl
-import OpenGL.GLUT as glut
-import sys
 
-from vispy import gloo
-
-RES_X = 800
-RES_Y = 800
-
-scale = 3
-center = [-0.5, 0]
-bounds = [-2, 2]
-iterations = 300
-min_scale = 0.00005
-max_scale = 4
-
-
-# GLUT callback functions
-# -----------------------------------------------------------------------------
-def display():
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-    program.draw(gl.GL_TRIANGLES)
-    glut.glutSwapBuffers()
-
-
-def reshape(width, height):
-    gl.glViewport(0, 0, width, height)
-
-
-def timer(fps):
-    global scale, center
-    program["scale"] = scale
-    program["center"] = center
-
-    glut.glutTimerFunc(int(1000 / fps), timer, fps)
-    glut.glutPostRedisplay()
-
-
-# Mouse/keyboard input
-# Click to recenter plot, and use mouse wheel or +/- buttons to zoom.
-# -----------------------------------------------------------------------------
-def mouse(button, state, x, y):
-    global scale, center
-    if (state == glut.GLUT_UP):
-        return  # Disregard redundant GLUT_UP events
-    if button == 3:  # Wheel up
-        zoom_in()
-    elif button == 4:  # Wheel down
-        zoom_out()
-    elif button == 0:  # Left click
-        X, Y = pixel_to_coords(x, y)
-        center[0] = min(max(X, bounds[0]), bounds[1])
-        center[1] = min(max(Y, bounds[0]), bounds[1])
-
-
-def keyboard(key, x, y):
-    if key == b'+':
-        zoom_in()
-    elif key == b'-':
-        zoom_out()
-
-
-def zoom_in():
-    global scale
-    scale *= 0.9
-    scale = max(min(scale, max_scale), min_scale)
-
-
-def zoom_out():
-    global scale
-    scale *= 1/0.9
-    scale = max(min(scale, max_scale), min_scale)
-
-
-def pixel_to_coords(x, y):
-    rx, ry = float(RES_X), float(RES_Y)
-    nx = (x / rx - 0.5) * scale + center[0]
-    ny = ((ry - y) / ry - 0.5) * scale + center[1]
-    return [nx, ny]
-
+from vispy import app, gloo
 
 # Shader source code
 # -----------------------------------------------------------------------------
@@ -155,27 +77,87 @@ void main() {
 """
 
 
-# GLUT Init
+# vispy Canvas
 # -----------------------------------------------------------------------------
-glut.glutInit(sys.argv)
-glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA)
-glut.glutCreateWindow("First PyOpenGL program")
-glut.glutReshapeWindow(RES_X, RES_Y)
-glut.glutDisplayFunc(display)
-glut.glutReshapeFunc(reshape)
-glut.glutMouseFunc(mouse)
-glut.glutKeyboardFunc(keyboard)
-glut.glutTimerFunc(int(1000 / 60), timer, 60)
+class Canvas(app.Canvas):
 
-# Build program
-# -----------------------------------------------------------------------------
-program = gloo.Program(vertex, fragment, count=6)
-program["position"] = [(-1, -1), (-1, 1), (1, 1),
-                       (-1, -1), (1, 1), (1, -1)]
+    def __init__(self, *args, **kwargs):
+        app.Canvas.__init__(self, *args, **kwargs)
+        self.program = gloo.Program(vertex, fragment)
+        self.program["position"] = [(-1, -1), (-1, 1), (1, 1),
+                                    (-1, -1), (1, 1), (1, -1)]
 
-program["resolution"] = [RES_X, RES_Y]
-program["iter"] = iterations
+        self.scale = self.program["scale"] = 3
+        self.center = self.program["center"] = [-0.5, 0]
+        self.iterations = self.program["iter"] = 300
+        self.program['resolution'] = self.size
 
-# Start
-# -----------------------------------------------------------------------------
-glut.glutMainLoop()
+        self.bounds = [-2, 2]
+        self.min_scale = 0.00005
+        self.max_scale = 4
+
+        self.timer = app.Timer(1.0 / 60)  # change rendering speed here
+        self.timer.connect(lambda x: self.update())
+        self.timer.start()
+
+    def on_initialize(self, event):
+        gloo.set_clear_color(color=(0., 0., 0., 1.))
+
+    def on_paint(self, event):
+        self.program.draw()
+
+    def on_resize(self, event):
+        width, height = event.size
+        gloo.set_viewport(0, 0, width, height)
+        self.program['resolution'] = [width, height]
+
+    def on_mouse_press(self, event):
+        """Center visualization on mouse coordinates when left-clicked."""
+        if event.button != 1:
+            return
+        x, y = float(event.pos[0]), float(event.pos[1])
+        X, Y = self.pixel_to_coords(x, y)
+        self.center[0] = min(max(X, self.bounds[0]), self.bounds[1])
+        self.center[1] = min(max(Y, self.bounds[0]), self.bounds[1])
+        self.program["center"] = self.center
+
+    def pixel_to_coords(self, x, y):
+        """Convert pixel coordinates to Mandelbrot set coordinates."""
+        rx, ry = self.size
+        nx = (x / rx - 0.5) * self.scale + self.center[0]
+        ny = ((ry - y) / ry - 0.5) * self.scale + self.center[1]
+        return [nx, ny]
+
+    def on_mouse_wheel(self, event):
+        """Use the mouse wheel to zoom."""
+        delta = event.delta[1]
+        if delta > 0:  # Zoom in
+            factor = 0.9
+        elif delta < 0:  # Zoom out
+            factor = 1 / 0.9
+        for _ in range(int(abs(delta))):
+            self.zoom(factor)
+
+    def on_key_press(self, event):
+        """Use + or - to zoom in and out.
+
+        The mouse wheel can be used to zoom, but some people don't have mouse
+        wheels :)
+
+        """
+        if event.text == '+':
+            self.zoom(0.9)
+        elif event.text == '-':
+            self.zoom(1/0.9)
+
+    def zoom(self, factor):
+        """Factors less than zero zoom in, and greater than zero zoom out."""
+        self.scale *= factor
+        self.scale = max(min(self.scale, self.max_scale), self.min_scale)
+        self.program["scale"] = self.scale
+
+
+if __name__ == '__main__':
+    canvas = Canvas(size=(800, 800))
+    canvas.show()
+    app.run()
