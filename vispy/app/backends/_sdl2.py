@@ -379,12 +379,16 @@ class CanvasBackend(BaseCanvasBackend):
             key = keysym.sym
             self._process_mod(mods, down)
             if key in KEYMAP:
-                key = KEYMAP[key]
-                if down:
-                    fun = self._vispy_canvas.events.key_press
-                else:
-                    fun = self._vispy_canvas.events.key_release
-                fun(key=key, text='', modifiers=self._mods)
+                key, text = KEYMAP[key], ''
+            elif key >= 32 and key <= 127:
+                key, text = keys.Key(chr(key)), chr(key)
+            else:
+                key, text = None, ''
+            if down:
+                fun = self._vispy_canvas.events.key_press
+            else:
+                fun = self._vispy_canvas.events.key_release
+            fun(key=key, text=text, modifiers=self._mods)
 
     def _process_mod(self, key, down):
         _modifiers = list()
