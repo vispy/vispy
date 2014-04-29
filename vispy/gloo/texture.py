@@ -788,11 +788,11 @@ class TextureCubeMap(Texture):
                 raise ValueError("Too many dimensions for texture")
             elif len(shape) == 3:
                 if shape[0] != 6:
-                    raise ValueError("First dimension must be 6 for texture cube")
+                    raise ValueError("First dim must be 6 for texture cube")
                 shape = shape[0], shape[1], shape[2], 1
             elif len(shape) == 4:
                 if shape[0] != 6:
-                    raise ValueError("First dimension must be 6 for texture cube")
+                    raise ValueError("First dim must be 6 for texture cube")
                 if shape[-1] > 4:
                     raise ValueError("Too many channels for texture")
         # Return
