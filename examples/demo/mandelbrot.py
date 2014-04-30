@@ -84,6 +84,9 @@ class Canvas(app.Canvas):
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
         self.program = gloo.Program(vertex, fragment)
+
+        # Draw a rectangle that takes up the whole screen. All of the work is
+        # done in the shader.
         self.program["position"] = [(-1, -1), (-1, 1), (1, 1),
                                     (-1, -1), (1, 1), (1, -1)]
 
@@ -118,13 +121,16 @@ class Canvas(app.Canvas):
             x1, y1 = event.pos[0], event.pos[1]
             X0, Y0 = self.pixel_to_coords(float(x0), float(y0))
             X1, Y1 = self.pixel_to_coords(float(x1), float(y1))
+            self.translate_center(X1 - X0, Y1 - Y0)
 
-            center = self.center
-            center[0] -= X1 - X0
-            center[1] -= Y1 - Y0
-            center[0] = min(max(center[0], self.bounds[0]), self.bounds[1])
-            center[1] = min(max(center[1], self.bounds[0]), self.bounds[1])
-            self.program["center"] = self.center = center
+    def translate_center(self, dx, dy):
+        """Translates the center point, and keeps it in bounds."""
+        center = self.center
+        center[0] -= dx
+        center[1] -= dy
+        center[0] = min(max(center[0], self.bounds[0]), self.bounds[1])
+        center[1] = min(max(center[1], self.bounds[0]), self.bounds[1])
+        self.program["center"] = self.center = center
 
     def pixel_to_coords(self, x, y):
         """Convert pixel coordinates to Mandelbrot set coordinates."""
@@ -141,7 +147,7 @@ class Canvas(app.Canvas):
         elif delta < 0:  # Zoom out
             factor = 1 / 0.9
         for _ in range(int(abs(delta))):
-            self.zoom(factor)
+            self.zoom(factor, event.pos)
 
     def on_key_press(self, event):
         """Use + or - to zoom in and out.
@@ -155,11 +161,24 @@ class Canvas(app.Canvas):
         elif event.text == '-':
             self.zoom(1/0.9)
 
-    def zoom(self, factor):
-        """Factors less than zero zoom in, and greater than zero zoom out."""
+    def zoom(self, factor, mouse_coords=None):
+        """Factors less than zero zoom in, and greater than zero zoom out.
+
+        If mouse_coords is given, the point under the mouse stays stationary
+        while zooming. mouse_coords should come from MouseEvent.pos.
+
+        """
+        if mouse_coords:  # Record the position of the mouse
+            x, y = float(mouse_coords[0]), float(mouse_coords[1])
+            x0, y0 = self.pixel_to_coords(x, y)
+
         self.scale *= factor
         self.scale = max(min(self.scale, self.max_scale), self.min_scale)
         self.program["scale"] = self.scale
+
+        if mouse_coords:  # Translate so the mouse point is stationary
+            x1, y1 = self.pixel_to_coords(x, y)
+            self.translate_center(x1 - x0, y1 - y0)
 
 
 if __name__ == '__main__':
