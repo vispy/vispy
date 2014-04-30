@@ -10,87 +10,70 @@ from __future__ import division
 
 import sys
 import ctypes
-from OpenGL import platform
 from time import sleep, time
 
-import OpenGL.error
-import OpenGL.GLUT as glut
-
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, BaseSharedContext)
 from ...util import ptime, keys, logger
 
+# -------------------------------------------------------------------- init ---
 
-# glut.GLUT_ACTIVE_SHIFT: keys.SHIFT,
-# glut.GLUT_ACTIVE_CTRL: keys.CONTROL,
-# glut.GLUT_ACTIVE_ALT: keys.ALT,
-# -1: keys.META,
+try:
+    from OpenGL import platform
+    import OpenGL.error
+    import OpenGL.GLUT as glut
 
-# Map native keys to vispy keys
-KEYMAP = {
-    -1: keys.SHIFT,
-    -2: keys.CONTROL,
-    -3: keys.ALT,
-    -4: keys.META,
+    # glut.GLUT_ACTIVE_SHIFT: keys.SHIFT,
+    # glut.GLUT_ACTIVE_CTRL: keys.CONTROL,
+    # glut.GLUT_ACTIVE_ALT: keys.ALT,
+    # -1: keys.META,
 
-    glut.GLUT_KEY_LEFT: keys.LEFT,
-    glut.GLUT_KEY_UP: keys.UP,
-    glut.GLUT_KEY_RIGHT: keys.RIGHT,
-    glut.GLUT_KEY_DOWN: keys.DOWN,
-    glut.GLUT_KEY_PAGE_UP: keys.PAGEUP,
-    glut.GLUT_KEY_PAGE_DOWN: keys.PAGEDOWN,
+    # Map native keys to vispy keys
+    KEYMAP = {
+        -1: keys.SHIFT,
+        -2: keys.CONTROL,
+        -3: keys.ALT,
+        -4: keys.META,
 
-    glut.GLUT_KEY_INSERT: keys.INSERT,
-    chr(127): keys.DELETE,
-    glut.GLUT_KEY_HOME: keys.HOME,
-    glut.GLUT_KEY_END: keys.END,
+        glut.GLUT_KEY_LEFT: keys.LEFT,
+        glut.GLUT_KEY_UP: keys.UP,
+        glut.GLUT_KEY_RIGHT: keys.RIGHT,
+        glut.GLUT_KEY_DOWN: keys.DOWN,
+        glut.GLUT_KEY_PAGE_UP: keys.PAGEUP,
+        glut.GLUT_KEY_PAGE_DOWN: keys.PAGEDOWN,
 
-    chr(27): keys.ESCAPE,
-    chr(8): keys.BACKSPACE,
+        glut.GLUT_KEY_INSERT: keys.INSERT,
+        chr(127): keys.DELETE,
+        glut.GLUT_KEY_HOME: keys.HOME,
+        glut.GLUT_KEY_END: keys.END,
 
-    glut.GLUT_KEY_F1: keys.F1,
-    glut.GLUT_KEY_F2: keys.F2,
-    glut.GLUT_KEY_F3: keys.F3,
-    glut.GLUT_KEY_F4: keys.F4,
-    glut.GLUT_KEY_F5: keys.F5,
-    glut.GLUT_KEY_F6: keys.F6,
-    glut.GLUT_KEY_F7: keys.F7,
-    glut.GLUT_KEY_F8: keys.F8,
-    glut.GLUT_KEY_F9: keys.F9,
-    glut.GLUT_KEY_F10: keys.F10,
-    glut.GLUT_KEY_F11: keys.F11,
-    glut.GLUT_KEY_F12: keys.F12,
+        chr(27): keys.ESCAPE,
+        chr(8): keys.BACKSPACE,
 
-    ' ': keys.SPACE,
-    '\r': keys.ENTER,
-    '\n': keys.ENTER,
-    '\t': keys.TAB,
-}
+        glut.GLUT_KEY_F1: keys.F1,
+        glut.GLUT_KEY_F2: keys.F2,
+        glut.GLUT_KEY_F3: keys.F3,
+        glut.GLUT_KEY_F4: keys.F4,
+        glut.GLUT_KEY_F5: keys.F5,
+        glut.GLUT_KEY_F6: keys.F6,
+        glut.GLUT_KEY_F7: keys.F7,
+        glut.GLUT_KEY_F8: keys.F8,
+        glut.GLUT_KEY_F9: keys.F9,
+        glut.GLUT_KEY_F10: keys.F10,
+        glut.GLUT_KEY_F11: keys.F11,
+        glut.GLUT_KEY_F12: keys.F12,
 
+        ' ': keys.SPACE,
+        '\r': keys.ENTER,
+        '\n': keys.ENTER,
+        '\t': keys.TAB,
+    }
 
-BUTTONMAP = {glut.GLUT_LEFT_BUTTON: 1,
-             glut.GLUT_RIGHT_BUTTON: 2,
-             glut.GLUT_MIDDLE_BUTTON: 3
-             }
+    BUTTONMAP = {glut.GLUT_LEFT_BUTTON: 1,
+                 glut.GLUT_RIGHT_BUTTON: 2,
+                 glut.GLUT_MIDDLE_BUTTON: 3
+                 }
 
-
-_VP_GLUT_ALL_WINDOWS = []
-
-
-def _get_glut_process_func(missing='error'):
-    if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
-        func = glut.glutMainLoopEvent
-    elif hasattr(glut, 'glutCheckLoop') and bool(glut.glutCheckLoop):
-        func = glut.glutCheckLoop  # Darwin
-    else:
-        msg = ('Your implementation of GLUT does not allow '
-               'interactivity. Consider installing freeglut.')
-        if missing == 'log':
-            logger.info(msg)
-        raise RuntimeError(msg)
-    return func
-
-
-def _init_glut():
     # HiDPI support for retina display
     # This requires glut from
     # http://iihm.imag.fr/blanch/software/glut-macosx/
@@ -115,10 +98,81 @@ def _init_glut():
                            glut.GLUT_ACTION_CONTINUE_EXECUTION)
     except Exception:
         pass
-    return glut
+    _GLUT_INIT = glut
 
-_GLUT_INIT = _init_glut()  # only ever call once!
+    def _get_glut_process_func(missing='error'):
+        if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
+            func = glut.glutMainLoopEvent
+        elif hasattr(glut, 'glutCheckLoop') and bool(glut.glutCheckLoop):
+            func = glut.glutCheckLoop  # Darwin
+        else:
+            msg = ('Your implementation of GLUT does not allow '
+                   'interactivity. Consider installing freeglut.')
+            if missing == 'log':
+                logger.info(msg)
+            raise RuntimeError(msg)
+        return func
+except Exception as exp:
+    available, testable, why_not, which = False, False, str(exp), None
+else:
+    available, why_not = True, None
+    testable = (_get_glut_process_func() is not None)
+    which = 'from OpenGL %s' % OpenGL.__version__
 
+
+_VP_GLUT_ALL_WINDOWS = []
+
+# -------------------------------------------------------------- capability ---
+
+capability = dict(  # things that can be set by the backend
+    title=True,
+    size=True,
+    position=True,
+    show=True,
+    vsync=False,
+    resizable=False,
+    decorate=False,
+    fullscreen=True,
+    context=False,
+    multi_window=False,
+    scroll=False,
+)
+
+
+# ------------------------------------------------------- set_configuration ---
+
+def _set_config(config):
+    """Set gl configuration"""
+    s = ""
+    if sys.platform == 'darwin':
+        s += "acca=0 "  # No accum buffer
+        s += "red>=%d " % config['red_size']
+        s += "green>=%d " % config['green_size']
+        s += "blue>=%d " % config['blue_size']
+        s += "alpha>=%d " % config['alpha_size']
+        s += "depth>=%d " % config['depth_size']
+        s += "stencil~%d " % config['stencil_size']
+        s += "double=1 " if config['double_buffer'] else "single=1 "
+        s += "stereo=%d " % config['stereo']
+        s += "samples~%d " % config['samples']
+    else:  # freeglut
+        s += "red=%d " % config['red_size']
+        s += "green=%d " % config['green_size']
+        s += "blue=%d " % config['blue_size']
+        s += "alpha=%d " % config['alpha_size']
+        s += "depth=%d " % config['depth_size']
+        s += "stencil=%d " % config['stencil_size']
+        s += "double " if config['double_buffer'] else "single "
+        s += "stereo " if config['stereo'] else ""
+        s += "samples=%d " % config['samples'] if config['samples'] else ""
+    glut.glutInitDisplayString(s.encode('ASCII'))
+
+
+class SharedContext(BaseSharedContext):
+    _backend = 'glut'
+
+
+# ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
 
@@ -188,19 +242,28 @@ def _set_close_fun(id_, fun):
             pass
 
 
+# ------------------------------------------------------------------ canvas ---
+
 class CanvasBackend(BaseCanvasBackend):
 
     """ GLUT backend for Canvas abstract class."""
 
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self)
-        title, size, show, position = self._process_backend_kwargs(kwargs)
+    def __init__(self, **kwargs):
+        BaseCanvasBackend.__init__(self, capability, SharedContext)
+        title, size, position, show, vsync, resize, dec, fs, context = \
+            self._process_backend_kwargs(kwargs)
+        _set_config(context)
         glut.glutInitWindowSize(size[0], size[1])
         self._id = glut.glutCreateWindow(title.encode('ASCII'))
         if not self._id:
             raise RuntimeError('could not create window')
         glut.glutSetWindow(self._id)
         _VP_GLUT_ALL_WINDOWS.append(self)
+        if fs is not False:
+            if isinstance(fs, int):
+                logger.warn('Cannot specify monitor for glut fullscreen, '
+                            'using default')
+            glut.glutFullScreen()
 
         # Cache of modifiers so we can send modifiers along with mouse motion
         self._modifiers_cache = ()
@@ -222,6 +285,11 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_set_position(*position)
         if not show:
             glut.glutHideWindow()
+
+    @property
+    def _vispy_context(self):
+        """Context to return for sharing"""
+        return SharedContext(None)  # cannot share in GLUT
 
     def _vispy_warmup(self):
         etime = time() + 0.4  # empirically determined :(
@@ -392,6 +460,8 @@ class CanvasBackend(BaseCanvasBackend):
             self._modifiers_cache = mod
         return self._modifiers_cache
 
+
+# ------------------------------------------------------------------- timer ---
 
 # Note: we could also build a timer using glutTimerFunc, but this causes
 # trouble because timer callbacks appear to take precedence over all others.

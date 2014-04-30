@@ -12,7 +12,8 @@ app.use('qt')
 # app.use('glut')
 # app.use('pyglet')
 
-canvas = app.Canvas(size=(512, 512), title = "Do nothing benchmark (vispy)")
+canvas = app.Canvas(size=(512, 512), title = "Do nothing benchmark (vispy)",
+                    close_keys='escape')
 
 
 @canvas.connect

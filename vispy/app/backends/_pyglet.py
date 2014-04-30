@@ -9,70 +9,131 @@ vispy backend for pyglet.
 from __future__ import division
 
 from distutils.version import LooseVersion
-import pyglet
-version = pyglet.version
+from time import sleep
 
-if LooseVersion(version) < LooseVersion('1.2'):
-    help_ = ('You can install the latest pyglet using:\n'
-             '    pip install http://pyglet.googlecode.com/archive/tip.zip')
-    raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
-                      % (pyglet.version, help_))
-
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, BaseSharedContext)
 from ...util import keys
+from ...util.ptime import time
 
 
-# Map native keys to vispy keys
-KEYMAP = {
-    pyglet.window.key.LSHIFT: keys.SHIFT,
-    pyglet.window.key.RSHIFT: keys.SHIFT,
-    pyglet.window.key.LCTRL: keys.CONTROL,
-    pyglet.window.key.RCTRL: keys.CONTROL,
-    pyglet.window.key.LALT: keys.ALT,
-    pyglet.window.key.RALT: keys.ALT,
-    pyglet.window.key.LMETA: keys.META,
-    pyglet.window.key.RMETA: keys.META,
+# -------------------------------------------------------------------- init ---
 
-    pyglet.window.key.LEFT: keys.LEFT,
-    pyglet.window.key.UP: keys.UP,
-    pyglet.window.key.RIGHT: keys.RIGHT,
-    pyglet.window.key.DOWN: keys.DOWN,
-    pyglet.window.key.PAGEUP: keys.PAGEUP,
-    pyglet.window.key.PAGEDOWN: keys.PAGEDOWN,
+try:
+    import pyglet
+    version = pyglet.version
+    if LooseVersion(version) < LooseVersion('1.2'):
+        help_ = ('You can install the latest pyglet using:\n    '
+                 'pip install http://pyglet.googlecode.com/archive/tip.zip')
+        raise ImportError('Pyglet version too old (%s), need >= 1.2\n%s'
+                          % (version, help_))
 
-    pyglet.window.key.INSERT: keys.INSERT,
-    pyglet.window.key.DELETE: keys.DELETE,
-    pyglet.window.key.HOME: keys.HOME,
-    pyglet.window.key.END: keys.END,
+    # Map native keys to vispy keys
+    KEYMAP = {
+        pyglet.window.key.LSHIFT: keys.SHIFT,
+        pyglet.window.key.RSHIFT: keys.SHIFT,
+        pyglet.window.key.LCTRL: keys.CONTROL,
+        pyglet.window.key.RCTRL: keys.CONTROL,
+        pyglet.window.key.LALT: keys.ALT,
+        pyglet.window.key.RALT: keys.ALT,
+        pyglet.window.key.LMETA: keys.META,
+        pyglet.window.key.RMETA: keys.META,
 
-    pyglet.window.key.ESCAPE: keys.ESCAPE,
-    pyglet.window.key.BACKSPACE: keys.BACKSPACE,
+        pyglet.window.key.LEFT: keys.LEFT,
+        pyglet.window.key.UP: keys.UP,
+        pyglet.window.key.RIGHT: keys.RIGHT,
+        pyglet.window.key.DOWN: keys.DOWN,
+        pyglet.window.key.PAGEUP: keys.PAGEUP,
+        pyglet.window.key.PAGEDOWN: keys.PAGEDOWN,
 
-    pyglet.window.key.F1: keys.F1,
-    pyglet.window.key.F2: keys.F2,
-    pyglet.window.key.F3: keys.F3,
-    pyglet.window.key.F4: keys.F4,
-    pyglet.window.key.F5: keys.F5,
-    pyglet.window.key.F6: keys.F6,
-    pyglet.window.key.F7: keys.F7,
-    pyglet.window.key.F8: keys.F8,
-    pyglet.window.key.F9: keys.F9,
-    pyglet.window.key.F10: keys.F10,
-    pyglet.window.key.F11: keys.F11,
-    pyglet.window.key.F12: keys.F12,
+        pyglet.window.key.INSERT: keys.INSERT,
+        pyglet.window.key.DELETE: keys.DELETE,
+        pyglet.window.key.HOME: keys.HOME,
+        pyglet.window.key.END: keys.END,
 
-    pyglet.window.key.SPACE: keys.SPACE,
-    pyglet.window.key.ENTER: keys.ENTER,  # == pyglet.window.key.RETURN
-    pyglet.window.key.NUM_ENTER: keys.ENTER,
-    pyglet.window.key.TAB: keys.TAB,
-}
+        pyglet.window.key.ESCAPE: keys.ESCAPE,
+        pyglet.window.key.BACKSPACE: keys.BACKSPACE,
+
+        pyglet.window.key.F1: keys.F1,
+        pyglet.window.key.F2: keys.F2,
+        pyglet.window.key.F3: keys.F3,
+        pyglet.window.key.F4: keys.F4,
+        pyglet.window.key.F5: keys.F5,
+        pyglet.window.key.F6: keys.F6,
+        pyglet.window.key.F7: keys.F7,
+        pyglet.window.key.F8: keys.F8,
+        pyglet.window.key.F9: keys.F9,
+        pyglet.window.key.F10: keys.F10,
+        pyglet.window.key.F11: keys.F11,
+        pyglet.window.key.F12: keys.F12,
+
+        pyglet.window.key.SPACE: keys.SPACE,
+        pyglet.window.key.ENTER: keys.ENTER,  # == pyglet.window.key.RETURN
+        pyglet.window.key.NUM_ENTER: keys.ENTER,
+        pyglet.window.key.TAB: keys.TAB,
+    }
+
+    BUTTONMAP = {pyglet.window.mouse.LEFT: 1,
+                 pyglet.window.mouse.RIGHT: 2,
+                 pyglet.window.mouse.MIDDLE: 3
+                 }
+except Exception as exp:
+    available, testable, why_not, which = False, False, str(exp), None
+
+    class _Window(object):
+        pass
+else:
+    available, testable, why_not = True, True, None
+    which = 'pyglet ' + str(pyglet.version)
+    _Window = pyglet.window.Window
 
 
-BUTTONMAP = {pyglet.window.mouse.LEFT: 1,
-             pyglet.window.mouse.RIGHT: 2,
-             pyglet.window.mouse.MIDDLE: 3
-             }
+# -------------------------------------------------------------- capability ---
 
+capability = dict(  # things that can be set by the backend
+    title=True,
+    size=True,
+    position=True,
+    show=True,
+    vsync=True,
+    resizable=True,
+    decorate=True,
+    fullscreen=True,
+    context=True,
+    multi_window=True,
+    scroll=True,
+)
+
+
+# ------------------------------------------------------- set_configuration ---
+
+def _set_config(config):
+    """Set gl configuration"""
+    pyglet_config = pyglet.gl.Config()
+
+    pyglet_config.red_size = config['red_size']
+    pyglet_config.green_size = config['green_size']
+    pyglet_config.blue_size = config['blue_size']
+    pyglet_config.alpha_size = config['alpha_size']
+
+    pyglet_config.accum_red_size = 0
+    pyglet_config.accum_green_size = 0
+    pyglet_config.accum_blue_size = 0
+    pyglet_config.accum_alpha_size = 0
+
+    pyglet_config.depth_size = config['depth_size']
+    pyglet_config.stencil_size = config['stencil_size']
+    pyglet_config.double_buffer = config['double_buffer']
+    pyglet_config.stereo = config['stereo']
+    pyglet_config.samples = config['samples']
+    return pyglet_config
+
+
+class SharedContext(BaseSharedContext):
+    _backend = 'pyglet'
+
+
+# ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
 
@@ -100,30 +161,62 @@ class ApplicationBackend(BaseApplicationBackend):
         return pyglet.app
 
 
-class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
+# ------------------------------------------------------------------ canvas ---
+
+class CanvasBackend(_Window, BaseCanvasBackend):
 
     """ Pyglet backend for Canvas abstract class."""
 
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self)
-        title, size, show, position = self._process_backend_kwargs(kwargs)
-        # Initialize native widget, but default hidden and resizable
-        kwargs['resizable'] = kwargs.get('resizable', True)
-        kwargs['vsync'] = kwargs.get('vsync', 0)
-
+    def __init__(self, **kwargs):
+        BaseCanvasBackend.__init__(self, capability, SharedContext)
+        title, size, position, show, vsync, resize, dec, fs, context = \
+            self._process_backend_kwargs(kwargs)
+        if not isinstance(context, (dict, SharedContext)):
+            raise TypeError('context must be a dict or pyglet SharedContext')
+        if not isinstance(context, SharedContext):
+            config = _set_config(context)  # transform to Pyglet config
+        else:
+            # contexts are shared by default in Pyglet, so we shouldn't need
+            # to do anything to share them...
+            config = None
+        style = (pyglet.window.Window.WINDOW_STYLE_DEFAULT if dec else
+                 pyglet.window.Window.WINDOW_STYLE_BORDERLESS)
         # We keep track of modifier keys so we can pass them to mouse_motion
         self._current_modifiers = set()
         #self._buttons_accepted = 0
         self._draw_ok = False  # whether it is ok to draw yet
         self._pending_position = None
+        if fs is not False:
+            screen = pyglet.window.get_platform().get_default_display()
+            if fs is True:
+                screen = screen.get_default_screen()
+            else:
+                screen = screen.get_screens()
+                if fs >= len(screen):
+                    raise RuntimeError('fullscreen must be < %s'
+                                       % len(screen))
+                screen = screen[fs]
+        else:
+            screen = None
         pyglet.window.Window.__init__(self, width=size[0], height=size[1],
                                       caption=title, visible=show,
-                                      *args, **kwargs)
+                                      config=config, vsync=vsync,
+                                      resizable=resize, style=style,
+                                      screen=screen)
         if position is not None:
             self._vispy_set_position(*position)
 
+    @property
+    def _vispy_context(self):
+        """Context to return for sharing"""
+        return SharedContext(None)
+
     def _vispy_warmup(self):
-        pass  # no need, sort of, but it still fails many of our tests
+        etime = time() + 0.1
+        while time() < etime:
+            sleep(0.01)
+            self._vispy_set_current()
+            self._vispy_canvas.app.process_events()
 
     # Override these ...
     def flip(self):
@@ -187,6 +280,7 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
     def on_show(self):
         if self._vispy_canvas is None:
             return
+        self._vispy_set_current()
         self._vispy_canvas.events.initialize()
         # Set location now if we must. For some reason we get weird
         # offsets in viewport if set_location is called before the
@@ -322,6 +416,8 @@ class CanvasBackend(pyglet.window.Window, BaseCanvasBackend):
                 mod += keys.ALT,
         return mod
 
+
+# ------------------------------------------------------------------- timer ---
 
 class TimerBackend(BaseTimerBackend):
 

@@ -1,13 +1,13 @@
 import numpy as np
 import sys
+from collections import namedtuple
 
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import Application, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
-from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,  # noqa
-                                requires_glut, requires_application)
+from vispy.util.testing import requires_application
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader
@@ -59,6 +59,42 @@ def _test_callbacks(canvas):
     elif 'qt' in backend_name.lower():
         # constructing fake Qt events is too hard :(
         pass
+    elif 'sdl2' in backend_name.lower():
+        event = namedtuple('event', ['type', 'window', 'motion', 'button',
+                                     'wheel', 'key'])
+        event.type = 512  # WINDOWEVENT
+        event.window = namedtuple('window', ['event', 'data1', 'data2'])
+        event.motion = namedtuple('motion', ['x', 'y'])
+        event.button = namedtuple('button', ['x', 'y', 'button'])
+        event.wheel = namedtuple('wheel', ['x', 'y'])
+        event.key = namedtuple('key', ['keysym'])
+        event.key.keysym = namedtuple('keysym', ['mod', 'sym'])
+
+        event.window.event = 5  # WINDOWEVENT_RESIZED
+        event.window.data1 = 10
+        event.window.data2 = 20
+        backend._on_event(event)
+
+        event.type = 1024  # SDL_MOUSEMOTION
+        event.motion.x, event.motion.y = 1, 1
+        backend._on_event(event)
+
+        event.type = 1025  # MOUSEBUTTONDOWN
+        event.button.x, event.button.y, event.button.button = 1, 1, 1
+        backend._on_event(event)
+        event.type = 1026  # MOUSEBUTTONUP
+        backend._on_event(event)
+
+        event.type = 1027  # sdl2.SDL_MOUSEWHEEL
+        event.wheel.x, event.wheel.y = 0, 1
+        backend._on_event(event)
+
+        event.type = 768  # SDL_KEYDOWN
+        event.key.keysym.mod = 1073742049  # SLDK_LSHIFT
+        event.key.keysym.sym = 1073741906  # SDLK_UP
+        backend._on_event(event)
+        event.type = 769  # SDL_KEYUP
+        backend._on_event(event)
     elif 'glut' in backend_name.lower():
         backend.on_mouse_action(0, 0, 0, 0)
         backend.on_mouse_action(0, 1, 0, 0)
@@ -86,6 +122,30 @@ def _test_run(backend):
         c.app.quit()  # make sure it doesn't break if a user quits twice
 
 
+def _test_capability(backend):
+    """Test application capability enumeration"""
+    non_default_vals = dict(title='foo', size=[100, 100], position=[0, 0],
+                            show=True, decorate=False, resizable=False,
+                            vsync=True)  # context is tested elsewhere
+    good_kwargs = dict()
+    bad_kwargs = dict()
+    with Canvas(app=backend) as c:
+        for key, val in c._backend._vispy_capability.items():
+            if key in non_default_vals:
+                if val:
+                    good_kwargs[key] = non_default_vals[key]
+                else:
+                    bad_kwargs[key] = non_default_vals[key]
+    # ensure all settable values can be set
+    with Canvas(app=backend, **good_kwargs):
+        # some of these are hard to test, and the ones that are easy are
+        # tested elsewhere, so let's just make sure it runs here
+        pass
+    # ensure that *any* bad argument gets caught
+    for key, val in bad_kwargs.items():
+        assert_raises(RuntimeError, Canvas, app=backend, **{key: val})
+
+
 def _test_application(backend):
     """Test application running"""
     app = Application()
@@ -96,7 +156,7 @@ def _test_application(backend):
     app.process_events()
     if backend is not None:
         # "in" b/c "qt" in "PySide (qt)"
-        assert_in(backend, app.backend_name)
+        assert_in(backend, app.backend_name.lower())
     print(app)  # test __repr__
 
     # Canvas
@@ -219,42 +279,75 @@ def _test_application(backend):
         app.process_events()
         # put this in even though __exit__ will call it to make sure we don't
         # have problems calling it multiple times
-        #canvas.close()  # done by context
+        canvas.close()  # done by context
+
+
+def _test_fs(backend):
+    c = Canvas(app=backend, fullscreen=True)
+    c.close()
+    c = Canvas(app=backend, fullscreen=0)
+    c.close()
+    assert_raises(TypeError, Canvas, app=backend, fullscreen='foo')
 
 
 @requires_application()
 def test_none():
     """Test default application choosing"""
-    _test_application(None)
+    backend = None
+    _test_application(backend)
+    _test_capability(backend)
+    _test_fs(backend)
 
 
-@requires_qt()
+@requires_application('qt')
 def test_qt():
     """Test Qt application"""
-    _test_application('qt')
-    _test_run('qt')
+    backend = 'qt'
+    _test_application(backend)
+    _test_run(backend)
+    _test_capability(backend)
+    _test_fs(backend)
 
 
-@requires_pyglet()
+@requires_application('pyglet')
 def test_pyglet():
     """Test Pyglet application"""
-    _test_application('Pyglet')
-    if sys.platform != 'darwin':  # XXX knownfail, segfault due to Pyglet bug?
-        _test_run('Pyglet')
+    backend = 'pyglet'
+    _test_application(backend)
+    if sys.platform != 'darwin':  # XXX knownfail, segfault due to Pyglet bug
+        _test_run(backend)
+    _test_capability(backend)
+    _test_fs(backend)
 
 
-@requires_glfw()
+@requires_application('glfw')
 def test_glfw():
     """Test Glfw application"""
-    _test_application('Glfw')
-    _test_run('Glfw')
+    backend = 'glfw'
+    _test_application(backend)
+    _test_run(backend)
+    _test_capability(backend)
+    #_test_fs(backend)  # blanks entire screen, which isn't very nice
 
 
-@requires_glut()
+@requires_application('sdl2')
+def test_sdl2():
+    """Test SDL2 application"""
+    backend = 'sdl2'
+    _test_application(backend)
+    _test_run(backend)
+    _test_capability(backend)
+    #_test_fs(backend)  # blanks entire screen, which isn't very nice
+
+
+@requires_application('glut')
 def test_glut():
     """Test Glut application"""
-    _test_application('Glut')
-    #_test_run('Glut')  # can't do this for GLUT b/c of mainloop
+    backend = 'glut'
+    _test_application(backend)
+    #_test_run(backend)  # can't do this for GLUT b/c of mainloop
+    _test_capability(backend)
+    _test_fs(backend)
 
 
 def test_abstract():
@@ -266,6 +359,7 @@ def test_abstract():
 
 
 def test_mouse_key_events():
+    """Test mouse and key events"""
     me = MouseEvent('mouse_press')
     for fun in (me.pos, me.button, me.buttons, me.modifiers, me.delta,
                 me.press_event, me.last_event, me.is_dragging):

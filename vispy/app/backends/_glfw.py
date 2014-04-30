@@ -21,67 +21,74 @@ from __future__ import division
 import atexit
 from time import sleep
 
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, BaseSharedContext)
 from ...util import keys
 from ...util.ptime import time
 
-from . import _libglfw as glfw
 
-if not glfw.glfwInit():  # only ever call once
-    raise OSError('Could not init glfw')
-atexit.register(glfw.glfwTerminate)
+# -------------------------------------------------------------------- init ---
 
-# Map native keys to vispy keys
-KEYMAP = {
-    glfw.GLFW_KEY_LEFT_SHIFT: keys.SHIFT,
-    glfw.GLFW_KEY_RIGHT_SHIFT: keys.SHIFT,
-    glfw.GLFW_KEY_LEFT_CONTROL: keys.CONTROL,
-    glfw.GLFW_KEY_RIGHT_CONTROL: keys.CONTROL,
-    glfw.GLFW_KEY_LEFT_ALT: keys.ALT,
-    glfw.GLFW_KEY_RIGHT_ALT: keys.ALT,
-    glfw.GLFW_KEY_LEFT_SUPER: keys.META,
-    glfw.GLFW_KEY_RIGHT_SUPER: keys.META,
+try:
+    from . import _libglfw as glfw
+    if not glfw.glfwInit():  # only ever call once
+        raise OSError('Could not init glfw')
+    atexit.register(glfw.glfwTerminate)
 
-    glfw.GLFW_KEY_LEFT: keys.LEFT,
-    glfw.GLFW_KEY_UP: keys.UP,
-    glfw.GLFW_KEY_RIGHT: keys.RIGHT,
-    glfw.GLFW_KEY_DOWN: keys.DOWN,
-    glfw.GLFW_KEY_PAGE_UP: keys.PAGEUP,
-    glfw.GLFW_KEY_PAGE_DOWN: keys.PAGEDOWN,
+    # Map native keys to vispy keys
+    KEYMAP = {
+        glfw.GLFW_KEY_LEFT_SHIFT: keys.SHIFT,
+        glfw.GLFW_KEY_RIGHT_SHIFT: keys.SHIFT,
+        glfw.GLFW_KEY_LEFT_CONTROL: keys.CONTROL,
+        glfw.GLFW_KEY_RIGHT_CONTROL: keys.CONTROL,
+        glfw.GLFW_KEY_LEFT_ALT: keys.ALT,
+        glfw.GLFW_KEY_RIGHT_ALT: keys.ALT,
+        glfw.GLFW_KEY_LEFT_SUPER: keys.META,
+        glfw.GLFW_KEY_RIGHT_SUPER: keys.META,
 
-    glfw.GLFW_KEY_INSERT: keys.INSERT,
-    glfw.GLFW_KEY_DELETE: keys.DELETE,
-    glfw.GLFW_KEY_HOME: keys.HOME,
-    glfw.GLFW_KEY_END: keys.END,
+        glfw.GLFW_KEY_LEFT: keys.LEFT,
+        glfw.GLFW_KEY_UP: keys.UP,
+        glfw.GLFW_KEY_RIGHT: keys.RIGHT,
+        glfw.GLFW_KEY_DOWN: keys.DOWN,
+        glfw.GLFW_KEY_PAGE_UP: keys.PAGEUP,
+        glfw.GLFW_KEY_PAGE_DOWN: keys.PAGEDOWN,
 
-    glfw.GLFW_KEY_ESCAPE: keys.ESCAPE,
-    glfw.GLFW_KEY_BACKSPACE: keys.BACKSPACE,
+        glfw.GLFW_KEY_INSERT: keys.INSERT,
+        glfw.GLFW_KEY_DELETE: keys.DELETE,
+        glfw.GLFW_KEY_HOME: keys.HOME,
+        glfw.GLFW_KEY_END: keys.END,
 
-    glfw.GLFW_KEY_F1: keys.F1,
-    glfw.GLFW_KEY_F2: keys.F2,
-    glfw.GLFW_KEY_F3: keys.F3,
-    glfw.GLFW_KEY_F4: keys.F4,
-    glfw.GLFW_KEY_F5: keys.F5,
-    glfw.GLFW_KEY_F6: keys.F6,
-    glfw.GLFW_KEY_F7: keys.F7,
-    glfw.GLFW_KEY_F8: keys.F8,
-    glfw.GLFW_KEY_F9: keys.F9,
-    glfw.GLFW_KEY_F10: keys.F10,
-    glfw.GLFW_KEY_F11: keys.F11,
-    glfw.GLFW_KEY_F12: keys.F12,
+        glfw.GLFW_KEY_ESCAPE: keys.ESCAPE,
+        glfw.GLFW_KEY_BACKSPACE: keys.BACKSPACE,
 
-    glfw.GLFW_KEY_SPACE: keys.SPACE,
-    glfw.GLFW_KEY_ENTER: keys.ENTER,
-    '\r': keys.ENTER,
-    glfw.GLFW_KEY_TAB: keys.TAB,
-}
+        glfw.GLFW_KEY_F1: keys.F1,
+        glfw.GLFW_KEY_F2: keys.F2,
+        glfw.GLFW_KEY_F3: keys.F3,
+        glfw.GLFW_KEY_F4: keys.F4,
+        glfw.GLFW_KEY_F5: keys.F5,
+        glfw.GLFW_KEY_F6: keys.F6,
+        glfw.GLFW_KEY_F7: keys.F7,
+        glfw.GLFW_KEY_F8: keys.F8,
+        glfw.GLFW_KEY_F9: keys.F9,
+        glfw.GLFW_KEY_F10: keys.F10,
+        glfw.GLFW_KEY_F11: keys.F11,
+        glfw.GLFW_KEY_F12: keys.F12,
 
+        glfw.GLFW_KEY_SPACE: keys.SPACE,
+        glfw.GLFW_KEY_ENTER: keys.ENTER,
+        '\r': keys.ENTER,
+        glfw.GLFW_KEY_TAB: keys.TAB,
+    }
 
-BUTTONMAP = {glfw.GLFW_MOUSE_BUTTON_LEFT: 1,
-             glfw.GLFW_MOUSE_BUTTON_RIGHT: 2,
-             glfw.GLFW_MOUSE_BUTTON_MIDDLE: 3
-             }
-
+    BUTTONMAP = {glfw.GLFW_MOUSE_BUTTON_LEFT: 1,
+                 glfw.GLFW_MOUSE_BUTTON_RIGHT: 2,
+                 glfw.GLFW_MOUSE_BUTTON_MIDDLE: 3
+                 }
+except Exception as exp:
+    available, testable, why_not, which = False, False, str(exp), None
+else:
+    available, testable, why_not = True, True, None
+    which = 'glfw ' + str(glfw.__version__)
 
 _VP_GLFW_ALL_WINDOWS = []
 
@@ -95,6 +102,52 @@ def _get_glfw_windows():
             wins.append(win)
     return wins
 
+
+# -------------------------------------------------------------- capability ---
+
+capability = dict(  # things that can be set by the backend
+    title=True,
+    size=True,
+    position=True,
+    show=True,
+    vsync=True,
+    resizable=True,
+    decorate=True,
+    fullscreen=True,
+    context=True,
+    multi_window=True,
+    scroll=True,
+)
+
+
+# ------------------------------------------------------- set_configuration ---
+
+def _set_config(c):
+    """Set gl configuration for GLFW """
+    glfw.glfwWindowHint(glfw.GLFW_RED_BITS, c['red_size'])
+    glfw.glfwWindowHint(glfw.GLFW_GREEN_BITS, c['green_size'])
+    glfw.glfwWindowHint(glfw.GLFW_BLUE_BITS, c['blue_size'])
+    glfw.glfwWindowHint(glfw.GLFW_ALPHA_BITS, c['alpha_size'])
+
+    glfw.glfwWindowHint(glfw.GLFW_ACCUM_RED_BITS, 0)
+    glfw.glfwWindowHint(glfw.GLFW_ACCUM_GREEN_BITS, 0)
+    glfw.glfwWindowHint(glfw.GLFW_ACCUM_BLUE_BITS, 0)
+    glfw.glfwWindowHint(glfw.GLFW_ACCUM_ALPHA_BITS, 0)
+
+    glfw.glfwWindowHint(glfw.GLFW_DEPTH_BITS, c['depth_size'])
+    glfw.glfwWindowHint(glfw.GLFW_STENCIL_BITS, c['stencil_size'])
+    #glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MAJOR, c['major_version'])
+    #glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, c['minor_version'])
+    #glfw.glfwWindowHint(glfw.GLFW_SRGB_CAPABLE, c['srgb'])
+    glfw.glfwWindowHint(glfw.GLFW_SAMPLES, c['samples'])
+    glfw.glfwWindowHint(glfw.GLFW_STEREO, c['stereo'])
+
+
+class SharedContext(BaseSharedContext):
+    _backend = 'glfw'
+
+
+# ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
 
@@ -121,7 +174,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_run(self):
         wins = _get_glfw_windows()
-        while all(w._id is not None and glfw.glfwWindowShouldClose(w._id)
+        while all(w._id is not None and not glfw.glfwWindowShouldClose(w._id)
                   for w in wins):
             self._vispy_process_events()
         self._vispy_quit()  # to clean up
@@ -140,25 +193,41 @@ class ApplicationBackend(BaseApplicationBackend):
         return glfw
 
 
+# ------------------------------------------------------------------ canvas ---
+
 class CanvasBackend(BaseCanvasBackend):
 
     """ Glfw backend for Canvas abstract class."""
 
-    def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self)
-        title, size, show, position = self._process_backend_kwargs(kwargs)
+    def __init__(self, **kwargs):
+        BaseCanvasBackend.__init__(self, capability, SharedContext)
+        title, size, position, show, vsync, resize, dec, fs, context = \
+            self._process_backend_kwargs(kwargs)
         # Init GLFW, add window hints, and create window
-        glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)
-        glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, True)
-        glfw.glfwWindowHint(glfw.GLFW_DEPTH_BITS, 24)
-        glfw.glfwWindowHint(glfw.GLFW_RED_BITS, 8)
-        glfw.glfwWindowHint(glfw.GLFW_GREEN_BITS, 8)
-        glfw.glfwWindowHint(glfw.GLFW_BLUE_BITS, 8)
-        glfw.glfwWindowHint(glfw.GLFW_ALPHA_BITS, 8)
-        glfw.glfwWindowHint(glfw.GLFW_DECORATED, True)
-        glfw.glfwWindowHint(glfw.GLFW_VISIBLE, True)
+        if isinstance(context, dict):
+            _set_config(context)
+            share = None
+        else:
+            share = context.value
+        glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)  # highest possible
+        glfw.glfwSwapInterval(1 if vsync else 0)
+        glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, int(resize))
+        glfw.glfwWindowHint(glfw.GLFW_DECORATED, int(dec))
+        glfw.glfwWindowHint(glfw.GLFW_VISIBLE, 0)  # start out hidden
+        if fs is not False:
+            if fs is True:
+                monitor = glfw.glfwGetPrimaryMonitor()
+            else:
+                monitor = glfw.glfwGetMonitors()
+                if fs >= len(monitor):
+                    raise ValueError('fullscreen must be <= %s'
+                                     % len(monitor))
+                monitor = monitor[fs]
+        else:
+            monitor = None
         self._id = glfw.glfwCreateWindow(width=size[0], height=size[1],
-                                         title=title)
+                                         title=title, monitor=monitor,
+                                         share=share)
         if not self._id:
             raise RuntimeError('Could not create window')
         _VP_GLFW_ALL_WINDOWS.append(self)
@@ -172,15 +241,20 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwSetScrollCallback(self._id, self._on_mouse_scroll)
         glfw.glfwSetCursorPosCallback(self._id, self._on_mouse_motion)
         glfw.glfwSetWindowCloseCallback(self._id, self._on_close)
-        glfw.glfwSwapInterval(1)  # avoid tearing
         self._vispy_canvas_ = None
         self._needs_draw = False
+        self._vispy_set_current()
         if position is not None:
             self._vispy_set_position(*position)
-        if not show:
-            glfw.glfwHideWindow(self._id)
+        if show:
+            glfw.glfwShowWindow(self._id)
 
-    ###########################################################################
+    @property
+    def _vispy_context(self):
+        """Context to return for sharing"""
+        return SharedContext(self._id)
+
+    ####################################
     # Deal with events we get from vispy
     @property
     def _vispy_canvas(self):
@@ -192,6 +266,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Init events when the property is set by Canvas
         self._vispy_canvas_ = vc
         if vc is not None:
+            self._vispy_set_current()
             self._vispy_canvas.events.initialize()
         return self._vispy_canvas
 
@@ -271,7 +346,7 @@ class CanvasBackend(BaseCanvasBackend):
         x, y = glfw.glfwGetWindowPos(self._id)
         return x, y
 
-    ###########################################################################
+    ##########################################
     # Notify vispy of events triggered by GLFW
     def _on_resize(self, _id, w, h):
         if self._vispy_canvas is None:
@@ -354,6 +429,8 @@ class CanvasBackend(BaseCanvasBackend):
                 self._mod.pop(self._mod.index(key))
         return self._mod
 
+
+# ------------------------------------------------------------------- timer ---
 
 class TimerBackend(BaseTimerBackend):
 

@@ -92,7 +92,7 @@ class ViewPort(object):
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self)
+        app.Canvas.__init__(self, close_keys='escape')
         self.size = 400, 200
         self.left = ViewPort((1.0, 0.5, 0.5, 1.0))
         self.right = ViewPort((0.5, 1.0, 0.5, 1.0))

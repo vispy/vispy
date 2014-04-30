@@ -8,10 +8,12 @@ implementation is corect.
 
 """
 
+from nose.tools import assert_raises
+from inspect import getargspec
+
 import vispy
 from vispy import keys
-from vispy.util.testing import (requires_pyglet, requires_qt, requires_glfw,
-                                requires_glut)
+from vispy.util.testing import requires_application
 
 
 class BaseTestmodule:
@@ -45,10 +47,15 @@ class BaseTestmodule:
 
         Klass = self._module.CanvasBackend
         KlassRef = vispy.app.base.BaseCanvasBackend
+        base = KlassRef(None, None)
         for key in dir(KlassRef):
             if not key.startswith('__'):
                 method = getattr(Klass, key)
                 if key not in exceptions:
+                    print(key)
+                    args = [None] * (len(getargspec(method).args) - 1)
+                    assert_raises(NotImplementedError, getattr(base, key),
+                                  *args)
                     if hasattr(method, '__module__'):
                         mod_str = method.__module__  # Py3k
                     else:
@@ -111,7 +118,7 @@ class Test_TemplateBackend(BaseTestmodule):
 
 class Test_QtBackend(BaseTestmodule):
 
-    @requires_qt()
+    @requires_application('qt')
     def __init__(self):
         from vispy.app.backends import _qt
         BaseTestmodule.__init__(self, _qt)
@@ -119,7 +126,7 @@ class Test_QtBackend(BaseTestmodule):
 
 class Test_PygletBackend(BaseTestmodule):
 
-    @requires_pyglet()
+    @requires_application('pyglet')
     def __init__(self):
         from vispy.app.backends import _pyglet
         BaseTestmodule.__init__(self, _pyglet)
@@ -127,15 +134,23 @@ class Test_PygletBackend(BaseTestmodule):
 
 class Test_GlfwBackend(BaseTestmodule):
 
-    @requires_glfw()
+    @requires_application('glfw')
     def __init__(self):
         from vispy.app.backends import _glfw
         BaseTestmodule.__init__(self, _glfw)
 
 
+class Test_SDL2Backend(BaseTestmodule):
+
+    @requires_application('sdl2')
+    def __init__(self):
+        from vispy.app.backends import _sdl2
+        BaseTestmodule.__init__(self, _sdl2)
+
+
 class Test_GlutBackend(BaseTestmodule):
 
-    @requires_glut()
+    @requires_application('glut')
     def __init__(self):
         from vispy.app.backends import _glut
         BaseTestmodule.__init__(self, _glut)
