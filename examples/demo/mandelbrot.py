@@ -111,15 +111,20 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, width, height)
         self.program['resolution'] = [width, height]
 
-    def on_mouse_press(self, event):
-        """Center visualization on mouse coordinates when left-clicked."""
-        if event.button != 1:
-            return
-        x, y = float(event.pos[0]), float(event.pos[1])
-        X, Y = self.pixel_to_coords(x, y)
-        self.center[0] = min(max(X, self.bounds[0]), self.bounds[1])
-        self.center[1] = min(max(Y, self.bounds[0]), self.bounds[1])
-        self.program["center"] = self.center
+    def on_mouse_move(self, event):
+        """Pan the view based on the change in mouse position."""
+        if event.is_dragging and event.buttons[0] == 1:
+            x0, y0 = event.last_event.pos[0], event.last_event.pos[1]
+            x1, y1 = event.pos[0], event.pos[1]
+            X0, Y0 = self.pixel_to_coords(float(x0), float(y0))
+            X1, Y1 = self.pixel_to_coords(float(x1), float(y1))
+
+            center = self.center
+            center[0] -= X1 - X0
+            center[1] -= Y1 - Y0
+            center[0] = min(max(center[0], self.bounds[0]), self.bounds[1])
+            center[1] = min(max(center[1], self.bounds[0]), self.bounds[1])
+            self.program["center"] = self.center = center
 
     def pixel_to_coords(self, x, y):
         """Convert pixel coordinates to Mandelbrot set coordinates."""
