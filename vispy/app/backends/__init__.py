@@ -10,6 +10,9 @@ instance we can test whether the GUI toolkit for a backend is already
 imported. This stuff is mostly used in the Application.use method.
 """
 
+import os
+
+
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
 BACKENDS = [
@@ -34,3 +37,4 @@ BACKENDMAP = dict([(be[0].lower(), be) for be in BACKENDS])
 # List of attempted backends. For logging and for communicating
 # to the backends.
 ATTEMPTED_BACKENDS = []
+_VISPY_TESTING_BACKEND = os.getenv('_VISPY_TESTING_BACKEND', None)
