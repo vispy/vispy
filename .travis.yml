@@ -67,7 +67,7 @@ install:
         source activate testenv;
         conda install --yes --quiet numpy nose;
       else
-        travis_retry sudo apt-get -qq -y install python-numpy python-nose;
+        travis_retry sudo apt-get -qq -y install python-numpy python-nose python-setuptools;
       fi;
     - pip install -q coveralls nose-timer
     # Dont install flake8 on 2.6 to make sure tests still run without it
@@ -137,7 +137,7 @@ install:
           make -j 2;
           sudo make install;
         fi;
-        pip install -q PySDL2;
+        pip install PySDL2;
       fi;
     # after manual builds we need to update .so search
     - sudo ldconfig
