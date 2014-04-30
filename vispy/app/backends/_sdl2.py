@@ -115,6 +115,7 @@ def _set_config(c):
     func(sdl2.SDL_GL_ALPHA_SIZE, c['alpha_size'])
     func(sdl2.SDL_GL_DEPTH_SIZE, c['depth_size'])
     func(sdl2.SDL_GL_STENCIL_SIZE, c['stencil_size'])
+    func(sdl2.SDL_GL_DOUBLEBUFFER, 1 if c['double_buffer'] else 0)
     samps = c['samples']
     func(sdl2.SDL_GL_MULTISAMPLEBUFFERS, 1 if samps > 0 else 0)
     func(sdl2.SDL_GL_MULTISAMPLESAMPLES, samps if samps > 0 else 0)
@@ -247,7 +248,7 @@ class CanvasBackend(BaseCanvasBackend):
         return self._vispy_canvas
 
     def _vispy_warmup(self):
-        etime = time() + 0.25
+        etime = time() + 0.1
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()

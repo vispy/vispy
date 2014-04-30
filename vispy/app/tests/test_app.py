@@ -4,6 +4,7 @@ from collections import namedtuple
 
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
+from unittest.case import SkipTest
 
 from vispy.app import Application, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
@@ -115,7 +116,7 @@ def test_run():
     a = Application()
     a.use()
     if a.backend_name.lower() == 'glut':
-        return  # knownfail, glut can't handle it
+        raise SkipTest('cannot test running glut')  # knownfail
     for _ in range(2):
         with Canvas(size=(100, 100), show=True, title=' run') as c:
             @c.events.paint.connect

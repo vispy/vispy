@@ -9,6 +9,7 @@ Implements the global singleton app object.
 
 from __future__ import division
 
+import os
 import sys
 
 from. import backends
@@ -122,8 +123,10 @@ class Application(object):
             if backend_name.lower() not in BACKENDMAP:
                 raise ValueError('backend_name must be one of %s or None, not '
                                  '%s' % (BACKENDMAP, backend_name))
-        elif backends._VISPY_TESTING_BACKEND is not None:
-            backend_name = backends._VISPY_TESTING_BACKEND
+        else:
+            _b = os.getenv('_VISPY_TESTING_TYPE', None)
+            if _b is not None:
+                backend_name = _b
 
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None

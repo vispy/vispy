@@ -11,6 +11,8 @@ import os
 import sys
 from subprocess import Popen
 from copy import deepcopy
+from functools import partial
+from unittest.case import SkipTest
 
 from .ptime import time
 
@@ -114,15 +116,33 @@ def has_backend(backend, has=(), capable=(), out=()):
     return ret
 
 
-def requires_application():
-    good = False
-    if os.getenv('_VISPY_TESTING_BACKEND', '') != 'no':
-        from ..app.backends import BACKEND_NAMES
+def requires_application(backend=None, has=(), capable=()):
+    """Decorator for tests that require an application"""
+    from ..app.backends import BACKEND_NAMES
+    if backend is None:
+        good = False
         for backend in BACKEND_NAMES:
-            if has_backend(backend):
+            if has_backend(backend, has=has, capable=capable):
                 good = True
                 break
-    return np.testing.dec.skipif(not good, 'Uses application backend')
+        msg = 'Requires application backend'
+    else:
+        good, why = has_backend(backend, has=has, capable=capable,
+                                out=['why_not'])
+        msg = 'Requires %s: %s' % (backend, why)
+
+    # Actually construct the decorator
+    def skip_decorator(f):
+        import nose
+        f.vispy_app_test = True  # set attribute for easy run or not
+
+        def skipper(*args, **kwargs):
+            if not good:
+                raise SkipTest("Skipping test: %s: %s" % (f.__name__, msg))
+            else:
+                return f(*args, **kwargs)
+        return nose.tools.make_decorator(f)(skipper)
+    return skip_decorator
 
 
 ###############################################################################
@@ -150,9 +170,10 @@ def _tester(label='full'):
     ----------
     label : str
         Can be one of 'full', 'nose', 'nobackend', 'lineendings', or 'flake',
-        or a backend name (e.g., 'qt').
+        or any backend name (e.g., 'qt').
     """
     from vispy.app.backends import BACKEND_NAMES as backend_names
+    label = label.lower()
     if os.path.isfile('.coverage'):
         os.remove('.coverage')
     known_types = ['full', 'nose', 'lineendings', 'flake', 'nobackend']
@@ -162,42 +183,67 @@ def _tester(label='full'):
                          % (known_types, backend_names))
     work_dir = os.path.join(_get_root_dir()[0], '..')
     orig_dir = os.getcwd()
-    try:
-        t0 = time()
-        os.chdir(work_dir)
-        if label in ('full', 'nose'):
-            for backend in backend_names:
-                _nose(backend)
-        elif label in backend_names:
-            _nose(label)
-        if label in ('nobackend', 'full', 'nose'):
-            _nose('no')
-        if label in ('full', 'lineendings'):
-            _check_line_endings()
-        if label in ('full', 'flake'):
-            _flake()
-        print('Testing completed successfully in %s seconds' % (time() - t0))
-    finally:
-        os.chdir(orig_dir)
+    # figure out what we actually need to run
+    runs = []
+    if label in ('full', 'nose'):
+        for backend in backend_names:
+            runs.append(partial(_nose, backend))
+    elif label in backend_names:
+        runs.append(partial(_nose, label))
+    if label in ('full', 'nose', 'nobackend'):
+        runs.append(partial(_nose, 'nobackend'))
+    if label in ('full', 'lineendings'):
+        runs.append(_check_line_endings)
+    if label in ('full', 'flake'):
+        runs.append(_flake)
+    t0 = time()
+    fail = 0
+    skip = 0
+    for run in runs:
+        try:
+            os.chdir(work_dir)
+            run()
+        except RuntimeError:
+            print('Failed')
+            fail += 1
+        except SkipTest:
+            skip += 1
+        else:
+            print('Passed')
+        finally:
+            sys.stdout.flush()
+            os.chdir(orig_dir)
+    dt = time() - t0
+    stat = '%s failed, %s skipped' % (fail, skip)
+    extra = 'failed' if fail else 'succeeded'
+    print('Testing %s (%s) in %s seconds' % (extra, stat, dt))
+    sys.stdout.flush()
+    if fail > 0:
+        raise RuntimeError('FAILURE')
 
 
-def _nose(backend):
-    """Run nosetests using a particular backend"""
+def _nose(mode):
+    """Run nosetests using a particular mode"""
     try:
         import nose  # noqa, analysis:ignore
     except ImportError:
         print('Skipping nosetests, nose not installed')
-        return
-    if backend == 'no' or has_backend(backend):
-        print('Running tests with %s backend' % backend)
+        raise SkipTest()
+    if mode == 'nobackend':
+        print('Running tests with no backend')
+        attrs = ['-a', '!vispy_app_test']
+    elif has_backend(mode):
+        print('Running tests with %s backend' % mode)
+        attrs = ['-a', 'vispy_app_test']
     else:
-        print('Skipping tests for backend %s, not found')
+        print('Skipping tests for backend %s, not found' % mode)
+        raise SkipTest()
     sys.stdout.flush()
     cmd = ['nosetests', '-d', '--with-coverage', '--cover-package=vispy',
-           '--cover-branches']
+           '--cover-branches', '--verbosity=1'] + attrs
     cwd = os.getcwd()
     env = deepcopy(os.environ)
-    env.update(dict(_VISPY_TESTING_BACKEND=backend))
+    env.update(dict(_VISPY_TESTING_TYPE=mode))
     proc = Popen(cmd, cwd=cwd, env=env)
     stdout, stderr = proc.communicate()
     if(proc.returncode):
@@ -211,9 +257,9 @@ def _flake():
     root_dir, dev = _get_root_dir()
     os.chdir(os.path.join(root_dir, '..'))
     if dev:
-        sys.argv[1:] = ('vispy', 'examples', 'make')
+        sys.argv[1:] = ['vispy', 'examples', 'make']
     else:
-        sys.argv[1:] = ('vispy',)
+        sys.argv[1:] = ['vispy']
     sys.argv.append('--ignore=E226,E241,E265,W291,W293')
     sys.argv.append('--exclude=six.py,_py24_ordereddict.py,_libglfw.py,'
                     '_proxy.py,_angle.py,_desktop.py,_pyopengl.py,'

@@ -3,6 +3,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
 from nose.tools import assert_true
+from unittest.case import SkipTest
 from time import sleep
 
 from vispy.app import Application, Canvas, Timer
@@ -48,6 +49,9 @@ def test_multiple_canvases():
     """Testing multiple canvases"""
     n_check = 3
     a = Application()
+    a.use()
+    if a.backend_name.lower() == 'glut':
+        raise SkipTest('glut cannot use multiple canvases')
     with Canvas(app=a, size=_win_size, title='same_0') as c0:
         with Canvas(app=a, size=_win_size, title='same_1') as c1:
             ct = [0, 0]

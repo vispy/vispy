@@ -2,7 +2,7 @@ import os
 from nose.tools import assert_equal, assert_raises
 
 from vispy.util.testing import requires_application
-from vispy.app import Canvas
+from vispy.app import Canvas, Application
 from vispy.gloo import (get_gl_configuration, VertexShader, FragmentShader,
                         Program, check_error)
 
@@ -10,9 +10,16 @@ from vispy.gloo import (get_gl_configuration, VertexShader, FragmentShader,
 @requires_application()
 def test_context_properties():
     """Test setting context properties"""
+    a = Application()
+    a.use()
+    if a.backend_name.lower() == 'pyglet':
+        return  # cannot set more than once on Pyglet
     # stereo, double buffer won't work on every sys
-    contexts = (dict(samples=4), dict(stencil_size=8),
-                dict(stencil_size=8, samples=4))
+    contexts = [dict(samples=4), dict(stencil_size=8),
+                dict(samples=4, stencil_size=8)]
+    if a.backend_name.lower() != 'glfw':  # glfw *always* double-buffers
+        contexts.append(dict(double_buffer=False, samples=4))
+        contexts.append(dict(double_buffer=False))
     for context in contexts:
         n_items = len(context)
         with Canvas(context=context):

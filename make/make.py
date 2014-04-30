@@ -150,31 +150,7 @@ class Maker:
         """ Run all tests. """
         from vispy import test
         try:
-            test('full')
-        except Exception:
-            raise SystemExit(1)
-
-    def nose(self, arg):
-        """ Run all unit tests using nose. """
-        from vispy import test
-        try:
-            test('nose')
-        except Exception:
-            raise SystemExit(1)
-
-    def flake(self, arg):
-        """ Run flake8 to find style inconsistencies. """
-        from vispy import test
-        try:
-            test('flake')
-        except Exception:
-            raise SystemExit(1)
-
-    def lineendings(self, args):
-        """ Check that all lineendings are LF """
-        from vispy import test
-        try:
-            test('lineendings')
+            test(arg)
         except Exception:
             raise SystemExit(1)
 

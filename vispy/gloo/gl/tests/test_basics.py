@@ -10,7 +10,6 @@ import sys
 from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true  # noqa
 from vispy.app import Canvas
-from vispy.util.testing import assert_in  # noqa
 from numpy.testing import assert_almost_equal
 from vispy.util.testing import requires_application, requires_pyopengl
 from vispy.util.six import string_types
@@ -267,9 +266,3 @@ def _test_fbo():
     gl.glDeleteFramebuffer(hframebuf)
     
     gl.check_error()
-
-    
-if __name__ == '__main__':
-    #SHOW = True
-    test_basics_desktop()
-    test_basics_pypengl()

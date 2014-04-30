@@ -141,6 +141,9 @@ def _set_config(c):
     #glfw.glfwWindowHint(glfw.GLFW_SRGB_CAPABLE, c['srgb'])
     glfw.glfwWindowHint(glfw.GLFW_SAMPLES, c['samples'])
     glfw.glfwWindowHint(glfw.GLFW_STEREO, c['stereo'])
+    if not c['double_buffer']:
+        raise RuntimeError('GLFW must double buffer, consider using a '
+                           'different backend, or using double buffering')
 
 
 class SharedContext(BaseSharedContext):
