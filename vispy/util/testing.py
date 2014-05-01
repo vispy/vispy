@@ -12,7 +12,14 @@ import sys
 from subprocess import Popen
 from copy import deepcopy
 from functools import partial
-from unittest.case import SkipTest
+try:
+    from unittest.case import SkipTest
+except ImportError:
+    try:
+        from unittest2.case import SkipTest
+    except ImportError:
+        class SkipTest(Exception):
+            pass
 
 from .ptime import time
 
