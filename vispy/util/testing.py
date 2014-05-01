@@ -244,7 +244,7 @@ def _nose(mode):
         raise SkipTest()
     sys.stdout.flush()
     cmd = ['nosetests', '-d', '--with-coverage', '--cover-package=vispy',
-           '--cover-branches', '--verbosity=1'] + attrs
+           '--cover-branches', '--verbosity=2'] + attrs
     env = deepcopy(os.environ)
     env.update(dict(_VISPY_TESTING_TYPE=mode))
     proc = Popen(cmd, env=env)
