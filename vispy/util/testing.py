@@ -278,8 +278,6 @@ def _flake():
                 pass  # do not exit yet, we want to print a success msg
             else:
                 raise RuntimeError('flake8 failed')
-        print('Hooray! flake8 test passed.')
-        sys.stdout.flush()
     finally:
         os.chdir(orig_dir)
 
@@ -313,5 +311,3 @@ def _check_line_endings():
     if len(report) > 0:
         raise RuntimeError('Found %s files with incorrect endings:\n%s'
                            % (len(report), '\n'.join(report)))
-    print('Line endings check passed')
-    sys.stdout.flush()
