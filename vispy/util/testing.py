@@ -176,15 +176,15 @@ def _tester(label='full'):
     Parameters
     ----------
     label : str
-        Can be one of 'full', 'nose', 'nobackend', 'lineendings', or 'flake',
-        or any backend name (e.g., 'qt').
+        Can be one of 'full', 'nose', 'nobackend', 'extra', 'lineendings',
+        'flake', or any backend name (e.g., 'qt').
     """
     from vispy.app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
     if os.path.isfile('.coverage'):
         os.remove('.coverage')
-    known_types = ['full', 'nose', 'lineendings', 'flake', 'nobackend']
-    known_types += backend_names
+    known_types = ['full', 'nose', 'lineendings', 'extra', 'flake',
+                   'nobackend'] + backend_names
     if label not in known_types:
         raise ValueError('label must be one of %s, or a backend name %s'
                          % (known_types, backend_names))
@@ -199,9 +199,9 @@ def _tester(label='full'):
         runs.append([partial(_nose, label), label])
     if label in ('full', 'nose', 'nobackend'):
         runs.append([partial(_nose, 'nobackend'), 'nobackend'])
-    if label in ('full', 'lineendings'):
+    if label in ('full', 'extra', 'lineendings'):
         runs.append([_check_line_endings, 'lineendings'])
-    if label in ('full', 'flake'):
+    if label in ('full', 'extra', 'flake'):
         runs.append([_flake, 'flake'])
     t0 = time()
     fail = []

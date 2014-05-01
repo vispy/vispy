@@ -40,6 +40,9 @@ flake: clean
 lineendings: clean
 	python make test lineendings
 
+extra: clean
+	python make test extra
+
 nobackend : clean
 	python make test nobackend
 

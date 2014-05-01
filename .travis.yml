@@ -162,10 +162,7 @@ script:
       fi;
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - if [ "${TEST}" == "extra" ]; then
-        make flake;
-      fi;
-    - if [ "${TEST}" == "extra" ]; then
-        make lineendings;
+        make extra;
       fi;
     - if [ "${TEST}" == "extra" ]; then
         echo "Size difference ${SIZE_DIFF} kB";
