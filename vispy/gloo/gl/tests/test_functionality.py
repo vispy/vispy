@@ -19,12 +19,12 @@ import sys
 
 import numpy as np
 
-from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true
 from vispy.app import Canvas
 from vispy.util.testing import assert_in  # noqa
 from numpy.testing import assert_almost_equal  # noqa
-from vispy.util.testing import requires_application, requires_pyopengl
+from vispy.util.testing import (requires_application, requires_pyopengl,
+                                SkipTest)
 
 from vispy.gloo import gl
 

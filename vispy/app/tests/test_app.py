@@ -4,11 +4,10 @@ from collections import namedtuple
 
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
-from unittest.case import SkipTest
 
 from vispy.app import Application, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
-from vispy.util.testing import requires_application
+from vispy.util.testing import requires_application, SkipTest
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader

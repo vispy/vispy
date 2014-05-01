@@ -4,10 +4,9 @@
 # This is a strange test: vispy does not need designer or uic stuff to run!
 
 from os import path as op
-from unittest.case import SkipTest
 
 from vispy.app import Canvas, Application
-from vispy.util.testing import requires_application
+from vispy.util.testing import requires_application, SkipTest
 from vispy.gloo import gl
 
 

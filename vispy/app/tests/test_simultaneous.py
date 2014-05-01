@@ -3,11 +3,10 @@
 import numpy as np
 from numpy.testing import assert_allclose
 from nose.tools import assert_true
-from unittest.case import SkipTest
 from time import sleep
 
 from vispy.app import Application, Canvas, Timer
-from vispy.util.testing import requires_application
+from vispy.util.testing import requires_application, SkipTest
 from vispy.util.ptime import time
 from vispy.gloo import gl
 from vispy.gloo.util import _screenshot

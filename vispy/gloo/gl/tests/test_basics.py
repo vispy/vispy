@@ -7,11 +7,11 @@ The only exception is glCompressedTexImage2D and glCompressedTexSubImage2D.
 
 import sys
 
-from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true  # noqa
 from vispy.app import Canvas
 from numpy.testing import assert_almost_equal
-from vispy.util.testing import requires_application, requires_pyopengl
+from vispy.util.testing import (requires_application, requires_pyopengl,
+                                SkipTest)
 from vispy.util.six import string_types
 
 from vispy.gloo import gl
