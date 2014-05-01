@@ -1,7 +1,7 @@
 import os
 from nose.tools import assert_equal, assert_raises
 
-from vispy.util.testing import requires_application
+from vispy.util.testing import requires_application, SkipTest
 from vispy.app import Canvas, Application
 from vispy.gloo import (get_gl_configuration, VertexShader, FragmentShader,
                         Program, check_error)
@@ -20,6 +20,8 @@ def test_context_properties():
     if a.backend_name.lower() != 'glfw':  # glfw *always* double-buffers
         contexts.append(dict(double_buffer=False, samples=4))
         contexts.append(dict(double_buffer=False))
+    if a.backend_name.lower() == 'sdl2' and os.getenv('TRAVIS') == 'true':
+        raise SkipTest('Travis SDL cannot set context')
     for context in contexts:
         n_items = len(context)
         with Canvas(context=context):

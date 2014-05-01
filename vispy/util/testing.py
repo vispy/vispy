@@ -194,38 +194,38 @@ def _tester(label='full'):
     runs = []
     if label in ('full', 'nose'):
         for backend in backend_names:
-            runs.append(partial(_nose, backend))
+            runs.append([partial(_nose, backend), backend])
     elif label in backend_names:
-        runs.append(partial(_nose, label))
+        runs.append([partial(_nose, label), label])
     if label in ('full', 'nose', 'nobackend'):
-        runs.append(partial(_nose, 'nobackend'))
+        runs.append([partial(_nose, 'nobackend'), 'nobackend'])
     if label in ('full', 'lineendings'):
-        runs.append(_check_line_endings)
+        runs.append([_check_line_endings, 'lineendings'])
     if label in ('full', 'flake'):
-        runs.append(_flake)
+        runs.append([_flake, 'flake'])
     t0 = time()
-    fail = 0
-    skip = 0
+    fail = []
+    skip = []
     for run in runs:
         try:
             os.chdir(work_dir)
-            run()
+            run[0]()
         except RuntimeError:
             print('Failed')
-            fail += 1
+            fail += [run[1]]
         except SkipTest:
-            skip += 1
+            skip += [run[1]]
         else:
             print('Passed')
         finally:
             sys.stdout.flush()
             os.chdir(orig_dir)
     dt = time() - t0
-    stat = '%s failed, %s skipped' % (fail, skip)
+    stat = '%s failed, %s skipped' % (fail if fail else 0, skip if skip else 0)
     extra = 'failed' if fail else 'succeeded'
-    print('Testing %s (%s) in %s seconds' % (extra, stat, dt))
+    print('Testing %s (%s) in %0.3f seconds' % (extra, stat, dt))
     sys.stdout.flush()
-    if fail > 0:
+    if len(fail) > 0:
         raise RuntimeError('FAILURE')
 
 

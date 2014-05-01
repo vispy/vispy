@@ -73,6 +73,12 @@ install:
     # Dont install flake8 on 2.6 to make sure tests still run without it
     - if [ "${PYTHON}" != "2.6" ]; then
         pip install -q flake8;
+      else
+        pip install unittest2;
+      fi
+    # helpful for debugging faults
+    - if [ "${PYTHON}" != 3.3 ]; then
+        pip install nose-faulthandler;
       fi
 
     # Install PyOpenGL
