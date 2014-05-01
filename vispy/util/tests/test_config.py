@@ -5,7 +5,7 @@ import os
 from vispy.util import (config, sys_info, _TempDir, get_data_file,
                         set_data_dir, save_config)
 
-from vispy.util.testing import assert_in, requires_application
+from vispy.testing import assert_in, requires_application
 temp_dir = _TempDir()
 
 

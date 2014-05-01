@@ -7,11 +7,10 @@ from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import Application, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
-from vispy.util.testing import requires_application, SkipTest
+from vispy.testing import requires_application, SkipTest, assert_is
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader
-from vispy.util.testing import assert_is
 from vispy.gloo.util import _screenshot
 from vispy.gloo import gl
 

@@ -14,7 +14,7 @@ from inspect import getargspec
 import vispy
 from vispy import keys
 from vispy.app import Application
-from vispy.util.testing import requires_application
+from vispy.testing import requires_application
 from vispy.app.backends import _template
 
 

@@ -6,7 +6,7 @@
 from os import path as op
 
 from vispy.app import Canvas, Application
-from vispy.util.testing import requires_application, SkipTest
+from vispy.testing import requires_application, SkipTest
 from vispy.gloo import gl
 
 

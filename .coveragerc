@@ -8,4 +8,5 @@ omit =
     */vispy/util/_py24_ordereddict.py
     */vispy/gloo/gl/angle.py
     */vispy/gloo/gl/_angle.py
+    */vispy/testing/_runners.py
 

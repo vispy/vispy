@@ -3,7 +3,7 @@ backends, and no more than that.
 """
 
 from nose.tools import assert_equal
-from vispy.util.testing import requires_pyopengl
+from vispy.testing import requires_pyopengl
 
 from vispy.gloo import gl
 

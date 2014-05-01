@@ -282,7 +282,7 @@ def sys_info(fname=None, overwrite=False):
         from ..app import Application, Canvas
         from ..app.backends import BACKEND_NAMES
         from ..gloo import gl
-        from .testing import has_backend
+        from ..testing import has_backend
         # get default app
         this_app = Application()
         with use_log_level('warning'):

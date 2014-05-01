@@ -11,7 +11,6 @@ from ._data import get_data_file  # noqa
 from ._config import (_parse_command_line_arguments, config, sys_info,  # noqa
                       save_config, get_config_keys, set_data_dir,  # noqa
                       _TempDir)  # noqa
-from .testing import _tester  # noqa
 
 from . import cube        # noqa
 from . import transforms  # noqa

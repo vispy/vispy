@@ -10,8 +10,7 @@ import sys
 from nose.tools import assert_equal, assert_true  # noqa
 from vispy.app import Canvas
 from numpy.testing import assert_almost_equal
-from vispy.util.testing import (requires_application, requires_pyopengl,
-                                SkipTest)
+from vispy.testing import requires_application, requires_pyopengl, SkipTest
 from vispy.util.six import string_types
 
 from vispy.gloo import gl

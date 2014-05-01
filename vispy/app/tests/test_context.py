@@ -1,7 +1,7 @@
 import os
 from nose.tools import assert_equal, assert_raises
 
-from vispy.util.testing import requires_application, SkipTest
+from vispy.testing import requires_application, SkipTest
 from vispy.app import Canvas, Application
 from vispy.gloo import (get_gl_configuration, VertexShader, FragmentShader,
                         Program, check_error)
