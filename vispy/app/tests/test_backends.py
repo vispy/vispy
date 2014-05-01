@@ -15,14 +15,16 @@ import vispy
 from vispy import keys
 from vispy.app import Application
 from vispy.util.testing import requires_application
+from vispy.app.backends import _template
 
 
 @requires_application()
-def test_module():
+def test_module(_module=None):
     """Test application module"""
-    a = Application()
-    a.use()
-    _module = a.backend_module
+    if _module is None:
+        a = Application()
+        a.use()
+        _module = a.backend_module
 
     # Test that the keymap contains all keys supported by vispy.
     keymap = _module.KEYMAP
@@ -104,3 +106,8 @@ def test_module():
     for name in eventNames:
         assert 'events.%s' % name in text, ('events.%s does not appear '
                                             'in %s' % (name, fname))
+
+
+def test_template():
+    """Test backend template"""
+    test_module(_template)
