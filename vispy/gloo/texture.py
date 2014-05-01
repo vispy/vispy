@@ -271,11 +271,16 @@ class Texture(GLObject):
         """
 
         if self.base is not None and not self._valid:
-            raise ValueError("This texture view has been invalited")
+            raise ValueError("This texture view has been invalidated")
 
         if self.base is not None:
             self.base.set_data(data, offset=self.offset, copy=copy)
             return
+        
+        # Force using the same data type. We could probably allow it,
+        # but with the views and data storage, this is rather complex.
+        if data.dtype != self.dtype:
+            raise ValueError('Cannot set texture data with another dtype.')
         
         # Copy if needed, check/normalize shape
         data = np.array(data, copy=copy)
@@ -301,7 +306,12 @@ class Texture(GLObject):
         for i in range(len(data.shape)):
             if offset[i] + data.shape[i] > self.shape[i]:
                 raise ValueError("Data is too large")
-
+        
+        if self._store:
+            pass  
+            # todo: @nico should we not update self._data?
+            # but we need to keep the offset into account.
+        
         self._pending_data.append((data, offset))
         self._need_update = True
 

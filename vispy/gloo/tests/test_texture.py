@@ -204,7 +204,7 @@ class TextureTest(unittest.TestCase):
 
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data, store=False)
-        T[...] = np.ones((10, 10))
+        T[...] = np.ones((10, 10), np.uint8)
         assert len(T._pending_data) == 1
         assert np.allclose(data, np.zeros((10, 10)))
 
@@ -267,8 +267,8 @@ class Texture1DTest(unittest.TestCase):
         data = np.zeros(10, dtype=np.uint8)
         T = Texture1D(data=data)
         assert T.width == 10
-   
-   # Set misshaped data
+
+    # Set misshaped data
     # ---------------------------------
     def test_set_misshaped_data_1D(self):
         data = np.zeros(10, dtype=np.uint8)
@@ -343,7 +343,7 @@ class Texture2DTest(unittest.TestCase):
     def test_set_oversized_data(self):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture2D(data=data)
-        T.set_data(np.ones((20, 20)))
+        T.set_data(np.ones((20, 20), np.uint8))
         assert T.shape == (20, 20, 1)
         assert T._data.shape == (20, 20, 1)
         assert len(T._pending_data) == 1
@@ -353,7 +353,7 @@ class Texture2DTest(unittest.TestCase):
     def test_set_undersized_data(self):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture2D(data=data)
-        T.set_data(np.ones((5, 5)))
+        T.set_data(np.ones((5, 5), np.uint8))
         assert T.shape == (5, 5, 1)
         assert len(T._pending_data) == 1
 
@@ -381,7 +381,7 @@ class Texture2DTest(unittest.TestCase):
     def test_set_whole_data(self):
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture2D(data=data)
-        T.set_data(np.ones((10, 10)))
+        T.set_data(np.ones((10, 10), np.uint8))
         assert T.shape == (10, 10, 1)
         assert len(T._pending_data) == 1
     
@@ -396,7 +396,7 @@ class Texture2DTest(unittest.TestCase):
     
     # Test set data with different shape
     # ---------------------------------
-    def test_reset_data(self):
+    def test_reset_data_shape(self):
         shape1 = 10, 10
         shape3 = 10, 10, 3
         
@@ -425,8 +425,22 @@ class Texture2DTest(unittest.TestCase):
         T.resize(shape1)
         assert T.shape == (10, 10, 1)
         assert T._format == gl.GL_LUMINANCE
-        
     
+    # Test set data with different shape
+    # ---------------------------------
+    def test_reset_data_type(self):
+        shape = 10, 10
+        T = Texture2D(data=np.zeros(shape, dtype=np.uint8))
+        assert T.dtype == np.uint8
+        assert T._gtype == gl.GL_UNSIGNED_BYTE
+        
+        newdata = np.zeros(shape, dtype=np.float32)
+        self.assertRaises(ValueError, T.set_data, newdata)
+        
+        newdata = np.zeros(shape, dtype=np.int32)
+        self.assertRaises(ValueError, T.set_data, newdata)
+
+
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     unittest.main()
