@@ -156,7 +156,6 @@ before_script:
 
 script:
     - cd ${SRC_DIR}
-    - echo ${SRC_DIR}
     - if [ "${TEST}" != "extra" ]; then
         make nose;
       fi;
