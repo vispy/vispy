@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 
 from vispy.gloo.texture import Texture, Texture1D, Texture2D
+from vispy.gloo import gl
 
 
 # ----------------------------------------------------------------- Texture ---
@@ -108,93 +109,6 @@ class TextureTest(unittest.TestCase):
         T = Texture(data=data.copy(), store=True)
         assert T._data is not data
         assert T._data is not None
-
-    # Set undersized data
-    # ---------------------------------
-    def test_set_undersized_data(self):
-        data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture(data=data)
-        T.set_data(np.ones((5, 5)))
-        assert T.shape == (5, 5)
-        assert len(T._pending_data) == 1
-
-    # Set misplaced data
-    # ---------------------------------
-    def test_set_misplaced_data(self):
-        data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture(data=data)
-        # with self.assertRaises(ValueError):
-        #    T.set_data(np.ones((5, 5)), offset=(8, 8))
-        self.assertRaises(ValueError, T.set_data,
-                          np.ones((5, 5)), offset=(8, 8))
-
-    # Set misshaped data
-    # ---------------------------------
-    def test_set_misshaped_data(self):
-        data = np.zeros(10, dtype=np.uint8)
-        T = Texture(data=data)
-        # with self.assertRaises(ValueError):
-        #    T.set_data(np.ones((10, 10)))
-        self.assertRaises(ValueError, T.set_data, np.ones((10, 10)))
-
-    # Set whole data (clear pending data)
-    # ---------------------------------
-    def test_set_whole_data(self):
-        data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture(data=data)
-        T.set_data(np.ones((10, 10)))
-        assert T.shape == (10, 10)
-        assert len(T._pending_data) == 1
-
-    # Set oversized data (-> resize)
-    # ---------------------------------
-    def test_set_oversized_data(self):
-        data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture(data=data)
-        T.set_data(np.ones((20, 20)))
-        assert T.shape == (20, 20)
-        assert T._data.shape == (20, 20)
-        assert len(T._pending_data) == 1
-
-    # Resize
-    # ---------------------------------
-    def test_resize(self):
-        data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture(data=data)
-        T.resize((5, 5))
-        assert T.shape == (5, 5)
-        assert T._data.shape == (5, 5)
-        assert T._need_resize is True
-        assert T._need_update is False
-        assert len(T._pending_data) == 0
-
-    # Resize with bad shape
-    # ---------------------------------
-    def test_resize_bad_shape(self):
-        data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture(data=data)
-        # with self.assertRaises(ValueError):
-        #    T.resize((5, 5, 5))
-        self.assertRaises(ValueError, T.resize, (5, 5, 5))
-
-    # Resize view (forbidden)
-    # ---------------------------------
-    def test_resize_view(self):
-        data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture(data=data)
-        # with self.assertRaises(RuntimeError):
-        #    T[...].resize((5, 5))
-        Z = T[...]
-        self.assertRaises(RuntimeError, Z.resize, (5, 5))
-
-    # Resize not resizeable
-    # ---------------------------------
-    def test_resize_unresizeable(self):
-        data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture(data=data, resizeable=False)
-        # with self.assertRaises(RuntimeError):
-        #    T.resize((5, 5))
-        self.assertRaises(RuntimeError, T.resize, (5, 5))
 
     # Get a view of the whole texture
     # ---------------------------------
@@ -336,19 +250,10 @@ class TextureTest(unittest.TestCase):
         assert len(T._pending_data) == 2
         assert np.allclose(data[5:, 5:], np.ones((5, 5)))
 
-    # Test view get invalidated when base is resized
-    # ----------------------------------------------
-    def test_invalid_views(self):
-        data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture(data=data)
-        Z = T[5:, 5:]
-        T.resize((5, 5))
-        assert Z._valid is False
-
 
 # --------------------------------------------------------------- Texture1D ---
 class Texture1DTest(unittest.TestCase):
-
+    
     # Shape extension
     # ---------------------------------
     def test_init(self):
@@ -362,11 +267,22 @@ class Texture1DTest(unittest.TestCase):
         data = np.zeros(10, dtype=np.uint8)
         T = Texture1D(data=data)
         assert T.width == 10
+   
+   # Set misshaped data
+    # ---------------------------------
+    def test_set_misshaped_data_1D(self):
+        data = np.zeros(10, dtype=np.uint8)
+        T = Texture1D(data=data)
+        # with self.assertRaises(ValueError):
+        #    T.set_data(np.ones((10, 10)))
+        self.assertRaises(ValueError, T.set_data, np.ones((10, 10)))
 
 
 # --------------------------------------------------------------- Texture2D ---
 class Texture2DTest(unittest.TestCase):
-
+    # Note: put many tests related to (re)sizing here, because Texture
+    # is not really aware of shape.
+    
     # Shape extension
     # ---------------------------------
     def test_init(self):
@@ -381,8 +297,136 @@ class Texture2DTest(unittest.TestCase):
         T = Texture2D(data=data)
         assert T.width == 20
         assert T.height == 10
+    
+    # Resize
+    # ---------------------------------
+    def test_resize(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture2D(data=data)
+        T.resize((5, 5))
+        assert T.shape == (5, 5, 1)
+        assert T._data.shape == (5, 5, 1)
+        assert T._need_resize is True
+        assert T._need_update is False
+        assert len(T._pending_data) == 0
 
+    # Resize with bad shape
+    # ---------------------------------
+    def test_resize_bad_shape(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture2D(data=data)
+        # with self.assertRaises(ValueError):
+        #    T.resize((5, 5, 5))
+        self.assertRaises(ValueError, T.resize, (5, 5, 5))
 
+    # Resize view (forbidden)
+    # ---------------------------------
+    def test_resize_view(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture2D(data=data)
+        # with self.assertRaises(RuntimeError):
+        #    T[...].resize((5, 5))
+        Z = T[...]
+        self.assertRaises(RuntimeError, Z.resize, (5, 5))
+
+    # Resize not resizeable
+    # ---------------------------------
+    def test_resize_unresizeable(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture2D(data=data, resizeable=False)
+        # with self.assertRaises(RuntimeError):
+        #    T.resize((5, 5))
+        self.assertRaises(RuntimeError, T.resize, (5, 5))
+    
+    # Set oversized data (-> resize)
+    # ---------------------------------
+    def test_set_oversized_data(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture2D(data=data)
+        T.set_data(np.ones((20, 20)))
+        assert T.shape == (20, 20, 1)
+        assert T._data.shape == (20, 20, 1)
+        assert len(T._pending_data) == 1
+    
+    # Set undersized data
+    # ---------------------------------
+    def test_set_undersized_data(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture2D(data=data)
+        T.set_data(np.ones((5, 5)))
+        assert T.shape == (5, 5, 1)
+        assert len(T._pending_data) == 1
+
+    # Set misplaced data
+    # ---------------------------------
+    def test_set_misplaced_data(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture2D(data=data)
+        # with self.assertRaises(ValueError):
+        #    T.set_data(np.ones((5, 5)), offset=(8, 8))
+        self.assertRaises(ValueError, T.set_data,
+                          np.ones((5, 5)), offset=(8, 8))
+
+    # Set misshaped data
+    # ---------------------------------
+    def test_set_misshaped_data_2D(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture2D(data=data)
+        # with self.assertRaises(ValueError):
+        #    T.set_data(np.ones((10, 10)))
+        self.assertRaises(ValueError, T.set_data, np.ones((10,)))
+
+    # Set whole data (clear pending data)
+    # ---------------------------------
+    def test_set_whole_data(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture2D(data=data)
+        T.set_data(np.ones((10, 10)))
+        assert T.shape == (10, 10, 1)
+        assert len(T._pending_data) == 1
+    
+    # Test view get invalidated when base is resized
+    # ----------------------------------------------
+    def test_invalid_views(self):
+        data = np.zeros((10, 10), dtype=np.uint8)
+        T = Texture2D(data=data)
+        Z = T[5:, 5:]
+        T.resize((5, 5))
+        assert Z._valid is False
+    
+    # Test set data with different shape
+    # ---------------------------------
+    def test_reset_data(self):
+        shape1 = 10, 10
+        shape3 = 10, 10, 3
+        
+        # Init data (explicit shape)
+        data = np.zeros((10, 10, 1), dtype=np.uint8)
+        T = Texture2D(data=data)
+        assert T.shape == (10, 10, 1)
+        assert T._format == gl.GL_LUMINANCE
+        
+        # Set data to rgb
+        T.set_data(np.zeros(shape3, np.uint8))
+        assert T.shape == (10, 10, 3)
+        assert T._format == gl.GL_RGB
+        
+        # Set data to grayscale
+        T.set_data(np.zeros(shape1, np.uint8))
+        assert T.shape == (10, 10, 1)
+        assert T._format == gl.GL_LUMINANCE
+        
+        # Set size to rgb
+        T.resize(shape3)
+        assert T.shape == (10, 10, 3)
+        assert T._format == gl.GL_RGB
+        
+        # Set size to grayscale
+        T.resize(shape1)
+        assert T.shape == (10, 10, 1)
+        assert T._format == gl.GL_LUMINANCE
+        
+    
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     unittest.main()

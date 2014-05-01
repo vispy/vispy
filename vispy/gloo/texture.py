@@ -226,7 +226,14 @@ class Texture(GLObject):
 
         if shape == self.shape:
             return
-
+        
+        # Reset format if size of last dimension differs
+        if shape[-1] != self.shape[-1]:
+            format = Texture._formats.get(shape[-1], None)
+            if format is None:
+                raise ValueError("Cannot determine texture format from shape")
+            self._format = format
+        
         # Invalidate any view on this texture
         for view in self._views:
             view._valid = False
