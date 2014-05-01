@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import numpy as np
 import os
+from os import path as op
 import sys
 from subprocess import Popen
 from copy import deepcopy
@@ -156,17 +157,13 @@ def requires_application(backend=None, has=(), capable=()):
 # Test running
 
 def _get_root_dir():
-    this_dir = os.path.abspath(os.path.dirname(__file__))
-    for subdir in ['.', '..']:
-        root_dir = os.path.abspath(os.path.join(this_dir, subdir))
-        if os.path.isfile(os.path.join(this_dir, 'setup.py')):
-            dev = True
-            this_dir = os.path.join(this_dir, 'vispy')
-            break
+    root_dir = os.getcwd()
+    if (op.isfile(op.join(root_dir, 'setup.py')) and
+            op.isdir(op.join(root_dir, 'vispy'))):
+        dev = True
     else:
-        dev = False
-        import vispy
-        root_dir = os.path.dirname(vispy.__file__)
+        root_dir = op.abspath(op.join(op.dirname(__file__), '..', '..'))
+        dev = True if op.isfile(op.join(root_dir, 'setup.py')) else False
     return root_dir, dev
 
 
@@ -181,14 +178,14 @@ def _tester(label='full'):
     """
     from vispy.app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
-    if os.path.isfile('.coverage'):
+    if op.isfile('.coverage'):
         os.remove('.coverage')
     known_types = ['full', 'nose', 'lineendings', 'extra', 'flake',
                    'nobackend'] + backend_names
     if label not in known_types:
         raise ValueError('label must be one of %s, or a backend name %s'
                          % (known_types, backend_names))
-    work_dir = os.path.join(_get_root_dir()[0], '..')
+    work_dir = _get_root_dir()[0]
     orig_dir = os.getcwd()
     # figure out what we actually need to run
     runs = []
@@ -248,10 +245,9 @@ def _nose(mode):
     sys.stdout.flush()
     cmd = ['nosetests', '-d', '--with-coverage', '--cover-package=vispy',
            '--cover-branches', '--verbosity=1'] + attrs
-    cwd = os.getcwd()
     env = deepcopy(os.environ)
     env.update(dict(_VISPY_TESTING_TYPE=mode))
-    proc = Popen(cmd, cwd=cwd, env=env)
+    proc = Popen(cmd, env=env)
     stdout, stderr = proc.communicate()
     if(proc.returncode):
         raise RuntimeError('Nose failure (%s):\n%s'
@@ -262,7 +258,7 @@ def _flake():
     """Test flake8"""
     orig_dir = os.getcwd()
     root_dir, dev = _get_root_dir()
-    os.chdir(os.path.join(root_dir, '..'))
+    os.chdir(root_dir)
     if dev:
         sys.argv[1:] = ['vispy', 'examples', 'make']
     else:
@@ -294,15 +290,16 @@ def _check_line_endings():
     print('Running line endings check... ', end='')
     sys.stdout.flush()
     report = []
-    root_dir = _get_root_dir()[0]  # doesn't matter if dev or not
+    root_dir, dev = _get_root_dir()
+    if not dev:
+        root_dir = op.join(root_dir, 'vispy')
     for dirpath, dirnames, filenames in os.walk(root_dir):
         for fname in filenames:
-            if os.path.splitext(fname)[1] in ('.pyc', '.pyo',
-                                              '.so', '.dll'):
+            if op.splitext(fname)[1] in ('.pyc', '.pyo', '.so', '.dll'):
                 continue
             # Get filename
-            filename = os.path.join(dirpath, fname)
-            relfilename = os.path.relpath(filename, root_dir)
+            filename = op.join(dirpath, fname)
+            relfilename = op.relpath(filename, root_dir)
             # Open and check
             try:
                 text = open(filename, 'rb').read().decode('utf-8')

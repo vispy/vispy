@@ -57,7 +57,6 @@ before_install:
           SIZE_DIFF=0;
         fi;
       fi;
-    - cd ${SRC_DIR}
 
 
 install:
@@ -112,9 +111,9 @@ install:
       fi;
 
     # Install vispy
+    - cd ${SRC_DIR}
     - python setup.py build
     - python setup.py install
-    - SRC_DIR=$(pwd)
     - cd ~
 
     # GLFW: version 2 shouldn't work (so let's try on Py2.6), version 3 will
@@ -157,6 +156,7 @@ before_script:
 
 script:
     - cd ${SRC_DIR}
+    - echo ${SRC_DIR}
     - if [ "${TEST}" != "extra" ]; then
         make nose;
       fi;
