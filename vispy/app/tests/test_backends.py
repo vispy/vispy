@@ -110,6 +110,23 @@ def _test_module_properties(_module=None):
 def test_template():
     """Test application module template"""
     _test_module_properties(_template)
+    assert_raises(NotImplementedError, _template._set_config, dict())
+    a = _template.ApplicationBackend()
+    print(a._vispy_get_backend_name())
+    for method in (a._vispy_process_events, a._vispy_run, a._vispy_quit,
+                   a._vispy_get_native_app):
+        assert_raises(NotImplementedError, method)
+
+    c = _template.CanvasBackend(None)
+    print(c._vispy_get_native_canvas())
+    for method in (c.events_to_emit, c._vispy_set_current,
+                   c._vispy_swap_buffers, c._vispy_update, c._vispy_close,
+                   c._vispy_get_size, c._vispy_get_position):
+        assert_raises(NotImplementedError, method)
+    for method in (c._vispy_set_title, c._vispy_set_visible):
+        assert_raises(NotImplementedError, method, 0)
+    for method in (c._vispy_set_size, c._vispy_set_position):
+        assert_raises(NotImplementedError, method, 0, 0)
 
 
 @requires_application()

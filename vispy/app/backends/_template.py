@@ -9,7 +9,8 @@ should be emitted.
 
 from __future__ import division
 
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, BaseSharedContext)
 from ...util import keys
 
 
@@ -76,7 +77,11 @@ capability = dict(
 # ------------------------------------------------------- set_configuration ---
 def _set_config(c):
     """Set gl configuration for template"""
-    return
+    raise NotImplementedError
+
+
+class SharedContext(BaseSharedContext):
+    _backend = 'template'
 
 
 # ------------------------------------------------------------- application ---
@@ -109,8 +114,7 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, vispy_canvas, *args, **kwargs):
         #NativeWidgetClass.__init__(self, *args, **kwargs)
-        BaseCanvasBackend.__init__(self, vispy_canvas)
-        #_set_config(dict())
+        BaseCanvasBackend.__init__(self, vispy_canvas, SharedContext)
 
     def _vispy_set_current(self):
         # Make this the current context
