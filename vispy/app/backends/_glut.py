@@ -144,27 +144,22 @@ capability = dict(  # things that can be set by the backend
 def _set_config(config):
     """Set gl configuration"""
     s = ""
+    st = '~' if sys.platform == 'darwin' else '='
+    ge = '>=' if sys.platform == 'darwin' else '='
+    s += "red%s%d " % (ge, config['red_size'])
+    s += "green%s%d " % (ge, config['green_size'])
+    s += "blue%s%d " % (ge, config['blue_size'])
+    s += "alpha%s%d " % (ge, config['alpha_size'])
+    s += "depth%s%d " % (ge, config['depth_size'])
+    s += "stencil%s%d " % (st, config['stencil_size'])
+    s += "samples%s%d " % (st, config['samples']) if config['samples'] else ""
+    s += "acca=0 " if sys.platform == 'darwin' else ""
     if sys.platform == 'darwin':
-        s += "acca=0 "  # No accum buffer
-        s += "red>=%d " % config['red_size']
-        s += "green>=%d " % config['green_size']
-        s += "blue>=%d " % config['blue_size']
-        s += "alpha>=%d " % config['alpha_size']
-        s += "depth>=%d " % config['depth_size']
-        s += "stencil~%d " % config['stencil_size']
         s += "double=1 " if config['double_buffer'] else "single=1 "
         s += "stereo=%d " % config['stereo']
-        s += "samples~%d " % config['samples']
     else:  # freeglut
-        s += "red=%d " % config['red_size']
-        s += "green=%d " % config['green_size']
-        s += "blue=%d " % config['blue_size']
-        s += "alpha=%d " % config['alpha_size']
-        s += "depth=%d " % config['depth_size']
-        s += "stencil=%d " % config['stencil_size']
         s += "double " if config['double_buffer'] else "single "
         s += "stereo " if config['stereo'] else ""
-        s += "samples=%d " % config['samples'] if config['samples'] else ""
     glut.glutInitDisplayString(s.encode('ASCII'))
 
 
