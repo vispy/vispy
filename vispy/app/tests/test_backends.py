@@ -13,13 +13,12 @@ from inspect import getargspec
 
 import vispy
 from vispy import keys
-from vispy.app import Application
 from vispy.testing import requires_application
+from vispy.app import Application
 from vispy.app.backends import _template
 
 
-@requires_application()
-def test_module(_module=None):
+def _test_module_properties(_module=None):
     """Test application module"""
     if _module is None:
         a = Application()
@@ -109,5 +108,11 @@ def test_module(_module=None):
 
 
 def test_template():
-    """Test backend template"""
-    test_module(_template)
+    """Test application module template"""
+    _test_module_properties(_template)
+
+
+@requires_application()
+def test_actual():
+    """Test actual application module"""
+    _test_module_properties(None)

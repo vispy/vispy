@@ -106,17 +106,18 @@ def has_backend(backend, has=(), capable=(), out=()):
         ret = (False,) if len(out) > 0 else False
         for o in out:
             ret += (None,)
-    else:
-        mod = __import__('app.backends._%s' % backend, globals(), level=2)
-        mod = getattr(mod.backends, '_%s' % backend)
-        good = mod.testable
-        for h in has:
-            good = (good and getattr(mod, 'has_%s' % h))
-        for cap in capable:
-            good = (good and mod.capability[cap])
-        ret = (good,) if len(out) > 0 else good
-        for o in out:
-            ret += (getattr(mod, o),)
+        return ret
+    # let's follow the standard code path
+    mod = __import__('app.backends._%s' % backend, globals(), level=2)
+    mod = getattr(mod.backends, '_%s' % backend)
+    good = mod.testable
+    for h in has:
+        good = (good and getattr(mod, 'has_%s' % h))
+    for cap in capable:
+        good = (good and mod.capability[cap])
+    ret = (good,) if len(out) > 0 else good
+    for o in out:
+        ret += (getattr(mod, o),)
     return ret
 
 

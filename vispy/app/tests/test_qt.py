@@ -22,16 +22,19 @@ def test_qt_designer():
     WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
 
     class MainWindow(TemplateBaseClass):
+
         def __init__(self):
             TemplateBaseClass.__init__(self)
+
             self.ui = WindowTemplate()
             self.ui.setupUi(self)
             self.show()
+
     win = MainWindow()
     try:
         win.show()
         canvas = Canvas(create_native=False)
-        canvas.app.use()  # Make sure the app exists (as create_native=0)
+        canvas.app.use()  # Make sure the app exists (because create_native=0)
         canvas._set_backend(win.ui.canvas)
         canvas.create_native()
 
