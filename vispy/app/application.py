@@ -123,10 +123,6 @@ class Application(object):
             if backend_name.lower() not in BACKENDMAP:
                 raise ValueError('backend_name must be one of %s or None, not '
                                  '%s' % (BACKENDMAP, backend_name))
-        else:
-            _b = os.getenv('_VISPY_TESTING_TYPE', None)
-            if _b is not None:
-                backend_name = _b
 
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None
@@ -142,12 +138,15 @@ class Application(object):
         # Get backends to try ...
         backends_to_try = []
         if not try_others:
-            # Test if given name is ok
-            if backend_name.lower() not in BACKENDMAP.keys():
-                raise ValueError('Backend name not known: "%s"' % backend_name)
+            # We should never hit this, since we check above
+            assert backend_name.lower() in BACKENDMAP.keys()
             # Add it
             backends_to_try.append(backend_name.lower())
         else:
+            # See if we're in a specific testing mode
+            name = os.getenv('_VISPY_TESTING_TYPE', None)
+            if name is not None:
+                backends_to_try.append(name.lower())
             # See if a backend is loaded
             for name, module_name, native_module_name in BACKENDS:
                 if native_module_name and native_module_name in sys.modules:

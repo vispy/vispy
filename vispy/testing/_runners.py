@@ -160,6 +160,10 @@ def _tester(label='full'):
             fail += [run[1]]
         except SkipTest:
             skip += [run[1]]
+        except Exception as exp:
+            # this should only happen if we've screwed up the test setup
+            fail += [run[1]]
+            print('Failed strangely: %s' % str(exp))
         else:
             print('Passed')
         finally:

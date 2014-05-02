@@ -154,9 +154,10 @@ def test_capability():
 @requires_application()
 def test_application():
     """Test application running"""
+    assert_raises(ValueError, Application, backend='foo')
     app = Application()
-    assert_raises(ValueError, app.use, 'foo')
-    app.use()
+    print(app)  # __repr__ without app
+    app.create()
     wrong = 'glut' if app.backend_name.lower() != 'glut' else 'pyglet'
     assert_raises(RuntimeError, app.use, wrong)
     app.process_events()
@@ -297,6 +298,12 @@ def test_fs():
         pass
     with Canvas(fullscreen=0):
         pass
+
+
+def test_default():
+    """Test backend finding error"""
+    a = Application()
+    assert_raises(RuntimeError, a.use, '_test')
 
 
 def test_abstract():
