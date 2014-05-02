@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 from collections import namedtuple
+from time import sleep
 
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
@@ -8,6 +9,7 @@ from nose.tools import assert_equal, assert_true, assert_raises
 from vispy.app import Application, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
 from vispy.testing import requires_application, SkipTest, assert_is
+from vispy.util import keys
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader
@@ -171,9 +173,19 @@ def test_application():
     title = 'default'
     with Canvas(title=title, size=size, app=app, show=True,
                 position=pos) as canvas:
+        assert_true(canvas.create_native() is None)  # should be done already
         assert_is(canvas.app, app)
         assert_true(canvas.native)
         assert_equal('swap_buffers', canvas.events.paint.callback_refs[-1])
+
+        # FPS
+        canvas.measure_fps(0.001)
+        sleep(0.002)
+        canvas.update()
+        app.process_events()
+        assert_true(canvas.fps > 0)
+
+        # Other methods
         print(canvas)  # __repr__
         assert_array_equal(canvas.size, size)
         assert_equal(canvas.title, title)
@@ -300,10 +312,28 @@ def test_fs():
         pass
 
 
+@requires_application()
+def test_close_keys():
+    """Test close keys"""
+    c = Canvas(close_keys='ESCAPE')
+    x = list()
+
+    @c.events.close.connect
+    def closer(event):
+        x.append('done')
+    c.events.key_press(key=keys.ESCAPE, text='', modifiers=[])
+    # XXX known fail: this works on Qt, but not any other backend,
+    # the flow of canvas.close() is inconsistent (and should close_keys)
+    # call canvas.close(), or canvas.events.close()?
+    #assert_equal(len(x), 1)  # ensure the close event was sent
+    c.app.process_events()
+
+
 def test_default():
     """Test backend finding error"""
     a = Application()
     assert_raises(RuntimeError, a.use, '_test')
+    assert_raises(RuntimeError, Application, backend='_test')
 
 
 def test_abstract():

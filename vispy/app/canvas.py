@@ -127,7 +127,7 @@ class Canvas(object):
         # Create widget now
         if create_native:
             self.create_native()
-        
+
         # Close keys
         def close_keys_check(event):
             if event.key in self.close_keys:
