@@ -20,6 +20,9 @@ def test_context_properties():
     if a.backend_name.lower() != 'glfw':  # glfw *always* double-buffers
         contexts.append(dict(double_buffer=False, samples=4))
         contexts.append(dict(double_buffer=False))
+    else:
+        assert_raises(RuntimeError, Canvas, app=a,
+                      context=dict(double_buffer=False))
     if a.backend_name.lower() == 'sdl2' and os.getenv('TRAVIS') == 'true':
         raise SkipTest('Travis SDL cannot set context')
     for context in contexts:
