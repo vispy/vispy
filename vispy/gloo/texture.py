@@ -89,6 +89,7 @@ class Texture(GLObject):
                 data = np.array(data, copy=False)
             self._dtype = data.dtype
             # Handle shape
+            data = self._normalize_shape(data)
             if shape is not None:
                 raise ValueError('Texture needs data or shape, nor both.')
             self._shape = data.shape
@@ -104,7 +105,8 @@ class Texture(GLObject):
         elif dtype is not None:
             if shape is not None:
                 self._need_resize = True
-            self._shape = shape or ()
+            shape = shape or ()
+            self._shape = self._normalize_shape(shape)
             self._dtype = dtype
             if self._store:
                 self._data = np.empty(self._shape, dtype=self._dtype)
@@ -116,8 +118,7 @@ class Texture(GLObject):
         else:
             self._offset = offset
         
-        # Check shape and dtype
-        self._check_shape()
+        # Check dtype
         if hasattr(self._dtype, 'fields') and self._dtype.fields:
             raise ValueError("Texture dtype cannot be structured")
 
@@ -125,8 +126,8 @@ class Texture(GLObject):
         if self._gtype is None:
             raise ValueError("Type not allowed for texture")
 
-    def _check_shape(self):
-        pass
+    def _normalize_shape(self, data_or_shape):
+        return data_or_shape
     
     @property
     def shape(self):
@@ -211,7 +212,9 @@ class Texture(GLObject):
         -----
         This clears any pending operations.
         """
-
+        
+        shape = self._normalize_shape(shape)
+        
         if not self._resizeable:
             raise RuntimeError("Texture is not resizeable")
 
@@ -223,7 +226,14 @@ class Texture(GLObject):
 
         if shape == self.shape:
             return
-
+        
+        # Reset format if size of last dimension differs
+        if shape[-1] != self.shape[-1]:
+            format = Texture._formats.get(shape[-1], None)
+            if format is None:
+                raise ValueError("Cannot determine texture format from shape")
+            self._format = format
+        
         # Invalidate any view on this texture
         for view in self._views:
             view._valid = False
@@ -261,13 +271,20 @@ class Texture(GLObject):
         """
 
         if self.base is not None and not self._valid:
-            raise ValueError("This texture view has been invalited")
+            raise ValueError("This texture view has been invalidated")
 
         if self.base is not None:
             self.base.set_data(data, offset=self.offset, copy=copy)
             return
         
+        # Force using the same data type. We could probably allow it,
+        # but with the views and data storage, this is rather complex.
+        if data.dtype != self.dtype:
+            raise ValueError('Cannot set texture data with another dtype.')
+        
+        # Copy if needed, check/normalize shape
         data = np.array(data, copy=copy)
+        data = self._normalize_shape(data)
         
         # Check data has the right shape
         # if len(data.shape) != len(self.shape):
@@ -289,7 +306,12 @@ class Texture(GLObject):
         for i in range(len(data.shape)):
             if offset[i] + data.shape[i] > self.shape[i]:
                 raise ValueError("Data is too large")
-
+        
+        if self._store:
+            pass  
+            # todo: @nico should we not update self._data?
+            # but we need to keep the offset into account.
+        
         self._pending_data.append((data, offset))
         self._need_update = True
 
@@ -526,20 +548,31 @@ class Texture1D(Texture):
         if self._format is None:
             raise ValueError("Cannot convert data to texture")
 
-    def _check_shape(self):
-        shape = self._shape
+    def _normalize_shape(self, data_or_shape):
+        # Get data and shape from input
+        if isinstance(data_or_shape, np.ndarray):
+            data = data_or_shape
+            shape = data.shape
+        else:
+            assert isinstance(data_or_shape, tuple)
+            data = None
+            shape = data_or_shape
+        # Check and correct
         if shape:
             if len(shape) < 1:
                 raise ValueError("Too few dimensions for texture")
             elif len(shape) > 2:
                 raise ValueError("Too many dimensions for texture")
             elif len(shape) == 1:
-                if self._data is not None:
-                    self._data = self._data.reshape((shape[0], 1))
-                self._shape = (shape[0], 1)
+                shape = shape[0], 1
             elif len(shape) == 2:
                 if shape[-1] > 4:
                     raise ValueError("Too many channels for texture")
+        # Return
+        if data is not None:
+            return data.reshape(*shape)
+        else:
+            return shape
     
     @property
     def width(self):
@@ -625,20 +658,31 @@ class Texture2D(Texture):
         if self._format is None:
             raise ValueError("Cannot convert data to texture")
     
-    def _check_shape(self):
-        shape = self._shape
+    def _normalize_shape(self, data_or_shape):
+        # Get data and shape from input
+        if isinstance(data_or_shape, np.ndarray):
+            data = data_or_shape
+            shape = data.shape
+        else:
+            assert isinstance(data_or_shape, tuple)
+            data = None
+            shape = data_or_shape
+        # Check and correct
         if shape:
             if len(shape) < 2:
                 raise ValueError("Too few dimensions for texture")
             elif len(shape) > 3:
                 raise ValueError("Too many dimensions for texture")
             elif len(shape) == 2:
-                if self._data is not None:
-                    self._data = self._data.reshape((shape[0], shape[1], 1))
-                self._shape = (shape[0], shape[1], 1)
+                shape = shape[0], shape[1], 1
             elif len(shape) == 3:
                 if shape[-1] > 4:
                     raise ValueError("Too many channels for texture")
+        # Return
+        if data is not None:
+            return data.reshape(*shape)
+        else:
+            return shape
 
     @property
     def height(self):
@@ -744,25 +788,36 @@ class TextureCubeMap(Texture):
                               target=target + i, offset=offset)
             self._textures.append(T)
     
-    def _check_shape(self):
-        shape = self._shape
-        if len(shape) < 3:
-            raise ValueError("Too few dimensions for texture")
-        elif len(shape) > 4:
-            raise ValueError("Too many dimensions for texture")
-        elif len(shape) == 3:
-            if shape[0] != 6:
-                raise ValueError("First dimension must be 6 for texture cube")
-            if self._data is not None:
-                self._data = self._data.reshape((shape[0], shape[1], 
-                                                 shape[2], 1))
-            self._shape = (shape[0], shape[1], shape[2], 1)
-        elif len(shape) == 4:
-            if shape[0] != 6:
-                raise ValueError("First dimension must be 6 for texture cube")
-            if shape[-1] > 4:
-                raise ValueError("Too many channels for texture")
-
+    def _normalize_shape(self, data_or_shape):
+        # Get data and shape from input
+        if isinstance(data_or_shape, np.ndarray):
+            data = data_or_shape
+            shape = data.shape
+        else:
+            assert isinstance(data_or_shape, tuple)
+            data = None
+            shape = data_or_shape
+        # Check and correct
+        if shape:
+            if len(shape) < 3:
+                raise ValueError("Too few dimensions for texture")
+            elif len(shape) > 4:
+                raise ValueError("Too many dimensions for texture")
+            elif len(shape) == 3:
+                if shape[0] != 6:
+                    raise ValueError("First dim must be 6 for texture cube")
+                shape = shape[0], shape[1], shape[2], 1
+            elif len(shape) == 4:
+                if shape[0] != 6:
+                    raise ValueError("First dim must be 6 for texture cube")
+                if shape[-1] > 4:
+                    raise ValueError("Too many channels for texture")
+        # Return
+        if data is not None:
+            return data.reshape(*shape)
+        else:
+            return shape
+        
     def activate(self):
         """ Activate the object on GPU """
 
