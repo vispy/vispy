@@ -13,6 +13,10 @@ from vispy.testing import assert_in, assert_not_in, requires_pyopengl
 import vispy
 
 
+# minimum that will be imported when importing vispy
+_min_modules = ['vispy', 'vispy.util', 'vispy.testing', 'vispy.ext']
+
+
 def check_output(*popenargs, **kwargs):
     """ Minimal py 2.6 compatible version of subprocess.check_output()
 
@@ -62,9 +66,6 @@ def loaded_vispy_modules(import_module, depth=None, all_modules=False):
             vispy_modules.add(m)
     
     return vispy_modules
-
-
-_min_modules = ['vispy', 'vispy.util', 'vispy.testing']  # minimum
 
 
 def test_import_nothing():

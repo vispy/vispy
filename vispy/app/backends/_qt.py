@@ -14,7 +14,7 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
 from ...util import keys
 from . import ATTEMPTED_BACKENDS
-from ...util.six import text_type
+from ...ext.six import text_type
 from ...util import logger
 
 # Get what qt lib to try

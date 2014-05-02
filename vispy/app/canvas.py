@@ -9,7 +9,7 @@ import numpy as np
 from ._default_app import default_app
 from ..util.event import EmitterGroup, Event
 from ..util.ptime import time
-from ..util.six import string_types
+from ..ext.six import string_types
 from .application import Application
 from ._config import get_default_config
 

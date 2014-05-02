@@ -17,7 +17,7 @@ import atexit
 from shutil import rmtree
 
 from .event import EmitterGroup, EventEmitter, Event
-from .six import string_types
+from ..ext.six import string_types
 from ._logging import logger, set_log_level, use_log_level
 
 

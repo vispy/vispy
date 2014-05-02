@@ -14,7 +14,7 @@ intended as a compatibility measure.
 
 """
 
-from .six import string_types
+from ..ext.six import string_types
 
 
 class Key(object):

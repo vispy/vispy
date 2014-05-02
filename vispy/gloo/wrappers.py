@@ -8,7 +8,7 @@ import numpy as np
 from copy import deepcopy
 
 from . import gl
-from ..util.six import string_types
+from ..ext.six import string_types
 
 
 __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',

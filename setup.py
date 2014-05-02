@@ -82,6 +82,7 @@ setup(
         'vispy',
         'vispy.app', 'vispy.app.tests',
         'vispy.app.backends',
+        'vispy.ext',
         'vispy.gloo', 'vispy.gloo.tests',
         'vispy.gloo.gl', 'vispy.gloo.gl.tests',
         'vispy.testing', 'vispy.testing.tests',

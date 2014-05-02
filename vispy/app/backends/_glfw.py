@@ -30,7 +30,7 @@ from ...util.ptime import time
 # -------------------------------------------------------------------- init ---
 
 try:
-    from . import _libglfw as glfw
+    from ...ext import glfw
     if not glfw.glfwInit():  # only ever call once
         raise OSError('Could not init glfw')
     atexit.register(glfw.glfwTerminate)
