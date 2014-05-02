@@ -20,7 +20,7 @@ BACKENDS = [
     ('Glfw', '_glfw', 'vispy.app.backends._libglfw'),
     ('SDL2', '_sdl2', 'sdl2'),
     ('Glut', '_glut', 'OpenGL.GLUT'),
-    ('_test', '_test', '_test'),  # add one that can and will fail
+    ('_test', '_test', 'vispy.app.backends._test'),  # add one that will fail
 ]
 
 BACKEND_NAMES = []
