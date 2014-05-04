@@ -24,8 +24,9 @@ def _get_root_dir():
     return root_dir, dev
 
 
-def _nose(mode):
+def _nose(mode, verbosity):
     """Run nosetests using a particular mode"""
+    cwd = os.getcwd()  # this must be done before nose import
     try:
         import nose  # noqa, analysis:ignore
     except ImportError:
@@ -42,10 +43,10 @@ def _nose(mode):
         raise SkipTest()
     sys.stdout.flush()
     cmd = ['nosetests', '-d', '--with-coverage', '--cover-package=vispy',
-           '--cover-branches', '--verbosity=2'] + attrs
+           '--cover-branches', '--verbosity=%s' % verbosity] + attrs + ['.']
     env = deepcopy(os.environ)
     env.update(dict(_VISPY_TESTING_TYPE=mode))
-    proc = Popen(cmd, env=env)
+    proc = Popen(cmd, cwd=cwd, env=env)
     stdout, stderr = proc.communicate()
     if(proc.returncode):
         raise RuntimeError('Nose failure (%s):\n%s'
@@ -115,7 +116,7 @@ def _check_line_endings():
                            % (len(report), '\n'.join(report)))
 
 
-def _tester(label='full'):
+def _tester(label='full', verbosity=2):
     """Test vispy software
 
     Parameters
@@ -123,9 +124,12 @@ def _tester(label='full'):
     label : str
         Can be one of 'full', 'nose', 'nobackend', 'extra', 'lineendings',
         'flake', or any backend name (e.g., 'qt').
+    verbosity : int
+        Verbosity level to use when running ``nose``.
     """
     from vispy.app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
+    verbosity = int(verbosity)
     if op.isfile('.coverage'):
         os.remove('.coverage')
     known_types = ['full', 'nose', 'lineendings', 'extra', 'flake',
@@ -139,11 +143,11 @@ def _tester(label='full'):
     runs = []
     if label in ('full', 'nose'):
         for backend in backend_names:
-            runs.append([partial(_nose, backend), backend])
+            runs.append([partial(_nose, backend, verbosity), backend])
     elif label in backend_names:
-        runs.append([partial(_nose, label), label])
+        runs.append([partial(_nose, label, verbosity), label])
     if label in ('full', 'nose', 'nobackend'):
-        runs.append([partial(_nose, 'nobackend'), 'nobackend'])
+        runs.append([partial(_nose, 'nobackend', verbosity), 'nobackend'])
     if label in ('full', 'extra', 'lineendings'):
         runs.append([_check_line_endings, 'lineendings'])
     if label in ('full', 'extra', 'flake'):
