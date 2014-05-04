@@ -13,7 +13,7 @@ import numpy as np
 from vispy import gloo
 from vispy import app
 from vispy.util.transforms import perspective, translate, rotate
-app.use('sdl2')
+
 # Create vertices
 n, p = 100, 150
 data = np.zeros(p * n, [('a_position', np.float32, 2),

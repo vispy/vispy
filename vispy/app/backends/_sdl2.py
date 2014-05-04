@@ -142,12 +142,14 @@ class ApplicationBackend(BaseApplicationBackend):
         return 'SDL2'
 
     def _vispy_process_events(self):
-        event = sdl2.SDL_Event()
-        while sdl2.SDL_PollEvent(ctypes.byref(event)) != 0:
-            _id = event.window.windowID
-            if _id in _VP_SDL2_ALL_WINDOWS:
-                win = _VP_SDL2_ALL_WINDOWS[_id]
-                win._on_event(event)
+        events = sdl2.ext.get_events()
+        while len(events) > 0:
+            for event in events:
+                _id = event.window.windowID
+                if _id in _VP_SDL2_ALL_WINDOWS:
+                    win = _VP_SDL2_ALL_WINDOWS[_id]
+                    win._on_event(event)
+            events = sdl2.ext.get_events()
         for timer in self._timers:
             timer._tick()
         wins = _get_sdl2_windows()
@@ -209,16 +211,14 @@ class CanvasBackend(BaseCanvasBackend):
         self._mods = list()
         if position is None:
             position = [sdl2.SDL_WINDOWPOS_UNDEFINED] * 2
-        self._id = sdl2.SDL_CreateWindow(title.encode('UTF-8'),
-                                         position[0], position[1],
-                                         size[0], size[1], flags)
-        if not self._id:
+        self._id = sdl2.ext.Window(title, size, position, flags)
+        if not self._id.window:
             raise RuntimeError('Could not create window')
         if share is None:
-            self._native_context = sdl2.SDL_GL_CreateContext(self._id)
+            self._native_context = sdl2.SDL_GL_CreateContext(self._id.window)
         else:
             self._native_context = sdl2.SDL_GL_CreateContext(share[0])
-        self._sdl_id = sdl2.SDL_GetWindowID(self._id)
+        self._sdl_id = sdl2.SDL_GetWindowID(self._id.window)
         _VP_SDL2_ALL_WINDOWS[self._sdl_id] = self
         self._vispy_canvas_ = None
         self._needs_draw = False
@@ -229,7 +229,7 @@ class CanvasBackend(BaseCanvasBackend):
     @property
     def _vispy_context(self):
         """Context to return for sharing"""
-        return SharedContext((self._id, self._native_context))
+        return SharedContext((self._id.window, self._native_context))
 
     ####################################
     # Deal with events we get from vispy
@@ -244,6 +244,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas_ = vc
         if vc is not None:
             self._vispy_set_current()
+            print('init')
             self._vispy_canvas.events.initialize()
         return self._vispy_canvas
 
@@ -258,42 +259,42 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         # Make this the current context
-        sdl2.SDL_GL_MakeCurrent(self._id, self._native_context)
+        sdl2.SDL_GL_MakeCurrent(self._id.window, self._native_context)
 
     def _vispy_swap_buffers(self):
         if self._id is None:
             return
         # Swap front and back buffer
-        sdl2.SDL_GL_SwapWindow(self._id)
+        sdl2.SDL_GL_SwapWindow(self._id.window)
 
     def _vispy_set_title(self, title):
         if self._id is None:
             return
         # Set the window title. Has no effect for widgets
-        sdl2.SDL_SetWindowTitle(self._id, title.encode('UTF-8'))
+        sdl2.SDL_SetWindowTitle(self._id.window, title.encode('UTF-8'))
 
     def _vispy_set_size(self, w, h):
         if self._id is None:
             return
         # Set size of the widget or window
-        sdl2.SDL_SetWindowSize(self._id, w, h)
+        sdl2.SDL_SetWindowSize(self._id.window, w, h)
 
     def _vispy_set_position(self, x, y):
         if self._id is None:
             return
         # Set position of the widget or window. May have no effect for widgets
-        sdl2.SDL_SetWindowPosition(self._id, x, y)
+        sdl2.SDL_SetWindowPosition(self._id.window, x, y)
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
         if self._id is None:
             return
         if visible:
-            sdl2.SDL_ShowWindow(self._id)
+            self._id.show()
             # this ensures that the show takes effect
             self._vispy_update()
         else:
-            sdl2.SDL_HideWindow(self._id)
+            self._id.hide()
 
     def _vispy_update(self):
         # Invoke a redraw, passing it on to the canvas
@@ -305,7 +306,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_close(self):
         # Force the window or widget to shut down
         if self._id is not None:
-            _id = self._id
+            _id = self._id.window
             self._id = None
             sdl2.SDL_DestroyWindow(_id)
             del _VP_SDL2_ALL_WINDOWS[self._sdl_id]
@@ -315,7 +316,8 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         w, h = ctypes.c_int(), ctypes.c_int()
-        sdl2.SDL_GetWindowSize(self._id, ctypes.byref(w), ctypes.byref(h))
+        sdl2.SDL_GetWindowSize(self._id.window,
+                               ctypes.byref(w), ctypes.byref(h))
         w, h = w.value, h.value
         return w, h
 
@@ -323,7 +325,8 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         x, y = ctypes.c_int(), ctypes.c_int()
-        sdl2.SDL_GetWindowPosition(self._id, ctypes.byref(x), ctypes.byref(y))
+        sdl2.SDL_GetWindowPosition(self._id.window,
+                                   ctypes.byref(x), ctypes.byref(y))
         x, y = x.value, y.value
         return x, y
 
