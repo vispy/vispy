@@ -20,6 +20,7 @@ def test_qt_designer():
     from PyQt4 import uic
     fname = op.join(op.dirname(__file__), 'qt-designer.ui')
     WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
+    a.create()  # make sure we have an app, or the init will fail
 
     class MainWindow(TemplateBaseClass):
 

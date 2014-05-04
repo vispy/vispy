@@ -21,9 +21,9 @@ from ...util.ptime import time
 
 try:
     import sdl2
-    if sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO) < 0:  # only ever call once
-        raise OSError('Could not init sdl2: %s' % sdl2.SDL_GetError())
-    atexit.register(sdl2.SDL_Quit)
+    import sdl2.ext
+    sdl2.ext.init()
+    atexit.register(sdl2.ext.quit)
 
     # Map native keys to vispy keys
     KEYMAP = {
