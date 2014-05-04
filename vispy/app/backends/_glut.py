@@ -116,7 +116,11 @@ except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
     available, why_not = True, None
-    testable = (_get_glut_process_func() is not None)
+    testable = True
+    try:
+        _get_glut_process_func()
+    except RuntimeError:
+        testable = False
     which = 'from OpenGL %s' % OpenGL.__version__
 
 
