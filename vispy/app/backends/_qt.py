@@ -90,6 +90,7 @@ try:
         QtCore.Qt.Key_Return: keys.ENTER,
         QtCore.Qt.Key_Tab: keys.TAB,
     }
+    BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 
@@ -109,7 +110,6 @@ else:
         import PySide
         which = ('PySide', PySide.__version__, QtCore.__version__)
 
-BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 # -------------------------------------------------------------- capability ---
 

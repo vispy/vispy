@@ -31,9 +31,6 @@ from ...util.ptime import time
 
 try:
     from ...ext import glfw
-    if not glfw.glfwInit():  # only ever call once
-        raise OSError('Could not init glfw')
-    atexit.register(glfw.glfwTerminate)
 
     # Map native keys to vispy keys
     KEYMAP = {
@@ -90,9 +87,9 @@ else:
     available, testable, why_not = True, True, None
     which = 'glfw ' + str(glfw.__version__)
 
-_VP_GLFW_ALL_WINDOWS = []
-
 MOD_KEYS = [keys.SHIFT, keys.ALT, keys.CONTROL, keys.META]
+_GLFW_INITIALIZED = False
+_VP_GLFW_ALL_WINDOWS = []
 
 
 def _get_glfw_windows():
@@ -193,6 +190,12 @@ class ApplicationBackend(BaseApplicationBackend):
         self._timers = []
 
     def _vispy_get_native_app(self):
+        global _GLFW_INITIALIZED
+        if not _GLFW_INITIALIZED:
+            if not glfw.glfwInit():  # only ever call once
+                raise OSError('Could not init glfw')
+            atexit.register(glfw.glfwTerminate)
+            _GLFW_INITIALIZED = True
         return glfw
 
 

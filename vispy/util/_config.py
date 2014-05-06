@@ -279,27 +279,26 @@ def sys_info(fname=None, overwrite=False):
     out = ''
     try:
         # Nest all imports here to avoid any circular imports
-        from ..app import Application, Canvas
+        from ..app import default_app, Canvas
         from ..app.backends import BACKEND_NAMES
         from ..gloo import gl
         from ..testing import has_backend
         # get default app
-        this_app = Application()
         with use_log_level('warning'):
-            this_app.use()  # suppress unnecessary messages
+            default_app.use()  # suppress unnecessary messages
         out += 'Platform: %s\n' % platform.platform()
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
-        out += 'Backend:  %s\n' % this_app.backend_name
+        out += 'Backend:  %s\n' % default_app.backend_name
         for backend in BACKEND_NAMES:
             which = has_backend(backend, out=['which'])[1]
             out += '{0:<9} {1}\n'.format(backend + ':', which)
         out += '\n'
         # We need an OpenGL context to get GL info
-        if 'glut' in this_app.backend_name.lower():
+        if 'glut' in default_app.backend_name.lower():
             # glut causes problems
             out += 'OpenGL information omitted for glut backend\n'
         else:
-            canvas = Canvas('Test', (10, 10), show=False, app=this_app)
+            canvas = Canvas('Test', (10, 10), show=False, app=default_app)
             canvas._backend._vispy_set_current()
             out += 'GL version:  %s\n' % gl.glGetParameter(gl.GL_VERSION)
             x_ = gl.GL_MAX_TEXTURE_SIZE

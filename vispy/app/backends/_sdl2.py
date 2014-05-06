@@ -22,8 +22,6 @@ from ...util.ptime import time
 try:
     import sdl2
     import sdl2.ext
-    sdl2.ext.init()
-    atexit.register(sdl2.ext.quit)
 
     # Map native keys to vispy keys
     KEYMAP = {
@@ -80,6 +78,7 @@ else:
     available, testable, why_not = True, True, None
     which = 'sdl2 %d.%d.%d' % sdl2.version_info[:3]
 
+_SDL2_INITIALIZED = False
 _VP_SDL2_ALL_WINDOWS = {}
 
 
@@ -175,6 +174,11 @@ class ApplicationBackend(BaseApplicationBackend):
         self._timers = []
 
     def _vispy_get_native_app(self):
+        global _SDL2_INITIALIZED
+        if not _SDL2_INITIALIZED:
+            sdl2.ext.init()
+            atexit.register(sdl2.ext.quit)
+            _SDL2_INITIALIZED = True
         return sdl2
 
 

@@ -9,7 +9,6 @@ vispy backend for glut.
 from __future__ import division
 
 import sys
-import ctypes
 from time import sleep, time
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -19,7 +18,6 @@ from ...util import ptime, keys, logger
 # -------------------------------------------------------------------- init ---
 
 try:
-    from OpenGL import platform
     import OpenGL.error
     import OpenGL.GLUT as glut
 
@@ -74,32 +72,6 @@ try:
                  glut.GLUT_MIDDLE_BUTTON: 3
                  }
 
-    # HiDPI support for retina display
-    # This requires glut from
-    # http://iihm.imag.fr/blanch/software/glut-macosx/
-    if sys.platform == 'darwin':
-        try:
-            glutInitDisplayString = platform.createBaseFunction(
-                'glutInitDisplayString', dll=platform.GLUT,
-                resultType=None, argTypes=[ctypes.c_char_p],
-                doc='glutInitDisplayString(  ) -> None', argNames=())
-            text = ctypes.c_char_p("rgba stencil double samples=8 hidpi")
-            glutInitDisplayString(text)
-        except Exception:
-            pass
-    glut.glutInit(['vispy'.encode('ASCII')])  # todo: allow user to give args?
-    mode = (glut.GLUT_RGBA | glut.GLUT_DOUBLE |
-            glut.GLUT_STENCIL | glut.GLUT_DEPTH)
-    if bool(glut.glutInitDisplayMode):
-        glut.glutInitDisplayMode(mode)
-    # Prevent exit when closing window
-    try:
-        glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE,
-                           glut.GLUT_ACTION_CONTINUE_EXECUTION)
-    except Exception:
-        pass
-    _GLUT_INIT = glut
-
     def _get_glut_process_func(missing='error'):
         if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
             func = glut.glutMainLoopEvent
@@ -124,6 +96,7 @@ else:
     which = 'from OpenGL %s' % OpenGL.__version__
 
 
+_GLUT_INITIALIZED = False
 _VP_GLUT_ALL_WINDOWS = []
 
 # -------------------------------------------------------------- capability ---
@@ -164,6 +137,10 @@ def _set_config(config):
     else:  # freeglut
         s += "double " if config['double_buffer'] else "single "
         s += "stereo " if config['stereo'] else ""
+    # HiDPI support for retina display
+    # This requires glut from
+    # http://iihm.imag.fr/blanch/software/glut-macosx/
+    s += " hidpi" if sys.platform == 'darwin' else ""
     glut.glutInitDisplayString(s.encode('ASCII'))
 
 
@@ -219,7 +196,17 @@ class ApplicationBackend(BaseApplicationBackend):
                 win._vispy_close()
 
     def _vispy_get_native_app(self):
-        return _GLUT_INIT
+        global _GLUT_INITIALIZED
+        if not _GLUT_INITIALIZED:
+            glut.glutInit(['vispy'.encode('ASCII')])
+            # Prevent exit when closing window
+            try:
+                glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE,
+                                   glut.GLUT_ACTION_CONTINUE_EXECUTION)
+            except Exception:
+                pass
+            _GLUT_INITIALIZED = True
+        return glut
 
 
 def _set_close_fun(id_, fun):

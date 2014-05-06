@@ -6,7 +6,7 @@ from time import sleep
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
 
-from vispy.app import Application, Canvas, Timer, MouseEvent, KeyEvent
+from vispy.app import default_app, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
 from vispy.testing import requires_application, SkipTest, assert_is
 from vispy.util import keys
@@ -113,7 +113,7 @@ def _test_callbacks(canvas):
 @requires_application()
 def test_run():
     """Test app running"""
-    a = Application()
+    a = default_app
     a.use()
     if a.backend_name.lower() == 'glut':
         raise SkipTest('cannot test running glut')  # knownfail
@@ -156,8 +156,7 @@ def test_capability():
 @requires_application()
 def test_application():
     """Test application running"""
-    assert_raises(ValueError, Application, backend='foo')
-    app = Application()
+    app = default_app
     print(app)  # __repr__ without app
     app.create()
     wrong = 'glut' if app.backend_name.lower() != 'glut' else 'pyglet'
@@ -301,11 +300,11 @@ def test_application():
 @requires_application()
 def test_fs():
     """Test fullscreen support"""
-    a = Application()
+    a = default_app
     a.use()
     assert_raises(TypeError, Canvas, fullscreen='foo')
     if a.backend_name.lower() in ('glfw', 'sdl2'):  # takes over screen
-        return
+        raise SkipTest('glfw and sdl2 take over screen')
     with Canvas(fullscreen=True):
         pass
     with Canvas(fullscreen=0):
@@ -327,13 +326,6 @@ def test_close_keys():
     # call canvas.close(), or canvas.events.close()?
     #assert_equal(len(x), 1)  # ensure the close event was sent
     c.app.process_events()
-
-
-def test_default():
-    """Test backend finding error"""
-    a = Application()
-    assert_raises(RuntimeError, a.use, '_test')
-    assert_raises(RuntimeError, Application, backend='_test')
 
 
 def test_abstract():
