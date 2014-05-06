@@ -7,7 +7,6 @@ vispy backend for Qt (PySide and PyQt4).
 """
 
 from __future__ import division
-from time import sleep, time
 
 from ... import config
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -34,13 +33,13 @@ try:
     # Import PySide or PyQt4
     if qt_lib in ('any', 'qt'):
         try:
-            from PyQt4 import QtGui, QtCore, QtOpenGL
+            from PyQt4 import QtGui, QtCore, QtOpenGL, QtTest
         except ImportError:
-            from PySide import QtGui, QtCore, QtOpenGL
+            from PySide import QtGui, QtCore, QtOpenGL, QtTest
     elif qt_lib in ('pyqt', 'pyqt4'):
-        from PyQt4 import QtGui, QtCore, QtOpenGL
+        from PyQt4 import QtGui, QtCore, QtOpenGL, QtTest
     elif qt_lib == 'pyside':
-        from PySide import QtGui, QtCore, QtOpenGL
+        from PySide import QtGui, QtCore, QtOpenGL, QtTest
     else:
         raise Exception("Do not recognize Qt library '%s'. Options are "
                         "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
@@ -246,11 +245,8 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
         return SharedContext(self)
 
     def _vispy_warmup(self):
-        etime = time() + 0.25
-        while time() < etime:
-            sleep(0.01)
-            self._vispy_set_current()
-            self._vispy_canvas.app.process_events()
+        self._vispy_canvas.app.process_events()
+        QtTest.QTest.qWaitForWindowShown(self)
 
     def _vispy_set_current(self):
         # Make this the current context
@@ -282,6 +278,8 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
 
     def _vispy_close(self):
         # Force the window or widget to shut down
+        self.doneCurrent()
+        self.context().reset()
         self.close()
 
     def _vispy_get_position(self):
@@ -401,15 +399,6 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
         if QtCore.Qt.MetaModifier & qtmod:
             mod += keys.META,
         return mod
-
-    def __del__(self):
-        # Destroy if this is a toplevel widget
-        if not self._initialized:
-            return
-        if self.parent() is None:
-            self.destroy()
-        if hasattr(QtOpenGL.QGLWidget, '__del__'):
-            QtOpenGL.QGLWidget.__del__(self)
 
 
 # ------------------------------------------------------------------- timer ---

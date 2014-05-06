@@ -35,12 +35,12 @@ def _nose(mode, verbosity, coverage):
     extra = ('-' * 70)
     if mode == 'nobackend':
         print(extra + '\nRunning tests with no backend')
-        attrs = ['-a', '!vispy_app_test']
+        attrs = '-a !vispy_app_test '
     else:
         has, why_not = has_backend(mode, out=['why_not'])
         if has:
             print('%s\nRunning tests with %s backend' % (extra, mode))
-            attrs = ['-a', 'vispy_app_test']
+            attrs = '-a vispy_app_test '
         else:
             msg = ('Skipping tests for backend %s, not found (%s)'
                    % (mode, why_not))
@@ -48,10 +48,14 @@ def _nose(mode, verbosity, coverage):
             raise SkipTest(msg)
     sys.stdout.flush()
     if coverage:
-        covs = ['--with-coverage', '--cover-package=vispy', '--cover-branches']
+        covs = '--with-coverage --cover-package=vispy --cover-branches '
     else:
-        covs = []
-    cmd = ['nosetests', '-d', '--verbosity=%s' % verbosity] + covs + attrs
+        covs = ''
+    args = ' ' + ('--verbosity=%s ' % verbosity) + covs + attrs
+    # make a call to "python" so that it inherits whatever the system
+    # thinks is "python" (e.g., virtualenvs)
+    cmd = ['python', '-c',
+           'import nose; nose.main(argv="%s".split(" "))' % args]
     env = deepcopy(os.environ)
     env.update(dict(_VISPY_TESTING_TYPE=mode))
     p = Popen(cmd, cwd=cwd, env=env)
