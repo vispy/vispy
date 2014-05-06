@@ -72,7 +72,7 @@ try:
                  glut.GLUT_MIDDLE_BUTTON: 3
                  }
 
-    def _get_glut_process_func(missing='error'):
+    def _get_glut_process_func():
         if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
             func = glut.glutMainLoopEvent
         elif hasattr(glut, 'glutCheckLoop') and bool(glut.glutCheckLoop):
@@ -80,19 +80,16 @@ try:
         else:
             msg = ('Your implementation of GLUT does not allow '
                    'interactivity. Consider installing freeglut.')
-            if missing == 'log':
-                logger.info(msg)
             raise RuntimeError(msg)
         return func
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
-    available, why_not = True, None
-    testable = True
+    available, why_not, testable = True, None, True
     try:
         _get_glut_process_func()
     except RuntimeError:
-        testable = False
+        testable, why_not = False, 'No process_func'
     which = 'from OpenGL %s' % OpenGL.__version__
 
 
