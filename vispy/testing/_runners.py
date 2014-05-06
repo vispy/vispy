@@ -24,7 +24,7 @@ def _get_root_dir():
     return root_dir, dev
 
 
-def _nose(mode, verbosity):
+def _nose(mode, verbosity, coverage):
     """Run nosetests using a particular mode"""
     cwd = os.getcwd()  # this must be done before nose import
     try:
@@ -32,22 +32,26 @@ def _nose(mode, verbosity):
     except ImportError:
         print('Skipping nosetests, nose not installed')
         raise SkipTest()
+    extra = ('-' * 70)
     if mode == 'nobackend':
-        print('Running tests with no backend')
+        print(extra + '\nRunning tests with no backend')
         attrs = ['-a', '!vispy_app_test']
     else:
         has, why_not = has_backend(mode, out=['why_not'])
         if has:
-            print('Running tests with %s backend' % mode)
+            print('%s\nRunning tests with %s backend' % (extra, mode))
             attrs = ['-a', 'vispy_app_test']
         else:
             msg = ('Skipping tests for backend %s, not found (%s)'
                    % (mode, why_not))
-            print(msg)
+            print(extra + '\n' + msg + '\n' + extra + '\n')  # last \n nicer
             raise SkipTest(msg)
     sys.stdout.flush()
-    cmd = ['nosetests', '-d', '--with-coverage', '--cover-package=vispy',
-           '--cover-branches', '--verbosity=%s' % verbosity] + attrs + ['.']
+    if coverage:
+        covs = ['--with-coverage', '--cover-package=vispy', '--cover-branches']
+    else:
+        covs = []
+    cmd = ['nosetests', '-d', '--verbosity=%s' % verbosity] + covs + attrs
     env = deepcopy(os.environ)
     env.update(dict(_VISPY_TESTING_TYPE=mode))
     p = Popen(cmd, cwd=cwd, env=env)
@@ -89,7 +93,7 @@ def _flake():
 
 def _check_line_endings():
     """Check all files in the repository for CR characters"""
-    print('Running line endings check... ', end='')
+    print('Running line endings check... ')
     sys.stdout.flush()
     report = []
     root_dir, dev = _get_root_dir()
@@ -119,7 +123,7 @@ def _check_line_endings():
                            % (len(report), '\n'.join(report)))
 
 
-def _tester(label='full', verbosity=2):
+def _tester(label='full', coverage=False, verbosity=1):
     """Test vispy software
 
     Parameters
@@ -127,13 +131,16 @@ def _tester(label='full', verbosity=2):
     label : str
         Can be one of 'full', 'nose', 'nobackend', 'extra', 'lineendings',
         'flake', or any backend name (e.g., 'qt').
+    coverage : bool
+        Produce coverage outputs (.coverage file and printing).
     verbosity : int
         Verbosity level to use when running ``nose``.
     """
     from vispy.app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
     verbosity = int(verbosity)
-    if op.isfile('.coverage'):
+    cov = bool(coverage)
+    if cov and op.isfile('.coverage'):
         os.remove('.coverage')
     known_types = ['full', 'nose', 'lineendings', 'extra', 'flake',
                    'nobackend'] + backend_names
@@ -146,11 +153,11 @@ def _tester(label='full', verbosity=2):
     runs = []
     if label in ('full', 'nose'):
         for backend in backend_names:
-            runs.append([partial(_nose, backend, verbosity), backend])
+            runs.append([partial(_nose, backend, verbosity, cov), backend])
     elif label in backend_names:
-        runs.append([partial(_nose, label, verbosity), label])
+        runs.append([partial(_nose, label, verbosity, cov), label])
     if label in ('full', 'nose', 'nobackend'):
-        runs.append([partial(_nose, 'nobackend', verbosity), 'nobackend'])
+        runs.append([partial(_nose, 'nobackend', verbosity, cov), 'nobackend'])
     if label in ('full', 'extra', 'lineendings'):
         runs.append([_check_line_endings, 'lineendings'])
     if label in ('full', 'extra', 'flake'):
@@ -170,9 +177,9 @@ def _tester(label='full', verbosity=2):
         except Exception as exp:
             # this should only happen if we've screwed up the test setup
             fail += [run[1]]
-            print('Failed strangely: %s' % str(exp))
+            print('Failed strangely: %s\n' % str(exp))
         else:
-            print('Passed')
+            print('Passed\n')
         finally:
             sys.stdout.flush()
             os.chdir(orig_dir)

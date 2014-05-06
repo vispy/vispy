@@ -150,7 +150,7 @@ class Maker:
         """ Run all tests. """
         from vispy import test
         try:
-            test(arg)
+            test(*(arg.split()))
         except Exception:
             raise SystemExit(1)
 

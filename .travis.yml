@@ -157,7 +157,7 @@ before_script:
 script:
     - cd ${SRC_DIR}
     - if [ "${TEST}" != "extra" ]; then
-        make nose;
+        make nose_coverage;
       fi;
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - if [ "${TEST}" == "extra" ]; then

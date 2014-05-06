@@ -31,6 +31,9 @@ nosetests: nose # alias
 nose: clean
 	python make test nose
 
+nose_coverage: clean
+	python make test nose 1
+
 test: clean
 	python make test full
 
