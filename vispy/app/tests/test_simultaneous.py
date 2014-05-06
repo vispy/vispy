@@ -12,16 +12,15 @@ from vispy.gloo import gl
 from vispy.gloo.util import _screenshot
 
 _win_size = (200, 50)
-_err_sleep_time = 0.
-_ig_fail = True
 
 
-def _update_process_check(canvas, val, paint=True, ignore_fail=False):
+def _update_process_check(canvas, val, paint=True):
     """Update, process, and check result"""
     if paint:
         canvas.update()
         canvas.app.process_events()
         canvas.app.process_events()
+        sleep(0.03)  # give it time to swap (Qt?)
     canvas._backend._vispy_set_current()
     print('           check %s' % val)
     # check screenshot to see if it's all one color
@@ -30,17 +29,13 @@ def _update_process_check(canvas, val, paint=True, ignore_fail=False):
         assert_allclose(ss.shape[:2], _win_size[::-1])
     except Exception:
         print('!!!!!!!!!! FAIL  bad size %s' % list(ss.shape[:2]))
-        sleep(_err_sleep_time)
-        if not ignore_fail:
-            raise
+        raise
     goal = val * np.ones(ss.shape)
     try:
         assert_allclose(ss, goal, atol=1)  # can be off by 1 due to rounding
     except Exception:
         print('!!!!!!!!!! FAIL  %s' % np.unique(ss))
-        sleep(_err_sleep_time)
-        if not ignore_fail:
-            raise
+        raise
 
 
 @requires_application()
@@ -90,13 +85,10 @@ def test_multiple_canvases():
                 default_app.process_events()
             assert_true(timer_ran)
 
-    kwargs = dict(app=default_app, autoswap=False, size=_win_size)
+    kwargs = dict(app=default_app, autoswap=False, size=_win_size,
+                  show=True)
     with Canvas(title='0', **kwargs) as c0:
-        with Canvas(title='_1', **kwargs) as c1:
-            for canvas, pos in zip((c0, c1), ((0, 0), (_win_size[0], 0))):
-                canvas.show()
-                canvas.position = pos
-                canvas.app.process_events()
+        with Canvas(title='1', **kwargs) as c1:
             bgcolors = [None] * 2
 
             @c0.events.paint.connect
