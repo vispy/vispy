@@ -278,7 +278,6 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
 
     def _vispy_close(self):
         # Force the window or widget to shut down
-        self.swapBuffers()  # make sure current GL calls are done
         self.doneCurrent()
         self.context().reset()
         self.close()
