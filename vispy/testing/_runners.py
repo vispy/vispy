@@ -35,22 +35,25 @@ def _nose(mode, verbosity):
     if mode == 'nobackend':
         print('Running tests with no backend')
         attrs = ['-a', '!vispy_app_test']
-    elif has_backend(mode):
-        print('Running tests with %s backend' % mode)
-        attrs = ['-a', 'vispy_app_test']
     else:
-        print('Skipping tests for backend %s, not found' % mode)
-        raise SkipTest()
+        has, why_not = has_backend(mode, out=['why_not'])
+        if has:
+            print('Running tests with %s backend' % mode)
+            attrs = ['-a', 'vispy_app_test']
+        else:
+            msg = ('Skipping tests for backend %s, not found (%s)'
+                   % (mode, why_not))
+            print(msg)
+            raise SkipTest(msg)
     sys.stdout.flush()
     cmd = ['nosetests', '-d', '--with-coverage', '--cover-package=vispy',
            '--cover-branches', '--verbosity=%s' % verbosity] + attrs + ['.']
     env = deepcopy(os.environ)
     env.update(dict(_VISPY_TESTING_TYPE=mode))
-    proc = Popen(cmd, cwd=cwd, env=env)
-    stdout, stderr = proc.communicate()
-    if(proc.returncode):
-        raise RuntimeError('Nose failure (%s):\n%s'
-                           % (proc.returncode, stderr))
+    p = Popen(cmd, cwd=cwd, env=env)
+    stdout, stderr = p.communicate()
+    if(p.returncode):
+        raise RuntimeError('Nose failure (%s):\n%s' % (p.returncode, stderr))
 
 
 def _flake():
