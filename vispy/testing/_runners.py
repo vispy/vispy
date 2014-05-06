@@ -173,8 +173,8 @@ def _tester(label='full', coverage=False, verbosity=1):
         try:
             os.chdir(work_dir)
             run[0]()
-        except RuntimeError:
-            print('Failed')
+        except RuntimeError as exp:
+            print('Failed: %s' % str(exp))
             fail += [run[1]]
         except SkipTest:
             skip += [run[1]]
