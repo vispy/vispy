@@ -134,10 +134,6 @@ def _set_config(config):
     else:  # freeglut
         s += "double " if config['double_buffer'] else "single "
         s += "stereo " if config['stereo'] else ""
-    # HiDPI support for retina display
-    # This requires glut from
-    # http://iihm.imag.fr/blanch/software/glut-macosx/
-    s += " hidpi" if sys.platform == 'darwin' else ""
     glut.glutInitDisplayString(s.encode('ASCII'))
 
 

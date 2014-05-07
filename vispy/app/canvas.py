@@ -314,6 +314,7 @@ class Canvas(object):
         return self
 
     def __exit__(self, type, value, traceback):
+        self.swap_buffers()  # ensure all GL calls are complete
         self.close()
 
     # def mouse_event(self, event):
