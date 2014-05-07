@@ -267,6 +267,7 @@ class Canvas(object):
         """
         if self._backend is not None:
             self._backend._vispy_close()
+            self._backend._vispy_canvas = None
 
     def _update_fps(self, event):
         """ Updates the fps after every window and resets the basetime

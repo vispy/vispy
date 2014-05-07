@@ -64,6 +64,7 @@ def _test_basics(backend):
         _test_setting_stuff()
         _test_object_creation_and_deletion()
         _test_fbo()
+        gl.glFinish()
 
 
 def _test_setting_parameters():

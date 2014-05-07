@@ -98,6 +98,7 @@ def _test_functonality(backend):
         # Clean up
         for delete_func, handle in objects:
             delete_func(handle)
+        gl.glFinish()
 
 
 ## Create CPU data

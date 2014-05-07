@@ -250,14 +250,20 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
 
     def _vispy_set_current(self):
         # Make this the current context
+        if self._vispy_canvas is None:
+            return
         self.makeCurrent()
 
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
+        if self._vispy_canvas is None:
+            return
         self.swapBuffers()
 
     def _vispy_set_title(self, title):
         # Set the window title. Has no effect for widgets
+        if self._vispy_canvas is None:
+            return
         self.setWindowTitle(title)
 
     def _vispy_set_size(self, w, h):
@@ -273,14 +279,16 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
         self._vispy_show_func() if visible else self.hide()
 
     def _vispy_update(self):
+        if self._vispy_canvas is None:
+            return
         # Invoke a redraw
         self.update()
 
     def _vispy_close(self):
         # Force the window or widget to shut down
+        self.close()
         self.doneCurrent()
         self.context().reset()
-        self.close()
 
     def _vispy_get_position(self):
         g = self.geometry()
@@ -359,45 +367,33 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
         )
 
     def keyPressEvent(self, ev):
-        self._vispy_canvas.events.key_press(
-            native=ev,
-            key=self._processKey(ev),
-            text=text_type(ev.text()),
-            modifiers=self._modifiers(ev),
-        )
+        self._keyEvent(self._vispy_canvas.events.key_press, ev)
 
     def keyReleaseEvent(self, ev):
-        # if ev.isAutoRepeat():
-            # return # Skip release auto repeat events
-        self._vispy_canvas.events.key_release(
-            native=ev,
-            key=self._processKey(ev),
-            text=text_type(ev.text()),
-            modifiers=self._modifiers(ev),
-        )
+        self._keyEvent(self._vispy_canvas.events.key_release, ev)
 
-    def _processKey(self, event):
+    def _keyEvent(self, func, ev):
         # evaluates the keycode of qt, and transform to vispy key.
-        key = int(event.key())
+        key = int(ev.key())
         if key in KEYMAP:
-            return KEYMAP[key]
+            key = KEYMAP[key]
         elif key >= 32 and key <= 127:
-            return keys.Key(chr(key))
+            key = keys.Key(chr(key))
         else:
-            return None
+            key = None
+        mod = self._modifiers(ev)
+        func(native=ev, key=key, text=text_type(ev.text()), modifiers=mod)
 
     def _modifiers(self, event):
         # Convert the QT modifier state into a tuple of active modifier keys.
         mod = ()
         qtmod = event.modifiers()
-        if QtCore.Qt.ShiftModifier & qtmod:
-            mod += keys.SHIFT,
-        if QtCore.Qt.ControlModifier & qtmod:
-            mod += keys.CONTROL,
-        if QtCore.Qt.AltModifier & qtmod:
-            mod += keys.ALT,
-        if QtCore.Qt.MetaModifier & qtmod:
-            mod += keys.META,
+        for q, v in ([QtCore.Qt.ShiftModifier, keys.SHIFT],
+                     [QtCore.Qt.ControlModifier, keys.CONTROL],
+                     [QtCore.Qt.AltModifier, keys.ALT],
+                     [QtCore.Qt.MetaModifier, keys.META]):
+            if q & qtmod:
+                mod += (v,)
         return mod
 
 
