@@ -79,7 +79,7 @@ class Canvas(app.Canvas):
 
     def on_initialize(self, event):
         gloo.set_clear_color((1, 1, 1, 1))
-        gloo.set_state(depth=True)
+        gloo.set_state(depth_test=True)
 
     def on_resize(self, event):
         width, height = event.size
