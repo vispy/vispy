@@ -35,13 +35,13 @@ try:
     # Import PySide or PyQt4
     if qt_lib in ('any', 'qt'):
         try:
-            from PyQt4 import QtGui, QtCore, QtOpenGL, QtTest
+            from PyQt4 import QtGui, QtCore, QtOpenGL
         except ImportError:
-            from PySide import QtGui, QtCore, QtOpenGL, QtTest
+            from PySide import QtGui, QtCore, QtOpenGL
     elif qt_lib in ('pyqt', 'pyqt4'):
-        from PyQt4 import QtGui, QtCore, QtOpenGL, QtTest
+        from PyQt4 import QtGui, QtCore, QtOpenGL
     elif qt_lib == 'pyside':
-        from PySide import QtGui, QtCore, QtOpenGL, QtTest
+        from PySide import QtGui, QtCore, QtOpenGL
     else:
         raise Exception("Do not recognize Qt library '%s'. Options are "
                         "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
