@@ -8,7 +8,7 @@ from ..gloo import gl
 from .. import app
 
 from .viewbox import Document, ViewBox
-from .transforms import STTransform
+from .transforms import STTransform, NullTransform
 from .events import ScenePaintEvent, SceneMouseEvent
 
 
@@ -56,7 +56,7 @@ class SceneCanvas(app.Canvas):
         self.root.transform.translate = (-1, -1)
         
         # 2. Set size of document to match the area of the canvas
-        self.root.size = self.size
+        self.root.size = (1.0, 1.0)  # root viewbox is in NDC 
 
     def on_resize(self, event):
         self._update_document()
@@ -65,15 +65,21 @@ class SceneCanvas(app.Canvas):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
-
-        # Draw viewbox
+        if self._root is None:
+            return  # Can happen on initialization
+        
+        # Set roots total transform 
+        self._root._total_transform = NullTransform()
+#         self._root._total_transform = STTransform()
+#         size = self._root.size
+#         self._root._total_transform.scale = 2.0 / size[0], 2.0 / size[1]
+        
+        # Create paint event, which keeps track of the path of transforms
         self._process_entity_count = 0  # for debugging
-        self._root.process_system(self, 'draw')  # process drawing system
-        #scene_event = ScenePaintEvent(canvas=self, event=event)
-        #scene_event.push_viewport(0, 0, *self.size)
-
-        #self._root._process_paint_event(scene_event)
-
+        scene_event = ScenePaintEvent(canvas=self, event=event)
+        self._root.paint(scene_event)
+        
+    
     def _process_mouse_event(self, event):
         scene_event = SceneMouseEvent(canvas=self, event=event)
         # todo: ak: I disabled this for now. I have a feeling that we should also

@@ -41,9 +41,17 @@ class Entity(object):
         self._parents = set()
         if parents is not None:
             self.parents = parents
-
+        
         # Components that all entities in vispy have
         self._transform = transforms.AffineTransform()
+        
+        # Cache of the total transform chain
+        # The drawing system sets this. 
+        # todo: Perhaps this is better stored at the draw event instance. 
+        # On the other hand, we probably want some form of caching (on
+        # the entity) anyway ...
+        self._total_transform = None
+        
 
     @property
     def children(self):
@@ -119,10 +127,8 @@ class Entity(object):
     
     @property
     def transform(self):
-        """ The user-accessible transform for this entity.
-        
-        This transform forms some or all of the *parent_transform*.        
-        By default, this is an AffineTransform instance.
+        """ The transform that maps the parent coordinate frame to the
+        coordinate frame local to this entity.
         """
         return self._transform
         
@@ -134,6 +140,7 @@ class Entity(object):
         
     @property
     def parent_transform(self):
+        # todo: ak: I do not get this, do we need this?
         """
         maps from the local coordinate system of the Entity to its parent's 
         coordinate system.
@@ -153,17 +160,17 @@ class Entity(object):
         """
         pass
     
-    def _process_paint_event(self, event):
-        """
-        Paint the entire tree of Entities beginning here.            
-        """
-        for enter, path in self.walk():
-            event._set_path(path)
-            entity = path[-1]
-            if enter:
-                entity.events.paint(event)
-            else:
-                entity.events.children_painted(event)
+#     def _process_paint_event(self, event):
+#         """
+#         Paint the entire tree of Entities beginning here.            
+#         """
+#         for enter, path in self.walk():
+#             event._set_path(path)
+#             entity = path[-1]
+#             if enter:
+#                 entity.events.paint(event)
+#             else:
+#                 entity.events.children_painted(event)
                 
 
     def _process_mouse_event(self, event):

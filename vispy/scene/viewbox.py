@@ -7,19 +7,66 @@ from __future__ import division
 import numpy as np
 
 from .entity import Entity
-from .transforms import STTransform, PerspectiveTransform
+from .transforms import STTransform, NullTransform, PerspectiveTransform
+from ..util.event import Event
 
 
-class ViewBox(Entity):
+class Widget(Entity):
+    """ A widget takes up a rectangular space, intended for use in 
+    a 2D pixel coordinate frame.
+    
+    The widget is positioned using the transform attribute (as any
+    entity), and its extend (size) is kept as a separate property.
+    
+    This is a simple preliminary version!
     """
-    Box class that provides an interactive (pan/zoom) view on its children.    
+    
+    def __init__(self, *args, **kwargs):
+        Entity.__init__(self, *args, **kwargs)
+        self.events.add(rect_change=Event)
+        self._size = 16, 16
+        self.transform = STTransform()  # todo: TTransform (translate only)
+    
+    @property
+    def pos(self):
+        return tuple(self.transform.translate[:2])
+    
+    @pos.setter
+    def pos(self, p):
+        assert isinstance(p, tuple)
+        assert len(p) == 2
+        self.transform.translate = p[0], [1], 0, 1
+        self.events.rect_change()
+    
+    @property
+    def size(self):
+        return self._size
+    
+    @size.setter
+    def size(self, s):
+        assert isinstance(s, tuple)
+        assert len(s) == 2
+        self._size = s
+        self.events.rect_change()
+
+
+class ViewBox(Widget):
+    """ Provides a rectangular pixel grid to which its subscene is rendered
+    
+    The viewbox defines a certain coordinate frame using a camera (which
+    is an entity in the subscene itself). A viewbox also defines lights,
+    and has its own drawing system.
     """
+    
     def __init__(self, *args, **kwds):
-        Entity.__init__(self, *args, **kwds)
+        Widget.__init__(self, *args, **kwds)
         self._child_group = Entity(parents=[self])
         
         # Background color of this viewbox. Used in glClear()
         self._bgcolor = (0.0, 0.0, 0.0, 1.0)
+        
+        # Init resolution
+        self._resolution = self.size
         
         # Each viewbox has a camera. Default is NDCCamera (i.e. null camera)
         self._camera = None
@@ -33,17 +80,9 @@ class ViewBox(Entity):
     def resolution(self):
         """ The number of pixels (in x and y) that are avalailable in
         the ViewBox.
-        
-        Note: it would perhaps make sense to call this "size", because
-        for the CanvasWithScene, size and resolution are equal by
-        definition. However, perhaps we want to give entities a "size"
-        property later.
         """
-        # todo: ak: in my version I had the transform set to the size.
-        # Luke's version seems to asume ND coordinates. I am not sure what
-        # is the best one. The root transform is not even used (I think?)
-        M = self.transform
-        return int(2.0/M.scale[0]), int(2.0/M.scale[1])
+        return self._resolution
+    
     
     @property
     def bgcolor(self):
@@ -137,10 +176,69 @@ class ViewBox(Entity):
 #     def on_children_painted(self, event):
 #         event.pop_viewport()
     
-    def process_system(self, root, system_name):
-        """ Process all systems.
+    def process_system(self, event, system_name):
+        """ Process a system.
         """
-        self._systems[system_name].process(self, root)
+        self._systems[system_name].process(event)
+    
+    
+    def paint(self, event):
+        """ Paint the viewbox. This does not really draw anything, but
+        prepare for drawing our childen to the virtual canvas that this
+        viewbox represents. Then the drawing system is invoked to draw
+        the children themselves. The preparation is done in one of three
+        possible ways, depending on the situation.
+        """
+        # Get transform from viewport to here, including camera transforms
+        transform = self._total_transform
+        
+        # Get whether the transform to here is translation only
+        is_translate_only = False
+        if isinstance(transform, (NullTransform, STTransform)):
+            # todo: check that all transforms in event.path are really translate only
+            is_translate_only = True
+        # Get user preference
+        prefer_viewport = True  # Should be settable
+        
+        # Do what a viewbox does, in one of three ways ...
+        if is_translate_only:
+            if prefer_viewport:
+                self._paint_via_viewport(event)
+            else:
+                # Use a transform
+                raise RuntimeError('Viewbox does not support transform for now')
+        else:
+            # Use FBO
+            raise RuntimeError('Viewbox does not support FBO for now')
+    
+    
+    def _paint_via_viewport(self, event):
+        """ Paint the viewbox via a viewport. This assumes that there are
+        no transforms from the previous viewport to here, except for
+        translations.
+        """
+        # Get transform from viewport to here, including camera transforms.
+        # We already verfied that it only does translation and scale
+        # We multiply with unit STTTransform in case total_transform is Null
+        transform = self._total_transform *  STTransform()
+        
+        # Calculate x, y and w, h
+        tx, ty = transform.translate[:2]
+        sx, sy = transform.scale[:2]
+        res = event.resolution
+        #
+        x, y = tx * res[0], ty * res[1]
+        w, h = self.size[0] * sx * res[0], self.size[1] * sy * res[1]
+        
+        # Calculate viewport and resolution (rounding)
+        viewport = int(x+0.5), int(y+0.5), int(w+0.5), int(h+0.5)
+        resolution = viewport[2:]
+        
+        # Process our children
+        event.push_viewbox(self, resolution, viewport)
+        self.process_system(event, 'draw')  # invoke our drawing system
+        event.pop_viewbox()
+        # ... return to canvas, or drawing system that invoked us ...
 
 
 
@@ -164,8 +262,88 @@ class Document(Entity):
 
 
 
-from .systems import DrawingSystem
+class DrawingSystem(object):
+    """ Simple implementation of a drawing engine.
+    
+    There is one system per viewbox. When we encounter a viewbox, one
+    of three things can/should happen:
+      * we use glViewPort to create a new viewport with clipping. The
+        chain of transformations is thus reset from this point.
+      * we use an FBO to draw the subscene in the viewbox. The chain
+        of transformations is thus reset from this point. This should
+        also happen when we need the viewbox to have a specific
+        resolution.
+      * we do use neither (but apply clipping in fragment shader). Now
+        the complete chain of transforms (from the last viewport) must
+        be taken into account.
+    
+    """
+    
+    def process(self, event):
+        viewbox = event.viewbox
+        root = event.canvas
+        if not isinstance(viewbox, ViewBox):
+            raise ValueError('DrawingSystem.draw expects a ViewBox instance.')
+        
+        # Get camera transforms
+        self._camtransform = self._get_camera_transform(viewbox.camera)
+        self._projection = viewbox.camera.get_projection(event)
+        
+        # Iterate over entities
+        for entity in viewbox:
+            self._process_entity(event, entity)
+    
+    
+    def _process_entity(self, event, entity):
+        from .visuals import Visual  # todo: import crap
+        
+        event.canvas._process_entity_count += 1
+        
+        # Push entity and set its total transform
+        event.push_entity(entity)
+        entity._total_transform = (self._projection * 
+                                   self._camtransform * 
+                                   event.transform_from_viewbox * 
+                                   event.transform_to_viewbox)
+        
+        if isinstance(entity, ViewBox):
+            # If a viewbox, render the subscene (*this* drawing system
+            # does not process its children)
+            entity.paint(event)
+        else:
+            # Paint if it is a visual
+            if isinstance(entity, Visual):
+                entity.paint(event)
+            # Processs children; recurse
+            for sub_entity in entity:
+                self._process_entity(event, sub_entity)
+        
+        event.pop_entity()
 
+    
+    def _get_camera_transform(self, camera):
+        """ Calculate the transform from the camera to the viewbox.
+        This is the inverse of the transform chain *to* the camera.
+        """
+        from .viewbox import ViewBox
+        
+        # Get total transform of the camera
+        object = camera
+        camtransform = object.transform
+        
+        while True:
+            # todo: does it make sense to have a camera in a multi-path scene?
+            object = object.parents[0]
+            if object is None:
+                break  # Root viewbox
+            elif isinstance(object, ViewBox):
+                break  # Go until the any parent ViewBox
+            assert isinstance(object, Entity)
+            if object.transform is not None:
+                camtransform = camtransform * object.transform
+        
+        # Return inverse!
+        return camtransform.inverse()
 
 
 from . import transforms  # Needed by cameras
@@ -189,7 +367,7 @@ class Camera(Entity):
         self._projection = transforms.NullTransform()
     
     
-    def get_projection(self, viewbox):
+    def get_projection(self, event):
         """ Get the projection matrix. Should be overloaded by camera
         classes to define the projection of view.
         """
@@ -210,8 +388,8 @@ class PixelCamera(Camera):
     The coordinates map directly to the viewbox coordinates. The origin
     is in the upper left.
     """
-    def get_projection(self, viewbox):
-        w, h = viewbox.resolution
+    def get_projection(self, event):
+        w, h = event.resolution
         from vispy.util import transforms as trans
         projection = np.eye(4)
         trans.scale(projection, 2.0/w, 2.0/h)

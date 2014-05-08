@@ -25,7 +25,7 @@ color[:, 1] = color[::-1, 0]
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
-        self.line = visuals.Line(pos, color=color)
+        self.line = visuals.Line(pos=pos, color=color)
         self.line.events.update.connect(self.line_changed)
         
         vispy.app.Canvas.__init__(self)

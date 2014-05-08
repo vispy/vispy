@@ -203,9 +203,6 @@ class Visual(Entity):
         self._program.add_chain('vert_post_hook')
         self._program.add_chain('frag_color')
         
-        # Cache of the total transform chain to get here ...
-        self._total_transform = None
-        
         # Components for plugging different types of position and color input.
         self._pos_components = []
         #self._color_component = None
@@ -338,7 +335,7 @@ class Visual(Entity):
 #         self._visual.transform = event.viewport_transform
 #         self.paint()
     
-    def paint(self):
+    def paint(self, event=None):
         """
         Paint this visual now.
         
@@ -346,7 +343,8 @@ class Visual(Entity):
         of self._gl_options            
         
         """
-        print('paint', self)
+        
+        #print('paint', self)
         self._activate_gl_options()
         mode = self._paint_mode()
         self._activate_components(mode)
@@ -414,8 +412,10 @@ class Visual(Entity):
         
     def _activate_transform(self):
         # TODO: this must be optimized.
+        # Allow using as plain visual or in a scenegraph
+        transform = self._total_transform or self.transform
         #self._program['map_local_to_nd'] = self.transform.shader_map()
-        self._program['map_local_to_nd'] = self._total_transform.shader_map()
+        self._program['map_local_to_nd'] = transform.shader_map()
         
 
 
