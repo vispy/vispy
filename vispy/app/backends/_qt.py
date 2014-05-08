@@ -8,6 +8,8 @@ vispy backend for Qt (PySide and PyQt4).
 
 from __future__ import division
 
+from time import sleep, time
+
 from ... import config
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
@@ -245,8 +247,11 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
         return SharedContext(self)
 
     def _vispy_warmup(self):
-        self._vispy_canvas.app.process_events()
-        QtTest.QTest.qWaitForWindowShown(self)
+        etime = time() + 0.25
+        while time() < etime:
+            sleep(0.01)
+            self._vispy_set_current()
+            self._vispy_canvas.app.process_events()
 
     def _vispy_set_current(self):
         # Make this the current context
