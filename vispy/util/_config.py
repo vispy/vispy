@@ -226,7 +226,7 @@ def set_data_dir(directory=None, create=False, save=False):
     if not op.isdir(directory):
         if not create:
             raise IOError('directory "%s" does not exist, perhaps try '
-                          'create=True to create it?')
+                          'create=True to create it?' % directory)
         os.mkdir(directory)
     config.update(data_path=directory)
     if save:
