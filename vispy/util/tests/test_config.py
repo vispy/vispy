@@ -27,12 +27,15 @@ def test_config():
     """Test vispy config methods and file downloading"""
     assert_raises(TypeError, config.update, data_path=dict())
     assert_raises(KeyError, config.update, foo='bar')  # bad key
-    set_data_dir(temp_dir)
-    assert_equal(config['data_path'], temp_dir)
-    config['data_path'] = temp_dir
+    new_dir = op.join(temp_dir, 'config')
+    set_data_dir()  # should use default just fine
+    assert_raises(IOError, set_data_dir, new_dir)  # didn't say to create
+    set_data_dir(new_dir, create=True)
+    assert_equal(config['data_path'], new_dir)
+    config['data_path'] = new_dir
     print(config)  # __repr__
     get_data_file('CONTRIBUTING.txt')
-    fid = open(op.join(temp_dir, 'test-faked.txt'), 'w')
+    fid = open(op.join(new_dir, 'test-faked.txt'), 'w')
     fid.close()
     get_data_file('test-faked.txt')  # this one shouldn't download
     assert_raises(RuntimeError, get_data_file, 'foo-nonexist.txt')

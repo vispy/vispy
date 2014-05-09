@@ -211,7 +211,7 @@ config = Config(default_backend='qt', qt_lib='any',
 try:
     config.update(**_load_config())
 except Exception as err:
-    raise Exception('Error while reading vispy config file "%s":\n  %s' % 
+    raise Exception('Error while reading vispy config file "%s":\n  %s' %
                     (_get_config_fname(), err.message))
 set_log_level(config['logging_level'])
 
@@ -230,7 +230,7 @@ def set_data_dir(directory=None, create=False, save=False):
         os.mkdir(directory)
     config.update(data_path=directory)
     if save:
-        save_config(dict(data_path=directory))
+        save_config(data_path=directory)
 
 
 ###############################################################################
