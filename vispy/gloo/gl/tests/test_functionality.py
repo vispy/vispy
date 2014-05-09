@@ -22,7 +22,8 @@ import numpy as np
 from nose.tools import assert_equal, assert_true
 from vispy.app import Canvas
 from numpy.testing import assert_almost_equal  # noqa
-from vispy.testing import requires_application, requires_pyopengl, SkipTest
+from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
+                           glut_skip)
 
 from vispy.gloo import gl
 
@@ -38,6 +39,7 @@ def teardown_module():
 @requires_application()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
+    glut_skip()
     _test_functonality('desktop')
 
 
@@ -45,6 +47,7 @@ def test_functionality_desktop():
 def test_functionality_proxy():
     """ Test GL proxy class for full functionality. """
     # By using debug mode, we are using the proxy class
+    glut_skip()
     _test_functonality('desktop debug')
 
 
@@ -52,6 +55,7 @@ def test_functionality_proxy():
 @requires_pyopengl()
 def test_functionality_pyopengl():
     """ Test pyopengl GL backend for full functionality. """
+    glut_skip()
     _test_functonality('pyopengl')
 
 
@@ -62,7 +66,7 @@ def test_functionality_angle():
         raise SkipTest('Skip Angle functionality test for now.')
     if sys.platform.startswith('win'):
         raise SkipTest('Can only test angle functionality on Windows.')
-
+    glut_skip()
     _test_functonality('angle')
 
 
