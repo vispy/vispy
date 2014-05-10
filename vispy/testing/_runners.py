@@ -97,6 +97,10 @@ def _flake():
 
 def _check_line_endings():
     """Check all files in the repository for CR characters"""
+    if sys.platform == 'win32':
+        print('Skipping line endings check on Windows')
+        sys.stdout.flush()
+        return
     print('Running line endings check... ')
     sys.stdout.flush()
     report = []
