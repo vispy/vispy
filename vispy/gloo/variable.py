@@ -330,7 +330,7 @@ class Attribute(Variable):
             stride = self.data.stride
             gl.glEnableVertexAttribArray(self.handle)
             gl.glVertexAttribPointer(self.handle, size, gtype, gl.GL_FALSE,
-                                     stride, ctypes.c_void_p(0))
+                                     stride, ctypes.c_void_p(self.data.offset))
     
     def _deactivate(self):
         if isinstance(self.data, VertexBuffer):
