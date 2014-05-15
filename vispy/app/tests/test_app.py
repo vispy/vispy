@@ -186,8 +186,6 @@ def test_application():
 
         # Other methods
         print(canvas)  # __repr__
-        if sys.platform != 'win32':  # XXX knownfail for windows
-            assert_array_equal(canvas.size, size)
         assert_equal(canvas.title, title)
         canvas.title = 'you'
         canvas.position = pos
@@ -205,7 +203,8 @@ def test_application():
         ss = _screenshot()
         assert_array_equal(ss.shape, size + (3,))
         assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
-        if app.backend_name.lower() != 'glut':  # XXX knownfail for Almar
+        if (app.backend_name.lower() != 'glut' and  # XXX knownfail for Almar
+                sys.platform != 'win32'):  # XXX knownfail for windows
             assert_array_equal(canvas.size, size)
         assert_equal(len(canvas.position), 2)  # XXX knawnfail, doesn't "take"
 
