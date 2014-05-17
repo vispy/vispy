@@ -9,7 +9,7 @@ import numpy as np
 from ._default_app import default_app
 from ..util.event import EmitterGroup, Event
 from ..util.ptime import time
-from ..util.six import string_types
+from ..ext.six import string_types
 from .application import Application
 from ._config import get_default_config
 
@@ -127,7 +127,7 @@ class Canvas(object):
         # Create widget now
         if create_native:
             self.create_native()
-        
+
         # Close keys
         def close_keys_check(event):
             if event.key in self.close_keys:
@@ -267,6 +267,7 @@ class Canvas(object):
         """
         if self._backend is not None:
             self._backend._vispy_close()
+            self._backend._vispy_canvas = None
 
     def _update_fps(self, event):
         """ Updates the fps after every window and resets the basetime
@@ -314,6 +315,7 @@ class Canvas(object):
         return self
 
     def __exit__(self, type, value, traceback):
+        self.swap_buffers()  # ensure all GL calls are complete
         self.close()
 
     # def mouse_event(self, event):

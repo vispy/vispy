@@ -12,7 +12,7 @@ from . buffer import VertexBuffer, IndexBuffer
 from . shader import VertexShader, FragmentShader
 from . variable import Uniform, Attribute
 from ..util import logger
-from ..util.six import string_types
+from ..ext.six import string_types
 
 
 # ----------------------------------------------------------- Program class ---

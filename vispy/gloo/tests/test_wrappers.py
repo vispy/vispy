@@ -10,7 +10,7 @@ from nose.tools import assert_true, assert_equal, assert_raises
 from vispy import gloo
 from vispy.gloo import gl
 from vispy.app import Canvas
-from vispy.util.testing import requires_application
+from vispy.testing import requires_application
 
 
 @requires_application()

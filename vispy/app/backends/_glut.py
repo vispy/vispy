@@ -9,7 +9,6 @@ vispy backend for glut.
 from __future__ import division
 
 import sys
-import ctypes
 from time import sleep, time
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -19,7 +18,6 @@ from ...util import ptime, keys, logger
 # -------------------------------------------------------------------- init ---
 
 try:
-    from OpenGL import platform
     import OpenGL.error
     import OpenGL.GLUT as glut
 
@@ -74,33 +72,7 @@ try:
                  glut.GLUT_MIDDLE_BUTTON: 3
                  }
 
-    # HiDPI support for retina display
-    # This requires glut from
-    # http://iihm.imag.fr/blanch/software/glut-macosx/
-    if sys.platform == 'darwin':
-        try:
-            glutInitDisplayString = platform.createBaseFunction(
-                'glutInitDisplayString', dll=platform.GLUT,
-                resultType=None, argTypes=[ctypes.c_char_p],
-                doc='glutInitDisplayString(  ) -> None', argNames=())
-            text = ctypes.c_char_p("rgba stencil double samples=8 hidpi")
-            glutInitDisplayString(text)
-        except Exception:
-            pass
-    glut.glutInit(['vispy'.encode('ASCII')])  # todo: allow user to give args?
-    mode = (glut.GLUT_RGBA | glut.GLUT_DOUBLE |
-            glut.GLUT_STENCIL | glut.GLUT_DEPTH)
-    if bool(glut.glutInitDisplayMode):
-        glut.glutInitDisplayMode(mode)
-    # Prevent exit when closing window
-    try:
-        glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE,
-                           glut.GLUT_ACTION_CONTINUE_EXECUTION)
-    except Exception:
-        pass
-    _GLUT_INIT = glut
-
-    def _get_glut_process_func(missing='error'):
+    def _get_glut_process_func():
         if hasattr(glut, 'glutMainLoopEvent') and bool(glut.glutMainLoopEvent):
             func = glut.glutMainLoopEvent
         elif hasattr(glut, 'glutCheckLoop') and bool(glut.glutCheckLoop):
@@ -108,18 +80,20 @@ try:
         else:
             msg = ('Your implementation of GLUT does not allow '
                    'interactivity. Consider installing freeglut.')
-            if missing == 'log':
-                logger.info(msg)
             raise RuntimeError(msg)
         return func
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
-    available, why_not = True, None
-    testable = (_get_glut_process_func() is not None)
+    available, why_not, testable = True, None, True
+    try:
+        _get_glut_process_func()
+    except RuntimeError:
+        testable, why_not = False, 'No process_func'
     which = 'from OpenGL %s' % OpenGL.__version__
 
 
+_GLUT_INITIALIZED = False
 _VP_GLUT_ALL_WINDOWS = []
 
 # -------------------------------------------------------------- capability ---
@@ -144,27 +118,22 @@ capability = dict(  # things that can be set by the backend
 def _set_config(config):
     """Set gl configuration"""
     s = ""
+    st = '~' if sys.platform == 'darwin' else '='
+    ge = '>=' if sys.platform == 'darwin' else '='
+    s += "red%s%d " % (ge, config['red_size'])
+    s += "green%s%d " % (ge, config['green_size'])
+    s += "blue%s%d " % (ge, config['blue_size'])
+    s += "alpha%s%d " % (ge, config['alpha_size'])
+    s += "depth%s%d " % (ge, config['depth_size'])
+    s += "stencil%s%d " % (st, config['stencil_size'])
+    s += "samples%s%d " % (st, config['samples']) if config['samples'] else ""
+    s += "acca=0 " if sys.platform == 'darwin' else ""
     if sys.platform == 'darwin':
-        s += "acca=0 "  # No accum buffer
-        s += "red>=%d " % config['red_size']
-        s += "green>=%d " % config['green_size']
-        s += "blue>=%d " % config['blue_size']
-        s += "alpha>=%d " % config['alpha_size']
-        s += "depth>=%d " % config['depth_size']
-        s += "stencil~%d " % config['stencil_size']
         s += "double=1 " if config['double_buffer'] else "single=1 "
         s += "stereo=%d " % config['stereo']
-        s += "samples~%d " % config['samples']
     else:  # freeglut
-        s += "red=%d " % config['red_size']
-        s += "green=%d " % config['green_size']
-        s += "blue=%d " % config['blue_size']
-        s += "alpha=%d " % config['alpha_size']
-        s += "depth=%d " % config['depth_size']
-        s += "stencil=%d " % config['stencil_size']
         s += "double " if config['double_buffer'] else "single "
         s += "stereo " if config['stereo'] else ""
-        s += "samples=%d " % config['samples'] if config['samples'] else ""
     glut.glutInitDisplayString(s.encode('ASCII'))
 
 
@@ -220,7 +189,17 @@ class ApplicationBackend(BaseApplicationBackend):
                 win._vispy_close()
 
     def _vispy_get_native_app(self):
-        return _GLUT_INIT
+        global _GLUT_INITIALIZED
+        if not _GLUT_INITIALIZED:
+            glut.glutInit(['vispy'.encode('ASCII')])
+            # Prevent exit when closing window
+            try:
+                glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE,
+                                   glut.GLUT_ACTION_CONTINUE_EXECUTION)
+            except Exception:
+                pass
+            _GLUT_INITIALIZED = True
+        return glut
 
 
 def _set_close_fun(id_, fun):

@@ -8,7 +8,7 @@ import numpy as np
 from copy import deepcopy
 
 from . import gl
-from ..util.six import string_types
+from ..ext.six import string_types
 
 
 __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',
@@ -648,7 +648,7 @@ def get_gl_configuration():
     val = fb_param(gl.GL_FRAMEBUFFER, GL_FRONT_LEFT,
                    GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING)
     if val not in (gl.GL_LINEAR, GL_SRGB):
-        raise RuntimeError('unknown value for SRGB')
+        raise RuntimeError('unknown value for SRGB: %s' % val)
     config['srgb'] = True if val == GL_SRGB else False  # GL_LINEAR
     config['stereo'] = True if gl.glGetParameter(GL_STEREO) else False
     config['double_buffer'] = (True if gl.glGetParameter(GL_DOUBLEBUFFER)

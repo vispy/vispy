@@ -30,10 +30,7 @@ from ...util.ptime import time
 # -------------------------------------------------------------------- init ---
 
 try:
-    from . import _libglfw as glfw
-    if not glfw.glfwInit():  # only ever call once
-        raise OSError('Could not init glfw')
-    atexit.register(glfw.glfwTerminate)
+    from ...ext import glfw
 
     # Map native keys to vispy keys
     KEYMAP = {
@@ -90,9 +87,9 @@ else:
     available, testable, why_not = True, True, None
     which = 'glfw ' + str(glfw.__version__)
 
-_VP_GLFW_ALL_WINDOWS = []
-
 MOD_KEYS = [keys.SHIFT, keys.ALT, keys.CONTROL, keys.META]
+_GLFW_INITIALIZED = False
+_VP_GLFW_ALL_WINDOWS = []
 
 
 def _get_glfw_windows():
@@ -141,6 +138,9 @@ def _set_config(c):
     #glfw.glfwWindowHint(glfw.GLFW_SRGB_CAPABLE, c['srgb'])
     glfw.glfwWindowHint(glfw.GLFW_SAMPLES, c['samples'])
     glfw.glfwWindowHint(glfw.GLFW_STEREO, c['stereo'])
+    if not c['double_buffer']:
+        raise RuntimeError('GLFW must double buffer, consider using a '
+                           'different backend, or using double buffering')
 
 
 class SharedContext(BaseSharedContext):
@@ -190,6 +190,12 @@ class ApplicationBackend(BaseApplicationBackend):
         self._timers = []
 
     def _vispy_get_native_app(self):
+        global _GLFW_INITIALIZED
+        if not _GLFW_INITIALIZED:
+            if not glfw.glfwInit():  # only ever call once
+                raise OSError('Could not init glfw')
+            atexit.register(glfw.glfwTerminate)
+            _GLFW_INITIALIZED = True
         return glfw
 
 

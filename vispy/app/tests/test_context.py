@@ -1,9 +1,8 @@
 import os
 from nose.tools import assert_equal, assert_raises
 
-from vispy.util.testing import requires_application, has_backend
-from vispy.app import Canvas
-from vispy.app.backends import BACKEND_NAMES
+from vispy.testing import requires_application, SkipTest
+from vispy.app import Canvas, default_app
 from vispy.gloo import (get_gl_configuration, VertexShader, FragmentShader,
                         Program, check_error)
 
@@ -11,9 +10,21 @@ from vispy.gloo import (get_gl_configuration, VertexShader, FragmentShader,
 @requires_application()
 def test_context_properties():
     """Test setting context properties"""
-    contexts = (dict(double_buffer=False),  # stereo won't work on every sys
-                dict(samples=4), dict(stencil_size=8),
-                dict(double_buffer=False, samples=4))
+    a = default_app
+    a.use()
+    if a.backend_name.lower() == 'pyglet':
+        return  # cannot set more than once on Pyglet
+    # stereo, double buffer won't work on every sys
+    contexts = [dict(samples=4), dict(stencil_size=8),
+                dict(samples=4, stencil_size=8)]
+    if a.backend_name.lower() != 'glfw':  # glfw *always* double-buffers
+        contexts.append(dict(double_buffer=False, samples=4))
+        contexts.append(dict(double_buffer=False))
+    else:
+        assert_raises(RuntimeError, Canvas, app=a,
+                      context=dict(double_buffer=False))
+    if a.backend_name.lower() == 'sdl2' and os.getenv('TRAVIS') == 'true':
+        raise SkipTest('Travis SDL cannot set context')
     for context in contexts:
         n_items = len(context)
         with Canvas(context=context):
@@ -30,30 +41,28 @@ def test_context_properties():
     assert_raises(TypeError, Canvas, context=dict(double_buffer='foo'))
 
 
+@requires_application()
 def test_context_sharing():
     """Test context sharing"""
-    can = list()
-    for backend in BACKEND_NAMES:
-        if has_backend(backend, capable=['context']):
-            can.append(backend)
-    # We could also test backends that can't share contexts, but that's only
-    # GLUT and it doesn't test well :(
-    for backend in can:
-        with Canvas(app=backend) as c1:
-            vert = VertexShader("uniform vec4 pos;"
-                                "void main (void) {gl_Position = pos;}")
-            frag = FragmentShader("uniform vec4 pos;"
-                                  "void main (void) {gl_FragColor = pos;}")
-            program = Program(vert, frag)
-            program['pos'] = [1, 2, 3, 4]
-            program.activate()  # should print
+    with Canvas() as c1:
+        vert = VertexShader("uniform vec4 pos;"
+                            "void main (void) {gl_Position = pos;}")
+        frag = FragmentShader("uniform vec4 pos;"
+                              "void main (void) {gl_FragColor = pos;}")
+        program = Program(vert, frag)
+        program['pos'] = [1, 2, 3, 4]
+        program.activate()  # should print
 
-            def check():
-                program.activate()
-                check_error()
+        def check():
+            program.activate()
+            check_error()
 
-            with Canvas(app=backend):
-                if backend.lower() != 'pyglet':  # pyglet always shares
-                    assert_raises(RuntimeError, check)
-            with Canvas(app=backend, context=c1.context):
+        with Canvas() as c:
+            # pyglet always shares
+            if 'pyglet' not in c.app.backend_name.lower():
+                assert_raises(RuntimeError, check)
+        if c1.app.backend_name.lower() in ('glut',):
+            assert_raises(RuntimeError, Canvas, context=c1.context)
+        else:
+            with Canvas(context=c1.context):
                 check()

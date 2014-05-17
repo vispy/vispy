@@ -57,7 +57,6 @@ before_install:
           SIZE_DIFF=0;
         fi;
       fi;
-    - cd ${SRC_DIR}
 
 
 install:
@@ -73,6 +72,12 @@ install:
     # Dont install flake8 on 2.6 to make sure tests still run without it
     - if [ "${PYTHON}" != "2.6" ]; then
         pip install -q flake8;
+      else
+        pip install unittest2;
+      fi
+    # helpful for debugging faults
+    - if [ "${PYTHON}" != 3.3 ]; then
+        pip install nose-faulthandler;
       fi
 
     # Install PyOpenGL
@@ -106,9 +111,9 @@ install:
       fi;
 
     # Install vispy
+    - cd ${SRC_DIR}
     - python setup.py build
     - python setup.py install
-    - SRC_DIR=$(pwd)
     - cd ~
 
     # GLFW: version 2 shouldn't work (so let's try on Py2.6), version 3 will
@@ -142,14 +147,6 @@ install:
     # after manual builds we need to update .so search
     - sudo ldconfig
 
-    # XXX For now, don't run from install dir since coveralls can't handle it
-    # We will run tests from vispy dir to test our install worked
-    # VISPY_DIR=$(python -c 'import vispy;print(vispy.__path__[0])')
-    # ln -s ${SRC_DIR}/.coveragerc ${VISPY_DIR}/../.coveragerc
-    # ln -s ${SRC_DIR}/setup.cfg ${VISPY_DIR}/../setup.cfg
-    # Link coverage to src dir, coveralls should be run from there (needs git calls)
-    # ln -s ${VISPY_DIR}/../.coverage ${SRC_DIR}/.coverage
-
 
 before_script:
     # We need to create a (fake) display on Travis, let's use a funny resolution
@@ -158,19 +155,13 @@ before_script:
 
 
 script:
-    # XXX cd ${VISPY_DIR}/../
     - cd ${SRC_DIR}
-    - # Nose-timer has bugs on 3+ as of Jan 2014
     - if [ "${TEST}" != "extra" ]; then
-        nosetests --with-timer --timer-top-n 10;
+        make nose_coverage;
       fi;
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
-    # XXX cd ${SRC_DIR}
     - if [ "${TEST}" == "extra" ]; then
-        make flake;
-      fi;
-    - if [ "${TEST}" == "extra" ]; then
-        make lineendings;
+        make extra;
       fi;
     - if [ "${TEST}" == "extra" ]; then
         echo "Size difference ${SIZE_DIFF} kB";
@@ -181,6 +172,5 @@ script:
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
     - if [ "${TEST}" != "extra" ]; then
-        cd ${SRC_DIR};
         coveralls;
       fi;

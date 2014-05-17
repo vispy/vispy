@@ -7,7 +7,7 @@ import sys
 import inspect
 import re
 
-from .six import string_types
+from ..ext.six import string_types
 
 
 ###############################################################################

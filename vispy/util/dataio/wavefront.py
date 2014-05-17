@@ -100,12 +100,8 @@ class WavefrontReader(object):
         elif line.startswith('mtllib '):
             logger.warning('Notice reading .OBJ: material properties are '
                            'ignored.')
-        elif line.startswith('g ') or line.startswith('s '):
-            pass  # Ignore groups and smoothing groups
-        elif line.startswith('o '):
-            pass  # Ignore object names
-        elif line.startswith('usemtl '):
-            pass  # Ignore material
+        elif any(line.startswith(x) for x in ('g ', 's ', 'o ', 'usemtl ')):
+            pass  # Ignore groups and smoothing groups, obj names, material
         elif not line.strip():
             pass
         else:

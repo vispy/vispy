@@ -1,7 +1,7 @@
 """ Test the use function.
 """
 
-from vispy.util.testing import assert_is, requires_pyopengl
+from vispy.testing import assert_is, requires_pyopengl
 
 from vispy.gloo import gl
 

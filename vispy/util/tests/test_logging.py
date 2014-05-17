@@ -1,9 +1,8 @@
-from nose.tools import assert_equal, assert_true
+from nose.tools import assert_equal
 import logging
 
-from vispy import app
 from vispy.util import logger, use_log_level
-from vispy.util.testing import assert_in, assert_not_in, requires_application
+from vispy.testing import assert_in, assert_not_in
 
 
 def test_logging():
@@ -17,32 +16,24 @@ def test_logging():
     assert_equal(logger.level, ll)
 
 
-@requires_application()
 def test_debug_logging():
     """Test advanced debugging logging"""
     with use_log_level('debug', 'Selected', True) as l:
-        a = app.Application()
-        a.use()
-        a.quit()
+        logger.debug('Selected foo')
     assert_equal(len(l), 1)
-    assert_in('vispy.app.application', l[0])
+    assert_in('unknown', l[0])  # can't really parse this location
 
     with use_log_level('debug', record=True) as l:
-        a = app.Application()
-        a.use()
-        a.quit()
-    assert_true(len(l) >= 1)  # some might be skipped
-    assert_in('vispy.app.application', l[0])
+        logger.debug('foo')
+    assert_equal(len(l), 1)
+    assert_in('unknown', l[0])
 
     with use_log_level('debug', 'foo', True) as l:
-        a = app.Application()
-        a.use()
-        a.quit()
+        logger.debug('bar')
     assert_equal(len(l), 0)
 
     with use_log_level('info', record=True) as l:
-        a = app.Application()
-        a.use()
-        a.quit()
-    assert_true(len(l) >= 1)  # some might be skipped
-    assert_not_in('vispy.app.application', l[0])
+        logger.debug('foo')
+        logger.info('bar')
+    assert_equal(len(l), 1)
+    assert_not_in('unknown', l[0])

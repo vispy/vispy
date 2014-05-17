@@ -17,7 +17,7 @@ import atexit
 from shutil import rmtree
 
 from .event import EmitterGroup, EventEmitter, Event
-from .six import string_types
+from ..ext.six import string_types
 from ._logging import logger, set_log_level, use_log_level
 
 
@@ -211,7 +211,7 @@ config = Config(default_backend='qt', qt_lib='any',
 try:
     config.update(**_load_config())
 except Exception as err:
-    raise Exception('Error while reading vispy config file "%s":\n  %s' % 
+    raise Exception('Error while reading vispy config file "%s":\n  %s' %
                     (_get_config_fname(), err.message))
 set_log_level(config['logging_level'])
 
@@ -226,11 +226,11 @@ def set_data_dir(directory=None, create=False, save=False):
     if not op.isdir(directory):
         if not create:
             raise IOError('directory "%s" does not exist, perhaps try '
-                          'create=True to create it?')
+                          'create=True to create it?' % directory)
         os.mkdir(directory)
     config.update(data_path=directory)
     if save:
-        save_config(dict(data_path=directory))
+        save_config(data_path=directory)
 
 
 ###############################################################################
@@ -279,27 +279,26 @@ def sys_info(fname=None, overwrite=False):
     out = ''
     try:
         # Nest all imports here to avoid any circular imports
-        from ..app import Application, Canvas
+        from ..app import default_app, Canvas
         from ..app.backends import BACKEND_NAMES
         from ..gloo import gl
-        from .testing import has_backend
+        from ..testing import has_backend
         # get default app
-        this_app = Application()
         with use_log_level('warning'):
-            this_app.use()  # suppress unnecessary messages
+            default_app.use()  # suppress unnecessary messages
         out += 'Platform: %s\n' % platform.platform()
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
-        out += 'Backend:  %s\n' % this_app.backend_name
+        out += 'Backend:  %s\n' % default_app.backend_name
         for backend in BACKEND_NAMES:
             which = has_backend(backend, out=['which'])[1]
             out += '{0:<9} {1}\n'.format(backend + ':', which)
         out += '\n'
         # We need an OpenGL context to get GL info
-        if 'glut' in this_app.backend_name.lower():
+        if 'glut' in default_app.backend_name.lower():
             # glut causes problems
             out += 'OpenGL information omitted for glut backend\n'
         else:
-            canvas = Canvas('Test', (10, 10), show=False, app=this_app)
+            canvas = Canvas('Test', (10, 10), show=False, app=default_app)
             canvas._backend._vispy_set_current()
             out += 'GL version:  %s\n' % gl.glGetParameter(gl.GL_VERSION)
             x_ = gl.GL_MAX_TEXTURE_SIZE
