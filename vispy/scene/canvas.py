@@ -68,12 +68,6 @@ class SceneCanvas(app.Canvas):
         if self._root is None:
             return  # Can happen on initialization
         
-        # Set roots total transform 
-        self._root._total_transform = NullTransform()
-#         self._root._total_transform = STTransform()
-#         size = self._root.size
-#         self._root._total_transform.scale = 2.0 / size[0], 2.0 / size[1]
-        
         # Create paint event, which keeps track of the path of transforms
         self._process_entity_count = 0  # for debugging
         scene_event = ScenePaintEvent(canvas=self, event=event)

@@ -424,7 +424,9 @@ class ChainTransform(Transform):
     
     def simplify(self):
         """
-        Attempt to simplify the chain by joining adjacent transforms.        
+        Attempt to simplify the chain by joining adjacent transforms. 
+        If the result is a single transform, return that transform.
+        Otherwise return this chaintransform.
         """
         self.flatten()
         while True:
@@ -441,7 +443,11 @@ class ChainTransform(Transform):
                     new_tr.append(tr2)
             self.transforms = new_tr
             if exit:
-                break            
+                break       
+        if len(self._transforms) == 1:
+            return self._transforms[0]
+        else:
+            return self
 
     def append(self, tr):
         """

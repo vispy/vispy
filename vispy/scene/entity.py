@@ -43,7 +43,7 @@ class Entity(object):
             self.parents = parents
         
         # Components that all entities in vispy have
-        self._transform = transforms.AffineTransform()
+        self._transform = transforms.NullTransform()
         
         # Cache of the total transform chain
         # The drawing system sets this. 

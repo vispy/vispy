@@ -19,8 +19,9 @@ color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
 line = scene.visuals.Line(parents=canvas.root, pos=pos, color=color)
-line.transform.scale((700, 50))
-line.transform.translate((50, 300))
+line.transform = scene.transforms.STTransform(scale=(700, 50))
+# line.transform.scale = 700, 50
+line.transform.translate = 50, -300
 canvas.root.camera = scene.cameras.PixelCamera()
 
 app.run()

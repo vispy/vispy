@@ -44,6 +44,7 @@ class ViewBox:
 
 from .entity import Entity
 from .canvas import SceneCanvas
+from .viewbox import ViewBox
 from . import visuals
 from . import widgets
 from . import cameras

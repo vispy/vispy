@@ -35,7 +35,7 @@ class Widget(Entity):
     def pos(self, p):
         assert isinstance(p, tuple)
         assert len(p) == 2
-        self.transform.translate = p[0], [1], 0, 1
+        self.transform.translate = p[0], p[1], 0, 1
         self.events.rect_change()
     
     @property
@@ -54,8 +54,8 @@ class ViewBox(Widget):
     """ Provides a rectangular pixel grid to which its subscene is rendered
     
     The viewbox defines a certain coordinate frame using a camera (which
-    is an entity in the subscene itself). A viewbox also defines lights,
-    and has its own drawing system.
+    is an entity in the subscene itself). A viewbox also defines
+    background color, lights, and has its own drawing system.
     """
     
     def __init__(self, *args, **kwds):
@@ -194,7 +194,9 @@ class ViewBox(Widget):
         
         # Get whether the transform to here is translation only
         is_translate_only = False
-        if isinstance(transform, (NullTransform, STTransform)):
+        if event.canvas.root is self:
+            is_translate_only = True
+        elif isinstance(transform, (NullTransform, STTransform)):
             # todo: check that all transforms in event.path are really translate only
             is_translate_only = True
         # Get user preference
@@ -205,31 +207,50 @@ class ViewBox(Widget):
             if prefer_viewport:
                 self._paint_via_viewport(event)
             else:
-                # Use a transform
-                raise RuntimeError('Viewbox does not support transform for now')
+                self._paint_via_transform(event)
         else:
-            # Use FBO
-            raise RuntimeError('Viewbox does not support FBO for now')
+            self._paint_via_fbo(event)
     
     
     def _paint_via_viewport(self, event):
-        """ Paint the viewbox via a viewport. This assumes that there are
-        no transforms from the previous viewport to here, except for
-        translations.
+        """ Paint the viewbox via a viewport. This assumes that there
+        are no transforms from the previous viewport to here, except
+        for translation and scaling.
+        
+        This method for providing a rectangular pixel grid is the most
+        straightforward and relatively efficient.
         """
         # Get transform from viewport to here, including camera transforms.
         # We already verfied that it only does translation and scale
-        # We multiply with unit STTTransform in case total_transform is Null
-        transform = self._total_transform *  STTransform()
+        if event.canvas.root is self:
+            # Do not take transform into account if root; the root
+            # can have a parent and a transform and a size with respect
+            # to that parent. But we should ignore these here.
+            transform = STTransform(translate=(-1.0, -1.0))
+            size = 2.0, 2.0
+        else:
+            # Multiply with unit STTTransform in case total_transform is Null
+            transform = self._total_transform * STTransform()
+            size = self.size 
         
         # Calculate x, y and w, h
         tx, ty = transform.translate[:2]
         sx, sy = transform.scale[:2]
         res = event.resolution
-        #
-        x, y = tx * res[0], ty * res[1]
-        w, h = self.size[0] * sx * res[0], self.size[1] * sy * res[1]
         
+        # Transform from NDC to viewport coordinates
+        x = (1.0 + tx) * res[0] * 0.5
+        y = (1.0 + ty) * res[1] * 0.5
+        w = (size[0] * sx) * res[0] * 0.5
+        h = (size[1] * sy) * res[1] * 0.5
+        
+        # todo: handle out of bounds ...
+        if x < 0: 
+            x = abs(x)
+            print('warning, x was smaller than 0')
+        if y < 0: 
+            y = abs(y)
+            print('warning, y was smaller than 0')
         # Calculate viewport and resolution (rounding)
         viewport = int(x+0.5), int(y+0.5), int(w+0.5), int(h+0.5)
         resolution = viewport[2:]
@@ -239,6 +260,34 @@ class ViewBox(Widget):
         self.process_system(event, 'draw')  # invoke our drawing system
         event.pop_viewbox()
         # ... return to canvas, or drawing system that invoked us ...
+    
+    
+    def _paint_via_transform(self, event):
+        """ Paint the viewbox via a transform. This assumes that there
+        are no transforms from the previous viewport to here, except
+        for translation and scaling.
+        
+        This method for providing a rectangular pixel grid may be the
+        most efficient, especially if many viewboxes are used, because
+        there is no overhead for setting viewport and scisssors. Also,
+        collection may "cross this viewbox". However, this method
+        required an alternative clipping method (not yet implemented),
+        e.g. in the fragment shader.
+        """
+        raise NotImplementedError('Viewbox does not support transform for now')
+    
+    
+    def _paint_via_fbo(self, event):
+        """ Paint the viewbox via an FBO. This method can be applied
+        in any situation, regardless of the transformations to this
+        viewbox.
+        
+        This method for providing a rectangular pixel grid is the least
+        efficient. One should use it when the above two methods cannot
+        be used, or when the rendered image needs to be cached and/or
+        reused.
+        """
+        raise NotImplementedError('Viewbox does not support FBO for now')
 
 
 
@@ -304,7 +353,8 @@ class DrawingSystem(object):
         entity._total_transform = (self._projection * 
                                    self._camtransform * 
                                    event.transform_from_viewbox * 
-                                   event.transform_to_viewbox)
+                                   event.transform_to_viewbox
+                                  ).simplify()
         
         if isinstance(entity, ViewBox):
             # If a viewbox, render the subscene (*this* drawing system
@@ -390,12 +440,17 @@ class PixelCamera(Camera):
     """
     def get_projection(self, event):
         w, h = event.resolution
-        from vispy.util import transforms as trans
-        projection = np.eye(4)
-        trans.scale(projection, 2.0/w, 2.0/h)
-        trans.translate(projection, -1, -1)
-        trans.scale(projection, 1, -1)  # Flip y-axis
-        return transforms.AffineTransform(projection)
+#         from vispy.util import transforms as trans
+#         projection = np.eye(4)
+#         trans.scale(projection, 2.0/w, 2.0/h)
+#         trans.translate(projection, -1, -1)
+#         trans.scale(projection, 1, -1)  # Flip y-axis
+#         #return transforms.AffineTransform(projection)
+        trans = transforms.STTransform()
+        # todo: flip back y-axis ?
+        trans.scale = 2.0/w, 2.0/h  # Flip y-axis
+        trans.translate = -1, -1
+        return trans
 
 
 

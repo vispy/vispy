@@ -15,7 +15,7 @@ class StackItem:
         self._resolution = resolution
         self._path = []
         self._transform_to_viewbox = NullTransform()
-        self._viewport = None
+        self._viewport = 0, 0, resolution[0], resolution[1]
 
 
 class SceneEvent(Event):
@@ -81,12 +81,18 @@ class SceneEvent(Event):
     # todo: a lot of stuff is rather specific to draw events
     
     def push_viewbox(self, viewbox, resolution, viewport=None, transform=None):
+        """ If viewport is given, it is the viewport relative to the current
+        viewport.
+        """
         curitem = None if not self._stack else self._stack[-1]
         newitem = StackItem(viewbox, resolution)
         # Handle viewport
         if viewport is not None:
-            newitem._viewport = viewport
-            gl.glViewport(*viewport)
+            # Make absolute
+            x = curitem._viewport[0] + viewport[0]
+            y = curitem._viewport[1] + viewport[1]
+            newitem._viewport = x, y, viewport[2], viewport[3]
+            gl.glViewport(*newitem._viewport)
         else:
             newitem._viewport = curiem._viewport
         # Handle transform
