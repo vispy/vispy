@@ -204,7 +204,7 @@ class ViewBox(Widget):
         
         # Do what a viewbox does, in one of three ways ...
         if is_translate_only:
-            if prefer_viewport:
+            if prefer_viewport or event.canvas.root is self:
                 self._paint_via_viewport(event)
             else:
                 self._paint_via_transform(event)
@@ -256,7 +256,7 @@ class ViewBox(Widget):
         resolution = viewport[2:]
         
         # Process our children
-        event.push_viewbox(self, resolution, viewport)
+        event.push_viewbox(self, resolution, viewport=viewport)
         self.process_system(event, 'draw')  # invoke our drawing system
         event.pop_viewbox()
         # ... return to canvas, or drawing system that invoked us ...
@@ -274,7 +274,39 @@ class ViewBox(Widget):
         required an alternative clipping method (not yet implemented),
         e.g. in the fragment shader.
         """
-        raise NotImplementedError('Viewbox does not support transform for now')
+    
+        # Get transform from viewport to here, including camera transforms.
+        # We already verfied that it only does translation and scale
+        if event.canvas.root is self:
+            # Do not take transform into account if root; the root
+            # can have a parent and a transform and a size with respect
+            # to that parent. But we should ignore these here.
+            transform = STTransform(translate=(-1.0, -1.0))
+            size = 2.0, 2.0
+        else:
+            # Multiply with unit STTTransform in case total_transform is Null
+            transform = self._total_transform2 * STTransform()
+            size = self.size 
+        
+        # Calculate x, y and w, h
+        tx, ty = transform.translate[:2]
+        sx, sy = transform.scale[:2]
+        res = event.resolution
+        
+        # Transform from NDC to viewport coordinates
+        x = (1.0 + tx) * res[0] * 0.5
+        y = (1.0 + ty) * res[1] * 0.5
+        w = (size[0] * sx) * res[0] * 0.5
+        h = (size[1] * sy) * res[1] * 0.5
+        
+        # Calculate viewport and resolution (rounding)
+        x, y, w, h = int(x+0.5), int(y+0.5), int(w+0.5), int(h+0.5)
+        viewport = x, y, w, h
+        resolution = viewport[2:]
+        
+        event.push_viewbox(self, resolution, transform=viewport)
+        self.process_system(event, 'draw')  # invoke our drawing system
+        event.pop_viewbox()
     
     
     def _paint_via_fbo(self, event):
@@ -350,12 +382,24 @@ class DrawingSystem(object):
         
         # Push entity and set its total transform
         event.push_entity(entity)
-        entity._total_transform = (self._projection * 
+        entity._total_transform = (event.transform_to_viewbox *
+                                   self._projection * 
                                    self._camtransform * 
-                                   event.transform_from_viewbox * 
-                                   event.transform_to_viewbox
+                                   event.transform_from_viewbox  
                                   ).simplify()
+              
+        # We multiply with NullTransform. This seems needed in some situation.
+        # I am not exactly sure, but I suspect that if we don't, different
+        # entities can share the transform object, causing problems.
+        # todo: look into this              
+        entity._total_transform = entity._total_transform * NullTransform()
         
+        # Also a transform without the virtual viewport
+        entity._total_transform2 = (self._projection * # todo: clean up
+                                   self._camtransform * 
+                                   event.transform_from_viewbox 
+                                  ).simplify()
+                                  
         if isinstance(entity, ViewBox):
             # If a viewbox, render the subscene (*this* drawing system
             # does not process its children)

@@ -16,6 +16,7 @@ class StackItem:
         self._path = []
         self._transform_to_viewbox = NullTransform()
         self._viewport = 0, 0, resolution[0], resolution[1]
+        self._soft_viewport = 0, 0, 1, 1
 
 
 class SceneEvent(Event):
@@ -84,24 +85,33 @@ class SceneEvent(Event):
         """ If viewport is given, it is the viewport relative to the current
         viewport.
         """
+        # todo: rename transform to soft_viewport?
         curitem = None if not self._stack else self._stack[-1]
         newitem = StackItem(viewbox, resolution)
-        # Handle viewport
+        
+        # Hard GL viewport
         if viewport is not None:
             # Make absolute
             x = curitem._viewport[0] + viewport[0]
             y = curitem._viewport[1] + viewport[1]
+            # Apply
             newitem._viewport = x, y, viewport[2], viewport[3]
             gl.glViewport(*newitem._viewport)
         else:
-            newitem._viewport = curiem._viewport
-        # Handle transform
+            newitem._viewport = curitem._viewport
+        
+        # Soft viewport via a transform
         if transform is not None:
-            # Use a transformation (and the same viewport as parent viewbox)
-            #newitem._viewport = curitem._viewport
-            transform = self.transform_from_viewbox
-            if curitem._transform_to_viewbox:
-                transform = curitem._transform_to_viewbox * transform
+            # Make absolute
+            x = curitem._soft_viewport[0] + transform[0]
+            y = curitem._soft_viewport[1] + transform[1]
+            w, h = transform[2], transform[3]
+            # Calculate transform
+            res = curitem._viewport[2:]
+            transform = STTransform(translate=(2*x/res[0]-0.5, 2*y/res[1]-0.5),
+                                    scale=(w/res[0], h/res[1]))
+            # Apply
+            newitem._soft_viewport = x, y, w, h
             newitem._transform_to_viewbox = transform
         
         # Add to stack
