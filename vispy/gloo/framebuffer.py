@@ -285,12 +285,12 @@ class FrameBuffer(GLObject):
         if len(shape) != 2:
             raise ValueError("New shape has wrong number of dimensions")
 
-        if self.color is not None:
-            self.color.resize(shape)
-        if self.depth is not None:
-            self.depth.resize(shape)
-        if self.stencil is not None:
-            self.stencil.resize(shape)
+        if self.color_buffer is not None:
+            self.color_buffer.resize(shape)
+        if self.depth_buffer is not None:
+            self.depth_buffer.resize(shape)
+        if self.stencil_buffer is not None:
+            self.stencil_buffer.resize(shape)
 
     def _create(self):
         """ Create framebuffer on GPU """
@@ -359,9 +359,11 @@ class FrameBuffer(GLObject):
             elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
                 raise RuntimeError(
                     'attachments do not have the same width and height.')
-            elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS:
-                raise RuntimeError('Internal format of attachment '
-                                   'is not renderable.')
+            #elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS: # not in es 2.0
+            #    raise RuntimeError('Internal format of attachment '
+            #                       'is not renderable.')
             elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
                 raise RuntimeError('Combination of internal formats used '
                                    'by attachments is not supported.')
+            else:
+                raise RuntimeError('Unknown framebuffer error: %r.' % res)
