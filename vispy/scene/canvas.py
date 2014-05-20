@@ -67,7 +67,7 @@ class SceneCanvas(app.Canvas):
         
         if self._root is None:
             return  # Can happen on initialization
-        
+        print('Canvas draw')
         # Create paint event, which keeps track of the path of transforms
         self._process_entity_count = 0  # for debugging
         scene_event = ScenePaintEvent(canvas=self, event=event)

@@ -8,6 +8,7 @@ import numpy as np
 from vispy import app, gloo
 from vispy import scene
 
+
 gloo.gl.use('desktop debug')
 
 canvas = scene.SceneCanvas(size=(800,600), show=True)
@@ -17,6 +18,7 @@ N = 1000
 color = np.ones((N, 4), dtype=np.float32)
 color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
+color[:100,:] = 1.0
 pos = np.empty((N,2), np.float32)
 #
 pos[:,0] = np.linspace(-1., 1., N)

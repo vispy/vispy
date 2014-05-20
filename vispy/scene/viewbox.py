@@ -11,7 +11,9 @@ from .transforms import STTransform, NullTransform, PerspectiveTransform
 from ..util.event import Event
 
 
-class Widget(Entity):
+from .visuals import Visual
+
+class Widget(Visual):
     """ A widget takes up a rectangular space, intended for use in 
     a 2D pixel coordinate frame.
     
@@ -22,7 +24,8 @@ class Widget(Entity):
     """
     
     def __init__(self, *args, **kwargs):
-        Entity.__init__(self, *args, **kwargs)
+        #Entity.__init__(self, *args, **kwargs)
+        Visual.__init__(self, *args, **kwargs)
         self.events.add(rect_change=Event)
         self._size = 16, 16
         self.transform = STTransform()  # todo: TTransform (translate only)
@@ -199,15 +202,20 @@ class ViewBox(Widget):
         elif isinstance(transform, (NullTransform, STTransform)):
             # todo: check that all transforms in event.path are really translate only
             is_translate_only = True
+        
         # Get user preference
-        prefer_viewport = True  # Should be settable
+        prefer = 'fbo'  # Should be settable
+        
+        assert prefer in ('viewport', 'transform', 'fbo')
+        
+        use_viewport = prefer.lower() == 'viewport' and is_translate_only
+        use_transform = prefer.lower() == 'transform' and is_translate_only
         
         # Do what a viewbox does, in one of three ways ...
-        if is_translate_only:
-            if prefer_viewport or event.canvas.root is self:
-                self._paint_via_viewport(event)
-            else:
-                self._paint_via_transform(event)
+        if event.canvas.root is self or use_viewport:
+            self._paint_via_viewport(event)
+        elif use_transform:
+            self._paint_via_transform(event)
         else:
             self._paint_via_fbo(event)
     
@@ -309,6 +317,67 @@ class ViewBox(Widget):
         event.pop_viewbox()
     
     
+    def _paint_via_fbo_as_visual(self, event):
+        """ 
+        FBO as we want it, but I dont get the components. This does not work
+        right now.
+        """
+        
+        from vispy import gloo
+        from .components import (TextureComponent, VertexTextureCoordinateComponent,
+                         TextureCoordinateComponent)
+                         
+        # Get fbo, ensure it exists
+        fbo = getattr(self, '_fbo', None)
+        if fbo is None:
+            im = np.zeros((10,10, 3), np.uint8)
+            self._tex = tex = gloo.Texture2D(im)
+            self._fbo = 4
+#             tex.activate()
+#             self._fbo = fbo = gloo.FrameBuffer(color=tex, 
+#                                                depth=gloo.DepthBuffer((10,10)),
+#                                                )
+#                                                #stencil=gloo.StencilBuffer((10,10)))
+#             
+            w, h = 1, 1
+            tex_coords = np.array([[0,0,0], [w,0,0], [w,h,0], 
+                             [0,0,0], [w,h,0], [0,h,0]], 
+                            dtype=np.float32)
+            tex_coord_comp = TextureCoordinateComponent(tex_coords)
+            self.color_components = [TextureComponent(tex, tex_coord_comp)]
+        
+        # Set fbo size
+        resolution = 60, 60
+        im = np.zeros((resolution[0], resolution[1], 3), np.uint8)
+        im[:20,:,:] = 200
+        im[20:,:,1] = 200
+        self._tex.set_data(im)
+        #fbo.color_buffer.resize(resolution+(3,))
+#         fbo.depth_buffer.resize(resolution)
+        # fbo.stencil_buffer.resize(resolution)
+        
+        # Get viewport and resolution
+        viewport = 0, 0, resolution[0], resolution[1]
+        resolution = viewport[2:]
+        
+        # Set texture coords
+        w, h = self.size[0], self.size[1]
+        vertexes = np.array([[0,0,0], [w,0,0], [w,h,0], 
+                             [0,0,0], [w,h,0], [0,h,0]], 
+                            dtype=np.float32)
+        self.set_data(pos=vertexes)
+        print(self._total_transform)
+#         event.push_viewbox(self, resolution, viewport=viewport, fbo=fbo)
+#         from vispy.gloo import gl
+#         gl.glClearColor(1.0, 0.0, 0.0, 1.0)
+#         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+#         
+#         self.process_system(event, 'draw')  # invoke our drawing system
+#         event.pop_viewbox()
+        
+        Visual.paint(self, event)
+    
+    
     def _paint_via_fbo(self, event):
         """ Paint the viewbox via an FBO. This method can be applied
         in any situation, regardless of the transformations to this
@@ -318,9 +387,121 @@ class ViewBox(Widget):
         efficient. One should use it when the above two methods cannot
         be used, or when the rendered image needs to be cached and/or
         reused.
+        
+        Right now, this implementation create a program, texture and FBO
+        on *each* draw, because it does not work otherwise. This is probably
+        a bug in gloo that prevents using two FBO's / programs at the same
+        time.
+        
         """
-        raise NotImplementedError('Viewbox does not support FBO for now')
+        from vispy.gloo import gl
+        from vispy import gloo
+        from .components import (TextureComponent, VertexTextureCoordinateComponent,
+                         TextureCoordinateComponent)
+        
+        
+        if True:
+            # Create program
+            self._myprogram = gloo.Program(render_vertex, render_fragment)
+            # Create texture
+            self._tex = gloo.Texture2D(shape=(10,10,4), dtype=np.uint8)
+            self._tex.interpolation = gl.GL_LINEAR
+            self._myprogram['u_texture'] = self._tex
+            # Create texcoords and vertices
+            texcoord = np.array([[0,0], [1,0], [0,1], [1,1]], dtype=np.float32)
+            position = np.zeros((4,3), np.float32)
+            self._myprogram['a_texcoord'] = gloo.VertexBuffer(texcoord)
+            self._myprogram['a_position'] = self._vert = gloo.VertexBuffer(position)
+        
+        # Get fbo, ensure it exists
+        fbo = getattr(self, '_fbo', None)
+        if True:#fbo is None:
+            self._fbo = 4
+            self._fbo = fbo = gloo.FrameBuffer(self._tex, 
+                                    depth=gloo.DepthBuffer((10,10)),
+                                    )
+        
+        if True:
+            # Multiply with unit STTTransform in case total_transform is Null
+            transform = self._total_transform2 * STTransform()
+            size = self.size 
+            # Calculate x, y and w, h
+            tx, ty = transform.translate[:2]
+            sx, sy = transform.scale[:2]
+            res = event.resolution
+            
+            # Transform from NDC to viewport coordinates
+            x = (1.0 + tx) * res[0] * 0.5
+            y = (1.0 + ty) * res[1] * 0.5
+            w = (size[0] * sx) * res[0] * 0.5
+            h = (size[1] * sy) * res[1] * 0.5
+            x, y, w, h = int(x+0.5), int(y+0.5), int(w+0.5), int(h+0.5)
+            
+            # Set texture coords
+            x1, y1 = 2*x/res[0]-1, 2*y/res[1]-1
+            x2, y2 = x1 + 2*w/res[0], y1 + 2*h/res[1]
+            z = 0
+            vertexes = np.array([[x1,y1,z], [x2,y1,z], [x1,y2,z], [x2,y2,z]], 
+                                np.float32)
+            self._vert.set_data(vertexes)
+        
+        # Set fbo size (mind that this is set using shape!)
+        # Resolution does not have to match size or wxh 
+        # We add one, to get a barely noticable mis-alignment, so that
+        # interpolation kicks in and we clearly see that this is an FBO
+        resolution = int(w+1), int(h+1)
+        shape = resolution[1], resolution[0]
+        fbo.color_buffer.resize(shape+(4,))
+        fbo.depth_buffer.resize(shape)
+        # Set to force fbo to rematch sizes
+        fbo.color_buffer = self._tex
+        fbo.depth_buffer = fbo.depth_buffer
+        # fbo.stencil_buffer.resize(resolution)
+        
+        if getattr(self, '_name'):
+            print(self._name, (x1, x2, y1, y2), (w, h), res)
+        
+        # Get viewport and resolution
+        viewport = 0, 0, resolution[0], resolution[1]
+        resolution = viewport[2:]
+        
+        # Prepare viewbox
+        event.push_viewbox(self, resolution, viewport=viewport, fbo=fbo)
+        clrs = {'':(0.1, 0.1, 0.1), 
+                'vb1':(0.2,0,0), 'vb11':(0.2,0,0.1), 'vb12':(0.2,0,0.2), 
+                'vb2':(0,0.2,0), 'vb21':(0,0.2,0.1), 'vb22':(0,0.2,0.2)}
+        clr = clrs[getattr(self,'_name', '')]
+        gl.glClearColor(clr[0], clr[1], clr[2], 1.0)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        # Process childen
+        self.process_system(event, 'draw')  # invoke our drawing system
+        # Revert
+        gl.glFlush()
+        event.pop_viewbox()
+        # Draw the result in the parent scene
+        self._myprogram.draw(gloo.gl.GL_TRIANGLE_STRIP)
 
+
+render_vertex = """
+attribute vec3 a_position;
+attribute vec2 a_texcoord;
+varying vec2 v_texcoord;
+void main()
+{
+    gl_Position = vec4(a_position, 1.0);
+    v_texcoord = a_texcoord;
+}
+"""
+
+render_fragment = """
+uniform sampler2D u_texture;
+varying vec2 v_texcoord;
+void main()
+{
+    vec4 v = texture2D(u_texture, v_texcoord);
+    gl_FragColor = vec4(v.rgb, 1.0);
+}
+"""
 
 
 class Document(Entity):

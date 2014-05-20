@@ -17,6 +17,7 @@ class StackItem:
         self._transform_to_viewbox = NullTransform()
         self._viewport = 0, 0, resolution[0], resolution[1]
         self._soft_viewport = 0, 0, 1, 1
+        self._fbo = None
 
 
 class SceneEvent(Event):
@@ -81,22 +82,36 @@ class SceneEvent(Event):
     
     # todo: a lot of stuff is rather specific to draw events
     
-    def push_viewbox(self, viewbox, resolution, viewport=None, transform=None):
+    def push_viewbox(self, viewbox, resolution, viewport=None, transform=None, fbo=None):
         """ If viewport is given, it is the viewport relative to the current
         viewport.
         """
         # todo: rename transform to soft_viewport?
+        # todo: we always pass a viewport ...
+        
         curitem = None if not self._stack else self._stack[-1]
         newitem = StackItem(viewbox, resolution)
         
+        # FBO
+        if fbo is not None:
+            newitem._fbo = fbo
+            fbo.activate()
+            # Is deactivated in pop_viewbox
+        else:
+            newitem._fbo = curitem._fbo
+        
         # Hard GL viewport
         if viewport is not None:
-            # Make absolute
-            x = curitem._viewport[0] + viewport[0]
-            y = curitem._viewport[1] + viewport[1]
+            # Make absolute (is already so for FBO)
+            if fbo is None:
+                x = curitem._viewport[0] + viewport[0]
+                y = curitem._viewport[1] + viewport[1]
+            else:
+                x, y = viewport[:2]
             # Apply
             newitem._viewport = x, y, viewport[2], viewport[3]
             gl.glViewport(*newitem._viewport)
+            gl.glScissor(*newitem._viewport)
         else:
             newitem._viewport = curitem._viewport
         
@@ -121,10 +136,16 @@ class SceneEvent(Event):
         olditem = self._stack.pop(-1)
         if self._stack:
             curitem = self._stack[-1]
+            # Deal with fbo
+            if olditem._fbo is not None:
+                olditem._fbo.deactivate()
+            if curitem._fbo is not None:
+                curitem._fbo.activate()
             # Deal with viewport
             if curitem._viewport != olditem._viewport:
                 if curitem._viewport:
                     gl.glViewport(*curitem._viewport)
+                    gl.glScissor(*curitem._viewport)
         else:
             pass  # we popped the whole stack!
     
