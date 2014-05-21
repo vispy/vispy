@@ -28,7 +28,7 @@ class Widget(Visual):
         Visual.__init__(self, *args, **kwargs)
         self.events.add(rect_change=Event)
         self._size = 16, 16
-        self.transform = STTransform()  # todo: TTransform (translate only)
+        self.transform = STTransform()  # todo: TTransform (translate only for widgets)
     
     @property
     def pos(self):
@@ -120,7 +120,7 @@ class ViewBox(Widget):
         # Test that self is a parent of the camera
         object = cam
         while object is not None:
-            # todo: ignoring multi-parentin here, we need Entity.isparent()
+            # todo: ignoring multi-parenting here, we need Entity.isparent()
             object = object.parents[0]  
             if isinstance(object, ViewBox):
                 break
@@ -244,7 +244,7 @@ class ViewBox(Widget):
         
         # Get whether the transform to here is translate-scale only
         is_ts_only = False
-        if isinstance(self._total_transform, (NullTransform, STTransform)):
+        if isinstance(event.view_transform, (NullTransform, STTransform)):
             is_ts_only = True
         
         # Get user preference
@@ -273,8 +273,8 @@ class ViewBox(Widget):
             transform = STTransform(translate=(-1.0, -1.0))
             size = 2.0, 2.0
         else:
-            # Multiply with unit STTTransform in case total_transform is Null
-            transform = self._total_transform2 * STTransform()
+            # Multiply with unit STTTransform in case view_transform is Null
+            transform = event.view_transform * STTransform()
             size = self.size 
         
         # Calculate x, y and w, h
@@ -477,6 +477,7 @@ class Document(Entity):
 class DrawingSystem(object):
     """ Simple implementation of a drawing engine. There is one system
     per viewbox.
+    
     """
     
     def process(self, event):
@@ -484,10 +485,6 @@ class DrawingSystem(object):
         root = event.canvas
         if not isinstance(viewbox, ViewBox):
             raise ValueError('DrawingSystem.draw expects a ViewBox instance.')
-        
-        # Get camera transforms
-        self._camtransform = self._get_camera_transform(viewbox.camera)
-        self._projection = viewbox.camera.get_projection(event)
         
         # Iterate over entities
         for entity in viewbox:
@@ -501,24 +498,7 @@ class DrawingSystem(object):
         
         # Push entity and set its total transform
         event.push_entity(entity)
-        entity._total_transform = (event.transform_to_viewbox *
-                                   self._projection * 
-                                   self._camtransform * 
-                                   event.transform_from_viewbox  
-                                  ).simplify()
-              
-        # We multiply with NullTransform. This seems needed in some situation.
-        # I am not exactly sure, but I suspect that if we don't, different
-        # entities can share the transform object, causing problems.
-        # todo: look into this              
-        entity._total_transform = entity._total_transform * NullTransform()
         
-        # Also a transform without the virtual viewport
-        entity._total_transform2 = (self._projection * # todo: clean up
-                                   self._camtransform * 
-                                   event.transform_from_viewbox 
-                                  ).simplify()
-                                  
         if isinstance(entity, ViewBox):
             # If a viewbox, render the subscene (*this* drawing system
             # does not process its children)
@@ -532,31 +512,6 @@ class DrawingSystem(object):
                 self._process_entity(event, sub_entity)
         
         event.pop_entity()
-
-    
-    def _get_camera_transform(self, camera):
-        """ Calculate the transform from the camera to the viewbox.
-        This is the inverse of the transform chain *to* the camera.
-        """
-        from .viewbox import ViewBox
-        
-        # Get total transform of the camera
-        object = camera
-        camtransform = object.transform
-        
-        while True:
-            # todo: does it make sense to have a camera in a multi-path scene?
-            object = object.parents[0]
-            if object is None:
-                break  # Root viewbox
-            elif isinstance(object, ViewBox):
-                break  # Go until the any parent ViewBox
-            assert isinstance(object, Entity)
-            if object.transform is not None:
-                camtransform = camtransform * object.transform
-        
-        # Return inverse!
-        return camtransform.inverse()
 
 
 from . import transforms  # Needed by cameras

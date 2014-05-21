@@ -429,6 +429,8 @@ class ChainTransform(Transform):
         Otherwise return this chaintransform.
         """
         self.flatten()
+        if not self.transforms:
+            return NullTransform()
         while True:
             new_tr = [self.transforms[0]]
             exit = True

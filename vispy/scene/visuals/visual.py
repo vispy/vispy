@@ -347,7 +347,7 @@ class Visual(Entity):
         #print('paint', self)
         self._activate_gl_options()
         mode = self._paint_mode()
-        self._activate_components(mode)
+        self._activate_components(mode, event)
         self._program.draw(self.primitive, self.vertex_index)
 
     def _paint_mode(self):
@@ -386,7 +386,7 @@ class Visual(Entity):
                 func = getattr(gloo.gl, name)
                 func(*args)
                 
-    def _activate_components(self, mode):
+    def _activate_components(self, mode, event):
         """
         This is called immediately before painting to inform all components
         that a paint is about to occur and to let them assign program
@@ -408,14 +408,14 @@ class Visual(Entity):
         for comp in all_comps:
             comp.activate(self._program, mode)
             
-        self._activate_transform()
+        self._activate_transform(event)
         
-    def _activate_transform(self):
+    def _activate_transform(self, event=None):
         # TODO: this must be optimized.
         # Allow using as plain visual or in a scenegraph
-        transform = self._total_transform or self.transform
+        t = self.transform if (event is None) else event.render_transform
         #self._program['map_local_to_nd'] = self.transform.shader_map()
-        self._program['map_local_to_nd'] = transform.shader_map()
+        self._program['map_local_to_nd'] = t.shader_map()
         
 
 

@@ -36,6 +36,8 @@ class Entity(object):
                                    )
 
         # Entities are organized in a parent-children hierarchy
+        # todo: I think we want this to be a list. The order *may* be important
+        # for some drawing systems. Using a set may lead to inconsistency
         self._children = set()
         # TODO: use weakrefs for parents.
         self._parents = set()
@@ -44,14 +46,7 @@ class Entity(object):
         
         # Components that all entities in vispy have
         self._transform = transforms.NullTransform()
-        
-        # Cache of the total transform chain
-        # The drawing system sets this. 
-        # todo: Perhaps this is better stored at the draw event instance. 
-        # On the other hand, we probably want some form of caching (on
-        # the entity) anyway ...
-        self._total_transform = None
-        
+    
 
     @property
     def children(self):
@@ -153,12 +148,12 @@ class Entity(object):
         """
         return self._transform
     
-    def on_paint(self, event):
-        """
-        Paint this entity, given that we are drawing through 
-        the given scene *path*.
-        """
-        pass
+#     def on_paint(self, event):
+#         """
+#         Paint this entity, given that we are drawing through 
+#         the given scene *path*.
+#         """
+#         pass
     
 #     def _process_paint_event(self, event):
 #         """
@@ -189,29 +184,29 @@ class Entity(object):
             entity = path[-1]
             getattr(entity.events, event.type)(event)
 
-    def walk(self, path=None):
-        """
-        Return an iterator that walks the entire scene graph starting at this
-        Entity. Yields (True, [list of Entities]) as each path in the 
-        scenegraph is visited. Yields (False, [list of Entities]) as each path
-        is finished.
-        """
-        # TODO: need some control over the order..
-        #if path is None:
-            #path = []
-            #yield path, self
-        #if len(self.children) > 0:
-            #path = path + [self]
-            #yield path, self.children
-            #for ch in self:
-                #for e in ch.walk(path):
-                    #yield e
-        path = (path or []) + [self]
-        yield (True, path)
-        for ch in self:
-            for p in ch.walk(path):
-                yield p
-        yield (False, path)
+#     def walk(self, path=None):
+#         """
+#         Return an iterator that walks the entire scene graph starting at this
+#         Entity. Yields (True, [list of Entities]) as each path in the 
+#         scenegraph is visited. Yields (False, [list of Entities]) as each path
+#         is finished.
+#         """
+#         # TODO: need some control over the order..
+#         #if path is None:
+#             #path = []
+#             #yield path, self
+#         #if len(self.children) > 0:
+#             #path = path + [self]
+#             #yield path, self.children
+#             #for ch in self:
+#                 #for e in ch.walk(path):
+#                     #yield e
+#         path = (path or []) + [self]
+#         yield (True, path)
+#         for ch in self:
+#             for p in ch.walk(path):
+#                 yield p
+#         yield (False, path)
         
         
 

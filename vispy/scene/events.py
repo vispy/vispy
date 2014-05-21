@@ -14,7 +14,9 @@ class StackItem:
     scene inside a viewbox).
     """
     def __init__(self, viewbox, resolution):
+        # The viewbox and associated camera transform
         self._viewbox = viewbox
+        self._camtransform = NullTransform()  # Must be set 
         
         # Path from viewbox to the current entity
         self._path = []
@@ -34,8 +36,8 @@ class StackItem:
         
         # The fbo in use. If None, it represents the defaulf framebuffer
         self._fbo = None
-
-
+    
+    
 class SceneEvent(Event):
     """
     SceneEvent is an Event that tracks its path through a scenegraph,
@@ -146,6 +148,12 @@ class SceneEvent(Event):
             gl.glViewport(*newitem._viewport)
             gl.glScissor(*newitem._viewport)
         self._stack.append(newitem)
+        
+        # Set camera transforms now (newitem must be appended)
+        projection = viewbox.camera.get_projection(self)
+        camtransform = projection * self._get_camera_transform(viewbox)
+        newitem._camtransform = camtransform
+        
     
     def pop_viewbox(self):
         """ Pop a viewbox from the stack. This will handle resetting
@@ -168,21 +176,64 @@ class SceneEvent(Event):
             pass  # we popped the whole stack!
     
     @property
-    def transform_from_viewbox(self):
-        """ Return the transform that maps from current viewbox to the recipient
-        of this event.
+    def full_transform(self):
+        """ The transform that maps from current viewbox to current
+        entity; the composition of the line of entities from viewbox to
+        here.
         """
         path = self._stack[-1]._path
         tr = [e.parent_transform for e in path[::-1]]
         # TODO: cache transform chains
         return ChainTransform(tr)
     
+    
     @property
-    def transform_to_viewbox(self):
-        """ The transfrom from the current viewport to the current viewbox.
-        This transform may "pass through" one or more viewboxes.
+    def view_transform(self):
+        """ The transform from pixel grid to current entity (taking
+        camera into account). 
         """
-        return self._stack[-1]._transform_to_viewbox
+        transform = self._stack[-1]._camtransform * self.full_transform
+        transform = transform.simplify()
+        # We multiply with NullTransform. This seems needed in some situation.
+        # I am not exactly sure, but I suspect that if we don't, different
+        # entities can share the transform object, causing problems.
+        # todo: look into this              
+        transform = transform * NullTransform()
+        return transform
+    
+    
+    @property
+    def render_transform(self):
+        """ The transform that should be used during rendering a visual.
+        This may differ from view_transform if the viewbox used the
+        'transform' method to provide a pixel grid.
+        """
+        transform = self._stack[-1]._transform_to_viewbox * self.view_transform
+        if isinstance(transform, ChainTransform):
+            transform = transform.simplify()
+        return transform
+    
+    
+    def _get_camera_transform(self, viewbox):
+        """ Calculate the transform from the camera to the viewbox.
+        This is the inverse of the transform chain *to* the camera.
+        """
+        
+        # Get total transform of the camera
+        object = viewbox.camera
+        camtransform = object.transform
+        
+        while True:
+            # todo: does it make sense to have a camera in a multi-path?
+            object = object.parents[0]
+            if object is viewbox:
+                break  # Go until we meet ourselves
+            assert isinstance(object, Entity)
+            if object.transform is not None:
+                camtransform = camtransform * object.transform
+        
+        # Return inverse!
+        return camtransform.inverse()
 
 
 #     @property
