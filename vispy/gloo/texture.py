@@ -495,7 +495,7 @@ class Texture(GLObject):
         logger.debug("GPU: Deactivate texture")
         gl.glBindTexture(self._target, 0)
     
-    # from pylgy
+    # Taken from pygly
     def _get_alignment(self, width):
         """Determines a textures byte alignment.
 
