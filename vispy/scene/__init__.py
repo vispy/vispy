@@ -3,42 +3,44 @@ The vispy.scene namespace provides functionality for higher level
 visuals as well as scenegraph and related classes.
 
 
-Some docs/ideas about the key scenegraph concepts:
+Terminology
+-----------
 
-class Entity:
-  The base object of an object in a scene graph.
-  - parent: the parent(s) that this object is a child of
-  - children: the children (sub-entities) for this entity
-  - transform: the transform from the parent to local coordinate frame
-
-class Widget:
-  - size: the extend (w, h) of the widget
-
-class ViewBox:
-  A viewbox provides a rectangular pixel grid to render the subscene
-  to. The viewbox defines a certain coordinate frame using a camera
-  (which is an entity in the subscene itself). A viewbox also defines
-  lights, and has its own drawing system.
-  - resolution: the size (w, h) of the "canvas" that this viewbox exposes.
-
-  The transform of the root viewbox is not used at all, since there is
-  no parent to define a transformation to.
+* entity - an object that lives in the scenegraph. It can have zero or
+  more children and zero or more parents (although one is recommended).
+  It also has a transform that specifies that transformation from the
+  parent to the local coordinate frame.
   
-  A Viewbox can work in three ways:
-  - via a viewport
-  - via a simple transform
-  - via an FBO
+* scene - a complete connected graph of entities.
   
-  The first two cases can work in case the viewbox maps to a rectangular
-  grid of an underlying viewbox, and if the size of the region that the
-  viewbox takes up in the parent subscene matches with the resolution.
-  If either requirements are not met, we need an FBO. 
+* subscene - the entities that are children of a viewbox. Any viewboxes
+  inside this subscene are part of the subscene, but not their children.
   
-  Using a transform rather than a viewport may have some performance
-  advantages, but we need to do clipping in the fragment shader, which
-  poses additional complexity and performance overhead. It probably
-  depends on the situation what works best. We probably want to allow
-  both approaches.
+* visual - an entity that has a visual representation. It can be made
+  visible/invisible and also has certain bounds.
+  
+* widget - an entity of a certain size that provides interaction. It
+  is made to live in a 2D scene with a pixel camera.
+  
+* viewbox - an entity that provides a pixel grid for its children (i.e.
+  the subscene). It *can* use a viewport for this, but t can also do
+  this via a transform or an fbo. Each viewbox has its own camera, its
+  own lights, etc.
+  
+* camera - an entity that specifies how the subscene of a viewbox is
+  rendered to the pixel grid. It determines position and orientation
+  (through its transform) an projection (through a special
+  transformation property). Some cameras also provide interaction (e.g.
+  zooming). Although there can be multiple cameras in a subscene, each
+  viewbox has one active camera.
+  
+* pixel grid - a uniform rectangular grid of a certain resolution that
+  can be rendered to.
+  
+* viewport - as in glViewPort, a sub pixel grid in a framebuffer.
+  
+* drawing system - a part of the viewbox that takes care of rendering
+  a subscene to the pixel grid of that viewbox.
 
 """
 

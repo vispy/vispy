@@ -10,13 +10,29 @@ from ..gloo import gl
 
 
 class StackItem:
+    """ A stack item represents the drawing state for a subscene (a
+    scene inside a viewbox).
+    """
     def __init__(self, viewbox, resolution):
         self._viewbox = viewbox
-        self._resolution = resolution
+        
+        # Path from viewbox to the current entity
         self._path = []
+        
+        # The resolution (w, h) of the pixel grid provided by the viewbbox
+        self._resolution = resolution
+        
+        # The transform from a parent pixe grid to this one (transform method)
         self._transform_to_viewbox = NullTransform()
-        self._viewport = 0, 0, resolution[0], resolution[1]
-        self._soft_viewport = 0, 0, 1, 1
+        
+        # The gl viewport in use for this viewbox (may represent a parent
+        # pixel grid if the transform method is used)
+        self._viewport = None  # must be set
+        
+        # A "virtual" viewport inside a real viewport (for transform method)
+        self._soft_viewport = 0, 0, 1, 1 # expressed in 0..1 coords
+        
+        # The fbo in use. If None, it represents the defaulf framebuffer
         self._fbo = None
 
 
@@ -33,9 +49,11 @@ class SceneEvent(Event):
         self._canvas = canvas
         self._stack = []  # list of StackItem objects
         
-        # Create dummy item that represents the canvas. This makes that
-        # the code in viewbox.paint does not have to care whether it is root.
-        self._stack.append(StackItem(None, canvas.size))
+        # Create dummy item that represents the canvas.
+        newitem = StackItem(None, canvas.size)
+        newitem._viewport = 0, 0, canvas.size[0], canvas.size[1]
+        self._stack.append(newitem)
+        gl.glViewport(*newitem._viewport)
     
     @property
     def canvas(self):
@@ -75,52 +93,36 @@ class SceneEvent(Event):
 #         self._path = path
     
     def push_entity(self, entity):
+        """ Push an entity on the stack. """
         self._stack[-1]._path.append(entity)
     
     def pop_entity(self):
+        """ Pop an entity from the stack. """
         self._stack[-1]._path.pop(-1)
     
     # todo: a lot of stuff is rather specific to draw events
-    
-    def push_viewbox(self, viewbox, resolution, viewport=None, transform=None, fbo=None):
-        """ If viewport is given, it is the viewport relative to the current
-        viewport.
+    def push_viewbox(self, viewbox, rect, use_transform=False, fbo=None):
+        """ Push a viewbox on the stack. This will handle setting
+        the viewport, activating fbo, etc.
         """
-        # todo: rename transform to soft_viewport?
-        # todo: we always pass a viewport ...
         
         curitem = None if not self._stack else self._stack[-1]
-        newitem = StackItem(viewbox, resolution)
+        newitem = StackItem(viewbox, rect[2:])
         
-        # FBO
+        assert not (use_transform and fbo)
+        set_viewport = not use_transform  # True for 'viewport' and 'fbo' methods
+        
         if fbo is not None:
+            # Use fbo method
             newitem._fbo = fbo
-            fbo.activate()
-            # Is deactivated in pop_viewbox
-        else:
-            newitem._fbo = curitem._fbo
+            fbo.activate()  # is deactivated in pop_viewbox
+            newitem._viewport = rect
         
-        # Hard GL viewport
-        if viewport is not None:
-            # Make absolute (is already so for FBO)
-            if fbo is None:
-                x = curitem._viewport[0] + viewport[0]
-                y = curitem._viewport[1] + viewport[1]
-            else:
-                x, y = viewport[:2]
-            # Apply
-            newitem._viewport = x, y, viewport[2], viewport[3]
-            gl.glViewport(*newitem._viewport)
-            gl.glScissor(*newitem._viewport)
-        else:
-            newitem._viewport = curitem._viewport
-        
-        # Soft viewport via a transform
-        if transform is not None:
-            # Make absolute
-            x = curitem._soft_viewport[0] + transform[0]
-            y = curitem._soft_viewport[1] + transform[1]
-            w, h = transform[2], transform[3]
+        elif use_transform:
+            # Use transform method
+            x = curitem._soft_viewport[0] + rect[0]
+            y = curitem._soft_viewport[1] + rect[1]
+            w, h = rect[2], rect[3]
             # Calculate transform
             res = curitem._viewport[2:]
             transform = STTransform(translate=(2*x/res[0]-0.5, 2*y/res[1]-0.5),
@@ -128,11 +130,27 @@ class SceneEvent(Event):
             # Apply
             newitem._soft_viewport = x, y, w, h
             newitem._transform_to_viewbox = transform
+            newitem._viewport = curitem._viewport
+            newitem._fbo = curitem._fbo
         
-        # Add to stack
+        else:
+            # Use viewport method
+            x = curitem._viewport[0] + rect[0]
+            y = curitem._viewport[1] + rect[1]
+            # Apply
+            newitem._viewport = x, y, rect[2], rect[3]
+            newitem._fbo = curitem._fbo
+        
+        # Apply viewport and add to stack
+        if set_viewport:
+            gl.glViewport(*newitem._viewport)
+            gl.glScissor(*newitem._viewport)
         self._stack.append(newitem)
     
     def pop_viewbox(self):
+        """ Pop a viewbox from the stack. This will handle resetting
+        viewport, transform, and framebuffer targets.
+        """
         olditem = self._stack.pop(-1)
         if self._stack:
             curitem = self._stack[-1]

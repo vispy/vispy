@@ -44,23 +44,30 @@ class SceneCanvas(app.Canvas):
             self._root.events.update.disconnect(self._scene_update)
         self._root = e
         self._root.events.update.connect(self._scene_update)
-        self._update_document()
+        #self._update_document()
 
     def _scene_update(self, event):
         self.update()
 
-    def _update_document(self):
-        # 1. Set scaling on document such that its local coordinate system 
-        #    represents pixels in the canvas.
-        self.root.transform.scale = (2. / self.size[0], 2. / self.size[1])
-        self.root.transform.translate = (-1, -1)
-        
-        # 2. Set size of document to match the area of the canvas
-        self.root.size = (1.0, 1.0)  # root viewbox is in NDC 
+#     def _update_document(self):
+#         # 1. Set scaling on document such that its local coordinate system 
+#         #    represents pixels in the canvas.
+#         self.root.transform.scale = (2. / self.size[0], 2. / self.size[1])
+#         self.root.transform.translate = (-1, -1)
+#         
+#         # 2. Set size of document to match the area of the canvas
+#         self.root.size = (1.0, 1.0)  # root viewbox is in NDC 
+# AK: no need to set size, we set the size explicitly when painting.
+# actually, we can have a root viewbox that has children, we should not
+# touch its transform at all.
 
     def on_resize(self, event):
-        self._update_document()
-
+        pass
+        #self._update_document()
+        # todo: I think we should raise an event about a resolution change or something
+        # Although ... right now viewbox resolution is only available
+        # via the event object, which may be sufficient!
+    
     def on_paint(self, event):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
