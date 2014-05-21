@@ -516,6 +516,7 @@ class Texture(GLObject):
             if width % alignment == 0:
                 return alignment
 
+
 # --------------------------------------------------------- Texture1D class ---
 class Texture1D(Texture):
     """ One dimensional texture
