@@ -9,6 +9,7 @@ vispy backend for Qt (PySide and PyQt4).
 from __future__ import division
 
 from time import sleep, time
+import sys
 
 from ... import config
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -17,6 +18,10 @@ from ...util import keys
 from . import ATTEMPTED_BACKENDS
 from ...ext.six import text_type
 from ...util import logger
+
+# Check what libs are already imported
+_loaded_pyqt4 = sys.modules.get('PyQt4.QtCore', None)
+_loaded_pyside = sys.modules.get('PySide.QtCore', None)
 
 # Get what qt lib to try
 if len(ATTEMPTED_BACKENDS):
@@ -106,10 +111,24 @@ else:
     if hasattr(QtCore, 'PYQT_VERSION_STR'):
         has_uic = True
         which = ('PyQt4', QtCore.PYQT_VERSION_STR, QtCore.QT_VERSION_STR)
+        _loaded_this, _loaded_other = _loaded_pyqt4, _loaded_pyside
     else:
         has_uic = False
         import PySide
         which = ('PySide', PySide.__version__, QtCore.__version__)
+        _loaded_this, _loaded_other = _loaded_pyside, _loaded_pyqt4
+    
+    # Test whether other backend is already being used (has an app instance),
+    # which may lead to unpredictable behavior (e.g. segfaults on closing).
+    # Note that PySide.QtCore.QCoreApplication.instance() will return
+    # an instance even if that instance was created from PyQt4.
+    # Therefore we do the test if *only* the other backend was imported
+    # at this point.
+    if _loaded_other and not _loaded_this:
+        if _loaded_other.QCoreApplication.instance():
+            _other_name = 'PySide' if which[0] == 'PyQt4' else 'PyQt4'
+            logger.warn('Using %s vispy backend with a %s application.' %
+                        (which[0], _other_name))
 
 
 # -------------------------------------------------------------- capability ---
