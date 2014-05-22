@@ -494,6 +494,27 @@ class Texture(GLObject):
 
         logger.debug("GPU: Deactivate texture")
         gl.glBindTexture(self._target, 0)
+    
+    # Taken from pygly
+    def _get_alignment(self, width):
+        """Determines a textures byte alignment.
+
+        If the width isn't a power of 2
+        we need to adjust the byte alignment of the image.
+        The image height is unimportant
+
+        www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
+        """
+
+        # we know the alignment is appropriate
+        # if we can divide the width by the
+        # alignment cleanly
+        # valid alignments are 1,2,4 and 8
+        # put 4 first, since it's the default
+        alignments = [4, 8, 2, 1]
+        for alignment in alignments:
+            if width % alignment == 0:
+                return alignment
 
 
 # --------------------------------------------------------- Texture1D class ---
@@ -723,9 +744,15 @@ class Texture2D(Texture):
             x, y = 0, 0
             if offset is not None:
                 y, x = offset[0], offset[1]
+            # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+            alignment = self._get_alignment(data.shape[-2]*data.shape[-1])
+            if alignment != 4:
+                gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
             #width, height = data.shape[1], data.shape[0]
             gl.glTexSubImage2D(self.target, 0, x, y, self._format, 
                                self._gtype, data)
+            if alignment != 4:
+                gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
 '''
 # ---------------------------------------------------- TextureCubeMap class ---
