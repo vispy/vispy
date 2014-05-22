@@ -3,8 +3,6 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-import ctypes
-
 import numpy as np
 
 from . import gl
@@ -330,7 +328,7 @@ class Attribute(Variable):
             stride = self.data.stride
             gl.glEnableVertexAttribArray(self.handle)
             gl.glVertexAttribPointer(self.handle, size, gtype, gl.GL_FALSE,
-                                     stride, ctypes.c_void_p(self.data.offset))
+                                     stride, self.data.offset)
     
     def _deactivate(self):
         if isinstance(self.data, VertexBuffer):
