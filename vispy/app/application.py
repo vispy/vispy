@@ -123,7 +123,7 @@ class Application(object):
         if backend_name is not None:
             if backend_name.lower() not in BACKENDMAP:
                 raise ValueError('backend_name must be one of %s or None, not '
-                                 '%s' % (BACKENDMAP, backend_name))
+                                 '%r' % (BACKENDMAP, backend_name))
         # See if we're in a specific testing mode
         elif test_name is not None:
             backend_name = test_name.lower()

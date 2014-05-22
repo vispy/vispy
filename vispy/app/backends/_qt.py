@@ -4,6 +4,16 @@
 
 """
 vispy backend for Qt (PySide and PyQt4).
+
+This gets imported by _pyside and _pyqt4, which is why we check
+ATTEMPTED_BACKENDS to see if we should try just one. Note that these
+"proxy modules" only import *this* module if their import of Qt
+(including QOpenGL) worked, so we are sure to get a successfull import
+here too.
+
+This is, however, also a (meta) backend itself, for people who just want
+to use Qt and do not care whether PySide or PyQt4 is used.
+
 """
 
 from __future__ import division
@@ -26,7 +36,7 @@ _loaded_pyside = sys.modules.get('PySide.QtCore', None)
 # Get what qt lib to try
 if len(ATTEMPTED_BACKENDS):
     qt_lib = ATTEMPTED_BACKENDS[-1].lower()
-    if qt_lib.lower() == 'qt':
+    if qt_lib == 'qt':
         qt_lib = config['qt_lib'].lower()
     # in case the last app we ran was something else (e.g., Pyglet)
     if qt_lib not in ['pyqt', 'pyqt4', 'pyside', 'qt']:
@@ -39,10 +49,18 @@ else:
 try:
     # Import PySide or PyQt4
     if qt_lib in ('any', 'qt'):
-        try:
-            from PyQt4 import QtGui, QtCore, QtOpenGL
-        except ImportError:
-            from PySide import QtGui, QtCore, QtOpenGL
+        # Ok, so it does not matter what backend to use. Let's decide based
+        # on what is currently imported.
+        if _loaded_pyside:
+            try:
+                from PySide import QtGui, QtCore, QtOpenGL
+            except ImportError:
+                from PyQt4 import QtGui, QtCore, QtOpenGL
+        else:
+            try:
+                from PyQt4 import QtGui, QtCore, QtOpenGL
+            except ImportError:
+                from PySide import QtGui, QtCore, QtOpenGL
     elif qt_lib in ('pyqt', 'pyqt4'):
         from PyQt4 import QtGui, QtCore, QtOpenGL
     elif qt_lib == 'pyside':
@@ -51,6 +69,16 @@ try:
         raise Exception("Do not recognize Qt library '%s'. Options are "
                         "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
 
+    # Test whether other backend is already imported. Using PySide and
+    # PyQt4 simultaneously may lead to unpredictable behavior (e.g.
+    # segfaults on closing).
+    is_pyqt4 = hasattr(QtCore, 'PYQT_VERSION_STR')
+    _loaded_other = _loaded_pyside if is_pyqt4 else _loaded_pyqt4
+    _names = ('PyQt4', 'PySide') if is_pyqt4 else ('PySide', 'PyQt4')
+    if _loaded_other:
+        raise RuntimeError('Vispy cannot use %s backend because %s is already '
+                           'imported.' % _names)
+    
     # todo: add support for distinguishing left and right shift/ctrl/alt keys.
     # Linux scan codes:  (left, right)
     #   Shift  50, 62
@@ -117,18 +145,6 @@ else:
         import PySide
         which = ('PySide', PySide.__version__, QtCore.__version__)
         _loaded_this, _loaded_other = _loaded_pyside, _loaded_pyqt4
-    
-    # Test whether other backend is already being used (has an app instance),
-    # which may lead to unpredictable behavior (e.g. segfaults on closing).
-    # Note that PySide.QtCore.QCoreApplication.instance() will return
-    # an instance even if that instance was created from PyQt4.
-    # Therefore we do the test if *only* the other backend was imported
-    # at this point.
-    if _loaded_other and not _loaded_this:
-        if _loaded_other.QCoreApplication.instance():
-            _other_name = 'PySide' if which[0] == 'PyQt4' else 'PyQt4'
-            logger.warn('Using %s vispy backend with a %s application.' %
-                        (which[0], _other_name))
 
 
 # -------------------------------------------------------------- capability ---

@@ -14,8 +14,8 @@ imported. This stuff is mostly used in the Application.use method.
 # This is the order in which they are attempted to be imported.
 BACKENDS = [
     ('Qt', '_qt', None),  # Meta backend
-    ('PySide', '_qt', 'PySide'),
-    ('PyQt4', '_qt', 'PyQt4'),
+    ('PySide', '_pyside', 'PySide'),
+    ('PyQt4', '_pyqt4', 'PyQt4'),
     ('Pyglet', '_pyglet', 'pyglet'),
     ('Glfw', '_glfw', 'vispy.app.backends._libglfw'),
     ('SDL2', '_sdl2', 'sdl2'),
