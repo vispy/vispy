@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-vispy backend for Qt (PySide and PyQt4).
+vispy backend for Qt (PySide or PyQt4).
 
 This gets imported by _pyside and _pyqt4, which is why we check
 ATTEMPTED_BACKENDS to see if we should try just one. Note that these
@@ -11,8 +11,11 @@ ATTEMPTED_BACKENDS to see if we should try just one. Note that these
 (including QOpenGL) worked, so we are sure to get a successfull import
 here too.
 
-This is, however, also a (meta) backend itself, for people who just want
-to use Qt and do not care whether PySide or PyQt4 is used.
+This is, however, also a backend itself, that imports either PySide or
+PyQt4 (whatever works).
+
+Once this module is imported, a choice between PySide and PyQt4 is made,
+and the other backend cannot be used in the same process.
 
 """
 
@@ -33,7 +36,8 @@ from ...util import logger
 _loaded_pyqt4 = sys.modules.get('PyQt4.QtCore', None)
 _loaded_pyside = sys.modules.get('PySide.QtCore', None)
 
-# Get what qt lib to try
+# Get what qt lib to try. This tells us wheter this module is imported
+# directly, or via _pyside or _pyqt4
 if len(ATTEMPTED_BACKENDS):
     qt_lib = ATTEMPTED_BACKENDS[-1].lower()
     if qt_lib == 'qt':
@@ -69,13 +73,13 @@ try:
         raise Exception("Do not recognize Qt library '%s'. Options are "
                         "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
 
-    # Test whether other backend is already imported. Using PySide and
-    # PyQt4 simultaneously may lead to unpredictable behavior (e.g.
-    # segfaults on closing).
-    is_pyqt4 = hasattr(QtCore, 'PYQT_VERSION_STR')
-    _loaded_other = _loaded_pyside if is_pyqt4 else _loaded_pyqt4
-    _names = ('PyQt4', 'PySide') if is_pyqt4 else ('PySide', 'PyQt4')
+    # Test whether other backend was already loaded at the time this
+    # module was imported. Using PySide and PyQt4 simultaneously may
+    # lead to unpredictable behavior (e.g. segfaults on closing).
+    _is_pyqt4 = hasattr(QtCore, 'PYQT_VERSION_STR')
+    _loaded_other = _loaded_pyside if _is_pyqt4 else _loaded_pyqt4
     if _loaded_other:
+        _names = ('PyQt4', 'PySide') if _is_pyqt4 else ('PySide', 'PyQt4')
         raise RuntimeError('Vispy cannot use %s backend because %s is already '
                            'imported.' % _names)
     
