@@ -3,152 +3,90 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-vispy backend for Qt (PySide or PyQt4).
+Base code for the PySide and PyQt4 backends. Note that this is *not*
+(anymore) a backend by itself! One has to explicitly use either PySide
+or PyQt4. Note that the automatic backend selection prefers a GUI
+toolkit that is already imported.
 
-This gets imported by _pyside and _pyqt4, which is why we check
-ATTEMPTED_BACKENDS to see if we should try just one. Note that these
-"proxy modules" only import *this* module if their import of Qt
-(including QOpenGL) worked, so we are sure to get a successfull import
-here too.
-
-This is, however, also a backend itself, that imports either PySide or
-PyQt4 (whatever works).
-
-Once this module is imported, a choice between PySide and PyQt4 is made,
-and the other backend cannot be used in the same process.
+The _pyside and _pyqt4 modules will import * from this module, and also
+keep a ref to the module object. Note that if both the PySide and PyQt4
+backend are used, this module is actually reloaded. This is a sorts of
+poor mans "subclassing" to get a working version for both backends using
+the same code.
 
 """
 
 from __future__ import division
 
 from time import sleep, time
-import sys
 
-from ... import config
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
 from ...util import keys
-from . import ATTEMPTED_BACKENDS
 from ...ext.six import text_type
 from ...util import logger
 
-# Check what libs are already imported
-_loaded_pyqt4 = sys.modules.get('PyQt4.QtCore', None)
-_loaded_pyside = sys.modules.get('PySide.QtCore', None)
-
-# Get what qt lib to try. This tells us wheter this module is imported
-# directly, or via _pyside or _pyqt4
-if len(ATTEMPTED_BACKENDS):
-    qt_lib = ATTEMPTED_BACKENDS[-1].lower()
-    if qt_lib == 'qt':
-        qt_lib = config['qt_lib'].lower()
-    # in case the last app we ran was something else (e.g., Pyglet)
-    if qt_lib not in ['pyqt', 'pyqt4', 'pyside', 'qt']:
-        qt_lib = 'any'
-else:
-    qt_lib = 'any'
+from . import qt_lib
 
 # -------------------------------------------------------------------- init ---
 
-try:
-    # Import PySide or PyQt4
-    if qt_lib in ('any', 'qt'):
-        # Ok, so it does not matter what backend to use. Let's decide based
-        # on what is currently imported.
-        if _loaded_pyside:
-            try:
-                from PySide import QtGui, QtCore, QtOpenGL
-            except ImportError:
-                from PyQt4 import QtGui, QtCore, QtOpenGL
-        else:
-            try:
-                from PyQt4 import QtGui, QtCore, QtOpenGL
-            except ImportError:
-                from PySide import QtGui, QtCore, QtOpenGL
-    elif qt_lib in ('pyqt', 'pyqt4'):
-        from PyQt4 import QtGui, QtCore, QtOpenGL
-    elif qt_lib == 'pyside':
-        from PySide import QtGui, QtCore, QtOpenGL
-    else:
-        raise Exception("Do not recognize Qt library '%s'. Options are "
-                        "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
-
-    # Test whether other backend was already loaded at the time this
-    # module was imported. Using PySide and PyQt4 simultaneously may
-    # lead to unpredictable behavior (e.g. segfaults on closing).
-    _is_pyqt4 = hasattr(QtCore, 'PYQT_VERSION_STR')
-    _loaded_other = _loaded_pyside if _is_pyqt4 else _loaded_pyqt4
-    if _loaded_other:
-        _names = ('PyQt4', 'PySide') if _is_pyqt4 else ('PySide', 'PyQt4')
-        raise RuntimeError('Vispy cannot use %s backend because %s is already '
-                           'imported.' % _names)
-    
-    # todo: add support for distinguishing left and right shift/ctrl/alt keys.
-    # Linux scan codes:  (left, right)
-    #   Shift  50, 62
-    #   Ctrl   37, 105
-    #   Alt    64, 108
-    KEYMAP = {
-        QtCore.Qt.Key_Shift: keys.SHIFT,
-        QtCore.Qt.Key_Control: keys.CONTROL,
-        QtCore.Qt.Key_Alt: keys.ALT,
-        QtCore.Qt.Key_AltGr: keys.ALT,
-        QtCore.Qt.Key_Meta: keys.META,
-
-        QtCore.Qt.Key_Left: keys.LEFT,
-        QtCore.Qt.Key_Up: keys.UP,
-        QtCore.Qt.Key_Right: keys.RIGHT,
-        QtCore.Qt.Key_Down: keys.DOWN,
-        QtCore.Qt.Key_PageUp: keys.PAGEUP,
-        QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
-
-        QtCore.Qt.Key_Insert: keys.INSERT,
-        QtCore.Qt.Key_Delete: keys.DELETE,
-        QtCore.Qt.Key_Home: keys.HOME,
-        QtCore.Qt.Key_End: keys.END,
-
-        QtCore.Qt.Key_Escape: keys.ESCAPE,
-        QtCore.Qt.Key_Backspace: keys.BACKSPACE,
-
-        QtCore.Qt.Key_F1: keys.F1,
-        QtCore.Qt.Key_F2: keys.F2,
-        QtCore.Qt.Key_F3: keys.F3,
-        QtCore.Qt.Key_F4: keys.F4,
-        QtCore.Qt.Key_F5: keys.F5,
-        QtCore.Qt.Key_F6: keys.F6,
-        QtCore.Qt.Key_F7: keys.F7,
-        QtCore.Qt.Key_F8: keys.F8,
-        QtCore.Qt.Key_F9: keys.F9,
-        QtCore.Qt.Key_F10: keys.F10,
-        QtCore.Qt.Key_F11: keys.F11,
-        QtCore.Qt.Key_F12: keys.F12,
-
-        QtCore.Qt.Key_Space: keys.SPACE,
-        QtCore.Qt.Key_Enter: keys.ENTER,
-        QtCore.Qt.Key_Return: keys.ENTER,
-        QtCore.Qt.Key_Tab: keys.TAB,
-    }
-    BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
-except Exception as exp:
-    available, testable, why_not, which = False, False, str(exp), None
-
-    class _QGLWidget(object):
-        pass
-
-    _QTimer = _QGLWidget
+# Get what qt lib to try. This tells us wheter this module is imported
+# via _pyside or _pyqt4
+if qt_lib == 'pyqt4':
+    from PyQt4 import QtGui, QtCore, QtOpenGL
+elif qt_lib == 'pyside':
+    from PySide import QtGui, QtCore, QtOpenGL
+elif qt_lib:
+    raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
 else:
-    available, testable, why_not = True, True, None
-    _QGLWidget = QtOpenGL.QGLWidget
-    _QTimer = QtCore.QTimer
-    if hasattr(QtCore, 'PYQT_VERSION_STR'):
-        has_uic = True
-        which = ('PyQt4', QtCore.PYQT_VERSION_STR, QtCore.QT_VERSION_STR)
-        _loaded_this, _loaded_other = _loaded_pyqt4, _loaded_pyside
-    else:
-        has_uic = False
-        import PySide
-        which = ('PySide', PySide.__version__, QtCore.__version__)
-        _loaded_this, _loaded_other = _loaded_pyside, _loaded_pyqt4
+    raise RuntimeError("Module backends._qt should not be imported directly.")
+
+# todo: add support for distinguishing left and right shift/ctrl/alt keys.
+# Linux scan codes:  (left, right)
+#   Shift  50, 62
+#   Ctrl   37, 105
+#   Alt    64, 108
+KEYMAP = {
+    QtCore.Qt.Key_Shift: keys.SHIFT,
+    QtCore.Qt.Key_Control: keys.CONTROL,
+    QtCore.Qt.Key_Alt: keys.ALT,
+    QtCore.Qt.Key_AltGr: keys.ALT,
+    QtCore.Qt.Key_Meta: keys.META,
+
+    QtCore.Qt.Key_Left: keys.LEFT,
+    QtCore.Qt.Key_Up: keys.UP,
+    QtCore.Qt.Key_Right: keys.RIGHT,
+    QtCore.Qt.Key_Down: keys.DOWN,
+    QtCore.Qt.Key_PageUp: keys.PAGEUP,
+    QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
+
+    QtCore.Qt.Key_Insert: keys.INSERT,
+    QtCore.Qt.Key_Delete: keys.DELETE,
+    QtCore.Qt.Key_Home: keys.HOME,
+    QtCore.Qt.Key_End: keys.END,
+
+    QtCore.Qt.Key_Escape: keys.ESCAPE,
+    QtCore.Qt.Key_Backspace: keys.BACKSPACE,
+
+    QtCore.Qt.Key_F1: keys.F1,
+    QtCore.Qt.Key_F2: keys.F2,
+    QtCore.Qt.Key_F3: keys.F3,
+    QtCore.Qt.Key_F4: keys.F4,
+    QtCore.Qt.Key_F5: keys.F5,
+    QtCore.Qt.Key_F6: keys.F6,
+    QtCore.Qt.Key_F7: keys.F7,
+    QtCore.Qt.Key_F8: keys.F8,
+    QtCore.Qt.Key_F9: keys.F9,
+    QtCore.Qt.Key_F10: keys.F10,
+    QtCore.Qt.Key_F11: keys.F11,
+    QtCore.Qt.Key_F12: keys.F12,
+
+    QtCore.Qt.Key_Space: keys.SPACE,
+    QtCore.Qt.Key_Enter: keys.ENTER,
+    QtCore.Qt.Key_Return: keys.ENTER,
+    QtCore.Qt.Key_Tab: keys.TAB,
+}
+BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 
 # -------------------------------------------------------------- capability ---
@@ -236,7 +174,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 
-class CanvasBackend(_QGLWidget, BaseCanvasBackend):
+class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     """Qt backend for Canvas abstract class."""
 
@@ -443,7 +381,7 @@ class CanvasBackend(_QGLWidget, BaseCanvasBackend):
 
 # ------------------------------------------------------------------- timer ---
 
-class TimerBackend(BaseTimerBackend, _QTimer):
+class TimerBackend(BaseTimerBackend, QtCore.QTimer):
 
     def __init__(self, vispy_timer):
         if QtGui.QApplication.instance() is None:

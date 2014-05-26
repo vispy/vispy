@@ -13,7 +13,6 @@ imported. This stuff is mostly used in the Application.use method.
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
 BACKENDS = [
-    ('Qt', '_qt', None),  # Meta backend
     ('PySide', '_pyside', 'PySide'),
     ('PyQt4', '_pyqt4', 'PyQt4'),
     ('Pyglet', '_pyglet', 'pyglet'),
@@ -32,6 +31,8 @@ for backend in BACKENDS:
 # so that we can look up its properties if we only have a name.
 BACKENDMAP = dict([(be[0].lower(), be) for be in BACKENDS])
 
-# List of attempted backends. For logging and for communicating
-# to the backends.
+# List of attempted backends. For logging.
 ATTEMPTED_BACKENDS = []
+
+# Flag for _pyside, _pyqt4 and _qt modules to communicate.
+qt_lib = None

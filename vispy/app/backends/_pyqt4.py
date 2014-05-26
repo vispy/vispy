@@ -6,20 +6,22 @@
 """
 
 import sys
-
-# Check what libs are already imported
-_loaded_pyqt4 = sys.modules.get('PyQt4.QtCore', None)
-_loaded_pyside = sys.modules.get('PySide.QtCore', None)
+from .. import backends
 
 try:
-    if _loaded_pyside:
-        raise RuntimeError('Cannot use PyQt4 backend if PySide is imported.')
+    # Try importing
     from PyQt4 import QtGui, QtCore, QtOpenGL  # noqa
-    
 except Exception as exp:
+    # Fail: this backend cannot be used
     available, testable, why_not, which = False, False, str(exp), None
-
 else:
-    # Right before importing this module, 'pyqt4' is added to
-    # ATTEMPTED_BACKENDS so that _qt knows it should import PyQt4.
+    # Success
+    available, testable, why_not = True, True, None
+    has_uic = True
+    which = ('PyQt4', QtCore.PYQT_VERSION_STR, QtCore.QT_VERSION_STR)
+    # Remove _qt module to force an import even if it was already imported
+    sys.modules.pop(__name__.replace('_pyqt4', '_qt'), None)
+    # Import _qt. Keep a ref to the module object!
+    backends.qt_lib = 'pyqt4'  # Signal to _qt what it should import
+    from . import _qt  # noqa
     from ._qt import *  # noqa

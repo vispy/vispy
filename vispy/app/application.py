@@ -141,6 +141,7 @@ class Application(object):
             return
 
         # Get backends to try ...
+        imported_toolkits = []  # Backends for which the native lib is imported
         backends_to_try = []
         if not try_others:
             # We should never hit this, since we check above
@@ -151,6 +152,7 @@ class Application(object):
             # See if a backend is loaded
             for name, module_name, native_module_name in BACKENDS:
                 if native_module_name and native_module_name in sys.modules:
+                    imported_toolkits.append(name.lower())
                     backends_to_try.append(name.lower())
             # See if a default is given
             default_backend = config['default_backend'].lower()
@@ -174,8 +176,18 @@ class Application(object):
                 msg = ('Could not import backend "%s":\n%s'
                        % (name, str(mod.why_not)))
                 if not try_others:
+                    # Fail if user wanted to use a specific backend
                     raise RuntimeError(msg)
+                elif key in imported_toolkits:
+                    # Warn if were unable to use an already imported toolkit
+                    msg = ('Although %s is already imported, the %s backend '
+                           'could not\nbe used ("%s"). \nNote that running '
+                           'multiple GUI toolkits simultaneously can cause '
+                           'side effects.' % 
+                           (native_module_name, name, str(mod.why_not))) 
+                    logger.warn(msg)
                 else:
+                    # Inform otherwise
                     logger.info(msg)
             else:
                 # Success!
