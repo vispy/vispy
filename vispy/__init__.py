@@ -33,6 +33,23 @@ __version__ = '0.2.1'
 
 from .util import (dataio, _parse_command_line_arguments, config,  # noqa
                    set_log_level, keys, sys_info)  # noqa
-from .testing import _tester as test  # noqa
 
 _parse_command_line_arguments()
+
+
+# Define test proxy function, so we don't have to import vispy.testing now
+def test(label='full', coverage=False, verbosity=1):
+    """Test vispy software
+
+    Parameters
+    ----------
+    label : str
+        Can be one of 'full', 'nose', 'nobackend', 'extra', 'lineendings',
+        'flake', or any backend name (e.g., 'qt').
+    coverage : bool
+        Produce coverage outputs (.coverage file and printing).
+    verbosity : int
+        Verbosity level to use when running ``nose``.
+    """
+    from .testing import _tester
+    return _tester(label, coverage, verbosity)

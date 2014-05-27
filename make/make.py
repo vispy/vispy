@@ -147,7 +147,18 @@ class Maker:
             sys.exit('Command "website" does not have subcommand "%s"' % arg)
 
     def test(self, arg):
-        """ Run all tests. """
+        """ Run tests:
+                * full - run all tests
+                * nose - run nose tests (also for each backend)
+                * any backend name (e.g. pyside, pyqt4, glut, sdl2, etc.) - 
+                  run tests for the given backend
+                * nobackend - run tests that do not require a backend
+                * extra - run extra tests (line endings and style)
+                * lineendings - test line ending consistency
+                * flake - flake style testing (PEP8 and more)
+        """
+        if not arg:
+            return self.help('test')
         from vispy import test
         try:
             test(*(arg.split()))
