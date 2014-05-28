@@ -13,8 +13,8 @@ imported. This stuff is mostly used in the Application.use method.
 # Define backends: name, vispy.app.backends.xxx module, native module name.
 # This is the order in which they are attempted to be imported.
 BACKENDS = [
-    ('PySide', '_pyside', 'PySide'),
     ('PyQt4', '_pyqt4', 'PyQt4'),
+    ('PySide', '_pyside', 'PySide'),
     ('Pyglet', '_pyglet', 'pyglet'),
     ('Glfw', '_glfw', 'vispy.app.backends._libglfw'),
     ('SDL2', '_sdl2', 'sdl2'),

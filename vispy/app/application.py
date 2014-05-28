@@ -104,9 +104,8 @@ class Application(object):
 
         If the backend name is omitted, will choose a suitable backend
         automatically. It is an error to try to select a particular backend
-        if one is already selected. Available backends: 'PySide', 'PyQt4',
-        'Glut', 'Glfw', 'Pyglet', 'qt'. The latter will use PySide or
-        PyQt4, whichever works.
+        if one is already selected. Available backends: 'PyQt4', 'PySide',
+        'Glut', 'Glfw', 'Pyglet', 'sdl2'.
 
         If a backend name is provided, and that backend could not be
         loaded, an error is raised.
