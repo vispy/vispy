@@ -10,7 +10,7 @@ from vispy.testing import requires_application, SkipTest
 from vispy.gloo import gl
 
 
-@requires_application('qt', has=['uic'])
+@requires_application('pyqt4', has=['uic'])
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
     default_app.use()
