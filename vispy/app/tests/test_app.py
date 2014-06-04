@@ -219,7 +219,7 @@ def test_application():
         assert_equal(len(log), 1)
         assert_in('deprecated', log[0])
         if app.backend_name.lower() != 'glut':  # XXX knownfail
-            assert_equal(len(x), 1)
+            assert_true(len(x) >= 1)
 
         # screenshots
         gl.glViewport(0, 0, *size)
