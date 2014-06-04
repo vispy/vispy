@@ -14,3 +14,4 @@ from ._config import (_parse_command_line_arguments, config, sys_info,  # noqa
 
 from . import cube        # noqa
 from . import transforms  # noqa
+from ._wrapper import test  # noqa

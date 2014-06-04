@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import os
 from collections import namedtuple
 from time import sleep
 
@@ -8,8 +9,8 @@ from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import default_app, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
-from vispy.testing import requires_application, SkipTest, assert_is
-from vispy.util import keys
+from vispy.testing import requires_application, SkipTest, assert_is, assert_in
+from vispy.util import keys, use_log_level
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
 from vispy.gloo.shader import VertexShader, FragmentShader
@@ -165,6 +166,10 @@ def test_application():
     print(app)  # test __repr__
 
     # Canvas
+    c = Canvas(create_native=False)
+    print(c)
+    del c
+
     pos = [0, 0]
     size = (100, 100)
     # Use "with" statement so failures don't leave open window
@@ -177,7 +182,6 @@ def test_application():
         assert_true(canvas.native)
         assert_equal('swap_buffers', canvas.events.draw.callback_refs[-1])
 
-        # FPS
         canvas.measure_fps(0.001)
         sleep(0.002)
         canvas.update()
@@ -197,6 +201,25 @@ def test_application():
             canvas.show()
         app.process_events()
         assert_raises(ValueError, canvas.connect, on_nonexist)
+        # deprecation of "paint"
+        with use_log_level('info', record=True) as log:
+            x = []
+            olderr = sys.stderr
+            try:
+                with open(os.devnull, 'w') as fid:
+                    sys.stderr = fid
+
+                    @canvas.events.paint.connect
+                    def fake(event):
+                        x.append(0)
+            finally:
+                sys.stderr = olderr
+            canvas.update()
+            canvas.app.process_events()
+        assert_equal(len(log), 1)
+        assert_in('deprecated', log[0])
+        if app.backend_name.lower() != 'glut':  # XXX knownfail
+            assert_equal(len(x), 1)
 
         # screenshots
         gl.glViewport(0, 0, *size)

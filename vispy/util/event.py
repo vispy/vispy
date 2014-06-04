@@ -491,7 +491,7 @@ class WarningEmitter(EventEmitter):
         self._message = message
         self._warned = False
         EventEmitter.__init__(self, *args, **kwds)
-        
+
     def connect(self, cb, *args, **kwds):
         self._warn(cb)
         return EventEmitter.connect(self, cb, *args, **kwds)
@@ -499,19 +499,19 @@ class WarningEmitter(EventEmitter):
     def _invoke_callback(self, cb, event):
         self._warn(cb)
         return EventEmitter._invoke_callback(self, cb, event)
-        
+
     def _warn(self, cb):
         if self._warned:
             return
-        
-        # don't warn about unimplemented connections 
+
+        # don't warn about unimplemented connections
         if isinstance(cb, tuple) and getattr(cb[0], cb[1], None) is None:
             return
-        
+
         traceback.print_stack()
         logger.warn(self._message)
         self._warned = True
-        
+
 
 class EmitterGroup(EventEmitter):
 

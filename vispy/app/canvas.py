@@ -77,6 +77,26 @@ class Canvas(object):
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, vsync=False, resizable=True, decorate=True,
                  fullscreen=False, context=None, close_keys=()):
+
+        size = [int(s) for s in size]
+        if len(size) != 2:
+            raise ValueError('size must be a 2-element list')
+        title = str(title)
+        if not isinstance(fullscreen, (bool, int)):
+            raise TypeError('fullscreen must be bool or int')
+        if context is None:
+            context = get_default_config()
+
+        # Initialize some values
+        self._autoswap = autoswap
+        self._title = title
+        self._frame_count = 0
+        self._fps = 0
+        self._basetime = time()
+        self._fps_callback = None
+        self._backend = None
+
+        # Create events
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
                                    resize=ResizeEvent,
@@ -90,27 +110,17 @@ class Canvas(object):
                                    stylus=Event,
                                    touch=Event,
                                    close=Event)
-        
+
         # Deprecated paint emitter
         emitter = WarningEmitter('Canvas.events.paint and Canvas.on_paint are '
                                  'deprecated; use Canvas.events.draw and '
                                  'Canvas.on_draw instead.',
-                                 source=self, type='draw', 
+                                 source=self, type='draw',
                                  event_class=DrawEvent)
         self.events.add(paint=emitter)
         self.events.draw.connect(self.events.paint)
-        
-        size = [int(s) for s in size]
-        if len(size) != 2:
-            raise ValueError('size must be a 2-element list')
-        title = str(title)
-        if not isinstance(fullscreen, (bool, int)):
-            raise TypeError('fullscreen must be bool or int')
-        if context is None:
-            context = get_default_config()
 
-        # Initialize backend attribute
-        self._backend = None
+        # Initialize gloo settings
         if init_gloo:
             self.events.initialize.connect(_gloo_initialize,
                                            ref='gloo_initialize')
@@ -120,14 +130,6 @@ class Canvas(object):
                       vsync=vsync, resizable=resizable, decorate=decorate,
                       fullscreen=fullscreen, context=context)
         self._backend_kwargs = kwargs
-
-        # Initialise some values
-        self._autoswap = autoswap
-        self._title = title
-        self._frame_count = 0
-        self._fps = 0
-        self._basetime = time()
-        self._fps_callback = None
 
         # Get app instance
         if isinstance(app, string_types):
