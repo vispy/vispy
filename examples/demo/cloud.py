@@ -290,7 +290,7 @@ class Canvas(app.Canvas):
         self.program['u_size'] = 5 / self.translate
         self.update()
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         gloo.clear()
         self.program.draw('points')
 

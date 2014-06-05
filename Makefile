@@ -49,8 +49,11 @@ extra: clean
 nobackend : clean
 	python make test nobackend
 
-qt: clean
-	python make test qt
+pyqt4: clean
+	python make test pyqt4
+
+pyside: clean
+	python make test pyside
 
 pyglet: clean
 	python make test pyglet

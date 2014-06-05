@@ -88,7 +88,7 @@ class Canvas(app.Canvas):
         width, height = event.size
         gloo.set_viewport(0, 0, width, height)
 
-    def on_paint(self, event):
+    def on_draw(self, event):
 
         # Clear
         gloo.clear()

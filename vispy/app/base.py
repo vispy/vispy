@@ -38,7 +38,7 @@ class BaseCanvasBackend(object):
     Each backend must implement a subclass of CanvasBackend, and
     implement all its _vispy_xxx methods. Also, also a backend must
     make sure to generate the following events: 'initialize', 'resize',
-    'paint', 'mouse_press', 'mouse_release', 'mouse_move',
+    'draw', 'mouse_press', 'mouse_release', 'mouse_move',
     'mouse_wheel', 'key_press', 'key_release', 'close'.
     """
 
