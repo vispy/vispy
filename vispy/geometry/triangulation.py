@@ -403,4 +403,3 @@ print tris
 for tri in tris:
     draw_tri(tri)
 draw_state()
-raw_input()
