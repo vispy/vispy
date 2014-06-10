@@ -525,14 +525,14 @@ class DataBuffer(Buffer):
             # WARNING: do we check data size
             #          or do we let numpy raises an error ?
             self.data[key] = data
-            offset = start * self.itemsize
+            offset = start #* self.itemsize
             self.set_data(data=self.data[start:stop],
                           offset=offset, copy=False)
 
         # Buffer is a base buffer but we do not have CPU storage
         # If 'key' points to a contiguous chunk of buffer, it's ok
         elif step == 1:
-            offset = start * self.itemsize
+            offset = start #* self.itemsize
 
             # Make sure data is an array
             if not isinstance(data, np.ndarray):
@@ -595,7 +595,6 @@ class VertexBuffer(DataBuffer):
                 data = data.view(dtype=[('f0', data.dtype.base, c)])
             else:
                 data = data.view(dtype=[('f0', data.dtype.base, 1)])
-
         elif dtype is not None:
             dtype = np.dtype(dtype)
             if dtype.isbuiltin:
@@ -619,7 +618,7 @@ class VertexBuffer(DataBuffer):
                     count = 1
                 if btype not in [np.int8,  np.uint8,  np.float16,
                                  np.int16, np.uint16, np.float32]:
-                    msg = "Data basetype not allowed for Buffer/%s" % name
+                    msg = "Data basetype (%s) not allowed for Buffer/%s" % (repr(btype),name)
                     raise TypeError(msg)
                 elif count not in [1, 2, 3, 4]:
                     msg = "Data basecount not allowed for Buffer/%s" % name
