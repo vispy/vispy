@@ -143,20 +143,20 @@ class Visual(object):
     visuals. The implmentation includes:
     
     * A modular program with a standard set of vertex and 
-        fragment shader hooks
+      fragment shader hooks
     * A mechanism for adding and removing components
-        that affect the vertex position (pos_components) and fragment 
-        color (color_components)
+      that affect the vertex position (pos_components) and fragment 
+      color (color_components)
     * A transform property that defines the base vertex transform
-        implemented in te vertex shader
+      implemented in te vertex shader
     * A default paint() method that:
         * activates each of the attached components
         * negotiates a buffer mode (pre-indexed or unindexed) supported by 
-            all components
+          all components
         * Requests an index buffer from components (if needed)
         * Instructs the program to draw using self.primitive
     * A simple set_data() method intended to serve as an example for 
-        subclasses to follow.
+      subclasses to follow.
 
     """
     
