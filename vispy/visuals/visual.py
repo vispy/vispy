@@ -119,14 +119,14 @@ GLOptions = {
 
 class Visual(object):
     """ 
-    Abstract class representing a drawable object. Visuals implement the 
-    following interfaces:
+    Abstract class representing a drawable object. 
     
-        * paint() calls all of the GL commands necessary to paint the visual.
-        * bounds() describes the bounding rectangle of the visual.
-        * gl_options() is used to configure the OpenGL state immediately
-          before the visual is painted.
-          
+    At a minimum, Visual subclasses must provide the following interfaces:
+    
+    * paint() calls all of the GL commands necessary to paint the visual.
+    * bounds() describes the bounding rectangle of the visual.
+    * gl_options() is used to configure the OpenGL state immediately
+      before the visual is painted.
     
     Events:
     
@@ -134,6 +134,30 @@ class Visual(object):
         Emitted when the visual has changed and needs to be repainted.
     bounds_change : Event
         Emitted when the bounding rectangle of the visual has changed.
+        
+    
+    The base Visual class also serves as a skeleton system that provides a 
+    complete implementation. Although these details are not part of the 
+    required API for all visuals, it is recommended to follow this 
+    implementation as closely as possible to ensure consistency between
+    visuals. The implmentation includes:
+    
+    * A modular program with a standard set of vertex and 
+        fragment shader hooks
+    * A mechanism for adding and removing components
+        that affect the vertex position (pos_components) and fragment 
+        color (color_components)
+    * A transform property that defines the base vertex transform
+        implemented in te vertex shader
+    * A default paint() method that:
+        * activates each of the attached components
+        * negotiates a buffer mode (pre-indexed or unindexed) supported by 
+            all components
+        * Requests an index buffer from components (if needed)
+        * Instructs the program to draw using self.primitive
+    * A simple set_data() method intended to serve as an example for 
+        subclasses to follow.
+
     """
     
     VERTEX_SHADER = """
@@ -348,7 +372,8 @@ class Visual(object):
         self._activate_components(mode)
         self._program.draw(self.primitive, self.vertex_index)
 
-    def _paint_mode(self):
+    # todo: should this be called "buffer_mode" ?
+    def _paint_mode(self):  
         """
         Return the mode that should be used to paint this visual
         (DRAW_PRE_INDEXED or DRAW_UNINDEXED)
@@ -458,7 +483,14 @@ class VisualComponent(object):
 
     def _attach(self, visual):
         """Attach this component to a Visual. This should be called by the 
-        Visual itself.
+        Visual itself. 
+        
+        A component may only be attached to a single Visual. However, it may 
+        be attached _multiple times_ to the same visual.
+        
+        The default implementation of this method calls 
+        self._auto_attach_shaders() to generate the list of shader callbacks 
+        that should be added to the Visual's program.
         """
         if visual is not self._visual and self._visual is not None:
             raise Exception("Cannot attach component %s to %s; already "
@@ -472,7 +504,11 @@ class VisualComponent(object):
             comp._attach(visual)
 
     def _detach(self):
-        """Detach this component from its Visual.
+        """Detach this component from its Visual. This should be called by the 
+        visual itself.        
+        
+        If the component was attached
+        multiple times, it must be detached the same number of times.
         """
         if self._attach_count == 0:
             raise Exception("Cannot detach component %s; not attached." % self)
@@ -502,7 +538,7 @@ class VisualComponent(object):
         both) currently supported by this component.
         
         DRAW_PRE_INDEXED indicates that the component may be used when the 
-        program uses an array of indexes do determine the order of elements to
+        program uses an array of indexes to determine the order of elements to
         draw from its vertex buffers (using glDrawElements).
         
         DRAW_UNINDEXED indicates that the component may be used when the
@@ -513,7 +549,7 @@ class VisualComponent(object):
         that only support one mode must override this method.
         """
         # TODO: This should be expanded to include other questions, such as
-        # whether the visual supports geometry shaders.
+        # whether the component supports geometry shaders.
         return set([self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED])
 
     def update(self):
