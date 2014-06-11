@@ -15,18 +15,19 @@ void main() {
 }
 """
 
+
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, close_keys='escape')
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.program['a_position'] = np.zeros((0,2))
+        self.program['a_position'] = np.zeros((0, 2))
 
     def on_resize(self, event):
         width, height = event.size
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
-        gloo.clear((1,1,1,1))
+        gloo.clear((1, 1, 1, 1))
         self.program.draw('points')
 
 c = Canvas()
