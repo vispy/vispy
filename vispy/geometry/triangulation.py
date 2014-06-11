@@ -17,7 +17,7 @@ from itertools import permutations
 def distance(A, B):
     n = len(A)
     assert len(B) == n
-    return sum((A[i]-B[i])**2 for i in xrange(n))**0.5
+    return np.linalg.norm(np.array(list(A))-np.array(list(B)))
 
 # Distance of a set of points from a given line
 def distances_from_line(e, points):
@@ -199,8 +199,9 @@ def legalize((f00, f11, p)):
         if (point==a or point==b or point==c):
             continue
         elif distance(cc, point) < cr:
-           print "Illegal point"
-           print point
+           #print "Illegal point"
+           #print point
+           pass
 
     return (f00, f11, p)
 
@@ -220,10 +221,6 @@ def add_tri(f0, f1, p):
         edges_lookup[(front[f0], p)] = front[f1]
     tri = legalize((front[f0], front[f1], p))
     tris.append(tri)
-    #print "Inserted at position f1={} value p={}".format(f1,p)
-    #print "front = {}".format(front)
-    # visual debugging
-    #draw_tri(tris[-1])
 
 def add_triangle(a, b, c):
     # todo: legalize!
@@ -315,7 +312,6 @@ for i in range(3, len(pts)):
                     break
 
         # (ii) remove intersected triangles
-        # initialize set(to remove redundancy) for upper and lower vertices
         upper_polygon = []
         lower_polygon = []
 
@@ -328,10 +324,24 @@ for i in range(3, len(pts)):
                 if h>=0 and h<1 and h>h_max:
                     h_max = h
                     closest_edge = edge
+            if not closest_edge:
+                # the edge does not intersect any lines
+                # triangulate the points on the front lying between the edge
+                start = front.index(i)
+                end = front.index(endpoint)
+                upper_polygon.append(i)
+                lower_polygon.append(i)
+                c = -1 if (start>end) else 1
+                for k in range(start+c, end, c):
+                    if orientation(e, front[k])>0:
+                        upper_polygon.append(front[k])
+                    else:
+                        lower_polygon.append(front[k])
+                        front.pop(k)
 
         else:
-            print "Removed triangle = "
-            print current_side+(i,)
+            #print "Removed triangle = "
+            #print current_side+(i,)
             remove_tri(current_side+(i,))
             upper_polygon.append(i)
             lower_polygon.append(i)
@@ -381,7 +391,6 @@ for i in range(3, len(pts)):
         upper_dist = distances_from_line(e, upper_polygon)
         while len(upper_polygon) > 2:
             i = np.argmax(upper_dist)
-            print "i = ", i, upper_polygon[i], upper_polygon[i-1], upper_polygon[i+1]
             add_triangle(upper_polygon[i], upper_polygon[i-1], upper_polygon[i+1])  # add_tri does legalization with new triangle
             upper_polygon.pop(i)
             upper_dist.pop(i)
@@ -392,13 +401,25 @@ for i in range(3, len(pts)):
             add_triangle(lower_polygon[i], lower_polygon[i-1], lower_polygon[i+1])  # add_tri does legalization with new triangle
             lower_polygon.pop(i)
             lower_dist.pop(i)
-    #draw_state()
 
 ## Finalize (sec. 3.5)
 
 # (i) Remove all triangles that include at least one artificial point
 # (ii) Add bordering triangles to fill hull
-##print edges_lookup
+front = list(OrderedDict.fromkeys(front))
+
+l = len(front) - 2
+k=0
+while k < l:
+    # if edges lie in counterclockwise direction, then signed area is positive
+    if iscounterclockwise(front[k], front[k+1], front[k+2]):
+        add_triangle(front[k], front[k+1], front[k+2])
+        front.pop(k+1)
+        l-=1
+        continue
+    k+=1
+
+print front
 print tris
 for tri in tris:
     draw_tri(tri)
