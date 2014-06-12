@@ -9,7 +9,7 @@ language: python
 branches:
   except:
     - scenegraph
-
+    - visuals
 
 virtualenv:
     system_site_packages: true
