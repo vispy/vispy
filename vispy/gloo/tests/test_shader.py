@@ -54,6 +54,20 @@ class ShaderTest(unittest.TestCase):
         shader = VertexShader("uniform float color;")
         assert shader.uniforms == [("color", gl.GL_FLOAT)]
 
+    def test_commented_uniform_1(self):
+        shader = VertexShader("// uniform float color;")
+        assert shader.uniforms == []
+
+    def test_commented_uniform_2(self):
+        shader = VertexShader("/* uniform float color; */")
+        assert shader.uniforms == []
+
+    def test_multiple_uniforms(self):
+        shader = VertexShader("uniform float a,b,c;")
+        assert shader.uniforms == [("a", gl.GL_FLOAT),
+                                   ("b", gl.GL_FLOAT),
+                                   ("c", gl.GL_FLOAT)]
+
     def test_uniform_vec4(self):
         shader = VertexShader("uniform vec4 color;")
         assert shader.uniforms == [("color", gl.GL_FLOAT_VEC4)]
@@ -71,6 +85,19 @@ class ShaderTest(unittest.TestCase):
         shader = VertexShader("attribute vec4 color;")
         assert shader.attributes == [("color", gl.GL_FLOAT_VEC4)]
 
+    def test_commented_attribute_1(self):
+        shader = VertexShader("// attribute float color;")
+        assert shader.attributes == []
+
+    def test_commented_attribute_2(self):
+        shader = VertexShader("/* attribute float color; */")
+        assert shader.attributes == []
+
+    def test_multiple_attributes(self):
+        shader = VertexShader("attribute float a,b,c;")
+        assert shader.attributes == [("a", gl.GL_FLOAT),
+                                   ("b", gl.GL_FLOAT),
+                                   ("c", gl.GL_FLOAT)]
 
 if __name__ == "__main__":
     unittest.main()
