@@ -13,6 +13,7 @@ from .globject import GLObject
 
 # ------------------------------------------------------------ Shader class ---
 class Shader(GLObject):
+
     """ Abstract shader class
 
     Parameters
@@ -182,25 +183,23 @@ class Shader(GLObject):
         results = [' ' * indentation + r for r in results]
         return '\n'.join(results)
 
-
     def _remove_comments(self, string):
         """ Remove C-style comment from a string """
 
         pattern = r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)"
         # first group captures quoted strings (double or single)
         # second group captures comments (//single-line or /* multi-line */)
-        regex = re.compile(pattern, re.MULTILINE|re.DOTALL)
+        regex = re.compile(pattern, re.MULTILINE | re.DOTALL)
 
         def do_replace(match):
             # if the 2nd group (capturing comments) is not None,
             # it means we have captured a non-quoted (real) comment string.
             if match.group(2) is not None:
-                return "" # so we will return empty to remove the comment
-            else: # otherwise, we will return the 1st group
-                return match.group(1) # captured quoted-string
+                return ""  # so we will return empty to remove the comment
+            else:  # otherwise, we will return the 1st group
+                return match.group(1)  # captured quoted-string
 
         return regex.sub(do_replace, string)
-
 
     @property
     def uniforms(self):
@@ -232,13 +231,13 @@ class Shader(GLObject):
                 else:
                     size = int(size)
                     if size == 0:
-                        raise RuntimeError("Size of uniform array cannot be zero")
+                        raise RuntimeError(
+                            "Size of uniform array cannot be zero")
                     for i in range(size):
-                        iname = '%s[%d]' % (name,i)
+                        iname = '%s[%d]' % (name, i)
                         uniforms.append((iname, gtype))
 
         return uniforms
-
 
     @property
     def attributes(self):
@@ -271,9 +270,10 @@ class Shader(GLObject):
                 else:
                     size = int(size)
                     if size == 0:
-                        raise RuntimeError("Size of uniform array cannot be zero")
+                        raise RuntimeError(
+                            "Size of uniform array cannot be zero")
                     for i in range(size):
-                        iname = '%s[%d]' % (name,i)
+                        iname = '%s[%d]' % (name, i)
                         attributes.append((iname, gtype))
 
         return attributes
@@ -281,6 +281,7 @@ class Shader(GLObject):
 
 # ------------------------------------------------------ VertexShader class ---
 class VertexShader(Shader):
+
     """ Vertex shader object
 
     Parameters
@@ -299,6 +300,7 @@ class VertexShader(Shader):
 
 # ---------------------------------------------------- FragmentShader class ---
 class FragmentShader(Shader):
+
     """ Fragment shader object
 
     Parameters

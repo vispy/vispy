@@ -96,8 +96,8 @@ class ShaderTest(unittest.TestCase):
     def test_multiple_attributes(self):
         shader = VertexShader("attribute float a,b,c;")
         assert shader.attributes == [("a", gl.GL_FLOAT),
-                                   ("b", gl.GL_FLOAT),
-                                   ("c", gl.GL_FLOAT)]
+                                     ("b", gl.GL_FLOAT),
+                                     ("c", gl.GL_FLOAT)]
 
 if __name__ == "__main__":
     unittest.main()
