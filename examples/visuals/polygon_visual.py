@@ -13,14 +13,16 @@ from vispy.visuals.polygon import PolygonVisual
 
 # vertex positions of data to draw
 pos = np.array([[0, 0, 0],
-       [0.5, 0.12, 0],
-       [0.25, 0.5, 0],
-       [0, 0.5, 0],
-       [-0.25, 0.25, 0]])
+               [-0.2, 0.22, 0],
+               [0.25, 0.5, 0],
+               [0, 0.5, 0],
+               [-0.25, 0.25, 0]])
+
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
-        self.polygon = PolygonVisual(pos=pos, color=(1,0,0,1))
+        self.polygon = PolygonVisual(pos=pos, color=(1, 0, 0, 1),
+                                     border=(1, 1, 1, 1))
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)
