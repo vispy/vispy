@@ -5,19 +5,21 @@
 
 from os import path as op
 
-from vispy.app import Canvas
-from vispy.util.testing import requires_qt
+from vispy.app import Canvas, default_app
+from vispy.testing import requires_application, SkipTest
 from vispy.gloo import gl
 
 
-@requires_qt(requires_uic=True)
+@requires_application('qt', has=['uic'])
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
-    from PyQt4 import QtGui, uic
-    if not QtGui.QApplication.instance():
-        QtGui.QApplication([])  # noqa
+    default_app.use()
+    if 'pyqt4' not in default_app.backend_name.lower():
+        raise SkipTest('Not using PyQt4 backend')  # wrong backend
+    from PyQt4 import uic
     fname = op.join(op.dirname(__file__), 'qt-designer.ui')
     WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
+    default_app.create()  # make sure we have an app, or the init will fail
 
     class MainWindow(TemplateBaseClass):
 

@@ -7,14 +7,17 @@ vispy backend for Qt (PySide and PyQt4).
 """
 
 from __future__ import division
+
 from time import sleep, time
 from ...util import logger
 
 from ... import config
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, BaseSharedContext)
 from ...util import keys
 from . import ATTEMPTED_BACKENDS
-from ...util.six import text_type
+from ...ext.six import text_type
+from ...util import logger
 
 # Get what qt lib to try
 if len(ATTEMPTED_BACKENDS):
@@ -27,19 +30,88 @@ if len(ATTEMPTED_BACKENDS):
 else:
     qt_lib = 'any'
 
-# Import PySide or PyQt4
-if qt_lib in ('any', 'qt'):
-    try:
+
+# -------------------------------------------------------------------- init ---
+
+try:
+    # Import PySide or PyQt4
+    if qt_lib in ('any', 'qt'):
+        try:
+            from PyQt4 import QtGui, QtCore, QtOpenGL
+        except ImportError:
+            from PySide import QtGui, QtCore, QtOpenGL
+    elif qt_lib in ('pyqt', 'pyqt4'):
         from PyQt4 import QtGui, QtCore, QtOpenGL
-    except ImportError:
+    elif qt_lib == 'pyside':
         from PySide import QtGui, QtCore, QtOpenGL
-elif qt_lib in ('pyqt', 'pyqt4'):
-    from PyQt4 import QtGui, QtCore, QtOpenGL
-elif qt_lib == 'pyside':
-    from PySide import QtGui, QtCore, QtOpenGL
+    else:
+        raise Exception("Do not recognize Qt library '%s'. Options are "
+                        "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
+
+    # todo: add support for distinguishing left and right shift/ctrl/alt keys.
+    # Linux scan codes:  (left, right)
+    #   Shift  50, 62
+    #   Ctrl   37, 105
+    #   Alt    64, 108
+    KEYMAP = {
+        QtCore.Qt.Key_Shift: keys.SHIFT,
+        QtCore.Qt.Key_Control: keys.CONTROL,
+        QtCore.Qt.Key_Alt: keys.ALT,
+        QtCore.Qt.Key_AltGr: keys.ALT,
+        QtCore.Qt.Key_Meta: keys.META,
+
+        QtCore.Qt.Key_Left: keys.LEFT,
+        QtCore.Qt.Key_Up: keys.UP,
+        QtCore.Qt.Key_Right: keys.RIGHT,
+        QtCore.Qt.Key_Down: keys.DOWN,
+        QtCore.Qt.Key_PageUp: keys.PAGEUP,
+        QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
+
+        QtCore.Qt.Key_Insert: keys.INSERT,
+        QtCore.Qt.Key_Delete: keys.DELETE,
+        QtCore.Qt.Key_Home: keys.HOME,
+        QtCore.Qt.Key_End: keys.END,
+
+        QtCore.Qt.Key_Escape: keys.ESCAPE,
+        QtCore.Qt.Key_Backspace: keys.BACKSPACE,
+
+        QtCore.Qt.Key_F1: keys.F1,
+        QtCore.Qt.Key_F2: keys.F2,
+        QtCore.Qt.Key_F3: keys.F3,
+        QtCore.Qt.Key_F4: keys.F4,
+        QtCore.Qt.Key_F5: keys.F5,
+        QtCore.Qt.Key_F6: keys.F6,
+        QtCore.Qt.Key_F7: keys.F7,
+        QtCore.Qt.Key_F8: keys.F8,
+        QtCore.Qt.Key_F9: keys.F9,
+        QtCore.Qt.Key_F10: keys.F10,
+        QtCore.Qt.Key_F11: keys.F11,
+        QtCore.Qt.Key_F12: keys.F12,
+
+        QtCore.Qt.Key_Space: keys.SPACE,
+        QtCore.Qt.Key_Enter: keys.ENTER,
+        QtCore.Qt.Key_Return: keys.ENTER,
+        QtCore.Qt.Key_Tab: keys.TAB,
+    }
+    BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
+except Exception as exp:
+    available, testable, why_not, which = False, False, str(exp), None
+
+    class _QGLWidget(object):
+        pass
+
+    _QTimer = _QGLWidget
 else:
-    raise Exception("Do not recognize Qt library '%s'. Options are "
-                    "'pyqt4', 'pyside', or 'qt'])." % str(qt_lib))
+    available, testable, why_not = True, True, None
+    _QGLWidget = QtOpenGL.QGLWidget
+    _QTimer = QtCore.QTimer
+    if hasattr(QtCore, 'PYQT_VERSION_STR'):
+        has_uic = True
+        which = ('PyQt4', QtCore.PYQT_VERSION_STR, QtCore.QT_VERSION_STR)
+    else:
+        has_uic = False
+        import PySide
+        which = ('PySide', PySide.__version__, QtCore.__version__)
 
 
 # Properly log Qt messages
@@ -54,55 +126,50 @@ def message_handler(msg_type, msg):
 
 QtCore.qInstallMsgHandler(message_handler)
 
+# -------------------------------------------------------------- capability ---
 
-# todo: add support for distinguishing left and right shift/ctrl/alt keys.
-# Linux scan codes:  (left, right)
-#   Shift  50, 62
-#   Ctrl   37, 105
-#   Alt    64, 108
-KEYMAP = {
-    QtCore.Qt.Key_Shift: keys.SHIFT,
-    QtCore.Qt.Key_Control: keys.CONTROL,
-    QtCore.Qt.Key_Alt: keys.ALT,
-    QtCore.Qt.Key_AltGr: keys.ALT,
-    QtCore.Qt.Key_Meta: keys.META,
+capability = dict(  # things that can be set by the backend
+    title=True,
+    size=True,
+    position=True,
+    show=True,
+    vsync=True,
+    resizable=True,
+    decorate=True,
+    fullscreen=True,
+    context=True,
+    multi_window=True,
+    scroll=True,
+)
 
-    QtCore.Qt.Key_Left: keys.LEFT,
-    QtCore.Qt.Key_Up: keys.UP,
-    QtCore.Qt.Key_Right: keys.RIGHT,
-    QtCore.Qt.Key_Down: keys.DOWN,
-    QtCore.Qt.Key_PageUp: keys.PAGEUP,
-    QtCore.Qt.Key_PageDown: keys.PAGEDOWN,
 
-    QtCore.Qt.Key_Insert: keys.INSERT,
-    QtCore.Qt.Key_Delete: keys.DELETE,
-    QtCore.Qt.Key_Home: keys.HOME,
-    QtCore.Qt.Key_End: keys.END,
+# ------------------------------------------------------- set_configuration ---
+def _set_config(c):
+    """Set the OpenGL configuration"""
+    glformat = QtOpenGL.QGLFormat()
+    glformat.setRedBufferSize(c['red_size'])
+    glformat.setGreenBufferSize(c['green_size'])
+    glformat.setBlueBufferSize(c['blue_size'])
+    glformat.setAlphaBufferSize(c['alpha_size'])
+    glformat.setAccum(False)
+    glformat.setRgba(True)
+    glformat.setDoubleBuffer(True if c['double_buffer'] else False)
+    glformat.setDepth(True if c['depth_size'] else False)
+    glformat.setDepthBufferSize(c['depth_size'] if c['depth_size'] else 0)
+    glformat.setStencil(True if c['stencil_size'] else False)
+    glformat.setStencilBufferSize(c['stencil_size'] if c['stencil_size']
+                                  else 0)
+    glformat.setSampleBuffers(True if c['samples'] else False)
+    glformat.setSamples(c['samples'] if c['samples'] else 0)
+    glformat.setStereo(c['stereo'])
+    return glformat
 
-    QtCore.Qt.Key_Escape: keys.ESCAPE,
-    QtCore.Qt.Key_Backspace: keys.BACKSPACE,
 
-    QtCore.Qt.Key_F1: keys.F1,
-    QtCore.Qt.Key_F2: keys.F2,
-    QtCore.Qt.Key_F3: keys.F3,
-    QtCore.Qt.Key_F4: keys.F4,
-    QtCore.Qt.Key_F5: keys.F5,
-    QtCore.Qt.Key_F6: keys.F6,
-    QtCore.Qt.Key_F7: keys.F7,
-    QtCore.Qt.Key_F8: keys.F8,
-    QtCore.Qt.Key_F9: keys.F9,
-    QtCore.Qt.Key_F10: keys.F10,
-    QtCore.Qt.Key_F11: keys.F11,
-    QtCore.Qt.Key_F12: keys.F12,
+class SharedContext(BaseSharedContext):
+    _backend = 'qt'
 
-    QtCore.Qt.Key_Space: keys.SPACE,
-    QtCore.Qt.Key_Enter: keys.ENTER,
-    QtCore.Qt.Key_Return: keys.ENTER,
-    QtCore.Qt.Key_Tab: keys.TAB,
-}
 
-BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
-
+# ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
 
@@ -142,22 +209,56 @@ class ApplicationBackend(BaseApplicationBackend):
         return app
 
 
-class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
+# ------------------------------------------------------------------ canvas ---
+
+class CanvasBackend(_QGLWidget, BaseCanvasBackend):
 
     """Qt backend for Canvas abstract class."""
 
     def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self)
-        title, size, show, position = self._process_backend_kwargs(kwargs)
-        QtOpenGL.QGLWidget.__init__(self, *args, **kwargs)
+        self._initialized = False
+        BaseCanvasBackend.__init__(self, capability, SharedContext)
+        title, size, position, show, vsync, resize, dec, fs, context = \
+            self._process_backend_kwargs(kwargs)
+        if isinstance(context, dict):
+            glformat = _set_config(context)
+            glformat.setSwapInterval(1 if vsync else 0)
+            widget = kwargs.pop('shareWidget', None)
+        else:
+            glformat = QtOpenGL.QGLFormat.defaultFormat()
+            if 'shareWidget' in kwargs:
+                raise RuntimeError('cannot use vispy to share context and '
+                                   'use built-in shareWidget')
+            widget = context.value
+        f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
+        parent = kwargs.pop('parent', None)
+        # first arg can be glformat, or a shared context
+        QtOpenGL.QGLWidget.__init__(self, glformat, parent, widget, f)
+        self._initialized = True
+        if not self.isValid():
+            raise RuntimeError('context could not be created')
         self.setAutoBufferSwap(False)  # to make consistent with other backends
         self.setMouseTracking(True)
         self._vispy_set_title(title)
         self._vispy_set_size(*size)
+        if fs is not False:
+            if isinstance(fs, int):
+                logger.warn('Cannot specify monitor number for Qt fullscreen, '
+                            'using default')
+            self._vispy_show_func = self.showFullScreen
+        else:
+            self._vispy_show_func = self.show
+        if not resize:
+            self.setFixedSize(self.size())
         if position is not None:
             self._vispy_set_position(*position)
         if show:
             self._vispy_set_visible(True)
+
+    @property
+    def _vispy_context(self):
+        """Context to return for sharing"""
+        return SharedContext(self)
 
     def _vispy_warmup(self):
         etime = time() + 0.25
@@ -168,14 +269,20 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     def _vispy_set_current(self):
         # Make this the current context
+        if self._vispy_canvas is None:
+            return
         self.makeCurrent()
 
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
+        if self._vispy_canvas is None:
+            return
         self.swapBuffers()
 
     def _vispy_set_title(self, title):
         # Set the window title. Has no effect for widgets
+        if self._vispy_canvas is None:
+            return
         self.setWindowTitle(title)
 
     def _vispy_set_size(self, w, h):
@@ -188,15 +295,19 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
-        self.show() if visible else self.hide()
+        self._vispy_show_func() if visible else self.hide()
 
     def _vispy_update(self):
+        if self._vispy_canvas is None:
+            return
         # Invoke a redraw
         self.update()
 
     def _vispy_close(self):
         # Force the window or widget to shut down
         self.close()
+        self.doneCurrent()
+        self.context().reset()
 
     def _vispy_get_position(self):
         g = self.geometry()
@@ -275,65 +386,39 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         )
 
     def keyPressEvent(self, ev):
-        self._vispy_canvas.events.key_press(
-            native=ev,
-            key=self._processKey(ev),
-            text=text_type(ev.text()),
-            modifiers=self._modifiers(ev),
-        )
+        self._keyEvent(self._vispy_canvas.events.key_press, ev)
 
     def keyReleaseEvent(self, ev):
-        # if ev.isAutoRepeat():
-            # return # Skip release auto repeat events
-        self._vispy_canvas.events.key_release(
-            native=ev,
-            key=self._processKey(ev),
-            text=text_type(ev.text()),
-            modifiers=self._modifiers(ev),
-        )
+        self._keyEvent(self._vispy_canvas.events.key_release, ev)
 
-    def _processKey(self, event):
+    def _keyEvent(self, func, ev):
         # evaluates the keycode of qt, and transform to vispy key.
-        key = int(event.key())
+        key = int(ev.key())
         if key in KEYMAP:
-            return KEYMAP[key]
+            key = KEYMAP[key]
         elif key >= 32 and key <= 127:
-            return keys.Key(chr(key))
+            key = keys.Key(chr(key))
         else:
-            return None
+            key = None
+        mod = self._modifiers(ev)
+        func(native=ev, key=key, text=text_type(ev.text()), modifiers=mod)
 
     def _modifiers(self, event):
         # Convert the QT modifier state into a tuple of active modifier keys.
         mod = ()
         qtmod = event.modifiers()
-        if QtCore.Qt.ShiftModifier & qtmod:
-            mod += keys.SHIFT,
-        if QtCore.Qt.ControlModifier & qtmod:
-            mod += keys.CONTROL,
-        if QtCore.Qt.AltModifier & qtmod:
-            mod += keys.ALT,
-        if QtCore.Qt.MetaModifier & qtmod:
-            mod += keys.META,
+        for q, v in ([QtCore.Qt.ShiftModifier, keys.SHIFT],
+                     [QtCore.Qt.ControlModifier, keys.CONTROL],
+                     [QtCore.Qt.AltModifier, keys.ALT],
+                     [QtCore.Qt.MetaModifier, keys.META]):
+            if q & qtmod:
+                mod += (v,)
         return mod
 
-    def __del__(self):
-        # Destroy if this is a toplevel widget
-        if self.parent() is None:
-            self.destroy()
-        if hasattr(QtOpenGL.QGLWidget, '__del__'):
-            QtOpenGL.QGLWidget.__del__(self)
 
+# ------------------------------------------------------------------- timer ---
 
-# class QtMouseEvent(MouseEvent):
-# special subclass of MouseEvent for propagating acceptance info back to Qt.
-#     @MouseEvent.handled.setter
-#     def handled(self, val):
-#         self._handled = val
-#         if val:
-#             self.qt_event.accept()
-#         else:
-#             self.qt_event.ignore()
-class TimerBackend(BaseTimerBackend, QtCore.QTimer):
+class TimerBackend(BaseTimerBackend, _QTimer):
 
     def __init__(self, vispy_timer):
         if QtGui.QApplication.instance() is None:

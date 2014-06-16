@@ -20,7 +20,7 @@ import weakref
 
 from .ordereddict import OrderedDict
 from ._logging import logger
-from .six import string_types
+from ..ext.six import string_types
 
 
 class Event(object):

@@ -8,7 +8,6 @@ You should see a colored outlined spinning cube.
 
 import numpy as np
 from vispy import app, gloo
-from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, rotate
 
 
@@ -98,15 +97,15 @@ def cube():
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self)
+        app.Canvas.__init__(self, close_keys='escape')
         self.size = 800, 600
 
         self.vertices, self.filled, self.outline = cube()
-        self.filled_buf = gloo.ElementBuffer(self.filled)
-        self.outline_buf = gloo.ElementBuffer(self.outline)
+        self.filled_buf = gloo.IndexBuffer(self.filled)
+        self.outline_buf = gloo.IndexBuffer(self.outline)
 
         self.program = gloo.Program(vert, frag)
-        self.program.set_vars(gloo.VertexBuffer(self.vertices))
+        self.program.bind(gloo.VertexBuffer(self.vertices))
 
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
@@ -125,9 +124,9 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glPolygonOffset(1, 1)
+        gloo.set_clear_color((1, 1, 1, 1))
+        gloo.set_state('opaque')
+        gloo.set_polygon_offset(1, 1)
         # gl.glEnable( gl.GL_LINE_SMOOTH )
 
     # ---------------------------------
@@ -143,29 +142,26 @@ class Canvas(app.Canvas):
     # ---------------------------------
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(45.0, width / float(height), 2.0, 10.0)
         self.program['u_projection'] = self.projection
 
     # ---------------------------------
     def on_paint(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gloo.clear()
 
-        with self.program as prog:
-            # Filled cube
-            gl.glDisable(gl.GL_BLEND)
-            gl.glEnable(gl.GL_DEPTH_TEST)
-            gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
-            prog['u_color'] = 1, 1, 1, 1
-            prog.draw(gl.GL_TRIANGLES, self.filled_buf)
+        # Filled cube
+        
+        gloo.set_state(blend=False, depth_test=True, polygon_offset_fill=True)
+        self.program['u_color'] = 1, 1, 1, 1
+        self.program.draw('triangles', self.filled_buf)
 
-            # Outline
-            gl.glDisable(gl.GL_POLYGON_OFFSET_FILL)
-            gl.glEnable(gl.GL_BLEND)
-            gl.glDepthMask(gl.GL_FALSE)
-            prog['u_color'] = 0, 0, 0, 1
-            prog.draw(gl.GL_LINES, self.outline_buf)
-            gl.glDepthMask(gl.GL_TRUE)
+        # Outline
+        gloo.set_state(blend=True, depth_test=True, polygon_offset_fill=False)
+        gloo.set_depth_mask(False)
+        self.program['u_color'] = 0, 0, 0, 1
+        self.program.draw('lines', self.outline_buf)
+        gloo.set_depth_mask(True)
 
 
 # -----------------------------------------------------------------------------

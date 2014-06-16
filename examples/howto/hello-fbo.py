@@ -76,7 +76,7 @@ SIZE = 50
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self)
+        app.Canvas.__init__(self, close_keys='escape')
         self.size = 560, 420
 
         # Create texture to render to

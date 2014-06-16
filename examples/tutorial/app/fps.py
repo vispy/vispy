@@ -37,7 +37,7 @@ class Canvas(app.Canvas):
         print("FPS - %.2f" % fps)
 
 if __name__ == '__main__':
-    canvas = Canvas()
+    canvas = Canvas(close_keys='escape')
     canvas.show()
     canvas.measure_fps(1, canvas.show_fps)
     app.run()

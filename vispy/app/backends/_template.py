@@ -9,8 +9,12 @@ should be emitted.
 
 from __future__ import division
 
-from ..base import BaseApplicationBackend, BaseCanvasBackend, BaseTimerBackend
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
+                    BaseTimerBackend, BaseSharedContext)
 from ...util import keys
+
+
+# -------------------------------------------------------------------- init ---
 
 # Map native keys to vispy keys
 KEYMAP = {
@@ -53,6 +57,35 @@ KEYMAP = {
 }
 
 
+# -------------------------------------------------------------- capability ---
+
+capability = dict(
+    position=False,
+    size=False,
+    multi_window=False,
+    scroll=False,
+    no_decoration=False,
+    no_sizing=False,
+    fullscreen=False,
+    unicode=False,
+    gl_version=False,
+    gl_profile=False,
+    share_context=False,
+)
+
+
+# ------------------------------------------------------- set_configuration ---
+def _set_config(c):
+    """Set gl configuration for template"""
+    raise NotImplementedError
+
+
+class SharedContext(BaseSharedContext):
+    _backend = 'template'
+
+
+# ------------------------------------------------------------- application ---
+
 class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
@@ -74,12 +107,14 @@ class ApplicationBackend(BaseApplicationBackend):
         raise NotImplementedError()
 
 
+# ------------------------------------------------------------------ canvas ---
+
 # You can mix this class with the native widget
 class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, vispy_canvas, *args, **kwargs):
         #NativeWidgetClass.__init__(self, *args, **kwargs)
-        BaseCanvasBackend.__init__(self, vispy_canvas)
+        BaseCanvasBackend.__init__(self, vispy_canvas, SharedContext)
 
     def _vispy_set_current(self):
         # Make this the current context
@@ -162,6 +197,8 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas.events.key_release(key=key, text=text, modifiers=())
         """
 
+
+# ------------------------------------------------------------------- timer ---
 
 class TimerBackend(BaseTimerBackend):  # Can be mixed with native timer class
 
