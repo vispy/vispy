@@ -115,7 +115,7 @@ class Canvas(vispy.app.Canvas):
             m._program._need_build = True
         self.update()
         
-    def on_paint(self, ev):
+    def on_draw(self, ev):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glViewport(0, 0, *self.size)
