@@ -9,7 +9,7 @@ from ...gloo import Program, VertexShader, FragmentShader
 from .function import Function, FunctionChain, Variable
 from . import parsing
 from ...util import logger
-from ...util.six import string_types
+from ...ext.six import string_types
 
 
 """

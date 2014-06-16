@@ -8,7 +8,7 @@ import numpy as np
 
 from ... import gloo
 from ...util import event
-from ...util.six import string_types
+from ...ext.six import string_types
 
 from ..shaders import ModularProgram, Function
 from ..transforms import NullTransform

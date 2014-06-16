@@ -7,7 +7,7 @@ import string
 
 from . import parsing
 from ...util.event import EmitterGroup, Event
-from ...util.six import string_types
+from ...ext.six import string_types
 
 
 class ShaderObject(object):
