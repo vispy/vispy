@@ -14,9 +14,9 @@ from vispy.gloo.util import _screenshot
 _win_size = (200, 50)
 
 
-def _update_process_check(canvas, val, paint=True):
+def _update_process_check(canvas, val, draw=True):
     """Update, process, and check result"""
-    if paint:
+    if draw:
         canvas.update()
         canvas.app.process_events()
         canvas.app.process_events()
@@ -49,19 +49,19 @@ def test_multiple_canvases():
         with Canvas(app=default_app, size=_win_size, title='same_1') as c1:
             ct = [0, 0]
 
-            @c0.events.paint.connect
-            def paint0(event):
+            @c0.events.draw.connect
+            def draw0(event):
                 ct[0] += 1
                 c0.update()
 
-            @c1.events.paint.connect  # noqa, analysis:ignore
-            def paint1(event):
+            @c1.events.draw.connect  # noqa, analysis:ignore
+            def draw1(event):
                 ct[1] += 1
                 c1.update()
 
             c0.show()  # ensure visible
             c1.show()
-            c0.update()  # force first paint
+            c0.update()  # force first draw
             c1.update()
 
             timeout = time() + 2.0
@@ -91,8 +91,8 @@ def test_multiple_canvases():
         with Canvas(title='1', **kwargs) as c1:
             bgcolors = [None] * 2
 
-            @c0.events.paint.connect
-            def paint00(event):
+            @c0.events.draw.connect
+            def draw00(event):
                 print('  {0:7}: {1}'.format('0', bgcolors[0]))
                 if bgcolors[0] is not None:
                     gl.glViewport(0, 0, *list(_win_size))
@@ -100,8 +100,8 @@ def test_multiple_canvases():
                     gl.glClear(gl.GL_COLOR_BUFFER_BIT)
                     gl.glFinish()
 
-            @c1.events.paint.connect
-            def paint11(event):
+            @c1.events.draw.connect
+            def draw11(event):
                 print('  {0:7}: {1}'.format('1', bgcolors[1]))
                 if bgcolors[1] is not None:
                     gl.glViewport(0, 0, *list(_win_size))
@@ -110,13 +110,13 @@ def test_multiple_canvases():
                     gl.glFinish()
 
             for ci, canvas in enumerate((c0, c1)):
-                print('paint %s' % canvas.title)
+                print('draw %s' % canvas.title)
                 bgcolors[ci] = [0.5, 0.5, 0.5, 1.0]
                 _update_process_check(canvas, 127)
 
             for ci, canvas in enumerate((c0, c1)):
                 print('test')
-                _update_process_check(canvas, 127, paint=False)
+                _update_process_check(canvas, 127, draw=False)
                 bgcolors[ci] = [1., 1., 1., 1.]
                 _update_process_check(canvas, 255)
                 bgcolors[ci] = [0.25, 0.25, 0.25, 0.25]

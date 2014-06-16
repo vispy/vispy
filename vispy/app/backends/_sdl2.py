@@ -304,7 +304,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Invoke a redraw, passing it on to the canvas
         if self._vispy_canvas is None or self._id is None:
             return
-        # Mark that this window wants to be painted on the next loop iter
+        # Mark that this window wants to be drawn on the next loop iter
         self._needs_draw = True
 
     def _vispy_close(self):
@@ -347,7 +347,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._vispy_canvas is None or self._id is None:
             return
         self._vispy_set_current()
-        self._vispy_canvas.events.paint(region=None)  # (0, 0, w, h))
+        self._vispy_canvas.events.draw(region=None)  # (0, 0, w, h))
 
     def _on_event(self, event):
         if self._vispy_canvas is None:

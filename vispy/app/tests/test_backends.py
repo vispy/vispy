@@ -32,7 +32,12 @@ def _test_module_properties(_module=None):
             continue
         key = getattr(keys, keyname)
         assert key in vispy_keys
-
+    
+    # For Qt backend, we have a common implementation
+    alt_modname = ''
+    if _module.__name__.split('.')[-1] in ('_pyside', '_pyqt4'):
+        alt_modname = _module.__name__.rsplit('.', 1)[0] + '._qt'
+    
     # Test that all _vispy_x methods are there.
     exceptions = (
         '_vispy_get_native_canvas',
@@ -59,7 +64,7 @@ def _test_module_properties(_module=None):
                     mod_str = method.__module__  # Py3k
                 else:
                     mod_str = method.im_func.__module__
-                assert mod_str == _module.__name__, \
+                assert mod_str in (_module.__name__, alt_modname), \
                     "Method %s.%s not defined in %s" \
                     % (Klass, key, _module.__name__)
 
@@ -71,7 +76,7 @@ def _test_module_properties(_module=None):
             if key not in exceptions:
                 if hasattr(method, '__module__'):
                     # Py3k
-                    assert method.__module__ == _module.__name__
+                    assert method.__module__ in (_module.__name__, alt_modname)
                 else:
                     t = method.im_func.__module__ == _module.__name__
                     assert t
@@ -84,7 +89,7 @@ def _test_module_properties(_module=None):
             if key not in exceptions:
                 if hasattr(method, '__module__'):
                     # Py3k
-                    assert method.__module__ == _module.__name__
+                    assert method.__module__ in (_module.__name__, alt_modname)
                 else:
                     t = method.im_func.__module__ == _module.__name__
                     assert t
@@ -97,13 +102,14 @@ def _test_module_properties(_module=None):
     canvas = vispy.app.Canvas(create_native=False)
     # Stylus and touch are ignored because they are not yet implemented.
     # Mouse events are emitted from the CanvasBackend base class.
-    ignore = set(['stylus', 'touch', 'mouse_press',
+    ignore = set(['stylus', 'touch', 'mouse_press', 'paint',
                   'mouse_move', 'mouse_release'])
     eventNames = set(canvas.events._emitters.keys()) - ignore
-
-    for name in eventNames:
-        assert 'events.%s' % name in text, ('events.%s does not appear '
-                                            'in %s' % (name, fname))
+    
+    if not alt_modname:  # Only check for non-proxy modules
+        for name in eventNames:
+            assert 'events.%s' % name in text, ('events.%s does not appear '
+                                                'in %s' % (name, fname))
 
 
 def test_template():

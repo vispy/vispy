@@ -106,7 +106,7 @@ class Canvas(app.Canvas):
     def on_initialize(self, event):
         gloo.set_clear_color(color=(0., 0., 0., 1.))
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         self.program.draw()
 
     def on_resize(self, event):

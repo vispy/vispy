@@ -132,17 +132,7 @@ def _check_line_endings():
 
 
 def _tester(label='full', coverage=False, verbosity=1):
-    """Test vispy software
-
-    Parameters
-    ----------
-    label : str
-        Can be one of 'full', 'nose', 'nobackend', 'extra', 'lineendings',
-        'flake', or any backend name (e.g., 'qt').
-    coverage : bool
-        Produce coverage outputs (.coverage file and printing).
-    verbosity : int
-        Verbosity level to use when running ``nose``.
+    """Test vispy software. See vispy.test()
     """
     from vispy.app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
