@@ -66,7 +66,7 @@ class ViewBox(Widget):
     
     def __init__(self, *args, **kwds):
         Widget.__init__(self, *args, **kwds)
-        self._child_group = Entity(parents=[self])
+        self._child_group = Entity(parent=self)
         
         # Background color of this viewbox. Used in glClear()
         self._bgcolor = (0.0, 0.0, 0.0, 1.0)

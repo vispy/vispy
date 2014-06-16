@@ -21,7 +21,7 @@ class Entity(object):
     It is recommended to use multi-parenting with care.
     """
 
-    def __init__(self, parents=None):
+    def __init__(self, parent=None):
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    parents_change=Event,
@@ -41,8 +41,8 @@ class Entity(object):
         self._children = set()
         # TODO: use weakrefs for parents.
         self._parents = set()
-        if parents is not None:
-            self.parents = parents
+        if parent is not None:
+            self.parents = parent
         
         # Components that all entities in vispy have
         self._transform = transforms.NullTransform()
@@ -54,16 +54,30 @@ class Entity(object):
         arbitrary order.
         """
         return list(self._children)
-
+    
+    @property
+    def parent(self):
+        """ Get/set the parent. If the entity has multiple parents while
+        using this property as a getter, an error is raised.
+        """
+        if noe self._parents:
+            return None
+        elif len(self._parents) == 1:
+            return self._parents[0]
+        else:
+            raise RuntimeError('Ambiguous parent: there are multiple parents.')
+    
+    @parent.setter
+    def parent(self, parent):
+        # This is basically an alias
+        self.parents = parent
+    
     @property
     def parents(self):
-        """ Get/set a tuple of parents. Typically the tuple will have
-        one element.
+        """ Get/set a tuple of parents.
         """
-        # todo: ak: I don't like plural "parents", since 99% of the time it 
-        # will be singular
         return tuple(self._parents)
-
+    
     @parents.setter
     def parents(self, parents):
         # Test input

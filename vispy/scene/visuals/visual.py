@@ -179,8 +179,8 @@ class Visual(Entity):
 
     
     
-    def __init__(self, parents=None):
-        Entity.__init__(self, parents)
+    def __init__(self, parent=None):
+        Entity.__init__(self, parent)
         
         # Dict of {'GL_FLAG': bool} and {'glFunctionName': (args)} 
         # specifications. By default, these are enabled whenever the Visual 
