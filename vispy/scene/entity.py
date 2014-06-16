@@ -147,20 +147,6 @@ class Entity(object):
         self._transform = tr
         self.update()
         
-    @property
-    def parent_transform(self):
-        # todo: ak: I do not get this, do we need this?
-        """
-        maps from the local coordinate system of the Entity to its parent's 
-        coordinate system.
-        
-        It is possible to map into the local coordinate system of any Entity
-        by assembling a chain of parent_transforms.
-        
-        By default, this is equal to self.transform. However, subclasses may
-        choose to augment this transform with extra components.
-        """
-        return self._transform
     
 #     def on_paint(self, event):
 #         """

@@ -182,7 +182,7 @@ class SceneEvent(Event):
         here.
         """
         path = self._stack[-1]._path
-        tr = [e.parent_transform for e in path[::-1]]
+        tr = [e.transform for e in path[::-1]]
         # TODO: cache transform chains
         return ChainTransform(tr)
     
@@ -311,7 +311,7 @@ class SceneEvent(Event):
 #             if isinstance(e, Document):
 #                 found = True
 #                 break
-#             tr.append(e.parent_transform)
+#             tr.append(e.transform)
 #         if not found:
 #             raise Exception("No Document in the Entity path for this Event.")
 #         return ChainTransform(tr)
