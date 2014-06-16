@@ -44,7 +44,14 @@ class VisualComponent(object):
 
     def _attach(self, visual):
         """Attach this component to a Visual. This should be called by the 
-        Visual itself.
+        Visual itself. 
+        
+        A component may only be attached to a single Visual. However, it may 
+        be attached _multiple times_ to the same visual.
+        
+        The default implementation of this method calls 
+        self._auto_attach_shaders() to generate the list of shader callbacks 
+        that should be added to the Visual's program.
         """
         if visual is not self._visual and self._visual is not None:
             raise Exception("Cannot attach component %s to %s; already "
@@ -58,7 +65,11 @@ class VisualComponent(object):
             comp._attach(visual)
 
     def _detach(self):
-        """Detach this component from its Visual.
+        """Detach this component from its Visual. This should be called by the 
+        visual itself.        
+        
+        If the component was attached
+        multiple times, it must be detached the same number of times.
         """
         if self._attach_count == 0:
             raise Exception("Cannot detach component %s; not attached." % self)
@@ -88,7 +99,7 @@ class VisualComponent(object):
         both) currently supported by this component.
         
         DRAW_PRE_INDEXED indicates that the component may be used when the 
-        program uses an array of indexes do determine the order of elements to
+        program uses an array of indexes to determine the order of elements to
         draw from its vertex buffers (using glDrawElements).
         
         DRAW_UNINDEXED indicates that the component may be used when the
@@ -99,7 +110,7 @@ class VisualComponent(object):
         that only support one mode must override this method.
         """
         # TODO: This should be expanded to include other questions, such as
-        # whether the visual supports geometry shaders.
+        # whether the component supports geometry shaders.
         return set([self.DRAW_PRE_INDEXED, self.DRAW_UNINDEXED])
 
     def update(self):

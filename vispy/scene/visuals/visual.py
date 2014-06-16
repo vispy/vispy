@@ -123,14 +123,14 @@ GLOptions = {
 
 class Visual(Entity):
     """ 
-    Abstract class representing a drawable object. Visuals implement the 
-    following interfaces:
+    Abstract class representing a drawable object. 
     
-        * paint() calls all of the GL commands necessary to paint the visual.
-        * bounds() describes the bounding rectangle of the visual.
-        * gl_options() is used to configure the OpenGL state immediately
-          before the visual is painted.
-          
+    At a minimum, Visual subclasses must provide the following interfaces:
+    
+    * paint() calls all of the GL commands necessary to paint the visual.
+    * bounds() describes the bounding rectangle of the visual.
+    * gl_options() is used to configure the OpenGL state immediately
+      before the visual is painted.
     
     Events:
     
@@ -138,6 +138,30 @@ class Visual(Entity):
         Emitted when the visual has changed and needs to be repainted.
     bounds_change : Event
         Emitted when the bounding rectangle of the visual has changed.
+        
+    
+    The base Visual class also serves as a skeleton system that provides a 
+    complete implementation. Although these details are not part of the 
+    required API for all visuals, it is recommended to follow this 
+    implementation as closely as possible to ensure consistency between
+    visuals. The implmentation includes:
+    
+    * A modular program with a standard set of vertex and 
+      fragment shader hooks
+    * A mechanism for adding and removing components
+      that affect the vertex position (pos_components) and fragment 
+      color (color_components)
+    * A transform property that defines the base vertex transform
+      implemented in te vertex shader
+    * A default paint() method that:
+        * activates each of the attached components
+        * negotiates a buffer mode (pre-indexed or unindexed) supported by 
+          all components
+        * Requests an index buffer from components (if needed)
+        * Instructs the program to draw using self.primitive
+    * A simple set_data() method intended to serve as an example for 
+      subclasses to follow.
+
     """
     
     VERTEX_SHADER = """
@@ -341,7 +365,8 @@ class Visual(Entity):
         self._activate_components(mode)
         self._program.draw(self.primitive, self.vertex_index)
 
-    def _paint_mode(self):
+    # todo: should this be called "buffer_mode" ?
+    def _paint_mode(self):  
         """
         Return the mode that should be used to paint this visual
         (DRAW_PRE_INDEXED or DRAW_UNINDEXED)
