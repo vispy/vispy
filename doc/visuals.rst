@@ -9,7 +9,7 @@ multiple simpler visuals, such as plot axes, ...
 
 Most visuals consist of a base :class:`Visual` instance combined with multiple 
 :class:`VisualComponent` instances that customize the visual's output. The
-Visual itself implements a `paint()` method that decides which GL primitive 
+Visual itself implements a `draw()` method that decides which GL primitive 
 type to draw (point, line, tri) and provides the user with an interface for 
 setting and modifying the data to be displayed.
 
