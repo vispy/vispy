@@ -29,7 +29,7 @@ class Screenshot(object):
     def on_draw(self, event):
         self.canvas_on_draw(event)
         self.image = vispy.gloo.util._screenshot(
-            (0, 0, self.canvas.size[0], self.canvas.size[1]))
+            (0, 0, self.canvas.size[0], self.canvas.size[1]))[::-1]
         self.canvas.on_draw = self.canvas_on_draw
 
     def save(self, image_path="screenshot.png"):
