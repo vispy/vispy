@@ -59,10 +59,10 @@ class Unstructured2d(app.Canvas):
             uniform mat4 view;
             uniform mat4 projection;
             uniform sampler2D texture;
-            
+
             attribute vec2 position;
             attribute {tex_t} texcoord;
-            
+
             varying {tex_t} v_texcoord;
             void main()
             {{
@@ -82,7 +82,8 @@ class Unstructured2d(app.Canvas):
 
         self.program = gloo.Program(vertex, fragment)
         if len(colormap.shape) == 2:
-            self.program['texture'] = np.ascontiguousarray(colormap[None, :, :])
+            self.program['texture'] = np.ascontiguousarray(
+                colormap[None, :, :])
         else:
             self.program['texture'] = colormap
         self.program['texture'].interpolation = gl.GL_LINEAR
