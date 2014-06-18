@@ -13,6 +13,8 @@ from ..util.event import Event
 
 from .visuals import Visual
 
+
+
 class Widget(Visual):
     """ A widget takes up a rectangular space, intended for use in 
     a 2D pixel coordinate frame.
@@ -53,10 +55,21 @@ class Widget(Visual):
         self.events.rect_change()
 
 
+
 class SubScene(Entity):
     """ A subscene with entities.
     
-    A subscene can be a child of a Canvas or a ViewBox.
+    A subscene can be a child of a Canvas or a ViewBox. It is a
+    placeholder for the transform to make the sub scene appear as
+    intended. It's transform cannot be mannually set, but its set
+    automatically and is based on three components:
+    
+      * Viewbox transform: a scale and translation to make the subscene
+        be displayed in the boundaries of the viewbox.
+      * Projection transform: the camera projection, e.g. perspective
+      * position transform: the inverse of the transform from this
+        subscene to the camera. This takes care of position and
+        orientation of the view.
     
     TODO: should camera, lights, etc. be properties of the subscene or the
     viewbox? I think of the scene. In that way canvas.root can simply
@@ -130,11 +143,12 @@ class SubScene(Entity):
     
     
     def _update_transform(self, event):
+        # Get three components of the transform
+        viewbox = self.viewbox_transform
         projection = self.camera.get_projection(event)
-        viewtransform = projection * self._get_camera_transform()
-        # todo: viewbox transform in front or behind?
-        self._transform = self.viewbox_transform * viewtransform
-#         self._transform = viewtransform * self.viewbox_transform 
+        position = self._get_camera_transform()
+        # Combine and set
+        self._transform = viewbox * projection * position
     
     
     def _get_camera_transform(self):
@@ -157,48 +171,21 @@ class SubScene(Entity):
         # Return inverse
         return camtransform.inverse()
     
+    
     def paint(self, event):
-       
-#         if event.canvas.root is self:
-#             # Do not take transform into account if root; the root
-#             # can have a parent and a transform and a size with respect
-#             # to that parent. But we should ignore these here.
-#             #transform = STTransform(translate=(-1.0, -1.0))
-#             scaleback = NullTransform()
-#             size = 2.0, 2.0
-#         else:
-#             # Multiply with unit STTTransform in case view_transform is Null
-#             transform = event.full_transform * STTransform()
-#             size = event.resolution
-#             scaleback = STTransform()
-#             scaleback.scale = size[0], size[1]
-#             scaleback = scaleback * transform
-#             
-#             xy0, xy1 = scaleback.map((0, 0, 0)), scaleback.map((1, 1, 1))
-#             size = xy1[0]-xy0[0], xy1[1] -xy0[1]
-#             scaleback = STTransform()
-#             scaleback.scale = size[0], size[1]
-#             # todo: need *previous* res!
         
-#         # Calculate x, y and w, h
-#         tx, ty = transform.translate[:2]
-#         sx, sy = transform.scale[:2]
-#         res = event.resolution
-#         
-#         # Transform from NDC to viewport coordinates
-#         x = (1.0 + tx) * res[0] * 0.5
-#         y = (1.0 + ty) * res[1] * 0.5
-#         w = (size[0] * sx) * res[0] * 0.5
-#         h = (size[1] * sy) * res[1] * 0.5
-        
-        
+        # todo: update transform only when necessay
         self._update_transform(event)
-        self.process_system(event, 'draw')  # invoke our drawing system
-
+        
+        # Invoke our drawing system
+        self.process_system(event, 'draw') 
+    
+    
     def process_system(self, event, system_name):
         """ Process a system.
         """
         self._systems[system_name].process(event, self)
+
 
 
 class ViewBox(Widget):
@@ -280,16 +267,6 @@ class ViewBox(Widget):
             
         self.camera.view_mouse_event(event)
 
-#     def on_paint(self, event):
-#         super(ViewBox, self).on_paint(event)
-#         
-#         r = self.rect.padded(self.margin)
-#         r = event.framebuffer_transform.map(r).normalized()
-#         event.push_viewport(r.left, r.bottom, r.width, r.height)
-#         
-#     def on_children_painted(self, event):
-#         event.pop_viewport()
-    
     
     @property
     def prefer_pixel_grid(self):
@@ -349,155 +326,97 @@ class ViewBox(Widget):
         themselves. 
         """
         
-        # Get some stats
-        size = self.size
-        prev_res = event.resolution  # parent resolution
-        canvas_res = event.canvas.size  # root resolution
+        # --  Calculate viewbox transformation
         
-        # Get current transform and calculate the scale, assuming linear trans
+        # Get the sign of the camera transform of the parent scene. We
+        # cannot look at full_transform, since the ViewBox may just be
+        # really upside down (intended). The camera transform defines
+        # the direction of the dimensions of the coordinate frame.
+        # todo: get this sign information in a more effective manner
+        parent_viewbox = event.viewbox
+        if parent_viewbox:
+            s = parent_viewbox.camera.get_projection(event) * STTransform()
+            signx = 1 if s.scale[0] > 0 else -1
+            signy = 1 if s.scale[1] > 0 else -1
+        else:
+            signx, signy = 1, 1
+        
+        # Determine transformation to make NDC coords (-1..1) map to
+        # the viewbox region. The translation is equivalent to doing a
+        # (1, 1) shift *after* the scale.
+        size = self.size
+        trans = STTransform()
+        trans.scale = signx * size[0] / 2, signy * size[1] / 2
+        trans.translate = size[0] / 2, size[1] / 2
+        
+        # Set this transform at the scene
+        self.scene.viewbox_transform = trans
+        
+        # -- Calculate resolution
+        
+        # Get current transform and calculate the 'scale' of the viewbox
         transform = event.full_transform
         p0, p1 = transform.map((0,0)), transform.map(size)
         sx, sy = p1[0] - p0[0], p1[1] - p0[1]
 
-        # sx and sy specify how a square of unit size will currently projected.
-        # Now, we must ensure -1..1 is projected in the area that this widget
-        # takes up. Therefore we must first calculate this area.
+        # From the viewbox scale, we can calculate the resolution. Note that
+        # the viewbox scale (sx, sy) applies to the root.
+        # todo: we should probably take rotation into account here ...
+        canvas_res = event.canvas.size  # root resolution
+        w = abs(sx * canvas_res[0] * 0.5)
+        h = abs(sy * canvas_res[1] * 0.5)
         
-        # Estimate how a unit square would be projected. This assumes
-        # a linear transform
-        sx2, sy2 = sx / size[0], sy / size[1]
+        # Set resolution (note that resolution can be non-integer)
+        self._resolution = w, h
+        #print(getattr(self, '_name', ''), w, h)
         
-        w = sx * canvas_res[0] * 0.5
-        h = sy * canvas_res[1] * 0.5
+        # -- Paint
         
-        #w, h = size[0] * sx, size[1] * sy
-        self._resolution = res = w, h
+        # Get user preference
+        prefer = self.prefer_pixel_grid
+        assert prefer in ('viewport', 'transform', 'fbo')
+        viewport = None
+        if prefer == 'viewport':
+            viewport = self._get_viewport(event)
         
-        print(self._name, w, h)
-        
-#         if getattr(self, '_name', '') == 'vb21':
-#            1/0
-        
-        
-        trans1 = STTransform()
-        trans2 = STTransform()
-        if True:#getattr(self, '_name', '') == 'vb21ssssss':
-            trans1.scale = size[0]/2, size[1]/2
-            #trans1.scale = res[0] / prev_res[0], res[1] / prev_res[1]
-            trans2.translate = 1,1
-        else:
-            trans1.scale = w / event.resolution[0], h / event.resolution[1]
-            trans1.translate =  w / event.resolution[0], h / event.resolution[1]
-        self.scene.viewbox_transform = trans1 * trans2
-#         if getattr(self, '_name', '') == 'vb1':
-#             1/0
+        if viewport:
+            event.push_viewport(*viewport)
         event.push_viewbox(self)
         self.scene.paint(event)
-        #self.process_system(event, 'draw')  # invoke our drawing system
         event.pop_viewbox()
-        
-        
-#         # Is this the root viewbox?
-#         is_root = event.canvas.root is self
-#         
-#         # Get whether the transform to here is translate-scale only
-#         is_ts_only = False
-#         if isinstance(event.view_transform, (NullTransform, STTransform)):
-#             is_ts_only = True
-#         
-#         # Get user preference
-#         prefer = self.prefer_pixel_grid
-#         assert prefer in ('viewport', 'transform', 'fbo')
-#         
-#         # Do what a viewbox does, in one of three ways ...
-#         if is_root or (is_ts_only and prefer == 'viewport'):
-#             self._paint_viewport(event)
-#         elif is_ts_only and prefer == 'transform':
-#             self._paint_via_transform(event)
-#         else:
-#             self._paint_via_fbo(event)
+        if viewport:
+            event.pop_viewport()
     
     
-    def _get_pixel_rect_assuming_st_transform(self, event):
-        """ Get the pixel rectangle coordinates for this viewbox,
-        assuming that we only have translation and scale with respect
-        to the parent pixel grid.
+    def _get_viewport(self, event):
+        """ Get the pixel rectangle coordinates for this viewbox. If the 
+        full transform is not translate-scale only, None is returned.
         """
         
-        if event.canvas.root is self:
-            # Do not take transform into account if root; the root
-            # can have a parent and a transform and a size with respect
-            # to that parent. But we should ignore these here.
-            transform = STTransform(translate=(-1.0, -1.0))
-            size = 2.0, 2.0
-        else:
-            # Multiply with unit STTTransform in case view_transform is Null
-            transform = event.view_transform * STTransform()
-            size = self.size 
+        # Get transform to here
+        transform = event.full_transform * STTransform()
+        transform = transform.simplify()
+        size = self.size 
+        
+        # Get whether the transform to here is translate-scale only
+        if not isinstance(transform, STTransform):
+            print('Nope!', transform)
+            return None
         
         # Calculate x, y and w, h
         tx, ty = transform.translate[:2]
         sx, sy = transform.scale[:2]
-        res = event.resolution
+        res = event.canvas.size
         
         # Transform from NDC to viewport coordinates
-        x = (1.0 + tx) * res[0] * 0.5
-        y = (1.0 + ty) * res[1] * 0.5
-        w = (size[0] * sx) * res[0] * 0.5
-        h = (size[1] * sy) * res[1] * 0.5
+        signx, signy = sx > 0, sy > 0
+        x = (signx*1.0 + tx) * res[0] * 0.5
+        y = (signy*1.0 + ty) * res[1] * 0.5
+        w = abs((size[0] * sx) * res[0] * 0.5)
+        h = abs((size[1] * sy) * res[1] * 0.5)
         
         # Return rounded to integers
         return int(x+0.5), int(y+0.5), int(w+0.5), int(h+0.5)
-    
-    
-    def _paint_viewport(self, event):
-        """ Paint the viewbox via a viewport. This assumes that there
-        are no transforms from the previous viewport to here, except
-        for translation and scaling.
-        
-        This method for providing a rectangular pixel grid is the most
-        straightforward and relatively efficient.
-        """
-        
-        # Get viewport and resolution of parent pixel grid
-        x, y, w, h = self._get_pixel_rect_assuming_st_transform(event)
-        res = event.resolution
-        
-        # Check if we are inside the bounds of the parent pixel grid. 
-        # If not, use transform method
-        if x < 0 or y < 0: 
-            return self._paint_via_transform(event)
-        if (x+w) > res[0] or (y+h) > res[1]: 
-            return self._paint_via_transform(event)
-        
-        # Process our children
-        event.push_viewbox(self, (x, y, w, h))
-        self.process_system(event, 'draw')  # invoke our drawing system
-        event.pop_viewbox()
-        # ... return to canvas, or drawing system that invoked us ...
-    
-    
-    def _paint_via_transform(self, event):
-        """ Paint the viewbox via a transform. This assumes that there
-        are no transforms from the previous viewport to here, except
-        for translation and scaling.
-        
-        This method for providing a rectangular pixel grid may be the
-        most efficient, especially if many viewboxes are used, because
-        there is no overhead for setting viewport and scisssors. Also,
-        collection may "cross this viewbox". However, this method
-        required an alternative clipping method (not yet implemented),
-        e.g. in the fragment shader.
-        """
-    
-        # Get viewport and resolution of parent pixel grid
-        x, y, w, h = self._get_pixel_rect_assuming_st_transform(event)
-        
-        # Process our children
-        event.push_viewbox(self, (x, y, w, h), use_transform=True)
-        self.process_system(event, 'draw')  # invoke our drawing system
-        event.pop_viewbox()
-        # ... return to canvas, or drawing system that invoked us ...
     
     
     def _paint_via_fbo(self, event):
@@ -612,6 +531,7 @@ class ViewBox(Widget):
 
 
 
+# todo: What to do with Document. Make dpi a property of the SubScene or ViewBox?
 class Document(Entity):
     """
     Box that represents the area of a rectangular document with 
@@ -659,12 +579,9 @@ class DrawingSystem(object):
             entity.paint(event)
         # Paint if it is a visual (also if a viewbox)
         elif isinstance(entity, Visual):
-            #print(entity)
-            #for e in event.path:
-            #    print('  %r' % e)
-            print(entity, 'in', event.path[-3]._name)
-            print('  ', event.full_transform.simplify())
-            print('  ', event.path)
+            #print(entity, 'in', event.path[-3]._name)
+            #print('  ', event.full_transform.simplify())
+            #print('  ', event.path)
             entity.paint(event)
         
         # Processs children; recurse. 
@@ -710,11 +627,7 @@ class NDCCamera(Camera):
     """ Camera that presents a view on the world in normalized device
     coordinates (-1..1).
     """
-    def get_projection(self, event):
-        size = event.resolution
-        trans = STTransform()
-#         trans.scale = 1.0/size[0], 1.0/size[1]
-        return trans
+    pass
 
 
 class PixelCamera(Camera):
@@ -724,18 +637,16 @@ class PixelCamera(Camera):
     """
     def get_projection(self, event):
         w, h = event.resolution
-#         from vispy.util import transforms as trans
-#         projection = np.eye(4)
-#         trans.scale(projection, 2.0/w, 2.0/h)
-#         trans.translate(projection, -1, -1)
-#         trans.scale(projection, 1, -1)  # Flip y-axis
-#         #return transforms.AffineTransform(projection)
         trans = transforms.STTransform()
-        # todo: flip back y-axis ?
-        trans.scale = 2.0/w, 2.0/h  # Flip y-axis
-        trans.translate = -1, -1
+        if True:
+            # Origin in top left (flipped y-axis)
+            trans.scale = 2.0/w, -2.0/h
+            trans.translate = -1, 1
+        else:
+            # Origin in bottom left
+            trans.scale = 2.0/w, 2.0/h
+            trans.translate = -1, -1
         return trans
-
 
 
 class TwoDCamera(Camera):

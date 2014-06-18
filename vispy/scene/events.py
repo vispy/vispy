@@ -76,7 +76,10 @@ class SceneEvent(Event):
     def viewbox(self):
         """ The current viewbox.
         """
-        return self._viewbox_stack[-1]
+        if self._viewbox_stack:
+            return self._viewbox_stack[-1]
+        else: 
+            return None
     
     @property
     def path(self):
@@ -97,9 +100,6 @@ class SceneEvent(Event):
             total_path += item._path
         return total_path
 
-#     def _set_path(self, path):
-#         self._path = path
-    
     def push_entity(self, entity):
         """ Push an entity on the stack. """
         self._stack.append(entity)

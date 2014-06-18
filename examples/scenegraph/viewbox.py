@@ -23,7 +23,7 @@ gloo.gl.use('desktop debug')
 # With the tranform method you can see the absence of clipping.
 # With the fbo method you can see the texture interpolation (induced by 
 # a delibirate mismatch in screen and textue resolution)
-PREFER_PIXEL_GRID = 'fbo'  # viewport, transform, or fbo
+PREFER_PIXEL_GRID = 'viewport'  # viewport, transform, or fbo
 
 
 # Create lines for use in ndc and pixel coordinates
@@ -35,10 +35,12 @@ pos = np.empty((N,2), np.float32)
 #
 pos[:,0] = np.linspace(-1., 1., N)
 pos[:,1] = np.random.normal(0.0, 0.5, size=N)
+pos[:20,1] = -0.5  # So we can see which side is down
 line_ndc = scene.visuals.Line(pos=pos.copy(), color=color)
 #
 pos[:,0] = np.linspace(50, 350., N)
 pos[:,1] = 150 + pos[:,1] * 50
+pos[:20,1] = 100  # So we can see which side is down
 line_pixels = scene.visuals.Line(pos=pos.copy(), color=color)
 
 # Create canvas
