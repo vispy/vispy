@@ -32,7 +32,7 @@ class Unstructured2d(app.Canvas):
                  colormap=None, data_lim=None,
                  dir_x_right=True, dir_y_top=True,
                  **kwargs):
-        app.Canvas.__init__(self, close_keys='escape', **kwargs)
+        app.Canvas.__init__(self, **kwargs)
         self.create_shader(colormap)
         self.create_mesh(x, y, u, v)
         self.program.bind(self.vbo)
@@ -82,7 +82,7 @@ class Unstructured2d(app.Canvas):
 
         self.program = gloo.Program(vertex, fragment)
         if len(colormap.shape) == 2:
-            self.program['texture'] = colormap[None, :, :]
+            self.program['texture'] = np.ascontiguousarray(colormap[None, :, :])
         else:
             self.program['texture'] = colormap
         self.program['texture'].interpolation = gl.GL_LINEAR
@@ -113,20 +113,18 @@ class Unstructured2d(app.Canvas):
         self.index = gloo.IndexBuffer(edges)
 
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gloo.set_state(blend=True, clear_color=(1, 1, 1, 1),
+                       blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def on_draw(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        self.program.draw(gl.GL_TRIANGLES, self.index)
+        gloo.clear()
+        self.program.draw('triangles', self.index)
 
     def on_resize(self, event):
         self.resize(*event.size)
 
     def resize(self, width, height):
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         data_width = self._data_lim[0][1] - self._data_lim[0][0]
         data_height = self._data_lim[1][1] - self._data_lim[1][0]
         data_aspect = data_width / float(data_height)
@@ -148,7 +146,8 @@ class Unstructured2d(app.Canvas):
         args_ortho = frame_lim[0][::(1 if self._dir_x_right else -1)]
         args_ortho += frame_lim[1][::(1 if self._dir_y_top else -1)]
         args_ortho += -1000, 1000
-        self.program['projection'] = ortho(*args_ortho)
+        self.projection = ortho(*args_ortho)
+        self.program['projection'] = self.projection
 
 
 def create_colormap2d_hsv(size=512):
@@ -205,13 +204,15 @@ if __name__ == '__main__':
     width = 500
     height = 500
     c1 = Unstructured2d(title="Unstructured 2D - 2D colormap",
-                        size=(width, height), position=(0, 0),
+                        size=(width, height), position=(0, 40),
                         x=loc[:, 0], y=loc[:, 1], u=vec[:, 0], v=vec[:, 1],
-                        colormap=create_colormap2d_4dirs(size=128))
+                        colormap=create_colormap2d_4dirs(size=128),
+                        close_keys='escape')
     c2 = Unstructured2d(title="Unstructured 2D - 1D colormap",
-                        size=(width, height), position=(width + 20, 0),
+                        size=(width, height), position=(width + 20, 40),
                         x=loc[:, 0], y=loc[:, 1], u=vec[:, 0],
-                        colormap=create_colormap1d_hot(size=128))
+                        colormap=create_colormap1d_hot(size=128),
+                        close_keys='escape')
     c1.show()
     c2.show()
     app.run()
