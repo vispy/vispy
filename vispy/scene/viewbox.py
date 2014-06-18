@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from .entity import Entity
-from .transforms import STTransform, NullTransform, PerspectiveTransform
+from .transforms import STTransform, NullTransform, PerspectiveTransform, ChainTransform
 from ..util.event import Event
 
 
@@ -203,7 +203,7 @@ class ViewBox(Widget):
         self._bgcolor = (0.0, 0.0, 0.0, 1.0)
         
         # Init preferred method to provided a pixel grid
-        self._prefer_pixel_grid = 'viewport'
+        self._prefer_pixel_grid = 'transform'
         
         # Each viewbox has a scene widget, which has a transform that
         # represents the transformation imposed by camera.
@@ -321,9 +321,9 @@ class ViewBox(Widget):
         """ Paint the viewbox. 
         
         This does not really draw *this* object, but prepare for drawing
-        our childen to the virtual canvas that this viewbox represents.
-        Then the drawing system is invoked to draw the children
-        themselves. 
+        our the subscene. In particular, here we calculate the transform
+        needed to project the subscene in our viewbox rectangle. Also
+        we handle setting a viewport if requested.
         """
         
         # --  Calculate viewbox transformation
@@ -333,6 +333,7 @@ class ViewBox(Widget):
         # really upside down (intended). The camera transform defines
         # the direction of the dimensions of the coordinate frame.
         # todo: get this sign information in a more effective manner
+        # than we can probably also get rid of storing viewbox on event!
         parent_viewbox = event.viewbox
         if parent_viewbox:
             s = parent_viewbox.camera.get_projection(event) * STTransform()
@@ -379,19 +380,27 @@ class ViewBox(Widget):
         if prefer == 'viewport':
             viewport = self._get_viewport(event)
         
-        if viewport:
-            event.push_viewport(*viewport)
-        event.push_viewbox(self)
-        self.scene.paint(event)
-        event.pop_viewbox()
-        if viewport:
-            event.pop_viewport()
+        if prefer == 'fbo':
+            event.push_viewbox(self)
+            self._paint_via_fbo(event)
+            event.pop_viewbox()
+        else:
+            if viewport:
+                event.push_viewport(*viewport)
+            event.push_viewbox(self)
+            self.scene.paint(event)
+            event.pop_viewbox()
+            if viewport:
+                event.pop_viewport()
     
     
     def _get_viewport(self, event):
         """ Get the pixel rectangle coordinates for this viewbox. If the 
         full transform is not translate-scale only, None is returned.
         """
+        
+        # Note that we could reuse w, h, signx, signy from paint, but we 
+        # repdoduce them here to make this code more self-contained (for now).
         
         # Get transform to here
         transform = event.full_transform * STTransform()
@@ -400,7 +409,6 @@ class ViewBox(Widget):
         
         # Get whether the transform to here is translate-scale only
         if not isinstance(transform, STTransform):
-            print('Nope!', transform)
             return None
         
         # Calculate x, y and w, h
@@ -487,24 +495,31 @@ class ViewBox(Widget):
                                     depth=gloo.DepthBuffer((10,10)),
                                     )
         
-        # todo: for now we assume scale-translate only!
-        # Get viewport and resolution of parent pixel grid
-        x, y, w, h = self._get_pixel_rect_assuming_st_transform(event)
-        res = event.resolution
+#         # todo: for now we assume scale-translate only!
+#         # Get viewport and resolution of parent pixel grid
+#         x, y, w, h = self._get_pixel_rect_assuming_st_transform(event)
+#         res = event.resolution
+        
         # Set texture coords to make the texture be drawn in the right place
-        x1, y1 = 2*x/res[0]-1, 2*y/res[1]-1
-        x2, y2 = x1 + 2*w/res[0], y1 + 2*h/res[1]
-        z = 0
+        # Note that we would just use -1..1 if we would use a Visual.
+        # Note that we need the viewbox transform here!
+        coords = (-1, -1, 0), (1, 1, 0)
+        transform = event.render_transform * self.scene.viewbox_transform
+        coords = [transform.map(c) for c in coords]
+        x1, y1, z = coords[0][:3]
+        x2, y2, z = coords[1][:3]
         vertexes = np.array([[x1,y1,z], [x2,y1,z], [x1,y2,z], [x2,y2,z]], 
                             np.float32)
         self._vert.set_data(vertexes)
         
-        # Set resolution of pixel grid that we provide (can be anything!)
-        # We add one, to get a barely noticable mis-alignment, so that
-        # interpolation kicks in and we clearly see that this is an FBO
-        resolution = int(w+1), int(h+1)
+#         # Set resolution of pixel grid that we provide (can be anything!)
+#         # We add one, to get a barely noticable mis-alignment, so that
+#         # interpolation kicks in and we clearly see that this is an FBO
+#         resolution = int(w+1), int(h+1)
         
         # Set fbo size (mind that this is set using shape!)
+        # +1 to create delibirate smoothing
+        resolution = [int(i+0.5+1) for i in self._resolution]  # is set in paint()
         shape = resolution[1], resolution[0]
         fbo.color_buffer.resize(shape+(4,))
         fbo.depth_buffer.resize(shape)
@@ -513,18 +528,29 @@ class ViewBox(Widget):
         clrs = {'':(0.1, 0.1, 0.1), 
                 'vb1':(0.2,0,0), 'vb11':(0.2,0,0.1), 'vb12':(0.2,0,0.2), 
                 'vb2':(0,0.2,0), 'vb21':(0,0.2,0.1), 'vb22':(0,0.2,0.2)}
-        clr = clrs['']  # clrs[getattr(self,'_name', '')]
+        clr = clrs[getattr(self,'_name', '')]  # clrs[''] or clrs[getattr(self,'_name', '')]
         
         # Prepare viewbox
         rect = 0, 0, resolution[0], resolution[1]
-        event.push_viewbox(self, rect, fbo=fbo)
+        #transform = self._get_viewport(event)
+        transform = event.full_transform * self.scene.viewbox_transform
+        transform = transform.inverse()
+        event.push_fbo(rect, fbo, transform)
+        
+        #self.scene.viewbox_transform = NullTransform()
+        
+        print((event.render_transform * self.scene.viewbox_transform).simplify())
+        
         gl.glClearColor(clr[0], clr[1], clr[2], 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        
         # Process childen
-        self.process_system(event, 'draw')  # invoke our drawing system
+        self.scene.paint(event)
+        
         # Revert
         #gl.glFlush()
-        event.pop_viewbox()
+        event.pop_fbo()
+        
         # Draw the result in the parent scene
         self._myprogram.draw(gloo.gl.GL_TRIANGLE_STRIP)
         # ... return to canvas, or drawing system that invoked us ...

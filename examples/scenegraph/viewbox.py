@@ -23,7 +23,7 @@ gloo.gl.use('desktop debug')
 # With the tranform method you can see the absence of clipping.
 # With the fbo method you can see the texture interpolation (induced by 
 # a delibirate mismatch in screen and textue resolution)
-PREFER_PIXEL_GRID = 'viewport'  # viewport, transform, or fbo
+PREFER_PIXEL_GRID = 'aa'  # viewport, transform, or fbo
 
 
 # Create lines for use in ndc and pixel coordinates
@@ -89,11 +89,9 @@ line_ndc.add_parent(vb21.scene)
 line_pixels.add_parent(vb22.scene)
 
 
-
-
-# # Set preferred pixel grid method
-# for vb in [vb1, vb11, vb12, vb2, vb21, vb22]:
-#     vb.prefer_pixel_grid = PREFER_PIXEL_GRID
+# Set preferred pixel grid method
+for vb in [vb1, vb11, vb12, vb2, vb21, vb22]:
+    vb.prefer_pixel_grid = PREFER_PIXEL_GRID
 
 
 # For testing/dev

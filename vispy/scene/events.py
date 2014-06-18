@@ -121,19 +121,35 @@ class SceneEvent(Event):
     
     def push_viewport(self, x, y, w, h):
         x, y, w, h = int(x), int(y), int(w), int(h)
-        self._viewport_stack.append((x, y, w, h))
+        self._viewport_stack.append(((x, y, w, h), None, None))
         gl.glViewport(x, y, w, h)
         
     def pop_viewport(self):
-        self._viewport_stack.pop(-1)
-        gl.glViewport(*self._viewport_stack[-1])
+        # Pop old
+        viewport, fbo, transform = self._viewport_stack.pop(-1)
+        assert fbo is None
+        # Activate new
+        viewport, fbo, transform = self._viewport_stack[-1]
+        if fbo:
+            fbo.activate()
+        gl.glViewport(*viewport)
     
-    
-    def push_fbo(self, ):
-        pass  # todo: fbo
+    def push_fbo(self, viewport, fbo, transform):
+        self._viewport_stack.append((viewport, fbo, transform))
+        fbo.activate()
+        gl.glViewport(*viewport)
         
     def pop_fbo(self):
-        pass  # todo: fbo
+        # Pop old
+        viewport, fbo, transform = self._viewport_stack.pop(-1)
+        assert fbo is not None
+        fbo.deactivate()
+        # Activate new
+        viewport, fbo, transform = self._viewport_stack[-1]
+        if fbo:
+            fbo.activate()
+        gl.glViewport(*viewport)
+    
     
 #     # todo: a lot of stuff is rather specific to draw events
 #     def push_viewbox(self, viewbox, rect, use_transform=False, fbo=None):
@@ -214,6 +230,7 @@ class SceneEvent(Event):
         entity; the composition of the line of entities from viewbox to
         here.
         """
+        # todo: reversed, or not???? quite fundamental
         tr = [e.transform for e in reversed(self._stack)]
         # TODO: cache transform chains
         return ChainTransform(tr)
@@ -261,15 +278,17 @@ class SceneEvent(Event):
         if len(self._viewport_stack) <= 1:
             return self.full_transform
         else:
-            print('Taking viewport into account in render_transform')
-            viewport = self._viewport_stack[-1]
-            csize = self.canvas.size
-            scale = csize[0]/viewport[2], csize[1]/viewport[3]
-            origin = (((csize[0] - 2.0 * viewport[0]) / viewport[2] - 1), 
-                    ((csize[1] - 2.0 * viewport[1]) / viewport[3] - 1))
-            
-            return (STTransform(translate=(origin[0], origin[1])) * 
-                    STTransform(scale=scale) * self.full_transform)
+            viewport, fbo, transform  = self._viewport_stack[-1]
+            if fbo:
+                return transform * self.full_transform
+            else:
+                csize = self.canvas.size
+                scale = csize[0]/viewport[2], csize[1]/viewport[3]
+                origin = (((csize[0] - 2.0 * viewport[0]) / viewport[2] - 1), 
+                        ((csize[1] - 2.0 * viewport[1]) / viewport[3] - 1))
+                
+                return (STTransform(translate=(origin[0], origin[1])) * 
+                        STTransform(scale=scale) * self.full_transform)
         
 #     @property
 #     def framebuffer_transform(self):
