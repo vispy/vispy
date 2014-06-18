@@ -7,7 +7,7 @@ from __future__ import division
 from ..gloo import gl
 from .. import app
 
-from .viewbox import Document, ViewBox
+from .viewbox import Document, ViewBox, SubScene
 from .transforms import STTransform, NullTransform
 from .events import ScenePaintEvent, SceneMouseEvent
 
@@ -26,10 +26,9 @@ class SceneCanvas(app.Canvas):
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
         
+        # todo: rename root to scene, like in ViewBox
         self._root = None
-        #root = Document()
-        root = ViewBox()
-        root.transform = STTransform()
+        root = SubScene()
         self.root = root
         
     @property

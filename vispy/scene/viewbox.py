@@ -38,7 +38,7 @@ class Widget(Visual):
     def pos(self, p):
         assert isinstance(p, tuple)
         assert len(p) == 2
-        self.transform.translate = p[0], p[1], 0, 1
+        self.transform.translate = p[0], p[1], 0, 0
         self.events.rect_change()
     
     @property
@@ -53,20 +53,164 @@ class Widget(Visual):
         self.events.rect_change()
 
 
+class SubScene(Entity):
+    """ A subscene with entities.
+    
+    A subscene can be a child of a Canvas or a ViewBox.
+    
+    TODO: should camera, lights, etc. be properties of the subscene or the
+    viewbox? I think of the scene. In that way canvas.root can simply
+    be a subscene.
+    """
+    
+    def __init__(self, parent=None):
+        Entity.__init__(self, parent)
+        
+        # Each scene has a camera. Default is NDCCamera (i.e. null camera)
+        self._camera = None
+        self.camera = NDCCamera(self)
+        
+        self.viewbox_transform = NullTransform()
+        
+        # Initialize systems
+        self._systems = {}
+        self._systems['draw'] = DrawingSystem()
+    
+    @property
+    def camera(self):
+        """ The camera associated with this viewbox. Can be None if there
+        are no cameras in the scene.
+        """
+        return self._camera
+    
+    @camera.setter
+    def camera(self, cam):
+        # convenience: set parent if it's an orphan
+        if not cam.parents:
+            cam.parents = self
+        # Test that self is a parent of the camera
+        object = cam
+        while object is not None:
+            # todo: ignoring multi-parenting here, we need Entity.isparent()
+            object = object.parents[0]  
+            if isinstance(object, SubScene):
+                break
+        if object is not self:
+            raise ValueError('Given camera is not in the scene itself.')
+        # Set and (dis)connect events
+#         if self._camera is not None:
+#             self._camera.events.update.disconnect(self._camera_update)
+        self._camera = cam
+#         cam.events.update.connect(self._camera_update)
+    
+    def get_cameras(self):
+        """ Get a list of all cameras that live in this scene.
+        """
+        def getcams(val):
+            cams = []
+            for entity in val:
+                if isinstance(entity, Camera):
+                    cams.append(entity)
+                if isinstance(entity, SubScene):
+                    pass # Do not go into subscenes
+                elif isinstance(entity, Entity):  # if, not elif!
+                    cams.extend(getcams(entity))
+            return cams
+        return getcams(self)
+    
+    
+    @property
+    def transform(self):
+        return self._transform
+    
+    
+    @transform.setter
+    def transform(self, transform):
+        raise RuntimeError('Cannot set transform of SubScene object.')
+    
+    
+    def _update_transform(self, event):
+        projection = self.camera.get_projection(event)
+        viewtransform = projection * self._get_camera_transform()
+        # todo: viewbox transform in front or behind?
+        self._transform = self.viewbox_transform * viewtransform
+#         self._transform = viewtransform * self.viewbox_transform 
+    
+    
+    def _get_camera_transform(self):
+        """ Calculate the transform from the camera to the SubScene entity.
+        This is the inverse of the transform chain *to* the camera.
+        """
+        
+        # Get total transform of the camera
+        object = self.camera
+        camtransform = object.transform
+        
+        while True:
+            # todo: does it make sense to have a camera in a multi-path?
+            object = object.parents[0]
+            if object is self:
+                break  # Go until we meet ourselves
+            if object.transform is not None:
+                camtransform = camtransform * object.transform
+        
+        # Return inverse
+        return camtransform.inverse()
+    
+    def paint(self, event):
+       
+#         if event.canvas.root is self:
+#             # Do not take transform into account if root; the root
+#             # can have a parent and a transform and a size with respect
+#             # to that parent. But we should ignore these here.
+#             #transform = STTransform(translate=(-1.0, -1.0))
+#             scaleback = NullTransform()
+#             size = 2.0, 2.0
+#         else:
+#             # Multiply with unit STTTransform in case view_transform is Null
+#             transform = event.full_transform * STTransform()
+#             size = event.resolution
+#             scaleback = STTransform()
+#             scaleback.scale = size[0], size[1]
+#             scaleback = scaleback * transform
+#             
+#             xy0, xy1 = scaleback.map((0, 0, 0)), scaleback.map((1, 1, 1))
+#             size = xy1[0]-xy0[0], xy1[1] -xy0[1]
+#             scaleback = STTransform()
+#             scaleback.scale = size[0], size[1]
+#             # todo: need *previous* res!
+        
+#         # Calculate x, y and w, h
+#         tx, ty = transform.translate[:2]
+#         sx, sy = transform.scale[:2]
+#         res = event.resolution
+#         
+#         # Transform from NDC to viewport coordinates
+#         x = (1.0 + tx) * res[0] * 0.5
+#         y = (1.0 + ty) * res[1] * 0.5
+#         w = (size[0] * sx) * res[0] * 0.5
+#         h = (size[1] * sy) * res[1] * 0.5
+        
+        
+        self._update_transform(event)
+        self.process_system(event, 'draw')  # invoke our drawing system
+
+    def process_system(self, event, system_name):
+        """ Process a system.
+        """
+        self._systems[system_name].process(event, self)
+
+
 class ViewBox(Widget):
-    """ Provides a rectangular pixel grid to which its subscene is rendered
+    """ Provides a rectangular window to which its subscene is rendered
     
     The viewbox defines a certain coordinate frame using a camera (which
     is an entity in the subscene itself). A viewbox also defines
     background color, lights, and has its own drawing system.
-    
-    The viewbox provides a rectangular pixel grid using one of three methods,
-    see the docs of prefer_pixel_grid for more information.
     """
     
     def __init__(self, *args, **kwds):
         Widget.__init__(self, *args, **kwds)
-        self._child_group = Entity(parent=self)
         
         # Background color of this viewbox. Used in glClear()
         self._bgcolor = (0.0, 0.0, 0.0, 1.0)
@@ -74,14 +218,11 @@ class ViewBox(Widget):
         # Init preferred method to provided a pixel grid
         self._prefer_pixel_grid = 'viewport'
         
-        # Each viewbox has a camera. Default is NDCCamera (i.e. null camera)
-        self._camera = None
-        self.camera = NDCCamera(self)
+        # Each viewbox has a scene widget, which has a transform that
+        # represents the transformation imposed by camera.
+        self._scene = SubScene()
+        self._scene.parent = self
         
-        # Initialize systems
-        self._systems = {}
-        self._systems['draw'] = DrawingSystem()
-    
     
     @property
     def bgcolor(self):
@@ -106,53 +247,27 @@ class ViewBox(Widget):
         self._bgcolor = tuple(value)
     
     @property
+    def scene(self):
+        """ The root entity of the subscene of this viewbox. This entity
+        takes care of the transformation imposed by the camera of the
+        viewbox.
+        """
+        return self._scene
+    
+    
+    @property
     def camera(self):
         """ The camera associated with this viewbox. Can be None if there
         are no cameras in the scene.
         """
-        return self._camera
+        return self.scene.camera
     
     @camera.setter
     def camera(self, cam):
-        # convenience: set parent if it's an orphan
-        if not cam.parents:
-            cam.parents = self
-        # Test that self is a parent of the camera
-        object = cam
-        while object is not None:
-            # todo: ignoring multi-parenting here, we need Entity.isparent()
-            object = object.parents[0]  
-            if isinstance(object, ViewBox):
-                break
-        if object is not self:
-            raise ValueError('Given camera is not in the scene of the ViewBox.')
-        # Set and (dis)connect events
-        if self._camera is not None:
-            self._camera.events.update.disconnect(self._camera_update)
-        self._camera = cam
-        cam.events.update.connect(self._camera_update)
-    
-    def get_cameras(self):
-        """ Get a list of all cameras that live in this scene.
+        """ Get/set the camera of the scene. Equivalent to scene.camera.
         """
-        def getcams(val):
-            cams = []
-            for entity in val:
-                if isinstance(entity, Camera):
-                    cams.append(entity)
-                if isinstance(entity, ViewBox):
-                    pass # Do not go into subscenes
-                elif isinstance(entity, Entity):  # if, not elif!
-                    cams.extend(getcams(entity))
-            return cams
-        return getcams(self)
+        self.scene.camera = cam
     
-    
-    def _camera_update(self, event):
-        self._child_group.transform = self.camera.transform.inverse()
-        
-    def add(self, entity):
-        entity.add_parent(self._child_group)
     
     def on_mouse_move(self, event):
         if event.handled:
@@ -174,11 +289,6 @@ class ViewBox(Widget):
 #         
 #     def on_children_painted(self, event):
 #         event.pop_viewport()
-    
-    def process_system(self, event, system_name):
-        """ Process a system.
-        """
-        self._systems[system_name].process(event)
     
     
     @property
@@ -239,25 +349,73 @@ class ViewBox(Widget):
         themselves. 
         """
         
-        # Is this the root viewbox?
-        is_root = event.canvas.root is self
+        # Get some stats
+        size = self.size
+        prev_res = event.resolution  # parent resolution
+        canvas_res = event.canvas.size  # root resolution
         
-        # Get whether the transform to here is translate-scale only
-        is_ts_only = False
-        if isinstance(event.view_transform, (NullTransform, STTransform)):
-            is_ts_only = True
+        # Get current transform and calculate the scale, assuming linear trans
+        transform = event.full_transform
+        p0, p1 = transform.map((0,0)), transform.map(size)
+        sx, sy = p1[0] - p0[0], p1[1] - p0[1]
+
+        # sx and sy specify how a square of unit size will currently projected.
+        # Now, we must ensure -1..1 is projected in the area that this widget
+        # takes up. Therefore we must first calculate this area.
         
-        # Get user preference
-        prefer = self.prefer_pixel_grid
-        assert prefer in ('viewport', 'transform', 'fbo')
+        # Estimate how a unit square would be projected. This assumes
+        # a linear transform
+        sx2, sy2 = sx / size[0], sy / size[1]
         
-        # Do what a viewbox does, in one of three ways ...
-        if is_root or (is_ts_only and prefer == 'viewport'):
-            self._paint_viewport(event)
-        elif is_ts_only and prefer == 'transform':
-            self._paint_via_transform(event)
+        w = sx * canvas_res[0] * 0.5
+        h = sy * canvas_res[1] * 0.5
+        
+        #w, h = size[0] * sx, size[1] * sy
+        self._resolution = res = w, h
+        
+        print(self._name, w, h)
+        
+#         if getattr(self, '_name', '') == 'vb21':
+#            1/0
+        
+        
+        trans1 = STTransform()
+        trans2 = STTransform()
+        if True:#getattr(self, '_name', '') == 'vb21ssssss':
+            trans1.scale = size[0]/2, size[1]/2
+            #trans1.scale = res[0] / prev_res[0], res[1] / prev_res[1]
+            trans2.translate = 1,1
         else:
-            self._paint_via_fbo(event)
+            trans1.scale = w / event.resolution[0], h / event.resolution[1]
+            trans1.translate =  w / event.resolution[0], h / event.resolution[1]
+        self.scene.viewbox_transform = trans1 * trans2
+#         if getattr(self, '_name', '') == 'vb1':
+#             1/0
+        event.push_viewbox(self)
+        self.scene.paint(event)
+        #self.process_system(event, 'draw')  # invoke our drawing system
+        event.pop_viewbox()
+        
+        
+#         # Is this the root viewbox?
+#         is_root = event.canvas.root is self
+#         
+#         # Get whether the transform to here is translate-scale only
+#         is_ts_only = False
+#         if isinstance(event.view_transform, (NullTransform, STTransform)):
+#             is_ts_only = True
+#         
+#         # Get user preference
+#         prefer = self.prefer_pixel_grid
+#         assert prefer in ('viewport', 'transform', 'fbo')
+#         
+#         # Do what a viewbox does, in one of three ways ...
+#         if is_root or (is_ts_only and prefer == 'viewport'):
+#             self._paint_viewport(event)
+#         elif is_ts_only and prefer == 'transform':
+#             self._paint_via_transform(event)
+#         else:
+#             self._paint_via_fbo(event)
     
     
     def _get_pixel_rect_assuming_st_transform(self, event):
@@ -480,16 +638,13 @@ class DrawingSystem(object):
     
     """
     
-    def process(self, event):
-        viewbox = event.viewbox
-        root = event.canvas
-        if not isinstance(viewbox, ViewBox):
-            raise ValueError('DrawingSystem.draw expects a ViewBox instance.')
-        
+    def process(self, event, subscene):
         # Iterate over entities
-        for entity in viewbox:
+        assert isinstance(subscene, SubScene)
+        event.push_entity(subscene)
+        for entity in subscene:
             self._process_entity(event, entity)
-    
+        event.pop_entity()
     
     def _process_entity(self, event, entity):
         from .visuals import Visual  # todo: import crap
@@ -499,15 +654,22 @@ class DrawingSystem(object):
         # Push entity and set its total transform
         event.push_entity(entity)
         
+        # If a viewbox, let it render its own subscene 
         if isinstance(entity, ViewBox):
-            # If a viewbox, render the subscene (*this* drawing system
-            # does not process its children)
             entity.paint(event)
-        else:
-            # Paint if it is a visual
-            if isinstance(entity, Visual):
-                entity.paint(event)
-            # Processs children; recurse
+        # Paint if it is a visual (also if a viewbox)
+        elif isinstance(entity, Visual):
+            #print(entity)
+            #for e in event.path:
+            #    print('  %r' % e)
+            print(entity, 'in', event.path[-3]._name)
+            print('  ', event.full_transform.simplify())
+            print('  ', event.path)
+            entity.paint(event)
+        
+        # Processs children; recurse. 
+        # Do not go into subscenes (ViewBox.paint processes the subscene)
+        if not isinstance(entity, SubScene):
             for sub_entity in entity:
                 self._process_entity(event, sub_entity)
         
@@ -515,6 +677,7 @@ class DrawingSystem(object):
 
 
 from . import transforms  # Needed by cameras
+
 
 
 class Camera(Entity):
@@ -547,8 +710,11 @@ class NDCCamera(Camera):
     """ Camera that presents a view on the world in normalized device
     coordinates (-1..1).
     """
-    pass
-
+    def get_projection(self, event):
+        size = event.resolution
+        trans = STTransform()
+#         trans.scale = 1.0/size[0], 1.0/size[1]
+        return trans
 
 
 class PixelCamera(Camera):

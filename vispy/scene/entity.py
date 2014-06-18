@@ -42,9 +42,13 @@ class Entity(object):
         # TODO: use weakrefs for parents.
         self._parents = set()
         if parent is not None:
+            if parent.__class__.__name__ == 'ViewBox':
+                # This is going to be a common pitfall. How can we prevent it?
+                print('Warning: setting a viewbox as parent on %r, did you mean viewbox.scene?' % self)
             self.parents = parent
         
         # Components that all entities in vispy have
+        # todo: default transform should be trans-scale-rot transform
         self._transform = transforms.NullTransform()
     
 
@@ -60,10 +64,10 @@ class Entity(object):
         """ Get/set the parent. If the entity has multiple parents while
         using this property as a getter, an error is raised.
         """
-        if noe self._parents:
+        if not self._parents:
             return None
         elif len(self._parents) == 1:
-            return self._parents[0]
+            return tuple(self._parents)[0]
         else:
             raise RuntimeError('Ambiguous parent: there are multiple parents.')
     

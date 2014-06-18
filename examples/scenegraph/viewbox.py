@@ -52,18 +52,19 @@ vb1.pos = -1.0, -1.0
 vb1.size = 1.0, 2.0
 vb1.camera = scene.cameras.NDCCamera()
 #
-vb11 = scene.ViewBox(vb1)
+vb11 = scene.ViewBox(vb1.scene)
 vb11.pos = -1.0, -1.0
 vb11.size = 2.0, 1.0
 vb11.camera = scene.cameras.NDCCamera()
 #
-vb12 = scene.ViewBox(vb1)
+vb12 = scene.ViewBox(vb1.scene)
 vb12.pos = -1.0, 0.0
 vb12.size = 2.0, 1.0
 vb12.camera = scene.cameras.PixelCamera()
 #
-line_ndc.add_parent(vb11)
-line_pixels.add_parent(vb12)
+line_ndc.add_parent(vb11.scene)
+line_pixels.add_parent(vb12.scene)
+
 
 # Create viewboxes right ...
 
@@ -72,23 +73,25 @@ vb2.pos = 0.0, -1.0
 vb2.size = 1.0, 2.0
 vb2.camera = scene.cameras.PixelCamera()
 #
-vb21 = scene.ViewBox(vb2)
+vb21 = scene.ViewBox(vb2.scene)
 vb21.pos = 0, 0
 vb21.size = 400, 300
 vb21.camera = scene.cameras.NDCCamera()
 #
-vb22 = scene.ViewBox(vb2)
+vb22 = scene.ViewBox(vb2.scene)
 vb22.pos = 0, 300
 vb22.size = 400, 300
 vb22.camera = scene.cameras.PixelCamera()
 #
-line_ndc.add_parent(vb21)
-line_pixels.add_parent(vb22)
+line_ndc.add_parent(vb21.scene)
+line_pixels.add_parent(vb22.scene)
 
 
-# Set preferred pixel grid method
-for vb in [vb1, vb11, vb12, vb2, vb21, vb22]:
-    vb.prefer_pixel_grid = PREFER_PIXEL_GRID
+
+
+# # Set preferred pixel grid method
+# for vb in [vb1, vb11, vb12, vb2, vb21, vb22]:
+#     vb.prefer_pixel_grid = PREFER_PIXEL_GRID
 
 
 # For testing/dev
