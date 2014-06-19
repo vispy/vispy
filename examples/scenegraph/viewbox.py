@@ -2,9 +2,8 @@
 Simple test of stacking viewboxes, demonstrating the three methods that
 can be used by a viewbox to provide clipping.
 
-There is one root viewbox with an NDC camera (the root viewbox is always
-rendered using the viewport method). It contains two viewboxes. One
-with an NDC camera on the left, and one with a pixel camera on the
+There is one root scene with an NDC camera. It contains two viewboxes.
+One with an NDC camera on the left, and one with a pixel camera on the
 right. Each of these viewboxes contains again two viewboxes. One with
 ndc camera at the bottom, and one with a pixel camera at the top.
 
@@ -50,11 +49,11 @@ line_pixels = scene.visuals.Line(pos=pos.copy(), color=color)
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800,600), show=True)
-canvas.root.camera = scene.cameras.NDCCamera()  # Default NDCCamera
+canvas.scene.camera = scene.cameras.NDCCamera()  # Default NDCCamera
 
 # Create viewboxes left ...
 
-vb1 = scene.ViewBox(canvas.root)
+vb1 = scene.ViewBox(canvas.scene)
 vb1.pos = -1.0, -1.0
 vb1.size = 1.0, 2.0
 vb1.scene.camera = scene.cameras.NDCCamera()
@@ -75,7 +74,7 @@ line_pixels.add_parent(vb12.scene)
 
 # Create viewboxes right ...
 
-vb2 = scene.ViewBox(canvas.root)
+vb2 = scene.ViewBox(canvas.scene)
 vb2.pos = 0.0, -1.0
 vb2.size = 1.0, 2.0
 vb2.scene.camera = scene.cameras.PixelCamera()

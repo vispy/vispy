@@ -75,7 +75,7 @@ class SubScene(Entity):
         orientation of the view.
     
     TODO: should camera, lights, etc. be properties of the subscene or the
-    viewbox? I think of the scene. In that way canvas.root can simply
+    viewbox? I think of the scene. In that way canvas.scene can simply
     be a subscene.
     """
     
