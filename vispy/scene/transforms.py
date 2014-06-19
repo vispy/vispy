@@ -295,7 +295,7 @@ class ChainTransform(Transform):
     NonScaling = False
     Isometric = False
 
-    def __init__(self, *transforms, simplify=False):
+    def __init__(self, *transforms):
         #super(ChainTransform, self).__init__()
         
         # Set input transforms
@@ -309,8 +309,8 @@ class ChainTransform(Transform):
         
         # Post-process
         self.flatten()
-        if simplify:
-            self.simplify()
+        #if simplify:
+        #    self.simplify()
         
         # ChainTransform does not have shader maps
         self._shader_map = None
