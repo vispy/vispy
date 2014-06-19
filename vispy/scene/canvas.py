@@ -65,6 +65,10 @@ class SceneCanvas(app.Canvas):
         # via the event object, which may be sufficient!
     
     def on_paint(self, event):
+        self.on_draw(event)  # backwards compat with older versions of vispy
+        # todo: rename paint -> draw througout vispy.scene
+    
+    def on_draw(self, event):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         
