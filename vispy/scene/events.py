@@ -9,42 +9,19 @@ from .transforms import NullTransform, STTransform, ChainTransform
 from ..gloo import gl
 
 
-# class StackItem:
-#     """ A stack item represents the drawing state for a subscene (a
-#     scene inside a viewbox).
-#     """
-#     def __init__(self, viewbox, resolution):
-#         # The viewbox and associated camera transform
-#         self._viewbox = viewbox
-#         self._camtransform = NullTransform()  # Must be set 
-#         
-#         # Path from viewbox to the current entity
-#         self._path = []
-#         
-#         # The resolution (w, h) of the pixel grid provided by the viewbbox
-#         self._resolution = resolution
-#         
-#         # The transform from a parent pixel grid to this one (transform method)
-#         self._transform_to_viewbox = NullTransform()
-#         
-#         # The gl viewport in use for this viewbox (may represent a parent
-#         # pixel grid if the transform method is used)
-#         self._viewport = None  # must be set
-#         
-#         # A "virtual" viewport inside a real viewport (for transform method)
-#         self._soft_viewport = 0, 0, 1, 1 # expressed in 0..1 coords
-#         
-#         # The fbo in use. If None, it represents the defaulf framebuffer
-#         self._fbo = None
-
-
-
 class RenderArea(object):
+    """ Container to store information about the render area, such as
+    viewport and information related to the FBO.
+    """
     def __init__(self, viewport, size, fbo_transform, fbo=None):
-        self.viewport = viewport  # The viewport
-        self.size = size  # Full size of the render area (i.e. resolution)
-        self.fbo_transform = fbo_transform  # Transform to get there (for FBO)
-        self.fbo = fbo  # FBO that applies to it. Only necessary for push_fbo
+        # The viewport (x, y, w, h)
+        self.viewport = viewport
+        # Full size of the render area (i.e. resolution)
+        self.size = size
+        # Transform to get there (for FBO)
+        self.fbo_transform = fbo_transform
+        # FBO that applies to it. Only necessary for push_fbo
+        self.fbo = fbo
         
         # Calculate viewport transform for render_transform
         csize = size
@@ -59,24 +36,26 @@ class SceneEvent(Event):
     """
     SceneEvent is an Event that tracks its path through a scenegraph,
     beginning at a Canvas. It exposes useful information useful during
-    drawing. Although the total path can be traced, most properties
-    relate to the current viewbox, because entities in general do not
-    need to be aware of anything beyond that.
+    drawing. 
     """
+    
     def __init__(self, type, canvas):
         super(SceneEvent, self).__init__(type=type)
         self._canvas = canvas
         
+        # Init stacks
         self._stack = []  # list of entities
-        self._viewport_stack = []  # for viewport & fbo
+        self._ra_stack = []  # for viewport & fbo
         self._viewbox_stack = []
         
-        # Init
+        # Init render are
         viewport = 0, 0, canvas.size[0], canvas.size[1]
         ra = RenderArea(viewport, canvas.size, NullTransform())
-        self._viewport_stack.append(ra)
+        self._ra_stack.append(ra)
         gl.glViewport(*viewport)
-        self._resolution = canvas.size  # Resolution with respect to canvas
+        
+        # Init resolution with respect to canvas
+        self._resolution = canvas.size  
     
     @property
     def canvas(self):
@@ -128,11 +107,11 @@ class SceneEvent(Event):
         the caller to ensure the given values are int.
         """
         # Append. Take over the transform to the active FBO
-        ra = self._viewport_stack[-1]
+        ra = self._ra_stack[-1]
         x, y, w, h = viewport
         viewport = ra.viewport[0] + x, ra.viewport[1] + y, w, h 
         ra_new = RenderArea(viewport, ra.size, ra.fbo_transform)
-        self._viewport_stack.append(ra_new)
+        self._ra_stack.append(ra_new)
         # Apply
         gl.glViewport(*viewport)
     
@@ -140,11 +119,11 @@ class SceneEvent(Event):
         """ Pop a viewport from the stack.
         """
         # Pop old, check
-        ra = self._viewport_stack.pop(-1)
+        ra = self._ra_stack.pop(-1)
         if ra.fbo is not None:
             raise RuntimeError('Popping a viewport when top item is an FBO')
         # Activate latest
-        ra = self._viewport_stack[-1]
+        ra = self._ra_stack[-1]
         gl.glViewport(*ra.viewport)
     
     def push_fbo(self, viewport, fbo, transform):
@@ -153,7 +132,7 @@ class SceneEvent(Event):
         """
         # Append, an FBO resets the viewport
         ra_new = RenderArea(viewport, viewport[2:], transform, fbo)
-        self._viewport_stack.append(ra_new)
+        self._ra_stack.append(ra_new)
         # Apply
         fbo.activate()
         gl.glViewport(*viewport)
@@ -162,12 +141,12 @@ class SceneEvent(Event):
         """ Pop an FBO from the stack.
         """
         # Pop old
-        ra = self._viewport_stack.pop(-1)
+        ra = self._ra_stack.pop(-1)
         if ra.fbo is None:
             raise RuntimeError('Popping an FBO when top item is an viewport')
         ra.fbo.deactivate()
         # Activate current
-        ra = self._viewport_stack[-1]
+        ra = self._ra_stack[-1]
         if ra.fbo:
             ra.fbo.activate()
         gl.glViewport(*ra.viewport)
@@ -193,13 +172,14 @@ class SceneEvent(Event):
         
         Most entities should use this transform when painting.
         """
-        if len(self._viewport_stack) <= 1:
+        if len(self._ra_stack) <= 1:
             return self.full_transform
         else:
-            ra = self._viewport_stack[-1]
+            ra = self._ra_stack[-1]
             return ra.fbo_transform * ra.vp_transform * self.full_transform
 
-        
+
+# AK: we should revive the methods below if and when we need them
 #     @property
 #     def framebuffer_transform(self):
 #         """

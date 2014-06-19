@@ -45,6 +45,9 @@ class Widget(Visual):
     
     @property
     def size(self):
+        # Note that we cannot let the size be reflected in the transform.
+        # Consider a widget of 40x40 in a pixel grid, a child widget therin
+        # with size 20x20 would get a scale of 800x800!
         return self._size
     
     @size.setter
@@ -190,10 +193,6 @@ class SubScene(Entity):
 
 class ViewBox(Widget):
     """ Provides a rectangular window to which its subscene is rendered
-    
-    The viewbox defines a certain coordinate frame using a camera (which
-    is an entity in the subscene itself). A viewbox also defines
-    background color, lights, and has its own drawing system.
     """
     
     def __init__(self, *args, **kwds):
@@ -253,7 +252,8 @@ class ViewBox(Widget):
     def camera(self, cam):
         """ Get/set the camera of the scene. Equivalent to scene.camera.
         """
-        self.scene.camera = cam
+        raise RuntimeError('ViewBox does no longer have a camera. '
+                           'Use viewbox.scene instead')
     
     
     def on_mouse_move(self, event):
@@ -319,6 +319,9 @@ class ViewBox(Widget):
         we handle setting a viewport if requested.
         """
         
+        # todo: we could consider including some padding 
+        # so that we have room *inside* the viewbox to draw ticks and stuff
+         
         # --  Calculate viewbox transformation
         
         # Get the sign of the camera transform of the parent scene. We
@@ -501,11 +504,6 @@ class ViewBox(Widget):
             self._fbo = fbo = gloo.FrameBuffer(self._tex, 
                                     depth=gloo.DepthBuffer((10,10)),
                                     )
-        
-#         # todo: for now we assume scale-translate only!
-#         # Get viewport and resolution of parent pixel grid
-#         x, y, w, h = self._get_pixel_rect_assuming_st_transform(event)
-#         res = event.resolution
         
         # Set texture coords to make the texture be drawn in the right place
         # Note that we would just use -1..1 if we would use a Visual.

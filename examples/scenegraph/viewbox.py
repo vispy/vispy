@@ -57,17 +57,17 @@ canvas.root.camera = scene.cameras.NDCCamera()  # Default NDCCamera
 vb1 = scene.ViewBox(canvas.root)
 vb1.pos = -1.0, -1.0
 vb1.size = 1.0, 2.0
-vb1.camera = scene.cameras.NDCCamera()
+vb1.scene.camera = scene.cameras.NDCCamera()
 #
 vb11 = scene.ViewBox(vb1.scene)
 vb11.pos = -1.0, -1.0
 vb11.size = 2.0, 1.0
-vb11.camera = scene.cameras.NDCCamera()
+vb11.scene.camera = scene.cameras.NDCCamera()
 #
 vb12 = scene.ViewBox(vb1.scene)
 vb12.pos = -1.0, 0.0
 vb12.size = 2.0, 1.0
-vb12.camera = scene.cameras.PixelCamera()
+vb12.scene.camera = scene.cameras.PixelCamera()
 #
 line_ndc.add_parent(vb11.scene)
 line_pixels.add_parent(vb12.scene)
@@ -78,17 +78,17 @@ line_pixels.add_parent(vb12.scene)
 vb2 = scene.ViewBox(canvas.root)
 vb2.pos = 0.0, -1.0
 vb2.size = 1.0, 2.0
-vb2.camera = scene.cameras.PixelCamera()
+vb2.scene.camera = scene.cameras.PixelCamera()
 #
 vb21 = scene.ViewBox(vb2.scene)
 vb21.pos = 0, 0
 vb21.size = 400, 300
-vb21.camera = scene.cameras.NDCCamera()
+vb21.scene.camera = scene.cameras.NDCCamera()
 #
 vb22 = scene.ViewBox(vb2.scene)
 vb22.pos = 0, 300
 vb22.size = 400, 300
-vb22.camera = scene.cameras.PixelCamera()
+vb22.scene.camera = scene.cameras.PixelCamera()
 #
 line_ndc.add_parent(vb21.scene)
 line_pixels.add_parent(vb22.scene)
