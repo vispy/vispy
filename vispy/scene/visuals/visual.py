@@ -11,7 +11,7 @@ from ...util import event
 from ...util.six import string_types
 
 from ..shaders import ModularProgram, Function
-from ..transforms import NullTransform
+from ..transforms import NullTransform, ChainTransform
 from ..entity import Entity
 from ..components import (VisualComponent, XYPosComponent, XYZPosComponent, 
                          UniformColorComponent, VertexColorComponent)
@@ -414,7 +414,8 @@ class Visual(Entity):
         # TODO: this must be optimized.
         # Allow using as plain visual or in a scenegraph
         t = self.transform if (event is None) else event.render_transform
-        t.simplify()  # Reduce number of transforms
+        if isinstance(t, ChainTransform):
+            t.simplify()  # Reduce number of transforms
         #self._program['map_local_to_nd'] = self.transform.shader_map()
         self._program['map_local_to_nd'] = t.shader_map()
         
