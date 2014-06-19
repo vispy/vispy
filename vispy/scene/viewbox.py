@@ -203,7 +203,7 @@ class ViewBox(Widget):
         self._bgcolor = (0.0, 0.0, 0.0, 1.0)
         
         # Init preferred method to provided a pixel grid
-        self._prefer_pixel_grid = 'transform'
+        self._preferred_clip_method = 'none'
         
         # Each viewbox has a scene widget, which has a transform that
         # represents the transformation imposed by camera.
@@ -269,52 +269,45 @@ class ViewBox(Widget):
 
     
     @property
-    def prefer_pixel_grid(self):
-        """ The preferred way to provide a pixel grid
+    def preferred_clip_method(self):
+        """ The preferred way to clip the boundaries of the viewbox.
         
-        There are three possible ways that the viewbox can provide a virtual
-        rectangular (and clipped) pixel grid:
+        There are three possible ways that the viewbox can perform
+        clipping:
         
+        * 'none' - do not perform clipping. The default for now.
+        * 'fragment' - clipping in the fragment shader TODO
         * 'viewport' - use glViewPort to provide a clipped sub-grid
-          onto the parent pixel grid.
-        * 'transform' - calculate the transformation from the current
-          pixel grid to this viewbox, and make that transformation part
-          of the total transform of all sub-entities. Clipping is
-          performed in the fragment shader TODO!
+          onto the parent pixel grid, if possible.
         * 'fbo' - use an FBO to draw the subscene to a texture, and
           then render the texture in the parent scene.
         
         Restrictions and considerations
         -------------------------------
         
-        The 'viewport' and 'transform' methods require that the
-        transformation (from the pixel grid to this viewbox) is
-        translate+scale only. For the 'viewport' method, the dimensions
-        must also be fully contained inside the parent pixel grid. If
-        these restrictions are not met, the 'fbo' method is used.
+        The 'viewport' method requires that the transformation (from
+        the pixel grid to this viewbox) is translate+scale only. If
+        this is not the case, the method falls back to the default.
         
-        The 'fbo' method *always* works, even if the parent viewbox
-        uses a 3D camera. Further it allows using any resolution, and
-        reusing of the resulting render image. Although the 'fbo' method
-        is clearly the most flexible, the other methods are more
-        efficient, especially if a large number of subplots are used.
-        
-        The 'transform' method should allow creating collections that
-        span multiple viewboxes.
+        The 'fbo' method is convenient when the result of the viewbox
+        should be reused. Otherwise the overhead can be significant and
+        the image can get slightly blurry if the transformations do
+        not match.
         
         It is possible to have a graph with multiple stacked viewboxes
         which each use different methods (subject to the above
         restrictions).
         
         """
-        return self._prefer_pixel_grid
+        return self._preferred_clip_method
     
-    @prefer_pixel_grid.setter
-    def prefer_pixel_grid(self, value):
-        if value not in ('viewport', 'transform', 'fbo'):
-            t = 'prefer_pixel_grid should be "viewport", "transform" or "fbo"'
-            raise ValueError(t + ', not %r' % value)
-        self._prefer_pixel_grid = value
+    @preferred_clip_method.setter
+    def preferred_clip_method(self, value):
+        valid_methods = ('none', 'fragment', 'viewport', 'fbo')
+        if value not in valid_methods:
+            t = 'preferred_clip_method should be in %s' % str(valid_methods)
+            raise ValueError((t + ', not %r') % value)
+        self._preferred_clip_method = value
     
     
     def paint(self, event):
@@ -371,71 +364,85 @@ class ViewBox(Widget):
         self._resolution = w, h
         #print(getattr(self, '_name', ''), w, h)
         
+        # -- Get user clipping preference
+        
+        prefer = self.preferred_clip_method
+        assert prefer in ('none', 'fragment', 'viewport', 'fbo')
+        viewport, fbo = None, None
+        
+        if prefer == 'none':
+            pass
+        elif prefer == 'fragment':
+            raise NotImplementedError('No fragment shader clipping yet.')
+        elif prefer == 'viewport':
+            viewport = self._prepare_viewport(event, w, h, signx, signy)
+        elif prefer == 'fbo':
+            fbo = self._prepare_fbo(event)
+        
         # -- Paint
         
-        # Get user preference
-        prefer = self.prefer_pixel_grid
-        assert prefer in ('viewport', 'transform', 'fbo')
-        viewport = None
-        if prefer == 'viewport':
-            viewport = self._get_viewport(event)
+        event.push_viewbox(self)
         
-        if prefer == 'fbo':
-            event.push_viewbox(self)
-            self._paint_via_fbo(event)
-            event.pop_viewbox()
-        else:
-            if viewport:
-                event.push_viewport(*viewport)
-            event.push_viewbox(self)
+        if fbo:
+            # Push FBO
+            shape = fbo.color_buffer.shape
+            rect = 0, 0, shape[1], shape[0]
+            transform = event.full_transform * self.scene.viewbox_transform
+            event.push_fbo(rect, fbo, transform.inverse())
+            #print(self._name, (event.render_transform * self.scene.viewbox_transform).simplify())
+            # Clear bg color (handy for dev)
+            from vispy.gloo import gl
+            clrs = {'':(0.1, 0.1, 0.1), 
+                    'vb1':(0.2,0,0), 'vb11':(0.2,0,0.1), 'vb12':(0.2,0,0.2), 
+                    'vb2':(0,0.2,0), 'vb21':(0,0.2,0.1), 'vb22':(0,0.2,0.2)}
+            clr = clrs[getattr(self,'_name', '')]  # clrs[''] or clrs[getattr(self,'_name', '')]
+            gl.glClearColor(clr[0], clr[1], clr[2], 1.0)
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+            # Process childen
             self.scene.paint(event)
-            event.pop_viewbox()
-            if viewport:
-                event.pop_viewport()
+            # Pop FBO and now draw the result
+            event.pop_fbo()
+            self._myprogram.draw(gl.GL_TRIANGLE_STRIP)
+            
+        elif viewport:
+            # Push viewport, draw, pop it
+            event.push_viewport(viewport)
+            self.scene.paint(event)
+            event.pop_viewport()
+        
+        else:
+            # Just draw
+            # todo: invoke fragment shader clipping
+            self.scene.paint(event)
+        
+        event.pop_viewbox()
     
     
-    def _get_viewport(self, event):
-        """ Get the pixel rectangle coordinates for this viewbox. If the 
-        full transform is not translate-scale only, None is returned.
-        """
-        
-        # Note that we could reuse w, h, signx, signy from paint, but we 
-        # repdoduce them here to make this code more self-contained (for now).
-        
-        # Get transform to here
-        transform = event.full_transform * STTransform()
-        transform = transform.simplify()
-        size = self.size 
-        
+    def _prepare_viewport(self, event, w, h, signx, signy):
         # Get whether the transform to here is translate-scale only
-        if not isinstance(transform, STTransform):
+        rtransform = event.render_transform
+        p0 = rtransform.map((0,0))
+        px, py = rtransform.map((1,0)), rtransform.map((0,1))
+        dx, dy = py[0] - p0[0], px[1] - p0[1]
+        
+        # Does the transform look scale-trans only?
+        if not (dx == 0 and dy == 0):
             return None
-        
-        # Calculate x, y and w, h
-        tx, ty = transform.translate[:2]
-        sx, sy = transform.scale[:2]
-        res = event.canvas.size
-        
+            
         # Transform from NDC to viewport coordinates
-        signx, signy = sx > 0, sy > 0
-        x = (signx*1.0 + tx) * res[0] * 0.5
-        y = (signy*1.0 + ty) * res[1] * 0.5
-        w = abs((size[0] * sx) * res[0] * 0.5)
-        h = abs((size[1] * sy) * res[1] * 0.5)
+        canvas_res = event.canvas.size
+        tx, ty = py[0], px[1]  # Translation of unit vector
+        x = (signx*0.5 + 0.5 + tx) * canvas_res[0] * 0.5
+        y = (signy*0.5 + 0.5 + ty) * canvas_res[1] * 0.5
         
-        # Return rounded to integers
+        # Round
         return int(x+0.5), int(y+0.5), int(w+0.5), int(h+0.5)
+        
     
-    
-    def _paint_via_fbo(self, event):
+    def _prepare_fbo(self, event):
         """ Paint the viewbox via an FBO. This method can be applied
         in any situation, regardless of the transformations to this
         viewbox.
-        
-        This method for providing a rectangular pixel grid is the least
-        efficient. One should use it when the above two methods cannot
-        be used, or when the rendered image needs to be cached and/or
-        reused.
         
         TODO:
         Right now, this implementation create a program, texture and FBO
@@ -512,11 +519,6 @@ class ViewBox(Widget):
                             np.float32)
         self._vert.set_data(vertexes)
         
-#         # Set resolution of pixel grid that we provide (can be anything!)
-#         # We add one, to get a barely noticable mis-alignment, so that
-#         # interpolation kicks in and we clearly see that this is an FBO
-#         resolution = int(w+1), int(h+1)
-        
         # Set fbo size (mind that this is set using shape!)
         # +1 to create delibirate smoothing
         resolution = [int(i+0.5+1) for i in self._resolution]  # is set in paint()
@@ -524,37 +526,7 @@ class ViewBox(Widget):
         fbo.color_buffer.resize(shape+(4,))
         fbo.depth_buffer.resize(shape)
         
-        # Select bg color (handy for dev)
-        clrs = {'':(0.1, 0.1, 0.1), 
-                'vb1':(0.2,0,0), 'vb11':(0.2,0,0.1), 'vb12':(0.2,0,0.2), 
-                'vb2':(0,0.2,0), 'vb21':(0,0.2,0.1), 'vb22':(0,0.2,0.2)}
-        clr = clrs[getattr(self,'_name', '')]  # clrs[''] or clrs[getattr(self,'_name', '')]
-        
-        # Prepare viewbox
-        rect = 0, 0, resolution[0], resolution[1]
-        #transform = self._get_viewport(event)
-        transform = event.full_transform * self.scene.viewbox_transform
-        transform = transform.inverse()
-        event.push_fbo(rect, fbo, transform)
-        
-        #self.scene.viewbox_transform = NullTransform()
-        
-        print((event.render_transform * self.scene.viewbox_transform).simplify())
-        
-        gl.glClearColor(clr[0], clr[1], clr[2], 1.0)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        
-        # Process childen
-        self.scene.paint(event)
-        
-        # Revert
-        #gl.glFlush()
-        event.pop_fbo()
-        
-        # Draw the result in the parent scene
-        self._myprogram.draw(gloo.gl.GL_TRIANGLE_STRIP)
-        # ... return to canvas, or drawing system that invoked us ...
-
+        return fbo
 
 
 # todo: What to do with Document. Make dpi a property of the SubScene or ViewBox?
@@ -605,9 +577,9 @@ class DrawingSystem(object):
             entity.paint(event)
         # Paint if it is a visual (also if a viewbox)
         elif isinstance(entity, Visual):
-            #print(entity, 'in', event.path[-3]._name)
-            #print('  ', event.full_transform.simplify())
-            #print('  ', event.path)
+#             print(entity, 'in', getattr(event.viewbox, '_name', repr(event.viewbox)))
+#             print('  ', event.render_transform.simplify())
+#             print('  ', event.path)
             entity.paint(event)
         
         # Processs children; recurse. 

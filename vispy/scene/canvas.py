@@ -77,7 +77,7 @@ class SceneCanvas(app.Canvas):
         self._process_entity_count = 0  # for debugging
         scene_event = ScenePaintEvent(canvas=self, event=event)
         self._root.paint(scene_event)
-        
+    
     
     def _process_mouse_event(self, event):
         scene_event = SceneMouseEvent(canvas=self, event=event)

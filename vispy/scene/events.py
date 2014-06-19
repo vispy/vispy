@@ -38,6 +38,23 @@ from ..gloo import gl
 #         self._fbo = None
 
 
+
+class RenderArea(object):
+    def __init__(self, viewport, size, fbo_transform, fbo=None):
+        self.viewport = viewport  # The viewport
+        self.size = size  # Full size of the render area (i.e. resolution)
+        self.fbo_transform = fbo_transform  # Transform to get there (for FBO)
+        self.fbo = fbo  # FBO that applies to it. Only necessary for push_fbo
+        
+        # Calculate viewport transform for render_transform
+        csize = size
+        scale = csize[0]/viewport[2], csize[1]/viewport[3]
+        origin = (((csize[0] - 2.0 * viewport[0]) / viewport[2] - 1), 
+                  ((csize[1] - 2.0 * viewport[1]) / viewport[3] - 1))
+        self.vp_transform = (STTransform(translate=(origin[0], origin[1])) * 
+                             STTransform(scale=scale))
+
+
 class SceneEvent(Event):
     """
     SceneEvent is an Event that tracks its path through a scenegraph,
@@ -51,16 +68,15 @@ class SceneEvent(Event):
         self._canvas = canvas
         
         self._stack = []  # list of entities
-        self._viewport_stack = []
+        self._viewport_stack = []  # for viewport & fbo
         self._viewbox_stack = []
         
-        # Create dummy item that represents the canvas.
-#         newitem = StackItem(None, canvas.size)
-#         newitem._viewport = 0, 0, canvas.size[0], canvas.size[1]
-#         self._stack.append(newitem)
-        
-        self.push_viewport(0, 0, canvas.size[0], canvas.size[1])
-        self._resolution = canvas.size
+        # Init
+        viewport = 0, 0, canvas.size[0], canvas.size[1]
+        ra = RenderArea(viewport, canvas.size, NullTransform())
+        self._viewport_stack.append(ra)
+        gl.glViewport(*viewport)
+        self._resolution = canvas.size  # Resolution with respect to canvas
     
     @property
     def canvas(self):
@@ -83,23 +99,11 @@ class SceneEvent(Event):
     
     @property
     def path(self):
-        """ The path of Entities leading from the latest ViewBox to the
+        """ The path of Entities leading from the root SubScene to the
         current recipient of this Event.
         """
         return self._stack
     
-    @property
-    def total_path(self):
-        """ The path of Entities leading from the Canvas to the current recipient
-        of this Event. Alias for path
-        """
-        return self._stack # todo: remove this
-        # Return flattened path
-        total_path = []
-        for item in self._stack:
-            total_path += item._path
-        return total_path
-
     def push_entity(self, entity):
         """ Push an entity on the stack. """
         self._stack.append(entity)
@@ -119,110 +123,54 @@ class SceneEvent(Event):
         else:
             self._resolution = self.canvas.size
     
-    def push_viewport(self, x, y, w, h):
-        x, y, w, h = int(x), int(y), int(w), int(h)
-        self._viewport_stack.append(((x, y, w, h), None, None))
-        gl.glViewport(x, y, w, h)
-        
-    def pop_viewport(self):
-        # Pop old
-        viewport, fbo, transform = self._viewport_stack.pop(-1)
-        assert fbo is None
-        # Activate new
-        viewport, fbo, transform = self._viewport_stack[-1]
-        if fbo:
-            fbo.activate()
+    def push_viewport(self, viewport):
+        """ Push a viewport on the stack. It is the responsibility of
+        the caller to ensure the given values are int.
+        """
+        # Append. Take over the transform to the active FBO
+        ra = self._viewport_stack[-1]
+        x, y, w, h = viewport
+        viewport = ra.viewport[0] + x, ra.viewport[1] + y, w, h 
+        ra_new = RenderArea(viewport, ra.size, ra.fbo_transform)
+        self._viewport_stack.append(ra_new)
+        # Apply
         gl.glViewport(*viewport)
+    
+    def pop_viewport(self):
+        """ Pop a viewport from the stack.
+        """
+        # Pop old, check
+        ra = self._viewport_stack.pop(-1)
+        if ra.fbo is not None:
+            raise RuntimeError('Popping a viewport when top item is an FBO')
+        # Activate latest
+        ra = self._viewport_stack[-1]
+        gl.glViewport(*ra.viewport)
     
     def push_fbo(self, viewport, fbo, transform):
-        self._viewport_stack.append((viewport, fbo, transform))
+        """ Push an FBO on the stack, together with the new viewport.
+        and the transform to the FBO.
+        """
+        # Append, an FBO resets the viewport
+        ra_new = RenderArea(viewport, viewport[2:], transform, fbo)
+        self._viewport_stack.append(ra_new)
+        # Apply
         fbo.activate()
         gl.glViewport(*viewport)
-        
+    
     def pop_fbo(self):
+        """ Pop an FBO from the stack.
+        """
         # Pop old
-        viewport, fbo, transform = self._viewport_stack.pop(-1)
-        assert fbo is not None
-        fbo.deactivate()
-        # Activate new
-        viewport, fbo, transform = self._viewport_stack[-1]
-        if fbo:
-            fbo.activate()
-        gl.glViewport(*viewport)
-    
-    
-#     # todo: a lot of stuff is rather specific to draw events
-#     def push_viewbox(self, viewbox, rect, use_transform=False, fbo=None):
-#         """ Push a viewbox on the stack. This will handle setting
-#         the viewport, activating fbo, etc.
-#         """
-#         
-#         curitem = None if not self._stack else self._stack[-1]
-#         newitem = StackItem(viewbox, rect[2:])
-#         
-#         assert not (use_transform and fbo)
-#         set_viewport = not use_transform  # True for 'viewport' and 'fbo' methods
-#         
-#         if fbo is not None:
-#             # Use fbo method
-#             newitem._fbo = fbo
-#             fbo.activate()  # is deactivated in pop_viewbox
-#             newitem._viewport = rect
-#         
-#         elif use_transform:
-#             # Use transform method
-#             x = curitem._soft_viewport[0] + rect[0]
-#             y = curitem._soft_viewport[1] + rect[1]
-#             w, h = rect[2], rect[3]
-#             # Calculate transform
-#             res = curitem._viewport[2:]
-#             transform = STTransform(translate=(2*x/res[0]-0.5, 2*y/res[1]-0.5),
-#                                     scale=(w/res[0], h/res[1]))
-#             # Apply
-#             newitem._soft_viewport = x, y, w, h
-#             newitem._transform_to_viewbox = transform
-#             newitem._viewport = curitem._viewport
-#             newitem._fbo = curitem._fbo
-#         
-#         else:
-#             # Use viewport method
-#             x = curitem._viewport[0] + rect[0]
-#             y = curitem._viewport[1] + rect[1]
-#             # Apply
-#             newitem._viewport = x, y, rect[2], rect[3]
-#             newitem._fbo = curitem._fbo
-#         
-#         # Apply viewport and add to stack
-#         if set_viewport:
-#             gl.glViewport(*newitem._viewport)
-#             gl.glScissor(*newitem._viewport)
-#         self._stack.append(newitem)
-#         
-#         # Set camera transforms now (newitem must be appended)
-#         projection = viewbox.camera.get_projection(self)
-#         camtransform = projection * self._get_camera_transform(viewbox)
-#         newitem._camtransform = camtransform
-#         
-#     
-#     def pop_viewbox(self):
-#         """ Pop a viewbox from the stack. This will handle resetting
-#         viewport, transform, and framebuffer targets.
-#         """
-#         olditem = self._stack.pop(-1)
-#         if self._stack:
-#             curitem = self._stack[-1]
-#             # Deal with fbo
-#             if olditem._fbo is not None:
-#                 olditem._fbo.deactivate()
-#             if curitem._fbo is not None:
-#                 curitem._fbo.activate()
-#             # Deal with viewport
-#             if curitem._viewport != olditem._viewport:
-#                 if curitem._viewport:
-#                     gl.glViewport(*curitem._viewport)
-#                     gl.glScissor(*curitem._viewport)
-#         else:
-#             pass  # we popped the whole stack!
+        ra = self._viewport_stack.pop(-1)
+        if ra.fbo is None:
+            raise RuntimeError('Popping an FBO when top item is an viewport')
+        ra.fbo.deactivate()
+        # Activate current
+        ra = self._viewport_stack[-1]
+        if ra.fbo:
+            ra.fbo.activate()
+        gl.glViewport(*ra.viewport)
     
     @property
     def full_transform(self):
@@ -230,40 +178,10 @@ class SceneEvent(Event):
         entity; the composition of the line of entities from viewbox to
         here.
         """
-        # todo: reversed, or not???? quite fundamental
-        tr = [e.transform for e in reversed(self._stack)]
+        tr = [e.transform for e in self._stack]
         # TODO: cache transform chains
         return ChainTransform(tr)
     
-    
-#     @property
-#     def view_transform(self):
-#         """ The transform from pixel grid to current entity (taking
-#         camera into account). 
-#         """
-#         transform = self._stack[-1]._camtransform * self.full_transform
-#         transform = transform.simplify()
-#         # We multiply with NullTransform. This seems needed in some situation.
-#         # I am not exactly sure, but I suspect that if we don't, different
-#         # entities can share the transform object, causing problems.
-#         # todo: look into this              
-#         transform = transform * NullTransform()
-#         return transform
-    
-    
-#     @property
-#     def render_transform(self):
-#         """ The transform that should be used during rendering a visual.
-#         This may differ from view_transform if the viewbox used the
-#         'transform' method to provide a pixel grid.
-#         """
-#         transform = self._stack[-1]._transform_to_viewbox * self.view_transform
-#         if isinstance(transform, ChainTransform):
-#             transform = transform.simplify()
-#         return transform
-    
-    
-
     @property
     def render_transform(self):
         """ The transform that should be used during rendering a visual.
@@ -271,24 +189,16 @@ class SceneEvent(Event):
         device coordinates (-1 to 1 within the current glViewport).
         
         This transform consists of the root_transform plus a correction for the
-        current glViewport.
+        current glViewport and/or FBO.
         
         Most entities should use this transform when painting.
         """
         if len(self._viewport_stack) <= 1:
             return self.full_transform
         else:
-            viewport, fbo, transform  = self._viewport_stack[-1]
-            if fbo:
-                return transform * self.full_transform
-            else:
-                csize = self.canvas.size
-                scale = csize[0]/viewport[2], csize[1]/viewport[3]
-                origin = (((csize[0] - 2.0 * viewport[0]) / viewport[2] - 1), 
-                        ((csize[1] - 2.0 * viewport[1]) / viewport[3] - 1))
-                
-                return (STTransform(translate=(origin[0], origin[1])) * 
-                        STTransform(scale=scale) * self.full_transform)
+            ra = self._viewport_stack[-1]
+            return ra.fbo_transform * ra.vp_transform * self.full_transform
+
         
 #     @property
 #     def framebuffer_transform(self):

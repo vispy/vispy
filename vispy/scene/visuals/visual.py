@@ -414,6 +414,7 @@ class Visual(Entity):
         # TODO: this must be optimized.
         # Allow using as plain visual or in a scenegraph
         t = self.transform if (event is None) else event.render_transform
+        t.simplify()  # Reduce number of transforms
         #self._program['map_local_to_nd'] = self.transform.shader_map()
         self._program['map_local_to_nd'] = t.shader_map()
         
