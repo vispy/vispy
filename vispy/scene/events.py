@@ -35,8 +35,8 @@ class RenderArea(object):
 class SceneEvent(Event):
     """
     SceneEvent is an Event that tracks its path through a scenegraph,
-    beginning at a Canvas. It exposes useful information useful during
-    drawing. 
+    beginning at a Canvas. It exposes information useful during drawing
+    and user interaction.
     """
     
     def __init__(self, type, canvas):
@@ -103,8 +103,10 @@ class SceneEvent(Event):
             self._resolution = self.canvas.size
     
     def push_viewport(self, viewport):
-        """ Push a viewport on the stack. It is the responsibility of
-        the caller to ensure the given values are int.
+        """ Push a viewport (x, y, w, h) on the stack. It is the
+        responsibility of the caller to ensure the given values are
+        int. The viewport's origin is defined relative to the current
+        viewport.
         """
         # Append. Take over the transform to the active FBO
         ra = self._ra_stack[-1]
@@ -153,9 +155,8 @@ class SceneEvent(Event):
     
     @property
     def full_transform(self):
-        """ The transform that maps from the canvas to current
-        entity; the composition of the line of entities from viewbox to
-        here.
+        """ The transform that maps from the current entity to the
+        top-level canvas.
         """
         tr = [e.transform for e in self._stack]
         # TODO: cache transform chains
@@ -163,12 +164,12 @@ class SceneEvent(Event):
     
     @property
     def render_transform(self):
-        """ The transform that should be used during rendering a visual.
-        Return the transform that maps from the end of the path to normalized
-        device coordinates (-1 to 1 within the current glViewport).
+        """ The transform that maps from the current entity to
+        normalized device coordinates within the current glViewport and
+        FBO.
         
-        This transform consists of the root_transform plus a correction for the
-        current glViewport and/or FBO.
+        This transform consists of the full_transform prepended by a
+        correction for the current glViewport and/or FBO.
         
         Most entities should use this transform when painting.
         """
@@ -284,10 +285,11 @@ class SceneMouseEvent(SceneEvent):
     @property
     def buttons(self):
         return self.mouse_event.buttons
-        
+
+
 class ScenePaintEvent(SceneEvent):
     def __init__(self, event, canvas):
-        self.paint_event = event
+        self.draw_event = event
         super(ScenePaintEvent, self).__init__(type=event.type, canvas=canvas)
     
     

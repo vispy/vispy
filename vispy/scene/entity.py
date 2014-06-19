@@ -42,9 +42,6 @@ class Entity(object):
         # TODO: use weakrefs for parents.
         self._parents = set()
         if parent is not None:
-            if parent.__class__.__name__ == 'ViewBox':
-                # This is going to be a common pitfall. How can we prevent it?
-                print('Warning: setting a viewbox as parent on %r, did you mean viewbox.scene?' % self)
             self.parents = parent
         
         # Components that all entities in vispy have
@@ -140,8 +137,8 @@ class Entity(object):
     
     @property
     def transform(self):
-        """ The transform that maps the parent coordinate frame to the
-        coordinate frame local to this entity.
+        """ The transform that maps the local coordinate frame to the
+        coordinate frame of the parent.
         """
         return self._transform
         
