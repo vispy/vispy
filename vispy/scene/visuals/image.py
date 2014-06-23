@@ -111,7 +111,7 @@ class Image(Mesh):
         self.color_components = [TextureComponent(self._texture, tex_coord_comp)]
 
     
-    def _activate_transform(self):
+    def _activate_transform(self, event=None):
         # this is handled in _build_data instead.
         pass
     

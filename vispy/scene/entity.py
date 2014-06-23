@@ -21,7 +21,7 @@ class Entity(object):
     It is recommended to use multi-parenting with care.
     """
 
-    def __init__(self, parents=None):
+    def __init__(self, parent=None):
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    parents_change=Event,
@@ -36,31 +36,54 @@ class Entity(object):
                                    )
 
         # Entities are organized in a parent-children hierarchy
+        # todo: I think we want this to be a list. The order *may* be important
+        # for some drawing systems. Using a set may lead to inconsistency
         self._children = set()
         # TODO: use weakrefs for parents.
         self._parents = set()
-        if parents is not None:
-            self.parents = parents
-
+        if parent is not None:
+            self.parents = parent
+        
         # Components that all entities in vispy have
-        self._transform = transforms.AffineTransform()
+        # todo: default transform should be trans-scale-rot transform
+        self._transform = transforms.NullTransform()
+    
 
     @property
     def children(self):
-        """ The list of children of this entity.
+        """ The list of children of this entity. The children are in 
+        arbitrary order.
         """
         return list(self._children)
-
+    
+    @property
+    def parent(self):
+        """ Get/set the parent. If the entity has multiple parents while
+        using this property as a getter, an error is raised.
+        """
+        if not self._parents:
+            return None
+        elif len(self._parents) == 1:
+            return tuple(self._parents)[0]
+        else:
+            raise RuntimeError('Ambiguous parent: there are multiple parents.')
+    
+    @parent.setter
+    def parent(self, parent):
+        # This is basically an alias
+        self.parents = parent
+    
     @property
     def parents(self):
-        """ Get/set the list of parents. Typically the tuple will have
-        one element.
+        """ Get/set a tuple of parents.
         """
-        return list(self._parents)
-
+        return tuple(self._parents)
+    
     @parents.setter
     def parents(self, parents):
         # Test input
+        if isinstance(parents, Entity):
+            parents = (parents,)
         if not hasattr(parents, '__iter__'):
             raise ValueError("Entity.parents must be iterable (got %s)" % type(parents))
 
@@ -78,7 +101,6 @@ class Entity(object):
             # Remove from parents
             for parent in prev - parents:
                 self.remove_parent(parent)
-                
             # Add new
             for parent in parents - prev:
                 self.add_parent(parent)
@@ -115,10 +137,8 @@ class Entity(object):
     
     @property
     def transform(self):
-        """ The user-accessible transform for this entity.
-        
-        This transform forms some or all of the *parent_transform*.        
-        By default, this is an AffineTransform instance.
+        """ The transform that maps the local coordinate frame to the
+        coordinate frame of the parent.
         """
         return self._transform
         
@@ -128,38 +148,25 @@ class Entity(object):
         self._transform = tr
         self.update()
         
-    @property
-    def parent_transform(self):
-        """
-        maps from the local coordinate system of the Entity to its parent's 
-        coordinate system.
-        
-        It is possible to map into the local coordinate system of any Entity
-        by assembling a chain of parent_transforms.
-        
-        By default, this is equal to self.transform. However, subclasses may
-        choose to augment this transform with extra components.
-        """
-        return self._transform
     
-    def on_paint(self, event):
-        """
-        Paint this entity, given that we are drawing through 
-        the given scene *path*.
-        """
-        pass
+#     def on_paint(self, event):
+#         """
+#         Paint this entity, given that we are drawing through 
+#         the given scene *path*.
+#         """
+#         pass
     
-    def _process_paint_event(self, event):
-        """
-        Paint the entire tree of Entities beginnging here.            
-        """
-        for enter, path in self.walk():
-            event._set_path(path)
-            entity = path[-1]
-            if enter:
-                entity.events.paint(event)
-            else:
-                entity.events.children_painted(event)
+#     def _process_paint_event(self, event):
+#         """
+#         Paint the entire tree of Entities beginning here.            
+#         """
+#         for enter, path in self.walk():
+#             event._set_path(path)
+#             entity = path[-1]
+#             if enter:
+#                 entity.events.paint(event)
+#             else:
+#                 entity.events.children_painted(event)
                 
 
     def _process_mouse_event(self, event):
@@ -178,29 +185,29 @@ class Entity(object):
             entity = path[-1]
             getattr(entity.events, event.type)(event)
 
-    def walk(self, path=None):
-        """
-        Return an iterator that walks the entire scene graph starting at this
-        Entity. Yields (True, [list of Entities]) as each path in the 
-        scenegraph is visited. Yields (False, [list of Entities]) as each path
-        is finished.
-        """
-        # TODO: need some control over the order..
-        #if path is None:
-            #path = []
-            #yield path, self
-        #if len(self.children) > 0:
-            #path = path + [self]
-            #yield path, self.children
-            #for ch in self:
-                #for e in ch.walk(path):
-                    #yield e
-        path = (path or []) + [self]
-        yield (True, path)
-        for ch in self:
-            for p in ch.walk(path):
-                yield p
-        yield (False, path)
+#     def walk(self, path=None):
+#         """
+#         Return an iterator that walks the entire scene graph starting at this
+#         Entity. Yields (True, [list of Entities]) as each path in the 
+#         scenegraph is visited. Yields (False, [list of Entities]) as each path
+#         is finished.
+#         """
+#         # TODO: need some control over the order..
+#         #if path is None:
+#             #path = []
+#             #yield path, self
+#         #if len(self.children) > 0:
+#             #path = path + [self]
+#             #yield path, self.children
+#             #for ch in self:
+#                 #for e in ch.walk(path):
+#                     #yield e
+#         path = (path or []) + [self]
+#         yield (True, path)
+#         for ch in self:
+#             for p in ch.walk(path):
+#                 yield p
+#         yield (False, path)
         
         
 

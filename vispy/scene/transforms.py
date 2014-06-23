@@ -20,28 +20,15 @@ API Issues to work out:
         ct = ChainTransform([t1, t2])
         
         t1.scale = (0.5, 0.5) # should this affect ChainTransform?
-        
-  - Should transform multiplication work like matrix multiplication?
-    (and should we use __mul__ at all?)
     
-        t1 * t2  => ChainTransform([t2, t1])  
-                        OR
-                 => ChainTransform([t1, t2])
-                 
-    Matrix-multiplication style is tempting, but confounded by the fact 
-    that throughout vispy, we use transformation matrices and vectors that are 
-    transposed relative to traditional linear algebra expectations. This has the 
-    awkward side-effect that the arguments to np.dot() must be reversed (and 
-    potentially other side effects). Since we are reversing the matrix 
-    multiplication order anyway, perhaps it makes sense to reverse it here as 
-    well?
-
   - Should transforms have a 'changed' event?
   
         t1.changed.connect(callback)
             OR
-        t1.events.change.connect(callback)
+        t1.events.change.connect(callback)  
         
+        # AK: I don't think we expect other events, so t1.changes seems fine
+    
   - AffineTransform and STTransform both have 'scale' and 'translate'
     attributes, but they are used in very different ways. It would be nice
     to keep this consistent, but how?
@@ -74,7 +61,6 @@ class Transform(object):
     Note that although all classes should define both map() and imap(), it
     is not necessarily the case that imap(map(x)) == x; there may be instances
     where the inverse mapping is ambiguous or otherwise meaningless.
-    
     
     """
     glsl_map = None  # Must be GLSL code
@@ -201,19 +187,19 @@ class Transform(object):
         5. If that fails, it must:
         
                * return super(B).__rmul__(A) OR
-               * return ChainTransform([A, B]) if the superclass would return an
+               * return ChainTransform([B, A]) if the superclass would return an
                  invalid result.
                  
-        6. When Transform.__rmul__(B, A) is called, ChainTransform([B, A]) is 
-           returned. Note that the order is reversed so that multiplication
-           works like matrix multiplication (last matrix in a product is the
-           first to be applied when mapping vectors).
+        6. When Transform.__rmul__(B, A) is called, ChainTransform([A, B]) is 
+           returned. 
         """
         # switch to __rmul__ attempts.
-        return NotImplemented
-
+        # Don't use the "return NotImplemted" trick, because that won't work if
+        # self and tr are of the same type.
+        return tr.__rmul__(self)
+    
     def __rmul__(self, tr):
-        return ChainTransform([self, tr])
+        return ChainTransform([tr, self])
         
     
 
@@ -309,29 +295,40 @@ class ChainTransform(Transform):
     NonScaling = False
     Isometric = False
 
-    def __init__(self, transforms=None, simplify=False):
+    def __init__(self, *transforms):
         #super(ChainTransform, self).__init__()
-        if transforms is None:
-            transforms = []
-        self.transforms = transforms
+        
+        # Set input transforms
+        trs = []
+        for tr in transforms:
+            if isinstance(tr, (tuple, list)):
+                trs.extend(tr)
+            else:
+                trs.append(tr)
+        self._transforms = trs
+        
+        # Post-process
         self.flatten()
-        if simplify:
-            self.simplify()
-            
+        #if simplify:
+        #    self.simplify()
+        
+        # ChainTransform does not have shader maps
         self._shader_map = None
         self._shader_imap = None
-        
+    
     @property
     def transforms(self):
+        """ Get the list of transform that make up the transform chain.
+        """
         return self._transforms
     
-    @transforms.setter
-    def transforms(self, tr):
-        #if self._enabled:
-            #raise RuntimeError("Shader is already enabled; cannot modify.")
-        if not isinstance(tr, list):
-            raise TypeError("Transform chain must be a list")
-        self._transforms = tr
+#     @transforms.setter
+#     def transforms(self, tr):
+#         #if self._enabled:
+#             #raise RuntimeError("Shader is already enabled; cannot modify.")
+#         if not isinstance(tr, list):
+#             raise TypeError("Transform chain must be a list")
+#         self._transforms = tr
         
     @property
     def Linear(self):
@@ -362,12 +359,12 @@ class ChainTransform(Transform):
         return b
         
     def map(self, obj):
-        for tr in self.transforms:
+        for tr in reversed(self.transforms):
             obj = tr.map(obj)
         return obj
 
     def imap(self, obj):
-        for tr in self.transforms[::-1]:
+        for tr in self.transforms:
             obj = tr.imap(obj)
         return obj
     
@@ -389,9 +386,9 @@ class ChainTransform(Transform):
     
     def _make_shader_map(self, imap):
         if imap:
-            funcs = [tr.shader_imap() for tr in self.transforms[::-1]]
+            funcs = [tr.shader_imap() for tr in self.transforms]
         else:
-            funcs = [tr.shader_map() for tr in self.transforms]
+            funcs = [tr.shader_map() for tr in reversed(self.transforms)]
         
         #bindings = []
         #for i,tr in enumerate(transforms):
@@ -408,25 +405,37 @@ class ChainTransform(Transform):
 
 
     def inverse(self):
-        return ChainTransform([tr.inverse() for tr in self.transforms[::-1]])
+        return ChainTransform([tr.inverse() for tr in reversed(self.transforms)])
+    
     
     def flatten(self):
         """
         Attempt to simplify the chain by expanding any nested chains.
         """
-        new_tr = []
-        for tr in self.transforms:
-            if isinstance(tr, ChainTransform):
-                new_tr.extend(tr.transforms)
-            else:
-                new_tr.append(tr)
-        self.transforms = new_tr
+        # Flatten untill there is nothing more to flatten
+        encountered_chains = True
+        while encountered_chains:
+            encountered_chains = False
+            #
+            new_tr = []
+            for tr in self.transforms:
+                if isinstance(tr, ChainTransform):
+                    encountered_chains = True
+                    new_tr.extend(tr.transforms)
+                else:
+                    new_tr.append(tr)
+            self._transforms = new_tr
+    
     
     def simplify(self):
         """
-        Attempt to simplify the chain by joining adjacent transforms.        
+        Attempt to simplify the chain by joining adjacent transforms. 
+        If the result is a single transform, return that transform.
+        Otherwise return this chaintransform.
         """
         self.flatten()
+        if not self.transforms:
+            return NullTransform()
         while True:
             new_tr = [self.transforms[0]]
             exit = True
@@ -438,64 +447,74 @@ class ChainTransform(Transform):
                     new_tr.pop()
                     new_tr.append(pr)
                 else:
-                    new_tr.append(tr2)
-            self.transforms = new_tr
+                    new_tr.append(t2)
+            self._transforms = new_tr
             if exit:
-                break            
+                break
+        # todo: get rid of this in-place + return thing
+        if len(self._transforms) == 1:
+            return self._transforms[0]
+        else:
+            return self
 
     def append(self, tr):
         """
-        Add a new Transform to the end of this chain, combining with prior
-        transforms if possible.        
+        Add a new Transform to the end of this chain.
         """
-        while len(self.transforms) > 0:
-            pr = tr * self.transforms[-1]
-            if isinstance(pr, ChainTransform):
-                self.transforms.append(tr)
-                break
-            else:
-                self.transforms.pop()
-                tr = pr
-                if len(self.transforms)  == 0:
-                    self.transforms = [pr]
-                    break
+        self.transforms.append(tr)
+        # Keep simple for now. Let's look at efficienty later
+        # I feel that this class should not decide when to compose transforms
+#         while len(self.transforms) > 0:
+#             pr = tr * self.transforms[-1]
+#             if isinstance(pr, ChainTransform):
+#                 self.transforms.append(tr)
+#                 break
+#             else:
+#                 self.transforms.pop()
+#                 tr = pr
+#                 if len(self.transforms)  == 0:
+#                     self._transforms = [pr]
+#                     break
 
     def prepend(self, tr):
         """
-        Add a new Transform to the beginning of this chain, combining with 
-        subsequent transforms if possible.        
+        Add a new Transform to the beginning of this chain.
         """
-        while len(self.transforms) > 0:
-            pr = self.transforms[0] * tr
-            if isinstance(pr, ChainTransform):
-                self.transforms.insert(0, tr)
-                break
-            else:
-                self.transforms.pop(0)
-                tr = pr
-                if len(self.transforms)  == 0:
-                    self.transforms = [pr]
-                    break
+        self.transforms.insert(0, tr)
+        # Keep simple for now. Let's look at efficienty later
+#         while len(self.transforms) > 0:
+#             pr = self.transforms[0] * tr
+#             if isinstance(pr, ChainTransform):
+#                 self.transforms.insert(0, tr)
+#                 break
+#             else:
+#                 self.transforms.pop(0)
+#                 tr = pr
+#                 if len(self.transforms)  == 0:
+#                     self._transforms = [pr]
+#                     break
+    
     
     def __mul__(self, tr):
         if isinstance(tr, ChainTransform):
             trs = tr.transforms
         else:
             trs = [tr]
-            
-        new = ChainTransform(self.transforms)
-        for t in trs:
-            new.prepend(t)
-        return new
-        
+        return ChainTransform(self.transforms+trs)
+    
+    
     def __rmul__(self, tr):
-        new = ChainTransform(self.transforms)
-        new.append(tr)
-        return new
-        
+        if isinstance(tr, ChainTransform):
+            trs = tr.transforms
+        else:
+            trs = [tr]
+        return ChainTransform(trs+self.transforms)
+    
+    
     def __repr__(self):
         names = [tr.__class__.__name__ for tr in self.transforms]
         return "<ChainTransform [%s]>" % (", ".join(names))
+
 
 
 class NullTransform(Transform):
@@ -744,7 +763,8 @@ class AffineTransform(Transform):
         s += indent + str(list(self.matrix[2])) + ",\n"
         s += indent + str(list(self.matrix[3])) + "])"
         return s
-    
+
+
 class SRTTransform(Transform):
     """ Transform performing scale, rotate, and translate, in that order.
     
