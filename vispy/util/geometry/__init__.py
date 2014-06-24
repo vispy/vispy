@@ -11,4 +11,4 @@ This module implements classes and methods for handling geometric data.
 from __future__ import division
 
 from .polygon import PolygonData  # noqa
-from .rect import Rect
+from .rect import Rect  # noqa

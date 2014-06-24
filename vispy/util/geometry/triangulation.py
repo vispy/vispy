@@ -9,15 +9,16 @@ Sweep‐line algorithm for constrained Delaunay triangulation
 """
 
 import numpy as np
-from math import cos
 from collections import OrderedDict
 from itertools import permutations
+
 
 # Distance between points A and B
 def distance(A, B):
     n = len(A)
     assert len(B) == n
     return np.linalg.norm(np.array(list(A))-np.array(list(B)))
+
 
 # Distance of a set of points from a given line
 def distances_from_line(e, points):
@@ -27,7 +28,7 @@ def distances_from_line(e, points):
     # check if e is not just a point
     l2 = float(distance(e1, e2))
     l2 *= l2
-    if l2==0:
+    if l2 == 0:
         for p in points:
             distances.append(distance(e1, pts[p]))
 
@@ -43,43 +44,49 @@ def distances_from_line(e, points):
                 distances.append(distance(pts[p], projection))
     return distances
 
+
 # Cosine of angle ABC
 def cosine(A, B, C):
-    a,b,c = distance(B,C), distance(A,C), distance(A,B)
+    a, b, c = distance(B, C), distance(A, C), distance(A, B)
     return (a*a+c*c-b*b)/(2*a*c)
+
 
 # Cartesian coordinates of the point whose barycentric coordinates
 # with respect to the triangle ABC are [p,q,r]
-def barycentric(A,B,C,p,q,r):
+def barycentric(A, B, C, p, q, r):
     n = len(A)
     assert len(B) == len(C) == n
     s = p+q+r
     p, q, r = p/s, q/s, r/s
     return tuple([p*A[i]+q*B[i]+r*C[i] for i in xrange(n)])
 
+
 # Cartesian coordinates of the point whose trilinear coordinates
 # with respect to the triangle ABC are [alpha,beta,gamma]
-def trilinear(A,B,C,alpha,beta,gamma):
-    a = distance(B,C)
-    b = distance(A,C)
-    c = distance(A,B)
-    return barycentric(A,B,C,a*alpha,b*beta,c*gamma)
+def trilinear(A, B, C, alpha, beta, gamma):
+    a = distance(B, C)
+    b = distance(A, C)
+    c = distance(A, B)
+    return barycentric(A, B, C, a*alpha, b*beta, c*gamma)
+
                
 # Cartesian coordinates of the circumcenter of triangle ABC
-def circuminfo(A,B,C):
-    cosA = cosine(C,A,B)
-    cosB = cosine(A,B,C)
-    cosC = cosine(B,C,A)
-    cc = trilinear(A,B,C,cosA,cosB,cosC)
+def circuminfo(A, B, C):
+    cosA = cosine(C, A, B)
+    cosB = cosine(A, B, C)
+    cosC = cosine(B, C, A)
+    cc = trilinear(A, B, C, cosA, cosB, cosC)
     # returns circumcenter and circumradius
     return cc, distance(cc, A)
+
 
 # Check if the points lie in counter-clockwise order or not
 def iscounterclockwise(a, b, c):
     A = np.array(list(pts[a]))
     B = np.array(list(pts[b]))
     C = np.array(list(pts[c]))
-    return np.cross(B-A, C-B)>0
+    return np.cross(B-A, C-B) > 0
+
 
 def intersection(edge1, edge2):
     global pts
@@ -92,21 +99,25 @@ def intersection(edge1, edge2):
     F = D-C
     P = np.array([-E[1], E[0]])
     f = float(F.dot(P))
-    if f==0.:
+    if f == 0.:
         return float('Inf')
     h = float((A-C).dot(P))/f
     return h
 
+
 def isintersects(edge1, edge2):
     global pts
     h = intersection(edge1, edge2)
-    return (h>=0 and h<1)
+    return (h >= 0 and h < 1)
+
 
 # check if the point is on which side - substitutes the point in the edge
 # equation and returns the value
 def orientation(edge, point):
-    m = float(pts[edge[1]][1]-pts[edge[0]][1])/float(pts[edge[1]][0]-pts[edge[0]][0])
+    m = float(pts[edge[1]][1]-pts[edge[0]][1])/float(pts[edge[1]][0] -
+                                                     pts[edge[0]][0])
     return pts[point][1]-pts[edge[0]][1]-m*(pts[point][0]--pts[edge[0]][0])
+
 
 #user input data - points and constraining edges
 pts = [(0, 0),
@@ -180,26 +191,32 @@ import time
 app = pg.mkQApp()
 win = pg.plot()
 gpts = pts.view(float).reshape(len(pts), 2)
-graph = pg.GraphItem(pos=gpts, adj=edges, pen={'width': 3, 'color':(0,100,0)})
+graph = pg.GraphItem(pos=gpts, adj=edges, pen={'width': 3,
+                                               'color': (0, 100, 0)})
 win.addItem(graph)
 front_line = pg.PlotCurveItem(pen={'width': 2, 'dash': [5, 5], 'color': 'y'})
 win.addItem(front_line)
 tri_shapes = []
+
+
 def draw_state():
     front_pts = pts[np.array(front)]
     front_line.setData(front_pts['x'], front_pts['y'])
     for i in range(100):  # sleep ~1 sec, but keep ui responsive
         app.processEvents()
         time.sleep(0.01)
+
+
 def draw_tri(tri):
     tpts = pts[np.array(tri)]
     path = pg.arrayToQPath(tpts['x'], tpts['y'])
     shape = pg.QtGui.QGraphicsPathItem(path)
-    shape.setPen(pg.mkPen(255,255,255,100))
-    shape.setBrush(pg.mkBrush(0,255,255,50))
+    shape.setPen(pg.mkPen(255, 255, 255, 100))
+    shape.setBrush(pg.mkBrush(0, 255, 255, 50))
     win.addItem(shape)
     tri_shapes.append(shape)
 draw_state()
+
 
 ## Legalize recursively - incomplete
 def legalize((f00, f11, p)):
@@ -209,18 +226,17 @@ def legalize((f00, f11, p)):
     c = pts[p]
     cc, cr = circuminfo(a, b, c)
     for point in pts:
-        if (point==a or point==b or point==c):
+        if point == a or point == b or point == c:
             continue
         elif distance(cc, point) < cr:
-           print "Illegal point"
-           print point
-           pass
+            print "Illegal point"
+            print point
+            pass
 
     return (f00, f11, p)
 
 
 ## Sweep (sec. 3.4)
-
 def add_tri(f0, f1, p):
     # todo: legalize!
     global front, tris
@@ -236,6 +252,7 @@ def add_tri(f0, f1, p):
     tris.append(tri)
     #draw_tri(tris[-1])
 
+
 def add_triangle(a, b, c):
     # todo: legalize!
     global tris
@@ -250,6 +267,7 @@ def add_triangle(a, b, c):
     tri = legalize((a, b, c))
     tris.append(tri)
 
+
 def remove_tri((a, b, c)):
     global tris
     
@@ -257,17 +275,16 @@ def remove_tri((a, b, c)):
         if k in tris:
             tris.remove(k)
             break
-
     (a, b, c) = k
 
-    if edges_lookup[(a,b)]==c:
-        del edges_lookup[(a,b)]
-        del edges_lookup[(b,c)]
-        del edges_lookup[(c,a)]
+    if edges_lookup[(a, b)] == c:
+        del edges_lookup[(a, b)]
+        del edges_lookup[(b, c)]
+        del edges_lookup[(c, a)]
     else:
-        del edges_lookup[(b,a)]
-        del edges_lookup[(a,c)]
-        del edges_lookup[(c,b)]
+        del edges_lookup[(b, a)]
+        del edges_lookup[(a, c)]
+        del edges_lookup[(c, b)]
 
 for i in range(3, len(pts)):
     pi = pts[i]
@@ -284,7 +301,7 @@ for i in range(3, len(pts)):
         # Add a single triangle connecting pi,pl,pr
         add_tri(l, l+1, i)
         front.insert(l+1, i)
-    else: # "(ii) left case"
+    else:  # "(ii) left case"
         ps = pts[l-1]
         # Add triangles connecting pi,pl,ps and pi,pl,pr
         add_tri(l, l+1, i)
@@ -296,14 +313,14 @@ for i in range(3, len(pts)):
     # todo: Continue adding triangles to smooth out front
     # (use heuristics shown in figs. 9, 10)
                     
-    if i in tops: # this is an "edge event" (sec. 3.4.2)
+    if i in tops:  # this is an "edge event" (sec. 3.4.2)
         print "Locate first intersected triangle"
         # Locate the other endpoint
         found = False
         for e in edges:
             if i in e:
                 found = True
-                endpoint = e[0] if (e[1]==i) else e[1]
+                endpoint = e[0] if (e[1] == i) else e[1]
                 break
         if not found:
             print "Other end point not located"
@@ -319,7 +336,7 @@ for i in range(3, len(pts)):
         vals = edges_lookup.values()
         intersects = False
         for value in vals:
-            if value==i:
+            if value == i:
                 current_side = edges_lookup.keys()[vals.index(i)]
                 if isintersects(current_side, e):
                     intersects = True
@@ -335,7 +352,7 @@ for i in range(3, len(pts)):
             closest_edge = None
             for edge in edges_lookup.keys():
                 h = intersection(edge, e)
-                if h>=0 and h<1 and h>h_max:
+                if h >= 0 and h < 1 and h > h_max:
                     h_max = h
                     closest_edge = edge
             if not closest_edge:
@@ -345,9 +362,9 @@ for i in range(3, len(pts)):
                 end = front.index(endpoint)
                 upper_polygon.append(i)
                 lower_polygon.append(i)
-                c = -1 if (start>end) else 1
+                c = -1 if (start > end) else 1
                 for k in range(start+c, end, c):
-                    if orientation(e, front[k])>0:
+                    if orientation(e, front[k]) > 0:
                         upper_polygon.append(front[k])
                     else:
                         lower_polygon.append(front[k])
@@ -359,7 +376,7 @@ for i in range(3, len(pts)):
             remove_tri(current_side+(i,))
             upper_polygon.append(i)
             lower_polygon.append(i)
-            if orientation(e, current_side[0])>0:
+            if orientation(e, current_side[0]) > 0:
                 upper_polygon.append(current_side[0])
                 lower_polygon.append(current_side[1])
             else:
@@ -371,7 +388,7 @@ for i in range(3, len(pts)):
                 remove_tri(current_side+(other_vertex, ))
             except KeyError:
                 other_vertex = endpoint
-            while (other_vertex!=endpoint):
+            while (other_vertex != endpoint):
                 # now the edge intersects one of the triangles on either sides
                 # of current triangle, we find which one and continue the loop
                 side1 = (current_side[0], other_vertex)
@@ -387,10 +404,11 @@ for i in range(3, len(pts)):
                         remove_tri(current_side+(other_vertex, ))
                     else:
                         # edge passes through the other_vertex
-                        print "does not intersect any other side, need to handle it"
+                        print "does not intersect any other side, " \
+                              "need to handle it"
                         break
 
-                if orientation(e, current_side[0])>0:
+                if orientation(e, current_side[0]) > 0:
                     upper_polygon.append(current_side[0])
                     lower_polygon.append(current_side[1])
                 else:
@@ -408,14 +426,18 @@ for i in range(3, len(pts)):
         upper_dist = distances_from_line(e, upper_polygon)
         while len(upper_polygon) > 2:
             i = np.argmax(upper_dist)
-            add_triangle(upper_polygon[i], upper_polygon[i-1], upper_polygon[i+1])  # add_tri does legalization with new triangle
+            # add_tri does legalization with new triangle but
+            # add_triangle doesn't
+            add_triangle(upper_polygon[i], upper_polygon[i-1],
+                         upper_polygon[i+1])
             upper_polygon.pop(i)
             upper_dist.pop(i)
 
         lower_dist = distances_from_line(e, lower_polygon)
         while len(lower_polygon) > 2:
             i = np.argmax(lower_dist)
-            add_triangle(lower_polygon[i], lower_polygon[i-1], lower_polygon[i+1])  # add_tri does legalization with new triangle
+            add_triangle(lower_polygon[i], lower_polygon[i-1],
+                         lower_polygon[i+1])
             lower_polygon.pop(i)
             lower_dist.pop(i)
         #draw_state()
@@ -426,15 +448,15 @@ for i in range(3, len(pts)):
 front = list(OrderedDict.fromkeys(front))
 
 l = len(front) - 2
-k=0
+k = 0
 while k < l:
     # if edges lie in counterclockwise direction, then signed area is positive
     if iscounterclockwise(front[k], front[k+1], front[k+2]):
         add_triangle(front[k], front[k+1], front[k+2])
         front.pop(k+1)
-        l-=1
+        l -= 1
         continue
-    k+=1
+    k += 1
 
 print front
 print tris
