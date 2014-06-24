@@ -11,8 +11,8 @@ from vispy.gloo import gl
 import vispy.gloo as gloo
 from vispy.scene import visuals
 from vispy.scene.transforms import Transform, STTransform, arg_to_array
-from vispy.scene.shaders import Function
-from vispy.scene.components import VisualComponent, VertexColorComponent, XYPosComponent
+from vispy.scene.components import (VisualComponent, VertexColorComponent,
+                                    XYPosComponent)
 
 # vertex positions of data to draw
 N = 50
@@ -24,6 +24,7 @@ pos[:, 1] = np.random.normal(size=N, scale=0.2).astype(np.float32)
 color = np.ones((N, 4), dtype=np.float32)
 color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
+
 
 # A custom Transform
 class SineTransform(Transform):
@@ -38,22 +39,22 @@ class SineTransform(Transform):
     @arg_to_array
     def map(self, coords):
         ret = coords.copy()
-        ret[...,1] += np.sin(ret[...,0])
+        ret[..., 1] += np.sin(ret[..., 0])
         return ret
-    
+
     @arg_to_array
     def imap(self, coords):
         ret = coords.copy()
-        ret[...,1] -= np.sin(ret[...,0])
+        ret[..., 1] -= np.sin(ret[..., 0])
         return ret
 
-        
-# Custom color component        
+
+# Custom color component
 class DashComponent(VisualComponent):
     """
     VisualComponent that adds dashing to an attached LineVisual.
     """
-    
+
     SHADERS = dict(
         frag_color="""
             vec4 $dash(vec4 color) {
@@ -68,17 +69,17 @@ class DashComponent(VisualComponent):
                 $output_dist = $distance_attr;
             }
         """)
-    
+
     def __init__(self, pos):
         super(DashComponent, self).__init__()
         self._vbo = None
         self.pos = pos
-        
+
     def _make_vbo(self):
         if self._vbo is None:
             # measure distance along line
             # TODO: this should be recomputed if the line data changes.
-            pixel_tr = STTransform(scale=(400,400)) * self.visual.transform
+            pixel_tr = STTransform(scale=(400, 400)) * self.visual.transform
             pixel_pos = pixel_tr.map(self.pos)
             dist = np.empty(pos.shape[0], dtype=np.float32)
             diff = ((pixel_pos[1:] - pixel_pos[:-1]) ** 2).sum(axis=1) ** 0.5
@@ -86,7 +87,7 @@ class DashComponent(VisualComponent):
             dist[1:] = np.cumsum(diff)
             self._vbo = gloo.VertexBuffer(dist)
         return self._vbo
-        
+
     def activate(self, program, mode):
         vf = self._funcs['vert_post_hook']
         ff = self._funcs['frag_color']
@@ -118,61 +119,56 @@ class WobbleComponent(VisualComponent):
         super(WobbleComponent, self).__init__()
         self._vbo = None
         self.pos = pos
-        self.theta = (np.random.random(size=pos.shape[:-1]).astype(np.float32) 
+        self.theta = (np.random.random(size=pos.shape[:-1]).astype(np.float32)
                       * (2. * np.pi))
         self.phase = 0
-        
+
     def activate(self, program, mode):
         if self._vbo is None:
             self._vbo = gloo.VertexBuffer(self.theta)
-            
+
         pf = self._funcs['local_position']
         pf['theta'] = ('attribute', 'float', self._vbo)
         pf['phase'] = ('uniform', 'float', self.phase)
-        
+
         # TODO: make this automatic
         self._visual._program._need_build = True
-        
-
 
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
-        
+
         self.line = visuals.Line()
-        self.line.transform = (STTransform(scale=(0.1,.3)) * 
-                               SineTransform() * 
-                               STTransform(scale=(10,3)))
+        self.line.transform = (STTransform(scale=(0.1, .3)) *
+                               SineTransform() *
+                               STTransform(scale=(10, 3)))
         self.wobbler = WobbleComponent(pos)
         self.line.pos_components = [XYPosComponent(pos), self.wobbler]
         dasher = DashComponent(pos)
         self.line.color_components = [VertexColorComponent(color), dasher]
-        
-        vispy.app.Canvas.__init__(self)
+
+        vispy.app.Canvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
-        
+
         self.timer = vispy.app.Timer(connect=self.wobble,
-                                     interval=0.02, 
+                                     interval=0.02,
                                      start=True)
-        
+
     def on_draw(self, ev):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glViewport(0, 0, *self.size)
-        
+
         self.line.paint()
-        
+
     def wobble(self, ev):
         self.wobbler.phase += 0.1
         self.update()
-        
+
 
 if __name__ == '__main__':
-    win = Canvas() 
+    win = Canvas()
     import sys
     if sys.flags.interactive != 1:
         vispy.app.run()
-    
-
-

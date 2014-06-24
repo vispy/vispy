@@ -43,19 +43,18 @@ class Entity(object):
         self._parents = set()
         if parent is not None:
             self.parents = parent
-        
+
         # Components that all entities in vispy have
         # todo: default transform should be trans-scale-rot transform
         self._transform = transforms.NullTransform()
-    
 
     @property
     def children(self):
-        """ The list of children of this entity. The children are in 
+        """ The list of children of this entity. The children are in
         arbitrary order.
         """
         return list(self._children)
-    
+
     @property
     def parent(self):
         """ Get/set the parent. If the entity has multiple parents while
@@ -67,36 +66,37 @@ class Entity(object):
             return tuple(self._parents)[0]
         else:
             raise RuntimeError('Ambiguous parent: there are multiple parents.')
-    
+
     @parent.setter
     def parent(self, parent):
         # This is basically an alias
         self.parents = parent
-    
+
     @property
     def parents(self):
         """ Get/set a tuple of parents.
         """
         return tuple(self._parents)
-    
+
     @parents.setter
     def parents(self, parents):
         # Test input
         if isinstance(parents, Entity):
             parents = (parents,)
         if not hasattr(parents, '__iter__'):
-            raise ValueError("Entity.parents must be iterable (got %s)" % type(parents))
+            raise ValueError("Entity.parents must be iterable (got %s)"
+                             % type(parents))
 
         # Test that all parents are entities
         for p in parents:
             if not isinstance(p, Entity):
                 raise ValueError('A parent of an entity must be an entity too,'
                                  ' not %s.' % p.__class__.__name__)
-        
+
         # convert to set
         prev = self._parents.copy()
         parents = set(parents)
-        
+
         with self.events.parents_change.blocker():
             # Remove from parents
             for parent in prev - parents:
@@ -114,7 +114,7 @@ class Entity(object):
         parent._add_child(self)
         self.events.parents_change(added=parent)
         self.update()
-        
+
     def remove_parent(self, parent):
         if parent not in self._parents:
             raise ValueError("Parent not in set of parents for this entity.")
@@ -134,31 +134,30 @@ class Entity(object):
 
     def __iter__(self):
         return self._children.__iter__()
-    
+
     @property
     def transform(self):
         """ The transform that maps the local coordinate frame to the
         coordinate frame of the parent.
         """
         return self._transform
-        
+
     @transform.setter
     def transform(self, tr):
         assert isinstance(tr, transforms.Transform)
         self._transform = tr
         self.update()
-        
-    
+
 #     def on_paint(self, event):
 #         """
-#         Paint this entity, given that we are drawing through 
+#         Paint this entity, given that we are drawing through
 #         the given scene *path*.
 #         """
 #         pass
-    
+
 #     def _process_paint_event(self, event):
 #         """
-#         Paint the entire tree of Entities beginning here.            
+#         Paint the entire tree of Entities beginning here.
 #         """
 #         for enter, path in self.walk():
 #             event._set_path(path)
@@ -167,17 +166,16 @@ class Entity(object):
 #                 entity.events.paint(event)
 #             else:
 #                 entity.events.children_painted(event)
-                
 
     def _process_mouse_event(self, event):
         """
         Propagate a mouse event through the scene tree starting at this Entity.
         """
-        # 1. find all entities whose mouse-area includes the point of the click.
+        # 1. find all entities whose mouse-area includes the click point.
         # 2. send the event to each entity one at a time
-        #    (we should use a specialized emitter for this, rather than 
+        #    (we should use a specialized emitter for this, rather than
         #     rebuild the emitter machinery!)
-        
+
         # TODO: for now we send the event to all entities; need to use
         # picking to decide which entities should receive the event.
         for enter, path in self.walk():
@@ -188,9 +186,9 @@ class Entity(object):
 #     def walk(self, path=None):
 #         """
 #         Return an iterator that walks the entire scene graph starting at this
-#         Entity. Yields (True, [list of Entities]) as each path in the 
-#         scenegraph is visited. Yields (False, [list of Entities]) as each path
-#         is finished.
+#         Entity. Yields (True, [list of Entities]) as each path in the
+#         scenegraph is visited. Yields (False, [list of Entities]) as each
+#         path is finished.
 #         """
 #         # TODO: need some control over the order..
 #         #if path is None:
@@ -208,14 +206,9 @@ class Entity(object):
 #             for p in ch.walk(path):
 #                 yield p
 #         yield (False, path)
-        
-        
 
     def update(self):
         """
         Emit an event to inform Canvases that this Entity needs to be redrawn.
         """
         self.events.update()
-
-
-    
