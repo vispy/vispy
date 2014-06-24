@@ -193,16 +193,23 @@ class Entity(object):
         the two entities; otherwise an exception will be raised.        
         """
         cp = self.common_parent(entity)
-        tr = entity.transform
         
+        
+        # First map from entity to common parent
+        tr = entity.transform
         while True:
             entity = entity.parent
-            if entity is self:
-                break  # Go until we meet ourselves
+            if entity is cp:
+                break
             if entity.transform is not None:
-                tr = object.transform * camtransform
+                tr = entity.transform * tr
                 
-        return tr
+        if entity is self:
+            return tr
+        
+        # Now map from common parent to self
+        tr2 = cp.entity_transform(self)
+        return tr2.inverse() * tr
         
         
 #     def on_paint(self, event):

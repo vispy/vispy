@@ -167,7 +167,7 @@ class SubScene(Entity):
         """
         
         # Get total transform of the camera
-        camtransform = self.entity_transform(camera)
+        camtransform = self.entity_transform(self.camera)
         
         # Return inverse
         return camtransform.inverse()
