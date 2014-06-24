@@ -504,10 +504,10 @@ class ViewBox(Widget):
         coords = [transform.map(c) for c in coords]
         x1, y1, z = coords[0][:3]
         x2, y2, z = coords[1][:3]
-        vertexes = np.array([[x1, y1, z], [x2, y1, z],
+        vertices = np.array([[x1, y1, z], [x2, y1, z],
                              [x1, y2, z], [x2, y2, z]],
                             np.float32)
-        self._vert.set_data(vertexes)
+        self._vert.set_data(vertices)
 
         # Set fbo size (mind that this is set using shape!)
         # +1 to create delibirate smoothing

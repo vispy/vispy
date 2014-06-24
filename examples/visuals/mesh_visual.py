@@ -26,13 +26,13 @@ class Canvas(vispy.app.Canvas):
         global mdata
         mdata = sphere(20, 40, 1.0)
 
-        # Mesh with pre-indexed vertexes, uniform color
-        verts = mdata.vertexes(indexed='faces')
+        # Mesh with pre-indexed vertices, uniform color
+        verts = mdata.vertices(indexed='faces')
         mesh = visuals.Mesh(pos=verts, color=(1, 0, 0, 1))
         self.meshes.append(mesh)
 
-        # Mesh with pre-indexed vertexes, per-face color
-        #   Because vertexes are pre-indexed, we get a different color
+        # Mesh with pre-indexed vertices, per-face color
+        #   Because vertices are pre-indexed, we get a different color
         #   every time a vertex is visited, resulting in sharp color
         #   differences between edges.
         nf = verts.size//9
@@ -43,11 +43,11 @@ class Canvas(vispy.app.Canvas):
         mesh = visuals.Mesh(pos=verts, color=fcolor)
         self.meshes.append(mesh)
 
-        # Mesh with unindexed vertexes, per-vertex color
-        #   Because vertexes are unindexed, we get the same color
+        # Mesh with unindexed vertices, per-vertex color
+        #   Because vertices are unindexed, we get the same color
         #   every time a vertex is visited, resulting in no color differences
         #   between edges.
-        verts = mdata.vertexes()
+        verts = mdata.vertices()
         faces = mdata.faces()
         nv = verts.size//3
         vcolor = np.ones((nv, 4), dtype=np.float32)
@@ -57,7 +57,7 @@ class Canvas(vispy.app.Canvas):
         mesh = visuals.Mesh(pos=verts, faces=faces, color=vcolor)
         self.meshes.append(mesh)
 
-        # Mesh colored by vertexes + grid contours
+        # Mesh colored by vertices + grid contours
         mesh = visuals.Mesh(pos=verts, faces=faces)
         mesh.color_components = [VertexColorComponent(vcolor),
                                  GridContourComponent(spacing=(0.13, 0.13,
@@ -76,7 +76,7 @@ class Canvas(vispy.app.Canvas):
         self.meshes.append(mesh)
 
         # Phong shaded mesh, flat faces
-        mesh = visuals.Mesh(pos=mdata.vertexes(indexed='faces'))
+        mesh = visuals.Mesh(pos=mdata.vertices(indexed='faces'))
         normal_comp = VertexNormalComponent(mdata, smooth=False)
         mesh.color_components = [VertexColorComponent(vcolor[mdata.faces()]),
                                  GridContourComponent(spacing=(0.1, 0.1, 0.1)),

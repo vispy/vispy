@@ -82,10 +82,10 @@ class Image(Mesh):
 
             quads[..., :2] += mgrid
             tex_coords = quads.reshape(grid[1]*grid[0]*6, 3)
-            vertexes = tex_coords.copy()
-            vertexes[..., 0] *= self._data.shape[1]
-            vertexes[..., 1] *= self._data.shape[0]
-            Mesh.set_data(self, pos=vertexes)
+            vertices = tex_coords.copy()
+            vertices[..., 0] *= self._data.shape[1]
+            vertices[..., 1] *= self._data.shape[0]
+            Mesh.set_data(self, pos=vertices)
 
             tex_coord_comp = TextureCoordinateComponent(tex_coords)
 

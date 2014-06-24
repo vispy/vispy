@@ -104,7 +104,7 @@ class DashComponent(VisualComponent):
 # custom position component
 class WobbleComponent(VisualComponent):
     """
-    Give all vertexes a wobble with random phase.
+    Give all vertices a wobble with random phase.
     """
     SHADERS = dict(
         local_position="""
