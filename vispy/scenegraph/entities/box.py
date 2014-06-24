@@ -5,11 +5,11 @@
 from __future__ import division
 import numpy as np
 
-from ..entity import Entity
-from ...visuals import LineVisual
+from ...scene.entity import Entity
+from ...scene.visuals import Line as LineVisual
 from ...util.event import Event
 from ...util.geometry import Rect
-from .viewbox import ViewBox
+from ...scene.viewbox import ViewBox
 
 __all__ = ['Box', 'Document', 'GridBox']
 

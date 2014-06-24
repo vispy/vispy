@@ -1,5 +1,5 @@
 import re
-from vispy.shaders.parsing import re_identifier
+from vispy.scene.shaders.parsing import re_identifier
 
 
 def test_identifier():

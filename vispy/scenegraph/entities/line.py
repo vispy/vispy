@@ -4,8 +4,8 @@
 
 from __future__ import division
 
-from ..entity import Entity
-from ...visuals import LineVisual
+from ...scene.entity import Entity
+from ...scene.visuals import Line as LineVisual
 
 __all__ = ['Line']
 

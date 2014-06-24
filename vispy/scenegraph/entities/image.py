@@ -5,8 +5,9 @@
 from __future__ import division
 import numpy as np
 
-from ..entity import Entity
-from ...visuals import ImageVisual, LineVisual
+from ...scene.entity import Entity
+from ...scene.visuals import Image as ImageVisual
+from ...scene.visuals import Line as LineVisual
 
 __all__ = ['Image']
 
