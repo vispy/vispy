@@ -155,8 +155,56 @@ class Entity(object):
         assert isinstance(tr, transforms.Transform)
         self._transform = tr
         self.update()
+
+    def _parent_chain(self):
+        """
+        Return the chain of parents starting from this entity. The chain ends
+        at the first entity with either no parents or multiple parents.
+        """
+        chain = [self]
+        while True:
+            try:
+                parent = chain[-1].parent
+            except Exception:
+                break
+            if parent is None:
+                break
+            chain.append(parent)
+        return chain
+
+    def common_parent(self, entity):
+        """
+        Return the common parent of two entities. If the entities have no 
+        common parent, return None. Does not search past multi-parent branches.
+        """
+        p1 = self._parent_chain()
+        p2 = entity._parent_chain()
+        for p in p1:
+            if p in p2:
+                return p
+        return None
         
-    
+    def entity_transform(self, entity):
+        """
+        Return the transform that maps from the coordinate system of
+        *entity* to the local coordinate system of *self*.
+        
+        Note that there must be a _single_ path in the scenegraph that connects
+        the two entities; otherwise an exception will be raised.        
+        """
+        cp = self.common_parent(entity)
+        tr = entity.transform
+        
+        while True:
+            entity = entity.parent
+            if entity is self:
+                break  # Go until we meet ourselves
+            if entity.transform is not None:
+                tr = object.transform * camtransform
+                
+        return tr
+        
+        
 #     def on_paint(self, event):
 #         """
 #         Paint this entity, given that we are drawing through 

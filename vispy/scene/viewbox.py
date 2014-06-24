@@ -162,20 +162,12 @@ class SubScene(Entity):
     
     def _get_camera_transform(self):
         """ Calculate the transform from the camera to the SubScene entity.
-        This is the inverse of the transform chain *to* the camera.
+        This transform maps from scene coordinates to the local coordinate
+        system of the camera.
         """
         
         # Get total transform of the camera
-        object = self.camera
-        camtransform = object.transform
-        
-        while True:
-            # todo: does it make sense to have a camera in a multi-path?
-            object = object.parents[0]
-            if object is self:
-                break  # Go until we meet ourselves
-            if object.transform is not None:
-                camtransform = camtransform * object.transform
+        camtransform = self.entity_transform(camera)
         
         # Return inverse
         return camtransform.inverse()
@@ -276,13 +268,6 @@ class ViewBox(Widget):
         `entity.add_parent(viewbox.scene)`
         """
         entity.add_parent(self.scene)
-
-    def on_mouse_move(self, event):
-        # TODO: original event dispatcher should pick Entities under cursor
-        # so we won't need this check.            
-        if not self.rect.contains(*event.press_event.pos[:2]):
-            event.process_children = False # instruct mouse system not to pass 
-                                           # this event to children 
 
     @property
     def preferred_clip_method(self):
@@ -569,21 +554,13 @@ class DrawingSystem(object):
     per viewbox.
     
     """
-    
     def process(self, event, subscene):
         # Iterate over entities
-        assert isinstance(subscene, SubScene)
-        event.push_entity(subscene)
-        
-        TODO: 
-            - visit each entity both before and after visiting children.
-            - make System superclass to automate tree-walking  
-        
-        for entity in subscene:
-            self._process_entity(event, entity)
-        event.pop_entity()
+        #assert isinstance(subscene, SubScene)  # LC: allow any part of the 
+                                                #     scene to be drawn 
+        self._process_entity(event, subscene, force_recurse=True)
     
-    def _process_entity(self, event, entity):
+    def _process_entity(self, event, entity, force_recurse=False):
         #from .visuals import Visual  # todo: import crap
         
         event.canvas._process_entity_count += 1
@@ -591,25 +568,16 @@ class DrawingSystem(object):
         # Push entity and set its total transform
         event.push_entity(entity)
         
-        # If a viewbox, let it render its own subscene 
-        #if isinstance(entity, ViewBox):
-            #entity.paint(event)
-        ## Paint if it is a visual (also if a viewbox)
-        #elif isinstance(entity, Visual):
-#             print(entity, 'in', getattr(event.viewbox, '_name', repr(event.viewbox)))
-#             print('  ', event.render_transform.simplify())
-#             print('  ', event.path)
         if isinstance(entity, Visual):
             try:
                 entity.paint(event)
             except:
                 sys.excepthook(*sys.exc_info())
                 logger.warning("Error drawing entity %s" % entity)
-            
         
         # Processs children; recurse. 
         # Do not go into subscenes (ViewBox.paint processes the subscene)
-        if not isinstance(entity, SubScene):
+        if force_recurse or not isinstance(entity, SubScene):
             for sub_entity in entity:
                 self._process_entity(event, sub_entity)
         
@@ -618,24 +586,38 @@ class DrawingSystem(object):
 
 class MouseInputSystem(object):
     def process(self, event, subscene):
-        # Iterate over entities
-        assert isinstance(subscene, SubScene)
-        event.push_entity(subscene)
-        for entity in subscene:
-            self._process_entity(event, entity)
-        event.pop_entity()
+        # For simplicity, this system delivers the event to each entity
+        # in the scenegraph, except for widgets that are not under the 
+        # press_event. 
+        # TODO: 
+        #  1. This eventually should be replaced with a picking system.
+        #  2. We also need to ensure that if one entity accepts a press 
+        #     event, it will also receive all subsequent mouse events
+        #     until the button is released.
+        
+        self._process_entity(event, subscene)
     
     def _process_entity(self, event, entity):
         # Push entity and set its total transform
         event.push_entity(entity)
-        
-        for sub_entity in entity:
-            self._process_entity(event, sub_entity)
-            if event.handled:
-                break
-        
-        if not event.handled:
-            getattr(entity.events, event.type)(event)
+
+        if isinstance(entity, Widget):
+            # widgets are rectangular; easy to do mouse collision 
+            # testing
+            if event.press_event is None:
+                deliver = entity.rect.contains(*event.pos[:2])
+            else:
+                deliver = entity.rect.contains(*event.press_event.pos[:2])
+        else:
+            deliver = True
+                
+        if deliver:
+            for sub_entity in entity:
+                self._process_entity(event, sub_entity)
+                if event.handled:
+                    break
+            if not event.handled:
+                getattr(entity.events, event.type)(event)
         
         event.pop_entity()
 
@@ -743,12 +725,11 @@ class TwoDCamera(Camera):
         An attached ViewBox received a mouse event; 
         
         """
-        print event.pos, event.press_event.pos
-        print event._stack
         
         if 1 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]
             p2 = np.array(event.pos)[:2]
+            print p1, p2
             #p1 = event.map_to_canvas(p1)
             #p2 = event.map_to_canvas(p2)
             self.transform = self.transform * STTransform(translate=p1-p2)
@@ -761,8 +742,8 @@ class TwoDCamera(Camera):
             p2c = event.map_to_canvas(p2)[:2]
             s = 0.97 ** ((p2c-p1c) * np.array([1, -1]))
             center = event.press_event.pos[:2]
-            center[0] -= 1
-            center[1] = (center[1] * 2) - 1
+            #center[0] -= 1
+            #center[1] = (center[1] * 2) - 1
             # TODO: would be nice if STTransform had a nice scale(s, center) 
             # method like AffineTransform.
             self.transform = (self.transform *
