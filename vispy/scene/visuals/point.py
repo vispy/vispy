@@ -4,13 +4,10 @@
 
 from __future__ import division
 
-import numpy as np
-
 from ... import gloo
 from .visual import Visual
-from ..components import (XYPosComponent, XYZPosComponent, 
-                         UniformColorComponent, VertexColorComponent)
 from ..shaders import Function
+
 
 class Point(Visual):
     """
@@ -18,13 +15,13 @@ class Point(Visual):
     """
     def __init__(self, pos=None, **kwds):
         super(Point, self).__init__()
-        
+
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
-        
+
         if pos is not None or kwds:
             self.set_data(pos, **kwds)
-            
+
         # TODO: turn this into a proper component.
         code = """
         void $set_point_size() {
@@ -38,9 +35,10 @@ class Point(Visual):
         return gloo.gl.GL_POINTS
 
     def paint(self):
-        # HACK: True OpenGL ES does not need to enable point sprite and does not define
-        # these two constants. Desktop OpenGL needs to enable these two modes but we do
-        # not have these two constants because our GL namespace pretends to be ES.
+        # HACK: True OpenGL ES does not need to enable point sprite and does
+        # not define these two constants. Desktop OpenGL needs to enable these
+        # two modes but we do not have these two constants because our GL
+        # namespace pretends to be ES.
         GL_VERTEX_PROGRAM_POINT_SIZE = 34370
         GL_POINT_SPRITE = 34913
         gloo.gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)

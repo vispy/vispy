@@ -1,5 +1,5 @@
 from nose.tools import assert_raises
-from vispy.shaders.composite import *
+from vispy.shaders.composite import Function, Variable
 
 
 def test_function():
@@ -13,11 +13,11 @@ def test_function():
     assert(func.rtype == 'vec3')
     assert(func.args == [('vec2', 'x'), ('float', 'z')])
     assert(not func.is_anonymous)
-    
+
     func.compile({})  # ok
     func.compile({func: 'my_function'})  # ok
     assert_raises(Exception, lambda: func.compile({func: 'wrong_name'}))
-        
+
     func2 = Function("""
     vec3 $my_function2() {
         return vec3($xy, $z);
@@ -33,7 +33,7 @@ def test_function():
 
     func2['xy'] = ('varying', 'vec2')
     func2['z'] = ('varying', 'float')
-    
+
     # raise exception because xy and z are not specified in compile
     assert_raises(Exception, lambda: func2.compile({func2: 'func_name'}))
 
@@ -43,29 +43,29 @@ def test_function():
     assert(func2['xy'].is_anonymous)
     assert(func2['xy'].compile({}) == 'varying vec2 xy;')
     assert(func2['z'].compile({}) == 'varying float z;')
-    assert(func2['xy'].compile({func2['xy']: 'vname'}) == 'varying vec2 vname;')    
-    
-    names = {func2: 'some_function', func2['xy']: 'var_xy', func2['z']: 'var_z'}
+    assert(func2['xy'].compile({func2['xy']: 'vname'}) ==
+           'varying vec2 vname;')
+
+    names = {func2: 'some_function', func2['xy']: 'var_xy',
+             func2['z']: 'var_z'}
     func3 = Function(func2.compile(names))
     assert(func3.name == 'some_function')
-                                   
 
 
-    
 #vmain = """
 #vec3 my_hook1(vec2 x, float y);
 #vec3 my_hook2(vec2 x);
 #vec4 my_hook3(vec4 x);
 
 #void main() {
-    
+
 #}
 
 #"""
 
 #fmain = """
 #void main() {
-    
+
 #}
 #"""
 
@@ -82,7 +82,6 @@ def test_function():
 #assert(bound.rtype == 'vec3')
 
 #prog.set_hook('my_hook2', bound)
-
 
 
 #fn1 = ShaderFunction("""
@@ -108,6 +107,3 @@ def test_function():
 #prog.set_hook('my_hook3', chain)
 
 #print "\n".join(prog.generate_code())
-
-
-

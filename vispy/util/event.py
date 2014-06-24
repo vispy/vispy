@@ -434,7 +434,7 @@ class EventEmitter(object):
                 if self.print_callback_errors:
                     sys.excepthook(type, value, tb)
                     logger.warning("Error invoking callback %s for "
-                                    "event: %s" % (cb, event))
+                                   "event: %s" % (cb, event))
             else:
                 raise
 

@@ -1,2 +1,2 @@
-from .canvas import SceneCanvas
-from .entities import Box, Line
+from .canvas import SceneCanvas  # noqa
+from .entities import Box, Line  # noqa
