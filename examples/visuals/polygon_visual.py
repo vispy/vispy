@@ -22,7 +22,7 @@ pos = np.array([[0, 0, 0],
 class Canvas(vispy.app.Canvas):
     def __init__(self):
         self.polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
-                                     border_color=(1, 1, 1, 1))
+                                       border_color=(1, 1, 1, 1))
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)

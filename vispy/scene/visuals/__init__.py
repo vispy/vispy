@@ -6,10 +6,10 @@ Visuals do not have to be used in a scenegraph per se; they can also
 be used stand-alone e.g. from a vispy.app.Canvas, or using Glut.
 """
 
-from .visual import Visual
-from .line import Line
-from .point import Point
-from .image import Image
-from .mesh import Mesh
-from .polygon import Polygon
-from .ellipse import Ellipse
+from .visual import Visual  # noqa
+from .line import Line  # noqa
+from .point import Point  # noqa
+from .image import Image  # noqa
+from .mesh import Mesh  # noqa
+from .polygon import Polygon  # noqa
+from .ellipse import Ellipse  # noqa

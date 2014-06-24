@@ -34,12 +34,13 @@ class Line(Visual):
         
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
-        if mode=='lines':
+        if mode == 'lines':
             self._primitive = gloo.gl.GL_LINES
-        elif mode=='line_strip' or mode==None:
+        elif mode == 'line_strip' or mode is None:
             self._primitive = gloo.gl.GL_LINE_STRIP
         else:
-            print "Invalid mode - %s, Available modes - lines , line_strip" % (mode)
+            print "Invalid mode - %s, Available modes - lines , " \
+                  "line_strip" % (mode)
             raise
 
         if pos is not None or kwds:

@@ -77,7 +77,6 @@ class PolygonData(object):
         """
         self._vertices = v
 
-
     @property  
     def edges(self):
         """Return an array (Nv, 2) of vertex indices.

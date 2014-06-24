@@ -11,7 +11,6 @@ from __future__ import division
 
 import numpy as np
 
-from ... import gloo
 from .polygon import Polygon, Mesh, Line
 from ...util.geometry import PolygonData
 
@@ -43,11 +42,11 @@ class Ellipse(Polygon):
                                    self.data.vertices[self.data.convex_hull],
                                    color=border_color, mode='lines')
 
-
     def _generate_vertices(self, pos, radius, num_segments=100):
         xr, yr = radius
         n_inverse = 1/num_segments
-        self._vertices = np.empty([0, 3], dtype=np.float32)
+        self._vertices = np.empty([num_segments, 3], dtype=np.float32)
         for t in range(num_segments):
             theta = t*n_inverse*2*np.pi
-            self._vertices = np.append(self._vertices, [np.float32([pos[0]+xr*np.cos(theta), pos[1]+yr*np.sin(theta), 0])], axis=0)
+            self._vertices[t] = np.float32([pos[0]+xr*np.cos(theta),
+                                            pos[1]+yr*np.sin(theta), 0])
