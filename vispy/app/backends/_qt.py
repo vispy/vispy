@@ -12,7 +12,7 @@ The _pyside and _pyqt4 modules will import * from this module, and also
 keep a ref to the module object. Note that if both the PySide and PyQt4
 backend are used, this module is actually reloaded. This is a sorts of
 poor mans "subclassing" to get a working version for both backends using
-the same code. 
+the same code.
 
 Note that it is strongly discouraged to use the PySide and PyQt4
 backends simultaneously. It is known to cause unpredictable behavior
@@ -22,14 +22,15 @@ and segfaults.
 from __future__ import division
 
 from time import sleep, time
+from ...util import logger
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
 from ...util import keys
 from ...ext.six import text_type
-from ...util import logger
 
 from . import qt_lib
+
 
 # -------------------------------------------------------------------- init ---
 
@@ -91,6 +92,18 @@ KEYMAP = {
 }
 BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
+
+# Properly log Qt messages
+# Also, ignore spam about tablet input
+def message_handler(msg_type, msg):
+    if msg == ("QCocoaView handleTabletEvent: This tablet device is "
+               "unknown (received no proximity event for it). Discarding "
+               "event."):
+        return
+    else:
+        logger.warning(msg)
+
+QtCore.qInstallMsgHandler(message_handler)
 
 # -------------------------------------------------------------- capability ---
 
