@@ -140,16 +140,13 @@ class SubScene(Entity):
             return cams
         return getcams(self)
     
-    
     @property
     def transform(self):
         return self._transform
     
-    
     @transform.setter
     def transform(self, transform):
         raise RuntimeError('Cannot set transform of SubScene object.')
-    
     
     def _update_transform(self, event):
         # Get three components of the transform
@@ -159,19 +156,12 @@ class SubScene(Entity):
         # Combine and set
         self._transform = viewbox * projection * position
     
-    
     def _get_camera_transform(self):
         """ Calculate the transform from the camera to the SubScene entity.
         This transform maps from scene coordinates to the local coordinate
         system of the camera.
         """
-        
-        # Get total transform of the camera
-        camtransform = self.entity_transform(self.camera)
-        
-        # Return inverse
-        return camtransform.inverse()
-    
+        return self.entity_transform(self.camera).inverse()
     
     def paint(self, event):
         
@@ -181,10 +171,8 @@ class SubScene(Entity):
         # Invoke our drawing system
         self.process_system(event, 'draw') 
     
-    
     def _process_mouse_event(self, event):
         self.process_system(event, 'mouse') 
-    
     
     def process_system(self, event, system_name):
         """ Process a system.
@@ -195,6 +183,7 @@ class SubScene(Entity):
         if event.press_event is None or event.handled:
             return
         
+        # Let camera handle mouse interaction
         self.camera.scene_mouse_event(event)
 
 
@@ -216,13 +205,11 @@ class ViewBox(Widget):
         self._scene = SubScene()
         self._scene.parent = self
         
-    
     @property
     def bgcolor(self):
         """ The background color of the scene. within the viewbox.
         """
         return self._bgcolor
-    
     
     @bgcolor.setter
     def bgcolor(self, value):
@@ -653,10 +640,10 @@ class Camera(Entity):
         """
         return self._projection
 
-    def view_mouse_event(self, event):
+    def scene_mouse_event(self, event):
         """
-        An attached ViewBox received a mouse event; update the camera
-        transform as needed.
+        This camera's SubScene received a mouse event; update transform 
+        accordingly.
         """
         pass
 
@@ -722,17 +709,18 @@ class TwoDCamera(Camera):
 
     def scene_mouse_event(self, event):
         """
-        An attached ViewBox received a mouse event; 
-        
+        This camera's SubScene received a mouse event; update transform 
+        accordingly.
         """
         
         if 1 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]
             p2 = np.array(event.pos)[:2]
-            print p1, p2
+            print event.mouse_event.pos, event.mouse_event.last_event.pos, event.last_event.mouse_event.pos
+            print p1, p2, p1-p2
             #p1 = event.map_to_canvas(p1)
             #p2 = event.map_to_canvas(p2)
-            self.transform = self.transform * STTransform(translate=p1-p2)
+            self.transform = STTransform(translate=p1-p2) * self.transform
             self.update()
             event.handled = True
         elif 2 in event.buttons:
@@ -746,10 +734,10 @@ class TwoDCamera(Camera):
             #center[1] = (center[1] * 2) - 1
             # TODO: would be nice if STTransform had a nice scale(s, center) 
             # method like AffineTransform.
-            self.transform = (self.transform *
-                              STTransform(translate=center) * 
+            self.transform = (STTransform(translate=center) * 
                               STTransform(scale=s) * 
-                              STTransform(translate=-center))
+                              STTransform(translate=-center) *
+                              self.transform)
             self.update()        
             event.handled = True
 

@@ -69,7 +69,7 @@ vb12.size = 2.0, 1.0
 vb12.scene.camera = scene.cameras.PixelCamera()
 #vb12.scene.camera.scale = (100, 100)
 #
-#line_ndc.add_parent(vb11.scene)
+line_ndc.add_parent(vb11.scene)
 line_pixels.add_parent(vb12.scene)
 
 box = np.array([[0,0], [0,1], [1,1], [1,0], [0,0]], dtype=np.float32)
@@ -88,7 +88,7 @@ vb2.scene.camera = scene.cameras.PixelCamera()
 vb21 = scene.ViewBox(vb2.scene)
 vb21.pos = 0, 0
 vb21.size = 400, 300
-vb21.scene.camera = scene.cameras.NDCCamera()
+vb21.scene.camera = scene.cameras.TwoDCamera()
 #
 vb22 = scene.ViewBox(vb2.scene)
 vb22.pos = 0, 300
