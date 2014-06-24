@@ -181,7 +181,6 @@ class SceneEvent(Event):
             ra = self._ra_stack[-1]
             return ra.fbo_transform * ra.vp_transform * self.full_transform
 
-
 # AK: we should revive the methods below if and when we need them
 #     @property
 #     def framebuffer_transform(self):
@@ -297,6 +296,7 @@ class SceneMouseEvent(SceneEvent):
         ev._viewbox_stack = self._viewbox_stack[:]
         ev._resolution = self._resolution
         return ev
+
 
 class SceneDrawEvent(SceneEvent):
     def __init__(self, event, canvas):

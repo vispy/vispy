@@ -71,9 +71,9 @@ vb12.scene.camera = scene.cameras.PixelCamera()
 line_ndc.add_parent(vb11.scene)
 line_pixels.add_parent(vb12.scene)
 
-box = np.array([[0,0], [0,1], [1,1], [1,0], [0,0]], dtype=np.float32)
-unit_box = scene.visuals.Line(pos=box, color=(1,0,0,1), name='unit box')
-nd_box = scene.visuals.Line(pos=box*2-1, color=(0,1,0,1), name='nd box')
+box = np.array([[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]], dtype=np.float32)
+unit_box = scene.visuals.Line(pos=box, color=(1, 0, 0, 1), name='unit box')
+nd_box = scene.visuals.Line(pos=box*2-1, color=(0, 1, 0, 1), name='nd box')
 vb11.add(unit_box)
 vb11.add(nd_box)
 

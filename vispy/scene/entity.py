@@ -195,7 +195,6 @@ class Entity(object):
         """
         cp = self.common_parent(entity)
         
-        
         # First map from entity to common parent
         tr = entity.transform
         while True:
@@ -211,7 +210,6 @@ class Entity(object):
         # Now map from common parent to self
         tr2 = cp.entity_transform(self)
         return tr2.inverse() * tr
-        
         
 #     def on_draw(self, event):
 #         """

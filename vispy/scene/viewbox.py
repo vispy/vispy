@@ -61,7 +61,8 @@ class Widget(Visual):
 
     @property
     def rect(self):
-        return Rect((0,0), self.size)
+        return Rect((0, 0), self.size)
+
 
 class SubScene(Entity):
     """ A subscene with entities.
@@ -556,13 +557,13 @@ class DrawingSystem(object):
         
         if isinstance(entity, Visual):
             try:
-                entity.paint(event)
+                entity.draw(event)
             except:
                 sys.excepthook(*sys.exc_info())
                 logger.warning("Error drawing entity %s" % entity)
         
         # Processs children; recurse. 
-        # Do not go into subscenes (ViewBox.paint processes the subscene)
+        # Do not go into subscenes (SubScene.draw processes the subscene)
         if force_recurse or not isinstance(entity, SubScene):
             for sub_entity in entity:
                 self._process_entity(event, sub_entity)
@@ -644,6 +645,7 @@ class Camera(Entity):
         """
         pass
 
+
 class NDCCamera(Camera):
     """ Camera that presents a view on the world in normalized device
     coordinates (-1..1).
@@ -712,8 +714,6 @@ class TwoDCamera(Camera):
         if 1 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]
             p2 = np.array(event.pos)[:2]
-            print event.mouse_event.pos, event.mouse_event.last_event.pos, event.last_event.mouse_event.pos
-            print p1, p2, p1-p2
             #p1 = event.map_to_canvas(p1)
             #p2 = event.map_to_canvas(p2)
             self.transform = STTransform(translate=p1-p2) * self.transform
