@@ -123,7 +123,7 @@ class VisualComponent(object):
 
     def activate(self, program):
         """
-        *program* is about to paint; attach to *program* all functions and
+        *program* is about to draw; attach to *program* all functions and
         data required by this component.
         """
         raise NotImplementedError

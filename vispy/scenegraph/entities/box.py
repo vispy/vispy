@@ -114,9 +114,9 @@ class Box(Entity):
             [left, bottom]]).astype(np.float32)
         self._visual.set_data(pos=pos)
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         self._visual.transform = event.viewport_transform
-        self._visual.paint()
+        self._visual.draw()
 
     def on_rect_change(self, ev):
         self._update_child_boxes()

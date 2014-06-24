@@ -115,7 +115,7 @@ class Canvas(vispy.app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glViewport(0, 0, *self.size)
         for mesh in self.meshes:
-            mesh.paint()
+            mesh.draw()
 
 
 if __name__ == '__main__':

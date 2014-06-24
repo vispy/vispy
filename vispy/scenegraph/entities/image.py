@@ -30,9 +30,9 @@ class Image(Entity):
         for method in self.WrapMethods:
             setattr(self, method, getattr(self._image, method))
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         self._image.transform = event.viewport_transform
-        self._image.paint()
+        self._image.draw()
 
         self._border.transform = event.viewport_transform
-        self._border.paint()
+        self._border.draw()

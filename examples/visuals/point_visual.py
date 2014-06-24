@@ -29,7 +29,7 @@ class Canvas(vispy.app.Canvas):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glViewport(0, 0, *self.size)
-        self.points.paint()
+        self.points.draw()
 
 
 if __name__ == '__main__':

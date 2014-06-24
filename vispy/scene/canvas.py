@@ -9,7 +9,8 @@ from .. import app
 
 from .viewbox import SubScene
 from .transforms import STTransform
-from .events import ScenePaintEvent, SceneMouseEvent
+from .events import SceneDrawEvent, SceneMouseEvent
+from ..util import logger
 
 
 class SceneCanvas(app.Canvas):
@@ -54,7 +55,7 @@ class SceneCanvas(app.Canvas):
 #
 #         # 2. Set size of document to match the area of the canvas
 #         self.scene.size = (1.0, 1.0)  # root viewbox is in NDC
-# AK: no need to set size, we set the size explicitly when painting.
+# AK: no need to set size, we set the size explicitly when drawing.
 # actually, we can have a root viewbox that has children, we should not
 # touch its transform at all.
 
@@ -64,21 +65,17 @@ class SceneCanvas(app.Canvas):
         # Right now viewbox resolution is only available
         # via the event object, which may be sufficient!
 
-    def on_paint(self, event):
-        self.on_draw(event)  # backwards compat with older versions of vispy
-        # todo: rename paint -> draw througout vispy.scene
-
     def on_draw(self, event):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         if self._scene is None:
             return  # Can happen on initialization
-        print('Canvas draw')
-        # Create paint event, which keeps track of the path of transforms
+        logger.debug('Canvas draw')
+        # Create draw event, which keeps track of the path of transforms
         self._process_entity_count = 0  # for debugging
-        scene_event = ScenePaintEvent(canvas=self, event=event)
-        self._scene.paint(scene_event)
+        scene_event = SceneDrawEvent(canvas=self, event=event)
+        self._scene.draw(scene_event)
 
     def _process_mouse_event(self, event):
         scene_event = SceneMouseEvent(canvas=self, event=event)

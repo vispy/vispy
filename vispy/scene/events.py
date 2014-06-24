@@ -171,7 +171,7 @@ class SceneEvent(Event):
         This transform consists of the full_transform prepended by a
         correction for the current glViewport and/or FBO.
 
-        Most entities should use this transform when painting.
+        Most entities should use this transform when drawing.
         """
         if len(self._ra_stack) <= 1:
             return self.full_transform
@@ -283,7 +283,7 @@ class SceneMouseEvent(SceneEvent):
         return self.mouse_event.buttons
 
 
-class ScenePaintEvent(SceneEvent):
+class SceneDrawEvent(SceneEvent):
     def __init__(self, event, canvas):
         self.draw_event = event
-        super(ScenePaintEvent, self).__init__(type=event.type, canvas=canvas)
+        super(SceneDrawEvent, self).__init__(type=event.type, canvas=canvas)

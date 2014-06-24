@@ -118,11 +118,11 @@ class Image(Mesh):
         # this is handled in _build_data instead.
         pass
 
-    def paint(self):
+    def draw(self):
         if self._data is None:
             return
 
         if self._texture is None:
             self._build_data()
 
-        super(Image, self).paint()
+        super(Image, self).draw()
