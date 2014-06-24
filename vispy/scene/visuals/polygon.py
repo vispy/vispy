@@ -13,6 +13,7 @@ import numpy as np
 
 from ... import gloo
 from .visual import Visual
+from .. import transforms
 from .mesh import Mesh
 from .line import Line
 from ...util.geometry import PolygonData
@@ -40,7 +41,24 @@ class Polygon(Visual):
                                    self.data.vertices[self.data.convex_hull],
                                    color=border_color, mode='lines')
 
-    def paint(self):
+    @property
+    def transform(self):
+        """ The transform that maps the local coordinate frame to the
+        coordinate frame of the parent.
+        """
+        return self._transform
+
+    @transform.setter
+    def transform(self, tr):
+        assert isinstance(tr, transforms.Transform)
+        self._transform = tr
+        self.mesh._transform = tr
+        self.border._transform = tr
+        self.mesh.update()
+        self.border.update()
+        self.update()
+
+    def paint(self, event=None):
         if self.mesh:
             gloo.set_state(polygon_offset_fill=True)
             gloo.set_polygon_offset(1, 1)

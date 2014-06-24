@@ -8,7 +8,7 @@ Simple demonstration of EllipseVisual.
 
 import vispy.app
 from vispy import gloo
-from vispy.scene import visuals
+from vispy.scene import visuals, transforms
 
 
 class Canvas(vispy.app.Canvas):
@@ -16,6 +16,7 @@ class Canvas(vispy.app.Canvas):
         self.ellipse = visuals.Ellipse(pos=(0.5, 0.3, 0), radius=(0.4, 0.2),
                                        color=(1, 0, 0, 1),
                                        border_color=(0, 1, 1, 1))
+        self.ellipse.transform = transforms.STTransform(scale=(0.5, 2.0))
         
         vispy.app.Canvas.__init__(self)
         self.size = (800, 800)
