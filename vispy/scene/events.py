@@ -217,9 +217,19 @@ class SceneEvent(Event):
         return canvas_tr * root_tr
     
     def map_to_canvas(self, obj):
+        """
+        Convenience method that maps *obj* from the current coordinate system 
+        of the event to the canvas coordinate system (logical pixels; 
+        see SceneEvent.canvas_transform).
+        """
         return self.canvas_transform.map(obj)
     
     def map_from_canvas(self, obj):
+        """
+        Convenience method that maps *obj* from the canvas coordinate system 
+        (logical pixels; see SceneEvent.canvas_transform) to the current 
+        coordinate system of the event.
+        """
         return self.canvas_transform.inverse().map(obj)
     
 #     @property
