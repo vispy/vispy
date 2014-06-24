@@ -5,11 +5,13 @@
 from __future__ import division
 
 import numpy as np
+import sys
 
 from .entity import Entity
 from .transforms import STTransform, NullTransform, PerspectiveTransform, ChainTransform
 from ..util.event import Event
-
+from ..util.geometry import Rect
+from ..util._logging import logger
 
 from .visuals import Visual
 
@@ -57,6 +59,9 @@ class Widget(Visual):
         self._size = s
         self.events.rect_change()
 
+    @property
+    def rect(self):
+        return Rect((0,0), self.size)
 
 
 class SubScene(Entity):
@@ -91,6 +96,7 @@ class SubScene(Entity):
         # Initialize systems
         self._systems = {}
         self._systems['draw'] = DrawingSystem()
+        self._systems['mouse'] = MouseInputSystem()
     
     @property
     def camera(self):
@@ -184,11 +190,20 @@ class SubScene(Entity):
         self.process_system(event, 'draw') 
     
     
+    def _process_mouse_event(self, event):
+        self.process_system(event, 'mouse') 
+    
+    
     def process_system(self, event, system_name):
         """ Process a system.
         """
         self._systems[system_name].process(event, self)
 
+    def on_mouse_move(self, event):
+        if event.press_event is None or event.handled:
+            return
+        
+        self.camera.scene_mouse_event(event)
 
 
 class ViewBox(Widget):
@@ -240,7 +255,6 @@ class ViewBox(Widget):
         """
         return self._scene
     
-    
     @property
     def camera(self):
         """ The camera associated with this viewbox. Can be None if there
@@ -255,19 +269,21 @@ class ViewBox(Widget):
         raise RuntimeError('ViewBox does no longer have a camera. '
                            'Use viewbox.scene instead')
     
-    
-    def on_mouse_move(self, event):
-        if event.handled:
-            return
+    def add(self, entity):
+        """ Add an Entity to the scene for this ViewBox. 
         
-        # TODO: original event dispatcher should pick Entities under cursor
-        # so we won't need this check.
-        if event.press_event is None or not self.rect.contains(*event.press_event.pos[:2]):
-            return
-            
-        self.camera.view_mouse_event(event)
+        This is a convenience method equivalent to 
+        `entity.add_parent(viewbox.scene)`
+        """
+        entity.add_parent(self.scene)
 
-    
+    def on_mouse_move(self, event):
+        # TODO: original event dispatcher should pick Entities under cursor
+        # so we won't need this check.            
+        if not self.rect.contains(*event.press_event.pos[:2]):
+            event.process_children = False # instruct mouse system not to pass 
+                                           # this event to children 
+
     @property
     def preferred_clip_method(self):
         """ The preferred way to clip the boundaries of the viewbox.
@@ -558,12 +574,17 @@ class DrawingSystem(object):
         # Iterate over entities
         assert isinstance(subscene, SubScene)
         event.push_entity(subscene)
+        
+        TODO: 
+            - visit each entity both before and after visiting children.
+            - make System superclass to automate tree-walking  
+        
         for entity in subscene:
             self._process_entity(event, entity)
         event.pop_entity()
     
     def _process_entity(self, event, entity):
-        from .visuals import Visual  # todo: import crap
+        #from .visuals import Visual  # todo: import crap
         
         event.canvas._process_entity_count += 1
         
@@ -571,20 +592,50 @@ class DrawingSystem(object):
         event.push_entity(entity)
         
         # If a viewbox, let it render its own subscene 
-        if isinstance(entity, ViewBox):
-            entity.paint(event)
-        # Paint if it is a visual (also if a viewbox)
-        elif isinstance(entity, Visual):
+        #if isinstance(entity, ViewBox):
+            #entity.paint(event)
+        ## Paint if it is a visual (also if a viewbox)
+        #elif isinstance(entity, Visual):
 #             print(entity, 'in', getattr(event.viewbox, '_name', repr(event.viewbox)))
 #             print('  ', event.render_transform.simplify())
 #             print('  ', event.path)
-            entity.paint(event)
+        if isinstance(entity, Visual):
+            try:
+                entity.paint(event)
+            except:
+                sys.excepthook(*sys.exc_info())
+                logger.warning("Error drawing entity %s" % entity)
+            
         
         # Processs children; recurse. 
         # Do not go into subscenes (ViewBox.paint processes the subscene)
         if not isinstance(entity, SubScene):
             for sub_entity in entity:
                 self._process_entity(event, sub_entity)
+        
+        event.pop_entity()
+
+
+class MouseInputSystem(object):
+    def process(self, event, subscene):
+        # Iterate over entities
+        assert isinstance(subscene, SubScene)
+        event.push_entity(subscene)
+        for entity in subscene:
+            self._process_entity(event, entity)
+        event.pop_entity()
+    
+    def _process_entity(self, event, entity):
+        # Push entity and set its total transform
+        event.push_entity(entity)
+        
+        for sub_entity in entity:
+            self._process_entity(event, sub_entity)
+            if event.handled:
+                break
+        
+        if not event.handled:
+            getattr(entity.events, event.type)(event)
         
         event.pop_entity()
 
@@ -599,8 +650,11 @@ class Camera(Entity):
     default does not draw anything.
     
     Next to the normal transformation, a camera also defines a
-    projection tranformation that defines the camera view. This can for
+    projection transformation that defines the camera view. This can for
     instance be orthographic, perspective, log, polar, etc.
+    
+    Cameras are also responsible for handling any user input that
+    should affect the viewpoint of projection of the camera.
     """
     
     def __init__(self, parent=None):
@@ -617,6 +671,12 @@ class Camera(Entity):
         """
         return self._projection
 
+    def view_mouse_event(self, event):
+        """
+        An attached ViewBox received a mouse event; update the camera
+        transform as needed.
+        """
+        pass
 
 
 class NDCCamera(Camera):
@@ -678,22 +738,31 @@ class TwoDCamera(Camera):
         #self.fov = self.fov[0], ry
         #self.transform[-1, 1] = y
 
-    def view_mouse_event(self, event):
+    def scene_mouse_event(self, event):
         """
         An attached ViewBox received a mouse event; 
         
         """
+        print event.pos, event.press_event.pos
+        print event._stack
+        
         if 1 in event.buttons:
-            p1 = np.array(event.last_event.pos)
-            p2 = np.array(event.pos)
+            p1 = np.array(event.last_event.pos)[:2]
+            p2 = np.array(event.pos)[:2]
+            #p1 = event.map_to_canvas(p1)
+            #p2 = event.map_to_canvas(p2)
             self.transform = self.transform * STTransform(translate=p1-p2)
             self.update()
             event.handled = True
         elif 2 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]
             p2 = np.array(event.pos)[:2]
-            s = 0.97 ** ((p2-p1) * np.array([1, 1]))
-            center = event.press_event.pos
+            p1c = event.map_to_canvas(p1)[:2]
+            p2c = event.map_to_canvas(p2)[:2]
+            s = 0.97 ** ((p2c-p1c) * np.array([1, -1]))
+            center = event.press_event.pos[:2]
+            center[0] -= 1
+            center[1] = (center[1] * 2) - 1
             # TODO: would be nice if STTransform had a nice scale(s, center) 
             # method like AffineTransform.
             self.transform = (self.transform *

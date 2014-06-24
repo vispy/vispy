@@ -21,7 +21,7 @@ class Entity(object):
     It is recommended to use multi-parenting with care.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, name=None):
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    parents_change=Event,
@@ -34,6 +34,7 @@ class Entity(object):
                                    children_painted=ScenePaintEvent,
                                    update=Event,
                                    )
+        self.name = name
 
         # Entities are organized in a parent-children hierarchy
         # todo: I think we want this to be a list. The order *may* be important
@@ -48,6 +49,13 @@ class Entity(object):
         # todo: default transform should be trans-scale-rot transform
         self._transform = transforms.NullTransform()
     
+    @property
+    def name(self):
+        return self._name
+    
+    @name.setter
+    def name(self, n):
+        self._name = n
 
     @property
     def children(self):
@@ -217,5 +225,7 @@ class Entity(object):
         """
         self.events.update()
 
-
+    def __str__(self):
+        return "<%s name=%s id=0x%x>" % (self.__class__.__name__, self._name, 
+                                         id(self))
     

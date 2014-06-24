@@ -179,8 +179,8 @@ class Visual(Entity):
 
     
     
-    def __init__(self, parent=None):
-        Entity.__init__(self, parent)
+    def __init__(self, parent=None, name=None):
+        Entity.__init__(self, parent, name=name)
         
         # Dict of {'GL_FLAG': bool} and {'glFunctionName': (args)} 
         # specifications. By default, these are enabled whenever the Visual 
@@ -210,7 +210,6 @@ class Visual(Entity):
         self._color_components = []
         #self.color_components = [UniformColorComponent()]
         
-    
     @property
     def primitive(self):
         """
