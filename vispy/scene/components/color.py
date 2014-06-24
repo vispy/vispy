@@ -20,7 +20,7 @@ from ... import gloo
 
 class UniformColorComponent(VisualComponent):
     """
-    Generates a uniform color for all vertexes.
+    Generates a uniform color for all vertices.
     """
 
     SHADERS = dict(

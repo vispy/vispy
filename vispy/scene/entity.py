@@ -6,7 +6,7 @@ from __future__ import division
 
 from . import transforms
 from ..util.event import EmitterGroup, Event
-from .events import ScenePaintEvent, SceneMouseEvent
+from .events import SceneDrawEvent, SceneMouseEvent
 
 
 class Entity(object):
@@ -30,8 +30,8 @@ class Entity(object):
                                    mouse_press=SceneMouseEvent,
                                    mouse_move=SceneMouseEvent,
                                    mouse_release=SceneMouseEvent,
-                                   paint=ScenePaintEvent,
-                                   children_painted=ScenePaintEvent,
+                                   draw=SceneDrawEvent,
+                                   children_drawn=SceneDrawEvent,
                                    update=Event,
                                    )
 
@@ -148,24 +148,24 @@ class Entity(object):
         self._transform = tr
         self.update()
 
-#     def on_paint(self, event):
+#     def on_draw(self, event):
 #         """
-#         Paint this entity, given that we are drawing through
+#         Draw this entity, given that we are drawing through
 #         the given scene *path*.
 #         """
 #         pass
 
-#     def _process_paint_event(self, event):
+#     def _process_draw_event(self, event):
 #         """
-#         Paint the entire tree of Entities beginning here.
+#         Draw the entire tree of Entities beginning here.
 #         """
 #         for enter, path in self.walk():
 #             event._set_path(path)
 #             entity = path[-1]
 #             if enter:
-#                 entity.events.paint(event)
+#                 entity.events.draw(event)
 #             else:
-#                 entity.events.children_painted(event)
+#                 entity.events.children_drawn(event)
 
     def _process_mouse_event(self, event):
         """

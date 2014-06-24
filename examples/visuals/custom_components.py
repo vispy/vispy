@@ -104,7 +104,7 @@ class DashComponent(VisualComponent):
 # custom position component
 class WobbleComponent(VisualComponent):
     """
-    Give all vertexes a wobble with random phase.
+    Give all vertices a wobble with random phase.
     """
     SHADERS = dict(
         local_position="""
@@ -160,7 +160,7 @@ class Canvas(vispy.app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glViewport(0, 0, *self.size)
 
-        self.line.paint()
+        self.line.draw()
 
     def wobble(self, ev):
         self.wobbler.phase += 0.1

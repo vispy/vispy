@@ -169,7 +169,7 @@ class SubScene(Entity):
         # Return inverse
         return camtransform.inverse()
 
-    def paint(self, event):
+    def draw(self, event):
 
         # todo: update transform only when necessay
         self._update_transform(event)
@@ -297,8 +297,8 @@ class ViewBox(Widget):
             raise ValueError((t + ', not %r') % value)
         self._preferred_clip_method = value
 
-    def paint(self, event):
-        """ Paint the viewbox.
+    def draw(self, event):
+        """ Draw the viewbox.
 
         This does not really draw *this* object, but prepare for drawing
         our the subscene. In particular, here we calculate the transform
@@ -369,7 +369,7 @@ class ViewBox(Widget):
         elif prefer == 'fbo':
             fbo = self._prepare_fbo(event)
 
-        # -- Paint
+        # -- Draw
 
         event.push_viewbox(self)
 
@@ -393,7 +393,7 @@ class ViewBox(Widget):
             gl.glClearColor(clr[0], clr[1], clr[2], 1.0)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             # Process childen
-            self.scene.paint(event)
+            self.scene.draw(event)
             # Pop FBO and now draw the result
             event.pop_fbo()
             self._myprogram.draw(gl.GL_TRIANGLE_STRIP)
@@ -401,13 +401,13 @@ class ViewBox(Widget):
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
-            self.scene.paint(event)
+            self.scene.draw(event)
             event.pop_viewport()
 
         else:
             # Just draw
             # todo: invoke fragment shader clipping
-            self.scene.paint(event)
+            self.scene.draw(event)
 
         event.pop_viewbox()
 
@@ -432,7 +432,7 @@ class ViewBox(Widget):
         return int(x+0.5), int(y+0.5), int(w+0.5), int(h+0.5)
 
     def _prepare_fbo(self, event):
-        """ Paint the viewbox via an FBO. This method can be applied
+        """ Draw the viewbox via an FBO. This method can be applied
         in any situation, regardless of the transformations to this
         viewbox.
 
@@ -504,14 +504,14 @@ class ViewBox(Widget):
         coords = [transform.map(c) for c in coords]
         x1, y1, z = coords[0][:3]
         x2, y2, z = coords[1][:3]
-        vertexes = np.array([[x1, y1, z], [x2, y1, z],
+        vertices = np.array([[x1, y1, z], [x2, y1, z],
                              [x1, y2, z], [x2, y2, z]],
                             np.float32)
-        self._vert.set_data(vertexes)
+        self._vert.set_data(vertices)
 
         # Set fbo size (mind that this is set using shape!)
         # +1 to create delibirate smoothing
-        resolution = [int(i+0.5+1) for i in self._resolution]  # set in paint()
+        resolution = [int(i+0.5+1) for i in self._resolution]  # set in draw()
         shape = resolution[1], resolution[0]
         fbo.color_buffer.resize(shape+(4,))
         fbo.depth_buffer.resize(shape)
@@ -563,17 +563,17 @@ class DrawingSystem(object):
 
         # If a viewbox, let it render its own subscene
         if isinstance(entity, ViewBox):
-            entity.paint(event)
-        # Paint if it is a visual (also if a viewbox)
+            entity.draw(event)
+        # Draw if it is a visual (also if a viewbox)
         elif isinstance(entity, Visual):
             #print(entity, 'in', getattr(event.viewbox, '_name',
             #                            repr(event.viewbox)))
             #print('  ', event.render_transform.simplify())
             #print('  ', event.path)
-            entity.paint(event)
+            entity.draw(event)
 
         # Processs children; recurse.
-        # Do not go into subscenes (ViewBox.paint processes the subscene)
+        # Do not go into subscenes (ViewBox.draw processes the subscene)
         if not isinstance(entity, SubScene):
             for sub_entity in entity:
                 self._process_entity(event, sub_entity)

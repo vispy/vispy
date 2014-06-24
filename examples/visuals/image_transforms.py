@@ -62,7 +62,7 @@ class Canvas(vispy.app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glViewport(0, 0, *self.size)
         for img in self.images:
-            img.paint()
+            img.draw()
 
 
 # A simple custom Transform

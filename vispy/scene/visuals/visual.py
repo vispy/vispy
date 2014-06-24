@@ -126,15 +126,15 @@ class Visual(Entity):
 
     At a minimum, Visual subclasses must provide the following interfaces:
 
-    * paint() calls all of the GL commands necessary to paint the visual.
+    * draw() calls all of the GL commands necessary to draw the visual.
     * bounds() describes the bounding rectangle of the visual.
     * gl_options() is used to configure the OpenGL state immediately
-      before the visual is painted.
+      before the visual is drawn.
 
     Events:
 
     update : Event
-        Emitted when the visual has changed and needs to be repainted.
+        Emitted when the visual has changed and needs to be redrawn.
     bounds_change : Event
         Emitted when the bounding rectangle of the visual has changed.
 
@@ -152,7 +152,7 @@ class Visual(Entity):
       color (color_components)
     * A transform property that defines the base vertex transform
       implemented in te vertex shader
-    * A default paint() method that:
+    * A default draw() method that:
         * activates each of the attached components
         * negotiates a buffer mode (pre-indexed or unindexed) supported by
           all components
@@ -205,7 +205,7 @@ class Visual(Entity):
 
         # Dict of {'GL_FLAG': bool} and {'glFunctionName': (args)}
         # specifications. By default, these are enabled whenever the Visual
-        # if painted. This provides a simple way for the user to customize the
+        # if drawn. This provides a simple way for the user to customize the
         # appearance of the Visual. Example:
         #
         #     { 'GL_BLEND': True,
@@ -343,37 +343,35 @@ class Visual(Entity):
 
     def update(self):
         """
-        This method is called whenever the Visual must be repainted.
+        This method is called whenever the Visual must be redrawn.
 
         """
         self.events.update()
 
 # no need if we use the drawing system
-#     def on_paint(self, event):
-#         """ when we get a paint event from the scenegraph
+#     def on_draw(self, event):
+#         """ when we get a draw event from the scenegraph
 #         """
 #         self._visual.transform = event.viewport_transform
-#         self.paint()
+#         self.draw()
 
-    def paint(self, event=None):
+    def draw(self, event=None):
         """
-        Paint this visual now.
+        Draw this visual now.
 
         The default implementation configures GL flags according to the
         contents of self._gl_options
 
         """
-
-        #print('paint', self)
         self._activate_gl_options()
-        mode = self._paint_mode()
+        mode = self._draw_mode()
         self._activate_components(mode, event)
         self._program.draw(self.primitive, self.vertex_index)
 
     # todo: should this be called "buffer_mode" ?
-    def _paint_mode(self):
+    def _draw_mode(self):
         """
-        Return the mode that should be used to paint this visual
+        Return the mode that should be used to draw this visual
         (DRAW_PRE_INDEXED or DRAW_UNINDEXED)
         """
         modes = set([VisualComponent.DRAW_PRE_INDEXED,
@@ -384,7 +382,7 @@ class Visual(Entity):
         if len(modes) == 0:
             for c in self._color_components:
                 print(c, c.supported_draw_modes)
-            raise Exception("Visual cannot paint--no mutually supported "
+            raise Exception("Visual cannot draw--no mutually supported "
                             "draw modes between components.")
 
         #TODO: pick most efficient draw mode!
@@ -409,8 +407,8 @@ class Visual(Entity):
 
     def _activate_components(self, mode, event):
         """
-        This is called immediately before painting to inform all components
-        that a paint is about to occur and to let them assign program
+        This is called immediately before drawing to inform all components
+        that a draw is about to occur and to let them assign program
         variables.
         """
         if len(self._pos_components) == 0:

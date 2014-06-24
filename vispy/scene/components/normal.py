@@ -53,12 +53,12 @@ class VertexNormalComponent(VisualComponent):
             else:
                 index = None
             if self.smooth:
-                norm = self._meshdata.vertexNormals(indexed=index)
+                norm = self._meshdata.vertex_normals(indexed=index)
             else:
                 if index != 'faces':
                     raise Exception("Not possible to draw faceted mesh without"
                                     "pre-indexing.")
-                norm = self._meshdata.faceNormals(indexed=index)
+                norm = self._meshdata.face_normals(indexed=index)
             self._vbo = gloo.VertexBuffer(norm)
             self._vbo_mode = mode
         return self._vbo

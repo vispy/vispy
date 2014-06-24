@@ -1,5 +1,6 @@
 from nose.tools import assert_raises
-from vispy.shaders.composite import Function, Variable
+
+from vispy.scene.shaders.function import Function, Variable
 
 
 def test_function():

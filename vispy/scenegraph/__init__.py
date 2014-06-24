@@ -1,2 +1,1 @@
-from .canvas import SceneCanvas  # noqa
-from .entities import Box, Line  # noqa
+from .entities import Box, Line, Image, Document, GridBox  # noqa

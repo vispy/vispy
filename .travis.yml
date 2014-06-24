@@ -6,11 +6,6 @@ language: python
 # allows for more complete testing.
 
 
-branches:
-  except:
-    - scenegraph
-
-
 virtualenv:
     system_site_packages: true
 

@@ -100,11 +100,11 @@ class VisualComponent(object):
         both) currently supported by this component.
 
         DRAW_PRE_INDEXED indicates that the component may be used when the
-        program uses an array of indexes to determine the order of elements to
+        program uses an array of indices to determine the order of elements to
         draw from its vertex buffers (using glDrawElements).
 
         DRAW_UNINDEXED indicates that the component may be used when the
-        program will not use an array of indexes; rather, vertex buffers are
+        program will not use an array of indices; rather, vertex buffers are
         processed in the order they appear in the buffer (using glDrawArrays).
 
         By default, this method returns a tuple with both values. Components
@@ -123,7 +123,7 @@ class VisualComponent(object):
 
     def activate(self, program):
         """
-        *program* is about to paint; attach to *program* all functions and
+        *program* is about to draw; attach to *program* all functions and
         data required by this component.
         """
         raise NotImplementedError
