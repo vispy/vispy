@@ -47,7 +47,7 @@ pos[:20, 1] = 100  # So we can see which side is down
 line_pixels = scene.visuals.Line(pos=pos.copy(), color=color)
 
 # Create canvas
-canvas = scene.SceneCanvas(size=(800, 600), show=True)
+canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
 canvas.scene.camera = scene.cameras.NDCCamera()  # Default NDCCamera
 
 # Create viewboxes left ...
