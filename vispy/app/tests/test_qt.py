@@ -5,7 +5,7 @@
 
 from os import path as op
 
-from vispy.app import Canvas, default_app
+from vispy.app import Canvas, use
 from vispy.testing import requires_application, SkipTest
 from vispy.gloo import gl
 
@@ -13,13 +13,13 @@ from vispy.gloo import gl
 @requires_application('pyqt4', has=['uic'])
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
-    default_app.use()
-    if 'pyqt4' not in default_app.backend_name.lower():
+    app = use()
+    if 'pyqt4' not in app.backend_name.lower():
         raise SkipTest('Not using PyQt4 backend')  # wrong backend
     from PyQt4 import uic
     fname = op.join(op.dirname(__file__), 'qt-designer.ui')
     WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
-    default_app.create()  # make sure we have an app, or the init will fail
+    app.create()  # make sure we have an app, or the init will fail
 
     class MainWindow(TemplateBaseClass):
 
@@ -34,7 +34,6 @@ def test_qt_designer():
     try:
         win.show()
         canvas = Canvas(create_native=False)
-        canvas.app.use()  # Make sure the app exists (because create_native=0)
         canvas._set_backend(win.ui.canvas)
         canvas.create_native()
 

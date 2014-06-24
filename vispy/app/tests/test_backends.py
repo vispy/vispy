@@ -14,15 +14,15 @@ from inspect import getargspec
 import vispy
 from vispy import keys
 from vispy.testing import requires_application
-from vispy.app import default_app
+from vispy.app import use
 from vispy.app.backends import _template
 
 
 def _test_module_properties(_module=None):
     """Test application module"""
     if _module is None:
-        default_app.use()
-        _module = default_app.backend_module
+        app = use()
+        _module = app.backend_module
 
     # Test that the keymap contains all keys supported by vispy.
     keymap = _module.KEYMAP

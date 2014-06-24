@@ -2,7 +2,7 @@ import os
 from nose.tools import assert_equal, assert_raises
 
 from vispy.testing import requires_application, SkipTest
-from vispy.app import Canvas, default_app
+from vispy.app import Canvas, use
 from vispy.gloo import (get_gl_configuration, VertexShader, FragmentShader,
                         Program, check_error)
 
@@ -10,8 +10,7 @@ from vispy.gloo import (get_gl_configuration, VertexShader, FragmentShader,
 @requires_application()
 def test_context_properties():
     """Test setting context properties"""
-    a = default_app
-    a.use()
+    a = use()
     if a.backend_name.lower() == 'pyglet':
         return  # cannot set more than once on Pyglet
     # stereo, double buffer won't work on every sys
