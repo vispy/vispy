@@ -13,7 +13,7 @@ import numpy as np
 
 from ... import gloo
 from .polygon import Polygon, Mesh, Line
-from ...geometry import PolygonData
+from ...util.geometry import PolygonData
 
 
 class Ellipse(Polygon):

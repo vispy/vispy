@@ -15,7 +15,7 @@ from ... import gloo
 from .visual import Visual
 from .mesh import Mesh
 from .line import Line
-from ...geometry import PolygonData
+from ...util.geometry import PolygonData
 
 
 class Polygon(Visual):
