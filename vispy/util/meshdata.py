@@ -167,7 +167,8 @@ class MeshData(object):
         self._faceNormalsIndexedByFaces = None
 
     def hasFaceIndexedData(self):
-        """Return True if vertex positions are already indexed by face"""
+        """Return True if this object already has vertex positions indexed
+        by face"""
         return self._vertexesIndexedByFaces is not None
 
     def hasEdgeIndexedData(self):
