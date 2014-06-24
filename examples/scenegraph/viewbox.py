@@ -13,7 +13,6 @@ manyally set the preferred_clip_method property of one or more viewboxes.
 
 """
 
-import sys
 import numpy as np
 
 from vispy import app, gloo
@@ -23,7 +22,7 @@ gloo.gl.use('desktop debug')
 
 # <<< Change method here
 # With the none method you can see the absence of clipping.
-# With the fbo method you can see the texture interpolation (induced by 
+# With the fbo method you can see the texture interpolation (induced by
 # a delibirate mismatch in screen and textue resolution)
 # Try different combinarions, like a viewport in an fbo
 PREFER_PIXEL_GRID1 = 'fbo'  # none, viewport, fbo (fragment to come)
@@ -35,20 +34,20 @@ N = 1000
 color = np.ones((N, 4), dtype=np.float32)
 color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
-pos = np.empty((N,2), np.float32)
+pos = np.empty((N, 2), np.float32)
 #
-pos[:,0] = np.linspace(-1., 1., N)
-pos[:,1] = np.random.normal(0.0, 0.5, size=N)
-pos[:20,1] = -0.5  # So we can see which side is down
+pos[:, 0] = np.linspace(-1., 1., N)
+pos[:, 1] = np.random.normal(0.0, 0.5, size=N)
+pos[:20, 1] = -0.5  # So we can see which side is down
 line_ndc = scene.visuals.Line(pos=pos.copy(), color=color)
 #
-pos[:,0] = np.linspace(50, 350., N)
-pos[:,1] = 150 + pos[:,1] * 50
-pos[:20,1] = 100  # So we can see which side is down
+pos[:, 0] = np.linspace(50, 350., N)
+pos[:, 1] = 150 + pos[:, 1] * 50
+pos[:20, 1] = 100  # So we can see which side is down
 line_pixels = scene.visuals.Line(pos=pos.copy(), color=color)
 
 # Create canvas
-canvas = scene.SceneCanvas(size=(800,600), show=True)
+canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
 canvas.scene.camera = scene.cameras.NDCCamera()  # Default NDCCamera
 
 # Create viewboxes left ...
@@ -104,7 +103,7 @@ print vb2, vb21, vb22
 # Set preferred pixel grid method
 for vb in [vb1, vb2]:
     vb.preferred_clip_method = PREFER_PIXEL_GRID1
-for vb in [vb11, vb12,vb21, vb22]:
+for vb in [vb11, vb12, vb21, vb22]:
     vb.preferred_clip_method = PREFER_PIXEL_GRID2
 
 

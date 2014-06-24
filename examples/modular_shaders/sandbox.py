@@ -2,10 +2,16 @@
 Sandbox for experimenting with vispy.shaders.composite
 
 """
+from PyQt4 import QtCore
+from PyQt4.QtGui import *  # noqa
+import sys
+import traceback
+
+from editor import Editor, HAVE_QSCI
+
 
 presets = [
-
-('Introduction', '''
+    ('Introduction', '''
 """
              ------ Shader Composition Sandbox -------
 
@@ -13,9 +19,9 @@ Instructions:
 
 1) Edit this code; it is immediately executed after every change. Exceptions
    will be displayed on the right side.
-   
+
 2) Assign strings to VERTEX and FRAGMENT variables (see below) and they will
-   appear in the windows to the right. 
+   appear in the windows to the right.
 
 3) Select presets from the list above to see a few examples.
 
@@ -36,17 +42,17 @@ FRAGMENT = program.frag_code
 '''),
 
 
-('Simple hook', '''
+    ('Simple hook', '''
 """
 In this example we define a 'hook' in the vertex shader: a function prototype
-with no definition. By leaving this function undefined, any new function 
+with no definition. By leaving this function undefined, any new function
 definition may be concatenated to the shader.
 """
 
 from vispy.shaders.composite import ModularProgram, Function
 
 # The hook is called 'input_position', and is used to provide the
-# value for gl_Position. 
+# value for gl_Position.
 vertex_shader = """
 vec4 input_position();
 
@@ -81,16 +87,17 @@ FRAGMENT = program.frag_code
 '''),
 
 
-('Anonymous functions', '''
+    ('Anonymous functions', '''
 """
-Functions may optionally be defined with '$' in front of the function name. This
-indicates that the function is anonymous (has no name) and thus may be assigned 
-any new name in the program. 
+Functions may optionally be defined with '$' in front of the function name.
+This indicates that the function is anonymous (has no name) and thus may be
+assigned any new name in the program.
 
-The major benefit to using anonymous functions is that the modular shader system
-is free to rename functions that would otherwise conflict with each other. 
+The major benefit to using anonymous functions is that the modular shader
+system is free to rename functions that would otherwise conflict with each
+other.
 
-In this example, an anonymous function is assigned to a hook. When it is 
+In this example, an anonymous function is assigned to a hook. When it is
 compiled into the complete program, it is renamed to match the hook.
 """
 
@@ -130,13 +137,12 @@ FRAGMENT = program.frag_code
 '''),
 
 
-
-('Program variables', '''
+    ('Program variables', '''
 """
-Many Functions need to define their own program variables 
+Many Functions need to define their own program variables
 (uniform/attribute/varying) in order to operate correctly. However, with many
-independent functions added to a ModularProgram, it is likely that two 
-Functions might try to define variables of the same name. 
+independent functions added to a ModularProgram, it is likely that two
+Functions might try to define variables of the same name.
 
 To solve this, Functions may use $anonymous_variables that will be assigned to
 a real program variable at compile time.
@@ -164,19 +170,19 @@ void main() {
 
 program = ModularProgram(vertex_shader, fragment_shader)
 
-# Define a function to do a matrix transform. 
-# The variable $matrix will be substituted with a uniquely-named program 
+# Define a function to do a matrix transform.
+# The variable $matrix will be substituted with a uniquely-named program
 # variable when the function is compiled.
 func = Function("""
     vec4 $matrix_transform(vec4 pos) {
         return $matrix * pos;
     }
     """)
-    
+
 # The definition for 'matrix' must indicate the variable type and data type.
 func['matrix'] = ('uniform', 'mat4', np.eye(4))
 
-    
+
 program.set_hook('transform_position', func)
 
 
@@ -188,10 +194,10 @@ FRAGMENT = program.frag_code
 '''),
 
 
-('Resolving name conflicts', '''
+    ('Resolving name conflicts', '''
 """
-When anonymous functions and variables have conflicting names, the 
-ModularProgram will generate unique names by appending _N to the end of the 
+When anonymous functions and variables have conflicting names, the
+ModularProgram will generate unique names by appending _N to the end of the
 name.
 
 This example demonstrates dynamic naming of a program variable.
@@ -233,7 +239,7 @@ modelview = Function("""
     """)
 modelview['matrix'] = ('uniform', 'mat4', np.eye(4))
 
-    
+
 program.set_hook('projection', projection)
 program.set_hook('modelview', modelview)
 
@@ -246,9 +252,7 @@ FRAGMENT = program.frag_code
 '''),
 
 
-
-
-('Function chaining', '''
+    ('Function chaining', '''
 """
 Function chains are another essential component of shader composition,
 allowing a list of functions to be executed in order.
@@ -261,7 +265,7 @@ from vispy.shaders.composite import ModularProgram, Function, FunctionChain
 vertex_shader = """
 void vert_post_hook();
 
-attribute vec4 position_a; 
+attribute vec4 position_a;
 
 void main() {
     gl_Position = position_a;
@@ -310,11 +314,11 @@ FRAGMENT = program.frag_code
 '''),
 
 
-('Function composition', '''
+    ('Function composition', '''
 """
-Chains may also be used to generate a function composition where the return 
-value of each function call supplies the input to the next argument. 
-Thus, the original input is transformed in a series steps. 
+Chains may also be used to generate a function composition where the return
+value of each function call supplies the input to the next argument.
+Thus, the original input is transformed in a series steps.
 
 This is most commonly used for passing vertex positions through a composition
 of transform functions.
@@ -356,7 +360,7 @@ scale = Function("""
     """)
 scale['scale'] = ('uniform', 'vec3', (2, 1, 1))
 
-# Assigning a list of both functions to a program hook will gemerate a 
+# Assigning a list of both functions to a program hook will gemerate a
 # composition of functions:
 program['transform_chain'] = [flatten, scale]
 
@@ -372,12 +376,9 @@ FRAGMENT = program.frag_code
 '''),
 
 
-
-
-
-('Fragment shaders', '''
+    ('Fragment shaders', '''
 """
-Although the prior examples focused on vertex shaders, these concepts 
+Although the prior examples focused on vertex shaders, these concepts
 apply equally well for fragment shaders.
 
 However: fragment shaders have one limitation that makes them very
@@ -390,7 +391,7 @@ from vispy.shaders.composite import (ModularProgram, Function, FunctionChain)
 from vispy.gloo import VertexBuffer
 import numpy as np
 
-# we require a void hook in the vertex shader that can be used 
+# we require a void hook in the vertex shader that can be used
 # to attach supporting code for the fragment shader.
 vertex_shader = """
 void vert_post_hook();
@@ -422,7 +423,7 @@ frag_func['f_input'] = ('varying', 'vec4')
 # Attach to the program
 program['fragment_color'] = frag_func
 
-# Next, we need a vertex shader function that will supply input 
+# Next, we need a vertex shader function that will supply input
 # to the varying.
 vert_func = Function("void $vert_color_input() { $v_output = $v_input; }")
 colors = VertexBuffer(np.array([[1,1,1,1]], dtype=np.float32))
@@ -437,13 +438,13 @@ program['vert_post_hook'] = vert_func
 
 
 # obligatory: these variables are used to fill the text fields on the right.
-program._compile() 
+program._compile()
 VERTEX = program.vert_code
 FRAGMENT = program.frag_code
 '''),
 
 
-('Sub-hooks', '''
+    ('Sub-hooks', '''
 """
 """
 
@@ -485,13 +486,13 @@ void $other_func() {
 # Assign other_func to the anonymous function call in vert_func:
 vert_func['some_other_function'] = other_func
 
-# The name assigned to other_func will be inserted in place of 
+# The name assigned to other_func will be inserted in place of
 # the function call in vert_func
 
 program['vert_post_hook'] = vert_func
 
 # obligatory: these variables are used to fill the text fields on the right.
-program._compile() 
+program._compile()
 VERTEX = program.vert_code
 FRAGMENT = program.frag_code
 '''),
@@ -499,18 +500,6 @@ FRAGMENT = program.frag_code
 
 ]
 
-
-
-
-
-
-
-
-from PyQt4 import QtCore
-from PyQt4.QtGui import *
-import sys, traceback
-
-from editor import Editor, HAVE_QSCI
 
 qsci_note = """
 #  [[ NOTE: Install PyQt.QsciScintilla for improved code editing ]]
@@ -549,6 +538,8 @@ vsplit.addWidget(fragment)
 menubar = win.menuBar()
 
 last_loaded = -1
+
+
 def load_example(name):
     global last_loaded
     if isinstance(name, int):
@@ -563,6 +554,7 @@ def load_example(name):
                 last_loaded = i
                 return
 
+
 def load_next():
     global last_loaded
     try:
@@ -570,22 +562,24 @@ def load_next():
     except IndexError:
         pass
 
+
 def mk_load_callback(name):
     return lambda: load_example(name)
-    
-import functools
+
 example_menu = menubar.addMenu('Load example..')
 for i, preset in enumerate(presets):
     name = preset[0]
-    action = example_menu.addAction("%d. %s" % (i,name), mk_load_callback(name))
-    
+    action = example_menu.addAction("%d. %s" % (i, name),
+                                    mk_load_callback(name))
+
 next_action = menubar.addAction("Next example", load_next)
 
 win.show()
-win.resize(1800,1100)
+win.resize(1800, 1100)
 hsplit.setSizes([900, 900])
 
 load_example(0)
+
 
 def update():
     code = editor.text()
@@ -605,11 +599,11 @@ def update():
             if tb.tb_frame.f_code.co_filename == '<string>':
                 editor.set_marker(tb.tb_lineno-1)
             tb = tb.tb_next
-        
+
     vertex.setText(vert)
     fragment.setText(frag)
-    
+
 editor.textChanged.connect(update)
-update()    
-    
+update()
+
 app.exec_()

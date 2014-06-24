@@ -32,7 +32,7 @@ class Unstructured2d(app.Canvas):
                  colormap=None, data_lim=None,
                  dir_x_right=True, dir_y_top=True,
                  **kwargs):
-        app.Canvas.__init__(self, **kwargs)
+        app.Canvas.__init__(self, close_keys='escape', **kwargs)
         self.create_shader(colormap)
         self.create_mesh(x, y, u, v)
         self.program.bind(self.vbo)
@@ -118,7 +118,7 @@ class Unstructured2d(app.Canvas):
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         self.program.draw(gl.GL_TRIANGLES, self.index)
 

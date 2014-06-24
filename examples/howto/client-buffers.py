@@ -79,7 +79,7 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self)
+        app.Canvas.__init__(self, close_keys='escape')
 
         # Time
         self._t = time.time()
@@ -122,7 +122,7 @@ class Canvas(app.Canvas):
         elif self._button == 2:
             predator['position'][:] = sx, sy, 0
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         # Draw

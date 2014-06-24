@@ -43,7 +43,7 @@ class ViewPort(object):
 
     """ Represents a rectangular region on the screen.
     Resize and mouse events are propagated to here, as well
-    as the paint event.
+    as the draw event.
     """
 
     def __init__(self, bgcolor):
@@ -81,7 +81,7 @@ class ViewPort(object):
     def on_resize(self, event):
         self._size = event.size
 
-    def on_paint(self):
+    def on_draw(self):
         x = 2.0 * self._pos[0] / self._size[0] - 1.0
         y = 2.0 * self._pos[1] / self._size[1] - 1.0
         data = np.array([[x, -y, 0]], np.float32)
@@ -92,7 +92,7 @@ class ViewPort(object):
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self)
+        app.Canvas.__init__(self, close_keys='escape')
         self.size = 400, 200
         self.left = ViewPort((1.0, 0.5, 0.5, 1.0))
         self.right = ViewPort((0.5, 1.0, 0.5, 1.0))
@@ -102,8 +102,8 @@ class Canvas(app.Canvas):
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
 
-    def on_paint(self, event):
-        # Paint events are "manually" propagated to the viewport instances,
+    def on_draw(self, event):
+        # Draw events are "manually" propagated to the viewport instances,
         # because we first want to set the glViewport for each one.
 
         # Prepare
@@ -112,10 +112,10 @@ class Canvas(app.Canvas):
         w2 = self.size[0] - w1
         # Left
         gl.glViewport(0, 0, w1, self.size[1])
-        self.left.on_paint()
+        self.left.on_draw()
         # Right
         gl.glViewport(w1, 0, w2, self.size[1])
-        self.right.on_paint()
+        self.right.on_draw()
 
         # Invoke new draw
         self.update()

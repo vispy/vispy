@@ -3,10 +3,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
-from ..entity import Entity
-from ...visuals import LineVisual
+
+from ...scene.entity import Entity
+from ...scene.visuals import Line as LineVisual
 
 __all__ = ['Line']
+
 
 class Line(Entity):
     """
@@ -19,9 +21,7 @@ class Line(Entity):
         self._visual = LineVisual(*args, **kwds)
         for method in self.WrapMethods:
             setattr(self, method, getattr(self._visual, method))
-    
-    def on_paint(self, event):
+
+    def on_draw(self, event):
         self._visual.transform = event.viewport_transform
-        self._visual.paint()
-
-
+        self._visual.draw()

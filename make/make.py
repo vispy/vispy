@@ -147,51 +147,23 @@ class Maker:
             sys.exit('Command "website" does not have subcommand "%s"' % arg)
 
     def test(self, arg):
-        """ Run all tests. """
-        self.nose(arg)
-        self.lineendings(arg)
-        self.flake(arg)  # must go last b/c raises SystemExit
-
-    def nose(self, arg):
-        """ Run all unit tests using nose. """
-        os.chdir(ROOT_DIR)
-        # faulthandler helps debugging hard crashes, it is included in py3.3
+        """ Run tests:
+                * full - run all tests
+                * nose - run nose tests (also for each backend)
+                * any backend name (e.g. pyside, pyqt4, glut, sdl2, etc.) - 
+                  run tests for the given backend
+                * nobackend - run tests that do not require a backend
+                * extra - run extra tests (line endings and style)
+                * lineendings - test line ending consistency
+                * flake - flake style testing (PEP8 and more)
+        """
+        if not arg:
+            return self.help('test')
+        from vispy import test
         try:
-            if sys.executable.lower().endswith('pythonw.exe'):
-                raise ImportError('Dont use faulthandler in pythonw.exe')
-            import faulthandler
-            faulthandler.enable()
-        except ImportError:
-            pass
-        # Clear coverage: rm -f .coverage
-        try:
-            os.remove('.coverage')
-        except OSError:  # FileNotFoundError not on py 2.x
-            pass
-        # Test
-        sys.argv[1:] = []
-        import nose
-        nose.run()
-
-    def flake(self, arg):
-        """ Run flake8 to find style inconsistencies. """
-        os.chdir(ROOT_DIR)
-        sys.argv[1:] = ['vispy', 'examples', 'make']
-        try:
-            from flake8.main import main
-        except ImportError:
-            print('Skipping flake8 test, flake8 not installed')
-        else:
-            print('Running flake8... ')  # if end='', first error gets ugly
-            sys.stdout.flush()
-            try:
-                main()
-            except SystemExit as ex:
-                if ex.code in (None, 0):
-                    pass  # do not exit yet, we want to print a success msg
-                else:
-                    raise  # raises SystemExit again
-            print('Hooray! flake8 test passed.')
+            test(*(arg.split()))
+        except Exception:
+            raise SystemExit(1)
 
     def images(self, arg):
         """ Create images (screenshots). Subcommands:
@@ -282,7 +254,7 @@ class Maker:
                 if not frames:
                     m.done = True
             c = m.Canvas()
-            c.events.paint.connect(grabscreenshot)
+            c.events.draw.connect(grabscreenshot)
             c.show()
             while not m.done:
                 m.app.process_events()
@@ -353,15 +325,6 @@ class Maker:
         # Report
         print('Replaced %i copyright statements' % count_replaced)
         print('Found %i copyright statements up to date' % count_ok)
-
-    def lineendings(self, args):
-        """ Check that all lineendings are LF """
-        from vispy.util.codequality import check_line_endings
-        print('Running line endings check... ', end='')
-        sys.stdout.flush()
-        nfiles = check_line_endings()
-        if nfiles > 0:
-            raise SystemExit(1)
 
 
 # Functions used by the maker

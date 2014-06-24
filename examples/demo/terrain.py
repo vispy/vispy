@@ -106,7 +106,7 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self)
+        app.Canvas.__init__(self, close_keys='escape')
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         #Sets the view to an appropriate position over the terrain
@@ -193,7 +193,7 @@ class Canvas(app.Canvas):
         self.projection = perspective(60.0, width / float(height), 1.0, 100.0)
         self.program['u_projection'] = self.projection
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         # Clear
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         # Draw

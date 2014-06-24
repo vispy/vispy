@@ -1,15 +1,17 @@
 #-------------------------------------------------------------------------
 # QScintilla editor
-# 
+#
 # Adapted from Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
-# 
+#
 # API: http://pyqt.sourceforge.net/Docs/QScintilla2/classQsciScintilla.html
-# 
+#
 #-------------------------------------------------------------------------
-import sys, re
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import sys
+import re
+from PyQt4.QtCore import *  # noqa
+from PyQt4.QtGui import *  # noqa
+
 
 try:
     from PyQt4 import Qsci
@@ -23,16 +25,16 @@ if not HAVE_QSCI:
     class Editor(QPlainTextEdit):
         def __init__(self, parent=None, language=None):
             QPlainTextEdit.__init__(self, parent)
-            
+
         def setText(self, text):
             self.setPlainText(text)
-            
+
         def text(self):
             return str(self.toPlainText()).encode('UTF-8')
-        
+
         def __getattr__(self, name):
             return lambda: None
-        
+
 else:
     class Editor(QsciScintilla):
         ARROW_MARKER_NUM = 8
@@ -41,7 +43,7 @@ else:
             super(Editor, self).__init__(parent)
             self.setIndentationsUseTabs(False)
             self.setIndentationWidth(4)
-            
+
             # Set the default font
             font = QFont()
             font.setFamily('DejaVu Sans Mono')
@@ -62,12 +64,11 @@ else:
             # Clickable margin 1 for showing markers
             #self.setMarginSensitivity(1, True)
             #self.connect(self,
-                #SIGNAL('marginClicked(int, int, Qt::KeyboardModifiers)'),
-                #self.on_margin_clicked)
-            self.markerDefine(QsciScintilla.RightArrow,
-                self.ARROW_MARKER_NUM)
+            #    SIGNAL('marginClicked(int, int, Qt::KeyboardModifiers)'),
+            #    self.on_margin_clicked)
+            self.markerDefine(QsciScintilla.RightArrow, self.ARROW_MARKER_NUM)
             self.setMarkerBackgroundColor(QColor("#ee1111"),
-                self.ARROW_MARKER_NUM)
+                                          self.ARROW_MARKER_NUM)
 
             # Brace matching: enable for a brace immediately before or after
             # the current position
@@ -91,7 +92,7 @@ else:
             # Use raw message to Scintilla here (all messages are documented
             # here: http://www.scintilla.org/ScintillaDoc.html)
             self.SendScintilla(QsciScintilla.SCI_SETHSCROLLBAR, 0)
-            
+
             self.setWrapMode(QsciScintilla.WrapWord)
 
             self.setEolMode(QsciScintilla.EolUnix)
@@ -102,11 +103,11 @@ else:
             self.clear_marker()
             self.markerAdd(line, self.ARROW_MARKER_NUM)
             self._marker = line
-        
+
         def clear_marker(self):
             if self._marker is not None:
                 self.markerDelete(self._marker, self.ARROW_MARKER_NUM)
-            
+
         #def on_margin_clicked(self, nmargin, nline, modifiers):
             ## Toggle marker for the line the margin was clicked on
             #if self.markersAtLine(nline) != 0:
@@ -123,7 +124,7 @@ else:
                     self.zoomOut()
             else:
                 return super(Editor, self).wheelEvent(ev)
-                
+
         def keyPressEvent(self, ev):
             if int(Qt.ControlModifier & ev.modifiers()) > 0:
                 if ev.key() == Qt.Key_Slash:
@@ -132,16 +133,17 @@ else:
                 elif ev.key() == Qt.Key_Question:
                     self.comment(False)
                     return
-                elif ev.key() == Qt.Key_Z and Qt.ShiftModifier & ev.modifiers():
+                elif (ev.key() == Qt.Key_Z and
+                      Qt.ShiftModifier & ev.modifiers()):
                     self.redo()
                     return
                 elif ev.key() == Qt.Key_Q:
                     sys.exit(0)
             return super(Editor, self).keyPressEvent(ev)
-                
+
         def text(self):
             return str(super(Editor, self).text()).encode('UTF-8')
-            
+
         def comment(self, comment=True):
             sel = self.getSelection()[:]
             text = self.text()

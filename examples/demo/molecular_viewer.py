@@ -96,7 +96,8 @@ void main()
 class MolecularViewerCanvas(app.Canvas):
 
     def __init__(self, fname):
-        app.Canvas.__init__(self, title='Molecular viewer')
+        app.Canvas.__init__(self, title='Molecular viewer',
+                            close_keys='escape')
         self.size = 1200, 800
 
         self.program = gloo.Program(vertex, fragment)
@@ -186,7 +187,7 @@ class MolecularViewerCanvas(app.Canvas):
         self.program['u_view'] = self.view
         self.update()
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         gloo.clear()
         self.program.draw('points')
 

@@ -118,7 +118,7 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self)
+        app.Canvas.__init__(self, close_keys='escape')
         self.size = 800, 800
         self.title = "D'oh ! A big donut"
 
@@ -180,7 +180,7 @@ class Canvas(app.Canvas):
         self.program['u_size'] = 5 / self.translate
         self.update()
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         gloo.clear()
         self.program.draw('points')
 

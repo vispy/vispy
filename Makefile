@@ -1,7 +1,5 @@
 # simple makefile to simplify repetetive build env management tasks under posix
 
-# caution: testing won't work on windows, see README
-
 PYTHON ?= python
 CTAGS ?= ctags
 
@@ -22,20 +20,49 @@ clean-ctags:
 
 clean: clean-build clean-pyc clean-so clean-ctags
 
-flake:
-	python make flake
-
 in: inplace # just a shortcut
 inplace:
 	$(PYTHON) setup.py build_ext -i
 
 nosetests: nose # alias
-nose:
-	python make nose
+
+# Test conditions
+
+nose: clean
+	python make test nose
+
+nose_coverage: clean
+	python make test nose 1
 
 test: clean
-	python make test
+	python make test full
+
+flake: clean
+	python make test flake
 
 lineendings: clean
-	python make lineendings
+	python make test lineendings
 
+extra: clean
+	python make test extra
+
+nobackend : clean
+	python make test nobackend
+
+pyqt4: clean
+	python make test pyqt4
+
+pyside: clean
+	python make test pyside
+
+pyglet: clean
+	python make test pyglet
+
+glfw: clean
+	python make test glfw
+
+sdl2: clean
+	python make test sdl2
+
+glut: clean
+	python make test glut

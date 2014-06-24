@@ -8,17 +8,15 @@ generating surface normal vectors.
 
 These components generate a function in the fragment shader that accepts no
 arguments and returns a vec4 normal vector. Typically, the normal vector
-is computed in the vertex shader and passed by varying to the fragment 
+is computed in the vertex shader and passed by varying to the fragment
 shader.
 """
 
 from __future__ import division
 
-import numpy as np
-
 from .component import VisualComponent
-from ..shaders import Function
 from ... import gloo
+
 
 class VertexNormalComponent(VisualComponent):
     SHADERS = dict(
@@ -31,7 +29,8 @@ class VertexNormalComponent(VisualComponent):
             void $normal_support() {
                 vec3 o = vec3(0,0,0);
                 vec3 i = o + $input_normal.xyz;
-                $output_normal = map_local_to_nd(vec4(i,1)) - map_local_to_nd(vec4(o,1));
+                $output_normal = map_local_to_nd(vec4(i,1)) -
+                                 map_local_to_nd(vec4(o,1));
             }
         """)
 
@@ -39,14 +38,14 @@ class VertexNormalComponent(VisualComponent):
     # does not have a 'frag_normal' hook; instead this function will be called
     # by another component.
     AUTO_ATTACH = ['vert_post_hook']
-    
+
     def __init__(self, meshdata, smooth=True):
         super(VertexNormalComponent, self).__init__()
         self._meshdata = meshdata
         self.smooth = smooth
         self._vbo = None
         self._vbo_mode = None
-        
+
     def _make_vbo(self, mode):
         if self._vbo is None or self._vbo_mode != mode:
             if mode is self.DRAW_PRE_INDEXED:
@@ -54,26 +53,26 @@ class VertexNormalComponent(VisualComponent):
             else:
                 index = None
             if self.smooth:
-                norm = self._meshdata.vertexNormals(indexed=index)
+                norm = self._meshdata.vertex_normals(indexed=index)
             else:
                 if index != 'faces':
                     raise Exception("Not possible to draw faceted mesh without"
                                     "pre-indexing.")
-                norm = self._meshdata.faceNormals(indexed=index)
+                norm = self._meshdata.face_normals(indexed=index)
             self._vbo = gloo.VertexBuffer(norm)
             self._vbo_mode = mode
         return self._vbo
-        
+
     def normal_shader(self):
         """
-        Return the fragment shader function that returns a normal vector.        
+        Return the fragment shader function that returns a normal vector.
         """
         return self._funcs['frag_normal']
-        
+
     def activate(self, program, mode):
         ff = self._funcs['frag_normal']
         ff['norm'] = ('varying', 'vec4')
-        
+
         vf = self._funcs['vert_post_hook']
         vf['input_normal'] = ('attribute', 'vec4', self._make_vbo(mode))
         vf['output_normal'] = ff['norm']
@@ -85,4 +84,3 @@ class VertexNormalComponent(VisualComponent):
         else:
             # not possible to draw faceted mesh without pre-indexing.
             return set([self.DRAW_PRE_INDEXED])
-

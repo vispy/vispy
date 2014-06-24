@@ -6,7 +6,7 @@
 Vertex components are modular shader components used for retrieving or
 generating untransformed vertex locations.
 
-These components create a function in the vertex shader that accepts no 
+These components create a function in the vertex shader that accepts no
 arguments and returns a vec4 vertex location in the local coordinate system
 of the visual.
 """
@@ -16,8 +16,8 @@ from __future__ import division
 import numpy as np
 
 from .component import VisualComponent
-from ..shaders import Function
 from ... import gloo
+
 
 class XYPosComponent(VisualComponent):
     """
@@ -38,7 +38,7 @@ class XYPosComponent(VisualComponent):
         self._vbo = None
         self._ibo = None
         self.set_data(xy, z, index)
-        
+
     @property
     def supported_draw_modes(self):
         # TODO: Add support for converting between pre-indexed and unindexed
@@ -83,7 +83,6 @@ class XYPosComponent(VisualComponent):
         else:
             return self.ibo
 
-    
 
 class XYZPosComponent(VisualComponent):
     """
@@ -133,10 +132,11 @@ class XYZPosComponent(VisualComponent):
         if self._ibo is None:
             self._ibo = gloo.IndexBuffer(self._index)
         return self._ibo
-    
+
     def activate(self, program, draw_mode):
-        self._funcs['local_position']['xyz_pos'] = ('attribute', 'vec3', self.vbo)
-        
+        self._funcs['local_position']['xyz_pos'] = ('attribute', 'vec3',
+                                                    self.vbo)
+
     @property
     def index(self):
         if self._index is False:
@@ -148,7 +148,7 @@ class XYZPosComponent(VisualComponent):
 class HeightFieldComponent(VisualComponent):
     """
     Generate vertex coordinate from 2D array of z-positions.
-    
+
     x,y will be generated in the vertex shader using uniforms that specify the
     range.
     """
@@ -164,7 +164,7 @@ class HeightFieldComponent(VisualComponent):
         """)
 
     def __init__(self, z=None):
-        super(SurfacePosComponent, self).__init__()
+        super(HeightFieldComponent, self).__init__()
         self._z = None
         self._vbo = None
         if z is not None:
@@ -180,12 +180,12 @@ class HeightFieldComponent(VisualComponent):
         if self._z is None or self._z.shape != z.shape:
             # if this data has a new shape, we need a new index buffer
             self._ibo = None
-            
+
         self._z = z
         # TODO: might be better to re-upload data rather than creating
         # a new VB, if possible.
         self._vbo = None
-        
+
         self.update()
 
     @property
@@ -196,25 +196,26 @@ class HeightFieldComponent(VisualComponent):
         return self._vbo
 
     def activate(self, program, draw_mode):
-        self._funcs['local_position']['z_pos'] = ('attribute', 'vec3', self.vbo)
-        
+        self._funcs['local_position']['z_pos'] = ('attribute', 'vec3',
+                                                  self.vbo)
+
     @property
     def index(self):
         """
-        The IndexBuffer used by this input component.        
+        The IndexBuffer used by this input component.
         """
         if self._ibo is None:
             cols = self._z.shape[1]-1
             rows = self._z.shape[0]-1
             faces = np.empty((cols*rows*2, 3), dtype=np.uint)
-            rowtemplate1 = (np.arange(cols).reshape(cols, 1) + 
+            rowtemplate1 = (np.arange(cols).reshape(cols, 1) +
                             np.array([[0, 1, cols+1]]))
-            rowtemplate2 = (np.arange(cols).reshape(cols, 1) + 
+            rowtemplate2 = (np.arange(cols).reshape(cols, 1) +
                             np.array([[cols+1, 1, cols+2]]))
             for row in range(rows):
-                start = row * cols * 2 
+                start = row * cols * 2
                 faces[start:start+cols] = rowtemplate1 + row * (cols+1)
-                faces[start+cols:start+(cols*2)] = (rowtemplate2 + 
+                faces[start+cols:start+(cols*2)] = (rowtemplate2 +
                                                     row * (cols+1))
             self._ibo = gloo.IndexBuffer(faces)
         return self._ibo

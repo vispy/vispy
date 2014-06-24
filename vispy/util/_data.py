@@ -11,7 +11,7 @@ from os import path as op
 import sys
 import shutil
 
-from .six.moves import urllib
+from ..ext.six.moves import urllib
 from ._config import config
 
 

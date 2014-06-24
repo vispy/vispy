@@ -1,3 +1,3 @@
-from .box import *
-from .line import *
-from .image import *
+from .box import Box, Document, GridBox  # noqa
+from .line import Line  # noqa
+from .image import Image  # noqa

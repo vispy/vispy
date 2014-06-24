@@ -9,7 +9,6 @@ gloo objects that this example demonstrates: Program.
 
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 import numpy as np
 
 # Create vetices
@@ -36,7 +35,7 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self)
+        app.Canvas.__init__(self, close_keys='escape')
 
         # Create program
         self._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
@@ -46,15 +45,15 @@ class Canvas(app.Canvas):
         self._program['a_position'] = gloo.VertexBuffer(vPosition)
 
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
+        gloo.set_clear_color((1, 1, 1, 1))
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
 
-    def on_paint(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        self._program.draw(gl.GL_TRIANGLE_STRIP)
+    def on_draw(self, event):
+        gloo.clear()
+        self._program.draw('triangle_strip')
 
 
 if __name__ == '__main__':

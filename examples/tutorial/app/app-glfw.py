@@ -52,8 +52,8 @@ class Canvas(app.Canvas):
     def on_mouse_wheel(self, event):
         print('on_mouse_wheel: %r' % (event.delta,))
 
-    def on_paint(self, event):
-        print('on_paint')
+    def on_draw(self, event):
+        print('on_draw')
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
     def on_timer(self, event):
@@ -61,6 +61,6 @@ class Canvas(app.Canvas):
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    canvas = Canvas()
+    canvas = Canvas(close_keys='escape')
     canvas.show()
     app.run()

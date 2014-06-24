@@ -91,8 +91,13 @@ void main(void)
            new_state = 1.0;
     }
 
-    gl_FragColor[1-pingpong] = new_state;
-    gl_FragColor[pingpong] = old_state;
+    if( pingpong == 0) {
+        gl_FragColor[1] = new_state;
+        gl_FragColor[0] = old_state;
+    } else {
+        gl_FragColor[1] = old_state;
+        gl_FragColor[0] = new_state;
+    }
 }
 """
 

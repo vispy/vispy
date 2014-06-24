@@ -69,7 +69,7 @@ NBLOCKS = 10
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, title='Spacy')
+        app.Canvas.__init__(self, title='Spacy', close_keys='escape')
         self.size = 800, 600
         
         self.program = gloo.Program(vertex, fragment)
@@ -115,7 +115,7 @@ class Canvas(app.Canvas):
         self.projection = perspective(25.0, width / float(height), 1.0, far)
         self.program['u_projection'] = self.projection
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         # Set time offset. Factor runs from 1 to 0
         # the time offset goes from 0 to size
         factor = (self._timeout - time.time()) / SPEED

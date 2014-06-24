@@ -5,16 +5,17 @@
 from __future__ import division
 from .visual import Visual
 
+
 class Mesh(Visual):
     """
     Displays a 3D triangle mesh.
     """
     def __init__(self, **kwds):
         super(Mesh, self).__init__()
-        
+
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
-        
+
         if kwds:
             self.set_data(**kwds)
 

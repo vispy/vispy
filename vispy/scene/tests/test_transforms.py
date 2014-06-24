@@ -12,6 +12,7 @@ CT = tr.ChainTransform
 def assert_chain_types(chain, types):
     assert list(map(type, chain.transforms)) == types
 
+
 def assert_chain_objects(chain1, chain2):
     assert chain1.transforms == chain2.transforms
 
@@ -23,8 +24,9 @@ def tesst_multiplication():
     p = PT()
     l = LT()
     c1 = CT([s, a, p])
+    assert c1
     c2 = CT([s, a, s])
-    
+
     assert isinstance(n * n, NT)
     assert isinstance(n * s, ST)
     assert isinstance(s * s, ST)
@@ -44,24 +46,29 @@ def tesst_multiplication():
 
 def test_transform_chain():
     # Make dummy classes for easier distinguishing the transforms
-    class TransA(tr.Transform): pass
-    class TransB(tr.Transform): pass
-    class TransC(tr.Transform): pass
-    
+    class TransA(tr.Transform):
+        pass
+
+    class TransB(tr.Transform):
+        pass
+
+    class TransC(tr.Transform):
+        pass
+
     # Create test transforms
     a, b, c = TransA(), TransB(), TransC()
-    
+
     # Test Chain creation
     assert tr.ChainTransform().transforms == []
     assert tr.ChainTransform(a).transforms == [a]
     assert tr.ChainTransform(a, b).transforms == [a, b]
     assert tr.ChainTransform(a, b, c, a).transforms == [a, b, c, a]
-    
+
     # Test composition by multiplication
     assert_chain_objects(a * b, tr.ChainTransform(a, b))
     assert_chain_objects(a * b * c, tr.ChainTransform(a, b, c))
     assert_chain_objects(a * b * c * a, tr.ChainTransform(a, b, c, a))
-    
+
     # Test adding/prepending to transform
     chain = tr.ChainTransform()
     chain.append(a)
@@ -74,15 +81,15 @@ def test_transform_chain():
     assert chain.transforms == [b, a, b, c]
     chain.prepend(c)
     assert chain.transforms == [c, b, a, b, c]
-    
+
     # Test flattening
     chain1 = tr.ChainTransform(a, b)
     chain2 = tr.ChainTransform(c)
-    chain3 = tr.ChainTransform(chain1,chain2)
+    chain3 = tr.ChainTransform(chain1, chain2)
     chain4 = tr.ChainTransform(a, b, c, chain3)
     chain4.flatten()
     assert chain4.transforms == [a, b, c, a, b, c]
-    
+
     # Test simplifying
     t1 = tr.STTransform(scale=(2, 3))
     t2 = tr.STTransform(translate=(3, 4))
@@ -103,10 +110,10 @@ def test_transform_chain():
     assert np.all(c123.transforms[0].translate == t123.translate)
     assert np.all(c321.transforms[0].scale == t321.scale)
     assert np.all(c321.transforms[0].translate == t321.translate)
-    
+
     # Test Mapping
-    t1 = tr.STTransform(scale=(2,3))
-    t2 = tr.STTransform(translate=(3,4))
+    t1 = tr.STTransform(scale=(2, 3))
+    t2 = tr.STTransform(translate=(3, 4))
     chain1 = tr.ChainTransform(t1, t2)
     chain2 = tr.ChainTransform(t2, t1)
     #
@@ -122,7 +129,7 @@ def test_transform_chain():
     assert m12 != m21
     assert m12 == m12_
     assert m21 == m21_
-    
+
     # Test shader map
     t1 = tr.STTransform(scale=(2, 3))
     t2 = tr.STTransform(translate=(3, 4))
@@ -142,14 +149,9 @@ def test_map_rect():
     assert r1 == Rect((-6, 24), (26, 38))
 
 
-
-
-
 if __name__ == '__main__':
     for key in [key for key in globals()]:
         if key.startswith('test_'):
             func = globals()[key]
             print('running', func.__name__)
             func()
-
-    

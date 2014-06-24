@@ -61,15 +61,15 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self)
+        app.Canvas.__init__(self, close_keys='escape')
         self.size = W * 5, H * 5
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.texture = gloo.Texture2D(I)
-        self.texture.set_filter(gl.GL_NEAREST, gl.GL_NEAREST)
+        self.texture.interpolation = gl.GL_LINEAR
 
         self.program['u_texture'] = self.texture
-        self.program.set_vars(gloo.VertexBuffer(data))
+        self.program.bind(gloo.VertexBuffer(data))
 
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
@@ -100,9 +100,9 @@ class Canvas(app.Canvas):
             x, y = int((width - w) / 2), 0
         data['a_position'] = np.array(
             [[x, y], [x + w, y], [x, y + h], [x + w, y + h]])
-        self.program.set_vars(gloo.VertexBuffer(data))
+        self.program.bind(gloo.VertexBuffer(data))
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         I[...] = np.random.uniform(0, 1, (W, H)).astype(np.float32)
         self.texture.set_data(I)

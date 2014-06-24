@@ -8,8 +8,8 @@ The visualization
 -----------------
 
 We create a visualization where the screen is divided in 4 quadrants,
-and each quadrant is painted a different color (black, red, green,
-blue). The painting is done for 50% using attribute data, and 50%
+and each quadrant is drawn a different color (black, red, green,
+blue). The drawing is done for 50% using attribute data, and 50%
 using a texture. The end result should be fully saturated colors.
 
 Remember: the bottom left is (-1, -1) and the first quadrant. 
@@ -19,12 +19,11 @@ import sys
 
 import numpy as np
 
-from nose.plugins.skip import SkipTest
 from nose.tools import assert_equal, assert_true
 from vispy.app import Canvas
-from vispy.util.testing import assert_in  # noqa
 from numpy.testing import assert_almost_equal  # noqa
-from vispy.util.testing import requires_application, requires_pyopengl
+from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
+                           glut_skip)
 
 from vispy.gloo import gl
 
@@ -40,6 +39,7 @@ def teardown_module():
 @requires_application()
 def test_functionality_desktop():
     """ Test desktop GL backend for full functionality. """
+    glut_skip()
     _test_functonality('desktop')
 
 
@@ -47,6 +47,7 @@ def test_functionality_desktop():
 def test_functionality_proxy():
     """ Test GL proxy class for full functionality. """
     # By using debug mode, we are using the proxy class
+    glut_skip()
     _test_functonality('desktop debug')
 
 
@@ -54,6 +55,7 @@ def test_functionality_proxy():
 @requires_pyopengl()
 def test_functionality_pyopengl():
     """ Test pyopengl GL backend for full functionality. """
+    glut_skip()
     _test_functonality('pyopengl')
 
 
@@ -64,7 +66,7 @@ def test_functionality_angle():
         raise SkipTest('Skip Angle functionality test for now.')
     if sys.platform.startswith('win'):
         raise SkipTest('Can only test angle functionality on Windows.')
-
+    glut_skip()
     _test_functonality('angle')
 
 
@@ -88,7 +90,7 @@ def _test_functonality(backend):
         gl.glScissor(0, 0, w, h)  # touch
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         
-        # Setup visualization, ensure to do it in a paint event
+        # Setup visualization, ensure to do it in a draw event
         objects = _prepare_vis()
         _clear_screen()
         _draw1()
@@ -100,6 +102,7 @@ def _test_functonality(backend):
         # Clean up
         for delete_func, handle in objects:
             delete_func(handle)
+        gl.glFinish()
 
 
 ## Create CPU data

@@ -7,10 +7,11 @@ from __future__ import division, print_function
 import numpy as np
 
 from ._default_app import default_app
-from ..util.event import EmitterGroup, Event
+from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
-from ..util.six import string_types
+from ..ext.six import string_types
 from .application import Application
+from ._config import get_default_config
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -26,7 +27,7 @@ class Canvas(object):
     """Representation of a GUI element with an OpenGL context
 
     Receives the following events:
-    initialize, resize, paint, mouse_press, mouse_release, mouse_move,
+    initialize, resize, draw, mouse_press, mouse_release, mouse_move,
     mouse_wheel, key_press, key_release, stylus, touch, close
 
     Parameters
@@ -40,9 +41,9 @@ class Canvas(object):
     show : bool
         Whether to show the widget immediately. Default False.
     autoswap : bool
-        Whether to swap the buffers automatically after a paint event.
+        Whether to swap the buffers automatically after a draw event.
         Default True. If True, the ``swap_buffers`` Canvas method will
-        be called last (by default) by the ``canvas.paint`` event handler.
+        be called last (by default) by the ``canvas.draw`` event handler.
     app : Application | str
         Give vispy Application instance to use as a backend.
         (vispy.app is used by default.) If str, then an application
@@ -52,19 +53,54 @@ class Canvas(object):
         Whether to create the widget immediately. Default True.
     init_gloo : bool
         Initialize standard values in gloo (e.g., ``GL_POINT_SPRITE``).
-    native_args : iterable
-        Extra arguments to use when creating the native widget.
-    native_kwargs : dict
-        The keyword arguments to use when creaing the native widget.
+    vsync : bool
+        Enable vertical synchronization.
+    resizable : bool
+        Allow the window to be resized.
+    decorate : bool
+        Decorate the window.
+    fullscreen : bool | int
+        If False, windowed mode is used (default). If True, the default
+        monitor is used. If int, the given monitor number is used.
+    context : dict | instance SharedContext | None
+        OpenGL configuration to use when creating the context for the canvas,
+        or a context to share. If None, ``vispy.app.get_default_config`` will
+        be used to set the OpenGL context parameters. Alternatively, the
+        ``canvas.context`` property from an existing canvas (using the
+        same backend) will return a ``SharedContext`` that can be used,
+        thereby sharing the existing context.
+    close_keys : str | list of str
+        Key to use that will cause the canvas to be closed.
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
-                 init_gloo=True, native_args=None, native_kwargs=None):
+                 init_gloo=True, vsync=False, resizable=True, decorate=True,
+                 fullscreen=False, context=None, close_keys=()):
+
+        size = [int(s) for s in size]
+        if len(size) != 2:
+            raise ValueError('size must be a 2-element list')
+        title = str(title)
+        if not isinstance(fullscreen, (bool, int)):
+            raise TypeError('fullscreen must be bool or int')
+        if context is None:
+            context = get_default_config()
+
+        # Initialize some values
+        self._autoswap = autoswap
+        self._title = title
+        self._frame_count = 0
+        self._fps = 0
+        self._basetime = time()
+        self._fps_callback = None
+        self._backend = None
+
+        # Create events
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
                                    resize=ResizeEvent,
-                                   paint=PaintEvent,
+                                   draw=DrawEvent,
                                    mouse_press=MouseEvent,
                                    mouse_release=MouseEvent,
                                    mouse_move=MouseEvent,
@@ -74,33 +110,26 @@ class Canvas(object):
                                    stylus=Event,
                                    touch=Event,
                                    close=Event)
-        size = [int(s) for s in size]
-        if len(size) != 2:
-            raise ValueError('size must be a 2-element list')
-        title = str(title)
 
-        # Initialize backend attribute
-        self._backend = None
+        # Deprecated paint emitter
+        emitter = WarningEmitter('Canvas.events.paint and Canvas.on_paint are '
+                                 'deprecated; use Canvas.events.draw and '
+                                 'Canvas.on_draw instead.',
+                                 source=self, type='draw',
+                                 event_class=DrawEvent)
+        self.events.add(paint=emitter)
+        self.events.draw.connect(self.events.paint)
+
+        # Initialize gloo settings
         if init_gloo:
             self.events.initialize.connect(_gloo_initialize,
                                            ref='gloo_initialize')
-        self._backend_args = native_args or ()
-        self._backend_kwargs = native_kwargs or {}
 
-        # change arguments that get set on Canvas init
-        # XXX eventually we can add Context-related kwargs here
-        self._backend_kwargs['_vispy_title'] = title
-        self._backend_kwargs['_vispy_size'] = size
-        self._backend_kwargs['_vispy_show'] = show
-        self._backend_kwargs['_vispy_position'] = position
-
-        # Initialise some values
-        self._autoswap = autoswap
-        self._title = title
-        self._frame_count = 0
-        self._fps = 0
-        self._basetime = time()
-        self._fps_callback = None
+        # store arguments that get set on Canvas init
+        kwargs = dict(title=title, size=size, position=position, show=show,
+                      vsync=vsync, resizable=resizable, decorate=decorate,
+                      fullscreen=fullscreen, context=context)
+        self._backend_kwargs = kwargs
 
         # Get app instance
         if isinstance(app, string_types):
@@ -110,6 +139,15 @@ class Canvas(object):
         # Create widget now
         if create_native:
             self.create_native()
+
+        # Close keys
+        def close_keys_check(event):
+            if event.key in self.close_keys:
+                self.close()
+        if isinstance(close_keys, string_types):
+            close_keys = [close_keys]
+        self.close_keys = close_keys
+        self.events.key_press.connect(close_keys_check, ref=True)
 
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
@@ -121,8 +159,7 @@ class Canvas(object):
         self._app.use()
         assert self._app.native
         # Instantiate the backend with the right class
-        be = self._app.backend_module.CanvasBackend(*self._backend_args,
-                                                    **self._backend_kwargs)
+        be = self._app.backend_module.CanvasBackend(**self._backend_kwargs)
         self._set_backend(be)
 
     def _set_backend(self, backend):
@@ -133,8 +170,14 @@ class Canvas(object):
         self._backend._vispy_canvas = self
         if self._autoswap:
             # append to the end
-            self.events.paint.connect((self, 'swap_buffers'),
-                                      ref=True, position='last')
+            self.events.draw.connect((self, 'swap_buffers'),
+                                     ref=True, position='last')
+
+    @property
+    def context(self):
+        """ The OpenGL context of the native widget
+        """
+        return self._backend._vispy_context
 
     @property
     def app(self):
@@ -150,7 +193,7 @@ class Canvas(object):
 
     def connect(self, fun):
         """ Connect a function to an event. The name of the function
-        should be on_X, with X the name of the event (e.g. 'on_paint').
+        should be on_X, with X the name of the event (e.g. 'on_draw').
 
         This method is typically used as a decorater on a function
         definition for an event handler.
@@ -203,10 +246,10 @@ class Canvas(object):
         self._title = title
         self._backend._vispy_set_title(title)
 
-    # --------------------------------------------------------------- fps ---
+    # ----------------------------------------------------------------- fps ---
     @property
     def fps(self):
-        """ The fps of canvas/window, measured as the rate that events.paint
+        """ The fps of canvas/window, measured as the rate that events.draw
         is emitted. """
         return self._fps
 
@@ -220,7 +263,7 @@ class Canvas(object):
         return self._backend._vispy_set_visible(visible)
 
     def update(self):
-        """ Inform the backend that the Canvas needs to be repainted """
+        """ Inform the backend that the Canvas needs to be redrawn """
         if self._backend is not None:
             return self._backend._vispy_update()
         else:
@@ -236,6 +279,7 @@ class Canvas(object):
         """
         if self._backend is not None:
             self._backend._vispy_close()
+            self._backend._vispy_canvas = None
 
     def _update_fps(self, event):
         """ Updates the fps after every window and resets the basetime
@@ -252,7 +296,7 @@ class Canvas(object):
     def measure_fps(self, window=1, callback=print):
         """Measure the current FPS
 
-        Sets the update window, connects the paint event to
+        Sets the update window, connects the draw event to
         update_fps and sets the callback function
         If no callback is passed, measurement stops.
 
@@ -263,15 +307,16 @@ class Canvas(object):
         callback : function
             The function to call with the FPS. Default is ``print``.
         """
-        # Connect update_fps function to paint
-        self.events.paint.disconnect(self._update_fps)
+        # Connect update_fps function to draw
+        self.events.draw.disconnect(self._update_fps)
         if callback:
             self._fps_window = window
-            self.events.paint.connect(self._update_fps)
+            self.events.draw.connect(self._update_fps)
             self._fps_callback = callback
         else:
             self._fps_callback = None
 
+    # ---------------------------------------------------------------- misc ---
     def __repr__(self):
         return ('<Vispy canvas (%s backend) at %s>'
                 % (self.app.backend_name, hex(id(self))))
@@ -282,6 +327,7 @@ class Canvas(object):
         return self
 
     def __exit__(self, type, value, traceback):
+        self.swap_buffers()  # ensure all GL calls are complete
         self.close()
 
     # def mouse_event(self, event):
@@ -321,11 +367,11 @@ class Canvas(object):
         #     event.size  (w,h)
         #"""
 
-    # def paint_event(self, event):
-        #"""Called when all or part of the Canvas needs to be repainted.
+    # def draw_event(self, event):
+        #"""Called when all or part of the Canvas needs to be redrawn.
 
         # Event properties:
-        #     event.region  (x,y,w,h) region of Canvas requiring repaint
+        #     event.region  (x,y,w,h) region of Canvas requiring redraw
         #"""
 
 
@@ -525,11 +571,11 @@ class ResizeEvent(Event):
         return self._size
 
 
-class PaintEvent(Event):
+class DrawEvent(Event):
 
-    """ Paint event class
+    """ Draw event class
 
-    This type of event is sent to Canvas.events.paint when a repaint
+    This type of event is sent to Canvas.events.draw when a redraw
     is required.
 
     Note that each event object has an attribute for each of the input
@@ -540,8 +586,8 @@ class PaintEvent(Event):
     type : str
        String indicating the event type (e.g. mouse_press, key_release)
     region : (int, int, int, int) or None
-        The region of the canvas which needs to be repainted (x, y, w, h).
-        If None, the entire canvas must be repainted.
+        The region of the canvas which needs to be redrawn (x, y, w, h).
+        If None, the entire canvas must be redrawn.
     native : object (optional)
        The native GUI event object
     **kwds : extra keyword arguments

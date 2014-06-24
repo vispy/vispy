@@ -3,7 +3,7 @@ from nose.tools import assert_true, assert_raises, assert_equal
 import pickle
 
 from vispy.util.ordereddict import OrderedDict
-from vispy.util.six.moves import zip
+from vispy.ext.six.moves import zip
 from vispy.util import _TempDir
 
 temp_dir = _TempDir()

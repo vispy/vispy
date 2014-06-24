@@ -9,6 +9,7 @@ Implements the global singleton app object.
 
 from __future__ import division
 
+import os
 import sys
 
 from. import backends
@@ -103,9 +104,8 @@ class Application(object):
 
         If the backend name is omitted, will choose a suitable backend
         automatically. It is an error to try to select a particular backend
-        if one is already selected. Available backends: 'PySide', 'PyQt4',
-        'Glut', 'Glfw', 'Pyglet', 'qt'. The latter will use PySide or
-        PyQt4, whichever works.
+        if one is already selected. Available backends: 'PyQt4', 'PySide',
+        'Glut', 'Glfw', 'Pyglet', 'sdl2'.
 
         If a backend name is provided, and that backend could not be
         loaded, an error is raised.
@@ -118,10 +118,15 @@ class Application(object):
         predetermined order.
 
         """
+        test_name = os.getenv('_VISPY_TESTING_TYPE', None)
         if backend_name is not None:
             if backend_name.lower() not in BACKENDMAP:
                 raise ValueError('backend_name must be one of %s or None, not '
-                                 '%s' % (BACKENDMAP, backend_name))
+                                 '%r' % (BACKENDMAP, backend_name))
+        # See if we're in a specific testing mode
+        elif test_name is not None:
+            backend_name = test_name.lower()
+            assert backend_name in BACKENDMAP
 
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None
@@ -135,17 +140,18 @@ class Application(object):
             return
 
         # Get backends to try ...
+        imported_toolkits = []  # Backends for which the native lib is imported
         backends_to_try = []
         if not try_others:
-            # Test if given name is ok
-            if backend_name.lower() not in BACKENDMAP.keys():
-                raise ValueError('Backend name not known: "%s"' % backend_name)
+            # We should never hit this, since we check above
+            assert backend_name.lower() in BACKENDMAP.keys()
             # Add it
             backends_to_try.append(backend_name.lower())
         else:
             # See if a backend is loaded
             for name, module_name, native_module_name in BACKENDS:
                 if native_module_name and native_module_name in sys.modules:
+                    imported_toolkits.append(name.lower())
                     backends_to_try.append(name.lower())
             # See if a default is given
             default_backend = config['default_backend'].lower()
@@ -160,35 +166,31 @@ class Application(object):
 
         # Now try each one
         for key in backends_to_try:
-            # Get info for this backend
-            try:
-                name, module_name, native_module_name = BACKENDMAP[key]
-            except KeyError:
-                logger.warn('This should not happen, unknown backend: "".'
-                            % key)
-                continue
-            # Try to import it ...
-
-            try:
-                ATTEMPTED_BACKENDS.append(name)
-                mod_name = 'backends.' + module_name
-                __import__(mod_name, globals(), level=1)
-            except ImportError as err:
-                msg = 'Could not import backend "%s":\n%s' % (name, str(err))
+            name, module_name, native_module_name = BACKENDMAP[key]
+            ATTEMPTED_BACKENDS.append(name)
+            mod_name = 'backends.' + module_name
+            __import__(mod_name, globals(), level=1)
+            mod = getattr(backends, module_name)
+            if not mod.available:
+                msg = ('Could not import backend "%s":\n%s'
+                       % (name, str(mod.why_not)))
                 if not try_others:
-                    logger.error(msg)
-                    raise
-            except Exception as err:
-                msg = ('Error while importing backend "%s":\n%s'
-                       % (name, str(err)))
-                if not try_others:
-                    logger.error(msg)
-                    raise
+                    # Fail if user wanted to use a specific backend
+                    raise RuntimeError(msg)
+                elif key in imported_toolkits:
+                    # Warn if were unable to use an already imported toolkit
+                    msg = ('Although %s is already imported, the %s backend '
+                           'could not\nbe used ("%s"). \nNote that running '
+                           'multiple GUI toolkits simultaneously can cause '
+                           'side effects.' % 
+                           (native_module_name, name, str(mod.why_not))) 
+                    logger.warn(msg)
                 else:
+                    # Inform otherwise
                     logger.info(msg)
             else:
                 # Success!
-                self._backend_module = getattr(backends, module_name)
+                self._backend_module = mod
                 logger.info('Selected backend %s' % module_name)
                 break
         else:

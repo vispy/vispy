@@ -8,9 +8,13 @@ import os
 import subprocess
 
 from nose.tools import assert_equal
-from vispy.util.testing import assert_in, assert_not_in, requires_pyopengl
+from vispy.testing import assert_in, assert_not_in, requires_pyopengl
 
 import vispy
+
+
+# minimum that will be imported when importing vispy
+_min_modules = ['vispy', 'vispy.util', 'vispy.ext']
 
 
 def check_output(*popenargs, **kwargs):
@@ -73,19 +77,19 @@ def test_import_nothing():
 def test_import_vispy():
     """ Importing vispy should only pull in other vispy.util submodule. """
     modnames = loaded_vispy_modules('vispy', 2)
-    assert_equal(modnames, set(['vispy', 'vispy.util']))
+    assert_equal(modnames, set(_min_modules))
 
 
 def test_import_vispy_util():
     """ Importing vispy.util should not pull in other vispy submodules. """
     modnames = loaded_vispy_modules('vispy.util', 2)
-    assert_equal(modnames, set(['vispy', 'vispy.util']))
+    assert_equal(modnames, set(_min_modules))
 
 
 def test_import_vispy_app1():
     """ Importing vispy.app should not pull in other vispy submodules. """
     modnames = loaded_vispy_modules('vispy.app', 2)
-    assert_equal(modnames, set(['vispy', 'vispy.util', 'vispy.app']))
+    assert_equal(modnames, set(_min_modules + ['vispy.app']))
 
 
 def test_import_vispy_app2():
@@ -100,7 +104,7 @@ def test_import_vispy_app2():
 def test_import_vispy_gloo():
     """ Importing vispy.gloo should not pull in other vispy submodules. """
     modnames = loaded_vispy_modules('vispy.gloo', 2)
-    assert_equal(modnames, set(['vispy', 'vispy.util', 'vispy.gloo']))
+    assert_equal(modnames, set(_min_modules + ['vispy.gloo']))
 
 
 def test_import_vispy_no_pyopengl():

@@ -53,11 +53,11 @@ class Canvas(app.Canvas):
         print('%s - pos: %r, button: %i, modifiers: %s, delta: %r' %
               (what, event.pos, event.button, modifiers, event.delta))
 
-    def on_paint(self, event):
+    def on_draw(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
 
 if __name__ == '__main__':
-    canvas = Canvas()
+    canvas = Canvas(close_keys='escape')
     canvas.show()
     app.run()

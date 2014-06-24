@@ -8,7 +8,7 @@ import numpy as np
 from copy import deepcopy
 
 from . import gl
-from ..util.six import string_types
+from ..ext.six import string_types
 
 
 __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',
@@ -19,7 +19,8 @@ __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',
            'set_stencil_op', 'set_depth_func', 'set_depth_mask',
            'set_color_mask', 'set_sample_coverage',
            'get_state_presets', 'set_state', 'finish', 'flush',
-           'get_parameter', 'read_pixels', 'set_hint')
+           'get_parameter', 'read_pixels', 'set_hint',
+           'get_gl_configuration', 'check_error')
 _setters = [s[4:] for s in __all__
             if s.startswith('set_') and s != 'set_state']
 
@@ -478,6 +479,17 @@ def set_state(preset=None, **kwargs):
     off (which would normally be on for that preset), and additionally
     set the glClearColor parameter to be white.
 
+    Another example to showcase glEnable/glDisable wrapping:
+
+        >>> gloo.set_state(blend=True, depth_test=True, polygon_offset_fill=False)  # noqa, doctest:+SKIP
+
+    This would be equivalent to calling 
+
+        >>> from vispy.gloo import gl
+        >>> gl.glDisable(gl.GL_BLEND)
+        >>> gl.glEnable(gl.GL_DEPTH_TEST)
+        >>> gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
+
     Or here's another example:
 
         >>> gloo.set_state(clear_color=(0, 0, 0, 1), blend=True, blend_func=('src_alpha', 'one'))  # noqa, doctest:+SKIP
@@ -596,3 +608,60 @@ def set_hint(target, mode):
     if not all(isinstance(tm, string_types) for tm in (target, mode)):
         raise TypeError('target and mode must both be strings')
     gl.glHint(_gl_attr(target), _gl_attr(mode))
+
+
+###############################################################################
+# Current OpenGL configuration
+
+def get_gl_configuration():
+    """Read the current gl configuration
+
+    This function uses constants that are not in the OpenGL ES 2.1
+    namespace, so only use this on desktop systems.
+
+    Returns
+    -------
+    config : dict
+        The currently active OpenGL configuration.
+    """
+    # XXX eventually maybe we can ask `gl` whether or not we can access these
+    gl.check_error('pre-config check')
+    config = dict()
+    gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
+    fb_param = gl.glGetFramebufferAttachmentParameter
+    # copied since they aren't in ES:
+    GL_FRONT_LEFT = 1024
+    GL_DEPTH = 6145
+    GL_STENCIL = 6146
+    GL_SRGB = 35904
+    GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING = 33296
+    GL_STEREO = 3123
+    GL_DOUBLEBUFFER = 3122
+    sizes = dict(red=(GL_FRONT_LEFT, 33298),
+                 green=(GL_FRONT_LEFT, 33299),
+                 blue=(GL_FRONT_LEFT, 33300),
+                 alpha=(GL_FRONT_LEFT, 33301),
+                 depth=(GL_DEPTH, 33302),
+                 stencil=(GL_STENCIL, 33303))
+    for key, val in sizes.items():
+        config[key + '_size'] = fb_param(gl.GL_FRAMEBUFFER, val[0], val[1])
+    val = fb_param(gl.GL_FRAMEBUFFER, GL_FRONT_LEFT,
+                   GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING)
+    if val not in (gl.GL_LINEAR, GL_SRGB):
+        raise RuntimeError('unknown value for SRGB: %s' % val)
+    config['srgb'] = True if val == GL_SRGB else False  # GL_LINEAR
+    config['stereo'] = True if gl.glGetParameter(GL_STEREO) else False
+    config['double_buffer'] = (True if gl.glGetParameter(GL_DOUBLEBUFFER)
+                               else False)
+    config['samples'] = gl.glGetParameter(gl.GL_SAMPLES)
+    gl.check_error('post-config check')
+    return config
+
+
+def check_error():
+    """Check for OpenGL errors
+
+    For efficiency, errors are only checked periodically. This forces
+    a check for OpenGL errors.
+    """
+    gl.check_error('gloo check')
