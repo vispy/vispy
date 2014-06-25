@@ -231,12 +231,15 @@ class Visual(Entity):
         self._color_components = []
         #self.color_components = [UniformColorComponent()]
 
+        # Primitive, default is GL_TRIANGLES
+        self._primitive = gloo.gl.GL_TRIANGLES
+    
     @property
     def primitive(self):
         """
         The GL primitive used to draw this visual.
         """
-        return gloo.gl.GL_TRIANGLES
+        return self._primitive
 
     @property
     def vertex_index(self):
