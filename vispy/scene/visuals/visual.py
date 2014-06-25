@@ -200,8 +200,8 @@ class Visual(Entity):
     }
     """
 
-    def __init__(self, parent=None, name=None):
-        Entity.__init__(self, parent, name=name)
+    def __init__(self, parent=None, **kwds):
+        Entity.__init__(self, parent, **kwds)
         
         # Dict of {'GL_FLAG': bool} and {'glFunctionName': (args)} 
         # specifications. By default, these are enabled whenever the Visual 
