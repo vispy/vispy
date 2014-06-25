@@ -97,9 +97,6 @@ vb22.scene.camera = scene.cameras.PixelCamera()
 line_ndc.add_parent(vb21.scene)
 line_pixels.add_parent(vb22.scene)
 
-print vb1, vb11, vb12
-print vb2, vb21, vb22
-
 # Set preferred pixel grid method
 for vb in [vb1, vb2]:
     vb.preferred_clip_method = PREFER_PIXEL_GRID1
