@@ -22,6 +22,14 @@ class Widget(Visual):
     """
 
     def __init__(self, *args, **kwargs):
+        self._border = kwargs.pop('border', (0.2, 0.2, 0.2, 0.5))
+        self._visual = Line(color=self._border, width=1)  # for drawing border
+        self._clip = kwargs.pop('clip', False) # whether this widget should
+                                               # clip its children
+        self._padding = kwargs.pop('padding', 0)  # reserved space inside border
+        self._margin = kwargs.pop('margin', 0)  # reserved space outside border
+        
+        
         #Entity.__init__(self, *args, **kwargs)
         Visual.__init__(self, *args, **kwargs)
         self.events.add(rect_change=Event)
@@ -29,13 +37,6 @@ class Widget(Visual):
         self.transform = STTransform()
         # todo: TTransform (translate only for widgets)
 
-        border = kwargs.pop('border', (0.2, 0.2, 0.2, 0.5))
-        self._border = border
-        self._visual = Line(color=border, width=1)  # for drawing border
-        self._clip = kwargs.get('clip', False) # whether this widget should
-                                               # clip its children
-        self._padding = 0  # reserved space inside border
-        self._margin = 0   # reserved space outside border
         self._widgets = []
 
     @property
@@ -107,18 +108,16 @@ class Widget(Visual):
 
     def _update_line(self):
         """ Update border line to match new shape """
-        pad = self.margin
-        left = self.pos[0] + pad
-        right = self.pos[0] + self.size[0] - pad
-        bottom = self.pos[1] + pad
-        top = self.pos[1] + self.size[1] - pad
-
+        m = self.margin
+        r = self.size[0] - m
+        t = self.size[1] - m
+        
         pos = np.array([
-            [left, bottom],
-            [right, bottom],
-            [right, top],
-            [left, top],
-            [left, bottom]]).astype(np.float32)
+            [m, m],
+            [r, m],
+            [r, t],
+            [m, t],
+            [m, m]]).astype(np.float32)
         self._visual.set_data(pos=pos)
 
     def draw(self, event):
