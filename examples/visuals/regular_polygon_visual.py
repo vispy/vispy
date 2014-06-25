@@ -3,23 +3,22 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Simple demonstration of EllipseVisual. 
+Simple demonstration of RegularPolygonVisual.
 """
 
 import vispy.app
 from vispy import gloo
-from vispy.scene import visuals, transforms
+from vispy.scene import visuals
 
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
-        self.ellipse = visuals.Ellipse(pos=(0.5, 0.3, 0), radius=(0.4, 0.3),
-                                       color=(1, 0, 0, 1),
-                                       border_color=(1, 1, 1, 1),
-                                       start_angle=180., span_angle=150.)
-        self.ellipse.transform = transforms.STTransform(scale=(0.5, 1.5))
+        self.rpolygon = visuals.RegularPolygon(pos=(0.5, 0.3, 0), radius=0.4,
+                                               color=(1, 0, 0, 1),
+                                               border_color=(1, 1, 1, 1),
+                                               sides=6)
         
-        vispy.app.Canvas.__init__(self, close_keys='escape')
+        vispy.app.Canvas.__init__(self)
         self.size = (800, 800)
         self.show()
         
@@ -27,7 +26,7 @@ class Canvas(vispy.app.Canvas):
         gloo.set_clear_color((0, 0, 0, 1))
         gloo.clear()
         gloo.set_viewport(0, 0, *self.size)
-        self.ellipse.draw()
+        self.rpolygon.draw()
         
 
 if __name__ == '__main__':
