@@ -50,11 +50,8 @@ class Polygon(Visual):
     @transform.setter
     def transform(self, tr):
         Visual.transform.fset(self, tr)
-        self.mesh._transform = tr
-        self.border._transform = tr
-        self.mesh.update()
-        self.border.update()
-        self.update()
+        self.mesh.transform = tr
+        self.border.transform = tr
 
     def paint(self, event=None):
         if self.mesh:
