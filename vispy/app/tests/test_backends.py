@@ -14,7 +14,7 @@ from inspect import getargspec
 import vispy
 from vispy import keys
 from vispy.testing import requires_application
-from vispy.app import Application
+from vispy.app import use_app, Application
 from vispy.app.backends import _template
 
 
@@ -26,7 +26,7 @@ class DummyApplication(Application):
 def _test_module_properties(_module=None):
     """Test application module"""
     if _module is None:
-        app = Application.get_default_app()
+        app = use_app()
         _module = app.backend_module
 
     # Test that the keymap contains all keys supported by vispy.

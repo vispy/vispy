@@ -34,7 +34,7 @@ def use(usage):
     """ Set the usagage options for vispy
     
     Specify what app backend and GL backend to use. Also see
-    `vispy.app.use()` and `vispy.gloo.gl.use()`.
+    `vispy.app.use_app()` and `vispy.gloo.gl.use_gl()`.
     
     Parameters
     ----------
@@ -97,7 +97,7 @@ def use(usage):
     # Apply now
     if app_name:
         import vispy.app
-        vispy.app.use(app_name)
+        vispy.app.use_app(app_name)
     if gl_name:
         import vispy.gloo
-        vispy.gloo.gl.use(gl_name)
+        vispy.gloo.gl.use_gl(gl_name)

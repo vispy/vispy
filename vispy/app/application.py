@@ -23,7 +23,8 @@ class Application(object):
     """Representation of the vispy application
 
     This wraps a native GUI application instance. Vispy has a default
-    instance of this class that can be created/obtained via `vispy.app.use()`.
+    instance of this class that can be created/obtained via 
+    `vispy.app.use_app()`.
 
     Parameters
     ----------
@@ -55,16 +56,6 @@ class Application(object):
         self._backend = None
         self._use(backend_name)
     
-    @classmethod
-    def get_default_app(self):
-        """ Classmethod to get the default app instance. If there is no
-        default app yet, it is created.
-        """
-        # Import default app module. We cannot import above.
-        from . import _default_app  # noqa
-        _default_app.use()
-        return _default_app.default_app
-
     def __repr__(self):
         name = self.backend_name
         if not name:

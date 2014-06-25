@@ -153,8 +153,8 @@ def requires_application(backend=None, has=(), capable=()):
 def glut_skip():
     """Helper to skip a test if GLUT is the current backend"""
     # this is basically a knownfail tool for glut
-    from ..app import Application
-    app = Application.get_default_app()
+    from ..app import use_app
+    app = use_app()
     if app.backend_name.lower() == 'glut':
         raise SkipTest('GLUT unstable')
     return  # otherwise it's fine

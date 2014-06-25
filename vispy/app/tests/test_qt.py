@@ -5,7 +5,7 @@
 
 from os import path as op
 
-from vispy.app import Canvas, Application
+from vispy.app import Canvas, use_ap
 from vispy.testing import requires_application, SkipTest
 from vispy.gloo import gl
 
@@ -13,7 +13,7 @@ from vispy.gloo import gl
 @requires_application('pyqt4', has=['uic'])
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
-    app = Application.get_default_app()
+    app = use_ap()
     if 'pyqt4' not in app.backend_name.lower():
         raise SkipTest('Not using PyQt4 backend')  # wrong backend
     from PyQt4 import uic
