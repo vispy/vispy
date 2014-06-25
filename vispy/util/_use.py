@@ -24,10 +24,31 @@ modes for app and gl.
 
 """
 
-# Possible usage options. These need to be kept in sync with
-# app/backends/__init__.py and the modules in gloo/gl
-_app_names = 'PyQt4', 'PySide', 'Pyglet', 'Glfw', 'SDL2', 'Glut'
-_gl_names = 'desktop', 'pyopengl', 'angle'
+
+# Define backends: name, vispy.app.backends.xxx module, native module name.
+# This is the order in which they are attempted to be imported.
+APP_BACKENDS = [
+    ('PyQt4', '_pyqt4', 'PyQt4'),
+    ('PySide', '_pyside', 'PySide'),
+    ('Pyglet', '_pyglet', 'pyglet'),
+    ('Glfw', '_glfw', 'vispy.app.backends._libglfw'),
+    ('SDL2', '_sdl2', 'sdl2'),
+    ('Glut', '_glut', 'OpenGL.GLUT'),
+    ('_test', '_test', 'vispy.app.backends._test'),  # add one that will fail
+]
+
+APP_BACKEND_NAMES = []
+for backend in APP_BACKENDS:
+    if backend[1][1:] not in APP_BACKEND_NAMES:  # remove redundant qt entries
+        APP_BACKEND_NAMES.append(backend[1][1:])
+
+# Map of the lowercase backend names to the backend descriptions above
+# so that we can look up its properties if we only have a name.
+APP_BACKENDMAP = dict([(be[0].lower(), be) for be in APP_BACKENDS])
+
+
+# Define possible GL backends
+GL_BACKENDS = 'desktop', 'pyopengl', 'angle'
 
 
 def use(usage):
@@ -70,7 +91,7 @@ def use(usage):
         gl_name = 'webgl'
     
     # Take zero or one items for app
-    for name in _app_names:
+    for name in APP_BACKEND_NAMES:
         if name.lower() in parts:
             if app_name:
                 raise ValueError('Can only specify one app backend.')
@@ -78,7 +99,7 @@ def use(usage):
             parts.discard(name.lower())
     
     # Take zero or one items for gl
-    for name in _gl_names:
+    for name in GL_BACKENDS:
         if name.lower() in parts:
             if gl_name:
                 raise ValueError('Can only specify one gl backend.')
