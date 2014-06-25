@@ -5,6 +5,7 @@ including configuration options.
 import vispy
 from vispy.testing import requires_application
 
+
 @requires_application('pyside')
 def test_use():
     vispy.use('')  # Should do nothing
