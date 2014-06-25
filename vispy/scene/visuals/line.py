@@ -29,14 +29,14 @@ class Line(Visual):
     """
     Displays multiple line segments.
     """
-    def __init__(self, parent=None, pos=None, name=None, **kwds):
-        super(Line, self).__init__(parent, name)
+    def __init__(self, parent=None, pos=None, color=None, z=0.0, **kwds):
+        super(Line, self).__init__(parent, **kwds)
         
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
 
         if pos is not None or kwds:
-            self.set_data(pos, **kwds)
+            self.set_data(pos=pos, color=color, z=z)
 
     def set_data(self, pos=None, **kwds):
         kwds['index'] = kwds.pop('edges', kwds.get('index', None))
