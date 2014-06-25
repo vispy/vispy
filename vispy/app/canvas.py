@@ -10,7 +10,6 @@ from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..ext.six import string_types
 from .application import Application
-from . import use
 from ._config import get_default_config
 
 # todo: add functions for asking about current mouse/keyboard state
@@ -133,7 +132,7 @@ class Canvas(object):
 
         # Get app instance
         if app is None:
-            self._app = use()  # Use default app
+            self._app = Application.get_default_app()
         elif isinstance(app, Application):
             self._app = app
         elif isinstance(app, string_types):

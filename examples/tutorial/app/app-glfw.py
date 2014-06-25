@@ -8,9 +8,9 @@ detected. A timer is also run every second and it should print "tick !"
 every second.
 """
 
-from vispy import app, keys
+from vispy import app, keys, use
 from vispy.gloo import gl
-app.use('glfw')
+use('glfw')
 
 
 class Canvas(app.Canvas):

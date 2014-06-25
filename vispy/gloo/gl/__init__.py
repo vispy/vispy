@@ -97,7 +97,6 @@ proxy = MainProxy()
 _debug_proxy = DebugProxy()
 
 
-# todo: we need a vispy.use(), e.g. webgl needs action both here and in app
 def use(target='desktop'):
     """ Let Vispy use the target OpenGL ES 2.0 implementation.
 

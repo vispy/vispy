@@ -12,7 +12,7 @@ from __future__ import division
 import os
 import sys
 
-from. import backends
+from . import backends
 from .backends import BACKENDS, BACKENDMAP, ATTEMPTED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
@@ -54,7 +54,17 @@ class Application(object):
         self._backend_module = None
         self._backend = None
         self._use(backend_name)
-
+    
+    @classmethod
+    def get_default_app(self):
+        """ Classmethod to get the default app instance. If there is no
+        default app yet, it is created.
+        """
+        # Import default app module. We cannot import above.
+        from . import _default_app  # noqa
+        _default_app.use()
+        return _default_app.default_app
+    
     def __repr__(self):
         name = self.backend_name
         if not name:
@@ -109,7 +119,10 @@ class Application(object):
     def _use(self, backend_name=None):
         """Select a backend by name. See class docstring for details.
         """
+        # Get backend used in testing
         test_name = os.getenv('_VISPY_TESTING_TYPE', None)
+        if test_name not in BACKENDMAP:
+            test_name = None 
         if backend_name is not None:
             if backend_name.lower() not in BACKENDMAP:
                 raise ValueError('backend_name must be one of %s or None, not '

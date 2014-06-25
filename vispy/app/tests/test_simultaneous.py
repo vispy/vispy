@@ -5,7 +5,7 @@ from numpy.testing import assert_allclose
 from nose.tools import assert_true
 from time import sleep
 
-from vispy.app import use, Canvas, Timer
+from vispy.app import Application, Canvas, Timer
 from vispy.testing import requires_application, SkipTest
 from vispy.util.ptime import time
 from vispy.gloo import gl
@@ -42,7 +42,7 @@ def _update_process_check(canvas, val, draw=True):
 def test_multiple_canvases():
     """Testing multiple canvases"""
     n_check = 3
-    app = use()
+    app = Application.get_default_app()
     if app.backend_name.lower() == 'glut':
         raise SkipTest('glut cannot use multiple canvases')
     with Canvas(app=app, size=_win_size, title='same_0') as c0:

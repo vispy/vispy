@@ -8,7 +8,7 @@ from ..util.event import Event, EmitterGroup
 from ..util.ptime import time as precision_time
 from ..ext.six import string_types
 from .base import BaseTimerBackend as TimerBackend  # noqa
-from . import use, Application
+from . import Application
 
 
 class Timer(object):
@@ -40,7 +40,7 @@ class Timer(object):
 
         # Get app instance
         if app is None:
-            self._app = use()  # Use default app
+            self._app = Application.get_default_app()
         elif isinstance(app, Application):
             self._app = app
         elif isinstance(app, string_types):

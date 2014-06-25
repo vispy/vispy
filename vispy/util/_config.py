@@ -279,13 +279,13 @@ def sys_info(fname=None, overwrite=False):
     out = ''
     try:
         # Nest all imports here to avoid any circular imports
-        from ..app import use, Canvas
+        from ..app import Application, Canvas
         from ..app.backends import BACKEND_NAMES
         from ..gloo import gl
         from ..testing import has_backend
         # get default app
         with use_log_level('warning'):
-            app = use()  # suppress unnecessary messages
+            app = Application.get_default_app()  # suppress messages
         out += 'Platform: %s\n' % platform.platform()
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
         out += 'Backend:  %s\n' % app.backend_name
