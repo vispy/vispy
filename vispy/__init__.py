@@ -35,3 +35,4 @@ from .util import (dataio, _parse_command_line_arguments, config,  # noqa
                    set_log_level, keys, sys_info, test)  # noqa
 
 _parse_command_line_arguments()
+from .util._use import use  # noqa
