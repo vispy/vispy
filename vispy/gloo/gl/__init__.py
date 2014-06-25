@@ -100,7 +100,7 @@ _debug_proxy = DebugProxy()
 def use_gl(target='desktop'):
     """ Let Vispy use the target OpenGL ES 2.0 implementation
     
-    Also see vispy.use().
+    Also see ``vispy.use()``.
     
     Parameters
     ----------

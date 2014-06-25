@@ -20,7 +20,7 @@ def use_app(backend_name=None):
     ----------
     backend_name : str | None
         The name of the backend application to use. If not specified, Vispy
-        tries to select a backend automatically. See `vispy.use()` for
+        tries to select a backend automatically. See ``vispy.use()`` for
         details.
     
     """

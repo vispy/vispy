@@ -30,7 +30,7 @@ class Application(object):
     ----------
     backend_name : str | None
         The name of the backend application to use. If not specified,
-        Vispy tries to select a backend automatically. See `vispy.use()`
+        Vispy tries to select a backend automatically. See ``vispy.use()``
         for details.
     
     Notes

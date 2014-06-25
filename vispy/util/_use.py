@@ -55,7 +55,7 @@ def use(usage):
     """ Set the usage options for vispy
     
     Specify what app backend and GL backend to use. Also see
-    `vispy.app.use_app()` and `vispy.gloo.gl.use_gl()`.
+    ``vispy.app.use_app()`` and ``vispy.gloo.gl.use_gl()``.
     
     Parameters
     ----------
@@ -85,8 +85,8 @@ def use(usage):
     
     Notes
     -----
-    If app options are given, vispy.app is imported. If gl options are
-    given, vispy.gloo is imported.
+    If app options are given, ``vispy.app`` is imported. If gl options
+    are given, ``vispy.gloo`` is imported.
     
     If an app backend name is provided, and that backend could not be
     loaded, an error is raised.
