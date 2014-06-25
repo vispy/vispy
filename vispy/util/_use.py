@@ -88,6 +88,15 @@ def use(usage):
     If app options are given, vispy.app is imported. If gl options are
     given, vispy.gloo is imported.
     
+    If an app backend name is provided, and that backend could not be
+    loaded, an error is raised.
+    
+    If no backend name is provided, Vispy will first check if the GUI
+    toolkit corresponding to each backend is already imported, and try
+    that backend first. If this is unsuccessful, it will try the
+    'default_backend' provided in the vispy config. If still not
+    succesful, it will try each backend in a predetermined order.
+    
     """
     
     # Split components of usage

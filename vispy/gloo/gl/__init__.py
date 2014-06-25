@@ -98,7 +98,7 @@ _debug_proxy = DebugProxy()
 
 
 def use_gl(target='desktop'):
-    """ Let Vispy use the target OpenGL ES 2.0 implementation.
+    """ Let Vispy use the target OpenGL ES 2.0 implementation
     
     Also see vispy.use().
     
@@ -107,8 +107,7 @@ def use_gl(target='desktop'):
     target : str
         The target GL backend to use.
 
-    Backends
-    --------
+    Available backends:
     * desktop - Use desktop (i.e. normal) OpenGL.
     * pyopengl - Use pyopengl (for fallback and testing). 
     * angle - Use the Angle library to target DirectX (Windows only). (WIP)

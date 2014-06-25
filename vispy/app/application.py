@@ -29,25 +29,16 @@ class Application(object):
     Parameters
     ----------
     backend_name : str | None
-        If None (default), a suitable backend will be chosen automatically.
-        Trying to select a particular backend when one is already selected
-        will raise an error. Available backends: 
-        'PyQt4', 'PySide', 'Glut', 'Glfw', 'Pyglet', 'sdl2'.
+        The name of the backend application to use. If not specified,
+        Vispy tries to select a backend automatically. See `vispy.use()`
+        for details.
     
     Notes
     -----
-    If a backend name is provided, and that backend could not be loaded,
-    an error is raised.
-
-    If no backend name is provided, this function will first check if
-    the GUI toolkit corresponding to each backend is already imported,
-    and try that backend first. If this is unsuccessful, it will try
-    the 'default_backend' provided in the vispy config. If still not
-    succesful, it will try each backend in a predetermined order.
-    
-    Upon creating an Application, a backend is selected, but the native
-    backend application object is only created when `create()` is called
-    or `native` is used. The Canvas and Timer call create() when needed.
+    Upon creating an Application object, a backend is selected, but the
+    native backend application object is only created when `create()`
+    is called or `native` is used. The Canvas and Timer do this
+    automatically.
     
     """
 

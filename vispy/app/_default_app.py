@@ -11,12 +11,18 @@ default_app = None
 
 
 def use_app(backend_name=None):
-    """Get the default Application object. Create it if necessary. It
-    is safe to call this function multiple times, as long as
+    """ Get/create the default Application object
+    
+    It is safe to call this function multiple times, as long as
     backend_name is None or matches the already selected backend.
     
-    Also see vispy.use(). See Application for details on available
-    backends.
+    Parameters
+    ----------
+    backend_name : str | None
+        The name of the backend application to use. If not specified, Vispy
+        tries to select a backend automatically. See `vispy.use()` for
+        details.
+    
     """
     global default_app
     
