@@ -4,7 +4,10 @@
 
 from __future__ import division
 
+import numpy as np
+
 from ..visuals.visual import Visual
+from ..visuals.line import Line
 from ..transforms import STTransform
 from ...util.event import Event
 from ...util.geometry import Rect
@@ -16,8 +19,6 @@ class Widget(Visual):
 
     The widget is positioned using the transform attribute (as any
     entity), and its extend (size) is kept as a separate property.
-
-    This is a simple preliminary version!
     """
 
     def __init__(self, *args, **kwargs):
@@ -28,6 +29,15 @@ class Widget(Visual):
         self.transform = STTransform()
         # todo: TTransform (translate only for widgets)
 
+        border = kwargs.pop('border', (0.2, 0.2, 0.2, 0.5))
+        self._border = border
+        self._visual = Line(color=border, width=1)  # for drawing border
+        self._clip = kwargs.get('clip', False) # whether this widget should
+                                               # clip its children
+        self._padding = 0  # reserved space inside border
+        self._margin = 0   # reserved space outside border
+        self._widgets = []
+
     @property
     def pos(self):
         return tuple(self.transform.translate[:2])
@@ -37,6 +47,7 @@ class Widget(Visual):
         assert isinstance(p, tuple)
         assert len(p) == 2
         self.transform.translate = p[0], p[1], 0, 0
+        self._update_line()
         self.events.rect_change()
 
     @property
@@ -51,8 +62,107 @@ class Widget(Visual):
         assert isinstance(s, tuple)
         assert len(s) == 2
         self._size = s
+        self._update_line()
         self.events.rect_change()
 
     @property
     def rect(self):
         return Rect((0, 0), self.size)
+
+    @rect.setter
+    def rect(self, r):
+        with self.events.rect_change.blocker():
+            self.pos = r.pos
+            self.size = r.size
+        self.update()
+        self.events.rect_change()
+
+    @property
+    def border(self):
+        return self._border
+
+    @border.setter
+    def border(self, b):
+        self._border = b
+        self._visual.set_data(color=b)
+        self.update()
+
+    @property
+    def margin(self):
+        return self._margin
+
+    @margin.setter
+    def margin(self, m):
+        self._margin = m
+        self._update_line()
+
+    @property
+    def padding(self):
+        return self._padding
+
+    @padding.setter
+    def padding(self, p):
+        self._padding = p
+        self._update_child_boxes()
+
+    def _update_line(self):
+        """ Update border line to match new shape """
+        pad = self.margin
+        left = self.pos[0] + pad
+        right = self.pos[0] + self.size[0] - pad
+        bottom = self.pos[1] + pad
+        top = self.pos[1] + self.size[1] - pad
+
+        pos = np.array([
+            [left, bottom],
+            [right, bottom],
+            [right, top],
+            [left, top],
+            [left, bottom]]).astype(np.float32)
+        self._visual.set_data(pos=pos)
+
+    def draw(self, event):
+        self._visual.draw(event)
+
+    def on_rect_change(self, ev):
+        self._update_child_widgets()
+
+    def _update_child_widgets(self):
+        # Set the position and size of child boxes (only those added
+        # using add_widget)
+        for ch in self._widgets:
+            ch.rect = self.rect.padded(self.padding + self.margin)
+
+    def add_widget(self, widget):
+        """
+        Add a Widget as a managed child of this Widget. The child will be
+        automatically positioned and sized to fill the entire space inside
+        this Widget (unless _update_child_widgets is redefined).
+        """
+        self._widgets.append(box)
+        widget.parent = self
+        self._update_child_widgets()
+        return widget
+
+    def add_grid(self, *args, **kwds):
+        """
+        Create a new Grid and add it as a child widget.
+
+        All arguments are given to add_widget().
+        """
+        grid = Grid()
+        return self.add_widget(grid, *args, **kwds)
+
+    def add_view(self, *args, **kwds):
+        """
+        Create a new ViewBox and add it as a child widget.
+
+        All arguments are given to add_widget().
+        """
+        view = ViewBox()
+        return self.add_widget(view, *args, **kwds)
+
+    def remove_widget(self, widget):
+        self._widgets.remove(widget)
+        widget.remove_parent(self)
+        self._update_child_widgets()
