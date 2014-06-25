@@ -52,27 +52,39 @@ GL_BACKENDS = 'desktop', 'pyopengl', 'angle'
 
 
 def use(usage):
-    """ Set the usagage options for vispy
+    """ Set the usage options for vispy
     
     Specify what app backend and GL backend to use. Also see
     `vispy.app.use_app()` and `vispy.gloo.gl.use_gl()`.
     
     Parameters
     ----------
-    
     usage : str
-        String usage options separated by spaces. Case insensitive.
+        String usage options separated by spaces. Case insensitive. 
     
-    Options
-    -------
+    Options for the app backend are: 
+      * 'PyQt4': use Qt widget toolkit via PyQt4.
+      * 'PySide': use Qt widget toolkit via PySide.
+      * 'PyGlet': use Pyglet backend.
+      * 'Glfw': use Glfw backend (successor of Glut). Widely available
+        on Linux.
+      * 'SDL2': use SDL v2 backend.
+      * 'Glut': use Glut backend. Widely available but limited. 
+        Not recommended.
     
-    * app-options: 'PyQt4', 'PySide', 'PyGlet', 'Glfw', 'SDL2', 'Glut'
-    * gl-options: 'desktop', 'pyopengl', 'angle'
-    * 'debug': check for errors after each gl command.
+    Options for the GL backend they are: 
+      * 'desktop': use Vispy's desktop OpenGL API. 
+      * 'pyopengl': use PyOpenGL's desktop OpenGL API. Mostly for testing.
+      * 'angle': (TO COME) use real OpenGL ES 2.0 on Windows via Angle.
+        Availability of ES 2.0 is larger for Windows, since it relies
+        on DirectX.
+    
+    Further, there are a few special options:
+      * 'debug': check for errors after each gl command.
+      * 'ipython_nb': (TO COME) Render in the IPython notebook.
     
     Notes
     -----
-    
     If app options are given, vispy.app is imported. If gl options are
     given, vispy.gloo is imported.
     
