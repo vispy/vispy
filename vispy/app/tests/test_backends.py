@@ -18,6 +18,11 @@ from vispy.app import Application
 from vispy.app.backends import _template
 
 
+class DummyApplication(Application):
+    def _use(self, backend_namd):
+        pass
+
+        
 def _test_module_properties(_module=None):
     """Test application module"""
     if _module is None:
@@ -99,7 +104,7 @@ def _test_module_properties(_module=None):
     fname = _module.__file__.strip('c')
     text = open(fname, 'rb').read().decode('utf-8')
 
-    canvas = vispy.app.Canvas(create_native=False)
+    canvas = vispy.app.Canvas(create_native=False, app=DummyApplication())
     # Stylus and touch are ignored because they are not yet implemented.
     # Mouse events are emitted from the CanvasBackend base class.
     ignore = set(['stylus', 'touch', 'mouse_press', 'paint',
