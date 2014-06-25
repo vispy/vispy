@@ -6,8 +6,7 @@ from __future__ import division
 
 from ..gloo import gl
 from .. import app
-
-from .viewbox import SubScene
+from .subscene import SubScene
 from .transforms import STTransform
 from .events import SceneDrawEvent, SceneMouseEvent
 from ..util import logger
