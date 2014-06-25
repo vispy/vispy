@@ -13,7 +13,6 @@ import numpy as np
 
 from ... import gloo
 from .visual import Visual
-from .. import transforms
 from .mesh import Mesh
 from .line import Line
 from ...util.geometry import PolygonData
@@ -46,12 +45,11 @@ class Polygon(Visual):
         """ The transform that maps the local coordinate frame to the
         coordinate frame of the parent.
         """
-        return self._transform
+        return Visual.transform.fget(self)
 
     @transform.setter
     def transform(self, tr):
-        assert isinstance(tr, transforms.Transform)
-        self._transform = tr
+        Visual.transform.fset(self, tr)
         self.mesh._transform = tr
         self.border._transform = tr
         self.mesh.update()
