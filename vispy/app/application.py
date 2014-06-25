@@ -64,7 +64,7 @@ class Application(object):
         from . import _default_app  # noqa
         _default_app.use()
         return _default_app.default_app
-    
+
     def __repr__(self):
         name = self.backend_name
         if not name:
