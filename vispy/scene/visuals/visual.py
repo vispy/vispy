@@ -200,8 +200,8 @@ class Visual(Entity):
     }
     """
 
-    def __init__(self, parent=None, name=None):
-        Entity.__init__(self, parent, name=name)
+    def __init__(self, parent=None, **kwds):
+        Entity.__init__(self, parent, **kwds)
         
         # Dict of {'GL_FLAG': bool} and {'glFunctionName': (args)} 
         # specifications. By default, these are enabled whenever the Visual 
@@ -231,12 +231,15 @@ class Visual(Entity):
         self._color_components = []
         #self.color_components = [UniformColorComponent()]
 
+        # Primitive, default is GL_TRIANGLES
+        self._primitive = gloo.gl.GL_TRIANGLES
+    
     @property
     def primitive(self):
         """
         The GL primitive used to draw this visual.
         """
-        return gloo.gl.GL_TRIANGLES
+        return self._primitive
 
     @property
     def vertex_index(self):
