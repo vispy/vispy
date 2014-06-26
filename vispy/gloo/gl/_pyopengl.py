@@ -174,19 +174,19 @@ def glGetUniformLocation(program, name):
 
 
 def glGetVertexAttrib(index, pname):
-    # Something changed in v3.1.0
-    try:  # maybe they will fix it
-        return GL.glGetVertexAttribfv(index, pname)
-    except TypeError:
-        n = 4
-        d = float('Inf')
-        params = (ctypes.c_float*n)(*[d for i in range(n)])
-        GL.glGetVertexAttribfv(index, pname, params)
-        params = [p for p in params if p!=d]
-        if len(params) == 1:
-            return params[0]
-        else:
-            return tuple(params)
+    # From PyOpenGL v3.1.0 the glGetVertexAttribfv(index, pname) does
+    # work, but it always returns 4 values, with zeros in the empty
+    # spaces. We have no way to tell whether they are empty or genuine
+    # zeros. Fortunately, pyopengl also supports the old syntax.
+    n = 4
+    d = float('Inf')
+    params = (ctypes.c_float*n)(*[d for i in range(n)])
+    GL.glGetVertexAttribfv(index, pname, params)
+    params = [p for p in params if p!=d]
+    if len(params) == 1:
+        return params[0]
+    else:
+        return tuple(params)
 
 
 def glGetVertexAttribOffset(index, pname):
