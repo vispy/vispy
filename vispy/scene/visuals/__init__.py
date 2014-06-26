@@ -11,3 +11,5 @@ from .line import Line  # noqa
 from .point import Point  # noqa
 from .image import Image  # noqa
 from .mesh import Mesh  # noqa
+from .polygon import Polygon  # noqa
+from .ellipse import Ellipse  # noqa
