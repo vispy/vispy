@@ -96,7 +96,7 @@ def use(app=None, gl=None):
     succesful, it will try each backend in a predetermined order.
     
     """
-    
+
     # Example for future. This wont work (yet).
     if app == 'ipynb':
         app = 'headless'
