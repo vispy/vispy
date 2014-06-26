@@ -174,6 +174,7 @@ def glGetUniformLocation(program, name):
 
 
 def glGetVertexAttrib(index, pname):
+    # Something changed in v3.1.0
     try:  # maybe they will fix it
         return GL.glGetVertexAttribfv(index, pname)
     except TypeError:

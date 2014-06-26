@@ -388,6 +388,7 @@ def getVertexAttrib(index, pname):
     else:
         return tuple(params)
     # --- pyopengl
+    # Something changed in v3.1.0
     try:  # maybe they will fix it
         ()
     except TypeError:
