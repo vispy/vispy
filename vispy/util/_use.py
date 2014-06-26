@@ -51,7 +51,7 @@ APP_BACKENDMAP = dict([(be[0].lower(), be) for be in APP_BACKENDS])
 GL_BACKENDS = 'desktop', 'pyopengl', 'angle'
 
 
-def use(usage):
+def use(app=None, gl=None):
     """ Set the usage options for vispy
     
     Specify what app backend and GL backend to use. Also see
@@ -59,34 +59,32 @@ def use(usage):
     
     Parameters
     ----------
-    usage : str
-        String usage options separated by spaces. Case insensitive. 
-    
-    Options for the app backend are: 
-      * 'PyQt4': use Qt widget toolkit via PyQt4.
-      * 'PySide': use Qt widget toolkit via PySide.
-      * 'PyGlet': use Pyglet backend.
-      * 'Glfw': use Glfw backend (successor of Glut). Widely available
-        on Linux.
-      * 'SDL2': use SDL v2 backend.
-      * 'Glut': use Glut backend. Widely available but limited. 
-        Not recommended.
-    
-    Options for the GL backend they are: 
-      * 'desktop': use Vispy's desktop OpenGL API. 
-      * 'pyopengl': use PyOpenGL's desktop OpenGL API. Mostly for testing.
-      * 'angle': (TO COME) use real OpenGL ES 2.0 on Windows via Angle.
-        Availability of ES 2.0 is larger for Windows, since it relies
-        on DirectX.
-    
-    Further, there are a few special options:
-      * 'debug': check for errors after each gl command.
-      * 'ipython_nb': (TO COME) Render in the IPython notebook.
+    app : str
+        The app backend to use (case insensitive). Options are:
+        * 'PyQt4': use Qt widget toolkit via PyQt4.
+        * 'PySide': use Qt widget toolkit via PySide.
+        * 'PyGlet': use Pyglet backend.
+        * 'Glfw': use Glfw backend (successor of Glut). Widely available
+            on Linux.
+        * 'SDL2': use SDL v2 backend.
+        * 'Glut': use Glut backend. Widely available but limited. 
+            Not recommended.
+        In the future, we plan on providing 'special' app backends such
+        as 'ipynb' to run vispy in the IPython notebook.
+    gl : str
+        The gl backend to use (case insensitive). Options are:
+        * 'desktop': use Vispy's desktop OpenGL API. 
+        * 'pyopengl': use PyOpenGL's desktop OpenGL API. Mostly for testing.
+        * 'angle': (TO COME) use real OpenGL ES 2.0 on Windows via Angle.
+            Availability of ES 2.0 is larger for Windows, since it relies
+            on DirectX.
+        * If 'debug' is included in this argument, vispy will check for
+          errors after each gl command.
     
     Notes
     -----
-    If app options are given, ``vispy.app`` is imported. If gl options
-    are given, ``vispy.gloo`` is imported.
+    If the app option is given, ``vispy.app.use_app()`` is called. If
+    the gl option is given, ``vispy.gloo.use_gl()`` is called.
     
     If an app backend name is provided, and that backend could not be
     loaded, an error is raised.
@@ -99,47 +97,15 @@ def use(usage):
     
     """
     
-    # Split components of usage
-    parts = set([s.lower() for s in usage.split(' ') if s])
-    
-    # Init things that we can set
-    app_name = None
-    gl_name = None
-    
     # Example for future. This wont work (yet).
-    if 'ipython' in parts:
-        app_name = 'headless'
-        gl_name = 'webgl'
-    
-    # Take zero or one items for app
-    for name in APP_BACKEND_NAMES:
-        if name.lower() in parts:
-            if app_name:
-                raise ValueError('Can only specify one app backend.')
-            app_name = name
-            parts.discard(name.lower())
-    
-    # Take zero or one items for gl
-    for name in GL_BACKENDS:
-        if name.lower() in parts:
-            if gl_name:
-                raise ValueError('Can only specify one gl backend.')
-            gl_name = name
-            parts.discard(name.lower())
-    
-    # Gl can also be in debug mode
-    if 'debug' in parts:
-        gl_name += ' debug'
-    parts.discard('debug')
-    
-    # Check if we have anything left
-    if parts:
-        raise ValueError('Don\'t know what to do with %r' % parts)
+    if app == 'ipynb':
+        app = 'headless'
+        gl = 'webgl'
     
     # Apply now
-    if app_name:
+    if app:
         import vispy.app
-        vispy.app.use_app(app_name)
-    if gl_name:
+        vispy.app.use_app(app)
+    if gl:
         import vispy.gloo
-        vispy.gloo.gl.use_gl(gl_name)
+        vispy.gloo.gl.use_gl(gl)
