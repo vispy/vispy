@@ -25,7 +25,7 @@ def use_app(backend_name=None):
     
     """
     global default_app
-    
+
     # If we already have a default_app, raise error or return
     if default_app is not None:
         names = default_app.backend_name.lower().replace('(', ' ').strip(') ')
@@ -34,7 +34,7 @@ def use_app(backend_name=None):
             raise RuntimeError('Can only select a backend once.')
         else:
             return default_app  # Current backend matches backend_name
-    
+
     # Create default app
     default_app = Application(backend_name)
     return default_app
