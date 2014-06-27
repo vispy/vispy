@@ -58,7 +58,7 @@ def barycentric(A, B, C, p, q, r):
     assert len(B) == len(C) == n
     s = p+q+r
     p, q, r = p/s, q/s, r/s
-    return tuple([p*A[i]+q*B[i]+r*C[i] for i in xrange(n)])
+    return tuple([p*A[i]+q*B[i]+r*C[i] for i in range(n)])
 
 
 # Cartesian coordinates of the point whose trilinear coordinates
