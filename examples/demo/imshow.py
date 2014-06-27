@@ -14,31 +14,34 @@ y = np.linspace(-3.0, 3.0, 512).astype(np.float32)
 X,Y = np.meshgrid(x, y)
 image = func(X,Y)
 
+# Image normalization
+vmin,vmax = image.min(), image.max()
+image = (image-vmin)/(vmax-vmin)
+
 
 # Colormaps
 colormaps = np.ones((16,512,4)).astype(np.float32)
+values = np.linspace(0,1,512)[1:-1]
 
 # Hot colormap
-colormaps[0,:,0] = np.interp(np.linspace(0,1,512),
-                             [0.00, 0.33, 0.66, 1.00],
-                             [0.00, 1.00, 1.00, 1.00])
-colormaps[0,:,1] = np.interp(np.linspace(0,1,512),
-                             [0.00, 0.33, 0.66, 1.00],
-                             [0.00, 0.00, 1.00, 1.00])
-colormaps[0,:,2] = np.interp(np.linspace(0,1,512),
-                             [0.00, 0.33, 0.66, 1.00],
-                             [0.00, 0.00, 0.00, 1.00])
+colormaps[0, 0] = 0,0,1,1 # Low values  (< vmin)
+colormaps[0,-1] = 0,1,0,1 # High values (> vmax)
+colormaps[0,1:-1,0] = np.interp(values, [0.00, 0.33, 0.66, 1.00],
+                                        [0.00, 1.00, 1.00, 1.00])
+colormaps[0,1:-1,1] = np.interp(values, [0.00, 0.33, 0.66, 1.00],
+                                        [0.00, 0.00, 1.00, 1.00])
+colormaps[0,1:-1,2] = np.interp(values, [0.00, 0.33, 0.66, 1.00],
+                                        [0.00, 0.00, 0.00, 1.00])
 
 # Grey colormap
-colormaps[1,:,0] = np.interp(np.linspace(0,1,512),
-                             [0.00, 1.00],
-                             [0.00, 1.00])
-colormaps[1,:,1] = np.interp(np.linspace(0,1,512),
-                             [0.00, 1.00],
-                             [0.00, 1.00])
-colormaps[1,:,2] = np.interp(np.linspace(0,1,512),
-                             [0.00, 1.00],
-                             [0.00, 1.00])
+colormaps[1, 0] = 0,0,1,1 # Low values (< vmin)
+colormaps[1,-1] = 0,1,0,1 # High values (> vmax)
+colormaps[1,1:-1,0] = np.interp(values, [0.00, 1.00],
+                                        [0.00, 1.00])
+colormaps[1,1:-1,1] = np.interp(values, [0.00, 1.00],
+                                        [0.00, 1.00])
+colormaps[1,1:-1,2] = np.interp(values, [0.00, 1.00],
+                                        [0.00, 1.00])
 # Jet colormap
 # ...
 
@@ -69,11 +72,17 @@ varying vec2 v_texcoord;
 void main()
 {
     float value = texture2D(image, v_texcoord).r;
-    value = (value-vmin)/(vmax-vmin);
+    float index = (cmap+0.5) / n_colormaps;
 
-    float index = (cmap+.5) / n_colormaps;
-    vec4 color = texture2D(colormaps, vec2(value,index));
-    gl_FragColor = color;
+    if( value < vmin ) {
+        gl_FragColor = texture2D(colormaps, vec2(0.0,index));
+    } else if( value > vmax ) {
+        gl_FragColor = texture2D(colormaps, vec2(1.0,index));
+    } else {
+        value = (value-vmin)/(vmax-vmin);
+        value = 1.0/512.0 + 510.0/512.0*value;
+        gl_FragColor = texture2D(colormaps, vec2(value,index));
+    }
 }
 """
 
@@ -84,9 +93,9 @@ class Window(app.Canvas):
         self.program = gloo.Program(vertex, fragment, 4)
         self.program['position'] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
         self.program['texcoord'] = (0, 0), (0, +1), (+1, 0), (+1, +1)
-        self.program['vmin'] = +0.0
-        self.program['vmax'] = +1.0
-        self.program['cmap'] = 1 # Colormap index to use
+        self.program['vmin'] = +0.1
+        self.program['vmax'] = +0.9
+        self.program['cmap'] = 0 # Colormap index to use
 
         self.program['colormaps'] = colormaps
         self.program['n_colormaps'] = colormaps.shape[0]
