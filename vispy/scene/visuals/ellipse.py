@@ -39,8 +39,6 @@ class Ellipse(Polygon):
                 border_pos = self.data.vertices[self.data.convex_hull]
                 self.border = Line(pos=border_pos, color=border_color,
                                    mode='lines')
-        glopts = kwds.pop('gl_options', 'translucent')
-        self.set_gl_options(glopts)
 
     def _generate_vertices(self, pos, radius, num_segments=100):
         xr, yr = radius

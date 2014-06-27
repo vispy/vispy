@@ -37,8 +37,8 @@ class Polygon(Visual):
                 border_pos = self.data.vertices[self.data.convex_hull]
                 self.border = Line(pos=border_pos, color=border_color,
                                    mode='lines')
-        #glopts = kwds.pop('gl_options', 'translucent')
-        #self.set_gl_options(glopts)
+        glopts = kwds.pop('gl_options', 'translucent')
+        self.set_gl_options(glopts)
 
     @property
     def transform(self):
