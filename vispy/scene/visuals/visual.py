@@ -200,12 +200,12 @@ class Visual(Entity):
     }
     """
 
-    def __init__(self, parent=None):
-        Entity.__init__(self, parent)
-
-        # Dict of {'GL_FLAG': bool} and {'glFunctionName': (args)}
-        # specifications. By default, these are enabled whenever the Visual
-        # if drawn. This provides a simple way for the user to customize the
+    def __init__(self, parent=None, **kwds):
+        Entity.__init__(self, parent, **kwds)
+        
+        # Dict of {'GL_FLAG': bool} and {'glFunctionName': (args)} 
+        # specifications. By default, these are enabled whenever the Visual 
+        # is drawn. This provides a simple way for the user to customize the
         # appearance of the Visual. Example:
         #
         #     { 'GL_BLEND': True,

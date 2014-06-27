@@ -29,8 +29,9 @@ class Line(Visual):
     """
     Displays multiple line segments.
     """
-    def __init__(self, pos=None, mode='line_strip', **kwds):
-        super(Line, self).__init__()
+    def __init__(self, parent=None, pos=None, color=None, z=0.0, 
+                 mode='line_strip', **kwds):
+        super(Line, self).__init__(parent, **kwds)
         
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
@@ -39,12 +40,11 @@ class Line(Visual):
         elif mode == 'line_strip' or mode is None:
             self._primitive = gloo.gl.GL_LINE_STRIP
         else:
-            print "Invalid mode - %s, Available modes - lines , " \
-                  "line_strip" % (mode)
-            raise
+            raise ValueError("Invalid line mode '%s'; must be 'lines' or "
+                             "'line-strip'.")
 
         if pos is not None or kwds:
-            self.set_data(pos, **kwds)
+            self.set_data(pos=pos, color=color, z=z)
 
     def set_data(self, pos=None, **kwds):
         kwds['index'] = kwds.pop('edges', kwds.get('index', None))

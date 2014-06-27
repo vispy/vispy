@@ -60,16 +60,22 @@ vb1.scene.camera = scene.cameras.NDCCamera()
 vb11 = scene.ViewBox(vb1.scene)
 vb11.pos = -1.0, -1.0
 vb11.size = 2.0, 1.0
-vb11.scene.camera = scene.cameras.NDCCamera()
+vb11.scene.camera = scene.cameras.TwoDCamera()
 #
 vb12 = scene.ViewBox(vb1.scene)
 vb12.pos = -1.0, 0.0
 vb12.size = 2.0, 1.0
 vb12.scene.camera = scene.cameras.PixelCamera()
+#vb12.scene.camera.scale = (100, 100)
 #
 line_ndc.add_parent(vb11.scene)
 line_pixels.add_parent(vb12.scene)
 
+box = np.array([[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]], dtype=np.float32)
+unit_box = scene.visuals.Line(pos=box, color=(1, 0, 0, 1), name='unit box')
+nd_box = scene.visuals.Line(pos=box*2-1, color=(0, 1, 0, 1), name='nd box')
+vb11.add(unit_box)
+vb11.add(nd_box)
 
 # Create viewboxes right ...
 
@@ -81,7 +87,7 @@ vb2.scene.camera = scene.cameras.PixelCamera()
 vb21 = scene.ViewBox(vb2.scene)
 vb21.pos = 0, 0
 vb21.size = 400, 300
-vb21.scene.camera = scene.cameras.NDCCamera()
+vb21.scene.camera = scene.cameras.TwoDCamera()
 #
 vb22 = scene.ViewBox(vb2.scene)
 vb22.pos = 0, 300
@@ -90,7 +96,6 @@ vb22.scene.camera = scene.cameras.PixelCamera()
 #
 line_ndc.add_parent(vb21.scene)
 line_pixels.add_parent(vb22.scene)
-
 
 # Set preferred pixel grid method
 for vb in [vb1, vb2]:

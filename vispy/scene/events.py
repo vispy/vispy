@@ -152,11 +152,13 @@ class SceneEvent(Event):
         if ra.fbo:
             ra.fbo.activate()
         gl.glViewport(*ra.viewport)
-
+    
+    # todo: I think "root_transform" is more descriptive (LC)
+    #       or perhaps "scene_transform"
     @property
     def full_transform(self):
         """ The transform that maps from the current entity to the
-        top-level canvas.
+        top-level entity in the scene.
         """
         tr = [e.transform for e in self._stack]
         # TODO: cache transform chains
@@ -179,7 +181,6 @@ class SceneEvent(Event):
             ra = self._ra_stack[-1]
             return ra.fbo_transform * ra.vp_transform * self.full_transform
 
-
 # AK: we should revive the methods below if and when we need them
 #     @property
 #     def framebuffer_transform(self):
@@ -197,24 +198,40 @@ class SceneEvent(Event):
 #         fb_tr = (STTransform(scale=scale) *
 #                  STTransform(translate=(1, 1)))
 #         return fb_tr * root_tr
-
-#     @property
-#     def canvas_transform(self):
-#         """
-#         Return the transform mapping from the end of the path to Canvas
-#         pixels (logical pixels).
-#
-#         Canvas_transform is used mainly for mouse interaction.
-#         For measuring distance in physical units, the use of
-#         document_transform is preferred.
-#         """
-#         root_tr = self.root_transform
-#         csize = self.canvas.size
-#         scale = csize[0]/2.0, -csize[1]/2.0
-#         canvas_tr = (STTransform(scale=scale) *
-#                      STTransform(translate=(1, -1)))
-#         return canvas_tr * root_tr
-
+        
+    @property
+    def canvas_transform(self):
+        """
+        Return the transform mapping from the end of the path to Canvas
+        pixels (logical pixels).
+        
+        Canvas_transform is used mainly for mouse interaction. 
+        For measuring distance in physical units, the use of document_transform 
+        is preferred. 
+        """
+        root_tr = self.render_transform
+        csize = self.canvas.size
+        scale = csize[0]/2.0, -csize[1]/2.0
+        canvas_tr = (STTransform(scale=scale) * 
+                     STTransform(translate=(1, -1)))
+        return canvas_tr * root_tr
+    
+    def map_to_canvas(self, obj):
+        """
+        Convenience method that maps *obj* from the current coordinate system 
+        of the event to the canvas coordinate system (logical pixels; 
+        see SceneEvent.canvas_transform).
+        """
+        return self.canvas_transform.map(obj)
+    
+    def map_from_canvas(self, obj):
+        """
+        Convenience method that maps *obj* from the canvas coordinate system 
+        (logical pixels; see SceneEvent.canvas_transform) to the current 
+        coordinate system of the event.
+        """
+        return self.canvas_transform.inverse().map(obj)
+    
 #     @property
 #     def document_transform(self):
 #         """
@@ -262,16 +279,16 @@ class SceneMouseEvent(SceneEvent):
     def last_event(self):
         if self.mouse_event.last_event is None:
             return None
-        ev = SceneMouseEvent(self.mouse_event.last_event, self.canvas)
-        ev._set_path(self.path)
+        ev = self.copy()
+        ev.mouse_event = self.mouse_event.last_event
         return ev
 
     @property
     def press_event(self):
         if self.mouse_event.press_event is None:
             return None
-        ev = SceneMouseEvent(self.mouse_event.press_event, self.canvas)
-        ev._set_path(self.path)
+        ev = self.copy()
+        ev.mouse_event = self.mouse_event.press_event
         return ev
 
     @property
@@ -281,6 +298,14 @@ class SceneMouseEvent(SceneEvent):
     @property
     def buttons(self):
         return self.mouse_event.buttons
+
+    def copy(self):
+        ev = self.__class__(self.mouse_event, self._canvas)
+        ev._stack = self._stack[:]
+        ev._ra_stack = self._ra_stack[:]
+        ev._viewbox_stack = self._viewbox_stack[:]
+        ev._resolution = self._resolution
+        return ev
 
 
 class SceneDrawEvent(SceneEvent):

@@ -79,10 +79,8 @@ class SceneCanvas(app.Canvas):
 
     def _process_mouse_event(self, event):
         scene_event = SceneMouseEvent(canvas=self, event=event)
-        # todo: ak: I disabled this for now. I have a feeling that we should
-        # also do this via a system, and using a picking mechanism!
-        #self._scene._process_mouse_event(scene_event)
-
+        self._scene._process_mouse_event(scene_event)
+        
         # If something in the scene handled the scene_event, then we mark
         # the original event accordingly.
         event.handled = scene_event.handled

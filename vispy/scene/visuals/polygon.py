@@ -36,9 +36,9 @@ class Polygon(Visual):
             self.mesh = Mesh(pos=self.data.vertices[self.data.faces],
                              color=color)
             if border_color:
-                self.border = Line(pos=
-                                   self.data.vertices[self.data.convex_hull],
-                                   color=border_color, mode='lines')
+                border_pos = self.data.vertices[self.data.convex_hull]
+                self.border = Line(pos=border_pos, color=border_color,
+                                   mode='lines')
 
     @property
     def transform(self):
@@ -53,10 +53,10 @@ class Polygon(Visual):
         self.mesh.transform = tr
         self.border.transform = tr
 
-    def paint(self, event=None):
+    def draw(self, event=None):
         if self.mesh:
             gloo.set_state(polygon_offset_fill=True)
             gloo.set_polygon_offset(1, 1)
-            self.mesh.paint()
+            self.mesh.draw()
         if self.border:
-            self.border.paint()
+            self.border.draw()

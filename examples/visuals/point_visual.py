@@ -21,7 +21,7 @@ pos[:, 1] = np.random.normal(size=N, scale=0.2).astype(np.float32)
 class Canvas(vispy.app.Canvas):
     def __init__(self):
         self.points = visuals.Point(pos, color=(0, 1, 0, 1))
-        vispy.app.Canvas.__init__(self)
+        vispy.app.Canvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
 

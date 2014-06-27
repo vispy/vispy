@@ -24,7 +24,7 @@ class Canvas(vispy.app.Canvas):
         self.polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
                                        border_color=(1, 1, 1, 1))
         
-        vispy.app.Canvas.__init__(self)
+        vispy.app.Canvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
         
@@ -32,7 +32,7 @@ class Canvas(vispy.app.Canvas):
         gloo.set_clear_color((0, 0, 0, 1))
         gloo.clear()
         gloo.set_viewport(0, 0, *self.size)
-        self.polygon.paint()
+        self.polygon.draw()
         
 
 if __name__ == '__main__':

@@ -21,7 +21,7 @@ class Entity(object):
     It is recommended to use multi-parenting with care.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, name=None):
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    parents_change=Event,
@@ -34,6 +34,7 @@ class Entity(object):
                                    children_drawn=SceneDrawEvent,
                                    update=Event,
                                    )
+        self.name = name
 
         # Entities are organized in a parent-children hierarchy
         # todo: I think we want this to be a list. The order *may* be important
@@ -47,6 +48,14 @@ class Entity(object):
         # Components that all entities in vispy have
         # todo: default transform should be trans-scale-rot transform
         self._transform = transforms.NullTransform()
+    
+    @property
+    def name(self):
+        return self._name
+    
+    @name.setter
+    def name(self, n):
+        self._name = n
 
     @property
     def children(self):
@@ -148,6 +157,60 @@ class Entity(object):
         self._transform = tr
         self.update()
 
+    def _parent_chain(self):
+        """
+        Return the chain of parents starting from this entity. The chain ends
+        at the first entity with either no parents or multiple parents.
+        """
+        chain = [self]
+        while True:
+            try:
+                parent = chain[-1].parent
+            except Exception:
+                break
+            if parent is None:
+                break
+            chain.append(parent)
+        return chain
+
+    def common_parent(self, entity):
+        """
+        Return the common parent of two entities. If the entities have no 
+        common parent, return None. Does not search past multi-parent branches.
+        """
+        p1 = self._parent_chain()
+        p2 = entity._parent_chain()
+        for p in p1:
+            if p in p2:
+                return p
+        return None
+        
+    def entity_transform(self, entity):
+        """
+        Return the transform that maps from the coordinate system of
+        *entity* to the local coordinate system of *self*.
+        
+        Note that there must be a _single_ path in the scenegraph that connects
+        the two entities; otherwise an exception will be raised.        
+        """
+        cp = self.common_parent(entity)
+        
+        # First map from entity to common parent
+        tr = entity.transform
+        while True:
+            entity = entity.parent
+            if entity is cp:
+                break
+            if entity.transform is not None:
+                tr = entity.transform * tr
+                
+        if entity is self:
+            return tr
+        
+        # Now map from common parent to self
+        tr2 = cp.entity_transform(self)
+        return tr2.inverse() * tr
+        
 #     def on_draw(self, event):
 #         """
 #         Draw this entity, given that we are drawing through
@@ -212,3 +275,7 @@ class Entity(object):
         Emit an event to inform Canvases that this Entity needs to be redrawn.
         """
         self.events.update()
+
+    def __str__(self):
+        name = "" if self.name is None else " name="+self.name
+        return "<%s%s id=0x%x>" % (self.__class__.__name__, name, id(self))
