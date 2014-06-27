@@ -36,9 +36,9 @@ class Polygon(Visual):
             self.mesh = Mesh(pos=self.data.vertices[self.data.faces],
                              color=color)
             if border_color:
-                self.border = Line(pos=
-                                   self.data.vertices[self.data.convex_hull],
-                                   color=border_color, mode='lines')
+                border_pos = self.data.vertices[self.data.convex_hull]
+                self.border = Line(pos=border_pos, color=border_color,
+                                   mode='lines')
 
     @property
     def transform(self):

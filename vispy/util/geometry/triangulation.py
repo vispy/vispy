@@ -219,7 +219,7 @@ draw_state()
 
 
 ## Legalize recursively - incomplete
-def legalize((f00, f11, p)):
+def legalize(f00, f11, p):
     print "Legalizing points = {}, {}, {}".format(f00, f11, p)
     a = pts[f00]
     b = pts[f11]
