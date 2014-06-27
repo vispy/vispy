@@ -219,8 +219,9 @@ draw_state()
 
 
 ## Legalize recursively - incomplete
-def legalize(f00, f11, p):
-    print "Legalizing points = {}, {}, {}".format(f00, f11, p)
+def legalize(pts):
+    f00, f11, p = pts
+    print("Legalizing points = {}, {}, {}".format(f00, f11, p))
     a = pts[f00]
     b = pts[f11]
     c = pts[p]
@@ -229,8 +230,8 @@ def legalize(f00, f11, p):
         if point == a or point == b or point == c:
             continue
         elif distance(cc, point) < cr:
-            print "Illegal point"
-            print point
+            print("Illegal point")
+            print(point)
             pass
 
     return (f00, f11, p)
@@ -268,7 +269,7 @@ def add_triangle(a, b, c):
     tris.append(tri)
 
 
-def remove_tri((a, b, c)):
+def remove_tri(a, b, c):
     global tris
     
     for k in permutations((a, b, c)):
@@ -314,7 +315,7 @@ for i in range(3, len(pts)):
     # (use heuristics shown in figs. 9, 10)
                     
     if i in tops:  # this is an "edge event" (sec. 3.4.2)
-        print "Locate first intersected triangle"
+        print("Locate first intersected triangle")
         # Locate the other endpoint
         found = False
         for e in edges:
@@ -323,7 +324,7 @@ for i in range(3, len(pts)):
                 endpoint = e[0] if (e[1] == i) else e[1]
                 break
         if not found:
-            print "Other end point not located"
+            print("Other end point not located")
             continue
         # (i) locate intersected triangles
         """
@@ -332,7 +333,7 @@ for i in range(3, len(pts)):
         contains the top point, then it has to be the first intersected
         triangleself.
         """
-        print edges_lookup
+        print(edges_lookup)
         vals = edges_lookup.values()
         intersects = False
         for value in vals:
@@ -371,9 +372,9 @@ for i in range(3, len(pts)):
                         front.pop(k)
 
         else:
-            print "Removed triangle = "
-            print current_side+(i,)
-            remove_tri(current_side+(i,))
+            print("Removed triangle = ")
+            print(current_side+(i,))
+            remove_tri(*(current_side+(i,)))
             upper_polygon.append(i)
             lower_polygon.append(i)
             if orientation(e, current_side[0]) > 0:
@@ -385,7 +386,7 @@ for i in range(3, len(pts)):
             # now traverse and remove all intersecting triangles
             try:
                 other_vertex = edges_lookup[current_side[::-1]]
-                remove_tri(current_side+(other_vertex, ))
+                remove_tri(*(current_side+(other_vertex, )))
             except KeyError:
                 other_vertex = endpoint
             while (other_vertex != endpoint):
@@ -395,17 +396,17 @@ for i in range(3, len(pts)):
                 if isintersects(side1, e):
                     other_vertex = edges_lookup[side1[::-1]]
                     current_side = side1
-                    remove_tri(current_side+(other_vertex, ))
+                    remove_tri(*(current_side+(other_vertex, )))
                 else:
                     side2 = (other_vertex, current_side[1])
                     if isintersects(side2, e):
                         other_vertex = edges_lookup[side2[::-1]]
                         current_side = side2
-                        remove_tri(current_side+(other_vertex, ))
+                        remove_tri(*(current_side+(other_vertex, )))
                     else:
                         # edge passes through the other_vertex
-                        print "does not intersect any other side, " \
-                              "need to handle it"
+                        print("does not intersect any other side, "
+                              "need to handle it")
                         break
 
                 if orientation(e, current_side[0]) > 0:
@@ -458,8 +459,8 @@ while k < l:
         continue
     k += 1
 
-print front
-print tris
+print(front)
+print(tris)
 for tri in tris:
     draw_tri(tri)
 draw_state()
