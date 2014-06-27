@@ -26,8 +26,6 @@ class Polygon(Visual):
                  border_color=None, **kwds):
         super(Polygon, self).__init__()
 
-        glopts = kwds.pop('gl_options', 'translucent')
-        self.set_gl_options(glopts)
         self.mesh = None
         self.border = None
         self.data = PolygonData(vertices=np.array(pos, dtype=np.float32))
@@ -39,6 +37,8 @@ class Polygon(Visual):
                 border_pos = self.data.vertices[self.data.convex_hull]
                 self.border = Line(pos=border_pos, color=border_color,
                                    mode='lines')
+        #glopts = kwds.pop('gl_options', 'translucent')
+        #self.set_gl_options(glopts)
 
     @property
     def transform(self):
@@ -52,6 +52,12 @@ class Polygon(Visual):
         Visual.transform.fset(self, tr)
         self.mesh.transform = tr
         self.border.transform = tr
+        
+    def set_gl_options(self, *args, **kwds):
+        self.mesh.set_gl_options(*args, **kwds)
+
+    def update_gl_options(self, *args, **kwds):
+        self.mesh.update_gl_options(*args, **kwds)
 
     def draw(self, event=None):
         if self.mesh:
