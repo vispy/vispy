@@ -22,10 +22,10 @@ API issues to work out:
 from __future__ import division
 
 from ... import gloo
-from .visual import Visual
+from .modular_visual import ModularVisual
 
 
-class Line(Visual):
+class Line(ModularVisual):
     """
     Displays multiple line segments.
     """
