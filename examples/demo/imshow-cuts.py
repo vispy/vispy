@@ -46,7 +46,27 @@ colormaps[1,1:-1,2] = np.interp(values, [0.00, 1.00],
 # ...
 
 
-img_vertex = """
+lines_vertex = """
+attribute vec2 position;
+attribute vec4 color;
+varying vec4 v_color;
+void main()
+{
+    gl_Position = vec4(position, 0.0, 1.0 );
+    v_color = color;
+}
+"""
+
+lines_fragment = """
+varying vec4 v_color;
+void main()
+{
+    gl_FragColor = v_color;
+}
+"""
+
+
+image_vertex = """
 attribute vec2 position;
 attribute vec2 texcoord;
 
@@ -58,22 +78,20 @@ void main()
 }
 """
 
-img_fragment = """
+image_fragment = """
 uniform float vmin;
 uniform float vmax;
 uniform float cmap;
+uniform float n_colormaps;
 
 uniform sampler2D image;
-uniform vec2 image_shape;
-
 uniform sampler2D colormaps;
-uniform vec2 colormaps_shape;
 
 varying vec2 v_texcoord;
 void main()
 {
     float value = texture2D(image, v_texcoord).r;
-    float index = (cmap+0.5) / colormaps_shape.y;
+    float index = (cmap+0.5) / n_colormaps;
 
     if( value < vmin ) {
         gl_FragColor = texture2D(colormaps, vec2(0.0,index));
@@ -92,20 +110,25 @@ class Window(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, show=True, size=(512,512))
 
-        self.image = gloo.Program(img_vertex, img_fragment, 4)
+        self.image = gloo.Program(image_vertex, image_fragment, 4)
         self.image['position'] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
         self.image['texcoord'] = (0, 0), (0, +1), (+1, 0), (+1, +1)
         self.image['vmin'] = +0.1
         self.image['vmax'] = +0.9
         self.image['cmap'] = 0 # Colormap index to use
-
         self.image['colormaps'] = colormaps
-        self.image['colormaps'].interpolation = gl.GL_LINEAR
-        self.image['colormaps_shape'] = colormaps.shape[1], colormaps.shape[0]
-
+        self.image['n_colormaps'] = colormaps.shape[0]
         self.image['image'] = I
         self.image['image'].interpolation = gl.GL_LINEAR
-        self.image['image_shape'] = I.shape[1], I.shape[0]
+
+        self.lines = gloo.Program(lines_vertex, lines_fragment, 4+4+514+514)
+        self.lines["position"] = np.zeros((4+4+514+514,2))
+        color = np.zeros((4+4+514+514,4))
+        color[1:1+2,3] = 0.25
+        color[5:5+2,3] = 0.25
+        color[9:9+512,3] = 0.5
+        color[523:523+512,3] = 0.5
+        self.lines["color"] = color
 
     def on_initialize(self, event):
         gl.glClearColor(0, 0, 0, 1)
@@ -117,6 +140,39 @@ class Window(app.Canvas):
     def on_draw(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         self.image.draw(gl.GL_TRIANGLE_STRIP)
+        self.lines.draw(gl.GL_LINE_STRIP)
+
+    def on_mouse_move(self, event):
+        x,y = event.pos
+        yf = 1 - y/256.0
+        xf = x/256.0 - 1
+        P = np.zeros((4+4+514+514,2))
+
+        x_baseline = P[:4]
+        y_baseline = P[4:8]
+        x_profile  = P[8:522]
+        y_profile  = P[522:]
+
+        x_baseline[...] = (-1,yf), (-1,yf), (1,yf), (1,yf)
+        y_baseline[...] = (xf,-1), (xf,-1), (xf,1), (xf,1)
+
+        x_profile[1:-1,0] = np.linspace(-1,1,512)
+        x_profile[1:-1,1] = yf+0.15*I[y]
+        x_profile[0] = x_profile[1]
+        x_profile[-1] = x_profile[-2]
+
+        y_profile[1:-1,0] = xf+0.15*I[:,x]
+        y_profile[1:-1,1] = np.linspace(-1,1,512)
+        y_profile[0]  = y_profile[1]
+        y_profile[-1] = y_profile[-2]
+
+
+        self.lines["position"] = P
+        self.update()
 
 window = Window()
+gl.glClearColor(1, 1, 1, 1)
+gl.glEnable(gl.GL_BLEND)
+gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
 app.run()
