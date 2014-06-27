@@ -341,7 +341,3 @@ class ViewBox(Widget):
         fbo.depth_buffer.resize(shape)
 
         return fbo
-
-
-
-

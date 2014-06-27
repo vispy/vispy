@@ -4,50 +4,54 @@
 
 from __future__ import division
 
+import numpy as np
+
+from .widget import Widget
 
 
-class GridBox(Box):
+class Grid(Widget):
     """
-    Box that automatically sets the position and size of child Boxes to
+    Widget that automatically sets the position and size of child Widgets to
     proportionally divide its internal area into a grid.
     """
     def __init__(self, parent=None, pos=None, size=None, border=None):
-        Box.__init__(self, parent, pos, size, border)
+        Widget.__init__(self, parent, pos, size, border)
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
-        self._boxes = {}
+        self._widgets = {}
         self.spacing = 6
 
-    def add_box(self, box=None, row=None, col=None, row_span=1, col_span=1):
+    def add_widget(self, widget=None, row=None, col=None, row_span=1, 
+                   col_span=1):
         """
-        Add a new box to this grid.
+        Add a new widget to this grid.
         """
         if row is None:
             row = self._next_cell[0]
         if col is None:
             col = self._next_cell[1]
 
-        if box is None:
-            box = Box()
+        if widget is None:
+            widget = Widget()
 
         _row = self._cells.setdefault(row, {})
-        _row[col] = box
-        self._boxes[box] = row, col, row_span, col_span
-        box.add_parent(self)
+        _row[col] = widget
+        self._widgets[widget] = row, col, row_span, col_span
+        widget.add_parent(self)
 
         self._next_cell = [row, col+col_span]
-        self._update_child_boxes()
-        return box
+        self._update_child_widgets()
+        return widget
 
     def next_row(self):
         self._next_cell = [self._next_cell[0] + 1, 0]
 
-    def _update_child_boxes(self):
-        # Resize all boxes in this grid to share space.
+    def _update_child_widgets(self):
+        # Resize all widgets in this grid to share space.
         # This logic will need a lot of work..
 
-        rvals = [box[0]+box[2] for box in self._boxes.values()]
-        cvals = [box[1]+box[3] for box in self._boxes.values()]
+        rvals = [widget[0]+widget[2] for widget in self._widgets.values()]
+        cvals = [widget[1]+widget[3] for widget in self._widgets.values()]
         if len(rvals) == 0 or len(cvals) == 0:
             return
 
@@ -64,8 +68,8 @@ class GridBox(Box):
         colstart = cols[:-1] + s2
         colend = cols[1:] - s2
 
-        for ch in self._boxes:
-            row, col, rspan, cspan = self._boxes[ch]
+        for ch in self._widgets:
+            row, col, rspan, cspan = self._widgets[ch]
 
             # Translate the origin of the entity to the corner of the area
             ch.transform.reset()

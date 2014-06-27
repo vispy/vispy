@@ -5,7 +5,7 @@
 from __future__ import division
 
 from .entity import Entity
-from .cameras import NDCCamera
+from .cameras import Camera, NDCCamera
 from .transforms import NullTransform
 from .systems import DrawingSystem, MouseInputSystem
 
