@@ -113,8 +113,8 @@ class Window(app.Canvas):
         self.image = gloo.Program(image_vertex, image_fragment, 4)
         self.image['position'] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
         self.image['texcoord'] = (0, 0), (0, +1), (+1, 0), (+1, +1)
-        self.image['vmin'] = +0.1
-        self.image['vmax'] = +0.9
+        self.image['vmin'] = +0.0
+        self.image['vmax'] = +1.0
         self.image['cmap'] = 0 # Colormap index to use
         self.image['colormaps'] = colormaps
         self.image['n_colormaps'] = colormaps.shape[0]
