@@ -27,10 +27,7 @@ def glextTexImage3D(target, level, internalformat, format, type, pixels):
 
     res = glext.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels)
 
-def glTexSubImage3D(target, level, xoffset, yoffset, zoffset, format, type, pixels):
-    print 'subimage3D'
-    print pixels
-
+def glextTexSubImage3D(target, level, xoffset, yoffset, zoffset, format, type, pixels):
     if not pixels.flags['C_CONTIGUOUS']:
         pixels = pixels.copy('C')
     pixels_ = pixels
@@ -906,7 +903,7 @@ class Texture3D(Texture):
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
             #width, height, depth = data.shape[1], data.shape[0], data.shape[2]
-            glTexSubImage3D(self.target, 0, x, y, z, self._format, 
+            glextTexSubImage3D(self.target, 0, x, y, z, self._format, 
                                self._gtype, data)
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
