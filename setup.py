@@ -90,8 +90,6 @@ setup(
         'vispy.scene.shaders', 'vispy.scene.shaders.tests',
         'vispy.scene.visuals',
         'vispy.scene.widgets',
-        'vispy.scenegraph',
-        'vispy.scenegraph.entities',
         'vispy.testing', 'vispy.testing.tests',
         'vispy.util', 'vispy.util.tests',
         'vispy.util.dataio',
