@@ -26,8 +26,6 @@ class Ellipse(Polygon):
                  radius=(0.1, 0.1), **kwds):
         super(Ellipse, self).__init__()
 
-        glopts = kwds.pop('gl_options', 'translucent')
-        self.set_gl_options(glopts)
         self.mesh = None
         self.border = None
         self._vertices = None
