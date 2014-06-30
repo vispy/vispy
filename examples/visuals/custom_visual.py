@@ -11,13 +11,15 @@ from vispy.scene.transforms import STTransform, LogTransform
 
 
 class PanZoomTransform(STTransform):
-    def move(self, (dx, dy)):
+    def move(self, dx):
         """I call this when I want to translate."""
+        dx, dy = dx
         self.translate = (self.translate[0] + dx/self.scale[0],
                           self.translate[1] + dy/self.scale[1])
         
-    def zoom(self, (dx, dy), center=(0., 0.)):
+    def zoom(self, dx, center=(0., 0.)):
         """I call this when I want to zoom."""
+        dx, dy = dx
         scale = (self.scale[0] * exp(2.5*dx),
                  self.scale[1] * exp(2.5*dy))
         tr = self.translate
