@@ -12,7 +12,7 @@ The _pyside and _pyqt4 modules will import * from this module, and also
 keep a ref to the module object. Note that if both the PySide and PyQt4
 backend are used, this module is actually reloaded. This is a sorts of
 poor mans "subclassing" to get a working version for both backends using
-the same code. 
+the same code.
 
 Note that it is strongly discouraged to use the PySide and PyQt4
 backends simultaneously. It is known to cause unpredictable behavior
@@ -304,6 +304,9 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.close()
+
+    def sizeHint(self):
+        return self.size()
 
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:
