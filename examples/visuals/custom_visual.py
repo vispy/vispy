@@ -1,11 +1,10 @@
 from __future__ import division
-from collections import namedtuple
 import numpy as np
 from math import exp
 
 from vispy import app
 from vispy import gloo
-from vispy.scene.shaders import Function, ModularProgram
+from vispy.scene.shaders import ModularProgram
 from vispy.scene.visuals import Visual
 from vispy.scene.transforms import STTransform, LogTransform
 
@@ -86,7 +85,8 @@ class MarkerVisual(Visual):
     """
     
     def __init__(self, pos=None, color=None, size=None):
-        self._program = ModularProgram(self.VERTEX_SHADER, self.FRAGMENT_SHADER)
+        self._program = ModularProgram(self.VERTEX_SHADER, 
+                                       self.FRAGMENT_SHADER)
         self.set_data(pos=pos, color=color, size=size)
         
     def set_options(self):
@@ -105,8 +105,9 @@ class MarkerVisual(Visual):
         self._size = size
         
     def draw(self):
+        # attributes / uniforms are not available until program is built        
         self._program._create()
-        self._program._build()  # attributes / uniforms are not available until program is built
+        self._program._build()
         self._program['a_position'] = gloo.VertexBuffer(self._pos)
         self._program['a_color'] = gloo.VertexBuffer(self._color)
         self._program['a_size'] = gloo.VertexBuffer(self._size)
@@ -135,10 +136,11 @@ class Canvas(app.Canvas):
         # component.$variable. Here, since pan and zoom are tuples,
         # Vispy understands that it has to create two uniforms (u_$variable 
         # for example).
-        tr = self.panzoom * LogTransform(base=(0,2,0))
+        tr = self.panzoom * LogTransform(base=(0, 2, 0))
         self.points._program['transform'] = tr.shader_map()
 
-    def _normalize((x, y)):
+    def _normalize(self, xy):
+        x, y = xy
         w, h = float(self.width), float(self.height)
         return x/(w/2.)-1., y/(h/2.)-1.
         
@@ -164,7 +166,8 @@ class Canvas(app.Canvas):
             # the two corresponding uniforms.
             self.update()
             
-            # Force transform to update its shader. (this should not be necessary)
+            # Force transform to update its shader. 
+            # (this should not be necessary)
             self.panzoom.shader_map()
         
     def on_resize(self, event):

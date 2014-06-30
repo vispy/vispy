@@ -7,9 +7,6 @@ from __future__ import division, print_function
 import numpy as np
 
 from ... import gloo
-from ...util import event
-from ...ext.six import string_types
-
 from .visual import Visual
 from ..shaders import ModularProgram
 from ..transforms import ChainTransform
