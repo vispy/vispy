@@ -9,7 +9,34 @@ from . import gl
 from .globject import GLObject
 from ..util import logger
 
+import ctypes
 import OpenGL.GL as glext
+
+def glextTexImage3D(target, level, internalformat, format, type, pixels):
+    border = 0
+    if isinstance(pixels, (tuple, list)):
+        height, width, depth = pixels
+        pixels = ctypes.c_void_p(0)
+        pixels = None
+    else:
+        if not pixels.flags['C_CONTIGUOUS']:
+            pixels = pixels.copy('C')
+        pixels_ = pixels
+        pixels = pixels_.ctypes.data
+        height, width, depth = pixels_.shape[:3]
+
+    res = glext.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels)
+
+def glTexSubImage3D(target, level, xoffset, yoffset, zoffset, format, type, pixels):
+    print 'subimage3D'
+    print pixels
+
+    if not pixels.flags['C_CONTIGUOUS']:
+        pixels = pixels.copy('C')
+    pixels_ = pixels
+    pixels = pixels_.ctypes.data
+    height, width, depth = pixels_.shape[:3]
+    res = glext.glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels)
 
 
 # ----------------------------------------------------------- Texture class ---
@@ -853,8 +880,8 @@ class Texture3D(Texture):
         logger.debug("GPU: Resizing texture(%sx%sx%s)" %
                      (self.width, self.height, self.depth))
         shape = self.height, self.width, self.depth
-#        gl.glTexImage2D(self.target, 0, self._format, self._format, 
-#                        self._gtype, shape)
+        glextTexImage3D(self.target, 0, self._format, self._format, 
+                        self._gtype, shape)
 
     def _update(self):
         """ Texture update on GPU """
@@ -873,16 +900,17 @@ class Texture3D(Texture):
             data, offset = self._pending_data.pop(0)
             x, y, z = 0, 0, 0
             if offset is not None:
-                z, y, x = offset[0], offset[1], offset[2]
+                y, x, z = offset[0], offset[1], offset[2]
             # Set alignment (width is nbytes_per_pixel * npixels_per_line)
             alignment = self._get_alignment(data.shape[-3]*data.shape[-2]*data.shape[-1])
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
-            #width, height = data.shape[1], data.shape[0]
-            glext.glTexSubImage3D(self.target, 0, x, y, z, self._format, 
+            #width, height, depth = data.shape[1], data.shape[0], data.shape[2]
+            glTexSubImage3D(self.target, 0, x, y, z, self._format, 
                                self._gtype, data)
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+
 
 '''
 # ---------------------------------------------------- TextureCubeMap class ---
