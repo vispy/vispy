@@ -14,6 +14,8 @@ from . variable import Uniform, Attribute
 from ..util import logger
 from ..ext.six import string_types
 
+import OpenGL.GL as glext
+
 
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
@@ -233,7 +235,7 @@ class Program(GLObject):
         for (name, gtype) in self.all_uniforms:
             uniform = Uniform(self, name, gtype)
             # if gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
-            if gtype in (gl.GL_SAMPLER_2D,):
+            if gtype in (gl.GL_SAMPLER_2D, glext.GL_SAMPLER_3D):
                 uniform._unit = count
                 count += 1
             self._uniforms[name] = uniform

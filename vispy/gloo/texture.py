@@ -9,7 +9,7 @@ from . import gl
 from .globject import GLObject
 from ..util import logger
 
-import OpenGL.GL as pygl
+import OpenGL.GL as glext
 
 
 # ----------------------------------------------------------- Texture class ---
@@ -793,7 +793,7 @@ class Texture3D(Texture):
 
         Texture.__init__(self, data=data, shape=shape, dtype=dtype, base=base,
                          resizeable=resizeable, store=store,
-                         target=pygl.GL_TEXTURE_3D, offset=offset)
+                         target=glext.GL_TEXTURE_3D, offset=offset)
 
         # Get and check format
         if format is None:
@@ -851,10 +851,38 @@ class Texture3D(Texture):
         """ Texture resize on GPU """
 
         logger.debug("GPU: Resizing texture(%sx%sx%s)" %
-                     (self.width, self.height))
+                     (self.width, self.height, self.depth))
         shape = self.height, self.width, self.depth
 #        gl.glTexImage2D(self.target, 0, self._format, self._format, 
 #                        self._gtype, shape)
+
+    def _update(self):
+        """ Texture update on GPU """
+
+        # We let base texture to handle all operations
+        if self.base is not None:
+            return
+
+        if self._need_resize:
+            self._resize()
+            self._need_resize = False
+        logger.debug("GPU: Updating texture (%d pending operation(s))" %
+                     len(self._pending_data))
+
+        while self._pending_data:
+            data, offset = self._pending_data.pop(0)
+            x, y, z = 0, 0, 0
+            if offset is not None:
+                z, y, x = offset[0], offset[1], offset[2]
+            # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+            alignment = self._get_alignment(data.shape[-3]*data.shape[-2]*data.shape[-1])
+            if alignment != 4:
+                gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+            #width, height = data.shape[1], data.shape[0]
+            glext.glTexSubImage3D(self.target, 0, x, y, z, self._format, 
+                               self._gtype, data)
+            if alignment != 4:
+                gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
 '''
 # ---------------------------------------------------- TextureCubeMap class ---
