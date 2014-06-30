@@ -9,6 +9,8 @@ from . import gl
 from .globject import GLObject
 from ..util import logger
 
+import OpenGL.GL as pygl
+
 
 # ----------------------------------------------------------- Texture class ---
 class Texture(GLObject):
@@ -753,6 +755,106 @@ class Texture2D(Texture):
                                self._gtype, data)
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+
+
+# --------------------------------------------------------- Texture2D class ---
+class Texture3D(Texture):
+    """ Three dimensional texture
+    
+    Parameters
+    ----------
+
+    data : ndarray
+        Texture data (optional)
+    shape : tuple of integers
+        Texture shape (optional)
+    dtype : dtype
+        Texture data type (optional)
+    store : bool
+        Specify whether this object stores a reference to the data,
+        allowing the data to be updated regardless of striding. Note
+        that modifying the data after passing it here might result in
+        undesired behavior, unless a copy is given. Default True.
+    format : ENUM
+        The format of the texture: GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA, 
+        or GL_RGB, GL_RGBA. If not given the format is chosen automatically 
+        based on the number of channels. When the data has one channel,
+        GL_LUMINANCE is assumed.
+    """
+
+    def __init__(self, data=None, shape=None, dtype=None, store=True, 
+                 format=None, **kwargs):
+
+        # We don't want these parameters to be seen from outside (because they
+        # are only used internally)
+        offset = kwargs.get("offset", None)
+        base = kwargs.get("base", None)
+        resizeable = kwargs.get("resizeable", True)
+
+        Texture.__init__(self, data=data, shape=shape, dtype=dtype, base=base,
+                         resizeable=resizeable, store=store,
+                         target=pygl.GL_TEXTURE_3D, offset=offset)
+
+        # Get and check format
+        if format is None:
+            self._format = Texture._formats.get(self.shape[-1], None)
+        else:
+            self._format = format
+        if self._format is None:
+            raise ValueError("Cannot convert data to texture")
+    
+    def _normalize_shape(self, data_or_shape):
+        # Get data and shape from input
+        if isinstance(data_or_shape, np.ndarray):
+            data = data_or_shape
+            shape = data.shape
+        else:
+            assert isinstance(data_or_shape, tuple)
+            data = None
+            shape = data_or_shape
+        # Check and correct
+        if shape:
+            if len(shape) < 3:
+                raise ValueError("Too few dimensions for texture")
+            elif len(shape) > 4:
+                raise ValueError("Too many dimensions for texture")
+            elif len(shape) == 3:
+                shape = shape[0], shape[1], shape[2], 1
+            elif len(shape) == 4:
+                if shape[-1] > 4:
+                    raise ValueError("Too many channels for texture")
+        # Return
+        if data is not None:
+            return data.reshape(*shape)
+        else:
+            return shape
+
+    @property
+    def height(self):
+        """ Texture height """
+
+        return self._shape[0]
+
+    @property
+    def width(self):
+        """ Texture width """
+
+        return self._shape[1]
+
+    @property
+    def depth(self):
+        """ Texture depth """
+
+        return self._shape[2]
+
+    def _resize(self):
+        """ Texture resize on GPU """
+
+        logger.debug("GPU: Resizing texture(%sx%sx%s)" %
+                     (self.width, self.height))
+        shape = self.height, self.width, self.depth
+#        gl.glTexImage2D(self.target, 0, self._format, self._format, 
+#                        self._gtype, shape)
 
 '''
 # ---------------------------------------------------- TextureCubeMap class ---

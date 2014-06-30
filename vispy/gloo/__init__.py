@@ -53,6 +53,7 @@ from .buffer import IndexBuffer         # noqa
 from .initialize import gl_initialize   # noqa
 from .texture import Texture1D          # noqa
 from .texture import Texture2D          # noqa
+from .texture import Texture3D          # noqa
 from .shader import VertexShader        # noqa
 from .shader import FragmentShader      # noqa
 from .program import Program            # noqa
