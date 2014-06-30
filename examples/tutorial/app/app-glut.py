@@ -14,9 +14,9 @@ event may or may not be detected. Furthermore, glut has no utf-8 support and
 non ascii-key will most likely produces garbage.
 """
 
-from vispy import app
+from vispy import app, use
 from vispy.gloo import gl
-app.use('glut')
+use('glut')
 
 
 class Canvas(app.Canvas):

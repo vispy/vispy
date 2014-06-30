@@ -6,11 +6,10 @@ from __future__ import division, print_function
 
 import numpy as np
 
-from ._default_app import default_app
 from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..ext.six import string_types
-from .application import Application
+from . import Application, use_app
 from ._config import get_default_config
 
 # todo: add functions for asking about current mouse/keyboard state
@@ -132,10 +131,15 @@ class Canvas(object):
         self._backend_kwargs = kwargs
 
         # Get app instance
-        if isinstance(app, string_types):
-            app = Application(app)
-        self._app = default_app if app is None else app
-
+        if app is None:
+            self._app = use_app()
+        elif isinstance(app, Application):
+            self._app = app
+        elif isinstance(app, string_types):
+            self._app = Application(app)
+        else:
+            raise ValueError('Invalid value for app %r' % app)
+        
         # Create widget now
         if create_native:
             self.create_native()
@@ -156,7 +160,6 @@ class Canvas(object):
         if self._backend is not None:
             return
         # Make sure that the app is active
-        self._app.use()
         assert self._app.native
         # Instantiate the backend with the right class
         be = self._app.backend_module.CanvasBackend(**self._backend_kwargs)

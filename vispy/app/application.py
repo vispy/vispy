@@ -12,7 +12,7 @@ from __future__ import division
 import os
 import sys
 
-from. import backends
+from . import backends
 from .backends import BACKENDS, BACKENDMAP, ATTEMPTED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
@@ -23,31 +23,30 @@ class Application(object):
     """Representation of the vispy application
 
     This wraps a native GUI application instance. Vispy has a default
-    instance of this class at vispy.app.default_app.
+    instance of this class that can be created/obtained via 
+    `vispy.app.use_app()`.
 
     Parameters
     ----------
-    backend : str | None
-        Backend to use. See ``use()`` for details.
-
+    backend_name : str | None
+        The name of the backend application to use. If not specified,
+        Vispy tries to select a backend automatically. See ``vispy.use()``
+        for details.
+    
     Notes
     -----
-    There are multiple stages for an Application object:
-        * Backend-less - the state when it is just initialized
-        * Backend selected - use() has been successfully called. Note that
-          the Canvas calls use() without arguments right before creating
-          its backend widget.
-        * Native application is created - the Canvas probes the
-          Application.native property to ensure that there is a native
-          application right before a native widget is created.
+    Upon creating an Application object, a backend is selected, but the
+    native backend application object is only created when `create()`
+    is called or `native` is used. The Canvas and Timer do this
+    automatically.
+    
     """
 
-    def __init__(self, backend=None):
+    def __init__(self, backend_name=None):
         self._backend_module = None
         self._backend = None
-        if backend is not None:
-            self.use(backend)
-
+        self._use(backend_name)
+    
     def __repr__(self):
         name = self.backend_name
         if not name:
@@ -80,7 +79,7 @@ class Application(object):
     def create(self):
         """ Create the native application.
         """
-        self.use()  # Ensure it exists
+        # Ensure that the native app exists
         self.native
 
     def run(self):
@@ -99,26 +98,13 @@ class Application(object):
         """
         return self._backend._vispy_get_native_app()
 
-    def use(self, backend_name=None):
-        """Select a backend by name.
-
-        If the backend name is omitted, will choose a suitable backend
-        automatically. It is an error to try to select a particular backend
-        if one is already selected. Available backends: 'PyQt4', 'PySide',
-        'Glut', 'Glfw', 'Pyglet', 'sdl2'.
-
-        If a backend name is provided, and that backend could not be
-        loaded, an error is raised.
-
-        If no backend name is provided, this function will first check
-        if the GUI toolkit corresponding to each backend is already
-        imported, and try that backend first. If this is unsuccessful,
-        it will try the 'default_backend' provided in the vispy config.
-        If still not succesful, it will try each backend in a
-        predetermined order.
-
+    def _use(self, backend_name=None):
+        """Select a backend by name. See class docstring for details.
         """
+        # Get backend used in testing
         test_name = os.getenv('_VISPY_TESTING_TYPE', None)
+        if test_name not in BACKENDMAP:
+            test_name = None 
         if backend_name is not None:
             if backend_name.lower() not in BACKENDMAP:
                 raise ValueError('backend_name must be one of %s or None, not '
@@ -130,14 +116,6 @@ class Application(object):
 
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None
-
-        # Check if already selected
-        if self._backend is not None:
-            names = self.backend_name.lower().replace('(', ' ').strip(') ')
-            names = [name for name in names.split(' ') if name]
-            if backend_name and backend_name.lower() not in names:
-                raise RuntimeError('Can only select a backend once.')
-            return
 
         # Get backends to try ...
         imported_toolkits = []  # Backends for which the native lib is imported

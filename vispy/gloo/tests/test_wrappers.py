@@ -17,7 +17,7 @@ from vispy.testing import requires_application
 def test_wrappers():
     """Test gloo wrappers"""
     with Canvas():
-        gl.use('desktop debug')
+        gl.use_gl('desktop debug')
         # check presets
         assert_raises(ValueError, gloo.set_state, preset='foo')
         for state in gloo.get_state_presets().keys():

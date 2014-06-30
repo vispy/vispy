@@ -5,7 +5,7 @@ from numpy.testing import assert_allclose
 from nose.tools import assert_true
 from time import sleep
 
-from vispy.app import default_app, Canvas, Timer
+from vispy.app import use_app, Canvas, Timer
 from vispy.testing import requires_application, SkipTest
 from vispy.util.ptime import time
 from vispy.gloo import gl
@@ -42,11 +42,11 @@ def _update_process_check(canvas, val, draw=True):
 def test_multiple_canvases():
     """Testing multiple canvases"""
     n_check = 3
-    default_app.use()
-    if default_app.backend_name.lower() == 'glut':
+    app = use_app()
+    if app.backend_name.lower() == 'glut':
         raise SkipTest('glut cannot use multiple canvases')
-    with Canvas(app=default_app, size=_win_size, title='same_0') as c0:
-        with Canvas(app=default_app, size=_win_size, title='same_1') as c1:
+    with Canvas(app=app, size=_win_size, title='same_0') as c0:
+        with Canvas(app=app, size=_win_size, title='same_1') as c1:
             ct = [0, 0]
 
             @c0.events.draw.connect
@@ -66,7 +66,7 @@ def test_multiple_canvases():
 
             timeout = time() + 2.0
             while (ct[0] < n_check or ct[1] < n_check) and time() < timeout:
-                default_app.process_events()
+                app.process_events()
             print((ct, n_check))
             assert_true(n_check <= ct[0] <= n_check + 1)
             assert_true(n_check <= ct[1] <= n_check + 1)
@@ -79,13 +79,13 @@ def test_multiple_canvases():
                 global timer_ran
                 timer_ran = True
             timeout = time() + 2.0
-            Timer(0.1, app=default_app, connect=on_timer, iterations=1,
+            Timer(0.1, app=app, connect=on_timer, iterations=1,
                   start=True)
             while not timer_ran and time() < timeout:
-                default_app.process_events()
+                app.process_events()
             assert_true(timer_ran)
 
-    kwargs = dict(app=default_app, autoswap=False, size=_win_size,
+    kwargs = dict(app=app, autoswap=False, size=_win_size,
                   show=True)
     with Canvas(title='0', **kwargs) as c0:
         with Canvas(title='1', **kwargs) as c1:

@@ -12,7 +12,7 @@ from vispy import gloo
 from vispy import app
 from vispy.util.transforms import perspective, translate, rotate
 
-# app.use('glut')
+# app.use_app('glut')
 
 # Create vetices
 n = 100

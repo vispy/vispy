@@ -5,12 +5,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import time
-from vispy import app
+from vispy import app, use
 from vispy.gloo import gl
 
-app.use('qt')
-# app.use('glut')
-# app.use('pyglet')
+use('qt')
+# use('glut')
+# use('pyglet')
 
 canvas = app.Canvas(size=(512, 512), title = "Do nothing benchmark (vispy)",
                     close_keys='escape')
