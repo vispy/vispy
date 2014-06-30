@@ -5,27 +5,15 @@
 from __future__ import division  # just to be safe...
 
 import numpy as np
-from os import path as op
-import json
 from copy import deepcopy
 
-from ..util.six import string_types
+from ..ext.six import string_types
 from ..util import logger
+from ._color_dict import _color_dict
 
 
 ###############################################################################
 # User-friendliness helpers
-
-def get_color_names():
-    """Get the known color names
-
-    Returns
-    -------
-    names : list
-        List of color names known by vispy.
-    """
-    return list(_color_dict.keys())
-
 
 def _string_to_rgb(color):
     """Convert user string or hex color to color array (length 3 or 4)"""
@@ -482,34 +470,3 @@ class LinearGradient(ColorArray):
                                % str(loc))
         rgba = [np.interp(loc, self._grad_x, rr) for rr in self._rgba.T]
         return np.array(rgba)
-
-
-# This is used by color functions to translate user strings to colors
-# For now, this is web colors, and all in hex. It will take some simple
-# but annoying refactoring to deal with non-hex entries if we want them.
-_color_dict = dict(r='#FF0000',
-                   g='#00FF00',
-                   b='#0000FF',
-                   white='#FFFFFF',
-                   silver='#C0C0C0',
-                   gray='#808080',
-                   black='#000000',
-                   red='#FF0000',
-                   maroon='#800000',
-                   yellow='#FFFF00',
-                   olive='#808000',
-                   lime='#00FF00',
-                   green='#008000',
-                   aqua='#00FFFF',
-                   teal='#008080',
-                   blue='#0000FF',
-                   navy='#000080',
-                   fuchsia='#FF00FF',
-                   purple='#800080',
-                   )
-# Add the CSS colors, courtesy MIT-licensed code from Dave Eddy:
-# github.com/bahamas10/css-color-names/blob/master/css-color-names.json
-_css_file = op.join(op.dirname(__file__), '..', 'data',
-                    'css-color-names.json')
-with open(_css_file, 'r') as fid:
-    _color_dict.update(json.load(fid))
