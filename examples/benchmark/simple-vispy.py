@@ -8,7 +8,7 @@ import time
 from vispy import app, use
 from vispy.gloo import gl
 
-use('qt')
+use('pyqt4')
 # use('glut')
 # use('pyglet')
 
