@@ -10,7 +10,7 @@ every second.
 
 from vispy import app, use
 from vispy.gloo import gl
-use('qt')
+use('pyqt4')
 
 
 class Canvas(app.Canvas):
