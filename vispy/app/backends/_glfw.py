@@ -114,6 +114,7 @@ capability = dict(  # things that can be set by the backend
     context=True,
     multi_window=True,
     scroll=True,
+    parent=False
 )
 
 
@@ -207,7 +208,7 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, **kwargs):
         BaseCanvasBackend.__init__(self, capability, SharedContext)
-        title, size, position, show, vsync, resize, dec, fs, context = \
+        title, size, position, show, vsync, resize, dec, fs, parent, context =\
             self._process_backend_kwargs(kwargs)
         # Init GLFW, add window hints, and create window
         if isinstance(context, dict):

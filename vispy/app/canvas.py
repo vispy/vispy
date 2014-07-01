@@ -70,12 +70,14 @@ class Canvas(object):
         thereby sharing the existing context.
     close_keys : str | list of str
         Key to use that will cause the canvas to be closed.
+    parent :
+        The parent widget if this makes sense for the used backend.
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, vsync=False, resizable=True, decorate=True,
-                 fullscreen=False, context=None, close_keys=()):
+                 fullscreen=False, context=None, close_keys=(), parent=None):
 
         size = [int(s) for s in size]
         if len(size) != 2:
@@ -127,7 +129,7 @@ class Canvas(object):
         # store arguments that get set on Canvas init
         kwargs = dict(title=title, size=size, position=position, show=show,
                       vsync=vsync, resizable=resizable, decorate=decorate,
-                      fullscreen=fullscreen, context=context)
+                      fullscreen=fullscreen, context=context, parent=parent)
         self._backend_kwargs = kwargs
 
         # Get app instance
@@ -139,7 +141,7 @@ class Canvas(object):
             self._app = Application(app)
         else:
             raise ValueError('Invalid value for app %r' % app)
-        
+
         # Create widget now
         if create_native:
             self.create_native()
