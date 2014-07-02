@@ -255,4 +255,3 @@ def log_exception(level='warning', tb_skip=2):
     logger.log(logging_types[level], msg)
     
 logger.log_exception = log_exception  # make this easier to reach
-
