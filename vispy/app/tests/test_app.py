@@ -169,7 +169,7 @@ def test_application():
     print(c)
     del c
 
-    pos = [0, 0]
+    pos = [0, 0] if app.backend_module.capability['position'] else None
     size = (100, 100)
     # Use "with" statement so failures don't leave open window
     # (and test context manager behavior)
@@ -191,7 +191,9 @@ def test_application():
         print(canvas)  # __repr__
         assert_equal(canvas.title, title)
         canvas.title = 'you'
-        canvas.position = pos
+        if app.backend_module.capability['position']:
+            # todo: disable more tests based on capability
+            canvas.position = pos
         canvas.size = size
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
@@ -324,6 +326,8 @@ def test_application():
 def test_fs():
     """Test fullscreen support"""
     a = use_app()
+    if not a.backend_module.capability['fullscreen']:
+        return 
     assert_raises(TypeError, Canvas, fullscreen='foo')
     if a.backend_name.lower() in ('glfw', 'sdl2'):  # takes over screen
         raise SkipTest('glfw and sdl2 take over screen')

@@ -13,7 +13,7 @@ import os
 import sys
 
 from . import backends
-from .backends import BACKENDS, BACKENDMAP, ATTEMPTED_BACKENDS
+from .backends import CORE_BACKENDS, BACKEND_NAMES, BACKENDMAP, TRIED_BACKENDS
 from .. import config
 from .base import BaseApplicationBackend as ApplicationBackend  # noqa
 from ..util import logger
@@ -101,19 +101,22 @@ class Application(object):
     def _use(self, backend_name=None):
         """Select a backend by name. See class docstring for details.
         """
-        # Get backend used in testing
+        # See if we're in a specific testing mode
         test_name = os.getenv('_VISPY_TESTING_TYPE', None)
         if test_name not in BACKENDMAP:
             test_name = None 
+        
+        # Check whether the given name is valid
         if backend_name is not None:
-            if backend_name.lower() not in BACKENDMAP:
+            if backend_name.lower() == 'default':
+                backend_name = None  # Explicitly use default, avoid using test
+            elif backend_name.lower() not in BACKENDMAP:
                 raise ValueError('backend_name must be one of %s or None, not '
-                                 '%r' % (BACKENDMAP, backend_name))
-        # See if we're in a specific testing mode
+                                 '%r' % (BACKEND_NAMES, backend_name))
         elif test_name is not None:
             backend_name = test_name.lower()
             assert backend_name in BACKENDMAP
-
+        
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None
 
@@ -127,7 +130,7 @@ class Application(object):
             backends_to_try.append(backend_name.lower())
         else:
             # See if a backend is loaded
-            for name, module_name, native_module_name in BACKENDS:
+            for name, module_name, native_module_name in CORE_BACKENDS:
                 if native_module_name and native_module_name in sys.modules:
                     imported_toolkits.append(name.lower())
                     backends_to_try.append(name.lower())
@@ -137,7 +140,7 @@ class Application(object):
                 if default_backend not in backends_to_try:
                     backends_to_try.append(default_backend)
             # After this, try each one
-            for name, module_name, native_module_name in BACKENDS:
+            for name, module_name, native_module_name in CORE_BACKENDS:
                 name = name.lower()
                 if name not in backends_to_try:
                     backends_to_try.append(name)
@@ -145,7 +148,7 @@ class Application(object):
         # Now try each one
         for key in backends_to_try:
             name, module_name, native_module_name = BACKENDMAP[key]
-            ATTEMPTED_BACKENDS.append(name)
+            TRIED_BACKENDS.append(name)
             mod_name = 'backends.' + module_name
             __import__(mod_name, globals(), level=1)
             mod = getattr(backends, module_name)

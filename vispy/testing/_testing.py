@@ -100,6 +100,7 @@ def requires_pyopengl():
 # App stuff
 
 def has_backend(backend, has=(), capable=(), out=()):
+    from ..app.backends import BACKENDMAP
     using = os.getenv('_VISPY_TESTING_BACKEND', None)
     if using is not None and using != backend:
         # e.g., we are on  a 'pyglet' run but the test requires PyQt4
@@ -108,8 +109,9 @@ def has_backend(backend, has=(), capable=(), out=()):
             ret += (None,)
         return ret
     # let's follow the standard code path
-    mod = __import__('app.backends._%s' % backend, globals(), level=2)
-    mod = getattr(mod.backends, '_%s' % backend)
+    module_name = BACKENDMAP[backend.lower()][1]
+    mod = __import__('app.backends.%s' % module_name, globals(), level=2)
+    mod = getattr(mod.backends, module_name)
     good = mod.testable
     for h in has:
         good = (good and getattr(mod, 'has_%s' % h))
