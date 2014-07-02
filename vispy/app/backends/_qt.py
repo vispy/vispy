@@ -198,7 +198,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
                                    'use built-in shareWidget')
             widget = context.value
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
-        parent = kwargs.pop('parent', None)
+
         # first arg can be glformat, or a shared context
         QtOpenGL.QGLWidget.__init__(self, glformat, parent, widget, f)
         self._initialized = True
