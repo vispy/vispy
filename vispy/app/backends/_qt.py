@@ -106,7 +106,7 @@ capability = dict(  # things that can be set by the backend
     context=True,
     multi_window=True,
     scroll=True,
-    parent=True
+    parent=True,
 )
 
 

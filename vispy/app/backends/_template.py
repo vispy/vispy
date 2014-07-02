@@ -59,18 +59,22 @@ KEYMAP = {
 
 # -------------------------------------------------------------- capability ---
 
+# These are all booleans. Note that they mirror many of the kwargs to
+# the initialization of the Canvas class.
 capability = dict(
-    position=False,
-    size=False,
-    multi_window=False,
-    scroll=False,
-    no_decoration=False,
-    no_sizing=False,
-    fullscreen=False,
-    unicode=False,
-    gl_version=False,
-    gl_profile=False,
-    share_context=False,
+    # if True they mean:
+    title=False,          # can set title on the fly
+    size=False,           # can set size on the fly
+    position=False,       # can set position on the fly
+    show=False,           # can show/hide window XXX ?
+    vsync=False,          # can set window to sync to blank
+    resizable=False,      # can toggle resizability (e.g., no user resizing)
+    decorate=False,       # can toggle decorations
+    fullscreen=False,     # fullscreen window support
+    context=False,        # can share contexts between windows
+    multi_window=False,   # can use multiple windows at once
+    scroll=False,         # scroll-wheel events are supported
+    parent=False,         # can pass native widget backend parent
 )
 
 

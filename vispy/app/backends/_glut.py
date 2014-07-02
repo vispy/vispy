@@ -110,7 +110,7 @@ capability = dict(  # things that can be set by the backend
     context=False,
     multi_window=False,
     scroll=False,
-    parent=False
+    parent=False,
 )
 
 
