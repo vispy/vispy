@@ -60,7 +60,7 @@ class BaseCanvasBackend(object):
         """Removes vispy-specific kwargs for CanvasBackend"""
         # these are the output arguments
         keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
-                'decorate', 'fullscreen']
+                'decorate', 'fullscreen', 'parent']
         from .canvas import Canvas
         outs = list()
         spec = getargspec(Canvas.__init__)

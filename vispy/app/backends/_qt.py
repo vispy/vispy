@@ -106,6 +106,7 @@ capability = dict(  # things that can be set by the backend
     context=True,
     multi_window=True,
     scroll=True,
+    parent=True
 )
 
 
@@ -184,7 +185,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
     def __init__(self, *args, **kwargs):
         self._initialized = False
         BaseCanvasBackend.__init__(self, capability, SharedContext)
-        title, size, position, show, vsync, resize, dec, fs, context = \
+        title, size, position, show, vsync, resize, dec, fs, parent, context =\
             self._process_backend_kwargs(kwargs)
         if isinstance(context, dict):
             glformat = _set_config(context)
@@ -197,7 +198,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
                                    'use built-in shareWidget')
             widget = context.value
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
-        parent = kwargs.pop('parent', None)
+
         # first arg can be glformat, or a shared context
         QtOpenGL.QGLWidget.__init__(self, glformat, parent, widget, f)
         self._initialized = True
