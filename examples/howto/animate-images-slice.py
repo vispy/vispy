@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 2
 """
-Example demonstrating showing a, image with a fixed ratio.
+Example demonstrating a 3D Texture
+
 """
 
 import numpy as np
@@ -14,10 +15,19 @@ from vispy.gloo import gl
 
 import OpenGL.GL as glext
 
+from vispy.util import logger,use_log_level
+
+use_log_level('debug')
+
 
 # Image to be displayed
-W, H, D = 64, 64, 64
-I = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
+S=64
+W, H, D = S,S,S
+#I = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
+
+#gradient
+I=np.linspace(0.0,1.0,S).astype(np.float32)
+I=np.tile(I,(S,S,1))
 
 # A simple texture quad
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),
@@ -50,11 +60,12 @@ void main (void)
 
 FRAG_SHADER = """
 uniform sampler3D u_texture;
+uniform float i;
 varying vec2 v_texcoord;
 void main()
 {
-// This should draw white noise. It doesn't currently work for some reason.
-    gl_FragColor = texture3D(u_texture, vec3(v_texcoord,0.0));
+// step through gradient with i
+    gl_FragColor = texture3D(u_texture, vec3(i,v_texcoord));
     gl_FragColor.a = 1.0;
 }
 
@@ -72,6 +83,7 @@ class Canvas(app.Canvas):
         self.texture.interpolation = gl.GL_LINEAR
 
         self.program['u_texture'] = self.texture
+        self.program['i']=0.0
         self.program.bind(gloo.VertexBuffer(data))
 
         self.view = np.eye(4, dtype=np.float32)
@@ -82,6 +94,8 @@ class Canvas(app.Canvas):
         self.program['u_view'] = self.view
         self.projection = ortho(0, W, 0, H, -1, 1)
         self.program['u_projection'] = self.projection
+        
+        self.i=0;
 
     def on_initialize(self, event):
         gl.glClearColor(1, 1, 1, 1)
@@ -107,10 +121,14 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        I[...] = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
-        self.texture.set_data(I)
+        #I[...] = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
+        #self.texture.set_data(I)
+        self.program['i']=self.i
         self.program.draw(gl.GL_TRIANGLE_STRIP)
         self.update()
+        
+        self.i=(self.i+0.01)%1.0
+        #gl.check_error()
 
 
 if __name__ == '__main__':
