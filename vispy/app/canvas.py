@@ -70,7 +70,7 @@ class Canvas(object):
         thereby sharing the existing context.
     close_keys : str | list of str
         Key to use that will cause the canvas to be closed.
-    parent :
+    parent : widget-object
         The parent widget if this makes sense for the used backend.
     """
 
