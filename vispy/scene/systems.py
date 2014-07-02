@@ -31,8 +31,8 @@ class DrawingSystem(object):
         if isinstance(entity, Visual):
             try:
                 entity.draw(event)
-            except:
-                sys.excepthook(*sys.exc_info())
+            except Exception:
+                logger.log_exception()
                 logger.warning("Error drawing entity %s" % entity)
         
         # Processs children; recurse. 
