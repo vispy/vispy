@@ -432,7 +432,7 @@ class EventEmitter(object):
             # Handle
             if self.ignore_callback_errors:
                 if self.print_callback_errors:
-                    sys.excepthook(type, value, tb)
+                    logger.log_exception()
                     logger.warning("Error invoking callback %s for "
                                    "event: %s" % (cb, event))
             else:

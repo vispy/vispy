@@ -4,8 +4,6 @@
 
 from __future__ import division
 
-import sys
-
 from .widgets.widget import Widget
 from .visuals.visual import Visual
 from ..util._logging import logger
@@ -31,8 +29,8 @@ class DrawingSystem(object):
         if isinstance(entity, Visual):
             try:
                 entity.draw(event)
-            except:
-                sys.excepthook(*sys.exc_info())
+            except Exception:
+                logger.log_exception()
                 logger.warning("Error drawing entity %s" % entity)
         
         # Processs children; recurse. 
