@@ -47,7 +47,7 @@ def _set_config(c):
 # Note that if IPython has already loaded a GUI backend, vispy is
 # probably going to use that as well, because it prefers loaded backends.
 try:
-     # Explicitly use default (avoid using test-app)
+    # Explicitly use default (avoid using test-app)
     _app = Application('default')
 except RuntimeError:
     _msg = 'ipynb_vnc backend relies on a core backend'
