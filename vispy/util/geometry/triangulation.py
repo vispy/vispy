@@ -148,7 +148,14 @@ edges += [(l,   l+1),
 
 pts = np.array(pts, dtype=[('x', float), ('y', float)])
 edges = np.array(edges, dtype=int)
+
+# For each triangle, maps (a, b): c
+# This is used to look up the thrid point in a triangle, given any edge. 
+# Since each edge has two triangles, they are independently stored as 
+# (a, b): c and (b, a): d
 edges_lookup = {}
+
+
 ## Initialization (sec. 3.3)
 
 # sort by y, then x
@@ -178,7 +185,8 @@ pts = newpts
 edges += 2
 
 # find topmost point in each edge
-tops = set(edges.max(axis=1))
+tops = edges.max(axis=1)
+bottoms = edges.min(axis=1)
 
 # inintialize sweep front
 front = [0, 2, 1]
@@ -196,7 +204,7 @@ graph = pg.GraphItem(pos=gpts, adj=edges, pen={'width': 3,
 win.addItem(graph)
 front_line = pg.PlotCurveItem(pen={'width': 2, 'dash': [5, 5], 'color': 'y'})
 win.addItem(front_line)
-tri_shapes = []
+tri_shapes = {}
 
 
 def draw_state():
@@ -214,13 +222,19 @@ def draw_tri(tri):
     shape.setPen(pg.mkPen(255, 255, 255, 100))
     shape.setBrush(pg.mkBrush(0, 255, 255, 50))
     win.addItem(shape)
-    tri_shapes.append(shape)
+    tri_shapes[tri] = shape
+
+def undraw_tri(tri):
+    shape = tri_shapes.pop(tri)
+    win.removeItem(shape)
+
+
 draw_state()
 
 
 ## Legalize recursively - incomplete
-def legalize(pts):
-    f00, f11, p = pts
+def legalize(p):
+    f00, f11, p = p
     print("Legalizing points = {}, {}, {}".format(f00, f11, p))
     a = pts[f00]
     b = pts[f11]
@@ -238,25 +252,25 @@ def legalize(pts):
 
 
 ## Sweep (sec. 3.4)
-def add_tri(f0, f1, p):
-    # todo: legalize!
-    global front, tris
-    if iscounterclockwise(front[f0], front[f1], p):
-        edges_lookup[(front[f0], front[f1])] = p
-        edges_lookup[(front[f1], p)] = front[f0]
-        edges_lookup[(p, front[f0])] = front[f1]
-    else:
-        edges_lookup[(front[f1], front[f0])] = p
-        edges_lookup[(p, front[f1])] = front[f0]
-        edges_lookup[(front[f0], p)] = front[f1]
-    tri = legalize((front[f0], front[f1], p))
-    tris.append(tri)
-    #draw_tri(tris[-1])
+#def add_tri(f0, f1, p):
+    ## todo: legalize!
+    #global front, tris
+    #if iscounterclockwise(front[f0], front[f1], p):
+        #edges_lookup[(front[f0], front[f1])] = p
+        #edges_lookup[(front[f1], p)] = front[f0]
+        #edges_lookup[(p, front[f0])] = front[f1]
+    #else:
+        #edges_lookup[(front[f1], front[f0])] = p
+        #edges_lookup[(p, front[f1])] = front[f0]
+        #edges_lookup[(front[f0], p)] = front[f1]
+    #tri = legalize((front[f0], front[f1], p))
+    #tris.append(tri)
 
 
-def add_triangle(a, b, c):
-    # todo: legalize!
+def add_tri(a, b, c, legal=True):
     global tris
+    
+    # TODO: should add to edges_lookup after legalization??
     if iscounterclockwise(a, b, c):
         edges_lookup[(a, b)] = c
         edges_lookup[(b, c)] = a
@@ -265,8 +279,12 @@ def add_triangle(a, b, c):
         edges_lookup[(b, a)] = c
         edges_lookup[(c, b)] = a
         edges_lookup[(a, c)] = b
-    tri = legalize((a, b, c))
+    if legal:
+        tri = legalize((a, b, c))
+    else:
+        tri = (a,b,c)
     tris.append(tri)
+    draw_tri(tris[-1])
 
 
 def remove_tri(a, b, c):
@@ -287,8 +305,16 @@ def remove_tri(a, b, c):
         del edges_lookup[(a, c)]
         del edges_lookup[(c, b)]
 
+    undraw_tri(k)
+
+
+# Begin triangulation
 for i in range(3, len(pts)):
+    draw_state()
+    
     pi = pts[i]
+    print "========== New point %d: %s ==========" % (i, pi)
+    
     # First, triangulate from front to new point
     # This applies to both "point events" (3.4.1) and "edge events" (3.4.2).
 
@@ -300,14 +326,14 @@ for i in range(3, len(pts)):
     pr = pts[front[l+1]]
     if pi['x'] > pl['x']:  # "(i) middle case"
         # Add a single triangle connecting pi,pl,pr
-        add_tri(l, l+1, i)
+        add_tri(front[l], front[l+1], i)
         front.insert(l+1, i)
     else:  # "(ii) left case"
         ps = pts[l-1]
         # Add triangles connecting pi,pl,ps and pi,pl,pr
-        add_tri(l, l+1, i)
+        add_tri(front[l], front[l+1], i)
         front.insert(l+1, i)
-        add_tri(l-1, l, i)
+        add_tri(front[l-1], front[l], i)
         front.insert(l, i)
         front.pop(l+1)
         
@@ -315,7 +341,16 @@ for i in range(3, len(pts)):
     # (use heuristics shown in figs. 9, 10)
                     
     if i in tops:  # this is an "edge event" (sec. 3.4.2)
-        print("Locate first intersected triangle")
+        # First just see whether this edge is already present
+        # (this is not in the published algorithm)
+        btm = bottoms[tops == i][0]
+        print("Point is top of edge (%d, %d)" % (btm, i))
+        if (i, btm) in edges_lookup or (btm, i) in edges_lookup:
+            print("  edge already added, continuing..")
+            continue
+        
+        
+        print("  Locate first intersected triangle")
         # Locate the other endpoint
         found = False
         for e in edges:
@@ -324,21 +359,23 @@ for i in range(3, len(pts)):
                 endpoint = e[0] if (e[1] == i) else e[1]
                 break
         if not found:
-            print("Other end point not located")
+            print("  Other end point not located; continuing.")
             continue
         # (i) locate intersected triangles
         """
         If the first intersected triangle contains the top point,
         then start traversal there. Also, if an intersected triangle
         contains the top point, then it has to be the first intersected
-        triangleself.
+        triangle.
         """
-        print(edges_lookup)
+        #print("  edges lookup:")
+        #print(edges_lookup)
         vals = edges_lookup.values()
         intersects = False
         for value in vals:
             if value == i:
                 current_side = edges_lookup.keys()[vals.index(i)]
+                # todo: might be sped up by using cross product as described in fig. 11
                 if isintersects(current_side, e):
                     intersects = True
                     break
@@ -427,21 +464,21 @@ for i in range(3, len(pts)):
         upper_dist = distances_from_line(e, upper_polygon)
         while len(upper_polygon) > 2:
             i = np.argmax(upper_dist)
-            # add_tri does legalization with new triangle but
-            # add_triangle doesn't
-            add_triangle(upper_polygon[i], upper_polygon[i-1],
-                         upper_polygon[i+1])
+            add_tri(upper_polygon[i], upper_polygon[i-1],
+                    upper_polygon[i+1], legal=False)
             upper_polygon.pop(i)
             upper_dist.pop(i)
 
         lower_dist = distances_from_line(e, lower_polygon)
         while len(lower_polygon) > 2:
             i = np.argmax(lower_dist)
-            add_triangle(lower_polygon[i], lower_polygon[i-1],
-                         lower_polygon[i+1])
+            add_tri(lower_polygon[i], lower_polygon[i-1],
+                    lower_polygon[i+1], legal=False)
             lower_polygon.pop(i)
             lower_dist.pop(i)
-        #draw_state()
+            
+
+
 ## Finalize (sec. 3.5)
 
 # (i) Remove all triangles that include at least one artificial point
@@ -453,7 +490,7 @@ k = 0
 while k < l:
     # if edges lie in counterclockwise direction, then signed area is positive
     if iscounterclockwise(front[k], front[k+1], front[k+2]):
-        add_triangle(front[k], front[k+1], front[k+2])
+        add_tri(front[k], front[k+1], front[k+2], legal=False)
         front.pop(k+1)
         l -= 1
         continue
@@ -461,6 +498,6 @@ while k < l:
 
 print(front)
 print(tris)
-for tri in tris:
-    draw_tri(tri)
-draw_state()
+#for tri in tris:
+    #draw_tri(tri)
+#draw_state()
