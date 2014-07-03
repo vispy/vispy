@@ -25,7 +25,7 @@ def use(app=None, gl=None):
     Parameters
     ----------
     app : str
-        The app backend to use (case insensitive). Options are:
+        The app backend to use (case insensitive). Standard backends:
         * 'PyQt4': use Qt widget toolkit via PyQt4.
         * 'PySide': use Qt widget toolkit via PySide.
         * 'PyGlet': use Pyglet backend.
@@ -34,8 +34,9 @@ def use(app=None, gl=None):
         * 'SDL2': use SDL v2 backend.
         * 'Glut': use Glut backend. Widely available but limited. 
             Not recommended.
-        In the future, we plan on providing 'special' app backends such
-        as 'ipynb' to run vispy in the IPython notebook.
+        Additional backends:
+        * 'ipynb_vnc': render in the IPython notebook via a VNC approach
+          (experimental)
     gl : str
         The gl backend to use (case insensitive). Options are:
         * 'desktop': use Vispy's desktop OpenGL API. 
@@ -63,7 +64,7 @@ def use(app=None, gl=None):
     """
 
     # Example for future. This wont work (yet).
-    if app == 'ipynb':
+    if app == 'ipynb_webgl':
         app = 'headless'
         gl = 'webgl'
     

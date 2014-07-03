@@ -2,6 +2,16 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+"""
+vispy backend for the IPython notebook (vnc approach).
+
+We aim to have:
+* ipynb_static - export visualization to a static notebook
+* ipynb_vnc - vnc-approach: render in Python, send result to JS as png
+* ipynb_webgl - send gl commands to JS and execute in webgl context
+
+"""
+
 from __future__ import division
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend, 
@@ -40,7 +50,7 @@ try:
      # Explicitly use default (avoid using test-app)
     _app = Application('default')
 except RuntimeError:
-    _msg = 'ipynb-png backend relies on a core backend'
+    _msg = 'ipynb_vnc backend relies on a core backend'
     available, testable, why_not = False, False, _msg
 else:
     available, testable, why_not = True, True, None
@@ -61,7 +71,7 @@ class ApplicationBackend(BaseApplicationBackend):
     
     def _vispy_get_backend_name(self):
         realname = self._backend2._vispy_get_backend_name()
-        return 'ipynb-png (via %s)' % realname
+        return 'ipynb_vnc (via %s)' % realname
 
     def _vispy_process_events(self):
         return self._backend2._vispy_process_events()
@@ -85,15 +95,15 @@ class CanvasBackend(BaseCanvasBackend):
      
         # Test kwargs
 #         if kwargs['size']:
-#             raise RuntimeError('ipynb-png Canvas is not resizable')
+#             raise RuntimeError('ipynb_vnc Canvas is not resizable')
 #         if kwargs['position']:
-#             raise RuntimeError('ipynb-png Canvas is not positionable')
+#             raise RuntimeError('ipynb_vnc Canvas is not positionable')
         if not kwargs['decorate']:
-            raise RuntimeError('ipynb-png Canvas is not decoratable (or not)')
+            raise RuntimeError('ipynb_vnc Canvas is not decoratable (or not)')
         if kwargs['vsync']:
-            raise RuntimeError('ipynb-png Canvas does not support vsync')
+            raise RuntimeError('ipynb_vnc Canvas does not support vsync')
         if kwargs['fullscreen']:
-            raise RuntimeError('ipynb-png Canvas does not support fullscreen')
+            raise RuntimeError('ipynb_vnc Canvas does not support fullscreen')
         
         # Create real canvas. It is a backend to this backend
         kwargs['autoswap'] = False

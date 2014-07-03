@@ -24,7 +24,7 @@ CORE_BACKENDS = [
 # Whereas core backends really represents libraries that can create a
 # canvas, the pseudo backends act more like a proxy.
 PSEUDO_BACKENDS = [
-    ('ipynb-png', '_ipynb_png', None),
+    ('ipynb_vnc', '_ipynb_vnc', None),
     ('_test', '_test', 'vispy.app.backends._test'),  # add one that will fail
 ]
 
