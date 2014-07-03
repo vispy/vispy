@@ -37,16 +37,17 @@ def _set_config(c):
 # Note that if IPython has already loaded a GUI backend, vispy is
 # probably going to use that as well, because it prefers loaded backends.
 try:
-    _app = Application('default')  # explicitly use default (avoid using test-app)
+     # Explicitly use default (avoid using test-app)
+    _app = Application('default')
 except RuntimeError:
     _msg = 'ipynb-png backend relies on a core backend'
     available, testable, why_not = False, False, _msg
 else:
     available, testable, why_not = True, True, None
     
-# Use that backend's shared context
-KEYMAP = _app.backend_module.KEYMAP
-SharedContext = _app.backend_module.SharedContext
+    # Use that backend's shared context
+    KEYMAP = _app.backend_module.KEYMAP
+    SharedContext = _app.backend_module.SharedContext
 
 
 # ------------------------------------------------------------- application ---
