@@ -49,6 +49,9 @@ def _set_config(c):
 try:
     # Explicitly use default (avoid using test-app)
     _app = Application('default')
+    if 'glut' in _app.backend_module.__name__:
+        _msg = 'ipynb_vnc backend refuses to work with GLUT'
+        available, testable, why_not = False, False, _msg
 except RuntimeError:
     _msg = 'ipynb_vnc backend relies on a core backend'
     available, testable, why_not = False, False, _msg
