@@ -225,7 +225,7 @@ def test_application():
         # screenshots
         gl.glViewport(0, 0, *size)
         ss = _screenshot()
-        assert_array_equal(ss.shape, size + (3,))
+        assert_array_equal(ss.shape, size + (4,))
         assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
         if (app.backend_name.lower() != 'glut' and  # XXX knownfail for Almar
                 sys.platform != 'win32'):  # XXX knownfail for windows
@@ -327,7 +327,7 @@ def test_fs():
     """Test fullscreen support"""
     a = use_app()
     if not a.backend_module.capability['fullscreen']:
-        return 
+        return
     assert_raises(TypeError, Canvas, fullscreen='foo')
     if a.backend_name.lower() in ('glfw', 'sdl2'):  # takes over screen
         raise SkipTest('glfw and sdl2 take over screen')
