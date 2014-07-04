@@ -34,7 +34,7 @@ def _update_process_check(canvas, val, draw=True):
     try:
         # Get rid of the alpha value before testing
         # It can be off by 1 due to rounding
-        assert_allclose(ss[:,:,:3], goal[:,:,:3], atol=1)
+        assert_allclose(ss[:, :, :3], goal[:, :, :3], atol=1)
     except Exception:
         print('!!!!!!!!!! FAIL  %s' % np.unique(ss))
         raise
