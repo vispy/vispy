@@ -11,7 +11,7 @@ from vispy import gloo
 from vispy.gloo import gl
 from vispy.app import Canvas
 from vispy.testing import requires_application
-from vispy.gloo.wrappers import read_pixels
+from vispy.gloo import read_pixels
 
 
 @requires_application()
