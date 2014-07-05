@@ -89,6 +89,9 @@ def iscounterclockwise(a, b, c):
 
 
 def intersection(edge1, edge2):
+    """Return the intercept of the line defined by edge1 onto edge2.
+    A value of 0 indicates intersection at edge2[0], and i indicates 
+    intersection at edge2[1]."""
     global pts
     A = pts[edge1[0]]
     B = pts[edge1[1]]
@@ -105,11 +108,25 @@ def intersection(edge1, edge2):
     return h
 
 
-def isintersects(edge1, edge2):
+def intersects(edge1, edge2):
     global pts
     h = intersection(edge1, edge2)
     return (h >= 0 and h < 1)
 
+
+def intersection_point(edge1, edge2):
+    """Return the point at which two edges intersect, or None if they do not.
+    If edges intersect at their endpoints, return None.
+    """
+    h1 = intersection(edge2, edge1)
+    h2 = intersection(edge1, edge2)
+    if (0 < h1 < 1) and (0 < h2 < 1):  # intersection at endpoints returns None
+        p0 = pts[edge1[0]]
+        p1 = pts[edge1[1]]
+        return p0 * (1.0 - h1) + p1 * h1
+    else:
+        return None
+    
 
 # check if the point is on which side - substitutes the point in the edge
 # equation and returns the value
@@ -124,6 +141,14 @@ def orientation(edge, point):
     v1 = pts[point] - pts[edge[0]]
     v2 = pts[edge[1]] - pts[edge[0]]
     return np.cross(v1, v2) # positive if v1 is CW from v2
+
+
+#def int_pt(p1, p2, p3, p4):
+    ## for testing intersection:
+    #global pts
+    #pts = np.array([p1, p2, p3, p4], dtype=float)
+    #print("Intersection:", intersection_point([0,1], [2,3]))
+
 
 #user input data - points and constraining edges
 pts = [(0, 0),
@@ -152,8 +177,54 @@ edges += [(l,   l+1),
           (l+2, l+3),
           (l+3, l)]
 
-pts = np.array(pts, dtype=[('x', float), ('y', float)])
+pts = np.array(pts, dtype=float)
 edges = np.array(edges, dtype=int)
+
+
+# Clean up data:   (not discussed in original publication)
+# (i) Split intersecting edges
+intersections = []
+for i in range(len(edges)-1):
+    for j in range(i+1, len(edges)):
+        pt = intersection_point(edges[i], edges[j])
+        if pt is not None:
+            intersections.append((i, j, pt))
+
+print "intersections:", intersections
+
+for i, j, pt in intersections:
+    k = len(pts)
+    pts = np.append(pts, pt.reshape(1,2), axis=0)
+    ei1 = edges[i,1]
+    ej1 = edges[j,1]
+    edges[i] = (edges[i,0], k)
+    edges[j] = (edges[j,0], k)
+    edges = np.append(edges, [[k, ei1]], axis=0)
+    edges = np.append(edges, [[k, ej1]], axis=0)
+
+# (ii) merge identical points
+dups = []
+for i in range(pts.shape[0]-1):
+    if i in dups:
+        continue
+    for j in range(i+1, pts.shape[0]):
+        if np.all(pts[i] == pts[j]):
+            dups.append((i, j))
+
+for i, j in dups:
+    print("========  %d => %d  =============" % (j, i))
+    print(pts)
+    print(edges)
+    # rewrite edges to use i instead of j
+    edges[edges == j] = i
+    
+    # remove j from points
+    pts = np.concatenate([pts[:j], pts[j+1:]])
+    mask = edges > j
+    edges[mask] = edges[mask] - 1
+    print(pts)
+    print(edges)
+
 
 # For each triangle, maps (a, b): c
 # This is used to look up the thrid point in a triangle, given any edge. 
@@ -165,6 +236,7 @@ edges_lookup = {}
 ## Initialization (sec. 3.3)
 
 # sort by y, then x
+pts = pts.reshape(pts.shape[0]*pts.shape[1]).view([('x', float), ('y', float)])
 order = np.argsort(pts, order=('y', 'x'))
 pts = pts[order]
 # update display edges to match new point order
@@ -440,20 +512,20 @@ for i in range(3, pts.shape[0]):
         #print(edges_lookup)
         
         vals = edges_lookup.values()
-        intersects = False
+        edge_intersects = False
         for value in vals:
             if value == i:          # loop over all triangles containing Pi
                 current_side = edges_lookup.keys()[vals.index(i)]
                 # todo: might be sped up by using cross product as described in fig. 11
-                if isintersects(current_side, e):
-                    intersects = True
+                if intersects(current_side, e):
+                    edge_intersects = True
                     break
 
         # (ii) remove intersected triangles
         upper_polygon = []
         lower_polygon = []
 
-        if not intersects:
+        if not edge_intersects:
             # find the closest intersection to point
             h_max = 0
             closest_edge = None
@@ -499,13 +571,13 @@ for i in range(3, pts.shape[0]):
                 # now the edge intersects one of the triangles on either sides
                 # of current triangle, we find which one and continue the loop
                 side1 = (current_side[0], other_vertex)
-                if isintersects(side1, e):
+                if intersects(side1, e):
                     other_vertex = edges_lookup[side1[::-1]]
                     current_side = side1
                     remove_tri(*(current_side+(other_vertex, )))
                 else:
                     side2 = (other_vertex, current_side[1])
-                    if isintersects(side2, e):
+                    if intersects(side2, e):
                         other_vertex = edges_lookup[side2[::-1]]
                         current_side = side2
                         remove_tri(*(current_side+(other_vertex, )))
@@ -583,31 +655,36 @@ while k < l-1:
 print "== Remove overzealous triangles"
 print(tris)
 print(edges)
-rem = []
-for edge in edges_lookup.keys():
-    einv = (edge[1], edge[0])
-    if einv in edges_lookup:
-        continue
-    ok = False
-    for e in edge, einv:
-        m = edges == e
-        m = m[:,0] * m[:,1]
-        if np.any(m):
-            ok = True
-            break
+while True:
+    rem = []
+    for edge in edges_lookup.keys():
+        einv = (edge[1], edge[0])
+        if einv in edges_lookup:
+            continue
+        ok = False
+        for e in edge, einv:
+            m = edges == e
+            m = m[:,0] * m[:,1]
+            if np.any(m):
+                ok = True
+                break
 
-    if ok:
-        continue
-    print("  edge %s fails" % str(edge))
+        if ok:
+            continue
+        print("  edge %s fails" % str(edge))
+            
+        rem.append((edge[0], edge[1], edges_lookup[edge]))
         
-    rem.append((edge[0], edge[1], edges_lookup[edge]))
+    if len(rem) == 0:
+        break
     
-for tri in rem:
-    try:
-        remove_tri(*tri)
-    except KeyError:
-        pass
+    for tri in rem:
+        try:
+            remove_tri(*tri)
+        except KeyError:
+            pass
 
+    draw_state()
 
 
 print(front)
