@@ -17,13 +17,13 @@ from itertools import permutations
 def distance(A, B):
     n = len(A)
     assert len(B) == n
-    return np.linalg.norm(np.array(list(A))-np.array(list(B)))
+    return np.linalg.norm(np.array(list(A)) - np.array(list(B)))
 
 
 # Distance of a set of points from a given line
 def distances_from_line(e, points):
-    e1 = np.array(list(pts[e[0]]))
-    e2 = np.array(list(pts[e[1]]))
+    e1 = pts[e[0]]
+    e2 = pts[e[1]]
     distances = []
     # check if e is not just a point
     l2 = float(distance(e1, e2))
@@ -34,7 +34,7 @@ def distances_from_line(e, points):
 
     else:
         for p in points:
-            t = float((np.array(list(pts[p])) - e1).dot(e2 - e1))/l2
+            t = float((pts[p] - e1).dot(e2 - e1))/l2
             if (t < 0.0):
                 distances.append(distance(pts[p], e1))
             elif (t > 0.0):
@@ -82,18 +82,18 @@ def circuminfo(A, B, C):
 
 # Check if the points lie in counter-clockwise order or not
 def iscounterclockwise(a, b, c):
-    A = np.array(list(pts[a]))
-    B = np.array(list(pts[b]))
-    C = np.array(list(pts[c]))
+    A = pts[a]
+    B = pts[b]
+    C = pts[c]
     return np.cross(B-A, C-B) > 0
 
 
 def intersection(edge1, edge2):
     global pts
-    A = np.array(list(pts[edge1[0]]))
-    B = np.array(list(pts[edge1[1]]))
-    C = np.array(list(pts[edge2[0]]))
-    D = np.array(list(pts[edge2[1]]))
+    A = pts[edge1[0]]
+    B = pts[edge1[1]]
+    C = pts[edge2[0]]
+    D = pts[edge2[1]]
 
     E = B-A
     F = D-C
@@ -113,11 +113,17 @@ def isintersects(edge1, edge2):
 
 # check if the point is on which side - substitutes the point in the edge
 # equation and returns the value
-def orientation(edge, point):
-    m = float(pts[edge[1]][1]-pts[edge[0]][1])/float(pts[edge[1]][0] -
-                                                     pts[edge[0]][0])
-    return pts[point][1]-pts[edge[0]][1]-m*(pts[point][0]--pts[edge[0]][0])
+#def orientation(edge, point):
+    #m = float(pts[edge[1]][1]-pts[edge[0]][1])/float(pts[edge[1]][0] -
+                                                     #pts[edge[0]][0])
+    #return pts[point][1]-pts[edge[0]][1]-m*(pts[point][0]--pts[edge[0]][0])
 
+
+def orientation(edge, point):
+    """Returns positive if edge[0]->point is clockwise from edge[0]->edge[1]"""
+    v1 = pts[point] - pts[edge[0]]
+    v2 = pts[edge[1]] - pts[edge[0]]
+    return np.cross(v1, v2) # positive if v1 is CW from v2
 
 #user input data - points and constraining edges
 pts = [(0, 0),
@@ -164,20 +170,23 @@ pts = pts[order]
 # update display edges to match new point order
 invorder = np.argsort(order)
 edges = invorder[edges]
+pts = pts.view(float).reshape(len(pts), 2)
+
+
 
 # make artificial points P-1 and P-2
-xmax = pts['x'].max()
-xmin = pts['x'].min()
-ymax = pts['y'].max()
-ymin = pts['y'].min()
+xmax = pts[:,0].max()
+xmin = pts[:,0].min()
+ymax = pts[:,1].max()
+ymin = pts[:,1].min()
 xa = (xmax-xmin) * 0.3
 ya = (ymax-ymin) * 0.3
-p1 = (pts['x'].min() - xa, pts['y'].min() - ya)
+p1 = (pts[:,0].min() - xa, pts[:,1].min() - ya)
 # error in the equation in the paper, should be x_max+delta_x, not -delta_x
-p2 = (pts['x'].max() + xa, pts['y'].min() - ya)
+p2 = (pts[:,0].max() + xa, pts[:,1].min() - ya)
 
 # prepend artificial points to point list
-newpts = np.empty(len(pts)+2, dtype=pts.dtype)
+newpts = np.empty((pts.shape[0]+2, 2), dtype=float)
 newpts[0] = p1
 newpts[1] = p2
 newpts[2:] = pts
@@ -198,8 +207,8 @@ import pyqtgraph as pg
 import time
 app = pg.mkQApp()
 win = pg.plot()
-gpts = pts.view(float).reshape(len(pts), 2)
-graph = pg.GraphItem(pos=gpts, adj=edges, pen={'width': 3,
+#gpts = pts.view(float).reshape(len(pts), 2)
+graph = pg.GraphItem(pos=pts, adj=edges, pen={'width': 3,
                                                'color': (0, 100, 0)})
 win.addItem(graph)
 front_line = pg.PlotCurveItem(pen={'width': 2, 'dash': [5, 5], 'color': 'y'})
@@ -209,18 +218,22 @@ tri_shapes = {}
 
 def draw_state():
     front_pts = pts[np.array(front)]
-    front_line.setData(front_pts['x'], front_pts['y'])
-    for i in range(100):  # sleep ~1 sec, but keep ui responsive
+    front_line.setData(front_pts[:,0], front_pts[:,1])
+    for i in range(10):  # sleep ~1 sec, but keep ui responsive
         app.processEvents()
         time.sleep(0.01)
 
 
-def draw_tri(tri):
+def draw_tri(tri, color=None):
     tpts = pts[np.array(tri)]
-    path = pg.arrayToQPath(tpts['x'], tpts['y'])
+    path = pg.arrayToQPath(tpts[:,0], tpts[:,1])
     shape = pg.QtGui.QGraphicsPathItem(path)
     shape.setPen(pg.mkPen(255, 255, 255, 100))
-    shape.setBrush(pg.mkBrush(0, 255, 255, 50))
+    if color is None:
+        brush = pg.mkBrush(0, 255, 255, 50)
+    else:
+        brush = pg.mkBrush(color)
+    shape.setBrush(brush)
     win.addItem(shape)
     tri_shapes[tri] = shape
 
@@ -234,14 +247,17 @@ draw_state()
 
 ## Legalize recursively - incomplete
 def legalize(p):
+    
     f00, f11, p = p
+    return (f00, f11, p)
+
     print("Legalizing points = {}, {}, {}".format(f00, f11, p))
     a = pts[f00]
     b = pts[f11]
     c = pts[p]
     cc, cr = circuminfo(a, b, c)
     for point in pts:
-        if point == a or point == b or point == c:
+        if np.all(point == a) or np.all(point == b) or np.all(point == c):
             continue
         elif distance(cc, point) < cr:
             print("Illegal point")
@@ -267,15 +283,32 @@ def legalize(p):
     #tris.append(tri)
 
 
-def add_tri(a, b, c, legal=True):
+def add_tri(a, b, c, legal=True, color=None):
     global tris
+    print("Add:", (a,b,c))
+    
+    # sanity check
+    assert a != b and b != c and c != a
+    
+    # ignore flat tris
+    if np.all(pts[a] == pts[b]) or np.all(pts[b] == pts[c]) or np.all(pts[c] == pts[a]):
+        print("   Triangle is flat; refusing to add.")
+        return
+    
+    # check this tri is unique
+    for t in permutations((a,b,c)):
+        if t in tris:
+            raise Exception("Cannot add %s; already have %s" % (tri, t))
+    
     
     # TODO: should add to edges_lookup after legalization??
     if iscounterclockwise(a, b, c):
+        print("    ", (a,b), (b,c), (c,a))
         edges_lookup[(a, b)] = c
         edges_lookup[(b, c)] = a
         edges_lookup[(c, a)] = b
     else:
+        print("    ", (b,a), (c,b), (a,c))
         edges_lookup[(b, a)] = c
         edges_lookup[(c, b)] = a
         edges_lookup[(a, c)] = b
@@ -284,11 +317,12 @@ def add_tri(a, b, c, legal=True):
     else:
         tri = (a,b,c)
     tris.append(tri)
-    draw_tri(tris[-1])
+    draw_tri(tris[-1], color=color)
 
 
 def remove_tri(a, b, c):
     global tris
+    print("Remove:", (a,b,c))
     
     for k in permutations((a, b, c)):
         if k in tris:
@@ -296,11 +330,13 @@ def remove_tri(a, b, c):
             break
     (a, b, c) = k
 
-    if edges_lookup[(a, b)] == c:
+    if edges_lookup.get((a, b), None) == c:
+        print("    ", (a,b), (b,c), (c,a))
         del edges_lookup[(a, b)]
         del edges_lookup[(b, c)]
         del edges_lookup[(c, a)]
     else:
+        print("    ", (b,a), (c,b), (a,c))
         del edges_lookup[(b, a)]
         del edges_lookup[(a, c)]
         del edges_lookup[(c, b)]
@@ -309,7 +345,7 @@ def remove_tri(a, b, c):
 
 
 # Begin triangulation
-for i in range(3, len(pts)):
+for i in range(3, pts.shape[0]):
     draw_state()
     
     pi = pts[i]
@@ -320,27 +356,58 @@ for i in range(3, len(pts)):
 
     # get index along front that intersects pts[i]
     l = 0
-    while pts[front[l+1]]['x'] <= pi['x']:
+    while pts[front[l+1], 0] <= pi[0]:
         l += 1
     pl = pts[front[l]]
     pr = pts[front[l+1]]
-    if pi['x'] > pl['x']:  # "(i) middle case"
+    if pi[0] > pl[0]:  # "(i) middle case"
+        print("  mid case")
         # Add a single triangle connecting pi,pl,pr
         add_tri(front[l], front[l+1], i)
         front.insert(l+1, i)
     else:  # "(ii) left case"
+        print("  left case")
         ps = pts[l-1]
         # Add triangles connecting pi,pl,ps and pi,pl,pr
         add_tri(front[l], front[l+1], i)
-        front.insert(l+1, i)
         add_tri(front[l-1], front[l], i)
-        front.insert(l, i)
-        front.pop(l+1)
+        front[l] = i
+        #front.insert(l+1, i)
+        #front.insert(l, i)
+        #front.pop(l+1)
+    print(front)
         
-    # todo: Continue adding triangles to smooth out front
-    # (use heuristics shown in figs. 9, 10)
+    draw_state()
+    
+    # Continue adding triangles to smooth out front
+    # (heuristics shown in figs. 9, 10)
+    for direction in -1, 1:
+        while True:
+            # Find point connected to pi
+            ind0 = front.index(i)
+            ind1 = ind0 + direction
+            ind2 = ind1 + direction
+            if ind2 < 0 or ind2 >= len(front):
+                break
+            
+            # measure angle made with front
+            p1 = pts[front[ind1]]
+            p2 = pts[front[ind2]]
+            angle = np.arccos(cosine(pi, p1, p2))
+            
+            # if angle is < pi/2, make new triangle
+            if angle > np.pi/2.:
+                break
+            
+            assert i != front[ind1] and front[ind1] != front[ind2] and front[ind2] != i
+            add_tri(i, front[ind1], front[ind2], color=(0, 255, 0, 50))
+            front.pop(ind1)
+    
+    draw_state()
+    
                     
     if i in tops:  # this is an "edge event" (sec. 3.4.2)
+        
         # First just see whether this edge is already present
         # (this is not in the published algorithm)
         btm = bottoms[tops == i][0]
@@ -350,7 +417,6 @@ for i in range(3, len(pts)):
             continue
         
         
-        print("  Locate first intersected triangle")
         # Locate the other endpoint
         found = False
         for e in edges:
@@ -361,6 +427,8 @@ for i in range(3, len(pts)):
         if not found:
             print("  Other end point not located; continuing.")
             continue
+        
+        print("  Locate first intersected triangle")
         # (i) locate intersected triangles
         """
         If the first intersected triangle contains the top point,
@@ -370,10 +438,11 @@ for i in range(3, len(pts)):
         """
         #print("  edges lookup:")
         #print(edges_lookup)
+        
         vals = edges_lookup.values()
         intersects = False
         for value in vals:
-            if value == i:
+            if value == i:          # loop over all triangles containing Pi
                 current_side = edges_lookup.keys()[vals.index(i)]
                 # todo: might be sped up by using cross product as described in fig. 11
                 if isintersects(current_side, e):
@@ -402,7 +471,7 @@ for i in range(3, len(pts)):
                 lower_polygon.append(i)
                 c = -1 if (start > end) else 1
                 for k in range(start+c, end, c):
-                    if orientation(e, front[k]) > 0:
+                    if orientation((i, endpoint), front[k]) > 0:
                         upper_polygon.append(front[k])
                     else:
                         lower_polygon.append(front[k])
@@ -414,7 +483,7 @@ for i in range(3, len(pts)):
             remove_tri(*(current_side+(i,)))
             upper_polygon.append(i)
             lower_polygon.append(i)
-            if orientation(e, current_side[0]) > 0:
+            if orientation((i, endpoint), current_side[0]) > 0:
                 upper_polygon.append(current_side[0])
                 lower_polygon.append(current_side[1])
             else:
@@ -446,7 +515,7 @@ for i in range(3, len(pts)):
                               "need to handle it")
                         break
 
-                if orientation(e, current_side[0]) > 0:
+                if orientation((i, endpoint), current_side[0]) > 0:
                     upper_polygon.append(current_side[0])
                     lower_polygon.append(current_side[1])
                 else:
@@ -482,12 +551,25 @@ for i in range(3, len(pts)):
 ## Finalize (sec. 3.5)
 
 # (i) Remove all triangles that include at least one artificial point
+print "== Remove artificial triangles"
+# todo: just don't add these in the first place. 
+rem = []
+for tri in tris:
+    if 0 in tri or 1 in tri:
+        rem.append(tri)
+        
+for tri in rem:
+    remove_tri(*tri)
+    draw_state()
+
+
 # (ii) Add bordering triangles to fill hull
+print "== Fill hull"
 front = list(OrderedDict.fromkeys(front))
 
 l = len(front) - 2
-k = 0
-while k < l:
+k = 1
+while k < l-1:
     # if edges lie in counterclockwise direction, then signed area is positive
     if iscounterclockwise(front[k], front[k+1], front[k+2]):
         add_tri(front[k], front[k+1], front[k+2], legal=False)
@@ -496,8 +578,40 @@ while k < l:
         continue
     k += 1
 
+# (iii) Remove all edges that have only one triangle and are not a constraint 
+#       edge (not described in article)
+print "== Remove overzealous triangles"
+print(tris)
+print(edges)
+rem = []
+for edge in edges_lookup.keys():
+    einv = (edge[1], edge[0])
+    if einv in edges_lookup:
+        continue
+    ok = False
+    for e in edge, einv:
+        m = edges == e
+        m = m[:,0] * m[:,1]
+        if np.any(m):
+            ok = True
+            break
+
+    if ok:
+        continue
+    print("  edge %s fails" % str(edge))
+        
+    rem.append((edge[0], edge[1], edges_lookup[edge]))
+    
+for tri in rem:
+    try:
+        remove_tri(*tri)
+    except KeyError:
+        pass
+
+
+
 print(front)
 print(tris)
 #for tri in tris:
     #draw_tri(tri)
-#draw_state()
+draw_state()
