@@ -592,7 +592,7 @@ def read_pixels(viewport=None):
     if not isinstance(im, np.ndarray):
         im = np.frombuffer(im, np.uint8)
     im.shape = h, w, 4
-    im = im[::-1]  # flip the image
+    im = im[::-1, :, :]  # flip the image
     return im
 
 

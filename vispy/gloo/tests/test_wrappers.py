@@ -70,7 +70,7 @@ def test_wrappers():
 @requires_application()
 def test_read_pixels():
     """Test read_pixels to ensure that the image is not flipped"""
-    # Create vetices
+    # Create vertices
     vPosition = np.array([[-1, 1], [0, 1],  # For drawing a square to top left
                           [-1, 0], [0, 0]], np.float32)
 
