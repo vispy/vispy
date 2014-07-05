@@ -92,7 +92,7 @@ def test_read_pixels():
         c._backend._vispy_warmup()
         c._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         c._program['a_position'] = gloo.VertexBuffer(vPosition)
-        gloo.set_clear_color((0, 0, 0, 0)) # Black background
+        gloo.set_clear_color((0, 0, 0, 0))  # Black background
         gloo.clear()
         c._program.draw('triangle_strip')
 
