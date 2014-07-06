@@ -49,7 +49,7 @@ def make_png(data, level=6):
         raise TypeError('data.dtype must be np.ubyte (np.uint8)')
 
     dim = data.shape[2]  # Dimension
-    if not dim in (3, 4):
+    if dim not in (3, 4):
         raise TypeError('data.shape[2] must be in (3, 4)')
 
     # www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.IHDR
