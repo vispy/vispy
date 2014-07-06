@@ -11,6 +11,7 @@ from vispy import gloo
 from vispy.gloo import gl
 from vispy.app import Canvas
 from vispy.testing import requires_application
+from vispy.gloo import read_pixels
 
 
 @requires_application()
@@ -64,3 +65,42 @@ def test_wrappers():
         assert_array_equal(gloo.get_parameter('viewport'), viewport)
         assert_equal(gloo.get_parameter('front_face'), gl.GL_CW)
         assert_equal(gloo.get_parameter('blend_color'), blend_color + (1,))
+
+
+@requires_application()
+def test_read_pixels():
+    """Test read_pixels to ensure that the image is not flipped"""
+    # Create vertices
+    vPosition = np.array([[-1, 1], [0, 1],  # For drawing a square to top left
+                          [-1, 0], [0, 0]], np.float32)
+
+    VERT_SHADER = """ // simple vertex shader
+    attribute vec2 a_position;
+    void main (void) {
+        gl_Position = vec4(a_position, 0., 1.0);
+    }
+    """
+
+    FRAG_SHADER = """ // simple fragment shader
+    void main()
+    {
+        gl_FragColor = vec4(1,1,1,1);
+    }
+    """
+
+    with Canvas() as c:
+        c._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
+        c._program['a_position'] = gloo.VertexBuffer(vPosition)
+        gloo.set_clear_color((0, 0, 0, 0))  # Black background
+        gloo.clear()
+        c._program.draw('triangle_strip')
+
+        # Check if the return of read_pixels is the same as our drawing
+        img = read_pixels()
+        top_left = sum(img[0][0])
+        assert_true(top_left > 0)  # Should be > 0 (255*4)
+        # Sum of the pixels in top right + bottom left + bottom right corners
+        corners = sum(img[0][-1] + img[-1][0] + img[-1][-1])
+        assert_true(corners == 0)  # Should be all 0
+        gloo.flush()
+        gloo.finish()

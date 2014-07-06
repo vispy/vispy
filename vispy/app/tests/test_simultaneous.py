@@ -32,7 +32,9 @@ def _update_process_check(canvas, val, draw=True):
         raise
     goal = val * np.ones(ss.shape)
     try:
-        assert_allclose(ss, goal, atol=1)  # can be off by 1 due to rounding
+        # Get rid of the alpha value before testing
+        # It can be off by 1 due to rounding
+        assert_allclose(ss[:, :, :3], goal[:, :, :3], atol=1)
     except Exception:
         print('!!!!!!!!!! FAIL  %s' % np.unique(ss))
         raise
