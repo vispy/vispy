@@ -395,8 +395,10 @@ class MouseEvent(Event):
     pos : (int, int)
         The position of the mouse (in screen coordinates).
     button : int
-        The button that generated this event (can be None).
-        Left=1, right=2, middle=3.
+        The button that generated this event.
+        Left=1, right=2, middle=3, none=0. During a mouse drag, this
+        will return the button that started the drag (same thing as
+        ``event.press_event.button``).
     buttons : [int, ...]
         The list of buttons depressed during this event.
     modifiers : tuple of Key instances
