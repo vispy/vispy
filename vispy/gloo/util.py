@@ -7,12 +7,21 @@
 from .wrappers import read_pixels
 
 
-def _screenshot(viewport=None):
+def _screenshot(viewport=None, alpha=True):
     """ Take a screenshot using glReadPixels. Not sure where to put this
     yet, so a private function for now. Used in make.py.
+
+    Parameters
+    ----------
+    viewport : array-like | None
+        4-element list of x, y, w, h parameters. If None (default),
+        the current GL viewport will be queried and used.
+    alpha : bool
+        Alpha toggle.
     """
+
     # gl.glReadBuffer(gl.GL_BACK)  Not avaliable in ES 2.0
-    return read_pixels(viewport)
+    return read_pixels(viewport, alpha)
 
 
 KEYWORDS = set(['active', 'asm', 'cast', 'class', 'common', 'default',
@@ -43,16 +52,16 @@ def check_variable(name):
     if len(name) > 31:
         return ("Variable names >31 characters may not function on some "
                 "systems.")
-    
+
     return check_identifier(name)
 
 
 def check_identifier(name):
     if '__' in name:
         return "Identifiers may not contain double-underscores."
-    
+
     if name[:3] == 'gl_' or name[:3] == 'GL_':
         return "Identifiers may not begin with gl_ or GL_."
-    
+
     if name in KEYWORDS:
         return "Identifier is a reserved keyword."

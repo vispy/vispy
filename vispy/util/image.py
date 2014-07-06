@@ -12,15 +12,13 @@ import zlib
 import numpy as np
 
 
-def make_png(data, alpha=True, level=6):
+def make_png(data, level=6):
     """Convert numpy array to PNG byte array.
 
     Parameters
     ----------
     data : numpy.ndarray
-        Data must be (H, W, 3 | 4) with dtype=ubyte
-    alpha : bool
-        Alpha toggle.
+        Data must be (H, W, 3 | 4) with dtype = np.ubyte (np.uint8)
     level: int
         https://docs.python.org/2/library/zlib.html#zlib.compress
         An integer from 0 to 9 controlling the level of compression:
@@ -35,9 +33,6 @@ def make_png(data, alpha=True, level=6):
         PNG formatted array
     """
 
-    # www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
-    header = b'\x89PNG\x0d\x0a\x1a\x0a'  # header
-
     def mkchunk(data, name):
         if isinstance(data, np.ndarray):
             size = data.nbytes
@@ -50,13 +45,21 @@ def make_png(data, alpha=True, level=6):
         chunk.data[-4:] = struct.pack('!i', zlib.crc32(chunk[4:-4]))
         return chunk
 
+    if not data.dtype == np.ubyte:
+        raise TypeError('data.dtype must be np.ubyte (np.uint8)')
+
+    dim = data.shape[2]  # Dimension
+    if not dim in (3, 4):
+        raise TypeError('data.shape[2] must be in (3, 4)')
+
     # www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.IHDR
-    if alpha:
+    if dim == 4:
         ctyp = 0b0110  # RGBA
-        dim = 4  # Dimension = 4
     else:
         ctyp = 0b0010  # RGB
-        dim = 3  # Dimension = 3
+
+    # www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
+    header = b'\x89PNG\x0d\x0a\x1a\x0a'  # header
 
     h, w = data.shape[:2]
     depth = data.itemsize * 8
