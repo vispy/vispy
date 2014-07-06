@@ -218,7 +218,7 @@ class Program(GLObject):
         self._need_build = False
 
     def _update(self):
-        # Activate uniforms
+       # Activate uniforms
         active_uniforms = [name for (name, gtype) in self.active_uniforms]
         for uniform in self._uniforms.values():
             if uniform.name in active_uniforms:
@@ -307,7 +307,10 @@ class Program(GLObject):
         logger.debug("GPU: Activating program")
         
         gl.glUseProgram(self.handle)
+        
+        self._activate_variables()
 
+    def _activate_variables(self):
         for uniform in self._uniforms.values():
             if uniform.active:
                 uniform.activate()
@@ -315,7 +318,7 @@ class Program(GLObject):
         for attribute in self._attributes.values():
             if attribute.active:
                 attribute.activate()
-                
+
     def _deactivate(self):
         """Deactivate the program."""
 

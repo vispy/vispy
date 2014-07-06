@@ -273,14 +273,12 @@ class ModularProgram(Program):
         # and continue.
         super(ModularProgram, self)._build()
 
-    def _activate(self):
-        super(ModularProgram, self)._activate()
-        
-        # set all variables..
-        # todo: should be reacting to changes in individual variables
-        # and applying those changes in _update() rather than updating all
-        # variables here. 
+    def _activate_variables(self):
+        # set all variables
         self._apply_variables()
+        
+        super(ModularProgram, self)._activate_variables()
+        
         
     def _find_hooks(self):
         # Locate all undefined function prototypes in both shaders
