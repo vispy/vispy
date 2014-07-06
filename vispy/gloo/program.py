@@ -307,7 +307,10 @@ class Program(GLObject):
         logger.debug("GPU: Activating program")
         
         gl.glUseProgram(self.handle)
+        
+        self._activate_variables()
 
+    def _activate_variables(self):
         for uniform in self._uniforms.values():
             if uniform.active:
                 uniform.activate()
