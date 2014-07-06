@@ -90,8 +90,46 @@ def test_find_edge_intersections():
             for j in range(len(vcut)):
                 assert_array_almost_equal(np.array(ecut[j]), np.array(vcut[j]))
     
+def test_merge_duplicate_points():
+    pts = np.array([
+        [0, 0],
+        [1, 1], 
+        [0.1, 0.7],
+        [2, 3],
+        [0, 0],
+        [0.1, 0.7], 
+        [5, 6],
+        ])
+    edges = np.array([
+        [0, 6],
+        [1, 5],
+        [2, 4],
+        [3, 6],
+        [4, 5],
+        ])
+    
+    t = T(pts, edges)
+    t.merge_duplicate_points()
+
+    pts = np.array([
+        [0, 0],
+        [1, 1], 
+        [0.1, 0.7],
+        [2, 3],
+        [5, 6],
+        ])
+    edges = np.array([
+        [0, 4],
+        [1, 2],
+        [2, 0],
+        [3, 4],
+        [0, 2],
+        ])
+    assert np.all(t.pts == pts)
+    assert np.all(t.edges == edges)
+
 
 if __name__ == '__main__':
-    test_find_edge_intersections()
+    test_merge_duplicate_points()
     
     

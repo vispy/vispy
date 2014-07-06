@@ -22,42 +22,14 @@ class Triangulation(object):
     def normalize(self):
         # Clean up data   (not discussed in original publication)
         
-        # (i) Split intersecting edges
-        
-        # we can do all intersections at once, but this has excessive memory
-        # overhead.
-        #int1 = self.intersection_matrix(edges)
-        #int2 = int1.T
-        
-        # measure intersection point between all pairs of edges
-        cuts = self.find_edge_intersections()
-
-        
-                
+        # (i) Split intersecting edges. Every edge that intersects another 
+        #     edge or point is split. This extends self.pts and self.edges.
+        self.split_intersecting_edges()
         
 
-        # (ii) merge identical points
-        dups = []
-        for i in range(pts.shape[0]-1):
-            if i in dups:
-                continue
-            for j in range(i+1, pts.shape[0]):
-                if np.all(pts[i] == pts[j]):
-                    dups.append((i, j))
-
-        for i, j in dups:
-            print("========  %d => %d  =============" % (j, i))
-            print(pts)
-            print(edges)
-            # rewrite edges to use i instead of j
-            edges[edges == j] = i
-            
-            # remove j from points
-            pts = np.concatenate([pts[:j], pts[j+1:]])
-            mask = edges > j
-            edges[mask] = edges[mask] - 1
-            print(pts)
-            print(edges)
+        # (ii) Merge identical points. If any two points are found to be equal,
+        #      the second is removed and the edge table is updated accordingly. 
+        self.merge_duplicate_points()
 
 
     def initialize(self):
@@ -453,6 +425,72 @@ class Triangulation(object):
             v.sort(key=lambda x: x[0])
             
         return cuts
+
+    def split_intersecting_edges(self):
+        # we can do all intersections at once, but this has excessive memory
+        # overhead.
+        #int1 = self.intersection_matrix(edges)
+        #int2 = int1.T
+        
+        # measure intersection point between all pairs of edges
+        all_cuts = self.find_edge_intersections()
+
+        # cut edges at each intersection
+        add_pts = []
+        add_edges = []
+        for edge, cuts in all_cuts.items():
+            if len(cuts) == 0:
+                continue
+            
+            # add new points
+            pt_offset = self.pts.shape[0] + len(add_pts)
+            new_pts = [x[1] for x in cuts]
+            add_pts.extend(new_pts)
+            
+            # list of point indexes for all new edges
+            pt_indexes = range(pt_offset, pt_offset + len(cuts))
+            pt_indexes.append(self.edges[edge, 1])
+            
+            # modify original edge
+            self.edges[edge, 1] = pt_indexes[0]
+            
+            # add new edges
+            new_edges = [[pt_indexes[i-1], pt_indexes[i]] for i in range(len(pt_indexes)-1)] 
+            add_edges.extend(new_edges)
+                    
+        self.pts = np.append(self.pts, np.array(add_pts), axis=0)
+        self.edges = np.append(self.edges, np.array(add_edges), axis=0)
+
+    def merge_duplicate_points(self):
+        # generate a list of all pairs (i,j) of identical points
+        dups = []
+        for i in range(self.pts.shape[0]-1):
+            test_pt = self.pts[i:i+1]
+            comp_pts = self.pts[i+1:]
+            eq = test_pt == comp_pts
+            eq = eq[:, 0] & eq[:, 1]
+            for j in np.argwhere(eq)[:,0]:
+                dups.append((i, i+1+j))
+
+        dups_arr = np.array(dups)
+        # remove duplicate points
+        pt_mask = np.ones(self.pts.shape[0], dtype=bool)
+        for i, inds in enumerate(dups_arr):
+            # remove j from points
+            # (note we pull the index from the original dups instead of 
+            # dups_arr because the indexes in pt_mask do not change)
+            pt_mask[dups[i][1]] = False
+            
+            i, j = inds
+            
+            # rewrite edges to use i instead of j
+            self.edges[self.edges == j] = i
+            
+            # decrement all point indexes > j
+            self.edges[self.edges > j] -= 1
+            dups_arr[dups_arr > j] -= 1
+        
+        self.pts = self.pts[pt_mask]
     
     # Distance between points A and B
     def distance(self, A, B):
