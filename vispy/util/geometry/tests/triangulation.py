@@ -44,7 +44,7 @@ def test_intersect_edge_arrays():
         assert_array_eq(intercepts[i], int2)
 
 
-def test_find_edge_intersections():
+def test_edge_intersections():
     pts = np.array([
         [0, 0],
         [1, 0],
@@ -66,6 +66,7 @@ def test_find_edge_intersections():
     
     t = T(pts, edges)
     
+    # first test find_edge_intersections
     cuts = t.find_edge_intersections()
     expect = {
         0: [],
@@ -89,6 +90,46 @@ def test_find_edge_intersections():
             assert len(vcut) == len(ecut)
             for j in range(len(vcut)):
                 assert_array_almost_equal(np.array(ecut[j]), np.array(vcut[j]))
+                
+    # next test that we can split the edges correctly
+    t.split_intersecting_edges()
+    #print "\n".join([str((i, t.pts[i])) for i in range(len(t.pts))])
+    pts = np.array([[ 0. ,  0. ],
+                    [ 1. ,  0. ],
+                    [ 1. ,  1. ],
+                    [ 0. ,  1. ],
+                    [ 0. ,  0.5],
+                    [ 2. ,  0.5],
+                    [-1. ,  0.2],
+                    [ 2. ,  0.8],
+                    [ 1. ,  0.5],
+                    [ 1. ,  0.6],
+                    [ 0. ,  0.5],
+                    [ 0. ,  0.4],
+                    [ 0.5,  0.5],
+                    [ 1. ,  0.5],
+                    [ 0. ,  0.4],
+                    [ 0.5,  0.5],
+                    [ 1. ,  0.6]])
+    edges = np.array([[ 0,  1],
+                    [ 1,  8],
+                    [ 2,  3],
+                    [ 3, 10],
+                    [ 4, 12],
+                    [ 6, 14],
+                    [ 8,  9],
+                    [ 9,  2],
+                    [10, 11],
+                    [11,  0],
+                    [12, 13],
+                    [13,  5],
+                    [14, 15],
+                    [15, 16],
+                    [16,  7]])
+    
+    assert_array_almost_equal(pts, t.pts)
+    assert np.all(edges == t.edges)
+
     
 def test_merge_duplicate_points():
     pts = np.array([
@@ -130,6 +171,7 @@ def test_merge_duplicate_points():
 
 
 if __name__ == '__main__':
-    test_merge_duplicate_points()
+    test_edge_intersections()
+    #test_merge_duplicate_points()
     
     

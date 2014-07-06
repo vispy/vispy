@@ -455,7 +455,7 @@ class Triangulation(object):
             self.edges[edge, 1] = pt_indexes[0]
             
             # add new edges
-            new_edges = [[pt_indexes[i-1], pt_indexes[i]] for i in range(len(pt_indexes)-1)] 
+            new_edges = [[pt_indexes[i-1], pt_indexes[i]] for i in range(1, len(pt_indexes))] 
             add_edges.extend(new_edges)
                     
         self.pts = np.append(self.pts, np.array(add_pts), axis=0)
