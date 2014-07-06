@@ -23,13 +23,9 @@ class Triangulation(object):
     The pts and edges arrays may be modified!
     """
     
-    
-    
-    
     def __init__(self, pts, edges):
         self.pts = pts
         self.edges = edges
-        
         
     def normalize(self):
         # Clean up data   (not discussed in original publication)
