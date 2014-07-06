@@ -18,9 +18,13 @@ def _screenshot(viewport=None, alpha=True):
         the current GL viewport will be queried and used.
     alpha : bool
         If True (default), the returned array has 4 elements (RGBA).
-        Otherwise, it has 3 (RGB).
-    """
+        Otherwise, it has 3 (RGB)
 
+    Returns
+    -------
+    pixels : array
+        3D array of pixels in np.uint8 format
+    """
     # gl.glReadBuffer(gl.GL_BACK)  Not avaliable in ES 2.0
     return read_pixels(viewport, alpha)
 

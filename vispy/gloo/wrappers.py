@@ -573,7 +573,8 @@ def read_pixels(viewport=None, alpha=True):
         4-element list of x, y, w, h parameters. If None (default),
         the current GL viewport will be queried and used.
     alpha : bool
-        Alpha toggle.
+        If True (default), the returned array has 4 elements (RGBA).
+        Otherwise, it has 3 (RGB).
 
     Returns
     -------
