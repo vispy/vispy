@@ -93,7 +93,6 @@ def test_edge_intersections():
                 
     # next test that we can split the edges correctly
     t.split_intersecting_edges()
-    #print "\n".join([str((i, t.pts[i])) for i in range(len(t.pts))])
     pts = np.array([[ 0. ,  0. ],
                     [ 1. ,  0. ],
                     [ 1. ,  1. ],
@@ -112,20 +111,20 @@ def test_edge_intersections():
                     [ 0.5,  0.5],
                     [ 1. ,  0.6]])
     edges = np.array([[ 0,  1],
-                    [ 1,  8],
-                    [ 2,  3],
-                    [ 3, 10],
-                    [ 4, 12],
-                    [ 6, 14],
-                    [ 8,  9],
-                    [ 9,  2],
-                    [10, 11],
-                    [11,  0],
-                    [12, 13],
-                    [13,  5],
-                    [14, 15],
-                    [15, 16],
-                    [16,  7]])
+                      [ 1,  8],
+                      [ 2,  3],
+                      [ 3, 10],
+                      [ 4, 12],
+                      [ 6, 14],
+                      [ 8,  9],
+                      [ 9,  2],
+                      [10, 11],
+                      [11,  0],
+                      [12, 13],
+                      [13,  5],
+                      [14, 15],
+                      [15, 16],
+                      [16,  7]])
     
     assert_array_almost_equal(pts, t.pts)
     assert np.all(edges == t.edges)

@@ -1,12 +1,4 @@
 # -*- coding: utf8 -*- 
-"""
-Constrained delaunay implementation based on 
-
-Domiter, V. and Žalik, B.
-Sweep‐line algorithm for constrained Delaunay triangulation
-
-(this implementation is not complete)
-"""
 
 import numpy as np
 from collections import OrderedDict
@@ -14,6 +6,26 @@ from itertools import permutations
 
 
 class Triangulation(object):
+    """
+    Constrained delaunay implementation based on 
+
+    Domiter, V. and Žalik, B.
+    Sweep‐line algorithm for constrained Delaunay triangulation
+
+    (this implementation is not complete)
+    
+    Parameters:
+    pts : array((N, 2), dtype=float)
+    edges : array((N, 2), dtype=int)
+    
+    Notes:
+    
+    The pts and edges arrays may be modified!
+    """
+    
+    
+    
+    
     def __init__(self, pts, edges):
         self.pts = pts
         self.edges = edges
@@ -38,43 +50,45 @@ class Triangulation(object):
         ## Initialization (sec. 3.3)
 
         # sort points by y, then x
-        pts = pts.reshape(pts.shape[0]*pts.shape[1]).view([('x', float), ('y', float)])
+        flat_shape = self.pts.shape[0] * self.pts.shape[1]
+        pts = self.pts.reshape(flat_shape).view([('x', float), ('y', float)])
         order = np.argsort(pts, order=('y', 'x'))
         pts = pts[order]
-        # update display edges to match new point order
+        # update edges to match new point order
         invorder = np.argsort(order)
-        edges = invorder[edges]
-        pts = pts.view(float).reshape(len(pts), 2)
+        self.edges = invorder[self.edges]
+        self.pts = pts.view(float).reshape(len(pts), 2)
 
         # make artificial points P-1 and P-2
-        xmax = pts[:,0].max()
-        xmin = pts[:,0].min()
-        ymax = pts[:,1].max()
-        ymin = pts[:,1].min()
+        xmax = self.pts[:,0].max()
+        xmin = self.pts[:,0].min()
+        ymax = self.pts[:,1].max()
+        ymin = self.pts[:,1].min()
         xa = (xmax-xmin) * 0.3
         ya = (ymax-ymin) * 0.3
-        p1 = (pts[:,0].min() - xa, pts[:,1].min() - ya)
-        # error in the equation in the paper, should be x_max+delta_x, not -delta_x
-        p2 = (pts[:,0].max() + xa, pts[:,1].min() - ya)
+        p1 = (xmin - xa, ymin - ya)
+        p2 = (xmax + xa, ymin - ya)
 
         # prepend artificial points to point list
-        newpts = np.empty((pts.shape[0]+2, 2), dtype=float)
+        newpts = np.empty((self.pts.shape[0]+2, 2), dtype=float)
         newpts[0] = p1
         newpts[1] = p2
-        newpts[2:] = pts
-        pts = newpts
-        edges += 2
+        newpts[2:] = self.pts
+        self.pts = newpts
+        self.edges += 2
 
         # find topmost point in each edge
-        self.tops = edges.max(axis=1)
-        self.bottoms = edges.min(axis=1)
+        self.tops = self.edges.max(axis=1)
+        self.bottoms = self.edges.min(axis=1)
 
         # inintialize sweep front
+        # values in this list are indexes into self.pts
         self.front = [0, 2, 1]
         
+        # empty triangle list. 
+        # This will contain [(a, b, c), ...] where a,b,c are indexes into 
+        # self.pts
         self.tris = []
-        self.pts = pts
-        self.edges = edges
 
         # For each triangle, maps (a, b): c
         # This is used to look up the thrid point in a triangle, given any edge. 
@@ -85,11 +99,12 @@ class Triangulation(object):
 
     def triangulate(self):
         self.initialize()
+        pts = self.pts
+        edges = self.edges
+        front = self.front
         
         ## Begin sweep (sec. 3.4)
         for i in range(3, pts.shape[0]):
-            draw_state()
-            
             pi = pts[i]
             print "========== New point %d: %s ==========" % (i, pi)
             
@@ -102,25 +117,25 @@ class Triangulation(object):
                 l += 1
             pl = pts[front[l]]
             pr = pts[front[l+1]]
-            if pi[0] > pl[0]:  # "(i) middle case"
+            
+            # "(i) middle case"
+            if pi[0] > pl[0]:  
                 print("  mid case")
                 # Add a single triangle connecting pi,pl,pr
-                add_tri(front[l], front[l+1], i)
+                self.add_tri(front[l], front[l+1], i)
                 front.insert(l+1, i)
-            else:  # "(ii) left case"
+            
+            # "(ii) left case"
+            else:
                 print("  left case")
                 ps = pts[l-1]
                 # Add triangles connecting pi,pl,ps and pi,pl,pr
-                add_tri(front[l], front[l+1], i)
-                add_tri(front[l-1], front[l], i)
+                self.add_tri(front[l], front[l+1], i)
+                self.add_tri(front[l-1], front[l], i)
                 front[l] = i
-                #front.insert(l+1, i)
-                #front.insert(l, i)
-                #front.pop(l+1)
+            
             print(front)
                 
-            draw_state()
-            
             # Continue adding triangles to smooth out front
             # (heuristics shown in figs. 9, 10)
             for direction in -1, 1:
@@ -135,24 +150,25 @@ class Triangulation(object):
                     # measure angle made with front
                     p1 = pts[front[ind1]]
                     p2 = pts[front[ind2]]
-                    angle = np.arccos(cosine(pi, p1, p2))
+                    angle = np.arccos(self.cosine(pi, p1, p2))
                     
                     # if angle is < pi/2, make new triangle
                     if angle > np.pi/2.:
                         break
                     
-                    assert i != front[ind1] and front[ind1] != front[ind2] and front[ind2] != i
-                    add_tri(i, front[ind1], front[ind2], color=(0, 255, 0, 50))
+                    assert (i != front[ind1] and 
+                            front[ind1] != front[ind2] and 
+                            front[ind2] != i)
+                    self.add_tri(i, front[ind1], front[ind2], source='smooth1')
                     front.pop(ind1)
             
-            draw_state()
-            
-                            
-            if i in tops:  # this is an "edge event" (sec. 3.4.2)
+            # "edge event" (sec. 3.4.2)
+            # remove any triangles cut by completed edges and re-fill the holes.
+            if i in self.tops:  
                 print "  == edge event =="
                 
-                for j in bottoms[tops == i]:
-                    edge_event(j, i)  # Make sure edge (j, i) is present in mesh
+                for j in self.bottoms[self.tops == i]:
+                    self.edge_event(j, i)  # Make sure edge (j, i) is present in mesh
                 
                 ## First just see whether this edge is already present
                 ## (this is not in the published algorithm)
@@ -299,24 +315,24 @@ class Triangulation(object):
         print "== Remove artificial triangles"
         # todo: just don't add these in the first place. 
         rem = []
-        for tri in tris:
+        for tri in self.tris:
             if 0 in tri or 1 in tri:
                 rem.append(tri)
                 
         for tri in rem:
-            remove_tri(*tri)
+            self.remove_tri(*tri)
 
 
         # (ii) Add bordering triangles to fill hull
         print "== Fill hull"
-        front = list(OrderedDict.fromkeys(front))
+        front = list(OrderedDict.fromkeys(self.front))
 
         l = len(front) - 2
         k = 1
         while k < l-1:
             # if edges lie in counterclockwise direction, then signed area is positive
-            if iscounterclockwise(front[k], front[k+1], front[k+2]):
-                add_tri(front[k], front[k+1], front[k+2], legal=False)
+            if self.iscounterclockwise(front[k], front[k+1], front[k+2]):
+                self.add_tri(front[k], front[k+1], front[k+2], legal=False, source='fill_hull')
                 front.pop(k+1)
                 l -= 1
                 continue
@@ -329,6 +345,7 @@ class Triangulation(object):
         #        "bad". Two triangles that share a hull edge are marked opposite, and
         #        triangles that share a non-hull edge are marked the same. This should
         #        take care of all artificial and hole triangles.
+        # TODO:  We can remove (i) after this is implemented.
 
 
     def edge_event(self, i, j):
@@ -337,6 +354,7 @@ class Triangulation(object):
         This works by removing intersected triangles and filling holes up to
         the cutting edge.
         """
+        return
         # traverse in two different modes:
         #  1. If cutting edge is below front, traverse through triangles. These
         #     must be removed and the resulting hole re-filled. (fig. 12)
@@ -526,8 +544,8 @@ class Triangulation(object):
 
     # Cosine of angle ABC
     def cosine(self, A, B, C):
-        a, b, c = distance(B, C), distance(A, C), distance(A, B)
-        return (a*a+c*c-b*b)/(2*a*c)
+        a, b, c = self.distance(B, C), self.distance(A, C), self.distance(A, B)
+        return (a*a + c*c - b*b) / (2*a*c)
 
 
     # Cartesian coordinates of the point whose barycentric coordinates
@@ -561,9 +579,9 @@ class Triangulation(object):
 
     # Check if the points lie in counter-clockwise order or not
     def iscounterclockwise(self, a, b, c):
-        A = pts[a]
-        B = pts[b]
-        C = pts[c]
+        A = self.pts[a]
+        B = self.pts[b]
+        C = self.pts[c]
         return np.cross(B-A, C-B) > 0
 
 
@@ -708,7 +726,7 @@ class Triangulation(object):
         # check this tri is unique
         for t in permutations((a,b,c)):
             if t in self.tris:
-                raise Exception("Cannot add %s; already have %s" % (tri, t))
+                raise Exception("Cannot add %s; already have %s" % ((a,b,c), t))
         
         # TODO: should add to edges_lookup after legalization??
         if self.iscounterclockwise(a, b, c):
@@ -734,7 +752,7 @@ class Triangulation(object):
         print("Remove triangle:", (a,b,c))
         
         for k in permutations((a, b, c)):
-            if k in tris:
+            if k in self.tris:
                 break
         self.tris.remove(k)
         (a, b, c) = k
@@ -765,11 +783,11 @@ if __name__ == '__main__':
         Visualize triangulation process stepwise to aid in debugging.
         """
         def __init__(self, pts, edges):
-            Triangluate.__init__(self, pts, edges)
+            Triangulation.__init__(self, pts, edges)
             
             # visual debugging: draw edges, front, triangles
             self.win = pg.plot()
-            self.graph = pg.GraphItem(pos=pts, adj=edges, 
+            self.graph = pg.GraphItem(pos=pts.copy(), adj=edges.copy(), 
                                       pen={'width': 3, 'color': (0, 100, 0)})
             self.win.addItem(self.graph)
             self.front_line = pg.PlotCurveItem(pen={'width': 2, 
@@ -777,8 +795,8 @@ if __name__ == '__main__':
                                                     'color': 'y'})
             self.win.addItem(self.front_line)
             self.tri_shapes = {}
-
-            self.draw_state()
+            
+        
             
         def draw_state(self):
             global app
@@ -789,14 +807,18 @@ if __name__ == '__main__':
                 time.sleep(0.01)
 
         def draw_tri(self, tri, source=None):
+            # assign triangle color based on the source that generated it
+            color = {
+                None: (0, 255, 255, 50),
+                'smooth1': (0, 255, 0, 50),
+                'fill_hull': (255, 255, 0, 50),
+                }[source]
+            
             tpts = self.pts[np.array(tri)]
             path = pg.arrayToQPath(tpts[:,0], tpts[:,1])
             shape = pg.QtGui.QGraphicsPathItem(path)
             shape.setPen(pg.mkPen(255, 255, 255, 100))
-            if source is None:
-                brush = pg.mkBrush(0, 255, 255, 50)
-            else:
-                brush = pg.mkBrush(color)
+            brush = pg.mkBrush(color)
             shape.setBrush(brush)
             self.win.addItem(shape)
             self.tri_shapes[tri] = shape
@@ -812,8 +834,8 @@ if __name__ == '__main__':
             self.draw_tri(self.tris[-1], source=kwds.get('source', None))
         
         def remove_tri(self, *args, **kwds):
-            k = Triangulation.add_tri(self, *args, **kwds)
-            undraw_tri(k)
+            k = Triangulation.remove_tri(self, *args, **kwds)
+            self.undraw_tri(k)
         
         
     #user input data - points and constraining edges
@@ -847,8 +869,8 @@ if __name__ == '__main__':
     edges = np.array(edges, dtype=int)
 
 
-    triangulation = DebugTriangulation(pts, edges)
-
+    t = DebugTriangulation(pts, edges)
+    t.triangulate()
 
 
 
