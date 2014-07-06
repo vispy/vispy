@@ -1,0 +1,86 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+# Author: Luke Campagnola
+# -----------------------------------------------------------------------------
+
+
+import struct
+import zlib
+import numpy as np
+
+
+def make_png(data, alpha=True, level=6):
+    """Convert numpy array to PNG byte array.
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Data must be (H, W, 3 | 4) with dtype=ubyte
+    alpha : bool
+        Alpha toggle.
+    level: int
+        https://docs.python.org/2/library/zlib.html#zlib.compress
+        An integer from 0 to 9 controlling the level of compression:
+        1 is fastest and produces the least compression,
+        9 is slowest and produces the most.
+        0 is no compression.
+        The default value is 6.
+
+    Returns
+    -------
+    png : array
+        PNG formatted array
+    """
+
+    # www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
+    header = b'\x89PNG\x0d\x0a\x1a\x0a'  # header
+
+    def mkchunk(data, name):
+        if isinstance(data, np.ndarray):
+            size = data.nbytes
+        else:
+            size = len(data)
+        chunk = np.empty(size + 12, dtype=np.ubyte)
+        chunk.data[0:4] = struct.pack('!I', size)
+        chunk.data[4:8] = name  # b'CPXS' # critical, public, standard, safe
+        chunk.data[8:8 + size] = data
+        chunk.data[-4:] = struct.pack('!i', zlib.crc32(chunk[4:-4]))
+        return chunk
+
+    # www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.IHDR
+    if alpha:
+        ctyp = 0b0110  # RGBA
+        dim = 4  # Dimension = 4
+    else:
+        ctyp = 0b0010  # RGB
+        dim = 3  # Dimension = 3
+
+    h, w = data.shape[:2]
+    depth = data.itemsize * 8
+    ihdr = struct.pack('!IIBBBBB', w, h, depth, ctyp, 0, 0, 0)
+    c1 = mkchunk(ihdr, 'IHDR')
+
+    # www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.IDAT
+    # insert filter byte at each scanline
+    idat = np.empty((h, w * dim + 1), dtype=np.ubyte)
+    idat[:, 1:] = data.reshape(h, w * dim)
+    idat[:, 0] = 0
+
+    comp_data = zlib.compress(idat, level)
+    c2 = mkchunk(comp_data, 'IDAT')
+    c3 = mkchunk(np.empty((0,), dtype=np.ubyte), 'IEND')
+
+    # concatenate
+    lh = len(header)
+    png = np.empty(lh + c1.nbytes + c2.nbytes + c3.nbytes, dtype=np.ubyte)
+    png.data[:lh] = header
+    p = lh
+
+    for chunk in (c1, c2, c3):
+        png[p:p + len(chunk)] = chunk
+        p += chunk.nbytes
+
+    return png
