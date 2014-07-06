@@ -92,7 +92,7 @@ setup(
         'vispy.scene.widgets',
         'vispy.testing', 'vispy.testing.tests',
         'vispy.util', 'vispy.util.tests',
-        'vispy.util.dataio',
+        'vispy.util.dataio', 'vispy.util.geometry'
     ],
     package_dir={
         'vispy': 'vispy'},
