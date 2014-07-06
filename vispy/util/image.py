@@ -19,7 +19,7 @@ def make_png(data, level=6):
     ----------
     data : numpy.ndarray
         Data must be (H, W, 3 | 4) with dtype = np.ubyte (np.uint8)
-    level: int
+    level : int
         https://docs.python.org/2/library/zlib.html#zlib.compress
         An integer from 0 to 9 controlling the level of compression:
             1 is fastest and produces the least compression,
