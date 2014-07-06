@@ -279,7 +279,6 @@ class ModularProgram(Program):
         
         super(ModularProgram, self)._activate_variables()
         
-        
     def _find_hooks(self):
         # Locate all undefined function prototypes in both shaders
         vprots = parsing.find_prototypes(self.vmain)
