@@ -103,7 +103,7 @@ class Timer(object):
             self.max_iterations = iterations
         self._backend._vispy_start(self.interval)
         self._running = True
-        self._last_emit_time = None
+        self._last_emit_time = precision_time()
         self.events.start(type='timer_start')
 
     def stop(self):
@@ -139,10 +139,7 @@ class Timer(object):
 
         # compute dt since last event
         now = precision_time()
-        if self._last_emit_time is None:
-            dt = None
-        else:
-            dt = now - self._last_emit_time
+        dt = now - self._last_emit_time
         self._last_emit_time = now
 
         self.events.timeout(
