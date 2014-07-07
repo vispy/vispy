@@ -390,7 +390,7 @@ class Triangulation(object):
                     front_holes.append([front_index]) 
                     continue
                 else:
-                    next_tri = adjacent_triangle(last_tri, last_edge)
+                    next_tri = adjacent_tri(last_tri, last_edge)
                     if j in next_tri:
                         # reached endpoint! 
                         # update front / polygons
@@ -436,16 +436,38 @@ class Triangulation(object):
                 polygon.pop(i)
                 dist.pop(i)
 
-        # update front
+        # update front by removing points in the holes (places where front 
+        # passes below the cut edge)
         if front_dir == 1:
             front_holes = front_holes[::-1]
         for hole in front_holes:
-            if len(hole) < 2:
-                continue
             ind = min(hole) + 1
             for num in range(max(hole) - ind):
                 front.pop(ind)
         
+    def find_cut_triangle(self, edge):
+        """
+        Return the triangle that has edge[0] as one of its vertices and is 
+        bisected by edge.
+        """
+
+    def edge_opposite_point(self, tri, i):
+        """
+        Given a triangle, return the edge that is opposite point i.
+        Vertexes are returned in the same orientation as in tri.
+        """
+        ind = tri.index(i)
+        return ((ind+1) % 3, (ind+2) % 3)
+
+    def adjacent_tri(self, edge, i):
+        """
+        Given a triangle formed by edge and i, return the triangle that shares
+        edge.
+        """
+        pt = self.edge_lookup[edge]
+        if pt == i:
+            pt = self.edge_lookup[(edge[1], edge[0])]
+        return (edge[1], edge[0], pt)
 
     def edge_below_front(self, edge, front_index):
         f0 = self.front[front_index-1]
