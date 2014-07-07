@@ -75,7 +75,8 @@ class _VispyStreamHandler(logging.StreamHandler):
         """Log message emitter that optionally matches and/or records"""
         test = record.getMessage()
         match = self._vispy_match
-        if match is None or len(re.findall(match, test)) > 0:
+        if (match is None or re.search(match, test) or 
+                re.search(match, _get_vispy_caller())):
             if self._vispy_emit_record:
                 fmt_rec = self._vispy_formatter.format(record)
                 self._vispy_emit_list.append(fmt_rec)
@@ -157,7 +158,7 @@ def set_log_level(verbose, match=None, return_old=False):
     if isinstance(verbose, string_types):
         verbose = verbose.lower()
         if verbose not in logging_types:
-            raise ValueError('verbose must be of a valid type')
+            raise ValueError('Invalid argument "%s"' % verbose)
         verbose = logging_types[verbose]
     else:
         raise TypeError('verbose must be a bool or string')

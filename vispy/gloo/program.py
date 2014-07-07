@@ -45,7 +45,9 @@ class Program(GLObject):
 
         self._count = count
         self._buffer = None
-
+        
+        self._need_build = True
+        
         # Get all vertex shaders
         self._verts = []
         if isinstance(vert, (str, VertexShader)):
@@ -122,6 +124,7 @@ class Program(GLObject):
         self._frags = list(set(self._frags))
 
         self._need_create = True
+        self._need_build = True
         self._need_update = True
 
         # Build uniforms and attributes
@@ -155,6 +158,7 @@ class Program(GLObject):
                     self._frags.remove(shader)
                 else:
                     raise RuntimeError("Shader is not attached to the program")
+        self._need_build = True
         self._need_update = True
 
         # Build uniforms and attributes
@@ -162,15 +166,21 @@ class Program(GLObject):
         self._build_attributes()
 
     def _create(self):
-        """ create the program object on the GPU """
+        """
+        Create the GL program object if needed.
+        """
+        # Check if program has been created
+        if self._handle <= 0:
+            self._handle = gl.glCreateProgram()
+            if not self._handle:
+                raise RuntimeError("Cannot create program object")
         
-        # Create and check if program has been created:
-        self._handle = gl.glCreateProgram()
-        if not self._handle:
-            raise RuntimeError("Cannot create program object")
-    
-    def _update(self):
-        """ Build (link) the program and checks everything's ok """
+    def _build(self):
+        """
+        Build (link) the program and checks everything's ok.
+
+        A GL context must be available to be able to build (link)
+        """
 
         # Check if we have something to link
         if not self._verts:
@@ -198,13 +208,16 @@ class Program(GLObject):
         if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
             print(gl.glGetProgramInfoLog(self._handle))
             raise RuntimeError('Program linking error')
-        
+
         # Validate
         gl.glValidateProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle, gl.GL_VALIDATE_STATUS):
             print(gl.glGetProgramInfoLog(self._handle))
             raise RuntimeError('Program validation error')
         
+        self._need_build = False
+
+    def _update(self):
         # Activate uniforms
         active_uniforms = [name for (name, gtype) in self.active_uniforms]
         for uniform in self._uniforms.values():
@@ -220,7 +233,7 @@ class Program(GLObject):
                 attribute.active = True
             else:
                 attribute.active = False
-
+        
     def _delete(self):
         logger.debug("GPU: Deleting program")
         gl.glDeleteProgram(self._handle)
@@ -249,6 +262,7 @@ class Program(GLObject):
             attribute = Attribute(self, name, gtype)
             self._attributes[name] = attribute
             dtype.append(attribute.dtype)
+        self._need_update = True
 
     def bind(self, data):
         """ Bind a VertexBuffer that has structured data
@@ -275,7 +289,7 @@ class Program(GLObject):
         elif name in self._attributes.keys():
             self._attributes[name].set_data(data)
         else:
-            raise ValueError("Unknown uniform or attribute")
+            raise KeyError("Unknown uniform or attribute %s" % name)
 
     def __getitem__(self, name):
         if name in self._uniforms.keys():
@@ -283,19 +297,20 @@ class Program(GLObject):
         elif name in self._attributes.keys():
             return self._attributes[name].data
         else:
-            raise IndexError("Unknown uniform or attribute")
+            raise KeyError("Unknown uniform or attribute %s" % name)
 
     def _activate(self):
         """Activate the program as part of current rendering state."""
-
-        if self._need_update:
-            # We cannot use the program if its not yet linked etc.
-            # _activate will get called after _update again
-            return
+        if self._need_build:
+            self._build()
         
         logger.debug("GPU: Activating program")
+        
         gl.glUseProgram(self.handle)
+        
+        self._activate_variables()
 
+    def _activate_variables(self):
         for uniform in self._uniforms.values():
             if uniform.active:
                 uniform.activate()
@@ -303,7 +318,7 @@ class Program(GLObject):
         for attribute in self._attributes.values():
             if attribute.active:
                 attribute.activate()
-
+                
     def _deactivate(self):
         """Deactivate the program."""
 

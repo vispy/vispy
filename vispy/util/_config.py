@@ -236,12 +236,31 @@ def set_data_dir(directory=None, create=False, save=False):
 ###############################################################################
 # System information and parsing
 
+VISPY_HELP = """
+VisPy command line arguments:
+
+  --vispy-backend=(qt|pyqt|pyside|glut|glfw|pyglet)
+    Selects the backend system for VisPy to use. This will override the default
+    backend selection in your configuration file.
+    
+  --vispy-log=(debug|info|warning|error|critical)[,search string]
+    Sets the verbosity of logging output. The default is 'warning'. If a search
+    string is given, messages will only be displayed if they match the string,
+    or if their call location (module.class:method(line) or 
+    module:function(line)) matches the string.    
+    
+  --vispy-help
+    Display this help message.
+
+"""
+
+
 def _parse_command_line_arguments():
     """ Transform vispy specific command line args to vispy config.
     Put into a function so that any variables dont leak in the vispy namespace.
     """
     # Get command line args for vispy
-    argnames = ['vispy-backend', 'vispy-gl-debug']
+    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-log=', 'vispy-help']
     try:
         opts, args = getopt.getopt(sys.argv[1:], '', argnames)
     except getopt.GetoptError:
@@ -254,6 +273,16 @@ def _parse_command_line_arguments():
                 logger.info('backend', a)
             elif o == '--vispy-gl-debug':
                 config['gl_debug'] = True
+            elif o == '--vispy-log':
+                if ',' in a:
+                    verbose, match = a.split(',')
+                else:
+                    verbose = a
+                    match = None
+                config['logging_level'] = a
+                set_log_level(verbose, match)
+            elif o == '--vispy-help':
+                print(VISPY_HELP)
             else:
                 logger.warning("Unsupported vispy flag: %s" % o)
 
