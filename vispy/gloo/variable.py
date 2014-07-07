@@ -169,6 +169,7 @@ class Uniform(Variable):
         self._data = np.zeros(size, dtype)
         self._ufunction = Uniform._ufunctions[self._gtype]
         self._unit = -1
+        self._need_update = False
 
     def set_data(self, data):
         """ Set data (no upload) """
@@ -304,7 +305,7 @@ class Attribute(Variable):
             _, _, dtype = gl_typeinfo[self._gtype]
             self._data = np.array(data).astype(dtype)
             self._generic = True
-            self._need_update = True
+            #self._need_update = True
             self._afunction = Attribute._afunctions[self._gtype]
             return
         else:
