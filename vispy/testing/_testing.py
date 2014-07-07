@@ -160,3 +160,10 @@ def glut_skip():
     if app.backend_name.lower() == 'glut':
         raise SkipTest('GLUT unstable')
     return  # otherwise it's fine
+
+
+def requires_img_lib():
+    """Decorator for tests that require an image library"""
+    from ..util.dataio import _check_img_lib
+    has_img_lib = not all(c is None for c in _check_img_lib())
+    return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
