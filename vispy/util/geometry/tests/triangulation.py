@@ -175,6 +175,28 @@ def test_merge_duplicate_points():
     assert np.all(t.edges == edges)
 
 
+def test_utility_methods():
+    pts = np.array([
+        [0, 0],
+        [1, 0],
+        [2, 0], 
+        [3, 0],
+        [1.5, 2],
+        [1.5, -2],
+        ])
+    edges = np.array([
+        [0, 3],  # fan of triangles
+        [0, 4],  # (0-3 edge will be automatically cut)
+        [1, 4],
+        [2, 4],
+        [3, 4],
+        [4, 5],  # edge cuts through triangle (1, 2, 4) 
+        ])
+
+    t = T(pts, edges)
+    t.normalize()
+    assert t.find_cut_triangle((4, 5)) == (1, 2, 4)
+
 if __name__ == '__main__':
     test_edge_intersections()
     #test_merge_duplicate_points()

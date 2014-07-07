@@ -449,7 +449,21 @@ class Triangulation(object):
         """
         Return the triangle that has edge[0] as one of its vertices and is 
         bisected by edge.
+        
+        Return None if no triangle is found.
         """
+        edges = [] # opposite edge for each triangle attached to edge[0]
+        for tri in self.tris:
+            if edge[0] in tri:
+                edges.append(self.edge_opposite_point(tri, edge[0]))
+                
+        for oedge in edges:
+            o1 = self.orientation(edge, oedge[0])
+            o2 = self.orientation(edge, oedge[1]) 
+            if o1 != o2:
+                return (edge[0], oedge[0], oedge[1])
+        
+        return None
 
     def edge_opposite_point(self, tri, i):
         """
@@ -759,10 +773,12 @@ class Triangulation(object):
         return h
 
     def orientation(self, edge, point):
-        """Returns positive if edge[0]->point is clockwise from edge[0]->edge[1]"""
+        """Returns +1 if edge[0]->point is clockwise from edge[0]->edge[1], 
+        -1 if counterclockwise, and 0 if parallel."""
         v1 = self.pts[point] - self.pts[edge[0]]
         v2 = self.pts[edge[1]] - self.pts[edge[0]]
-        return np.cross(v1, v2) # positive if v1 is CW from v2
+        c = np.cross(v1, v2)  # positive if v1 is CW from v2
+        return 1 if c > 0 else (-1 if c < 0 else 0)
 
     ## Legalize recursively - incomplete
     def legalize(self, p):
