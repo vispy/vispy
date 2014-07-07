@@ -39,6 +39,8 @@ class Triangulation(object):
         #      the second is removed and the edge table is updated accordingly. 
         self.merge_duplicate_points()
 
+        # (iii) Remove duplicate edges
+        # TODO
 
     def initialize(self):
         self.normalize()
@@ -120,7 +122,7 @@ class Triangulation(object):
                 # Add a single triangle connecting pi,pl,pr
                 self.add_tri(front[l], front[l+1], i)
                 front.insert(l+1, i)
-            
+                front_index = l+1
             # "(ii) left case"
             else:
                 print("  left case")
@@ -129,6 +131,7 @@ class Triangulation(object):
                 self.add_tri(front[l], front[l+1], i)
                 self.add_tri(front[l-1], front[l], i)
                 front[l] = i
+                front_index = l
             
             print(front)
                 
@@ -161,18 +164,10 @@ class Triangulation(object):
             # "edge event" (sec. 3.4.2)
             # remove any triangles cut by completed edges and re-fill the holes.
             if i in self.tops:  
-                print "  == edge event =="
-                
                 for j in self.bottoms[self.tops == i]:
-                    self.edge_event(j, i)  # Make sure edge (j, i) is present in mesh
+                    self.edge_event(i, j, front_index)  # Make sure edge (j, i) is present in mesh
+                    front = self.front # because edge event may have created a new front list
                 
-                ## First just see whether this edge is already present
-                ## (this is not in the published algorithm)
-                #btm = bottoms[tops == i][0]
-                #print("    Point is top of edge (%d, %d)" % (btm, i))
-                #if (i, btm) in edges_lookup or (btm, i) in edges_lookup:
-                    #print("    edge already added, continuing..")
-                    #continue
                 
                 
                 ## Locate the other endpoint
@@ -283,24 +278,6 @@ class Triangulation(object):
                 #upper_polygon.append(endpoint)
                 #lower_polygon.append(endpoint)
 
-                # (iii) triangluate empty areas
-                
-                # triangulate upper area
-                #upper_dist = distances_from_line(e, upper_polygon)
-                #while len(upper_polygon) > 2:
-                    #i = np.argmax(upper_dist)
-                    #add_tri(upper_polygon[i], upper_polygon[i-1],
-                            #upper_polygon[i+1], legal=False)
-                    #upper_polygon.pop(i)
-                    #upper_dist.pop(i)
-
-                #lower_dist = distances_from_line(e, lower_polygon)
-                #while len(lower_polygon) > 2:
-                    #i = np.argmax(lower_dist)
-                    #add_tri(lower_polygon[i], lower_polygon[i-1],
-                            #lower_polygon[i+1], legal=False)
-                    #lower_polygon.pop(i)
-                    #lower_dist.pop(i)
                     
         self.finalize()
         
@@ -344,13 +321,24 @@ class Triangulation(object):
         # TODO:  We can remove (i) after this is implemented.
 
 
-    def edge_event(self, i, j):
+    def edge_event(self, i, j, front_index):
         """
         Force edge (i, j) to be present in mesh. 
         This works by removing intersected triangles and filling holes up to
         the cutting edge.
         """
-        return
+        print "  == edge event =="
+        pts = self.pts
+        edges = self.edges
+        front = self.front
+
+        # First just see whether this edge is already present
+        # (this is not in the published algorithm)
+        if (i, j) in self.edges_lookup or (j, i) in self.edges_lookup:
+            print "    already added."
+            return
+        print "    Edge (%d,%d) not added yet. Do edge event. (%s - %s)" % (i, j, pts[i], pts[j])
+        
         # traverse in two different modes:
         #  1. If cutting edge is below front, traverse through triangles. These
         #     must be removed and the resulting hole re-filled. (fig. 12)
@@ -365,17 +353,24 @@ class Triangulation(object):
         
         # Keep track of which section of the front must be replaced
         # and with what it should be replaced
-        front_hole = []  # contains start and stop indexes for section of front to remove
-        front_patch = []  # contains data that should fill the hole in the front
+        front_hole = [front_index, None]  # contains start and stop indexes for section of front to remove
+        front_patch = [i]  # contains data that should fill the hole in the front
         
-        if edge_below_front:
+        last_tri = None   # last triangle cut by the edge (already set if in mode 1)
+        last_edge = None  # or last triangle edge crossed (if in mode 1)
+        
+        # Which direction to traverse front
+        front_dir = 1 if self.pts[j][0] > self.pts[i][0] else -1
+                
+        if self.edge_below_front((i, j), front_index):
             mode = 1  # follow triangles
         else:
             mode = 2  # follow front
+            front_index += front_dir
+            lower_polygon.append(front[front_index])
             
-        last_tri = None   # last triangle cut by the edge (already set if in mode 1)
-        last_edge = None  # last front edge followed (already set if in mode 2)
-                        # or last triangle edge crossed (if in mode 1)
+
+        # Loop until we reach point j
         while True:
             if mode == 1:
                 if last_edge in front_edges: # crossing over front
@@ -398,7 +393,49 @@ class Triangulation(object):
                 
                 
             else:  # mode == 2
-                pass
+                front_index += front_dir
+                front_hole[1] = front_index
+                if front[front_index] == j:
+                    # found endpoint!
+                    lower_polygon.append(j)
+                    break
+                next_edge = tuple(front[front_index:front_index+2])
+                if edges_intersect:
+                    mode = 1
+                    # more..
+                else:
+                    continue  # stay in mode 2, start next point
+        
+        front_patch.append(j)
+        
+        print("Finished edge_event:")
+        print("  front_hole:", front_hole)
+        print("  front_patch:", front_patch)
+        print("  upper_polygon:", upper_polygon)
+        print("  lower_polygon:", lower_polygon)
+
+        # (iii) triangluate empty areas
+        
+        for polygon in [lower_polygon, upper_polygon]:
+            dist = self.distances_from_line((i, j), polygon)
+            while len(polygon) > 2:
+                i = np.argmax(dist)
+                self.add_tri(polygon[i], polygon[i-1],
+                             polygon[i+1], legal=False, 
+                             source='edge_event')
+                polygon.pop(i)
+                dist.pop(i)
+
+        # update front
+        self.front = front[:front_hole[0]] + front_patch + front[front_hole[1]+1:]
+        
+        
+
+    def edge_below_front(self, edge, front_index):
+        f0 = self.front[front_index-1]
+        f1 = self.front[front_index+1]
+        return (self.orientation(edge, f0) > 0 and 
+                self.orientation(edge, f1) < 0)
 
     def find_edge_intersections(self):
         """
@@ -434,10 +471,12 @@ class Triangulation(object):
                     other_cuts = cuts.setdefault(ind+i+1, [])
                     other_cuts.append((int1[ind], pts[j]))
         
-        # sort all cut lists by intercept
+        # sort all cut lists by intercept, remove duplicates
         for k,v in cuts.items():
             v.sort(key=lambda x: x[0])
-            
+            for i in range(len(v)-2, -1, -1):
+                if v[i][0] == v[i+1][0]:
+                    v.pop(i+1)
         return cuts
 
     def split_intersecting_edges(self):
@@ -471,6 +510,8 @@ class Triangulation(object):
             # add new edges
             new_edges = [[pt_indexes[i-1], pt_indexes[i]] for i in range(1, len(pt_indexes))] 
             add_edges.extend(new_edges)
+            
+            assert [21, 22] not in new_edges
                     
         self.pts = np.append(self.pts, np.array(add_pts), axis=0)
         self.edges = np.append(self.edges, np.array(add_edges), axis=0)
@@ -499,6 +540,7 @@ class Triangulation(object):
             
             # rewrite edges to use i instead of j
             self.edges[self.edges == j] = i
+            #assert not np.any(self.edges[:,0] == self.edges[:,1])
             
             # decrement all point indexes > j
             self.edges[self.edges > j] -= 1
@@ -514,27 +556,28 @@ class Triangulation(object):
 
 
     # Distance of a set of points from a given line
-    def distances_from_line(self, e, points):
-        e1 = pts[e[0]]
-        e2 = pts[e[1]]
+    def distances_from_line(self, edge, points):
+        # TODO: vectorize
+        e1 = self.pts[edge[0]]
+        e2 = self.pts[edge[1]]
         distances = []
         # check if e is not just a point
-        l2 = float(distance(e1, e2))
+        l2 = float(self.distance(e1, e2))
         l2 *= l2
         if l2 == 0:
             for p in points:
-                distances.append(distance(e1, pts[p]))
-
+                distances.append(self.distance(e1, self.pts[p]))
         else:
             for p in points:
                 t = float((pts[p] - e1).dot(e2 - e1))/l2
                 if (t < 0.0):
-                    distances.append(distance(pts[p], e1))
+                    distances.append(self.distance(self.pts[p], e1))
                 elif (t > 0.0):
-                    distances.append(distance(pts[p], e2))
+                    distances.append(self.distance(self.pts[p], e2))
                 else:
                     projection = e1 + t * (e2 - e1)
-                    distances.append(distance(pts[p], projection))
+                    distances.append(self.distance(self.pts[p], projection))
+        
         return distances
 
 
@@ -677,11 +720,11 @@ class Triangulation(object):
         #h = ((A - C) * P).sum(axis=1) / f  # (A-C) dot P
         return h
 
-    #def orientation(self, edge, point):
-        #"""Returns positive if edge[0]->point is clockwise from edge[0]->edge[1]"""
-        #v1 = self.pts[point] - self.pts[edge[0]]
-        #v2 = self.pts[edge[1]] - self.pts[edge[0]]
-        #return np.cross(v1, v2) # positive if v1 is CW from v2
+    def orientation(self, edge, point):
+        """Returns positive if edge[0]->point is clockwise from edge[0]->edge[1]"""
+        v1 = self.pts[point] - self.pts[edge[0]]
+        v2 = self.pts[edge[1]] - self.pts[edge[0]]
+        return np.cross(v1, v2) # positive if v1 is CW from v2
 
     ## Legalize recursively - incomplete
     def legalize(self, p):
@@ -808,6 +851,7 @@ if __name__ == '__main__':
                 None: (0, 255, 255, 50),
                 'smooth1': (0, 255, 0, 50),
                 'fill_hull': (255, 255, 0, 50),
+                'edge_event': (255, 0, 255, 50),
                 }[source]
             
             tpts = self.pts[np.array(tri)]
@@ -832,7 +876,11 @@ if __name__ == '__main__':
         def remove_tri(self, *args, **kwds):
             k = Triangulation.remove_tri(self, *args, **kwds)
             self.undraw_tri(k)
-        
+
+        def edge_event(self, *args, **kwds):
+            self.draw_state()
+            Triangulation.edge_event(self, *args, **kwds)
+            self.draw_state()
         
     #user input data - points and constraining edges
     pts = [(0, 0),
