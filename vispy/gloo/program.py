@@ -191,14 +191,12 @@ class Program(GLObject):
         # Stuff we need to do *after* glUse-ing the program
         self._activate_variables()
     
-    
     def _deactivate(self):
         """Deactivate the program."""
 
         logger.debug("GPU: Deactivating program")
         gl.glUseProgram(0)
         self._deactivate_variables()
-    
     
     def _build(self):
         """
