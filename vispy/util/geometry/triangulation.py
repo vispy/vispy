@@ -353,19 +353,28 @@ class Triangulation(object):
         
         # Keep track of which section of the front must be replaced
         # and with what it should be replaced
-        front_hole = [front_index, None]  # contains start and stop indexes for section of front to remove
-        front_patch = [i]  # contains data that should fill the hole in the front
+        front_holes = []  # contains start and stop indexes for sections of front to condense
         
-        last_tri = None   # last triangle cut by the edge (already set if in mode 1)
+        next_tri = None   # next triangle to cut (already set if in mode 1)
         last_edge = None  # or last triangle edge crossed (if in mode 1)
         
         # Which direction to traverse front
         front_dir = 1 if self.pts[j][0] > self.pts[i][0] else -1
                 
+        # Initialize search state
         if self.edge_below_front((i, j), front_index):
             mode = 1  # follow triangles
+            tri = self.find_cut_triangle((i, j))
+            last_edge = self.edge_opposite_point(tri, i)
+            next_tri = self.adjacent_tri(last_edge, i)
+            self.remove_tri(tri)
+            # todo: does this work? can we count on last_edge to be clockwise
+            # around point i?
+            lower_polygon.append(last_edge[1])
+            upper_polygon.append(last_edge[0])
         else:
             mode = 2  # follow front
+            front_holes.append([front_index])
             front_index += front_dir
             lower_polygon.append(front[front_index])
             
@@ -377,6 +386,8 @@ class Triangulation(object):
                     mode = 2
                     last_tri = None
                     # update front / polygons
+                    front_index = x  # where did we cross the front?
+                    front_holes.append([front_index]) 
                     continue
                 else:
                     next_tri = adjacent_triangle(last_tri, last_edge)
@@ -394,23 +405,22 @@ class Triangulation(object):
                 
             else:  # mode == 2
                 front_index += front_dir
-                front_hole[1] = front_index
                 if front[front_index] == j:
                     # found endpoint!
                     lower_polygon.append(j)
+                    front_holes[-1].append(front_index)
                     break
                 next_edge = tuple(front[front_index:front_index+2])
                 if edges_intersect:
                     mode = 1
+                    front_holes[-1].append(front_index)
                     # more..
                 else:
                     continue  # stay in mode 2, start next point
         
-        front_patch.append(j)
         
         print("Finished edge_event:")
-        print("  front_hole:", front_hole)
-        print("  front_patch:", front_patch)
+        print("  front_holes:", front_holes)
         print("  upper_polygon:", upper_polygon)
         print("  lower_polygon:", lower_polygon)
 
@@ -427,8 +437,14 @@ class Triangulation(object):
                 dist.pop(i)
 
         # update front
-        self.front = front[:front_hole[0]] + front_patch + front[front_hole[1]+1:]
-        
+        if front_dir == 1:
+            front_holes = front_holes[::-1]
+        for hole in front_holes:
+            if len(hole) < 2:
+                continue
+            ind = min(hole) + 1
+            for num in range(max(hole) - ind):
+                front.pop(ind)
         
 
     def edge_below_front(self, edge, front_index):
