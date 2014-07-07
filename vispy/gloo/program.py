@@ -87,8 +87,7 @@ class Program(GLObject):
                 raise ValueError('Cannot make a FragmentShader of %r.' % T)
 
         # Build uniforms and attributes
-        self._build_uniforms()
-        self._build_attributes()
+        self._create_variables()
 
         # Build associated structured vertex buffer if count is given
         if self._count > 0:
@@ -125,11 +124,9 @@ class Program(GLObject):
 
         self._need_create = True
         self._need_build = True
-        self._need_update = True
 
         # Build uniforms and attributes
-        self._build_uniforms()
-        self._build_attributes()
+        self._create_variables()
 
     def detach(self, shaders):
         """Detach one or several vertex/fragment shaders from the program.
@@ -159,11 +156,9 @@ class Program(GLObject):
                 else:
                     raise RuntimeError("Shader is not attached to the program")
         self._need_build = True
-        self._need_update = True
 
         # Build uniforms and attributes
-        self._build_uniforms()
-        self._build_attributes()
+        self._create_variables()
 
     def _create(self):
         """
@@ -174,7 +169,37 @@ class Program(GLObject):
             self._handle = gl.glCreateProgram()
             if not self._handle:
                 raise RuntimeError("Cannot create program object")
+    
+    def _delete(self):
+        logger.debug("GPU: Deleting program")
+        gl.glDeleteProgram(self._handle)
+    
+    def _activate(self):
+        """Activate the program as part of current rendering state."""
         
+        #logger.debug("GPU: Activating program")
+        
+        # Stuff we need to do *before* glUse-ing the program
+        if self._need_build:
+            self._build()
+            self._enable_variables()
+            self._need_build = False
+        
+        # Go and use the prrogram
+        gl.glUseProgram(self.handle)
+        
+        # Stuff we need to do *after* glUse-ing the program
+        self._activate_variables()
+    
+    
+    def _deactivate(self):
+        """Deactivate the program."""
+
+        logger.debug("GPU: Deactivating program")
+        gl.glUseProgram(0)
+        self._deactivate_variables()
+    
+    
     def _build(self):
         """
         Build (link) the program and checks everything's ok.
@@ -214,33 +239,13 @@ class Program(GLObject):
         if not gl.glGetProgramParameter(self._handle, gl.GL_VALIDATE_STATUS):
             print(gl.glGetProgramInfoLog(self._handle))
             raise RuntimeError('Program validation error')
+    
+    def _create_variables(self):
+        """ Create the uniform and attribute objects based on the
+        provided GLSL. This method is called when the GLSL is changed.
+        """
         
-        self._need_build = False
-
-    def _update(self):
-        # Activate uniforms
-        active_uniforms = [name for (name, gtype) in self.active_uniforms]
-        for uniform in self._uniforms.values():
-            if uniform.name in active_uniforms:
-                uniform.active = True
-            else:
-                uniform.active = False
-        
-        # Activate attributes
-        active_attributes = [name for (name, gtype) in self.active_attributes]
-        for attribute in self._attributes.values():
-            if attribute.name in active_attributes:
-                attribute.active = True
-            else:
-                attribute.active = False
-        
-    def _delete(self):
-        logger.debug("GPU: Deleting program")
-        gl.glDeleteProgram(self._handle)
-
-    def _build_uniforms(self):
-        """ Build the uniform objects """
-
+        # Build uniforms
         self._uniforms = {}
         count = 0
         for (name, gtype) in self.all_uniforms:
@@ -250,20 +255,59 @@ class Program(GLObject):
                 uniform._unit = count
                 count += 1
             self._uniforms[name] = uniform
-        self._need_update = True
-
-    def _build_attributes(self):
-        """ Build the attribute objects """
-
+        
+        # Build attributes
         self._attributes = {}
-
         dtype = []
         for (name, gtype) in self.all_attributes:
             attribute = Attribute(self, name, gtype)
             self._attributes[name] = attribute
             dtype.append(attribute.dtype)
-        self._need_update = True
+    
+    def _enable_variables(self):  # previously _update
+        """ Enable the uniform and attribute objects that will actually be
+        used by the Program. i.e. variables that are optimised out are
+        disabled. This method is called after the program has been buid.
+        """
+        # Enable uniforms
+        active_uniforms = [name for (name, gtype) in self.active_uniforms]
+        for uniform in self._uniforms.values():
+            if uniform.name in active_uniforms:
+                uniform.enabled = True
+            else:
+                uniform.enabled = False
+        
+        # Enable attributes
+        active_attributes = [name for (name, gtype) in self.active_attributes]
+        for attribute in self._attributes.values():
+            if attribute.name in active_attributes:
+                attribute.enabled = True
+            else:
+                attribute.enabled = False
+    
+    def _activate_variables(self):
+        """ Activate the uniforms and attributes so that the Program
+        can use them. This method is called when the Program gets activated.
+        """
+        for uniform in self._uniforms.values():
+            if uniform.enabled:
+                uniform.activate()
 
+        for attribute in self._attributes.values():
+            if attribute.enabled:
+                attribute.activate()
+    
+    def _deactivate_variables(self):
+        """ Deactivate all enabled uniforms and attributes. This method
+        gets called when the Program gets deactivated.
+        """
+        for uniform in self._uniforms.values():
+            if uniform.enabled:
+                uniform.deactivate()
+        for attribute in self._attributes.values():
+            if attribute.enabled:
+                attribute.deactivate()
+    
     def bind(self, data):
         """ Bind a VertexBuffer that has structured data
         
@@ -298,39 +342,6 @@ class Program(GLObject):
             return self._attributes[name].data
         else:
             raise KeyError("Unknown uniform or attribute %s" % name)
-
-    def _activate(self):
-        """Activate the program as part of current rendering state."""
-        if self._need_build:
-            self._build()
-        
-        logger.debug("GPU: Activating program")
-        
-        gl.glUseProgram(self.handle)
-        
-        self._activate_variables()
-
-    def _activate_variables(self):
-        for uniform in self._uniforms.values():
-            if uniform.active:
-                uniform.activate()
-
-        for attribute in self._attributes.values():
-            if attribute.active:
-                attribute.activate()
-                
-    def _deactivate(self):
-        """Deactivate the program."""
-
-        logger.debug("GPU: Deactivating program")
-        gl.glUseProgram(0)
-
-        for uniform in self._uniforms.values():
-            if uniform.active:
-                uniform.deactivate()
-        for attribute in self._attributes.values():
-            if attribute.active:
-                attribute.deactivate()
 
     @property
     def all_uniforms(self):

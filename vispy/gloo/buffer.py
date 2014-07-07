@@ -116,7 +116,6 @@ class Buffer(GLObject):
         if nbytes == self._nbytes and offset == 0:
             self._pending_data = []
         self._pending_data.append((data, nbytes, offset))
-        self._need_update = True
 
     def _create(self):
         """ Create buffer on GPU """
@@ -135,32 +134,37 @@ class Buffer(GLObject):
 
         logger.debug("GPU: Resizing buffer(%d bytes)" % self._nbytes)
         gl.glBufferData(self._target, self._nbytes, self._usage)
-        self._need_resize = False
 
     def _activate(self):
         """ Bind the buffer to some target """
 
         logger.debug("GPU: Activating buffer")
         gl.glBindBuffer(self._target, self._handle)
-
+        
+        if self.base is not None:
+            return
+        
+        # Resize if necessary
+        if self._need_resize:
+            self._resize()
+            self._need_resize = False
+        
+        # Update pending data if necessary
+        if self._pending_data:
+            logger.debug("GPU: Updating buffer (%d pending operation(s))" %
+                         len(self._pending_data))
+            self._update_data()
+    
     def _deactivate(self):
         """ Unbind the current bound buffer """
 
         logger.debug("GPU: Deactivating buffer")
         gl.glBindBuffer(self._target, 0)
 
-    def _update(self):
+    def _update_data(self):
         """ Upload all pending data to GPU. """
 
-        if self.base is not None:
-            return
-
-        if self._need_resize:
-            self._resize()
-            self._need_resize = False
-
-        logger.debug("GPU: Updating buffer (%d pending operation(s))" %
-                     len(self._pending_data))
+        # Update data
         while self._pending_data:
             data, nbytes, offset = self._pending_data.pop(0)
 
@@ -401,7 +405,6 @@ class DataBuffer(Buffer):
         self._views = []
 
         self._pending_data = []
-        self._need_update = False
         self._need_resize = True
         self._size = size
         if self._data is not None and self._store:

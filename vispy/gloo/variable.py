@@ -95,8 +95,8 @@ class Variable(GLObject):
         # CPU data
         self._data = None
 
-        # Whether this variable is active
-        self._active = True
+        # Whether this variable is actually being used by GLSL
+        self._enabled = True
 
     @property
     def name(self):
@@ -123,14 +123,14 @@ class Variable(GLObject):
         return self._dtype
 
     @property
-    def active(self):
-        """ Whether this variable is active in the program """
-        return self._active
+    def enabled(self):
+        """ Whether this variable is being used by the program """
+        return self._enabled
 
-    @active.setter
-    def active(self, active):
-        """ Whether this variable is active in the program """
-        self._active = bool(active)
+    @enabled.setter
+    def enabled(self, enabled):
+        """ Whether this variable is being used by the program """
+        self._enabled = bool(enabled)
 
     @property
     def data(self):
@@ -209,11 +209,17 @@ class Uniform(Variable):
     def _activate(self):
         # if self._gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
         if self._gtype in (gl.GL_SAMPLER_2D,):
-            logger.debug("GPU: Active texture is %d" % self._unit)
+            #logger.debug("GPU: Active texture is %d" % self._unit)
             gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
             if self.data is not None:
                 self.data.activate()
-
+        
+        # Update if necessary. OpenGL stores uniform values at the Program
+        # object, so they only have to be set once.
+        if self._need_update:
+            self._update()
+            self._need_update = False
+    
     def _deactivate(self):
         if self._gtype in (gl.GL_SAMPLER_2D,):
             #gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
@@ -223,17 +229,11 @@ class Uniform(Variable):
     def _update(self):
 
         # Check active status (mandatory)
-        if not self._active:
+        if not self._enabled:
             raise RuntimeError("Uniform variable is not active")
         if self._data is None:
             raise RuntimeError("Uniform variable data is not set")
         
-        # WARNING : Uniform are supposed to keep their value between program
-        #           activation/deactivation (from the GL documentation). It has
-        #           been tested on some machines but if it is not the case on
-        #           every machine, we can expect nasty bugs from this early
-        #           return
-
         # Matrices (need a transpose argument)
         if self._gtype in (gl.GL_FLOAT_MAT2,
                            gl.GL_FLOAT_MAT3, gl.GL_FLOAT_MAT4):
@@ -244,10 +244,6 @@ class Uniform(Variable):
         # Textures (need to get texture count)
         # elif self._gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
         elif self._gtype in (gl.GL_SAMPLER_2D,):
-            # texture = self.data
-            # log("GPU: Active texture is %d" % self._unit)
-            # gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
-            # gl.glBindTexture(texture.target, texture.handle)
             gl.glUniform1i(self._handle, self._unit)
 
         # Regular uniform
@@ -256,9 +252,11 @@ class Uniform(Variable):
 
     def _create(self):
         """ Create uniform on GPU (get handle) """
-
         self._handle = gl.glGetUniformLocation(
             self._program.handle, self._name)
+    
+    def _delete(self):
+        pass  # No need to delete variables; they are not really *objects*
 
 
 # --------------------------------------------------------- Attribute class ---
@@ -322,13 +320,8 @@ class Attribute(Variable):
         self._generic = False
 
     def _activate(self):
-        if isinstance(self.data, VertexBuffer):
-            self.data.activate()
-            size, gtype, dtype = gl_typeinfo[self._gtype]
-            stride = self.data.stride
-            gl.glEnableVertexAttribArray(self.handle)
-            gl.glVertexAttribPointer(self.handle, size, gtype, gl.GL_FALSE,
-                                     stride, self.data.offset)
+        # Update always, attributes are not stored at the Program object
+        self._update()
     
     def _deactivate(self):
         if isinstance(self.data, VertexBuffer):
@@ -337,10 +330,10 @@ class Attribute(Variable):
     def _update(self):
         """ Actual upload of data to GPU memory  """
 
-        logger.debug("GPU: Updating %s" % self.name)
+        #logger.debug("GPU: Updating %s" % self.name)
         
         # Check active status (mandatory)
-        if not self._active:
+        if not self._enabled:
             raise RuntimeError("Attribute variable is not active")
         if self._data is None:
             raise RuntimeError("Attribute variable data is not set")
@@ -351,51 +344,28 @@ class Attribute(Variable):
                 gl.glDisableVertexAttribArray(self._handle)
                 self._afunction(self._handle, *self._data)
 
-        # Direct upload
-        # elif isinstance(self._data, ClientVertexBuffer):
-            # Tell OpenGL to use the array and not the glVertexAttrib* value
-            # gl.glEnableVertexAttribArray(self._loc)
-            # Disable any VBO
-            # gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-            # Early exit (pointer to CPU-data is still known by Program)
-            # if not self._dirty:
-            #    return
-            # Get numpy array from its container
-            #data = self._data.data
-
-            # Check attribute format against data format
-            #size, gtype, _ = gl_typeinfo[self._gtype]
-            # if self._gtype != self._data._gtype:
-            #    raise ValueError("Data not compatible with attribute type")
-            #offset = 0
-            #stride = self._data.stride
-            # Apply (first disable any previous VertexBuffer)
-            #gl.glVertexAttribPointer(self._loc, size, gtype,False,stride,data)
-
         # Regular vertex buffer
         elif self._handle >= 0:
-            #if self._need_update:
-            #    self.data._update()
-            #    self._need_update = False
-
+            
+            # Activate the VBO
+            self.data.activate()
+            
             # Get relevant information from gl_typeinfo
             size, gtype, dtype = gl_typeinfo[self._gtype]
             stride = self.data.stride
-
-            # Make offset a pointer, or it will be interpreted as a small array
-            # Not needed with our new GL API
-            offset = self.data.offset  # ctypes.c_void_p(self.data.offset)
+            offset = self.data.offset
 
             gl.glEnableVertexAttribArray(self.handle)
-            #gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.data.handle)
             gl.glVertexAttribPointer(
                 self.handle, size, gtype, gl.GL_FALSE, stride, offset)
 
     def _create(self):
         """ Create attribute on GPU (get handle) """
-
         self._handle = gl.glGetAttribLocation(self._program.handle, self.name)
-
+    
+    def _delete(self):
+        pass  # No need to delete variables; they are not really *objects*
+    
     @property
     def size(self):
         """ Size of the underlying vertex buffer """

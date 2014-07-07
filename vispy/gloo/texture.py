@@ -70,15 +70,16 @@ class Texture(GLObject):
         self._offset = offset
         self._pending_data = []
         self._resizeable = resizeable
-        self._need_resize = False
-        self._need_update = False
         self._valid = True
         self._views = []
-
+        
+        # Extra stages that are handled in _activate()
+        self._need_resize = False
+        self._need_parameterization = True
+        
         self._interpolation = gl.GL_NEAREST, gl.GL_NEAREST
         self._wrapping = gl.GL_CLAMP_TO_EDGE
-        self._need_parameterization = True
-
+        
         # Do we have data to build texture upon ?
         if data is not None:
             self._need_resize = True
@@ -240,7 +241,6 @@ class Texture(GLObject):
         self._views = []
 
         self._pending_data = []
-        self._need_update = False
         self._need_resize = True
         self._shape = shape
         if self._data is not None and self._store:
@@ -313,7 +313,6 @@ class Texture(GLObject):
             # but we need to keep the offset into account.
         
         self._pending_data.append((data, offset))
-        self._need_update = True
 
     def __getitem__(self, key):
         """ x.__getitem__(y) <==> x[y] """
@@ -443,29 +442,26 @@ class Texture(GLObject):
 
     def _parameterize(self):
         """ Paramaterize texture """
+        if isinstance(self._interpolation, tuple):
+            min_filter = self._interpolation[0]
+            mag_filter = self._interpolation[1]
+        else:
+            min_filter = self._interpolation
+            mag_filter = self._interpolation
+        gl.glTexParameterf(
+            self._target, gl.GL_TEXTURE_MIN_FILTER, min_filter)
+        gl.glTexParameterf(
+            self._target, gl.GL_TEXTURE_MAG_FILTER, mag_filter)
 
-        if self._need_parameterization:
-            self._need_parameterization = False
-            if isinstance(self._interpolation, tuple):
-                min_filter = self._interpolation[0]
-                mag_filter = self._interpolation[1]
-            else:
-                min_filter = self._interpolation
-                mag_filter = self._interpolation
-            gl.glTexParameterf(
-                self._target, gl.GL_TEXTURE_MIN_FILTER, min_filter)
-            gl.glTexParameterf(
-                self._target, gl.GL_TEXTURE_MAG_FILTER, mag_filter)
-
-            if isinstance(self._wrapping, tuple):
-                wrap_s = self._wrapping[0]
-                wrap_t = self._wrapping[1]
-            else:
-                wrap_s = self._wrapping
-                wrap_t = self._wrapping
-            gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S, wrap_s)
-            gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrap_t)
-
+        if isinstance(self._wrapping, tuple):
+            wrap_s = self._wrapping[0]
+            wrap_t = self._wrapping[1]
+        else:
+            wrap_s = self._wrapping
+            wrap_t = self._wrapping
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S, wrap_s)
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrap_t)
+    
     def _create(self):
         """ Create texture on GPU """
 
@@ -483,12 +479,27 @@ class Texture(GLObject):
 
         logger.debug("GPU: Activate texture")
         gl.glBindTexture(self.target, self._handle)
-        if self._need_parameterization:
-            self._parameterize()
+        
+        # We let base texture to handle all operations
+        if self.base is not None:
+            return
+
+        # Resize if necessary
         if self._need_resize:
             self._resize()
             self._need_resize = False
-
+        
+        # Reparameterize if necessary
+        if self._need_parameterization:
+            self._parameterize()
+            self._need_parameterization = False
+        
+        # Update pending data if necessary
+        if self._pending_data:
+            logger.debug("GPU: Updating texture (%d pending operation(s))" %
+                         len(self._pending_data))
+            self._update_data()
+    
     def _deactivate(self):
         """ Deactivate texture on GPU """
 
@@ -611,15 +622,8 @@ class Texture1D(Texture):
         gl.glTexImage2D(self.target, 0, self._format, self._format, 
                         self._gtype, shape)
 
-    def _update(self):
+    def _update_data(self):
         """ Texture update on GPU """
-
-        # We let base texture to handle all operations
-        if self.base is not None:
-            return
-
-        logger.debug("GPU: Updating texture (%d pending operation(s))" %
-                     len(self._pending_data))
 
         while self._pending_data:
             data, offset = self._pending_data.pop(0)
@@ -726,19 +730,10 @@ class Texture2D(Texture):
         gl.glTexImage2D(self.target, 0, self._format, self._format, 
                         self._gtype, shape)
 
-    def _update(self):
+    def _update_data(self):
         """ Texture update on GPU """
 
-        # We let base texture to handle all operations
-        if self.base is not None:
-            return
-
-        if self._need_resize:
-            self._resize()
-            self._need_resize = False
-        logger.debug("GPU: Updating texture (%d pending operation(s))" %
-                     len(self._pending_data))
-
+        # Update data
         while self._pending_data:
             data, offset = self._pending_data.pop(0)
             x, y = 0, 0
@@ -883,7 +878,7 @@ class TextureCubeMap(Texture):
         logger.debug("GPU: Resizing texture(%sx%s)" %
                      (self.width, self.height))
 
-    def _update(self):
+    def _update_data(self):
         """ Texture upload on GPU """
 
         logger.debug("GPU: Updating texture (%d pending operation(s))" %

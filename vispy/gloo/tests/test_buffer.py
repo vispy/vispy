@@ -20,7 +20,6 @@ class BufferTest(unittest.TestCase):
         assert B._target == gl.GL_ARRAY_BUFFER
         assert B._handle == -1
         assert B._need_create is True
-        assert B._need_update is True
         assert B._need_resize is True
         assert B._need_delete is False
         assert B._nbytes == 0
