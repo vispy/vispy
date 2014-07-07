@@ -394,9 +394,11 @@ class MouseEvent(Event):
        String indicating the event type (e.g. mouse_press, key_release)
     pos : (int, int)
         The position of the mouse (in screen coordinates).
-    button : int
+    button : int | None
         The button that generated this event (can be None).
-        Left=1, right=2, middle=3.
+        Left=1, right=2, middle=3. During a mouse drag, this
+        will return the button that started the drag (same thing as
+        ``event.press_event.button``).
     buttons : [int, ...]
         The list of buttons depressed during this event.
     modifiers : tuple of Key instances
@@ -424,7 +426,7 @@ class MouseEvent(Event):
                  **kwds):
         Event.__init__(self, type, **kwds)
         self._pos = (0, 0) if (pos is None) else (pos[0], pos[1])
-        self._button = int(button) if (button is not None) else 0
+        self._button = int(button) if (button is not None) else None
         self._buttons = [] if (buttons is None) else buttons
         self._modifiers = tuple(modifiers or ())
         self._delta = (0.0, 0.0) if (delta is None) else (delta[0], delta[1])
