@@ -106,8 +106,7 @@ class MarkerVisual(Visual):
         
     def draw(self):
         # attributes / uniforms are not available until program is built        
-        self._program._create()
-        self._program._build()
+        self._program.prepare()  # Force ModularProgram to set shaders
         self._program['a_position'] = gloo.VertexBuffer(self._pos)
         self._program['a_color'] = gloo.VertexBuffer(self._color)
         self._program['a_size'] = gloo.VertexBuffer(self._size)

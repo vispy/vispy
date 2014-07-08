@@ -48,6 +48,10 @@ class Program(GLObject):
         
         self._need_build = True
         
+        # Init uniforms and attributes
+        self._uniforms = {}
+        self._attributes = {}
+        
         # Get all vertex shaders
         self._verts = []
         if isinstance(vert, (str, VertexShader)):
@@ -182,7 +186,6 @@ class Program(GLObject):
         # Stuff we need to do *before* glUse-ing the program
         if self._need_build:
             self._build()
-            self._enable_variables()
             self._need_build = False
         
         # Go and use the prrogram
@@ -204,7 +207,6 @@ class Program(GLObject):
 
         A GL context must be available to be able to build (link)
         """
-
         # Check if we have something to link
         if not self._verts:
             raise ValueError("No vertex shader has been given")
@@ -237,11 +239,20 @@ class Program(GLObject):
         if not gl.glGetProgramParameter(self._handle, gl.GL_VALIDATE_STATUS):
             print(gl.glGetProgramInfoLog(self._handle))
             raise RuntimeError('Program validation error')
+        
+        # Now we know what variable will be used by the program
+        self._enable_variables()
     
     def _create_variables(self):
         """ Create the uniform and attribute objects based on the
         provided GLSL. This method is called when the GLSL is changed.
         """
+        
+        # todo: maybe we want to restore previously set variables, 
+        # so that uniforms and attributes do not have to be set each time
+        # that the shaders are updated. However, we should take into account
+        # that typically all shaders are removed (i.e. no variables are
+        # present) and then the new shaders are added.
         
         # Build uniforms
         self._uniforms = {}
@@ -270,18 +281,11 @@ class Program(GLObject):
         # Enable uniforms
         active_uniforms = [name for (name, gtype) in self.active_uniforms]
         for uniform in self._uniforms.values():
-            if uniform.name in active_uniforms:
-                uniform.enabled = True
-            else:
-                uniform.enabled = False
-        
+            uniform.enabled = uniform.name in active_uniforms
         # Enable attributes
         active_attributes = [name for (name, gtype) in self.active_attributes]
         for attribute in self._attributes.values():
-            if attribute.name in active_attributes:
-                attribute.enabled = True
-            else:
-                attribute.enabled = False
+            attribute.enabled = attribute.name in active_attributes
     
     def _activate_variables(self):
         """ Activate the uniforms and attributes so that the Program
@@ -290,7 +294,6 @@ class Program(GLObject):
         for uniform in self._uniforms.values():
             if uniform.enabled:
                 uniform.activate()
-
         for attribute in self._attributes.values():
             if attribute.enabled:
                 attribute.activate()

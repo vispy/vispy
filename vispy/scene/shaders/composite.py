@@ -255,7 +255,15 @@ class ModularProgram(Program):
     #    for dep in function.all_deps():
     #        for hook_name, cb in dep.callbacks:
     #            self.add_callback(hook_name, cb)
-
+    
+    def prepare(self):
+        """ Prepare the Program so we can set attributes and uniforms.
+        """
+        # TEMP function to fix sync issues for now
+        self._create()
+        self._build()
+        self._need_build = False
+    
     def _build(self):
         # generate all code..
         self._compile()
