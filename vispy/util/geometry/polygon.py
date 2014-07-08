@@ -5,7 +5,6 @@
 # -----------------------------------------------------------------------------
 
 import numpy as np
-from scipy.spatial import Delaunay
 
 
 class PolygonData(object):
@@ -113,6 +112,7 @@ class PolygonData(object):
         Triangulates the set of vertices and stores the triangles in faces and
         the convex hull in convex_hull.
         """
+        from scipy.spatial import Delaunay
         if self._vertices is None:
             return
         pos2 = np.delete(self._vertices, 2, 1)
