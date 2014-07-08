@@ -265,6 +265,8 @@ class ModularProgram(Program):
         self._need_build = False
     
     def _build(self):
+        """ Overload Program._build
+        """
         # generate all code..
         self._compile()
 
@@ -281,11 +283,13 @@ class ModularProgram(Program):
         # and continue.
         super(ModularProgram, self)._build()
 
-    def _activate_variables(self):
+    def _enable_variables(self):
+        """ Overload Program._enable_variables
+        """
         # set all variables
         self._apply_variables()
         
-        super(ModularProgram, self)._activate_variables()
+        super(ModularProgram, self)._enable_variables()
         
     def _find_hooks(self):
         # Locate all undefined function prototypes in both shaders
