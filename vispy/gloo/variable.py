@@ -169,6 +169,7 @@ class Uniform(Variable):
         self._data = np.zeros(size, dtype)
         self._ufunction = Uniform._ufunctions[self._gtype]
         self._unit = -1
+        self._need_update = False
 
     def set_data(self, data):
         """ Set data (no upload) """
@@ -230,9 +231,9 @@ class Uniform(Variable):
 
         # Check active status (mandatory)
         if not self._enabled:
-            raise RuntimeError("Uniform variable is not active")
+            raise RuntimeError("Uniform %r is not active" % self.name)
         if self._data is None:
-            raise RuntimeError("Uniform variable data is not set")
+            raise RuntimeError("Uniform data not set for %r" % self.name)
         
         # Matrices (need a transpose argument)
         if self._gtype in (gl.GL_FLOAT_MAT2,
@@ -304,7 +305,7 @@ class Attribute(Variable):
             _, _, dtype = gl_typeinfo[self._gtype]
             self._data = np.array(data).astype(dtype)
             self._generic = True
-            self._need_update = True
+            #self._need_update = True
             self._afunction = Attribute._afunctions[self._gtype]
             return
         else:
@@ -334,9 +335,9 @@ class Attribute(Variable):
         
         # Check active status (mandatory)
         if not self._enabled:
-            raise RuntimeError("Attribute variable is not active")
+            raise RuntimeError("Attribute %r is not active" % self.name)
         if self._data is None:
-            raise RuntimeError("Attribute variable data is not set")
+            raise RuntimeError("Attribute data not set for %r" % self.name)
         
         # Generic vertex attribute (all vertices receive the same value)
         if self._generic:
