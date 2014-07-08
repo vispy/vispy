@@ -14,15 +14,20 @@ from inspect import getargspec
 import vispy
 from vispy import keys
 from vispy.testing import requires_application
-from vispy.app import default_app
+from vispy.app import use_app, Application
 from vispy.app.backends import _template
 
 
+class DummyApplication(Application):
+    def _use(self, backend_namd):
+        pass
+
+        
 def _test_module_properties(_module=None):
     """Test application module"""
     if _module is None:
-        default_app.use()
-        _module = default_app.backend_module
+        app = use_app()
+        _module = app.backend_module
 
     # Test that the keymap contains all keys supported by vispy.
     keymap = _module.KEYMAP
@@ -99,7 +104,7 @@ def _test_module_properties(_module=None):
     fname = _module.__file__.strip('c')
     text = open(fname, 'rb').read().decode('utf-8')
 
-    canvas = vispy.app.Canvas(create_native=False)
+    canvas = vispy.app.Canvas(create_native=False, app=DummyApplication())
     # Stylus and touch are ignored because they are not yet implemented.
     # Mouse events are emitted from the CanvasBackend base class.
     ignore = set(['stylus', 'touch', 'mouse_press', 'paint',

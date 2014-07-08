@@ -162,7 +162,8 @@ class Maker:
         from vispy import test
         try:
             test(*(arg.split()))
-        except Exception:
+        except Exception as err:
+            print(err)
             raise SystemExit(1)
 
     def images(self, arg):

@@ -11,9 +11,8 @@ via functions in the module's namespace.
 from __future__ import division
 
 from .application import Application  # noqa
+from ._default_app import use_app, create, run, quit, process_events  # noqa
 from .canvas import Canvas, MouseEvent, KeyEvent  # noqa
 from .timer import Timer  # noqa
-from ._default_app import (default_app, use, create, run, quit,  # noqa
-                           process_events)  # noqa
 from . import base  # noqa
 from ._config import get_default_config  # noqa

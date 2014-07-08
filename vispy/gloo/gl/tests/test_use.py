@@ -7,7 +7,7 @@ from vispy.gloo import gl
 
 
 def teardown_module():
-    gl.use()  # Reset to default
+    gl.use_gl()  # Reset to default
 
 
 @requires_pyopengl()
@@ -15,7 +15,7 @@ def test_use_desktop():
     """ Testing that gl.use injects all names in gl namespace """
 
     # Use desktop
-    gl.use('desktop')
+    gl.use_gl('desktop')
     #
     for name in dir(gl.desktop):
         if name.lower().startswith('gl'):
@@ -24,7 +24,7 @@ def test_use_desktop():
             assert_is(val1, val2)
 
     # Use pyopengl
-    gl.use('pyopengl')
+    gl.use_gl('pyopengl')
     #
     for name in dir(gl.desktop):
         if name.lower().startswith('gl'):
@@ -33,7 +33,7 @@ def test_use_desktop():
             assert_is(val1, val2)
     
     # Use webgl
-    gl.use('webgl')
+    gl.use_gl('webgl')
     #
     for name in dir(gl.desktop):
         if name.lower().startswith('gl'):
@@ -42,10 +42,10 @@ def test_use_desktop():
             assert_is(val1, val2)
     
     # Touch debug wrapper stuff
-    gl.use('desktop debug')
+    gl.use_gl('desktop debug')
     
     # Use desktop again
-    gl.use('desktop')
+    gl.use_gl('desktop')
     #
     for name in dir(gl.desktop):
         if name.lower().startswith('gl'):

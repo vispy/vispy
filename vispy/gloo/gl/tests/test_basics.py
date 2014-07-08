@@ -18,7 +18,7 @@ from vispy.gloo import gl
 
 
 def teardown_module():
-    gl.use()  # Reset to default
+    gl.use_gl()  # Reset to default
 
 
 @requires_application()
@@ -61,7 +61,7 @@ def _test_basics(backend):
     """
 
     # use the backend
-    gl.use(backend)
+    gl.use_gl(backend)
 
     with Canvas():
         _test_setting_parameters()

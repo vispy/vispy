@@ -483,7 +483,7 @@ def set_state(preset=None, **kwargs):
 
         >>> gloo.set_state(blend=True, depth_test=True, polygon_offset_fill=False)  # noqa, doctest:+SKIP
 
-    This would be equivalent to calling 
+    This would be equivalent to calling
 
         >>> from vispy.gloo import gl
         >>> gl.glDisable(gl.GL_BLEND)
@@ -564,7 +564,7 @@ def get_parameter(name):
     return gl.glGetParameter(_gl_attr(name))
 
 
-def read_pixels(viewport=None):
+def read_pixels(viewport=None, alpha=True):
     """Read pixels from the front buffer
 
     Parameters
@@ -572,11 +572,13 @@ def read_pixels(viewport=None):
     viewport : array-like | None
         4-element list of x, y, w, h parameters. If None (default),
         the current GL viewport will be queried and used.
+    alpha : bool
+        Alpha toggle.
 
     Returns
     -------
     pixels : array
-        2D array of pixels in np.uint8 format.
+        3D array of pixels in np.uint8 format.
     """
     if viewport is None:
         viewport = get_parameter('viewport')
@@ -586,12 +588,20 @@ def read_pixels(viewport=None):
             raise ValueError('viewport must be 1D 4-element array-like')
     x, y, w, h = viewport
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)  # PACK, not UNPACK
-    im = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
+    if alpha:  # gl.GL_RGBA
+        im = gl.glReadPixels(x, y, w, h, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
+    else:  # gl.gl_RGB
+        im = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
     # reshape, flip, and return
     if not isinstance(im, np.ndarray):
         im = np.frombuffer(im, np.uint8)
-    im.shape = h, w, 3
+
+    if alpha:
+        im.shape = h, w, 4  # RGBA
+    else:
+        im.shape = h, w, 3  # RGB
+    im = im[::-1, :, :]  # flip the image
     return im
 
 

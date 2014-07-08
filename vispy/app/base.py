@@ -60,7 +60,7 @@ class BaseCanvasBackend(object):
         """Removes vispy-specific kwargs for CanvasBackend"""
         # these are the output arguments
         keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
-                'decorate', 'fullscreen']
+                'decorate', 'fullscreen', 'parent']
         from .canvas import Canvas
         outs = list()
         spec = getargspec(Canvas.__init__)
@@ -173,6 +173,8 @@ class BaseCanvasBackend(object):
             last_event = self._vispy_mouse_data['last_event']
             if last_event is not None:
                 last_event._forget_last_event()
+        else:
+            kwds['button'] = self._vispy_mouse_data['press_event'].button
 
         ev = self._vispy_canvas.events.mouse_move(**kwds)
         self._vispy_mouse_data['last_event'] = ev
