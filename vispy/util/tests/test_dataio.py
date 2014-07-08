@@ -3,16 +3,12 @@ from os import path as op
 from nose.tools import assert_equal, assert_raises
 from numpy.testing import assert_allclose, assert_array_equal
 
-from vispy.util.dataio import (write_mesh, read_mesh, _check_img_lib, crate,
-                               imsave, imread)
+from vispy.util.dataio import write_mesh, read_mesh, crate, imsave, imread
 from vispy.util._geom import _fast_cross_3d
 from vispy.util import _TempDir
+from vispy.testing import requires_img_lib
 
 temp_dir = _TempDir()
-
-has_img_lib = not all(c is None for c in _check_img_lib())
-requires_img_lib = np.testing.dec.skipif(not has_img_lib, 'imageio or PIL '
-                                         'required')
 
 
 def test_wavefront():
@@ -42,7 +38,7 @@ def test_wavefront():
                     rtol=1e-10, atol=1e-10)
 
 
-@requires_img_lib
+@requires_img_lib()
 def test_read_write_image():
     """Test reading and writing of images"""
     fname = op.join(temp_dir, 'out.png')
