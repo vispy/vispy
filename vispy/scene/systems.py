@@ -4,6 +4,8 @@
 
 from __future__ import division
 
+import sys
+
 from .widgets.widget import Widget
 from .visuals.visual import Visual
 from ..util._logging import logger
