@@ -4,6 +4,8 @@
 
 from __future__ import division
 
+import sys
+
 from .widgets.widget import Widget
 from .visuals.visual import Visual
 from ..util._logging import logger
@@ -30,6 +32,15 @@ class DrawingSystem(object):
             try:
                 entity.draw(event)
             except Exception:
+                # get traceback and store (so we can do postmortem
+                # debugging)
+                type, value, tb = sys.exc_info()
+                tb = tb.tb_next  # Skip *this* frame
+                sys.last_type = type
+                sys.last_value = value
+                sys.last_traceback = tb
+                del tb  # Get rid of it in this namespace
+                # Handle
                 logger.log_exception()
                 logger.warning("Error drawing entity %s" % entity)
         
