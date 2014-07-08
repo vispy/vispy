@@ -6,6 +6,7 @@ import logging
 import sys
 import inspect
 import re
+import traceback
 
 from ..ext.six import string_types
 
@@ -75,7 +76,8 @@ class _VispyStreamHandler(logging.StreamHandler):
         """Log message emitter that optionally matches and/or records"""
         test = record.getMessage()
         match = self._vispy_match
-        if match is None or len(re.findall(match, test)) > 0:
+        if (match is None or re.search(match, test) or 
+                re.search(match, _get_vispy_caller())):
             if self._vispy_emit_record:
                 fmt_rec = self._vispy_formatter.format(record)
                 self._vispy_emit_list.append(fmt_rec)
@@ -157,7 +159,7 @@ def set_log_level(verbose, match=None, return_old=False):
     if isinstance(verbose, string_types):
         verbose = verbose.lower()
         if verbose not in logging_types:
-            raise ValueError('verbose must be of a valid type')
+            raise ValueError('Invalid argument "%s"' % verbose)
         verbose = logging_types[verbose]
     else:
         raise TypeError('verbose must be a bool or string')
@@ -225,3 +227,31 @@ class use_log_level(object):
         # reset handler
         if self._record:
             _lh._vispy_set_emit_record(False)
+
+
+def log_exception(level='warning', tb_skip=2):
+    """
+    Send an exception and traceback to the logger.
+    
+    This function is used in cases where an exception is handled safely but
+    nevertheless should generate a descriptive error message. An extra line
+    is inserted into the stack trace indicating where the exception was caught.
+    
+    Parameters
+    ----------
+    level : str
+        See ``set_log_level`` for options.
+    tb_skip : int
+        The number of traceback entries to ignore, prior to the point where
+        the exception was caught. The default is 2.
+    """
+    stack = "".join(traceback.format_stack()[:-tb_skip])
+    tb = traceback.format_exception(*sys.exc_info())
+    msg = tb[0]  # "Traceback (most recent call last):"
+    msg += stack
+    msg += "  << caught exception here: >>\n"
+    msg += "".join(tb[1:]).rstrip()
+    
+    logger.log(logging_types[level], msg)
+    
+logger.log_exception = log_exception  # make this easier to reach
