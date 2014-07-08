@@ -198,10 +198,33 @@ def test_utility_methods():
         ])
 
     t = T(pts, edges)
-    t.initialize()
-    t.tris = [[0, 1, 4], [1, 2, 4], [2, 3, 4]]
-    assert t.find_cut_triangle((4, 5)) == (1, 2, 4)
+    # skip initialization and just simulate being part-way through 
+    # triangulation
+    for tri in [[0, 1, 4], [1, 2, 4], [2, 3, 4]]:
+        t.add_tri(*tri)
     
+    assert t.find_cut_triangle((4, 5)) == (4, 1, 2)
+    
+    assert t.orientation((4, 5), 0) == 1
+    assert t.orientation((4, 5), 1) == 1
+    assert t.orientation((4, 5), 2) == -1
+    assert t.orientation((4, 5), 3) == -1
+    assert t.orientation((4, 5), 4) == 0
+    assert t.orientation((4, 5), 5) == 0
+    
+    dist = ((t.pts[0]-t.pts[1])**2).sum()**0.5
+    assert t.distance(t.pts[0], t.pts[1]) == dist
+
+    assert t.adjacent_tri((1, 4), 0) == (4, 1, 2)
+    assert t.adjacent_tri((0, 4), 1) == None
+    assert t.adjacent_tri((1, 4), (1, 4, 0)) == (4, 1, 2)
+    assert t.adjacent_tri((0, 4), (1, 4, 0)) == None
+    try:
+        t.adjacent_tri((1, 4), 5)
+    except RuntimeError:
+        pass
+    else:
+        raise Exception("Expected RuntimeError.")
 
 if __name__ == '__main__':
     #test_edge_intersections()

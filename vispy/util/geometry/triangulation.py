@@ -27,6 +27,11 @@ class Triangulation(object):
         self.pts = pts
         self.edges = edges
         
+        # described in initialize()
+        self.front = [0, 2, 1]
+        self.tris = []
+        self.edges_lookup = {}
+        
     def normalize(self):
         # Clean up data   (not discussed in original publication)
         
@@ -367,7 +372,8 @@ class Triangulation(object):
             tri = self.find_cut_triangle((i, j))
             last_edge = self.edge_opposite_point(tri, i)
             next_tri = self.adjacent_tri(last_edge, i)
-            self.remove_tri(tri)
+            assert next_tri is not None
+            self.remove_tri(*tri)
             # todo: does this work? can we count on last_edge to be clockwise
             # around point i?
             lower_polygon.append(last_edge[1])
@@ -382,24 +388,24 @@ class Triangulation(object):
         # Loop until we reach point j
         while True:
             if mode == 1:
-                if last_edge in front_edges: # crossing over front
+                if self.edge_in_front(last_edge): # crossing over front
                     mode = 2
-                    last_tri = None
+                    next_tri = None
                     # update front / polygons
                     front_index = x  # where did we cross the front?
                     front_holes.append([front_index]) 
                     continue
-                else:
-                    next_tri = adjacent_tri(last_tri, last_edge)
+                else: # crossing from one triangle into another
                     if j in next_tri:
                         # reached endpoint! 
                         # update front / polygons
                         break
                     else:
-                        tri_edges = edges_in_tri(next_tri)
+                        tri_edges = self.edges_in_tri(next_tri)
                         tri_edges.remove(last_edge)
                         # select the edge that is cut
-                        next_edge = intersected_edge(tri_edges, (i,j))
+                        last_edge = self.intersected_edge(tri_edges, (i,j))
+                        next_tri = self.adjacent_tri(last_edge, next_tri)
 
                 
                 
@@ -411,7 +417,7 @@ class Triangulation(object):
                     front_holes[-1].append(front_index)
                     break
                 next_edge = tuple(front[front_index:front_index+2])
-                if edges_intersect:
+                if edges_intersect: # crossing over front into triangle
                     mode = 1
                     front_holes[-1].append(front_index)
                     # more..
@@ -468,6 +474,16 @@ class Triangulation(object):
         
         return None
 
+    def edge_in_front(self, edge):
+        """
+        Return True if *edge* is in the current front.
+        """
+        e = (list(edge), list(edge)[::-1])
+        for i in range(len(self.front)-1):
+            if self.front[i:i+2] in e:
+                return True
+        return False
+
     def edge_opposite_point(self, tri, i):
         """
         Given a triangle, return the edge that is opposite point i.
@@ -479,12 +495,24 @@ class Triangulation(object):
     def adjacent_tri(self, edge, i):
         """
         Given a triangle formed by edge and i, return the triangle that shares
-        edge.
+        edge. *i* may be either a point or the entire triangle.
         """
-        pt = self.edge_lookup[edge]
-        if pt == i:
-            pt = self.edge_lookup[(edge[1], edge[0])]
-        return (edge[1], edge[0], pt)
+        if not np.isscalar(i):
+            i = [x for x in i if x not in edge][0]
+
+        try:
+            pt1 = self.edges_lookup[edge]
+            pt2 = self.edges_lookup[(edge[1], edge[0])]
+        except KeyError:
+            return None
+            
+        if pt1 == i:
+            return (edge[1], edge[0], pt2)
+        elif pt2 == i:
+            return (edge[1], edge[0], pt1)
+        else:
+            raise RuntimeError("Edge %s and point %d do not form a triangle "
+                               "in this mesh." % (edge, i))
 
     def edge_below_front(self, edge, front_index):
         f0 = self.front[front_index-1]
@@ -894,15 +922,26 @@ if __name__ == '__main__':
             self.win.addItem(self.front_line)
             self.tri_shapes = {}
             
-        
+            self.nextStep = False
+            self.win.scene().sigMouseClicked.connect(self.mouseClicked)
+
+        def mouseClicked(self):
+            self.nextStep = True
             
         def draw_state(self):
             global app
             front_pts = self.pts[np.array(self.front)]
             self.front_line.setData(front_pts[:,0], front_pts[:,1])
-            for i in range(10):  # sleep ~1 sec, but keep ui responsive
+            #for i in range(100):  # sleep ~1 sec, but keep ui responsive
+                #app.processEvents()
+                #time.sleep(0.01)
+            while True:
                 app.processEvents()
                 time.sleep(0.01)
+                if self.nextStep:
+                    self.nextStep = False
+                    break
+                
 
         def draw_tri(self, tri, source=None):
             # assign triangle color based on the source that generated it
