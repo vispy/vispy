@@ -18,7 +18,6 @@ class GLObject(object):
         self._handle = -1
         self._target = None
         self._need_create = True
-        self._need_update = True
         self._need_delete = False
 
         GLObject._idcount += 1
@@ -43,20 +42,19 @@ class GLObject(object):
             self._delete()
         self._handle = -1
         self._need_create = True
-        self._need_update = True
         self._need_delete = False
 
     def activate(self):
         """ Activate the object on GPU """
-
+        
+        # As a base class, we only provide functionality for
+        # automatically creating the object. The other stages are so
+        # different that it's more clear if each GLObject specifies
+        # what it does in _activate().
         if self._need_create:
             self._create()
             self._need_create = False
         self._activate()
-        if self._need_update:
-            self._update()
-            self._need_update = False
-            self._activate()
     
     def deactivate(self):
         """ Deactivate the object on GPU """
@@ -89,8 +87,4 @@ class GLObject(object):
 
     def _deactivate(self):
         """ Dummy deactivate method """
-        raise NotImplementedError()
-
-    def _update(self):
-        """ Dummy update method """
         raise NotImplementedError()

@@ -35,7 +35,6 @@ class RenderBuffer(GLObject):
         self._format = format
         self._resizeable = resizeable
         self._need_resize = True
-        self._need_update = False
 
     @property
     def shape(self):
@@ -82,6 +81,8 @@ class RenderBuffer(GLObject):
 
         logger.debug("GPU: Activate render buffer")
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._handle)
+        
+        # Resize if necessary
         if self._need_resize:
             self._resize()
             self._need_resize = False
@@ -194,7 +195,6 @@ class FrameBuffer(GLObject):
         self._color_buffer = color
         self._depth_buffer = depth
         self._stencil_buffer = stencil
-        self._need_update = False
         self._need_attach = True
         self._resizeable = resizeable
         self._pending_attachments = []
@@ -309,10 +309,12 @@ class FrameBuffer(GLObject):
 
         logger.debug("GPU: Activate render framebuffer")
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
+        
+        # Attach buffers if necessary
         if self._need_attach:
             self._attach()
             self._need_attach = False
-
+    
     def _deactivate(self):
         """ Deactivate framebuffer on GPU """
 
