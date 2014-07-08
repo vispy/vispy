@@ -11,6 +11,7 @@ def assert_array_eq(a, b):
     assert np.all(a[~mask] == b[~mask])
 
 def test_intersect_edge_arrays():
+    global t
     pts = np.array([
         [0., 0.],
         [0., 10.],
@@ -45,6 +46,7 @@ def test_intersect_edge_arrays():
 
 
 def test_edge_intersections():
+    global t
     pts = np.array([
         [0, 0],
         [1, 0],
@@ -137,6 +139,7 @@ def test_edge_intersections():
 
     
 def test_merge_duplicate_points():
+    global t
     pts = np.array([
         [0, 0],
         [1, 1], 
@@ -174,8 +177,14 @@ def test_merge_duplicate_points():
     assert np.all(t.pts == pts)
     assert np.all(t.edges == edges)
 
+def test_initialize():
+    # check points are correctly sorted
+    # check artificial points are outside bounds of all others
+    # check tops / bottoms
+    pass
 
 def test_utility_methods():
+    global t
     pts = np.array([
         [0, 0],
         [1, 0],
@@ -185,20 +194,17 @@ def test_utility_methods():
         [1.5, -2],
         ])
     edges = np.array([
-        [0, 3],  # fan of triangles
-        [0, 4],  # (0-3 edge will be automatically cut)
-        [1, 4],
-        [2, 4],
-        [3, 4],
         [4, 5],  # edge cuts through triangle (1, 2, 4) 
         ])
 
     t = T(pts, edges)
-    t.normalize()
+    t.initialize()
+    t.tris = [[0, 1, 4], [1, 2, 4], [2, 3, 4]]
     assert t.find_cut_triangle((4, 5)) == (1, 2, 4)
+    
 
 if __name__ == '__main__':
-    test_edge_intersections()
+    #test_edge_intersections()
     #test_merge_duplicate_points()
-    
+    test_utility_methods()
     

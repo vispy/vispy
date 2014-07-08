@@ -460,6 +460,9 @@ class Triangulation(object):
         for oedge in edges:
             o1 = self.orientation(edge, oedge[0])
             o2 = self.orientation(edge, oedge[1]) 
+            print edge, oedge, o1, o2
+            print self.pts[np.array(edge)]
+            print self.pts[np.array(oedge)]
             if o1 != o2:
                 return (edge[0], oedge[0], oedge[1])
         
@@ -471,7 +474,7 @@ class Triangulation(object):
         Vertexes are returned in the same orientation as in tri.
         """
         ind = tri.index(i)
-        return ((ind+1) % 3, (ind+2) % 3)
+        return (tri[(ind+1) % 3], tri[(ind+2) % 3])
 
     def adjacent_tri(self, edge, i):
         """
@@ -565,8 +568,10 @@ class Triangulation(object):
             
             assert [21, 22] not in new_edges
                     
-        self.pts = np.append(self.pts, np.array(add_pts), axis=0)
-        self.edges = np.append(self.edges, np.array(add_edges), axis=0)
+        if add_pts:
+            self.pts = np.append(self.pts, np.array(add_pts), axis=0)
+        if add_edges:
+            self.edges = np.append(self.edges, np.array(add_edges), axis=0)
 
     def merge_duplicate_points(self):
         # generate a list of all pairs (i,j) of identical points
