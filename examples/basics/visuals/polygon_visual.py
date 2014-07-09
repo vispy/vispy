@@ -18,9 +18,31 @@ pos = np.array([[0, 0, 0],
                [0, 0.5, 0],
                [-0.25, 0.25, 0]])
 
+pos = np.array([[0, 0],
+                [10, 0],
+                [10, 10],
+                [20, 10],
+                [20, 20],
+                [25, 20],
+                [25, 25],
+                [20, 25],
+                [20, 20],
+                [10, 17],
+                [5, 25],
+                [9, 30],
+                [6, 15],
+                [15, 12.5],
+                [0, 5]])
+
+theta = np.linspace(0, 2*np.pi, 11)
+pos = np.hstack([np.cos(theta)[:,np.newaxis], 
+                 np.sin(theta)[:,np.newaxis]])
+pos[::2] *= 0.4
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
+        global pos
+        
         self.polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
                                        border_color=(1, 1, 1, 1))
         self.polygon.transform = vispy.scene.transforms.STTransform(

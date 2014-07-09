@@ -6,6 +6,7 @@
 
 import numpy as np
 
+from .triangulation import Triangulation
 
 class PolygonData(object):
     """
@@ -107,18 +108,25 @@ class PolygonData(object):
         return self._convex_hull
 
     def triangulate(self):
-        # To be replaced soon to remove scipy dependency
         """
         Triangulates the set of vertices and stores the triangles in faces and
         the convex hull in convex_hull.
         """
-        from scipy.spatial import Delaunay
-        if self._vertices is None:
-            return
-        pos2 = np.delete(self._vertices, 2, 1)
-        tri = Delaunay(pos2)
-        self._faces = tri.simplices
-        self._convex_hull = tri.convex_hull
+        #from scipy.spatial import Delaunay
+        #if self._vertices is None:
+            #return
+        #pos2 = np.delete(self._vertices, 2, 1)
+        #tri = Delaunay(pos2)
+        #self._faces = tri.simplices
+        #self._convex_hull = tri.convex_hull
+        
+        edges = np.empty((len(self._vertices), 2), dtype=np.uint)
+        edges[:,0] = np.arange(len(self._vertices))
+        edges[:,1] = edges[:,0] + 1
+        edges[-1, 1] = 0
+        tri = Triangulation(self._vertices, edges)
+        tri.triangulate()
+        return tri.pts, tri.tris
 
     def add_vertex(self, vertex):
         """
