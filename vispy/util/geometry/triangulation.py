@@ -157,7 +157,8 @@ class Triangulation(object):
                     angle = np.arccos(self.cosine(pi, p1, p2))
                     
                     # if angle is < pi/2, make new triangle
-                    if angle > np.pi/2.:
+                    print "Smooth angle:", pi, p1, p2, angle
+                    if angle > np.pi/2. or np.isnan(angle):
                         break
                     
                     assert (i != front[ind1] and 
@@ -290,15 +291,15 @@ class Triangulation(object):
         ## Finalize (sec. 3.5)
 
         # (i) Remove all triangles that include at least one artificial point
-        print "== Remove artificial triangles"
-        # todo: just don't add these in the first place. 
-        rem = []
-        for tri in self.tris:
-            if 0 in tri or 1 in tri:
-                rem.append(tri)
+        #print "== Remove artificial triangles"
+        ## todo: just don't add these in the first place. 
+        #rem = []
+        #for tri in self.tris:
+            #if 0 in tri or 1 in tri:
+                #rem.append(tri)
                 
-        for tri in rem:
-            self.remove_tri(*tri)
+        #for tri in rem:
+            #self.remove_tri(*tri)
 
 
         # (ii) Add bordering triangles to fill hull
@@ -324,7 +325,42 @@ class Triangulation(object):
         #        triangles that share a non-hull edge are marked the same. This should
         #        take care of all artificial and hole triangles.
         # TODO:  We can remove (i) after this is implemented.
-
+        tris = []  # triangles to check
+        tri_state = {}  # 0 for outside, 1 for inside
+        
+        # find a starting triangle
+        for t in self.tris:
+            if 0 in t or 1 in t:
+                tri_state[t] = 0
+                tris.append(t)
+                break
+        
+        while tris:
+            print "iterate:", tris
+            next_tris = []
+            for t in tris:
+                v = tri_state[t]
+                for i in (0,1,2):
+                    edge = (t[i], t[(i+1)%3])
+                    pt = t[(i+2)%3]
+                    t2 = self.adjacent_tri(edge, pt)
+                    if t2 is None:
+                        continue
+                    t2a = t2[1:3] + t2[0:1]
+                    t2b = t2[2:3] + t2[0:2]
+                    if (t2 in tri_state or 
+                        t2a in tri_state or t2b in tri_state):
+                        continue
+                    if self.is_constraining_edge(edge):
+                        tri_state[t2] = 1 - v
+                    else:
+                        tri_state[t2] = v
+                    next_tris.append(t2)
+            tris = next_tris
+        
+        for t, v in tri_state.items():
+            if v == 0:
+                self.remove_tri(*t)
 
     def edge_event(self, i, j, front_index):
         """
@@ -387,8 +423,17 @@ class Triangulation(object):
 
         # Loop until we reach point j
         while True:
+            self.draw_state()
+            print "  edge_event loop: mode %d" % mode
+            print "    front_holes:", front_holes, front
+            print "    front_index:", front_index
+            print "    next_tri:", next_tri
+            print "    last_edge:", last_edge
+            print "    upper_polygon:", upper_polygon
+            print "    lower_polygon:", lower_polygon
             if mode == 1:
                 if self.edge_in_front(last_edge): # crossing over front
+                    print "    -> crossed over front.."
                     mode = 2
                     next_tri = None
                     # update front / polygons
@@ -396,7 +441,9 @@ class Triangulation(object):
                     front_holes.append([front_index]) 
                     continue
                 else: # crossing from one triangle into another
+                    print "    -> next triangle.."
                     if j in next_tri:
+                        print "    -> hit endpoint!"
                         # reached endpoint! 
                         # update front / polygons
                         break
@@ -412,16 +459,21 @@ class Triangulation(object):
             else:  # mode == 2
                 front_index += front_dir
                 if front[front_index] == j:
+                    print "    -> hit endpoint!"
                     # found endpoint!
                     lower_polygon.append(j)
                     front_holes[-1].append(front_index)
                     break
                 next_edge = tuple(front[front_index:front_index+2])
-                if edges_intersect: # crossing over front into triangle
+                
+                if self.edges_intersect((i, j), next_edge): # crossing over front into triangle
+                    print "    -> crossed over front.."
                     mode = 1
                     front_holes[-1].append(front_index)
                     # more..
                 else:
+                    print "    -> next front edge.."
+                    lower_polygon.append(front[front_index])
                     continue  # stay in mode 2, start next point
         
         
@@ -519,6 +571,12 @@ class Triangulation(object):
         f1 = self.front[front_index+1]
         return (self.orientation(edge, f0) > 0 and 
                 self.orientation(edge, f1) < 0)
+
+    def is_constraining_edge(self, edge):
+        mask1 = self.edges == edge[0]
+        mask2 = self.edges == edge[1]
+        return (np.any(mask1[:,0] & mask2[:,1]) or 
+                np.any(mask2[:,0] & mask1[:,1]))
 
     def find_edge_intersections(self):
         """
@@ -654,7 +712,7 @@ class Triangulation(object):
                 distances.append(self.distance(e1, self.pts[p]))
         else:
             for p in points:
-                t = float((pts[p] - e1).dot(e2 - e1))/l2
+                t = float((self.pts[p] - e1).dot(e2 - e1)) / l2
                 if (t < 0.0):
                     distances.append(self.distance(self.pts[p], e1))
                 elif (t > 0.0):
@@ -729,10 +787,13 @@ class Triangulation(object):
         return h
 
 
-    def intersects(self, edge1, edge2):
-        global pts
-        h = intersection(edge1, edge2)
-        return (h >= 0 and h < 1)
+    def edges_intersect(self, edge1, edge2):
+        """
+        Return 1 if edges intersect completely (endpoints excluded)
+        """
+        h = self.intersect_edge_arrays(self.pts[np.array(edge1)], 
+                                       self.pts[np.array(edge2)])
+        return 0 < h < 1
 
 
     #def intersection_point(self, edge1, edge2):
@@ -836,7 +897,7 @@ class Triangulation(object):
 
     def add_tri(self, a, b, c, legal=True, source=None):
         # source is just used for debugging
-        print("Add triangle:", (a,b,c))
+        print("Add triangle [%s]:" % source, (a,b,c))
         
         # sanity check
         assert a != b and b != c and c != a
@@ -932,15 +993,20 @@ if __name__ == '__main__':
             global app
             front_pts = self.pts[np.array(self.front)]
             self.front_line.setData(front_pts[:,0], front_pts[:,1])
-            #for i in range(100):  # sleep ~1 sec, but keep ui responsive
-                #app.processEvents()
-                #time.sleep(0.01)
-            while True:
+            self.graph.setData(pos=self.pts, adj=self.edges) 
+            
+            # Auto-advance on timer
+            for i in range(1):  # sleep ~1 sec, but keep ui responsive
                 app.processEvents()
                 time.sleep(0.01)
-                if self.nextStep:
-                    self.nextStep = False
-                    break
+                
+            # Advance once per click
+            #while True:
+                #app.processEvents()
+                #time.sleep(0.01)
+                #if self.nextStep:
+                    #self.nextStep = False
+                    #break
                 
 
         def draw_tri(self, tri, source=None):
@@ -949,7 +1015,7 @@ if __name__ == '__main__':
                 None: (0, 255, 255, 50),
                 'smooth1': (0, 255, 0, 50),
                 'fill_hull': (255, 255, 0, 50),
-                'edge_event': (255, 0, 255, 50),
+                'edge_event': (100, 100, 255, 100),
                 }[source]
             
             tpts = self.pts[np.array(tri)]

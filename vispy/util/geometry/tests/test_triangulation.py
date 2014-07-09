@@ -203,8 +203,11 @@ def test_utility_methods():
     for tri in [[0, 1, 4], [1, 2, 4], [2, 3, 4]]:
         t.add_tri(*tri)
     
+    
+    # find_cut_triangle
     assert t.find_cut_triangle((4, 5)) == (4, 1, 2)
     
+    # orientation
     assert t.orientation((4, 5), 0) == 1
     assert t.orientation((4, 5), 1) == 1
     assert t.orientation((4, 5), 2) == -1
@@ -212,9 +215,11 @@ def test_utility_methods():
     assert t.orientation((4, 5), 4) == 0
     assert t.orientation((4, 5), 5) == 0
     
+    # distance
     dist = ((t.pts[0]-t.pts[1])**2).sum()**0.5
     assert t.distance(t.pts[0], t.pts[1]) == dist
 
+    # adjacent_tri
     assert t.adjacent_tri((1, 4), 0) == (4, 1, 2)
     assert t.adjacent_tri((0, 4), 1) == None
     assert t.adjacent_tri((1, 4), (1, 4, 0)) == (4, 1, 2)
@@ -225,6 +230,18 @@ def test_utility_methods():
         pass
     else:
         raise Exception("Expected RuntimeError.")
+
+    # edges_intersect
+    assert not t.edges_intersect((0, 1), (1, 2))
+    assert not t.edges_intersect((0, 2), (1, 2))
+    assert t.edges_intersect((4, 5), (1, 2))
+
+    # is_constraining_edge
+    assert t.is_constraining_edge((4, 5))
+    assert t.is_constraining_edge((5, 4))
+    assert not t.is_constraining_edge((3, 5))
+    assert not t.is_constraining_edge((3, 2))
+    
 
 if __name__ == '__main__':
     #test_edge_intersections()
