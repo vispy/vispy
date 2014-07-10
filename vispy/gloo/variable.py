@@ -140,6 +140,7 @@ class Variable(GLObject):
     def __repr__(self):
         return "<%s %s>" % (self.__class__.__name__, self.name)
 
+
 # ----------------------------------------------------------- Uniform class ---
 class Uniform(Variable):
     """ A Uniform represents a program uniform variable. 
