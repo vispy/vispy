@@ -133,7 +133,7 @@ class MeshData(object):
         elif indexed == 'faces':
             if (self._vertices_indexed_by_faces is None and
                     self._vertices is not None):
-                self._vertices_indexed_by_faces = self._vertices[self.faces()]
+                return self._vertices[self.faces()]
             return self._vertices_indexed_by_faces
         else:
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
@@ -398,7 +398,7 @@ class MeshData(object):
         #pass
 
     def _compute_edges(self):
-        if not self.has_face_indexed_data:
+        if not self.has_face_indexed_data():
             ## generate self._edges from self._faces
             nf = len(self._faces)
             edges = np.empty(nf*3, dtype=[('i', np.uint, 2)])
@@ -543,4 +543,69 @@ def cylinder(rows, cols, radius=[1.0, 1.0], length=1.0, offset=False):
         faces[start:start+cols] = rowtemplate1 + row * cols
         faces[start+cols:start+(cols*2)] = rowtemplate2 + row * cols
 
+    return MeshData(vertices=verts, faces=faces)
+
+def cone(cols, radius=3.0, length=10.0):
+    """
+    Return a MeshData instance with vertexes and faces computed
+    for a cone surface.
+    """
+    verts = np.empty((cols+1, 3), dtype=float)
+    ## compute vertexes
+    th = np.linspace(2 * np.pi, 0, cols+1).reshape(1, cols+1)
+    verts[:-1,2] = 0.0
+    verts[:-1,0] = radius * np.cos(th[0,:-1]) # x = r cos(th)
+    verts[:-1,1] = radius * np.sin(th[0,:-1]) # y = r sin(th)
+    # Add the extremity
+    verts[-1,0] = 0.0
+    verts[-1,1] = 0.0
+    verts[-1,2] = length
+    verts = verts.reshape((cols+1), 3) # just reshape: no redundant vertices...
+    ## compute faces
+    faces = np.empty((cols, 3), dtype=np.uint)
+    template = np.array([[0, 1]])
+    for pos in range(cols):
+        faces[pos,:-1] = template + pos
+    faces[:,2] = cols
+    faces[-1,1] = 0
+    
+    return MeshData(vertices=verts, faces=faces)
+
+
+def arrow(rows, cols, radius=0.1, length=1.0, fRC=2.0, fLC=0.3):
+    """
+    Return a MeshData instance with vertexes and faces computed
+    for an arrow surface.
+    it's a cylinder + a cone
+    
+    IN :
+        - length : Arrow length
+        - radius = Cylinder Radius
+        - fCR = factor Cone Radius : Cone radius = fCR*radius 
+        - fLC = factor Cone length of arrow length : Cone length = fLC*length
+                                                     Cylinder length = length - fLC*length if fLC < 1.0 else = 0.0
+            0 < flc < 1.0
+        - rows : number of vertexes on radius
+    
+    OUT: a MeshData object.        
+    
+    
+    TODO: add the colors for the head and cylinder
+    """
+    # create the cylinder
+    mdCyl = None
+    conL = length * fLC
+    if abs(fLC) < 1.0:
+        cylL = length * (1.0 - fLC)             
+        mdCyl = cylinder(rows, cols, radius=[radius, radius], length=cylL)
+    # create the cone
+    mdCon = cone(cols, radius=radius*fRC, length=conL)
+    verts = mdCon.vertices()
+    nbrVertsCon = verts.size/3
+    faces = mdCon.faces()
+    if mdCyl is not None:
+        trans = np.array([[0.0, 0.0, cylL]])
+        verts = np.vstack((verts+trans, mdCyl.vertices()))
+        faces = np.vstack((faces, mdCyl.faces()+nbrVertsCon))
+    
     return MeshData(vertices=verts, faces=faces)
