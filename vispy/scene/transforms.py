@@ -605,7 +605,7 @@ class STTransform(Transform):
     def scale(self, s):
         self._scale[:len(s)] = s[:4]
         self._scale[len(s):] = 1.0
-        #self._update()
+        self.shader_map()  # update shader variables
 
     @property
     def translate(self):
@@ -615,6 +615,7 @@ class STTransform(Transform):
     def translate(self, t):
         self._translate[:len(t)] = t[:4]
         self._translate[len(t):] = 0.0
+        self.shader_map()  # update shader variables
 
     def as_affine(self):
         m = AffineTransform()

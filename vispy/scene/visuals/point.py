@@ -5,11 +5,11 @@
 from __future__ import division
 
 from ... import gloo
-from .visual import Visual
+from .modular_visual import ModularVisual
 from ..shaders import Function
 
 
-class Point(Visual):
+class Point(ModularVisual):
     """
     Displays multiple point sprites.
     """

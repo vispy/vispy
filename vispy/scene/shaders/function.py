@@ -68,10 +68,11 @@ class Variable(ShaderObject):
     Created by Function.__getitem__
     """
     def __init__(self, function, name, spec=None, anonymous=False):
+        self._state_counter = 0
         super(Variable, self).__init__()
         self.function = function
         self._name = name  # local name within the function
-        self.spec = None  # (vtype, dtype, value)
+        self._spec = None  # (vtype, dtype, value)
         if spec is not None:
             self.spec = spec
         self.anonymous = anonymous  # if True, variable may be renamed.
@@ -115,6 +116,22 @@ class Variable(ShaderObject):
             raise Exception("%s has not been assigned; cannot "
                             "determine value." % self)
         return self.spec[2]
+
+    @property
+    def spec(self):
+        return self._spec
+    
+    @spec.setter
+    def spec(self, s):
+        self._spec = s
+        self._state_counter += 1
+        
+    @property
+    def state_id(self):
+        """Return a unique ID that changes whenever the state of the Variable
+        has changed. This allows ModularProgram to quickly determine whether
+        the value has changed since it was last used."""
+        return id(self), self._state_counter
 
     def __repr__(self):
         return ("<Variable '%s' on %s (%d)>" %

@@ -82,6 +82,7 @@ setup(
         'vispy',
         'vispy.app', 'vispy.app.tests',
         'vispy.app.backends',
+        'vispy.color', 'vispy.color.tests',
         'vispy.ext',
         'vispy.gloo', 'vispy.gloo.tests',
         'vispy.gloo.gl', 'vispy.gloo.gl.tests',
@@ -90,11 +91,9 @@ setup(
         'vispy.scene.shaders', 'vispy.scene.shaders.tests',
         'vispy.scene.visuals',
         'vispy.scene.widgets',
-        'vispy.scenegraph',
-        'vispy.scenegraph.entities',
         'vispy.testing', 'vispy.testing.tests',
         'vispy.util', 'vispy.util.tests',
-        'vispy.util.dataio',
+        'vispy.util.dataio', 'vispy.util.geometry'
     ],
     package_dir={
         'vispy': 'vispy'},

@@ -6,7 +6,7 @@
 
 There are multiple backend implementations of this API, available as
 submodules of this module. One can use one of the backends directly,
-or call `gl.use()` to select one. The backend system allow running
+or call `gl.use_gl()` to select one. The backend system allow running
 visualizations using Angle, WebGL, or other forms of remote rendering.
 This is in part possible by the widespread availability of OpenGL ES 2.0.
 
@@ -97,17 +97,17 @@ proxy = MainProxy()
 _debug_proxy = DebugProxy()
 
 
-# todo: we need a vispy.use(), e.g. webgl needs action both here and in app
-def use(target='desktop'):
-    """ Let Vispy use the target OpenGL ES 2.0 implementation.
-
+def use_gl(target='desktop'):
+    """ Let Vispy use the target OpenGL ES 2.0 implementation
+    
+    Also see ``vispy.use()``.
+    
     Parameters
     ----------
     target : str
         The target GL backend to use.
 
-    Backends
-    --------
+    Available backends:
     * desktop - Use desktop (i.e. normal) OpenGL.
     * pyopengl - Use pyopengl (for fallback and testing). 
     * angle - Use the Angle library to target DirectX (Windows only). (WIP)
@@ -185,4 +185,4 @@ def check_error(when='periodic check'):
 from . import desktop as default_backend  # noqa
 
 # Call use to start using our default backend
-use()
+use_gl()

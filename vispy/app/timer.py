@@ -4,10 +4,11 @@
 
 from __future__ import division
 
-from ._default_app import default_app
 from ..util.event import Event, EmitterGroup
 from ..util.ptime import time as precision_time
+from ..ext.six import string_types
 from .base import BaseTimerBackend as TimerBackend  # noqa
+from . import use_app, Application
 
 
 class Timer(object):
@@ -28,13 +29,8 @@ class Timer(object):
         The application to attach the timer to.
     """
 
-    def __init__(
-            self,
-            interval=0.0,
-            connect=None,
-            iterations=-1,
-            start=False,
-            app=None):
+    def __init__(self, interval=0.0, connect=None, iterations=-1, start=False,
+                 app=None):
         self.events = EmitterGroup(source=self,
                                    start=Event,
                                    stop=Event,
@@ -42,10 +38,19 @@ class Timer(object):
         #self.connect = self.events.timeout.connect
         #self.disconnect = self.events.timeout.disconnect
 
-        # Get app instance and make sure that it has an associated backend
-        self._app = default_app if app is None else app
-        self._app.use()
-
+        # Get app instance
+        if app is None:
+            self._app = use_app()
+        elif isinstance(app, Application):
+            self._app = app
+        elif isinstance(app, string_types):
+            self._app = Application(app)
+        else:
+            raise ValueError('Invalid value for app %r' % app)
+        
+        # Ensure app has backend app object
+        self._app.native
+        
         # Instantiate the backed with the right class
         self._backend = self._app.backend_module.TimerBackend(self)
 
@@ -98,7 +103,7 @@ class Timer(object):
             self.max_iterations = iterations
         self._backend._vispy_start(self.interval)
         self._running = True
-        self._last_emit_time = None
+        self._last_emit_time = precision_time()
         self.events.start(type='timer_start')
 
     def stop(self):
@@ -134,10 +139,7 @@ class Timer(object):
 
         # compute dt since last event
         now = precision_time()
-        if self._last_emit_time is None:
-            dt = None
-        else:
-            dt = now - self._last_emit_time
+        dt = now - self._last_emit_time
         self._last_emit_time = now
 
         self.events.timeout(

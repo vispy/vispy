@@ -120,6 +120,9 @@ class ModularProgram(Program):
 
         # hook definitions
         self._hook_defs = {}  # {'hook_name': Function}
+        
+        # Cache state of Variables so we know which ones require update
+        self._variable_state = {}
 
         self._find_hooks()
 
@@ -252,7 +255,16 @@ class ModularProgram(Program):
     #    for dep in function.all_deps():
     #        for hook_name, cb in dep.callbacks:
     #            self.add_callback(hook_name, cb)
-
+    
+    def prepare(self):
+        """ Prepare the Program so we can set attributes and uniforms.
+        """
+        # TEMP function to fix sync issues for now
+        if self._need_build:
+            self._create()
+            self._build()
+            self._need_build = False
+    
     def _build(self):
         # generate all code..
         self._compile()
@@ -267,12 +279,15 @@ class ModularProgram(Program):
         self.vshader = vs
         self.fshader = fs
 
-        # set all variables..
-        self._apply_variables()
-
         # and continue.
         super(ModularProgram, self)._build()
 
+    def _activate_variables(self):
+        # set all variables
+        self._apply_variables()
+        
+        super(ModularProgram, self)._activate_variables()
+        
     def _find_hooks(self):
         # Locate all undefined function prototypes in both shaders
         vprots = parsing.find_prototypes(self.vmain)
@@ -463,4 +478,7 @@ class ModularProgram(Program):
             if isinstance(spec, Function) or spec.vtype == 'varying':
                 continue
             logger.debug("    %s = %s" % (name, spec.value))
-            self[name] = spec.value
+            state_id = spec.state_id
+            if self._variable_state.get(name, None) != state_id:
+                self[name] = spec.value
+                self._variable_state[name] = state_id

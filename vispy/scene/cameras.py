@@ -8,7 +8,7 @@ import numpy as np
 
 from . import transforms
 from .entity import Entity
-from .transforms import STTransform
+from .transforms import STTransform, PerspectiveTransform
 
 
 class Camera(Entity):

@@ -44,7 +44,7 @@ class Image(Mesh):
 
         self._texture = None
         self.set_data(data)
-        self.set_gl_options(glCullFace=('GL_FRONT_AND_BACK',))
+        self.set_gl_options(cull_face=('front_and_back',))
 
         self.method = method
         self.grid = grid

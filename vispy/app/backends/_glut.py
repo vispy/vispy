@@ -110,6 +110,7 @@ capability = dict(  # things that can be set by the backend
     context=False,
     multi_window=False,
     scroll=False,
+    parent=False,
 )
 
 
@@ -229,7 +230,7 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, **kwargs):
         BaseCanvasBackend.__init__(self, capability, SharedContext)
-        title, size, position, show, vsync, resize, dec, fs, context = \
+        title, size, position, show, vsync, resize, dec, fs, parent, context =\
             self._process_backend_kwargs(kwargs)
         _set_config(context)
         glut.glutInitWindowSize(size[0], size[1])

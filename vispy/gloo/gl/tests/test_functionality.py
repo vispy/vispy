@@ -33,7 +33,7 @@ from vispy.gloo import gl
 ## High level tests
 
 def teardown_module():
-    gl.use()  # Reset to default
+    gl.use_gl()  # Reset to default
 
 
 @requires_application()
@@ -79,7 +79,7 @@ def _test_functonality(backend):
     """ Create app and canvas so we have a context. Then run tests.
     """
     # use the backend
-    gl.use(backend)
+    gl.use_gl(backend)
     
     with Canvas() as canvas:
         _clear_screen()

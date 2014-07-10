@@ -277,5 +277,5 @@ class Entity(object):
         self.events.update()
 
     def __str__(self):
-        return "<%s name=%s id=0x%x>" % (self.__class__.__name__, self._name, 
-                                         id(self))
+        name = "" if self.name is None else " name="+self.name
+        return "<%s%s id=0x%x>" % (self.__class__.__name__, name, id(self))

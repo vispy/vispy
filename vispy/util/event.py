@@ -429,10 +429,11 @@ class EventEmitter(object):
             sys.last_type = type
             sys.last_value = value
             sys.last_traceback = tb
+            del tb  # Get rid of it in this namespace
             # Handle
             if self.ignore_callback_errors:
                 if self.print_callback_errors:
-                    sys.excepthook(type, value, tb)
+                    logger.log_exception()
                     logger.warning("Error invoking callback %s for "
                                    "event: %s" % (cb, event))
             else:

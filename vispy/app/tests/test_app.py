@@ -7,7 +7,7 @@ from time import sleep
 from numpy.testing import assert_array_equal
 from nose.tools import assert_equal, assert_true, assert_raises
 
-from vispy.app import default_app, Canvas, Timer, MouseEvent, KeyEvent
+from vispy.app import use_app, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
 from vispy.testing import requires_application, SkipTest, assert_is, assert_in
 from vispy.util import keys, use_log_level
@@ -17,7 +17,7 @@ from vispy.gloo.shader import VertexShader, FragmentShader
 from vispy.gloo.util import _screenshot
 from vispy.gloo import gl
 
-gl.use('desktop debug')
+gl.use_gl('desktop debug')
 
 
 def on_nonexist(self, *args):
@@ -114,8 +114,7 @@ def _test_callbacks(canvas):
 @requires_application()
 def test_run():
     """Test app running"""
-    a = default_app
-    a.use()
+    a = use_app()
     if a.backend_name.lower() == 'glut':
         raise SkipTest('cannot test running glut')  # knownfail
     for _ in range(2):
@@ -157,11 +156,11 @@ def test_capability():
 @requires_application()
 def test_application():
     """Test application running"""
-    app = default_app
+    app = use_app()
     print(app)  # __repr__ without app
     app.create()
     wrong = 'glut' if app.backend_name.lower() != 'glut' else 'pyglet'
-    assert_raises(RuntimeError, app.use, wrong)
+    assert_raises(RuntimeError, use_app, wrong)
     app.process_events()
     print(app)  # test __repr__
 
@@ -170,7 +169,7 @@ def test_application():
     print(c)
     del c
 
-    pos = [0, 0]
+    pos = [0, 0] if app.backend_module.capability['position'] else None
     size = (100, 100)
     # Use "with" statement so failures don't leave open window
     # (and test context manager behavior)
@@ -192,7 +191,9 @@ def test_application():
         print(canvas)  # __repr__
         assert_equal(canvas.title, title)
         canvas.title = 'you'
-        canvas.position = pos
+        if app.backend_module.capability['position']:
+            # todo: disable more tests based on capability
+            canvas.position = pos
         canvas.size = size
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
@@ -224,7 +225,7 @@ def test_application():
         # screenshots
         gl.glViewport(0, 0, *size)
         ss = _screenshot()
-        assert_array_equal(ss.shape, size + (3,))
+        assert_array_equal(ss.shape, size + (4,))
         assert_equal(len(canvas._backend._vispy_get_geometry()), 4)
         if (app.backend_name.lower() != 'glut' and  # XXX knownfail for Almar
                 sys.platform != 'win32'):  # XXX knownfail for windows
@@ -324,8 +325,9 @@ def test_application():
 @requires_application()
 def test_fs():
     """Test fullscreen support"""
-    a = default_app
-    a.use()
+    a = use_app()
+    if not a.backend_module.capability['fullscreen']:
+        return
     assert_raises(TypeError, Canvas, fullscreen='foo')
     if a.backend_name.lower() in ('glfw', 'sdl2'):  # takes over screen
         raise SkipTest('glfw and sdl2 take over screen')

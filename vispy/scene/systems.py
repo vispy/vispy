@@ -8,7 +8,6 @@ import sys
 
 from .widgets.widget import Widget
 from .visuals.visual import Visual
-from ..util.geometry import Rect
 from ..util._logging import logger
 
 
@@ -32,15 +31,27 @@ class DrawingSystem(object):
         if isinstance(entity, Visual):
             try:
                 entity.draw(event)
-            except:
-                sys.excepthook(*sys.exc_info())
+            except Exception:
+                # get traceback and store (so we can do postmortem
+                # debugging)
+                type, value, tb = sys.exc_info()
+                tb = tb.tb_next  # Skip *this* frame
+                sys.last_type = type
+                sys.last_value = value
+                sys.last_traceback = tb
+                del tb  # Get rid of it in this namespace
+                # Handle
+                logger.log_exception()
                 logger.warning("Error drawing entity %s" % entity)
         
         # Processs children; recurse. 
         # Do not go into subscenes (SubScene.draw processes the subscene)
-        from .subscene import SubScene  # import here to break import cycle.
-                                        # (LC: we should be able to remove this
-                                        # check entirely.)
+        
+        # import here to break import cycle.
+        # (LC: we should be able to remove this
+        # check entirely.)
+        from .subscene import SubScene
+        
         if force_recurse or not isinstance(entity, SubScene):
             for sub_entity in entity:
                 self._process_entity(event, sub_entity)

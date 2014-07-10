@@ -22,28 +22,31 @@ API issues to work out:
 from __future__ import division
 
 from ... import gloo
-from .visual import Visual
+from .modular_visual import ModularVisual
 
 
-class Line(Visual):
+class Line(ModularVisual):
     """
     Displays multiple line segments.
     """
-    def __init__(self, parent=None, pos=None, name=None, **kwds):
-        super(Line, self).__init__(parent, name)
+    def __init__(self, parent=None, pos=None, color=None, z=0.0, 
+                 mode='line_strip', **kwds):
+        super(Line, self).__init__(parent, **kwds)
         
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
+        if mode == 'lines':
+            self._primitive = gloo.gl.GL_LINES
+        elif mode == 'line_strip' or mode is None:
+            self._primitive = gloo.gl.GL_LINE_STRIP
+        else:
+            raise ValueError("Invalid line mode '%s'; must be 'lines' or "
+                             "'line-strip'.")
 
         if pos is not None or kwds:
-            self.set_data(pos, **kwds)
+            self.set_data(pos=pos, color=color, z=z)
 
     def set_data(self, pos=None, **kwds):
         kwds['index'] = kwds.pop('edges', kwds.get('index', None))
         kwds.pop('width', 1)  # todo: do something with width
         super(Line, self).set_data(pos, **kwds)
-
-    @property
-    def primitive(self):
-        # TODO: add support for GL_LINES, GL_TRIANGLES
-        return gloo.gl.GL_LINE_STRIP
