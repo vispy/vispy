@@ -135,9 +135,10 @@ class Variable(GLObject):
     @property
     def data(self):
         """ CPU data """
-
         return self._data
 
+    def __repr__(self):
+        return "<%s %s>" % (self.__class__.__name__, self.name)
 
 # ----------------------------------------------------------- Uniform class ---
 class Uniform(Variable):

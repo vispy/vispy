@@ -260,9 +260,10 @@ class ModularProgram(Program):
         """ Prepare the Program so we can set attributes and uniforms.
         """
         # TEMP function to fix sync issues for now
-        self._create()
-        self._build()
-        self._need_build = False
+        if self._need_build:
+            self._create()
+            self._build()
+            self._need_build = False
     
     def _build(self):
         # generate all code..
