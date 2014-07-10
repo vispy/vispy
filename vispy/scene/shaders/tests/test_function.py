@@ -1,4 +1,4 @@
-from vispy.scene.shaders.function2 import Function
+from vispy.scene.shaders.function2 import Function, Variable
 
 
 TransformScale = Function("""
@@ -38,9 +38,10 @@ t2 = TransformZOffset.new()
 t3 = TransformScale.new()
 t4 = TransformScale.new()
 
+pos = Variable('u_position', ('attribute','vec4', 'u_position'))
 # Compose everything together
-code['position'] = t1(t2(t3('attribute vec4 u_position')))
-code['correction'] = t1('attribute vec4 u_position')  # Look, we use t1 again, different sig
+code['position'] = t1(t2(t3(pos)))
+code['correction'] = t1(pos)  # Look, we use t1 again, different sig
 code['endtransform'] = t4()  # Sig defined in template overrides given sig
 code['nlights'] = '4'
 

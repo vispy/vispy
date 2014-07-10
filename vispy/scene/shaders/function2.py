@@ -53,7 +53,8 @@ class Expression(object):
     
     @property
     def dependencies(self):
-        """ The dependencies (Functions and Variables) for this expression.
+        """ The dependencies (Function and Variable objects) for this
+        expression.
         """
         return self._dependencies()
     
@@ -98,7 +99,7 @@ class Variable(Expression):
     """
     def __init__(self, name, spec):
         self._state_counter = 0
-        self._name = name  # local name within the function
+        self._name = self._oname = name  # local name within the function
         self._spec = spec  # (vtype, dtype, value)
         #if spec is not None:
         #    self.spec = spec
@@ -106,18 +107,17 @@ class Variable(Expression):
 #     @property
 #     def function(self):
 #         return self._function
-#     
-#     @property
-#     def name(self):
-#         return self._name
-
     
-    def compile(self, obj_names):
-        name = obj_names.get(self, self.name)
-        if not self.is_anonymous and name != self.name:
-            raise Exception("Cannot compile %s with name %s; variable "
-                            "is not anonymous." % (self, name))
-        return "%s %s %s;" % (self.vtype, self.dtype, name)
+    @property
+    def name(self):
+        return self._name
+    
+#     def compile(self, obj_names):
+#         name = obj_names.get(self, self.name)
+#         if not self.is_anonymous and name != self.name:
+#             raise Exception("Cannot compile %s with name %s; variable "
+#                             "is not anonymous." % (self, name))
+#         return "%s %s %s;" % (self.vtype, self.dtype, name)
 
     @property
     def vtype(self):
@@ -157,8 +157,7 @@ class Variable(Expression):
         return id(self), self._state_counter
 
     def __repr__(self):
-        return ("<Variable '%s' on %s at 0x%x)>" %
-                (self.name, self.function.name, id(self)))
+        return ("<Variable '%s' at 0x%x)>" % (self.name, id(self)))
     
     def _dependencies(self):
         d = OrderedDict()
@@ -167,6 +166,10 @@ class Variable(Expression):
     
     def _injection(self):
         return self._name
+    
+    def _rename(self, name):
+        self._name = name
+        self._spec = self._spec[0], self._spec[1], name
 
 
 class FunctionCall(Expression):
@@ -287,7 +290,7 @@ class Function(object):
         
         # Get some information derived from the code
         self._signature = parsing.parse_function_signature(self._code)
-        self._name = self._signature[0]
+        self._name = self._oname = self._signature[0]
         self._template_vars = self._parse_template_vars()
         
         # Expressions replace template variables (also our dependencies)
@@ -462,12 +465,18 @@ class Function(object):
 #                     aname = line.split(' ')[2].strip(' ;')
 #                     self._expressions[aname] = self.attribute(aname)
      
-     
+    def _rename(self, name):
+        """ Set the name to be applied when compiling this function.
+        """
+        self._name = name
+        
     def _get_replaced_code(self):
         """ Return code, with replacements applied.
         """
         code = self._code
-        # First apply plain replacements
+        # Modify name
+        code = code.replace(self._oname+'(', self._name+'(')
+        # Apply plain replacements
         for key, val in self._replacements.items():
             code = code.replace(key, val)
         # Apply template replacements 
@@ -498,6 +507,17 @@ class Function(object):
         # Init
         deps = self.dependencies
         code = ''
+        # Do some renaminmg. Objects only gets renamed if there are > 1
+        # objects with that name. We use dep._oname and dep._rename() here.
+        depset = set(deps.keys())
+        names = {}
+        for dep in depset:
+            others = names.setdefault(dep._oname, [])
+            if others:
+                nr = len(others) + 1
+                dep._rename(dep._oname + '_' + str(nr))
+                others[0]._rename(others[0]._oname + '_1')
+            others.append(dep)
         # Add variable definitions
         for dep in deps:
             if isinstance(dep, Variable):
