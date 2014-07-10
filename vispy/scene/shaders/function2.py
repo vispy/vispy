@@ -93,10 +93,15 @@ class Function(object):
         # Get and strip code
         if isinstance(code, Function):
             code = code._code
+        elif not isinstance(code, string_types):
+            raise ValueError('Function needs a string or Function.')
         self._code = code.strip()
         
         # Get some information derived from the code
-        self._signature = parsing.parse_function_signature(self._code)
+        try:
+            self._signature = parsing.parse_function_signature(self._code)
+        except Exception as err:
+            raise ValueError('Invalid code: ' + str(err))
         self._name = self._oname = self._signature[0]
         self._template_vars = self._parse_template_vars()
         
@@ -315,10 +320,12 @@ class TextExpression(Expression):
     """
     
     def __init__(self, text):
+        if not isinstance(text, string_types):
+            raise ValueError('TextExpression needs a string.')
         self._text = text
 
     def __repr__(self):
-        return "<Expression %r at 0x%x>" % (self._text, id(self))
+        return "<TextExpression %r at 0x%x>" % (self._text, id(self))
     
     def _dependencies(self):
         return OrderedDict()
@@ -420,12 +427,13 @@ class FunctionCall(Expression):
     """
     
     def __init__(self, function, signature):
+        if not isinstance(function, Function):
+            raise ValueError('FunctionCall needs a Function')
         self._function = function
         self._signature = signature
     
     def __repr__(self):
-        return '<FunctionCall %r for %r at 0x%x>' % (
-               self._injection(), self.function, id(self))
+        return '<FunctionCall %r for at 0x%x>' % (self._injection(), id(self))
     
     @property
     def function(self):
