@@ -18,7 +18,7 @@ import numpy as np
 from vispy import app, gloo
 from vispy import scene
 
-gloo.gl.use('desktop debug')
+#gloo.gl.use('desktop debug')
 
 # <<< Change method here
 # With the none method you can see the absence of clipping.

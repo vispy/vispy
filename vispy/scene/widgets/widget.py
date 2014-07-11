@@ -23,7 +23,7 @@ class Widget(Visual):
 
     def __init__(self, *args, **kwargs):
         self._border = kwargs.pop('border', (0.2, 0.2, 0.2, 0.5))
-        self._visual = Line(color=self._border, width=1)  # for drawing border
+        self._visual = Line(color=self._border)  # for drawing border
         self._clip = kwargs.pop('clip', False) # whether this widget should
                                                # clip its children
         self._padding = kwargs.pop('padding', 0)  # reserved space inside border
