@@ -33,9 +33,6 @@ fragment = """
     }
 """
 
-kernel = np.array([[1, 0, -1], [2, 0, -1], [1, 0, -1]], dtype=np.float32)
-kernel /= kernel.sum()
-
 
 class Canvas(app.Canvas):
     def __init__(self):
