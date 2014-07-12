@@ -115,9 +115,28 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # You can mix this class with the native widget
 class CanvasBackend(BaseCanvasBackend):
+    """Template backend
+
+    Events to emit are shown below. Most backends will probably
+    have one method for each event:
+
+        self._vispy_canvas.events.initialize()
+        self._vispy_canvas.events.resize(size=(w, h))
+        self._vispy_canvas.events.draw(region=None)
+        self._vispy_canvas.events.close()
+        self._vispy_canvas.events.mouse_press(pos=(x, y), button=1,
+                                              modifiers=())
+        self._vispy_canvas.events.mouse_release(pos=(x, y), button=1,
+                                                modifiers=())
+        self._vispy_canvas.events.mouse_move(pos=(x, y), modifiers=())
+        self._vispy_canvas.events.mouse_wheel(pos=(x, y), delta=(0, 0),
+                                              modifiers=())
+        self._vispy_canvas.events.key_press(key=key, text=text, modifiers=())
+        self._vispy_canvas.events.key_release(key=key, text=text, modifiers=())
+    """
 
     def __init__(self, vispy_canvas, *args, **kwargs):
-        #NativeWidgetClass.__init__(self, *args, **kwargs)
+        # NativeWidgetClass.__init__(self, *args, **kwargs)
         BaseCanvasBackend.__init__(self, vispy_canvas, SharedContext)
 
     def _vispy_set_current(self):
@@ -164,42 +183,6 @@ class CanvasBackend(BaseCanvasBackend):
         # Should return the native widget object.
         # If this is self, this method can be omitted.
         return self
-
-    def events_to_emit(self):
-        """ Shown here in one method, but most backends will probably
-        have one method for each event.
-        """
-        raise NotImplementedError
-        """
-        if self._vispy_canvas is None:
-            return
-
-        self._vispy_canvas.events.initialize()
-        self._vispy_canvas.events.resize(size=(w, h))
-        self._vispy_canvas.events.draw(region=None)
-        self._vispy_canvas.events.close()
-
-        self._vispy_canvas.events.mouse_press(
-            pos=(
-                x,
-                y),
-            button=1,
-            modifiers=())
-        self._vispy_canvas.events.mouse_release(
-            pos=(
-                x,
-                y),
-            button=1,
-            modifiers=())
-        self._vispy_canvas.events.mouse_move(pos=(x, y), modifiers=())
-        self._vispy_canvas.events.mouse_wheel(
-            pos=(
-                x, y), delta=(
-                0, 0), modifiers=())
-
-        self._vispy_canvas.events.key_press(key=key, text=text, modifiers=())
-        self._vispy_canvas.events.key_release(key=key, text=text, modifiers=())
-        """
 
 
 # ------------------------------------------------------------------- timer ---

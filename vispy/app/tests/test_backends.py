@@ -129,9 +129,8 @@ def test_template():
 
     c = _template.CanvasBackend(None)
     print(c._vispy_get_native_canvas())
-    for method in (c.events_to_emit, c._vispy_set_current,
-                   c._vispy_swap_buffers, c._vispy_update, c._vispy_close,
-                   c._vispy_get_size, c._vispy_get_position):
+    for method in (c._vispy_set_current, c._vispy_swap_buffers, c._vispy_close,
+                   c._vispy_update, c._vispy_get_size, c._vispy_get_position):
         assert_raises(NotImplementedError, method)
     for method in (c._vispy_set_title, c._vispy_set_visible):
         assert_raises(NotImplementedError, method, 0)
