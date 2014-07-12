@@ -12,9 +12,22 @@ S. Moyne le 09/07/14
 MODIFICATION :
     - le 10/07/14 add cone, arrow and cylinder onject in the viwer
     - le 10/07/14 add all variable in the viewer
-
+    - le 12/07/14 add sip variable initialization
 
 """
+
+try: 
+    from sip import setapi
+    setapi("QDate", 2)
+    setapi("QDateTime", 2)
+    setapi("QTextStream", 2)
+    setapi("QTime", 2)
+    setapi("QVariant", 2)
+    setapi("QString", 2)
+    setapi("QUrl", 2)
+except:
+    pass
+
 
 from PyQt4 import QtGui, QtCore
 import sys
