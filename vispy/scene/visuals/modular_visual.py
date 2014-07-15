@@ -9,7 +9,7 @@ import numpy as np
 from ... import gloo
 from .visual import Visual
 from ..shaders import ModularProgram
-from ..transforms import ChainTransform
+#from ..transforms import ChainTransform
 from ..components import (VisualComponent, XYPosComponent, XYZPosComponent,
                           UniformColorComponent, VertexColorComponent)
 
@@ -359,6 +359,6 @@ class ModularVisual(Visual):
         # Allow using as plain visual or in a scenegraph
         t = self.transform if (event is None) else event.render_transform
         #if isinstance(t, ChainTransform):
-            #t.simplify()  # Reduce number of transforms
+        #    t.simplify()  # Reduce number of transforms
         #self._program['map_local_to_nd'] = self.transform.shader_map()
         self._program['map_local_to_nd'] = t.shader_map()
