@@ -24,6 +24,3 @@ def test_meshdata():
     assert_array_equal(square_normals, mesh.vertex_normals())
     # test edge calculus
     assert_array_equal(square_edges, mesh.edges())
-
-if __name__ == '__main__':
-    test_meshdata()
