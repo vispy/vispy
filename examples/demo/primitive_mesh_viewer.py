@@ -4,12 +4,6 @@
 Test the fps capability of Vispy with meshdata primitive
 
 S. Moyne le 09/07/14
-
-MODIFICATION :
-    - le 10/07/14 add cone, arrow and cylinder onject in the viwer
-    - le 10/07/14 add all variable in the viewer
-    - le 12/07/14 add sip variable initialization
-    - le 15/07/14 force faces and edges to uint32 dtype
 """
 
 try:
@@ -281,7 +275,7 @@ class Canvas(app.Canvas):
             gloo.set_depth_mask(True)
 
     # ---------------------------------
-    def setData(self, vertices, filled, outline, diam):
+    def set_data(self, vertices, filled, outline, diam):
         self.filled_buf = gloo.IndexBuffer(filled)
         self.outline_buf = gloo.IndexBuffer(outline)
         self.vertices_buff = gloo.VertexBuffer(vertices)
@@ -409,7 +403,7 @@ class MainWindow(QtGui.QMainWindow):
         self.mesh.set_faces(mesh.faces())
         self.mesh.set_vertex_colors(DEFAULT_COLOR)
         vertices, filled, outline = self.mesh.getGLTriangles()
-        self.canvas.setData(vertices, filled, outline, diam)
+        self.canvas.set_data(vertices, filled, outline, diam)
 
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
