@@ -1,20 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Test the fps capability of Vispy with mesh
-
-
-for mesh the spher i use https://sites.google.com/site/dlampetest/python/triangulating-a-sphere-recursively
+Test the fps capability of Vispy with meshdata primitive
 
 S. Moyne le 09/07/14
-
 
 MODIFICATION :
     - le 10/07/14 add cone, arrow and cylinder onject in the viwer
     - le 10/07/14 add all variable in the viewer
     - le 12/07/14 add sip variable initialization
-    - le 15/07/14 force face and edge in uint32
-
+    - le 15/07/14 force faces and edges to uint32 dtype
 """
 
 try: 
@@ -150,8 +145,7 @@ class ObjectParam(object):
 class ObjectWidget(QtGui.QWidget):
     """    
     Widget for editing OBJECT parameters
-    """
-    
+    """    
     signalObjetChanged = QtCore.pyqtSignal(ObjectParam, name='objectChanged')    
         
     def __init__(self, parent=None, param=None):
@@ -267,29 +261,30 @@ class Canvas(app.Canvas):
         self.size = event.size
         gloo.set_viewport(0, 0, width, height)
         self.aspect = width / float(height)
-        self.projection = perspective(self.fovy, width / float(height), 1.0, self.zfar)
+        self.projection = perspective(self.fovy, width / float(height), 1.0, 
+                                      self.zfar)
         self.program['u_projection'] = self.projection
 
     # ---------------------------------
     def on_draw(self, event):
-        gloo.clear()
-        
+        gloo.clear()        
         if self.visible:
             # Filled cube        
-            gloo.set_state(blend=False, depth_test=True, polygon_offset_fill=True)
+            gloo.set_state(blend=False, depth_test=True, 
+                           polygon_offset_fill=True)
             self.program['u_color'] = 1, 1, 1, 1
             self.program.draw('triangles', self.filled_buf)
     
             # Outline
-            gloo.set_state(blend=True, depth_test=True, polygon_offset_fill=False)
+            gloo.set_state(blend=True, depth_test=True, 
+                           polygon_offset_fill=False)
             gloo.set_depth_mask(False)
             self.program['u_color'] = 0, 0, 0, 1
             self.program.draw('lines', self.outline_buf)
             gloo.set_depth_mask(True)
         
     # ---------------------------------
-    def setData(self, vertices, filled, outline, diam):
-        
+    def setData(self, vertices, filled, outline, diam):        
         self.filled_buf = gloo.IndexBuffer(filled)
         self.outline_buf = gloo.IndexBuffer(outline)
         self.vertices_buff = gloo.VertexBuffer(vertices)
@@ -352,13 +347,13 @@ class MainWindow(QtGui.QMainWindow):
         self.mesh = MyMeshData()
         self.updateView(self.propsWidget.param)
 
-    def listObjectChanged(self):
-        
+    def listObjectChanged(self):        
         row = self.listObject.currentIndex().row()
         name = self.listObject.currentIndex().data()
         if row !=-1:
             self.propsWidget.deleteLater()
-            self.propsWidget = ObjectWidget(self, param=ObjectParam(name, OBJECT[name]))
+            self.propsWidget = ObjectWidget(self, 
+                            param=ObjectParam(name, OBJECT[name]))
             self.splitterV.addWidget(self.propsWidget)
             self.propsWidget.signalObjetChanged.connect(self.updateView)
             self.updateView(self.propsWidget.param)
@@ -384,7 +379,6 @@ class MainWindow(QtGui.QMainWindow):
 
     
     def updateView(self, param):
-        
         cols = param.props['cols']
         print cols
         radius = param.props['radius']  
@@ -401,17 +395,18 @@ class MainWindow(QtGui.QMainWindow):
             rows = param.props['rows']
             length = param.props['length']
             radius2 = param.props['radius Top.']
-            mesh =  md.cylinder(rows, cols, radius=[radius, radius2], length=length)
+            mesh =  md.cylinder(rows, cols, radius=[radius, radius2], 
+                                  length=length)
             diam = max(diam, length*2.0, radius2*2.0)
         elif param.name == 'arrow':
             length = param.props['length']
             rows = param.props['rows']
             fRC = param.props['fRC']
             fLC = param.props['fLC']
-            mesh = md.arrow(rows, cols, radius=radius, length=length, fRC=fRC, fLC=fLC)
+            mesh = md.arrow(rows, cols, radius=radius, length=length, 
+                            fRC=fRC, fLC=fLC)
             diam = max(diam, length*2.0, radius*2.0*fRC)
-        
-        
+                
         else:
             return
         
@@ -432,6 +427,3 @@ if __name__ == '__main__':
     win.show()
     
     sys.exit(appQt.exec_())        
-
-
-
