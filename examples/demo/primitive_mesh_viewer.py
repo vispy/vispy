@@ -13,6 +13,7 @@ MODIFICATION :
     - le 10/07/14 add cone, arrow and cylinder onject in the viwer
     - le 10/07/14 add all variable in the viewer
     - le 12/07/14 add sip variable initialization
+    - le 15/07/14 force face and edge in uint32
 
 """
 
@@ -119,9 +120,9 @@ class MyMeshData(md.MeshData):
         
         vertices = self.vertices()
         normals = self.vertex_normals()
-        faces = self.faces()
+        faces = np.uint32(self.faces())
         
-        edges = self.edges().reshape((-1))
+        edges = np.uint32(self.edges().reshape((-1)))
         colors = self.vertex_colors()
              
         nbrVerts = vertices.shape[0]
