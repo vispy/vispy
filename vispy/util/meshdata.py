@@ -98,8 +98,9 @@ class MeshData(object):
 
     def faces(self, indexed=None):
         """Array (Nf, 3) of vertex indices, three per triangular face.
-           if indexed is 'faces'then return (Nf, 3) array of faces with
-           vertices indexed by faces
+           "If indexed is 'faces', then return (Nf, 3, 2)
+           array of vertex indices with 3 edges per face,
+           and two vertices per edge.
 
         If faces have not been computed for this mesh, returns None.
         """
