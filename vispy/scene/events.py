@@ -9,28 +9,6 @@ from .transforms import NullTransform, STTransform, ChainTransform
 from ..gloo import gl
 
 
-class RenderArea(object):
-    """ Container to store information about the render area, such as
-    viewport and information related to the FBO.
-    """
-    def __init__(self, viewport, size, fbo_transform, fbo=None):
-        # The viewport (x, y, w, h)
-        self.viewport = viewport
-        # Full size of the render area (i.e. resolution)
-        self.size = size
-        # Transform to get there (for FBO)
-        self.fbo_transform = fbo_transform
-        # FBO that applies to it. Only necessary for push_fbo
-        self.fbo = fbo
-
-        # Calculate viewport transform for render_transform
-        csize = size
-        scale = csize[0]/viewport[2], csize[1]/viewport[3]
-        origin = (((csize[0] - 2.0 * viewport[0]) / viewport[2] - 1),
-                  ((csize[1] - 2.0 * viewport[1]) / viewport[3] - 1))
-        self.vp_transform = (STTransform(translate=(origin[0], origin[1])) *
-                             STTransform(scale=scale))
-
 
 class SceneEvent(Event):
     """
@@ -45,7 +23,6 @@ class SceneEvent(Event):
 
         # Init stacks
         self._stack = []  # list of entities
-        self._ra_stack = []  # for viewport & fbo
         self._viewbox_stack = []
 
         # Init render are
@@ -108,50 +85,23 @@ class SceneEvent(Event):
         int. The viewport's origin is defined relative to the current
         viewport.
         """
-        # Append. Take over the transform to the active FBO
-        ra = self._ra_stack[-1]
-        x, y, w, h = viewport
-        viewport = ra.viewport[0] + x, ra.viewport[1] + y, w, h
-        ra_new = RenderArea(viewport, ra.size, ra.fbo_transform)
-        self._ra_stack.append(ra_new)
-        # Apply
-        gl.glViewport(*viewport)
+        self.canvas.push_viewport(viewport)
 
     def pop_viewport(self):
         """ Pop a viewport from the stack.
         """
-        # Pop old, check
-        ra = self._ra_stack.pop(-1)
-        if ra.fbo is not None:
-            raise RuntimeError('Popping a viewport when top item is an FBO')
-        # Activate latest
-        ra = self._ra_stack[-1]
-        gl.glViewport(*ra.viewport)
+        return self.canvas.pop_viewport()
 
     def push_fbo(self, viewport, fbo, transform):
         """ Push an FBO on the stack, together with the new viewport.
         and the transform to the FBO.
         """
-        # Append, an FBO resets the viewport
-        ra_new = RenderArea(viewport, viewport[2:], transform, fbo)
-        self._ra_stack.append(ra_new)
-        # Apply
-        fbo.activate()
-        gl.glViewport(*viewport)
+        self.canvas.push_fbo(viewport, fbo, transform)
 
     def pop_fbo(self):
         """ Pop an FBO from the stack.
         """
-        # Pop old
-        ra = self._ra_stack.pop(-1)
-        if ra.fbo is None:
-            raise RuntimeError('Popping an FBO when top item is an viewport')
-        ra.fbo.deactivate()
-        # Activate current
-        ra = self._ra_stack[-1]
-        if ra.fbo:
-            ra.fbo.activate()
-        gl.glViewport(*ra.viewport)
+        return self.canvas.pop_fbo()
     
     # todo: I think "root_transform" is more descriptive (LC)
     #       or perhaps "scene_transform"
@@ -175,11 +125,7 @@ class SceneEvent(Event):
 
         Most entities should use this transform when drawing.
         """
-        if len(self._ra_stack) <= 1:
-            return self.full_transform
-        else:
-            ra = self._ra_stack[-1]
-            return ra.fbo_transform * ra.vp_transform * self.full_transform
+        return self.canvas.render_transform * self.full_transform
 
 # AK: we should revive the methods below if and when we need them
 #     @property

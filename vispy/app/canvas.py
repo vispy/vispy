@@ -96,6 +96,7 @@ class Canvas(object):
         self._basetime = time()
         self._fps_callback = None
         self._backend = None
+        self._ra_stack = []  # for viewport & fbo
 
         # Create events
         self.events = EmitterGroup(source=self,
@@ -251,6 +252,76 @@ class Canvas(object):
         self._title = title
         self._backend._vispy_set_title(title)
 
+    # -------------------------------------------------- transform handling ---
+    def push_viewport(self, viewport):
+        """ Push a viewport (x, y, w, h) on the stack. It is the
+        responsibility of the caller to ensure the given values are
+        int. The viewport's origin is defined relative to the current
+        viewport.
+        """
+        # Append. Take over the transform to the active FBO
+        ra = self._ra_stack[-1]
+        x, y, w, h = viewport
+        viewport = ra.viewport[0] + x, ra.viewport[1] + y, w, h
+        ra_new = RenderArea(viewport, ra.size, ra.fbo_transform)
+        self._ra_stack.append(ra_new)
+        # Apply
+        gl.glViewport(*viewport)
+
+    def pop_viewport(self):
+        """ Pop a viewport from the stack.
+        """
+        # Pop old, check
+        ra = self._ra_stack.pop(-1)
+        if ra.fbo is not None:
+            raise RuntimeError('Popping a viewport when top item is an FBO')
+        # Activate latest
+        ra = self._ra_stack[-1]
+        gl.glViewport(*ra.viewport)
+
+    def push_fbo(self, viewport, fbo, transform):
+        """ Push an FBO on the stack, together with the new viewport.
+        and the transform to the FBO.
+        """
+        # Append, an FBO resets the viewport
+        ra_new = RenderArea(viewport, viewport[2:], transform, fbo)
+        self._ra_stack.append(ra_new)
+        # Apply
+        fbo.activate()
+        gl.glViewport(*viewport)
+
+    def pop_fbo(self):
+        """ Pop an FBO from the stack.
+        """
+        # Pop old
+        ra = self._ra_stack.pop(-1)
+        if ra.fbo is None:
+            raise RuntimeError('Popping an FBO when top item is an viewport')
+        ra.fbo.deactivate()
+        # Activate current
+        ra = self._ra_stack[-1]
+        if ra.fbo:
+            ra.fbo.activate()
+        gl.glViewport(*ra.viewport)
+    
+    @property
+    def render_transform(self):
+        """ The transform that maps from the Canvas pixel coordinate system 
+        <(0, 0) at top-left, (w, h) at bottom-right> to
+        normalized device coordinates within the current glViewport and
+        FBO.
+
+        This transform adjusts for the current glViewport and/or FBO.
+
+        Most visuals should use this transform when drawing.
+        """
+        if len(self._ra_stack) > 0:
+            ra = self._ra_stack[-1]
+            return ra.fbo_transform * ra.vp_transform * self.full_transform
+        else:
+            # todo: should just assume full canvas? 
+            return NullTransform()
+
     # ----------------------------------------------------------------- fps ---
     @property
     def fps(self):
@@ -378,6 +449,30 @@ class Canvas(object):
         # Event properties:
         #     event.region  (x,y,w,h) region of Canvas requiring redraw
         #"""
+
+
+class RenderArea(object):
+    """ Container to store information about the render area, such as
+    viewport and information related to the FBO.
+    """
+    def __init__(self, viewport, size, fbo_transform, fbo=None):
+        # The viewport (x, y, w, h)
+        self.viewport = viewport
+        # Full size of the render area (i.e. resolution)
+        self.size = size
+        # Transform to get there (for FBO)
+        self.fbo_transform = fbo_transform
+        # FBO that applies to it. Only necessary for push_fbo
+        self.fbo = fbo
+
+        # Calculate viewport transform for render_transform
+        csize = size
+        scale = csize[0]/viewport[2], csize[1]/viewport[3]
+        origin = (((csize[0] - 2.0 * viewport[0]) / viewport[2] - 1),
+                  ((csize[1] - 2.0 * viewport[1]) / viewport[3] - 1))
+        self.vp_transform = (STTransform(translate=(origin[0], origin[1])) *
+                             STTransform(scale=scale))
+
 
 
 # Event subclasses specific to the Canvas
