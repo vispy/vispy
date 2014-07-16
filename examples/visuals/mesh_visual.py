@@ -92,9 +92,9 @@ class Canvas(vispy.app.Canvas):
         for i, mesh in enumerate(self.meshes):
             x = 2.0 * (i % grid[0]) / grid[0] + 4.0 / grid[0] - 2
             y = - 2.0 * (i // grid[1]) / grid[1] - 4.0 / grid[1] + 2
-            mesh.transform = ChainTransform([self.rotation,
-                                             STTransform(translate=(x, y),
-                                                         scale=(s, s, s))])
+            mesh.transform = ChainTransform([STTransform(translate=(x, y),
+                                                         scale=(s, s, s)),
+                                             self.rotation])
 
         vispy.app.Canvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
