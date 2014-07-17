@@ -326,7 +326,10 @@ class ViewBox(Widget):
             self._tex.interpolation = gl.GL_LINEAR
             self._myprogram['u_texture'] = self._tex
             # Create texcoords and vertices
-            texcoord = np.array([[0, 0], [1, 0], [0, 1], [1, 1]],
+            # Note y-axis is inverted here because the viewbox coordinate
+            # system has origin in the upper-left, but the image is rendered
+            # to the framebuffer with origin in the lower-left.
+            texcoord = np.array([[0, 1], [1, 1], [0, 0], [1, 0]],
                                 dtype=np.float32)
             position = np.zeros((4, 3), np.float32)
             self._myprogram['a_texcoord'] = gloo.VertexBuffer(texcoord)
@@ -343,8 +346,10 @@ class ViewBox(Widget):
 
         # Set texture coords to make the texture be drawn in the right place
         # Note that we would just use -1..1 if we would use a Visual.
-        # Note that we need the viewbox transform here!
         coords = [[0, 0], [self.size[0], self.size[1]]]
+        
+        
+        
         transform = event.render_transform # * self.scene.viewbox_transform
         coords = transform.map(coords)
         x1, y1, z = coords[0][:3]

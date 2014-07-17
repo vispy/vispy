@@ -343,8 +343,14 @@ class Canvas(object):
         # TODO: should this be called px_transform ? 
         #
         """ The transform that maps from the canvas coordinate system to the
-        current framebuffer coordinate system. The framebuffer coordinate 
-        system is used primarily for antialiasing calculations.
+        current framebuffer coordinate system. 
+        
+        The framebuffer coordinate 
+        system is used for antialiasing calculations, and is also the 
+        system used when specifying coordinates for glViewport 
+        (or gloo.set_viewport). Its origin is in the lower-left corner (as
+        opposed to the document / canvas coordinate system, which has its
+        origin in the upper-left corner).
         
         Often the canvas and framebuffer coordinate systems are identical. 
         However, some systems with high-resolution 
@@ -358,6 +364,8 @@ class Canvas(object):
             fbsize = csize
         else:
             fbsize = fbo.color_buffer.shape
+            # image shape is (rows, cols), unlike canvas shape.
+            fbsize = fbsize[1], fbsize[0]  
 
         map_from = [list(offset), [offset[0] + csize[0], offset[1] + csize[1]]]
         map_to = [[0, fbsize[1]], [fbsize[0], 0]]
