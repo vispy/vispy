@@ -173,17 +173,17 @@ class ViewBox(Widget):
         # Get current transform and calculate the 'scale' of the viewbox
         transform = event.full_transform
         p0, p1 = transform.map((0, 0)), transform.map(self.size)
-        sx, sy = p1[0] - p0[0], p1[1] - p0[1]
+        size = (p1 - p0)[:2]
 
         # From the viewbox scale, we can calculate the resolution. Note that
         # the viewbox scale (sx, sy) applies to the root.
         # todo: we should probably take rotation into account here ...
-        canvas_res = event.canvas.size  # root resolution
-        w = abs(sx * canvas_res[0] * 0.5)
-        h = abs(sy * canvas_res[1] * 0.5)
+        #canvas_res = event.canvas.size  # root resolution
+        #w = abs(sx * canvas_res[0] * 0.5)
+        #h = abs(sy * canvas_res[1] * 0.5)
 
         # Set resolution (note that resolution can be non-integer)
-        self._resolution = w, h
+        self._resolution = size
         #print(getattr(self, '_name', ''), w, h)
 
         # -- Get user clipping preference
@@ -207,37 +207,39 @@ class ViewBox(Widget):
 
         if fbo:
             # Push FBO
-            shape = fbo.color_buffer.shape
-            rect = 0, 0, shape[1], shape[0]
-            transform = event.full_transform * self.scene.viewbox_transform
-            event.push_fbo(rect, fbo, transform.inverse())
+            #shape = fbo.color_buffer.shape
+            #rect = 0, 0, shape[1], shape[0]
+            #transform = event.full_transform * self.scene.viewbox_transform
+            
+            # Ask the canvas to activate the new FBO
+            offset = event.full_transform.map((0, 0))[:2]
+            size = event.full_transform.map(self.size)[:2]
+            event.push_fbo(fbo, offset, offset + size)
+            
             #print(self._name, (event.render_transform #
             #                   self.scene.viewbox_transform).simplify())
             # Clear bg color (handy for dev)
-            from vispy.gloo import gl
-            clrs = {'': (0.1, 0.1, 0.1),
-                    'vb1': (0.2, 0, 0),
-                    'vb11': (0.2, 0, 0.1), 'vb12': (0.2, 0, 0.2),
-                    'vb2': (0, 0.2, 0),
-                    'vb21': (0, 0.2, 0.1), 'vb22': (0, 0.2, 0.2)}
-            clr = clrs[getattr(self, '_name', '')]
+            from ...gloo import gl
+            #clrs = {'': (0.1, 0.1, 0.1),
+                    #'vb1': (0.2, 0, 0),
+                    #'vb11': (0.2, 0, 0.1), 'vb12': (0.2, 0, 0.2),
+                    #'vb2': (0, 0.2, 0),
+                    #'vb21': (0, 0.2, 0.1), 'vb22': (0, 0.2, 0.2)}
+            #clr = clrs[getattr(self, '_name', '')]
             # clrs[''] or clrs[getattr(self,'_name', '')]
-            gl.glClearColor(clr[0], clr[1], clr[2], 1.0)
+            gl.glClearColor(0.2, 0, 0, 1)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             # Process childen
             self.scene.draw(event)
             # Pop FBO and now draw the result
-            print "POP:", event.canvas._ra_stack
             event.pop_fbo()
+            gl.glDisable(gl.GL_CULL_FACE)
             self._myprogram.draw(gl.GL_TRIANGLE_STRIP)
 
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
-            print("VIEWPORT:", viewport)
             try:
-                print("draw viewbox scene")
-                print(event.canvas.ndc_transform)
                 self.scene.draw(event)
             finally:
                 event.pop_viewport()
@@ -342,9 +344,9 @@ class ViewBox(Widget):
         # Set texture coords to make the texture be drawn in the right place
         # Note that we would just use -1..1 if we would use a Visual.
         # Note that we need the viewbox transform here!
-        coords = (-1, -1, 0), (1, 1, 0)
-        transform = event.render_transform * self.scene.viewbox_transform
-        coords = [transform.map(c) for c in coords]
+        coords = [[0, 0], [self.size[0], self.size[1]]]
+        transform = event.render_transform # * self.scene.viewbox_transform
+        coords = transform.map(coords)
         x1, y1, z = coords[0][:3]
         x2, y2, z = coords[1][:3]
         vertices = np.array([[x1, y1, z], [x2, y1, z],

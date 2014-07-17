@@ -290,21 +290,32 @@ class Canvas(object):
         from .. import gloo
         gloo.set_viewport(*vp)
 
-    def push_fbo(self, offset, csize, fbsize):
+    def push_fbo(self, fbo, offset, csize):
         """ Push an FBO on the stack, together with the new viewport.
         and the transform to the FBO.
         """
-        self._fb_stack.append((offset, csize, fbsize))
+        self._fb_stack.append((fbo, offset, csize))
         
         # Apply
-        #fbo.activate()
+        try:
+            fbo.activate()
+            h, w = fbo.color_buffer.shape[:2]
+            self.push_viewport((0, 0, w, h))
+        except:
+            self._fb_stack.pop()
+            raise
         #from .. import gloo
         #gloo.set_viewport(*viewport)
 
     def pop_fbo(self):
         """ Pop an FBO from the stack.
         """
-        return self._fb_stack.pop()
+        fbo = self._fb_stack.pop()
+        fbo[0].deactivate()
+        self.pop_viewport()
+        if len(self._fb_stack) > 0:
+            self._fb_stack[-1].activate()
+        return fbo
         ## Pop old
         #ra = self._ra_stack.pop(-1)
         #if ra.fbo is None:
@@ -319,12 +330,11 @@ class Canvas(object):
         #gl.glViewport(*ra.viewport)
         
     def _current_framebuffer(self):
-        """ Return (origin, canvas_size, framebuffer_size) for the current
+        """ Return (fbo, origin, canvas_size) for the current
         FBO on the stack, or for the canvas if there is no FBO.
         """
         if len(self._fb_stack) == 0:
-            # todo: account for high-res displays here.
-            return (0, 0), self.size, self.size
+            return None, (0, 0), self.size
         else:
             return self._fb_stack[-1]
 
@@ -342,7 +352,12 @@ class Canvas(object):
         size of the canvas. Likewise, when rendering to an FBO, the resolution
         and offset of the framebuffer may not match the canvas. 
         """
-        offset, csize, fbsize = self._current_framebuffer()
+        fbo, offset, csize = self._current_framebuffer()
+        if fbo is None:
+            # todo: account for high-res displays here.
+            fbsize = csize
+        else:
+            fbsize = fbo.color_buffer.shape
 
         map_from = [list(offset), [offset[0] + csize[0], offset[1] + csize[1]]]
         map_to = [[0, fbsize[1]], [fbsize[0], 0]]

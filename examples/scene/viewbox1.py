@@ -1,32 +1,8 @@
-"""
-Simple test of stacking viewboxes, demonstrating the three methods that
-can be used by a viewbox to provide clipping.
-
-There is one root scene with an NDC camera. It contains two viewboxes.
-One with an NDC camera on the left, and one with a pixel camera on the
-right. Each of these viewboxes contains again two viewboxes. One with
-ndc camera at the bottom, and one with a pixel camera at the top.
-
-Use the global PREFER_PIXEL_GRID variables to set the clipping method
-for the two toplevel and four leaf viewbox, respectively. You can also
-manyally set the preferred_clip_method property of one or more viewboxes.
-
-"""
 
 import numpy as np
 
 from vispy import app, gloo
 from vispy import scene
-
-#gloo.gl.use('desktop debug')
-
-# <<< Change method here
-# With the none method you can see the absence of clipping.
-# With the fbo method you can see the texture interpolation (induced by
-# a delibirate mismatch in screen and textue resolution)
-# Try different combinarions, like a viewport in an fbo
-PREFER_PIXEL_GRID1 = 'viewport'  # none, viewport, fbo (fragment to come)
-PREFER_PIXEL_GRID2 = 'viewport'
 
 
 # Create lines for use in ndc and pixel coordinates
@@ -51,7 +27,7 @@ canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
 canvas.scene.camera = scene.cameras.Camera()  # null
 
 vb1 = scene.ViewBox(canvas.scene)
-vb1.preferred_clip_method = 'viewport'
+vb1.preferred_clip_method = 'fbo'
 #vb1.pos = 100, 100
 #vb1.size = 200, 200
 vb1.pos = 0, 0
