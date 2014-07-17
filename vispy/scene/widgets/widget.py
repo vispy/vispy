@@ -29,6 +29,8 @@ class Widget(Visual):
         self._padding = kwargs.pop('padding', 0)  # reserved space inside border
         self._margin = kwargs.pop('margin', 0)  # reserved space outside border
         
+        pos = kwargs.pop('pos', (0, 0))
+        size = kwargs.pop('size', (10, 10))
         
         #Entity.__init__(self, *args, **kwargs)
         Visual.__init__(self, *args, **kwargs)
@@ -38,6 +40,8 @@ class Widget(Visual):
         # todo: TTransform (translate only for widgets)
 
         self._widgets = []
+        self.pos = pos
+        self.size = size
 
     @property
     def pos(self):
@@ -65,6 +69,7 @@ class Widget(Visual):
         self._size = s
         self._update_line()
         self.events.rect_change()
+        self._update_child_widgets()
 
     @property
     def rect(self):
@@ -149,6 +154,7 @@ class Widget(Visual):
 
         All arguments are given to add_widget().
         """
+        from .grid import Grid
         grid = Grid()
         return self.add_widget(grid, *args, **kwds)
 
@@ -158,6 +164,7 @@ class Widget(Visual):
 
         All arguments are given to add_widget().
         """
+        from .viewbox import ViewBox
         view = ViewBox()
         return self.add_widget(view, *args, **kwds)
 

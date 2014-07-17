@@ -14,12 +14,12 @@ class Grid(Widget):
     Widget that automatically sets the position and size of child Widgets to
     proportionally divide its internal area into a grid.
     """
-    def __init__(self, parent=None, pos=None, size=None, border=None):
-        Widget.__init__(self, parent, pos, size, border)
+    def __init__(self, *args, **kwds):
         self._next_cell = [0, 0]  # row, col
         self._cells = {}
-        self._widgets = {}
+        self._grid_widgets = {}
         self.spacing = 6
+        Widget.__init__(self, *args, **kwds)
 
     def add_widget(self, widget=None, row=None, col=None, row_span=1, 
                    col_span=1):
@@ -36,7 +36,7 @@ class Grid(Widget):
 
         _row = self._cells.setdefault(row, {})
         _row[col] = widget
-        self._widgets[widget] = row, col, row_span, col_span
+        self._grid_widgets[widget] = row, col, row_span, col_span
         widget.add_parent(self)
 
         self._next_cell = [row, col+col_span]
@@ -50,8 +50,8 @@ class Grid(Widget):
         # Resize all widgets in this grid to share space.
         # This logic will need a lot of work..
 
-        rvals = [widget[0]+widget[2] for widget in self._widgets.values()]
-        cvals = [widget[1]+widget[3] for widget in self._widgets.values()]
+        rvals = [widget[0]+widget[2] for widget in self._grid_widgets.values()]
+        cvals = [widget[1]+widget[3] for widget in self._grid_widgets.values()]
         if len(rvals) == 0 or len(cvals) == 0:
             return
 
@@ -68,12 +68,13 @@ class Grid(Widget):
         colstart = cols[:-1] + s2
         colend = cols[1:] - s2
 
-        for ch in self._widgets:
-            row, col, rspan, cspan = self._widgets[ch]
+        for ch in self._grid_widgets:
+            row, col, rspan, cspan = self._grid_widgets[ch]
 
             # Translate the origin of the entity to the corner of the area
-            ch.transform.reset()
-            ch.transform.translate((colstart[col], rowstart[row]))
+            #ch.transform.reset()
+            #ch.transform.translate((colstart[col], rowstart[row]))
+            ch.pos = colstart[col], rowstart[row]
 
             # ..and set the size to match.
             w = colend[col+cspan-1]-colstart[col]

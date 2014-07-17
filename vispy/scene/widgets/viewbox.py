@@ -202,6 +202,7 @@ class ViewBox(Widget):
             fbo = self._prepare_fbo(event)
 
         # -- Draw
+        super(ViewBox, self).draw(event)
 
         event.push_viewbox(self)
 
@@ -227,7 +228,7 @@ class ViewBox(Widget):
                     #'vb21': (0, 0.2, 0.1), 'vb22': (0, 0.2, 0.2)}
             #clr = clrs[getattr(self, '_name', '')]
             # clrs[''] or clrs[getattr(self,'_name', '')]
-            gl.glClearColor(0.2, 0, 0, 1)
+            gl.glClearColor(0, 0, 0, 0)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             # Process childen
             self.scene.draw(event)
@@ -251,7 +252,6 @@ class ViewBox(Widget):
 
         event.pop_viewbox()
         
-        super(ViewBox, self).draw(event)
         
 
     #def _prepare_viewport(self, event, w, h, signx, signy):
