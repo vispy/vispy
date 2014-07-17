@@ -135,7 +135,7 @@ def test_arc_draw1():
         c.ellipse.draw()
         ss = _screenshot(alpha=False)
         im = imread(get_test_file('visuals/arc1.png'))
-            assert_array_equal(im, ss)
+        assert_array_equal(im, ss)
 
 
 @requires_application()
