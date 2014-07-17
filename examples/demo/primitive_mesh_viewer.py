@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Test the fps capability of Vispy with meshdata primitive
-
-S. Moyne le 09/07/14
 """
 
 try:
