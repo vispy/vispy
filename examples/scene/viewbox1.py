@@ -48,69 +48,23 @@ line_pixels = scene.visuals.Line(pos=pos.copy(), color=color)
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
-canvas.scene.camera = scene.cameras.NDCCamera()  # Default NDCCamera
+canvas.scene.camera = scene.cameras.Camera()  # null
 
 # Create viewboxes left ...
 
 vb1 = scene.ViewBox(canvas.scene)
-vb1.pos = -1.0, -1.0
-vb1.size = 1.0, 2.0
+vb1.pos = 100, 100
+vb1.size = 200, 200
 vb1.scene.camera = scene.cameras.NDCCamera()
-#
-vb11 = scene.ViewBox(vb1.scene)
-vb11.pos = -1.0, -1.0
-vb11.size = 2.0, 1.0
-vb11.scene.camera = scene.cameras.TwoDCamera()
-#
-vb12 = scene.ViewBox(vb1.scene)
-vb12.pos = -1.0, 0.0
-vb12.size = 2.0, 1.0
-vb12.scene.camera = scene.cameras.PixelCamera()
-#vb12.scene.camera.scale = (100, 100)
-#
-line_ndc.add_parent(vb11.scene)
-line_pixels.add_parent(vb12.scene)
+
+line_ndc.add_parent(vb1.scene)
 
 box = np.array([[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]], dtype=np.float32)
 unit_box = scene.visuals.Line(pos=box, color=(1, 0, 0, 1), name='unit box')
 nd_box = scene.visuals.Line(pos=box*2-1, color=(0, 1, 0, 1), name='nd box')
-vb11.add(unit_box)
-vb11.add(nd_box)
+vb1.add(unit_box)
+vb1.add(nd_box)
 
-# Create viewboxes right ...
-
-vb2 = scene.ViewBox(canvas.scene)
-vb2.pos = 0.0, -1.0
-vb2.size = 1.0, 2.0
-vb2.scene.camera = scene.cameras.PixelCamera()
-#
-vb21 = scene.ViewBox(vb2.scene)
-vb21.pos = 0, 0
-vb21.size = 400, 300
-vb21.scene.camera = scene.cameras.TwoDCamera()
-#
-vb22 = scene.ViewBox(vb2.scene)
-vb22.pos = 0, 300
-vb22.size = 400, 300
-vb22.scene.camera = scene.cameras.PixelCamera()
-#
-line_ndc.add_parent(vb21.scene)
-line_pixels.add_parent(vb22.scene)
-
-# Set preferred pixel grid method
-for vb in [vb1, vb2]:
-    vb.preferred_clip_method = PREFER_PIXEL_GRID1
-for vb in [vb11, vb12, vb21, vb22]:
-    vb.preferred_clip_method = PREFER_PIXEL_GRID2
-
-
-# For testing/dev
-vb1._name = 'vb1'
-vb11._name = 'vb11'
-vb12._name = 'vb12'
-vb2._name = 'vb2'
-vb21._name = 'vb21'
-vb22._name = 'vb22'
 
 
 if __name__ == '__main__':

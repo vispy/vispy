@@ -96,7 +96,8 @@ class Canvas(object):
         self._basetime = time()
         self._fps_callback = None
         self._backend = None
-        self._ra_stack = []  # for viewport & fbo
+        self._fb_stack = []  # for storing information about framebuffers in use
+        self._vp_stack = []  # for storing information about viewports in use
 
         # Create events
         self.events = EmitterGroup(source=self,
@@ -259,68 +260,111 @@ class Canvas(object):
         int. The viewport's origin is defined relative to the current
         viewport.
         """
-        # Append. Take over the transform to the active FBO
-        ra = self._ra_stack[-1]
-        x, y, w, h = viewport
-        viewport = ra.viewport[0] + x, ra.viewport[1] + y, w, h
-        ra_new = RenderArea(viewport, ra.size, ra.fbo_transform)
-        self._ra_stack.append(ra_new)
+        self._vp_stack.append(viewport)
         # Apply
-        gl.glViewport(*viewport)
+        from .. import gloo
+        gloo.set_viewport(*viewport)
 
     def pop_viewport(self):
         """ Pop a viewport from the stack.
         """
-        # Pop old, check
-        ra = self._ra_stack.pop(-1)
-        if ra.fbo is not None:
-            raise RuntimeError('Popping a viewport when top item is an FBO')
+        vp = self._vp_stack.pop()
         # Activate latest
-        ra = self._ra_stack[-1]
-        gl.glViewport(*ra.viewport)
+        if len(self._vp_stack) > 0:
+            from .. import gloo
+            print("POP!", self._vp_stack)
+            gloo.set_viewport(*self._vp_stack[-1])
+        return vp
 
-    def push_fbo(self, viewport, fbo, transform):
+    def push_fbo(self, offset, csize, fbsize):
         """ Push an FBO on the stack, together with the new viewport.
         and the transform to the FBO.
         """
-        # Append, an FBO resets the viewport
-        ra_new = RenderArea(viewport, viewport[2:], transform, fbo)
-        self._ra_stack.append(ra_new)
+        self._fb_stack.append((offset, csize, fbsize))
+        
         # Apply
-        fbo.activate()
-        gl.glViewport(*viewport)
+        #fbo.activate()
+        #from .. import gloo
+        #gloo.set_viewport(*viewport)
 
     def pop_fbo(self):
         """ Pop an FBO from the stack.
         """
-        # Pop old
-        ra = self._ra_stack.pop(-1)
-        if ra.fbo is None:
-            raise RuntimeError('Popping an FBO when top item is an viewport')
-        ra.fbo.deactivate()
-        # Activate current
-        ra = self._ra_stack[-1]
-        if ra.fbo:
-            ra.fbo.activate()
-        gl.glViewport(*ra.viewport)
+        return self._fb_stack.pop()
+        ## Pop old
+        #ra = self._ra_stack.pop(-1)
+        #if ra.fbo is None:
+            #raise RuntimeError('FBO stack is empty; cannot pop.')
+        #ra.fbo.deactivate()
+        ## Activate current
+        #ra = self._ra_stack[-1]
+        #if ra.fbo:
+            #ra.fbo.activate()
+        
+        #from .. import gloo
+        #gl.glViewport(*ra.viewport)
+        
+    def _current_framebuffer(self):
+        """ Return (origin, canvas_size, framebuffer_size) for the current
+        FBO on the stack, or for the canvas if there is no FBO.
+        """
+        if len(self._fb_stack) == 0:
+            # todo: account for high-res displays here.
+            return (0, 0), self.size, self.size
+        else:
+            return self._fb_stack[-1]
+
+    @property
+    def fb_transform(self):
+        # TODO: should this be called px_transform ? 
+        #
+        """ The transform that maps from the canvas coordinate system to the
+        current framebuffer coordinate system. The framebuffer coordinate 
+        system is used primarily for antialiasing calculations.
+        
+        Often the canvas and framebuffer coordinate systems are identical. 
+        However, some systems with high-resolution 
+        displays may use framebuffers with higher resolution than the reported
+        size of the canvas. Likewise, when rendering to an FBO, the resolution
+        and offset of the framebuffer may not match the canvas. 
+        """
+        offset, csize, fbsize = self._current_framebuffer()
+
+        map_from = [list(offset), list(csize)]
+        map_to = [[0, 0], list(fbsize)]
+        
+        from ..scene.transforms import STTransform
+        tr = STTransform()
+        tr.set_mapping(map_from, map_to)
+        return tr
+
+    @property
+    def ndc_transform(self):
+        """ The transform that maps from the framebuffer coordinate system to
+        normalized device coordinates (which is the obligatory output 
+        coordinate system for all vertex shaders). This transform accounts for
+        the current glViewport.
+        """
+        offset, csize, fbsize = self._current_framebuffer()
+        x, y, w, h = self._vp_stack[-1]
+        
+        map_from = [[0, 0], list(fbsize)]
+        map_to = [[-1, 1], [1, -1]]
+        
+        from ..scene.transforms import STTransform
+        tr = STTransform()
+        tr.set_mapping(map_from, map_to)
+        return tr
     
     @property
     def render_transform(self):
         """ The transform that maps from the Canvas pixel coordinate system 
-        <(0, 0) at top-left, (w, h) at bottom-right> to
-        normalized device coordinates within the current glViewport and
-        FBO.
-
-        This transform adjusts for the current glViewport and/or FBO.
+        <(0, 0) at top-left, (w, h) at bottom-right> to normalized device 
+        coordinates within the current glViewport and FBO.
 
         Most visuals should use this transform when drawing.
         """
-        if len(self._ra_stack) > 0:
-            ra = self._ra_stack[-1]
-            return ra.fbo_transform * ra.vp_transform * self.full_transform
-        else:
-            # todo: should just assume full canvas? 
-            return NullTransform()
+        return self.ndc_transform * self.fb_transform
 
     # ----------------------------------------------------------------- fps ---
     @property
@@ -451,27 +495,28 @@ class Canvas(object):
         #"""
 
 
-class RenderArea(object):
-    """ Container to store information about the render area, such as
-    viewport and information related to the FBO.
-    """
-    def __init__(self, viewport, size, fbo_transform, fbo=None):
-        # The viewport (x, y, w, h)
-        self.viewport = viewport
-        # Full size of the render area (i.e. resolution)
-        self.size = size
-        # Transform to get there (for FBO)
-        self.fbo_transform = fbo_transform
-        # FBO that applies to it. Only necessary for push_fbo
-        self.fbo = fbo
+#class RenderArea(object):
+    #""" Container to store information about the render area, such as
+    #viewport and information related to the FBO.
+    #"""
+    #def __init__(self, viewport, size, fbo_transform, fbo=None):
+        #from ..scene.transforms import STTransform
+        ## The viewport (x, y, w, h)
+        #self.viewport = viewport
+        ## Full size of the render area (i.e. resolution)
+        #self.size = size
+        ## Transform to get there (for FBO)
+        #self.fbo_transform = fbo_transform
+        ## FBO that applies to it. Only necessary for push_fbo
+        #self.fbo = fbo
 
-        # Calculate viewport transform for render_transform
-        csize = size
-        scale = csize[0]/viewport[2], csize[1]/viewport[3]
-        origin = (((csize[0] - 2.0 * viewport[0]) / viewport[2] - 1),
-                  ((csize[1] - 2.0 * viewport[1]) / viewport[3] - 1))
-        self.vp_transform = (STTransform(translate=(origin[0], origin[1])) *
-                             STTransform(scale=scale))
+        ## Calculate viewport transform for render_transform
+        #csize = size
+        #scale = csize[0]/viewport[2], csize[1]/viewport[3]
+        #origin = (((csize[0] - 2.0 * viewport[0]) / viewport[2] - 1),
+                  #((csize[1] - 2.0 * viewport[1]) / viewport[3] - 1))
+        #self.vp_transform = (STTransform(translate=(origin[0], origin[1])) *
+                             #STTransform(scale=scale))
 
 
 

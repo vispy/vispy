@@ -189,7 +189,7 @@ class ViewBox(Widget):
         elif prefer == 'fragment':
             raise NotImplementedError('No fragment shader clipping yet.')
         elif prefer == 'viewport':
-            viewport = self._prepare_viewport(event, w, h, signx, signy)
+            viewport = self._prepare_viewport(event)
         elif prefer == 'fbo':
             fbo = self._prepare_fbo(event)
 
@@ -203,6 +203,7 @@ class ViewBox(Widget):
             rect = 0, 0, shape[1], shape[0]
             transform = event.full_transform * self.scene.viewbox_transform
             event.push_fbo(rect, fbo, transform.inverse())
+            print "PUSH:", event.canvas._ra_stack
             #print(self._name, (event.render_transform #
             #                   self.scene.viewbox_transform).simplify())
             # Clear bg color (handy for dev)
@@ -219,14 +220,17 @@ class ViewBox(Widget):
             # Process childen
             self.scene.draw(event)
             # Pop FBO and now draw the result
+            print "POP:", event.canvas._ra_stack
             event.pop_fbo()
             self._myprogram.draw(gl.GL_TRIANGLE_STRIP)
 
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
-            self.scene.draw(event)
-            event.pop_viewport()
+            try:
+                self.scene.draw(event)
+            finally:
+                event.pop_viewport()
 
         else:
             # Just draw
@@ -235,25 +239,30 @@ class ViewBox(Widget):
 
         event.pop_viewbox()
 
-    def _prepare_viewport(self, event, w, h, signx, signy):
-        # Get whether the transform to here is translate-scale only
-        rtransform = event.render_transform
-        p0 = rtransform.map((0, 0))
-        px, py = rtransform.map((1, 0)), rtransform.map((0, 1))
-        dx, dy = py[0] - p0[0], px[1] - p0[1]
+    #def _prepare_viewport(self, event, w, h, signx, signy):
+        ## Get whether the transform to here is translate-scale only
+        #rtransform = event.render_transform
+        #p0 = rtransform.map((0, 0))
+        #px, py = rtransform.map((1, 0)), rtransform.map((0, 1))
+        #dx, dy = py[0] - p0[0], px[1] - p0[1]
 
-        # Does the transform look scale-trans only?
-        if not (dx == 0 and dy == 0):
-            return None
+        ## Does the transform look scale-trans only?
+        #if not (dx == 0 and dy == 0):
+            #return None
 
-        # Transform from NDC to viewport coordinates
-        canvas_res = event.canvas.size
-        tx, ty = py[0], px[1]  # Translation of unit vector
-        x = (signx*0.5 + 0.5 + tx) * canvas_res[0] * 0.5
-        y = (signy*0.5 + 0.5 + ty) * canvas_res[1] * 0.5
+        ## Transform from NDC to viewport coordinates
+        #canvas_res = event.canvas.size
+        #tx, ty = py[0], px[1]  # Translation of unit vector
+        #x = (signx*0.5 + 0.5 + tx) * canvas_res[0] * 0.5
+        #y = (signy*0.5 + 0.5 + ty) * canvas_res[1] * 0.5
 
-        # Round
-        return int(x+0.5), int(y+0.5), int(w+0.5), int(h+0.5)
+        ## Round
+        #return int(x+0.5), int(y+0.5), int(w+0.5), int(h+0.5)
+
+    def _prepare_viewport(self, event):
+        p1 = event.map_to_fb((0, 0))
+        p2 = event.map_to_fb(self.size)
+        return p1[0], p1[1], p2[0]-p1[0], p2[1]-p1[1]
 
     def _prepare_fbo(self, event):
         """ Draw the viewbox via an FBO. This method can be applied

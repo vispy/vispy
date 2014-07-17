@@ -25,12 +25,6 @@ class SceneEvent(Event):
         self._stack = []  # list of entities
         self._viewbox_stack = []
 
-        # Init render are
-        viewport = 0, 0, canvas.size[0], canvas.size[1]
-        ra = RenderArea(viewport, canvas.size, NullTransform())
-        self._ra_stack.append(ra)
-        gl.glViewport(*viewport)
-
         # Init resolution with respect to canvas
         self._resolution = canvas.size
 
@@ -127,6 +121,13 @@ class SceneEvent(Event):
         """
         return self.canvas.render_transform * self.full_transform
 
+    @property
+    def fb_transform(self):
+        return self.canvas.fb_transform * self.full_transform
+    
+    def map_to_fb(self, obj):
+        return self.fb_transform.map(obj)
+
 # AK: we should revive the methods below if and when we need them
 #     @property
 #     def framebuffer_transform(self):
@@ -155,12 +156,13 @@ class SceneEvent(Event):
         For measuring distance in physical units, the use of document_transform 
         is preferred. 
         """
-        root_tr = self.render_transform
-        csize = self.canvas.size
-        scale = csize[0]/2.0, -csize[1]/2.0
-        canvas_tr = (STTransform(scale=scale) * 
-                     STTransform(translate=(1, -1)))
-        return canvas_tr * root_tr
+        return self.full_transform
+        #root_tr = self.render_transform
+        #csize = self.canvas.size
+        #scale = csize[0]/2.0, -csize[1]/2.0
+        #canvas_tr = (STTransform(scale=scale) * 
+                     #STTransform(translate=(1, -1)))
+        #return canvas_tr * root_tr
     
     def map_to_canvas(self, obj):
         """
@@ -248,7 +250,7 @@ class SceneMouseEvent(SceneEvent):
     def copy(self):
         ev = self.__class__(self.mouse_event, self._canvas)
         ev._stack = self._stack[:]
-        ev._ra_stack = self._ra_stack[:]
+        #ev._ra_stack = self._ra_stack[:]
         ev._viewbox_stack = self._viewbox_stack[:]
         ev._resolution = self._resolution
         return ev

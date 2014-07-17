@@ -68,13 +68,23 @@ class SceneCanvas(app.Canvas):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-        if self._scene is None:
-            return  # Can happen on initialization
-        logger.debug('Canvas draw')
-        # Create draw event, which keeps track of the path of transforms
-        self._process_entity_count = 0  # for debugging
-        scene_event = SceneDrawEvent(canvas=self, event=event)
-        self._scene.draw(scene_event)
+        self.push_viewport((0, 0) + self.size)
+        
+        try:
+            if self._scene is None:
+                return  # Can happen on initialization
+            logger.debug('Canvas draw')
+            # Create draw event, which keeps track of the path of transforms
+            self._process_entity_count = 0  # for debugging
+            scene_event = SceneDrawEvent(canvas=self, event=event)
+            self._scene.draw(scene_event)
+        finally:
+            self.pop_viewport()
+        
+        if len(self._vp_stack) > 0:
+            logger.warn("Viewport stack not fully cleared after draw.")
+        if len(self._fb_stack) > 0:
+            logger.warn("Framebuffer stack not fully cleared after draw.")
 
     def _process_mouse_event(self, event):
         scene_event = SceneMouseEvent(canvas=self, event=event)
