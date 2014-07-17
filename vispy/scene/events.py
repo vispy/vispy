@@ -128,24 +128,6 @@ class SceneEvent(Event):
     def map_to_fb(self, obj):
         return self.fb_transform.map(obj)
 
-# AK: we should revive the methods below if and when we need them
-#     @property
-#     def framebuffer_transform(self):
-#         """
-#         Return the transform mapping from the end of the path to framebuffer
-#         pixels (device pixels).
-#
-#         This is the coordinate system required by glViewport().
-#         The origin is at the bottom-left corner of the canvas.
-#         """
-#         root_tr = self.root_transform
-#         # TODO: How do we get the framebuffer size?
-#         csize = self.canvas.size
-#         scale = csize[0]/2.0, csize[1]/2.0
-#         fb_tr = (STTransform(scale=scale) *
-#                  STTransform(translate=(1, 1)))
-#         return fb_tr * root_tr
-        
     @property
     def canvas_transform(self):
         """
@@ -157,12 +139,6 @@ class SceneEvent(Event):
         is preferred. 
         """
         return self.full_transform
-        #root_tr = self.render_transform
-        #csize = self.canvas.size
-        #scale = csize[0]/2.0, -csize[1]/2.0
-        #canvas_tr = (STTransform(scale=scale) * 
-                     #STTransform(translate=(1, -1)))
-        #return canvas_tr * root_tr
     
     def map_to_canvas(self, obj):
         """
@@ -180,38 +156,6 @@ class SceneEvent(Event):
         """
         return self.canvas_transform.inverse().map(obj)
     
-#     @property
-#     def document_transform(self):
-#         """
-#         Return the complete Transform that maps from the end of the path
-#         to the first Document in its ancestry.
-#
-#         This coordinate system should be used for all physical unit
-#         measurements (px, mm, etc.)
-#         """
-#         from .entities import Document
-#         tr = []
-#         found = False
-#         for e in self._path[::-1]:
-#             if isinstance(e, Document):
-#                 found = True
-#                 break
-#             tr.append(e.transform)
-#         if not found:
-#             raise Exception("No Document in the Entity path for this Event.")
-#         return ChainTransform(tr)
-
-#     def map_to_document(self, obj):
-#         return self.document_transform.map(obj)
-#
-#     def map_from_document(self, obj):
-#         return self.document_transform.imap(obj)
-
-#     def map_to_canvas(self, obj):
-#         return self.canvas_transform.map(obj)
-#
-#     def map_from_canvas(self, obj):
-#         return self.canvas_transform.imap(obj)
 
 
 class SceneMouseEvent(SceneEvent):

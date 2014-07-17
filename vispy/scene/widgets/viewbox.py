@@ -133,33 +133,10 @@ class ViewBox(Widget):
         # todo: we could consider including some padding
         # so that we have room *inside* the viewbox to draw ticks and stuff
 
-        # --  Calculate viewbox transformation
-
-        # Get the sign of the camera transform of the parent scene. We
-        # cannot look at full_transform, since the ViewBox may just be
-        # really upside down (intended). The camera transform defines
-        # the direction of the dimensions of the coordinate frame.
-        # todo: get this sign information in a more effective manner
-        # than we can probably also get rid of storing viewbox on event!
-        
-        # LC: I think if we ever need to ask about sign, we have done something
-        # wrong. The transformations should always handle this for us if
-        # they are configured correctly.
-        #parent_viewbox = event.viewbox
-        #if parent_viewbox:
-            #s = parent_viewbox.camera.get_projection(event) * STTransform()
-            #signx = 1 if s.scale[0] > 0 else -1
-            #signy = 1 if s.scale[1] > 0 else -1
-        #else:
-            #signx, signy = 1, 1
-
         # Determine transformation to make the camera's unit box (-1..1) map to
         # the viewbox region.
         # Note that (-1, -1) is lower-left for the camera, but (0, 0) is
         # upper-left for the viewbox.
-        #size = self.size
-        #trans.scale = signx * size[0] / 2, signy * size[1] / 2
-        #trans.translate = size[0] / 2, size[1] / 2
         map_from = [[-1, 1], [1, -1]]
         map_to = [[0, 0], self.size]
         trans = STTransform()
@@ -174,13 +151,6 @@ class ViewBox(Widget):
         transform = event.full_transform
         p0, p1 = transform.map((0, 0)), transform.map(self.size)
         size = (p1 - p0)[:2]
-
-        # From the viewbox scale, we can calculate the resolution. Note that
-        # the viewbox scale (sx, sy) applies to the root.
-        # todo: we should probably take rotation into account here ...
-        #canvas_res = event.canvas.size  # root resolution
-        #w = abs(sx * canvas_res[0] * 0.5)
-        #h = abs(sy * canvas_res[1] * 0.5)
 
         # Set resolution (note that resolution can be non-integer)
         self._resolution = size
@@ -207,27 +177,13 @@ class ViewBox(Widget):
         event.push_viewbox(self)
 
         if fbo:
-            # Push FBO
-            #shape = fbo.color_buffer.shape
-            #rect = 0, 0, shape[1], shape[0]
-            #transform = event.full_transform * self.scene.viewbox_transform
-            
             # Ask the canvas to activate the new FBO
             offset = event.full_transform.map((0, 0))[:2]
             size = event.full_transform.map(self.size)[:2]
             event.push_fbo(fbo, offset, offset + size)
             
-            #print(self._name, (event.render_transform #
-            #                   self.scene.viewbox_transform).simplify())
             # Clear bg color (handy for dev)
             from ...gloo import gl
-            #clrs = {'': (0.1, 0.1, 0.1),
-                    #'vb1': (0.2, 0, 0),
-                    #'vb11': (0.2, 0, 0.1), 'vb12': (0.2, 0, 0.2),
-                    #'vb2': (0, 0.2, 0),
-                    #'vb21': (0, 0.2, 0.1), 'vb22': (0, 0.2, 0.2)}
-            #clr = clrs[getattr(self, '_name', '')]
-            # clrs[''] or clrs[getattr(self,'_name', '')]
             gl.glClearColor(0, 0, 0, 0)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             # Process childen
@@ -253,27 +209,6 @@ class ViewBox(Widget):
         event.pop_viewbox()
         
         
-
-    #def _prepare_viewport(self, event, w, h, signx, signy):
-        ## Get whether the transform to here is translate-scale only
-        #rtransform = event.render_transform
-        #p0 = rtransform.map((0, 0))
-        #px, py = rtransform.map((1, 0)), rtransform.map((0, 1))
-        #dx, dy = py[0] - p0[0], px[1] - p0[1]
-
-        ## Does the transform look scale-trans only?
-        #if not (dx == 0 and dy == 0):
-            #return None
-
-        ## Transform from NDC to viewport coordinates
-        #canvas_res = event.canvas.size
-        #tx, ty = py[0], px[1]  # Translation of unit vector
-        #x = (signx*0.5 + 0.5 + tx) * canvas_res[0] * 0.5
-        #y = (signy*0.5 + 0.5 + ty) * canvas_res[1] * 0.5
-
-        ## Round
-        #return int(x+0.5), int(y+0.5), int(w+0.5), int(h+0.5)
-
     def _prepare_viewport(self, event):
         p1 = event.map_to_fb((0, 0))
         p2 = event.map_to_fb(self.size)
