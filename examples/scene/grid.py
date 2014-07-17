@@ -1,6 +1,7 @@
 """
-Simple test of SceneCanvas containing a single line entity
-as its entire scenegraph.
+Test automatic layout of multiple viewboxes using Grid.
+
+
 """
 from vispy import scene
 from vispy import app
@@ -12,6 +13,7 @@ canvas.show()
 
 grid = scene.widgets.Grid(canvas.scene)
 
+# Ensure that grid fills the entire canvas, even after resize.
 @canvas.events.resize.connect
 def update_grid(event=None):
     global grid, canvas

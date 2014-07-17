@@ -1,4 +1,10 @@
+"""
+Demonstrate ViewBox using various clipping methods.
 
+Two boxes are manually positioned on the canvas; they are not updated
+when the canvas resizes.
+
+"""
 import numpy as np
 
 from vispy import app, gloo
