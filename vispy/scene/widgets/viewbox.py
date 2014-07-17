@@ -141,21 +141,29 @@ class ViewBox(Widget):
         # the direction of the dimensions of the coordinate frame.
         # todo: get this sign information in a more effective manner
         # than we can probably also get rid of storing viewbox on event!
-        parent_viewbox = event.viewbox
-        if parent_viewbox:
-            s = parent_viewbox.camera.get_projection(event) * STTransform()
-            signx = 1 if s.scale[0] > 0 else -1
-            signy = 1 if s.scale[1] > 0 else -1
-        else:
-            signx, signy = 1, 1
+        
+        # LC: I think if we ever need to ask about sign, we have done something
+        # wrong. The transformations should always handle this for us if
+        # they are configured correctly.
+        #parent_viewbox = event.viewbox
+        #if parent_viewbox:
+            #s = parent_viewbox.camera.get_projection(event) * STTransform()
+            #signx = 1 if s.scale[0] > 0 else -1
+            #signy = 1 if s.scale[1] > 0 else -1
+        #else:
+            #signx, signy = 1, 1
 
-        # Determine transformation to make NDC coords (-1..1) map to
-        # the viewbox region. The translation is equivalent to doing a
-        # (1, 1) shift *after* the scale.
-        size = self.size
+        # Determine transformation to make the camera's unit box (-1..1) map to
+        # the viewbox region.
+        # Note that (-1, -1) is lower-left for the camera, but (0, 0) is
+        # upper-left for the viewbox.
+        #size = self.size
+        #trans.scale = signx * size[0] / 2, signy * size[1] / 2
+        #trans.translate = size[0] / 2, size[1] / 2
+        map_from = [[-1, 1], [1, -1]]
+        map_to = [[0, 0], self.size]
         trans = STTransform()
-        trans.scale = signx * size[0] / 2, signy * size[1] / 2
-        trans.translate = size[0] / 2, size[1] / 2
+        trans.set_mapping(map_from, map_to)
 
         # Set this transform at the scene
         self.scene.viewbox_transform = trans
@@ -164,7 +172,7 @@ class ViewBox(Widget):
 
         # Get current transform and calculate the 'scale' of the viewbox
         transform = event.full_transform
-        p0, p1 = transform.map((0, 0)), transform.map(size)
+        p0, p1 = transform.map((0, 0)), transform.map(self.size)
         sx, sy = p1[0] - p0[0], p1[1] - p0[1]
 
         # From the viewbox scale, we can calculate the resolution. Note that
@@ -203,7 +211,6 @@ class ViewBox(Widget):
             rect = 0, 0, shape[1], shape[0]
             transform = event.full_transform * self.scene.viewbox_transform
             event.push_fbo(rect, fbo, transform.inverse())
-            print "PUSH:", event.canvas._ra_stack
             #print(self._name, (event.render_transform #
             #                   self.scene.viewbox_transform).simplify())
             # Clear bg color (handy for dev)
@@ -229,6 +236,8 @@ class ViewBox(Widget):
             event.push_viewport(viewport)
             print("VIEWPORT:", viewport)
             try:
+                print("draw viewbox scene")
+                print(event.canvas.ndc_transform)
                 self.scene.draw(event)
             finally:
                 event.pop_viewport()

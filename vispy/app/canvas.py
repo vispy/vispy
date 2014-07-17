@@ -260,10 +260,19 @@ class Canvas(object):
         int. The viewport's origin is defined relative to the current
         viewport.
         """
-        self._vp_stack.append(viewport)
+        vp = list(viewport)
+        # Normalize viewport before setting;
+        if vp[2] < 0:
+            vp[0] += vp[2]
+            vp[2] *= -1
+        if vp[3] < 0:
+            vp[1] += vp[3]
+            vp[3] *= -1
+            
+        self._vp_stack.append(vp)
         # Apply
         try:
-            self._set_viewport(viewport)
+            self._set_viewport(vp)
         except:
             self._vp_stack.pop()
             raise
@@ -279,16 +288,6 @@ class Canvas(object):
     
     def _set_viewport(self, vp):
         from .. import gloo
-        
-        vp = list(vp)
-        # Normalize viewport before setting; self.ndc_transform will 
-        # correct for this.
-        if vp[2] < 0:
-            vp[0] += vp[2]
-            vp[2] *= -1
-        if vp[3] < 0:
-            vp[1] += vp[3]
-            vp[3] *= -1
         gloo.set_viewport(*vp)
 
     def push_fbo(self, offset, csize, fbsize):
@@ -363,17 +362,20 @@ class Canvas(object):
         offset, csize, fbsize = self._current_framebuffer()
         x, y, w, h = self._vp_stack[-1]
         
-        map_from = [[0, 0], list(fbsize)]
-        map_to = [[-1, -1], [1, 1]]
+        #map_from = [[0, 0], list(fbsize)]
+        #map_to = [[-1, -1], [1, 1]]
         
-        # correct for inverted viewport here.
-        vp = self._vp_stack[-1]
-        if vp[2] < 0:
-            map_to[0][0] = 1
-            map_to[1][0] = -1
-        if vp[3] < 0:
-            map_to[0][1] = 1
-            map_to[1][1] = -1
+        ## correct for inverted viewport here.
+        #vp = self._vp_stack[-1]
+        #if vp[2] < 0:
+            #map_to[0][0] = 1
+            #map_to[1][0] = -1
+        #if vp[3] < 0:
+            #map_to[0][1] = 1
+            #map_to[1][1] = -1
+            
+        map_from = [[x, y], [x+w, y+h]]
+        map_to = [[-1, -1], [1, 1]]
         
         from ..scene.transforms import STTransform
         tr = STTransform()

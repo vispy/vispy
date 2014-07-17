@@ -52,8 +52,10 @@ canvas.scene.camera = scene.cameras.Camera()  # null
 
 vb1 = scene.ViewBox(canvas.scene)
 vb1.preferred_clip_method = 'viewport'
-vb1.pos = 100, 100
-vb1.size = 200, 200
+#vb1.pos = 100, 100
+#vb1.size = 200, 200
+vb1.pos = 0, 0
+vb1.size = canvas.size[0]/2., canvas.size[1]
 vb1.scene.camera = scene.cameras.TwoDCamera()
 
 line_ndc.add_parent(vb1.scene)
