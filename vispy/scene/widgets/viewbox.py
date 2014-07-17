@@ -250,6 +250,9 @@ class ViewBox(Widget):
             self.scene.draw(event)
 
         event.pop_viewbox()
+        
+        super(ViewBox, self).draw(event)
+        
 
     #def _prepare_viewport(self, event, w, h, signx, signy):
         ## Get whether the transform to here is translate-scale only
