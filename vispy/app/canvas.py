@@ -262,8 +262,11 @@ class Canvas(object):
         """
         self._vp_stack.append(viewport)
         # Apply
-        from .. import gloo
-        gloo.set_viewport(*viewport)
+        try:
+            self._set_viewport(viewport)
+        except:
+            self._vp_stack.pop()
+            raise
 
     def pop_viewport(self):
         """ Pop a viewport from the stack.
@@ -271,10 +274,22 @@ class Canvas(object):
         vp = self._vp_stack.pop()
         # Activate latest
         if len(self._vp_stack) > 0:
-            from .. import gloo
-            print("POP!", self._vp_stack)
-            gloo.set_viewport(*self._vp_stack[-1])
+            self._set_viewport(self._vp_stack[-1])
         return vp
+    
+    def _set_viewport(self, vp):
+        from .. import gloo
+        
+        vp = list(vp)
+        # Normalize viewport before setting; self.ndc_transform will 
+        # correct for this.
+        if vp[2] < 0:
+            vp[0] += vp[2]
+            vp[2] *= -1
+        if vp[3] < 0:
+            vp[1] += vp[3]
+            vp[3] *= -1
+        gloo.set_viewport(*vp)
 
     def push_fbo(self, offset, csize, fbsize):
         """ Push an FBO on the stack, together with the new viewport.
@@ -330,8 +345,8 @@ class Canvas(object):
         """
         offset, csize, fbsize = self._current_framebuffer()
 
-        map_from = [list(offset), list(csize)]
-        map_to = [[0, 0], list(fbsize)]
+        map_from = [list(offset), [offset[0] + csize[0], offset[1] + csize[1]]]
+        map_to = [[0, fbsize[1]], [fbsize[0], 0]]
         
         from ..scene.transforms import STTransform
         tr = STTransform()
@@ -349,7 +364,16 @@ class Canvas(object):
         x, y, w, h = self._vp_stack[-1]
         
         map_from = [[0, 0], list(fbsize)]
-        map_to = [[-1, 1], [1, -1]]
+        map_to = [[-1, -1], [1, 1]]
+        
+        # correct for inverted viewport here.
+        vp = self._vp_stack[-1]
+        if vp[2] < 0:
+            map_to[0][0] = 1
+            map_to[1][0] = -1
+        if vp[3] < 0:
+            map_to[0][1] = 1
+            map_to[1][1] = -1
         
         from ..scene.transforms import STTransform
         tr = STTransform()

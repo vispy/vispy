@@ -227,6 +227,7 @@ class ViewBox(Widget):
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
+            print("VIEWPORT:", viewport)
             try:
                 self.scene.draw(event)
             finally:

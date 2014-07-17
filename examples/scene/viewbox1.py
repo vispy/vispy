@@ -50,12 +50,11 @@ line_pixels = scene.visuals.Line(pos=pos.copy(), color=color)
 canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
 canvas.scene.camera = scene.cameras.Camera()  # null
 
-# Create viewboxes left ...
-
 vb1 = scene.ViewBox(canvas.scene)
+vb1.preferred_clip_method = 'viewport'
 vb1.pos = 100, 100
 vb1.size = 200, 200
-vb1.scene.camera = scene.cameras.NDCCamera()
+vb1.scene.camera = scene.cameras.TwoDCamera()
 
 line_ndc.add_parent(vb1.scene)
 
