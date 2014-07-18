@@ -87,27 +87,26 @@ def floatColor(mag, cmin, cmax, trans=1.0):
         # cmax = cmin
         x = 0.5 + np.zeros(shape)
     # Blue
-    colors[: ,0] = np.minimum(np.maximum(4*(0.75-x), 0.), 1.)
+    colors[:, 0] = np.minimum(np.maximum(4*(0.75-x), 0.), 1.)
     # Red
     colors[:, 1] = np.minimum(np.maximum(4*(x-0.25), 0.), 1.)
     # Green
     colors[:, 2] = np.minimum(np.maximum(4*np.abs(x-0.5)-1., 0.), 1.)
     # Trans
     colors[:, 3] = trans
-    
+
     return colors
 
 
 def contourLine(vertices=None, faces=None, vertex_data=None, cl=None):
-    """ 
-    Function for calculate contour line on a triangular Mesh surface with vertex
-    data.
-    
+    """ Function for calculate contour line on a triangular Mesh surface
+    with vertex data.
+
     Parameters
     ----------
-    vertices : ndarray, shape (Nv, 3) Vertex coordinates. 
+    vertices : ndarray, shape (Nv, 3) Vertex coordinates.
     faces : ndarray, shape (Nf, 3) Indices into the vertex array.
-    vertex_data : ndarray, shape (Nv) Vertex datas. 
+    vertex_data : ndarray, shape (Nv) Vertex datas.
     cl : ndarray, shape (Ncl) Values for isoline
 
     Return :
@@ -116,9 +115,10 @@ def contourLine(vertices=None, faces=None, vertex_data=None, cl=None):
 
     Notes
     -----
+    I use the marching cube algorithm for triangular element :
+    http://en.wikipedia.org/wiki/Marching_squares
 
-    It's based on the hypothesis that the vertex data have a linear variation
-    in the triangular face.
+    The interpolation of the data is linear in triangular element
 
     The Edges vertices are not unique for the moment.
 
@@ -128,59 +128,41 @@ def contourLine(vertices=None, faces=None, vertex_data=None, cl=None):
         return None
 
     cl = np.array(cl)
-    datas = vertex_data[faces]
-    fmin = datas.min(axis=1)
-    fmax = datas.max(axis=1)
     edgeCs = {}
     nbrEdge = 0
+    edges = np.vstack((faces.reshape((-1)), np.roll(faces,-1, axis=1).reshape((-1)))).T
+    edgeDatas = vertex_data[edges]
+    edgeCoors = vertices[edges].reshape(faces.shape[0]*3, 2, 3)
     for C in cl:
-        pos = 0
         color = floatColor(C, cl.min(), cl.max())
         edgeCs[C] = {'index': [], 'vertices': [], 'color': color}
-        # Select triangles with C between fmin and fmax
-        criterion = (fmin <= C) & (C <= fmax)
-        faceOKs = faces[criterion]
-        for face in faceOKs:
-            edges = np.vstack((face, np.roll(face, 1))).T
-            edgeDatas = vertex_data[edges]
-            emin = edgeDatas.min(axis=1)
-            emax = edgeDatas.max(axis=1)
-            # Select edge in the triangle with C betwin emin and emax
-            criterion = (emin <= C) & (C <= emax)
-            edges = edges[criterion]
-            edgeDatas = edgeDatas[criterion]
-            if edges.shape[0] >= 2:
-                # if the 3 node of tringale have the C value skip the
-                # the triangle
-                if not np.all(vertex_data[face] == C):
-                    xyz = vertices[edges]
-                    if edgeDatas[0][0] == edgeDatas[0][1]:
-                        edgeCs[C]['vertices'].append(xyz[0][0, :])
-                        edgeCs[C]['vertices'].append(xyz[0][1, :])                        
-                    elif edgeDatas[1][0] == edgeDatas[1][1]:
-                        edgeCs[C]['vertices'].append(xyz[1][0, :])
-                        edgeCs[C]['vertices'].append(xyz[1][1, :])                          
-                    else:       
-                        for i in [0, 1]:
-                            ratio = (C-edgeDatas[i][0])/(edgeDatas[i][1]-edgeDatas[i][0])
-                            point = xyz[i][0, :] + ratio*(xyz[i][1, :] - xyz[i][0, :])
-                            edgeCs[C]['vertices'].append(point)
-                    edgeCs[C]['index'].append((pos, pos+1))
-                    pos = pos + 2
-                    nbrEdge = nbrEdge + 1
-            else:
-                raise Exception("Invalid edge contouring")
+        # index for select edges with vertices have only False - True ot True - False at extremity
+        index = (edgeDatas >= C)
+        index = index[:,0]^index[:,1] # xor calculation 
+        # Selectect edge
+        edgeDatasOk = edgeDatas[index, :] 
+        xyz = edgeCoors[index]
+        # Linear interpolation
+        ratio = np.array([(C-edgeDatasOk[:, 0])/(edgeDatasOk[:, 1]-edgeDatasOk[:, 0])])
+        point = xyz[:, 0, :] + ratio.T*(xyz[:, 1, :] - xyz[:, 0, :])
+        edgeCs[C]['vertices'] = point
+        nbr = point.shape[0]/2
+        edgeCs[C]['index'] = np.arange(nbr*2).reshape((nbr,2))
+        nbrEdge += nbr
     return edgeCs, nbrEdge
 
 
-def test_contourLine(nbrC=2):
+def test_contourLine(nbrC=3):
 
-    vertices = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]], dtype=np.float)
-    faces = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.uint)
-    datas = np.array([0, 0, 10, 10], dtype=np.float)
+    vertices = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0.5, 0.5, 0]], dtype=np.float)
+    faces = np.array([[0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]], dtype=np.uint)
+    datas = np.array([0, 0, 10, 10, 5], dtype=np.float)
 
     cl = np.linspace(datas.min(), datas.max(), nbrC+2)[1:-1]
     contourDict, nbrEdge = contourLine(vertices=vertices, faces=faces, vertex_data=datas, cl=cl)
+    print nbrEdge
+    print "contourDict :"
+    print contourDict
 
 
 
@@ -498,6 +480,7 @@ class MainWindow(QtGui.QMainWindow):
         faces = mesh.faces()
 
         cl = np.linspace(-radius, radius, nbrC+2)[1:-1]
+        
         contourDict, nbrEdge = contourLine(vertices=vertices, faces=faces, vertex_data=vertices[:, 2], cl=cl)
 
         self.canvas.visible = param.props['visible']
@@ -510,7 +493,7 @@ class MainWindow(QtGui.QMainWindow):
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
 
-#    test_contourLine()
+    #test_contourLine()
 
     appQt = QtGui.QApplication(sys.argv)
     win = MainWindow()
