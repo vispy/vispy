@@ -57,7 +57,9 @@ class MeshData(object):
         self._faces_indexed_by_faces = None  # (Nf, 3, 2) indices
         # into self._vertices
         self._edges = None  # Nx2 indices into self._vertices, 2 verts/edge
-        self._edges_indexed_by_faces = None  # Nx2 indices into self._vertices
+        self._edges_indexed_by_faces = None  # (Ne, 3, 2) indoces into 
+        # self._vertices, 3 edge / face and 2 verts/edge
+        
         # inverse mappings
         self._vertex_faces = None  # maps vertex ID to a list of face IDs
         self._vertex_edges = None  # maps vertex ID to a list of edge IDs
@@ -113,7 +115,9 @@ class MeshData(object):
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def edges(self, indexed=None):
-        """Array (Nf, 3) of vertex indices, two per edge in the mesh."""
+        """Array (Nf, 3) of vertex indices, two per edge in the mesh.
+           If indexed is 'faces', then return (Nf, 3, 2) array of vertex
+           indices with 3 edges per face, and two vertices per edge."""
         if indexed is None:
             if self._edges is None:
                 self._compute_edges(indexed=None)
