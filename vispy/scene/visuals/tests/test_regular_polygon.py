@@ -5,23 +5,15 @@ Tests for RegularPolygonVisual
 All images are of size (100,100) to keep a small file size
 """
 
-import numpy as np
-from numpy.testing import assert_array_equal
 from vispy.app import Canvas
 from vispy import gloo
-from vispy.gloo.util import _screenshot
 from vispy.scene import visuals, transforms
-from vispy.testing import requires_application
-from vispy.util.dataio import imread, _check_img_lib
-from vispy.util import get_test_file
-
-has_img_lib = not all(c is None for c in _check_img_lib())
-requires_img_lib = np.testing.dec.skipif(not has_img_lib, 'imageio or PIL '
-                                         'required')
+from vispy.testing import (requires_application, assert_image_equal,
+                           requires_img_lib)
 
 
 @requires_application()
-@requires_img_lib
+@requires_img_lib()
 def test_regular_polygon_draw1():
     """Test drawing a simple borderless regular polygon using
     RegularPolygonVisual"""
@@ -32,13 +24,11 @@ def test_regular_polygon_draw1():
         gloo.clear()
         gloo.set_viewport(0, 0, *c.size)
         c.rpolygon.draw()
-        ss = _screenshot(alpha=False)
-        im = imread(get_test_file('visuals/regular_polygon1.png'))
-        assert_array_equal(im, ss)
+        assert_image_equal("screenshot", 'visuals/regular_polygon1.png')
 
 
 @requires_application()
-@requires_img_lib
+@requires_img_lib()
 def test_regular_polygon_draw2():
     """Test drawing a simple regular polygon with border using
     RegularPolygonVisual"""
@@ -50,13 +40,11 @@ def test_regular_polygon_draw2():
         gloo.clear()
         gloo.set_viewport(0, 0, *c.size)
         c.rpolygon.draw()
-        ss = _screenshot(alpha=False)
-        im = imread(get_test_file('visuals/regular_polygon2.png'))
-        assert_array_equal(im, ss)
+        assert_image_equal("screenshot", 'visuals/regular_polygon2.png')
 
 
 @requires_application()
-@requires_img_lib
+@requires_img_lib()
 def test_regular_polygon_draw3():
     """Test drawing an empty regular polygon border using
     RegularPolygonVisual"""
@@ -67,13 +55,11 @@ def test_regular_polygon_draw3():
         gloo.clear()
         gloo.set_viewport(0, 0, *c.size)
         c.rpolygon.draw()
-        ss = _screenshot(alpha=False)
-        im = imread(get_test_file('visuals/regular_polygon3.png'))
-        assert_array_equal(im, ss)
+        assert_image_equal("screenshot", 'visuals/regular_polygon3.png')
 
 
 @requires_application()
-@requires_img_lib
+@requires_img_lib()
 def test_regular_polygon_draw4():
     """Test drawing a transformed borderless regular polygon using
     RegularPolygonVisual"""
@@ -85,13 +71,11 @@ def test_regular_polygon_draw4():
         gloo.clear()
         gloo.set_viewport(0, 0, *c.size)
         c.rpolygon.draw()
-        ss = _screenshot(alpha=False)
-        im = imread(get_test_file('visuals/regular_polygon4.png'))
-        assert_array_equal(im, ss)
+        assert_image_equal("screenshot", 'visuals/regular_polygon4.png')
 
 
 @requires_application()
-@requires_img_lib
+@requires_img_lib()
 def test_regular_polygon_draw5():
     """Test drawing a transformed regular polygon with border using
     RegularPolygonVisual"""
@@ -104,13 +88,11 @@ def test_regular_polygon_draw5():
         gloo.clear()
         gloo.set_viewport(0, 0, *c.size)
         c.rpolygon.draw()
-        ss = _screenshot(alpha=False)
-        im = imread(get_test_file('visuals/regular_polygon5.png'))
-        assert_array_equal(im, ss)
+        assert_image_equal("screenshot", 'visuals/regular_polygon5.png')
 
 
 @requires_application()
-@requires_img_lib
+@requires_img_lib()
 def test_regular_polygon_draw6():
     """Test drawing a transformed empty regular polygon border using
     RegularPolygonVisual"""
@@ -122,6 +104,4 @@ def test_regular_polygon_draw6():
         gloo.clear()
         gloo.set_viewport(0, 0, *c.size)
         c.rpolygon.draw()
-        ss = _screenshot(alpha=False)
-        im = imread(get_test_file('visuals/regular_polygon6.png'))
-        assert_array_equal(im, ss)
+        assert_image_equal("screenshot", 'visuals/regular_polygon6.png')

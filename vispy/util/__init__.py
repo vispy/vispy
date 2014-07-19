@@ -7,7 +7,7 @@ one or more Vispy sub-packages.
 """
 
 from ._logging import logger, set_log_level, use_log_level  # noqa
-from ._data import get_data_file, get_test_file  # noqa
+from ._data import get_data_file, get_testing_file  # noqa
 from ._config import (_parse_command_line_arguments, config, sys_info,  # noqa
                       save_config, get_config_keys, set_data_dir,  # noqa
                       _TempDir)  # noqa

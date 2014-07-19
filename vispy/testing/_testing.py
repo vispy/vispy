@@ -167,3 +167,27 @@ def requires_img_lib():
     from ..util.dataio import _check_img_lib
     has_img_lib = not all(c is None for c in _check_img_lib())
     return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
+
+
+###############################################################################
+# Visuals stuff
+
+def assert_image_equal(image, reference):
+    """Downloads reference image and compares with image
+    Parameters
+    ----------
+    image: screenshot (string) or image data(numpy array)
+    reference: testing file location on test-data repo
+
+    Example
+    -------
+    assert_image_equal('screenshot', 'visuals/circle1.png') """
+    from numpy.testing import assert_array_equal
+    from vispy.gloo.util import _screenshot
+    from vispy.util.dataio import imread
+    from vispy.util import get_testing_file
+
+    if image == "screenshot":
+        image = _screenshot(alpha=False)
+    ref = imread(get_testing_file(reference))
+    assert_array_equal(image, ref)

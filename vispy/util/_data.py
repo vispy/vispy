@@ -57,7 +57,7 @@ def get_data_file(fname, directory=None, force_download=False):
     return fname
 
 
-def get_test_file(fname, directory=None, force_download=False):
+def get_testing_file(fname, directory=None, force_download=False):
     """Get a standard vispy test data file
 
     Parameters
