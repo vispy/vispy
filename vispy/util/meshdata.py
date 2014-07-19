@@ -54,8 +54,8 @@ class MeshData(object):
 
         ## mappings between vertices, faces, and edges
         self._faces = None  # Nx3 indices into self._vertices, 3 verts/face
-        self._faces_indexed_by_faces = None  # (Nf, 3, 2) indices
-        # into self._vertices
+        self._faces_indexed_by_faces = None  # (Nf, 3) indices
+        # into self._vertices_indexed_by_edges
         self._edges = None  # Nx2 indices into self._vertices, 2 verts/edge
         self._edges_indexed_by_faces = None  # (Ne, 3, 2) indoces into 
         # self._vertices, 3 edge / face and 2 verts/edge
@@ -110,6 +110,13 @@ class MeshData(object):
         if indexed is None:
             return self._faces
         elif indexed == 'faces':
+            if self._faces_indexed_by_faces is None:
+                verts = self.vertices(indexed='faces')
+                if verts is not None:
+                    nVerts = verts.shape[0]
+                    faces = np.arange(nVerts, dtype=np.uint)
+                    nF = nVerts/3
+                    self._faces_indexed_by_faces = faces.reshape((nF, 3))
             return self._faces_indexed_by_faces
         else:
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
