@@ -5,10 +5,8 @@ Tests for PolygonVisual
 All images are of size (100,100) to keep a small file size
 """
 
-
 import numpy as np
-from vispy.app import Canvas
-from vispy import gloo
+from vispy.app import TestingCanvas
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, assert_image_equal,
                            requires_img_lib)
@@ -22,12 +20,9 @@ def test_square_draw1():
                     [0.5, 0.5, 0],
                     [0.5, -0.5, 0],
                     [-0.5, -0.5, 0]])
-    with Canvas(size=(100, 100)) as c:
-        c.polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1))
-        gloo.set_clear_color((0, 0, 0, 1))
-        gloo.clear()
-        gloo.set_viewport(0, 0, *c.size)
-        c.polygon.draw()
+    with TestingCanvas():
+        polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1))
+        polygon.draw()
         assert_image_equal("screenshot", 'visuals/square1.png')
 
 
@@ -39,13 +34,10 @@ def test_square_draw2():
                     [0.5, 0.5, 0],
                     [0.5, -0.5, 0],
                     [-0.5, -0.5, 0]])
-    with Canvas(size=(100, 100)) as c:
-        c.polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
-                                    border_color=(1, 1, 1, 1))
-        gloo.set_clear_color((0, 0, 0, 1))
-        gloo.clear()
-        gloo.set_viewport(0, 0, *c.size)
-        c.polygon.draw()
+    with TestingCanvas():
+        polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
+                                  border_color=(1, 1, 1, 1))
+        polygon.draw()
         assert_image_equal("screenshot", 'visuals/square2.png')
 
 
@@ -57,12 +49,9 @@ def test_square_draw3():
                     [0.5, 0.5, 0],
                     [0.5, -0.5, 0],
                     [-0.5, -0.5, 0]])
-    with Canvas(size=(100, 100)) as c:
-        c.polygon = visuals.Polygon(pos=pos, border_color=(1, 1, 1, 1))
-        gloo.set_clear_color((0, 0, 0, 1))
-        gloo.clear()
-        gloo.set_viewport(0, 0, *c.size)
-        c.polygon.draw()
+    with TestingCanvas():
+        polygon = visuals.Polygon(pos=pos, border_color=(1, 1, 1, 1))
+        polygon.draw()
         assert_image_equal("screenshot", 'visuals/square3.png')
 
 
@@ -74,13 +63,10 @@ def test_rectangle_draw1():
                     [0.1, 0.5, 0],
                     [0.1, -0.5, 0],
                     [-0.1, -0.5, 0]])
-    with Canvas(size=(100, 100)) as c:
-        c.polygon = visuals.Polygon(pos=pos, color=(1, 1, 0, 1))
-        c.polygon.transform = transforms.STTransform(scale=(4.0, 0.5))
-        gloo.set_clear_color((0, 0, 0, 1))
-        gloo.clear()
-        gloo.set_viewport(0, 0, *c.size)
-        c.polygon.draw()
+    with TestingCanvas():
+        polygon = visuals.Polygon(pos=pos, color=(1, 1, 0, 1))
+        polygon.transform = transforms.STTransform(scale=(4.0, 0.5))
+        polygon.draw()
         assert_image_equal("screenshot", 'visuals/rectangle1.png')
 
 
@@ -92,14 +78,11 @@ def test_rectangle_draw2():
                     [0.1, 0.5, 0],
                     [0.1, -0.5, 0],
                     [-0.1, -0.5, 0]])
-    with Canvas(size=(100, 100)) as c:
-        c.polygon = visuals.Polygon(pos=pos, color=(1, 1, 0, 1),
-                                    border_color=(1, 0, 0, 1))
-        c.polygon.transform = transforms.STTransform(scale=(4.0, 0.5))
-        gloo.set_clear_color((0, 0, 0, 1))
-        gloo.clear()
-        gloo.set_viewport(0, 0, *c.size)
-        c.polygon.draw()
+    with TestingCanvas():
+        polygon = visuals.Polygon(pos=pos, color=(1, 1, 0, 1),
+                                  border_color=(1, 0, 0, 1))
+        polygon.transform = transforms.STTransform(scale=(4.0, 0.5))
+        polygon.draw()
         assert_image_equal("screenshot", 'visuals/rectangle2.png')
 
 
@@ -111,11 +94,8 @@ def test_rectangle_draw3():
                     [0.1, 0.5, 0],
                     [0.1, -0.5, 0],
                     [-0.1, -0.5, 0]])
-    with Canvas(size=(100, 100)) as c:
-        c.polygon = visuals.Polygon(pos=pos, border_color=(1, 0, 0, 1))
-        c.polygon.transform = transforms.STTransform(scale=(4.0, 0.5))
-        gloo.set_clear_color((0, 0, 0, 1))
-        gloo.clear()
-        gloo.set_viewport(0, 0, *c.size)
-        c.polygon.draw()
+    with TestingCanvas():
+        polygon = visuals.Polygon(pos=pos, border_color=(1, 0, 0, 1))
+        polygon.transform = transforms.STTransform(scale=(4.0, 0.5))
+        polygon.draw()
         assert_image_equal("screenshot", 'visuals/rectangle3.png')

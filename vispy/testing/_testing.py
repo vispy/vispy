@@ -174,20 +174,19 @@ def requires_img_lib():
 
 def assert_image_equal(image, reference):
     """Downloads reference image and compares with image
+
     Parameters
     ----------
-    image: screenshot (string) or image data(numpy array)
-    reference: testing file location on test-data repo
-
-    Example
-    -------
-    assert_image_equal('screenshot', 'visuals/circle1.png') """
-    from numpy.testing import assert_array_equal
-    from vispy.gloo.util import _screenshot
-    from vispy.util.dataio import imread
-    from vispy.util import get_testing_file
+    image: str, numpy.array
+        'screenshot' or image data
+    reference: str
+        'The filename on the remote ``test-data`` repository to download'
+    """
+    from ..gloo.util import _screenshot
+    from ..util.dataio import imread
+    from ..util import get_testing_file
 
     if image == "screenshot":
         image = _screenshot(alpha=False)
     ref = imread(get_testing_file(reference))
-    assert_array_equal(image, ref)
+    np.testing.assert_array_equal(image, ref)
