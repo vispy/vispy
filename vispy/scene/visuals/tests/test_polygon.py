@@ -9,11 +9,12 @@ import numpy as np
 from vispy.app import TestingCanvas
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, assert_image_equal,
-                           requires_img_lib)
+                           requires_img_lib, requires_scipy)
 
 
 @requires_application()
 @requires_img_lib()
+@requires_scipy()
 def test_square_draw1():
     """Test drawing a simple borderless square using PolygonVisual"""
     pos = np.array([[-0.5, 0.5, 0],
@@ -28,6 +29,7 @@ def test_square_draw1():
 
 @requires_application()
 @requires_img_lib()
+@requires_scipy()
 def test_square_draw2():
     """Test drawing a simple square with border using PolygonVisual"""
     pos = np.array([[-0.5, 0.5, 0],
@@ -43,6 +45,7 @@ def test_square_draw2():
 
 @requires_application()
 @requires_img_lib()
+@requires_scipy()
 def test_square_draw3():
     """Test drawing an empty square border using PolygonVisual"""
     pos = np.array([[-0.5, 0.5, 0],
@@ -57,6 +60,7 @@ def test_square_draw3():
 
 @requires_application()
 @requires_img_lib()
+@requires_scipy()
 def test_rectangle_draw1():
     """Test drawing a transformed borderless rectangle using PolygonVisual"""
     pos = np.array([[-0.1, 0.5, 0],
@@ -72,6 +76,7 @@ def test_rectangle_draw1():
 
 @requires_application()
 @requires_img_lib()
+@requires_scipy()
 def test_rectangle_draw2():
     """Test drawing a transformed rectangle with border using PolygonVisual"""
     pos = np.array([[-0.1, 0.5, 0],
@@ -88,6 +93,7 @@ def test_rectangle_draw2():
 
 @requires_application()
 @requires_img_lib()
+@requires_scipy()
 def test_rectangle_draw3():
     """Test drawing a transformed empty rectangle border using PolygonVisual"""
     pos = np.array([[-0.1, 0.5, 0],

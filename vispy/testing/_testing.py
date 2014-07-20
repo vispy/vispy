@@ -172,6 +172,19 @@ def requires_img_lib():
 ###############################################################################
 # Visuals stuff
 
+def _has_scipy():
+    try:
+        import scipy  # noqa, analysis:ignore
+    except Exception:
+        return False
+    else:
+        return True
+
+
+def requires_scipy():
+    return np.testing.dec.skipif(not _has_scipy(), 'Requires Scipy')
+
+
 def assert_image_equal(image, reference):
     """Downloads reference image and compares with image
 
