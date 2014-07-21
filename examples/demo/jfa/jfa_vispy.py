@@ -14,7 +14,8 @@ from PIL import Image
 import time
 from vispy.app import Canvas
 from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
-                        VertexBuffer, IndexBuffer, Texture2D, gl, set_viewport)
+                        VertexBuffer, IndexBuffer, Texture2D, gl, set_viewport,
+                        DepthBuffer)
 from vispy.util import get_data_file
 
 # GL_CLAMP_TO_BORDER = 33069
@@ -61,6 +62,7 @@ class JFACanvas(Canvas):
         for program in self.programs:
             program['u_texw'] = self.texture_size[0]
             program['u_texh'] = self.texture_size[1]
+        self.comp_depth = DepthBuffer(self.texture_size)
 
     def on_initialize(self, event):
         self._init = True
@@ -96,10 +98,11 @@ class JFACanvas(Canvas):
         if not self.use_shaders:
             self.programs[2]['u_texture'] = self.orig_tex
         else:
-            set_viewport(0, 0, *self.texture_size)
             self.fbo.color_buffer = self.comp_texs[0]
-            self.fbo.activate()
+            self.fbo.depth_buffer = self.comp_depth
             last_rend = 0
+            self.fbo.activate()
+            set_viewport(0, 0, *self.texture_size)
             self.programs[0]['u_texture'] = self.orig_tex
             self.programs[0].draw(indices=idx, mode='triangles')
             self.fbo.deactivate()
@@ -110,11 +113,12 @@ class JFACanvas(Canvas):
                 last_rend = 1 if last_rend == 0 else 0
                 self.fbo.color_buffer = self.comp_texs[last_rend]
                 self.fbo.activate()
+                set_viewport(0, 0, *self.texture_size)
                 self.programs[1].draw(indices=idx, mode='triangles')
                 self.fbo.deactivate()
                 stepsize //= 2
             self.programs[2]['u_texture'] = self.comp_texs[last_rend]
-        gl.glViewport(0, 0, *self.size)
+        set_viewport(0, 0, *self.size)
         self.programs[2].draw(indices=idx, mode='triangles')
         self.update()
 
