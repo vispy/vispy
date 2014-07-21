@@ -380,19 +380,6 @@ class Canvas(object):
         #"""
 
 
-class TestingCanvas(Canvas):
-    def __init__(self, clear_color=(0, 0, 0, 1), size=(100, 100)):
-        Canvas.__init__(self, size=size)
-        self._clear_color = clear_color
-
-    def __enter__(self):
-        Canvas.__enter__(self)
-        from .. import gloo
-        gloo.clear(color=self._clear_color)
-        gloo.set_viewport(0, 0, *self.size)
-        return self
-
-
 # Event subclasses specific to the Canvas
 class MouseEvent(Event):
 
