@@ -15,6 +15,7 @@ import time
 from vispy.app import Canvas
 from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
                         VertexBuffer, IndexBuffer, Texture2D, gl, set_viewport)
+from vispy.util import get_data_file
 
 # GL_CLAMP_TO_BORDER = 33069
 # GL_RG16 = 33324
@@ -42,7 +43,7 @@ class JFACanvas(Canvas):
         self.frames += 1
 
     def _setup_textures(self, fname):
-        img = Image.open(fname)
+        img = Image.open(get_data_file('jfa/' + fname))
         w, h = img.size
         self.texture_size = (w, h)
         data = np.array(img, np.ubyte)[::-1].copy()
