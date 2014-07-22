@@ -207,7 +207,7 @@ def assert_image_equal(image, reference):
     if image == "screenshot":
         image = _screenshot(alpha=False)
     ref = imread(get_testing_file(reference))
-    np.testing.assert_array_equal(image, ref)
+    np.testing.assert_array_almost_equal(image, ref)
 
 
 class TestingCanvas(Canvas):

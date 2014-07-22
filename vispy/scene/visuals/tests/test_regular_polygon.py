@@ -14,8 +14,7 @@ from vispy.testing import (requires_application, assert_image_equal,
 @requires_application()
 @requires_img_lib()
 def test_regular_polygon_draw1():
-    """Test drawing regular polygons without transforms using
-    RegularPolygonVisual"""
+    """Test drawing regular polygons without transforms using RegularPolygonVisual"""  # noqa
     with TestingCanvas():
         rpolygon = visuals.RegularPolygon(pos=(0., 0.), radius=0.4, sides=8,
                                           color=(1, 0, 0, 1))
@@ -39,8 +38,7 @@ def test_regular_polygon_draw1():
 @requires_application()
 @requires_img_lib()
 def test_regular_polygon_draw2():
-    """Test drawing transformed regular polygons using
-    RegularPolygonVisual"""
+    """Test drawing transformed regular polygons using RegularPolygonVisual"""  # noqa
     with TestingCanvas():
         rpolygon = visuals.RegularPolygon(pos=(0., 0.), radius=0.4, sides=8,
                                           color=(0, 0, 1, 1))
