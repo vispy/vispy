@@ -29,6 +29,8 @@ Things to consider / work out
     
 """
 
+import time
+
 from ...util.ordereddict import OrderedDict
 from ...ext.six import string_types
 from . import parsing
@@ -111,9 +113,12 @@ class Function(object):
         # Verbatim string replacements
         self._replacements = OrderedDict()
         
-        # Prepare: get name, inject CALL_TEMPLATE, set replacements for
-        # uniforms/attributes
-        #self._prepare(name)
+        # Toplevel vertex/fragment shader funtctions can be linked
+        self._linked = None
+        
+        # flags to be able to indicate whether code has changed
+        self._last_changed = time.time()
+        self._last_compiled = 0.0 
     
     def __setitem__(self, key, val):
         """ Setting of replacements through a dict-like syntax.
@@ -133,6 +138,7 @@ class Function(object):
         # Ensure val is an expression
         val = _convert_to_expression(val, altname=key)
         self._expressions[key] = val
+        self._last_changed = time.time()
     
     def __getitem__(self, key):
         """ Return a reference to a program variable from this function.
@@ -185,6 +191,20 @@ class Function(object):
         """
         return self._name
     
+    def ischanged(self, since=None):
+        """ Whether the code has been modified since the last time it
+        was compiled, or since the given time.
+        """
+        since = since or self._last_compiled
+        ischanged = True
+        if since > self._last_changed:
+            for dep in self._dependencies():
+                if since < dep._last_changed:
+                    break
+            else:
+                ischanged = False
+        return ischanged
+    
     def replace(self, str1, str2):
         """ Set verbatim code replacement
         
@@ -200,13 +220,35 @@ class Function(object):
             String to replace str1 with
         """
         self._replacements[str1] = str2
+        self._last_changed = time.time()
     
     def get_variables(self):
-        """ Get a list of all variable objects defined in the current
-        program.
+        """ Get a list of all variable objects defined in the current program
         """
         deps = self._dependencies()
         return [dep for dep in deps.keys() if isinstance(dep, Variable)]
+    
+    def link(self, frag_func):
+        """ Link a vertex and fragment shader
+        
+        Both functions need to represent main-functions. When the vertex
+        and fragment shader are linked, the scope for name mangling is
+        shared, and it allows for setting varyings
+        """
+        # Check 
+        if not isinstance(frag_func, Function):
+            raise ValueError('Can only link to a Function object.')
+        if not self.name == 'main':
+            raise ValueError('Can only link if this is a main-function.')
+        if not frag_func.name == 'main':
+            raise ValueError('Can only link to a main-function.')
+        # Apply
+        vert_func = self
+        vert_func._linked = frag_func, 'vertex'
+        frag_func._linked = vert_func, 'fragment'
+        # After linking we likely need renaming
+        vert_func._last_changed = time.time()
+        frag_func._last_changed = time.time()
     
     ## Private methods
     
@@ -225,7 +267,10 @@ class Function(object):
     def _rename(self, name):
         """ Set the name to be applied when compiling this function.
         """
+        if self.name == 'main':
+            raise ValueError('Cannot rename the main function.')
         self._name = name
+        self._last_changed = time.time()
         
     def _get_replaced_code(self):
         """ Return code, with new name, expressions, and replacements applied.
@@ -239,16 +284,28 @@ class Function(object):
         # Apply template replacements 
         for key, val in self._expressions.items():
             if isinstance(val, FunctionCall):
-                # when signature is specified, use that one instead
+                # When signature is specified, use that one instead
                 code = code.replace('$'+key+'(', val.function.name+'(')
             code = code.replace('$'+key, val._injection())
+        # Done
         return code
     
     def _dependencies(self):
-        """ Get the dependencies (Functions and Variables) for this expression.
+        """ Get the dependencies (Functions and Variables) for this
+        expression. If this Function is linked, this returns the total
+        collection of dependencies.
         """
+        # Get list of expressions, taking linking into account
+        expressions1, expressions2 = self._expressions.values(), []
+        if self._linked:
+            expressions2 = self._linked[0]._expressions.values()
+            if self._linked[1] == 'fragment':
+                expressions1, expressions2 = expressions2, expressions1
+        # Collect dependencies
         deps = OrderedDict()
-        for dep in self._expressions.values():
+        for dep in expressions1:
+            deps.update(dep._dependencies())
+        for dep in expressions2:
             deps.update(dep._dependencies())
         return deps
     
@@ -257,26 +314,39 @@ class Function(object):
         sig = [s[0] for s in self._signature[1]]
         return '%s %s(%s);' % (ret, self.name, ', '.join(sig))
     
+    def _mangle_names(self):
+        """ Mangle names of dependencies where necessary. Objects only
+        gets renamed if there are > 1 objects with that name, and if
+        they are not already renamed appropriatly. We use dep._oname
+        and dep._rename() here.
+        """
+        # Collect all dependencies with the same name
+        deps = self._dependencies()
+        names = {}
+        for dep in deps:
+            deps_with_this_name = names.setdefault(dep._oname, [])
+            deps_with_this_name.append(dep)
+        # Mangle names where necessary
+        for name, deps_with_this_name in names.items():
+            nameset = set([dep.name for dep in deps_with_this_name])
+            if len(nameset) > 1:
+                nameset.discard(name)  # if > 1, all must be mangled
+            if len(nameset) != len(deps_with_this_name):
+                for i, dep in enumerate(deps_with_this_name):
+                    dep._rename(dep._oname + '_' + str(i+1))
+    
     def _compile(self):
         """ Apply the replacements and add code for dependencies.
         Return new code string.
         """
         # Init
+        code = ''
+        self._mangle_names()
         deps = self._dependencies()
-        code = '#VERSION 120\n'  # (or not)
+        # Write header
+        if self.name == 'main':
+            code += '#VERSION 120\n'  # (or not)
         code += '// Code generated by vispy.scene.shaders.Function\n\n'
-        # Mangle names of dependencies where necessaty. Objects only
-        # gets renamed if there are > 1 objects with that name. We use
-        # dep._oname and dep._rename() here.
-        depset = set(deps.keys())
-        names = {}
-        for dep in depset:
-            others = names.setdefault(dep._oname, [])
-            if others:
-                nr = len(others) + 1
-                dep._rename(dep._oname + '_' + str(nr))
-                others[0]._rename(others[0]._oname + '_1')
-            others.append(dep)
         # Add variable definitions
         for dep in deps:
             if isinstance(dep, Variable):
@@ -295,6 +365,7 @@ class Function(object):
                 code += '\n\n'
                 code += dep._get_replaced_code()
         # Done
+        self._last_compiled = time.time()
         return code.rstrip() + '\n'
 
 
@@ -367,6 +438,7 @@ class Variable(Expression):
         self._oname = self._name
         self._state_counter = 0
         self._value = value
+        self._last_changed = time.time()
         assert self._vtype in VARIABLE_TYPES
 
     @property
@@ -405,12 +477,8 @@ class Variable(Expression):
         return self._name
     
     def _rename(self, name):
-        # If this is a varying, set name based on id of object so
-        # the variable can be used accross different programs
-        if self._vtype == 'varying':
-            name = '%s_%x' % (self._oname, id(self))
         self._name = name
-        #self._spec = self._spec[0], self._spec[1], name
+        self._last_changed = time.time()
     
     def _definition(self):
         # Used by Function to put at top of shader code

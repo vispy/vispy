@@ -60,6 +60,7 @@ def test_example1():
     code['correction'] = t1(pos)  # Look, we use t1 again, different sig
     code['endtransform'] = t3()  # Sig defined in template overrides given sig
     code['nlights'] = '4'
+    t1['scale'] = t2()
     t3['scale'] = 'uniform vec3 u_scale', (3.0, 4.0, 5.0)
     t2['offset'] = '1.0'
     
@@ -199,14 +200,8 @@ def test_Variable():
     var._rename('foo')
     assert_equal(var.name, 'foo')
     
-    # Renaming for varyings is different to support usage accross shaders
-    var = Variable('varying float bla')
-    assert_equal(var.name, 'bla')
-    var._rename('foo')
-    assert_equal(var.name, 'bla_%x' % id(var))
 
-
-def test_function():
+def test_function_basics():
     
     # Test init fail
     assert_raises(TypeError, Function)  # no args
@@ -250,7 +245,7 @@ def test_function():
     assert_is(type(fun['bar']), Variable)
     assert_in(fun['foo'], fun._dependencies())
     assert_in(fun['bar'], fun._dependencies())
-    # Name mangling
+    # Test basic name mangling
     assert_equal(fun['foo'].name, fun['bar'].name)  # Still the sae
     str(fun)  # force name mangling
     assert_not_equal(fun['foo'].name, fun['bar'].name) 
@@ -259,6 +254,123 @@ def test_function():
     # todo: Test verbatim replacements
     # todo: test actual code output
 
+def test_function_names():
+    
+    # Test more complex name mangling
+    fun1 = Function('void main(){$var1; $funccall;}')
+    fun2 = Function('void a_func(){$var2; $var3;}')
+    fun1['var1'] = 'uniform float bla'
+    fun1['funccall'] = fun2()  # Set after setting var1 so var1 comes first
+    fun2['var2'] = 'uniform float bla'
+    fun2['var3'] = 'uniform float bla'
+    # Compile fun2, var1 is not mangled yet
+    str(fun2)
+    assert_equal(fun1['var1'].name, 'bla')
+    assert_equal(fun2['var2'].name, 'bla_1')
+    assert_equal(fun2['var3'].name, 'bla_2')
+    # Compile fun1, all vars are mangled
+    str(fun1)
+    assert_equal(fun1['var1'].name, 'bla_1')
+    assert_equal(fun2['var2'].name, 'bla_2')
+    assert_equal(fun2['var3'].name, 'bla_3')
+    # Compile fun1, but mangling is unchanged now
+    str(fun2)
+    assert_equal(fun1['var1'].name, 'bla_1')
+    assert_equal(fun2['var2'].name, 'bla_2')
+    assert_equal(fun2['var3'].name, 'bla_3')
+
+
+def test_function_linking():
+    
+    # Test linking with wrong args
+    fun1 = Function('void main(){$var1; $var2;}')
+    fun2 = Function('void foo(){$var1; $var2;}')
+    assert_raises(ValueError, fun1.link, 3)
+    assert_raises(ValueError, fun1.link, fun2)
+    assert_raises(ValueError, fun2.link, fun1)
+    
+    # Test linking shaders
+    fun1 = Function('void main(){$var1; $var2;}')
+    fun2 = Function('void main(){$var1; $var2;}')
+    fun1['var1'] = 'uniform float bla'
+    fun1['var2'] = 'uniform float bla'
+    fun2['var1'] = 'uniform float bla'
+    fun2['var2'] = 'uniform float bla'
+    # The two functions are separate
+    str(fun1); str(fun2)
+    assert_equal(fun1['var1'].name, 'bla_1')
+    assert_equal(fun1['var2'].name, 'bla_2')
+    assert_equal(fun2['var1'].name, 'bla_1')
+    assert_equal(fun2['var2'].name, 'bla_2')
+    assert_equal(len(fun1.get_variables()), 2)
+    assert_equal(len(fun2.get_variables()), 2)
+    # Now link!
+    fun1.link(fun2)
+    str(fun1)
+    assert_equal(fun1['var1'].name, 'bla_1')
+    assert_equal(fun1['var2'].name, 'bla_2')
+    assert_equal(fun2['var1'].name, 'bla_3')
+    assert_equal(fun2['var2'].name, 'bla_4')
+    assert_equal(len(fun1.get_variables()), 4)
+    assert_equal(fun2.get_variables(), fun2.get_variables())
+
+
+def test_function_changed():
+    
+    fun1 = Function('void main(){$var1; $var2;}')
+    fun2 = Function('void main(){$var1; $var2;}')
+    fun3 = Function('void foo(){$var1; $var2;}')
+    # Start uninitialized
+    assert_equal(fun1.ischanged(), True)
+    # Get code and check
+    str(fun1)
+    assert_equal(fun1.ischanged(), False)
+    # Set function and check again
+    fun1['var1'] = fun3()
+    assert_equal(fun1.ischanged(), True)
+    str(fun3)
+    assert_equal(fun1.ischanged(), True)
+    str(fun1)
+    assert_equal(fun1.ischanged(), False)
+    # Set variable on funtcion and try again
+    fun3['var1'] = 'uniform float bla'
+    assert_equal(fun1.ischanged(), True)
+    assert_equal(fun3.ischanged(), True)
+    str(fun3)
+    assert_equal(fun1.ischanged(), True)
+    assert_equal(fun3.ischanged(), False)
+    str(fun1)
+    assert_equal(fun1.ischanged(), False)
+    
+    # Dirty when linking
+    str(fun1); str(fun2)
+    assert_equal(fun1.ischanged(), False)
+    assert_equal(fun2.ischanged(), False)
+    #
+    fun1.link(fun2)
+    assert_equal(fun1.ischanged(), True)
+    assert_equal(fun2.ischanged(), True)
+    #
+    str(fun1)
+    assert_equal(fun1.ischanged(), False)
+    assert_equal(fun2.ischanged(), True)
+    str(fun2)
+    assert_equal(fun1.ischanged(), False)
+    assert_equal(fun2.ischanged(), False)
+    
+    # Again, but different order
+    fun1.link(fun2)
+    assert_equal(fun1.ischanged(), True)
+    assert_equal(fun2.ischanged(), True)
+    #
+    str(fun2)
+    assert_equal(fun1.ischanged(), True)
+    assert_equal(fun2.ischanged(), False)
+    str(fun1)
+    assert_equal(fun1.ischanged(), False)
+    assert_equal(fun2.ischanged(), False)
+
+    
 
 if __name__ == '__main__':
     for key in [key for key in globals()]:
@@ -268,5 +380,5 @@ if __name__ == '__main__':
             func()
     
     # Uncomment to run example
-    # print('='*80)
-    # test_example1()
+    print('='*80)
+    test_example1()
