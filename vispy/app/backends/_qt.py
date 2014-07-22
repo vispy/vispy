@@ -318,6 +318,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
     def closeEvent(self, ev):
         if self._vispy_canvas is None:
             return
+        self._vispy_canvas.close()
 
     def sizeHint(self):
         return self.size()

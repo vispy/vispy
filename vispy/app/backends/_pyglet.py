@@ -297,9 +297,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
     def on_close(self):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.close()
-        #self.close()  # Or the window wont close
-        # AK: seems so wrong to try a close in the close event handler ...
+        self._vispy_canvas.close()
 
     def on_resize(self, w, h):
         if self._vispy_canvas is None:

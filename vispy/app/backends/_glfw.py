@@ -365,7 +365,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_close(self, _id):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.close()
+        self._vispy_canvas.close()
 
     def _on_draw(self, _id=None):
         if self._vispy_canvas is None or self._id is None:

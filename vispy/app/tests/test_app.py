@@ -347,10 +347,7 @@ def test_close_keys():
     def closer(event):
         x.append('done')
     c.events.key_press(key=keys.ESCAPE, text='', modifiers=[])
-    # XXX known fail: this works on Qt, but not any other backend,
-    # the flow of canvas.close() is inconsistent (and should close_keys)
-    # call canvas.close(), or canvas.events.close()?
-    #assert_equal(len(x), 1)  # ensure the close event was sent
+    assert_equal(len(x), 1)  # ensure the close event was sent
     c.app.process_events()
 
 

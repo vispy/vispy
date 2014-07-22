@@ -96,6 +96,7 @@ class Canvas(object):
         self._basetime = time()
         self._fps_callback = None
         self._backend = None
+        self._closed = False
 
         # Create events
         self.events = EmitterGroup(source=self,
@@ -283,7 +284,8 @@ class Canvas(object):
         To avoid having the widget destroyed (more like standard Qt
         behavior), consider making the widget a sub-widget.
         """
-        if self._backend is not None:
+        if self._backend is not None and not self._closed:
+            self._closed = True
             self.events.close()
             self._backend._vispy_close()
             self._backend._vispy_canvas = None

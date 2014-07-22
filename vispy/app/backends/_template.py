@@ -123,7 +123,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas.events.initialize()
         self._vispy_canvas.events.resize(size=(w, h))
         self._vispy_canvas.events.draw(region=None)
-        self._vispy_canvas.events.close()
+        self._vispy_canvas.close()
         self._vispy_canvas.events.mouse_press(pos=(x, y), button=1,
                                               modifiers=())
         self._vispy_canvas.events.mouse_release(pos=(x, y), button=1,

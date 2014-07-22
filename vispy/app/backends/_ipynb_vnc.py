@@ -194,7 +194,7 @@ class CanvasBackend(BaseCanvasBackend):
         # todo: implement this
         # Below are the events that you want to inject into vispy
 #         self._vispy_canvas.events.resize(size=(w, h))
-#         self._vispy_canvas.events.close()
+#         self._vispy_canvas.close()
 #         self._keyEvent(self._vispy_canvas.events.key_press, ev)
 #         self._keyEvent(self._vispy_canvas.events.key_release, ev)
 #         

@@ -356,13 +356,13 @@ class CanvasBackend(BaseCanvasBackend):
             return
         # triage event to proper handler
         if event.type == sdl2.SDL_QUIT:
-            self._vispy_canvas.events.close()
+            self._vispy_canvas.close()
         elif event.type == sdl2.SDL_WINDOWEVENT:
             if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
                 w, h = event.window.data1, event.window.data2
                 self._vispy_canvas.events.resize(size=(w, h))
             elif event.window.event == sdl2.SDL_WINDOWEVENT_CLOSE:
-                self._vispy_canvas.events.close()
+                self._vispy_canvas.close()
         elif event.type == sdl2.SDL_MOUSEMOTION:
             x, y = event.motion.x, event.motion.y
             self._vispy_mouse_move(pos=(x, y), modifiers=self._mods)
