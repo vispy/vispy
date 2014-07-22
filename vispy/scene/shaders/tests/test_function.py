@@ -9,7 +9,7 @@ from vispy.testing import assert_in, assert_not_in, assert_is  # noqa
 
 ## Define some snippets
 
-TransformScale = Function("""
+transformScale = Function("""
 vec4 transform_scale(vec4 pos)
 {
     pos.xyz *= $scale;
@@ -17,7 +17,7 @@ vec4 transform_scale(vec4 pos)
 }
 """)
 
-TransformZOffset = Function("""
+transformZOffset = Function("""
 vec4 transform_zoffset(vec4 pos)
 {
     pos.z += $offset;
@@ -25,7 +25,7 @@ vec4 transform_zoffset(vec4 pos)
 }
 """)
 
-Vert_template = Function("""
+vert_template = Function("""
 void main(void)
 {
     int nlights = $nlights;
@@ -36,7 +36,7 @@ void main(void)
 
 """)
 
-Frag_template = Function("""
+frag_template = Function("""
 void main(void)
 {
     gl_Fragcolor = $color;
@@ -54,10 +54,10 @@ def test_example1():
     """
     
     # Get function objects. Generate random name for transforms
-    code = Vert_template.new()
-    t1 = TransformScale.new()
-    t2 = TransformZOffset.new()
-    t3 = TransformScale.new()
+    code = Function(vert_template)
+    t1 = Function(transformScale)
+    t2 = Function(transformZOffset)
+    t3 = Function(transformScale)
     
     # We need to create a variable in order to use it in two places
     pos = Variable('attribute vec4 a_position')
@@ -71,7 +71,7 @@ def test_example1():
     t3['scale'] = 'uniform vec3 u_scale', (3.0, 4.0, 5.0)
     t2['offset'] = '1.0'
     
-    code2 = Function(Frag_template)
+    code2 = Function(frag_template)
     code.link(code2)
     code2['color'] = 'varying vec4 v_position'
     
@@ -95,14 +95,14 @@ def test_example2():
     """ Demonstrate how a transform would work.
     """
     
-    Vert_template = Function("""
+    vert_template = Function("""
     void main(void)
     {
         gl_Position = $position;
     }
     """)
     
-    TransformScale = Function("""
+    transformScale = Function("""
     vec4 transform_scale(vec4 pos)
     {
         pos.xyz *= $scale;
@@ -113,16 +113,16 @@ def test_example2():
     class Transform(object):
         def __init__(self):
             # Equivalent methods to create new function object
-            self.func = Function(TransformScale)
+            self.func = Function(transformScale)
             self.func['scale'] = 'uniform float'
-            #self.func = TransformScale.new()
+            #self.func = Function(transformScale)
         
         def set_scale(self, scale):
             self.func['scale'].value = scale
     
     transforms = [Transform(), Transform(), Transform()]
     
-    code = Vert_template.new()
+    code = Function(vert_template)
     ob = Variable('attribute vec3 a_position')
     for trans in transforms:
         ob = trans.func(ob)
@@ -142,8 +142,8 @@ def test_TextExpression():
 
 
 def test_FunctionCall():
-    fun = TransformScale.new()
-    fun2 = TransformZOffset.new()
+    fun = Function(transformScale)
+    fun2 = Function(transformZOffset)
     
     # No args
     call = fun()
@@ -247,7 +247,7 @@ def test_function_basics():
     assert_equal(fun['bar']._injection(), 'bla bla')
     
     # Test setting call expressions
-    trans = TransformScale.new()
+    trans = Function(transformScale)
     fun['foo'] = trans()
     fun['bar'] = trans('3')
     assert_is(type(fun['foo']), FunctionCall)

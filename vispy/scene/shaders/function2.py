@@ -17,16 +17,6 @@ The function class is considered a friend class of the Expression
 classes. It uses the _dependencies() and _injection() methods, and for
 Variable also the _rename() and _definition().
 
-Things to consider / work out
------------------------------
-
-* There should be a way to easily set values to varyings. Maybe we
-  just need a convention for a a post-hook and a pre-hook or
-    something.
-* ``code = SomeFunction.new()`` or ``code = Function(SomeFunction)``?
-  Both work actually. new() seems nice and short, but maybe the latter
-  is more Pythonic.
-    
 """
 
 import time
@@ -63,10 +53,10 @@ class Function(object):
         # ... omitted deinition of FragShaderTemplate and ScaleTransform
         
         # Always create new Function objects to ensure they are 'fresh'.
-        code = FragShaderTemplate.new()
-        trans1 = ScaleTransform.new()
-        trans2 = ScaleTransform.new()
-        position = Position.new()
+        code = Function(fragShaderTemplate)
+        trans1 = Function(scaleTransform)
+        trans2 = Function(scaleTransform)
+        position = Function(position)
         
         # Compose the different components
         code['position'] = position()  # Set a call to a function
@@ -180,12 +170,6 @@ class Function(object):
         return self._compile()
     
     ## Public API methods
-    
-    def new(self):
-        """ Make a copy of this Function object, discarting currently set 
-        expressions and replacements.
-        """
-        return Function(self._code)
     
     @property
     def name(self):
