@@ -297,7 +297,6 @@ class ViewBox(Widget):
         self._vert.set_data(vertices)
 
         # Set fbo size (mind that this is set using shape!)
-        # +1 to create delibirate smoothing
         resolution = [int(i+0.5) for i in self._resolution]  # set in draw()
         shape = resolution[1], resolution[0]
         fbo.color_buffer.resize(shape+(4,))
