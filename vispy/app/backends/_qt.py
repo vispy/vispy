@@ -198,8 +198,9 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
     def __init__(self, *args, **kwargs):
         self._initialized = False
         BaseCanvasBackend.__init__(self, capability, SharedContext)
-        title, size, position, show, vsync, resize, dec, fs, parent, context =\
-            self._process_backend_kwargs(kwargs)
+        title, size, position, show, vsync, resize, dec, fs, parent, context, \
+            vispy_canvas = self._process_backend_kwargs(kwargs)
+        self._vispy_canvas = vispy_canvas
         if isinstance(context, dict):
             glformat = _set_config(context)
             glformat.setSwapInterval(1 if vsync else 0)
@@ -317,7 +318,6 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
     def closeEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.close()
 
     def sizeHint(self):
         return self.size()

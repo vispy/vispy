@@ -62,7 +62,7 @@ class BaseCanvasBackend(object):
         keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
                 'decorate', 'fullscreen', 'parent']
         from .canvas import Canvas
-        outs = list()
+        outs = []
         spec = getargspec(Canvas.__init__)
         for key in keys:
             default = spec.defaults[spec.args.index(key) - 1]
@@ -98,6 +98,7 @@ class BaseCanvasBackend(object):
                             'a Canvas with the same backend, not %s'
                             % type(context))
         outs.append(context)
+        outs.append(kwargs.get('vispy_canvas', None))
         return outs
 
     def _vispy_set_current(self):

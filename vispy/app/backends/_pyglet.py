@@ -170,8 +170,9 @@ class CanvasBackend(_Window, BaseCanvasBackend):
 
     def __init__(self, **kwargs):
         BaseCanvasBackend.__init__(self, capability, SharedContext)
-        title, size, position, show, vsync, resize, dec, fs, parent, context =\
-            self._process_backend_kwargs(kwargs)
+        title, size, position, show, vsync, resize, dec, fs, parent, context, \
+            vispy_canvas = self._process_backend_kwargs(kwargs)
+        self._vispy_canvas = vispy_canvas
         if not isinstance(context, (dict, SharedContext)):
             raise TypeError('context must be a dict or pyglet SharedContext')
         if not isinstance(context, SharedContext):

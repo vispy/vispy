@@ -354,6 +354,33 @@ def test_close_keys():
     c.app.process_events()
 
 
+@requires_application()
+def test_event_order():
+    """Test event order"""
+    x = list()
+
+    class MyCanvas(Canvas):
+        def on_initialize(self, event):
+            x.append('init')
+
+        def on_draw(self, event):
+            x.append('draw')
+
+        def on_close(self, event):
+            x.append('close')
+
+    with MyCanvas() as c:
+        c.update()
+        c.app.process_events()
+
+    print(x)
+    assert_true(len(x) >= 3)
+    assert_equal(x[0], 'init')
+    assert_equal(x[1], 'draw')
+    assert_equal(x[-2], 'draw')
+    assert_equal(x[-1], 'close')
+
+
 def test_abstract():
     """Test app abstract template"""
     app = BaseApplicationBackend()
