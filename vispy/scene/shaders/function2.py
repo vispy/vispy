@@ -35,8 +35,8 @@ class Function(object):
     snippets. Each Function consists of a GLSL snippet in the form of
     a function. The code may have template variables that start with
     the dollar sign. These stubs can be replaced with expressions using
-    the index operation. Expressions can be plain code, variables
-    (constant, uniform, attribute, varying, inout) or function calls.
+    the index operation. Expressions can be plain text, variables
+    (constant, uniform, attribute, varying, inout), or function calls.
     
     Example
     -------
@@ -45,7 +45,7 @@ class Function(object):
     
         vert_code_template = Function('''
             void main() {
-            gl_Position = $position;
+            gl_Position = $pos;
             gl_Position.x += $xoffset;
             gl_Position.y += $yoffset;
         }''')
@@ -65,7 +65,7 @@ class Function(object):
         vert_code['xoffset'] = '3.0'  # Assign verbatim code
         vert_code['yoffset'] = 'uniform float offset'  # Assign a variable
         pos_var = 'attribute vec4 a_position'
-        vert_code['position'] = trans1(trans2(pos_var))  # Assign a function call
+        vert_code['pos'] = trans1(trans2(pos_var))  # Assign a function call
         
         # Transforms also need their variables set
         trans1['scale'] = 'uniform float scale'
@@ -117,11 +117,12 @@ class Function(object):
     Function calls
     --------------
     
-    As can be seen above, the arguments with which a function is to be called must be
-    specified by calling the Function object. The arguments can be any
-    of the expressions mentioned earlier. If the signature is already
+    As can be seen above, the arguments with which a function is to be
+    called must be specified by calling the Function object. The
+    arguments can be any of the expressions mentioned earlier (plain
+    text, variables, or function calls). If the signature is already
     specified in the template code, that signature is used instead.
-        
+    
         code = Function('''
             void main() {
                 vec4 position = $pos;
@@ -138,8 +139,9 @@ class Function(object):
     Data for uniform and attribute variables
     ----------------------------------------
     To each variable a value can be associated. The Function object
-    itself is agnostic about this value; it only provides a simple way
-    to associate data with it, so it can be reused later.
+    itself is agnostic about this value; it is only intended to keep
+    variable name and data together to make the code that needs to
+    process the variables easier.
     
         code['offset'] = 'uniform float offset'  # a variable with no data
         code['offset'] = 'uniform float offset', 3.0  # a variable with data

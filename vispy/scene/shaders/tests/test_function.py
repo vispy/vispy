@@ -77,7 +77,8 @@ def test_example1():
     
     code.post_apply('varying vec4 v_position', pos)
     code.post_apply(code2['color'], pos)
-    code.post_apply( Function("void foo(void){...}")() )
+    some_func = Function("void foo(void){...}")
+    code.post_apply(some_func())
     
     # Show result
     print(code)
@@ -322,7 +323,8 @@ def test_function_linking():
     fun2['var1'] = 'uniform float bla'
     fun2['var2'] = 'uniform float bla'
     # The two functions are separate
-    str(fun1); str(fun2)
+    str(fun1)
+    str(fun2)
     assert_equal(fun1['var1'].name, 'bla_1')
     assert_equal(fun1['var2'].name, 'bla_2')
     assert_equal(fun2['var1'].name, 'bla_1')
@@ -368,7 +370,8 @@ def test_function_changed():
     assert_equal(fun1.ischanged(), False)
     
     # Dirty when linking
-    str(fun1); str(fun2)
+    str(fun1)
+    str(fun2)
     assert_equal(fun1.ischanged(), False)
     assert_equal(fun2.ischanged(), False)
     #
@@ -395,7 +398,6 @@ def test_function_changed():
     assert_equal(fun1.ischanged(), False)
     assert_equal(fun2.ischanged(), False)
 
-    
 
 if __name__ == '__main__':
     for key in [key for key in globals()]:
