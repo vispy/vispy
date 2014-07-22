@@ -179,8 +179,9 @@ class ViewBox(Widget):
         if fbo:
             # Ask the canvas to activate the new FBO
             offset = event.full_transform.map((0, 0))[:2]
-            size = event.full_transform.map(self.size)[:2]
-            event.push_fbo(fbo, offset, offset + size)
+            size = event.full_transform.map(self.size)[:2] - offset
+            
+            event.push_fbo(fbo, offset, size)
             
             # Clear bg color (handy for dev)
             from ...gloo import gl
@@ -286,8 +287,6 @@ class ViewBox(Widget):
         # Note that we would just use -1..1 if we would use a Visual.
         coords = [[0, 0], [self.size[0], self.size[1]]]
         
-        
-        
         transform = event.render_transform # * self.scene.viewbox_transform
         coords = transform.map(coords)
         x1, y1, z = coords[0][:3]
@@ -299,7 +298,7 @@ class ViewBox(Widget):
 
         # Set fbo size (mind that this is set using shape!)
         # +1 to create delibirate smoothing
-        resolution = [int(i+0.5+1) for i in self._resolution]  # set in draw()
+        resolution = [int(i+0.5) for i in self._resolution]  # set in draw()
         shape = resolution[1], resolution[0]
         fbo.color_buffer.resize(shape+(4,))
         fbo.depth_buffer.resize(shape)
