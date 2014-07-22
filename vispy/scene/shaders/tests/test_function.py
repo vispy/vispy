@@ -237,7 +237,7 @@ def test_function_basics():
     assert_in('foo', fun._template_vars)
     assert_in('bar', fun._template_vars)
     
-    # Test setting text expressions
+    # Test setting verbatim expressions
     assert_raises(ValueError, fun.__setitem__, 'bla', '33')  # no such template
     fun['foo'] = '33'
     fun['bar'] = 'bla bla'
@@ -247,12 +247,23 @@ def test_function_basics():
     assert_equal(fun['bar']._injection(), 'bla bla')
     
     # Test setting call expressions
+    fun = Function('void main(){\n$foo;\n$bar;\n$spam(XX);\n$eggs(YY);\n}')
     trans = Function(transformScale)
     fun['foo'] = trans()
-    fun['bar'] = trans('3')
-    assert_is(type(fun['foo']), FunctionCall)
-    assert_equal(fun['foo'].function, trans)
-    assert_in(trans, fun._dependencies())
+    fun['bar'] = trans('3', '4')
+    fun['spam'] = trans()
+    fun['eggs'] = trans('3', '4')
+    #
+    for name in ['foo', 'bar', 'spam', 'eggs']:
+        assert_is(type(fun[name]), FunctionCall)
+        assert_equal(fun[name].function, trans)
+        assert_in(trans, fun._dependencies())
+    #
+    text = str(fun)
+    assert_in('\ntransform_scale();\n', text)
+    assert_in('\ntransform_scale(3, 4);\n', text)
+    assert_in('\ntransform_scale(XX);\n', text)
+    assert_in('\ntransform_scale(YY);\n', text)
     
     # Test variable expressions
     fun = Function('void main(){$foo; $bar;}')
@@ -266,10 +277,7 @@ def test_function_basics():
     assert_equal(fun['foo'].name, fun['bar'].name)  # Still the sae
     str(fun)  # force name mangling
     assert_not_equal(fun['foo'].name, fun['bar'].name) 
-    
-    # todo: Test function calls
-    # todo: Test verbatim replacements
-    # todo: test actual code output
+
 
 def test_function_names():
     
