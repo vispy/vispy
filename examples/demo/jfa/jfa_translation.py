@@ -11,8 +11,8 @@ Two modifications were made for OpenGL ES 2.0 compatibility:
 
     1. GL_CLAMP_TO_BORDER was changed to GL_CLAMP_TO_EDGE, with
        corresponding shader changes.
-    2. GL_RG16 was changed to GL_RGBA with corresponding shader changes.
-    3. "texlevels" was hard-coded at 65536.
+    2. GL_RG16 was changed to GL_RGBA with corresponding shader changes
+       (including hard-coding "texlevels" at 65536).
 
 """
 
