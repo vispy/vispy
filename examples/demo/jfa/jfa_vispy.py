@@ -10,6 +10,7 @@ This version is a vispy-ized translation of the OSX C code to Python.
 """
 
 import numpy as np
+from os import path as op
 from PIL import Image
 import time
 from vispy.app import Canvas
@@ -17,6 +18,8 @@ from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
                         VertexBuffer, IndexBuffer, Texture2D, gl, set_viewport,
                         DepthBuffer)
 from vispy.util import get_data_file
+
+this_dir = op.dirname(__file__)
 
 # GL_CLAMP_TO_BORDER = 33069
 # GL_RG16 = 33324
@@ -60,34 +63,33 @@ class JFACanvas(Canvas):
             tex.wrapping = gl.GL_CLAMP_TO_EDGE  # XXX BORDER
             self.comp_texs.append(tex)
         for program in self.programs:
-            program['u_texw'] = self.texture_size[0]
-            program['u_texh'] = self.texture_size[1]
+            program['texw'] = self.texture_size[0]
+            program['texh'] = self.texture_size[1]
         self.comp_depth = DepthBuffer(self.texture_size)
 
     def on_initialize(self, event):
         self._init = True
-        with open('vertex_vispy.glsl', 'r') as fid:
+        with open(op.join(this_dir, 'vertex_vispy.glsl'), 'r') as fid:
             vert = VertexShader(fid.read().decode('ASCII'))
-        with open('fragment_seed_vispy.glsl', 'r') as fid:
-            frag_seed = FragmentShader(fid.read().decode('ASCII'))
-        with open('fragment_flood_vispy.glsl', 'r') as fid:
-            frag_flood = FragmentShader(fid.read().decode('ASCII'))
-        with open('fragment_display_vispy.glsl', 'r') as fid:
-            frag_display = FragmentShader(fid.read().decode('ASCII'))
+        with open(op.join(this_dir, 'fragment_seed.glsl'), 'r') as f:
+            frag_seed = FragmentShader(f.read().decode('ASCII'))
+        with open(op.join(this_dir, 'fragment_flood.glsl'), 'r') as f:
+            frag_flood = FragmentShader(f.read().decode('ASCII'))
+        with open(op.join(this_dir, 'fragment_display.glsl'), 'r') as f:
+            frag_display = FragmentShader(f.read().decode('ASCII'))
         self.programs = [Program(vert, frag_seed),
                          Program(vert, frag_flood),
                          Program(vert, frag_display)]
         # Initialize variables
         self._setup_textures('shape1.tga')
         self.fbo = FrameBuffer()
-        vtype = np.dtype([('a_position', 'f4', 2), ('a_texcoord', 'f4', 2)])
+        vtype = np.dtype([('position', 'f4', 2), ('texcoord', 'f4', 2)])
         vertices = np.zeros(4, dtype=vtype)
-        vertices['a_position'] = [[-1., -1.], [1., -1.], [1., 1.], [-1., 1.]]
-        vertices['a_texcoord'] = [[0., 0.], [1., 0.], [1., 1.], [0., 1.]]
+        vertices['position'] = [[-1., -1.], [1., -1.], [1., 1.], [-1., 1.]]
+        vertices['texcoord'] = [[0., 0.], [1., 0.], [1., 1.], [0., 1.]]
         vertices = VertexBuffer(vertices)
         for program in self.programs:
-            program['u_texlevels'] = 65536
-            program['u_step'] = 0
+            program['step'] = 0
             program.bind(vertices)
 
     def on_draw(self, event):
@@ -96,20 +98,20 @@ class JFACanvas(Canvas):
             self.on_initialize(event)
         self._show_fps()
         if not self.use_shaders:
-            self.programs[2]['u_texture'] = self.orig_tex
+            self.programs[2]['texture'] = self.orig_tex
         else:
             self.fbo.color_buffer = self.comp_texs[0]
             self.fbo.depth_buffer = self.comp_depth
             last_rend = 0
             self.fbo.activate()
             set_viewport(0, 0, *self.texture_size)
-            self.programs[0]['u_texture'] = self.orig_tex
+            self.programs[0]['texture'] = self.orig_tex
             self.programs[0].draw(indices=idx, mode='triangles')
             self.fbo.deactivate()
             stepsize = (np.array(self.texture_size) // 2).max()
             while stepsize > 0:
-                self.programs[1]['u_step'] = stepsize
-                self.programs[1]['u_texture'] = self.comp_texs[last_rend]
+                self.programs[1]['step'] = stepsize
+                self.programs[1]['texture'] = self.comp_texs[last_rend]
                 last_rend = 1 if last_rend == 0 else 0
                 self.fbo.color_buffer = self.comp_texs[last_rend]
                 self.fbo.activate()
@@ -117,7 +119,7 @@ class JFACanvas(Canvas):
                 self.programs[1].draw(indices=idx, mode='triangles')
                 self.fbo.deactivate()
                 stepsize //= 2
-            self.programs[2]['u_texture'] = self.comp_texs[last_rend]
+            self.programs[2]['texture'] = self.comp_texs[last_rend]
         set_viewport(0, 0, *self.size)
         self.programs[2].draw(indices=idx, mode='triangles')
         self.update()

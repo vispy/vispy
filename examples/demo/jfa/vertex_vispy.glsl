@@ -7,20 +7,20 @@
 // You need to run it multiple times with different step
 // lengths to perform a full distance transformation.
 
-uniform float u_texw;
-uniform float u_texh;
-uniform float u_step;
-attribute vec2 a_position;
-attribute vec2 a_texcoord;
-varying float v_stepu;
-varying float v_stepv;
-varying vec2 v_texcoord;
+uniform float texw;
+uniform float texh;
+uniform float step;
+attribute vec2 position;
+attribute vec2 texcoord;
+varying float stepu;
+varying float stepv;
+varying vec2 uv;
 
 void main( void )
 {
   // Get the texture coordinates
-  v_stepu = u_step / u_texw; // Saves a division in the fragment shader
-  v_stepv = u_step / u_texh;
-  v_texcoord = a_texcoord;
-  gl_Position = vec4(a_position, 0.0, 1.0);
+  uv = texcoord.xy;
+  stepu = step / texw; // Saves a division in the fragment shader
+  stepv = step / texh;
+  gl_Position = vec4(position.xy, 0., 1.);
 }

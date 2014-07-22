@@ -8,9 +8,6 @@
 // lengths to perform a full distance transformation.
 
 uniform sampler2D texture;
-uniform float texw;
-uniform float texh;
-uniform float texlevels;
 varying float stepu;
 varying float stepv;
 varying vec2 uv;
@@ -20,12 +17,18 @@ varying vec2 uv;
 // The transformations are very specifically designed to map
 // integer texel values exactly to pixel centers, and vice versa.
 // (See fragment_seed.glsl for details.)
-vec2 remap(vec2 floatdata) {
-     return floatdata * (texlevels - 1.0) / texlevels * 2.0 - 1.0;
+
+vec2 remap(vec4 floatdata) {
+    vec2 scaleddata = vec2(floatdata.x * 65280. + floatdata.z * 255.,
+                           floatdata.y * 65280. + floatdata.w * 255.);
+    return scaleddata / 32768. - 1.0;
 }
 
-vec2 remap_inv(vec2 floatvec) {
-     return (floatvec + 1.0)* 0.5 * texlevels / (texlevels - 1.0);
+vec4 remap_inv(vec2 floatvec) {
+    vec2 data = (floatvec + 1.0) * 32768.;
+    float x = floor(data.x / 256.);
+    float y = floor(data.y / 256.);
+    return vec4(x, y, data.x - x * 256., data.y - y * 256.) / 255.;
 }
 
 void main( void )
@@ -35,7 +38,7 @@ void main( void )
   vec2 newvec;  // Absolute position of that candidate
   vec3 newseed; // Closest point from that candidate (.xy) and its distance (.z)
   vec3 bestseed; // Closest seed so far
-  bestseed.xy = remap(texture2D(texture, uv).rg);
+  bestseed.xy = remap(texture2D(texture, uv).rgba);
   bestseed.z = length(bestseed.xy);
 
   // This code depends on the texture having a CLAMP_TO_BORDER
@@ -50,8 +53,8 @@ void main( void )
 
   stepvec = vec2(-stepu, -stepv);
   newvec = uv + stepvec;
-//  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
-    newseed.xy = remap(texture2D(texture, newvec).rg);
+  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
+    newseed.xy = remap(texture2D(texture, newvec).rgba);
     if(newseed.x > -0.99999) { // if the new seed is not "indeterminate distance"
       newseed.xy = newseed.xy + stepvec;
       newseed.z = length(newseed.xy);
@@ -59,12 +62,12 @@ void main( void )
         bestseed = newseed;
       }
     }
-//  }
+  }
 
   stepvec = vec2(-stepu, 0.0);
   newvec = uv + stepvec;
-//  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
-    newseed.xy = remap(texture2D(texture, newvec).rg);
+  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
+    newseed.xy = remap(texture2D(texture, newvec).rgba);
     if(newseed.x > -0.99999) { // if the new seed is not "indeterminate distance"
       newseed.xy = newseed.xy + stepvec;
       newseed.z = length(newseed.xy);
@@ -72,12 +75,12 @@ void main( void )
         bestseed = newseed;
       }
     }
-//  }
+  }
 
   stepvec = vec2(-stepu, stepv);
   newvec = uv + stepvec;
-//  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
-    newseed.xy = remap(texture2D(texture, newvec).rg);
+  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
+    newseed.xy = remap(texture2D(texture, newvec).rgba);
     if(newseed.x > -0.99999) { // if the new seed is not "indeterminate distance"
       newseed.xy = newseed.xy + stepvec;
       newseed.z = length(newseed.xy);
@@ -85,12 +88,12 @@ void main( void )
         bestseed = newseed;
       }
     }
-//  }
+  }
 
   stepvec = vec2(0.0, -stepv);
   newvec = uv + stepvec;
-//  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
-    newseed.xy = remap(texture2D(texture, newvec).rg);
+  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
+    newseed.xy = remap(texture2D(texture, newvec).rgba);
     if(newseed.x > -0.99999) { // if the new seed is not "indeterminate distance"
       newseed.xy = newseed.xy + stepvec;
       newseed.z = length(newseed.xy);
@@ -98,12 +101,12 @@ void main( void )
         bestseed = newseed;
       }
     }
-//  }
+  }
 
   stepvec = vec2(0.0, stepv);
   newvec = uv + stepvec;
-//  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
-    newseed.xy = remap(texture2D(texture, newvec).rg);
+  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
+    newseed.xy = remap(texture2D(texture, newvec).rgba);
     if(newseed.x > -0.99999) { // if the new seed is not "indeterminate distance"
       newseed.xy = newseed.xy + stepvec;
       newseed.z = length(newseed.xy);
@@ -111,12 +114,12 @@ void main( void )
         bestseed = newseed;
       }
     }
-//  }
+  }
 
   stepvec = vec2(stepu, -stepv);
   newvec = uv + stepvec;
-//  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
-    newseed.xy = remap(texture2D(texture, newvec).rg);
+  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
+    newseed.xy = remap(texture2D(texture, newvec).rgba);
     if(newseed.x > -0.99999) { // if the new seed is not "indeterminate distance"
       newseed.xy = newseed.xy + stepvec;
       newseed.z = length(newseed.xy);
@@ -124,12 +127,12 @@ void main( void )
         bestseed = newseed;
       }
     }
-//  }
+  }
 
   stepvec = vec2(stepu, 0.0);
   newvec = uv + stepvec;
-//  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
-    newseed.xy = remap(texture2D(texture, newvec).rg);
+  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
+    newseed.xy = remap(texture2D(texture, newvec).rgba);
     if(newseed.x > -0.99999) { // if the new seed is not "indeterminate distance"
       newseed.xy = newseed.xy + stepvec;
       newseed.z = length(newseed.xy);
@@ -137,12 +140,12 @@ void main( void )
         bestseed = newseed;
       }
     }
-//  }
+  }
 
   stepvec = vec2(stepu, stepv);
   newvec = uv + stepvec;
-//  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
-    newseed.xy = remap(texture2D(texture, newvec).rg);
+  if ( all( bvec4( lessThan(newvec, vec2(1.0)), greaterThan(newvec, vec2(0.0)) ) ) ) {
+    newseed.xy = remap(texture2D(texture, newvec).rgba);
     if(newseed.x > -0.99999) { // if the new seed is not "indeterminate distance"
       newseed.xy = newseed.xy + stepvec;
       newseed.z = length(newseed.xy);
@@ -150,7 +153,7 @@ void main( void )
         bestseed = newseed;
       }
     }
-//  }
+  }
 
-  gl_FragColor = vec4(remap_inv(bestseed.xy), 0.0, 1.0);
+  gl_FragColor = remap_inv(bestseed.xy);
 }

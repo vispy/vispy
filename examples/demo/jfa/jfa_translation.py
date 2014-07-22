@@ -7,9 +7,17 @@ Author: Stefan Gustavson (stefan.gustavson@gmail.com)
 Adapted to `vispy` by Eric Larson <larson.eric.d@gmail.com>.
 
 This version is a translation of the OSX C code to Python.
+Two modifications were made for OpenGL ES 2.0 compatibility:
+
+    1. GL_CLAMP_TO_BORDER was changed to GL_CLAMP_TO_EDGE, with
+       corresponding shader changes.
+    2. GL_RG16 was changed to GL_RGBA8 with corresponding shader changes.
+    3. "texlevels" was hard-coded at 65536.
+
 """
 
 import numpy as np
+from os import path as op
 from vispy.ext import glfw
 from vispy.util import get_data_file
 from OpenGL import GL as gl
@@ -20,9 +28,9 @@ import time
 
 def createShader(vert_fname, frag_fname):
     """createShader - create, load, compile and link the shader object"""
-    with open(vert_fname, 'r') as fid:
+    with open(op.join(op.dirname(__file__), vert_fname), 'r') as fid:
         vert = fid.read().decode('ASCII')
-    with open(frag_fname, 'r') as fid:
+    with open(op.join(op.dirname(__file__), frag_fname), 'r') as fid:
         frag = fid.read().decode('ASCII')
     vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
     gl.glShaderSource(vertexShader, vert)
@@ -38,7 +46,7 @@ def createShader(vert_fname, frag_fname):
     return programObj
 
 
-def setUniformVariables(programObj, texture, texw, texh, texlevels, step):
+def setUniformVariables(programObj, texture, texw, texh, step):
     """setUniformVariables - set the uniform shader variables we need"""
     gl.glUseProgram(programObj)
     location_texture = gl.glGetUniformLocation(programObj, "texture")
@@ -50,9 +58,6 @@ def setUniformVariables(programObj, texture, texw, texh, texlevels, step):
     location_texh = gl.glGetUniformLocation(programObj, "texh")
     if location_texh != -1:
         gl.glUniform1f(location_texh, texh)
-    location_texlevels = gl.glGetUniformLocation(programObj, "texlevels")
-    if location_texlevels != -1:
-        gl.glUniform1f(location_texlevels, texlevels)
     location_step = gl.glGetUniformLocation(programObj, "step")
     if(location_step != -1):
         gl.glUniform1f(location_step, step)
@@ -107,13 +112,12 @@ def createBufferTexture(texID, texw, texh):
     gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER,
                        gl.GL_NEAREST)
     gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S,
-                       gl.GL_CLAMP_TO_EDGE)  # XXX GL_CLAMP_TO_BORDER
+                       gl.GL_CLAMP_TO_EDGE)
     gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T,
-                       gl.GL_CLAMP_TO_EDGE)  # XXX GL_CLAMP_TO_BORDER
+                       gl.GL_CLAMP_TO_EDGE)
     gl.glTexParameterfv(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_BORDER_COLOR, black)
-    # GL_RG16 = 33324  # XXX SHOULD PUT THIS BACK
-    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, texw, texh, 0, gl.GL_RGBA,
-                    gl.GL_UNSIGNED_BYTE, '\x00' * texw*texh*4)
+    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA8, texw, texh, 0,
+                    gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, '\x00' * texw*texh*4)
     gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
     checkGLError()
 
@@ -192,7 +196,7 @@ while running:
     if not useShaders:
         gl.glBindTexture(gl.GL_TEXTURE_2D, textureID[0])  # Pass-through
     else:
-        setUniformVariables(programObj0, 0, texw, texh, 65536, 0)
+        setUniformVariables(programObj0, 0, texw, texh, 0)
         gl.glBindTexture(gl.GL_TEXTURE_2D, textureID[0])
         gl.glBindFramebuffer(gl.GL_DRAW_FRAMEBUFFER, fboID)
         lastRendered = 1
@@ -203,7 +207,7 @@ while running:
         renderScene(programObj0, texw, texh)
         stepsize = texw//2 if texw > texh else texh//2
         while stepsize > 0:
-            setUniformVariables(programObj1, 0, texw, texh, 65536, stepsize)
+            setUniformVariables(programObj1, 0, texw, texh, stepsize)
             gl.glBindTexture(gl.GL_TEXTURE_2D, textureID[lastRendered])
             lastRendered = 1 if lastRendered == 2 else 2
             gl.glFramebufferTexture2D(gl.GL_DRAW_FRAMEBUFFER,
@@ -218,7 +222,7 @@ while running:
     width, height = glfw.glfwGetWindowSize(window)
     height = max(height, 1)
     width = max(width, 1)
-    setUniformVariables(programObj2, 0, texw, texh, 65536, 0)
+    setUniformVariables(programObj2, 0, texw, texh, 0)
     renderScene(programObj2, width, height)
 
     glfw.glfwSwapBuffers(window)

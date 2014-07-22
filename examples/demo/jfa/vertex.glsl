@@ -7,9 +7,11 @@
 // You need to run it multiple times with different step
 // lengths to perform a full distance transformation.
 
-uniform float texw, texh;
+uniform float texw;
+uniform float texh;
 uniform float step;
-varying float stepu, stepv;
+varying float stepu;
+varying float stepv;
 varying vec2 uv;
 
 void main( void )
