@@ -380,31 +380,6 @@ class Canvas(object):
         #"""
 
 
-#class RenderArea(object):
-    #""" Container to store information about the render area, such as
-    #viewport and information related to the FBO.
-    #"""
-    #def __init__(self, viewport, size, fbo_transform, fbo=None):
-        #from ..scene.transforms import STTransform
-        ## The viewport (x, y, w, h)
-        #self.viewport = viewport
-        ## Full size of the render area (i.e. resolution)
-        #self.size = size
-        ## Transform to get there (for FBO)
-        #self.fbo_transform = fbo_transform
-        ## FBO that applies to it. Only necessary for push_fbo
-        #self.fbo = fbo
-
-        ## Calculate viewport transform for render_transform
-        #csize = size
-        #scale = csize[0]/viewport[2], csize[1]/viewport[3]
-        #origin = (((csize[0] - 2.0 * viewport[0]) / viewport[2] - 1),
-                  #((csize[1] - 2.0 * viewport[1]) / viewport[3] - 1))
-        #self.vp_transform = (STTransform(translate=(origin[0], origin[1])) *
-                             #STTransform(scale=scale))
-
-
-
 # Event subclasses specific to the Canvas
 class MouseEvent(Event):
 
