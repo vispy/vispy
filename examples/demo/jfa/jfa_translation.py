@@ -11,7 +11,7 @@ Two modifications were made for OpenGL ES 2.0 compatibility:
 
     1. GL_CLAMP_TO_BORDER was changed to GL_CLAMP_TO_EDGE, with
        corresponding shader changes.
-    2. GL_RG16 was changed to GL_RGBA8 with corresponding shader changes.
+    2. GL_RG16 was changed to GL_RGBA with corresponding shader changes.
     3. "texlevels" was hard-coded at 65536.
 
 """
@@ -116,7 +116,7 @@ def createBufferTexture(texID, texw, texh):
     gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T,
                        gl.GL_CLAMP_TO_EDGE)
     gl.glTexParameterfv(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_BORDER_COLOR, black)
-    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA8, texw, texh, 0,
+    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, texw, texh, 0,
                     gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, '\x00' * texw*texh*4)
     gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
     checkGLError()

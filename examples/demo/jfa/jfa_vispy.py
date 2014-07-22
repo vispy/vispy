@@ -21,17 +21,13 @@ from vispy.util import get_data_file
 
 this_dir = op.dirname(__file__)
 
-# GL_CLAMP_TO_BORDER = 33069
-# GL_RG16 = 33324
-# GL_TEXTURE_BORDER_COLOR = 4100
-
 
 class JFACanvas(Canvas):
     def __init__(self):
         Canvas.__init__(self, size=(512, 512), show=True, close_keys='escape')
         self.t0 = 0.0
         self.frames = 0
-        self.use_shaders = True
+        self.use_shaders = False
         self.texture_size = (0, 0)
         self._init = False
 
@@ -58,9 +54,9 @@ class JFACanvas(Canvas):
         self.comp_texs = []
         data = np.zeros((w, h, 3), np.float32)
         for _ in range(2):
-            tex = Texture2D(data, format=gl.GL_RGB)  # XXX RG16
+            tex = Texture2D(data, format=gl.GL_RGBA)
             tex.interpolation = gl.GL_NEAREST
-            tex.wrapping = gl.GL_CLAMP_TO_EDGE  # XXX BORDER
+            tex.wrapping = gl.GL_CLAMP_TO_EDGE
             self.comp_texs.append(tex)
         for program in self.programs:
             program['texw'] = self.texture_size[0]
