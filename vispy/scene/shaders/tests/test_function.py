@@ -25,7 +25,7 @@ vec4 transform_zoffset(vec4 pos)
 }
 """)
 
-Frag_template = Function("""
+Vert_template = Function("""
 void main(void)
 {
     int nlights = $nlights;
@@ -36,6 +36,13 @@ void main(void)
 
 """)
 
+Frag_template = Function("""
+void main(void)
+{
+    gl_Fragcolor = $color;
+}
+
+""")
 
 data = 'just some dummy variable, Function is agnostic about this'
 
@@ -47,13 +54,13 @@ def test_example1():
     """
     
     # Get function objects. Generate random name for transforms
-    code = Frag_template.new()
+    code = Vert_template.new()
     t1 = TransformScale.new()
     t2 = TransformZOffset.new()
     t3 = TransformScale.new()
     
     # We need to create a variable in order to use it in two places
-    pos = Variable('attribute vec4 u_position')
+    pos = Variable('attribute vec4 a_position')
     
     # Compose everything together
     code['position'] = t1(t2(pos))
@@ -64,13 +71,23 @@ def test_example1():
     t3['scale'] = 'uniform vec3 u_scale', (3.0, 4.0, 5.0)
     t2['offset'] = '1.0'
     
+    code2 = Function(Frag_template)
+    code.link(code2)
+    code2['color'] = 'varying vec4 v_position'
+    
+    code.post_apply('varying vec4 v_position', pos)
+    code.post_apply(code2['color'], pos)
+    code.post_apply( Function("void foo(void){...}")() )
+    
     # Show result
     print(code)
+    print('=====')
+    print(code2)
     
     # Print all variables. Values can associated to variable objects and then
     # set to the shader program later in a loop similar to this:
     print('===== Variables:')
-    for var in code.get_variables():
+    for var in code2.get_variables():
         print(var.name, var.value)
 
 
@@ -78,7 +95,7 @@ def test_example2():
     """ Demonstrate how a transform would work.
     """
     
-    Frag_template = Function("""
+    Vert_template = Function("""
     void main(void)
     {
         gl_Position = $position;
@@ -105,7 +122,7 @@ def test_example2():
     
     transforms = [Transform(), Transform(), Transform()]
     
-    code = Frag_template.new()
+    code = Vert_template.new()
     ob = Variable('attribute vec3 a_position')
     for trans in transforms:
         ob = trans.func(ob)

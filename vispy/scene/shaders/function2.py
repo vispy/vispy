@@ -113,6 +113,9 @@ class Function(object):
         # Verbatim string replacements
         self._replacements = OrderedDict()
         
+        # Stuff to do at the end
+        self._post_hooks = []
+        
         # Toplevel vertex/fragment shader funtctions can be linked
         self._linked = None
         
@@ -198,7 +201,7 @@ class Function(object):
         since = since or self._last_compiled
         ischanged = True
         if since > self._last_changed:
-            for dep in self._dependencies():
+            for dep in self._dependencies(True):
                 if since < dep._last_changed:
                     break
             else:
@@ -223,10 +226,31 @@ class Function(object):
         self._last_changed = time.time()
     
     def get_variables(self):
-        """ Get a list of all variable objects defined in the current program
+        """ Get a list of all variable objects defined in the current program.
+        When this function is linked, it gets *all* variables.
         """
-        deps = self._dependencies()
+        deps = self._dependencies(True)
         return [dep for dep in deps.keys() if isinstance(dep, Variable)]
+    
+    def post_apply(self, val1, val2=None):
+        """ Assign one variable to another (as in ``val1 = val2``)
+        
+        This assigment is done at the end of the function.
+        """
+        if True:
+            val1 = _convert_to_expression(val1)
+            key1 = 'assign_%x' % id(val1)
+            self._expressions[key1] = val1
+        if val2:
+            val2 = _convert_to_expression(val2)
+            key2 = 'assign_%x' % id(val2)
+            self._expressions[key2] = val2
+        # Add code that these variables can hook into
+        if val2:
+            self._post_hooks.append('    $%s = $%s;' % (key1, key2))
+        else:
+            self._post_hooks.append('    $%s;' % key1)
+        self._last_changed = time.time()
     
     def link(self, frag_func):
         """ Link a vertex and fragment shader
@@ -281,6 +305,10 @@ class Function(object):
         # Apply plain replacements
         for key, val in self._replacements.items():
             code = code.replace(key, val)
+        # Apply placeholders for hooks
+        post_text = '\n' + '\n'.join(self._post_hooks) + '\n'
+        code = code.rpartition('}')
+        code = code[0] + post_text + code[1] + code[2]
         # Apply template replacements 
         for key, val in self._expressions.items():
             if isinstance(val, FunctionCall):
@@ -290,14 +318,13 @@ class Function(object):
         # Done
         return code
     
-    def _dependencies(self):
+    def _dependencies(self, also_linked=False):
         """ Get the dependencies (Functions and Variables) for this
-        expression. If this Function is linked, this returns the total
-        collection of dependencies.
+        expression.
         """
         # Get list of expressions, taking linking into account
         expressions1, expressions2 = self._expressions.values(), []
-        if self._linked:
+        if also_linked and self._linked:
             expressions2 = self._linked[0]._expressions.values()
             if self._linked[1] == 'fragment':
                 expressions1, expressions2 = expressions2, expressions1
@@ -321,7 +348,7 @@ class Function(object):
         and dep._rename() here.
         """
         # Collect all dependencies with the same name
-        deps = self._dependencies()
+        deps = self._dependencies(True)
         names = {}
         for dep in deps:
             deps_with_this_name = names.setdefault(dep._oname, [])
@@ -542,4 +569,4 @@ def _convert_to_expression(val, altname=None):
         # Be friendly for people who forget to call a function
         raise ValueError('A Function is not an expression, it\'s "call" is.')
     # Else ...
-    raise ValueError('Cannot convert to Expression %r' % val)
+    raise ValueError('Cannot convert to Expression: %r' % val)
