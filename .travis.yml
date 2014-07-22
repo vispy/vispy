@@ -108,7 +108,7 @@ install:
         fi;
         if [ "${PYTHON}" == "2.7" ]; then
           travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging;
-          travis_retry sudo apt-get -qq -y install python-scipy;
+          travis_retry pip install -q Scipy;
         fi;
       fi;
 
