@@ -29,23 +29,21 @@ class JFACanvas(Canvas):
 
     def _setup_textures(self, fname):
         img = Image.open(get_data_file('jfa/' + fname))
-        w, h = img.size
-        self.texture_size = (w, h)
+        self.texture_size = tuple(img.size)
         data = np.array(img, np.ubyte)[::-1].copy()
         self.orig_tex = Texture2D(data, format=gl.GL_LUMINANCE)
         self.orig_tex.wrapping = gl.GL_REPEAT
         self.orig_tex.interpolation = gl.GL_NEAREST
 
         self.comp_texs = []
-        data = np.zeros((w, h, 4), np.float32)
+        data = np.zeros(self.texture_size + (4,), np.float32)
         for _ in range(2):
             tex = Texture2D(data, format=gl.GL_RGBA)
             tex.interpolation = gl.GL_NEAREST
             tex.wrapping = gl.GL_CLAMP_TO_EDGE
             self.comp_texs.append(tex)
         for program in self.programs:
-            program['texw'] = self.texture_size[0]
-            program['texh'] = self.texture_size[1]
+            program['texw'], program['texh'] = self.texture_size
         self.comp_depth = DepthBuffer(self.texture_size)
 
     def on_initialize(self, event):
