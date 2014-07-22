@@ -31,53 +31,141 @@ VARIABLE_TYPES = ('constant', 'uniform', 'attribute', 'varying', 'inout')
 class Function(object):
     """ Representation of a GLSL function
     
-    This is the class to be used for re-using and composing GLSL snippets.
-    
-    Each Function consists of a GLSL snippet in the form of a function.
-    The code may have template variables that start with the dollar
-    sign. These stubs can be replaced with expressions using the index
-    operation. Expressions can be calls to other functions, variables
-    (constant, uniform, attribute, varying, inout) or plain code.
-    
-    The signature of a function can be set by calling the Function
-    object, arguments can be any of the expressions mentioned above.
-    If the signature is already specified in the template code, that
-    signature is used.
-    
-    To get the final source code, simply convert the Function object
-    to str (or print it). 
+    Objects of this class can be used for re-using and composing GLSL
+    snippets. Each Function consists of a GLSL snippet in the form of
+    a function. The code may have template variables that start with
+    the dollar sign. These stubs can be replaced with expressions using
+    the index operation. Expressions can be plain code, variables
+    (constant, uniform, attribute, varying, inout) or function calls.
     
     Example
     -------
+    
+    This example shows the basic usage of the Function class.
+    
+        vert_code_template = Function('''
+            void main() {
+            gl_Position = $position;
+            gl_Position.x += $xoffset;
+            gl_Position.y += $yoffset;
+        }''')
         
-        # ... omitted deinition of FragShaderTemplate and ScaleTransform
+        scale_transform = Function('''
+        vec4 transform_scale(vec4 pos){
+            return pos * $scale;
+        }''')
         
-        # Always create new Function objects to ensure they are 'fresh'.
-        code = Function(fragShaderTemplate)
-        trans1 = Function(scaleTransform)
-        trans2 = Function(scaleTransform)
-        position = Function(position)
+        # If you get the function from a snipped collection, always
+        # create new Function objects to ensure they are 'fresh'.
+        vert_code = Function(vert_code_template)
+        trans1 = Function(scale_transform)
+        trans2 = Function(scale_transform)  # trans2 != trans1
         
-        # Compose the different components
-        code['position'] = position()  # Set a call to a function
-        code['position'] = trans1(trans2(position())  # Functions with args 
-        code['some_stub'] = 'vec2(3.0, 1.0)'  # Verbatim code
-        code['offset'] = 'uniform float offset'  # a variable
-        code['offset'] = 'uniform float offset', 3.0  # a variable with data
-        position['position'] = 'attribute vec3 a_position', VertexBuffer()
+        # Three ways to assign to template variables
+        vert_code['xoffset'] = '3.0'  # Assign verbatim code
+        vert_code['yoffset'] = 'uniform float offset'  # Assign a variable
+        pos_var = 'attribute vec4 a_position'
+        vert_code['position'] = trans1(trans2(pos_var))  # Assign a function call
+        
+        # Transforms also need their variables set
+        trans1['scale'] = 'uniform float scale'
+        trans2['scale'] = 'uniform float scale'
         
         # You can actually change any code you want, but use this with care!
-        code.replace('= color;', '= vec4(color.rgb, 0.5)')
+        vert_code.replace('gl_Position.y', 'gl_Position.z')
+        
+        # Finally, you can let functions be called at the end
+        some_func = Function('void foo(){...}')
+        vert_code.post_apply(some_func())
+        # Or make some assignments at the end
+        vert_code.post_apply('gl_PointSize', 'uniform float u_pointsize')
+    
+    If we use ``str(vert_code)`` we get:
+    
+        uniform float offset;
+        uniform float scale_1;
+        uniform float scale_2;
+        attribute vec4 a_position;
+        uniform float u_pointsize;
+        
+        vec4 transform_scale_1(vec4);
+        vec4 transform_scale_2(vec4);
+        void foo();
+        
+        void main() {
+            gl_Position = transform_scale_1(transform_scale_2(a_position));
+            gl_Position.x += 3.0;
+            gl_Position.z += offset;
+        
+            foo();
+            gl_PointSize = u_pointsize;
+        }
+        
+        vec4 transform_scale_1(vec4 pos){
+            return pos * scale_1;
+        }
+        
+        vec4 transform_scale_2(vec4 pos){
+            return pos * scale_2;
+        }
+        
+        void foo(){...}
+    
+    Note how the two scale function resulted in two different functions
+    and two uniforms for the scale factors.
+    
+    Function calls
+    --------------
+    
+    As can be seen above, the arguments with which a function is to be called must be
+    specified by calling the Function object. The arguments can be any
+    of the expressions mentioned earlier. If the signature is already
+    specified in the template code, that signature is used instead.
+        
+        code = Function('''
+            void main() {
+                vec4 position = $pos;
+                gl_Position = $scale(position)
+            }
+        ''')
+        
+        # Example of a function call with all possible three expressions
+        vert_code['pos'] = func1('3.0', 'uniform float u_param', func2())
+        
+        # For scale, the sigfnature is already specified
+        code['scale'] = scale_func()  # No need to specify args
+    
+    Data for uniform and attribute variables
+    ----------------------------------------
+    To each variable a value can be associated. The Function object
+    itself is agnostic about this value; it only provides a simple way
+    to associate data with it, so it can be reused later.
+    
+        code['offset'] = 'uniform float offset'  # a variable with no data
+        code['offset'] = 'uniform float offset', 3.0  # a variable with data
+        position['position'] = 'attribute vec3 a_position', VertexBuffer()
         
         # Updating variables
         code['offset'].value = 4.0
         position['position'].value.set_data(...)
         
-        # Note that the Function object itself is agnostic about the
-        # value of a variable. It only provides a simple way to
-        # associate data with it. Somewhere down the line, you could do:
+        # ... Somewhere later, we get all variables and bind names to value
         for var in code.get_variables():
             program[var.name] = var.value
+    
+    Linking shaders and specifying varyings
+    ---------------------------------------
+    By linking a vertex and fragment shader, they share the same name
+    scope and variables. The most straightforward way to deal with
+    varyings is to use the post_apply() method:
+        
+        // This is how to link
+        vert_code.link(frag_code)
+        
+        // Pass attribute data to the fragment shader
+        frag_code['color'] = 'varying vec3 v_color'
+        vert_code.post_apply(frag_code['color'], 'attribute vec3 a_color')
+    
     """
     
     def __init__(self, code):
@@ -290,7 +378,9 @@ class Function(object):
         for key, val in self._replacements.items():
             code = code.replace(key, val)
         # Apply placeholders for hooks
-        post_text = '\n' + '\n'.join(self._post_hooks) + '\n'
+        post_text = ''
+        if self._post_hooks:
+            post_text = '\n' + '\n'.join(self._post_hooks) + '\n'
         code = code.rpartition('}')
         code = code[0] + post_text + code[1] + code[2]
         # Apply template replacements 
