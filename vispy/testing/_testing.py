@@ -172,17 +172,22 @@ def requires_img_lib():
 ###############################################################################
 # Visuals stuff
 
-def _has_scipy():
+def _has_scipy(min_version):
     try:
         import scipy  # noqa, analysis:ignore
+        from distutils.version import LooseVersion
+        this_version = LooseVersion(scipy.__version__)
+        if this_version < min_version:
+            return False
     except Exception:
         return False
     else:
         return True
 
 
-def requires_scipy():
-    return np.testing.dec.skipif(not _has_scipy(), 'Requires Scipy')
+def requires_scipy(min_version=0.13):
+    return np.testing.dec.skipif(not _has_scipy(min_version),
+                                 'Requires Scipy version >= %s' % min_version)
 
 
 def assert_image_equal(image, reference):
