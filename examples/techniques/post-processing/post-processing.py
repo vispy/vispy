@@ -79,12 +79,10 @@ def checkerboard(grid_num=8, grid_size=32):
 class MyCanvas(Canvas):
 
     def __init__(self):
-        # XXX app can be removed once pyqt inits properly
-        Canvas.__init__(self, title='Framebuffer post-processing', app='pyglet',
-                        close_keys='escape', size=(512, 512), show=True)
+        Canvas.__init__(self, title='Framebuffer post-processing',
+                        close_keys='escape', size=(512, 512))
 
     def on_initialize(self, event):
-        print('init!')
         # Build cube data
         # --------------------------------------
         vertices, indices, _ = cube()

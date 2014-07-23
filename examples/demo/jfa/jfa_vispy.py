@@ -22,8 +22,7 @@ this_dir = op.dirname(__file__)
 
 class JFACanvas(Canvas):
     def __init__(self):
-        # XXX Need show=False until init-PR is merged
-        Canvas.__init__(self, size=(512, 512), show=False, close_keys='escape')
+        Canvas.__init__(self, size=(512, 512), close_keys='escape')
         self.use_shaders = True
         self.texture_size = (0, 0)
 
@@ -42,6 +41,8 @@ class JFACanvas(Canvas):
             tex.interpolation = gl.GL_NEAREST
             tex.wrapping = gl.GL_CLAMP_TO_EDGE
             self.comp_texs.append(tex)
+        self.fbo_to[0].color_buffer = self.comp_texs[0]
+        self.fbo_to[1].color_buffer = self.comp_texs[1]
         for program in self.programs:
             program['texw'], program['texh'] = self.texture_size
 
@@ -58,6 +59,8 @@ class JFACanvas(Canvas):
                          Program(vert, frag_flood),
                          Program(vert, frag_display)]
         # Initialize variables
+        # using two FBs slightly faster than switching on one
+        self.fbo_to = [FrameBuffer(), FrameBuffer()]
         self._setup_textures('shape1.tga')
         vtype = np.dtype([('position', 'f4', 2), ('texcoord', 'f4', 2)])
         vertices = np.zeros(4, dtype=vtype)
@@ -69,34 +72,32 @@ class JFACanvas(Canvas):
             program.bind(vertices)
 
     def on_draw(self, event):
-        if not self.use_shaders:
-            self.programs[2]['texture'] = self.orig_tex
-        else:
+        if self.use_shaders:
             last_rend = 0
-            fbo = FrameBuffer(color=self.comp_texs[last_rend])
-            fbo.activate()
+            self.fbo_to[last_rend].activate()
             set_viewport(0, 0, *self.texture_size)
             self.programs[0]['texture'] = self.orig_tex
             self.programs[0].draw('triangle_strip')
-            fbo.deactivate()
+            self.fbo_to[last_rend].deactivate()
             stepsize = (np.array(self.texture_size) // 2).max()
             while stepsize > 0:
                 self.programs[1]['step'] = stepsize
                 self.programs[1]['texture'] = self.comp_texs[last_rend]
                 last_rend = 1 if last_rend == 0 else 0
-                fbo = FrameBuffer(color=self.comp_texs[last_rend])
-                fbo.activate()
+                self.fbo_to[last_rend].activate()
                 set_viewport(0, 0, *self.texture_size)
                 self.programs[1].draw('triangle_strip')
-                fbo.deactivate()
+                self.fbo_to[last_rend].deactivate()
                 stepsize //= 2
             self.programs[2]['texture'] = self.comp_texs[last_rend]
+        else:
+            self.programs[2]['texture'] = self.orig_tex
         set_viewport(0, 0, *self.size)
         self.programs[2].draw('triangle_strip')
         self.update()
 
     def on_key_press(self, event):
-        if event.key.name is not None and event.key.name in '1234':
+        if event.key is not None and event.key.name in '1234':
             fname = "shape%s.tga" % event.key.name
             self._setup_textures(fname)
         elif event.key == 'F1':
