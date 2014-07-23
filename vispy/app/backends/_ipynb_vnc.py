@@ -252,22 +252,22 @@ class CanvasBackend(BaseCanvasBackend):
                 self._vispy_canvas.events.mouse_wheel(native=mouse,
                                                       delta=mouse.get("delta"),
                                                       pos=mouse.get("pos"),
-                                                      modifiers=
-                                                      mouse.get("modifiers"),
+                                                      modifiers=mouse.get
+                                                      ("modifiers"),
                                                       )
         elif ev.get("name") == "KeyEvent":
             key = ev.get("properties")
             if key.get("type") == "key_press":
                 self._vispy_canvas.events.key_press(native=key,
                                                     key=key.get("key"),
-                                                    modifiers=
-                                                    key.get("modifiers"),
+                                                    modifiers=key.get
+                                                    ("modifiers"),
                                                     )
             elif key.get("type") == "key_release":
                 self._vispy_canvas.events.key_release(native=key,
                                                       key=key.get("key"),
-                                                      modifiers=
-                                                      key.get("modifiers"),
+                                                      modifiers=key.get
+                                                      ("modifiers"),
                                                       )
 
     def _prepare_js(self):

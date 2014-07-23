@@ -111,7 +111,7 @@ require(["widgets/js/widget"], function(WidgetManager){
             var event = gen_mouse_event(this.c, e, "mouse_move");
             var pos = event.event.properties.pos;
             var last_pos = this.c._eventinfo.last_pos;
-            if(pos[0] != last_pos[0]) || pos[1] != last_pos[1])
+            if(pos[0] != last_pos[0] || pos[1] != last_pos[1])
                 this.send(event);
             this.c._eventinfo.last_pos = pos;
         },
@@ -135,7 +135,8 @@ require(["widgets/js/widget"], function(WidgetManager){
             var delta = [e.originalEvent.wheelDeltaX/120, e.originalEvent.wheelDeltaY/120];
             event.event.properties.delta = delta;
             this.send(event);
-            e.preventDefault()
+            // Keep page from scrolling
+            e.preventDefault();
         },
 
         key_press: function(e) {
@@ -147,7 +148,6 @@ require(["widgets/js/widget"], function(WidgetManager){
             var event = gen_key_event(this.c, e, "key_release");
             this.send(event);
         },
-
 
         // Update, whenever value attribute of our widget changes
         update : function(){
