@@ -208,7 +208,17 @@ def assert_image_equal(image, reference):
     if image == "screenshot":
         image = _screenshot(alpha=False)
     ref = imread(get_testing_file(reference))
-    np.testing.assert_array_almost_equal(image, ref)
+
+    slices = [slice(0, -1), slice(0, None), slice(1, None)]
+    min_diff = np.inf
+    for i in range(3):
+        for j in range(3):
+            a = image[slices[i], slices[j]]
+            b = ref[slices[2-i], slices[2-j]]
+            diff = (a != b).sum()
+            if diff < min_diff:
+                min_diff = diff
+    assert min_diff < 10
 
 
 class TestingCanvas(Canvas):
