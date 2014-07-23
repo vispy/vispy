@@ -6,7 +6,7 @@ Author: Stefan Gustavson (stefan.gustavson@gmail.com)
 
 Adapted to `vispy` by Eric Larson <larson.eric.d@gmail.com>.
 
-This version is a vispy-ized translation of the OSX C code to Python.
+This version is a vispy-ized translation of jfa_translate.py.
 """
 
 import numpy as np
@@ -14,8 +14,7 @@ from os import path as op
 from PIL import Image
 from vispy.app import Canvas
 from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
-                        VertexBuffer, IndexBuffer, Texture2D, gl, set_viewport,
-                        DepthBuffer)
+                        VertexBuffer, Texture2D, gl, set_viewport)
 from vispy.util import get_data_file
 
 this_dir = op.dirname(__file__)
@@ -23,6 +22,7 @@ this_dir = op.dirname(__file__)
 
 class JFACanvas(Canvas):
     def __init__(self):
+        # XXX Need show=False until init-PR is merged
         Canvas.__init__(self, size=(512, 512), show=False, close_keys='escape')
         self.use_shaders = True
         self.texture_size = (0, 0)
@@ -44,7 +44,6 @@ class JFACanvas(Canvas):
             self.comp_texs.append(tex)
         for program in self.programs:
             program['texw'], program['texh'] = self.texture_size
-        self.comp_depth = DepthBuffer(self.texture_size)
 
     def on_initialize(self, event):
         with open(op.join(this_dir, 'vertex_vispy.glsl'), 'r') as fid:
@@ -60,44 +59,40 @@ class JFACanvas(Canvas):
                          Program(vert, frag_display)]
         # Initialize variables
         self._setup_textures('shape1.tga')
-        self.fbo = FrameBuffer()
         vtype = np.dtype([('position', 'f4', 2), ('texcoord', 'f4', 2)])
         vertices = np.zeros(4, dtype=vtype)
-        vertices['position'] = [[-1., -1.], [1., -1.], [1., 1.], [-1., 1.]]
-        vertices['texcoord'] = [[0., 0.], [1., 0.], [1., 1.], [0., 1.]]
+        vertices['position'] = [[-1., -1.], [-1., 1.], [1., -1.], [1., 1.]]
+        vertices['texcoord'] = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]]
         vertices = VertexBuffer(vertices)
         for program in self.programs:
             program['step'] = 0
             program.bind(vertices)
 
     def on_draw(self, event):
-        idx = IndexBuffer(np.array([[0, 1, 2], [0, 2, 3]], np.uint32))
         if not self.use_shaders:
             self.programs[2]['texture'] = self.orig_tex
         else:
-            self.programs[2]['texture'] = self.orig_tex
-            self.fbo.color_buffer = self.comp_texs[0]
-            self.fbo.depth_buffer = self.comp_depth
             last_rend = 0
-            self.fbo.activate()
+            fbo = FrameBuffer(color=self.comp_texs[last_rend])
+            fbo.activate()
             set_viewport(0, 0, *self.texture_size)
             self.programs[0]['texture'] = self.orig_tex
-            self.programs[0].draw(indices=idx, mode='triangles')
-            self.fbo.deactivate()
+            self.programs[0].draw('triangle_strip')
+            fbo.deactivate()
             stepsize = (np.array(self.texture_size) // 2).max()
             while stepsize > 0:
                 self.programs[1]['step'] = stepsize
                 self.programs[1]['texture'] = self.comp_texs[last_rend]
                 last_rend = 1 if last_rend == 0 else 0
-                self.fbo.color_buffer = self.comp_texs[last_rend]
-                self.fbo.activate()
+                fbo = FrameBuffer(color=self.comp_texs[last_rend])
+                fbo.activate()
                 set_viewport(0, 0, *self.texture_size)
-                self.programs[1].draw(indices=idx, mode='triangles')
-                self.fbo.deactivate()
+                self.programs[1].draw('triangle_strip')
+                fbo.deactivate()
                 stepsize //= 2
             self.programs[2]['texture'] = self.comp_texs[last_rend]
         set_viewport(0, 0, *self.size)
-        self.programs[2].draw(indices=idx, mode='triangles')
+        self.programs[2].draw('triangle_strip')
         self.update()
 
     def on_key_press(self, event):

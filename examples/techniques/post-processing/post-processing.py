@@ -8,15 +8,14 @@
 # Abstract: Show post-processing technique using framebuffer
 # Keywords: framebuffer, gloo, cube, post-processing
 # -----------------------------------------------------------------------------
-import sys
+
 import numpy as np
-import OpenGL.GL as gl
-import OpenGL.GLUT as glut
+from vispy.app import Canvas, Timer
 
 from vispy.util.cube import cube
 from vispy.util.transforms import perspective, translate, rotate
-from vispy.gloo import Program, VertexBuffer, IndexBuffer, Texture2D
-from vispy.gloo import FrameBuffer, DepthBuffer
+from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
+                        FrameBuffer, DepthBuffer, set_viewport, set_state, gl)
 
 cube_vertex = """
 uniform mat4 model;
@@ -77,91 +76,84 @@ def checkerboard(grid_num=8, grid_size=32):
     return 255 * Z.repeat(grid_size, axis=0).repeat(grid_size, axis=1)
 
 
-def display():
-    framebuffer.activate()
-    gl.glViewport(0, 0, 512, 512)
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-    gl.glEnable(gl.GL_DEPTH_TEST)
-    cube.draw(gl.GL_TRIANGLES, indices)
-    framebuffer.deactivate()
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-    gl.glDisable(gl.GL_DEPTH_TEST)
-    quad.draw(gl.GL_TRIANGLE_STRIP)
-    glut.glutSwapBuffers()
+class MyCanvas(Canvas):
 
+    def __init__(self):
+        # XXX app can be removed once pyqt inits properly
+        Canvas.__init__(self, title='Framebuffer post-processing', app='pyglet',
+                        close_keys='escape', size=(512, 512), show=True)
 
-def reshape(width, height):
-    gl.glViewport(0, 0, width, height)
-    projection = perspective(30.0, width / float(height), 2.0, 10.0)
-    cube['projection'] = projection
+    def on_initialize(self, event):
+        print('init!')
+        # Build cube data
+        # --------------------------------------
+        vertices, indices, _ = cube()
+        vertices = VertexBuffer(vertices)
+        self.indices = IndexBuffer(indices)
 
+        # Build program
+        # --------------------------------------
+        view = np.eye(4, dtype=np.float32)
+        model = np.eye(4, dtype=np.float32)
+        translate(view, 0, 0, -7)
+        self.phi, self.theta = 60, 20
+        rotate(model, self.theta, 0, 0, 1)
+        rotate(model, self.phi, 0, 1, 0)
 
-def keyboard(key, x, y):
-    if key == '\033':
-        sys.exit()
+        self.cube = Program(cube_vertex, cube_fragment)
+        self.cube.bind(vertices)
+        self.cube["texture"] = checkerboard()
+        self.cube["texture"].interpolation = gl.GL_LINEAR
+        self.cube['model'] = model
+        self.cube['view'] = view
 
+        depth = DepthBuffer((512, 512))
+        color = Texture2D(shape=(512, 512, 3), dtype=np.dtype(np.float32))
+        self.framebuffer = FrameBuffer(color=color, depth=depth)
 
-def timer(fps):
-    global theta, phi
-    theta += .5
-    phi += .5
-    model = np.eye(4, dtype=np.float32)
-    rotate(model, theta, 0, 0, 1)
-    rotate(model, phi, 0, 1, 0)
-    cube['model'] = model
-    glut.glutTimerFunc(1000 / fps, timer, fps)
-    glut.glutPostRedisplay()
+        self.quad = Program(quad_vertex, quad_fragment, count=4)
+        self.quad['texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        self.quad['position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        self.quad['texture'] = color
+        self.quad["texture"].interpolation = gl.GL_LINEAR
 
+        # OpenGL and Timer initalization
+        # --------------------------------------
+        set_state(clear_color=(.3, .3, .35, 1), depth_test=True)
+        self.timer = Timer(1.0 / 60)
+        self.timer.connect(self.on_timer)
+        self.timer.start()
+        self._set_projection(self.size)
 
-# Glut init
-# --------------------------------------
-glut.glutInit(sys.argv)
-glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_DEPTH)
-glut.glutCreateWindow('Framebuffer post-processing')
-glut.glutReshapeWindow(512, 512)
-glut.glutReshapeFunc(reshape)
-glut.glutKeyboardFunc(keyboard)
-glut.glutDisplayFunc(display)
-glut.glutTimerFunc(1000 / 60, timer, 60)
+    def on_draw(self, event):
+        self.framebuffer.activate()
+        set_viewport(0, 0, 512, 512)
+        clear(color=True, depth=True)
+        set_state(depth_test=True)
+        self.cube.draw('triangles', self.indices)
+        self.framebuffer.deactivate()
+        clear(color=True)
+        set_state(depth_test=False)
+        self.quad.draw('triangle_strip')
 
-# Build cube data
-# --------------------------------------
-vertices, indices, _ = cube()
-vertices = VertexBuffer(vertices)
-indices = IndexBuffer(indices)
+    def on_resize(self, event):
+        self._set_projection(event.size)
 
-# Build program
-# --------------------------------------
-view = np.eye(4, dtype=np.float32)
-model = np.eye(4, dtype=np.float32)
-projection = np.eye(4, dtype=np.float32)
-translate(view, 0, 0, -7)
-phi, theta = 60, 20
-rotate(model, theta, 0, 0, 1)
-rotate(model, phi, 0, 1, 0)
+    def _set_projection(self, size):
+        width, height = size
+        set_viewport(0, 0, width, height)
+        projection = perspective(30.0, width / float(height), 2.0, 10.0)
+        self.cube['projection'] = projection
 
-cube = Program(cube_vertex, cube_fragment)
-cube.bind(vertices)
-cube["texture"] = checkerboard()
-cube["texture"].interpolation = gl.GL_LINEAR
-cube['model'] = model
-cube['view'] = view
+    def on_timer(self, event):
+        self.theta += .5
+        self.phi += .5
+        model = np.eye(4, dtype=np.float32)
+        rotate(model, self.theta, 0, 0, 1)
+        rotate(model, self.phi, 0, 1, 0)
+        self.cube['model'] = model
+        self.update()
 
-depth = DepthBuffer((512, 512))
-color = Texture2D(shape=(512, 512, 3), dtype=np.dtype(np.float32))
-framebuffer = FrameBuffer(color=color, depth=depth)
-
-quad = Program(quad_vertex, quad_fragment, count=4)
-quad['texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
-quad['position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
-quad['texture'] = color
-quad["texture"].interpolation = gl.GL_LINEAR
-
-# OpenGL initalization
-# --------------------------------------
-gl.glClearColor(.3, .3, .35, 1)
-gl.glEnable(gl.GL_DEPTH_TEST)
-
-# Start
-# --------------------------------------
-glut.glutMainLoop()
+with MyCanvas() as c:
+    c.update()
+    c.app.run()
