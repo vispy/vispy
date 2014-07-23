@@ -174,6 +174,7 @@ def requires_img_lib():
 
 def _has_scipy(min_version):
     try:
+        assert isinstance(min_version, str)
         import scipy  # noqa, analysis:ignore
         from distutils.version import LooseVersion
         this_version = LooseVersion(scipy.__version__)
@@ -185,7 +186,7 @@ def _has_scipy(min_version):
         return True
 
 
-def requires_scipy(min_version=0.13):
+def requires_scipy(min_version='0.13'):
     return np.testing.dec.skipif(not _has_scipy(min_version),
                                  'Requires Scipy version >= %s' % min_version)
 
