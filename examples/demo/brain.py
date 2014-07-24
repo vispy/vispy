@@ -83,8 +83,7 @@ void main()
     vec3 K = normalize(normalize(surfaceToLight) + normalize(surfaceToCamera));
     float specular = clamp(pow(abs(dot(normal, K)), 40.), 0.0, 1.0);
     
-    gl_FragColor = v_color * brightness * vec4(u_light_intensity, 1) +
-                   specular * vec4(1.0, 1.0, 1.0, 1.0);
+    gl_FragColor = v_color * brightness * vec4(u_light_intensity, 1);
 }
 """
 
