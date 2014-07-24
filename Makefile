@@ -69,3 +69,6 @@ sdl2: clean
 
 glut: clean
 	python make test glut
+
+ipynb_vnc: clean
+	python make test ipynb_vnc
