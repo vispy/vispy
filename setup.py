@@ -91,8 +91,8 @@ setup(
     package_dir={
         'vispy': 'vispy'},
     package_data={
-        'vispy': [op.join('data', '*.*'),
-                  op.join('data', 'vispyjs', '*'),
+        'vispy': [op.join('data', '*'),
+                  op.join('html', 'static', '*'),
                   op.join('app', 'tests', 'qt-designer.ui')]},
     zip_safe=False,
     classifiers=[
