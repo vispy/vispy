@@ -10,7 +10,7 @@
 # -----------------------------------------------------------------------------
 
 import numpy as np
-from vispy.app import Canvas, Timer
+from vispy import app
 
 from vispy.util.cube import cube
 from vispy.util.transforms import perspective, translate, rotate
@@ -76,11 +76,11 @@ def checkerboard(grid_num=8, grid_size=32):
     return 255 * Z.repeat(grid_size, axis=0).repeat(grid_size, axis=1)
 
 
-class MyCanvas(Canvas):
+class Canvas(app.Canvas):
 
     def __init__(self):
-        Canvas.__init__(self, title='Framebuffer post-processing',
-                        close_keys='escape', size=(512, 512))
+        app.Canvas.__init__(self, title='Framebuffer post-processing',
+                            close_keys='escape', size=(512, 512))
 
     def on_initialize(self, event):
         # Build cube data
@@ -118,7 +118,7 @@ class MyCanvas(Canvas):
         # OpenGL and Timer initalization
         # --------------------------------------
         set_state(clear_color=(.3, .3, .35, 1), depth_test=True)
-        self.timer = Timer(1.0 / 60)
+        self.timer = app.Timer(1.0 / 60)
         self.timer.connect(self.on_timer)
         self.timer.start()
         self._set_projection(self.size)
@@ -152,6 +152,7 @@ class MyCanvas(Canvas):
         self.cube['model'] = model
         self.update()
 
-with MyCanvas() as c:
-    c.update()
+if __name__ == '__main__':
+    c = Canvas()
+    c.show()
     c.app.run()
