@@ -273,9 +273,9 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _prepare_js(self):
         pkgdir = op.dirname(__file__)
-        install_nbextension([op.join(pkgdir, '../../html/static')],
+        install_nbextension([op.join(pkgdir, '../../html/static/js')],
                             symlink=True)
-        script = 'IPython.load_extensions("static/vispy");'
+        script = 'IPython.load_extensions("js/vispy");'
         display(Javascript(script))
 
 

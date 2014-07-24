@@ -99,7 +99,7 @@ setup(
         'vispy': 'vispy'},
     package_data={
         'vispy': [op.join('data', '*'),
-                  op.join('html', 'static', '*'),
+                  op.join('html', 'static', 'js', '*'),
                   op.join('app', 'tests', 'qt-designer.ui')]},
     zip_safe=False,
     classifiers=[
