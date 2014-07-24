@@ -108,9 +108,9 @@ def _test_module_properties(_module=None):
     # Stylus and touch are ignored because they are not yet implemented.
     # Mouse events are emitted from the CanvasBackend base class.
     ignore = set(['stylus', 'touch', 'mouse_press', 'paint',
-                  'mouse_move', 'mouse_release'])
+                  'mouse_move', 'mouse_release', 'close'])
     eventNames = set(canvas.events._emitters.keys()) - ignore
-    
+
     if not alt_modname:  # Only check for non-proxy modules
         for name in eventNames:
             assert 'events.%s' % name in text, ('events.%s does not appear '

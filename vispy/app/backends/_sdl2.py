@@ -191,8 +191,8 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, **kwargs):
         BaseCanvasBackend.__init__(self, capability, SharedContext)
-        title, size, position, show, vsync, resize, dec, fs, parent, context =\
-            self._process_backend_kwargs(kwargs)
+        title, size, position, show, vsync, resize, dec, fs, parent, context, \
+            vispy_canvas = self._process_backend_kwargs(kwargs)
         # Init SDL2, add window hints, and create window
         if isinstance(context, dict):
             _set_config(context)
@@ -230,6 +230,8 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_set_current()
         if not show:
             self._vispy_set_visible(False)
+        self._initialized = False
+        self._vispy_canvas = vispy_canvas
 
     @property
     def _vispy_context(self):
@@ -247,11 +249,10 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_canvas(self, vc):
         # Init events when the property is set by Canvas
         self._vispy_canvas_ = vc
-        if vc is not None:
+        if vc is not None and not self._initialized:
+            self._initialized = True
             self._vispy_set_current()
-            print('init')
             self._vispy_canvas.events.initialize()
-        return self._vispy_canvas
 
     def _vispy_warmup(self):
         etime = time() + 0.1
@@ -355,13 +356,13 @@ class CanvasBackend(BaseCanvasBackend):
             return
         # triage event to proper handler
         if event.type == sdl2.SDL_QUIT:
-            self._vispy_canvas.events.close()
+            self._vispy_canvas.close()
         elif event.type == sdl2.SDL_WINDOWEVENT:
             if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
                 w, h = event.window.data1, event.window.data2
                 self._vispy_canvas.events.resize(size=(w, h))
             elif event.window.event == sdl2.SDL_WINDOWEVENT_CLOSE:
-                self._vispy_canvas.events.close()
+                self._vispy_canvas.close()
         elif event.type == sdl2.SDL_MOUSEMOTION:
             x, y = event.motion.x, event.motion.y
             self._vispy_mouse_move(pos=(x, y), modifiers=self._mods)

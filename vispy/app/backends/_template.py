@@ -123,7 +123,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas.events.initialize()
         self._vispy_canvas.events.resize(size=(w, h))
         self._vispy_canvas.events.draw(region=None)
-        self._vispy_canvas.events.close()
+        self._vispy_canvas.close()
         self._vispy_canvas.events.mouse_press(pos=(x, y), button=1,
                                               modifiers=())
         self._vispy_canvas.events.mouse_release(pos=(x, y), button=1,
@@ -133,6 +133,20 @@ class CanvasBackend(BaseCanvasBackend):
                                               modifiers=())
         self._vispy_canvas.events.key_press(key=key, text=text, modifiers=())
         self._vispy_canvas.events.key_release(key=key, text=text, modifiers=())
+
+    In most cases, if the window-cross is clicked, a native close-event is
+    generated, which should then call canvas.close(). The Canvas class is
+    responsible for firing the close event and calling
+    backend_canvas._vispy_close, which closes the native widget.
+    If this happens to result in a second close event, canvas.close() gets
+    called again, but Canvas knows it is closing so it stops there.
+
+    If canvas.close() is called (by the user), it calls
+    backend_canvas._vispy_close, which closes the native widget,
+    and we get the same stream of actions as above. This deviation from
+    having events come from the CanvasBackend is necessitated by how
+    different backends handle close events, and the various ways such
+    events can be triggered.
     """
 
     def __init__(self, vispy_canvas, *args, **kwargs):
