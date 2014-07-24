@@ -39,7 +39,10 @@ class BaseCanvasBackend(object):
     implement all its _vispy_xxx methods. Also, also a backend must
     make sure to generate the following events: 'initialize', 'resize',
     'draw', 'mouse_press', 'mouse_release', 'mouse_move',
-    'mouse_wheel', 'key_press', 'key_release', 'close'.
+    'mouse_wheel', 'key_press', 'key_release'. When a backend detects
+    that the canvas should be closed, the backend should call
+    'self._vispy_canvas.close', because the close event is handled within
+    the canvas itself.
     """
 
     def __init__(self, capability, context_type):
