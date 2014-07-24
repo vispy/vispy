@@ -17,7 +17,7 @@ from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
                         VertexBuffer, Texture2D, gl, set_viewport)
 from vispy.util import get_data_file
 
-this_dir = op.dirname(__file__)
+this_dir = op.abspath(op.dirname(__file__))
 
 
 class JFACanvas(Canvas):
