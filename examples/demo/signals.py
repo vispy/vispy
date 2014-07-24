@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vispy: gallery 2
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+"""
+Multiple digital signals.
+"""
+
 from vispy import gloo
 from vispy import app
 import numpy as np
@@ -16,10 +26,11 @@ data = np.zeros(n*m, dtype=[
 ])
 
 data['a_position'] = np.zeros((n*m, 2), dtype=np.float32)
-data['a_position'][:,0] = x
-data['a_position'][:,1] = .9*(y.ravel()/y.max()*2-1)
+data['a_position'][:, 0] = x
+data['a_position'][:, 1] = .9*(y.ravel()/y.max()*2-1)
 
-data['a_color'] = np.repeat(np.random.uniform(size=(m, 3), low=.5, high=.9), n, axis=0)
+data['a_color'] = np.repeat(np.random.uniform(size=(m, 3), low=.5, high=.9),
+                            n, axis=0)
 
 data['a_index'] = np.repeat(np.arange(m), n)
 
@@ -55,6 +66,7 @@ void main() {
 }
 """
 
+
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, close_keys='escape')
@@ -76,16 +88,15 @@ class Canvas(app.Canvas):
         gloo.clear(color=(0.0, 0.0, 0.0, 1.0))
         self.program.draw('line_strip')
 
-    def on_mouse_move(self, event):
-        
-        def _normalize((x, y)):
-            w, h = float(self.width), float(self.height)
-            return x/(w/2.)-1., y/(h/2.)-1.
+    def _normalize(self, (x, y)):
+        w, h = float(self.width), float(self.height)
+        return x/(w/2.)-1., y/(h/2.)-1.
             
+    def on_mouse_move(self, event):
         if event.is_dragging:
-            x0, y0 = _normalize(event.press_event.pos)
-            x1, y1 = _normalize(event.last_event.pos)
-            x, y = _normalize(event.pos)
+            x0, y0 = self._normalize(event.press_event.pos)
+            x1, y1 = self._normalize(event.last_event.pos)
+            x, y = self._normalize(event.pos)
             dx, dy = x - x1, -(y - y1)
             button = event.press_event.button
             
@@ -95,12 +106,24 @@ class Canvas(app.Canvas):
             if button == 1:
                 self.program['u_pan'] = (pan_x+dx/scale_x, pan_y+dy/scale_y)
             elif button == 2:
-                scale_x_new, scale_y_new = scale_x * math.exp(2.5*dx), scale_y * math.exp(2.5*dy)
+                scale_x_new, scale_y_new = (scale_x * math.exp(2.5*dx),
+                                            scale_y * math.exp(2.5*dy))
                 self.program['u_scale'] = (scale_x_new, scale_y_new)
-                self.program['u_pan'] = (pan_x - x0 * (1./scale_x - 1./scale_x_new), 
-                                         pan_y + y0 * (1./scale_y - 1./scale_y_new))
+                self.program['u_pan'] = (pan_x - 
+                                         x0 * (1./scale_x - 1./scale_x_new), 
+                                         pan_y + 
+                                         y0 * (1./scale_y - 1./scale_y_new))
             self.update()
+            
+    def on_mouse_wheel(self, event):
+        dx = np.sign(event.delta[1])*.05
+        scale_x, scale_y = self.program['u_scale']     
+        scale_x_new, scale_y_new = (scale_x * math.exp(2.5*dx), 
+                                    scale_y * math.exp(2.5*dx))
+        self.program['u_scale'] = (scale_x_new, scale_y_new)
+        self.update()
         
-c = Canvas()
-c.show()
-app.run()
+if __name__ == '__main__':
+    c = Canvas()
+    c.show()
+    app.run()

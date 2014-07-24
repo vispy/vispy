@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vispy: gallery 2
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+"""
+3D brain mesh viewer.
+"""
+
+from timeit import default_timer
 import numpy as np
 
 from vispy import gloo
@@ -95,6 +106,11 @@ class Canvas(app.Canvas):
         self.program['u_light_position'] = (1., 1., 1.)
         self.program['u_light_intensity'] = (1., 1., 1.)
         
+        self._t0 = default_timer()
+        self._timer = app.Timer(1. / 60)
+        self._timer.connect(self.on_timer)
+        self._timer.start()
+        
         self.update_matrices()
 
     def update_matrices(self):
@@ -115,16 +131,11 @@ class Canvas(app.Canvas):
     def on_initialize(self, event):
         gloo.set_state(blend=False, depth_test=True, polygon_offset_fill=True)
 
-    def on_mouse_move(self, event):
-        if event.is_dragging:
-            x0, y0 = event.press_event.pos
-            x1, y1 = event.last_event.pos
-            x, y = event.pos
-            dx, dy = x - x1, y - y1
-            self.phi += dx
-            self.theta += -dy
-            self.update_matrices()
-            self.update()
+    def on_timer(self, event):
+        elapsed = default_timer() - self._t0
+        self.phi = 180 + elapsed * 50.
+        self.update_matrices()
+        self.update()
 
     def on_resize(self, event):
         width, height = event.size
