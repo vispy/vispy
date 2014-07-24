@@ -14,7 +14,7 @@ We aim to have:
 
 from __future__ import division
 
-from ..base import (BaseApplicationBackend, BaseCanvasBackend, 
+from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from .. import Application, Canvas
 from ...util import logger
@@ -111,6 +111,7 @@ class CanvasBackend(BaseCanvasBackend):
             raise RuntimeError('ipynb_vnc Canvas does not support fullscreen')
         
         # Create real canvas. It is a backend to this backend
+        kwargs.pop('vispy_canvas', None)
         kwargs['autoswap'] = False
         canvas = Canvas(app=_app, **kwargs)
         self._backend2 = canvas.native
@@ -193,7 +194,7 @@ class CanvasBackend(BaseCanvasBackend):
         # todo: implement this
         # Below are the events that you want to inject into vispy
 #         self._vispy_canvas.events.resize(size=(w, h))
-#         self._vispy_canvas.events.close()
+#         self._vispy_canvas.close()
 #         self._keyEvent(self._vispy_canvas.events.key_press, ev)
 #         self._keyEvent(self._vispy_canvas.events.key_release, ev)
 #         
