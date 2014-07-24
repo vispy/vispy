@@ -88,7 +88,8 @@ class Canvas(app.Canvas):
         gloo.clear(color=(0.0, 0.0, 0.0, 1.0))
         self.program.draw('line_strip')
 
-    def _normalize(self, (x, y)):
+    def _normalize(self, x_y):
+        x, y = x_y
         w, h = float(self.width), float(self.height)
         return x/(w/2.)-1., y/(h/2.)-1.
             
