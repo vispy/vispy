@@ -1,8 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vispy: gallery 2
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+"""Display a live webcam feed. Require OpenCV (Python 2 only).
+"""
+
 try:
     import cv2
-except:
-    print("You need OpenCV for this example.")
-    cv2 = None
+except Exception:
+    raise ImportError("You need OpenCV for this example.")
     
 import numpy as np
 from vispy import app
@@ -41,8 +49,9 @@ class Canvas(app.Canvas):
         self.program['position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         self.program['texcoord'] = [(1, 1), (1, 0), (0, 1), (0, 0)]
         self.program['texture'] = np.zeros((480, 640, 3)).astype(np.uint8)
-        if cv2 is not None:
-            self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(0)
+        if not self.cap.isOpened():
+            raise Exception("There's no available camera.")
         self._timer = app.Timer(1 / 100.)
         self._timer.connect(self.on_timer)
         self._timer.start()
@@ -53,11 +62,7 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear((0, 0, 0, 0))
-        if cv2 is not None:
-            _, im = self.cap.read()
-        else:
-            im = np.random.randint(size=(480, 640, 3), 
-                                   low=0, high=255).astype(np.uint8)
+        _, im = self.cap.read()
         self.program['texture'][...] = im
         self.program.draw('triangle_strip')
         
@@ -67,5 +72,4 @@ class Canvas(app.Canvas):
 c = Canvas()
 c.show()
 app.run()
-if cv2 is not None:
-    c.cap.release()
+c.cap.release()
