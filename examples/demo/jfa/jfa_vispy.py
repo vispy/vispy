@@ -12,7 +12,7 @@ This version is a vispy-ized translation of jfa_translate.py.
 import numpy as np
 from os import path as op
 from PIL import Image
-from vispy.app import Canvas
+from vispy import app
 from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
                         VertexBuffer, Texture2D, gl, set_viewport)
 from vispy.util import get_data_file
@@ -20,11 +20,10 @@ from vispy.util import get_data_file
 this_dir = op.abspath(op.dirname(__file__))
 
 
-class JFACanvas(Canvas):
+class Canvas(app.Canvas):
     def __init__(self):
-        Canvas.__init__(self, size=(512, 512), close_keys='escape')
         self.use_shaders = True
-        self.texture_size = (0, 0)
+        app.Canvas.__init__(self, size=(512, 512), close_keys='escape')
 
     def _setup_textures(self, fname):
         img = Image.open(get_data_file('jfa/' + fname))
@@ -47,13 +46,13 @@ class JFACanvas(Canvas):
             program['texw'], program['texh'] = self.texture_size
 
     def on_initialize(self, event):
-        with open(op.join(this_dir, 'vertex_vispy.glsl'), 'r') as fid:
+        with open(op.join(this_dir, 'vertex_vispy.glsl'), 'rb') as fid:
             vert = VertexShader(fid.read().decode('ASCII'))
-        with open(op.join(this_dir, 'fragment_seed.glsl'), 'r') as f:
+        with open(op.join(this_dir, 'fragment_seed.glsl'), 'rb') as f:
             frag_seed = FragmentShader(f.read().decode('ASCII'))
-        with open(op.join(this_dir, 'fragment_flood.glsl'), 'r') as f:
+        with open(op.join(this_dir, 'fragment_flood.glsl'), 'rb') as f:
             frag_flood = FragmentShader(f.read().decode('ASCII'))
-        with open(op.join(this_dir, 'fragment_display.glsl'), 'r') as f:
+        with open(op.join(this_dir, 'fragment_display.glsl'), 'rb') as f:
             frag_display = FragmentShader(f.read().decode('ASCII'))
         self.programs = [Program(vert, frag_seed),
                          Program(vert, frag_flood),
@@ -106,9 +105,11 @@ class JFACanvas(Canvas):
             self.use_shaders = False
 
 
-with JFACanvas() as c:
-    def fun(x):
-        c.title = 'FPS: %0.1f' % x
+def fun(x):
+    c.title = 'FPS: %0.1f' % x
 
+if __name__ == '__main__':
+    c = Canvas()
+    c.show()
     c.measure_fps(callback=fun)
     c.app.run()

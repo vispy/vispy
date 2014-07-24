@@ -30,9 +30,9 @@ this_dir = op.abspath(op.dirname(__file__))
 
 def createShader(vert_fname, frag_fname):
     """createShader - create, load, compile and link the shader object"""
-    with open(op.join(this_dir, vert_fname), 'r') as fid:
+    with open(op.join(this_dir, vert_fname), 'rb') as fid:
         vert = fid.read().decode('ASCII')
-    with open(op.join(this_dir, frag_fname), 'r') as fid:
+    with open(op.join(this_dir, frag_fname), 'rb') as fid:
         frag = fid.read().decode('ASCII')
     vertexShader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
     gl.glShaderSource(vertexShader, vert)
