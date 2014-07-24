@@ -48,7 +48,7 @@ def _user_to_rgba(color, expand=True):
             if any(len(c) > 1 for c in color):
                 raise RuntimeError('could not parse colors, are they nested?')
             color = [c[0] for c in color]
-    color = np.atleast_2d(color).astype(np.float64)
+    color = np.atleast_2d(color).astype(np.float32)
     if color.shape[1] not in (3, 4):
         raise ValueError('color must have three or four elements')
     if expand and color.shape[1] == 3:  # only expand if requested
@@ -103,7 +103,7 @@ def _rgb_to_hsv(rgbs):
             sat = c / val
         hsv = [hue, sat, val]
         hsvs.append(hsv)
-    hsvs = np.array(hsvs, dtype=np.float64)
+    hsvs = np.array(hsvs, dtype=np.float32)
     if n_dim == 4:
         hsvs = np.concatenate((hsvs, rgbs[:, 3]), axis=1)
     return hsvs
@@ -134,7 +134,7 @@ def _hsv_to_rgb(hsvs):
             r, g, b = c, 0, x
         rgb = [r + m, g + m, b + m]
         rgbs.append(rgb)
-    rgbs = np.array(rgbs, dtype=np.float64)
+    rgbs = np.array(rgbs, dtype=np.float32)
     if n_dim == 4:
         rgbs = np.concatenate((rgbs, hsvs[:, 3]), axis=1)
     return rgbs
@@ -264,7 +264,7 @@ class ColorArray(object):
     Under the hood, this class stores data in RGBA format suitable for use
     on the GPU.
     """
-    def __init__(self, color=(0., 0., 0., 1.), alpha=None):
+    def __init__(self, color='black', alpha=None):
         """Parse input type, and set attribute"""
         rgba = _user_to_rgba(color)
         if alpha is not None:
@@ -337,7 +337,7 @@ class ColorArray(object):
     def RGBA(self, val):
         """Set the color using an Nx4 array of RGBA uint8 values"""
         # need to convert to normalized float
-        val = np.atleast_1d(val).astype(np.float64) / 255
+        val = np.atleast_1d(val).astype(np.float32) / 255
         self.rgba = val
 
     @property
@@ -349,7 +349,7 @@ class ColorArray(object):
     def RGB(self, val):
         """Set the color using an Nx3 array of RGB uint8 values"""
         # need to convert to normalized float
-        val = np.atleast_1d(val).astype(np.float64) / 255.
+        val = np.atleast_1d(val).astype(np.float32) / 255.
         self.rgba = val
 
     @property
@@ -367,7 +367,7 @@ class ColorArray(object):
     @property
     def hsv(self):
         """Nx3 array of HSV floats"""
-        return _rgb_to_hsv(self._rgba[:, :3])
+        return self._hsv
 
     @hsv.setter
     def hsv(self, val):
@@ -375,14 +375,20 @@ class ColorArray(object):
         self.rgba = _hsv_to_rgb(val)
 
     @property
+    def _hsv(self):
+        """Nx3 array of HSV floats"""
+        # this is done privately so that overriding functions work
+        return _rgb_to_hsv(self._rgba[:, :3])
+
+    @property
     def value(self):
         """Length-N array of color HSV values"""
-        return self.hsv[:, 2]
+        return self._hsv[:, 2]
 
     @value.setter
     def value(self, val):
         """Set the color using length-N array of (from HSV)"""
-        hsv = self.hsv
+        hsv = self._hsv
         hsv[:, 2] = _array_clip_val(val)
         self.rgba = _hsv_to_rgb(hsv)
 
@@ -456,7 +462,7 @@ class LinearGradient(ColorArray):
 
     @gradient_x.setter
     def gradient_x(self, val):
-        x = np.array(val, dtype=np.float64)
+        x = np.array(val, dtype=np.float32)
         if x.ndim != 1 or x.size != len(self):
             raise ValueError('x must 1D with the same size as colors (%s), '
                              'not %s' % (len(self), x.shape))
@@ -470,3 +476,66 @@ class LinearGradient(ColorArray):
                                % str(loc))
         rgba = [np.interp(loc, self._grad_x, rr) for rr in self._rgba.T]
         return np.array(rgba)
+
+
+class Color(ColorArray):
+    """A single color
+
+    Parameters
+    ----------
+    color : str | tuple
+        If str, can be any of the names in ``vispy.color.get_color_names``.
+        Can also be a hex value if it starts with ``'#'`` as ``'#ff0000'``.
+        If array-like, it must be an 1-dimensional array with 3 or 4 elements.
+    alpha : float | None
+        If no alpha is not supplied in ``color`` entry and ``alpha`` is None,
+        then this will default to 1.0 (opaque). If float, it will override
+        the alpha value in ``color``, if provided.
+    """
+    def __init__(self, color='black', alpha=None):
+        """Parse input type, and set attribute"""
+        if isinstance(color, (list, tuple)):
+            color = np.array(color, np.float32)
+        rgba = _user_to_rgba(color)
+        if rgba.shape[0] != 1:
+            raise ValueError('color must be of correct shape')
+        if alpha is not None:
+            rgba[:, 3] = alpha
+        self._rgba = None
+        self.rgba = rgba.ravel()
+
+    @ColorArray.rgba.getter
+    def rgba(self):
+        return super(Color, self).rgba[0]
+
+    @ColorArray.rgb.getter
+    def rgb(self):
+        return super(Color, self).rgb[0]
+
+    @ColorArray.RGBA.getter
+    def RGBA(self):
+        return super(Color, self).RGBA[0]
+
+    @ColorArray.RGB.getter
+    def RGB(self):
+        return super(Color, self).RGB[0]
+
+    @ColorArray.alpha.getter
+    def alpha(self):
+        return super(Color, self).alpha[0]
+
+    @ColorArray.hsv.getter
+    def hsv(self):
+        return super(Color, self).hsv[0]
+
+    @ColorArray.value.getter
+    def value(self):
+        return super(Color, self).value[0]
+
+    @ColorArray.lab.getter
+    def lab(self):
+        return super(Color, self).lab[0]
+
+    def __repr__(self):
+        nice_str = str(tuple(self._rgba[0]))
+        return ('<%s: %s>' % (self._name(), nice_str))

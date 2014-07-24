@@ -61,7 +61,7 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
-        gloo.clear((0, 0, 0, 0))
+        gloo.clear('black')
         _, im = self.cap.read()
         self.program['texture'][...] = im
         self.program.draw('triangle_strip')

@@ -162,7 +162,7 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_draw(self, event):
-        gloo.clear((0, 0, 0, 1))
+        gloo.clear('black')
         self.program.draw('points')
 
 

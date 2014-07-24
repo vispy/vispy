@@ -8,11 +8,11 @@
 # Abstract: GPU computing using the framebuffer
 # Keywords: framebuffer, GPU computing, cellular automata
 # -----------------------------------------------------------------------------
-import sys
+
 import numpy as np
-import OpenGL.GL as gl
-import OpenGL.GLUT as glut
-from vispy.gloo import Program, FrameBuffer, DepthBuffer
+from vispy.gloo import (Program, FrameBuffer, DepthBuffer, clear, set_viewport,
+                        gl, set_state)
+from vispy import app
 
 
 render_vertex = """
@@ -102,102 +102,77 @@ void main(void)
 """
 
 
-def display():
-    global comp_w, comp_h, disp_w, disp_h
+class Canvas(app.Canvas):
 
-    framebuffer.activate()
-    gl.glViewport(0, 0, comp_w, comp_h)
-    compute["texture"].interpolation = gl.GL_NEAREST
-    compute.draw(gl.GL_TRIANGLE_STRIP)
-    framebuffer.deactivate()
+    def __init__(self):
+        app.Canvas.__init__(self, title="Conway game of life",
+                            size=(512, 512), close_keys='escape')
 
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-    gl.glViewport(0, 0, disp_w, disp_h)
-    render["texture"].interpolation = gl.GL_LINEAR
-    render.draw(gl.GL_TRIANGLE_STRIP)
-    glut.glutSwapBuffers()
+    def on_initialize(self, event):
+        # Build programs
+        # --------------
+        self.comp_size = (512, 512)
+        size = self.comp_size + (4,)
+        Z = np.zeros(size, dtype=np.float32)
+        Z[...] = np.random.randint(0, 2, size)
+        Z[:256, :256, :] = 0
+        gun = """
+        ........................O...........
+        ......................O.O...........
+        ............OO......OO............OO
+        ...........O...O....OO............OO
+        OO........O.....O...OO..............
+        OO........O...O.OO....O.O...........
+        ..........O.....O.......O...........
+        ...........O...O....................
+        ............OO......................"""
+        x, y = 0, 0
+        for i in range(len(gun)):
+            if gun[i] == '\n':
+                y += 1
+                x = 0
+            elif gun[i] == 'O':
+                Z[y, x] = 1
+            x += 1
+
+        self.pingpong = 1
+        self.compute = Program(compute_vertex, compute_fragment, 4)
+        self.compute["texture"] = Z
+        self.compute["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        self.compute["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        self.compute['dx'] = 1.0 / size[1]
+        self.compute['dy'] = 1.0 / size[0]
+        self.compute['pingpong'] = self.pingpong
+
+        self.render = Program(render_vertex, render_fragment, 4)
+        self.render["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        self.render["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        self.render["texture"] = self.compute["texture"]
+        self.render['pingpong'] = self.pingpong
+
+        self.fbo = FrameBuffer(self.compute["texture"],
+                               DepthBuffer(self.comp_size))
+        set_state(depth_test=False, clear_color='black')
+
+    def on_draw(self, event):
+        with self.fbo:
+            set_viewport(0, 0, *self.comp_size)
+            self.compute["texture"].interpolation = gl.GL_NEAREST
+            self.compute.draw('triangle_strip')
+        clear()
+        set_viewport(0, 0, *self.size)
+        self.render["texture"].interpolation = gl.GL_LINEAR
+        self.render.draw('triangle_strip')
+        self.pingpong = 1 - self.pingpong
+        self.compute["pingpong"] = self.pingpong
+        self.render["pingpong"] = self.pingpong
+        self.update()
+
+    def on_reshape(self, event):
+        gl.glViewport(0, 0, *event.size)
 
 
-def reshape(width, height):
-    global disp_w, disp_h
-    gl.glViewport(0, 0, width, height)
-    disp_w, disp_h = width, height
-
-
-def keyboard(key, x, y):
-    if key == '\033':
-        sys.exit()
-
-
-def idle():
-    global pingpong
-    pingpong = 1 - pingpong
-    compute["pingpong"] = pingpong
-    render["pingpong"] = pingpong
-    glut.glutPostRedisplay()
-
-
-# Glut init
-# --------------------------------------
-glut.glutInit(sys.argv)
-glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA)
-glut.glutCreateWindow("Conway game of life")
-glut.glutReshapeWindow(512, 512)
-glut.glutReshapeFunc(reshape)
-glut.glutKeyboardFunc(keyboard)
-glut.glutDisplayFunc(display)
-glut.glutIdleFunc(idle)
-
-
-# Build programs
-# --------------
-comp_w, comp_h = 512, 512
-disp_w, disp_h = 512, 512
-Z = np.zeros((comp_h, comp_w, 4), dtype=np.float32)
-Z[...] = np.random.randint(0, 2, (comp_h, comp_w, 4))
-Z[:256, :256, :] = 0
-gun = """
-........................O...........
-......................O.O...........
-............OO......OO............OO
-...........O...O....OO............OO
-OO........O.....O...OO..............
-OO........O...O.OO....O.O...........
-..........O.....O.......O...........
-...........O...O....................
-............OO......................"""
-x, y = 0, 0
-for i in range(len(gun)):
-    if gun[i] == '\n':
-        y += 1
-        x = 0
-    elif gun[i] == 'O':
-        Z[y, x] = 1
-    x += 1
-
-pingpong = 1
-compute = Program(compute_vertex, compute_fragment, 4)
-compute["texture"] = Z
-compute["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
-compute["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
-compute['dx'] = 1.0 / comp_w
-compute['dy'] = 1.0 / comp_h
-compute['pingpong'] = pingpong
-
-render = Program(render_vertex, render_fragment, 4)
-render["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
-render["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
-render["texture"] = compute["texture"]
-render['pingpong'] = pingpong
-
-framebuffer = FrameBuffer(color=compute["texture"],
-                          depth=DepthBuffer((comp_w, comp_h)))
-
-# OpenGL initialization
-# --------------------------------------
-gl.glDisable(gl.GL_DEPTH_TEST)
-gl.glClearColor(0, 0, 0, 1)
-
-# Start
-# --------------------------------------
-glut.glutMainLoop()
+if __name__ == '__main__':
+    canvas = Canvas()
+    canvas.show()
+    app.run()

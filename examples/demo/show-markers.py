@@ -86,7 +86,7 @@ class Canvas(app.Canvas):
         self.program = self.programs[self.index]
 
     def on_initialize(self, event):
-        gloo.set_state(depth_test=False, blend=True, clear_color=(1, 1, 1, 1),
+        gloo.set_state(depth_test=False, blend=True, clear_color='white',
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def on_key_press(self, event):

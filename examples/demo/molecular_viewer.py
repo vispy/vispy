@@ -149,7 +149,7 @@ class MolecularViewerCanvas(app.Canvas):
         self.program['u_light_spec_position'] = -5., 5., -5.
 
     def on_initialize(self, event):
-        gloo.set_state(depth_test=True, clear_color=(0, 0, 0, 1))
+        gloo.set_state(depth_test=True, clear_color='black')
 
     def on_key_press(self, event):
         if event.text == ' ':

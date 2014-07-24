@@ -104,7 +104,7 @@ def test_import_vispy_app2():
 def test_import_vispy_gloo():
     """ Importing vispy.gloo should not pull in other vispy submodules. """
     modnames = loaded_vispy_modules('vispy.gloo', 2)
-    assert_equal(modnames, set(_min_modules + ['vispy.gloo']))
+    assert_equal(modnames, set(_min_modules + ['vispy.gloo', 'vispy.color']))
 
 
 def test_import_vispy_no_pyopengl():
