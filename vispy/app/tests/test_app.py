@@ -305,6 +305,8 @@ def test_application():
         timer.interval = 0.002
         assert_equal(timer.interval, 0.002)
         assert_true(timer.running)
+        sleep(.003)
+        assert_true(timer.elapsed >= 0.002)
         timer.stop()
         assert_true(not timer.running)
         assert_true(timer.native)

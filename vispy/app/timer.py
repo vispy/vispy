@@ -56,6 +56,7 @@ class Timer(object):
 
         self._interval = interval
         self._running = False
+        self._first_emit_time = None
         self._last_emit_time = None
         self.iter_count = 0
         self.max_iterations = iterations
@@ -82,6 +83,10 @@ class Timer(object):
             self.start()
 
     @property
+    def elapsed(self):
+        return precision_time() - self._first_emit_time
+
+    @property
     def running(self):
         return self._running
 
@@ -103,6 +108,7 @@ class Timer(object):
             self.max_iterations = iterations
         self._backend._vispy_start(self.interval)
         self._running = True
+        self._first_emit_time = precision_time()
         self._last_emit_time = precision_time()
         self.events.start(type='timer_start')
 
@@ -140,11 +146,13 @@ class Timer(object):
         # compute dt since last event
         now = precision_time()
         dt = now - self._last_emit_time
+        elapsed = now - self._first_emit_time
         self._last_emit_time = now
 
         self.events.timeout(
             type='timer_timeout',
             iteration=self.iter_count,
+            elapsed=elapsed,
             dt=dt)
         self.iter_count += 1
 
