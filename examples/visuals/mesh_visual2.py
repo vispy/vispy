@@ -198,20 +198,6 @@ class Mesh(Visual):
             # instance.
     
     def draw(self, event):
-        
-        ## todo: ischanged should not iterate over the variables
-        #if self._program.vert.ischanged():
-            #self._program.shaders[0].code = str(self._program.vert)
-            #self._program._create_variables()  # force update
-        #if self._program.frag.ischanged():
-            #self._program.shaders[1].code = str(self._program.frag)
-            #self._program._create_variables()  # force update
-        
-        ## todo: only do this when necesary
-        #for var in self._program.vert.get_variables():
-            #if var.vtype in ('attribute', 'uniform'):
-                #self._program[var.name] = var.value
-        
         # Draw
         self._program.draw('triangles', self._faces)
 
