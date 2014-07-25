@@ -116,27 +116,7 @@ class Line(Visual):
             raise ValueError('Line colors must be Nx3 array or color tuple')
     
     def draw(self, event=None):
-        
-        # The code updating and variable checking is something that can
-        # be abstracted away in a base class or a ModularShader 
-        # (I (AK) prefers the fisrt).
-        
         gloo.set_state(blend=True, blend_func=('src_alpha', 'one'))
-        
-        ## todo: ischanged should not iterate over the variables
-        #if self._program.vert.ischanged():
-            #print('updating vertex shader')
-            #self._program.shaders[0].code = str(self._program.vert)
-            #self._program._create_variables()  # force update
-        #if self._program.frag.ischanged():
-            #print('updating fragment shader')
-            #self._program.shaders[1].code = str(self._program.frag)
-            #self._program._create_variables()  # force update
-        
-        ## todo: only do this when necesary
-        #for var in self._program.vert.get_variables():
-            #if var.vtype in ('attribute', 'uniform'):
-                #self._program[var.name] = var.value
         
         # Draw
         self._program.draw('line_strip')
