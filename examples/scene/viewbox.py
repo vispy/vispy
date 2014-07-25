@@ -25,7 +25,7 @@ from vispy import scene
 # With the fbo method you can see the texture interpolation (induced by
 # a delibirate mismatch in screen and textue resolution)
 # Try different combinarions, like a viewport in an fbo
-PREFER_PIXEL_GRID1 = 'viewport'  # none, viewport, fbo (fragment to come)
+PREFER_PIXEL_GRID1 = 'fbo'  # none, viewport, fbo (fragment to come)
 PREFER_PIXEL_GRID2 = 'viewport'
 
 
@@ -52,10 +52,14 @@ canvas.scene.camera = scene.cameras.NDCCamera()  # Default NDCCamera
 
 # Create viewboxes left ...
 
-vb1 = scene.ViewBox(canvas.scene, name='vb1', margin=0.0, border=(1, 0, 0, 1))
-vb1.pos = -1.0, -1.0
-vb1.size = 1.0, 2.0
-vb1.scene.camera = scene.cameras.NDCCamera()
+w, h = canvas.size
+w2 = w / 2.
+h2 = h / 2.
+
+vb1 = scene.ViewBox(canvas.scene, name='vb1', margin=2, border=(1, 0, 0, 1))
+vb1.pos = 0, 0
+vb1.size = w2, h
+vb1.scene.camera = scene.cameras.Camera()
 #
 vb11 = scene.ViewBox(vb1.scene, name='vb11', margin=0.02, border=(0, 1, 0, 1))
 vb11.pos = -1.0, -1.0
@@ -79,9 +83,9 @@ vb11.add(nd_box)
 
 # Create viewboxes right ...
 
-vb2 = scene.ViewBox(canvas.scene, name='vb2', margin=0.0, border=(1, 1, 0, 1))
-vb2.pos = 0.0, -1.0
-vb2.size = 1.0, 2.0
+vb2 = scene.ViewBox(canvas.scene, name='vb2', margin=2, border=(1, 1, 0, 1))
+vb2.pos = w2, 0
+vb2.size = w2, h
 vb2.scene.camera = scene.cameras.PixelCamera()
 #
 vb21 = scene.ViewBox(vb2.scene, name='vb21', margin=10, border=(1, 0, 1, 1))
@@ -99,7 +103,7 @@ line_pixels.add_parent(vb22.scene)
 
 # Set preferred pixel grid method
 for vb in [vb1, vb2]:
-    vb.preferred_clip_method = PREFER_PIXEL_GRID2
+    vb.preferred_clip_method = PREFER_PIXEL_GRID1
 for vb in [vb11, vb12, vb21, vb22]:
     vb.preferred_clip_method = PREFER_PIXEL_GRID2
 
