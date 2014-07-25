@@ -243,6 +243,7 @@ def assert_image_equal(image, reference):
         assert min_diff < 10
     except AssertionError:
         _save_failed_test(image, reference.split('/')[-1])
+        raise
 
 
 class TestingCanvas(Canvas):
