@@ -15,6 +15,7 @@ import numpy as np
 
 from vispy.scene.visuals.visual import Visual
 from vispy.scene.shaders.function2 import Function, Variable
+from vispy.scene.shaders.program import ModularProgram
 from vispy import gloo
 
 
@@ -62,19 +63,15 @@ class Line(Visual):
         Visual.__init__(self, parent)
         
         # Create a program
-        self._program = gloo.Program('', '')
-        # Create vertex and fragment shaders
-        self._vert_code = Function(vertex_template)
-        self._frag_code = Function(fragment_template)
-        self._vert_code.link(self._frag_code)
+        self._program = ModularProgram(vertex_template, fragment_template)
         
         # Define how we are going to specify position and color
-        self._vert_code['gl_Position'] = 'vec4($position, 1.0)'
-        self._frag_code['gl_FragColor'] = 'vec4($color, 1.0)'
+        self._program.vert['gl_Position'] = 'vec4($position, 1.0)'
+        self._program.frag['gl_FragColor'] = 'vec4($color, 1.0)'
         
         # Set position data
         vbo = gloo.VertexBuffer(data)
-        self._vert_code['position'] = 'attribute vec3 position', vbo
+        self._program.vert['position'] = 'attribute vec3 position', vbo
         
         # Create some variables related to color. We use a combination
         # of these depending on the kind of color being set.
@@ -91,7 +88,7 @@ class Line(Visual):
     def set_data(self, data):
         """ Set the vertex data for this line.
         """
-        vbo = self._vert_code['position'].value
+        vbo = self._program.vert['position'].value
         vbo.set_data(data)
     
     def set_color(self, color):
@@ -108,13 +105,13 @@ class Line(Visual):
             color = [float(v) for v in color]
             assert len(color) == 3
             self._color_var.value = color
-            self._frag_code['color'] = self._color_var
+            self._program.frag['color'] = self._color_var
         elif isinstance(color, np.ndarray):
             # A value per vertex, via a VBO
             assert color.shape[1] == 3
             self._colors_var.value.set_data(color)
-            self._frag_code['color'] = self._color_varying
-            self._vert_code[self._color_varying] = self._colors_var
+            self._program.frag['color'] = self._color_varying
+            self._program.vert[self._color_varying] = self._colors_var
         else:
             raise ValueError('Line colors must be Nx3 array or color tuple')
     
@@ -126,20 +123,20 @@ class Line(Visual):
         
         gloo.set_state(blend=True, blend_func=('src_alpha', 'one'))
         
-        # todo: ischanged should not iterate over the variables
-        if self._vert_code.ischanged():
-            print('updating vertex shader')
-            self._program.shaders[0].code = str(self._vert_code)
-            self._program._create_variables()  # force update
-        if self._frag_code.ischanged():
-            print('updating fragment shader')
-            self._program.shaders[1].code = str(self._frag_code)
-            self._program._create_variables()  # force update
+        ## todo: ischanged should not iterate over the variables
+        #if self._program.vert.ischanged():
+            #print('updating vertex shader')
+            #self._program.shaders[0].code = str(self._program.vert)
+            #self._program._create_variables()  # force update
+        #if self._program.frag.ischanged():
+            #print('updating fragment shader')
+            #self._program.shaders[1].code = str(self._program.frag)
+            #self._program._create_variables()  # force update
         
-        # todo: only do this when necesary
-        for var in self._vert_code.get_variables():
-            if var.vtype in ('attribute', 'uniform'):
-                self._program[var.name] = var.value
+        ## todo: only do this when necesary
+        #for var in self._program.vert.get_variables():
+            #if var.vtype in ('attribute', 'uniform'):
+                #self._program[var.name] = var.value
         
         # Draw
         self._program.draw('line_strip')
@@ -153,10 +150,10 @@ class DashedLine(Line):
         Line.__init__(self, *args, **kwargs)
         
         dasher = Function(dash_template) 
-        self._frag_code['gl_FragColor.a'] = dasher()
+        self._program.frag['gl_FragColor.a'] = dasher()
         dasher['distance'] = 'varying float v_dashdist'
         dasher['dash_len'] = '0.001'
-        self._vert_code[dasher['distance']] = 'gl_Position.x'
+        self._program.vert[dasher['distance']] = 'gl_Position.x'
 
 
 ## Show the visual

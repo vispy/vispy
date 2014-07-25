@@ -15,6 +15,7 @@ import numpy as np
 
 from vispy.scene.visuals.visual import Visual
 from vispy.scene.shaders.function2 import Function, Variable
+from vispy.scene.shaders.program import ModularProgram
 from vispy import gloo
 
 
@@ -72,16 +73,11 @@ class Mesh(Visual):
         Visual.__init__(self, parent)
         
         # Create a program
-        self._program = gloo.Program('', '')
-        
-        # Create vertex and fragment shaders
-        self._vert_code = Function(vertex_template)
-        self._frag_code = Function(fragment_template)
-        self._vert_code.link(self._frag_code)
+        self._program = ModularProgram(vertex_template, fragment_template)
         
         # Define how we are going to specify position and color
-        self._vert_code['gl_Position'] = 'vec4($position, 1.0)'
-        self._frag_code['gl_FragColor'] = '$light($color)'
+        self._program.vert['gl_Position'] = 'vec4($position, 1.0)'
+        self._program.frag['gl_FragColor'] = '$light($color)'
         
         # Define variables related to color. Only one is in use at all times
         self._variables = {}
@@ -91,7 +87,7 @@ class Mesh(Visual):
         self._variables['a_color4'] = Variable('attribute vec4 a_color')
         
         # Set color to a varying
-        self._frag_code['color'] = 'varying vec4 v_color'
+        self._program.frag['color'] = 'varying vec4 v_color'
         
         # Init
         self.shading = 'plain'
@@ -103,7 +99,7 @@ class Mesh(Visual):
     
     def set_vertices(self, vertices):
         vertices = gloo.VertexBuffer(vertices)
-        self._vert_code['position'] = 'attribute vec3 a_position', vertices
+        self._program.vert['position'] = 'attribute vec3 a_position', vertices
     
     def set_faces(self, faces):
         if faces is not None:
@@ -126,11 +122,11 @@ class Mesh(Visual):
             if len(values) == 3:
                 variable = self._variables['u_color3']
                 variable.value = values
-                self._frag_code['color'] = color3to4(variable)
+                self._program.frag['color'] = color3to4(variable)
             elif len(values) == 4:
                 variable = self._variables['u_color4']
                 variable.value = values
-                self._frag_code['color'] = variable
+                self._program.frag['color'] = variable
             else:
                 raise ValueError('Color tuple must have 3 or 4 values.')
         
@@ -148,19 +144,19 @@ class Mesh(Visual):
             elif values.shape[1] == 3:
                 # Explicitly set color per vertex
                 varying = Variable('varying vec3 v_color')
-                self._frag_code['color'] = color3to4(varying)
+                self._program.frag['color'] = color3to4(varying)
                 variable = self._variables['a_color3']
                 variable.value = gloo.VertexBuffer(values)
-                self._vert_code[varying] = variable
+                self._program.vert[varying] = variable
             
             elif values.shape[1] == 4:
                 # Explicitly set color per vertex
                 # Fragment shader
                 varying = Variable('varying vec4 v_color')
-                self._frag_code['color'] = varying
+                self._program.frag['color'] = varying
                 variable = self._variables['a_color4']
                 variable.value = gloo.VertexBuffer(values)
-                self._vert_code[varying] = variable
+                self._program.vert[varying] = variable
             
             else:
                 raise ValueError('Mesh values must be NxM, with M 1,2,3 or 4.')
@@ -180,7 +176,7 @@ class Mesh(Visual):
         # todo: add gouroud shading
         # todo: allow flat shading even if vertices+faces is specified.
         if value == 'plain':
-            self._frag_code['light'] = stub4()
+            self._program.frag['light'] = stub4()
         
         elif value == 'flat':
             pass
@@ -189,11 +185,11 @@ class Mesh(Visual):
             assert self._normals is not None
             # Apply phonmg function, 
             phong = Function(phong_template)
-            self._frag_code['light'] = phong()
+            self._program.frag['light'] = phong()
             # Normal data comes via vertex shader
             phong['normal'] = 'varying vec3 v_normal'
             var = 'attribute vec3 a_normal', gloo.VertexBuffer(self._normals)
-            self._vert_code[phong['normal']] = var
+            self._program.vert[phong['normal']] = var
             # Additional phong proprties
             phong['light_dir'] = 'const vec3 LIGHTDIR vec3(1.0, 1.0, 1.0)'
             phong['light_color'] = 'vec4(1.0, 1.0, 1.0, 1.0)'
@@ -203,18 +199,18 @@ class Mesh(Visual):
     
     def draw(self, event):
         
-        # todo: ischanged should not iterate over the variables
-        if self._vert_code.ischanged():
-            self._program.shaders[0].code = str(self._vert_code)
-            self._program._create_variables()  # force update
-        if self._frag_code.ischanged():
-            self._program.shaders[1].code = str(self._frag_code)
-            self._program._create_variables()  # force update
+        ## todo: ischanged should not iterate over the variables
+        #if self._program.vert.ischanged():
+            #self._program.shaders[0].code = str(self._program.vert)
+            #self._program._create_variables()  # force update
+        #if self._program.frag.ischanged():
+            #self._program.shaders[1].code = str(self._program.frag)
+            #self._program._create_variables()  # force update
         
-        # todo: only do this when necesary
-        for var in self._vert_code.get_variables():
-            if var.vtype in ('attribute', 'uniform'):
-                self._program[var.name] = var.value
+        ## todo: only do this when necesary
+        #for var in self._program.vert.get_variables():
+            #if var.vtype in ('attribute', 'uniform'):
+                #self._program[var.name] = var.value
         
         # Draw
         self._program.draw('triangles', self._faces)
