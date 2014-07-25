@@ -27,11 +27,12 @@ vec4 transform_zoffset(vec4 pos)
 
 vert_template = Function("""
 void main(void)
-{
+{   
     int nlights = $nlights;
     vec4 pos = $position;
     pos += $correction;
     gl_Position = $endtransform(pos);
+    $post_hook
 }
 
 """)
@@ -75,10 +76,8 @@ def test_example1():
     code.link(code2)
     code2['color'] = 'varying vec4 v_position'
     
-    code.post_apply('varying vec4 v_position', pos)
-    code.post_apply(code2['color'], pos)
-    some_func = Function("void foo(void){...}")
-    code.post_apply(some_func())
+    code['gl_PointSize'] = '3.0'
+    code[code2['color']] = pos
     
     # Show result
     print(code)
@@ -239,7 +238,7 @@ def test_function_basics():
     assert_in('bar', fun._template_vars)
     
     # Test setting verbatim expressions
-    assert_raises(ValueError, fun.__setitem__, 'bla', '33')  # no such template
+    assert_raises(KeyError, fun.__setitem__, 'bla', '33')  # no such template
     fun['foo'] = '33'
     fun['bar'] = 'bla bla'
     assert_is(type(fun['foo']), TextExpression)
@@ -278,7 +277,25 @@ def test_function_basics():
     assert_equal(fun['foo'].name, fun['bar'].name)  # Still the sae
     str(fun)  # force name mangling
     assert_not_equal(fun['foo'].name, fun['bar'].name) 
-
+    
+    # Test special variables
+    fun = Function('void main(){$foo; $bar;}')
+    variable = Variable('attribute vec3 v_pos')
+    varying = Variable('varying vec3 color')
+    # These do not work due to index
+    assert_raises(KeyError, fun.__setitem__, 3, 3)  # not a string
+    assert_raises(KeyError, fun.__setitem__, 'xxx', 3)  # unknown template var
+    assert_raises(KeyError, fun.__setitem__, variable, 3)  # only varyings
+    # These do not work due to value
+    assert_raises(ValueError, fun.__setitem__, 'gl_PointSize', 3)
+    assert_raises(ValueError, fun.__setitem__, varying, 3)
+    # These work
+    fun['gl_PointSize'] = '3.0'
+    fun[varying] = variable
+    # And getting works
+    assert_equal(fun['gl_PointSize'].text, '3.0')
+    assert_equal(fun[varying], variable)
+    
 
 def test_function_names():
     

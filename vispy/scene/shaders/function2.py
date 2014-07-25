@@ -74,11 +74,8 @@ class Function(object):
         # You can actually change any code you want, but use this with care!
         vert_code.replace('gl_Position.y', 'gl_Position.z')
         
-        # Finally, you can let functions be called at the end
-        some_func = Function('void foo(){...}')
-        vert_code.post_apply(some_func())
-        # Or make some assignments at the end
-        vert_code.post_apply('gl_PointSize', 'uniform float u_pointsize')
+        # Finally, you can set special variables explicitly
+        vert_code['gl_PointSize'] = 'uniform float u_pointsize'
     
     If we use ``str(vert_code)`` we get:
     
@@ -159,14 +156,15 @@ class Function(object):
     ---------------------------------------
     By linking a vertex and fragment shader, they share the same name
     scope and variables. The most straightforward way to deal with
-    varyings is to use the post_apply() method:
+    varyings is to use the following method:
         
         // This is how to link
         vert_code.link(frag_code)
         
         // Pass attribute data to the fragment shader
         frag_code['color'] = 'varying vec3 v_color'
-        vert_code.post_apply(frag_code['color'], 'attribute vec3 a_color')
+        variable = frag_code['color']
+        vert_code[variable] = 'attribute vec3 a_color'
     
     """
     
@@ -194,7 +192,7 @@ class Function(object):
         self._replacements = OrderedDict()
         
         # Stuff to do at the end
-        self._post_hooks = []
+        self._post_hooks = OrderedDict()
         
         # Toplevel vertex/fragment shader funtctions can be linked
         self._linked = None
@@ -213,12 +211,26 @@ class Function(object):
         """
         
         # Check key
-        if not isinstance(key, string_types):
-            raise ValueError('In `function[key]` key must be a string.')
-        elif key not in self._template_vars:
-            raise ValueError('Invalid template variable %r' % key)
+        keykey = ''
+        if isinstance(key, Variable) and key.vtype == 'varying':
+            # We need this expression
+            keykey = 'varying_%x' % id(key)
+            self._expressions[keykey] = key
+        elif not isinstance(key, string_types):
+            raise KeyError('In `function[key]` key must be a string.')
+        else:
+            if key.startswith('gl_'):
+                pass
+            elif key not in self._template_vars:
+                raise KeyError('Invalid template variable %r' % key)
         
-        # Ensure val is an expression
+        # Remove expression?
+        if val is None:
+            self._expressions.pop(key, None)
+            self._expressions.pop(keykey, None)
+            return 
+        
+        # Store
         val = _convert_to_expression(val, altname=key)
         self._expressions[key] = val
         self._last_changed = time.time()
@@ -235,14 +247,15 @@ class Function(object):
         program.
         """
         
-        # Check key
-        if not isinstance(key, string_types):
-            raise ValueError('In `function[key]` key must be a string.')
-        elif key not in self._template_vars:
-            raise ValueError('Invalid template variable %r' % key)
+        try:
+            return self._expressions[key]
+        except KeyError:
+            pass
         
-        # Return
-        return self._expressions[key]
+        if key not in self._template_vars:
+            raise KeyError('Invalid template variable %r' % key) 
+        else:
+            raise KeyError('No value known for key %r' % key)
     
     def __call__(self, *args):
         """ Set the signature for this function and return an FunctionCall
@@ -306,26 +319,6 @@ class Function(object):
         deps = self._dependencies(True)
         return [dep for dep in deps.keys() if isinstance(dep, Variable)]
     
-    def post_apply(self, val1, val2=None):
-        """ Assign one variable to another (as in ``val1 = val2``)
-        
-        This assigment is done at the end of the function.
-        """
-        if True:
-            val1 = _convert_to_expression(val1)
-            key1 = 'assign_%x' % id(val1)
-            self._expressions[key1] = val1
-        if val2:
-            val2 = _convert_to_expression(val2)
-            key2 = 'assign_%x' % id(val2)
-            self._expressions[key2] = val2
-        # Add code that these variables can hook into
-        if val2:
-            self._post_hooks.append('    $%s = $%s;' % (key1, key2))
-        else:
-            self._post_hooks.append('    $%s;' % key1)
-        self._last_changed = time.time()
-    
     def link(self, frag_func):
         """ Link a vertex and fragment shader
         
@@ -379,18 +372,34 @@ class Function(object):
         # Apply plain replacements
         for key, val in self._replacements.items():
             code = code.replace(key, val)
-        # Apply placeholders for hooks
-        post_text = ''
-        if self._post_hooks:
-            post_text = '\n' + '\n'.join(self._post_hooks) + '\n'
-        code = code.rpartition('}')
-        code = code[0] + post_text + code[1] + code[2]
         # Apply template replacements 
+        post_lines = []
         for key, val in self._expressions.items():
+            # First check for post-hooks
+            if isinstance(key, Variable):
+                line = '    %s = %s;' % (key._injection(), val._injection())
+                post_lines.append(line)
+                continue
+            elif key.startswith('gl_'):
+                line = '    %s = %s;' % (key, val._injection())
+                post_lines.append(line)
+                continue
+            # Process normally
             if isinstance(val, FunctionCall):
                 # When signature is specified, use that one instead
                 code = code.replace('$'+key+'(', val.function.name+'(')
             code = code.replace('$'+key, val._injection())
+        # Apply post-hooks
+        if self.name == 'main':
+            # Add post-hook if necessary
+            if '$post_hook' not in code:
+                code = code.rpartition('}')
+                code = code[0] + '$post_hook\n' + code[1] + code[2]
+            # Apply placeholders for hooks
+            post_text = '\n'.join(post_lines)
+            if post_text:
+                post_text = '\n' + post_text
+            code = code.replace('$post_hook', post_text)
         # Done
         return code
     
@@ -497,7 +506,13 @@ class TextExpression(Expression):
         if not isinstance(text, string_types):
             raise ValueError('TextExpression needs a string.')
         self._text = text
-
+    
+    @property
+    def text(self):
+        """ The text for this expression.
+        """
+        return self._text
+    
     def __repr__(self):
         return "<TextExpression %r at 0x%x>" % (self._text, id(self))
     
