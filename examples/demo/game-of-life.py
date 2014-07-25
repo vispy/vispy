@@ -11,7 +11,7 @@
 
 import numpy as np
 from vispy.gloo import (Program, FrameBuffer, DepthBuffer, clear, set_viewport,
-                        gl, set_state)
+                        set_state)
 from vispy import app
 
 
@@ -157,11 +157,11 @@ class Canvas(app.Canvas):
     def on_draw(self, event):
         with self.fbo:
             set_viewport(0, 0, *self.comp_size)
-            self.compute["texture"].interpolation = gl.GL_NEAREST
+            self.compute["texture"].interpolation = 'nearest'
             self.compute.draw('triangle_strip')
         clear()
         set_viewport(0, 0, *self.size)
-        self.render["texture"].interpolation = gl.GL_LINEAR
+        self.render["texture"].interpolation = 'linear'
         self.render.draw('triangle_strip')
         self.pingpong = 1 - self.pingpong
         self.compute["pingpong"] = self.pingpong
@@ -169,7 +169,7 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_reshape(self, event):
-        gl.glViewport(0, 0, *event.size)
+        set_viewport(0, 0, *event.size)
 
 
 if __name__ == '__main__':

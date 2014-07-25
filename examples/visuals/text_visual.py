@@ -20,7 +20,7 @@ class Canvas(app.Canvas):
         self.apply_zoom()
 
     def on_draw(self, event):
-        gloo.clear(color=(1., 1., 1., 1.))
+        gloo.clear(color='white')
         self.text.draw()
         self.update()
 
