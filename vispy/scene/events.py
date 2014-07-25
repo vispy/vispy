@@ -5,9 +5,7 @@
 from __future__ import division
 
 from ..util.event import Event
-from .transforms import NullTransform, STTransform, ChainTransform
-from ..gloo import gl
-
+from .transforms import ChainTransform
 
 
 class SceneEvent(Event):
@@ -156,7 +154,6 @@ class SceneEvent(Event):
         """
         return self.canvas_transform.inverse().map(obj)
     
-
 
 class SceneMouseEvent(SceneEvent):
     def __init__(self, event, canvas):

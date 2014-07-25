@@ -23,16 +23,18 @@ class Widget(Visual):
 
     def __init__(self, *args, **kwargs):
         self._border = kwargs.pop('border', (0.2, 0.2, 0.2, 0.5))
-        self._visual = Line(color=self._border)  # for drawing border
-        self._clip = kwargs.pop('clip', False) # whether this widget should
-                                               # clip its children
-        self._padding = kwargs.pop('padding', 0)  # reserved space inside border
-        self._margin = kwargs.pop('margin', 0)  # reserved space outside border
+        # for drawing border
+        self._visual = Line(color=self._border)
+        # whether this widget should clip its children
+        self._clip = kwargs.pop('clip', False)
+        # reserved space inside border
+        self._padding = kwargs.pop('padding', 0)
+        # reserved space outside border
+        self._margin = kwargs.pop('margin', 0)
         
         pos = kwargs.pop('pos', (0, 0))
         size = kwargs.pop('size', (10, 10))
         
-        #Entity.__init__(self, *args, **kwargs)
         Visual.__init__(self, *args, **kwargs)
         self.events.add(rect_change=Event)
         self._size = 16, 16
@@ -143,7 +145,7 @@ class Widget(Visual):
         automatically positioned and sized to fill the entire space inside
         this Widget (unless _update_child_widgets is redefined).
         """
-        self._widgets.append(box)
+        self._widgets.append(widget)
         widget.parent = self
         self._update_child_widgets()
         return widget

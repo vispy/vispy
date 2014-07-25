@@ -15,7 +15,7 @@ manyally set the preferred_clip_method property of one or more viewboxes.
 
 import numpy as np
 
-from vispy import app, gloo
+from vispy import app
 from vispy import scene
 
 #gloo.gl.use('desktop debug')
@@ -52,17 +52,17 @@ canvas.scene.camera = scene.cameras.NDCCamera()  # Default NDCCamera
 
 # Create viewboxes left ...
 
-vb1 = scene.ViewBox(canvas.scene, name='vb1', margin=0.0, border=(1,0,0,1))
+vb1 = scene.ViewBox(canvas.scene, name='vb1', margin=0.0, border=(1, 0, 0, 1))
 vb1.pos = -1.0, -1.0
 vb1.size = 1.0, 2.0
 vb1.scene.camera = scene.cameras.NDCCamera()
 #
-vb11 = scene.ViewBox(vb1.scene, name='vb11', margin=0.02, border=(0,1,0,1))
+vb11 = scene.ViewBox(vb1.scene, name='vb11', margin=0.02, border=(0, 1, 0, 1))
 vb11.pos = -1.0, -1.0
 vb11.size = 2.0, 1.0
 vb11.scene.camera = scene.cameras.TwoDCamera()
 #
-vb12 = scene.ViewBox(vb1.scene, name='vb12', margin=0.02, border=(0,0,1,1))
+vb12 = scene.ViewBox(vb1.scene, name='vb12', margin=0.02, border=(0, 0, 1, 1))
 vb12.pos = -1.0, 0.0
 vb12.size = 2.0, 1.0
 vb12.scene.camera = scene.cameras.PixelCamera()
@@ -79,17 +79,17 @@ vb11.add(nd_box)
 
 # Create viewboxes right ...
 
-vb2 = scene.ViewBox(canvas.scene, name='vb2', margin=0.0, border=(1,1,0,1))
+vb2 = scene.ViewBox(canvas.scene, name='vb2', margin=0.0, border=(1, 1, 0, 1))
 vb2.pos = 0.0, -1.0
 vb2.size = 1.0, 2.0
 vb2.scene.camera = scene.cameras.PixelCamera()
 #
-vb21 = scene.ViewBox(vb2.scene, name='vb21', margin=10, border=(1,0,1,1))
+vb21 = scene.ViewBox(vb2.scene, name='vb21', margin=10, border=(1, 0, 1, 1))
 vb21.pos = 0, 0
 vb21.size = 400, 300
 vb21.scene.camera = scene.cameras.TwoDCamera()
 #
-vb22 = scene.ViewBox(vb2.scene, name='vb22', margin=10, border=(0,1,1,1))
+vb22 = scene.ViewBox(vb2.scene, name='vb22', margin=10, border=(0, 1, 1, 1))
 vb22.pos = 0, 300
 vb22.size = 400, 300
 vb22.scene.camera = scene.cameras.PixelCamera()

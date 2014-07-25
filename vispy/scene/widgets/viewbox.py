@@ -209,7 +209,6 @@ class ViewBox(Widget):
 
         event.pop_viewbox()
         
-        
     def _prepare_viewport(self, event):
         p1 = event.map_to_fb((0, 0))
         p2 = event.map_to_fb(self.size)
@@ -287,7 +286,7 @@ class ViewBox(Widget):
         # Note that we would just use -1..1 if we would use a Visual.
         coords = [[0, 0], [self.size[0], self.size[1]]]
         
-        transform = event.render_transform # * self.scene.viewbox_transform
+        transform = event.render_transform  # * self.scene.viewbox_transform
         coords = transform.map(coords)
         x1, y1, z = coords[0][:3]
         x2, y2, z = coords[1][:3]

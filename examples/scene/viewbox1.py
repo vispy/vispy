@@ -7,7 +7,7 @@ when the canvas resizes.
 """
 import numpy as np
 
-from vispy import app, gloo
+from vispy import app
 from vispy import scene
 
 
@@ -57,8 +57,6 @@ vb1.add(unit_box)
 vb1.add(nd_box)
 vb2.add(unit_box)
 vb2.add(nd_box)
-
-
 
 if __name__ == '__main__':
     app.run()
