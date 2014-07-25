@@ -183,6 +183,13 @@ class Program(GLObject):
         
         #logger.debug("GPU: Activating program")
         
+        need_rebuild = False
+        for shader in self.shaders:
+            if shader._need_compile:
+                need_rebuild = True
+        if need_rebuild:
+            self._build()
+        
         # Stuff we need to do *before* glUse-ing the program
         if self._need_build:
             self._build()
