@@ -96,7 +96,7 @@ class Canvas(app.Canvas):
 
     def on_initialize(self, event):
         # Enable blending
-        gloo.set_state(blend=True, clear_color=(0, 0, 0, 1),
+        gloo.set_state(blend=True, clear_color='black',
                        blend_func=('src_alpha', 'one'))
 
     def on_resize(self, event):

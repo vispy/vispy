@@ -82,7 +82,7 @@ class Canvas(app.Canvas):
         #self._program['a_texcoords'] = self._vbo['a_texcoords']
 
     def on_initialize(self, event):
-        gloo.set_clear_color((1, 1, 1, 1))
+        gloo.set_clear_color('white')
 
     def on_resize(self, event):
         width, height = event.size

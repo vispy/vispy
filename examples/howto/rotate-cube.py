@@ -84,11 +84,11 @@ def cube():
                   (v[6], n[5], c[6]), (v[5], n[5], c[5])],
                  dtype=vtype)
     I1 = np.resize(np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32), 6 * (2 * 3))
-    I1 += np.repeat(4 * np.arange(2 * 3), 6)
+    I1 += np.repeat(4 * np.arange(2 * 3, dtype=np.uint32), 6)
 
     I2 = np.resize(
         np.array([0, 1, 1, 2, 2, 3, 3, 0], dtype=np.uint32), 6 * (2 * 4))
-    I2 += np.repeat(4 * np.arange(6), 8)
+    I2 += np.repeat(4 * np.arange(6, dtype=np.uint32), 8)
 
     return V, I1, I2
 
@@ -124,7 +124,7 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_initialize(self, event):
-        gloo.set_clear_color((1, 1, 1, 1))
+        gloo.set_clear_color('white')
         gloo.set_state('opaque')
         gloo.set_polygon_offset(1, 1)
         # gl.glEnable( gl.GL_LINE_SMOOTH )

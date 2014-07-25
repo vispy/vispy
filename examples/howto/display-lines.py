@@ -78,7 +78,7 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_initialize(self, event):
-        gloo.set_clear_color((1, 1, 1, 1))
+        gloo.set_clear_color('white')
         gloo.set_state('translucent')
 
     # ---------------------------------

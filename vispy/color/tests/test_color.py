@@ -6,8 +6,21 @@ import numpy as np
 from nose.tools import assert_equal, assert_raises, assert_true
 from numpy.testing import assert_array_equal, assert_allclose
 
-from vispy.color import ColorArray, LinearGradient, get_color_names
+from vispy.color import Color, ColorArray, LinearGradient, get_color_names
 from vispy.util import use_log_level
+
+
+def test_color():
+    """Basic tests for Color class"""
+    x = Color('white')
+    assert_array_equal(x.rgba, [1.] * 4)
+    assert_array_equal(x.rgb, [1.] * 3)
+    assert_array_equal(x.RGBA, [255] * 4)
+    assert_array_equal(x.RGB, [255] * 3)
+    assert_equal(x.value, 1.)
+    assert_equal(x.alpha, 1.)
+    x.rgb = [0, 0, 1]
+    assert_array_equal(x.hsv, [240, 1, 1])
 
 
 def test_color_interpretation():
@@ -130,7 +143,7 @@ def test_color_conversion():
         hsv[1] = hsv[1] * 0.99 + 0.01  # avoid ugly boundary effects
         hsv[2] = hsv[2] * 0.99 + 0.01
         c.hsv = hsv
-        assert_allclose(c.hsv.ravel(), hsv)
+        assert_allclose(c.hsv.ravel(), hsv, rtol=1e-5, atol=1e-5)
 
     # Lab
     test = ColorArray()
