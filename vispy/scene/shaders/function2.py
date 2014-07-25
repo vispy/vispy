@@ -230,10 +230,16 @@ class Function(object):
             self._expressions.pop(keykey, None)
             return 
         
-        # Store
-        val = _convert_to_expression(val, altname=key)
-        self._expressions[key] = val
-        self._last_changed = time.time()
+        # Store if value is different from current
+        if val is not self._expressions.get(key, None):
+            val = _convert_to_expression(val, altname=key)
+            self._expressions[key] = val
+            self._last_changed = time.time()
+        
+            # In case of verbatim text, we might have added new template vars
+            if isinstance(val, TextExpression):
+                for var in parsing.find_template_variables(val.text):
+                    self._template_vars.add(var.lstrip('$'))
     
     def __getitem__(self, key):
         """ Return a reference to a program variable from this function.
@@ -309,8 +315,9 @@ class Function(object):
         str2 : str
             String to replace str1 with
         """
-        self._replacements[str1] = str2
-        self._last_changed = time.time()
+        if str2 != self._replacements.get(str1, None):
+            self._replacements[str1] = str2
+            self._last_changed = time.time()
     
     def get_variables(self):
         """ Get a list of all variable objects defined in the current program.
@@ -372,34 +379,36 @@ class Function(object):
         # Apply plain replacements
         for key, val in self._replacements.items():
             code = code.replace(key, val)
-        # Apply template replacements 
-        post_lines = []
-        for key, val in self._expressions.items():
-            # First check for post-hooks
-            if isinstance(key, Variable):
-                line = '    %s = %s;' % (key._injection(), val._injection())
-                post_lines.append(line)
-                continue
-            elif key.startswith('gl_'):
-                line = '    %s = %s;' % (key, val._injection())
-                post_lines.append(line)
-                continue
-            # Process normally
-            if isinstance(val, FunctionCall):
-                # When signature is specified, use that one instead
-                code = code.replace('$'+key+'(', val.function.name+'(')
-            code = code.replace('$'+key, val._injection())
         # Apply post-hooks
         if self.name == 'main':
             # Add post-hook if necessary
             if '$post_hook' not in code:
                 code = code.rpartition('}')
                 code = code[0] + '$post_hook\n' + code[1] + code[2]
+            # Collect post lines
+            post_lines = []
+            for key, val in self._expressions.items():
+                if isinstance(key, Variable):
+                    line = '    %s = %s;' % (key.name, val._injection())
+                    post_lines.append(line)
+                    continue
+                elif key.startswith('gl_'):
+                    line = '    %s = %s;' % (key, val._injection())
+                    post_lines.append(line)
+                    continue
             # Apply placeholders for hooks
             post_text = '\n'.join(post_lines)
             if post_text:
                 post_text = '\n' + post_text
             code = code.replace('$post_hook', post_text)
+        # Apply template variables
+        for key, val in self._expressions.items():
+            if isinstance(key, Variable) or key.startswith('gl_'):
+                continue
+            # When signature is specified, use that one instead
+            if isinstance(val, FunctionCall):
+                code = code.replace('$'+key+'(', val.function.name+'(')
+            code = code.replace('$'+key, val._injection())
         # Done
         return code
     

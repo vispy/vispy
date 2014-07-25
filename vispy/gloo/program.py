@@ -183,6 +183,7 @@ class Program(GLObject):
         
         #logger.debug("GPU: Activating program")
         
+        # Check whether we need to rebuild shaders and create variables
         need_rebuild = False
         for shader in self.shaders:
             if shader._need_compile:
