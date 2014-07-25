@@ -189,6 +189,27 @@ def _has_scipy(min_version):
 def requires_scipy(min_version='0.13'):
     return np.testing.dec.skipif(not _has_scipy(min_version),
                                  'Requires Scipy version >= %s' % min_version)
+        
+
+def _save_failed_test(data, filename):
+    import httplib
+    import urllib
+    import base64
+    from ..util import make_png
+    from datetime import datetime
+
+    name, extension = filename.split('.')
+    name += datetime.now().strftime("_%Y-%m-%d-%H-%M")
+    host = 'data.vispy.org'
+    png = make_png(data)
+    conn = httplib.HTTPConnection(host)
+    req = urllib.urlencode({'name': name+'.'+extension, 
+                            'data': base64.b64encode(png)})
+    conn.request('POST', '/upload.py', req)
+    response = conn.getresponse().read()
+    if not response.startswith('OK'):
+        print("WARNING: Error uploading data to %s" % host)
+        print(response)
 
 
 def assert_image_equal(image, reference):
@@ -218,7 +239,10 @@ def assert_image_equal(image, reference):
             diff = (a != b).sum()
             if diff < min_diff:
                 min_diff = diff
-    assert min_diff < 10
+    try:
+        assert min_diff < 10
+    except AssertionError:
+        _save_failed_test(image, reference.split('/')[-1])
 
 
 class TestingCanvas(Canvas):
