@@ -8,6 +8,8 @@ from __future__ import print_function
 
 import numpy as np
 import os
+import subprocess
+import inspect
 from ..app import Canvas
 
 ###############################################################################
@@ -22,6 +24,45 @@ except ImportError:
     except ImportError:
         class SkipTest(Exception):
             pass
+
+
+def run_subprocess(command):
+    """Run command using subprocess.Popen
+
+    Run command and wait for command to complete. If the return code was zero
+    then return, otherwise raise CalledProcessError.
+    By default, this will also add stdout= and stderr=subproces.PIPE
+    to the call to Popen to suppress printing to the terminal.
+
+    Parameters
+    ----------
+    command : list of str
+        Command to run as subprocess (see subprocess.Popen documentation).
+
+    Returns
+    -------
+    stdout : str
+        Stdout returned by the process.
+    stderr : str
+        Stderr returned by the process.
+    """
+    # code adapted with permission from mne-python
+    kwargs = dict(stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+
+    p = subprocess.Popen(command, **kwargs)
+    stdout_, stderr = p.communicate()
+
+    output = (stdout_, stderr)
+    if p.returncode:
+        print(stdout_)
+        print(stderr)
+        err_fun = subprocess.CalledProcessError.__init__
+        if 'output' in inspect.getargspec(err_fun).args:
+            raise subprocess.CalledProcessError(p.returncode, command, output)
+        else:
+            raise subprocess.CalledProcessError(p.returncode, command)
+
+    return output
 
 
 def _safe_rep(obj, short=False):
@@ -198,12 +239,14 @@ def _save_failed_test(data, filename):
     from ..util import make_png
     from datetime import datetime
 
-    name, extension = filename.split('.')
-    name += datetime.now().strftime("_%Y-%m-%d-%H-%M")
+    commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
+    name = filename.split('/')
+    name.insert(-1, commit)
+    filename = os.path.join(*name)
     host = 'data.vispy.org'
     png = make_png(data)
     conn = httplib.HTTPConnection(host)
-    req = urllib.urlencode({'name': name+'.'+extension, 
+    req = urllib.urlencode({'name': filename, 
                             'data': base64.b64encode(png)})
     conn.request('POST', '/upload.py', req)
     response = conn.getresponse().read()
@@ -242,7 +285,7 @@ def assert_image_equal(image, reference):
     try:
         assert min_diff < 10
     except AssertionError:
-        _save_failed_test(image, reference.split('/')[-1])
+        _save_failed_test(image, reference)
         raise
 
 
