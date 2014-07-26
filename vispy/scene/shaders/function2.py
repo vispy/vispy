@@ -24,11 +24,79 @@ import time
 from ...util.ordereddict import OrderedDict
 from ...ext.six import string_types
 from . import parsing
+from ..util.event import EventEmitter
 
 VARIABLE_TYPES = ('const', 'uniform', 'attribute', 'varying', 'inout')
 
 
-class Function(object):
+class ShaderObject(object):
+    """ Base class for all objects that may be included in a GLSL program
+    (Functions, Variables, Expressions).
+    
+    Shader objects have a *declaration* that defines the object in GLSL, an 
+    *expression* that is used to reference the object, and a set of 
+    *dependencies* that must be declared before the object is used.
+    
+    Dependencies are tracked hierarchically such that changes to the 
+    *expression* of any object will invalidate the *declaration* of its 
+    dependents.
+    """
+    
+    # todo: handle name, oname, rename, etc.
+    
+    def __init__(self):
+        # emitted when any part of the code for this object has changed,
+        # including dependencies.
+        self.code_changed = EventEmitter()
+        
+        # emitted when the expression for this object has changed.
+        self.expr_changed = EventEmitter()
+        
+        # objects that must be declared before this object's declaration.
+        self._deps = []
+        
+    @property
+    def declaration(self):
+        """ Return the GLSL declaration for this object.
+        """
+        return None
+    
+    @property
+    def expression(self):
+        """ Return the GLSL expression used to reference this object.
+        """
+        raise NotImplementedError()
+    
+    @property
+    def dependencies(self):
+        """ Return all dependencies required to use this object.
+        """
+        alldeps = [self]
+        for dep in self._deps:
+            alldeps.extend(dep._dependencies())
+        return alldeps
+        
+    def _add_dep(self, dep):
+        self._deps.append(dep)
+        dep.expr_changed.connect(self._dep_expr_changed)
+        dep.code_changed.connect(self._dep_code_changed)
+
+    def _remove_dep(self, dep):
+        self._deps.remove(dep)
+        dep.changed.disconnect(self._dep_changed)
+        
+    def _dep_expr_changed(self, event):
+        """ Called when a dependency's expression has changed.
+        """
+        self.changed()
+    
+    def _dep_code_changed(self, event):
+        """ Called when a dependency's code has changed.
+        """
+        self.code_changed()
+    
+
+class Function(ShaderObject):
     """ Representation of a GLSL function
     
     Objects of this class can be used for re-using and composing GLSL
@@ -169,6 +237,7 @@ class Function(object):
     """
     
     def __init__(self, code):
+        super(Function, self).__init__()
         
         # Get and strip code
         if isinstance(code, Function):
@@ -412,28 +481,33 @@ class Function(object):
         # Done
         return code
     
-    def _dependencies(self, also_linked=False):
-        """ Get the dependencies (Functions and Variables) for this
-        expression.
-        """
-        # Get list of expressions, taking linking into account
-        expressions1, expressions2 = self._expressions.values(), []
-        if also_linked and self._linked:
-            expressions2 = self._linked[0]._expressions.values()
-            if self._linked[1] == 'fragment':
-                expressions1, expressions2 = expressions2, expressions1
-        # Collect dependencies
-        deps = OrderedDict()
-        for dep in expressions1:
-            deps.update(dep._dependencies())
-        for dep in expressions2:
-            deps.update(dep._dependencies())
-        return deps
+    #def _dependencies(self, also_linked=False):
+        #""" Get the dependencies (Functions and Variables) for this
+        #expression.
+        #"""
+        ## Get list of expressions, taking linking into account
+        #expressions1, expressions2 = self._expressions.values(), []
+        #if also_linked and self._linked:
+            #expressions2 = self._linked[0]._expressions.values()
+            #if self._linked[1] == 'fragment':
+                #expressions1, expressions2 = expressions2, expressions1
+        ## Collect dependencies
+        #deps = OrderedDict()
+        #for dep in expressions1:
+            #deps.update(dep._dependencies())
+        #for dep in expressions2:
+            #deps.update(dep._dependencies())
+        #return deps
     
-    def _definition(self):
+    @property
+    def declaration(self):
         ret = self._signature[2]
         sig = [s[0] for s in self._signature[1]]
         return '%s %s(%s);' % (ret, self.name, ', '.join(sig))
+
+    @property
+    def expression(self):
+        return self.name
     
     def _mangle_names(self):
         """ Mangle names of dependencies where necessary. Objects only
@@ -489,35 +563,52 @@ class Function(object):
         self._last_compiled = time.time()
         return code.rstrip() + '\n'
 
-
-class Expression(object):
-    """ Base class for things that template variables can be replaced with.
-    """
-    
-    def _dependencies(self):
-        """ Get the dependencies (Function and Variable objects) for this
-        expression.
+    @staticmethod
+    def clean_code(code):
+        """ Return *code* with indentation and leading/trailing blank lines
+        removed. 
         """
-        raise NotImplementedError()
+        lines = code.strip().split("\n")
+        min_indent = 100
+        for line in lines:
+            if line.strip() != "":
+                indent = len(line) - len(line.lstrip())
+                min_indent = min(indent, min_indent)
+        if min_indent > 0:
+            lines = [line[min_indent:] for line in lines]
+        code = "\n".join(lines)
+        return code
+
+
+#class Expression(ShaderObject):
+    #""" Base class for things that template variables can be replaced with.
+    #"""
     
-    def _injection(self):
-        """ Get the piece of code that is to be replaced at the template
-        variable.
-        """
-        raise NotImplementedError()
+    #def _dependencies(self):
+        #""" Get the dependencies (Function and Variable objects) for this
+        #expression.
+        #"""
+        #raise NotImplementedError()
+    
+    #def _injection(self):
+        #""" Get the piece of code that is to be replaced at the template
+        #variable.
+        #"""
+        #raise NotImplementedError()
 
 
-class TextExpression(Expression):
+class TextExpression(ShaderObject):
     """ Representation of a piece of verbatim code
     """
     
     def __init__(self, text):
         if not isinstance(text, string_types):
             raise ValueError('TextExpression needs a string.')
+        super(TextExpression, self).__init__()
         self._text = text
     
     @property
-    def text(self):
+    def expression(self):
         """ The text for this expression.
         """
         return self._text
@@ -525,14 +616,14 @@ class TextExpression(Expression):
     def __repr__(self):
         return "<TextExpression %r at 0x%x>" % (self._text, id(self))
     
-    def _dependencies(self):
-        return OrderedDict()
+    #def _dependencies(self):
+        #return OrderedDict()
     
-    def _injection(self):
-        return self._text
+    #def _injection(self):
+        #return self._text
 
 
-class Variable(Expression):
+class Variable(ShaderObject):
     """ Representation of global shader variable
     
     These can include: const, uniform, attribute, varying, inout
@@ -541,6 +632,7 @@ class Variable(Expression):
     """
     
     def __init__(self, spec, value=None, altname=None):
+        super(Variable, self).__init__()
         # Unravel spec
         if not isinstance(spec, string_types):
             raise ValueError('Variable should be declared using a string')
@@ -554,17 +646,17 @@ class Variable(Expression):
         self._last_changed = time.time()
         
         # Parse spec
-        if spec.count(' ') == 1:
+        spec = spec.split(' ')
+        if len(spec) == 2:
             # Only vtype and dtype specified, use altname
-            self._vtype, self._dtype = spec.split(' ')
+            self._vtype, self._dtype = spec
             self._name = altname
-        elif spec.count(' ') == 2:
+        elif len(spec) == 3:
             # vtype, dtype and name specified, ignore altname
-            self._vtype, self._dtype, self._name = spec.split(' ')
-        elif spec.startswith('const '):
+            self._vtype, self._dtype, self._name = spec
+        elif spec[0] == 'const':
             # Constant can define its value in the spec
-            tmp = spec.split(' ', 3)
-            self._vtype, self._dtype, self._name, self._value = tmp
+            self._vtype, self._dtype, self._name, self._value = spec
         else:
             raise ValueError('Invalid value for Variable: %r' % spec)
         if not self._name:
@@ -614,15 +706,18 @@ class Variable(Expression):
         d[self] = None
         return d
     
-    def _injection(self):
+    @property
+    def expression(self):
         return self._name
     
     def _rename(self, name):
         self._name = name
         self._last_changed = time.time()
+        self.decl_changed()
+        self.expr_changed()
     
-    def _definition(self):
-        # Used by Function to put at top of shader code
+    @property
+    def declaration(self):
         if self._vtype == 'const':
             return '%s %s %s = %s;' % (self._vtype, self._dtype, self.name, 
                                        self.value)
@@ -630,7 +725,7 @@ class Variable(Expression):
             return '%s %s %s;' % (self._vtype, self._dtype, self.name)
 
 
-class FunctionCall(Expression):
+class FunctionCall(ShaderObject):
     """ Representation of a call to a function
     
     Essentially this is container for a Function along with its
@@ -639,34 +734,46 @@ class FunctionCall(Expression):
     the next FunctionCall or in the replacement at a function.
     """
     
-    def __init__(self, function, signature):
+    def __init__(self, function, args):
         if not isinstance(function, Function):
             raise ValueError('FunctionCall needs a Function')
         self._function = function
-        self._signature = signature
+        self._args = args
+        self._expr = None
+        
+        self.add_dep(function)
+        for arg in args:
+            if isinstance(arg, ShaderObject):
+                self.add_dep(arg)
     
     def __repr__(self):
-        return '<FunctionCall %r for at 0x%x>' % (self._injection(), id(self))
+        return '<FunctionCall %r for at 0x%x>' % (self.expression(), id(self))
     
     @property
     def function(self):
         return self._function
     
-    def _dependencies(self):
-        d = OrderedDict()
-        # Add "our" function and its dependencies
-        d[self.function] = None
-        d.update(self.function._dependencies())
-        # Add dependencies of each or our arguments
-        for arg in self._signature:
-            d.update(arg._dependencies())
-        return d
+    #def _dependencies(self):
+        #d = OrderedDict()
+        ## Add "our" function and its dependencies
+        #d[self.function] = None
+        #d.update(self.function._dependencies())
+        ## Add dependencies of each or our arguments
+        #for arg in self._signature:
+            #d.update(arg._dependencies())
+        #return d
     
-    def _injection(self):
-        str_args = [arg._injection() for arg in self._signature]
-        sig = ', '.join(str_args)
-        return '%s(%s)' % (self.function.name, sig)
-
+    @property
+    def expression(self):
+        if self._expr is None:
+            str_args = [arg.expression for arg in self._args]
+            args = ', '.join(str_args)
+            self._expr = '%s(%s)' % (self.function.name, args)
+        return self._expr
+    
+    def on_expr_changed(self, event):
+        self._expr = None
+    
 
 def _convert_to_expression(val, altname=None):
     """ Convert input to an expression. If an expression is given, it
