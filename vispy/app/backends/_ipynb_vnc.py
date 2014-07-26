@@ -268,6 +268,10 @@ class CanvasBackend(BaseCanvasBackend):
                                                       modifiers=key.get
                                                       ("modifiers"),
                                                       )
+        elif ev.get("name") == "TimerEvent":  # Ticking from front-end (JS)
+            # TODO: Produce timeout event(?)
+            # self._on_draw(?)
+            print "tick"
 
     def _prepare_js(self):
         pkgdir = op.dirname(__file__)
