@@ -237,7 +237,6 @@ def _save_failed_test(data, filename):
     import urllib
     import base64
     from ..util import make_png
-    from datetime import datetime
 
     commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
     name = filename.split('/')
