@@ -1,6 +1,6 @@
 function get_pos(c, e) {
     var rect = c.getBoundingClientRect();
-    return [e.clientX-rect.left, e.clientY-rect.top];
+    return [e.clientX - rect.left, e.clientY - rect.top];
 };
 
 function get_modifiers(e) {
@@ -12,14 +12,13 @@ function get_modifiers(e) {
     return modifiers;
 };
 
-function get_key(e){
+function get_key(e) {
     var keynum = null;
-    if(window.event){ // IE
+    if (window.event) { // IE
         keynum = e.keyCode;
-    }
-    else if(e.which){ // Netscape/Firefox/Opera
+    } else if (e.which) { // Netscape/Firefox/Opera
         keynum = e.which;
-     }
+    }
     return keynum;
 };
 
@@ -37,8 +36,7 @@ function gen_mouse_event(c, e, type) {
         // Mouse Event
         {
             "name": "MouseEvent",
-            "properties":
-            {
+            "properties": {
                 "type": type,
                 "pos": pos,
                 "button": e.button,
@@ -52,7 +50,7 @@ function gen_mouse_event(c, e, type) {
     return event;
 };
 
-function gen_key_event(c, e, type){
+function gen_key_event(c, e, type) {
     var modifiers = get_modifiers(e);
     var event = {
         "source": "browser",
@@ -60,8 +58,7 @@ function gen_key_event(c, e, type){
         // Key Event
         {
             "name": "KeyEvent",
-            "properties":
-            {
+            "properties": {
                 "type": type,
                 "key": get_key(e),
                 "modifiers": modifiers,
@@ -71,9 +68,20 @@ function gen_key_event(c, e, type){
     return event;
 };
 
-require(["widgets/js/widget"], function(WidgetManager){
+function send_timer_event(w) {
+    var event = {
+        "event":
+        // Timer Event
+        {
+            "name": "TimerEvent",
+        }
+    };
+    w.send(event);
+};
+
+require(["widgets/js/widget"], function(WidgetManager) {
     var Widget = IPython.DOMWidgetView.extend({
-        render: function(){
+        render: function() {
             this.$canvas = $('<canvas />')
                 .attr('id', 'canvas')
                 .attr('tabindex', '1')
@@ -96,6 +104,8 @@ require(["widgets/js/widget"], function(WidgetManager){
                 'is_button_pressed': 0,
                 'last_pos': [-1, -1],
             };
+
+            this.c.timer = setInterval(send_timer_event, 1000, this);
         },
 
         events: {
@@ -111,7 +121,7 @@ require(["widgets/js/widget"], function(WidgetManager){
             var event = gen_mouse_event(this.c, e, "mouse_move");
             var pos = event.event.properties.pos;
             var last_pos = this.c._eventinfo.last_pos;
-            if(pos[0] != last_pos[0] || pos[1] != last_pos[1])
+            if (pos[0] != last_pos[0] || pos[1] != last_pos[1])
                 this.send(event);
             this.c._eventinfo.last_pos = pos;
         },
@@ -132,7 +142,7 @@ require(["widgets/js/widget"], function(WidgetManager){
 
         mouse_wheel: function(e) {
             var event = gen_mouse_event(this.c, e, "mouse_wheel");
-            var delta = [e.originalEvent.wheelDeltaX/120, e.originalEvent.wheelDeltaY/120];
+            var delta = [e.originalEvent.wheelDeltaX / 120, e.originalEvent.wheelDeltaY / 120];
             event.event.properties.delta = delta;
             this.send(event);
             // Keep page from scrolling
@@ -150,7 +160,7 @@ require(["widgets/js/widget"], function(WidgetManager){
         },
 
         // Update, whenever value attribute of our widget changes
-        update : function(){
+        update: function() {
             this.c.width = this.model.get("width");
             this.c.height = this.model.get("height");
             var img_str = this.model.get("value");
