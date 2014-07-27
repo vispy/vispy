@@ -47,53 +47,44 @@ class ShaderObject(object):
     def __init__(self):
         # emitted when any part of the code for this object has changed,
         # including dependencies.
-        self.code_changed = EventEmitter()
-        
-        # emitted when the expression for this object has changed.
-        self.expr_changed = EventEmitter()
+        self.changed = EventEmitter()
         
         # objects that must be declared before this object's declaration.
         self._deps = []
         
-    @property
-    def declaration(self):
-        """ Return the GLSL declaration for this object.
+    def declaration(self, obj_names):
+        """ Return the GLSL declaration for this object. Use *obj_names* to
+        determine the names of dependencies.
         """
         return None
     
-    @property
-    def expression(self):
+    def expression(self, obj_names):
         """ Return the GLSL expression used to reference this object.
         """
-        raise NotImplementedError()
+        return obj_names[self]
     
-    @property
     def dependencies(self):
-        """ Return all dependencies required to use this object.
+        """ Return all dependencies required to use this object. The last item 
+        in the list is *self*.
         """
-        alldeps = [self]
+        alldeps = []
         for dep in self._deps:
             alldeps.extend(dep._dependencies())
+        alldeps.append(self)
         return alldeps
         
     def _add_dep(self, dep):
         self._deps.append(dep)
-        dep.expr_changed.connect(self._dep_expr_changed)
-        dep.code_changed.connect(self._dep_code_changed)
+        dep.changed.connect(self._dep_changed)
 
     def _remove_dep(self, dep):
         self._deps.remove(dep)
         dep.changed.disconnect(self._dep_changed)
         
-    def _dep_expr_changed(self, event):
+    def _dep_changed(self, event):
         """ Called when a dependency's expression has changed.
         """
         self.changed()
-    
-    def _dep_code_changed(self, event):
-        """ Called when a dependency's code has changed.
-        """
-        self.code_changed()
     
 
 class Function(ShaderObject):
@@ -244,14 +235,14 @@ class Function(ShaderObject):
             code = code._code
         elif not isinstance(code, string_types):
             raise ValueError('Function needs a string or Function.')
-        self._code = code.strip()
+        self._code = self._clean_code(code)
         
         # Get some information derived from the code
         try:
             self._signature = parsing.parse_function_signature(self._code)
         except Exception as err:
             raise ValueError('Invalid code: ' + str(err))
-        self._name = self._oname = self._signature[0]
+        self._name = self._signature[0]
         self._template_vars = self._parse_template_vars()
         
         # Expressions replace template variables (also our dependencies)
@@ -264,11 +255,11 @@ class Function(ShaderObject):
         self._post_hooks = OrderedDict()
         
         # Toplevel vertex/fragment shader funtctions can be linked
-        self._linked = None
+        #self._linked = None
         
         # flags to be able to indicate whether code has changed
-        self._last_changed = time.time()
-        self._last_compiled = 0.0 
+        #self._last_changed = time.time()
+        #self._last_compiled = 0.0 
     
     def __setitem__(self, key, val):
         """ Setting of replacements through a dict-like syntax.
@@ -300,6 +291,7 @@ class Function(ShaderObject):
             return 
         
         # Store if value is different from current
+        # todo: I think this conditional will always fail..
         if val is not self._expressions.get(key, None):
             val = _convert_to_expression(val, altname=key)
             self._expressions[key] = val
@@ -336,8 +328,6 @@ class Function(ShaderObject):
         """ Set the signature for this function and return an FunctionCall
         object. Each argument can be verbatim code or a FunctionCall object.
         """
-        # Ensure all expressions
-        args = [_convert_to_expression(a) for a in args]
         # Return FunctionCall object
         return FunctionCall(self, args)
     
@@ -356,19 +346,19 @@ class Function(ShaderObject):
         """
         return self._name
     
-    def ischanged(self, since=None):
-        """ Whether the code has been modified since the last time it
-        was compiled, or since the given time.
-        """
-        since = since or self._last_compiled
-        ischanged = True
-        if since > self._last_changed:
-            for dep in self._dependencies(True):
-                if since < dep._last_changed:
-                    break
-            else:
-                ischanged = False
-        return ischanged
+    #def ischanged(self, since=None):
+        #""" Whether the code has been modified since the last time it
+        #was compiled, or since the given time.
+        #"""
+        #since = since or self._last_compiled
+        #ischanged = True
+        #if since > self._last_changed:
+            #for dep in self._dependencies(True):
+                #if since < dep._last_changed:
+                    #break
+            #else:
+                #ischanged = False
+        #return ischanged
     
     def replace(self, str1, str2):
         """ Set verbatim code replacement
@@ -386,7 +376,8 @@ class Function(ShaderObject):
         """
         if str2 != self._replacements.get(str1, None):
             self._replacements[str1] = str2
-            self._last_changed = time.time()
+            self.changed()
+            #self._last_changed = time.time()
     
     def get_variables(self):
         """ Get a list of all variable objects defined in the current program.
@@ -395,27 +386,27 @@ class Function(ShaderObject):
         deps = self._dependencies(True)
         return [dep for dep in deps.keys() if isinstance(dep, Variable)]
     
-    def link(self, frag_func):
-        """ Link a vertex and fragment shader
+    #def link(self, frag_func):
+        #""" Link a vertex and fragment shader
         
-        Both functions need to represent main-functions. When the vertex
-        and fragment shader are linked, the scope for name mangling is
-        shared, and it allows for setting varyings
-        """
-        # Check 
-        if not isinstance(frag_func, Function):
-            raise ValueError('Can only link to a Function object.')
-        if not self.name == 'main':
-            raise ValueError('Can only link if this is a main-function.')
-        if not frag_func.name == 'main':
-            raise ValueError('Can only link to a main-function.')
-        # Apply
-        vert_func = self
-        vert_func._linked = frag_func, 'vertex'
-        frag_func._linked = vert_func, 'fragment'
-        # After linking we likely need renaming
-        vert_func._last_changed = time.time()
-        frag_func._last_changed = time.time()
+        #Both functions need to represent main-functions. When the vertex
+        #and fragment shader are linked, the scope for name mangling is
+        #shared, and it allows for setting varyings
+        #"""
+        ## Check 
+        #if not isinstance(frag_func, Function):
+            #raise ValueError('Can only link to a Function object.')
+        #if not self.name == 'main':
+            #raise ValueError('Can only link if this is a main-function.')
+        #if not frag_func.name == 'main':
+            #raise ValueError('Can only link to a main-function.')
+        ## Apply
+        #vert_func = self
+        #vert_func._linked = frag_func, 'vertex'
+        #frag_func._linked = vert_func, 'fragment'
+        ## After linking we likely need renaming
+        #vert_func._last_changed = time.time()
+        #frag_func._last_changed = time.time()
     
     ## Private methods
     
@@ -431,19 +422,21 @@ class Function(ShaderObject):
             template_vars.add(var)
         return template_vars
     
-    def _rename(self, name):
-        """ Set the name to be applied when compiling this function.
-        """
-        if self.name == 'main':
-            raise ValueError('Cannot rename the main function.')
-        self._name = name
-        self._last_changed = time.time()
+    #def _rename(self, name):
+        #""" Set the name to be applied when compiling this function.
+        #"""
+        #if self.name == 'main':
+            #raise ValueError('Cannot rename the main function.')
+        #self._name = name
+        #self._last_changed = time.time()
         
-    def _get_replaced_code(self):
+    def _get_replaced_code(self, names):
         """ Return code, with new name, expressions, and replacements applied.
         """
         code = self._code
         # Modify name
+        # todo: there is a bug here--it would replace "prefix_oname(" 
+        #       with "prefix_name("
         code = code.replace(self._oname+'(', self._name+'(')
         # Apply plain replacements
         for key, val in self._replacements.items():
@@ -737,6 +730,17 @@ class FunctionCall(ShaderObject):
     def __init__(self, function, args):
         if not isinstance(function, Function):
             raise ValueError('FunctionCall needs a Function')
+        
+        sig_len = len(function._signature[1])
+        if len(args) != sig_len:
+            raise ValueError('Function %s requires %d arguments (got %d)' %
+                             (function, sig_len, len(args)))
+        
+        # Ensure all expressions
+        sig = function._signature[1]
+        args = [_convert_to_expression(args[i], altname=sig[i][1]) 
+                for i in range(len(args))]
+        
         self._function = function
         self._args = args
         self._expr = None
