@@ -282,7 +282,7 @@ def assert_image_equal(image, reference):
             if diff < min_diff:
                 min_diff = diff
     try:
-        assert min_diff < 10
+        assert min_diff <= 40
     except AssertionError:
         _save_failed_test(image, reference)
         raise
