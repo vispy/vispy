@@ -95,6 +95,45 @@ class SceneEvent(Event):
         """
         return self.canvas.pop_fbo()
     
+    def entity_transform(self, entity):
+        """ Return transform that maps from local coordinate system of *entity*
+        to the root of the scenegraph.
+        """
+        # find where entity's ancestry first intersects the current path
+        path = []
+        while True:
+            if entity is None:
+                path.insert(0, entity)
+                break
+            elif entity not in self._stack:
+                path.insert(0, entity)
+                
+                # todo: if this fails, raise a nice exception explaining
+                #       the problem.
+                entity = entity.parent
+            else:
+                ind = self._stack.index(entity)
+                path = self._stack[:ind+1] + path
+                break
+        
+        tr = [e.transform for e in path]
+        # TODO: cache transform chains
+        return ChainTransform(tr)
+    
+    def map_entity_to_doc(self, entity, obj):
+        return self.entity_transform(entity).map(obj)
+    
+    def map_doc_to_entity(self, entity, obj):
+        return self.entity_transform(entity).imap(obj)
+        
+    def map_entity_to_fb(self, entity, obj):
+        tr = self.canvas.fb_transform * self.entity_transform(entity)
+        return tr.map(obj)
+    
+    def map_fb_to_entity(self, entity, obj):
+        tr = self.canvas.fb_transform * self.entity_transform(entity)
+        return tr.imap(obj)
+    
     # todo: I think "root_transform" is more descriptive (LC)
     #       or perhaps "scene_transform"
     @property
@@ -121,11 +160,19 @@ class SceneEvent(Event):
 
     @property
     def fb_transform(self):
+        """ Transform mapping from the local coordinate system of the current
+        entity to the framebuffer coordinate system.
+        """
         return self.canvas.fb_transform * self.full_transform
     
     def map_to_fb(self, obj):
         return self.fb_transform.map(obj)
 
+    def map_from_fb(self, obj):
+        return self.fb_transform.imap(obj)
+
+    # todo: need to disambiguate this from the doc cs, which is *usually* the
+    #       same, but may be separate in some rare situations.
     @property
     def canvas_transform(self):
         """

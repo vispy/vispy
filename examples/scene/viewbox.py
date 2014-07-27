@@ -65,6 +65,7 @@ vb11 = scene.ViewBox(vb1.scene, name='vb11', margin=0.02, border=(0, 1, 0, 1))
 vb11.pos = -1.0, -1.0
 vb11.size = 2.0, 1.0
 vb11.scene.camera = scene.cameras.TwoDCamera()
+vb11.scene.camera.transform.scale = (2., 2.)
 #
 vb12 = scene.ViewBox(vb1.scene, name='vb12', margin=0.02, border=(0, 0, 1, 1))
 vb12.pos = -1.0, 0.0
@@ -92,6 +93,7 @@ vb21 = scene.ViewBox(vb2.scene, name='vb21', margin=10, border=(1, 0, 1, 1))
 vb21.pos = 0, 0
 vb21.size = 400, 300
 vb21.scene.camera = scene.cameras.TwoDCamera()
+vb21.scene.camera.transform.scale = (2., 2.)
 #
 vb22 = scene.ViewBox(vb2.scene, name='vb22', margin=10, border=(0, 1, 1, 1))
 vb22.pos = 0, 300

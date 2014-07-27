@@ -58,16 +58,22 @@ class PixelCamera(Camera):
     is in the upper left.
     """
     def get_projection(self, event):
-        w, h = event.resolution
+        # find bounds of our viewbox relative to the document coordinate system
+        vb = event.viewbox
+        corners = np.array([[0, 0], list(vb.size)])
+        mapped = event.map_entity_to_doc(vb, corners)[:, :2]
+        
+        # size of viewbox relative to doc cs
+        mapped_size = abs(mapped[1] - mapped[0])
+        
+        # corners of visible coordinate system in scene
+        scene_corners = np.array([[0, 0], mapped_size])
+        ul = scene_corners.min(axis=0)
+        br = scene_corners.max(axis=0)
+        
+        # return transform that maps viewbox bounds to unit box
         trans = transforms.STTransform()
-        if True:
-            # Origin in top left (flipped y-axis)
-            trans.scale = 2.0/w, -2.0/h
-            trans.translate = -1, 1
-        else:
-            # Origin in bottom left
-            trans.scale = 2.0/w, 2.0/h
-            trans.translate = -1, -1
+        trans.set_mapping([ul, br], [[-1, 1], [1, -1]])
         return trans
 
 
