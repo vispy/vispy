@@ -112,7 +112,6 @@ install:
 
     # Install vispy
     - cd ${SRC_DIR}
-    - python setup.py build
     - python setup.py install
     - cd ~
 
