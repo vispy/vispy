@@ -1,22 +1,17 @@
 """
-Implementation of a function object for re-using and composing
-GLSL snippets. See the docstring of Function for details.
+Classses representing GLSL objects (functions, variables, etc) that may be
+composed together to create complete shaders. 
+See the docstring of Function for details.
 
 Details
 -------
 
-Each function object keeps track of a dict of Expression objects to
-replace template variables with. When composing the final code, the
-dependencies are collected recursively and the replacements are applied
-on the code of each function object, using the expressions associated
-with that object. In effect, expressions are local to the Function
-object on which they are set. Expression can be applied after composing
-the Function object.
-
-The function class is considered a friend class of the Expression
-classes. It uses the _dependencies() and _injection() methods, and for
-Variable also the _rename() and _definition().
-
+A complete GLSL program is composed of ShaderObjects, each of which may be used
+inline as an expression, and some of which include a declaration that must be
+included on the final code. ShaderObjects kepp track of a hierarchy of
+dependencies so that all necessary code is included at compile time, and
+changes made to any object may be propagated to the root of the hierarchy to 
+trigger a recompile.
 """
 
 import time
@@ -41,10 +36,28 @@ class ShaderObject(object):
     *expression* that is used to reference the object, and a set of 
     *dependencies* that must be declared before the object is used.
     
-    Dependencies are tracked hierarchically such that changes to the 
-    *expression* of any object will invalidate the *declaration* of its 
-    dependents.
+    Dependencies are tracked hierarchically such that changes to any object
+    will be propagated up the dependency hierarchy to trigger a recompile.
     """
+    @classmethod
+    def create(self, obj, ref=None):
+        """ Convert *obj* to a new ShaderObject. If the output is a Variable
+        with no name, then set its name using *ref*. 
+        """
+        if isinstance(ref, Variable):
+            ref = ref.name
+                    
+        if isinstance(obj, ShaderObject):
+            if isinstance(obj, Variable) and obj.name is None:
+                obj.name = ref
+        elif isinstance(obj, string_types):
+            obj = TextExpression(obj)
+        else:
+            obj = Variable(ref, obj)
+        
+        return obj
+        
+    
     def __init__(self):
         # emitted when any part of the code for this object has changed,
         # including dependencies.
@@ -65,7 +78,7 @@ class ShaderObject(object):
         return None
     
     def expression(self, obj_names):
-        """ Return the GLSL expression used to reference this object.
+        """ Return the GLSL expression used to reference this object inline.
         """
         return obj_names[self]
     
@@ -114,78 +127,78 @@ class Function(ShaderObject):
     snippets. Each Function consists of a GLSL snippet in the form of
     a function. The code may have template variables that start with
     the dollar sign. These stubs can be replaced with expressions using
-    the index operation. Expressions can be plain text, variables
-    (const, uniform, attribute, varying, inout), or function calls.
+    the index operation. Expressions can be plain text or any ShaderObject
+    that defines an expression() method.
     
     Example
     -------
     
-    This example shows the basic usage of the Function class.
-    
+    This example shows the basic usage of the Function class::
+
         vert_code_template = Function('''
             void main() {
             gl_Position = $pos;
             gl_Position.x += $xoffset;
             gl_Position.y += $yoffset;
         }''')
-        
+
         scale_transform = Function('''
         vec4 transform_scale(vec4 pos){
             return pos * $scale;
         }''')
-        
-        # If you get the function from a snipped collection, always
+
+        # If you get the function from a snippet collection, always
         # create new Function objects to ensure they are 'fresh'.
         vert_code = Function(vert_code_template)
         trans1 = Function(scale_transform)
         trans2 = Function(scale_transform)  # trans2 != trans1
-        
-        # Three ways to assign to template variables
-        vert_code['xoffset'] = '3.0'  # Assign verbatim code
-        vert_code['yoffset'] = 'uniform float offset'  # Assign a variable
+
+        #
+        # Three ways to assign to template variables:
+        #
+        # 1) Assign verbatim code
+        vert_code['xoffset'] = '(3.0 / 3.1415)'
+
+        # 2) Assign a value (this creates a new uniform or attribute)
+        vert_code['yoffset'] = 5.0
+
+        # 3) Assign a function call expression
         pos_var = 'attribute vec4 a_position'
-        vert_code['pos'] = trans1(trans2(pos_var))  # Assign a function call
-        
+        vert_code['pos'] = trans1(trans2(pos_var))  
+
         # Transforms also need their variables set
-        trans1['scale'] = 'uniform float scale'
-        trans2['scale'] = 'uniform float scale'
-        
+        trans1['scale'] = 0.5
+        trans2['scale'] = (1.0, 0.5, 1.0, 1.0)
+
         # You can actually change any code you want, but use this with care!
         vert_code.replace('gl_Position.y', 'gl_Position.z')
-        
-        # Finally, you can set special variables explicitly
-        vert_code['gl_PointSize'] = 'uniform float u_pointsize'
+
+        # Finally, you can set special variables explicitly. This generates
+        # a new statement at the end of the vert_code function.
+        vert_code['gl_PointSize'] = 10.
     
-    If we use ``str(vert_code)`` we get:
     
-        uniform float offset;
-        uniform float scale_1;
-        uniform float scale_2;
-        attribute vec4 a_position;
-        uniform float u_pointsize;
-        
-        vec4 transform_scale_1(vec4);
-        vec4 transform_scale_2(vec4);
-        void foo();
-        
-        void main() {
-            gl_Position = transform_scale_1(transform_scale_2(a_position));
-            gl_Position.x += 3.0;
-            gl_Position.z += offset;
-        
-            foo();
-            gl_PointSize = u_pointsize;
+    If we use ``str(vert_code)`` we get::
+
+        uniform float scale;
+        vec4 transform_scale(vec4 pos){
+            return pos * scale;
         }
-        
+
+        uniform vec4 scale_1;
         vec4 transform_scale_1(vec4 pos){
             return pos * scale_1;
         }
-        
-        vec4 transform_scale_2(vec4 pos){
-            return pos * scale_2;
+
+        uniform float gl_PointSize;
+        uniform float yoffset;
+        void main() {
+            gl_Position = transform_scale(transform_scale_1(attribute vec4 a_position));
+            gl_Position.x += (3.0 / 3.1415);
+            gl_Position.z += yoffset;
+
+            gl_PointSize = gl_PointSize;
         }
-        
-        void foo(){...}
     
     Note how the two scale function resulted in two different functions
     and two uniforms for the scale factors.
@@ -319,18 +332,7 @@ class Function(ShaderObject):
                 
         # Add new references
         if val is not None:
-            # If val is not a string or ShaderObject, then we convert it
-            # to a Variable automatically (scalars, tuples, VBOs, etc.)
-            if not isinstance(val, string_types + (ShaderObject,)):
-                
-                # If key is a Variable, then we can use its name to set the 
-                # name of the new Variable. Note that the Compiler will take
-                # care of disambiguating these names. 
-                if isinstance(key, Variable):
-                    vname = key.name
-                else:
-                    vname = key
-                val = Variable(vname, val)
+            val = ShaderObject.create(val, ref=key)
                 
             if isinstance(key, Varying):
                 # tell this varying to inherit properties from 
@@ -343,8 +345,8 @@ class Function(ShaderObject):
                     self.add_dep(obj)
 
         # In case of verbatim text, we might have added new template vars
-        if isinstance(val, string_types):
-            for var in parsing.find_template_variables(val):
+        if isinstance(val, TextExpression):
+            for var in parsing.find_template_variables(val.expression()):
                 if var not in self._template_vars:
                     self._template_vars.add(var.lstrip('$'))
         
@@ -462,18 +464,19 @@ class Function(ShaderObject):
                 key = names[key]
             if isinstance(val, ShaderObject):
                 val = val.expression(names)
-            line = '\n    %s = %s;' % (key, val)
+            line = '    %s = %s;' % (key, val)
             post_lines.append(line)
             
         # Apply placeholders for hooks
-        post_text = ''.join(post_lines) + '\n'
+        post_text = '\n'.join(post_lines)
+        if post_text:
+            post_text = '\n' + post_text + '\n'
         code = code.rpartition('}')
         code = code[0] + post_text + code[1] + code[2]
         
         # Apply template variables
         for key, val in self._expressions.items():
-            if isinstance(val, ShaderObject):
-                val = val.expression(names)
+            val = val.expression(names)
             search = r'\$' + key + r'($|[^a-zA-Z0-9_])'
             code = re.sub(search, val+r'\1', code)
 
@@ -485,7 +488,7 @@ class Function(ShaderObject):
                            '  replacements made: %s' % 
                            (v, self._expressions.keys()))
         
-        return code
+        return code + '\n'
     
     def declaration(self, names):
         return self._get_replaced_code(names)
@@ -662,7 +665,24 @@ class Varying(Variable):
         self.changed()
 
 
-class FunctionCall(ShaderObject):
+class Expression(ShaderObject):
+    def declaration(self, names):
+        # expressions are declared inline.
+        return None
+    
+
+class TextExpression(Expression):
+    """ Plain GLSL text to insert inline.
+    """
+    def __init__(self, text):
+        super(TextExpression, self).__init__()
+        self._text = text
+        
+    def expression(self, names=None):
+        return self._text
+
+
+class FunctionCall(Expression):
     """ Representation of a call to a function
     
     Essentially this is container for a Function along with its
@@ -686,20 +706,17 @@ class FunctionCall(ShaderObject):
         sig = function._signature[1]
         
         self._function = function
-        self._args = args
-        self._expr = None
+        
+        # Convert all arguments to ShaderObject, using arg name if possible.
+        self._args = [ShaderObject.create(arg, ref=sig[i][1]) 
+                      for i,arg in enumerate(args)]
         
         self.add_dep(function)
-        for arg in args:
-            if isinstance(arg, ShaderObject):
-                self.add_dep(arg)
+        for arg in self._args:
+            self.add_dep(arg)
     
     def __repr__(self):
         return '<FunctionCall %r for at 0x%x>' % (self.name, id(self))
-    
-    def declaration(self, names):
-        # expressions are declared inline.
-        return None
     
     @property
     def function(self):

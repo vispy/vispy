@@ -8,8 +8,9 @@ import re
 class Compiler(object):
     """
     Compiler is used to convert Function and Variable instances into 
-    ready-to-use GLSL code. This class selects names for all anonymous objects
-    to avoid name collisions, and caches these names to speed up recompilation.
+    ready-to-use GLSL code. This class handles name mangling to ensure that
+    there are no name collisions amongst global objects. The final name of
+    each object may be retrieved using ``Compiler.__getitem__(obj)``.
     
     Accepts multiple root Functions as keyword arguments. ``compile()`` then
     returns a dict of GLSL strings with the same keys.
@@ -42,14 +43,9 @@ class Compiler(object):
         return self._object_names[item]
 
     def compile(self):
+        """ Compile all code and return a dict {name: code} where the keys 
+        are determined by the keyword arguments passed to __init__().
         """
-        
-        objects   Structure describing shaders and objects to be compiled.
-                  {'shader_name': {object: name, ...}, ...}
-        names     Dict of pre-existing names to avoid.
-        prefix    String prefix to use when selecting object names.
-        """
-        
         # map of {name: object} for this compilation
         self.namespace = namespace = {}
 
@@ -87,13 +83,13 @@ class Compiler(object):
                 
                 declared.add(dep)
             
-            compiled[name] = '\n\n'.join(code)
+            compiled[name] = '\n'.join(code)
             
+        self.code = compiled
         return compiled
 
     def _suggest_name(self, name):
-        """
-        Suggest a name similar to *name* that does not exist in *ns*.
+        """ Suggest a name similar to *name* that does not exist in *ns*.
         """
         if name == 'main':  # do not rename main functions
             return name
