@@ -46,10 +46,8 @@ class ModularProgram(Program):
         self.shaders[0].code = code['vert']
         self.shaders[1].code = code['frag']
         
-        logger.debug('==== Vertex Shader ====')
-        logger.debug(code['vert'])
-        logger.debug('==== Fragment shader ====')
-        logger.debug(code['frag'])
+        logger.debug('==== Vertex Shader ====\n\n' + code['vert'] + "\n")
+        logger.debug('==== Fragment shader ====\n\n' + code['frag'] + "\n")
         
         self._create_variables()  # force update
         self._variable_state = {}

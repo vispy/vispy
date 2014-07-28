@@ -327,6 +327,12 @@ class Function(ShaderObject):
                 else:
                     vname = key
                 val = Variable(vname, val)
+                
+            if isinstance(key, Variable):
+                # tell this varying to inherit properties from 
+                # its source attribute.
+                key.link(val)
+                
             storage[key] = val
             for obj in (key, val):
                 if isinstance(obj, ShaderObject):
@@ -501,7 +507,7 @@ class Function(ShaderObject):
             post_lines.append(line)
             
         # Apply placeholders for hooks
-        post_text = ''.join(post_lines)
+        post_text = ''.join(post_lines) + '\n'
         code = code.rpartition('}')
         code = code[0] + post_text + code[1] + code[2]
         
@@ -732,12 +738,13 @@ class Variable(ShaderObject):
             elif isinstance(value, (int, np.integer)):
                 self.dtype = 'int'
             else:
-                raise TypeError("Unknown data type %r" % type(value))
+                raise TypeError("Unknown data type %r for variable %r" % 
+                                (type(value), self))
         elif hasattr(value, 'glsl_type'):
             self._vtype, self._dtype = value.glsl_type
         else:
-            print(value, value.glsl_type)
-            raise TypeError("Unknown data type %r" % type(value))
+            raise TypeError("Unknown data type %r for variable %r" % 
+                            (type(value), self))
             
         self.changed()
     
@@ -771,19 +778,19 @@ class Variable(ShaderObject):
             raise RuntimeError("Variable has no vtype: %r" % self)
         if self.dtype is None:
             raise RuntimeError("Variable has no dtype: %r" % self)
-        print(self.name, self.vtype, self.dtype)
         
         name = names[self]
-        if self._vtype == 'const':
-            return '%s %s %s = %s;' % (self._vtype, self._dtype, name, 
+        if self.vtype == 'const':
+            return '%s %s %s = %s;' % (self.vtype, self.dtype, name, 
                                        self.value)
         else:
-            return '%s %s %s;' % (self._vtype, self._dtype, name)
+            return '%s %s %s;' % (self.vtype, self.dtype, name)
 
 
 class Varying(Variable):
-    def __init__(self, name):
-        Variable.__init__(self, name, vtype='varying')
+    def __init__(self, name, dtype=None):
+        self._link = None
+        Variable.__init__(self, name, vtype='varying', dtype=dtype)
         
     @property
     def value(self):
@@ -793,11 +800,26 @@ class Varying(Variable):
     
     @value.setter
     def value(self, value):
-        if value is None:
-            return
-        assert isinstance(value, Variable)
-        self._dtype = Variable._dtype
-        
+        if value is not None:
+            raise TypeError("Cannot assign value directly to varying.")
+    
+    @property
+    def dtype(self):
+        if self._dtype is None:
+            if self._link is None:
+                return None
+            else:
+                return self._link.dtype
+        else:
+            return self._dtype
+
+    def link(self, var):
+        """ Link this Varying to another object from which it will derive its
+        dtype.
+        """
+        self._link = var
+        self.changed()
+
 
 class Expression(ShaderObject):
     def declaration(self, names):
@@ -840,11 +862,15 @@ class FunctionCall(Expression):
                 self.add_dep(arg)
     
     def __repr__(self):
-        return '<FunctionCall %r for at 0x%x>' % (self.expression(), id(self))
+        return '<FunctionCall %r for at 0x%x>' % (self.name, id(self))
     
     @property
     def function(self):
         return self._function
+    
+    @property
+    def dtype(self):
+        return self._function._signature[0]
     
     #def _dependencies(self):
         #d = OrderedDict()
