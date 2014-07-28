@@ -45,9 +45,6 @@ class ShaderObject(object):
     *expression* of any object will invalidate the *declaration* of its 
     dependents.
     """
-    
-    # todo: handle name, oname, rename, etc.
-    
     def __init__(self):
         # emitted when any part of the code for this object has changed,
         # including dependencies.
@@ -426,35 +423,6 @@ class Function(ShaderObject):
             self.changed()
             #self._last_changed = time.time()
     
-    #def get_variables(self):
-        #""" Get a list of all variable objects defined in the current program.
-        #When this function is linked, it gets *all* variables.
-        #"""
-        #deps = self._dependencies(True)
-        #return [dep for dep in deps.keys() if isinstance(dep, Variable)]
-    
-    #def link(self, frag_func):
-        #""" Link a vertex and fragment shader
-        
-        #Both functions need to represent main-functions. When the vertex
-        #and fragment shader are linked, the scope for name mangling is
-        #shared, and it allows for setting varyings
-        #"""
-        ## Check 
-        #if not isinstance(frag_func, Function):
-            #raise ValueError('Can only link to a Function object.')
-        #if not self.name == 'main':
-            #raise ValueError('Can only link if this is a main-function.')
-        #if not frag_func.name == 'main':
-            #raise ValueError('Can only link to a main-function.')
-        ## Apply
-        #vert_func = self
-        #vert_func._linked = frag_func, 'vertex'
-        #frag_func._linked = vert_func, 'fragment'
-        ## After linking we likely need renaming
-        #vert_func._last_changed = time.time()
-        #frag_func._last_changed = time.time()
-    
     ## Private methods
     
     def _parse_template_vars(self):
@@ -469,14 +437,6 @@ class Function(ShaderObject):
             template_vars.add(var)
         return list(template_vars)
     
-    #def _rename(self, name):
-        #""" Set the name to be applied when compiling this function.
-        #"""
-        #if self.name == 'main':
-            #raise ValueError('Cannot rename the main function.')
-        #self._name = name
-        #self._last_changed = time.time()
-        
     def _get_replaced_code(self, names):
         """ Return code, with new name, expressions, and replacements applied.
         """
@@ -527,90 +487,12 @@ class Function(ShaderObject):
         
         return code
     
-    #def _dependencies(self, also_linked=False):
-        #""" Get the dependencies (Functions and Variables) for this
-        #expression.
-        #"""
-        ## Get list of expressions, taking linking into account
-        #expressions1, expressions2 = self._expressions.values(), []
-        #if also_linked and self._linked:
-            #expressions2 = self._linked[0]._expressions.values()
-            #if self._linked[1] == 'fragment':
-                #expressions1, expressions2 = expressions2, expressions1
-        ## Collect dependencies
-        #deps = OrderedDict()
-        #for dep in expressions1:
-            #deps.update(dep._dependencies())
-        #for dep in expressions2:
-            #deps.update(dep._dependencies())
-        #return deps
-    
-    #def _definition(self):
-        #ret = self._signature[2]
-        #sig = [s[0] for s in self._signature[1]]
-        #return '%s %s(%s);' % (ret, self.name, ', '.join(sig))
-        
-        
     def declaration(self, names):
         return self._get_replaced_code(names)
 
     def expression(self, names):
         return names[self]
     
-    #def _mangle_names(self):
-        #""" Mangle names of dependencies where necessary. Objects only
-        #gets renamed if there are > 1 objects with that name, and if
-        #they are not already renamed appropriatly. We use dep._oname
-        #and dep._rename() here.
-        #"""
-        ## Collect all dependencies with the same name
-        #deps = self._dependencies(True)
-        #names = {}
-        #for dep in deps:
-            #deps_with_this_name = names.setdefault(dep._oname, [])
-            #deps_with_this_name.append(dep)
-        ## Mangle names where necessary
-        #for name, deps_with_this_name in names.items():
-            #nameset = set([dep.name for dep in deps_with_this_name])
-            #if len(nameset) > 1:
-                #nameset.discard(name)  # if > 1, all must be mangled
-            #if len(nameset) != len(deps_with_this_name):
-                #for i, dep in enumerate(deps_with_this_name):
-                    #dep._rename(dep._oname + '_' + str(i+1))
-    
-    #def _compile(self):
-        #""" Apply the replacements and add code for dependencies.
-        #Return new code string.
-        #"""
-        ## Init
-        #code = ''
-        #self._mangle_names()
-        #deps = self._dependencies()
-        ## Write header
-        #if self.name == 'main':
-            #code += '#version 120\n'  # (or not)
-        #code += '// Code generated by vispy.scene.shaders.Function\n\n'
-        ## Add variable definitions
-        #for dep in deps:
-            #if isinstance(dep, Variable):
-                #code += dep._definition() + '\n'
-        #code += '\n'
-        ## Add function definitions
-        #for dep in deps:
-            #if isinstance(dep, Function):
-                #code += dep._definition() + '\n'
-        #code += '\n'
-        ## Add our code
-        #code += self._get_replaced_code()
-        ## Add code for dependencies
-        #for dep in deps:
-            #if isinstance(dep, Function):
-                #code += '\n\n'
-                #code += dep._get_replaced_code()
-        ## Done
-        #self._last_compiled = time.time()
-        #return code.rstrip() + '\n'
-
     def _clean_code(self, code):
         """ Return *code* with indentation and leading/trailing blank lines
         removed. 
@@ -625,48 +507,6 @@ class Function(ShaderObject):
             lines = [line[min_indent:] for line in lines]
         code = "\n".join(lines)
         return code
-
-
-#class Expression(ShaderObject):
-    #""" Base class for things that template variables can be replaced with.
-    #"""
-    
-    #def _dependencies(self):
-        #""" Get the dependencies (Function and Variable objects) for this
-        #expression.
-        #"""
-        #raise NotImplementedError()
-    
-    #def _injection(self):
-        #""" Get the piece of code that is to be replaced at the template
-        #variable.
-        #"""
-        #raise NotImplementedError()
-
-
-#class TextExpression(Expression):
-    #""" Representation of a piece of verbatim code
-    #"""
-    
-    #def __init__(self, text):
-        #if not isinstance(text, string_types):
-            #raise ValueError('TextExpression needs a string.')
-        #super(TextExpression, self).__init__()
-        #self._text = text
-    
-    #def expression(self):
-        #""" The text for this expression.
-        #"""
-        #return self._text
-    
-    #def __repr__(self):
-        #return "<TextExpression %r at 0x%x>" % (self._text, id(self))
-    
-    ##def _dependencies(self):
-        ##return OrderedDict()
-    
-    ##def _injection(self):
-        ##return self._text
 
 
 class Variable(ShaderObject):
@@ -850,8 +690,6 @@ class FunctionCall(Expression):
         
         # Ensure all expressions
         sig = function._signature[1]
-        #args = [_convert_to_expression(args[i], altname=sig[i][1]) 
-                #for i in range(len(args))]
         
         self._function = function
         self._args = args
@@ -873,40 +711,9 @@ class FunctionCall(Expression):
     def dtype(self):
         return self._function._signature[0]
     
-    #def _dependencies(self):
-        #d = OrderedDict()
-        ## Add "our" function and its dependencies
-        #d[self.function] = None
-        #d.update(self.function._dependencies())
-        ## Add dependencies of each or our arguments
-        #for arg in self._signature:
-            #d.update(arg._dependencies())
-        #return d
-    
     def expression(self, names):
         str_args = [arg.expression(names) for arg in self._args]
         args = ', '.join(str_args)
         fname = self.function.expression(names)
         return '%s(%s)' % (fname, args)
     
-
-#def _convert_to_expression(val, altname=None):
-    #""" Convert input to an expression. If an expression is given, it
-    #is left unchanged. An error is raised if an Expression could not
-    #be returned.
-    #"""
-    #if isinstance(val, Expression):
-        #return val
-    #elif isinstance(val, string_types):
-        #try:
-            #return Variable(val, altname=altname)
-        #except ValueError:
-            #return TextExpression(val)
-    #elif isinstance(val, tuple):
-        #if len(val) == 2:
-            #return Variable(val[0], val[1], altname=altname)
-    #elif isinstance(val, Function):
-        ## Be friendly for people who forget to call a function
-        #raise ValueError('A Function is not an expression, it\'s "call" is.')
-    ## Else ...
-    #raise ValueError('Cannot convert to Expression: %r' % val)

@@ -12,6 +12,7 @@ from . import parsing
 from .function2 import Function, Variable
 from .compiler import Compiler
 
+
 class ModularProgram(Program):
     """
     Shader program using Function instances as basis for its shaders.
@@ -54,20 +55,6 @@ class ModularProgram(Program):
         self._create_variables()  # force update
         self._variable_state = {}
         
-        #if self.vert.ischanged():
-            #logger.debug('==== Vertex Shader ====')
-            #code = str(self.vert)
-            #logger.debug(code)
-            #self.shaders[0].code = code
-            #self._create_variables()  # force update
-        
-        #if self.frag.ischanged():
-            #logger.debug('==== Fragment shader ====')
-            #code = str(self.frag)
-            #logger.debug(code)
-            #self.shaders[1].code = code
-            #self._create_variables()  # force update
-
         # and continue.
         super(ModularProgram, self)._build()
 

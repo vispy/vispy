@@ -11,14 +11,21 @@ class Compiler(object):
     ready-to-use GLSL code. This class selects names for all anonymous objects
     to avoid name collisions, and caches these names to speed up recompilation.
     
-    Summary of procedure:
-    1. For each object to be compiled, the hierarchy of its dependencies is
-       collected.
-    2. Objects with fixed names are added to the namespace
-    3. Objecs with cached names are added to the namespace, unless the cached
-       name conflicts with another object in the namespace.
-    4. New names are assigned to all anonymous objects.
-    5. All objects are compiled and code is concatenated into a single string.
+    Accepts multiple root Functions as keyword arguments. ``compile()`` then
+    returns a dict of GLSL strings with the same keys.
+    
+    Example::
+    
+        # initialize with two main functions
+        compiler = Compiler(vert=v_func, frag=f_func)
+        
+        # compile and extract shaders
+        code = compiler.compile()
+        v_code = code['vert']
+        f_code = code['frag']
+        
+        # look up name of some object
+        name = compiler[obj]
     
     """
     def __init__(self, **objects):
@@ -27,13 +34,6 @@ class Compiler(object):
         self._object_code = {}   # {object: code}
         self.namespace = None    # {name: object}
         self.objects = objects
-
-        # Garbage collection system: keep track of all objects (functions and
-        # variables) included in the program and their referrers. When no
-        # referrers are found, remove the object from here and from
-        # the namespaces / caches.
-        # TODO: Not implemented yet..
-        self._referrers = {}  # {obj: [list of referrers]}
 
     def __getitem__(self, item):
         """
