@@ -378,6 +378,10 @@ def test_function_changed():
     fun1['var1'] = 'z'
     assert_changed(fun1)
     
+    # same value; should result in no change events
+    fun1['var1'] = 'z'
+    assert_changed()
+    
     fun1['var1'] = 0.5
     var1 = fun1['var1']
     var1.changed.connect(on_change)
@@ -399,58 +403,37 @@ def test_function_changed():
     # var2 is now connected
     var2.value = (1, 2, 3, 4)
     assert_changed(fun1, var2)
-    
     # ..but var1 no longer triggers fun1.changed
     var1.value = 0.5
     assert_changed(var1)
 
+    # test expressions
+    fun2 = Function('float fn(float x){return $var1 + x;}')
+    fun3 = Function('float fn(float x){return $var1 + x;}')
+    exp1 = fun2(fun3(0.5))
+    fun1['var2'] = exp1
+    assert_changed(fun1)
+    
+    fun2.changed.connect(on_change)
+    fun3.changed.connect(on_change)
+    exp1.changed.connect(on_change)
+    
+    fun2['var1'] = 'x'
+    assert_changed(fun1, fun2, exp1)
+    
+    fun3['var1'] = 'x'
+    assert_changed(fun1, fun3, exp1)
 
+    # test disconnect
+    fun1['var2'] = fun2
+    assert_changed(fun1)
+    # triggers change
+    fun2['var1'] = 0.9
+    assert_changed(fun1, fun2, exp1)
+    # no longer triggers change
+    fun3['var1'] = 0.9
+    assert_changed(fun3, exp1)
     
-    
-    #fun2 = Function('void main(){$var1; $var2;}')
-    #fun3 = Function('void foo(){$var1; $var2;}')
-    
-    
-    ## Get code and check
-    ##str(fun1)
-    #assert_equal(changed(), (False, False, False))
-    ## Set function and check again
-    #fun1['var1'] = fun3()
-    #assert_equal(changed(), (True, False, False))
-    ##str(fun3)
-    ##assert_equal(changed(), (True, False, False))
-    ##str(fun1)
-    ##assert_equal(changed(), (False, False, False))
-    ## Set variable on funtcion and try again
-    #fun3['var1'] = 'uniform float bla'
-    #assert_equal(changed(), (True, False, True))
-    #str(fun3)
-    ##assert_equal(changed(), (True, False, False))
-    #str(fun1)
-    ##assert_equal(changed(), (False, False, False))
-    
-    ## Dirty when linking
-    #str(fun1)
-    #str(fun2)
-    ##assert_equal(changed(), (False, False, False))
-    ##
-    ##fun1.link(fun2)
-    ##assert_equal(changed(), (True, True, False))
-    ##
-    #str(fun1)
-    ##assert_equal(changed(), (False, True, False))
-    #str(fun2)
-    ##assert_equal(changed(), (False, False, False))
-    
-    ## Again, but different order
-    ##fun1.link(fun2)
-    ##assert_equal(changed(), (True, True, False))
-    ##
-    #str(fun2)
-    ##assert_equal(changed(), (True, False, False))
-    #str(fun1)
-    ##assert_equal(changed(), (False, False, False))
-
 
 if __name__ == '__main__':
     for key in [key for key in globals()]:

@@ -322,6 +322,11 @@ class Function(ShaderObject):
         else:
             raise TypeError('In `function[key]` key must be a string or '
                             'varying.')
+
+        
+        if storage.get(key) == val:
+            # values already match; bail out now
+            return
         
         # Remove old references, if any
         oldval = storage.pop(key, None)
@@ -690,6 +695,14 @@ class TextExpression(Expression):
         
     def expression(self, names=None):
         return self._text
+
+    def __eq__(self, a):
+        if isinstance(a, TextExpression):
+            return a._text == self._text
+        elif isinstance(a, string_types):
+            return a == self._text
+        else:
+            return False
 
 
 class FunctionCall(Expression):
