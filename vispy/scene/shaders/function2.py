@@ -223,7 +223,7 @@ class Function(ShaderObject):
         vert_code['pos'] = func1('3.0', 'uniform float u_param', func2())
         
         # For scale, the sigfnature is already specified
-        code['scale'] = scale_func()  # No need to specify args
+        code['scale'] = scale_func  # No need to specify args
     
     Data for uniform and attribute variables
     ----------------------------------------
@@ -568,28 +568,38 @@ class Variable(ShaderObject):
         self._value = value
         self._state_counter += 1
         if self._type_locked:
-            self.changed()
+            # Don't emit here--this should not result in a code change.
+            #self.changed()
             return
         
         if isinstance(value, (tuple, list)):
-            self._vtype = 'uniform'
-            self._dtype = 'vec%d' % len(value)
+            vtype = 'uniform'
+            dtype = 'vec%d' % len(value)
         elif np.isscalar(value):
-            self._vtype = 'uniform'
+            vtype = 'uniform'
             if isinstance(value, (float, np.floating)):
-                self._dtype = 'float'
+                dtype = 'float'
             elif isinstance(value, (int, np.integer)):
-                self.dtype = 'int'
+                dtype = 'int'
             else:
                 raise TypeError("Unknown data type %r for variable %r" % 
                                 (type(value), self))
         elif hasattr(value, 'glsl_type'):
-            self._vtype, self._dtype = value.glsl_type
+            vtype, dtype = value.glsl_type
         else:
             raise TypeError("Unknown data type %r for variable %r" % 
                             (type(value), self))
             
-        self.changed()
+        # update vtype/dtype and emit changed event if necessary
+        changed = False
+        if self._dtype != dtype:
+            self._dtype = dtype
+            changed = True
+        if self._vtype != vtype:
+            self._vtype = vtype
+            changed = True
+        if changed:
+            self.changed()
     
     @property
     def state_id(self):
