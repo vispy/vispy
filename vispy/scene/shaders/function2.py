@@ -319,7 +319,13 @@ class Function(ShaderObject):
                 
         # Add new references
         if val is not None:
+            # If val is not a string or ShaderObject, then we convert it
+            # to a Variable automatically (scalars, tuples, VBOs, etc.)
             if not isinstance(val, string_types + (ShaderObject,)):
+                
+                # If key is a Variable, then we can use its name to set the 
+                # name of the new Variable. Note that the Compiler will take
+                # care of disambiguating these names. 
                 if isinstance(key, Variable):
                     vname = key.name
                 else:
@@ -328,7 +334,7 @@ class Function(ShaderObject):
                 
             if isinstance(key, Varying):
                 # tell this varying to inherit properties from 
-                # its source attribute.
+                # its source attribute / expression.
                 key.link(val)
                 
             storage[key] = val
