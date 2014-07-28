@@ -20,11 +20,15 @@ Variable also the _rename() and _definition().
 """
 
 import time
+import re
+import numpy as np
 
 from ...util.ordereddict import OrderedDict
+from ...util.event import EventEmitter
+from ...util import logger
 from ...ext.six import string_types
 from . import parsing
-from ..util.event import EventEmitter
+from .compiler import Compiler
 
 VARIABLE_TYPES = ('const', 'uniform', 'attribute', 'varying', 'inout')
 
@@ -47,11 +51,15 @@ class ShaderObject(object):
     def __init__(self):
         # emitted when any part of the code for this object has changed,
         # including dependencies.
-        self.changed = EventEmitter()
+        self.changed = EventEmitter(source=self, type="code_change")
         
         # objects that must be declared before this object's declaration.
         # {obj: refcount}
         self._deps = {}
+        
+    @property
+    def name(self):
+        return None
         
     def declaration(self, obj_names):
         """ Return the GLSL declaration for this object. Use *obj_names* to
@@ -70,11 +78,11 @@ class ShaderObject(object):
         """
         alldeps = []
         for dep in self._deps:
-            alldeps.extend(dep._dependencies())
+            alldeps.extend(dep.dependencies())
         alldeps.append(self)
         return alldeps
         
-    def _add_dep(self, dep):
+    def add_dep(self, dep):
         """ Increment the reference count for *dep*. If this is a new 
         dependency, then connect to its *changed* event.
         """
@@ -84,7 +92,7 @@ class ShaderObject(object):
             self._deps[dep] = 1
             dep.changed.connect(self._dep_changed)
 
-    def _remove_dep(self, dep):
+    def remove_dep(self, dep):
         """ Decrement the reference count for *dep*. If the reference count 
         reaches 0, then the dependency is removed and its *changed* event is
         disconnected.
@@ -296,7 +304,7 @@ class Function(ShaderObject):
         elif isinstance(key, string_types):
             if key in ['gl_PointSize', 'gl_Position', 'gl_FragColor']:
                 storage = self._post_hooks
-            if key in self._template_vars:
+            elif key in self._template_vars:
                 storage = self._replacements
             else:
                 raise KeyError('Invalid template variable %r' % key)
@@ -306,12 +314,19 @@ class Function(ShaderObject):
         
         # Remove old references, if any
         oldval = storage.pop(key, None)
-        for obj in (key, oldval):
-            if isinstance(obj, ShaderObject):
-                self.remove_dep(obj)
+        if oldval is not None:
+            for obj in (key, oldval):
+                if isinstance(obj, ShaderObject):
+                    self.remove_dep(obj)
                 
         # Add new references
-        if key is not None:
+        if val is not None:
+            if not isinstance(val, string_types + (ShaderObject,)):
+                if isinstance(key, Variable):
+                    vname = key.name
+                else:
+                    vname = key
+                val = Variable(vname, val)
             storage[key] = val
             for obj in (key, val):
                 if isinstance(obj, ShaderObject):
@@ -341,7 +356,7 @@ class Function(ShaderObject):
         """
         
         try:
-            return self._expressions[key]
+            return self._replacements[key]
         except KeyError:
             pass
         
@@ -354,14 +369,14 @@ class Function(ShaderObject):
         """ Set the signature for this function and return an FunctionCall
         object. Each argument can be verbatim code or a FunctionCall object.
         """
-        # Return FunctionCall object
         return FunctionCall(self, args)
     
     def __repr__(self):
         return "<Function '%s' at 0x%x>" % (self.name, id(self))
     
     def __str__(self):
-        return self._compile()
+        compiler = Compiler(func=self)
+        return compiler.compile()['func']
     
     ## Public API methods
     
@@ -462,49 +477,48 @@ class Function(ShaderObject):
         code = self._code
         
         # Modify name
-        # todo: there is a bug here--it would replace "prefix_oname(" 
-        #       with "prefix_name("
-        code = code.replace(self.name + '(', names[self] + '(')
+        code = code.replace(" " + self.name + "(", " " + names[self] + "(")
+
+        def replace(code, key, val):
+            search = r'\$' + key + r'($|[^a-zA-Z0-9_])'
+            return re.sub(search, val+r'\1', code)
         
-        # Apply plain replacements
+        # Apply string replacements first -- these may contain $placeholders
         for key, val in self._replacements.items():
-            code = code.replace(key, val)
+            if isinstance(val, string_types):
+                code = replace(code, key, val)
         
         # Apply post-hooks
-        if self.name == 'main':
-            # Add post-hook placeholder if necessary
-            if '$post_hook' not in code:
-                code = code.rpartition('}')
-                code = code[0] + '$post_hook\n' + code[1] + code[2]
+        
+        # Collect post lines
+        post_lines = []
+        for key, val in self._post_hooks.items():
+            if isinstance(key, Variable):
+                key = names[key]
+            if isinstance(val, ShaderObject):
+                val = val.expression(names)
+            line = '\n    %s = %s;' % (key, val)
+            post_lines.append(line)
             
-            # Collect post lines
-            post_lines = []
-            for key, val in self._expressions.items():
-                if isinstance(key, Variable):
-                    line = '    %s = %s;' % (names[key], val.expression(names))
-                    post_lines.append(line)
-                elif key.startswith('gl_'):
-                    line = '    %s = %s;' % (key, val.expression(names))
-                    post_lines.append(line)
-                
-            # Apply placeholders for hooks
-            post_text = '\n'.join(post_lines)
-            if post_text:
-                post_text = '\n' + post_text
-            code = code.replace('$post_hook', post_text)
+        # Apply placeholders for hooks
+        post_text = ''.join(post_lines)
+        code = code.rpartition('}')
+        code = code[0] + post_text + code[1] + code[2]
         
         # Apply template variables
-        for key, val in self._expressions.items():
-            if isinstance(key, Variable) or key.startswith('gl_'):
-                continue
-            
-            # When signature is specified, use that one instead
-            # LC: this should be handled like `func1['placeholder'] = func2`
-            #if isinstance(val, FunctionCall):
-                #code = code.replace('$'+key+'(', val.function.name+'(')
-            
-            code = code.replace('$'+key, val.expression(names))
+        for key, val in self._replacements.items():
+            if isinstance(val, ShaderObject):
+                val = val.expression(names)
+                code = replace(code, key, val)
+
         # Done
+        
+        if '$' in code:
+            v = parsing.find_template_variables(code)
+            logger.warning('Unsubstituted placeholders in code: %s\n'
+                           '  replacements made: %s' % 
+                           (v, self._replacements.keys()))
+        
         return code
     
     #def _dependencies(self, also_linked=False):
@@ -591,8 +605,7 @@ class Function(ShaderObject):
         #self._last_compiled = time.time()
         #return code.rstrip() + '\n'
 
-    @staticmethod
-    def clean_code(code):
+    def _clean_code(self, code):
         """ Return *code* with indentation and leading/trailing blank lines
         removed. 
         """
@@ -625,35 +638,29 @@ class Function(ShaderObject):
         #raise NotImplementedError()
 
 
-class Expression(ShaderObject):
-    def declaration(self, names):
-        # expressions are declared inline.
-        return None
-
-
-class TextExpression(Expression):
-    """ Representation of a piece of verbatim code
-    """
+#class TextExpression(Expression):
+    #""" Representation of a piece of verbatim code
+    #"""
     
-    def __init__(self, text):
-        if not isinstance(text, string_types):
-            raise ValueError('TextExpression needs a string.')
-        super(TextExpression, self).__init__()
-        self._text = text
+    #def __init__(self, text):
+        #if not isinstance(text, string_types):
+            #raise ValueError('TextExpression needs a string.')
+        #super(TextExpression, self).__init__()
+        #self._text = text
     
-    def expression(self):
-        """ The text for this expression.
-        """
-        return self._text
-    
-    def __repr__(self):
-        return "<TextExpression %r at 0x%x>" % (self._text, id(self))
-    
-    #def _dependencies(self):
-        #return OrderedDict()
-    
-    #def _injection(self):
+    #def expression(self):
+        #""" The text for this expression.
+        #"""
         #return self._text
+    
+    #def __repr__(self):
+        #return "<TextExpression %r at 0x%x>" % (self._text, id(self))
+    
+    ##def _dependencies(self):
+        ##return OrderedDict()
+    
+    ##def _injection(self):
+        ##return self._text
 
 
 class Variable(ShaderObject):
@@ -663,45 +670,29 @@ class Variable(ShaderObject):
 
     Created by Function.__getitem__
     """
-    
-    def __init__(self, spec, value=None, altname=None):
+    def __init__(self, name, value=None, vtype=None, dtype=None):
         super(Variable, self).__init__()
-        # Unravel spec
-        if not isinstance(spec, string_types):
-            raise ValueError('Variable should be declared using a string')
-        if not any([spec.startswith(vtype) for vtype in VARIABLE_TYPES]):
-            raise ValueError('Variable spec should start with %r, nor %r' % 
-                             (VARIABLE_TYPES, spec.split(' ')[0]))
         
-        # Init
+        # allow full declaration in first argument
+        if ' ' in name:
+            vtype, dtype, name = name.split(' ')
+        
         self._state_counter = 0
-        self._value = value
-        self._last_changed = time.time()
+        self._name = name
+        self._vtype = vtype
+        self._dtype = dtype
         
-        # Parse spec
-        spec = spec.split(' ')
-        if len(spec) == 2:
-            # Only vtype and dtype specified, use altname
-            self._vtype, self._dtype = spec
-            self._name = altname
-        elif len(spec) == 3:
-            # vtype, dtype and name specified, ignore altname
-            self._vtype, self._dtype, self._name = spec
-        elif spec[0] == 'const':
-            # Constant can define its value in the spec
-            self._vtype, self._dtype, self._name, self._value = spec
-        else:
-            raise ValueError('Invalid value for Variable: %r' % spec)
-        if not self._name:
-            raise ValueError('Variable must have a name.')
+        # If vtype/dtype were given at init, then we will never
+        # try to set these values automatically.
+        self._type_locked = self._vtype is not None and self._dtype is not None
+            
+        self.value = value
         
-        # Further init
-        self._oname = self._name
         assert self._vtype in VARIABLE_TYPES
 
     @property
     def name(self):
-        """ The (possibly mangled) name of this variable.
+        """ The name of this variable.
         """
         return self._name
     
@@ -712,10 +703,14 @@ class Variable(ShaderObject):
         return self._vtype
     
     @property
+    def dtype(self):
+        """ The type of data (float, int, vec, mat, ...).
+        """
+        return self._dtype
+    
+    @property
     def value(self):
-        """ The value associated with this variable. This class is
-        agnostic about this value, it only provides a simple mechanism
-        to associate data with a Variable object.
+        """ The value associated with this variable.
         """
         return self._value
     
@@ -723,6 +718,28 @@ class Variable(ShaderObject):
     def value(self, value):
         self._value = value
         self._state_counter += 1
+        if self._type_locked:
+            self.changed()
+            return
+        
+        if isinstance(value, (tuple, list)):
+            self._vtype = 'uniform'
+            self._dtype = 'vec%d' % len(value)
+        elif np.isscalar(value):
+            self._vtype = 'uniform'
+            if isinstance(value, (float, np.floating)):
+                self._dtype = 'float'
+            elif isinstance(value, (int, np.integer)):
+                self.dtype = 'int'
+            else:
+                raise TypeError("Unknown data type %r" % type(value))
+        elif hasattr(value, 'glsl_type'):
+            self._vtype, self._dtype = value.glsl_type
+        else:
+            print(value, value.glsl_type)
+            raise TypeError("Unknown data type %r" % type(value))
+            
+        self.changed()
     
     @property
     def state_id(self):
@@ -732,7 +749,8 @@ class Variable(ShaderObject):
         return id(self), self._state_counter
 
     def __repr__(self):
-        return ("<Variable %r at 0x%x>" % (self._definition()[:-1], id(self)))
+        return ("<Variable \"%s %s %s\" at 0x%x>" % (self._vtype, self._dtype, 
+                                                     self.name, id(self)))
     
     #def _dependencies(self):
         #d = OrderedDict()
@@ -749,12 +767,42 @@ class Variable(ShaderObject):
         self.expr_changed()
     
     def declaration(self, names):
+        if self.vtype is None:
+            raise RuntimeError("Variable has no vtype: %r" % self)
+        if self.dtype is None:
+            raise RuntimeError("Variable has no dtype: %r" % self)
+        print(self.name, self.vtype, self.dtype)
+        
         name = names[self]
         if self._vtype == 'const':
             return '%s %s %s = %s;' % (self._vtype, self._dtype, name, 
                                        self.value)
         else:
             return '%s %s %s;' % (self._vtype, self._dtype, name)
+
+
+class Varying(Variable):
+    def __init__(self, name):
+        Variable.__init__(self, name, vtype='varying')
+        
+    @property
+    def value(self):
+        """ The value associated with this variable.
+        """
+        return self._value
+    
+    @value.setter
+    def value(self, value):
+        if value is None:
+            return
+        assert isinstance(value, Variable)
+        self._dtype = Variable._dtype
+        
+
+class Expression(ShaderObject):
+    def declaration(self, names):
+        # expressions are declared inline.
+        return None
 
 
 class FunctionCall(Expression):
@@ -767,6 +815,8 @@ class FunctionCall(Expression):
     """
     
     def __init__(self, function, args):
+        super(FunctionCall, self).__init__()
+        
         if not isinstance(function, Function):
             raise ValueError('FunctionCall needs a Function')
         
@@ -777,8 +827,8 @@ class FunctionCall(Expression):
         
         # Ensure all expressions
         sig = function._signature[1]
-        args = [_convert_to_expression(args[i], altname=sig[i][1]) 
-                for i in range(len(args))]
+        #args = [_convert_to_expression(args[i], altname=sig[i][1]) 
+                #for i in range(len(args))]
         
         self._function = function
         self._args = args
@@ -813,23 +863,23 @@ class FunctionCall(Expression):
         return '%s(%s)' % (fname, args)
     
 
-def _convert_to_expression(val, altname=None):
-    """ Convert input to an expression. If an expression is given, it
-    is left unchanged. An error is raised if an Expression could not
-    be returned.
-    """
-    if isinstance(val, Expression):
-        return val
-    elif isinstance(val, string_types):
-        try:
-            return Variable(val, altname=altname)
-        except ValueError:
-            return TextExpression(val)
-    elif isinstance(val, tuple):
-        if len(val) == 2:
-            return Variable(val[0], val[1], altname=altname)
-    elif isinstance(val, Function):
-        # Be friendly for people who forget to call a function
-        raise ValueError('A Function is not an expression, it\'s "call" is.')
-    # Else ...
-    raise ValueError('Cannot convert to Expression: %r' % val)
+#def _convert_to_expression(val, altname=None):
+    #""" Convert input to an expression. If an expression is given, it
+    #is left unchanged. An error is raised if an Expression could not
+    #be returned.
+    #"""
+    #if isinstance(val, Expression):
+        #return val
+    #elif isinstance(val, string_types):
+        #try:
+            #return Variable(val, altname=altname)
+        #except ValueError:
+            #return TextExpression(val)
+    #elif isinstance(val, tuple):
+        #if len(val) == 2:
+            #return Variable(val[0], val[1], altname=altname)
+    #elif isinstance(val, Function):
+        ## Be friendly for people who forget to call a function
+        #raise ValueError('A Function is not an expression, it\'s "call" is.')
+    ## Else ...
+    #raise ValueError('Cannot convert to Expression: %r' % val)

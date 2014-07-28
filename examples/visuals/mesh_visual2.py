@@ -14,7 +14,7 @@ import numpy as np
 #from ...import gloo
 
 from vispy.scene.visuals.visual import Visual
-from vispy.scene.shaders.function2 import Function, Variable
+from vispy.scene.shaders.function2 import Function, Variable, Varying
 from vispy.scene.shaders.program import ModularProgram
 from vispy import gloo
 
@@ -87,7 +87,7 @@ class Mesh(Visual):
         self._variables['a_color4'] = Variable('attribute vec4 a_color')
         
         # Set color to a varying
-        self._program.frag['color'] = 'varying vec4 v_color'
+        self._program.frag['color'] = Varying('v_color')
         
         # Init
         self.shading = 'plain'
@@ -99,7 +99,7 @@ class Mesh(Visual):
     
     def set_vertices(self, vertices):
         vertices = gloo.VertexBuffer(vertices)
-        self._program.vert['position'] = 'attribute vec3 a_position', vertices
+        self._program.vert['position'] = vertices
     
     def set_faces(self, faces):
         if faces is not None:
@@ -143,7 +143,7 @@ class Mesh(Visual):
             
             elif values.shape[1] == 3:
                 # Explicitly set color per vertex
-                varying = Variable('varying vec3 v_color')
+                varying = Varying('v_color')
                 self._program.frag['color'] = color3to4(varying)
                 variable = self._variables['a_color3']
                 variable.value = gloo.VertexBuffer(values)
@@ -152,7 +152,7 @@ class Mesh(Visual):
             elif values.shape[1] == 4:
                 # Explicitly set color per vertex
                 # Fragment shader
-                varying = Variable('varying vec4 v_color')
+                varying = Varying('v_color')
                 self._program.frag['color'] = varying
                 variable = self._variables['a_color4']
                 variable.value = gloo.VertexBuffer(values)
@@ -176,7 +176,7 @@ class Mesh(Visual):
         # todo: add gouroud shading
         # todo: allow flat shading even if vertices+faces is specified.
         if value == 'plain':
-            self._program.frag['light'] = stub4()
+            self._program.frag['light'] = stub4
         
         elif value == 'flat':
             pass
@@ -185,15 +185,15 @@ class Mesh(Visual):
             assert self._normals is not None
             # Apply phonmg function, 
             phong = Function(phong_template)
-            self._program.frag['light'] = phong()
+            self._program.frag['light'] = phong
             # Normal data comes via vertex shader
-            phong['normal'] = 'varying vec3 v_normal'
-            var = 'attribute vec3 a_normal', gloo.VertexBuffer(self._normals)
+            phong['normal'] = Varying('v_normal')
+            var = gloo.VertexBuffer(self._normals)
             self._program.vert[phong['normal']] = var
             # Additional phong proprties
-            phong['light_dir'] = 'const vec3 LIGHTDIR vec3(1.0, 1.0, 1.0)'
-            phong['light_color'] = 'vec4(1.0, 1.0, 1.0, 1.0)'
-            phong['ambient'] = 'vec4(0.3, 0.3, 0.3, 1.0)'
+            phong['light_dir'] = (1.0, 1.0, 1.0)
+            phong['light_color'] = (1.0, 1.0, 1.0, 1.0)
+            phong['ambient'] = (0.3, 0.3, 0.3, 1.0)
             # todo: light properties should be queried from the SubScene
             # instance.
     

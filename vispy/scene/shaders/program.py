@@ -6,11 +6,11 @@ from __future__ import division, print_function
 import re
 
 from ...gloo import Program, VertexShader, FragmentShader
-from .function2 import Function
-from . import parsing
 from ...util import logger
 from ...ext.six import string_types
-
+from . import parsing
+from .function2 import Function, Variable
+from .compiler import Compiler
 
 class ModularProgram(Program):
     """
@@ -41,10 +41,16 @@ class ModularProgram(Program):
         self._need_build = True
         
     def _build(self):
-        self.compiler = Compiler(vert=self.vmain, frag=self.fmain)
+        self.compiler = Compiler(vert=self.vert, frag=self.frag)
         code = self.compiler.compile()
         self.shaders[0].code = code['vert']
         self.shaders[1].code = code['frag']
+        
+        logger.debug('==== Vertex Shader ====')
+        logger.debug(code['vert'])
+        logger.debug('==== Fragment shader ====')
+        logger.debug(code['frag'])
+        
         self._create_variables()  # force update
         self._variable_state = {}
         
@@ -68,15 +74,15 @@ class ModularProgram(Program):
     def _activate_variables(self):
         # set all variables
         logger.debug("Apply variables:")
-        deps = self.vmain.dependencies() + self.fmain.dependencies()
+        deps = self.vert.dependencies() + self.frag.dependencies()
         for dep in deps:
-            if not isinstance(dep, Variable) or dep.type == 'varying':
+            if not isinstance(dep, Variable) or dep.vtype == 'varying':
                 continue
-            name = self.compiler[var]
-            logger.debug("    %s = %s" % (name, var.value))
-            state_id = var.state_id
+            name = self.compiler[dep]
+            logger.debug("    %s = %s" % (name, dep.value))
+            state_id = dep.state_id
             if self._variable_state.get(name, None) != state_id:
-                self[name] = var.value
+                self[name] = dep.value
                 self._variable_state[name] = state_id
         
         super(ModularProgram, self)._activate_variables()        
