@@ -662,13 +662,7 @@ class Varying(Variable):
         self.changed()
 
 
-class Expression(ShaderObject):
-    def declaration(self, names):
-        # expressions are declared inline.
-        return None
-
-
-class FunctionCall(Expression):
+class FunctionCall(ShaderObject):
     """ Representation of a call to a function
     
     Essentially this is container for a Function along with its
@@ -702,6 +696,10 @@ class FunctionCall(Expression):
     
     def __repr__(self):
         return '<FunctionCall %r for at 0x%x>' % (self.name, id(self))
+    
+    def declaration(self, names):
+        # expressions are declared inline.
+        return None
     
     @property
     def function(self):
