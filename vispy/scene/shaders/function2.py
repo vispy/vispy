@@ -266,7 +266,7 @@ class Function(ShaderObject):
         self._template_vars = self._parse_template_vars()
         
         ## Expressions replace template variables (also our dependencies)
-        #self._expressions = OrderedDict()
+        self._expressions = OrderedDict()
         
         # Verbatim string replacements
         self._replacements = OrderedDict()
@@ -303,7 +303,7 @@ class Function(ShaderObject):
                        ('gl_PointSize', 'gl_Position', 'gl_FragColor'))):
                 storage = self._post_hooks
             elif key in self._template_vars:
-                storage = self._replacements
+                storage = self._expressions
             else:
                 raise KeyError('Invalid template variable %r' % key)
         else:
@@ -363,7 +363,7 @@ class Function(ShaderObject):
         """
         
         try:
-            return self._replacements[key]
+            return self._expressions[key]
         except KeyError:
             pass
         
@@ -449,14 +449,9 @@ class Function(ShaderObject):
         # Modify name
         code = code.replace(" " + self.name + "(", " " + names[self] + "(")
 
-        def replace(code, key, val):
-            search = r'\$' + key + r'($|[^a-zA-Z0-9_])'
-            return re.sub(search, val+r'\1', code)
-        
         # Apply string replacements first -- these may contain $placeholders
         for key, val in self._replacements.items():
-            if isinstance(val, string_types):
-                code = replace(code, key, val)
+            code = code.replace(key, val)
         
         # Apply post-hooks
         
@@ -476,10 +471,11 @@ class Function(ShaderObject):
         code = code[0] + post_text + code[1] + code[2]
         
         # Apply template variables
-        for key, val in self._replacements.items():
+        for key, val in self._expressions.items():
             if isinstance(val, ShaderObject):
                 val = val.expression(names)
-                code = replace(code, key, val)
+            search = r'\$' + key + r'($|[^a-zA-Z0-9_])'
+            code = re.sub(search, val+r'\1', code)
 
         # Done
         
@@ -487,7 +483,7 @@ class Function(ShaderObject):
             v = parsing.find_template_variables(code)
             logger.warning('Unsubstituted placeholders in code: %s\n'
                            '  replacements made: %s' % 
-                           (v, self._replacements.keys()))
+                           (v, self._expressions.keys()))
         
         return code
     
