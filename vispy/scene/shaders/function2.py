@@ -299,7 +299,8 @@ class Function(ShaderObject):
                 raise TypeError("Variable assignment only allowed for "
                                 "varyings, not %s" % key.type)
         elif isinstance(key, string_types):
-            if key[:11] in ['gl_PointSiz', 'gl_Position', 'gl_FragColo']:
+            if any(map(key.startswith, 
+                       ('gl_PointSize', 'gl_Position', 'gl_FragColor'))):
                 storage = self._post_hooks
             elif key in self._template_vars:
                 storage = self._replacements

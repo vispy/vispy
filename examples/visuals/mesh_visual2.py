@@ -191,9 +191,9 @@ class Mesh(Visual):
             var = gloo.VertexBuffer(self._normals)
             self._program.vert[phong['normal']] = var
             # Additional phong proprties
-            phong['light_dir'] = (1.0, 1.0, 1.0)
-            phong['light_color'] = (1.0, 1.0, 1.0, 1.0)
-            phong['ambient'] = (0.3, 0.3, 0.3, 1.0)
+            phong['light_dir'] = 'vec3(1.0, 1.0, 1.0)'
+            phong['light_color'] = 'vec4(1.0, 1.0, 1.0, 1.0)'
+            phong['ambient'] = 'vec4(0.3, 0.3, 0.3, 1.0)'
             # todo: light properties should be queried from the SubScene
             # instance.
     
