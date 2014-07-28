@@ -24,6 +24,8 @@ class ModularProgram(Program):
         
         self.vert = Function(vcode)
         self.frag = Function(fcode)
+        self.vert.changed.connect(self._source_changed)
+        self.frag.changed.connect(self._source_changed)
         
         # Cache state of Variables so we know which ones require update
         self._variable_state = {}
@@ -37,7 +39,7 @@ class ModularProgram(Program):
         #self._build()
         #self._need_build = False
     
-    def _source_changed(self):
+    def _source_changed(self, ev):
         self._need_build = True
         
     def _build(self):

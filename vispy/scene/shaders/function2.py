@@ -302,7 +302,7 @@ class Function(ShaderObject):
                 raise TypeError("Variable assignment only allowed for "
                                 "varyings, not %s" % key.type)
         elif isinstance(key, string_types):
-            if key in ['gl_PointSize', 'gl_Position', 'gl_FragColor']:
+            if key[:11] in ['gl_PointSiz', 'gl_Position', 'gl_FragColo']:
                 storage = self._post_hooks
             elif key in self._template_vars:
                 storage = self._replacements
@@ -817,6 +817,7 @@ class Varying(Variable):
         """ Link this Varying to another object from which it will derive its
         dtype.
         """
+        assert self._dtype is not None or hasattr(var, 'dtype')
         self._link = var
         self.changed()
 

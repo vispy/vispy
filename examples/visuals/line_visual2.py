@@ -14,7 +14,7 @@ import numpy as np
 #from ...import gloo
 
 from vispy.scene.visuals.visual import Visual
-from vispy.scene.shaders.function2 import Function, Variable
+from vispy.scene.shaders.function2 import Function, Variable, Varying
 from vispy.scene.shaders.program import ModularProgram
 from vispy import gloo
 
@@ -71,7 +71,7 @@ class Line(Visual):
         
         # Set position data
         vbo = gloo.VertexBuffer(data)
-        self._program.vert['position'] = 'attribute vec3 position', vbo
+        self._program.vert['position'] = vbo
         
         # Create some variables related to color. We use a combination
         # of these depending on the kind of color being set.
@@ -79,7 +79,7 @@ class Line(Visual):
         vbo = gloo.VertexBuffer(data)
         self._color_var = Variable('uniform vec3 color')
         self._colors_var = Variable('attribute vec3 color', vbo)
-        self._color_varying = Variable('varying vec3 color')
+        self._color_varying = Varying('v_color')
         
         self.set_color((0, 0, 1))
         if color is not None:
@@ -131,7 +131,7 @@ class DashedLine(Line):
         
         dasher = Function(dash_template) 
         self._program.frag['gl_FragColor.a'] = dasher()
-        dasher['distance'] = 'varying float v_dashdist'
+        dasher['distance'] = Varying('v_distance', dtype='float')
         dasher['dash_len'] = '0.001'
         self._program.vert[dasher['distance']] = 'gl_Position.x'
 
