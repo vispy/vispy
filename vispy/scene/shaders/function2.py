@@ -326,7 +326,7 @@ class Function(ShaderObject):
                     vname = key
                 val = Variable(vname, val)
                 
-            if isinstance(key, Variable):
+            if isinstance(key, Varying):
                 # tell this varying to inherit properties from 
                 # its source attribute.
                 key.link(val)
@@ -340,10 +340,7 @@ class Function(ShaderObject):
         if isinstance(val, string_types):
             for var in parsing.find_template_variables(val):
                 if var not in self._template_vars:
-                    # LC: need append here to ensure we don't attempt to 
-                    #     replace these placeholders until they have been 
-                    #     added to the code.
-                    self._template_vars.append(var.lstrip('$'))
+                    self._template_vars.add(var.lstrip('$'))
         
         self.changed()
     
@@ -436,7 +433,7 @@ class Function(ShaderObject):
             if var == self.name:
                 continue
             template_vars.add(var)
-        return list(template_vars)
+        return template_vars
     
     def _get_replaced_code(self, names):
         """ Return code, with new name, expressions, and replacements applied.
