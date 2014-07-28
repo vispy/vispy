@@ -24,8 +24,7 @@ class ModularProgram(Program):
         
         self.vert = Function(vcode)
         self.frag = Function(fcode)
-        self.vert.link(self.frag)
-
+        
         # Cache state of Variables so we know which ones require update
         self._variable_state = {}
 
@@ -38,24 +37,30 @@ class ModularProgram(Program):
         #self._build()
         #self._need_build = False
     
-    def __setitem__(self, name, value):
-        # store variables here temporarily; they will be uploaded before draw.
-        self.vert[name] = value
+    def _source_changed(self):
+        self._need_build = True
         
     def _build(self):
-        if self.vert.ischanged():
-            logger.debug('==== Vertex Shader ====')
-            code = str(self.vert)
-            logger.debug(code)
-            self.shaders[0].code = code
-            self._create_variables()  # force update
+        self.compiler = Compiler(vert=self.vmain, frag=self.fmain)
+        code = self.compiler.compile()
+        self.shaders[0].code = code['vert']
+        self.shaders[1].code = code['frag']
+        self._create_variables()  # force update
+        self._variable_state = {}
         
-        if self.frag.ischanged():
-            logger.debug('==== Fragment shader ====')
-            code = str(self.frag)
-            logger.debug(code)
-            self.shaders[1].code = code
-            self._create_variables()  # force update
+        #if self.vert.ischanged():
+            #logger.debug('==== Vertex Shader ====')
+            #code = str(self.vert)
+            #logger.debug(code)
+            #self.shaders[0].code = code
+            #self._create_variables()  # force update
+        
+        #if self.frag.ischanged():
+            #logger.debug('==== Fragment shader ====')
+            #code = str(self.frag)
+            #logger.debug(code)
+            #self.shaders[1].code = code
+            #self._create_variables()  # force update
 
         # and continue.
         super(ModularProgram, self)._build()
@@ -63,13 +68,15 @@ class ModularProgram(Program):
     def _activate_variables(self):
         # set all variables
         logger.debug("Apply variables:")
-        for var in self.vert.get_variables():
-            name = var.name
+        deps = self.vmain.dependencies() + self.fmain.dependencies()
+        for dep in deps:
+            if not isinstance(dep, Variable) or dep.type == 'varying':
+                continue
+            name = self.compiler[var]
             logger.debug("    %s = %s" % (name, var.value))
-            if var.vtype in ('attribute', 'uniform'):
-                state_id = var.state_id
-                if self._variable_state.get(name, None) != state_id:
-                    Program.__setitem__(self, name, var.value)
-                    self._variable_state[name] = state_id
+            state_id = var.state_id
+            if self._variable_state.get(name, None) != state_id:
+                self[name] = var.value
+                self._variable_state[name] = state_id
         
         super(ModularProgram, self)._activate_variables()        
