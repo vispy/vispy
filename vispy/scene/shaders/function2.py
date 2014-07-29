@@ -532,11 +532,15 @@ class Variable(ShaderObject):
         
         # allow full definition in first argument
         if ' ' in name:
-            if name.count(' ') == 2:
-                vtype, dtype, name = name.split(' ')
+            fields = name.split(' ')
+            if len(fields) == 3:
+                vtype, dtype, name = fields
+            elif len(fields) == 4 and fields[0] == 'const':
+                vtype, dtype, name, value = fields
             else:
-                vtype, dtype, name, value = name.split(' ', 3)
-                assert vtype == 'const'
+                raise ValueError('Variable specifications given by string must'
+                                 ' be of the form "vtype dtype name" or '
+                                 '"const dtype name value".')
             
         if not isinstance(name, string_types + (None,)):
             raise TypeError("Variable name must be string or None.")
