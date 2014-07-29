@@ -16,6 +16,7 @@ import numpy as np
 from vispy.scene.visuals.visual import Visual
 from vispy.scene.shaders.function import Function, Variable, Varying
 from vispy.scene.shaders.program import ModularProgram
+from vispy.scene.transforms import STTransform
 from vispy import gloo
 
 
@@ -66,12 +67,14 @@ class Line(Visual):
         self._program = ModularProgram(vertex_template, fragment_template)
         
         # Define how we are going to specify position and color
-        self._program.vert['gl_Position'] = 'vec4($position, 1.0)'
+        self._program.vert['gl_Position'] = '$transform(vec4($position, 1.0))'
         self._program.frag['gl_FragColor'] = 'vec4($color, 1.0)'
         
         # Set position data
         vbo = gloo.VertexBuffer(data)
         self._program.vert['position'] = vbo
+        
+        self._program.vert['transform'] = self.transform.shader_map()
         
         # Create some variables related to color. We use a combination
         # of these depending on the kind of color being set.
@@ -84,6 +87,16 @@ class Line(Visual):
         self.set_color((0, 0, 1))
         if color is not None:
             self.set_color(color)
+
+    @property
+    def transform(self):
+        return Visual.transform.fget(self)
+
+    # todo: this should probably be handled by base visual class..
+    @transform.setter
+    def transform(self, tr):
+        self._program.vert['transform'] = tr.shader_map()
+        Visual.transform.fset(self, tr)
     
     def set_data(self, data):
         """ Set the vertex data for this line.
@@ -157,7 +170,9 @@ if __name__ == '__main__':
             app.Canvas.__init__(self, close_keys='escape')
             
             self.line1 = Line(None, pos, (3, 9, 0))
-            self.line2 = DashedLine(None, pos + 0.4, color)
+            self.line2 = DashedLine(None, pos, color)
+            self.line2.transform = STTransform(scale=(0.5, 0.5),
+                                               translate=(0.4, 0.4))
     
         def on_draw(self, ev):
             gloo.clear((0, 0, 0, 1), True)
