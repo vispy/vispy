@@ -119,6 +119,16 @@ class ShaderObject(object):
         """
         self.changed()
     
+    def __str__(self):
+        """ Return a compilation of this object and its dependencies. 
+        
+        Note: this is mainly for debugging purposes; the names in this code
+        are not guaranteed to match names in any other compilations. Use
+        Compiler directly to ensure consistent naming across multiple objects. 
+        """
+        compiler = Compiler(obj=self)
+        return compiler.compile()['obj']
+    
 
 class Function(ShaderObject):
     """ Representation of a GLSL function
@@ -393,10 +403,6 @@ class Function(ShaderObject):
     def __repr__(self):
         return "<Function '%s' at 0x%x>" % (self.name, id(self))
     
-    def __str__(self):
-        compiler = Compiler(func=self)
-        return compiler.compile()['func']
-    
     ## Public API methods
     
     @property
@@ -405,21 +411,30 @@ class Function(ShaderObject):
         to avoid name clashes.
         """
         return self._name
-    
-    #def ischanged(self, since=None):
-        #""" Whether the code has been modified since the last time it
-        #was compiled, or since the given time.
-        #"""
-        #since = since or self._last_compiled
-        #ischanged = True
-        #if since > self._last_changed:
-            #for dep in self._dependencies(True):
-                #if since < dep._last_changed:
-                    #break
-            #else:
-                #ischanged = False
-        #return ischanged
-    
+
+    @property
+    def args(self):
+        """
+        List of input arguments in the function signature::
+
+            [(arg_name, arg_type), ...]
+        """
+        return self.signature[1]
+
+    @property
+    def rtype(self):
+        """
+        Return type of this function.
+        """
+        return self.signature[2]
+
+    @property
+    def signature(self):
+        """
+        Function signature; (name, args, return_type)
+        """
+        return self._signature
+
     def replace(self, str1, str2):
         """ Set verbatim code replacement
         
@@ -536,7 +551,7 @@ class Variable(ShaderObject):
         if ' ' in name:
             vtype, dtype, name = name.split(' ')
             
-        if not isinstance(name, string_types + (None,)):
+        if not (isinstance(name, string_types) or name is None):
             raise TypeError("Variable name must be string or None.")
         
         self._state_counter = 0
@@ -741,13 +756,13 @@ class FunctionCall(Expression):
         if not isinstance(function, Function):
             raise TypeError('FunctionCall needs a Function')
         
-        sig_len = len(function._signature[1])
+        sig_len = len(function.args)
         if len(args) != sig_len:
             raise TypeError('Function %s requires %d arguments (got %d)' %
                             (function.name, sig_len, len(args)))
         
         # Ensure all expressions
-        sig = function._signature[1]
+        sig = function.args
         
         self._function = function
         
@@ -768,11 +783,174 @@ class FunctionCall(Expression):
     
     @property
     def dtype(self):
-        return self._function._signature[0]
+        return self._function.rtype
     
     def expression(self, names):
         str_args = [arg.expression(names) for arg in self._args]
         args = ', '.join(str_args)
         fname = self.function.expression(names)
         return '%s(%s)' % (fname, args)
+    
+
+class FunctionChain(Function):
+    """
+    Function subclass that generates GLSL code to call a list of Functions
+    in order. Functions may be called independently, or composed such that the
+    output of each function provides the input to the next.
+
+    Arguments:
+
+    name : str
+        The name of the generated function
+    funcs : list of Functions
+        The list of Functions that will be called by the generated GLSL code.
+
+
+    Example:
+
+        func1 = Function('void my_func_1() {}')
+        func2 = Function('void my_func_2() {}')
+        chain = FunctionChain('my_func_chain', [func1, func2])
+
+    If *chain* is included in a ModularProgram, it will generate the following
+    output:
+
+        void my_func_1() {}
+        void my_func_2() {}
+
+        void my_func_chain() {
+            my_func_1();
+            my_func_2();
+        }
+
+    The return type of the generated function is the same as the return type
+    of the last function in the chain. Likewise, the arguments for the
+    generated function are the same as the first function in the chain.
+
+    If the return type is not 'void', then the return value of each function
+    will be used to supply the first input argument of the next function in
+    the chain. For example:
+
+        vec3 my_func_1(vec3 input) {return input + vec3(1, 0, 0);}
+        void my_func_2(vec3 input) {return input + vec3(0, 1, 0);}
+
+        vec3 my_func_chain(vec3 input) {
+            return my_func_2(my_func_1(input));
+        }
+
+    """
+    def __init__(self, name=None, funcs=()):
+        # bypass Function.__init__ completely.
+        ShaderObject.__init__(self)
+        if not (name is None or isinstance(name, string_types)):
+            raise TypeError("Name argument must be string or None.")
+        self._funcs = []
+        self._name = name or "chain"
+        self.functions = funcs
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def functions(self):
+        return self._funcs[:]
+
+    @functions.setter
+    def functions(self, funcs):
+        while self._funcs:
+            self.remove(self._funcs[0])
+        for f in funcs:
+            self.append(f)
+        self._update()
+
+    @property
+    def signature(self):
+        return self.name, self._args, self._rtype
+
+    def _update(self):
+        funcs = self._funcs
+        if len(funcs) > 0:
+            self._rtype = funcs[-1].rtype
+            self._args = funcs[0].args[:]
+        else:
+            self._rtype = 'void'
+            self._args = []
+        
+        self.changed()
+
+    @property
+    def template_vars(self):
+        return {}
+
+    def append(self, function):
+        """ Append a new function to the end of this chain.
+        """
+        self._funcs.append(function)
+        self.add_dep(function)
+        self._update()
+
+    def insert(self, index, function):
+        """ Insert a new function into the chain at *index*.
+        """
+        self._funcs.insert(index, function)
+        self.add_dep(function)
+        self._update()
+
+    def remove(self, function):
+        """ Remove a function from the chain.
+        """
+        self._funcs.remove(function)
+        self.remove_dep(function)
+        self._update()
+
+    def definition(self, obj_names):
+        name = obj_names[self]
+
+        args = ", ".join(["%s %s" % arg for arg in self.args])
+        code = "%s %s(%s) {\n" % (self.rtype, name, args)
+
+        result_index = 0
+        if len(self.args) == 0:
+            last_rtype = 'void'
+            last_result = ''
+        else:
+            last_rtype, last_result = self.args[0][:2]
+
+        for fn in self._funcs:
+            # Use previous return value as an argument to the next function
+            if last_rtype == 'void':
+                args = ''
+            else:
+                args = last_result
+                if len(fn.args) != 1 or last_rtype != fn.args[0][0]:
+                    raise Exception("Cannot chain output '%s' of function to "
+                                    "input of '%s'" %
+                                    (last_rtype, fn.signature))
+            last_rtype = fn.rtype
+
+            # Store the return value of this function
+            if fn.rtype == 'void':
+                set_str = ''
+            else:
+                result_index += 1
+                result = 'result_%d' % result_index
+                set_str = '%s %s = ' % (fn.rtype, result)
+                last_result = result
+
+            code += "    %s%s(%s);\n" % (set_str, obj_names[fn], args)
+
+        # return the last function's output
+        if self.rtype != 'void':
+            code += "    return result_%d;\n" % result_index
+
+        code += "}\n"
+        return code
+
+    def __setitem__(self, k, v):
+        raise Exception("FunctionChain does not support indexing.")
+    
+    def __getitem__(self, k):
+        raise Exception("FunctionChain does not support indexing.")
+    
     
