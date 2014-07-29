@@ -859,9 +859,9 @@ class FunctionChain(Function):
     @functions.setter
     def functions(self, funcs):
         while self._funcs:
-            self.remove(self._funcs[0])
+            self.remove(self._funcs[0], update=False)
         for f in funcs:
-            self.append(f)
+            self.append(f, update=False)
         self._update()
 
     @property
@@ -883,26 +883,29 @@ class FunctionChain(Function):
     def template_vars(self):
         return {}
 
-    def append(self, function):
+    def append(self, function, update=True):
         """ Append a new function to the end of this chain.
         """
         self._funcs.append(function)
         self.add_dep(function)
-        self._update()
+        if update:
+            self._update()
 
-    def insert(self, index, function):
+    def insert(self, index, function, update=True):
         """ Insert a new function into the chain at *index*.
         """
         self._funcs.insert(index, function)
         self.add_dep(function)
-        self._update()
+        if update:
+            self._update()
 
-    def remove(self, function):
+    def remove(self, function, update=True):
         """ Remove a function from the chain.
         """
         self._funcs.remove(function)
         self.remove_dep(function)
-        self._update()
+        if update:
+            self._update()
 
     def definition(self, obj_names):
         name = obj_names[self]
