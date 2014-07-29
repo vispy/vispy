@@ -4,6 +4,7 @@
 
 from __future__ import division
 
+
 class Compiler(object):
     """
     Compiler is used to convert Function and Variable instances into 
