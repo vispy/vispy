@@ -50,8 +50,10 @@ class Polygon(Visual):
     @transform.setter
     def transform(self, tr):
         Visual.transform.fset(self, tr)
-        self.mesh.transform = tr
-        self.border.transform = tr
+        if self.mesh:
+            self.mesh.transform = tr
+        if self.border:
+            self.border.transform = tr
         
     def set_gl_options(self, *args, **kwds):
         self.mesh.set_gl_options(*args, **kwds)

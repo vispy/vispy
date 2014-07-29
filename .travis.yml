@@ -93,7 +93,7 @@ install:
       fi;
 
     # Use Pyglet alpha to get Py3.3 support
-    # Also install PyQt4 and imaging (PIL or pillow)
+    # Also install PyQt4, imaging (PIL or pillow) and scipy
     # Test old (insufficient) version of Pyglet on 2.6
     - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" == "2.6" ]; then
@@ -104,9 +104,10 @@ install:
         if [ "${PYTHON}" == "3.3" ]; then
           conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo;
           conda install --yes --quiet pillow;
+          conda install --yes --quiet scipy;
         fi;
         if [ "${PYTHON}" == "2.7" ]; then
-          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging;
+          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy;
         fi;
       fi;
 
