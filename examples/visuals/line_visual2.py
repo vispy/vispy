@@ -14,7 +14,7 @@ import numpy as np
 #from ...import gloo
 
 from vispy.scene.visuals.visual import Visual
-from vispy.scene.shaders.function2 import Function, Variable, Varying
+from vispy.scene.shaders.function import Function, Variable, Varying
 from vispy.scene.shaders.program import ModularProgram
 from vispy import gloo
 

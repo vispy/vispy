@@ -14,7 +14,7 @@ import numpy as np
 #from ...import gloo
 
 from vispy.scene.visuals.visual import Visual
-from vispy.scene.shaders.function2 import Function, Variable, Varying
+from vispy.scene.shaders.function import Function, Variable, Varying
 from vispy.scene.shaders.program import ModularProgram
 from vispy import gloo
 
@@ -221,7 +221,7 @@ if __name__ == '__main__':
     
     class Canvas(app.Canvas):
         def __init__(self):
-            app.Canvas.__init__(self, None)
+            app.Canvas.__init__(self, close_keys='escape')
             self.size = 700,    700
             self.meshes = []
             
@@ -262,3 +262,4 @@ if __name__ == '__main__':
     
     c = Canvas()
     c.show()
+    app.run()
