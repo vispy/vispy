@@ -242,121 +242,57 @@ def test_function_basics():
     fun['foo'] = '33'
     fun['bar'] = 'bla bla'
     assert_is(type(fun['foo']), TextExpression)
-    assert_equal(fun['foo']._injection(), '33')
+    assert_equal(fun['foo'].expression(None), '33')
     assert_is(type(fun['bar']), TextExpression)
-    assert_equal(fun['bar']._injection(), 'bla bla')
+    assert_equal(fun['bar'].expression(None), 'bla bla')
     
     # Test setting call expressions
     fun = Function('void main(){\n$foo;\n$bar;\n$spam(XX);\n$eggs(YY);\n}')
     trans = Function(transformScale)
-    fun['foo'] = trans()
-    fun['bar'] = trans('3', '4')
-    fun['spam'] = trans()
-    fun['eggs'] = trans('3', '4')
+    assert_raises(TypeError, trans)  # requires 1 arg 
+    assert_raises(TypeError, trans, '1', '2')
+    fun['foo'] = trans('2')
+    fun['bar'] = trans('3')
+    fun['spam'] = trans
+    fun['eggs'] = trans
     #
-    for name in ['foo', 'bar', 'spam', 'eggs']:
+    for name in ['foo', 'bar']:
         assert_is(type(fun[name]), FunctionCall)
         assert_equal(fun[name].function, trans)
-        assert_in(trans, fun._dependencies())
+        assert_in(trans, fun.dependencies())
+    for name in ['spam', 'eggs']:
+        assert_equal(fun[name], trans)
+        
     #
     text = str(fun)
-    assert_in('\ntransform_scale();\n', text)
-    assert_in('\ntransform_scale(3, 4);\n', text)
+    assert_in('\ntransform_scale(2);\n', text)
+    assert_in('\ntransform_scale(3);\n', text)
     assert_in('\ntransform_scale(XX);\n', text)
     assert_in('\ntransform_scale(YY);\n', text)
     
     # Test variable expressions
     fun = Function('void main(){$foo; $bar;}')
-    fun['foo'] = 'uniform float bla'
-    fun['bar'] = 'attribute float bla'
+    fun['foo'] = Variable('uniform float bla')
+    fun['bar'] = Variable('attribute float bla')
     assert_is(type(fun['foo']), Variable)
     assert_is(type(fun['bar']), Variable)
-    assert_in(fun['foo'], fun._dependencies())
-    assert_in(fun['bar'], fun._dependencies())
-    # Test basic name mangling
-    assert_equal(fun['foo'].name, fun['bar'].name)  # Still the sae
-    str(fun)  # force name mangling
-    assert_not_equal(fun['foo'].name, fun['bar'].name) 
+    assert_in(fun['foo'], fun.dependencies())
+    assert_in(fun['bar'], fun.dependencies())
     
     # Test special variables
     fun = Function('void main(){$foo; $bar;}')
     variable = Variable('attribute vec3 v_pos')
     varying = Variable('varying vec3 color')
     # These do not work due to index
-    assert_raises(KeyError, fun.__setitem__, 3, 3)  # not a string
+    assert_raises(TypeError, fun.__setitem__, 3, 3)  # not a string
     assert_raises(KeyError, fun.__setitem__, 'xxx', 3)  # unknown template var
-    assert_raises(KeyError, fun.__setitem__, variable, 3)  # only varyings
-    # These do not work due to value
-    assert_raises(ValueError, fun.__setitem__, 'gl_PointSize', 3)
-    assert_raises(ValueError, fun.__setitem__, varying, 3)
+    assert_raises(TypeError, fun.__setitem__, variable, 3)  # only varyings
     # These work
     fun['gl_PointSize'] = '3.0'
     fun[varying] = variable
     # And getting works
     assert_equal(fun['gl_PointSize'].text, '3.0')
     assert_equal(fun[varying], variable)
-    
-
-def test_function_names():
-    
-    # Test more complex name mangling
-    fun1 = Function('void main(){$var1; $funccall;}')
-    fun2 = Function('void a_func(){$var2; $var3;}')
-    fun1['var1'] = 'uniform float bla'
-    fun1['funccall'] = fun2()  # Set after setting var1 so var1 comes first
-    fun2['var2'] = 'uniform float bla'
-    fun2['var3'] = 'uniform float bla'
-    # Compile fun2, var1 is not mangled yet
-    str(fun2)
-    assert_equal(fun1['var1'].name, 'bla')
-    assert_equal(fun2['var2'].name, 'bla_1')
-    assert_equal(fun2['var3'].name, 'bla_2')
-    # Compile fun1, all vars are mangled
-    str(fun1)
-    assert_equal(fun1['var1'].name, 'bla_1')
-    assert_equal(fun2['var2'].name, 'bla_2')
-    assert_equal(fun2['var3'].name, 'bla_3')
-    # Compile fun1, but mangling is unchanged now
-    str(fun2)
-    assert_equal(fun1['var1'].name, 'bla_1')
-    assert_equal(fun2['var2'].name, 'bla_2')
-    assert_equal(fun2['var3'].name, 'bla_3')
-
-
-def test_function_linking():
-    
-    # Test linking with wrong args
-    fun1 = Function('void main(){$var1; $var2;}')
-    fun2 = Function('void foo(){$var1; $var2;}')
-    assert_raises(ValueError, fun1.link, 3)
-    assert_raises(ValueError, fun1.link, fun2)
-    assert_raises(ValueError, fun2.link, fun1)
-    
-    # Test linking shaders
-    fun1 = Function('void main(){$var1; $var2;}')
-    fun2 = Function('void main(){$var1; $var2;}')
-    fun1['var1'] = 'uniform float bla'
-    fun1['var2'] = 'uniform float bla'
-    fun2['var1'] = 'uniform float bla'
-    fun2['var2'] = 'uniform float bla'
-    # The two functions are separate
-    str(fun1)
-    str(fun2)
-    assert_equal(fun1['var1'].name, 'bla_1')
-    assert_equal(fun1['var2'].name, 'bla_2')
-    assert_equal(fun2['var1'].name, 'bla_1')
-    assert_equal(fun2['var2'].name, 'bla_2')
-    assert_equal(len(fun1.get_variables()), 2)
-    assert_equal(len(fun2.get_variables()), 2)
-    # Now link!
-    fun1.link(fun2)
-    str(fun1)
-    assert_equal(fun1['var1'].name, 'bla_1')
-    assert_equal(fun1['var2'].name, 'bla_2')
-    assert_equal(fun2['var1'].name, 'bla_3')
-    assert_equal(fun2['var2'].name, 'bla_4')
-    assert_equal(len(fun1.get_variables()), 4)
-    assert_equal(fun2.get_variables(), fun2.get_variables())
 
 
 def test_function_changed():

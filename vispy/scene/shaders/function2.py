@@ -310,7 +310,7 @@ class Function(ShaderObject):
                 storage = self._post_hooks
             else:
                 raise TypeError("Variable assignment only allowed for "
-                                "varyings, not %s" % key.type)
+                                "varyings, not %s" % key.vtype)
         elif isinstance(key, string_types):
             if any(map(key.startswith, 
                        ('gl_PointSize', 'gl_Position', 'gl_FragColor'))):
@@ -371,6 +371,11 @@ class Function(ShaderObject):
         
         try:
             return self._expressions[key]
+        except KeyError:
+            pass
+        
+        try:
+            return self._post_hooks[key]
         except KeyError:
             pass
         
@@ -540,9 +545,10 @@ class Variable(ShaderObject):
         # try to set these values automatically.
         self._type_locked = self._vtype is not None and self._dtype is not None
             
-        self.value = value
+        if value is not None:
+            self.value = value
         
-        assert self._vtype in VARIABLE_TYPES
+        assert self._vtype is None or self._vtype in VARIABLE_TYPES
 
     @property
     def name(self):
@@ -695,6 +701,15 @@ class TextExpression(Expression):
         
     def expression(self, names=None):
         return self._text
+    
+    @property
+    def text(self):
+        return self._text
+    
+    @text.setter
+    def text(self, t):
+        self._text = t
+        self.changed()
 
     def __eq__(self, a):
         if isinstance(a, TextExpression):
@@ -718,12 +733,12 @@ class FunctionCall(Expression):
         super(FunctionCall, self).__init__()
         
         if not isinstance(function, Function):
-            raise ValueError('FunctionCall needs a Function')
+            raise TypeError('FunctionCall needs a Function')
         
         sig_len = len(function._signature[1])
         if len(args) != sig_len:
-            raise ValueError('Function %s requires %d arguments (got %d)' %
-                             (function, sig_len, len(args)))
+            raise TypeError('Function %s requires %d arguments (got %d)' %
+                            (function.name, sig_len, len(args)))
         
         # Ensure all expressions
         sig = function._signature[1]

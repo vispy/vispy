@@ -59,7 +59,7 @@ class Compiler(object):
             deps = obj.dependencies()
             all_deps[obj] = deps
             for dep in deps:
-                if dep.name is None:
+                if dep.name is None or dep in self._object_names:
                     continue
 
                 name = self._suggest_name(dep.name)
