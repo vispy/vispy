@@ -19,6 +19,7 @@ import numpy as np
 
 from ...util.ordereddict import OrderedDict
 from ...util.event import EventEmitter
+from ...util.eq import eq
 from ...util import logger
 from ...ext.six import string_types
 from . import parsing
@@ -124,6 +125,7 @@ class ShaderObject(object):
     def _dep_changed(self, event):
         """ Called when a dependency's expression has changed.
         """
+        logger.debug("ShaderObject changed: %r" % event.source)
         self.changed()
     
     def __str__(self):
@@ -330,7 +332,7 @@ class Function(ShaderObject):
                             'varying.')
         
         # If values already match, bail out now
-        if storage.get(key) == val:
+        if eq(storage.get(key), val):
             return
         
         # Remove old references, if any

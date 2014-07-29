@@ -181,4 +181,4 @@ if __name__ == '__main__':
     
     c = Canvas()
     c.show()
-    app.run()
+    #app.run()
