@@ -1,4 +1,4 @@
-from vispy.scene.shaders.function2 import Function, Variable
+from vispy.scene.shaders.function2 import Function, Variable, Varying
 
 # Users normally don't need these, but I want to test them
 from vispy.scene.shaders.function2 import FunctionCall, TextExpression
@@ -68,27 +68,15 @@ def test_example1():
     code['correction'] = t1(pos)  # Look, we use t1 again, different sig
     code['endtransform'] = t3  # function pointer rather than function call
     code['nlights'] = '4'
-    t1['scale'] = t2()
+    t1['scale'] = t2
     t3['scale'] = (3.0, 4.0, 5.0)
     t2['offset'] = '1.0'
     
     code2 = Function(frag_template)
-    code.link(code2)
     code2['color'] = Varying('v_position')
     
     code['gl_PointSize'] = '3.0'
     code[code2['color']] = pos
-    
-    # Show result
-    print(code)
-    print('=====')
-    print(code2)
-    
-    # Print all variables. Values can associated to variable objects and then
-    # set to the shader program later in a loop similar to this:
-    print('===== Variables:')
-    for var in code2.get_variables():
-        print(var.name, var.value)
 
 
 def test_example2():
@@ -134,11 +122,10 @@ def test_example2():
 
 def test_TextExpression():
     exp = TextExpression('foo bar')
-    print(exp)
-    assert_in('foo bar', str(exp))
+    assert_equal('foo bar', exp.expression(None))
+    assert_equal(None, exp.definition(None))
     assert_in(exp.__class__.__name__, str(exp))
-    assert_equal(exp._injection(), 'foo bar')
-    assert_raises(ValueError, TextExpression, 4)
+    assert_raises(TypeError, TextExpression, 4)
 
 
 def test_FunctionCall():

@@ -701,6 +701,8 @@ class TextExpression(Expression):
     """
     def __init__(self, text):
         super(TextExpression, self).__init__()
+        if not isinstance(text, string_types):
+            raise TypeError("Argument must be string.")
         self._text = text
         
     def expression(self, names=None):
