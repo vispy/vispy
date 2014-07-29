@@ -113,11 +113,10 @@ class MeshData(object):
             if self._faces_indexed_by_faces is None:
                 verts = self.vertices(indexed='faces')
                 if verts is not None:
-                    nVerts = verts.shape[0]
-                    faces = np.arange(nVerts, dtype=np.uint)
-                    nF = nVerts/3
+                    nF = verts.shape[0]
+                    faces = np.arange(nF*3, dtype=np.uint)
                     self._faces_indexed_by_faces = faces.reshape((nF, 3))
-            return self._faces_indexed_by_faces
+                return self._faces_indexed_by_faces
         else:
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
