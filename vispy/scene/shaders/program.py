@@ -3,12 +3,10 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division, print_function
-import re
 
-from ...gloo import Program, VertexShader, FragmentShader
+from ...gloo import Program
 from ...util import logger
-from ...ext.six import string_types
-from . import parsing
+from ...ext.six import string_types  # noqa
 from .function2 import Function, Variable
 from .compiler import Compiler
 
@@ -60,10 +58,11 @@ class ModularProgram(Program):
 
     def _activate_variables(self):
         # set all variables
+        settable_vars = 'attribute', 'uniform'
         logger.debug("Apply variables:")
         deps = self.vert.dependencies() + self.frag.dependencies()
         for dep in deps:
-            if not isinstance(dep, Variable) or dep.vtype == 'varying':
+            if not isinstance(dep, Variable) or dep.vtype not in settable_vars:
                 continue
             name = self.compiler[dep]
             logger.debug("    %s = %s" % (name, dep.value))

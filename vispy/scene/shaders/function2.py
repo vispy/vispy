@@ -8,13 +8,12 @@ Details
 
 A complete GLSL program is composed of ShaderObjects, each of which may be used
 inline as an expression, and some of which include a definition that must be
-included on the final code. ShaderObjects kepp track of a hierarchy of
+included on the final code. ShaderObjects keep track of a hierarchy of
 dependencies so that all necessary code is included at compile time, and
 changes made to any object may be propagated to the root of the hierarchy to 
 trigger a recompile.
 """
 
-import time
 import re
 import numpy as np
 
@@ -39,6 +38,7 @@ class ShaderObject(object):
     Dependencies are tracked hierarchically such that changes to any object
     will be propagated up the dependency hierarchy to trigger a recompile.
     """
+    
     @classmethod
     def create(self, obj, ref=None):
         """ Convert *obj* to a new ShaderObject. If the output is a Variable
@@ -46,7 +46,10 @@ class ShaderObject(object):
         """
         if isinstance(ref, Variable):
             ref = ref.name
-                    
+        elif isinstance(ref, string_types) and ref.startswith('gl_'):
+            # gl_ names not allowed for variables
+            ref = ref[3:].lower()
+        
         if isinstance(obj, ShaderObject):
             if isinstance(obj, Variable) and obj.name is None:
                 obj.name = ref
@@ -54,9 +57,11 @@ class ShaderObject(object):
             obj = TextExpression(obj)
         else:
             obj = Variable(ref, obj)
+            # Try prepending the name to indicate attribute, uniform, varying
+            if obj.vtype and obj.vtype[0] in 'auv':
+                obj.name = obj.vtype[0] + '_' + obj.name 
         
         return obj
-        
     
     def __init__(self):
         # emitted when any part of the code for this object has changed,
@@ -65,10 +70,12 @@ class ShaderObject(object):
         
         # objects that must be declared before this object's definition.
         # {obj: refcount}
-        self._deps = {}
-        
+        self._deps = OrderedDict()  # OrderedDict for consistent code output
+    
     @property
     def name(self):
+        """ The name of this shader object.
+        """
         return None
         
     def definition(self, obj_names):
@@ -91,8 +98,8 @@ class ShaderObject(object):
             alldeps.extend(dep.dependencies())
         alldeps.append(self)
         return alldeps
-        
-    def add_dep(self, dep):
+    
+    def _add_dep(self, dep):
         """ Increment the reference count for *dep*. If this is a new 
         dependency, then connect to its *changed* event.
         """
@@ -102,7 +109,7 @@ class ShaderObject(object):
             self._deps[dep] = 1
             dep.changed.connect(self._dep_changed)
 
-    def remove_dep(self, dep):
+    def _remove_dep(self, dep):
         """ Decrement the reference count for *dep*. If the reference count 
         reaches 0, then the dependency is removed and its *changed* event is
         disconnected.
@@ -137,8 +144,13 @@ class Function(ShaderObject):
     snippets. Each Function consists of a GLSL snippet in the form of
     a function. The code may have template variables that start with
     the dollar sign. These stubs can be replaced with expressions using
-    the index operation. Expressions can be plain text or any ShaderObject
-    that defines an expression() method.
+    the index operation. Expressions can be:
+    
+    * plain text that is inserted verbatim in the code
+    * a Function object or a call to a funcion
+    * a Variable (or Varying) object
+    * float, int, tuple are automatically turned into a uniform Variable
+    * a VertexBuffer is automatically turned into an attribute Variable
     
     Example
     -------
@@ -151,63 +163,64 @@ class Function(ShaderObject):
             gl_Position.x += $xoffset;
             gl_Position.y += $yoffset;
         }''')
-
+        
         scale_transform = Function('''
         vec4 transform_scale(vec4 pos){
             return pos * $scale;
         }''')
-
+        
         # If you get the function from a snippet collection, always
         # create new Function objects to ensure they are 'fresh'.
         vert_code = Function(vert_code_template)
         trans1 = Function(scale_transform)
         trans2 = Function(scale_transform)  # trans2 != trans1
-
-        #
+        
         # Three ways to assign to template variables:
         #
         # 1) Assign verbatim code
         vert_code['xoffset'] = '(3.0 / 3.1415)'
-
+        
         # 2) Assign a value (this creates a new uniform or attribute)
         vert_code['yoffset'] = 5.0
-
+        
         # 3) Assign a function call expression
-        pos_var = 'attribute vec4 a_position'
+        pos_var = Variable('attribute a_position vec4')
         vert_code['pos'] = trans1(trans2(pos_var))  
-
+        
         # Transforms also need their variables set
         trans1['scale'] = 0.5
         trans2['scale'] = (1.0, 0.5, 1.0, 1.0)
-
+        
         # You can actually change any code you want, but use this with care!
         vert_code.replace('gl_Position.y', 'gl_Position.z')
-
+        
         # Finally, you can set special variables explicitly. This generates
         # a new statement at the end of the vert_code function.
-        vert_code['gl_PointSize'] = 10.
+        vert_code['gl_PointSize'] = '10.'
     
     
     If we use ``str(vert_code)`` we get::
 
-        uniform float scale;
-        vec4 transform_scale(vec4 pos){
-            return pos * scale;
-        }
-
-        uniform vec4 scale_1;
+        attribute vec4 a_position;
+        uniform float u_yoffset;
+        uniform float u_scale_1;
+        uniform vec4 u_scale_2;
+        uniform float u_pointsize;
+        
         vec4 transform_scale_1(vec4 pos){
-            return pos * scale_1;
+            return pos * u_scale_1;
         }
-
-        uniform float gl_PointSize;
-        uniform float yoffset;
+        
+        vec4 transform_scale_2(vec4 pos){
+            return pos * u_scale_2;
+        }
+        
         void main() {
-            gl_Position = transform_scale(transform_scale_1(attribute vec4 a_position));
+            gl_Position = transform_scale_1(transform_scale_2(a_position));
             gl_Position.x += (3.0 / 3.1415);
-            gl_Position.z += yoffset;
-
-            gl_PointSize = gl_PointSize;
+            gl_Position.z += u_yoffset;
+        
+            gl_PointSize = u_pointsize;
         }
     
     Note how the two scale function resulted in two different functions
@@ -218,9 +231,9 @@ class Function(ShaderObject):
     
     As can be seen above, the arguments with which a function is to be
     called must be specified by calling the Function object. The
-    arguments can be any of the expressions mentioned earlier (plain
-    text, variables, or function calls). If the signature is already
-    specified in the template code, that signature is used instead.
+    arguments can be any of the expressions mentioned earlier. If the
+    signature is already specified in the template code, that function
+    itself must be given.
     
         code = Function('''
             void main() {
@@ -233,45 +246,33 @@ class Function(ShaderObject):
         vert_code['pos'] = func1('3.0', 'uniform float u_param', func2())
         
         # For scale, the sigfnature is already specified
-        code['scale'] = scale_func  # No need to specify args
+        code['scale'] = scale_func  # Must not specify args
     
     Data for uniform and attribute variables
     ----------------------------------------
-    To each variable a value can be associated. The Function object
-    itself is agnostic about this value; it is only intended to keep
-    variable name and data together to make the code that needs to
-    process the variables easier.
+    To each variable a value can be associated. In fact, in most cases
+    the Function class is smart enough to be able to create a Variable
+    object if only the data is given.
     
-        code['offset'] = 'uniform float offset'  # a variable with no data
-        code['offset'] = 'uniform float offset', 3.0  # a variable with data
-        position['position'] = 'attribute vec3 a_position', VertexBuffer()
+        code['offset'] = Variable('uniform float offset')  # No data
+        code['offset'] = Variable('uniform float offset', 3.0)  # With data
+        code['offset'] = 3.0  # -> Uniform Variable
+        position['position'] = VertexBuffer()  # -> attribute Variable
         
         # Updating variables
         code['offset'].value = 4.0
         position['position'].value.set_data(...)
-        
-        # ... Somewhere later, we get all variables and bind names to value
-        for var in code.get_variables():
-            program[var.name] = var.value
-    
-    Linking shaders and specifying varyings
-    ---------------------------------------
-    By linking a vertex and fragment shader, they share the same name
-    scope and variables. The most straightforward way to deal with
-    varyings is to use the following method:
-        
-        // This is how to link
-        vert_code.link(frag_code)
-        
-        // Pass attribute data to the fragment shader
-        frag_code['color'] = 'varying vec3 v_color'
-        variable = frag_code['color']
-        vert_code[variable] = 'attribute vec3 a_color'
     
     """
     
-    def __init__(self, code):
+    def __init__(self, code, dependencies=None):
         super(Function, self).__init__()
+        
+        # Add depencencies is given. This is to allow people to
+        # manually define deps for a function that they use.
+        if dependencies is not None:
+            for dep in dependencies:
+                self._add_dep(dep)
         
         # Get and strip code
         if isinstance(code, Function):
@@ -288,21 +289,14 @@ class Function(ShaderObject):
         self._name = self._signature[0]
         self._template_vars = self._parse_template_vars()
         
-        ## Expressions replace template variables (also our dependencies)
+        # Expressions replace template variables (also our dependencies)
         self._expressions = OrderedDict()
         
         # Verbatim string replacements
         self._replacements = OrderedDict()
         
-        ## Stuff to do at the end
+        # Stuff to do at the end
         self._post_hooks = OrderedDict()
-        
-        # Toplevel vertex/fragment shader funtctions can be linked
-        #self._linked = None
-        
-        # flags to be able to indicate whether code has changed
-        #self._last_changed = time.time()
-        #self._last_compiled = 0.0 
     
     def __setitem__(self, key, val):
         """ Setting of replacements through a dict-like syntax.
@@ -310,8 +304,10 @@ class Function(ShaderObject):
         Each replacement can be:
         * verbatim code: ``fun1['foo'] = '3.14159'``
         * a FunctionCall: ``fun1['foo'] = fun2()``
-        * a Variable: ``fun1['foo'] = 'uniform vec3 u_ray'``
+        * a Variable: ``fun1['foo'] = Variable(...)`` (can be auto-generated)
         """
+        
+        # Check the key. Must be Varying, 'gl_X' or a known template variable
         if isinstance(key, Variable): 
             if key.vtype == 'varying':
                 if self.name != 'main':
@@ -332,10 +328,9 @@ class Function(ShaderObject):
         else:
             raise TypeError('In `function[key]` key must be a string or '
                             'varying.')
-
         
+        # If values already match, bail out now
         if storage.get(key) == val:
-            # values already match; bail out now
             return
         
         # Remove old references, if any
@@ -343,22 +338,24 @@ class Function(ShaderObject):
         if oldval is not None:
             for obj in (key, oldval):
                 if isinstance(obj, ShaderObject):
-                    self.remove_dep(obj)
-                
+                    self._remove_dep(obj)
+        
         # Add new references
         if val is not None:
+            # Ensure that val is a ShaderObject
             val = ShaderObject.create(val, ref=key)
-                
+            
             if isinstance(key, Varying):
                 # tell this varying to inherit properties from 
                 # its source attribute / expression.
                 key.link(val)
-                
+            
+            # Store value and dependencies
             storage[key] = val
             for obj in (key, val):
                 if isinstance(obj, ShaderObject):
-                    self.add_dep(obj)
-
+                    self._add_dep(obj)
+        
         # In case of verbatim text, we might have added new template vars
         if isinstance(val, TextExpression):
             for var in parsing.find_template_variables(val.expression()):
@@ -506,12 +503,11 @@ class Function(ShaderObject):
             code = re.sub(search, val+r'\1', code)
 
         # Done
-        
         if '$' in code:
             v = parsing.find_template_variables(code)
             logger.warning('Unsubstituted placeholders in code: %s\n'
                            '  replacements made: %s' % 
-                           (v, self._expressions.keys()))
+                           (v, list(self._expressions.keys())))
         
         return code + '\n'
     
@@ -540,16 +536,32 @@ class Function(ShaderObject):
 class Variable(ShaderObject):
     """ Representation of global shader variable
     
-    These can include: const, uniform, attribute, varying, inout
-
-    Created by Function.__getitem__
+    Parameters
+    ----------
+    name : str
+        the name of the variable. This string can also contain the full
+        definition of the variable, e.g. 'uniform vec2 foo'.
+    value : {float, int, tuple, GLObject}
+        If given, vtype and dtype are determined automatically. If a
+        float/int/tuple is given, the variable is a uniform. If a gloo
+        object is given that has a glsl_type property, the variable is
+        an attribute and
+    vtype : {'const', 'uniform', 'attribute', 'varying', 'inout'}
+        The type of variable.
+    dtype : str
+        The data type of the variable, e.g. 'float', 'vec4', 'mat', etc.
+    
     """
     def __init__(self, name, value=None, vtype=None, dtype=None):
         super(Variable, self).__init__()
         
         # allow full definition in first argument
         if ' ' in name:
-            vtype, dtype, name = name.split(' ')
+            if name.count(' ') == 2:
+                vtype, dtype, name = name.split(' ')
+            else:
+                vtype, dtype, name, value = name.split(' ', 3)
+                assert vtype == 'const'
             
         if not (isinstance(name, string_types) or name is None):
             raise TypeError("Variable name must be string or None.")
@@ -567,8 +579,9 @@ class Variable(ShaderObject):
         if value is not None:
             self.value = value
         
-        assert self._vtype is None or self._vtype in VARIABLE_TYPES
-
+        if self._vtype and self._vtype not in VARIABLE_TYPES:
+            raise ValueError('Not a valid vtype: %r' % self._vtype)
+    
     @property
     def name(self):
         """ The name of this variable.
@@ -577,6 +590,8 @@ class Variable(ShaderObject):
     
     @name.setter
     def name(self, n):
+        # Settable mostly to allow automatic setting of varying names 
+        # See ShaderObject.create()
         if self._name != n:
             self._name = n
             self.changed()
@@ -658,11 +673,6 @@ class Variable(ShaderObject):
         return ("<Variable \"%s %s %s\" at 0x%x>" % (self._vtype, self._dtype, 
                                                      self.name, id(self)))
     
-    #def _dependencies(self):
-        #d = OrderedDict()
-        #d[self] = None
-        #return d
-    
     def expression(self, names):
         return names[self]
     
@@ -681,6 +691,11 @@ class Variable(ShaderObject):
 
 
 class Varying(Variable):
+    """ Representation of a varying
+    
+    Varyings can inherit their dtype from another Variable, allowing for
+    more flexibility in composing shaders.
+    """
     def __init__(self, name, dtype=None):
         self._link = None
         Variable.__init__(self, name, vtype='varying', dtype=dtype)
@@ -708,7 +723,8 @@ class Varying(Variable):
 
     def link(self, var):
         """ Link this Varying to another object from which it will derive its
-        dtype.
+        dtype. This method is used internally when assigning an attribute to
+        a varying using syntax ``aFunction[varying] = attr``.
         """
         assert self._dtype is not None or hasattr(var, 'dtype')
         self._link = var
@@ -716,20 +732,28 @@ class Varying(Variable):
 
 
 class Expression(ShaderObject):
+    """ Base class for expressions (ShaderObjects that do not have a
+    definition nor dependencies)
+    """
+    
     def definition(self, names):
         # expressions are declared inline.
         return None
-    
+
 
 class TextExpression(Expression):
-    """ Plain GLSL text to insert inline.
+    """ Plain GLSL text to insert inline
     """
+    
     def __init__(self, text):
         super(TextExpression, self).__init__()
         if not isinstance(text, string_types):
             raise TypeError("Argument must be string.")
         self._text = text
-        
+    
+    def __repr__(self):
+        return '<TextExpression %r for at 0x%x>' % (self.text, id(self))
+    
     def expression(self, names=None):
         return self._text
     
@@ -749,15 +773,15 @@ class TextExpression(Expression):
             return a == self._text
         else:
             return False
+    
+    def __hash__(self):
+        return self._text.__hash__()
 
 
 class FunctionCall(Expression):
     """ Representation of a call to a function
     
-    Essentially this is container for a Function along with its
-    signature. Objects of this class generally live very short; they
-    serve only as a message. The signature is either incorporated in
-    the next FunctionCall or in the replacement at a function.
+    Essentially this is container for a Function along with its signature. 
     """
     
     def __init__(self, function, args):
@@ -778,14 +802,14 @@ class FunctionCall(Expression):
         
         # Convert all arguments to ShaderObject, using arg name if possible.
         self._args = [ShaderObject.create(arg, ref=sig[i][1]) 
-                      for i,arg in enumerate(args)]
+                      for i, arg in enumerate(args)]
         
-        self.add_dep(function)
+        self._add_dep(function)
         for arg in self._args:
-            self.add_dep(arg)
+            self._add_dep(arg)
     
     def __repr__(self):
-        return '<FunctionCall %r for at 0x%x>' % (self.name, id(self))
+        return '<FunctionCall of %r at 0x%x>' % (self.function.name, id(self))
     
     @property
     def function(self):
@@ -965,5 +989,3 @@ class FunctionChain(Function):
     
     def __getitem__(self, k):
         raise Exception("FunctionChain does not support indexing.")
-    
-    

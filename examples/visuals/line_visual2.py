@@ -144,7 +144,7 @@ class DashedLine(Line):
         dasher = Function(dash_template) 
         self._program.frag['gl_FragColor.a'] = dasher()
         dasher['distance'] = Varying('v_distance', dtype='float')
-        dasher['dash_len'] = '0.001'
+        dasher['dash_len'] = Variable('const float dash_len 0.001')
         self._program.vert[dasher['distance']] = 'gl_Position.x'
 
 
