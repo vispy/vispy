@@ -179,20 +179,41 @@ def test_Variable():
     
     # Test init fail
     assert_raises(TypeError, Variable)  # no args
-    assert_raises(ValueError, Variable, 3)  # need string
-    assert_raises(ValueError, Variable, 'blabla')  # need correct vtype
+    assert_raises(TypeError, Variable, 3)  # wrong type
+    assert_raises(TypeError, Variable, "name", "str")  # wrong type
     assert_raises(ValueError, Variable, 'bla bla')  # need correct vtype
-    assert_raises(ValueError, Variable, 'uniform_bla')  # need spaces
     assert_raises(ValueError, Variable, 'uniform b l a')  # too many
-    assert_raises(ValueError, Variable, 'uniform bla')  # need name
     
     # Test init success
     var = Variable('uniform float bla')  # Finally
     assert_equal(var.name, 'bla')
+    assert_equal(var.dtype, 'float')
+    assert_equal(var.vtype, 'uniform')
     assert var.value is None
-    var = Variable('uniform float', altname='bla')  # Also valid
+    
+    # test assign new value
+    var.value = 10
+    assert_equal(var.dtype, 'float')  # type is locked; won't change
+    
+    # test name-only init
+    var = Variable('bla')  # Finally
     assert_equal(var.name, 'bla')
+    assert_equal(var.dtype, None)
+    assert_equal(var.vtype, None)
     assert var.value is None
+    
+    # test assign new value
+    var.value = 10
+    assert_equal(var.dtype, 'int')
+    assert_equal(var.vtype, 'uniform')
+    assert_equal(var.value, 10)
+    
+    # test init with value
+    var = Variable('bla', (1, 2, 3))  # Also valid
+    assert_equal(var.name, 'bla')
+    assert_equal(var.dtype, 'vec3')
+    assert_equal(var.vtype, 'uniform')
+    assert_equal(var.value, (1, 2, 3))
     
     # Test value
     var = Variable('uniform float bla', data)  # Also valid
@@ -207,14 +228,14 @@ def test_Variable():
     assert_in('uniform float bla', str(var))
     
     # Test injection, definition, dependencies
-    assert_equal(var._injection(), var.name)
-    assert_equal(var._definition(), 'uniform float bla;')
-    assert_in(var, var._dependencies())
+    assert_equal(var.expression({var: 'xxx'}), 'xxx')
+    assert_equal(var.definition({var: 'xxx'}), 'uniform float xxx;')
+    assert_in(var, var.dependencies())
     
     # Renaming
     var = Variable('uniform float bla')
     assert_equal(var.name, 'bla')
-    var._rename('foo')
+    var.name = 'foo'
     assert_equal(var.name, 'foo')
     
 
@@ -322,6 +343,9 @@ def test_function_changed():
     var1 = fun1['var1']
     var1.changed.connect(on_change)
     assert_changed(fun1)
+    
+    var1.name = 'xxx'
+    assert_changed(fun1, var1)
     
     # changing type requires code change
     var1.value = 7

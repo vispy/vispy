@@ -7,7 +7,7 @@ Details
 -------
 
 A complete GLSL program is composed of ShaderObjects, each of which may be used
-inline as an expression, and some of which include a declaration that must be
+inline as an expression, and some of which include a definition that must be
 included on the final code. ShaderObjects kepp track of a hierarchy of
 dependencies so that all necessary code is included at compile time, and
 changes made to any object may be propagated to the root of the hierarchy to 
@@ -32,7 +32,7 @@ class ShaderObject(object):
     """ Base class for all objects that may be included in a GLSL program
     (Functions, Variables, Expressions).
     
-    Shader objects have a *declaration* that defines the object in GLSL, an 
+    Shader objects have a *definition* that defines the object in GLSL, an 
     *expression* that is used to reference the object, and a set of 
     *dependencies* that must be declared before the object is used.
     
@@ -63,7 +63,7 @@ class ShaderObject(object):
         # including dependencies.
         self.changed = EventEmitter(source=self, type="code_change")
         
-        # objects that must be declared before this object's declaration.
+        # objects that must be declared before this object's definition.
         # {obj: refcount}
         self._deps = {}
         
@@ -71,8 +71,8 @@ class ShaderObject(object):
     def name(self):
         return None
         
-    def declaration(self, obj_names):
-        """ Return the GLSL declaration for this object. Use *obj_names* to
+    def definition(self, obj_names):
+        """ Return the GLSL definition for this object. Use *obj_names* to
         determine the names of dependencies.
         """
         return None
@@ -500,7 +500,7 @@ class Function(ShaderObject):
         
         return code + '\n'
     
-    def declaration(self, names):
+    def definition(self, names):
         return self._get_replaced_code(names)
 
     def expression(self, names):
@@ -532,14 +532,18 @@ class Variable(ShaderObject):
     def __init__(self, name, value=None, vtype=None, dtype=None):
         super(Variable, self).__init__()
         
-        # allow full declaration in first argument
+        # allow full definition in first argument
         if ' ' in name:
             vtype, dtype, name = name.split(' ')
+            
+        if not isinstance(name, string_types + (None,)):
+            raise TypeError("Variable name must be string or None.")
         
         self._state_counter = 0
         self._name = name
         self._vtype = vtype
         self._dtype = dtype
+        self._value = None
         
         # If vtype/dtype were given at init, then we will never
         # try to set these values automatically.
@@ -555,6 +559,12 @@ class Variable(ShaderObject):
         """ The name of this variable.
         """
         return self._name
+    
+    @name.setter
+    def name(self, n):
+        if self._name != n:
+            self._name = n
+            self.changed()
     
     @property
     def vtype(self):
@@ -631,13 +641,7 @@ class Variable(ShaderObject):
     def expression(self, names):
         return names[self]
     
-    def _rename(self, name):
-        self._name = name
-        self._last_changed = time.time()
-        self.decl_changed()
-        self.expr_changed()
-    
-    def declaration(self, names):
+    def definition(self, names):
         if self.vtype is None:
             raise RuntimeError("Variable has no vtype: %r" % self)
         if self.dtype is None:
@@ -687,7 +691,7 @@ class Varying(Variable):
 
 
 class Expression(ShaderObject):
-    def declaration(self, names):
+    def definition(self, names):
         # expressions are declared inline.
         return None
     

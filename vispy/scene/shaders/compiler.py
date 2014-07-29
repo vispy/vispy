@@ -66,7 +66,7 @@ class Compiler(object):
                 namespace[name] = dep
                 self._object_names[dep] = name
 
-        # Now we have a complete namespace; concatenate all declarations
+        # Now we have a complete namespace; concatenate all definitions
         # together in topological order.
         compiled = {}
         
@@ -77,7 +77,7 @@ class Compiler(object):
                 if dep in declared:
                     continue
                 
-                dep_code = dep.declaration(self._object_names)
+                dep_code = dep.definition(self._object_names)
                 if dep_code is not None:
                     code.append(dep_code)
                 
