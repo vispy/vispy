@@ -89,12 +89,16 @@ class ShaderObject(object):
         """
         return obj_names[self]
     
-    def dependencies(self):
+    def dependencies(self, sort=None):
         """ Return all dependencies required to use this object. The last item 
         in the list is *self*.
         """
         alldeps = []
-        for dep in self._deps:
+        if sort is None:
+            deps = self._deps
+        else:
+            deps = sorted(self._deps, key=sort)
+        for dep in deps:
             alldeps.extend(dep.dependencies())
         alldeps.append(self)
         return alldeps

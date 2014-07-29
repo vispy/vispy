@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
-
+from .function import Variable
 
 class Compiler(object):
     """
@@ -46,19 +46,25 @@ class Compiler(object):
         """ Compile all code and return a dict {name: code} where the keys 
         are determined by the keyword arguments passed to __init__().
         """
-        # map of {name: object} for this compilation
-        #self.namespace = namespace = {}
-
         # Walk over all dependencies, assign a unique name to each.
         # Names are only changed if there is a conflict.
         all_deps = {}
         
+        def key(obj):
+            # sort deps such that we get functions, variables, self.
+            if obj is self:
+                return (0, 0, 0)
+            if not isinstance(obj, Variable):
+                return (1, 1, 0)
+            else:
+                return (1, 0, obj.vtype)
+            
         for obj_name, obj in self.objects.items():
             
             # Collect all dependencies by name, also pop duplicates
             unique_deps = []
             deps_by_name = {}
-            for dep in obj.dependencies():
+            for dep in obj.dependencies(sort=key):
                 # Ensure we handle each dependency just once
                 if dep in unique_deps:
                     continue
@@ -88,27 +94,18 @@ class Compiler(object):
         compiled = {}
         
         for name, obj in self.objects.items():
-            
-            # Sort the dependencies by variables and functions
-            variable_definitions = []
-            function_definitions = []
-            for dep in all_deps[obj]:
-                if hasattr(dep, 'vtype'):
-                    variable_definitions.append(dep)
-                else:
-                    function_definitions.append(dep)
-            
-            # Generate the code, first variables, then functions
             code = ['// Generated code by function composition\n']
-            for dep in sorted(variable_definitions, key=lambda x: x.vtype):
-                dep_code = dep.definition(self._object_names)
-                code.append(dep_code)
-            code.append('')
-            for dep in function_definitions:
+            declared = set()
+            for dep in all_deps[obj]:
+                if dep in declared:
+                    continue            
+                
                 dep_code = dep.definition(self._object_names)
                 if dep_code is not None:
                     code.append(dep_code)
-            
+                
+                declared.add(dep)
+                
             compiled[name] = '\n'.join(code)
             
         self.code = compiled
