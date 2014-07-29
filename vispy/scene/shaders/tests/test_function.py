@@ -32,7 +32,6 @@ void main(void)
     vec4 pos = $position;
     pos += $correction;
     gl_Position = $endtransform(pos);
-    $post_hook
 }
 
 """)
@@ -77,6 +76,7 @@ def test_example1():
     
     code['gl_PointSize'] = '3.0'
     code[code2['color']] = pos
+    print(code)
 
 
 def test_example2():
@@ -130,6 +130,7 @@ def test_TextExpression():
 
 def test_FunctionCall():
     fun = Function(transformScale)
+    fun['scale'] = '1.0'
     fun2 = Function(transformZOffset)
     
     # No args
@@ -255,7 +256,7 @@ def test_function_basics():
     
     # Test setting call expressions
     fun = Function('void main(){\n$foo;\n$bar;\n$spam(XX);\n$eggs(YY);\n}')
-    trans = Function(transformScale)
+    trans = Function('float transform_scale(float x) {return x+1.0;}')
     assert_raises(TypeError, trans)  # requires 1 arg 
     assert_raises(TypeError, trans, '1', '2')
     fun['foo'] = trans('2')

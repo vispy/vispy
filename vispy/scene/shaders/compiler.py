@@ -33,7 +33,7 @@ class Compiler(object):
         # cache of compilation results for each function and variable
         self._object_names = {}  # {object: name}
         self._object_code = {}   # {object: code}
-        self.namespace = None    # {name: object}
+        #self.namespace = None    # {name: object}
         self.objects = objects
 
     def __getitem__(self, item):
@@ -47,64 +47,70 @@ class Compiler(object):
         are determined by the keyword arguments passed to __init__().
         """
         # map of {name: object} for this compilation
-        self.namespace = namespace = {}
+        #self.namespace = namespace = {}
 
         # Walk over all dependencies, assign a unique name to each.
         # Names are only changed if there is a conflict.
-        named_objects = []  # objects with names; may need to be renamed
         all_deps = {}
         
         for obj_name, obj in self.objects.items():
-            # record all dependencies of this object in topological order
-            deps = obj.dependencies()
-            all_deps[obj] = deps
-            for dep in deps:
+            
+            # Collect all dependencies by name, also pop duplicates
+            unique_deps = []
+            deps_by_name = {}
+            for dep in obj.dependencies():
+                # Ensure we handle each dependency just once
+                if dep in unique_deps:
+                    continue
+                unique_deps.append(dep)
+                # Put this name in the right box
                 if dep.name is None or dep in self._object_names:
                     continue
-
-                name = self._suggest_name(dep.name)
-                namespace[name] = dep
-                self._object_names[dep] = name
+                deps_with_this_name = deps_by_name.setdefault(dep.name, [])
+                deps_with_this_name.append(dep)
+            
+            # Rename these dependencies that need a new name
+            for name, deps_with_this_name in deps_by_name.items():
+                if len(deps_with_this_name) == 1:
+                    dep = deps_with_this_name[0]
+                    #namespace[name] = dep
+                    self._object_names[dep] = name
+                else:
+                    for i, dep in enumerate(deps_with_this_name):
+                        newname = name + '_%i' % (i+1)
+                        #namespace[newname] = dep
+                        self._object_names[dep] = newname
+            
+            all_deps[obj] = unique_deps
+            
 
         # Now we have a complete namespace; concatenate all definitions
         # together in topological order.
         compiled = {}
         
         for name, obj in self.objects.items():
-            code = []
-            declared = set()
+            
+            # Sort the dependencies by variables and functions
+            variable_definitions = []
+            function_definitions = []
             for dep in all_deps[obj]:
-                if dep in declared:
-                    continue
-                
+                if hasattr(dep, 'vtype'):
+                    variable_definitions.append(dep)
+                else:
+                    function_definitions.append(dep)
+            
+            # Generate the code, first variables, then functions
+            code = ['// Generated code by function composition\n']
+            for dep in sorted(variable_definitions, key=lambda x: x.vtype):
+                dep_code = dep.definition(self._object_names)
+                code.append(dep_code)
+            code.append('')
+            for dep in function_definitions:
                 dep_code = dep.definition(self._object_names)
                 if dep_code is not None:
                     code.append(dep_code)
-                
-                declared.add(dep)
             
             compiled[name] = '\n'.join(code)
             
         self.code = compiled
         return compiled
-
-    def _suggest_name(self, name):
-        """ Suggest a name similar to *name* that does not exist in *ns*.
-        """
-        if name == 'main':  # do not rename main functions
-            return name
-        ns = self.namespace
-        if name in ns:
-            m = re.match(r'(.*)_(\d+)', name)
-            if m is None:
-                base_name = name
-                index = 1
-            else:
-                base_name, index = m.groups()
-            while True:
-                name = base_name + '_' + str(index)
-                if name not in ns:
-                    break
-                index += 1
-        return name
-

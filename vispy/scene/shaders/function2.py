@@ -47,6 +47,9 @@ class ShaderObject(object):
         """
         if isinstance(ref, Variable):
             ref = ref.name
+        elif isinstance(ref, string_types) and ref.startswith('gl_'):
+            # gl_ names not allowed for variables
+            ref = ref[3:].lower()
         
         if isinstance(obj, ShaderObject):
             if isinstance(obj, Variable) and obj.name is None:
@@ -55,6 +58,9 @@ class ShaderObject(object):
             obj = TextExpression(obj)
         else:
             obj = Variable(ref, obj)
+            # Try prepending the name to indicate attribute, uniform, varying
+            if obj.vtype and obj.vtype[0] in 'auv':
+                obj.name = obj.vtype[0] + '_' + obj.name 
         
         return obj
         
@@ -66,8 +72,8 @@ class ShaderObject(object):
         
         # objects that must be declared before this object's definition.
         # {obj: refcount}
-        self._deps = {}
-        
+        self._deps = OrderedDict()  # OrderedDict for consistent code output
+    
     @property
     def name(self):
         """ The name of this shader object.
@@ -130,8 +136,13 @@ class Function(ShaderObject):
     snippets. Each Function consists of a GLSL snippet in the form of
     a function. The code may have template variables that start with
     the dollar sign. These stubs can be replaced with expressions using
-    the index operation. Expressions can be plain text or any ShaderObject
-    that defines an expression() method.
+    the index operation. Expressions can be:
+    
+    * plain text that is inserted verbatim in the code
+    * a Function object or a call to a funcion
+    * a Variable (or Varying) object
+    * float, int, tuple are automatically turned into a uniform Variable
+    * a VertexBuffer is automatically turned into an attribute Variable
     
     Example
     -------
@@ -144,63 +155,64 @@ class Function(ShaderObject):
             gl_Position.x += $xoffset;
             gl_Position.y += $yoffset;
         }''')
-
+        
         scale_transform = Function('''
         vec4 transform_scale(vec4 pos){
             return pos * $scale;
         }''')
-
+        
         # If you get the function from a snippet collection, always
         # create new Function objects to ensure they are 'fresh'.
         vert_code = Function(vert_code_template)
         trans1 = Function(scale_transform)
         trans2 = Function(scale_transform)  # trans2 != trans1
-
-        #
+        
         # Three ways to assign to template variables:
         #
         # 1) Assign verbatim code
         vert_code['xoffset'] = '(3.0 / 3.1415)'
-
+        
         # 2) Assign a value (this creates a new uniform or attribute)
         vert_code['yoffset'] = 5.0
-
+        
         # 3) Assign a function call expression
-        pos_var = 'attribute vec4 a_position'
+        pos_var = Variable('attribute a_position vec4')
         vert_code['pos'] = trans1(trans2(pos_var))  
-
+        
         # Transforms also need their variables set
         trans1['scale'] = 0.5
         trans2['scale'] = (1.0, 0.5, 1.0, 1.0)
-
+        
         # You can actually change any code you want, but use this with care!
         vert_code.replace('gl_Position.y', 'gl_Position.z')
-
+        
         # Finally, you can set special variables explicitly. This generates
         # a new statement at the end of the vert_code function.
-        vert_code['gl_PointSize'] = 10.
+        vert_code['gl_PointSize'] = '10.'
     
     
     If we use ``str(vert_code)`` we get::
 
-        uniform float scale;
-        vec4 transform_scale(vec4 pos){
-            return pos * scale;
-        }
-
-        uniform vec4 scale_1;
+        attribute vec4 a_position;
+        uniform float u_yoffset;
+        uniform float u_scale_1;
+        uniform vec4 u_scale_2;
+        uniform float u_pointsize;
+        
         vec4 transform_scale_1(vec4 pos){
-            return pos * scale_1;
+            return pos * u_scale_1;
         }
-
-        uniform float gl_PointSize;
-        uniform float yoffset;
+        
+        vec4 transform_scale_2(vec4 pos){
+            return pos * u_scale_2;
+        }
+        
         void main() {
-            gl_Position = transform_scale(transform_scale_1(attribute vec4 a_position));
+            gl_Position = transform_scale_1(transform_scale_2(a_position));
             gl_Position.x += (3.0 / 3.1415);
-            gl_Position.z += yoffset;
-
-            gl_PointSize = gl_PointSize;
+            gl_Position.z += u_yoffset;
+        
+            gl_PointSize = u_pointsize;
         }
     
     Note how the two scale function resulted in two different functions
@@ -211,9 +223,9 @@ class Function(ShaderObject):
     
     As can be seen above, the arguments with which a function is to be
     called must be specified by calling the Function object. The
-    arguments can be any of the expressions mentioned earlier (plain
-    text, variables, or function calls). If the signature is already
-    specified in the template code, that signature is used instead.
+    arguments can be any of the expressions mentioned earlier. If the
+    signature is already specified in the template code, that function
+    itself must be given.
     
         code = Function('''
             void main() {
@@ -226,40 +238,22 @@ class Function(ShaderObject):
         vert_code['pos'] = func1('3.0', 'uniform float u_param', func2())
         
         # For scale, the sigfnature is already specified
-        code['scale'] = scale_func  # No need to specify args
+        code['scale'] = scale_func  # Must not specify args
     
     Data for uniform and attribute variables
     ----------------------------------------
-    To each variable a value can be associated. The Function object
-    itself is agnostic about this value; it is only intended to keep
-    variable name and data together to make the code that needs to
-    process the variables easier.
+    To each variable a value can be associated. In fact, in most cases
+    the Function class is smart enough to be able to create a Variable
+    object if only the data is given.
     
-        code['offset'] = 'uniform float offset'  # a variable with no data
-        code['offset'] = 'uniform float offset', 3.0  # a variable with data
-        position['position'] = 'attribute vec3 a_position', VertexBuffer()
+        code['offset'] = Variable('uniform float offset')  # No data
+        code['offset'] = Variable('uniform float offset', 3.0)  # With data
+        code['offset'] = 3.0  # -> Uniform Variable
+        position['position'] = VertexBuffer()  # -> attribute Variable
         
         # Updating variables
         code['offset'].value = 4.0
         position['position'].value.set_data(...)
-        
-        # ... Somewhere later, we get all variables and bind names to value
-        for var in code.get_variables():
-            program[var.name] = var.value
-    
-    Linking shaders and specifying varyings
-    ---------------------------------------
-    By linking a vertex and fragment shader, they share the same name
-    scope and variables. The most straightforward way to deal with
-    varyings is to use the following method:
-        
-        // This is how to link
-        vert_code.link(frag_code)
-        
-        // Pass attribute data to the fragment shader
-        frag_code['color'] = 'varying vec3 v_color'
-        variable = frag_code['color']
-        vert_code[variable] = 'attribute vec3 a_color'
     
     """
     
@@ -296,7 +290,7 @@ class Function(ShaderObject):
         Each replacement can be:
         * verbatim code: ``fun1['foo'] = '3.14159'``
         * a FunctionCall: ``fun1['foo'] = fun2()``
-        * a Variable: ``fun1['foo'] = Variable(...)``
+        * a Variable: ``fun1['foo'] = Variable(...)`` (can be auto-generated)
         """
         
         # Check the key. Must be Varying, 'gl_X' or a known template variable
@@ -480,7 +474,7 @@ class Function(ShaderObject):
             v = parsing.find_template_variables(code)
             logger.warning('Unsubstituted placeholders in code: %s\n'
                            '  replacements made: %s' % 
-                           (v, self._expressions.keys()))
+                           (v, list(self._expressions.keys())))
         
         return code + '\n'
     
@@ -512,7 +506,8 @@ class Variable(ShaderObject):
     Parameters
     ----------
     name : str
-        the name of the variable
+        the name of the variable. This string can also contain the full
+        definition of the variable, e.g. 'uniform vec2 foo'.
     value : {float, int, tuple, GLObject}
         If given, vtype and dtype are determined automatically. If a
         float/int/tuple is given, the variable is a uniform. If a gloo
@@ -529,7 +524,11 @@ class Variable(ShaderObject):
         
         # allow full definition in first argument
         if ' ' in name:
-            vtype, dtype, name = name.split(' ')
+            if name.count(' ') == 2:
+                vtype, dtype, name = name.split(' ')
+            else:
+                vtype, dtype, name, value = name.split(' ', 3)
+                assert vtype == 'const'
             
         if not isinstance(name, string_types + (None,)):
             raise TypeError("Variable name must be string or None.")
@@ -547,7 +546,9 @@ class Variable(ShaderObject):
         if value is not None:
             self.value = value
         
-        assert self._vtype is None or self._vtype in VARIABLE_TYPES
+        if self._vtype and self._vtype not in VARIABLE_TYPES:
+            raise ValueError('Not a valid vtype: %r' % self._vtype)
+        
 
     @property
     def name(self):
@@ -707,7 +708,10 @@ class TextExpression(Expression):
         if not isinstance(text, string_types):
             raise TypeError("Argument must be string.")
         self._text = text
-        
+    
+    def __repr__(self):
+        return '<TextExpression %r for at 0x%x>' % (self.text, id(self))
+    
     def expression(self, names=None):
         return self._text
     
@@ -735,10 +739,7 @@ class TextExpression(Expression):
 class FunctionCall(Expression):
     """ Representation of a call to a function
     
-    Essentially this is container for a Function along with its
-    signature. Objects of this class generally live very short; they
-    serve only as a message. The signature is either incorporated in
-    the next FunctionCall or in the assignment at a function.
+    Essentially this is container for a Function along with its signature. 
     """
     
     def __init__(self, function, args):
@@ -766,7 +767,7 @@ class FunctionCall(Expression):
             self._add_dep(arg)
     
     def __repr__(self):
-        return '<FunctionCall %r for at 0x%x>' % (self.name, id(self))
+        return '<FunctionCall of %r at 0x%x>' % (self.function.name, id(self))
     
     @property
     def function(self):

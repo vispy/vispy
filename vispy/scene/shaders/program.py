@@ -60,10 +60,11 @@ class ModularProgram(Program):
 
     def _activate_variables(self):
         # set all variables
+        settable_vars = 'attribute', 'uniform'
         logger.debug("Apply variables:")
         deps = self.vert.dependencies() + self.frag.dependencies()
         for dep in deps:
-            if not isinstance(dep, Variable) or dep.vtype == 'varying':
+            if not isinstance(dep, Variable) or dep.vtype not in settable_vars:
                 continue
             name = self.compiler[dep]
             logger.debug("    %s = %s" % (name, dep.value))
