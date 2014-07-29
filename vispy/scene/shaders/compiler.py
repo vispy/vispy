@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
-import re
+
 
 class Compiler(object):
     """
@@ -82,8 +82,7 @@ class Compiler(object):
                         self._object_names[dep] = newname
             
             all_deps[obj] = unique_deps
-            
-
+        
         # Now we have a complete namespace; concatenate all definitions
         # together in topological order.
         compiled = {}

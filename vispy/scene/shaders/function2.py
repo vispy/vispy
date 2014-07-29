@@ -14,7 +14,6 @@ changes made to any object may be propagated to the root of the hierarchy to
 trigger a recompile.
 """
 
-import time
 import re
 import numpy as np
 
@@ -63,7 +62,6 @@ class ShaderObject(object):
                 obj.name = obj.vtype[0] + '_' + obj.name 
         
         return obj
-        
     
     def __init__(self):
         # emitted when any part of the code for this object has changed,
@@ -257,8 +255,14 @@ class Function(ShaderObject):
     
     """
     
-    def __init__(self, code):
+    def __init__(self, code, dependencies=None):
         super(Function, self).__init__()
+        
+        # Add depencencies is given. This is to allow people to
+        # manually define deps for a function that they use.
+        if dependencies is not None:
+            for dep in dependencies:
+                self._add_dep(dep)
         
         # Get and strip code
         if isinstance(code, Function):
@@ -548,8 +552,7 @@ class Variable(ShaderObject):
         
         if self._vtype and self._vtype not in VARIABLE_TYPES:
             raise ValueError('Not a valid vtype: %r' % self._vtype)
-        
-
+    
     @property
     def name(self):
         """ The name of this variable.
@@ -760,7 +763,7 @@ class FunctionCall(Expression):
         
         # Convert all arguments to ShaderObject, using arg name if possible.
         self._args = [ShaderObject.create(arg, ref=sig[i][1]) 
-                      for i,arg in enumerate(args)]
+                      for i, arg in enumerate(args)]
         
         self._add_dep(function)
         for arg in self._args:

@@ -3,7 +3,7 @@ from vispy.scene.shaders.function2 import Function, Variable, Varying
 # Users normally don't need these, but I want to test them
 from vispy.scene.shaders.function2 import FunctionCall, TextExpression
 
-from nose.tools import assert_raises, assert_equal, assert_not_equal
+from nose.tools import assert_raises, assert_equal, assert_not_equal  # noqa
 from vispy.testing import assert_in, assert_not_in, assert_is  # noqa
 
 
@@ -305,6 +305,7 @@ def test_function_basics():
 
 def test_function_changed():
     ch = []
+    
     def on_change(event):
         ch.append(event.source)
         
