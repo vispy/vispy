@@ -3,7 +3,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 from __future__ import division
-from .function import Variable
 
 class Compiler(object):
     """
@@ -50,21 +49,12 @@ class Compiler(object):
         # Names are only changed if there is a conflict.
         all_deps = {}
         
-        def key(obj):
-            # sort deps such that we get functions, variables, self.
-            if obj is self:
-                return (0, 0, 0)
-            if not isinstance(obj, Variable):
-                return (1, 1, 0)
-            else:
-                return (1, 0, obj.vtype)
-            
         for obj_name, obj in self.objects.items():
             
             # Collect all dependencies by name, also pop duplicates
             unique_deps = []
             deps_by_name = {}
-            for dep in obj.dependencies(sort=key):
+            for dep in obj.dependencies(sort=True):
                 # Ensure we handle each dependency just once
                 if dep in unique_deps:
                     continue

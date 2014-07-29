@@ -89,15 +89,25 @@ class ShaderObject(object):
         """
         return obj_names[self]
     
-    def dependencies(self, sort=None):
+    def dependencies(self, sort=False):
         """ Return all dependencies required to use this object. The last item 
         in the list is *self*.
         """
         alldeps = []
-        if sort is None:
-            deps = self._deps
+        if sort:
+            def key(obj):
+                # sort deps such that we get functions, variables, self.
+                if obj is self:
+                    return (0, 0, 0)
+                if not isinstance(obj, Variable):
+                    return (1, 1, 0)
+                else:
+                    return (1, 0, obj.vtype)
+            
+            deps = sorted(self._deps, key=key)
         else:
-            deps = sorted(self._deps, key=sort)
+            deps = self._deps
+        
         for dep in deps:
             alldeps.extend(dep.dependencies())
         alldeps.append(self)
