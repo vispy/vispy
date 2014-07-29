@@ -519,8 +519,8 @@ class ChainTransform(Transform):
 class NullTransform(Transform):
     """ Transform having no effect on coordinates (identity transform).
     """
-    glsl_map = "vec4 $null_transform_map(vec4 pos) {return pos;}"
-    glsl_imap = "vec4 $null_transform_imap(vec4 pos) {return pos;}"
+    glsl_map = "vec4 null_transform_map(vec4 pos) {return pos;}"
+    glsl_imap = "vec4 null_transform_imap(vec4 pos) {return pos;}"
 
     Linear = True
     Orthogonal = True
@@ -547,13 +547,13 @@ class STTransform(Transform):
     """ Transform performing only scale and translate, in that order.
     """
     glsl_map = """
-        vec4 $st_transform_map(vec4 pos) {
+        vec4 st_transform_map(vec4 pos) {
             return (pos * $scale) + $translate;
         }
     """
 
     glsl_imap = """
-        vec4 $st_transform_imap(vec4 pos) {
+        vec4 st_transform_imap(vec4 pos) {
             return (pos - $translate) / $scale;
         }
     """
@@ -588,13 +588,13 @@ class STTransform(Transform):
         return STTransform(scale=s, translate=t)
 
     def shader_map(self):
-        self._shader_map['scale'] = ('uniform', 'vec4', self.scale)
-        self._shader_map['translate'] = ('uniform', 'vec4', self.translate)
+        self._shader_map['scale'] = self.scale
+        self._shader_map['translate'] = self.translate
         return self._shader_map
 
     def shader_imap(self):
-        self._shader_imap['scale'] = ('uniform', 'vec4', self.scale)
-        self._shader_imap['translate'] = ('uniform', 'vec4', self.translate)
+        self._shader_imap['scale'] = self.scale
+        self._shader_imap['translate'] = self.translate
         return self._shader_imap
 
     @property
@@ -644,13 +644,13 @@ class STTransform(Transform):
 
 class AffineTransform(Transform):
     glsl_map = """
-        vec4 $affine_transform_map(vec4 pos) {
+        vec4 affine_transform_map(vec4 pos) {
             return $matrix * pos;
         }
     """
 
     glsl_imap = """
-        vec4 $affine_transform_imap(vec4 pos) {
+        vec4 affine_transform_imap(vec4 pos) {
             return $inv_matrix * pos;
         }
     """
@@ -809,7 +809,7 @@ class LogTransform(Transform):
     # An alternative approach is to transpose the vector before
     # log-transforming, and then transpose back afterward.
     glsl_map = """
-        vec4 $LogTransform_map(vec4 pos) {
+        vec4 LogTransform_map(vec4 pos) {
             if($base.x > 1.0)
                 pos.x = log(pos.x) / log($base.x);
             else if($base.x < -1.0)
@@ -894,13 +894,13 @@ class PolarTransform(Transform):
 
     """
     glsl_map = """
-        vec4 $polar_transform_map(vec4 pos) {
+        vec4 polar_transform_map(vec4 pos) {
             return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1);
         }
         """
 
     glsl_imap = """
-        vec4 $polar_transform_map(vec4 pos) {
+        vec4 polar_transform_map(vec4 pos) {
             // TODO: need some modulo math to handle larger theta values..?
             float theta = atan(pos.y, pos.x);
             float r = length(pos.xy);

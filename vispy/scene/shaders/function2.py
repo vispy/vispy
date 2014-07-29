@@ -608,9 +608,19 @@ class Variable(ShaderObject):
             #self.changed()
             return
         
-        if isinstance(value, (tuple, list)):
+        if isinstance(value, (tuple, list)) and 1 < len(value) < 5:
             vtype = 'uniform'
             dtype = 'vec%d' % len(value)
+        elif isinstance(value, np.ndarray):
+            if value.ndim == 1 and (1 < len(value) < 5):
+                vtype = 'uniform'
+                dtype = 'vec%d' % len(value)
+            elif value.ndim == 2 and value.shape in ((2, 2), (3, 3), (4, 4)):
+                vtype = 'uniform'
+                dtype = 'mat%d' % value.shape[0]                
+            else:
+                raise ValueError("Cannot make uniform value from array of "
+                                 "shape %s." % (value.shape))
         elif np.isscalar(value):
             vtype = 'uniform'
             if isinstance(value, (float, np.floating)):
