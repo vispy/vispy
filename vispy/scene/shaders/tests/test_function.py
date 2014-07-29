@@ -146,33 +146,32 @@ def test_FunctionCall():
     fun2 = Function(transformZOffset)
     
     # No args
-    call = fun()
+    assert_raises(TypeError, fun)  # need 1 arg
+    assert_raises(TypeError, fun, 1, 2)  # need 1 arg
+    call = fun('x')
     # Test repr
-    print(call)
-    assert_in(fun.name, str(call))
-    assert_in(call.__class__.__name__, str(call))
+    exp = call.expression({fun: 'y'})
+    assert_equal(exp, 'y(x)')
     # Test sig
-    assert len(call._signature) == 0
-    assert_equal(call._injection(), fun.name+'()')
+    assert len(call._args) == 1
     # Test dependencies
-    assert_in(fun, call._dependencies())
+    assert_in(fun, call.dependencies())
+    assert_in(call._args[0], call.dependencies())
     
     # More args
-    call = fun('foo', fun2())
+    call = fun(fun2('foo'))
     # Test repr
-    print(call)
-    assert_in(fun.name, str(call))
-    assert_in('foo', str(call))
-    assert_in(fun2.name, str(call))
+    exp = call.expression({fun: 'y', fun2: 'z'})
+    assert_in('y(z(', exp)
     # Test sig
-    assert len(call._signature) == 2
+    assert len(call._args) == 1
+    call2 = call._args[0]
+    assert len(call2._args) == 1
     # Test dependencies
-    assert_in(fun, call._dependencies())
-    assert_in(fun2, call._dependencies())
-
-    # Wrong arg
-    assert_raises(TypeError, FunctionCall, 4)
-    assert_raises(ValueError, FunctionCall, 4, 4)
+    assert_in(fun, call.dependencies())
+    assert_in(call._args[0], call.dependencies())
+    assert_in(fun2, call.dependencies())
+    assert_in(call2._args[0], call.dependencies())
 
 
 def test_Variable():
