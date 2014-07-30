@@ -52,6 +52,8 @@ function gen_mouse_event(c, e, type) {
 
 function gen_key_event(c, e, type) {
     var modifiers = get_modifiers(e);
+    var key_code = get_key(e);
+    var key_text = String.fromCharCode(key_code);
     var event = {
         "source": "browser",
         "event":
@@ -60,7 +62,8 @@ function gen_key_event(c, e, type) {
             "name": "KeyEvent",
             "properties": {
                 "type": type,
-                "key": get_key(e),
+                "key": key_code,
+                "text": key_text,
                 "modifiers": modifiers,
             }
         }
