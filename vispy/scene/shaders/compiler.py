@@ -86,16 +86,10 @@ class Compiler(object):
         
         for name, obj in self.objects.items():
             code = ['// Generated code by function composition\n']
-            declared = set()
             for dep in all_deps[obj]:
-                if dep in declared:
-                    continue            
-                
                 dep_code = dep.definition(self._object_names)
                 if dep_code is not None:
                     code.append(dep_code)
-                
-                declared.add(dep)
                 
             compiled[name] = '\n'.join(code)
             
