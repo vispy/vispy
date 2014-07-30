@@ -334,6 +334,19 @@ class Function(ShaderObject):
         # If values already match, bail out now
         if eq(storage.get(key), val):
             return
+
+        # If we are only changing the value (and not the dtype) of a uniform,
+        # we can set that value and return immediately to avoid triggering a
+        # recompile.
+        if val is not None:
+            val = ShaderObject.create(val, ref=key)
+            if isinstance(val, Variable) and val.vtype == 'uniform':
+                variable = storage.get(key, None)
+                if (variable is not None and
+                    variable.dtype == val.dtype and
+                    variable.vtype == 'uniform'):
+                        variable.value = val.value
+                        return
         
         # Remove old references, if any
         oldval = storage.pop(key, None)
@@ -341,12 +354,9 @@ class Function(ShaderObject):
             for obj in (key, oldval):
                 if isinstance(obj, ShaderObject):
                     self._remove_dep(obj)
-        
+
         # Add new references
         if val is not None:
-            # Ensure that val is a ShaderObject
-            val = ShaderObject.create(val, ref=key)
-            
             if isinstance(key, Varying):
                 # tell this varying to inherit properties from 
                 # its source attribute / expression.
