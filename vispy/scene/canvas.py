@@ -136,7 +136,8 @@ class SceneCanvas(app.Canvas):
         fbo[0].deactivate()
         self.pop_viewport()
         if len(self._fb_stack) > 0:
-            self._fb_stack[-1].activate()
+            old_fbo = self._fb_stack[-1]
+            old_fbo[0].activate()
         return fbo
         
     def _current_framebuffer(self):
