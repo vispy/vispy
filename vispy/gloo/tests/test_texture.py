@@ -31,7 +31,6 @@ class TextureTest(unittest.TestCase):
         assert T._store is True
         assert T._copy is False
         assert T._need_resize is True
-        assert T._need_update is True
         assert T._data is data
         assert len(T._pending_data) == 1
 
@@ -46,7 +45,7 @@ class TextureTest(unittest.TestCase):
         assert T._store is True
         assert T._copy is True
         assert T._need_resize is True
-        assert T._need_update is True
+        assert T._pending_data
         assert T._data is not data
         assert len(T._pending_data) == 1
 
@@ -60,7 +59,7 @@ class TextureTest(unittest.TestCase):
         assert T._store is True
         assert T._copy is False
         assert T._need_resize is True
-        assert T._need_update is False
+        assert not T._pending_data
         assert T._data is not None
         assert T._data.shape == (10, 10)
         assert T._data.dtype == np.uint8
@@ -76,7 +75,7 @@ class TextureTest(unittest.TestCase):
         assert T._store is True
         assert T._copy is False
         assert T._need_resize is False
-        assert T._need_update is False
+        assert not T._pending_data
         assert T._data is not None
         assert len(T._pending_data) == 0
 
@@ -91,8 +90,8 @@ class TextureTest(unittest.TestCase):
         assert T._store is True
         assert T._copy is False
         assert T._need_resize is True
-        assert T._need_update is True
         assert T._data is not data
+        assert T._pending_data
         assert len(T._pending_data) == 1
 
     # Data, store but no copy
@@ -307,7 +306,7 @@ class Texture2DTest(unittest.TestCase):
         assert T.shape == (5, 5, 1)
         assert T._data.shape == (5, 5, 1)
         assert T._need_resize is True
-        assert T._need_update is False
+        assert not T._pending_data
         assert len(T._pending_data) == 0
 
     # Resize with bad shape

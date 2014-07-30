@@ -14,15 +14,20 @@ from inspect import getargspec
 import vispy
 from vispy import keys
 from vispy.testing import requires_application
-from vispy.app import default_app
+from vispy.app import use_app, Application
 from vispy.app.backends import _template
 
 
+class DummyApplication(Application):
+    def _use(self, backend_namd):
+        pass
+
+        
 def _test_module_properties(_module=None):
     """Test application module"""
     if _module is None:
-        default_app.use()
-        _module = default_app.backend_module
+        app = use_app()
+        _module = app.backend_module
 
     # Test that the keymap contains all keys supported by vispy.
     keymap = _module.KEYMAP
@@ -97,15 +102,16 @@ def _test_module_properties(_module=None):
     # Test that all events seem to be emitted.
     # Get text
     fname = _module.__file__.strip('c')
-    text = open(fname, 'rb').read().decode('utf-8')
+    with open(fname, 'rb') as fid:
+        text = fid.read().decode('utf-8')
 
-    canvas = vispy.app.Canvas(create_native=False)
+    canvas = vispy.app.Canvas(create_native=False, app=DummyApplication())
     # Stylus and touch are ignored because they are not yet implemented.
     # Mouse events are emitted from the CanvasBackend base class.
     ignore = set(['stylus', 'touch', 'mouse_press', 'paint',
-                  'mouse_move', 'mouse_release'])
+                  'mouse_move', 'mouse_release', 'close'])
     eventNames = set(canvas.events._emitters.keys()) - ignore
-    
+
     if not alt_modname:  # Only check for non-proxy modules
         for name in eventNames:
             assert 'events.%s' % name in text, ('events.%s does not appear '
@@ -124,9 +130,8 @@ def test_template():
 
     c = _template.CanvasBackend(None)
     print(c._vispy_get_native_canvas())
-    for method in (c.events_to_emit, c._vispy_set_current,
-                   c._vispy_swap_buffers, c._vispy_update, c._vispy_close,
-                   c._vispy_get_size, c._vispy_get_position):
+    for method in (c._vispy_set_current, c._vispy_swap_buffers, c._vispy_close,
+                   c._vispy_update, c._vispy_get_size, c._vispy_get_position):
         assert_raises(NotImplementedError, method)
     for method in (c._vispy_set_title, c._vispy_set_visible):
         assert_raises(NotImplementedError, method, 0)

@@ -110,6 +110,7 @@ capability = dict(  # things that can be set by the backend
     context=False,
     multi_window=False,
     scroll=False,
+    parent=False,
 )
 
 
@@ -229,8 +230,8 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, **kwargs):
         BaseCanvasBackend.__init__(self, capability, SharedContext)
-        title, size, position, show, vsync, resize, dec, fs, context = \
-            self._process_backend_kwargs(kwargs)
+        title, size, position, show, vsync, resize, dec, fs, parent, context, \
+            vispy_canvas = self._process_backend_kwargs(kwargs)
         _set_config(context)
         glut.glutInitWindowSize(size[0], size[1])
         self._id = glut.glutCreateWindow(title.encode('ASCII'))
@@ -264,6 +265,8 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_set_position(*position)
         if not show:
             glut.glutHideWindow()
+        self._initialized = False
+        self._vispy_canvas = vispy_canvas
 
     @property
     def _vispy_context(self):
@@ -286,7 +289,9 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_canvas(self, vc):
         # Init events when the property is set by Canvas
         self._vispy_canvas_ = vc
-        if vc is not None:
+        if vc is not None and not self._initialized:
+            self._initialized = True
+            self._vispy_set_current()
             self._vispy_canvas.events.initialize()
 
     def _vispy_set_current(self):
@@ -364,7 +369,7 @@ class CanvasBackend(BaseCanvasBackend):
     def on_close(self):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.close()
+        self._vispy_canvas.close()
 
     def on_draw(self, dummy=None):
         if self._vispy_canvas is None:

@@ -5,12 +5,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 import time
-from vispy import app
-from vispy.gloo import gl
+from vispy import app, use
+from vispy.gloo import clear
 
-app.use('qt')
-# app.use('glut')
-# app.use('pyglet')
+use('pyqt4')
+# use('glut')
+# use('pyglet')
 
 canvas = app.Canvas(size=(512, 512), title = "Do nothing benchmark (vispy)",
                     close_keys='escape')
@@ -19,7 +19,7 @@ canvas = app.Canvas(size=(512, 512), title = "Do nothing benchmark (vispy)",
 @canvas.connect
 def on_draw(event):
     global t, t0, frames
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+    clear(color=True, depth=True)
 
     t = time.time()
     frames = frames + 1

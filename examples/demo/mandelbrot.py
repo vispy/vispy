@@ -104,7 +104,7 @@ class Canvas(app.Canvas):
         self.timer.start()
 
     def on_initialize(self, event):
-        gloo.set_clear_color(color=(0., 0., 0., 1.))
+        gloo.set_clear_color(color='black')
 
     def on_draw(self, event):
         self.program.draw()

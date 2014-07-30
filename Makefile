@@ -1,6 +1,5 @@
 # simple makefile to simplify repetetive build env management tasks under posix
 
-PYTHON ?= python
 CTAGS ?= ctags
 
 all: clean inplace test
@@ -18,51 +17,62 @@ clean-build:
 clean-ctags:
 	rm -f tags
 
-clean: clean-build clean-pyc clean-so clean-ctags
+clean-cache:
+	find . -name "__pycache__" | xargs rm -rf
+
+clean: clean-build clean-pyc clean-so clean-ctags clean-cache
+
+clean-test: clean-build clean-pyc clean-ctags clean-cache
 
 in: inplace # just a shortcut
 inplace:
-	$(PYTHON) setup.py build_ext -i
+	python setup.py build_ext -i
 
 nosetests: nose # alias
 
-# Test conditions
+# Test conditions, don't "clean-so" or builds won't work!
 
-nose: clean
+nose: clean-test
 	python make test nose
 
-nose_coverage: clean
+nose_coverage: clean-test
 	python make test nose 1
 
-test: clean
+test: clean-test
 	python make test full
 
-flake: clean
+flake: clean-test
 	python make test flake
 
-lineendings: clean
+flake3: clean-test
+	python3 make test flake
+
+lineendings: clean-test
 	python make test lineendings
 
-extra: clean
+extra: clean-test
 	python make test extra
 
-nobackend : clean
+nobackend : clean-test
 	python make test nobackend
 
-pyqt4: clean
+pyqt4: clean-test
 	python make test pyqt4
 
-pyside: clean
+pyside: clean-test
 	python make test pyside
 
-pyglet: clean
+pyglet: clean-test
 	python make test pyglet
 
-glfw: clean
+glfw: clean-test
 	python make test glfw
 
-sdl2: clean
+sdl2: clean-test
 	python make test sdl2
 
-glut: clean
+glut: clean-test
 	python make test glut
+
+ipynb_vnc: clean-test
+	python make test ipynb_vnc

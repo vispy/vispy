@@ -22,7 +22,7 @@ import time
 import numpy as np
 from scipy.spatial import cKDTree
 
-from vispy.gloo import gl
+from vispy import gloo
 from vispy import app
 from vispy.gloo import Program, VertexBuffer
 
@@ -92,14 +92,12 @@ class Canvas(app.Canvas):
         self.program['size'] = VertexBuffer(particles['size'], client=True)
 
     def on_initialize(self, event):
-        gl.glClearColor(0, 0, 0, 1)
-
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+        gloo.set_state(clear_color='black', blend=True,
+                       blend_func=('src_alpha', 'one'))
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
 
     def on_mouse_press(self, event):
         self._button = event.button
@@ -123,13 +121,12 @@ class Canvas(app.Canvas):
             predator['position'][:] = sx, sy, 0
 
     def on_draw(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gloo.clear(color=True, depth=True)
 
         # Draw
-        self.program['position'] = VertexBuffer(
-            particles['position'],
-            client=True)
-        self.program.draw(gl.GL_POINTS)
+        self.program['position'] = VertexBuffer(particles['position'],
+                                                client=True)
+        self.program.draw('points')
 
         # Next iteration
         self._t = self.iteration(time.time() - self._t)
@@ -181,7 +178,6 @@ class Canvas(app.Canvas):
         boids['velocity'] += 0.0005 * C + 0.01 * \
             A + 0.01 * R + 0.0005 * T + 0.025 * dP
         boids['position'] += boids['velocity']
-
         return t
 
 

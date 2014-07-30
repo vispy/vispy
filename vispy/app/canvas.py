@@ -6,11 +6,10 @@ from __future__ import division, print_function
 
 import numpy as np
 
-from ._default_app import default_app
 from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..ext.six import string_types
-from .application import Application
+from . import Application, use_app
 from ._config import get_default_config
 
 # todo: add functions for asking about current mouse/keyboard state
@@ -71,12 +70,14 @@ class Canvas(object):
         thereby sharing the existing context.
     close_keys : str | list of str
         Key to use that will cause the canvas to be closed.
+    parent : widget-object
+        The parent widget if this makes sense for the used backend.
     """
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, vsync=False, resizable=True, decorate=True,
-                 fullscreen=False, context=None, close_keys=()):
+                 fullscreen=False, context=None, close_keys=(), parent=None):
 
         size = [int(s) for s in size]
         if len(size) != 2:
@@ -95,6 +96,7 @@ class Canvas(object):
         self._basetime = time()
         self._fps_callback = None
         self._backend = None
+        self._closed = False
 
         # Create events
         self.events = EmitterGroup(source=self,
@@ -128,13 +130,19 @@ class Canvas(object):
         # store arguments that get set on Canvas init
         kwargs = dict(title=title, size=size, position=position, show=show,
                       vsync=vsync, resizable=resizable, decorate=decorate,
-                      fullscreen=fullscreen, context=context)
+                      fullscreen=fullscreen, context=context, parent=parent,
+                      vispy_canvas=self)
         self._backend_kwargs = kwargs
 
         # Get app instance
-        if isinstance(app, string_types):
-            app = Application(app)
-        self._app = default_app if app is None else app
+        if app is None:
+            self._app = use_app()
+        elif isinstance(app, Application):
+            self._app = app
+        elif isinstance(app, string_types):
+            self._app = Application(app)
+        else:
+            raise ValueError('Invalid value for app %r' % app)
 
         # Create widget now
         if create_native:
@@ -156,7 +164,6 @@ class Canvas(object):
         if self._backend is not None:
             return
         # Make sure that the app is active
-        self._app.use()
         assert self._app.native
         # Instantiate the backend with the right class
         be = self._app.backend_module.CanvasBackend(**self._backend_kwargs)
@@ -167,7 +174,7 @@ class Canvas(object):
         """
         assert backend is not None  # should never happen
         self._backend = backend
-        self._backend._vispy_canvas = self
+        self._backend._vispy_canvas = self  # it's okay to set this again
         if self._autoswap:
             # append to the end
             self.events.draw.connect((self, 'swap_buffers'),
@@ -277,7 +284,9 @@ class Canvas(object):
         To avoid having the widget destroyed (more like standard Qt
         behavior), consider making the widget a sub-widget.
         """
-        if self._backend is not None:
+        if self._backend is not None and not self._closed:
+            self._closed = True
+            self.events.close()
             self._backend._vispy_close()
             self._backend._vispy_canvas = None
 
@@ -389,9 +398,11 @@ class MouseEvent(Event):
        String indicating the event type (e.g. mouse_press, key_release)
     pos : (int, int)
         The position of the mouse (in screen coordinates).
-    button : int
+    button : int | None
         The button that generated this event (can be None).
-        Left=1, right=2, middle=3.
+        Left=1, right=2, middle=3. During a mouse drag, this
+        will return the button that started the drag (same thing as
+        ``event.press_event.button``).
     buttons : [int, ...]
         The list of buttons depressed during this event.
     modifiers : tuple of Key instances
@@ -419,7 +430,7 @@ class MouseEvent(Event):
                  **kwds):
         Event.__init__(self, type, **kwds)
         self._pos = (0, 0) if (pos is None) else (pos[0], pos[1])
-        self._button = int(button) if (button is not None) else 0
+        self._button = int(button) if (button is not None) else None
         self._buttons = [] if (buttons is None) else buttons
         self._modifiers = tuple(modifiers or ())
         self._delta = (0.0, 0.0) if (delta is None) else (delta[0], delta[1])

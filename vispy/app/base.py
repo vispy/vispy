@@ -39,7 +39,10 @@ class BaseCanvasBackend(object):
     implement all its _vispy_xxx methods. Also, also a backend must
     make sure to generate the following events: 'initialize', 'resize',
     'draw', 'mouse_press', 'mouse_release', 'mouse_move',
-    'mouse_wheel', 'key_press', 'key_release', 'close'.
+    'mouse_wheel', 'key_press', 'key_release'. When a backend detects
+    that the canvas should be closed, the backend should call
+    'self._vispy_canvas.close', because the close event is handled within
+    the canvas itself.
     """
 
     def __init__(self, capability, context_type):
@@ -60,9 +63,9 @@ class BaseCanvasBackend(object):
         """Removes vispy-specific kwargs for CanvasBackend"""
         # these are the output arguments
         keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
-                'decorate', 'fullscreen']
+                'decorate', 'fullscreen', 'parent']
         from .canvas import Canvas
-        outs = list()
+        outs = []
         spec = getargspec(Canvas.__init__)
         for key in keys:
             default = spec.defaults[spec.args.index(key) - 1]
@@ -98,6 +101,7 @@ class BaseCanvasBackend(object):
                             'a Canvas with the same backend, not %s'
                             % type(context))
         outs.append(context)
+        outs.append(kwargs.get('vispy_canvas', None))
         return outs
 
     def _vispy_set_current(self):
@@ -173,6 +177,8 @@ class BaseCanvasBackend(object):
             last_event = self._vispy_mouse_data['last_event']
             if last_event is not None:
                 last_event._forget_last_event()
+        else:
+            kwds['button'] = self._vispy_mouse_data['press_event'].button
 
         ev = self._vispy_canvas.events.mouse_move(**kwds)
         self._vispy_mouse_data['last_event'] = ev

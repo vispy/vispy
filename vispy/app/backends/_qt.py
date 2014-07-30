@@ -12,7 +12,7 @@ The _pyside and _pyqt4 modules will import * from this module, and also
 keep a ref to the module object. Note that if both the PySide and PyQt4
 backend are used, this module is actually reloaded. This is a sorts of
 poor mans "subclassing" to get a working version for both backends using
-the same code. 
+the same code.
 
 Note that it is strongly discouraged to use the PySide and PyQt4
 backends simultaneously. It is known to cause unpredictable behavior
@@ -22,14 +22,15 @@ and segfaults.
 from __future__ import division
 
 from time import sleep, time
+from ...util import logger
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
 from ...util import keys
 from ...ext.six import text_type
-from ...util import logger
 
 from . import qt_lib
+
 
 # -------------------------------------------------------------------- init ---
 
@@ -92,6 +93,18 @@ KEYMAP = {
 BUTTONMAP = {0: 0, 1: 1, 2: 2, 4: 3, 8: 4, 16: 5}
 
 
+# Properly log Qt messages
+# Also, ignore spam about tablet input
+def message_handler(msg_type, msg):
+    if msg == ("QCocoaView handleTabletEvent: This tablet device is "
+               "unknown (received no proximity event for it). Discarding "
+               "event."):
+        return
+    else:
+        logger.warning(msg)
+
+QtCore.qInstallMsgHandler(message_handler)
+
 # -------------------------------------------------------------- capability ---
 
 capability = dict(  # things that can be set by the backend
@@ -106,6 +119,7 @@ capability = dict(  # things that can be set by the backend
     context=True,
     multi_window=True,
     scroll=True,
+    parent=True,
 )
 
 
@@ -184,8 +198,9 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
     def __init__(self, *args, **kwargs):
         self._initialized = False
         BaseCanvasBackend.__init__(self, capability, SharedContext)
-        title, size, position, show, vsync, resize, dec, fs, context = \
-            self._process_backend_kwargs(kwargs)
+        title, size, position, show, vsync, resize, dec, fs, parent, context, \
+            vispy_canvas = self._process_backend_kwargs(kwargs)
+        self._vispy_canvas = vispy_canvas
         if isinstance(context, dict):
             glformat = _set_config(context)
             glformat.setSwapInterval(1 if vsync else 0)
@@ -197,7 +212,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
                                    'use built-in shareWidget')
             widget = context.value
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
-        parent = kwargs.pop('parent', None)
+
         # first arg can be glformat, or a shared context
         QtOpenGL.QGLWidget.__init__(self, glformat, parent, widget, f)
         self._initialized = True
@@ -303,7 +318,10 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
     def closeEvent(self, ev):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.close()
+        self._vispy_canvas.close()
+
+    def sizeHint(self):
+        return self.size()
 
     def mousePressEvent(self, ev):
         if self._vispy_canvas is None:

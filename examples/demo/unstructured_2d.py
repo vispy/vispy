@@ -19,7 +19,6 @@ interpolated between the locations.
 import numpy as np
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 from vispy.util.transforms import ortho
 
 import scipy.spatial
@@ -86,7 +85,7 @@ class Unstructured2d(app.Canvas):
                 colormap[None, :, :])
         else:
             self.program['texture'] = colormap
-        self.program['texture'].interpolation = gl.GL_LINEAR
+        self.program['texture'].interpolation = 'linear'
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
@@ -114,7 +113,7 @@ class Unstructured2d(app.Canvas):
         self.index = gloo.IndexBuffer(edges)
 
     def on_initialize(self, event):
-        gloo.set_state(blend=True, clear_color=(1, 1, 1, 1),
+        gloo.set_state(blend=True, clear_color='white',
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def on_draw(self, event):

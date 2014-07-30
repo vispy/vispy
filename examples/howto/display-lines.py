@@ -12,7 +12,7 @@ from vispy import gloo
 from vispy import app
 from vispy.util.transforms import perspective, translate, rotate
 
-# app.use('glut')
+# app.use_app('glut')
 
 # Create vetices
 n = 100
@@ -78,7 +78,7 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_initialize(self, event):
-        gloo.set_clear_color((1, 1, 1, 1))
+        gloo.set_clear_color('white')
         gloo.set_state('translucent')
 
     # ---------------------------------

@@ -7,7 +7,6 @@
 
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 import numpy as np
 
 # Create vetices
@@ -73,28 +72,22 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, close_keys='escape')
 
+    def on_initialize(self, event):
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-
         # Set uniform and attribute
         self.program['a_color'] = gloo.VertexBuffer(v_color)
         self.program['a_position'] = gloo.VertexBuffer(v_position)
         self.program['a_size'] = gloo.VertexBuffer(v_size)
-
-    def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
-
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gloo.set_state(clear_color='white', blend=True,
+                       blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def on_resize(self, event):
-        width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, *event.size)
 
     def on_draw(self, event):
-        # Clear
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        # Draw
-        self.program.draw(gl.GL_POINTS)
+        gloo.clear(color=True, depth=True)
+        self.program.draw('points')
+        self.update()
 
 
 if __name__ == '__main__':

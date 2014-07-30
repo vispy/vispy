@@ -35,7 +35,6 @@ class RenderBuffer(GLObject):
         self._format = format
         self._resizeable = resizeable
         self._need_resize = True
-        self._need_update = False
 
     @property
     def shape(self):
@@ -82,6 +81,8 @@ class RenderBuffer(GLObject):
 
         logger.debug("GPU: Activate render buffer")
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._handle)
+        
+        # Resize if necessary
         if self._need_resize:
             self._resize()
             self._need_resize = False
@@ -194,7 +195,6 @@ class FrameBuffer(GLObject):
         self._color_buffer = color
         self._depth_buffer = depth
         self._stencil_buffer = stencil
-        self._need_update = False
         self._need_attach = True
         self._resizeable = resizeable
         self._pending_attachments = []
@@ -205,6 +205,13 @@ class FrameBuffer(GLObject):
             self.depth_buffer = depth
         if stencil is not None:
             self.stencil_buffer = stencil
+
+    def __enter__(self):
+        self.activate()
+        return self
+
+    def __exit__(self, t, val, trace):
+        self.deactivate()
 
     @property
     def color_buffer(self):
@@ -220,9 +227,11 @@ class FrameBuffer(GLObject):
         self._color_buffer = buffer
         if isinstance(buffer, (ColorBuffer, Texture2D)) or buffer is None:
             self._pending_attachments.append((target, buffer))
+            self._need_attach = True
         else:
             raise ValueError(
-                "Buffer must be a ColorBuffer, Texture2D or None")
+                "Buffer must be a ColorBuffer, Texture2D or None. (got %s)"
+                % type(buffer))
 
     @property
     def depth_buffer(self):
@@ -238,9 +247,11 @@ class FrameBuffer(GLObject):
         self._depth_buffer = buffer
         if isinstance(buffer, (DepthBuffer, Texture2D)) or buffer is None:
             self._pending_attachments.append((target, buffer))
+            self._need_attach = True
         else:
             raise ValueError(
-                "Buffer must be a DepthBuffer, Texture2D or None")
+                "Buffer must be a DepthBuffer, Texture2D or None. (got %s)"
+                % type(buffer))
 
     @property
     def stencil_buffer(self):
@@ -256,9 +267,11 @@ class FrameBuffer(GLObject):
         self._stencil_buffer = buffer
         if isinstance(buffer, StencilBuffer) or buffer is None:
             self._pending_attachments.append((target, buffer))
+            self._need_attach = True
         else:
             raise ValueError(
-                "Buffer must be a StencilBuffer, Texture2D or None")
+                "Buffer must be a StencilBuffer, Texture2D or None. (got %s)"
+                % type(buffer))
 
     @property
     def shape(self):
@@ -282,12 +295,12 @@ class FrameBuffer(GLObject):
         if len(shape) != 2:
             raise ValueError("New shape has wrong number of dimensions")
 
-        if self.color is not None:
-            self.color.resize(shape)
-        if self.depth is not None:
-            self.depth.resize(shape)
-        if self.stencil is not None:
-            self.stencil.resize(shape)
+        if self.color_buffer is not None:
+            self.color_buffer.resize(shape)
+        if self.depth_buffer is not None:
+            self.depth_buffer.resize(shape)
+        if self.stencil_buffer is not None:
+            self.stencil_buffer.resize(shape)
 
     def _create(self):
         """ Create framebuffer on GPU """
@@ -306,10 +319,12 @@ class FrameBuffer(GLObject):
 
         logger.debug("GPU: Activate render framebuffer")
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
+        
+        # Attach buffers if necessary
         if self._need_attach:
             self._attach()
             self._need_attach = False
-
+    
     def _deactivate(self):
         """ Deactivate framebuffer on GPU """
 
@@ -339,7 +354,7 @@ class FrameBuffer(GLObject):
                                           buffer.target, buffer.handle, 0)
                 buffer.deactivate()
             else:
-                raise ValueError("Invalid attachment")
+                raise ValueError("Invalid attachment: %s" % type(buffer))
 
         if 1:
             res = gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER)
@@ -356,9 +371,11 @@ class FrameBuffer(GLObject):
             elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
                 raise RuntimeError(
                     'attachments do not have the same width and height.')
-            elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS:
-                raise RuntimeError('Internal format of attachment '
-                                   'is not renderable.')
+            #elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS: # not in es 2.0
+            #    raise RuntimeError('Internal format of attachment '
+            #                       'is not renderable.')
             elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
                 raise RuntimeError('Combination of internal formats used '
                                    'by attachments is not supported.')
+            else:
+                raise RuntimeError('Unknown framebuffer error: %r.' % res)

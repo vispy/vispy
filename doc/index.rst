@@ -22,6 +22,7 @@ Contents:
    vispy.app - Application API <app>
    vispy.gloo - object oriented GL API <gloo>
    vispy.util - Utilities <util>
+   vispy.visuals - Drawable objects <visuals>
    
    examples
    releasenotes

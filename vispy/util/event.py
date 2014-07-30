@@ -429,12 +429,13 @@ class EventEmitter(object):
             sys.last_type = type
             sys.last_value = value
             sys.last_traceback = tb
+            del tb  # Get rid of it in this namespace
             # Handle
             if self.ignore_callback_errors:
                 if self.print_callback_errors:
-                    sys.excepthook(type, value, tb)
-                    logger.warning("Error invoking callback for "
-                                   "event: %s" % str(event))
+                    logger.log_exception()
+                    logger.warning("Error invoking callback %s for "
+                                   "event: %s" % (cb, event))
             else:
                 raise
 
@@ -617,7 +618,8 @@ class EmitterGroup(EventEmitter):
                     event_class=emitter)
             elif not isinstance(emitter, EventEmitter):
                 raise Exception('Emitter must be specified as either an '
-                                'EventEmitter instance or Event subclass')
+                                'EventEmitter instance or Event subclass. '
+                                '(got %s=%s)' % (name, emitter))
 
             # give this emitter the same source as the group.
             emitter.source = self.source

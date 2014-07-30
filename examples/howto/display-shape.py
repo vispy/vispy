@@ -11,7 +11,7 @@ from vispy import gloo
 from vispy import app
 import numpy as np
 
-# Create vetices
+# Create vertices
 vPosition = np.array([[-0.8, -0.8, 0.0], [+0.7, -0.7, 0.0],
                       [-0.7, +0.7, 0.0], [+0.8, +0.8, 0.0, ]], np.float32)
 
@@ -45,7 +45,7 @@ class Canvas(app.Canvas):
         self._program['a_position'] = gloo.VertexBuffer(vPosition)
 
     def on_initialize(self, event):
-        gloo.set_clear_color((1, 1, 1, 1))
+        gloo.set_clear_color('white')
 
     def on_resize(self, event):
         width, height = event.size

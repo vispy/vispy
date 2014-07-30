@@ -295,7 +295,7 @@ class WavefrontWriter(object):
             faces = np.arange(len(vertices))
 
         # Reshape faces
-        Nfaces = faces.size / 3
+        Nfaces = faces.size // 3
         faces = faces.reshape((Nfaces, 3))
 
         # Number of vertices

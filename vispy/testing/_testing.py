@@ -8,7 +8,9 @@ from __future__ import print_function
 
 import numpy as np
 import os
-
+import subprocess
+import inspect
+from ..app import Canvas
 
 ###############################################################################
 # Adapted from Python's unittest2 (which is wrapped by nose)
@@ -22,6 +24,45 @@ except ImportError:
     except ImportError:
         class SkipTest(Exception):
             pass
+
+
+def run_subprocess(command):
+    """Run command using subprocess.Popen
+
+    Run command and wait for command to complete. If the return code was zero
+    then return, otherwise raise CalledProcessError.
+    By default, this will also add stdout= and stderr=subproces.PIPE
+    to the call to Popen to suppress printing to the terminal.
+
+    Parameters
+    ----------
+    command : list of str
+        Command to run as subprocess (see subprocess.Popen documentation).
+
+    Returns
+    -------
+    stdout : str
+        Stdout returned by the process.
+    stderr : str
+        Stderr returned by the process.
+    """
+    # code adapted with permission from mne-python
+    kwargs = dict(stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+
+    p = subprocess.Popen(command, **kwargs)
+    stdout_, stderr = p.communicate()
+
+    output = (stdout_, stderr)
+    if p.returncode:
+        print(stdout_)
+        print(stderr)
+        err_fun = subprocess.CalledProcessError.__init__
+        if 'output' in inspect.getargspec(err_fun).args:
+            raise subprocess.CalledProcessError(p.returncode, command, output)
+        else:
+            raise subprocess.CalledProcessError(p.returncode, command)
+
+    return output
 
 
 def _safe_rep(obj, short=False):
@@ -100,6 +141,7 @@ def requires_pyopengl():
 # App stuff
 
 def has_backend(backend, has=(), capable=(), out=()):
+    from ..app.backends import BACKENDMAP
     using = os.getenv('_VISPY_TESTING_BACKEND', None)
     if using is not None and using != backend:
         # e.g., we are on  a 'pyglet' run but the test requires PyQt4
@@ -108,8 +150,9 @@ def has_backend(backend, has=(), capable=(), out=()):
             ret += (None,)
         return ret
     # let's follow the standard code path
-    mod = __import__('app.backends._%s' % backend, globals(), level=2)
-    mod = getattr(mod.backends, '_%s' % backend)
+    module_name = BACKENDMAP[backend.lower()][1]
+    mod = __import__('app.backends.%s' % module_name, globals(), level=2)
+    mod = getattr(mod.backends, module_name)
     good = mod.testable
     for h in has:
         good = (good and getattr(mod, 'has_%s' % h))
@@ -153,8 +196,106 @@ def requires_application(backend=None, has=(), capable=()):
 def glut_skip():
     """Helper to skip a test if GLUT is the current backend"""
     # this is basically a knownfail tool for glut
-    from ..app import default_app
-    default_app.use()
-    if default_app.backend_name.lower() == 'glut':
+    from ..app import use_app
+    app = use_app()
+    if app.backend_name.lower() == 'glut':
         raise SkipTest('GLUT unstable')
     return  # otherwise it's fine
+
+
+def requires_img_lib():
+    """Decorator for tests that require an image library"""
+    from ..util.dataio import _check_img_lib
+    has_img_lib = not all(c is None for c in _check_img_lib())
+    return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
+
+
+###############################################################################
+# Visuals stuff
+
+def _has_scipy(min_version):
+    try:
+        assert isinstance(min_version, str)
+        import scipy  # noqa, analysis:ignore
+        from distutils.version import LooseVersion
+        this_version = LooseVersion(scipy.__version__)
+        if this_version < min_version:
+            return False
+    except Exception:
+        return False
+    else:
+        return True
+
+
+def requires_scipy(min_version='0.13'):
+    return np.testing.dec.skipif(not _has_scipy(min_version),
+                                 'Requires Scipy version >= %s' % min_version)
+        
+
+def _save_failed_test(data, filename):
+    import httplib
+    import urllib
+    import base64
+    from ..util import make_png
+
+    commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
+    name = filename.split('/')
+    name.insert(-1, commit)
+    filename = os.path.join(*name)
+    host = 'data.vispy.org'
+    png = make_png(data)
+    conn = httplib.HTTPConnection(host)
+    req = urllib.urlencode({'name': filename, 
+                            'data': base64.b64encode(png)})
+    conn.request('POST', '/upload.py', req)
+    response = conn.getresponse().read()
+    if not response.startswith('OK'):
+        print("WARNING: Error uploading data to %s" % host)
+        print(response)
+
+
+def assert_image_equal(image, reference):
+    """Downloads reference image and compares with image
+
+    Parameters
+    ----------
+    image: str, numpy.array
+        'screenshot' or image data
+    reference: str
+        'The filename on the remote ``test-data`` repository to download'
+    """
+    from ..gloo.util import _screenshot
+    from ..util.dataio import imread
+    from ..util import get_testing_file
+
+    if image == "screenshot":
+        image = _screenshot(alpha=False)
+    ref = imread(get_testing_file(reference))
+
+    slices = [slice(0, -1), slice(0, None), slice(1, None)]
+    min_diff = np.inf
+    for i in range(3):
+        for j in range(3):
+            a = image[slices[i], slices[j]]
+            b = ref[slices[2-i], slices[2-j]]
+            diff = (a != b).sum()
+            if diff < min_diff:
+                min_diff = diff
+    try:
+        assert min_diff <= 40
+    except AssertionError:
+        _save_failed_test(image, reference)
+        raise
+
+
+class TestingCanvas(Canvas):
+    def __init__(self, clear_color=(0, 0, 0, 1), size=(100, 100)):
+        Canvas.__init__(self, size=size)
+        self._clear_color = clear_color
+
+    def __enter__(self):
+        Canvas.__enter__(self)
+        from .. import gloo
+        gloo.clear(color=self._clear_color)
+        gloo.set_viewport(0, 0, *self.size)
+        return self

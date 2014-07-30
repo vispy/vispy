@@ -53,6 +53,7 @@ class Shader(GLObject):
         self._target = target
         self._code = None
         self._source = None
+        self._need_compile = False
         if code is not None:
             self.code = code
 
@@ -71,7 +72,7 @@ class Shader(GLObject):
         else:
             self._code = code
             self._source = '<string>'
-        self._need_update = True
+        self._need_compile = True
 
     @property
     def source(self):
@@ -79,7 +80,13 @@ class Shader(GLObject):
         return self._source
     
     def _activate(self):
-        pass  # shaders do not need any kind of (de)activation
+        # shaders do not need any kind of (de)activation
+        # in the sense of glActiveSomething()
+        
+        # Recompile if necessary
+        if self._need_compile:
+            self._compile_shader()
+            self._need_compile = False
     
     def _deactivate(self):
         pass  # shaders do not need any kind of (de)activation
@@ -96,7 +103,7 @@ class Shader(GLObject):
         if self._handle <= 0:
             raise RuntimeError("Cannot create shader object")
 
-    def _update(self):
+    def _compile_shader(self):
         """ Compile the source and checks everything's ok """
         # Set shader source
         gl.glShaderSource(self._handle, self._code)

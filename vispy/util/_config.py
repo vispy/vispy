@@ -236,12 +236,31 @@ def set_data_dir(directory=None, create=False, save=False):
 ###############################################################################
 # System information and parsing
 
+VISPY_HELP = """
+VisPy command line arguments:
+
+  --vispy-backend=(qt|pyqt|pyside|glut|glfw|pyglet)
+    Selects the backend system for VisPy to use. This will override the default
+    backend selection in your configuration file.
+    
+  --vispy-log=(debug|info|warning|error|critical)[,search string]
+    Sets the verbosity of logging output. The default is 'warning'. If a search
+    string is given, messages will only be displayed if they match the string,
+    or if their call location (module.class:method(line) or 
+    module:function(line)) matches the string.    
+    
+  --vispy-help
+    Display this help message.
+
+"""
+
+
 def _parse_command_line_arguments():
     """ Transform vispy specific command line args to vispy config.
     Put into a function so that any variables dont leak in the vispy namespace.
     """
     # Get command line args for vispy
-    argnames = ['vispy-backend', 'vispy-gl-debug']
+    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-log=', 'vispy-help']
     try:
         opts, args = getopt.getopt(sys.argv[1:], '', argnames)
     except getopt.GetoptError:
@@ -254,6 +273,16 @@ def _parse_command_line_arguments():
                 logger.info('backend', a)
             elif o == '--vispy-gl-debug':
                 config['gl_debug'] = True
+            elif o == '--vispy-log':
+                if ',' in a:
+                    verbose, match = a.split(',')
+                else:
+                    verbose = a
+                    match = None
+                config['logging_level'] = a
+                set_log_level(verbose, match)
+            elif o == '--vispy-help':
+                print(VISPY_HELP)
             else:
                 logger.warning("Unsupported vispy flag: %s" % o)
 
@@ -279,26 +308,26 @@ def sys_info(fname=None, overwrite=False):
     out = ''
     try:
         # Nest all imports here to avoid any circular imports
-        from ..app import default_app, Canvas
+        from ..app import use_app, Canvas
         from ..app.backends import BACKEND_NAMES
         from ..gloo import gl
         from ..testing import has_backend
         # get default app
         with use_log_level('warning'):
-            default_app.use()  # suppress unnecessary messages
+            app = use_app()  # suppress messages
         out += 'Platform: %s\n' % platform.platform()
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
-        out += 'Backend:  %s\n' % default_app.backend_name
+        out += 'Backend:  %s\n' % app.backend_name
         for backend in BACKEND_NAMES:
             which = has_backend(backend, out=['which'])[1]
             out += '{0:<9} {1}\n'.format(backend + ':', which)
         out += '\n'
         # We need an OpenGL context to get GL info
-        if 'glut' in default_app.backend_name.lower():
+        if 'glut' in app.backend_name.lower():
             # glut causes problems
             out += 'OpenGL information omitted for glut backend\n'
         else:
-            canvas = Canvas('Test', (10, 10), show=False, app=default_app)
+            canvas = Canvas('Test', (10, 10), show=False, app=app)
             canvas._backend._vispy_set_current()
             out += 'GL version:  %s\n' % gl.glGetParameter(gl.GL_VERSION)
             x_ = gl.GL_MAX_TEXTURE_SIZE

@@ -7,12 +7,26 @@
 from .wrappers import read_pixels
 
 
-def _screenshot(viewport=None):
+def _screenshot(viewport=None, alpha=True):
     """ Take a screenshot using glReadPixels. Not sure where to put this
     yet, so a private function for now. Used in make.py.
+
+    Parameters
+    ----------
+    viewport : array-like | None
+        4-element list of x, y, w, h parameters. If None (default),
+        the current GL viewport will be queried and used.
+    alpha : bool
+        If True (default), the returned array has 4 elements (RGBA).
+        Otherwise, it has 3 (RGB)
+
+    Returns
+    -------
+    pixels : array
+        3D array of pixels in np.uint8 format
     """
     # gl.glReadBuffer(gl.GL_BACK)  Not avaliable in ES 2.0
-    return read_pixels(viewport)
+    return read_pixels(viewport, alpha)
 
 
 KEYWORDS = set(['active', 'asm', 'cast', 'class', 'common', 'default',
@@ -43,16 +57,53 @@ def check_variable(name):
     if len(name) > 31:
         return ("Variable names >31 characters may not function on some "
                 "systems.")
-    
+
     return check_identifier(name)
 
 
 def check_identifier(name):
     if '__' in name:
         return "Identifiers may not contain double-underscores."
-    
+
     if name[:3] == 'gl_' or name[:3] == 'GL_':
         return "Identifiers may not begin with gl_ or GL_."
-    
+
     if name in KEYWORDS:
         return "Identifier is a reserved keyword."
+
+
+vert_draw = """
+attribute vec2 a_position;
+attribute vec2 a_texcoord;
+varying vec2 v_uv;
+
+void main(void) {
+    v_uv = a_texcoord.xy;
+    gl_Position = vec4(a_position, 0, 1);
+}
+"""
+
+frag_draw = """
+uniform sampler2D u_texture;
+varying vec2 v_uv;
+
+void main(void) {
+    gl_FragColor = texture2D(u_texture, v_uv).rgba;
+}
+"""
+
+
+def draw_texture(tex):
+    """Draw a 2D texture to the current viewport
+
+    Parameters
+    ----------
+    tex : instance of Texture2D
+        The texture to draw.
+    """
+    from .program import Program
+    program = Program(vert_draw, frag_draw)
+    program['u_texture'] = tex
+    program['a_position'] = [[-1., -1.], [-1., 1.], [1., -1.], [1., 1.]]
+    program['a_texcoord'] = [[0., 1.], [0., 0.], [1., 1.], [1., 0.]]
+    program.draw('triangle_strip')

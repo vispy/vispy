@@ -97,7 +97,7 @@ class Canvas(app.Canvas):
         self._timeout = time.time() + SPEED
     
     def on_initialize(self, event):
-        gloo.set_state(clear_color=(0.0, 0.0, 0.0, 0.0), depth_test=False,
+        gloo.set_state(clear_color='black', depth_test=False,
                        blend=True, blend_equation='func_add',
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 

@@ -19,7 +19,7 @@ class VariableTest(unittest.TestCase):
         assert variable.name == "A"
         assert variable.data is None
         assert variable.gtype == gl.GL_FLOAT
-        assert variable.active is True
+        assert variable.enabled is True
 
     def test_init_wrong_type(self):
         # with self.assertRaises(TypeError):
