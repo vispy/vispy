@@ -428,21 +428,14 @@ class Function(ShaderObject):
 
             [(arg_name, arg_type), ...]
         """
-        return self.signature[1]
+        return self._signature[1]
 
     @property
     def rtype(self):
         """
-        Return type of this function.
+        The return type of this function.
         """
-        return self.signature[2]
-
-    @property
-    def signature(self):
-        """
-        Function signature; (name, args, return_type)
-        """
-        return self._signature
+        return self._signature[2]
 
     def replace(self, str1, str2):
         """ Set verbatim code replacement
@@ -895,10 +888,6 @@ class FunctionChain(Function):
         self.functions = funcs
 
     @property
-    def name(self):
-        return self._name
-
-    @property
     def functions(self):
         return self._funcs[:]
 
@@ -911,8 +900,12 @@ class FunctionChain(Function):
         self._update()
 
     @property
-    def signature(self):
-        return self.name, self._args, self._rtype
+    def args(self):
+        return self._args
+    
+    @property
+    def rtype(self):
+        return self._rtype
 
     def _update(self):
         funcs = self._funcs

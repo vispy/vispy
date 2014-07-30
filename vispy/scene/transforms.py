@@ -605,7 +605,7 @@ class STTransform(Transform):
     def scale(self, s):
         self._scale[:len(s)] = s[:4]
         self._scale[len(s):] = 1.0
-        #self._update()
+        self._update()
 
     @property
     def translate(self):
@@ -615,12 +615,18 @@ class STTransform(Transform):
     def translate(self, t):
         self._translate[:len(t)] = t[:4]
         self._translate[len(t):] = 0.0
+        self._update()
 
     def as_affine(self):
         m = AffineTransform()
         m.scale(self.scale)
         m.translate(self.translate)
         return m
+    
+    def _update(self):
+        # force update of uniforms on shader functions
+        self.shader_map()
+        self.shader_imap()
 
     def __mul__(self, tr):
         if isinstance(tr, STTransform):

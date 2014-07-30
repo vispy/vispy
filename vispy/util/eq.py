@@ -25,7 +25,7 @@ def eq(a, b):
         try:   ## disaster: if a is an empty array and b is not, then e.all() is True
             if a.shape != b.shape:
                 return False
-        except:
+        except Exception:
             return False
         if (hasattr(e, 'implements') and e.implements('MetaArray')):
             return e.asarray().all()
