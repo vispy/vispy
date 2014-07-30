@@ -105,7 +105,8 @@ require(["widgets/js/widget"], function(WidgetManager) {
                 'last_pos': [-1, -1],
             };
 
-            this.c.timer = setInterval(send_timer_event, 1000, this);
+            this.c.interval = 100.0;
+            this.c.timer = setInterval(send_timer_event, this.c.interval, this);
         },
 
         events: {
@@ -163,6 +164,13 @@ require(["widgets/js/widget"], function(WidgetManager) {
         update: function() {
             this.c.width = this.model.get("width");
             this.c.height = this.model.get("height");
+            var new_int = this.model.get("interval");
+            if(this.c.interval != new_int)  // Update the interval
+            {
+                this.c.interval = new_int;
+                clearInterval(this.c.timer);  // Remove existing and set new one
+                this.c.timer = setInterval(send_timer_event, this.c.interval, this);
+            }
             var img_str = this.model.get("value");
             var img = new Image();
             img.src = "data:image/png;base64," + img_str;

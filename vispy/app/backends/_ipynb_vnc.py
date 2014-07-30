@@ -64,7 +64,7 @@ else:
     # Try importing IPython
     try:
         from IPython.html.widgets import DOMWidget
-        from IPython.utils.traitlets import Unicode, Int
+        from IPython.utils.traitlets import Unicode, Int, Float
         from IPython.display import display, Javascript
         from IPython.html.nbextensions import install_nbextension
     except Exception as exp:
@@ -269,14 +269,11 @@ class CanvasBackend(BaseCanvasBackend):
                                                       ("modifiers"),
                                                       )
         elif ev.get("name") == "TimerEvent":  # Ticking from front-end (JS)
-            # TODO: Produce timeout event(?)
-            # self._on_draw(?)
-            print "tick"
+            self._vispy_canvas.events.timer(type="timer")
 
     def _prepare_js(self):
         pkgdir = op.dirname(__file__)
-        install_nbextension([op.join(pkgdir, '../../html/static/js')],
-                            symlink=True)
+        install_nbextension([op.join(pkgdir, '../../html/static/js')])
         script = 'IPython.load_extensions("js/vispy");'
         display(Javascript(script))
 
@@ -307,11 +304,13 @@ class Widget(DOMWidget):
     format = Unicode('png', sync=True)
     width = Int(sync=True)
     height = Int(sync=True)
+    interval = Float(sync=True)
     value = Unicode(sync=True)
 
     def __init__(self, gen_event, **kwargs):
         super(Widget, self).__init__(**kwargs)
         self.size = kwargs["size"]
+        self.interval = 100
         self.gen_event = gen_event
         self.on_msg(self._handle_event_msg)
 
