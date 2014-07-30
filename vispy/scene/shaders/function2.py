@@ -19,6 +19,7 @@ import numpy as np
 
 from ...util.ordereddict import OrderedDict
 from ...util.event import EventEmitter
+from ...util.eq import eq
 from ...util import logger
 from ...ext.six import string_types
 from . import parsing
@@ -124,7 +125,18 @@ class ShaderObject(object):
     def _dep_changed(self, event):
         """ Called when a dependency's expression has changed.
         """
+        logger.debug("ShaderObject changed: %r" % event.source)
         self.changed()
+    
+    def __str__(self):
+        """ Return a compilation of this object and its dependencies. 
+        
+        Note: this is mainly for debugging purposes; the names in this code
+        are not guaranteed to match names in any other compilations. Use
+        Compiler directly to ensure consistent naming across multiple objects. 
+        """
+        compiler = Compiler(obj=self)
+        return compiler.compile()['obj']
     
 
 class Function(ShaderObject):
@@ -320,8 +332,21 @@ class Function(ShaderObject):
                             'varying.')
         
         # If values already match, bail out now
-        if storage.get(key) == val:
+        if eq(storage.get(key), val):
             return
+
+        # If we are only changing the value (and not the dtype) of a uniform,
+        # we can set that value and return immediately to avoid triggering a
+        # recompile.
+        if val is not None:
+            val = ShaderObject.create(val, ref=key)
+            if isinstance(val, Variable) and val.vtype == 'uniform':
+                variable = storage.get(key, None)
+                if (variable is not None and
+                    variable.dtype == val.dtype and
+                    variable.vtype == 'uniform'):
+                        variable.value = val.value
+                        return
         
         # Remove old references, if any
         oldval = storage.pop(key, None)
@@ -329,12 +354,9 @@ class Function(ShaderObject):
             for obj in (key, oldval):
                 if isinstance(obj, ShaderObject):
                     self._remove_dep(obj)
-        
+
         # Add new references
         if val is not None:
-            # Ensure that val is a ShaderObject
-            val = ShaderObject.create(val, ref=key)
-            
             if isinstance(key, Varying):
                 # tell this varying to inherit properties from 
                 # its source attribute / expression.
@@ -390,10 +412,6 @@ class Function(ShaderObject):
     def __repr__(self):
         return "<Function '%s' at 0x%x>" % (self.name, id(self))
     
-    def __str__(self):
-        compiler = Compiler(func=self)
-        return compiler.compile()['func']
-    
     ## Public API methods
     
     @property
@@ -402,7 +420,23 @@ class Function(ShaderObject):
         to avoid name clashes.
         """
         return self._name
-    
+
+    @property
+    def args(self):
+        """
+        List of input arguments in the function signature::
+
+            [(arg_name, arg_type), ...]
+        """
+        return self._signature[1]
+
+    @property
+    def rtype(self):
+        """
+        The return type of this function.
+        """
+        return self._signature[2]
+
     def replace(self, str1, str2):
         """ Set verbatim code replacement
         
@@ -534,7 +568,7 @@ class Variable(ShaderObject):
                 vtype, dtype, name, value = name.split(' ', 3)
                 assert vtype == 'const'
             
-        if not isinstance(name, string_types + (None,)):
+        if not (isinstance(name, string_types) or name is None):
             raise TypeError("Variable name must be string or None.")
         
         self._state_counter = 0
@@ -594,9 +628,19 @@ class Variable(ShaderObject):
             #self.changed()
             return
         
-        if isinstance(value, (tuple, list)):
+        if isinstance(value, (tuple, list)) and 1 < len(value) < 5:
             vtype = 'uniform'
             dtype = 'vec%d' % len(value)
+        elif isinstance(value, np.ndarray):
+            if value.ndim == 1 and (1 < len(value) < 5):
+                vtype = 'uniform'
+                dtype = 'vec%d' % len(value)
+            elif value.ndim == 2 and value.shape in ((2, 2), (3, 3), (4, 4)):
+                vtype = 'uniform'
+                dtype = 'mat%d' % value.shape[0]                
+            else:
+                raise ValueError("Cannot make uniform value from array of "
+                                 "shape %s." % (value.shape))
         elif np.isscalar(value):
             vtype = 'uniform'
             if isinstance(value, (float, np.floating)):
@@ -751,13 +795,13 @@ class FunctionCall(Expression):
         if not isinstance(function, Function):
             raise TypeError('FunctionCall needs a Function')
         
-        sig_len = len(function._signature[1])
+        sig_len = len(function.args)
         if len(args) != sig_len:
             raise TypeError('Function %s requires %d arguments (got %d)' %
                             (function.name, sig_len, len(args)))
         
         # Ensure all expressions
-        sig = function._signature[1]
+        sig = function.args
         
         self._function = function
         
@@ -778,10 +822,175 @@ class FunctionCall(Expression):
     
     @property
     def dtype(self):
-        return self._function._signature[0]
+        return self._function.rtype
     
     def expression(self, names):
         str_args = [arg.expression(names) for arg in self._args]
         args = ', '.join(str_args)
         fname = self.function.expression(names)
         return '%s(%s)' % (fname, args)
+    
+
+class FunctionChain(Function):
+    """
+    Function subclass that generates GLSL code to call a list of Functions
+    in order. Functions may be called independently, or composed such that the
+    output of each function provides the input to the next.
+
+    Arguments:
+
+    name : str
+        The name of the generated function
+    funcs : list of Functions
+        The list of Functions that will be called by the generated GLSL code.
+
+
+    Example:
+
+        func1 = Function('void my_func_1() {}')
+        func2 = Function('void my_func_2() {}')
+        chain = FunctionChain('my_func_chain', [func1, func2])
+
+    If *chain* is included in a ModularProgram, it will generate the following
+    output:
+
+        void my_func_1() {}
+        void my_func_2() {}
+
+        void my_func_chain() {
+            my_func_1();
+            my_func_2();
+        }
+
+    The return type of the generated function is the same as the return type
+    of the last function in the chain. Likewise, the arguments for the
+    generated function are the same as the first function in the chain.
+
+    If the return type is not 'void', then the return value of each function
+    will be used to supply the first input argument of the next function in
+    the chain. For example:
+
+        vec3 my_func_1(vec3 input) {return input + vec3(1, 0, 0);}
+        void my_func_2(vec3 input) {return input + vec3(0, 1, 0);}
+
+        vec3 my_func_chain(vec3 input) {
+            return my_func_2(my_func_1(input));
+        }
+
+    """
+    def __init__(self, name=None, funcs=()):
+        # bypass Function.__init__ completely.
+        ShaderObject.__init__(self)
+        if not (name is None or isinstance(name, string_types)):
+            raise TypeError("Name argument must be string or None.")
+        self._funcs = []
+        self._name = name or "chain"
+        self.functions = funcs
+
+    @property
+    def functions(self):
+        return self._funcs[:]
+
+    @functions.setter
+    def functions(self, funcs):
+        while self._funcs:
+            self.remove(self._funcs[0], update=False)
+        for f in funcs:
+            self.append(f, update=False)
+        self._update()
+
+    @property
+    def args(self):
+        return self._args
+    
+    @property
+    def rtype(self):
+        return self._rtype
+
+    def _update(self):
+        funcs = self._funcs
+        if len(funcs) > 0:
+            self._rtype = funcs[-1].rtype
+            self._args = funcs[0].args[:]
+        else:
+            self._rtype = 'void'
+            self._args = []
+        
+        self.changed()
+
+    @property
+    def template_vars(self):
+        return {}
+
+    def append(self, function, update=True):
+        """ Append a new function to the end of this chain.
+        """
+        self._funcs.append(function)
+        self.add_dep(function)
+        if update:
+            self._update()
+
+    def insert(self, index, function, update=True):
+        """ Insert a new function into the chain at *index*.
+        """
+        self._funcs.insert(index, function)
+        self.add_dep(function)
+        if update:
+            self._update()
+
+    def remove(self, function, update=True):
+        """ Remove a function from the chain.
+        """
+        self._funcs.remove(function)
+        self.remove_dep(function)
+        if update:
+            self._update()
+
+    def definition(self, obj_names):
+        name = obj_names[self]
+
+        args = ", ".join(["%s %s" % arg for arg in self.args])
+        code = "%s %s(%s) {\n" % (self.rtype, name, args)
+
+        result_index = 0
+        if len(self.args) == 0:
+            last_rtype = 'void'
+            last_result = ''
+        else:
+            last_rtype, last_result = self.args[0][:2]
+
+        for fn in self._funcs:
+            # Use previous return value as an argument to the next function
+            if last_rtype == 'void':
+                args = ''
+            else:
+                args = last_result
+                if len(fn.args) != 1 or last_rtype != fn.args[0][0]:
+                    raise Exception("Cannot chain output '%s' of function to "
+                                    "input of '%s'" %
+                                    (last_rtype, fn.signature))
+            last_rtype = fn.rtype
+
+            # Store the return value of this function
+            if fn.rtype == 'void':
+                set_str = ''
+            else:
+                result_index += 1
+                result = 'result_%d' % result_index
+                set_str = '%s %s = ' % (fn.rtype, result)
+                last_result = result
+
+            code += "    %s%s(%s);\n" % (set_str, obj_names[fn], args)
+
+        # return the last function's output
+        if self.rtype != 'void':
+            code += "    return result_%d;\n" % result_index
+
+        code += "}\n"
+        return code
+
+    def __setitem__(self, k, v):
+        raise Exception("FunctionChain does not support indexing.")
+    
+    def __getitem__(self, k):
+        raise Exception("FunctionChain does not support indexing.")

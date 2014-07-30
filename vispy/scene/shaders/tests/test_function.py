@@ -1,7 +1,8 @@
-from vispy.scene.shaders.function2 import Function, Variable, Varying
+from vispy.scene.shaders.function import (Function, Variable, Varying,
+                                          FunctionChain)
 
 # Users normally don't need these, but I want to test them
-from vispy.scene.shaders.function2 import FunctionCall, TextExpression
+from vispy.scene.shaders.function import FunctionCall, TextExpression
 
 from nose.tools import assert_raises, assert_equal, assert_not_equal  # noqa
 from vispy.testing import assert_in, assert_not_in, assert_is  # noqa
@@ -124,7 +125,6 @@ def test_TextExpression():
     exp = TextExpression('foo bar')
     assert_equal('foo bar', exp.expression(None))
     assert_equal(None, exp.definition(None))
-    assert_in(exp.__class__.__name__, str(exp))
     assert_raises(TypeError, TextExpression, 4)
 
 
@@ -210,8 +210,6 @@ def test_Variable():
     
     # Test repr
     var = Variable('uniform float bla')
-    print(var)
-    assert_in(var.__class__.__name__, str(var))
     assert_in('uniform float bla', str(var))
     
     # Test injection, definition, dependencies
@@ -382,6 +380,36 @@ def test_function_changed():
     fun3['var1'] = 0.9
     assert_changed(fun3, exp1)
     
+    
+def test_FunctionChain():
+    
+    f1 = Function("void f1(){}")
+    f2 = Function("void f2(){}")
+    f3 = Function("float f3(vec3 x){}")
+    f4 = Function("vec3 f4(vec3 y){}")
+    f5 = Function("vec3 f5(vec4 z){}")
+    
+    ch = FunctionChain('chain', [f1, f2])
+    assert_in('f1', str(ch))
+    assert_in('f2', str(ch))
+    
+    ch.remove(f2)
+    assert_not_in('f2', str(ch))
+
+    ch.append(f2)
+    assert_in('f2', str(ch))
+
+    ch = FunctionChain(funcs=[f5, f4, f3])
+    assert_equal('float', ch.rtype)
+    assert_equal([('vec4', 'z')], ch.args)
+    assert_in('f3', str(ch))
+    assert_in('f4', str(ch))
+    assert_in('f5', str(ch))
+    assert_in(f3, ch.dependencies())
+    assert_in(f4, ch.dependencies())
+    assert_in(f5, ch.dependencies())
+    print(ch)
+
 
 if __name__ == '__main__':
     for key in [key for key in globals()]:
