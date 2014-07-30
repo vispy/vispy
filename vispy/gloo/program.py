@@ -14,8 +14,6 @@ from . variable import Uniform, Attribute
 from ..util import logger
 from ..ext.six import string_types
 
-import OpenGL.GL as glext
-
 
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
@@ -255,14 +253,17 @@ class Program(GLObject):
         # that the shaders are updated. However, we should take into account
         # that typically all shaders are removed (i.e. no variables are
         # present) and then the new shaders are added.
-        
+
+        # Import from PyOpenGL
+        import OpenGL.GL as _gl
+
         # Build uniforms
         self._uniforms = {}
         count = 0
         for (name, gtype) in self.all_uniforms:
             uniform = Uniform(self, name, gtype)
             # if gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
-            if gtype in (gl.GL_SAMPLER_2D, glext.GL_SAMPLER_3D):
+            if gtype in (gl.GL_SAMPLER_2D, _gl.GL_SAMPLER_3D):
                 uniform._unit = count
                 count += 1
             self._uniforms[name] = uniform

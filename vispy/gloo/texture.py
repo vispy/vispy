@@ -10,46 +10,26 @@ from .globject import GLObject
 from .wrappers import _check_conversion
 from ..util import logger
 
-import ctypes
-import OpenGL.GL as glext
 
 def glTexImage3D(target, level, internalformat, format, type, pixels):
+    # Import from PyOpenGL
+    import OpenGL.GL as _gl
+
     border = 0
     if isinstance(pixels, (tuple, list)):
         depth, height, width = pixels
         pixels = None
     else:
         depth, height, width = pixels.shape[:3]
-    glext.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels)
+    _gl.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels)
 
 
 def glTexSubImage3D(target, level, xoffset, yoffset, zoffset, format, type, pixels):
+    # Import from PyOpenGL
+    import OpenGL.GL as _gl
+
     depth, height, width = pixels.shape[:3]
-    glext.glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels)
-
-    
-#def glextTexImage3D(target, level, internalformat, format, type, shape, pixels):
-    #border = 0
-    #if isinstance(shape, (tuple, list)):
-        #height, width, depth = shape
-        ##pixels = ctypes.c_void_p(0)
-        ##pixels = None
-    #else:
-        #if not pixels.flags['C_CONTIGUOUS']:
-            #pixels = pixels.copy('C')
-        #pixels_ = pixels
-        #pixels = pixels_.ctypes.data
-        #height, width, depth = pixels_.shape[:3]
-
-    #res = glext.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels.ctypes.data)
-
-#def glextTexSubImage3D(target, level, xoffset, yoffset, zoffset, format, type, pixels):
-    #if not pixels.flags['C_CONTIGUOUS']:
-        #pixels = pixels.copy('C')
-    #pixels_ = pixels
-    #pixels = pixels_.ctypes.data
-    #height, width, depth = pixels_.shape[:3]
-    #res = glext.glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels)
+    _gl.glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels)
 
 
 def _check_texture_format(value):
@@ -801,8 +781,6 @@ class Texture2D(Texture):
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
          
-        #d=glext.glGetTexImage(self.target,0,self._format,self._gtype)
-
 
 # --------------------------------------------------------- Texture3D class ---
 class Texture3D(Texture):
@@ -832,6 +810,9 @@ class Texture3D(Texture):
     def __init__(self, data=None, shape=None, dtype=None, store=True, 
                  format=None, **kwargs):
 
+        # Import from PyOpenGL
+        import OpenGL.GL as _gl
+
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
         offset = kwargs.get("offset", None)
@@ -840,7 +821,7 @@ class Texture3D(Texture):
 
         Texture.__init__(self, data=data, shape=shape, dtype=dtype, base=base,
                          resizeable=resizeable, store=store,
-                         target=glext.GL_TEXTURE_3D, offset=offset)
+                         target=_gl.GL_TEXTURE_3D, offset=offset)
 
         # Get and check format
         if format is None:
@@ -933,7 +914,7 @@ class Texture3D(Texture):
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
         
-        d=glext.glGetTexImage(self.target,0,self._format,self._gtype)
+        d=_gl.glGetTexImage(self.target,0,self._format,self._gtype)
 
 
 # ------------------------------------------------------ TextureAtlas class ---
