@@ -14,7 +14,7 @@ manyally set the preferred_clip_method property of one or more viewboxes.
 This is what it should look like:
 
 The line in pixel coordinates is normally expected to have the marker
-up (since the y-axis points down). The line in pixel coordinates is
+up (since the y-axis points down). The line in 2D unit coordinates is
 normally expected to have the marker down (since the y-axis is up). But
 positioning a Viewbox is a UnitCamera2 will make it upside down.
 
