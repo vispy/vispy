@@ -49,8 +49,8 @@ class Transform(object):
     an object through the forward or inverse transformation, respectively.
 
     The two class variables glsl_map and glsl_imap are instances of
-    shaders.composite.Function that
-    define the forward- and inverse-mapping GLSL function code.
+    shaders.Function that define the forward- and inverse-mapping GLSL
+    function code.
 
     Optionally, an inverse() method returns a new Transform performing the
     inverse mapping.
@@ -284,8 +284,8 @@ def arg_to_vec4(func):
 
 class ChainTransform(Transform):
     """
-    Transform subclass that performs a sequence of transformations in order.
-    Internally, this class uses shaders.composite.FunctionChain to generate
+    Transform subclass that performs a sequence of transformations in
+    order. Internally, this class uses shaders.FunctionChain to generate
     its glsl_map and glsl_imap functions.
 
     Arguments:
