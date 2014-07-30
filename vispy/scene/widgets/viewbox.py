@@ -6,10 +6,9 @@ from __future__ import division
 
 import numpy as np
 
-from ..transforms import STTransform, NullTransform
+from ..transforms import STTransform
 from .widget import Widget
 from ..subscene import SubScene
-from ..cameras import PixelCamera
 
 
 class ViewBox(Widget):

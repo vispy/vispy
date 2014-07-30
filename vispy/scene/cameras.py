@@ -116,7 +116,6 @@ class TwoDCamera(Camera):
         map_to = (0, h), (w, 0)
         return transforms.STTransform.from_mapping(map_from, map_to)
     
-    
     ## xlim and ylim are convenience methods to set the view using limits
     #@property
     #def xlim(self):
