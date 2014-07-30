@@ -90,13 +90,25 @@ class ShaderObject(object):
         """
         return obj_names[self]
     
-    def dependencies(self):
+    def dependencies(self, sort=False):
         """ Return all dependencies required to use this object. The last item 
         in the list is *self*.
         """
         alldeps = []
-        for dep in self._deps:
-            alldeps.extend(dep.dependencies())
+        if sort:
+            def key(obj):
+                # sort deps such that we get functions, variables, self.
+                if not isinstance(obj, Variable):
+                    return (0, 0)
+                else:
+                    return (1, obj.vtype)
+            
+            deps = sorted(self._deps, key=key)
+        else:
+            deps = self._deps
+        
+        for dep in deps:
+            alldeps.extend(dep.dependencies(sort=sort))
         alldeps.append(self)
         return alldeps
     
@@ -562,11 +574,15 @@ class Variable(ShaderObject):
         
         # allow full definition in first argument
         if ' ' in name:
-            if name.count(' ') == 2:
-                vtype, dtype, name = name.split(' ')
+            fields = name.split(' ')
+            if len(fields) == 3:
+                vtype, dtype, name = fields
+            elif len(fields) == 4 and fields[0] == 'const':
+                vtype, dtype, name, value = fields
             else:
-                vtype, dtype, name, value = name.split(' ', 3)
-                assert vtype == 'const'
+                raise ValueError('Variable specifications given by string must'
+                                 ' be of the form "vtype dtype name" or '
+                                 '"const dtype name value".')
             
         if not (isinstance(name, string_types) or name is None):
             raise TypeError("Variable name must be string or None.")

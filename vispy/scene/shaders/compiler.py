@@ -46,9 +46,6 @@ class Compiler(object):
         """ Compile all code and return a dict {name: code} where the keys 
         are determined by the keyword arguments passed to __init__().
         """
-        # map of {name: object} for this compilation
-        #self.namespace = namespace = {}
-
         # Walk over all dependencies, assign a unique name to each.
         # Names are only changed if there is a conflict.
         all_deps = {}
@@ -58,7 +55,7 @@ class Compiler(object):
             # Collect all dependencies by name, also pop duplicates
             unique_deps = []
             deps_by_name = {}
-            for dep in obj.dependencies():
+            for dep in obj.dependencies(sort=True):
                 # Ensure we handle each dependency just once
                 if dep in unique_deps:
                     continue
@@ -88,27 +85,12 @@ class Compiler(object):
         compiled = {}
         
         for name, obj in self.objects.items():
-            
-            # Sort the dependencies by variables and functions
-            variable_definitions = []
-            function_definitions = []
-            for dep in all_deps[obj]:
-                if hasattr(dep, 'vtype'):
-                    variable_definitions.append(dep)
-                else:
-                    function_definitions.append(dep)
-            
-            # Generate the code, first variables, then functions
             code = ['// Generated code by function composition\n']
-            for dep in sorted(variable_definitions, key=lambda x: x.vtype):
-                dep_code = dep.definition(self._object_names)
-                code.append(dep_code)
-            code.append('')
-            for dep in function_definitions:
+            for dep in all_deps[obj]:
                 dep_code = dep.definition(self._object_names)
                 if dep_code is not None:
                     code.append(dep_code)
-            
+                
             compiled[name] = '\n'.join(code)
             
         self.code = compiled
