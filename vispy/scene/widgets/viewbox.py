@@ -6,9 +6,10 @@ from __future__ import division
 
 import numpy as np
 
-from ..transforms import STTransform
+from ..transforms import STTransform, NullTransform
 from .widget import Widget
 from ..subscene import SubScene
+from ..cameras import PixelCamera
 
 
 class ViewBox(Widget):
@@ -129,33 +130,29 @@ class ViewBox(Widget):
         needed to project the subscene in our viewbox rectangle. Also
         we handle setting a viewport if requested.
         """
-
+        
         # todo: we could consider including some padding
         # so that we have room *inside* the viewbox to draw ticks and stuff
-
-        # Determine transformation to make the camera's unit box (-1..1) map to
-        # the viewbox region.
-        # Note that (-1, -1) is lower-left for the camera, but (0, 0) is
-        # upper-left for the viewbox.
-        map_from = [[-1, 1], [1, -1]]
-        map_to = [[0, 0], self.size]
-        trans = STTransform()
-        trans.set_mapping(map_from, map_to)
-
-        # Set this transform at the scene
-        self.scene.viewbox_transform = trans
-
+        
         # -- Calculate resolution
-
+        
         # Get current transform and calculate the 'scale' of the viewbox
+        size = self.size
         transform = event.full_transform
-        p0, p1 = transform.map((0, 0)), transform.map(self.size)
-        size = (p1 - p0)[:2]
+        p0, p1 = transform.map((0, 0)), transform.map(size)
+        res = (p1 - p0)[:2]
+        res = abs(res[0]), abs(res[1])
 
         # Set resolution (note that resolution can be non-integer)
-        self._resolution = size
-        #print(getattr(self, '_name', ''), w, h)
-
+        self._resolution = res
+        
+        # -- Set the viewbox_transform 
+        
+        # Map our resolution in pixels to our size
+        mapfrom = (0, 0), res
+        mapto = (0, 0), size
+        self.scene.viewbox_transform = STTransform.from_mapping(mapfrom, mapto)
+        
         # -- Get user clipping preference
 
         prefer = self.preferred_clip_method

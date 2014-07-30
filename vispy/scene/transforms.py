@@ -623,6 +623,15 @@ class STTransform(Transform):
         m.translate(self.translate)
         return m
 
+    @classmethod
+    def from_mapping(cls, x0, x1):
+        """ Create an STTransform from the given mapping. 
+        See ``set_mapping()`` for details.
+        """
+        t = cls()
+        t.set_mapping(x0, x1)
+        return t
+    
     def set_mapping(self, x0, x1):
         """ Configure this transform such that it maps points x0 => x1, 
         where each argument must be an array of shape (2, 2) or (2, 3).

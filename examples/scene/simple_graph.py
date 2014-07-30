@@ -25,7 +25,7 @@ line_ndc = scene.visuals.Line(pos=pos.copy(), color=color)
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
-canvas.root.camera = scene.cameras.NDCCamera()  # Default NDCCamera
+canvas.root.camera = scene.cameras.UnitCamera2()
 
 # Create a line in two containers
 container1 = scene.Entity(canvas.root)

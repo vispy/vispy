@@ -11,6 +11,23 @@ Use the global PREFER_PIXEL_GRID variables to set the clipping method
 for the two toplevel and four leaf viewbox, respectively. You can also
 manyally set the preferred_clip_method property of one or more viewboxes.
 
+This is what it should look like:
+
+The line in pixel coordinates is normally expected to have the marker
+up (since the y-axis points down). The line in pixel coordinates is
+normally expected to have the marker down (since the y-axis is up). But
+positioning a Viewbox is a UnitCamera2 will make it upside down.
+
+  vb1 uses NormalCamera           vb2 uses PixelCamera
+  so contents are upside-down     so contents are correct
+_______________________________________________________________
+|                               |                               |
+| long line with marker down    | short line with marker down   |
+|_______________________________|_______________________________|
+|                               |                               |
+| short line with marker up     | long line with marker up      |
+|_______________________________|_______________________________|
+
 """
 
 import numpy as np
@@ -25,8 +42,8 @@ from vispy import scene
 # With the fbo method you can see the texture interpolation (induced by
 # a delibirate mismatch in screen and textue resolution)
 # Try different combinarions, like a viewport in an fbo
-PREFER_PIXEL_GRID1 = 'fbo'  # none, viewport, fbo (fragment to come)
-PREFER_PIXEL_GRID2 = 'viewport'
+PREFER_PIXEL_GRID1 = 'viewport'  # none, viewport, fbo (fragment to come)
+PREFER_PIXEL_GRID2 = 'fbo'
 
 
 # Create lines for use in ndc and pixel coordinates
@@ -48,7 +65,7 @@ line_pixels = scene.visuals.Line(pos=pos.copy(), color=color)
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
-canvas.scene.camera = scene.cameras.NDCCamera()  # Default NDCCamera
+canvas.scene.camera = scene.cameras.PixelCamera()
 
 # Create viewboxes left ...
 
@@ -59,7 +76,7 @@ h2 = h / 2.
 vb1 = scene.ViewBox(canvas.scene, name='vb1', margin=2, border=(1, 0, 0, 1))
 vb1.pos = 0, 0
 vb1.size = w2, h
-vb1.scene.camera = scene.cameras.Camera()
+vb1.scene.camera = scene.cameras.UnitCamera2()
 #
 vb11 = scene.ViewBox(vb1.scene, name='vb11', margin=0.02, border=(0, 1, 0, 1))
 vb11.pos = -1.0, -1.0

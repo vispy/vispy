@@ -2,6 +2,27 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+"""
+A brief explanation of how cameras work 
+---------------------------------------
+
+The view of a camera is determined by its transform (that it has as
+being an entity) and its projection. The former is essentially the
+position and orientation of the camera, the latter determines field of
+view and any non-linear transform (such as perspective).
+
+The projection must return such a transform that the correct view is
+mapped onto the size of the viewbox measured in pixels (i.e.
+event.resolution).
+
+The subscene actually has a thrird transform, the viewbox_transform,
+which is set by the viewbox and which takes care of the mapping from
+pixel coordinates to whatever region the viewbox takes in its parent
+viewbox.
+
+"""
+
+
 from __future__ import division
 
 import numpy as np
@@ -26,16 +47,13 @@ class Camera(Entity):
 
     def __init__(self, parent=None):
         Entity.__init__(self, parent)
-
-        # Can be orthograpic, perspective, log, polar, map, etc.
-        # Default unit
-        self._projection = transforms.NullTransform()
-
+    
     def get_projection(self, event):
         """ Get the projection matrix. Should be overloaded by camera
         classes to define the projection of view.
         """
-        return self._projection
+        # We don't want people to use this base camera
+        raise NotImplementedError()
 
     def scene_mouse_event(self, event):
         """
@@ -45,11 +63,30 @@ class Camera(Entity):
         pass
 
 
-class NDCCamera(Camera):
-    """ Camera that presents a view on the world in normalized device
-    coordinates (-1..1).
+class UnitCamera1(Camera):
+    """ Camera that presents a view on the world in unit coordinates
+    with a total size of 1. The projected range is 0..1 in x and y. The
+    origin is at the bottom left.
     """
-    pass
+    def get_projection(self, event):
+        # Map to the resolution (pixels) available in the viewbox
+        w, h = event.resolution
+        map_from = (0, 0), (1, 1)
+        map_to = (0, h), (w, 0)
+        return transforms.STTransform.from_mapping(map_from, map_to)
+
+
+class UnitCamera2(Camera):
+    """ Camera that presents a view on the world in unit coordinates
+    with a total size of 2. The projected range is -1..1 in x and y. The
+    point (-1,-1) is at the bottom left.
+    """
+    def get_projection(self, event):
+        # Map to the resolution (pixels) available in the viewbox
+        w, h = event.resolution
+        map_from = (-1, -1), (1, 1)
+        map_to = (0, h), (w, 0)
+        return transforms.STTransform.from_mapping(map_from, map_to)
 
 
 class PixelCamera(Camera):
@@ -57,24 +94,11 @@ class PixelCamera(Camera):
     The coordinates map directly to the viewbox coordinates. The origin
     is in the upper left.
     """
+    
     def get_projection(self, event):
-        # find bounds of our viewbox relative to the document coordinate system
-        vb = event.viewbox
-        corners = np.array([[0, 0], list(vb.size)])
-        mapped = event.map_entity_to_doc(vb, corners)[:, :2]
-        
-        # size of viewbox relative to doc cs
-        mapped_size = abs(mapped[1] - mapped[0])
-        
-        # corners of visible coordinate system in scene
-        scene_corners = np.array([[0, 0], mapped_size])
-        ul = scene_corners.min(axis=0)
-        br = scene_corners.max(axis=0)
-        
-        # return transform that maps viewbox bounds to unit box
-        trans = transforms.STTransform()
-        trans.set_mapping([ul, br], [[-1, 1], [1, -1]])
-        return trans
+        # Map to the resolution (pixels) available in the viewbox
+        # This happens to be the NullTransform for the PixelCamera :)
+        return transforms.NullTransform()
 
 
 class TwoDCamera(Camera):
@@ -83,6 +107,16 @@ class TwoDCamera(Camera):
         super(TwoDCamera, self).__init__(parent)
         self.transform = STTransform()
 
+    def get_projection(self, event):
+        # Our starting point is the range -1..1. Maybe 0..1 makes more sense.
+        # Anyway, we should have a way of snapping to the bounds of the visuals
+        # that are shown inside our subscene.
+        w, h = event.resolution
+        map_from = (-1, -1), (1, 1)
+        map_to = (0, h), (w, 0)
+        return transforms.STTransform.from_mapping(map_from, map_to)
+    
+    
     ## xlim and ylim are convenience methods to set the view using limits
     #@property
     #def xlim(self):
