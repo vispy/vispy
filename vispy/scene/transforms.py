@@ -406,7 +406,7 @@ class ChainTransform(Transform):
             #bindings.append(bound)
 
         name = "transform_%s_chain" % ('imap' if imap else 'map')
-        return FunctionChain(name, funcs, anonymous=True)
+        return FunctionChain(name, funcs)
 
     def inverse(self):
         return ChainTransform([tr.inverse()

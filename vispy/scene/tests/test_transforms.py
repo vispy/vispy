@@ -46,18 +46,23 @@ def tesst_multiplication():
 
 def test_transform_chain():
     # Make dummy classes for easier distinguishing the transforms
-    class TransA(tr.Transform):
+    
+    class DummyTrans(tr.Transform):
+        glsl_map = "vec4 trans(vec4 pos) {return pos;}"
+        glsl_imap = "vec4 trans(vec4 pos) {return pos;}"
+    
+    class TransA(DummyTrans):
         pass
 
-    class TransB(tr.Transform):
+    class TransB(DummyTrans):
         pass
 
-    class TransC(tr.Transform):
+    class TransC(DummyTrans):
         pass
 
     # Create test transforms
     a, b, c = TransA(), TransB(), TransC()
-
+    
     # Test Chain creation
     assert tr.ChainTransform().transforms == []
     assert tr.ChainTransform(a).transforms == [a]
@@ -135,11 +140,13 @@ def test_transform_chain():
     t2 = tr.STTransform(translate=(3, 4))
     chain = tr.ChainTransform(t1, t2)
     #
-    funcs = chain.shader_map().function_deps
-    funcsi = chain.shader_imap().function_deps
+    funcs = chain.shader_map().dependencies()
+    funcsi = chain.shader_imap().dependencies()
     #
-    assert funcs == [t2.shader_map(), t1.shader_map()]
-    assert funcsi == [t1.shader_imap(), t2.shader_imap()]
+    assert t1.shader_map() in funcs
+    assert t2.shader_map() in funcs
+    assert t1.shader_imap() in funcsi
+    assert t2.shader_imap() in funcsi
 
 
 def test_map_rect():

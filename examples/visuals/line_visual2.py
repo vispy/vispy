@@ -186,6 +186,7 @@ if __name__ == '__main__':
     timer.start(0.016)
     
     th = 0.0
+    
     @timer.connect
     def on_timer(event):
         global th
@@ -193,6 +194,5 @@ if __name__ == '__main__':
         pos = (np.cos(th) * 0.2 + 0.4, np.sin(th) * 0.2 + 0.4)
         c.line2.transform.translate = pos
         c.update()
-    
     
     app.run()

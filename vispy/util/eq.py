@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 from numpy import ndarray, bool_
 
+
 def eq(a, b):
-    """The great missing equivalence function: Guaranteed evaluation to a single bool value."""
+    """ The great missing equivalence function: Guaranteed evaluation
+    to a single bool value.
+    """
     if a is b:
         return True
-        
+    
     try:
-        e = a==b
+        e = a == b
     except ValueError:
         return False
     except AttributeError: 
@@ -22,7 +25,8 @@ def eq(a, b):
     elif t is bool_:
         return bool(e)
     elif isinstance(e, ndarray):
-        try:   ## disaster: if a is an empty array and b is not, then e.all() is True
+        try:
+            # disaster: if a is empty and b is not, then e.all() is True
             if a.shape != b.shape:
                 return False
         except Exception:

@@ -1,8 +1,8 @@
-from vispy.scene.shaders.function import (Function, Variable, Varying,
-                                          FunctionChain)
+from vispy.scene.shaders.function2 import (Function, Variable, Varying,
+                                           FunctionChain)
 
 # Users normally don't need these, but I want to test them
-from vispy.scene.shaders.function import FunctionCall, TextExpression
+from vispy.scene.shaders.function2 import FunctionCall, TextExpression
 
 from nose.tools import assert_raises, assert_equal, assert_not_equal  # noqa
 from vispy.testing import assert_in, assert_not_in, assert_is  # noqa
@@ -342,14 +342,15 @@ def test_function_changed():
     assert_changed()
 
     # test variable disconnect
-    fun1['var1'] = 7
+    fun1['var1'] = Variable('var1', 7)
     var2 = fun1['var1']
     var2.changed.connect(on_change)
-    assert_changed(fun1)
+    #assert_changed(fun1)
     # var2 is now connected
     var2.value = (1, 2, 3, 4)
     assert_changed(fun1, var2)
     # ..but var1 no longer triggers fun1.changed
+    assert_changed()
     var1.value = 0.5
     assert_changed(var1)
 

@@ -350,15 +350,17 @@ class Function(ShaderObject):
         # If we are only changing the value (and not the dtype) of a uniform,
         # we can set that value and return immediately to avoid triggering a
         # recompile.
-        if val is not None:
+        if val is not None and not isinstance(val, Variable):
+            # We are setting a value, now check it if it might be the 
+            # the value of a uniform
             val = ShaderObject.create(val, ref=key)
             if isinstance(val, Variable) and val.vtype == 'uniform':
                 variable = storage.get(key, None)
-                if (variable is not None and
-                    variable.dtype == val.dtype and
-                    variable.vtype == 'uniform'):
-                        variable.value = val.value
-                        return
+                if (isinstance(variable, Variable) and
+                        variable.dtype == val.dtype and
+                        variable.vtype == 'uniform'):
+                    variable.value = val.value
+                    return
         
         # Remove old references, if any
         oldval = storage.pop(key, None)
@@ -942,7 +944,7 @@ class FunctionChain(Function):
         """ Append a new function to the end of this chain.
         """
         self._funcs.append(function)
-        self.add_dep(function)
+        self._add_dep(function)
         if update:
             self._update()
 
@@ -950,7 +952,7 @@ class FunctionChain(Function):
         """ Insert a new function into the chain at *index*.
         """
         self._funcs.insert(index, function)
-        self.add_dep(function)
+        self._add_dep(function)
         if update:
             self._update()
 
@@ -958,7 +960,7 @@ class FunctionChain(Function):
         """ Remove a function from the chain.
         """
         self._funcs.remove(function)
-        self.remove_dep(function)
+        self._remove_dep(function)
         if update:
             self._update()
 
