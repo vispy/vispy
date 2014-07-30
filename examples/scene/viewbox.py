@@ -76,7 +76,7 @@ h2 = h / 2.
 vb1 = scene.ViewBox(canvas.scene, name='vb1', margin=2, border=(1, 0, 0, 1))
 vb1.pos = 0, 0
 vb1.size = w2, h
-vb1.scene.camera = scene.cameras.UnitCamera2()
+vb1.scene.camera = scene.cameras.Fixed2DCamera(fovx=(-1,1))
 #
 vb11 = scene.ViewBox(vb1.scene, name='vb11', margin=0.02, border=(0, 1, 0, 1))
 vb11.pos = -1.0, -1.0

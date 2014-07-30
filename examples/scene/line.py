@@ -22,7 +22,7 @@ line = scene.visuals.Line(canvas.scene, pos=pos, color=color)
 
 # We need to either use a unit camera, or scale the line up 
 # Uncomment ONE of the lines below
-canvas.scene.camera = scene.cameras.UnitCamera1()
+canvas.scene.camera = scene.cameras.UnitCamera()
 #line.transform = scene.transforms.STTransform(scale=(400, 400))
 
 app.run()

@@ -63,7 +63,19 @@ class Camera(Entity):
         pass
 
 
-class UnitCamera1(Camera):
+class PixelCamera(Camera):
+    """ Camera that presents a view on the world in pixel coordinates.
+    The coordinates map directly to the viewbox coordinates. The origin
+    is in the upper left.
+    """
+    
+    def get_projection(self, event):
+        # Map to the resolution (pixels) available in the viewbox
+        # This happens to be the NullTransform for the PixelCamera :)
+        return transforms.NullTransform()
+
+
+class UnitCamera(Camera):
     """ Camera that presents a view on the world in unit coordinates
     with a total size of 1. The projected range is 0..1 in x and y. The
     origin is at the bottom left.
@@ -76,29 +88,40 @@ class UnitCamera1(Camera):
         return transforms.STTransform.from_mapping(map_from, map_to)
 
 
-class UnitCamera2(Camera):
-    """ Camera that presents a view on the world in unit coordinates
-    with a total size of 2. The projected range is -1..1 in x and y. The
-    point (-1,-1) is at the bottom left.
+class Fixed2DCamera(Camera):
+    """ Camera that presents a 2D view on the world with a given field of 
+    view. When the fov is (1, 1) this is the same as a UnitCamera.
     """
-    def get_projection(self, event):
-        # Map to the resolution (pixels) available in the viewbox
-        w, h = event.resolution
-        map_from = (-1, -1), (1, 1)
-        map_to = (0, h), (w, 0)
-        return transforms.STTransform.from_mapping(map_from, map_to)
-
-
-class PixelCamera(Camera):
-    """ Camera that presents a view on the world in pixel coordinates.
-    The coordinates map directly to the viewbox coordinates. The origin
-    is in the upper left.
-    """
+    def __init__(self, parent=None, fovx=None, fovy=None):
+        Camera.__init__(self, parent)
+        if fovx is None:
+            fovx = 1, 1
+        self.set_fov(fovx, fovy)
+    
+    def set_fov(self, fovx, fovy=None):
+        """ Set the field of view for x and y. Both fovx anf fovy should
+        be two-element tuples indicating the range of view. If fovy is not
+        given or None, x and y get the same fov.
+        """
+        # Set x
+        fovx = tuple([float(v) for v in fovx])
+        assert len(fovx) == 2
+        self._fovx = fovx
+        # Set y
+        if fovy is not None:
+            fovy = tuple([float(v) for v in fovy])
+            assert len(fovy) == 2
+            self._fovy = fovy
+        else:
+            self._fovy = self._fovx
     
     def get_projection(self, event):
         # Map to the resolution (pixels) available in the viewbox
-        # This happens to be the NullTransform for the PixelCamera :)
-        return transforms.NullTransform()
+        fovx, fovy = self._fovx, self._fovy
+        w, h = event.resolution
+        map_from = (fovx[0], fovy[0]), (fovx[1], fovy[1])
+        map_to = (0, h), (w, 0)
+        return transforms.STTransform.from_mapping(map_from, map_to)
 
 
 class TwoDCamera(Camera):
