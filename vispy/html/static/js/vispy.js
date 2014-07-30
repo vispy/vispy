@@ -162,6 +162,12 @@ require(["widgets/js/widget"], function(WidgetManager) {
 
         // Update, whenever value attribute of our widget changes
         update: function() {
+            if(this.model.get("is_closing") == true)
+            {
+                clearInterval(this.c.timer);  // Remove existing timer
+                return;
+            }
+
             this.c.width = this.model.get("width");
             this.c.height = this.model.get("height");
             var new_int = this.model.get("interval");

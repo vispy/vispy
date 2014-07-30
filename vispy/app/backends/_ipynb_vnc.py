@@ -64,7 +64,7 @@ else:
     # Try importing IPython
     try:
         from IPython.html.widgets import DOMWidget
-        from IPython.utils.traitlets import Unicode, Int, Float
+        from IPython.utils.traitlets import Unicode, Int, Float, Bool
         from IPython.display import display, Javascript
         from IPython.html.nbextensions import install_nbextension
     except Exception as exp:
@@ -183,7 +183,7 @@ class CanvasBackend(BaseCanvasBackend):
         return self._backend2._vispy_update()
 
     def _vispy_close(self):
-        self._widget.close()
+        self._widget.quit()
         return self._backend2._vispy_close()
 
     def _vispy_get_position(self):
@@ -305,6 +305,7 @@ class Widget(DOMWidget):
     width = Int(sync=True)
     height = Int(sync=True)
     interval = Float(sync=True)
+    is_closing = Bool(sync=True)
     value = Unicode(sync=True)
 
     def __init__(self, gen_event, **kwargs):
@@ -324,3 +325,7 @@ class Widget(DOMWidget):
     @size.setter
     def size(self, size):
         self.width, self.height = size
+
+    def quit(self):
+        self.is_closing = True
+        self.close()
