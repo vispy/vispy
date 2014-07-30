@@ -6,7 +6,6 @@ from __future__ import division
 
 import sys
 
-from .widgets.widget import Widget
 from .visuals.visual import Visual
 from ..util._logging import logger
 
@@ -76,6 +75,7 @@ class MouseInputSystem(object):
         # Push entity and set its total transform
         event.push_entity(entity)
 
+        from .widgets.widget import Widget
         if isinstance(entity, Widget):
             # widgets are rectangular; easy to do mouse collision 
             # testing

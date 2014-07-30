@@ -249,6 +249,9 @@ VisPy command line arguments:
     or if their call location (module.class:method(line) or 
     module:function(line)) matches the string.    
     
+  --vispy-gl-debug
+    Enables error checking for all OpenGL calls.
+    
   --vispy-help
     Display this help message.
 
