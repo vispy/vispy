@@ -446,8 +446,8 @@ class Texture3DTest(unittest.TestCase):
     # is not really aware of shape.
 
     @requires_pyopengl()
-    def __init__(self):
-        unittest.TestCase.__init__(self)
+    def __init__(self, *args, **kwds):
+        unittest.TestCase.__init__(self, *args, **kwds)
 
     # Shape extension
     # ---------------------------------
