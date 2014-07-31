@@ -32,11 +32,11 @@ class ModularProgram(Program):
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.
         """
-        pass  # is this still needed?
+        #pass  # is this still needed?
         # TEMP function to fix sync issues for now
-        #self._create()
-        #self._build()
-        #self._need_build = False
+        self._create()
+        self._build()
+        self._need_build = False
     
     def _source_changed(self, ev):
         self._need_build = True
