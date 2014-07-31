@@ -10,7 +10,7 @@ from __future__ import division
 import numpy as np
 
 #from .visual import Visual
-#from ..shader.function2 import Function, Variable
+#from ..shader.function import Function, Variable
 #from ...import gloo
 
 from vispy.scene.visuals.visual import Visual

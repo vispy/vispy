@@ -7,7 +7,7 @@ from __future__ import division, print_function
 from ...gloo import Program
 from ...util import logger
 from ...ext.six import string_types  # noqa
-from .function2 import Function, Variable
+from .function import Function, Variable
 from .compiler import Compiler
 
 

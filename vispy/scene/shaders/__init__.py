@@ -2,4 +2,4 @@
 """
 
 from .program import ModularProgram  # noqa
-from .function2 import Function, Variable, Varying, FunctionChain  # noqa
+from .function import Function, Variable, Varying, FunctionChain  # noqa
