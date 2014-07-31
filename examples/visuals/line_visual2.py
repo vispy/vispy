@@ -38,7 +38,7 @@ dash_template = """
 float dash() {
     float mod = $distance / $dash_len;
     mod = mod - int(mod);
-    return 0.5 * sin(mod*3.141593*2) + 0.5;
+    return 0.5 * sin(mod*3.141593*2.0) + 0.5;
 }
 """
             

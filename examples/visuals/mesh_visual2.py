@@ -49,7 +49,7 @@ vec4 phong_shading(vec4 color) {
 }
 """
 
-## Functions that can be uses as is (don't have template variables)
+## Functions that can be used as is (don't have template variables)
 # Consider these stored in a central location in vispy ...
 
 color3to4 = Function("""
@@ -255,6 +255,7 @@ if __name__ == '__main__':
             self.meshes.append(mesh)
         
         def on_draw(self, event):
+            gloo.clear()
             gloo.set_viewport(0, 0, *self.size)
             for mesh in self.meshes:
                 mesh.draw(self)
