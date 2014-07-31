@@ -19,13 +19,13 @@ use_log_level('debug')
 
 
 # Image to be displayed
-S=64
-W, H, D = S,S,S
+S = 64
+W, H, D = S, S, S
 #I = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
 
 #gradient
-I=np.linspace(0.0, 1.0, S).astype(np.float32)
-I=np.tile(I, (S, S, 1))
+I = np.linspace(0.0, 1.0, S).astype(np.float32)
+I = np.tile(I, (S, S, 1))
 
 # A simple texture quad
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),
@@ -81,7 +81,7 @@ class Canvas(app.Canvas):
         self.texture.interpolation = gl.GL_LINEAR
 
         self.program['u_texture'] = self.texture
-        self.program['i']=0.0
+        self.program['i'] = 0.0
         self.program.bind(gloo.VertexBuffer(data))
 
         self.view = np.eye(4, dtype=np.float32)
@@ -93,7 +93,7 @@ class Canvas(app.Canvas):
         self.projection = ortho(0, W, 0, H, -1, 1)
         self.program['u_projection'] = self.projection
         
-        self.i=0;
+        self.i = 0
 
     def on_initialize(self, event):
         gl.glClearColor(1, 1, 1, 1)
@@ -121,11 +121,11 @@ class Canvas(app.Canvas):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         #I[...] = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
         #self.texture.set_data(I)
-        self.program['i']=self.i
+        self.program['i'] = self.i
         self.program.draw(gl.GL_TRIANGLE_STRIP)
         self.update()
         
-        self.i=(self.i+0.01)%1.0
+        self.i = (self.i + 0.01) % 1.0
         #gl.check_error()
 
 
