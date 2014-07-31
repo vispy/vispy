@@ -108,7 +108,7 @@ void main() {
         discard;
       
     // Clipping test.
-    vec2 test = abs((v_position.xy-v_ab.za)/v_ab.xy);
+    vec2 test = abs((v_position.xy-v_ab.zw)/v_ab.xy);
     if ((test.x > 1) || (test.y > 1))
         discard;
 }
