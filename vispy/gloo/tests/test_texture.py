@@ -469,7 +469,7 @@ class Texture3DTest(unittest.TestCase):
         assert T.shape == (5, 5, 5, 1)
         assert T._data.shape == (5, 5, 5, 1)
         assert T._need_resize is True
-        assert T._need_update is False
+        assert not T._pending_data
         assert len(T._pending_data) == 0
 
     # Resize with bad shape
