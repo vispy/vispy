@@ -14,7 +14,8 @@ from ..util import logger
 GL_SAMPLER_3D = 35679
 
 
-def glTexImage3D(target, level, internalformat, format, type, pixels):
+def glTexImage3D(target, level,
+                 internalformat, format, type, pixels):
     # Import from PyOpenGL
     import OpenGL.GL as _gl
 
@@ -24,15 +25,18 @@ def glTexImage3D(target, level, internalformat, format, type, pixels):
         pixels = None
     else:
         depth, height, width = pixels.shape[:3]
-    _gl.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels)
+    _gl.glTexImage3D(target, level, internalformat,
+                     width, height, depth, border, format, type, pixels)
 
 
-def glTexSubImage3D(target, level, xoffset, yoffset, zoffset, format, type, pixels):
+def glTexSubImage3D(target, level,
+                    xoffset, yoffset, zoffset, format, type, pixels):
     # Import from PyOpenGL
     import OpenGL.GL as _gl
 
     depth, height, width = pixels.shape[:3]
-    _gl.glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels)
+    _gl.glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
+                        width, height, depth, format, type, pixels)
 
 
 def _check_texture_format(value):
