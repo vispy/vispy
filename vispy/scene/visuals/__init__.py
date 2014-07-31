@@ -15,3 +15,4 @@ from .polygon import Polygon  # noqa
 from .ellipse import Ellipse  # noqa
 from .regular_polygon import RegularPolygon  # noqa
 from .text import Text  # noqa
+from .line_agg import LineAgg  # noqa
