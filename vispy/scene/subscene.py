@@ -5,7 +5,7 @@
 from __future__ import division
 
 from .entity import Entity
-from .cameras import Camera, NDCCamera
+from .cameras import Camera, PixelCamera
 from .transforms import NullTransform
 from .systems import DrawingSystem, MouseInputSystem
 
@@ -33,9 +33,9 @@ class SubScene(Entity):
     def __init__(self, parent=None):
         Entity.__init__(self, parent)
 
-        # Each scene has a camera. Default is NDCCamera (i.e. null camera)
+        # Each scene has a camera. Default is PixelCamera
         self._camera = None
-        self.camera = NDCCamera(self)
+        self.camera = PixelCamera(self)
 
         self.viewbox_transform = NullTransform()
 
@@ -95,6 +95,12 @@ class SubScene(Entity):
         raise RuntimeError('Cannot set transform of SubScene object.')
     
     def _update_transform(self, event):
+        # Shortcut
+        if isinstance(self.camera, PixelCamera):
+            # We know that projection is NullTransform, and we
+            # can ignore position transform for this camera.
+            self._transform = self.viewbox_transform
+        
         # Get three components of the transform
         viewbox = self.viewbox_transform
         projection = self.camera.get_projection(event)

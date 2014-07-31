@@ -118,7 +118,7 @@ class Image(Mesh):
         # this is handled in _build_data instead.
         pass
 
-    def draw(self):
+    def draw(self, canvas=None):
         if self._data is None:
             return
 

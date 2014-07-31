@@ -305,6 +305,8 @@ def test_application():
         timer.interval = 0.002
         assert_equal(timer.interval, 0.002)
         assert_true(timer.running)
+        sleep(.003)
+        assert_true(timer.elapsed >= 0.002)
         timer.stop()
         assert_true(not timer.running)
         assert_true(timer.native)
@@ -347,11 +349,35 @@ def test_close_keys():
     def closer(event):
         x.append('done')
     c.events.key_press(key=keys.ESCAPE, text='', modifiers=[])
-    # XXX known fail: this works on Qt, but not any other backend,
-    # the flow of canvas.close() is inconsistent (and should close_keys)
-    # call canvas.close(), or canvas.events.close()?
-    #assert_equal(len(x), 1)  # ensure the close event was sent
+    assert_equal(len(x), 1)  # ensure the close event was sent
     c.app.process_events()
+
+
+@requires_application()
+def test_event_order():
+    """Test event order"""
+    x = list()
+
+    class MyCanvas(Canvas):
+        def on_initialize(self, event):
+            x.append('init')
+
+        def on_draw(self, event):
+            x.append('draw')
+
+        def on_close(self, event):
+            x.append('close')
+
+    with MyCanvas() as c:
+        c.update()
+        c.app.process_events()
+
+    print(x)
+    assert_true(len(x) >= 3)
+    assert_equal(x[0], 'init')
+    assert_equal(x[1], 'draw')
+    assert_equal(x[-2], 'draw')
+    assert_equal(x[-1], 'close')
 
 
 def test_abstract():

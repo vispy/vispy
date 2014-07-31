@@ -70,3 +70,40 @@ def check_identifier(name):
 
     if name in KEYWORDS:
         return "Identifier is a reserved keyword."
+
+
+vert_draw = """
+attribute vec2 a_position;
+attribute vec2 a_texcoord;
+varying vec2 v_uv;
+
+void main(void) {
+    v_uv = a_texcoord.xy;
+    gl_Position = vec4(a_position, 0, 1);
+}
+"""
+
+frag_draw = """
+uniform sampler2D u_texture;
+varying vec2 v_uv;
+
+void main(void) {
+    gl_FragColor = texture2D(u_texture, v_uv).rgba;
+}
+"""
+
+
+def draw_texture(tex):
+    """Draw a 2D texture to the current viewport
+
+    Parameters
+    ----------
+    tex : instance of Texture2D
+        The texture to draw.
+    """
+    from .program import Program
+    program = Program(vert_draw, frag_draw)
+    program['u_texture'] = tex
+    program['a_position'] = [[-1., -1.], [-1., 1.], [1., -1.], [1., 1.]]
+    program['a_texcoord'] = [[0., 1.], [0., 0.], [1., 1.], [1., 0.]]
+    program.draw('triangle_strip')

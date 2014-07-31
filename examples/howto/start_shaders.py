@@ -27,7 +27,7 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
-        gloo.clear((1, 1, 1, 1))
+        gloo.clear('white')
         self.program.draw('points')
 
 c = Canvas()

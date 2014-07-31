@@ -8,11 +8,10 @@
 # Abstract: Water ripple effect following mouse
 # Keywords: antialias, water, mouse
 # -----------------------------------------------------------------------------
-import sys
-import numpy as np
-import OpenGL.GLUT as glut
 
-from vispy import gloo
+import numpy as np
+
+from vispy import gloo, app
 from vispy.gloo import Program, VertexBuffer
 from vispy.util.transforms import ortho
 
@@ -86,80 +85,57 @@ void main()
 """
 
 
-def display():
-    gloo.clear()
-    program.draw('points')
-    glut.glutSwapBuffers()
+class Canvas(app.Canvas):
+    def __init__(self):
+        app.Canvas.__init__(self, title='Rain [Move mouse]',
+                            size=(512, 512), close_keys='escape')
+
+    def on_initialize(self, event):
+        # Build data
+        # --------------------------------------
+        n = 500
+        self.data = np.zeros(n, [('a_position', np.float32, 2),
+                                 ('a_fg_color', np.float32, 4),
+                                 ('a_size',     np.float32, 1)])
+        self.index = 0
+        self.program = Program(vertex, fragment)
+        self.vdata = VertexBuffer(self.data)
+        self.program.bind(self.vdata)
+        self.program['u_antialias'] = 1.00
+        self.program['u_linewidth'] = 1.00
+        self.program['u_model'] = np.eye(4, dtype=np.float32)
+        self.program['u_view'] = np.eye(4, dtype=np.float32)
+        gloo.set_clear_color('white')
+        gloo.set_state(blend=True,
+                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self.timer = app.Timer(1. / 60., self.on_timer)
+        self.timer.start()
+
+    def on_draw(self, event):
+        gloo.clear()
+        self.program.draw('points')
+        self.update()
+
+    def on_resize(self, event):
+        gloo.set_viewport(0, 0, *event.size)
+        projection = ortho(0, event.size[0], 0, event.size[1], -1, +1)
+        self.program['u_projection'] = projection
+
+    def on_timer(self, event):
+        self.data['a_fg_color'][..., 3] -= 0.01
+        self.data['a_size'] += 1.0
+        self.vdata.set_data(self.data)
+
+    def on_mouse_move(self, event):
+        x, y = event.pos
+        h = gloo.get_parameter('viewport')[3]
+        self.data['a_position'][self.index] = x, h - y
+        self.data['a_size'][self.index] = 5
+        self.data['a_fg_color'][self.index] = 0, 0, 0, 1
+        self.index = (self.index + 1) % 500
 
 
-def reshape(width, height):
-    gloo.set_viewport(0, 0, width, height)
-    projection = ortho(0, width, 0, height, -1, +1)
-    program['u_projection'] = projection
-
-
-def keyboard(key, x, y):
-    if key == '\033':
-        sys.exit()
-
-
-def timer(fps):
-    glut.glutTimerFunc(1000 / fps, timer, fps)
-    data['a_fg_color'][..., 3] -= 0.01
-    data['a_size'] += 1.0
-    vdata.set_data(data)
-    glut.glutPostRedisplay()
-
-
-def on_passive_motion(x, y):
-    global index
-    _, _, _, h = gloo.get_parameter('viewport')
-    data['a_position'][index] = x, h - y
-    data['a_size'][index] = 5
-    data['a_fg_color'][index] = 0, 0, 0, 1
-    index = (index + 1) % 500
-    glut.glutPostRedisplay()
-
-
-# Glut init
-# --------------------------------------
-glut.glutInit(sys.argv)
-glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_DEPTH)
-glut.glutCreateWindow('Rain [Move mouse]')
-glut.glutReshapeWindow(512, 512)
-glut.glutReshapeFunc(reshape)
-glut.glutKeyboardFunc(keyboard)
-glut.glutDisplayFunc(display)
-glut.glutPassiveMotionFunc(on_passive_motion)
-glut.glutTimerFunc(1000 / 60, timer, 60)
-
-# Build data
-# --------------------------------------
-n = 500
-data = np.zeros(n, [('a_position', np.float32, 2),
-                    ('a_fg_color', np.float32, 4),
-                    ('a_size',     np.float32, 1)])
-index = 0
-
-# Build program
-# --------------------------------------
-program = Program(vertex, fragment)
-vdata = VertexBuffer(data)
-program.bind(vdata)
-program['u_antialias'] = 1.00
-program['u_linewidth'] = 1.00
-
-# Build view, model, projection
-# --------------------------------------
-program['u_model'] = np.eye(4, dtype=np.float32)
-program['u_view'] = np.eye(4, dtype=np.float32)
-
-# OpenGL initalization
-# --------------------------------------
-gloo.set_clear_color((1.0, 1.0, 1.0, 1.0))
-gloo.set_state(blend=True, blend_func=('src_alpha', 'one_minus_src_alpha'))
-gloo.gl_initialize()
-
-# Start
-# --------------------------------------
-glut.glutMainLoop()
+if __name__ == '__main__':
+    canvas = Canvas()
+    canvas.show()
+    app.run()

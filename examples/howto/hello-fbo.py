@@ -10,7 +10,6 @@ This example blurs the output image.
 
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 import numpy as np
 
 # Create vetices
@@ -80,10 +79,11 @@ class Canvas(app.Canvas):
         self.size = 560, 420
 
         # Create texture to render to
-        self._rendertex = gloo.Texture2D()
+        self._rendertex = gloo.Texture2D(shape=self.size, dtype=np.float32)
 
         # Create FBO, attach the color buffer and depth buffer
-        self._fbo = gloo.FrameBuffer(self._rendertex, gloo.RenderBuffer())
+        self._fbo = gloo.FrameBuffer(self._rendertex,
+                                     gloo.DepthBuffer(self.size))
 
         # Create program to render a shape
         self._program1 = gloo.Program(gloo.VertexShader(VERT_SHADER1),
@@ -100,27 +100,21 @@ class Canvas(app.Canvas):
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
-
-        # Set geometry (is no-op if the size does not change)
-        self._fbo.set_size(*self.size)
-
         # Draw the same scene as as in hello_quad.py, but draw it to the FBO
         with self._fbo:
-            # Init
-            gl.glClearColor(0, 0.0, 0.5, 1)
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-            # Draw
-            self._program1.draw(gl.GL_TRIANGLE_STRIP)
+            gloo.set_clear_color((0, 0.0, 0.5, 1))
+            gloo.clear(color=True, depth=True)
+            gloo.set_viewport(0, 0, *self.size)
+            self._program1.draw('triangle_strip')
 
         # Now draw result to a full-screen quad
         # Init
-        gl.glClearColor(1, 1, 1, 1)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        # Draw
-        self._program2.draw(gl.GL_TRIANGLE_STRIP)
+        gloo.set_clear_color('white')
+        gloo.clear(color=True, depth=True)
+        self._program2.draw('triangle_strip')
 
 
 if __name__ == '__main__':

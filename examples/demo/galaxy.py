@@ -148,8 +148,7 @@ class Canvas(app.Canvas):
 
     def on_initialize(self, event):
         gloo.set_state(depth_test=False, blend=True,
-                       blend_func=('src_alpha', 'one'),
-                       clear_color=(0, 0, 0, 1))
+                       blend_func=('src_alpha', 'one'), clear_color='black')
         # Start the timer upon initialization.
         self.timer.start()
 

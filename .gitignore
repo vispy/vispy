@@ -1,3 +1,5 @@
+*.c
+*.so
 *.pyc
 *.pyo
 *.DS_Store

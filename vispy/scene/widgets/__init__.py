@@ -4,4 +4,6 @@ user interaction. Widgets are rectangular Visual objects such as buttons
 and sliders.
 """
 
-# todo: implement some widgets :)
+from .grid import Grid  # noqa
+from .viewbox import ViewBox  # noqa
+from .widget import Widget  # noqa

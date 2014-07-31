@@ -628,6 +628,43 @@ class STTransform(Transform):
         self.shader_map()
         self.shader_imap()
 
+    @classmethod
+    def from_mapping(cls, x0, x1):
+        """ Create an STTransform from the given mapping. 
+        See ``set_mapping()`` for details.
+        """
+        t = cls()
+        t.set_mapping(x0, x1)
+        return t
+    
+    def set_mapping(self, x0, x1):
+        """ Configure this transform such that it maps points x0 => x1, 
+        where each argument must be an array of shape (2, 2) or (2, 3).
+        
+        For example, if we wish to map the corners of a rectangle::
+        
+            p1 = [[0, 0], [200, 300]]
+            
+        onto a unit cube::
+        
+            p2 = [[-1, -1], [1, 1]]
+            
+        then we can generate the transform as follows::
+        
+            tr = STTransform()
+            tr.set_mapping(p1, p2)
+            
+            # test:
+            assert tr.map(p1)[:,:2] == p2
+        
+        """
+        x0 = np.array(x0)
+        x1 = np.array(x1)
+        s = (x1[1] - x1[0]) / (x0[1] - x0[0])
+        t = x1[0] - s * x0[0]
+        self.scale = s
+        self.translate = t
+
     def __mul__(self, tr):
         if isinstance(tr, STTransform):
             s = self.scale * tr.scale

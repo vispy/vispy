@@ -208,8 +208,8 @@ class CanvasBackend(BaseCanvasBackend):
 
     def __init__(self, **kwargs):
         BaseCanvasBackend.__init__(self, capability, SharedContext)
-        title, size, position, show, vsync, resize, dec, fs, parent, context =\
-            self._process_backend_kwargs(kwargs)
+        title, size, position, show, vsync, resize, dec, fs, parent, context, \
+            vispy_canvas = self._process_backend_kwargs(kwargs)
         # Init GLFW, add window hints, and create window
         if isinstance(context, dict):
             _set_config(context)
@@ -255,6 +255,8 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_set_position(*position)
         if show:
             glfw.glfwShowWindow(self._id)
+        self._initialized = False
+        self._vispy_canvas = vispy_canvas
 
     @property
     def _vispy_context(self):
@@ -272,10 +274,10 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_canvas(self, vc):
         # Init events when the property is set by Canvas
         self._vispy_canvas_ = vc
-        if vc is not None:
+        if vc is not None and not self._initialized:
+            self._initialized = True
             self._vispy_set_current()
             self._vispy_canvas.events.initialize()
-        return self._vispy_canvas
 
     def _vispy_warmup(self):
         etime = time() + 0.25
@@ -363,7 +365,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _on_close(self, _id):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.close()
+        self._vispy_canvas.close()
 
     def _on_draw(self, _id=None):
         if self._vispy_canvas is None or self._id is None:

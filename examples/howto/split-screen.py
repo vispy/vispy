@@ -9,7 +9,6 @@ part of the future higher lever visuals layer.
 
 import numpy as np
 from vispy import app, gloo
-from vispy.gloo import gl
 from vispy.util.event import EmitterGroup
 
 
@@ -53,8 +52,7 @@ class ViewPort(object):
                                    mouse_press=app.canvas.MouseEvent,
                                    mouse_release=app.canvas.MouseEvent,
                                    mouse_move=app.canvas.MouseEvent,
-                                   mouse_wheel=app.canvas.MouseEvent,
-                                   )
+                                   mouse_wheel=app.canvas.MouseEvent)
 
         # Create program
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
@@ -62,7 +60,7 @@ class ViewPort(object):
         self.program['u_color'] = bgcolor
 
         # Create position
-        self.vbo = gloo.VertexBuffer(('', 'float32', 3))
+        self.vbo = gloo.VertexBuffer(dtype=np.float32)
         self.program['a_position'] = self.vbo
 
         # Init
@@ -86,7 +84,7 @@ class ViewPort(object):
         y = 2.0 * self._pos[1] / self._size[1] - 1.0
         data = np.array([[x, -y, 0]], np.float32)
         self.vbo.set_data(data)
-        self.program.draw(gl.GL_POINTS)
+        self.program.draw('points')
 
 
 class Canvas(app.Canvas):
@@ -98,23 +96,22 @@ class Canvas(app.Canvas):
         self.right = ViewPort((0.5, 1.0, 0.5, 1.0))
 
     def on_initialize(self, event):
-        gl.glClearColor(0, 0, 0, 1)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+        gloo.set_state(clear_color='black', blend=True,
+                       blend_func=('src_alpha', 'one'))
 
     def on_draw(self, event):
         # Draw events are "manually" propagated to the viewport instances,
         # because we first want to set the glViewport for each one.
 
         # Prepare
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gloo.clear(color=True)
         w1 = self.size[0] // 2
         w2 = self.size[0] - w1
         # Left
-        gl.glViewport(0, 0, w1, self.size[1])
+        gloo.set_viewport(0, 0, w1, self.size[1])
         self.left.on_draw()
         # Right
-        gl.glViewport(w1, 0, w2, self.size[1])
+        gloo.set_viewport(w1, 0, w2, self.size[1])
         self.right.on_draw()
 
         # Invoke new draw

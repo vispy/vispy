@@ -8,4 +8,4 @@ omit =
     */vispy/gloo/gl/_angle.py
     */vispy/testing/_runners.py
     */vispy/ext/*.py
-
+    */examples/*

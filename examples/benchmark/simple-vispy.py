@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 import time
 from vispy import app, use
-from vispy.gloo import gl
+from vispy.gloo import clear
 
 use('pyqt4')
 # use('glut')
@@ -19,7 +19,7 @@ canvas = app.Canvas(size=(512, 512), title = "Do nothing benchmark (vispy)",
 @canvas.connect
 def on_draw(event):
     global t, t0, frames
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+    clear(color=True, depth=True)
 
     t = time.time()
     frames = frames + 1

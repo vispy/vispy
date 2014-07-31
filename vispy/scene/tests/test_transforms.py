@@ -156,6 +156,16 @@ def test_map_rect():
     assert r1 == Rect((-6, 24), (26, 38))
 
 
+def test_st_mapping():
+    p1 = [[5., 7.], [23., 8.]]
+    p2 = [[-1.3, -1.4], [1.1, 1.2]]
+    
+    t = tr.STTransform()
+    t.set_mapping(p1, p2)
+    
+    assert np.allclose(t.map(p1)[:, :len(p2)], p2)
+
+
 if __name__ == '__main__':
     for key in [key for key in globals()]:
         if key.startswith('test_'):

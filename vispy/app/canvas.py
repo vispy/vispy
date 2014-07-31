@@ -96,6 +96,7 @@ class Canvas(object):
         self._basetime = time()
         self._fps_callback = None
         self._backend = None
+        self._closed = False
 
         # Create events
         self.events = EmitterGroup(source=self,
@@ -129,7 +130,8 @@ class Canvas(object):
         # store arguments that get set on Canvas init
         kwargs = dict(title=title, size=size, position=position, show=show,
                       vsync=vsync, resizable=resizable, decorate=decorate,
-                      fullscreen=fullscreen, context=context, parent=parent)
+                      fullscreen=fullscreen, context=context, parent=parent,
+                      vispy_canvas=self)
         self._backend_kwargs = kwargs
 
         # Get app instance
@@ -172,7 +174,7 @@ class Canvas(object):
         """
         assert backend is not None  # should never happen
         self._backend = backend
-        self._backend._vispy_canvas = self
+        self._backend._vispy_canvas = self  # it's okay to set this again
         if self._autoswap:
             # append to the end
             self.events.draw.connect((self, 'swap_buffers'),
@@ -282,7 +284,9 @@ class Canvas(object):
         To avoid having the widget destroyed (more like standard Qt
         behavior), consider making the widget a sub-widget.
         """
-        if self._backend is not None:
+        if self._backend is not None and not self._closed:
+            self._closed = True
+            self.events.close()
             self._backend._vispy_close()
             self._backend._vispy_canvas = None
 

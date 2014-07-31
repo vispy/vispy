@@ -8,11 +8,11 @@
 # Abstract: GPU computing usingthe framebuffer
 # Keywords: framebuffer, GPU computing, reaction-diffusion
 # -----------------------------------------------------------------------------
-import sys
+
 import numpy as np
-import OpenGL.GL as gl
-import OpenGL.GLUT as glut
-from vispy.gloo import Program, FrameBuffer, DepthBuffer
+from vispy.gloo import (Program, FrameBuffer, DepthBuffer, set_viewport,
+                        clear, set_state)
+from vispy import app
 
 
 render_vertex = """
@@ -121,112 +121,86 @@ void main(void)
 """
 
 
-def display():
-    global comp_w, comp_h, disp_w, disp_h
+class Canvas(app.Canvas):
+    def __init__(self):
+        app.Canvas.__init__(self, title='Grayscott Reaction-Diffusion',
+                            size=(512, 512), close_keys='escape')
 
-    framebuffer.activate()
-    gl.glViewport(0, 0, comp_w, comp_h)
-    compute["texture"].interpolation = gl.GL_NEAREST
-    compute.draw(gl.GL_TRIANGLE_STRIP)
-    framebuffer.deactivate()
+    def on_initialize(self, event):
+        self.scale = 4
+        self.comp_size = (256, 256)
+        comp_w, comp_h = self.comp_size
+        dt = 1.0
+        dd = 1.5
+        species = {
+            # name : [r_u, r_v, f, k]
+            'Bacteria 1': [0.16, 0.08, 0.035, 0.065],
+            'Bacteria 2': [0.14, 0.06, 0.035, 0.065],
+            'Coral': [0.16, 0.08, 0.060, 0.062],
+            'Fingerprint': [0.19, 0.05, 0.060, 0.062],
+            'Spirals': [0.10, 0.10, 0.018, 0.050],
+            'Spirals Dense': [0.12, 0.08, 0.020, 0.050],
+            'Spirals Fast': [0.10, 0.16, 0.020, 0.050],
+            'Unstable': [0.16, 0.08, 0.020, 0.055],
+            'Worms 1': [0.16, 0.08, 0.050, 0.065],
+            'Worms 2': [0.16, 0.08, 0.054, 0.063],
+            'Zebrafish': [0.16, 0.08, 0.035, 0.060]
+        }
+        P = np.zeros((comp_h, comp_w, 4), dtype=np.float32)
+        P[:, :] = species['Unstable']
 
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-    gl.glViewport(0, 0, disp_w, disp_h)
-    render["texture"].interpolation = gl.GL_LINEAR
-    render.draw(gl.GL_TRIANGLE_STRIP)
-    glut.glutSwapBuffers()
+        UV = np.zeros((comp_h, comp_w, 4), dtype=np.float32)
+        UV[:, :, 0] = 1.0
+        r = 32
+        UV[comp_h / 2 - r:comp_h / 2 + r,
+           comp_w / 2 - r:comp_w / 2 + r, 0] = 0.50
+        UV[comp_h / 2 - r:comp_h / 2 + r,
+           comp_w / 2 - r:comp_w / 2 + r, 1] = 0.25
+        UV += np.random.uniform(0.0, 0.01, (comp_h, comp_w, 4))
+        UV[:, :, 2] = UV[:, :, 0]
+        UV[:, :, 3] = UV[:, :, 1]
+
+        self.pingpong = 1
+        self.compute = Program(compute_vertex, compute_fragment, 4)
+        self.compute["params"] = P
+        self.compute["texture"] = UV
+        self.compute["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        self.compute["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        self.compute['dt'] = dt
+        self.compute['dx'] = 1.0 / comp_w
+        self.compute['dy'] = 1.0 / comp_h
+        self.compute['dd'] = dd
+        self.compute['pingpong'] = self.pingpong
+
+        self.render = Program(render_vertex, render_fragment, 4)
+        self.render["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        self.render["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        self.render["texture"] = self.compute["texture"]
+        self.render['pingpong'] = self.pingpong
+
+        self.fbo = FrameBuffer(self.compute["texture"],
+                               DepthBuffer(self.comp_size))
+        set_state(depth_test=False, clear_color='black')
+
+    def on_draw(self, event):
+        with self.fbo:
+            set_viewport(0, 0, *self.comp_size)
+            self.compute["texture"].interpolation = 'nearest'
+            self.compute.draw('triangle_strip')
+        clear(color=True)
+        set_viewport(0, 0, *self.size)
+        self.render["texture"].interpolation = 'linear'
+        self.render.draw('triangle_strip')
+        self.pingpong = 1 - self.pingpong
+        self.compute["pingpong"] = self.pingpong
+        self.render["pingpong"] = self.pingpong
+        self.update()
+
+    def on_resize(self, event):
+        set_viewport(0, 0, *self.size)
 
 
-def reshape(width, height):
-    global disp_w, disp_h
-    gl.glViewport(0, 0, width, height)
-    disp_w, disp_h = width, height
-
-
-def keyboard(key, x, y):
-    if key == '\033':
-        sys.exit()
-
-
-def idle():
-    global pingpong
-    pingpong = 1 - pingpong
-    compute["pingpong"] = pingpong
-    render["pingpong"] = pingpong
-    glut.glutPostRedisplay()
-
-
-# Glut init
-# --------------------------------------
-glut.glutInit(sys.argv)
-glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA)
-glut.glutCreateWindow('Grayscott Reaction-Diffusion')
-glut.glutReshapeWindow(512, 512)
-glut.glutReshapeFunc(reshape)
-glut.glutKeyboardFunc(keyboard)
-glut.glutDisplayFunc(display)
-glut.glutIdleFunc(idle)
-
-
-# Parameters
-# ----------
-scale = 4
-comp_w, comp_h = 256, 256
-disp_w, disp_h = 512, 512
-dt = 1.0
-dd = 1.5
-species = {
-    # name : [r_u, r_v, f, k]
-    'Bacteria 1': [0.16, 0.08, 0.035, 0.065],
-    'Bacteria 2': [0.14, 0.06, 0.035, 0.065],
-    'Coral': [0.16, 0.08, 0.060, 0.062],
-    'Fingerprint': [0.19, 0.05, 0.060, 0.062],
-    'Spirals': [0.10, 0.10, 0.018, 0.050],
-    'Spirals Dense': [0.12, 0.08, 0.020, 0.050],
-    'Spirals Fast': [0.10, 0.16, 0.020, 0.050],
-    'Unstable': [0.16, 0.08, 0.020, 0.055],
-    'Worms 1': [0.16, 0.08, 0.050, 0.065],
-    'Worms 2': [0.16, 0.08, 0.054, 0.063],
-    'Zebrafish': [0.16, 0.08, 0.035, 0.060]
-}
-P = np.zeros((comp_h, comp_w, 4), dtype=np.float32)
-P[:, :] = species['Unstable']
-
-UV = np.zeros((comp_h, comp_w, 4), dtype=np.float32)
-UV[:, :, 0] = 1.0
-r = 32
-UV[comp_h / 2 - r:comp_h / 2 + r, comp_w / 2 - r:comp_w / 2 + r, 0] = 0.50
-UV[comp_h / 2 - r:comp_h / 2 + r, comp_w / 2 - r:comp_w / 2 + r, 1] = 0.25
-UV += np.random.uniform(0.0, 0.01, (comp_h, comp_w, 4))
-UV[:, :, 2] = UV[:, :, 0]
-UV[:, :, 3] = UV[:, :, 1]
-
-pingpong = 1
-compute = Program(compute_vertex, compute_fragment, 4)
-compute["params"] = P
-compute["texture"] = UV
-compute["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
-compute["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
-compute['dt'] = dt
-compute['dx'] = 1.0 / comp_w
-compute['dy'] = 1.0 / comp_h
-compute['dd'] = dd
-compute['pingpong'] = pingpong
-
-render = Program(render_vertex, render_fragment, 4)
-render["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
-render["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
-render["texture"] = compute["texture"]
-render['pingpong'] = pingpong
-
-framebuffer = FrameBuffer(color=compute["texture"],
-                          depth=DepthBuffer((comp_w, comp_h)))
-
-# OpenGL initialization
-# --------------------------------------
-gl.glDisable(gl.GL_DEPTH_TEST)
-gl.glClearColor(0, 0, 0, 1)
-
-# Start
-# --------------------------------------
-glut.glutMainLoop()
+if __name__ == '__main__':
+    canvas = Canvas()
+    canvas.show()
+    app.run()

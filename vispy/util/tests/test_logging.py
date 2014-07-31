@@ -21,12 +21,12 @@ def test_debug_logging():
     with use_log_level('debug', 'Selected', True) as l:
         logger.debug('Selected foo')
     assert_equal(len(l), 1)
-    assert_in('unknown', l[0])  # can't really parse this location
+    assert_in('test_logging', l[0])  # can't really parse this location
 
     with use_log_level('debug', record=True) as l:
         logger.debug('foo')
     assert_equal(len(l), 1)
-    assert_in('unknown', l[0])
+    assert_in('test_logging', l[0])
 
     with use_log_level('debug', 'foo', True) as l:
         logger.debug('bar')

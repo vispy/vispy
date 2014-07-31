@@ -206,6 +206,13 @@ class FrameBuffer(GLObject):
         if stencil is not None:
             self.stencil_buffer = stencil
 
+    def __enter__(self):
+        self.activate()
+        return self
+
+    def __exit__(self, t, val, trace):
+        self.deactivate()
+
     @property
     def color_buffer(self):
         """Color buffer attachment"""
@@ -220,6 +227,7 @@ class FrameBuffer(GLObject):
         self._color_buffer = buffer
         if isinstance(buffer, (ColorBuffer, Texture2D)) or buffer is None:
             self._pending_attachments.append((target, buffer))
+            self._need_attach = True
         else:
             raise ValueError(
                 "Buffer must be a ColorBuffer, Texture2D or None. (got %s)"
@@ -239,6 +247,7 @@ class FrameBuffer(GLObject):
         self._depth_buffer = buffer
         if isinstance(buffer, (DepthBuffer, Texture2D)) or buffer is None:
             self._pending_attachments.append((target, buffer))
+            self._need_attach = True
         else:
             raise ValueError(
                 "Buffer must be a DepthBuffer, Texture2D or None. (got %s)"
@@ -258,6 +267,7 @@ class FrameBuffer(GLObject):
         self._stencil_buffer = buffer
         if isinstance(buffer, StencilBuffer) or buffer is None:
             self._pending_attachments.append((target, buffer))
+            self._need_attach = True
         else:
             raise ValueError(
                 "Buffer must be a StencilBuffer, Texture2D or None. (got %s)"
