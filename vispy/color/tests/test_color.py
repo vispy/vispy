@@ -137,13 +137,14 @@ def test_color_conversion():
     assert_equal(test, ColorArray('black'))
     c = ColorArray('black')
     assert_array_equal(c.hsv.ravel(), (0, 0, 0))
+    rng = np.random.RandomState(0)
     for _ in range(50):
-        hsv = np.random.rand(3)
+        hsv = rng.rand(3)
         hsv[0] *= 360
         hsv[1] = hsv[1] * 0.99 + 0.01  # avoid ugly boundary effects
         hsv[2] = hsv[2] * 0.99 + 0.01
         c.hsv = hsv
-        assert_allclose(c.hsv.ravel(), hsv, rtol=1e-5, atol=1e-5)
+        assert_allclose(c.hsv.ravel(), hsv, rtol=1e-4, atol=1e-4)
 
     # Lab
     test = ColorArray()
@@ -154,7 +155,7 @@ def test_color_conversion():
         assert_allclose(test.lab.ravel(), lab_dict[key], atol=1e-4, rtol=1e-4)
     for _ in range(50):
         # boundaries can have ugly rounding errors in some parameters
-        rgb = np.random.rand(3)[np.newaxis, :] * 0.9 + 0.05
+        rgb = (rng.rand(3)[np.newaxis, :] * 0.9 + 0.05)
         c.rgb = rgb
         lab = c.lab
         c.lab = lab
