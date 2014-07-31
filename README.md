@@ -19,13 +19,13 @@ display very large datasets. Applications of Vispy include:
 * OpenGL visualization demos.
 * Scientific GUIs with fast, scalable visualization widgets (Qt or IPython notebook with WebGL).
 
-**Important note**. As of today (July 2014), using Vispy requires knowing OpenGL. Within the next few weeks, we will offer higher-level graphical interfaces that allow for the creation of visualizations without any knowledge of OpenGL.
+**Important note**. As of today (August 2014), using Vispy requires knowing OpenGL. Within the next few weeks, we will offer higher-level graphical interfaces that allow for the creation of visualizations without any knowledge of OpenGL.
 
 
 Installation
 ------------
 
-Vispy runs on Python 2.6+ and Python 3.3+ and depends on Numpy and PyOpenGL.
+Vispy runs on Python 2.6+ and Python 3.3+ and depends on NumPy. You also need a backend (PyQt4/PySide, glfw, GLUT, pyglet, or SDL).
 
 As Vispy is under heavy development at this time, we highly recommend you to use the development version on Github  (master branch). You need to clone the repository and install Vispy with `python setup.py install`.
 
