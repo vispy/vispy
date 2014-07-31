@@ -11,6 +11,9 @@ from .wrappers import _check_conversion
 from ..util import logger
 
 
+GL_SAMPLER_3D = 35679
+
+
 def glTexImage3D(target, level, internalformat, format, type, pixels):
     # Import from PyOpenGL
     import OpenGL.GL as _gl

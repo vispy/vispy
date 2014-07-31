@@ -10,11 +10,10 @@ from .globject import GLObject
 from .buffer import VertexBuffer
 from .texture import Texture2D
 from .texture import Texture3D
+from .texture import GL_SAMPLER_3D
 from .framebuffer import RenderBuffer
 from ..util import logger
 from .util import check_variable
-
-import OpenGL.GL as glext
 
 
 # ------------------------------------------------------------- gl_typeinfo ---
@@ -36,7 +35,7 @@ gl_typeinfo = {
     gl.GL_FLOAT_MAT4: (16, gl.GL_FLOAT,        np.float32),
     #    gl.GL_SAMPLER_1D   : ( 1, gl.GL_UNSIGNED_INT, np.uint32),
     gl.GL_SAMPLER_2D: (1, gl.GL_UNSIGNED_INT, np.uint32),
-    glext.GL_SAMPLER_3D: (1, gl.GL_UNSIGNED_INT, np.uint32)
+    GL_SAMPLER_3D: (1, gl.GL_UNSIGNED_INT, np.uint32)
 }
 
 
@@ -56,7 +55,7 @@ class Variable(GLObject):
     gtype : ENUM
         The type of the variable: GL_FLOAT, GL_FLOAT_VEC2, GL_FLOAT_VEC3,
         GL_FLOAT_VEC4, GL_INT, GL_BOOL, GL_FLOAT_MAT2, GL_FLOAT_MAT3,
-        GL_FLOAT_MAT4, gl.GL_SAMPLER_2D, or glext.GL_SAMPLER_3D
+        GL_FLOAT_MAT4, gl.GL_SAMPLER_2D, or GL_SAMPLER_3D
     
     """
 
@@ -75,7 +74,7 @@ class Variable(GLObject):
                          gl.GL_FLOAT_MAT4,
                          #                         gl.GL_SAMPLER_1D,
                          gl.GL_SAMPLER_2D,
-                         glext.GL_SAMPLER_3D]:
+                         GL_SAMPLER_3D]:
             raise TypeError("Unknown variable type")
 
         GLObject.__init__(self)
@@ -166,7 +165,7 @@ class Uniform(Variable):
         gl.GL_FLOAT_MAT4:   gl.proxy.glUniformMatrix4fv,
         #        gl.GL_SAMPLER_1D:   gl.proxy.glUniform1i,
         gl.GL_SAMPLER_2D:   gl.proxy.glUniform1i,
-        glext.GL_SAMPLER_3D:   gl.proxy.glUniform1i,
+        GL_SAMPLER_3D:   gl.proxy.glUniform1i,
     }
 
     def __init__(self, program, name, gtype):
@@ -210,7 +209,7 @@ class Uniform(Variable):
                     self._data = Texture2D(data=data.astype(np.float32))
                 else:
                     self._data = Texture2D(data=data.astype(np.uint8))
-        elif self._gtype == glext.GL_SAMPLER_3D:
+        elif self._gtype == GL_SAMPLER_3D:
             if isinstance(data, Texture3D):
                 self._data = data
             elif isinstance(self._data, Texture3D):
@@ -231,7 +230,7 @@ class Uniform(Variable):
 
     def _activate(self):
         # if self._gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
-        if self._gtype in (gl.GL_SAMPLER_2D, glext.GL_SAMPLER_3D):
+        if self._gtype in (gl.GL_SAMPLER_2D, GL_SAMPLER_3D):
             logger.debug("GPU: Active texture is %d" % self._unit)
             gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
             if self.data is not None:
@@ -244,7 +243,7 @@ class Uniform(Variable):
             self._need_update = False
     
     def _deactivate(self):
-        if self._gtype in (gl.GL_SAMPLER_2D, glext.GL_SAMPLER_3D):
+        if self._gtype in (gl.GL_SAMPLER_2D, GL_SAMPLER_3D):
             #gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
             if self.data is not None:
                 self.data.deactivate()
@@ -266,15 +265,11 @@ class Uniform(Variable):
 
         # Textures (need to get texture count)
         # elif self._gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
-<<<<<<< HEAD
-        elif self._gtype in (gl.GL_SAMPLER_2D, glext.GL_SAMPLER_3D):
+        elif self._gtype in (gl.GL_SAMPLER_2D, GL_SAMPLER_3D):
             # texture = self.data
             # log("GPU: Active texture is %d" % self._unit)
             # gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
             # gl.glBindTexture(texture.target, texture.handle)
-=======
-        elif self._gtype in (gl.GL_SAMPLER_2D,):
->>>>>>> origin/master
             gl.glUniform1i(self._handle, self._unit)
 
         # Regular uniform
