@@ -8,6 +8,7 @@ import numpy as np
 
 from vispy.gloo.texture import Texture, Texture1D, Texture2D, Texture3D
 from vispy.gloo import gl
+from vispy.testing import requires_pyopengl
 
 
 # ----------------------------------------------------------------- Texture ---
@@ -446,6 +447,7 @@ class Texture3DTest(unittest.TestCase):
     
     # Shape extension
     # ---------------------------------
+    @requires_pyopengl()
     def test_init(self):
         data = np.zeros((10, 10, 10), dtype=np.uint8)
         T = Texture3D(data=data)
