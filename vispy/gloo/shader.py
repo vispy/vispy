@@ -9,8 +9,7 @@ import os.path
 from . import gl
 from ..util import logger
 from .globject import GLObject
-
-import OpenGL.GL as glext
+from .texture import GL_SAMPLER_3D
 
 
 # ------------------------------------------------------------ Shader class ---
@@ -42,7 +41,7 @@ class Shader(GLObject):
         'mat4':        gl.GL_FLOAT_MAT4,
         #        'sampler1D':   gl.GL_SAMPLER_1D,
         'sampler2D':   gl.GL_SAMPLER_2D,
-        'sampler3D':   glext.GL_SAMPLER_3D,
+        'sampler3D':   GL_SAMPLER_3D,
     }
 
     def __init__(self, target, code=None):
