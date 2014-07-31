@@ -895,6 +895,9 @@ class Texture3D(Texture):
     def _update(self):
         """ Texture update on GPU """
 
+        # Import from PyOpenGL
+        import OpenGL.GL as _gl
+
         # We let base texture to handle all operations
         if self.base is not None:
             return
@@ -911,17 +914,17 @@ class Texture3D(Texture):
             if offset is not None:
                 z,y,x = offset[0], offset[1], offset[2]
             # Set alignment (width is nbytes_per_pixel * npixels_per_line)
-            alignment = self._get_alignment(data.shape[-3]*data.shape[-2]*data.shape[-1])
+            alignment = self._get_alignment(data.shape[-3] *
+                                            data.shape[-2] * data.shape[-1])
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
             #width, height, depth = data.shape[1], data.shape[0], data.shape[2]
             glTexSubImage3D(self.target, 0, x, y, z, self._format, 
-                               self._gtype, data)
+                            self._gtype, data)
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
-        
-        d=_gl.glGetTexImage(self.target,0,self._format,self._gtype)
+        _gl.glGetTexImage(self.target, 0, self._format, self._gtype)
 
 
 # ------------------------------------------------------ TextureAtlas class ---

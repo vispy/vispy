@@ -440,6 +440,7 @@ class Texture2DTest(unittest.TestCase):
         newdata = np.zeros(shape, dtype=np.int32)
         self.assertRaises(ValueError, T.set_data, newdata)
 
+
 # --------------------------------------------------------------- Texture3D ---
 class Texture3DTest(unittest.TestCase):
     # Note: put many tests related to (re)sizing here, because Texture
