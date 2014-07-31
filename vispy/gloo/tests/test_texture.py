@@ -444,10 +444,13 @@ class Texture2DTest(unittest.TestCase):
 class Texture3DTest(unittest.TestCase):
     # Note: put many tests related to (re)sizing here, because Texture
     # is not really aware of shape.
-    
+
+    @requires_pyopengl()
+    def __init__(self):
+        unittest.TestCase.__init__(self)
+
     # Shape extension
     # ---------------------------------
-    @requires_pyopengl()
     def test_init(self):
         data = np.zeros((10, 10, 10), dtype=np.uint8)
         T = Texture3D(data=data)
