@@ -890,7 +890,7 @@ class Texture3D(Texture):
                      (self.width, self.height, self.depth))
         shape = self.depth, self.height, self.width
         glTexImage3D(self.target, 0, self._format, self._format, 
-                        self._gtype, shape)
+                     self._gtype, shape)
 
     def _update(self):
         """ Texture update on GPU """
@@ -912,7 +912,7 @@ class Texture3D(Texture):
             data, offset = self._pending_data.pop(0)
             x, y, z = 0, 0, 0
             if offset is not None:
-                z,y,x = offset[0], offset[1], offset[2]
+                z, y, x = offset[0], offset[1], offset[2]
             # Set alignment (width is nbytes_per_pixel * npixels_per_line)
             alignment = self._get_alignment(data.shape[-3] *
                                             data.shape[-2] * data.shape[-1])

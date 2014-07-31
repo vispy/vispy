@@ -13,9 +13,7 @@ from vispy import gloo
 from vispy import app
 from vispy.gloo import gl
 
-import OpenGL.GL as glext
-
-from vispy.util import logger,use_log_level
+from vispy.util import use_log_level
 
 use_log_level('debug')
 
@@ -26,8 +24,8 @@ W, H, D = S,S,S
 #I = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
 
 #gradient
-I=np.linspace(0.0,1.0,S).astype(np.float32)
-I=np.tile(I,(S,S,1))
+I=np.linspace(0.0, 1.0, S).astype(np.float32)
+I=np.tile(I, (S, S, 1))
 
 # A simple texture quad
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),
