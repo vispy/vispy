@@ -46,3 +46,7 @@ from .canvas import SceneCanvas  # noqa
 from . import visuals  # noqa
 from . import widgets  # noqa
 from . import cameras  # noqa
+from .visuals import *  # noqa
+from .cameras import *  # noqa
+from .transforms import *  # noqa
+from .widgets import *  # noqa
