@@ -173,12 +173,12 @@ class LineCollection(object):
         return V, I, self._Us
 
 
-class LineAggVisual(Visual):
+class LineAgg(Visual):
     VERTEX_SHADER = VERTEX_SHADER
     FRAGMENT_SHADER = FRAGMENT_SHADER
     
     def __init__(self, **kwargs):
-        super(LineAggVisual, self).__init__()
+        super(LineAgg, self).__init__()
         
         self._program = ModularProgram(self.VERTEX_SHADER, self.FRAGMENT_SHADER)
         self._collec = LineCollection(**kwargs)
