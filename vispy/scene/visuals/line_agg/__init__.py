@@ -1,1 +1,1 @@
-from .line_agg import LineAggVisual
+from .line_agg import LineAgg
