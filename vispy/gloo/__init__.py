@@ -20,42 +20,39 @@ object.
 
 Example::
 
-    # Init
-    program = gloo.Program(vertex_source, fragment_source)
-    program['a_position'] = gloo.VertexBuffer(my_positions_array)
-    program['s_texture'] = gloo.Texture2D(my_image)
-    ...
+# Init
+program = gloo.Program(vertex_source, fragment_source)
+program['a_position'] = gloo.VertexBuffer(my_positions_array)
+program['s_texture'] = gloo.Texture2D(my_image)
+...
 
-    # Draw event handler
-    program['u_color'] = 0.0, 1.0, 0.0
-    program.draw(gl.GL_TRIANGLES)
+# Draw event handler
+program['u_color'] = 0.0, 1.0, 0.0
+program.draw(gl.GL_TRIANGLES)
 
 .. Note::
 
-    With vispy.gloo we strive to offer a Python interface that provides
-    the full functionality of OpenGL. However, this layer is a work in
-    progress and there are still a few known limitations. Most notably:
+With vispy.gloo we strive to offer a Python interface that provides
+the full functionality of OpenGL. However, this layer is a work in
+progress and there are still a few known limitations. Most notably:
 
-    * TextureCubeMap is not yet implemented
-    * FBO's can only do 2D textures (not 3D textures or cube maps)
-    * Sharing of Shaders and RenderBuffers (between multiple Program's and
-      FrameBuffers, respectively) is not well supported.
-    * No support for compressed textures.
+* TextureCubeMap is not yet implemented
+* FBO's can only do 2D textures (not 3D textures or cube maps)
+* Sharing of Shaders and RenderBuffers (between multiple Program's and
+FrameBuffers, respectively) is not well supported.
+* No support for compressed textures.
 
 """
 
 from __future__ import division
 
-from . import gl  # noqa
-from .globject import GLObject  # noqa
-from .buffer import VertexBuffer, IndexBuffer  # noqa
-from .initialize import gl_initialize   # noqa
-from .texture import Texture1D          # noqa
-from .texture import Texture2D          # noqa
-from .texture import Texture3D          # noqa
-from .shader import VertexShader        # noqa
-from .shader import FragmentShader      # noqa
-from .program import Program            # noqa
-from .framebuffer import (FrameBuffer, ColorBuffer, DepthBuffer,  # noqa
-                          StencilBuffer)  # noqa
-from .wrappers import *                 # noqa
+from . import gl # noqa
+from .globject import GLObject # noqa
+from .buffer import VertexBuffer, IndexBuffer # noqa
+from .initialize import gl_initialize # noqa
+from .texture import Texture1D, Texture2D, TextureAtlas, Texture3D # noqa
+from .shader import VertexShader, FragmentShader # noqa
+from .program import Program # noqa
+from .framebuffer import (FrameBuffer, ColorBuffer, DepthBuffer, # noqa
+                          StencilBuffer) # noqa
+from .wrappers import * # noqa
