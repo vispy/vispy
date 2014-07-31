@@ -6,8 +6,13 @@ class Rect(object):
     Representation of a rectangular area in a 2D coordinate system.
     """
     def __init__(self, pos=None, size=None):
-        self._pos = tuple(pos) if pos is not None else (0, 0)
-        self._size = tuple(size) if pos is not None else (0, 0)
+        if isinstance(pos, Rect):
+            self._pos = pos._pos
+            self._size = pos._size
+        else:
+            self._pos = tuple(pos) if pos is not None else (0, 0)
+            self._size = tuple(size) if size is not None else (0, 0)
+        
         if len(self._pos) != 2 or len(self._size) != 2:
             raise ValueError("Rect pos and size arguments must have 2 "
                              "elements.")
@@ -90,10 +95,27 @@ class Rect(object):
                          min(self.top, self.bottom)),
                     size=(abs(self.width), abs(self.height)))
 
+    def flipped(self, x=False, y=True):
+        """ Return a Rect with the same bounds, but with the x or y axes 
+        inverted.
+        """
+        pos = list(self.pos)
+        size = list(self.size)
+        for i, flip in enumerate((x, y)):
+            if flip:
+                pos[i] += size[i]
+                size[i] *= -1
+        return Rect(pos, size)
+
     def __eq__(self, r):
         if not isinstance(r, Rect):
             return False
         return r.pos == self.pos and r.size == self.size
+
+    def __add__(self, a):
+        """ Return this Rect translated by *a*.
+        """
+        return self._transform_out(self._transform_in()[:,:2] + a[:2])
 
     def contains(self, x, y):
         return (x >= self.left and x <= self.right and

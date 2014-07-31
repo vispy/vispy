@@ -8,6 +8,7 @@ import numpy as np
 
 from .shaders import Function, FunctionChain
 from ..util import transforms
+from ..util.geometry import Rect
 
 """
 API Issues to work out:
@@ -661,9 +662,16 @@ class STTransform(Transform):
             assert tr.map(p1)[:,:2] == p2
         
         """
+        # if args are Rect, convert to array first
+        if isinstance(x0, Rect):
+            x0 = x0._transform_in()[:3]
+        if isinstance(x1, Rect):
+            x1 = x1._transform_in()[:3]
+        
         x0 = np.array(x0)
         x1 = np.array(x1)
         s = (x1[1] - x1[0]) / (x0[1] - x0[0])
+        s[x0[1] == x0[0]] = 1.0
         t = x1[0] - s * x0[0]
         self.scale = s
         self.translate = t

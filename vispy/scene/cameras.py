@@ -29,7 +29,7 @@ import numpy as np
 
 from . import transforms
 from .entity import Entity
-from .transforms import STTransform, PerspectiveTransform
+from .transforms import STTransform, PerspectiveTransform, NullTransform
 
 
 class Camera(Entity):
@@ -53,7 +53,7 @@ class Camera(Entity):
         classes to define the projection of view.
         """
         # We don't want people to use this base camera
-        raise NotImplementedError()
+        return NullTransform()
 
     def scene_mouse_event(self, event):
         """
@@ -61,31 +61,6 @@ class Camera(Entity):
         accordingly.
         """
         pass
-
-
-class PixelCamera(Camera):
-    """ Camera that presents a view on the world in pixel coordinates.
-    The coordinates map directly to the viewbox coordinates. The origin
-    is in the upper left.
-    """
-    
-    def get_projection(self, event):
-        # Map to the resolution (pixels) available in the viewbox
-        # This happens to be the NullTransform for the PixelCamera :)
-        return transforms.NullTransform()
-
-
-class UnitCamera(Camera):
-    """ Camera that presents a view on the world in unit coordinates
-    with a total size of 1. The projected range is 0..1 in x and y. The
-    origin is at the bottom left.
-    """
-    def get_projection(self, event):
-        # Map to the resolution (pixels) available in the viewbox
-        w, h = event.resolution
-        map_from = (0, 0), (1, 1)
-        map_to = (0, h), (w, 0)
-        return transforms.STTransform.from_mapping(map_from, map_to)
 
 
 class Fixed2DCamera(Camera):

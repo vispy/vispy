@@ -24,23 +24,17 @@ def update_grid(event=None):
 update_grid()
 
 b1 = grid.add_view(row=0, col=0, col_span=2)
-b1.scene.camera = scene.cameras.TwoDCamera()
-b1.scene.camera.transform.scale = (10, 5)
-b1.scene.camera.transform.translate = (5, 0)
+b1.viewer.rect = (-0.5, -5), (11, 10)
 b1.border = (1, 0, 0, 1)
 b1.preferred_clip_method = 'viewport'
 
 b2 = grid.add_view(row=1, col=0)
-b2.scene.camera = scene.cameras.TwoDCamera()
-b2.scene.camera.transform.scale = (10, 5)
-b2.scene.camera.transform.translate = (-2, 0)
+b2.viewer.rect = (-10, -5), (15, 10)
 b2.border = (1, 0, 0, 1)
 b2.preferred_clip_method = 'viewport'
 
 b3 = grid.add_view(row=1, col=1)
-b3.scene.camera = scene.cameras.TwoDCamera()
-b3.scene.camera.transform.scale = (5, 5)
-b3.scene.camera.transform.translate = (0, 0)
+b3.viewer.rect = (-5, -5), (10, 10)
 b3.border = (1, 0, 0, 1)
 b3.preferred_clip_method = 'viewport'
 
@@ -50,6 +44,7 @@ N = 10000
 pos = np.empty((N, 2), dtype=np.float32)
 pos[:, 0] = np.linspace(0, 10, N)
 pos[:, 1] = np.random.normal(size=N)
+pos[5000, 1] += 50
 
 color = np.ones((N, 4), dtype=np.float32)
 color[:, 0] = np.linspace(0, 1, N)
