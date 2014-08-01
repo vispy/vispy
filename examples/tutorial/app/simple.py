@@ -11,8 +11,7 @@ on what is available on your machine.
 """
 
 import math
-from vispy import app
-from vispy.gloo import gl
+from vispy import app, gloo
 
 
 class Canvas(app.Canvas):
@@ -25,12 +24,12 @@ class Canvas(app.Canvas):
         self.tick = 0
 
     def on_draw(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gloo.clear(color=True)
 
     def on_timer(self, event):
         self.tick += 1 / 60.0
         c = abs(math.sin(self.tick))
-        gl.glClearColor(c, c, c, 1)
+        gloo.set_clear_color((c, c, c, 1))
         self.update()
 
 if __name__ == '__main__':

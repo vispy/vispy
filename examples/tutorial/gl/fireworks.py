@@ -17,11 +17,11 @@ visualization during the explosion is highly optimized using a Vertex Buffer
 Object (VBO). After each explosion, vertex data for the next explosion are
 calculated, such that each explostion is unique.
 """
-import sys
 import ctypes
 import numpy as np
 import OpenGL.GL as gl
-import OpenGL.GLUT as glut
+
+from vispy import app
 
 
 vertex_code = """
@@ -61,122 +61,102 @@ void main()
 """
 
 
-def display():
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-    gl.glDrawArrays(gl.GL_POINTS, 0, len(data))
-    glut.glutSwapBuffers()
+class Canvas(app.Canvas):
+    def __init__(self):
+        app.Canvas.__init__(self, size=(800, 600), title='GL Fireworks',
+                            close_keys='escape')
+        self.timer = app.Timer(1./60., self.on_timer)
 
+    def on_initialize(self, event):
+        # Build & activate program
+        self.program = gl.glCreateProgram()
+        vertex = gl.glCreateShader(gl.GL_VERTEX_SHADER)
+        fragment = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
+        gl.glShaderSource(vertex, vertex_code)
+        gl.glShaderSource(fragment, fragment_code)
+        gl.glCompileShader(vertex)
+        gl.glCompileShader(fragment)
+        gl.glAttachShader(self.program, vertex)
+        gl.glAttachShader(self.program, fragment)
+        gl.glLinkProgram(self.program)
+        gl.glDetachShader(self.program, vertex)
+        gl.glDetachShader(self.program, fragment)
+        gl.glUseProgram(self.program)
 
-def reshape(width, height):
-    gl.glViewport(0, 0, width, height)
+        # Build vertex buffer
+        n = 10000
+        self.data = np.zeros(n, dtype=[('lifetime', np.float32, 1),
+                                       ('start',    np.float32, 3),
+                                       ('end',      np.float32, 3)])
+        vbuffer = gl.glGenBuffers(1)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbuffer)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data.nbytes, self.data,
+                        gl.GL_DYNAMIC_DRAW)
 
+        # Bind buffer attributes
+        stride = self.data.strides[0]
 
-def keyboard(key, x, y):
-    if key == '\033':
-        sys.exit()
+        offset = ctypes.c_void_p(0)
+        loc = gl.glGetAttribLocation(self.program, "lifetime")
+        gl.glEnableVertexAttribArray(loc)
+        gl.glVertexAttribPointer(loc, 1, gl.GL_FLOAT, False, stride, offset)
 
+        offset = ctypes.c_void_p(self.data.dtype["lifetime"].itemsize)
+        loc = gl.glGetAttribLocation(self.program, "start")
+        gl.glEnableVertexAttribArray(loc)
+        gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, stride, offset)
 
-def new_explosion():
-    n = len(data)
+        offset = ctypes.c_void_p(self.data.dtype["start"].itemsize)
+        loc = gl.glGetAttribLocation(self.program, "end")
+        gl.glEnableVertexAttribArray(loc)
+        gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, stride, offset)
 
-    color = np.random.uniform(0.1, 0.9, 4).astype(np.float32)
-    color[3] = 1.0 / n ** 0.08
-    loc = gl.glGetUniformLocation(program, "color")
-    gl.glUniform4f(loc, *color)
+        # OpenGL initalization
+        self.elapsed_time = 0
+        gl.glClearColor(0, 0, 0, 1)
+        gl.glDisable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+        gl.glEnable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
+        gl.glEnable(gl.GL_POINT_SPRITE)
+        self.new_explosion()
+        self.timer.start()
 
-    center = np.random.uniform(-0.5, 0.5, 3)
-    loc = gl.glGetUniformLocation(program, "center")
-    gl.glUniform3f(loc, *center)
+    def on_draw(self, event):
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glDrawArrays(gl.GL_POINTS, 0, len(self.data))
 
-    data['lifetime'] = np.random.normal(2.0, 0.5, (n,))
-    data['start'] = np.random.normal(0.0, 0.2, (n, 3))
-    data['end'] = np.random.normal(0.0, 1.2, (n, 3))
-    gl.glBufferData(gl.GL_ARRAY_BUFFER, data.nbytes, data, gl.GL_DYNAMIC_DRAW)
+    def on_resize(self, event):
+        gl.glViewport(0, 0, *event.size)
 
+    def on_timer(self, event):
+        self.elapsed_time += 1. / 60.
+        if self.elapsed_time > 1.5:
+            self.new_explosion()
+            self.elapsed_time = 0.0
 
-def timer(fps):
-    global elapsed_time
+        loc = gl.glGetUniformLocation(self.program, "time")
+        gl.glUniform1f(loc, self.elapsed_time)
+        self.update()
 
-    elapsed_time += 1.0 / fps
-    if elapsed_time > 1.5:
-        new_explosion()
-        elapsed_time = 0.0
+    def new_explosion(self):
+        n = len(self.data)
+        color = np.random.uniform(0.1, 0.9, 4).astype(np.float32)
+        color[3] = 1.0 / n ** 0.08
+        loc = gl.glGetUniformLocation(self.program, "color")
+        gl.glUniform4f(loc, *color)
 
-    loc = gl.glGetUniformLocation(program, "time")
-    gl.glUniform1f(loc, elapsed_time)
+        center = np.random.uniform(-0.5, 0.5, 3)
+        loc = gl.glGetUniformLocation(self.program, "center")
+        gl.glUniform3f(loc, *center)
 
-    glut.glutTimerFunc(1000 / fps, timer, fps)
-    glut.glutPostRedisplay()
+        self.data['lifetime'] = np.random.normal(2.0, 0.5, (n,))
+        self.data['start'] = np.random.normal(0.0, 0.2, (n, 3))
+        self.data['end'] = np.random.normal(0.0, 1.2, (n, 3))
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data.nbytes, self.data,
+                        gl.GL_DYNAMIC_DRAW)
 
-
-# GLUT init
-# --------------------------------------
-glut.glutInit()
-glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_DEPTH)
-glut.glutCreateWindow("GL Fireworks")
-glut.glutReshapeWindow(800, 600)
-glut.glutReshapeFunc(reshape)
-glut.glutDisplayFunc(display)
-glut.glutKeyboardFunc(keyboard)
-glut.glutTimerFunc(1000 / 60, timer, 60)
-
-# Build & activate program
-# --------------------------------------
-program = gl.glCreateProgram()
-vertex = gl.glCreateShader(gl.GL_VERTEX_SHADER)
-fragment = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
-gl.glShaderSource(vertex, vertex_code)
-gl.glShaderSource(fragment, fragment_code)
-gl.glCompileShader(vertex)
-gl.glCompileShader(fragment)
-gl.glAttachShader(program, vertex)
-gl.glAttachShader(program, fragment)
-gl.glLinkProgram(program)
-gl.glDetachShader(program, vertex)
-gl.glDetachShader(program, fragment)
-gl.glUseProgram(program)
-
-# Build vertex buffer
-# --------------------------------------
-n = 10000
-data = np.zeros(n, dtype=[('lifetime', np.float32, 1),
-                          ('start',    np.float32, 3),
-                          ('end',      np.float32, 3)])
-vbuffer = gl.glGenBuffers(1)
-gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbuffer)
-gl.glBufferData(gl.GL_ARRAY_BUFFER, data.nbytes, data, gl.GL_DYNAMIC_DRAW)
-
-# Bind buffer attributes
-# --------------------------------------
-stride = data.strides[0]
-
-offset = ctypes.c_void_p(0)
-loc = gl.glGetAttribLocation(program, "lifetime")
-gl.glEnableVertexAttribArray(loc)
-gl.glVertexAttribPointer(loc, 1, gl.GL_FLOAT, False, stride, offset)
-
-offset = ctypes.c_void_p(data.dtype["lifetime"].itemsize)
-loc = gl.glGetAttribLocation(program, "start")
-gl.glEnableVertexAttribArray(loc)
-gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, stride, offset)
-
-offset = ctypes.c_void_p(data.dtype["start"].itemsize)
-loc = gl.glGetAttribLocation(program, "end")
-gl.glEnableVertexAttribArray(loc)
-gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, stride, offset)
-
-
-# OpenGL initalization
-# --------------------------------------
-elapsed_time = 0
-gl.glClearColor(0, 0, 0, 1)
-gl.glDisable(gl.GL_DEPTH_TEST)
-gl.glEnable(gl.GL_BLEND)
-gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-gl.glEnable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
-gl.glEnable(gl.GL_POINT_SPRITE)
-new_explosion()
-
-# Enter mainloop
-# --------------------------------------
-glut.glutMainLoop()
+if __name__ == '__main__':
+    c = Canvas()
+    c.show()
+    app.run()
