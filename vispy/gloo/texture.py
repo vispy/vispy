@@ -19,7 +19,7 @@ def glTexImage3D(target, level,
     # Import from PyOpenGL
     try:
         import OpenGL.GL as _gl
-    except Exception:
+    except ImportError:
         raise ImportError('PyOpenGL is required for 3D texture support')
 
     border = 0
@@ -37,7 +37,7 @@ def glTexSubImage3D(target, level,
     # Import from PyOpenGL
     try:
         import OpenGL.GL as _gl
-    except Exception:
+    except ImportError:
         raise ImportError('PyOpenGL is required for 3D texture support')
 
     depth, height, width = pixels.shape[:3]
@@ -826,7 +826,7 @@ class Texture3D(Texture):
         # Import from PyOpenGL
         try:
             import OpenGL.GL as _gl
-        except Exception:
+        except ImportError:
             raise ImportError('PyOpenGL is required for 3D texture support')
 
         # We don't want these parameters to be seen from outside (because they
@@ -901,24 +901,14 @@ class Texture3D(Texture):
         glTexImage3D(self.target, 0, self._format, self._format, 
                      self._gtype, shape)
 
-    def _update(self):
+    def _update_data(self):
         """ Texture update on GPU """
 
         # Import from PyOpenGL
         try:
             import OpenGL.GL as _gl
-        except Exception:
+        except ImportError:
             raise ImportError('PyOpenGL is required for 3D texture support')
-
-        # We let base texture to handle all operations
-        if self.base is not None:
-            return
-
-        if self._need_resize:
-            self._resize()
-            self._need_resize = False
-        logger.debug("GPU: Updating texture (%d pending operation(s))" %
-                     len(self._pending_data))
 
         while self._pending_data:
             data, offset = self._pending_data.pop(0)

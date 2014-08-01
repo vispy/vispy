@@ -100,7 +100,7 @@ class Canvas(app.Canvas):
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         self.projection = ortho(0, width, 0, height, -100, 100)
         self.program['u_projection'] = self.projection
 
@@ -118,11 +118,11 @@ class Canvas(app.Canvas):
         self.program.bind(gloo.VertexBuffer(data))
 
     def on_draw(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gloo.clear(color=True, depth=True)
         #I[...] = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
         #self.texture.set_data(I)
         self.program['i'] = self.i
-        self.program.draw(gl.GL_TRIANGLE_STRIP)
+        self.program.draw('triangle_strip')
         self.update()
         
         self.i = (self.i + 0.01) % 1.0

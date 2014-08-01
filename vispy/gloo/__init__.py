@@ -20,27 +20,27 @@ object.
 
 Example::
 
-# Init
-program = gloo.Program(vertex_source, fragment_source)
-program['a_position'] = gloo.VertexBuffer(my_positions_array)
-program['s_texture'] = gloo.Texture2D(my_image)
-...
+    # Init
+    program = gloo.Program(vertex_source, fragment_source)
+    program['a_position'] = gloo.VertexBuffer(my_positions_array)
+    program['s_texture'] = gloo.Texture2D(my_image)
+    ...
 
-# Draw event handler
-program['u_color'] = 0.0, 1.0, 0.0
-program.draw(gl.GL_TRIANGLES)
+    # Draw event handler
+    program['u_color'] = 0.0, 1.0, 0.0
+    program.draw(gl.GL_TRIANGLES)
 
 .. Note::
 
-With vispy.gloo we strive to offer a Python interface that provides
-the full functionality of OpenGL. However, this layer is a work in
-progress and there are still a few known limitations. Most notably:
+    With vispy.gloo we strive to offer a Python interface that provides
+    the full functionality of OpenGL. However, this layer is a work in
+    progress and there are still a few known limitations. Most notably:
 
-* TextureCubeMap is not yet implemented
-* FBO's can only do 2D textures (not 3D textures or cube maps)
-* Sharing of Shaders and RenderBuffers (between multiple Program's and
-FrameBuffers, respectively) is not well supported.
-* No support for compressed textures.
+    * TextureCubeMap is not yet implemented
+    * FBO's can only do 2D textures (not 3D textures or cube maps)
+    * Sharing of Shaders and RenderBuffers (between multiple Program's and
+      FrameBuffers, respectively) is not well supported.
+    * No support for compressed textures.
 
 """
 
