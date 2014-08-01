@@ -65,7 +65,7 @@ line_pixels = scene.visuals.Line(pos=pos.copy(), color=color)
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
-canvas.scene.camera = scene.cameras.PixelCamera()
+#canvas.scene.camera = scene.cameras.PixelCamera()
 
 # Create viewboxes left ...
 
@@ -76,18 +76,22 @@ h2 = h / 2.
 vb1 = scene.ViewBox(canvas.scene, name='vb1', margin=2, border=(1, 0, 0, 1))
 vb1.pos = 0, 0
 vb1.size = w2, h
-vb1.scene.camera = scene.cameras.Fixed2DCamera(fovx=(-1, 1))
+#vb1.scene.camera = scene.cameras.Fixed2DCamera(fovx=(-1, 1))
+vb1.viewer.rect = (-1, -1), (2, 2)
+vb1.viewer.enable_mouse = False
 #
 vb11 = scene.ViewBox(vb1.scene, name='vb11', margin=0.02, border=(0, 1, 0, 1))
 vb11.pos = -1.0, -1.0
 vb11.size = 2.0, 1.0
-vb11.scene.camera = scene.cameras.TwoDCamera()
-vb11.scene.camera.transform.scale = (2., 2.)
+vb11.viewer.rect = (-1, -1), (2, 2)
+#vb11.scene.camera = scene.cameras.TwoDCamera()
+#vb11.scene.camera.transform.scale = (2., 2.)
 #
 vb12 = scene.ViewBox(vb1.scene, name='vb12', margin=0.02, border=(0, 0, 1, 1))
 vb12.pos = -1.0, 0.0
 vb12.size = 2.0, 1.0
-vb12.scene.camera = scene.cameras.PixelCamera()
+vb12.viewer.rect = (0, 0), (100, 100)
+#vb12.scene.camera = scene.cameras.PixelCamera()
 #vb12.scene.camera.scale = (100, 100)
 #
 line_ndc.add_parent(vb11.scene)
@@ -104,18 +108,22 @@ vb11.add(nd_box)
 vb2 = scene.ViewBox(canvas.scene, name='vb2', margin=2, border=(1, 1, 0, 1))
 vb2.pos = w2, 0
 vb2.size = w2, h
-vb2.scene.camera = scene.cameras.PixelCamera()
+#vb2.scene.camera = scene.cameras.PixelCamera()
+vb2.viewer.rect = (0, 0), vb2.size
+vb2.viewer.enable_mouse = False
 #
 vb21 = scene.ViewBox(vb2.scene, name='vb21', margin=10, border=(1, 0, 1, 1))
 vb21.pos = 0, 0
 vb21.size = 400, 300
-vb21.scene.camera = scene.cameras.TwoDCamera()
-vb21.scene.camera.transform.scale = (2., 2.)
+#vb21.scene.camera = scene.cameras.TwoDCamera()
+#vb21.scene.camera.transform.scale = (2., 2.)
+vb21.viewer.rect = (-1, -1), (2, 2)
 #
 vb22 = scene.ViewBox(vb2.scene, name='vb22', margin=10, border=(0, 1, 1, 1))
 vb22.pos = 0, 300
 vb22.size = 400, 300
-vb22.scene.camera = scene.cameras.PixelCamera()
+#vb22.scene.camera = scene.cameras.PixelCamera()
+vb22.viewer.rect = (0, 0), vb22.size
 #
 line_ndc.add_parent(vb21.scene)
 line_pixels.add_parent(vb22.scene)

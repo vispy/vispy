@@ -370,13 +370,22 @@ class PanZoomViewer(Viewer):
         super(PanZoomViewer, self).__init__()
         self._rect = Rect((0, 0), (1, 1))  # visible range in scene
         self._transform = STTransform()
+        self._mouse_enabled = True
+        
+    @property
+    def mouse_enabled(self):
+        return self._mouse_enabled
+    
+    @mouse_enabled.setter
+    def mouse_enabled(self, b):
+        self._mouse_enabled = b
     
     def mouse_event(self, event):
         """
         The SubScene received a mouse event; update transform 
         accordingly.
         """
-        if event.handled:
+        if event.handled or not self._mouse_enabled:
             return
         
         if 1 in event.buttons:
