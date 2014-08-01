@@ -223,6 +223,10 @@ class SceneMouseEvent(SceneEvent):
     def buttons(self):
         return self.mouse_event.buttons
 
+    @property
+    def delta(self):
+        return self.mouse_event.delta
+
     def copy(self):
         ev = self.__class__(self.mouse_event, self._canvas)
         ev._stack = self._stack[:]

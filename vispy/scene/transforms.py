@@ -9,6 +9,7 @@ import numpy as np
 from .shaders import Function, FunctionChain
 from ..util import transforms
 from ..util.geometry import Rect
+from ..util.event import EventEmitter
 
 """
 API Issues to work out:
@@ -84,6 +85,7 @@ class Transform(object):
     Isometric = None
 
     def __init__(self):
+        self.changed = EventEmitter(source=self, type='transform_changed')
         if self.glsl_map is not None:
             self._shader_map = Function(self.glsl_map)
         if self.glsl_imap is not None:
@@ -136,9 +138,9 @@ class Transform(object):
         """
         Called to inform any listeners that this Transform has changed.
         """
-        pass
         #self._shader_map.update()
         #self._shader_imap.update()
+        self.changed()
 
     #def _resolve(self, name, var_prefix, imap):
         ## The default implemntation assumes the following:
@@ -305,7 +307,7 @@ class ChainTransform(Transform):
     Isometric = False
 
     def __init__(self, *transforms):
-        #super(ChainTransform, self).__init__()
+        super(ChainTransform, self).__init__()
 
         # Set input transforms
         trs = []
@@ -609,6 +611,8 @@ class STTransform(Transform):
     def scale(self, s):
         self._scale[:len(s)] = s[:4]
         self._scale[len(s):] = 1.0
+        self.shader_map()  # update shader variables
+        self.shader_imap()
         self._update()
 
     @property
@@ -619,6 +623,8 @@ class STTransform(Transform):
     def translate(self, t):
         self._translate[:len(t)] = t[:4]
         self._translate[len(t):] = 0.0
+        self.shader_map()  # update shader variables
+        self.shader_imap()
         self._update()
 
     def as_affine(self):
@@ -759,6 +765,8 @@ class AffineTransform(Transform):
     def matrix(self, m):
         self._matrix = m
         self._inv_matrix = None
+        self.shader_map()
+        self.shader_imap()
         self.update()
 
     @property
@@ -802,14 +810,16 @@ class AffineTransform(Transform):
         self.matrix = np.eye(4)
 
     def __mul__(self, tr):
-        if isinstance(tr, AffineTransform):
+        if (isinstance(tr, AffineTransform) and
+            # don't multiply if the perspective column is used
+            not any(tr.matrix[:3, 3] != 0)):   
             return AffineTransform(matrix=np.dot(tr.matrix, self.matrix))
         else:
             return tr.__rmul__(self)
             #return super(AffineTransform, self).__mul__(tr)
 
     def __repr__(self):
-        s = "AffineTransform(matrix=["
+        s = "%s(matrix=[" % self.__class__.__name__
         indent = " "*len(s)
         s += str(list(self.matrix[0])) + ",\n"
         s += indent + str(list(self.matrix[1])) + ",\n"
@@ -835,11 +845,17 @@ class PerspectiveTransform(AffineTransform):
     """
     Matrix transform that also implements perspective division.
     """
-    # TODO
+    # todo: merge with affinetransform?
+    def set_perspective(self, fov, aspect, near, far):
+        self.matrix = transforms.perspective(fov, aspect, near, far)
 
-    @classmethod
-    def frustum(cls, l, r, t, b, n, f):
-        pass
+    def set_frustum(self, l, r, b, t, n, f):
+        self.matrix = transforms.frustum(l, r, b, t, n, f)
+
+    def __mul__(self, tr):
+        # Override multiplication -- this does not combine well with affine
+        # matrices.
+        return tr.__rmul__(self)
 
 
 class OrthoTransform(AffineTransform):

@@ -38,7 +38,7 @@ vb1 = scene.ViewBox(canvas.scene, border=(1, 1, 0, 1))
 vb1.preferred_clip_method = 'fbo'
 vb1.pos = 20, 20
 vb1.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
-vb1.viewer.rect = (-1.2, -2), (2.4, 4)
+vb1.viewer.rect = (-1.2, -2, 2.4, 4)
 #vb1.scene.camera = scene.cameras.TwoDCamera()
 
 line_ndc.add_parent(vb1.scene)
@@ -47,8 +47,10 @@ vb2 = scene.ViewBox(canvas.scene, border=(0, 0, 1, 1))
 vb2.preferred_clip_method = 'viewport'
 vb2.pos = canvas.size[0]/2. + 20, 20
 vb2.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
-vb2.viewer.rect = (-1.2, -2), (2.4, 4)
+#vb2.viewer.rect = (-1.2, -2), (2.4, 4)
 #vb2.scene.camera = scene.cameras.TwoDCamera()
+vb2.set_viewer('camera', pos=(0, 0, 10), look=(0, 0, 0), fov=60)
+#vb2.viewer.camera.transform.rotate(-30, (1, 0, 0))
 
 line_ndc.add_parent(vb2.scene)
 

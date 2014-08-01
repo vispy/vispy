@@ -26,6 +26,7 @@ class SceneCanvas(app.Canvas):
         self.events.mouse_press.connect(self._process_mouse_event)
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
+        self.events.mouse_wheel.connect(self._process_mouse_event)
 
         self._scene = None
         self.scene = SubScene()

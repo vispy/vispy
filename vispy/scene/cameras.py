@@ -29,7 +29,9 @@ import numpy as np
 
 from . import transforms
 from .entity import Entity
-from .transforms import STTransform, PerspectiveTransform, NullTransform
+from ..util.event import Event
+from .transforms import (STTransform, PerspectiveTransform, NullTransform,
+                         AffineTransform)
 
 
 class Camera(Entity):
@@ -47,6 +49,7 @@ class Camera(Entity):
 
     def __init__(self, parent=None):
         Entity.__init__(self, parent)
+        self.events.add(projection_change=Event)
     
     def get_projection(self, event):
         """ Get the projection matrix. Should be overloaded by camera
@@ -181,40 +184,47 @@ class PerspectiveCamera(Camera):
     """
     def __init__(self, parent=None):
         super(PerspectiveCamera, self).__init__(parent)
-        self.transform = PerspectiveTransform()
+        self._projection = PerspectiveTransform()
+        self.transform = AffineTransform()
         # TODO: allow self.look to be derived from an Anchor
         self._perspective = {
             'look': np.array([0., 0., 0., 1.]),
             'near': 1e-6,
             'far': 1e6,
             'fov': 60,
-            'top': np.array([0., 0., 1., 1.])}
+            'top': np.array([0., 0., 1., 1.]),
+            'aspect': 1.0
+            }
+    
+    @property
+    def pos(self):
+        raise NotImplementedError()
+    
+    @pos.setter
+    def pos(self, pos):
+        self.transform.reset()
+        self.transform.translate(pos)
+
+    def set_perspective(self, **kwds):
+        self._perspective.update(kwds)
+        # update camera here
+        ar = self._perspective['aspect']
+        near = self._perspective['near']
+        far = self._perspective['far']
+        fov = self._perspective['fov']
+        self._projection.set_perspective(fov, ar, near, far)
+        self.events.projection_change()
 
     def _update_transform(self):
         # create transform based on look, near, far, fov, and top.
-        self.transform.set_perspective(origin=(0, 0, 0), **self.perspective)
+        self._projection.set_perspective(origin=(0, 0, 0), **self.perspective)
+
+    def get_projection(self):
+        return self._projection
 
     def view_mouse_event(self, event):
         """
         An attached ViewBox received a mouse event;
 
         """
-        if 1 in event.buttons:
-            p1 = np.array(event.last_event.pos)
-            p2 = np.array(event.pos)
-            self.transform = self.transform * STTransform(translate=p1-p2)
-            self.update()
-            event.handled = True
-        elif 2 in event.buttons:
-            p1 = np.array(event.last_event.pos)[:2]
-            p2 = np.array(event.pos)[:2]
-            s = 0.97 ** ((p2-p1) * np.array([1, -1]))
-            center = event.press_event.pos
-            # TODO: would be nice if STTransform had a nice scale(s, center)
-            # method like AffineTransform.
-            self.transform = (self.transform *
-                              STTransform(translate=center) *
-                              STTransform(scale=s) *
-                              STTransform(translate=-center))
-            self.update()
-            event.handled = True
+        pass

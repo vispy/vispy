@@ -10,7 +10,7 @@ from ..transforms import STTransform, NullTransform
 from .widget import Widget
 from ..subscene import SubScene
 from ...util.geometry import Rect
-
+from ..cameras import PerspectiveCamera
 
 class ViewBox(Widget):
     """ Provides a rectangular window to which its subscene is rendered
@@ -42,8 +42,24 @@ class ViewBox(Widget):
     
     @viewer.setter
     def viewer(self, v):
+        if self._viewer is not None:
+            self._viewer.disconnect()
         self._viewer = v
         v.viewbox = self
+        
+    def set_viewer(self, vtype, *args, **kwds):
+        """ Create a new Viewer and attach it to this ViewBox. 
+        
+        *vtype* may be 'panzoom', 'camera', or None.
+        All other arguments are passed to the Viewer.__init__ method.
+        """
+        viewer = {
+            None: Viewer,
+            'panzoom': PanZoomViewer,
+            'camera': CameraViewer,
+            }[vtype](*args, **kwds)
+        self.viewer = viewer
+        return viewer
 
     @property
     def bgcolor(self):
@@ -301,14 +317,6 @@ class ViewBox(Widget):
 
         return fbo
 
-    def on_mouse_move(self, event):
-        if self._viewer is not None:
-            self._viewer.mouse_event(event)
-        
-    def on_rect_change(self, event):
-        if self._viewer is not None:
-            self._viewer.resize_event(event)
-
 
 class Viewer(object):
     """
@@ -325,7 +333,10 @@ class Viewer(object):
     
     @viewbox.setter
     def viewbox(self, vb):
+        if self._viewbox is not None:
+            self.disconnec()
         self._viewbox = vb
+        self.connect()
         self.update()
     
     @property
@@ -339,7 +350,23 @@ class Viewer(object):
     def transform(self, tr):
         self._transform = tr
         self.update()
+    
+    def connect(self):
+        self._viewbox.events.mouse_press.connect(self.mouse_event)
+        self._viewbox.events.mouse_release.connect(self.mouse_event)
+        self._viewbox.events.mouse_move.connect(self.mouse_event)
+        self._viewbox.events.mouse_wheel.connect(self.mouse_event)
+    
+    def disconnect(self):
+        """
+        Called by ViewBox.
         
+        """
+        self._viewbox.events.mouse_press.disconnect(self.mouse_event)
+        self._viewbox.events.mouse_release.disconnect(self.mouse_event)
+        self._viewbox.events.mouse_move.disconnect(self.mouse_event)
+        self._viewbox.events.mouse_wheel.disconnect(self.mouse_event)
+    
     def mouse_event(self, event):
         """
         The SubScene received a mouse event; update transform 
@@ -448,41 +475,77 @@ class CameraViewer(Viewer):
     Viewer that generates its transform from a Camera Entity placed inside the 
     scene.
     """
-    def __init__(self, viewbox):
-        super(CameraViewer, self).__init__(viewbox)
+    def __init__(self, pos=(0, 0, 1), look=(0, 0, 0), top=(0, 1, 0), fov=60, 
+                 near=0.01, far=1e6):
+        super(CameraViewer, self).__init__()
         self._camera = None
-        self.camera = OrthoCamera(self)
-
+        self.camera = PerspectiveCamera()
+        self.camera.set_perspective(look=look, top=top, fov=fov, 
+                                    near=near, far=far)
+        self.camera.pos = pos
+    
     @property
     def camera(self):
-        """ The camera associated with this viewbox. Can be None if there
-        are no cameras in the scene.
+        """ The camera associated with this Viewer.
         """
         return self._camera
 
     @camera.setter
     def camera(self, cam):
+        if self._camera is not None:
+            trc = self._camera.events.transform_change
+            trc.disconnect(self._update_transform)
         # convenience: set parent if it's an orphan
-        if not cam.parents:
-            cam.parents = self
-        # Test that self is a parent of the camera
-        object = cam
-        while object is not None:
-            # todo: ignoring multi-parenting here, we need Entity.isparent()
-            object = object.parents[0]
-            if isinstance(object, SubScene):
-                break
-        if object is not self:
-            raise ValueError('Given camera is not in the scene itself.')
-        # Set and (dis)connect events
-#         if self._camera is not None:
-#             self._camera.events.update.disconnect(self._camera_update)
+        if not cam.parents and self.viewbox is not None:
+            cam.parent = self.viewbox.scene
         self._camera = cam
-#         cam.events.update.connect(self._camera_update)
+        self._camera.events.transform_change.connect(self._update_transform)
+        self._update_transform()
 
-    def update(self):
+    @property
+    def viewbox(self):
+        return self._viewbox
+    
+    @viewbox.setter
+    def viewbox(self, vb):
+        Viewer.viewbox.fset(self, vb)
+        if not self.camera.parents:
+            self.camera.parent = vb.scene
+        self._update_transform()
+
+    def mouse_event(self, event):
+        """
+        The SubScene received a mouse event; update transform 
+        accordingly.
+        """
+        if event.handled:
+            return
+        
+        if event.type == 'mouse_wheel':
+            fov = self.camera._perspective['fov'] * (1.1**-event.delta[1])
+            self.camera.set_perspective(fov=fov)
+            
+        self._update_transform()
+        
+    def resize_event(self, event):
+        self._update_transform()
+    
+    def _update_transform(self, event=None):
         if self.viewbox is not None:
-            pass
-            # TODO: set transform from inverse camera transform
-        super(PanZoomViewer, self).update()
+            vbs = self.viewbox.size
+            self.camera.set_perspective(aspect=(vbs[0] / vbs[1]))
+            
+            unit = [[-1, 1], [1, -1]]
+            vrect = [[0, 0], self.viewbox.size]
+            viewbox_tr = STTransform.from_mapping(unit, vrect)
+            proj_tr = self.camera.get_projection()
+            cam_tr = self.camera.entity_transform(self.viewbox.scene) 
+            
+            self.transform = viewbox_tr * proj_tr * cam_tr
+            print "viewbox tr:", viewbox_tr
+            print "proj tr:", proj_tr
+            print "camera tr:", cam_tr
+            print self.transform
+        #super(CameraViewer, self).update()
+
     
