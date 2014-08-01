@@ -25,7 +25,7 @@ class XYPosComponent(VisualComponent):
     """
     SHADERS = dict(
         local_position="""
-            vec4 $input_xy_pos() {
+            vec4 input_xy_pos() {
                 return vec4($xy_pos, $z_pos, 1.0);
             }
         """)
@@ -37,7 +37,7 @@ class XYPosComponent(VisualComponent):
         self._index = False
         self._vbo = None
         self._ibo = None
-        self.set_data(xy, z, index)
+        self.set_data(xy[:,:2], z, index)
 
     @property
     def supported_draw_modes(self):
@@ -73,8 +73,10 @@ class XYPosComponent(VisualComponent):
 
     def activate(self, program, draw_mode):
         fn = self._funcs['local_position']
-        fn['xy_pos'] = ('attribute', 'vec2', self.vbo)
-        fn['z_pos'] = ('uniform', 'float', self._z)
+        #fn['xy_pos'] = ('attribute', 'vec2', self.vbo)
+        #fn['z_pos'] = ('uniform', 'float', self._z)
+        fn['xy_pos'] = self.vbo
+        fn['z_pos'] = self._z
 
     @property
     def index(self):
@@ -90,7 +92,7 @@ class XYZPosComponent(VisualComponent):
     """
     SHADERS = dict(
         local_position="""
-            vec4 $input_xyz_pos() {
+            vec4 input_xyz_pos() {
                 return vec4($xyz_pos, 1.0);
             }
         """)
@@ -134,8 +136,9 @@ class XYZPosComponent(VisualComponent):
         return self._ibo
 
     def activate(self, program, draw_mode):
-        self._funcs['local_position']['xyz_pos'] = ('attribute', 'vec3',
-                                                    self.vbo)
+        #self._funcs['local_position']['xyz_pos'] = ('attribute', 'vec3',
+                                                    #self.vbo)
+        self._funcs['local_position']['xyz_pos'] = self.vbo
 
     @property
     def index(self):
@@ -154,7 +157,7 @@ class HeightFieldComponent(VisualComponent):
     """
     SHADERS = dict(
         local_position="""
-            vec4 $input_z_pos() {
+            vec4 input_z_pos() {
                 int xind = int($index % $x_size);
                 float x = $x_min + (xind * $x_step);
                 int yind = int($index % $y_size);
@@ -196,8 +199,9 @@ class HeightFieldComponent(VisualComponent):
         return self._vbo
 
     def activate(self, program, draw_mode):
-        self._funcs['local_position']['z_pos'] = ('attribute', 'vec3',
-                                                  self.vbo)
+        #self._funcs['local_position']['z_pos'] = ('attribute', 'vec3',
+                                                  #self.vbo)
+        self._funcs['local_position']['z_pos'] = self.vbo
 
     @property
     def index(self):
