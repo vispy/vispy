@@ -91,7 +91,8 @@ class VertexTextureCoordinateComponent(VisualComponent):
         ff['tex_local_pos'] = Varying('v_tex_local_pos', dtype='vec4')
         ff['map_local_to_tex'] = self.transform.shader_map()
         self._funcs['vert_post_hook']['tex_local_pos'] = ff['tex_local_pos']
-        self._funcs['vert_post_hook']['local_pos'] = self.visual._program.vert['local_pos']
+        self._funcs['vert_post_hook']['local_pos'] = \
+            self.visual._program.vert['local_pos']
 
 
 class TextureCoordinateComponent(VisualComponent):

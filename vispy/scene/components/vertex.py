@@ -37,7 +37,7 @@ class XYPosComponent(VisualComponent):
         self._index = False
         self._vbo = None
         self._ibo = None
-        self.set_data(xy[:,:2], z, index)
+        self.set_data(xy[:, :2], z, index)
 
     @property
     def supported_draw_modes(self):
@@ -199,9 +199,7 @@ class HeightFieldComponent(VisualComponent):
         return self._vbo
 
     def activate(self, program, draw_mode):
-        #self._funcs['local_position']['z_pos'] = ('attribute', 'vec3',
-                                                  #self.vbo)
-        self._funcs['local_position']['z_pos'] = self.vbo
+        self._funcs['local_position']['z_pos'] = self.vbo  # attribute vec3
 
     @property
     def index(self):

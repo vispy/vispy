@@ -85,6 +85,7 @@ from ..components import (VisualComponent, XYPosComponent, XYZPosComponent,
 
 """
 
+
 class ComponentProgram(ModularProgram):
     """
     Temporary class to bridge differences between current ModularProgram 
@@ -118,7 +119,6 @@ class ComponentProgram(ModularProgram):
             except Exception:
                 ModularProgram.__setitem__(self, name, val)
             
-        
 
 class ModularVisual(Visual):
     """
@@ -371,7 +371,6 @@ class ModularVisual(Visual):
         
         for comp in all_comps:
             comp.activate(self._program, mode)
-
 
     def _activate_transform(self, event=None):
         # TODO: this must be optimized.

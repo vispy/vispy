@@ -15,6 +15,7 @@ from __future__ import division
 from .component import VisualComponent
 from ..shaders import Varying
 
+
 class GridContourComponent(VisualComponent):
     """
     Draw grid lines across a surface.
