@@ -97,7 +97,7 @@ class Canvas(app.Canvas):
         self.program_v['u_seeds[0]'] = x, y
         # TODO: just update the first line in the VBO instead of uploading the
         # whole array of seed points.
-        self.seeds[0,:] = x, y
+        self.seeds[0, :] = x, y
         self.program_s['a_position'].set_data(self.seeds)
         self.update()
 
