@@ -11,7 +11,6 @@ import numpy as np
 from vispy.util.transforms import ortho
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 
 
 # Shape of image to be displayed
@@ -73,7 +72,7 @@ class Canvas(app.Canvas):
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.texture = gloo.Texture3D(I)
-        self.texture.interpolation = gl.GL_LINEAR
+        self.texture.interpolation = 'linear'
 
         self.program['u_texture'] = self.texture
         self.program['i'] = 0.0
@@ -87,11 +86,11 @@ class Canvas(app.Canvas):
         self.program['u_view'] = self.view
         self.projection = ortho(0, W, 0, H, -1, 1)
         self.program['u_projection'] = self.projection
-        
+
         self.i = 0
 
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
+        gloo.set_clear_color('white')
 
     def on_resize(self, event):
         width, height = event.size
@@ -114,11 +113,9 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
-
         self.program['i'] = self.i
         self.program.draw('triangle_strip')
         self.update()
-        
         self.i = (self.i + 0.01) % 1.0
 
 
