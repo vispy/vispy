@@ -87,9 +87,19 @@ class Canvas(app.Canvas):
         self.program_s.draw('points')
 
     def on_resize(self, event):
-        w, h = event.size
-        gloo.set_viewport(0, 0, w, h)
-        self.program_v['u_screen'] = (w, h)
+        self.width, self.height = event.size
+        gloo.set_viewport(0, 0, self.width, self.height)
+        self.program_v['u_screen'] = (self.width, self.height)
+        
+    def on_mouse_move(self, event):
+        x, y = event.pos
+        x, y = x/float(self.width), 1-y/float(self.height)
+        self.program_v['u_seeds[0]'] = x, y
+        # TODO: just update the first line in the VBO instead of uploading the
+        # whole array of seed points.
+        self.seeds[0,:] = x, y
+        self.program_s['a_position'].set_data(self.seeds)
+        self.update()
 
 if __name__ == "__main__":
     c = Canvas()
