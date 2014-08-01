@@ -13,19 +13,14 @@ from vispy import gloo
 from vispy import app
 from vispy.gloo import gl
 
-from vispy.util import use_log_level
 
-use_log_level('debug')
-
-
-# Image to be displayed
+# Shape of image to be displayed
 S = 64
 W, H, D = S, S, S
-#I = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
 
-#gradient
-I = np.linspace(0.0, 1.0, S).astype(np.float32)
-I = np.tile(I, (S, S, 1))
+# Modulated image
+I = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
+I *= np.linspace(0, 1, D)[np.newaxis, np.newaxis, :]
 
 # A simple texture quad
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),
@@ -104,7 +99,7 @@ class Canvas(app.Canvas):
         self.projection = ortho(0, width, 0, height, -100, 100)
         self.program['u_projection'] = self.projection
 
-        # Compute thje new size of the quad
+        # Compute the new size of the quad
         r = width / float(height)
         R = W / float(H)
         if r < R:
@@ -119,14 +114,12 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
-        #I[...] = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
-        #self.texture.set_data(I)
+
         self.program['i'] = self.i
         self.program.draw('triangle_strip')
         self.update()
         
         self.i = (self.i + 0.01) % 1.0
-        #gl.check_error()
 
 
 if __name__ == '__main__':
