@@ -45,15 +45,15 @@ VS_seeds = """
 attribute vec2 a_position;
 
 void main() {
-    gl_Position = vec4(2 * a_position - 1, 0., 1.);
-    gl_PointSize = 10;
+    gl_Position = vec4(2. * a_position - 1., 0., 1.);
+    gl_PointSize = 10.;
 }
 """
 
 FS_seeds = """
 varying vec3 v_color;
 void main() {
-    gl_FragColor = vec4(1, 1, 1, 1);
+    gl_FragColor = vec4(1., 1., 1., 1.);
 }
 """
 
