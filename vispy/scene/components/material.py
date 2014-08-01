@@ -13,6 +13,7 @@ color as its only argument and returns a modified vec4 color.
 from __future__ import division
 
 from .component import VisualComponent
+from ..shaders import Varying
 
 
 class GridContourComponent(VisualComponent):
@@ -22,7 +23,7 @@ class GridContourComponent(VisualComponent):
 
     SHADERS = dict(
         frag_color="""
-            vec4 $grid_contour(vec4 color) {
+            vec4 grid_contour(vec4 color) {
                 if ( mod($pos.x, $spacing.x) < 0.005 ||
                     mod($pos.y, $spacing.y) < 0.005 ||
                     mod($pos.z, $spacing.z) < 0.005 ) {
@@ -34,7 +35,7 @@ class GridContourComponent(VisualComponent):
             }
         """,
         vert_post_hook="""
-            void $grid_contour_support() {
+            void grid_contour_support() {
                 $output_pos = local_position();
             }
         """)
@@ -53,8 +54,8 @@ class GridContourComponent(VisualComponent):
 
     def activate(self, program, mode):
         ff = self._funcs['frag_color']
-        ff['pos'] = ('varying', 'vec4')
-        ff['spacing'] = ('uniform', 'vec3', self.spacing)
+        ff['pos'] = Varying('pos', dtype='vec4')
+        ff['spacing'] = self.spacing  # uniform vec3
         self._funcs['vert_post_hook']['output_pos'] = ff['pos']
 
 
@@ -65,7 +66,7 @@ class ShadingComponent(VisualComponent):
 
     SHADERS = dict(
         frag_color="""
-            vec4 $shading(vec4 color) {
+            vec4 shading(vec4 color) {
                 vec3 norm = normalize($normal().xyz);
                 vec3 light = normalize($light_direction.xyz);
                 float p = dot(light, norm);
@@ -94,8 +95,6 @@ class ShadingComponent(VisualComponent):
         ff['normal'] = self.normal_comp.normal_shader()
 
         # TODO: add support for multiple lights
-        ff['light_direction'] = ('uniform', 'vec4',
-                                 tuple(self.lights[0][0][:3]) + (1,))
-        ff['light_color'] = ('uniform', 'vec4',
-                             tuple(self.lights[0][1][:3]) + (1,))
-        ff['ambient'] = ('uniform', 'float', self.ambient)
+        ff['light_direction'] = tuple(self.lights[0][0][:3]) + (1,)  # u vec4
+        ff['light_color'] = tuple(self.lights[0][1][:3]) + (1,)  # u vec4
+        ff['ambient'] = self.ambient  # u float

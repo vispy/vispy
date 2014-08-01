@@ -15,22 +15,23 @@ shader.
 from __future__ import division
 
 from .component import VisualComponent
+from ..shaders import Varying
 from ... import gloo
 
 
 class VertexNormalComponent(VisualComponent):
     SHADERS = dict(
         frag_normal="""
-            vec4 $normal() {
+            vec4 normal() {
                 return $norm;
             }
         """,
         vert_post_hook="""
-            void $normal_support() {
+            void normal_support() {
                 vec3 o = vec3(0,0,0);
                 vec3 i = o + $input_normal.xyz;
-                $output_normal = map_local_to_nd(vec4(i,1)) -
-                                 map_local_to_nd(vec4(o,1));
+                $output_normal = $map_local_to_nd(vec4(i,1)) -
+                                 $map_local_to_nd(vec4(o,1));
             }
         """)
 
@@ -71,11 +72,12 @@ class VertexNormalComponent(VisualComponent):
 
     def activate(self, program, mode):
         ff = self._funcs['frag_normal']
-        ff['norm'] = ('varying', 'vec4')
+        ff['norm'] = Varying('norm', dtype='vec4')
 
         vf = self._funcs['vert_post_hook']
-        vf['input_normal'] = ('attribute', 'vec4', self._make_vbo(mode))
+        vf['input_normal'] = self._make_vbo(mode)  # attribute vec4
         vf['output_normal'] = ff['norm']
+        vf['map_local_to_nd'] = self.visual._program.vert['map_local_to_nd']
 
     @property
     def supported_draw_modes(self):

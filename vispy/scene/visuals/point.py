@@ -24,7 +24,7 @@ class Point(ModularVisual):
 
         # TODO: turn this into a proper component.
         code = """
-        void $set_point_size() {
+        void set_point_size() {
             gl_PointSize = 10.0; //size;
         }
         """

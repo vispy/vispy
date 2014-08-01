@@ -15,6 +15,7 @@ from __future__ import division
 import numpy as np
 
 from .component import VisualComponent
+from ..shaders import Varying
 from ... import gloo
 
 
@@ -25,7 +26,7 @@ class UniformColorComponent(VisualComponent):
 
     SHADERS = dict(
         frag_color="""
-            vec4 $colorInput() {
+            vec4 colorInput() {
                 return $rgba;
             }
         """)
@@ -43,8 +44,7 @@ class UniformColorComponent(VisualComponent):
         self._color = c
 
     def activate(self, program, mode):
-        self._funcs['frag_color']['rgba'] = ('uniform', 'vec4',
-                                             np.array(self._color))
+        self._funcs['frag_color']['rgba'] = np.array(self._color)
 
 
 class VertexColorComponent(VisualComponent):
@@ -54,12 +54,12 @@ class VertexColorComponent(VisualComponent):
 
     SHADERS = dict(
         frag_color="""
-            vec4 $colorInput() {
+            vec4 colorInput() {
                 return $rgba;
             }
         """,
         vert_post_hook="""
-            void $colorInputSupport() {
+            void colorInputSupport() {
                 $output_color = $input_color;
             }
         """)
@@ -85,8 +85,9 @@ class VertexColorComponent(VisualComponent):
 
     def activate(self, program, mode):
         ff = self._funcs['frag_color']
-        ff['rgba'] = ('varying', 'vec4')
+        ff['rgba'] = Varying('rgba', dtype='vec4')
 
         vf = self._funcs['vert_post_hook']
         vf['output_color'] = ff['rgba']
-        vf['input_color'] = ('attribute', 'vec4', self.vbo)
+        #vf['input_color'] = ('attribute', 'vec4', self.vbo)
+        vf['input_color'] = self.vbo

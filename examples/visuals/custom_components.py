@@ -13,6 +13,7 @@ from vispy.scene import visuals
 from vispy.scene.transforms import Transform, STTransform, arg_to_array
 from vispy.scene.components import (VisualComponent, VertexColorComponent,
                                     XYPosComponent)
+from vispy.scene.shaders import Varying
 
 # vertex positions of data to draw
 N = 50
@@ -32,7 +33,7 @@ class SineTransform(Transform):
     Add sine wave to y-value for wavy effect.
     """
     glsl_map = """
-        vec4 $sineTransform(vec4 pos) {
+        vec4 sineTransform(vec4 pos) {
             return vec4(pos.x, pos.y + sin(pos.x), pos.z, 1);
         }"""
 
@@ -57,7 +58,7 @@ class DashComponent(VisualComponent):
 
     SHADERS = dict(
         frag_color="""
-            vec4 $dash(vec4 color) {
+            vec4 dash(vec4 color) {
                 float mod = $distance / $dash_len;
                 mod = mod - int(mod);
                 color.a = 0.5 * sin(mod*3.141593*2) + 0.5;
@@ -65,7 +66,7 @@ class DashComponent(VisualComponent):
             }
         """,
         vert_post_hook="""
-            void $dashSup() {
+            void dashSup() {
                 $output_dist = $distance_attr;
             }
         """)
@@ -91,9 +92,9 @@ class DashComponent(VisualComponent):
     def activate(self, program, mode):
         vf = self._funcs['vert_post_hook']
         ff = self._funcs['frag_color']
-        vf['distance_attr'] = ('attribute', 'float', self._make_vbo())
-        vf['output_dist'] = ('varying', 'float')
-        ff['dash_len'] = ('uniform', 'float', 20.)
+        vf['distance_attr'] = self._make_vbo()  # attribute float
+        vf['output_dist'] = Varying('output_dist', dtype='float')
+        ff['dash_len'] = 20.
         ff['distance'] = vf['output_dist']
 
     @property
@@ -108,7 +109,7 @@ class WobbleComponent(VisualComponent):
     """
     SHADERS = dict(
         local_position="""
-            vec4 $wobble(vec4 pos) {
+            vec4 wobble(vec4 pos) {
                 float x = pos.x + 0.01 * cos($theta + $phase);
                 float y = pos.y + 0.01 * sin($theta + $phase);
                 return vec4(x, y, pos.z, pos.w);
@@ -128,8 +129,8 @@ class WobbleComponent(VisualComponent):
             self._vbo = gloo.VertexBuffer(self.theta)
 
         pf = self._funcs['local_position']
-        pf['theta'] = ('attribute', 'float', self._vbo)
-        pf['phase'] = ('uniform', 'float', self.phase)
+        pf['theta'] = self._vbo
+        pf['phase'] = self.phase
 
         # TODO: make this automatic
         self._visual._program._need_build = True

@@ -292,7 +292,8 @@ class Function(ShaderObject):
         if isinstance(code, Function):
             code = code._code
         elif not isinstance(code, string_types):
-            raise ValueError('Function needs a string or Function.')
+            raise ValueError('Function needs a string or Function; got %s.' %
+                             type(code))
         self._code = self._clean_code(code)
         
         # Get some information derived from the code

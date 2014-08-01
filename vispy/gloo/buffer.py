@@ -381,7 +381,8 @@ class DataBuffer(Buffer):
     def glsl_type(self):
         """ GLSL declaration strings required for a variable to hold this data. 
         """
-        n = self.dtype[0].shape[0]
+        dtshape = self.dtype[0].shape
+        n = dtshape[0] if dtshape else 1
         if n > 1:
             dtype = 'vec%d' % n
         else:

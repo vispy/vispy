@@ -83,8 +83,10 @@ class Transform(object):
     Isometric = None
 
     def __init__(self):
-        self._shader_map = Function(self.glsl_map)
-        self._shader_imap = Function(self.glsl_imap)
+        if self.glsl_map is not None:
+            self._shader_map = Function(self.glsl_map)
+        if self.glsl_imap is not None:
+            self._shader_imap = Function(self.glsl_imap)
 
     def map(self, obj):
         """
@@ -133,8 +135,9 @@ class Transform(object):
         """
         Called to inform any listeners that this Transform has changed.
         """
-        self._shader_map.update()
-        self._shader_imap.update()
+        pass
+        #self._shader_map.update()
+        #self._shader_imap.update()
 
     #def _resolve(self, name, var_prefix, imap):
         ## The default implemntation assumes the following:
@@ -721,12 +724,12 @@ class AffineTransform(Transform):
 
     def shader_map(self):
         fn = super(AffineTransform, self).shader_map()
-        fn['matrix'] = ('uniform', 'mat4', self.matrix)
+        fn['matrix'] = self.matrix  # uniform mat4
         return fn
 
     def shader_imap(self):
         fn = super(AffineTransform, self).shader_imap()
-        fn['inv_matrix'] = ('uniform', 'mat4', self.inv_matrix)
+        fn['inv_matrix'] = self.inv_matrix  # uniform mat4
         return fn
 
     def inverse(self):
@@ -918,12 +921,12 @@ class LogTransform(Transform):
 
     def shader_map(self):
         fn = super(LogTransform, self).shader_map()
-        fn['base'] = ('uniform', 'vec3', self.base)
+        fn['base'] = self.base  # uniform vec3
         return fn
 
     def shader_imap(self):
         fn = super(LogTransform, self).shader_imap()
-        fn['base'] = ('uniform', 'vec3', self.base)
+        fn['base'] = self.base  # uniform vec3
         return fn
 
     def __repr__(self):
