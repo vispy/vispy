@@ -57,7 +57,16 @@ class Camera(Entity):
     def __init__(self):
         super(Camera, self).__init__()
         self._viewbox = None
-        self._transform = NullTransform()
+        self._scene_transform = NullTransform()
+        self._interactive = True
+
+    @property
+    def interactive(self):
+        return self._interactive
+    
+    @interactive.setter
+    def interactive(self, b):
+        self._interactive = b
 
     @property
     def viewbox(self):
@@ -66,47 +75,39 @@ class Camera(Entity):
     @viewbox.setter
     def viewbox(self, vb):
         if self._viewbox is not None:
-            self.disconnec()
+            self.disconnect()
         self._viewbox = vb
-        self.connect()
-        self.update()
+        if self._viewbox is not None:
+            self.connect()
+            self.update()
     
-    @property
-    def transform(self):
+    def _set_scene_transform(self, tr):
         """
-        Transform to apply to the ViewBox's SubScene.
+        Called by subclasses to configure the viewbox scene transform.
         """
-        return self._transform
-        
-    @transform.setter
-    def transform(self, tr):
-        self._transform = tr
+        self._scene_transform = tr
         self.update()
     
     def connect(self):
-        self._viewbox.events.mouse_press.connect(self.mouse_event)
-        self._viewbox.events.mouse_release.connect(self.mouse_event)
-        self._viewbox.events.mouse_move.connect(self.mouse_event)
-        self._viewbox.events.mouse_wheel.connect(self.mouse_event)
+        self._viewbox.events.mouse_press.connect(self.view_mouse_event)
+        self._viewbox.events.mouse_release.connect(self.view_mouse_event)
+        self._viewbox.events.mouse_move.connect(self.view_mouse_event)
+        self._viewbox.events.mouse_wheel.connect(self.view_mouse_event)
     
     def disconnect(self):
-        """
-        Called by ViewBox.
-        
-        """
-        self._viewbox.events.mouse_press.disconnect(self.mouse_event)
-        self._viewbox.events.mouse_release.disconnect(self.mouse_event)
-        self._viewbox.events.mouse_move.disconnect(self.mouse_event)
-        self._viewbox.events.mouse_wheel.disconnect(self.mouse_event)
+        self._viewbox.events.mouse_press.disconnect(self.view_mouse_event)
+        self._viewbox.events.mouse_release.disconnect(self.view_mouse_event)
+        self._viewbox.events.mouse_move.disconnect(self.view_mouse_event)
+        self._viewbox.events.mouse_wheel.disconnect(self.view_mouse_event)
     
-    def mouse_event(self, event):
+    def view_mouse_event(self, event):
         """
-        The SubScene received a mouse event; update transform 
+        The ViewBox received a mouse event; update transform 
         accordingly.
         """
         pass
         
-    def resize_event(self, event):
+    def view_resize_event(self, event):
         """
         The ViewBox was resized; update the transform accordingly.
         """
@@ -117,46 +118,34 @@ class Camera(Entity):
         Set the scene transform to match the Camera's transform.
         """
         if self.viewbox is not None:
-            self.viewbox.scene.transform = self.transform
-        
-
-
-
-
+            self.viewbox.scene.transform = self._scene_transform
 
     
 class PanZoomCamera(Camera):
     """
     Camera implementing 2D pan/zoom mouse interaction. Primarily intended for
     displaying plot data.
+    
+    Note: this Camera currently ignores its .transform
     """
     def __init__(self):
         super(PanZoomCamera, self).__init__()
         self._rect = Rect((0, 0), (1, 1))  # visible range in scene
-        self._transform = STTransform()
-        self._mouse_enabled = True
+        self._scene_transform = STTransform()
         
-    @property
-    def mouse_enabled(self):
-        return self._mouse_enabled
-    
-    @mouse_enabled.setter
-    def mouse_enabled(self, b):
-        self._mouse_enabled = b
-    
-    def mouse_event(self, event):
+    def view_mouse_event(self, event):
         """
         The SubScene received a mouse event; update transform 
         accordingly.
         """
-        if event.handled or not self._mouse_enabled:
+        if event.handled or not self.interactive:
             return
         
         if 1 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]
             p2 = np.array(event.pos)[:2]
-            p1s = self.transform.imap(p1)
-            p2s = self.transform.imap(p2)
+            p1s = self._scene_transform.imap(p1)
+            p2s = self._scene_transform.imap(p2)
             self.rect = self.rect + (p1s-p2s)
             event.handled = True
         elif 2 in event.buttons:
@@ -168,7 +157,7 @@ class PanZoomCamera(Camera):
             p2c = event.map_to_canvas(p2)[:2]
             
             s = 1.03 ** ((p1c-p2c) * np.array([1, -1]))
-            center = self.transform.imap(event.press_event.pos[:2])
+            center = self._scene_transform.imap(event.press_event.pos[:2])
             # TODO: would be nice if STTransform had a nice scale(s, center) 
             # method like AffineTransform.
             transform = (STTransform(translate=center) * 
@@ -181,7 +170,7 @@ class PanZoomCamera(Camera):
         if event.handled:
             self.update()
 
-    def resize_event(self, event):
+    def view_resize_event(self, event):
         self.update()
 
     @property
@@ -206,7 +195,7 @@ class PanZoomCamera(Camera):
     def update(self):
         if self.viewbox is not None:
             vbr = self.viewbox.rect.flipped(y=True, x=False)
-            self.transform.set_mapping(self.rect, vbr)
+            self._scene_transform.set_mapping(self.rect, vbr)
         super(PanZoomCamera, self).update()
 
         
@@ -258,7 +247,7 @@ class PerspectiveCamera(Camera):
         self.parent = vb.scene
         self._update_transform()
         
-    def resize_event(self, event):
+    def view_resize_event(self, event):
         self._update_transform()
     
     def _update_transform(self, event=None):
@@ -285,7 +274,7 @@ class PerspectiveCamera(Camera):
             proj_tr = self._projection
             cam_tr = self.entity_transform(self.viewbox.scene) 
             
-            self.transform = viewbox_tr * proj_tr * cam_tr
+            self._set_scene_transform(viewbox_tr * proj_tr * cam_tr)
 
     def set_perspective(self):
         vbs = self.viewbox.size
@@ -325,16 +314,16 @@ class TurntableCamera(PerspectiveCamera):
         self.elevation = np.clip(self.elevation + elev, -90, 90)
         self._update_transform()
         
-    def mouse_event(self, event):
+    def view_mouse_event(self, event):
         """
         The viewbox received a mouse event; update transform 
         accordingly.
         """
-        if event.handled:
+        if event.handled or not self.interactive:
             return
         
         if event.type == 'mouse_wheel':
-            self.fov = self.fov * (1.1**-event.delta[1])
+            self._perspective['fov'] *= 1.1 ** -event.delta[1]
             self._update_transform()
         elif event.type == 'mouse_move' and 1 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]

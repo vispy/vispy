@@ -41,11 +41,11 @@ class ViewBox(Widget):
         return self._camera
     
     @camera.setter
-    def camera(self, v):
+    def camera(self, cam):
         if self._camera is not None:
-            self._camera.disconnect()
-        self._camera = v
-        v.viewbox = self
+            self._camera.viewbox = None
+        self._camera = cam
+        cam.viewbox = self
         
     def set_camera(self, cam_type, *args, **kwds):
         """ Create a new Camera and attach it to this ViewBox. 
