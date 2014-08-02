@@ -7,6 +7,7 @@ import sys
 import inspect
 import re
 import traceback
+from functools import partial
 
 from ..ext.six import string_types
 
@@ -63,7 +64,7 @@ class _VispyStreamHandler(logging.StreamHandler):
     Prepending of traceback information is done in _VispyFormatter.
     """
     def __init__(self):
-        super(_VispyStreamHandler, self).__init__(sys.stderr)
+        logging.StreamHandler.__init__(self, sys.stderr)
         self._vispy_formatter = _lf
         self.setFormatter(self._vispy_formatter)
         self._vispy_match = None
@@ -89,7 +90,7 @@ class _VispyStreamHandler(logging.StreamHandler):
         if match is not None or self._vispy_emit_record:
             self.emit = self._vispy_emit_match_andor_record
         else:
-            self.emit = super(_VispyStreamHandler, self).emit
+            self.emit = partial(logging.StreamHandler.emit, self)
         return old_match
 
     def _vispy_set_emit_record(self, record):
@@ -99,7 +100,7 @@ class _VispyStreamHandler(logging.StreamHandler):
         if match is not None or self._vispy_emit_record:
             self.emit = self._vispy_emit_match_andor_record
         else:
-            self.emit = super(_VispyStreamHandler, self).emit
+            self.emit = partial(logging.StreamHandler.emit, self)
 
     def _vispy_reset_list(self):
         self._vispy_emit_list = list()
