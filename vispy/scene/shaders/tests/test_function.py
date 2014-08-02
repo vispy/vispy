@@ -1,5 +1,5 @@
 from vispy.scene.shaders.function import (Function, Variable, Varying,
-                                           FunctionChain)
+                                          FunctionChain)
 
 # Users normally don't need these, but I want to test them
 from vispy.scene.shaders.function import FunctionCall, TextExpression
