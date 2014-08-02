@@ -63,8 +63,7 @@ class _VispyStreamHandler(logging.StreamHandler):
     Prepending of traceback information is done in _VispyFormatter.
     """
     def __init__(self):
-        #logging.StreamHandler.__init__(self, _WrapStdOut())
-        logging.StreamHandler.__init__(self, sys.stdout)
+        super(_VispyStreamHandler, self).__init__(sys.stderr)
         self._vispy_formatter = _lf
         self.setFormatter(self._vispy_formatter)
         self._vispy_match = None
@@ -76,16 +75,12 @@ class _VispyStreamHandler(logging.StreamHandler):
         """Log message emitter that optionally matches and/or records"""
         test = record.getMessage()
         match = self._vispy_match
-        if (match is None or re.search(match, test) or 
+        if (match is None or re.search(match, test) or
                 re.search(match, _get_vispy_caller())):
             if self._vispy_emit_record:
                 fmt_rec = self._vispy_formatter.format(record)
                 self._vispy_emit_list.append(fmt_rec)
             return logging.StreamHandler.emit(self, record)
-
-    def _vispy_emit(self, record):
-        """Log message emitter that wraps directly to the standard method"""
-        return logging.StreamHandler.emit(self, record)
 
     def _vispy_set_match(self, match):
         old_match = self._vispy_match
@@ -94,7 +89,7 @@ class _VispyStreamHandler(logging.StreamHandler):
         if match is not None or self._vispy_emit_record:
             self.emit = self._vispy_emit_match_andor_record
         else:
-            self.emit = self._vispy_emit
+            self.emit = super(_VispyStreamHandler, self).emit
         return old_match
 
     def _vispy_set_emit_record(self, record):
@@ -104,7 +99,7 @@ class _VispyStreamHandler(logging.StreamHandler):
         if match is not None or self._vispy_emit_record:
             self.emit = self._vispy_emit_match_andor_record
         else:
-            self.emit = self._vispy_emit
+            self.emit = super(_VispyStreamHandler, self).emit
 
     def _vispy_reset_list(self):
         self._vispy_emit_list = list()
