@@ -85,7 +85,8 @@ class Compiler(object):
         compiled = {}
         
         for name, obj in self.objects.items():
-            code = ['// Generated code by function composition\n']
+            code = ['// Generated code by function composition', 
+                    '#version 120', '']
             for dep in all_deps[obj]:
                 dep_code = dep.definition(self._object_names)
                 if dep_code is not None:
