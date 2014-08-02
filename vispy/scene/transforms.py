@@ -815,6 +815,9 @@ class AffineTransform(Transform):
         # of standard linear algebra order.
         self.matrix = transforms.affine_map(points1, points2).T
 
+    def set_ortho(self, l, r, b, t, n, f):
+        self.matrix = transforms.ortho(l, r, b, t, n, f)
+
     def reset(self):
         self.matrix = np.eye(4)
 

@@ -10,7 +10,7 @@ from ..transforms import STTransform, NullTransform
 from .widget import Widget
 from ..subscene import SubScene
 from ...util.geometry import Rect
-from ..cameras import PerspectiveCamera
+from ..cameras import PerspectiveCamera, OrthoCamera
 
 class ViewBox(Widget):
     """ Provides a rectangular window to which its subscene is rendered
@@ -479,15 +479,16 @@ class CameraViewer(Viewer):
     scene.
     """
     def __init__(self, elevation=45, azimuth=0, distance=10, center=(0, 0, 0), 
-                 fov=60, near=0.01, far=1e6):
+                 fov=60, near=-1e6, far=1e6):
         super(CameraViewer, self).__init__()
         self._camera = None
-        self.camera = PerspectiveCamera()
-        self.camera.set_perspective(fov=fov, near=near, far=far)
+        self.camera = OrthoCamera()
+        self.camera.set_perspective(width=fov, height=fov, near=near, far=far)
         self.elevation = elevation
         self.azimuth = azimuth
         self.distance = distance
         self.center = center
+        self.fov = fov
     
     @property
     def camera(self):
@@ -534,8 +535,7 @@ class CameraViewer(Viewer):
             return
         
         if event.type == 'mouse_wheel':
-            fov = self.camera._perspective['fov'] * (1.1**-event.delta[1])
-            self.camera.set_perspective(fov=fov)
+            self.fov = self.fov * (1.1**-event.delta[1])
             self._update_transform()
         elif event.type == 'mouse_move' and 1 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]
@@ -551,16 +551,20 @@ class CameraViewer(Viewer):
     
     def _update_transform(self, event=None):
         if self.viewbox is not None:
-            tr = self.camera.transform
-            tr.reset()
-            tr.translate(0.0, 0.0, -self.distance)
-            tr.rotate(self.elevation - 90, (1, 0, 0))
-            tr.rotate(self.azimuth + 90, (0, 0, -1))
-            tr.translate(-np.array(self.center))
+            # don't loop back to this method while modifying the transform.
+            ch_em = self._camera.events.transform_change
+            with ch_em.blocker(self._update_transform):
+                tr = self.camera.transform
+                tr.reset()
+                tr.translate(0.0, 0.0, -self.distance)
+                tr.rotate(self.azimuth, (0, 1, 0))
+                tr.rotate(self.elevation, (-1, 0, 0))
+                tr.translate(-np.array(self.center))
             
             vbs = self.viewbox.size
-            self.camera.set_perspective(aspect=(vbs[0] / vbs[1]))
-            
+            #self.camera.set_perspective(aspect=(vbs[0] / vbs[1]))
+            self.camera.set_perspective(width=self.fov,
+                                        height=self.fov * (vbs[1] / vbs[0]))
             unit = [[-1, 1], [1, -1]]
             vrect = [[0, 0], self.viewbox.size]
             viewbox_tr = STTransform.from_mapping(unit, vrect)
@@ -568,10 +572,5 @@ class CameraViewer(Viewer):
             cam_tr = self.camera.entity_transform(self.viewbox.scene) 
             
             self.transform = viewbox_tr * proj_tr * cam_tr
-            print "viewbox tr:", viewbox_tr
-            print "proj tr:", proj_tr
-            print "camera tr:", cam_tr
-            print self.transform
-        #super(CameraViewer, self).update()
 
     

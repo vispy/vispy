@@ -188,11 +188,9 @@ class PerspectiveCamera(Camera):
         self.transform = AffineTransform()
         # TODO: allow self.look to be derived from an Anchor
         self._perspective = {
-            'look': np.array([0., 0., 0., 1.]),
             'near': 1e-6,
             'far': 1e6,
             'fov': 60,
-            'top': np.array([0., 0., 1., 1.]),
             'aspect': 1.0
             }
     
@@ -215,9 +213,67 @@ class PerspectiveCamera(Camera):
         self._projection.set_perspective(fov, ar, near, far)
         self.events.projection_change()
 
+    def set_ortho(self, **kwds):
+        self._perspective.update(kwds)
+        # update camera here
+        ar = self._perspective['aspect']
+        near = self._perspective['near']
+        far = self._perspective['far']
+        fov = self._perspective['fov']
+        self._projection.set_perspective(fov, ar, near, far)
+        self.events.projection_change()
+
     def _update_transform(self):
         # create transform based on look, near, far, fov, and top.
         self._projection.set_perspective(origin=(0, 0, 0), **self.perspective)
+
+    def get_projection(self):
+        return self._projection
+
+    def view_mouse_event(self, event):
+        """
+        An attached ViewBox received a mouse event;
+
+        """
+        pass
+
+class OrthoCamera(Camera):
+    """
+    In progress.
+
+    """
+    def __init__(self, parent=None):
+        super(OrthoCamera, self).__init__(parent)
+        self._projection = AffineTransform()
+        self.transform = AffineTransform()
+        # TODO: allow self.look to be derived from an Anchor
+        self._perspective = {
+            'near': 1e-6,
+            'far': 1e6,
+            'width': 10,
+            'height': 10,
+            }
+    
+    @property
+    def pos(self):
+        raise NotImplementedError()
+    
+    @pos.setter
+    def pos(self, pos):
+        self.transform.reset()
+        self.transform.translate(pos)
+
+    def set_perspective(self, **kwds):
+        self._perspective.update(kwds)
+        # update camera here
+        near = self._perspective['near']
+        far = self._perspective['far']
+        width = self._perspective['width']
+        height = self._perspective['height']
+        self._projection.set_ortho(-width/2., width/2., 
+                                   -height/2., height/2., 
+                                   near, far)
+        self.events.projection_change()
 
     def get_projection(self):
         return self._projection
