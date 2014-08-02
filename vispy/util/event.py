@@ -217,6 +217,10 @@ class EventEmitter(object):
     def print_callback_errors(self):
         """Print a message and stack trace if a callback raises an exception
 
+        Valid values are "first" (only show first instance), "reminders" (show
+        complete first instance, then counts), "always" (always show full
+        traceback), or "never".
+
         This assumes ignore_callback_errors=True. These will be raised as
         warnings, so ensure that the vispy logging level is set to at
         least "warning".
@@ -225,9 +229,9 @@ class EventEmitter(object):
 
     @print_callback_errors.setter
     def print_callback_errors(self, val):
-        if val not in ('first', 'reminders', 'always', False):
-            raise ValueError('print_callback_errors must be "first", "always",'
-                             ' or False')
+        if val not in ('first', 'reminders', 'always', 'never'):
+            raise ValueError('print_callback_errors must be "first", '
+                             '"reminders", "always", or "never"')
         self._print_callback_errors = val
 
     @property
@@ -436,7 +440,7 @@ class EventEmitter(object):
             del tb  # Get rid of it in this namespace
             # Handle
             if self.ignore_callback_errors:
-                if self.print_callback_errors:
+                if self.print_callback_errors != "never":
                     this_print = 'full'
                     if self.print_callback_errors in ('first', 'reminders'):
                         # need to check to see if we've hit this yet
