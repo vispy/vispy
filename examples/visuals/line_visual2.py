@@ -41,15 +41,6 @@ float dash(float distance) {
     return 0.5 * sin(mod*3.141593*2.0) + 0.5;
 }
 """
-            
-## Functions that can be uses as is (don't have template variables)
-# Consider these stored in a central location in vispy ...
-
-color3to4 = Function("""
-vec4 color3to4(vec3 rgb) {
-    return vec4(rgb, 1.0);
-}
-""")
 
 stub4 = Function("vec4 stub4(vec4 value) { return value; }")
 stub3 = Function("vec4 stub3(vec3 value) { return value; }")
@@ -59,7 +50,7 @@ stub3 = Function("vec4 stub3(vec3 value) { return value; }")
 
 class Line(Visual):
     
-    def __init__(self, parent, data, color=None):
+    def __init__(self, parent=None, data=None, color=None):
         Visual.__init__(self, parent)
         
         # Create a program
@@ -70,6 +61,7 @@ class Line(Visual):
         self._program.frag['gl_FragColor'] = 'vec4($color, 1.0)'
         
         # Set position data
+        assert data is not None
         vbo = gloo.VertexBuffer(data)
         self._program.vert['position'] = vbo
         

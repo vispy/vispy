@@ -59,7 +59,7 @@ vec4 color3to4(vec3 rgb) {
 """)
 
 stub4 = Function("vec4 stub4(vec4 value) { return value; }")
-stub3 = Function("vec4 stub3(vec3 value) { return value; }")
+stub3 = Function("vec3 stub3(vec3 value) { return value; }")
 
 
 ## Actual code
@@ -67,9 +67,11 @@ stub3 = Function("vec4 stub3(vec3 value) { return value; }")
 
 class Mesh(Visual):
     
-    def __init__(self, parent, 
-                 vertices, faces=None, normals=None, values=None):
+    def __init__(self, parent=None, 
+                 vertices=None, faces=None, normals=None, values=None):
         Visual.__init__(self, parent)
+        
+        assert vertices is not None
         
         # Create a program
         self._program = ModularProgram(vertex_template, fragment_template)
