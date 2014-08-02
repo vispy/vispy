@@ -186,8 +186,12 @@ class EventEmitter(object):
     def __init__(self, source=None, type=None, event_class=Event):
         self._callbacks = []
         self._callback_refs = []
-        self.blocked = 0
-        self._emitting = False  # used to detect emitter loops
+
+        # count number of times this emitter is blocked for each callback.
+        self._blocked = {None: 0}
+        
+        # used to detect emitter loops
+        self._emitting = False
         self.source = source
         self.default_args = {}
         if type is not None:
@@ -399,10 +403,12 @@ class EventEmitter(object):
         event._push_source(self.source)
         self._emitting = True
         try:
-            if self.blocked > 0:
+            if self.blocked():
                 return event
 
             for cb in self._callbacks:
+                if self.blocked(cb):
+                    continue
                 self._invoke_callback(cb, event)
                 if event.blocked:
                     break
@@ -456,21 +462,40 @@ class EventEmitter(object):
                              "instance or with keyword arguments only.")
         return event
 
-    def block(self):
+    def blocked(self, callback=None):
+        """Return boolean indicating whether the emitter is blocked for
+        the given callback.
+        """
+        return self._blocked.get(callback, 0) > 0
+
+    def block(self, callback=None):
         """Block this emitter. Any attempts to emit an event while blocked
-        will be silently ignored.
+        will be silently ignored. If *callback* is given, then the emitter
+        is only blocked for that specific callback.
 
         Calls to block are cumulative; the emitter must be unblocked the same
         number of times as it is blocked.
         """
-        self.blocked += 1
+        self._blocked[callback] = self._blocked.get(callback, 0) + 1
 
-    def unblock(self):
+    def unblock(self, callback=None):
         """ Unblock this emitter. See :func:`event.EventEmitter.block`.
+        
+        Note: Use of ``unblock(None)`` only reverses the effect of 
+        ``block(None)``; it does not unblock callbacks that were explicitly 
+        blocked using ``block(callback)``. 
         """
-        self.blocked = max(0, self.blocked - 1)
+        if callback not in self._blocked or self._blocked[callback] == 0:
+            raise RuntimeError("Cannot unblock %s for callback %s; emitter "
+                               "was not previously blocked." % 
+                               (self, callback))
+        b = self._blocked[callback] - 1
+        if b == 0 and callback is not None:
+            del self._blocked[callback]
+        else:
+            self._blocked[callback] = b
 
-    def blocker(self):
+    def blocker(self, callback=None):
         """Return an EventBlocker to be used in 'with' statements
 
            Notes
@@ -480,7 +505,7 @@ class EventEmitter(object):
                with emitter.blocker():
                    pass  # ..do stuff; no events will be emitted..
         """
-        return EventBlocker(self)
+        return EventBlocker(self, callback)
 
 
 class WarningEmitter(EventEmitter):
@@ -704,12 +729,12 @@ class EventBlocker(object):
     """ Represents a block for an EventEmitter to be used in a context
     manager (i.e. 'with' statement).
     """
-
-    def __init__(self, target):
+    def __init__(self, target, callback=None):
         self.target = target
+        self.callback = callback
 
     def __enter__(self):
-        self.target.block()
+        self.target.block(self.callback)
 
     def __exit__(self, *args):
-        self.target.unblock()
+        self.target.unblock(self.callback)

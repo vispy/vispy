@@ -478,15 +478,16 @@ class CameraViewer(Viewer):
     Viewer that generates its transform from a Camera Entity placed inside the 
     scene.
     """
-    def __init__(self, pos=(0, 0, 1), look=(0, 0, 0), top=(0, 1, 0), fov=60, 
-                 near=0.01, far=1e6):
+    def __init__(self, elevation=45, azimuth=0, distance=10, center=(0, 0, 0), 
+                 fov=60, near=0.01, far=1e6):
         super(CameraViewer, self).__init__()
         self._camera = None
         self.camera = PerspectiveCamera()
         self.camera.set_perspective(fov=fov, near=near, far=far)
-        self.look = look
-        self.pos = pos
-        self.top = top
+        self.elevation = elevation
+        self.azimuth = azimuth
+        self.distance = distance
+        self.center = center
     
     @property
     def camera(self):
@@ -517,6 +518,13 @@ class CameraViewer(Viewer):
             self.camera.parent = vb.scene
         self._update_transform()
 
+    def orbit(self, azim, elev):
+        """Orbits the camera around the center position. 
+        *azim* and *elev* are given in degrees."""
+        self.azimuth += azim
+        self.elevation = np.clip(self.elevation + elev, -90, 90)
+        self._update_transform()
+        
     def mouse_event(self, event):
         """
         The SubScene received a mouse event; update transform 
@@ -528,6 +536,7 @@ class CameraViewer(Viewer):
         if event.type == 'mouse_wheel':
             fov = self.camera._perspective['fov'] * (1.1**-event.delta[1])
             self.camera.set_perspective(fov=fov)
+            self._update_transform()
         elif event.type == 'mouse_move' and 1 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]
             p2 = np.array(event.pos)[:2]
@@ -535,19 +544,19 @@ class CameraViewer(Viewer):
             p2c = event.map_to_canvas(p2)[:2]
             d = p2c - p1c
             
-            self.camera.transform.rotate(d[1], (1, 0, 0))
-            self.camera.transform.rotate(d[0], (0, 1, 0))
-            
-        self._update_transform()
+            self.orbit(-d[0], d[1])
         
     def resize_event(self, event):
         self._update_transform()
     
     def _update_transform(self, event=None):
         if self.viewbox is not None:
-            self.camera.transform.reset()
-            # todo: need a method AffineTransform.set_mapping(...)
-            
+            tr = self.camera.transform
+            tr.reset()
+            tr.translate(0.0, 0.0, -self.distance)
+            tr.rotate(self.elevation - 90, (1, 0, 0))
+            tr.rotate(self.azimuth + 90, (0, 0, -1))
+            tr.translate(-np.array(self.center))
             
             vbs = self.viewbox.size
             self.camera.set_perspective(aspect=(vbs[0] / vbs[1]))

@@ -536,3 +536,127 @@ def test_event_connect_order():
     assert_equal((None, 'a', 'b', 'c', 'd', 'e', 'f'),
                  tuple(em.callback_refs))
     assert_equal((e, a, b, c, d, old_e, f), tuple(em.callbacks))
+
+
+def test_emitter_block():
+    state = [False, False]
+    
+    def a(ev):
+        state[0] = True
+        
+    def b(ev):
+        state[1] = True
+        
+    e = EventEmitter(source=None, type='event')
+    e.connect(a)
+    e.connect(b)
+    
+    def assert_state(a, b):
+        assert state == [a, b]
+        state[0] = False
+        state[1] = False
+    
+    e()
+    assert_state(True, True)
+    
+    # test global blocking
+    e.block()
+    e()
+    assert_state(False, False)
+    e.block()
+    e()
+    assert_state(False, False)
+    
+    # test global unlock, multiple depth
+    e.unblock()
+    e()
+    assert_state(False, False)
+    e.unblock()
+    e()
+    assert_state(True, True)
+    
+    # test unblock failure
+    try:
+        e.unblock()
+        raise Exception("Expected RuntimeError")
+    except RuntimeError:
+        pass
+    
+    # test single block
+    e.block(a)
+    e()
+    assert_state(False, True)
+    
+    e.block(b)
+    e()
+    assert_state(False, False)
+    
+    e.block(b)
+    e()
+    assert_state(False, False)
+
+    # test single unblock
+    e.unblock(a)
+    e()
+    assert_state(True, False)
+    
+    e.unblock(b)
+    e()
+    assert_state(True, False)
+    
+    e.unblock(b)
+    e()
+    assert_state(True, True)
+    
+    # Test single unblock failure
+    try:
+        e.unblock(a)
+        raise Exception("Expected RuntimeError")
+    except RuntimeError:
+        pass
+
+    # test global blocker
+    with e.blocker():
+        e()
+        assert_state(False, False)
+        
+        # test nested blocker
+        with e.blocker():
+            e()
+            assert_state(False, False)
+        
+        e()
+        assert_state(False, False)
+
+    e()
+    assert_state(True, True)
+
+    # test single blocker
+    with e.blocker(a):
+        e()
+        assert_state(False, True)
+        
+        # test nested gloabel blocker
+        with e.blocker():
+            e()
+            assert_state(False, False)
+
+        e()
+        assert_state(False, True)
+
+        # test nested single blocker
+        with e.blocker(a):
+            e()
+            assert_state(False, True)
+
+        with e.blocker(b):
+            e()
+            assert_state(False, False)
+
+        e()
+        assert_state(False, True)
+
+    e()
+    assert_state(True, True)
+
+    
