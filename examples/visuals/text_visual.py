@@ -16,7 +16,7 @@ class Canvas(app.Canvas):
         self.text = Text('Hello world!', bold=True)
         # We need to give a transform to our visual
         self.transform = STTransform()
-        self.text._program['transform'] = self.transform.shader_map()
+        self.text._program.vert['transform'] = self.transform.shader_map()
         self.apply_zoom()
 
     def on_draw(self, event):

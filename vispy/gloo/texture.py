@@ -624,6 +624,12 @@ class Texture1D(Texture):
         if self._format is None:
             raise ValueError("Cannot convert data to texture")
 
+    @property
+    def glsl_type(self):
+        """ GLSL declaration strings required for a variable to hold this data. 
+        """
+        return 'uniform', 'sampler1D'
+    
     def _normalize_shape(self, data_or_shape):
         # Get data and shape from input
         if isinstance(data_or_shape, np.ndarray):
@@ -728,6 +734,12 @@ class Texture2D(Texture):
         if self._format is None:
             raise ValueError("Cannot convert data to texture")
 
+    @property
+    def glsl_type(self):
+        """ GLSL declaration strings required for a variable to hold this data. 
+        """
+        return 'uniform', 'sampler2D'
+    
     def _normalize_shape(self, data_or_shape):
         # Get data and shape from input
         if isinstance(data_or_shape, np.ndarray):
@@ -846,6 +858,12 @@ class Texture3D(Texture):
             self._format = format
         if self._format is None:
             raise ValueError("Cannot convert data to texture")
+    
+    @property
+    def glsl_type(self):
+        """ GLSL declaration strings required for a variable to hold this data. 
+        """
+        return 'uniform', 'sampler3D'
     
     def _normalize_shape(self, data_or_shape):
         # Get data and shape from input

@@ -14,7 +14,7 @@ def test_text():
     with Canvas(size=(100, 100)) as c:
         text = Text('X', bold=True, color=(1., 1., 1., 1.))
         transform = STTransform((1., 1., 1.))
-        text._program['transform'] = transform.shader_map()
+        text._program.vert['transform'] = transform.shader_map()
         gloo.set_viewport(0, 0, *c.size)
         gloo.clear(color=(0., 0., 0., 1.))
         text.draw()

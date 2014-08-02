@@ -1,410 +1,398 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
-# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""
+Classses representing GLSL objects (functions, variables, etc) that may be
+composed together to create complete shaders. 
+See the docstring of Function for details.
 
-from __future__ import division
-import string
+Details
+-------
 
-from . import parsing
-from ...util.event import EmitterGroup, Event
+A complete GLSL program is composed of ShaderObjects, each of which may be used
+inline as an expression, and some of which include a definition that must be
+included on the final code. ShaderObjects keep track of a hierarchy of
+dependencies so that all necessary code is included at compile time, and
+changes made to any object may be propagated to the root of the hierarchy to 
+trigger a recompile.
+"""
+
+import re
+import numpy as np
+
+from ...util.ordereddict import OrderedDict
+from ...util.event import EventEmitter
+from ...util.eq import eq
+from ...util import logger
 from ...ext.six import string_types
+from . import parsing
+from .compiler import Compiler
+
+VARIABLE_TYPES = ('const', 'uniform', 'attribute', 'varying', 'inout')
 
 
 class ShaderObject(object):
-    """
-    Base class for objects that may appear in a GLSL shader (functions and
-    variables). This class defines the interface used by ModularProgram to
-    compile multiple objects together into a single program.
-    """
-    def __init__(self):
-        self.events = EmitterGroup(source=self, update=Event)
-
-    @property
-    def is_anonymous(self):
-        """
-        Indicates whether this object may be assigned a new name.
-        """
-        raise NotImplementedError
-
-    @property
-    def name(self):
-        """
-        The name of this object. If this object is anonymous, then the name
-        is only used as a suggestion when compiling a program.
-        """
-        raise NotImplementedError
-
-    @property
-    def dependencies(self):
-        """
-        A collection of objects that must be defined before this object.
-        """
-        raise NotImplementedError
-
-    def compile(self, object_names):
-        """
-        Return complete GLSL code needed to implement this object in a program.
-
-        *object_names* is a dict that maps ShaderObjects to the names
-        they have been assigned in a program. The generated code must make
-        use of these names when referring to other objects, as well as for
-        determining its own name.
-
-        """
-        raise NotImplementedError
-
-    def update(self):
-        """
-        Inform the object (and all listeners of events.update) that this
-        object has changed.
-        """
-        self.events.update()
-
-
-class Variable(ShaderObject):
-    """
-    References a program variable from a function.
-
-    Created by Function.__getitem__
-    """
-    def __init__(self, function, name, spec=None, anonymous=False):
-        self._state_counter = 0
-        super(Variable, self).__init__()
-        self.function = function
-        self._name = name  # local name within the function
-        self._spec = None  # (vtype, dtype, value)
-        if spec is not None:
-            self.spec = spec
-        self.anonymous = anonymous  # if True, variable may be renamed.
-
-    @property
-    def is_anonymous(self):
-        return self.anonymous
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def dependencies(self):
-        return ()
-
-    def compile(self, obj_names):
-        name = obj_names.get(self, self.name)
-        if not self.is_anonymous and name != self.name:
-            raise Exception("Cannot compile %s with name %s; variable "
-                            "is not anonymous." % (self, name))
-        return "%s %s %s;" % (self.vtype, self.dtype, name)
-
-    @property
-    def vtype(self):
-        if self.spec is None:
-            raise Exception("%s has not been assigned; cannot "
-                            "determine vtype." % self)
-        return self.spec[0]
-
-    @property
-    def dtype(self):
-        if self.spec is None:
-            raise Exception("%s has not been assigned; cannot "
-                            "determine dtype." % self)
-        return self.spec[1]
-
-    @property
-    def value(self):
-        if self.spec is None:
-            raise Exception("%s has not been assigned; cannot "
-                            "determine value." % self)
-        return self.spec[2]
-
-    @property
-    def spec(self):
-        return self._spec
+    """ Base class for all objects that may be included in a GLSL program
+    (Functions, Variables, Expressions).
     
-    @spec.setter
-    def spec(self, s):
-        self._spec = s
-        self._state_counter += 1
+    Shader objects have a *definition* that defines the object in GLSL, an 
+    *expression* that is used to reference the object, and a set of 
+    *dependencies* that must be declared before the object is used.
+    
+    Dependencies are tracked hierarchically such that changes to any object
+    will be propagated up the dependency hierarchy to trigger a recompile.
+    """
+    
+    @classmethod
+    def create(self, obj, ref=None):
+        """ Convert *obj* to a new ShaderObject. If the output is a Variable
+        with no name, then set its name using *ref*. 
+        """
+        if isinstance(ref, Variable):
+            ref = ref.name
+        elif isinstance(ref, string_types) and ref.startswith('gl_'):
+            # gl_ names not allowed for variables
+            ref = ref[3:].lower()
         
+        if isinstance(obj, ShaderObject):
+            if isinstance(obj, Variable) and obj.name is None:
+                obj.name = ref
+        elif isinstance(obj, string_types):
+            obj = TextExpression(obj)
+        else:
+            obj = Variable(ref, obj)
+            # Try prepending the name to indicate attribute, uniform, varying
+            if obj.vtype and obj.vtype[0] in 'auv':
+                obj.name = obj.vtype[0] + '_' + obj.name 
+        
+        return obj
+    
+    def __init__(self):
+        # emitted when any part of the code for this object has changed,
+        # including dependencies.
+        self.changed = EventEmitter(source=self, type="code_change")
+        
+        # objects that must be declared before this object's definition.
+        # {obj: refcount}
+        self._deps = OrderedDict()  # OrderedDict for consistent code output
+    
     @property
-    def state_id(self):
-        """Return a unique ID that changes whenever the state of the Variable
-        has changed. This allows ModularProgram to quickly determine whether
-        the value has changed since it was last used."""
-        return id(self), self._state_counter
+    def name(self):
+        """ The name of this shader object.
+        """
+        return None
+        
+    def definition(self, obj_names):
+        """ Return the GLSL definition for this object. Use *obj_names* to
+        determine the names of dependencies.
+        """
+        return None
+    
+    def expression(self, obj_names):
+        """ Return the GLSL expression used to reference this object inline.
+        """
+        return obj_names[self]
+    
+    def dependencies(self, sort=False):
+        """ Return all dependencies required to use this object. The last item 
+        in the list is *self*.
+        """
+        alldeps = []
+        if sort:
+            def key(obj):
+                # sort deps such that we get functions, variables, self.
+                if not isinstance(obj, Variable):
+                    return (0, 0)
+                else:
+                    return (1, obj.vtype)
+            
+            deps = sorted(self._deps, key=key)
+        else:
+            deps = self._deps
+        
+        for dep in deps:
+            alldeps.extend(dep.dependencies(sort=sort))
+        alldeps.append(self)
+        return alldeps
+    
+    def _add_dep(self, dep):
+        """ Increment the reference count for *dep*. If this is a new 
+        dependency, then connect to its *changed* event.
+        """
+        if dep in self._deps:
+            self._deps[dep] += 1
+        else:
+            self._deps[dep] = 1
+            dep.changed.connect(self._dep_changed)
 
-    def __repr__(self):
-        return ("<Variable '%s' on %s (%d)>" %
-                (self.name, self.function.name, id(self)))
-
+    def _remove_dep(self, dep):
+        """ Decrement the reference count for *dep*. If the reference count 
+        reaches 0, then the dependency is removed and its *changed* event is
+        disconnected.
+        """
+        refcount = self._deps[dep]
+        if refcount == 1:
+            self._deps.pop(dep)
+            dep.changed.disconnect(self._dep_changed)
+        else:
+            self._deps[dep] -= 1
+        
+    def _dep_changed(self, event):
+        """ Called when a dependency's expression has changed.
+        """
+        logger.debug("ShaderObject changed: %r" % event.source)
+        self.changed()
+    
+    def __str__(self):
+        """ Return a compilation of this object and its dependencies. 
+        
+        Note: this is mainly for debugging purposes; the names in this code
+        are not guaranteed to match names in any other compilations. Use
+        Compiler directly to ensure consistent naming across multiple objects. 
+        """
+        compiler = Compiler(obj=self)
+        return compiler.compile()['obj']
+    
 
 class Function(ShaderObject):
+    """ Representation of a GLSL function
+    
+    Objects of this class can be used for re-using and composing GLSL
+    snippets. Each Function consists of a GLSL snippet in the form of
+    a function. The code may have template variables that start with
+    the dollar sign. These stubs can be replaced with expressions using
+    the index operation. Expressions can be:
+    
+    * plain text that is inserted verbatim in the code
+    * a Function object or a call to a funcion
+    * a Variable (or Varying) object
+    * float, int, tuple are automatically turned into a uniform Variable
+    * a VertexBuffer is automatically turned into an attribute Variable
+    
+    Example
+    -------
+    
+    This example shows the basic usage of the Function class::
+
+        vert_code_template = Function('''
+            void main() {
+            gl_Position = $pos;
+            gl_Position.x += $xoffset;
+            gl_Position.y += $yoffset;
+        }''')
+        
+        scale_transform = Function('''
+        vec4 transform_scale(vec4 pos){
+            return pos * $scale;
+        }''')
+        
+        # If you get the function from a snippet collection, always
+        # create new Function objects to ensure they are 'fresh'.
+        vert_code = Function(vert_code_template)
+        trans1 = Function(scale_transform)
+        trans2 = Function(scale_transform)  # trans2 != trans1
+        
+        # Three ways to assign to template variables:
+        #
+        # 1) Assign verbatim code
+        vert_code['xoffset'] = '(3.0 / 3.1415)'
+        
+        # 2) Assign a value (this creates a new uniform or attribute)
+        vert_code['yoffset'] = 5.0
+        
+        # 3) Assign a function call expression
+        pos_var = Variable('attribute a_position vec4')
+        vert_code['pos'] = trans1(trans2(pos_var))  
+        
+        # Transforms also need their variables set
+        trans1['scale'] = 0.5
+        trans2['scale'] = (1.0, 0.5, 1.0, 1.0)
+        
+        # You can actually change any code you want, but use this with care!
+        vert_code.replace('gl_Position.y', 'gl_Position.z')
+        
+        # Finally, you can set special variables explicitly. This generates
+        # a new statement at the end of the vert_code function.
+        vert_code['gl_PointSize'] = '10.'
+    
+    
+    If we use ``str(vert_code)`` we get::
+
+        attribute vec4 a_position;
+        uniform float u_yoffset;
+        uniform float u_scale_1;
+        uniform vec4 u_scale_2;
+        uniform float u_pointsize;
+        
+        vec4 transform_scale_1(vec4 pos){
+            return pos * u_scale_1;
+        }
+        
+        vec4 transform_scale_2(vec4 pos){
+            return pos * u_scale_2;
+        }
+        
+        void main() {
+            gl_Position = transform_scale_1(transform_scale_2(a_position));
+            gl_Position.x += (3.0 / 3.1415);
+            gl_Position.z += u_yoffset;
+        
+            gl_PointSize = u_pointsize;
+        }
+    
+    Note how the two scale function resulted in two different functions
+    and two uniforms for the scale factors.
+    
+    Function calls
+    --------------
+    
+    As can be seen above, the arguments with which a function is to be
+    called must be specified by calling the Function object. The
+    arguments can be any of the expressions mentioned earlier. If the
+    signature is already specified in the template code, that function
+    itself must be given.
+    
+        code = Function('''
+            void main() {
+                vec4 position = $pos;
+                gl_Position = $scale(position)
+            }
+        ''')
+        
+        # Example of a function call with all possible three expressions
+        vert_code['pos'] = func1('3.0', 'uniform float u_param', func2())
+        
+        # For scale, the sigfnature is already specified
+        code['scale'] = scale_func  # Must not specify args
+    
+    Data for uniform and attribute variables
+    ----------------------------------------
+    To each variable a value can be associated. In fact, in most cases
+    the Function class is smart enough to be able to create a Variable
+    object if only the data is given.
+    
+        code['offset'] = Variable('uniform float offset')  # No data
+        code['offset'] = Variable('uniform float offset', 3.0)  # With data
+        code['offset'] = 3.0  # -> Uniform Variable
+        position['position'] = VertexBuffer()  # -> attribute Variable
+        
+        # Updating variables
+        code['offset'].value = 4.0
+        position['position'].value.set_data(...)
+    
     """
-    This class represents a single function in GLSL. Its *code* property
-    contains the entire GLSL code of the function as well as any program
-    variable declarations it depends on. Functions also have a list
-    of dependencies, which are other Functions that must be included
-    in the program because they are called from this function.
-
-    A ModularProgram generates its code by concatenating the *code* property
-    of multiple Functions and their dependencies; each function is
-    included exactly once, even if it is depended upon multiple times.
-
-    The function code may contain $template_variables in place of the function
-    name or in place of uniform/attribute/varyings. In this case, the function
-    or variable may be assigned a new name when it is compiled with a
-    ModularProgram to ensure uniqueness.
-
-    Parameters:
-        code : str
-            The GLSL code for this Function.
-        deps : [list of Functions]
-            All functions which may be called by this Function.
-    """
-    def __init__(self, code=None, deps=()):
+    
+    def __init__(self, code, dependencies=None):
         super(Function, self).__init__()
-        if code is not None and not isinstance(code, string_types):
-            raise ValueError("code argument must be string or None (got %s)"
-                             % type(code))
-        self._code = code
-        self._deps = deps
-        self._signature = None
-        self._anonymous = None
-
-        # Variable instance assigned to each program variable.
-        self._variables = {}  # {'local_var_name': Variable}
-
-        # Set of program variables defined in the program code
-        # TODO: not implemented yet; for now all program variables are
-        # implemented as template variables.
-        #self._program_vars = None
-
-        # Set of template variables used in the program code
-        # (excluding the function name)
-        self._template_vars = None
-
-        # List of (hook_name, function) pairs indicating functions that must
-        # be installed on a particular hook to provide support for this
-        # function.
-        # TODO: Might remove this. It was previously used by FragmentFunction,
-        # which is now out of service.
-        self._callbacks = []
-
-        # Cache of string.Template(self.code)
-        self._str_template = None
-
-    @property
-    def code(self):
-        """
-        The GLSL code that defines this function. Does not include
-        dependencies, program variables, hooks, etc.
-        """
-        return self._code
-
-    @property
-    def name(self):
-        """
-        Function name as given in the code.
-        """
-        return self.signature[0]
-
-    @property
-    def is_anonymous(self):
-        """ Indicates whether this is an anonymous function (the function name
-        begins with "$". Anonymous functions may be renamed when included in a
-        ModularProgram."""
-        return self._anonymous
-
-    @property
-    def dependencies(self):
-        """List of all Functions and Variables required by this
-        Function."""
-        deps = list(self._deps)
-        for k in self.template_vars:
-            deps.append(self[k])
-        return deps
-
-    @property
-    def args(self):
-        """
-        List of input arguments in the function signature::
-
-            [(arg_name, arg_type), ...]
-        """
-        return self.signature[1]
-
-    @property
-    def rtype(self):
-        """
-        Return type of this function.
-        """
-        return self.signature[2]
-
-    @property
-    def signature(self):
-        """
-        Function signature; (name, args, return_type)
-        """
-        if self._signature is None:
-            self._parse_signature()
-        return self._signature
-
-    @property
-    def template_vars(self):
-        """
-        Set of all template variables in the code, excluding the function
-        name.
-        """
-        if self._template_vars is None:
-            self._parse_template_vars()
-        return self._template_vars
-
-    #@property
-    #def program_vars(self):
-        #"""
-        #dict of program variables declared statically by this code.
-        #{var_name: (vtype, dtype)}
-        #"""
-        #if self._program_vars is None:
-        #    self._parse_program_vars()
-        #return self._program_vars
-
-    @property
-    def function_deps(self):
-        """
-        List of Functions required by this function.
-        """
-        return self._deps
-
-    # TODO: remove or resurrect?
-    #@property
-    #def callbacks(self):
-        #"""
-        #List of (hook, function) pairs.
-
-        #When this function is added to a program, each pair will cause
-        #program.add_callback(hook, function) to be called.
-        #"""
-        #return self._callbacks
-
-    @property
-    def _template(self):
-        # string.Template instance used to compile code with new function /
-        # variable names.
-        if self._str_template is None:
-            self._str_template = \
-                string.Template(Function.clean_code(self.code))
-        return self._str_template
-
-    def _parse_signature(self):
-        # Search code for function signature and template variables
-        name, args, rtype = parsing.parse_function_signature(self.code)
-        anon = name.startswith('$')
-        if anon:
-            name = name[1:]
-        self._anonymous = anon
-
-        self._signature = (name, args, rtype)
-
-    def _parse_template_vars(self):
-        # find all template variables in self.code, excluding the function
-        # name.
-        self._template_vars = set()
-        for var in parsing.find_template_variables(self.code):
-            var = var.lstrip('$')
-            if var == self.name:
-                continue
-            self._template_vars.add(var)
-
-    #def _parse_program_vars(self):
-        ## should find all statically-defined program variables and populate
-        ## self._program_vars
-        #raise NotImplementedError
-
-    def compile(self, obj_names):
-        """
-        Generate the final code for this function (excluding dependencies)
-        using the given name and object name mappings.
-        """
-        name = obj_names.get(self, self.name)
-        subs = {}
-        if self.is_anonymous:
-            subs[self.name] = name
-        elif name != self.name:
-            raise Exception("Cannot compile non-anonymous function %s with "
-                            "new name %s." % (self, name))
-
-        for name in self.template_vars:
-            var = self[name]
-            try:
-                subs[name] = obj_names[var]
-            except KeyError:
-                raise Exception("Cannot compile function %s; Variable %s has "
-                                "no name assignment." % (self, var))
-
+        
+        # Add depencencies is given. This is to allow people to
+        # manually define deps for a function that they use.
+        if dependencies is not None:
+            for dep in dependencies:
+                self._add_dep(dep)
+        
+        # Get and strip code
+        if isinstance(code, Function):
+            code = code._code
+        elif not isinstance(code, string_types):
+            raise ValueError('Function needs a string or Function; got %s.' %
+                             type(code))
+        self._code = self._clean_code(code)
+        
+        # Get some information derived from the code
         try:
-            code = self._template.substitute(**subs)
-            return self.clean_code(code)
-        except KeyError as err:
-            raise KeyError("Must specify variable $%s in substitution" %
-                           err.args[0])
-
-    def wrap(self, name=None, **kwds):
+            self._signature = parsing.parse_function_signature(self._code)
+        except Exception as err:
+            raise ValueError('Invalid code: ' + str(err))
+        self._name = self._signature[0]
+        self._template_vars = self._parse_template_vars()
+        
+        # Expressions replace template variables (also our dependencies)
+        self._expressions = OrderedDict()
+        
+        # Verbatim string replacements
+        self._replacements = OrderedDict()
+        
+        # Stuff to do at the end
+        self._post_hooks = OrderedDict()
+    
+    def __setitem__(self, key, val):
+        """ Setting of replacements through a dict-like syntax.
+        
+        Each replacement can be:
+        * verbatim code: ``fun1['foo'] = '3.14159'``
+        * a FunctionCall: ``fun1['foo'] = fun2()``
+        * a Variable: ``fun1['foo'] = Variable(...)`` (can be auto-generated)
         """
-        Create a wrapper function that calls this function with any of its
-        arguments filled in ..
-
-        """
-        raise NotImplementedError
-
-    def __setitem__(self, name, spec):
-        """
-        Set the value of a variable declared in this function's code.
-        Any ModularProgram that depends on this function will automatically
-        apply the variable when it is activated.
-
-        Must provide a complete specification of the variable. Examples:
-
-            function['position_a'] = ('attribute', 'vec4', VertexBuffer(...))
-            function['color_u'] = ('uniform', 'vec4', (1, 0, 0, 1))
-            function['color_v'] = ('varying', 'vec4')
-
-        Note that *name* refers to the locally defined variable name; this may
-        be represented by a program variable of a different name when the
-        Function is compiled.
-
-        It is also possible to assign one variable to another to ensure
-        they refer to the same program variable:
-
-            vert_func['color_ouptut'] = ('varying', 'vec4')
-            frag_func['color_input'] = vert_func['color_ouptut']
-        """
-        if name in self.template_vars:
-            anon = True
-        elif name in self.program_vars:
-            anon = False
-        else:
-            raise NameError("Variable '%s' does not exist in this function."
-                            % name)
-
-        if isinstance(spec, ShaderObject):
-            if name in self._variables:
-                if self._variables[name] is spec:
-                    return
-                raise Exception("Cannot assign variable to %s; already "
-                                "assigned to %s."
-                                % (spec, self._variables[name]))
-            self._variables[name] = spec
-        else:
-            if name in self._variables:
-                self._variables[name].spec = spec
+        
+        # Check the key. Must be Varying, 'gl_X' or a known template variable
+        if isinstance(key, Variable): 
+            if key.vtype == 'varying':
+                if self.name != 'main':
+                    raise Exception("Varying assignment only alowed in 'main' "
+                                    "function.")
+                storage = self._post_hooks
             else:
-                ref = Variable(self, name, spec, anonymous=anon)
-                self._variables[name] = ref
+                raise TypeError("Variable assignment only allowed for "
+                                "varyings, not %s" % key.vtype)
+        elif isinstance(key, string_types):
+            if any(map(key.startswith, 
+                       ('gl_PointSize', 'gl_Position', 'gl_FragColor'))):
+                storage = self._post_hooks
+            elif key in self._template_vars:
+                storage = self._expressions
+            else:
+                raise KeyError('Invalid template variable %r' % key)
+        else:
+            raise TypeError('In `function[key]` key must be a string or '
+                            'varying.')
+        
+        # If values already match, bail out now
+        if eq(storage.get(key), val):
+            return
 
-    def __getitem__(self, name):
-        """
-        Return a reference to a program variable from this function.
+        # If we are only changing the value (and not the dtype) of a uniform,
+        # we can set that value and return immediately to avoid triggering a
+        # recompile.
+        if val is not None and not isinstance(val, Variable):
+            # We are setting a value, now check it if it might be the 
+            # the value of a uniform
+            val = ShaderObject.create(val, ref=key)
+            if isinstance(val, Variable) and val.vtype == 'uniform':
+                variable = storage.get(key, None)
+                if (isinstance(variable, Variable) and
+                        variable.dtype == val.dtype and
+                        variable.vtype == 'uniform'):
+                    variable.value = val.value
+                    return
+        
+        # Remove old references, if any
+        oldval = storage.pop(key, None)
+        if oldval is not None:
+            for obj in (key, oldval):
+                if isinstance(obj, ShaderObject):
+                    self._remove_dep(obj)
+
+        # Add new references
+        if val is not None:
+            if isinstance(key, Varying):
+                # tell this varying to inherit properties from 
+                # its source attribute / expression.
+                key.link(val)
+            
+            # Store value and dependencies
+            storage[key] = val
+            for obj in (key, val):
+                if isinstance(obj, ShaderObject):
+                    self._add_dep(obj)
+        
+        # In case of verbatim text, we might have added new template vars
+        if isinstance(val, TextExpression):
+            for var in parsing.find_template_variables(val.expression()):
+                if var not in self._template_vars:
+                    self._template_vars.add(var.lstrip('$'))
+        
+        self.changed()
+    
+    def __getitem__(self, key):
+        """ Return a reference to a program variable from this function.
 
         This allows variables between functions to be linked together::
 
@@ -414,22 +402,147 @@ class Function(ShaderObject):
         same program variable whenever func1 and func2 are attached to the same
         program.
         """
-        # create empty reference if needed
-        if name not in self._variables:
-            self._variables[name] = Variable(self, name)
-        return self._variables[name]
-
+        
+        try:
+            return self._expressions[key]
+        except KeyError:
+            pass
+        
+        try:
+            return self._post_hooks[key]
+        except KeyError:
+            pass
+        
+        if key not in self._template_vars:
+            raise KeyError('Invalid template variable %r' % key) 
+        else:
+            raise KeyError('No value known for key %r' % key)
+    
+    def __call__(self, *args):
+        """ Set the signature for this function and return an FunctionCall
+        object. Each argument can be verbatim code or a FunctionCall object.
+        """
+        return FunctionCall(self, args)
+    
     def __repr__(self):
-        return "<%s %s %d>" % (self.__class__.__name__, self.name, id(self))
+        return "<Function '%s' at 0x%x>" % (self.name, id(self))
+    
+    ## Public API methods
+    
+    @property
+    def name(self):
+        """ The function name. The name may be mangled in the final code
+        to avoid name clashes.
+        """
+        return self._name
 
-    @staticmethod
-    def clean_code(code):
-        lines = code.split("\n")
+    @property
+    def args(self):
+        """
+        List of input arguments in the function signature::
+
+            [(arg_name, arg_type), ...]
+        """
+        return self._signature[1]
+
+    @property
+    def rtype(self):
+        """
+        The return type of this function.
+        """
+        return self._signature[2]
+
+    def replace(self, str1, str2):
+        """ Set verbatim code replacement
+        
+        It is strongly recommended to use function['$foo'] = 'bar' where
+        possible because template variables are less likely to changed
+        than the code itself in future versions of vispy.
+        
+        Parameters
+        ----------
+        str1 : str
+            String to replace
+        str2 : str
+            String to replace str1 with
+        """
+        if str2 != self._replacements.get(str1, None):
+            self._replacements[str1] = str2
+            self.changed()
+            #self._last_changed = time.time()
+    
+    ## Private methods
+    
+    def _parse_template_vars(self):
+        """ find all template variables in self._code, excluding the
+        function name. 
+        """
+        template_vars = set()
+        for var in parsing.find_template_variables(self._code):
+            var = var.lstrip('$')
+            if var == self.name:
+                continue
+            template_vars.add(var)
+        return template_vars
+    
+    def _get_replaced_code(self, names):
+        """ Return code, with new name, expressions, and replacements applied.
+        """
+        code = self._code
+        
+        # Modify name
+        code = code.replace(" " + self.name + "(", " " + names[self] + "(")
+
+        # Apply string replacements first -- these may contain $placeholders
+        for key, val in self._replacements.items():
+            code = code.replace(key, val)
+        
+        # Apply post-hooks
+        
+        # Collect post lines
+        post_lines = []
+        for key, val in self._post_hooks.items():
+            if isinstance(key, Variable):
+                key = names[key]
+            if isinstance(val, ShaderObject):
+                val = val.expression(names)
+            line = '    %s = %s;' % (key, val)
+            post_lines.append(line)
+            
+        # Apply placeholders for hooks
+        post_text = '\n'.join(post_lines)
+        if post_text:
+            post_text = '\n' + post_text + '\n'
+        code = code.rpartition('}')
+        code = code[0] + post_text + code[1] + code[2]
+        
+        # Apply template variables
+        for key, val in self._expressions.items():
+            val = val.expression(names)
+            search = r'\$' + key + r'($|[^a-zA-Z0-9_])'
+            code = re.sub(search, val+r'\1', code)
+
+        # Done
+        if '$' in code:
+            v = parsing.find_template_variables(code)
+            logger.warning('Unsubstituted placeholders in code: %s\n'
+                           '  replacements made: %s' % 
+                           (v, list(self._expressions.keys())))
+        
+        return code + '\n'
+    
+    def definition(self, names):
+        return self._get_replaced_code(names)
+
+    def expression(self, names):
+        return names[self]
+    
+    def _clean_code(self, code):
+        """ Return *code* with indentation and leading/trailing blank lines
+        removed. 
+        """
+        lines = code.strip().split("\n")
         min_indent = 100
-        while lines[0].strip() == "":
-            lines.pop(0)
-        while lines[-1].strip() == "":
-            lines.pop()
         for line in lines:
             if line.strip() != "":
                 indent = len(line) - len(line.lstrip())
@@ -439,6 +552,303 @@ class Function(ShaderObject):
         code = "\n".join(lines)
         return code
 
+
+class Variable(ShaderObject):
+    """ Representation of global shader variable
+    
+    Parameters
+    ----------
+    name : str
+        the name of the variable. This string can also contain the full
+        definition of the variable, e.g. 'uniform vec2 foo'.
+    value : {float, int, tuple, GLObject}
+        If given, vtype and dtype are determined automatically. If a
+        float/int/tuple is given, the variable is a uniform. If a gloo
+        object is given that has a glsl_type property, the variable is
+        an attribute and
+    vtype : {'const', 'uniform', 'attribute', 'varying', 'inout'}
+        The type of variable.
+    dtype : str
+        The data type of the variable, e.g. 'float', 'vec4', 'mat', etc.
+    
+    """
+    def __init__(self, name, value=None, vtype=None, dtype=None):
+        super(Variable, self).__init__()
+        
+        # allow full definition in first argument
+        if ' ' in name:
+            fields = name.split(' ')
+            if len(fields) == 3:
+                vtype, dtype, name = fields
+            elif len(fields) == 4 and fields[0] == 'const':
+                vtype, dtype, name, value = fields
+            else:
+                raise ValueError('Variable specifications given by string must'
+                                 ' be of the form "vtype dtype name" or '
+                                 '"const dtype name value".')
+            
+        if not (isinstance(name, string_types) or name is None):
+            raise TypeError("Variable name must be string or None.")
+        
+        self._state_counter = 0
+        self._name = name
+        self._vtype = vtype
+        self._dtype = dtype
+        self._value = None
+        
+        # If vtype/dtype were given at init, then we will never
+        # try to set these values automatically.
+        self._type_locked = self._vtype is not None and self._dtype is not None
+            
+        if value is not None:
+            self.value = value
+        
+        if self._vtype and self._vtype not in VARIABLE_TYPES:
+            raise ValueError('Not a valid vtype: %r' % self._vtype)
+    
+    @property
+    def name(self):
+        """ The name of this variable.
+        """
+        return self._name
+    
+    @name.setter
+    def name(self, n):
+        # Settable mostly to allow automatic setting of varying names 
+        # See ShaderObject.create()
+        if self._name != n:
+            self._name = n
+            self.changed()
+    
+    @property
+    def vtype(self):
+        """ The type of variable (const, uniform, attribute, varying or inout).
+        """
+        return self._vtype
+    
+    @property
+    def dtype(self):
+        """ The type of data (float, int, vec, mat, ...).
+        """
+        return self._dtype
+    
+    @property
+    def value(self):
+        """ The value associated with this variable.
+        """
+        return self._value
+    
+    @value.setter
+    def value(self, value):
+        self._value = value
+        self._state_counter += 1
+        if self._type_locked:
+            # Don't emit here--this should not result in a code change.
+            #self.changed()
+            return
+        
+        if isinstance(value, (tuple, list)) and 1 < len(value) < 5:
+            vtype = 'uniform'
+            dtype = 'vec%d' % len(value)
+        elif isinstance(value, np.ndarray):
+            if value.ndim == 1 and (1 < len(value) < 5):
+                vtype = 'uniform'
+                dtype = 'vec%d' % len(value)
+            elif value.ndim == 2 and value.shape in ((2, 2), (3, 3), (4, 4)):
+                vtype = 'uniform'
+                dtype = 'mat%d' % value.shape[0]                
+            else:
+                raise ValueError("Cannot make uniform value from array of "
+                                 "shape %s." % (value.shape))
+        elif np.isscalar(value):
+            vtype = 'uniform'
+            if isinstance(value, (float, np.floating)):
+                dtype = 'float'
+            elif isinstance(value, (int, np.integer)):
+                dtype = 'int'
+            else:
+                raise TypeError("Unknown data type %r for variable %r" % 
+                                (type(value), self))
+        elif hasattr(value, 'glsl_type'):
+            vtype, dtype = value.glsl_type
+        else:
+            raise TypeError("Unknown data type %r for variable %r" % 
+                            (type(value), self))
+            
+        # update vtype/dtype and emit changed event if necessary
+        changed = False
+        if self._dtype != dtype:
+            self._dtype = dtype
+            changed = True
+        if self._vtype != vtype:
+            self._vtype = vtype
+            changed = True
+        if changed:
+            self.changed()
+    
+    @property
+    def state_id(self):
+        """Return a unique ID that changes whenever the state of the Variable
+        has changed. This allows ModularProgram to quickly determine whether
+        the value has changed since it was last used."""
+        return id(self), self._state_counter
+
+    def __repr__(self):
+        return ("<Variable \"%s %s %s\" at 0x%x>" % (self._vtype, self._dtype, 
+                                                     self.name, id(self)))
+    
+    def expression(self, names):
+        return names[self]
+    
+    def definition(self, names):
+        if self.vtype is None:
+            raise RuntimeError("Variable has no vtype: %r" % self)
+        if self.dtype is None:
+            raise RuntimeError("Variable has no dtype: %r" % self)
+        
+        name = names[self]
+        if self.vtype == 'const':
+            return '%s %s %s = %s;' % (self.vtype, self.dtype, name, 
+                                       self.value)
+        else:
+            return '%s %s %s;' % (self.vtype, self.dtype, name)
+
+
+class Varying(Variable):
+    """ Representation of a varying
+    
+    Varyings can inherit their dtype from another Variable, allowing for
+    more flexibility in composing shaders.
+    """
+    def __init__(self, name, dtype=None):
+        self._link = None
+        Variable.__init__(self, name, vtype='varying', dtype=dtype)
+        
+    @property
+    def value(self):
+        """ The value associated with this variable.
+        """
+        return self._value
+    
+    @value.setter
+    def value(self, value):
+        if value is not None:
+            raise TypeError("Cannot assign value directly to varying.")
+    
+    @property
+    def dtype(self):
+        if self._dtype is None:
+            if self._link is None:
+                return None
+            else:
+                return self._link.dtype
+        else:
+            return self._dtype
+
+    def link(self, var):
+        """ Link this Varying to another object from which it will derive its
+        dtype. This method is used internally when assigning an attribute to
+        a varying using syntax ``aFunction[varying] = attr``.
+        """
+        assert self._dtype is not None or hasattr(var, 'dtype')
+        self._link = var
+        self.changed()
+
+
+class Expression(ShaderObject):
+    """ Base class for expressions (ShaderObjects that do not have a
+    definition nor dependencies)
+    """
+    
+    def definition(self, names):
+        # expressions are declared inline.
+        return None
+
+
+class TextExpression(Expression):
+    """ Plain GLSL text to insert inline
+    """
+    
+    def __init__(self, text):
+        super(TextExpression, self).__init__()
+        if not isinstance(text, string_types):
+            raise TypeError("Argument must be string.")
+        self._text = text
+    
+    def __repr__(self):
+        return '<TextExpression %r for at 0x%x>' % (self.text, id(self))
+    
+    def expression(self, names=None):
+        return self._text
+    
+    @property
+    def text(self):
+        return self._text
+    
+    @text.setter
+    def text(self, t):
+        self._text = t
+        self.changed()
+
+    def __eq__(self, a):
+        if isinstance(a, TextExpression):
+            return a._text == self._text
+        elif isinstance(a, string_types):
+            return a == self._text
+        else:
+            return False
+    
+    def __hash__(self):
+        return self._text.__hash__()
+
+
+class FunctionCall(Expression):
+    """ Representation of a call to a function
+    
+    Essentially this is container for a Function along with its signature. 
+    """
+    
+    def __init__(self, function, args):
+        super(FunctionCall, self).__init__()
+        
+        if not isinstance(function, Function):
+            raise TypeError('FunctionCall needs a Function')
+        
+        sig_len = len(function.args)
+        if len(args) != sig_len:
+            raise TypeError('Function %s requires %d arguments (got %d)' %
+                            (function.name, sig_len, len(args)))
+        
+        # Ensure all expressions
+        sig = function.args
+        
+        self._function = function
+        
+        # Convert all arguments to ShaderObject, using arg name if possible.
+        self._args = [ShaderObject.create(arg, ref=sig[i][1]) 
+                      for i, arg in enumerate(args)]
+        
+        self._add_dep(function)
+        for arg in self._args:
+            self._add_dep(arg)
+    
+    def __repr__(self):
+        return '<FunctionCall of %r at 0x%x>' % (self.function.name, id(self))
+    
+    @property
+    def function(self):
+        return self._function
+    
+    @property
+    def dtype(self):
+        return self._function.rtype
+    
+    def expression(self, names):
+        str_args = [arg.expression(names) for arg in self._args]
+        args = ', '.join(str_args)
+        fname = self.function.expression(names)
+        return '%s(%s)' % (fname, args)
+    
 
 class FunctionChain(Function):
     """
@@ -487,22 +897,36 @@ class FunctionChain(Function):
         }
 
     """
-    def __init__(self, name=None, funcs=(), anonymous=True):
-        Function.__init__(self, code=None, deps=list(funcs))
-        self._funcs = list(funcs)
+    def __init__(self, name=None, funcs=()):
+        # bypass Function.__init__ completely.
+        ShaderObject.__init__(self)
+        if not (name is None or isinstance(name, string_types)):
+            raise TypeError("Name argument must be string or None.")
+        self._funcs = []
         self._name = name or "chain"
-        self._update_signature()
-        self._anonymous = anonymous
+        self.functions = funcs
 
     @property
-    def name(self):
-        return self._name
+    def functions(self):
+        return self._funcs[:]
+
+    @functions.setter
+    def functions(self, funcs):
+        while self._funcs:
+            self.remove(self._funcs[0], update=False)
+        for f in funcs:
+            self.append(f, update=False)
+        self._update()
 
     @property
-    def signature(self):
-        return self.name, self._args, self._rtype
+    def args(self):
+        return self._args
+    
+    @property
+    def rtype(self):
+        return self._rtype
 
-    def _update_signature(self):
+    def _update(self):
         funcs = self._funcs
         if len(funcs) > 0:
             self._rtype = funcs[-1].rtype
@@ -510,63 +934,43 @@ class FunctionChain(Function):
         else:
             self._rtype = 'void'
             self._args = []
-        #self._bindings = dict([(a[1], a[0]) for a in self.args])
-
-    @property
-    def code(self):
-        """
-        The GLSL code that defines this function.
-
-        This property is disabled for FunctionChain; the code may only
-        be accessed by calling compile().
-        """
-        raise NotImplementedError
+        
+        self.changed()
 
     @property
     def template_vars(self):
         return {}
 
-    def append(self, function):
+    def append(self, function, update=True):
         """ Append a new function to the end of this chain.
         """
         self._funcs.append(function)
-        self._deps.append(function)
-        self._update_signature()
+        self._add_dep(function)
+        if update:
+            self._update()
 
-    def insert(self, index, function):
+    def insert(self, index, function, update=True):
         """ Insert a new function into the chain at *index*.
         """
         self._funcs.insert(index, function)
-        self._deps.insert(index, function)
-        self._update_signature()
+        self._add_dep(function)
+        if update:
+            self._update()
 
-    def remove(self, function):
+    def remove(self, function, update=True):
         """ Remove a function from the chain.
         """
         self._funcs.remove(function)
-        self._deps.remove(function)
-        self._update_signature()
+        self._remove_dep(function)
+        if update:
+            self._update()
 
-    def compile(self, obj_names):
-        name = obj_names.get(self, self.name)
-        if not self.is_anonymous and name != self.name:
-            raise Exception("Cannot compile %s with name %s; function is not "
-                            "anonymous." % (self, name))
-            #name = subs[self.name.lstrip('$')]
-        #else:
-            #name = self.name
+    def definition(self, obj_names):
+        name = obj_names[self]
 
         args = ", ".join(["%s %s" % arg for arg in self.args])
         code = "%s %s(%s) {\n" % (self.rtype, name, args)
 
-        #if self.rtype == 'void':
-        #    for fn in self._funcs:
-        #        code += "    %s();\n" % obj_names[fn]
-        #else:
-        #    code += "    return "
-        #    for fn in self._funcs[::-1]:
-        #        code += "%s(\n           " % obj_names[fn]
-        #    code += "    %s%s;\n" % (self.args[0][1], ')'*len(self._funcs))
         result_index = 0
         if len(self.args) == 0:
             last_rtype = 'void'
@@ -603,3 +1007,9 @@ class FunctionChain(Function):
 
         code += "}\n"
         return code
+
+    def __setitem__(self, k, v):
+        raise Exception("FunctionChain does not support indexing.")
+    
+    def __getitem__(self, k):
+        raise Exception("FunctionChain does not support indexing.")

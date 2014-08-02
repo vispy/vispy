@@ -169,10 +169,6 @@ class Text(Visual):
     """Visual that displays text"""
 
     VERTEX_SHADER = """
-        #version 120
-
-        vec4 transform(vec4);
-
         uniform sampler2D u_font_atlas;
         uniform vec4      u_color;
 
@@ -184,13 +180,12 @@ class Text(Visual):
 
         void main(void) {
             v_color = u_color;
-            gl_Position = transform(vec4(a_position, 0.0, 1.0));
+            gl_Position = $transform(vec4(a_position, 0.0, 1.0));
             v_texcoord = a_texcoord;
         }
         """
 
     FRAGMENT_SHADER = """
-        #version 120
         uniform sampler2D u_font_atlas;
         uniform vec4      u_color;
 
