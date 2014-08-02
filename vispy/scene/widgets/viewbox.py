@@ -423,10 +423,13 @@ class PanZoomViewer(Viewer):
             self.rect = self.rect + (p1s-p2s)
             event.handled = True
         elif 2 in event.buttons:
+            # todo: just access the original event position, rather
+            # than mapping to the viewbox and back again.
             p1 = np.array(event.last_event.pos)[:2]
             p2 = np.array(event.pos)[:2]
             p1c = event.map_to_canvas(p1)[:2]
             p2c = event.map_to_canvas(p2)[:2]
+            
             s = 1.03 ** ((p1c-p2c) * np.array([1, -1]))
             center = self.transform.imap(event.press_event.pos[:2])
             # TODO: would be nice if STTransform had a nice scale(s, center) 
@@ -480,9 +483,10 @@ class CameraViewer(Viewer):
         super(CameraViewer, self).__init__()
         self._camera = None
         self.camera = PerspectiveCamera()
-        self.camera.set_perspective(look=look, top=top, fov=fov, 
-                                    near=near, far=far)
-        self.camera.pos = pos
+        self.camera.set_perspective(fov=fov, near=near, far=far)
+        self.look = look
+        self.pos = pos
+        self.top = top
     
     @property
     def camera(self):
@@ -524,6 +528,15 @@ class CameraViewer(Viewer):
         if event.type == 'mouse_wheel':
             fov = self.camera._perspective['fov'] * (1.1**-event.delta[1])
             self.camera.set_perspective(fov=fov)
+        elif event.type == 'mouse_move' and 1 in event.buttons:
+            p1 = np.array(event.last_event.pos)[:2]
+            p2 = np.array(event.pos)[:2]
+            p1c = event.map_to_canvas(p1)[:2]
+            p2c = event.map_to_canvas(p2)[:2]
+            d = p2c - p1c
+            
+            self.camera.transform.rotate(d[1], (1, 0, 0))
+            self.camera.transform.rotate(d[0], (0, 1, 0))
             
         self._update_transform()
         
@@ -532,6 +545,10 @@ class CameraViewer(Viewer):
     
     def _update_transform(self, event=None):
         if self.viewbox is not None:
+            self.camera.transform.reset()
+            # todo: need a method AffineTransform.set_mapping(...)
+            
+            
             vbs = self.viewbox.size
             self.camera.set_perspective(aspect=(vbs[0] / vbs[1]))
             

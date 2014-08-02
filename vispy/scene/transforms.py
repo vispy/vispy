@@ -806,6 +806,15 @@ class AffineTransform(Transform):
         tr = transforms.rotate(np.eye(4), angle, *axis)
         self.matrix = np.dot(tr, self.matrix)
 
+    def set_mapping(self, points1, points2):
+        """ Set to a 3D transformation matrix that maps points1 onto points2.
+        
+        Arguments are specified as arrays of four 3D coordinates, shape (4, 3).
+        """
+        # note: need to transpose because util.functions uses opposite
+        # of standard linear algebra order.
+        self.matrix = transforms.affine_map(points1, points2).T
+
     def reset(self):
         self.matrix = np.eye(4)
 
