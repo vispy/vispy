@@ -142,6 +142,17 @@ class SceneCanvas(app.Canvas):
         if self._scene is None:
             return  # Can happen on initialization
         logger.debug('Canvas draw')
+
+        self.render(event)
+        
+    def render(self, event):
+        gloo.clear((0, 0, 0, 1))
+        
+        if len(self._fb_stack) == 0:
+            self.push_viewport((0, 0) + self.size)
+        else:
+            self.push_viewport((0, 0) + 
+                               self._fb_stack[-1][0].color_buffer.shape[::-1])
         
         # Draw the scene, but first disconnect its change signal--
         # any changes that take place during the paint should not trigger
@@ -183,6 +194,22 @@ class SceneCanvas(app.Canvas):
             visual.draw(scene_event)
         finally:
             scene_event.pop_viewport()
+
+    def screenshot(self, size=None, region=None):
+        """ Render the scene to an offscreen buffer and return the image array.
+        """
+        offset = (0, 0) if region is None else region[:2]
+        csize = self.size if region is None else region[2:]
+        size = size or self.size
+        fbo = gloo.FrameBuffer(color=gloo.ColorBuffer(size[::-1]), 
+                               depth=gloo.DepthBuffer(size[::-1]))
+        self.push_fbo(fbo, offset, csize)
+        event = app.canvas.DrawEvent('draw', region=region)
+        try:
+            self.render(event)
+            return fbo.read()
+        finally:
+            self.pop_fbo()
 
     def _process_mouse_event(self, event):
         tr_cache = self._transform_caches.setdefault(self.scene, 

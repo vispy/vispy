@@ -4,7 +4,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-#import OpenGL.GL as gl
+import numpy as np
+
 from . import gl
 from .globject import GLObject
 from .texture import Texture2D
@@ -297,6 +298,24 @@ class FrameBuffer(GLObject):
             self.depth_buffer.resize(shape)
         if self.stencil_buffer is not None:
             self.stencil_buffer.resize(shape)
+
+    def read(self, mode='color'):
+        """ Return array of pixel values in an attached buffer
+        
+        *mode* may be 'color', 'depth', or 'stencil'.
+        """
+        if mode not in ['color', 'depth', 'stencil']:
+            raise ValueError("mode argument must be 'color', 'depth', or "
+                             "'stencil'.")
+        buffer = getattr(self, mode+'_buffer')
+        w, h = buffer._shape
+            
+        # todo: this is ostensibly required, but not available in gloo.gl
+        #gl.glReadBuffer(buffer._target)
+        
+        px = gl.glReadPixels(0, 0, h, w, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
+        array = np.fromstring(px, dtype=np.ubyte).reshape(w, h, 4)
+        return array
 
     def _create(self):
         """ Create framebuffer on GPU """
