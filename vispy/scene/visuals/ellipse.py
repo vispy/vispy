@@ -26,15 +26,23 @@ default: (1,1)
                  num_segments=100, **kwds):
         super(Ellipse, self).__init__()
         self._vertices = None
-        if pos is not None or kwds:
-            self._generate_vertices(pos=pos, radius=radius,
-                                    start_angle=start_angle,
-                                    span_angle=span_angle,
-                                    num_segments=num_segments)
-            self.mesh = Mesh(pos=self._vertices, color=color)
+        self._pos = pos
+        self._color = color
+        self._border_color = border_color
+        self._radius = radius
+        self._start_angle = start_angle
+        self._span_angle = span_angle
+        self._num_segments = num_segments
+        if self._pos is not None or kwds:
+            self._generate_vertices(pos=self._pos, radius=self._radius,
+                                    start_angle=self._start_angle,
+                                    span_angle=self._span_angle,
+                                    num_segments=self._num_segments)
+            self.mesh = Mesh(pos=self._vertices, color=self._color)
             self.mesh._primitive = gloo.gl.GL_TRIANGLE_FAN
-            if border_color:
-                self.border = Line(pos=self._vertices[1:], color=border_color)
+            if self._border_color:
+                self.border = Line(pos=self._vertices[1:],
+                                   color=self._border_color)
 
     def _generate_vertices(self, pos, radius, start_angle, span_angle,
                            num_segments):
@@ -43,7 +51,8 @@ default: (1,1)
                 xr, yr = radius
             else:
                 raise ValueError("radius must be float or 2 value tuple/list"
-                                 " (got %s)" % type(radius))
+                                 " (got %s of length %d)" % (type(radius),
+                                                             len(radius)))
         else:
             xr = yr = radius
         curve_segments = int(num_segments * span_angle / 360.)
@@ -55,3 +64,60 @@ default: (1,1)
         self._vertices[1:, 0] = pos[0] + xr * np.cos(theta)
         self._vertices[1:, 1] = pos[1] + yr * np.sin(theta)
         self._vertices[1:, 2] = 0
+
+    @property
+    def radius(self):
+        """ The start radii of the ellipse.
+        """
+        return self._radius
+
+    @radius.setter
+    def radius(self, radius):
+        self._radius = radius
+        self._update()
+    
+    @property
+    def start_angle(self):
+        """ The start start_angle of the ellipse.
+        """
+        return self._start_angle
+
+    @start_angle.setter
+    def start_angle(self, start_angle):
+        self._start_angle = start_angle
+        self._update()
+
+    @property
+    def span_angle(self):
+        """ The angular span of the ellipse.
+        """
+        return self._span_angle
+
+    @span_angle.setter
+    def span_angle(self, span_angle):
+        self._span_angle = span_angle
+        self._update()
+
+    @property
+    def num_segments(self):
+        """ The number of segments in the ellipse.
+        """
+        return self._num_segments
+
+    @num_segments.setter
+    def num_segments(self, num_segments):
+        self._num_segments = num_segments
+        self._update()
+    
+    def _update(self):
+        if self._pos is not None:
+            self._generate_vertices(pos=self._pos, radius=self._radius,
+                                    start_angle=self._start_angle,
+                                    span_angle=self._span_angle,
+                                    num_segments=self._num_segments)
+            self.mesh = Mesh(pos=self._vertices, color=self._color)
+            self.mesh._primitive = gloo.gl.GL_TRIANGLE_FAN
+            if self._border_color:
+                self.border = Line(pos=self._vertices[1:],
+                                   color=self._border_color)
+        #self.update()

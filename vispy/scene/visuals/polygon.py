@@ -87,14 +87,13 @@ class Polygon(Visual):
         return self._border_color
 
     @border_color.setter
-    def border_color(self, pos):
+    def border_color(self, border_color):
         self._border_color = border_color
         self._update()
 
-
     def _update(self):
         self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
-        if self._pos is not None or kwds:
+        if self._pos is not None:
             self.data.triangulate()
             self.mesh = Mesh(pos=self.data.vertices[self.data.faces],
                              color=self._color)
