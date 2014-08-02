@@ -35,8 +35,8 @@ void main() {
 
 
 dash_template = """
-float dash() {
-    float mod = $distance / $dash_len;
+float dash(float distance) {
+    float mod = distance / $dash_len;
     mod = mod - int(mod);
     return 0.5 * sin(mod*3.141593*2.0) + 0.5;
 }
@@ -142,10 +142,10 @@ class DashedLine(Line):
         Line.__init__(self, *args, **kwargs)
         
         dasher = Function(dash_template) 
-        self._program.frag['gl_FragColor.a'] = dasher()
-        dasher['distance'] = Varying('v_distance', dtype='float')
+        distance = Varying('v_distance', dtype='float')
+        self._program.frag['gl_FragColor.a'] = dasher(distance) 
         dasher['dash_len'] = Variable('const float dash_len 0.001')
-        self._program.vert[dasher['distance']] = 'gl_Position.x'
+        self._program.vert[distance] = 'gl_Position.x'
 
 
 ## Show the visual
