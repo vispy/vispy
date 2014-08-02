@@ -47,8 +47,8 @@ vb2 = scene.ViewBox(canvas.scene, border=(0, 0, 1, 1))
 vb2.preferred_clip_method = 'viewport'
 vb2.pos = canvas.size[0]/2. + 20, 20
 vb2.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
-#vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30)
-vb2.set_camera('turntable', mode='perspective', elevation=30, azimuth=30)
+vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30)
+#vb2.set_camera('turntable', mode='perspective', distance=100, elevation=30, azimuth=30)
 
 line_ndc.add_parent(vb2.scene)
 

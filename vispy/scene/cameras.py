@@ -323,7 +323,11 @@ class TurntableCamera(PerspectiveCamera):
             return
         
         if event.type == 'mouse_wheel':
-            self._perspective['fov'] *= 1.1 ** -event.delta[1]
+            s = 1.1 ** -event.delta[1]
+            if self.mode == 'ortho':
+                self._ortho['width'] *= s
+            else:
+                self._perspective['fov'] *= s
             self._update_transform()
         elif event.type == 'mouse_move' and 1 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]
