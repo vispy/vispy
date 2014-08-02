@@ -132,7 +132,7 @@ class Canvas(app.Canvas):
         self.timer.start()
 
     def on_initialize(self, event):
-        gloo.set_state(clear_color=(1, 1, 1, 1), blend=True, 
+        gloo.set_state(clear_color='black', blend=True, 
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def on_resize(self, event):
@@ -157,7 +157,7 @@ class Canvas(app.Canvas):
         self.update()
         
     def on_draw(self, event):
-        gloo.clear(color=(0.0, 0.0, 0.0, 1.0))
+        gloo.clear()
         self.program.draw('line_strip')
         
 if __name__ == '__main__':
