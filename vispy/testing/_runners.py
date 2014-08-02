@@ -54,7 +54,7 @@ def _nose(mode, verbosity, coverage):
     args = ' ' + ('--verbosity=%s ' % verbosity) + covs + attrs
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
-    cmd = ['python', '-c',
+    cmd = [sys.executable, '-c',
            'import nose; nose.main(argv="%s".split(" "))' % args]
     env = deepcopy(os.environ)
     env.update(dict(_VISPY_TESTING_TYPE=mode))

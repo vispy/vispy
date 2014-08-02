@@ -9,7 +9,7 @@ Dynamic planar graph layout.
 import numpy as np
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
+from vispy.gloo import set_viewport, set_state, clear
 import markers
 
 vs = """
@@ -55,7 +55,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, close_keys='escape', **kwargs)
         self.size = 512, 512
         self.position = 50, 50
-        
+
         self.vbo = gloo.VertexBuffer(data)
         self.index = gloo.IndexBuffer(edges)
         self.view = np.eye(4, dtype=np.float32)
@@ -78,10 +78,8 @@ class Canvas(app.Canvas):
         # self.timer.start()
 
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        set_state(clear_color='white', depth_test=False, blend=True,
+                  blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def on_key_press(self, event):
         if event.text == ' ':
@@ -95,12 +93,12 @@ class Canvas(app.Canvas):
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        set_viewport(0, 0, width, height)
 
     def on_draw(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        self.program_e.draw(gl.GL_LINES, self.index)
-        self.program.draw(gl.GL_POINTS)
+        clear(color=True, depth=True)
+        self.program_e.draw('lines', self.index)
+        self.program.draw('points')
 
 if __name__ == '__main__':
     c = Canvas(title="Graph")

@@ -1,13 +1,12 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" Terrain generation using diamond-square alogrithm 
+""" Terrain generation using diamond-square alogrithm
 and Scipy for Delaunay triangulation
 """
 
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 from vispy.util.transforms import perspective, translate, xrotate, yrotate
 from vispy.util.transforms import zrotate
 import numpy as np
@@ -129,8 +128,7 @@ class Canvas(app.Canvas):
         self.program['a_position'] = gloo.VertexBuffer(triangles)
 
     def on_initialize(self, event):
-        gl.glClearColor(0, 0, 0, 1)
-        gl.glEnable(gl.GL_DEPTH_TEST)        
+        gloo.set_state(clear_color='black', depth_test=True)
 
     def on_key_press(self, event):
         """Controls -
@@ -189,15 +187,15 @@ class Canvas(app.Canvas):
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(60.0, width / float(height), 1.0, 100.0)
         self.program['u_projection'] = self.projection
 
     def on_draw(self, event):
         # Clear
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gloo.clear(color=True, depth=True)
         # Draw
-        self.program.draw(gl.GL_TRIANGLES)
+        self.program.draw('triangles')
 
 
 if __name__ == '__main__':

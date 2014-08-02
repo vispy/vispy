@@ -119,9 +119,7 @@ class Maker:
         # Prepare
         build_dir = os.path.join(WEBSITE_DIR, '_build')
         html_dir = os.path.join(build_dir, 'html')
-        if not arg:
-            return self.help('website')
-
+        
         # Clone repo for website if needed, make up-to-date otherwise
         if not os.path.isdir(WEBSITE_DIR):
             os.chdir(ROOT_DIR)
@@ -131,6 +129,9 @@ class Maker:
             os.chdir(WEBSITE_DIR)
             sh('git pull')
 
+        if not arg:
+            return self.help('website')
+        
         # Go
         if 'html' == arg:
             sphinx_clean(build_dir)
@@ -172,9 +173,7 @@ class Maker:
                 * test - make screenshots for testing
                 * upload - upload the images repository
         """
-        if not arg:
-            return self.help('images')
-
+        
         # Clone repo for images if needed, make up-to-date otherwise
         if not os.path.isdir(IMAGES_DIR):
             os.chdir(ROOT_DIR)
@@ -183,7 +182,10 @@ class Maker:
             print('Updating images repo')
             os.chdir(IMAGES_DIR)
             sh('git pull')
-
+        
+        if not arg:
+            return self.help('images')
+        
         # Create subdirs if needed
         for subdir in ['gallery', 'thumbs', 'test']:
             subdir = os.path.join(IMAGES_DIR, subdir)
@@ -199,7 +201,7 @@ class Maker:
         elif arg == 'upload':
             sphinx_upload(IMAGES_DIR)
         else:
-            sys.exit('Command "website" does not have subcommand "%s"' % arg)
+            sys.exit('Command "images" does not have subcommand "%s"' % arg)
 
     def _images_screenshots(self):
         # Prepare

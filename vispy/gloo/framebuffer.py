@@ -206,6 +206,13 @@ class FrameBuffer(GLObject):
         if stencil is not None:
             self.stencil_buffer = stencil
 
+    def __enter__(self):
+        self.activate()
+        return self
+
+    def __exit__(self, t, val, trace):
+        self.deactivate()
+
     @property
     def color_buffer(self):
         """Color buffer attachment"""

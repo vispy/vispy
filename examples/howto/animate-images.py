@@ -10,7 +10,6 @@ import numpy as np
 from vispy.util.transforms import ortho
 from vispy import gloo
 from vispy import app
-from vispy.gloo import gl
 
 
 # Image to be displayed
@@ -66,7 +65,7 @@ class Canvas(app.Canvas):
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.texture = gloo.Texture2D(I)
-        self.texture.interpolation = gl.GL_LINEAR
+        self.texture.interpolation = gloo.gl.GL_LINEAR
 
         self.program['u_texture'] = self.texture
         self.program.bind(gloo.VertexBuffer(data))
@@ -81,11 +80,11 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
 
     def on_initialize(self, event):
-        gl.glClearColor(1, 1, 1, 1)
+        gloo.set_clear_color('white')
 
     def on_resize(self, event):
         width, height = event.size
-        gl.glViewport(0, 0, width, height)
+        gloo.set_viewport(0, 0, width, height)
         self.projection = ortho(0, width, 0, height, -100, 100)
         self.program['u_projection'] = self.projection
 
@@ -103,10 +102,10 @@ class Canvas(app.Canvas):
         self.program.bind(gloo.VertexBuffer(data))
 
     def on_draw(self, event):
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gloo.clear(color=True, depth=True)
         I[...] = np.random.uniform(0, 1, (W, H)).astype(np.float32)
         self.texture.set_data(I)
-        self.program.draw(gl.GL_TRIANGLE_STRIP)
+        self.program.draw('triangle_strip')
         self.update()
 
 

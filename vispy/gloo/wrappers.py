@@ -9,6 +9,7 @@ from copy import deepcopy
 
 from . import gl
 from ..ext.six import string_types
+from ..color import Color
 
 
 __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',
@@ -56,15 +57,15 @@ def _to_args(x):
     return x
 
 
-def _check_color(color):
-    """Check and validate color"""
-    # XXX this should eventually go in vispy.colors
-    color = np.array(color, float)
-    if color.ndim != 1 or color.size not in (3, 4):
-        raise ValueError('color must be a 3- or 4-element array-like')
-    if len(color) == 3:
-        color = np.concatenate((color, [1.]))
-    return color
+def _check_conversion(key, valid_dict):
+    """Check for existence of key in dict, return value or raise error"""
+    if isinstance(key, string_types):
+        key = key.lower()
+    if key not in valid_dict and key not in valid_dict.values():
+        # Only show users the nice string values
+        keys = [v for v in valid_dict.keys() if isinstance(key, string_types)]
+        raise ValueError('value must be one of %s, not %s' % (keys, key))
+    return valid_dict[key] if key in valid_dict else key
 
 
 ###############################################################################
@@ -167,8 +168,8 @@ def clear(color=True, depth=True, stencil=True):
 
     Parameters
     ----------
-    color : bool | tuple
-        Clear the color buffer bit. If tuple, ``set_clear_color`` will
+    color : bool | str | tuple | instance of Color
+        Clear the color buffer bit. If not bool, ``set_clear_color`` will
         be used to set the color clear value.
     depth : bool | float
         Clear the depth buffer bit. If float, ``set_clear_depth`` will
@@ -193,17 +194,17 @@ def clear(color=True, depth=True, stencil=True):
     gl.glClear(bits)
 
 
-def set_clear_color(color=(0., 0., 0., 1.)):
+def set_clear_color(color='black'):
     """Set the screen clear color
 
     This is a wrapper for gl.glClearColor.
 
     Parameters
     ----------
-    color : 4-element tuple
-        Color to use. Defaults to black.
+    color : str | tuple | instance of Color
+        Color to use. See vispy.color.Color for options.
     """
-    gl.glClearColor(*_check_color(color))
+    gl.glClearColor(*Color(color).rgba)
 
 
 def set_clear_depth(depth=1.0):
@@ -260,10 +261,10 @@ def set_blend_color(color):
 
     Parameters
     ----------
-    color : array-like
-        3- or 4-element array-like specifying float RGB(A) values.
+    color : str | tuple | instance of Color
+        Color to use. See vispy.color.Color for options.
     """
-    gl.glBlendColor(*_check_color(color))
+    gl.glBlendColor(*Color(color).rgba)
 
 
 def set_blend_equation(mode_rgb, mode_alpha=None):
@@ -521,7 +522,8 @@ def set_state(preset=None, **kwargs):
         if s in kwargs:
             args = _to_args(kwargs.pop(s))
             # these actually need tuples
-            if s in ('blend_color', 'clear_color'):
+            if s in ('blend_color', 'clear_color') and \
+                    not isinstance(args[0], string_types):
                 args = [args]
             globals()['set_' + s](*args)
 

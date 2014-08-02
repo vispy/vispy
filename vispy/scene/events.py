@@ -5,31 +5,7 @@
 from __future__ import division
 
 from ..util.event import Event
-from .transforms import NullTransform, STTransform, ChainTransform
-from ..gloo import gl
-
-
-class RenderArea(object):
-    """ Container to store information about the render area, such as
-    viewport and information related to the FBO.
-    """
-    def __init__(self, viewport, size, fbo_transform, fbo=None):
-        # The viewport (x, y, w, h)
-        self.viewport = viewport
-        # Full size of the render area (i.e. resolution)
-        self.size = size
-        # Transform to get there (for FBO)
-        self.fbo_transform = fbo_transform
-        # FBO that applies to it. Only necessary for push_fbo
-        self.fbo = fbo
-
-        # Calculate viewport transform for render_transform
-        csize = size
-        scale = csize[0]/viewport[2], csize[1]/viewport[3]
-        origin = (((csize[0] - 2.0 * viewport[0]) / viewport[2] - 1),
-                  ((csize[1] - 2.0 * viewport[1]) / viewport[3] - 1))
-        self.vp_transform = (STTransform(translate=(origin[0], origin[1])) *
-                             STTransform(scale=scale))
+from .transforms import ChainTransform
 
 
 class SceneEvent(Event):
@@ -45,14 +21,7 @@ class SceneEvent(Event):
 
         # Init stacks
         self._stack = []  # list of entities
-        self._ra_stack = []  # for viewport & fbo
         self._viewbox_stack = []
-
-        # Init render are
-        viewport = 0, 0, canvas.size[0], canvas.size[1]
-        ra = RenderArea(viewport, canvas.size, NullTransform())
-        self._ra_stack.append(ra)
-        gl.glViewport(*viewport)
 
         # Init resolution with respect to canvas
         self._resolution = canvas.size
@@ -108,50 +77,62 @@ class SceneEvent(Event):
         int. The viewport's origin is defined relative to the current
         viewport.
         """
-        # Append. Take over the transform to the active FBO
-        ra = self._ra_stack[-1]
-        x, y, w, h = viewport
-        viewport = ra.viewport[0] + x, ra.viewport[1] + y, w, h
-        ra_new = RenderArea(viewport, ra.size, ra.fbo_transform)
-        self._ra_stack.append(ra_new)
-        # Apply
-        gl.glViewport(*viewport)
+        self.canvas.push_viewport(viewport)
 
     def pop_viewport(self):
         """ Pop a viewport from the stack.
         """
-        # Pop old, check
-        ra = self._ra_stack.pop(-1)
-        if ra.fbo is not None:
-            raise RuntimeError('Popping a viewport when top item is an FBO')
-        # Activate latest
-        ra = self._ra_stack[-1]
-        gl.glViewport(*ra.viewport)
+        return self.canvas.pop_viewport()
 
     def push_fbo(self, viewport, fbo, transform):
         """ Push an FBO on the stack, together with the new viewport.
         and the transform to the FBO.
         """
-        # Append, an FBO resets the viewport
-        ra_new = RenderArea(viewport, viewport[2:], transform, fbo)
-        self._ra_stack.append(ra_new)
-        # Apply
-        fbo.activate()
-        gl.glViewport(*viewport)
+        self.canvas.push_fbo(viewport, fbo, transform)
 
     def pop_fbo(self):
         """ Pop an FBO from the stack.
         """
-        # Pop old
-        ra = self._ra_stack.pop(-1)
-        if ra.fbo is None:
-            raise RuntimeError('Popping an FBO when top item is an viewport')
-        ra.fbo.deactivate()
-        # Activate current
-        ra = self._ra_stack[-1]
-        if ra.fbo:
-            ra.fbo.activate()
-        gl.glViewport(*ra.viewport)
+        return self.canvas.pop_fbo()
+    
+    def entity_transform(self, entity):
+        """ Return transform that maps from local coordinate system of *entity*
+        to the root of the scenegraph.
+        """
+        # find where entity's ancestry first intersects the current path
+        path = []
+        while True:
+            if entity is None:
+                path.insert(0, entity)
+                break
+            elif entity not in self._stack:
+                path.insert(0, entity)
+                
+                # todo: if this fails, raise a nice exception explaining
+                #       the problem.
+                entity = entity.parent
+            else:
+                ind = self._stack.index(entity)
+                path = self._stack[:ind+1] + path
+                break
+        
+        tr = [e.transform for e in path]
+        # TODO: cache transform chains
+        return ChainTransform(tr)
+    
+    def map_entity_to_doc(self, entity, obj):
+        return self.entity_transform(entity).map(obj)
+    
+    def map_doc_to_entity(self, entity, obj):
+        return self.entity_transform(entity).imap(obj)
+        
+    def map_entity_to_fb(self, entity, obj):
+        tr = self.canvas.fb_transform * self.entity_transform(entity)
+        return tr.map(obj)
+    
+    def map_fb_to_entity(self, entity, obj):
+        tr = self.canvas.fb_transform * self.entity_transform(entity)
+        return tr.imap(obj)
     
     # todo: I think "root_transform" is more descriptive (LC)
     #       or perhaps "scene_transform"
@@ -175,30 +156,23 @@ class SceneEvent(Event):
 
         Most entities should use this transform when drawing.
         """
-        if len(self._ra_stack) <= 1:
-            return self.full_transform
-        else:
-            ra = self._ra_stack[-1]
-            return ra.fbo_transform * ra.vp_transform * self.full_transform
+        return self.canvas.render_transform * self.full_transform
 
-# AK: we should revive the methods below if and when we need them
-#     @property
-#     def framebuffer_transform(self):
-#         """
-#         Return the transform mapping from the end of the path to framebuffer
-#         pixels (device pixels).
-#
-#         This is the coordinate system required by glViewport().
-#         The origin is at the bottom-left corner of the canvas.
-#         """
-#         root_tr = self.root_transform
-#         # TODO: How do we get the framebuffer size?
-#         csize = self.canvas.size
-#         scale = csize[0]/2.0, csize[1]/2.0
-#         fb_tr = (STTransform(scale=scale) *
-#                  STTransform(translate=(1, 1)))
-#         return fb_tr * root_tr
-        
+    @property
+    def fb_transform(self):
+        """ Transform mapping from the local coordinate system of the current
+        entity to the framebuffer coordinate system.
+        """
+        return self.canvas.fb_transform * self.full_transform
+    
+    def map_to_fb(self, obj):
+        return self.fb_transform.map(obj)
+
+    def map_from_fb(self, obj):
+        return self.fb_transform.imap(obj)
+
+    # todo: need to disambiguate this from the doc cs, which is *usually* the
+    #       same, but may be separate in some rare situations.
     @property
     def canvas_transform(self):
         """
@@ -209,12 +183,7 @@ class SceneEvent(Event):
         For measuring distance in physical units, the use of document_transform 
         is preferred. 
         """
-        root_tr = self.render_transform
-        csize = self.canvas.size
-        scale = csize[0]/2.0, -csize[1]/2.0
-        canvas_tr = (STTransform(scale=scale) * 
-                     STTransform(translate=(1, -1)))
-        return canvas_tr * root_tr
+        return self.full_transform
     
     def map_to_canvas(self, obj):
         """
@@ -232,39 +201,6 @@ class SceneEvent(Event):
         """
         return self.canvas_transform.inverse().map(obj)
     
-#     @property
-#     def document_transform(self):
-#         """
-#         Return the complete Transform that maps from the end of the path
-#         to the first Document in its ancestry.
-#
-#         This coordinate system should be used for all physical unit
-#         measurements (px, mm, etc.)
-#         """
-#         from .entities import Document
-#         tr = []
-#         found = False
-#         for e in self._path[::-1]:
-#             if isinstance(e, Document):
-#                 found = True
-#                 break
-#             tr.append(e.transform)
-#         if not found:
-#             raise Exception("No Document in the Entity path for this Event.")
-#         return ChainTransform(tr)
-
-#     def map_to_document(self, obj):
-#         return self.document_transform.map(obj)
-#
-#     def map_from_document(self, obj):
-#         return self.document_transform.imap(obj)
-
-#     def map_to_canvas(self, obj):
-#         return self.canvas_transform.map(obj)
-#
-#     def map_from_canvas(self, obj):
-#         return self.canvas_transform.imap(obj)
-
 
 class SceneMouseEvent(SceneEvent):
     def __init__(self, event, canvas):
@@ -302,7 +238,7 @@ class SceneMouseEvent(SceneEvent):
     def copy(self):
         ev = self.__class__(self.mouse_event, self._canvas)
         ev._stack = self._stack[:]
-        ev._ra_stack = self._ra_stack[:]
+        #ev._ra_stack = self._ra_stack[:]
         ev._viewbox_stack = self._viewbox_stack[:]
         ev._resolution = self._resolution
         return ev

@@ -10,6 +10,7 @@ from __future__ import division
 import atexit
 import ctypes
 from time import sleep
+import warnings
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
@@ -20,8 +21,9 @@ from ...util.ptime import time
 # -------------------------------------------------------------------- init ---
 
 try:
-    import sdl2
-    import sdl2.ext
+    with warnings.catch_warnings(record=True):  # can throw warnings
+        import sdl2
+        import sdl2.ext
 
     # Map native keys to vispy keys
     KEYMAP = {

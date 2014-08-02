@@ -57,8 +57,47 @@ def get_data_file(fname, directory=None, force_download=False):
     return fname
 
 
+def get_testing_file(fname, directory=None, force_download=False):
+    """Get a standard vispy test data file
+
+    Parameters
+    ----------
+    fname : str
+        The filename on the remote ``test-data`` repository to download,
+        e.g. ``'visuals/square.png'``. These correspond to paths
+        on ``https://github.com/vispy/test-data/``.
+    directory : str | None
+        Directory to use to save the file. By default, the vispy
+        configuration directory is used.
+    force_download : bool
+        If True, the file will be downloaded even if a local copy exists
+        (and this copy will be overwritten).
+
+    Returns
+    -------
+    fname : str
+        The path to the file on the local system.
+    """
+    _url_root = 'https://github.com/vispy/test-data/raw/master/'
+    url = _url_root + fname
+    if directory is None:
+        directory = config['data_path']
+        if directory is None:
+            raise ValueError('config["data_path"] is not defined, '
+                             'so directory must be supplied')
+
+    fname = op.join(directory, op.normcase(fname))  # convert to native
+    if op.isfile(fname) and not force_download:  # we're done
+        return fname
+    if not op.isdir(op.dirname(fname)):
+        os.makedirs(op.abspath(op.dirname(fname)))
+    # let's go get the file
+    _fetch_file(url, fname)
+    return fname
+
 ###############################################################################
 # File downloading (most adapted from mne-python)
+
 
 class ProgressBar(object):
     """Class for generating a command-line progressbar

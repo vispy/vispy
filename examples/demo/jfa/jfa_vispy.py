@@ -14,7 +14,7 @@ from os import path as op
 from PIL import Image
 from vispy import app
 from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
-                        VertexBuffer, Texture2D, gl, set_viewport)
+                        VertexBuffer, Texture2D, set_viewport)
 from vispy.util import get_data_file
 
 this_dir = op.abspath(op.dirname(__file__))
@@ -29,16 +29,16 @@ class Canvas(app.Canvas):
         img = Image.open(get_data_file('jfa/' + fname))
         self.texture_size = tuple(img.size)
         data = np.array(img, np.ubyte)[::-1].copy()
-        self.orig_tex = Texture2D(data, format=gl.GL_LUMINANCE)
-        self.orig_tex.wrapping = gl.GL_REPEAT
-        self.orig_tex.interpolation = gl.GL_NEAREST
+        self.orig_tex = Texture2D(data, format='luminance')
+        self.orig_tex.wrapping = 'repeat'
+        self.orig_tex.interpolation = 'nearest'
 
         self.comp_texs = []
         data = np.zeros(self.texture_size + (4,), np.float32)
         for _ in range(2):
-            tex = Texture2D(data, format=gl.GL_RGBA)
-            tex.interpolation = gl.GL_NEAREST
-            tex.wrapping = gl.GL_CLAMP_TO_EDGE
+            tex = Texture2D(data, format='rgba')
+            tex.interpolation = 'nearest'
+            tex.wrapping = 'clamp_to_edge'
             self.comp_texs.append(tex)
         self.fbo_to[0].color_buffer = self.comp_texs[0]
         self.fbo_to[1].color_buffer = self.comp_texs[1]

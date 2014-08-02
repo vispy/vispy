@@ -6,8 +6,21 @@ import numpy as np
 from nose.tools import assert_equal, assert_raises, assert_true
 from numpy.testing import assert_array_equal, assert_allclose
 
-from vispy.color import ColorArray, LinearGradient, get_color_names
+from vispy.color import Color, ColorArray, LinearGradient, get_color_names
 from vispy.util import use_log_level
+
+
+def test_color():
+    """Basic tests for Color class"""
+    x = Color('white')
+    assert_array_equal(x.rgba, [1.] * 4)
+    assert_array_equal(x.rgb, [1.] * 3)
+    assert_array_equal(x.RGBA, [255] * 4)
+    assert_array_equal(x.RGB, [255] * 3)
+    assert_equal(x.value, 1.)
+    assert_equal(x.alpha, 1.)
+    x.rgb = [0, 0, 1]
+    assert_array_equal(x.hsv, [240, 1, 1])
 
 
 def test_color_interpretation():
@@ -124,13 +137,14 @@ def test_color_conversion():
     assert_equal(test, ColorArray('black'))
     c = ColorArray('black')
     assert_array_equal(c.hsv.ravel(), (0, 0, 0))
+    rng = np.random.RandomState(0)
     for _ in range(50):
-        hsv = np.random.rand(3)
+        hsv = rng.rand(3)
         hsv[0] *= 360
         hsv[1] = hsv[1] * 0.99 + 0.01  # avoid ugly boundary effects
         hsv[2] = hsv[2] * 0.99 + 0.01
         c.hsv = hsv
-        assert_allclose(c.hsv.ravel(), hsv)
+        assert_allclose(c.hsv.ravel(), hsv, rtol=1e-4, atol=1e-4)
 
     # Lab
     test = ColorArray()
@@ -141,7 +155,7 @@ def test_color_conversion():
         assert_allclose(test.lab.ravel(), lab_dict[key], atol=1e-4, rtol=1e-4)
     for _ in range(50):
         # boundaries can have ugly rounding errors in some parameters
-        rgb = np.random.rand(3)[np.newaxis, :] * 0.9 + 0.05
+        rgb = (rng.rand(3)[np.newaxis, :] * 0.9 + 0.05)
         c.rgb = rgb
         lab = c.lab
         c.lab = lab

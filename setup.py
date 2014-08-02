@@ -34,6 +34,7 @@ Announcing:
 
 import os
 from os import path as op
+
 try:
     # use setuptools namespace, allows for "develop"
     import setuptools  # noqa, analysis:ignore
@@ -90,10 +91,12 @@ setup(
         'vispy.scene.components',
         'vispy.scene.shaders', 'vispy.scene.shaders.tests',
         'vispy.scene.visuals',
+        'vispy.scene.visuals.text',
         'vispy.scene.widgets',
         'vispy.testing', 'vispy.testing.tests',
         'vispy.util', 'vispy.util.tests',
-        'vispy.util.dataio', 'vispy.util.geometry'
+        'vispy.util.dataio', 'vispy.util.geometry',
+        'vispy.util.fonts', 'vispy.util.fonts.tests',
     ],
     package_dir={
         'vispy': 'vispy'},

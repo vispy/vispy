@@ -129,55 +129,29 @@ class ViewBox(Widget):
         needed to project the subscene in our viewbox rectangle. Also
         we handle setting a viewport if requested.
         """
-
+        
         # todo: we could consider including some padding
         # so that we have room *inside* the viewbox to draw ticks and stuff
-
-        # --  Calculate viewbox transformation
-
-        # Get the sign of the camera transform of the parent scene. We
-        # cannot look at full_transform, since the ViewBox may just be
-        # really upside down (intended). The camera transform defines
-        # the direction of the dimensions of the coordinate frame.
-        # todo: get this sign information in a more effective manner
-        # than we can probably also get rid of storing viewbox on event!
-        parent_viewbox = event.viewbox
-        if parent_viewbox:
-            s = parent_viewbox.camera.get_projection(event) * STTransform()
-            signx = 1 if s.scale[0] > 0 else -1
-            signy = 1 if s.scale[1] > 0 else -1
-        else:
-            signx, signy = 1, 1
-
-        # Determine transformation to make NDC coords (-1..1) map to
-        # the viewbox region. The translation is equivalent to doing a
-        # (1, 1) shift *after* the scale.
-        size = self.size
-        trans = STTransform()
-        trans.scale = signx * size[0] / 2, signy * size[1] / 2
-        trans.translate = size[0] / 2, size[1] / 2
-
-        # Set this transform at the scene
-        self.scene.viewbox_transform = trans
-
+        
         # -- Calculate resolution
-
+        
         # Get current transform and calculate the 'scale' of the viewbox
+        size = self.size
         transform = event.full_transform
         p0, p1 = transform.map((0, 0)), transform.map(size)
-        sx, sy = p1[0] - p0[0], p1[1] - p0[1]
-
-        # From the viewbox scale, we can calculate the resolution. Note that
-        # the viewbox scale (sx, sy) applies to the root.
-        # todo: we should probably take rotation into account here ...
-        canvas_res = event.canvas.size  # root resolution
-        w = abs(sx * canvas_res[0] * 0.5)
-        h = abs(sy * canvas_res[1] * 0.5)
+        res = (p1 - p0)[:2]
+        res = abs(res[0]), abs(res[1])
 
         # Set resolution (note that resolution can be non-integer)
-        self._resolution = w, h
-        #print(getattr(self, '_name', ''), w, h)
-
+        self._resolution = res
+        
+        # -- Set the viewbox_transform 
+        
+        # Map our resolution in pixels to our size
+        mapfrom = (0, 0), res
+        mapto = (0, 0), size
+        self.scene.viewbox_transform = STTransform.from_mapping(mapfrom, mapto)
+        
         # -- Get user clipping preference
 
         prefer = self.preferred_clip_method
@@ -189,44 +163,40 @@ class ViewBox(Widget):
         elif prefer == 'fragment':
             raise NotImplementedError('No fragment shader clipping yet.')
         elif prefer == 'viewport':
-            viewport = self._prepare_viewport(event, w, h, signx, signy)
+            viewport = self._prepare_viewport(event)
         elif prefer == 'fbo':
             fbo = self._prepare_fbo(event)
 
         # -- Draw
+        super(ViewBox, self).draw(event)
 
         event.push_viewbox(self)
 
         if fbo:
-            # Push FBO
-            shape = fbo.color_buffer.shape
-            rect = 0, 0, shape[1], shape[0]
-            transform = event.full_transform * self.scene.viewbox_transform
-            event.push_fbo(rect, fbo, transform.inverse())
-            #print(self._name, (event.render_transform #
-            #                   self.scene.viewbox_transform).simplify())
+            # Ask the canvas to activate the new FBO
+            offset = event.full_transform.map((0, 0))[:2]
+            size = event.full_transform.map(self.size)[:2] - offset
+            
+            event.push_fbo(fbo, offset, size)
+            
             # Clear bg color (handy for dev)
-            from vispy.gloo import gl
-            clrs = {'': (0.1, 0.1, 0.1),
-                    'vb1': (0.2, 0, 0),
-                    'vb11': (0.2, 0, 0.1), 'vb12': (0.2, 0, 0.2),
-                    'vb2': (0, 0.2, 0),
-                    'vb21': (0, 0.2, 0.1), 'vb22': (0, 0.2, 0.2)}
-            clr = clrs[getattr(self, '_name', '')]
-            # clrs[''] or clrs[getattr(self,'_name', '')]
-            gl.glClearColor(clr[0], clr[1], clr[2], 1.0)
+            from ...gloo import gl
+            gl.glClearColor(0, 0, 0, 0)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             # Process childen
             self.scene.draw(event)
             # Pop FBO and now draw the result
             event.pop_fbo()
+            gl.glDisable(gl.GL_CULL_FACE)
             self._myprogram.draw(gl.GL_TRIANGLE_STRIP)
 
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
-            self.scene.draw(event)
-            event.pop_viewport()
+            try:
+                self.scene.draw(event)
+            finally:
+                event.pop_viewport()
 
         else:
             # Just draw
@@ -234,26 +204,11 @@ class ViewBox(Widget):
             self.scene.draw(event)
 
         event.pop_viewbox()
-
-    def _prepare_viewport(self, event, w, h, signx, signy):
-        # Get whether the transform to here is translate-scale only
-        rtransform = event.render_transform
-        p0 = rtransform.map((0, 0))
-        px, py = rtransform.map((1, 0)), rtransform.map((0, 1))
-        dx, dy = py[0] - p0[0], px[1] - p0[1]
-
-        # Does the transform look scale-trans only?
-        if not (dx == 0 and dy == 0):
-            return None
-
-        # Transform from NDC to viewport coordinates
-        canvas_res = event.canvas.size
-        tx, ty = py[0], px[1]  # Translation of unit vector
-        x = (signx*0.5 + 0.5 + tx) * canvas_res[0] * 0.5
-        y = (signy*0.5 + 0.5 + ty) * canvas_res[1] * 0.5
-
-        # Round
-        return int(x+0.5), int(y+0.5), int(w+0.5), int(h+0.5)
+        
+    def _prepare_viewport(self, event):
+        p1 = event.map_to_fb((0, 0))
+        p2 = event.map_to_fb(self.size)
+        return p1[0], p1[1], p2[0]-p1[0], p2[1]-p1[1]
 
     def _prepare_fbo(self, event):
         """ Draw the viewbox via an FBO. This method can be applied
@@ -305,7 +260,10 @@ class ViewBox(Widget):
             self._tex.interpolation = gl.GL_LINEAR
             self._myprogram['u_texture'] = self._tex
             # Create texcoords and vertices
-            texcoord = np.array([[0, 0], [1, 0], [0, 1], [1, 1]],
+            # Note y-axis is inverted here because the viewbox coordinate
+            # system has origin in the upper-left, but the image is rendered
+            # to the framebuffer with origin in the lower-left.
+            texcoord = np.array([[0, 1], [1, 1], [0, 0], [1, 0]],
                                 dtype=np.float32)
             position = np.zeros((4, 3), np.float32)
             self._myprogram['a_texcoord'] = gloo.VertexBuffer(texcoord)
@@ -322,10 +280,10 @@ class ViewBox(Widget):
 
         # Set texture coords to make the texture be drawn in the right place
         # Note that we would just use -1..1 if we would use a Visual.
-        # Note that we need the viewbox transform here!
-        coords = (-1, -1, 0), (1, 1, 0)
-        transform = event.render_transform * self.scene.viewbox_transform
-        coords = [transform.map(c) for c in coords]
+        coords = [[0, 0], [self.size[0], self.size[1]]]
+        
+        transform = event.render_transform  # * self.scene.viewbox_transform
+        coords = transform.map(coords)
         x1, y1, z = coords[0][:3]
         x2, y2, z = coords[1][:3]
         vertices = np.array([[x1, y1, z], [x2, y1, z],
@@ -334,8 +292,7 @@ class ViewBox(Widget):
         self._vert.set_data(vertices)
 
         # Set fbo size (mind that this is set using shape!)
-        # +1 to create delibirate smoothing
-        resolution = [int(i+0.5+1) for i in self._resolution]  # set in draw()
+        resolution = [int(i+0.5) for i in self._resolution]  # set in draw()
         shape = resolution[1], resolution[0]
         fbo.color_buffer.resize(shape+(4,))
         fbo.depth_buffer.resize(shape)

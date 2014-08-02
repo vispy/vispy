@@ -43,7 +43,7 @@ class Line(ModularVisual):
             raise ValueError("Invalid line mode '%s'; must be 'lines' or "
                              "'line-strip'.")
 
-        if pos is not None or kwds:
+        if pos is not None or color is not None or z is not None:
             self.set_data(pos=pos, color=color, z=z)
 
     def set_data(self, pos=None, **kwds):

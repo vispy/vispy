@@ -102,7 +102,8 @@ def _test_module_properties(_module=None):
     # Test that all events seem to be emitted.
     # Get text
     fname = _module.__file__.strip('c')
-    text = open(fname, 'rb').read().decode('utf-8')
+    with open(fname, 'rb') as fid:
+        text = fid.read().decode('utf-8')
 
     canvas = vispy.app.Canvas(create_native=False, app=DummyApplication())
     # Stylus and touch are ignored because they are not yet implemented.
