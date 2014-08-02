@@ -10,14 +10,14 @@ from ..transforms import STTransform, NullTransform
 from .widget import Widget
 from ..subscene import SubScene
 from ...util.geometry import Rect
-from ..cameras import PerspectiveCamera, OrthoCamera
+from ..cameras import make_camera
 
 class ViewBox(Widget):
     """ Provides a rectangular window to which its subscene is rendered
     """
 
     def __init__(self, *args, **kwds):
-        self._viewer = None
+        self._camera = None
         
         Widget.__init__(self, *args, **kwds)
 
@@ -32,34 +32,29 @@ class ViewBox(Widget):
         self._scene = SubScene()
         self._scene.parent = self
         
-        # Viewer is a helper object that handles scene transformation
+        # Camera is a helper object that handles scene transformation
         # and user interaction.
-        self.viewer = PanZoomViewer()
+        self.camera = make_camera('panzoom')
 
     @property
-    def viewer(self):
-        return self._viewer
+    def camera(self):
+        return self._camera
     
-    @viewer.setter
-    def viewer(self, v):
-        if self._viewer is not None:
-            self._viewer.disconnect()
-        self._viewer = v
+    @camera.setter
+    def camera(self, v):
+        if self._camera is not None:
+            self._camera.disconnect()
+        self._camera = v
         v.viewbox = self
         
-    def set_viewer(self, vtype, *args, **kwds):
-        """ Create a new Viewer and attach it to this ViewBox. 
+    def set_camera(self, cam_type, *args, **kwds):
+        """ Create a new Camera and attach it to this ViewBox. 
         
-        *vtype* may be 'panzoom', 'camera', or None.
-        All other arguments are passed to the Viewer.__init__ method.
+        *cam_type* may be 'panzoom', 'turntable', or None.
+        All other arguments are passed to the Camera.__init__ method.
         """
-        viewer = {
-            None: Viewer,
-            'panzoom': PanZoomViewer,
-            'camera': CameraViewer,
-            }[vtype](*args, **kwds)
-        self.viewer = viewer
-        return viewer
+        self.camera = make_camera(cam_type, *args, **kwds)
+        return self.camera
 
     @property
     def bgcolor(self):
@@ -318,259 +313,3 @@ class ViewBox(Widget):
         return fbo
 
 
-class Viewer(object):
-    """
-    Helper class that handles setting the sub-scene transformation of a ViewBox
-    and reacts to user input.
-    """
-    def __init__(self):
-        self._viewbox = None
-        self._transform = NullTransform()
-
-    @property
-    def viewbox(self):
-        return self._viewbox
-    
-    @viewbox.setter
-    def viewbox(self, vb):
-        if self._viewbox is not None:
-            self.disconnec()
-        self._viewbox = vb
-        self.connect()
-        self.update()
-    
-    @property
-    def transform(self):
-        """
-        Transform to apply to the ViewBox's SubScene.
-        """
-        return self._transform
-        
-    @transform.setter
-    def transform(self, tr):
-        self._transform = tr
-        self.update()
-    
-    def connect(self):
-        self._viewbox.events.mouse_press.connect(self.mouse_event)
-        self._viewbox.events.mouse_release.connect(self.mouse_event)
-        self._viewbox.events.mouse_move.connect(self.mouse_event)
-        self._viewbox.events.mouse_wheel.connect(self.mouse_event)
-    
-    def disconnect(self):
-        """
-        Called by ViewBox.
-        
-        """
-        self._viewbox.events.mouse_press.disconnect(self.mouse_event)
-        self._viewbox.events.mouse_release.disconnect(self.mouse_event)
-        self._viewbox.events.mouse_move.disconnect(self.mouse_event)
-        self._viewbox.events.mouse_wheel.disconnect(self.mouse_event)
-    
-    def mouse_event(self, event):
-        """
-        The SubScene received a mouse event; update transform 
-        accordingly.
-        """
-        pass
-        
-    def resize_event(self, event):
-        """
-        The ViewBox was resized; update the transform accordingly.
-        """
-        pass
-        
-    def update(self):
-        """
-        Set the scene transform to match the Viewer's transform.
-        """
-        if self.viewbox is not None:
-            self.viewbox.scene.transform = self.transform
-        
-    
-class PanZoomViewer(Viewer):
-    """
-    Viewer implementing 2D pan/zoom mouse interaction. Primarily intended for
-    displaying plot data.
-    """
-    def __init__(self):
-        super(PanZoomViewer, self).__init__()
-        self._rect = Rect((0, 0), (1, 1))  # visible range in scene
-        self._transform = STTransform()
-        self._mouse_enabled = True
-        
-    @property
-    def mouse_enabled(self):
-        return self._mouse_enabled
-    
-    @mouse_enabled.setter
-    def mouse_enabled(self, b):
-        self._mouse_enabled = b
-    
-    def mouse_event(self, event):
-        """
-        The SubScene received a mouse event; update transform 
-        accordingly.
-        """
-        if event.handled or not self._mouse_enabled:
-            return
-        
-        if 1 in event.buttons:
-            p1 = np.array(event.last_event.pos)[:2]
-            p2 = np.array(event.pos)[:2]
-            p1s = self.transform.imap(p1)
-            p2s = self.transform.imap(p2)
-            self.rect = self.rect + (p1s-p2s)
-            event.handled = True
-        elif 2 in event.buttons:
-            # todo: just access the original event position, rather
-            # than mapping to the viewbox and back again.
-            p1 = np.array(event.last_event.pos)[:2]
-            p2 = np.array(event.pos)[:2]
-            p1c = event.map_to_canvas(p1)[:2]
-            p2c = event.map_to_canvas(p2)[:2]
-            
-            s = 1.03 ** ((p1c-p2c) * np.array([1, -1]))
-            center = self.transform.imap(event.press_event.pos[:2])
-            # TODO: would be nice if STTransform had a nice scale(s, center) 
-            # method like AffineTransform.
-            transform = (STTransform(translate=center) * 
-                         STTransform(scale=s) * 
-                         STTransform(translate=-center))
-            
-            self.rect = transform.map(self.rect)
-            event.handled = True
-        
-        if event.handled:
-            self.update()
-
-    def resize_event(self, event):
-        self.update()
-
-    @property
-    def rect(self):
-        return self._rect
-        #return self.transform.imap(self.viewbox.rect)
-        
-    @rect.setter
-    def rect(self, args):
-        """
-        Set the bounding rect of the visible area in the subscene. 
-        
-        By definition, the +y axis of this rect is opposite the +y axis of the
-        ViewBox. 
-        """
-        if isinstance(args, tuple):
-            self._rect = Rect(*args)
-        else:
-            self._rect = Rect(args)
-        self.update()
-        
-    def update(self):
-        if self.viewbox is not None:
-            vbr = self.viewbox.rect.flipped(y=True, x=False)
-            self.transform.set_mapping(self.rect, vbr)
-        super(PanZoomViewer, self).update()
-
-        
-class CameraViewer(Viewer):
-    """
-    Viewer that generates its transform from a Camera Entity placed inside the 
-    scene.
-    """
-    def __init__(self, elevation=45, azimuth=0, distance=10, center=(0, 0, 0), 
-                 fov=60, near=-1e6, far=1e6):
-        super(CameraViewer, self).__init__()
-        self._camera = None
-        self.camera = OrthoCamera()
-        self.camera.set_perspective(width=fov, height=fov, near=near, far=far)
-        self.elevation = elevation
-        self.azimuth = azimuth
-        self.distance = distance
-        self.center = center
-        self.fov = fov
-    
-    @property
-    def camera(self):
-        """ The camera associated with this Viewer.
-        """
-        return self._camera
-
-    @camera.setter
-    def camera(self, cam):
-        if self._camera is not None:
-            trc = self._camera.events.transform_change
-            trc.disconnect(self._update_transform)
-        # convenience: set parent if it's an orphan
-        if not cam.parents and self.viewbox is not None:
-            cam.parent = self.viewbox.scene
-        self._camera = cam
-        self._camera.events.transform_change.connect(self._update_transform)
-        self._update_transform()
-
-    @property
-    def viewbox(self):
-        return self._viewbox
-    
-    @viewbox.setter
-    def viewbox(self, vb):
-        Viewer.viewbox.fset(self, vb)
-        if not self.camera.parents:
-            self.camera.parent = vb.scene
-        self._update_transform()
-
-    def orbit(self, azim, elev):
-        """Orbits the camera around the center position. 
-        *azim* and *elev* are given in degrees."""
-        self.azimuth += azim
-        self.elevation = np.clip(self.elevation + elev, -90, 90)
-        self._update_transform()
-        
-    def mouse_event(self, event):
-        """
-        The SubScene received a mouse event; update transform 
-        accordingly.
-        """
-        if event.handled:
-            return
-        
-        if event.type == 'mouse_wheel':
-            self.fov = self.fov * (1.1**-event.delta[1])
-            self._update_transform()
-        elif event.type == 'mouse_move' and 1 in event.buttons:
-            p1 = np.array(event.last_event.pos)[:2]
-            p2 = np.array(event.pos)[:2]
-            p1c = event.map_to_canvas(p1)[:2]
-            p2c = event.map_to_canvas(p2)[:2]
-            d = p2c - p1c
-            
-            self.orbit(-d[0], d[1])
-        
-    def resize_event(self, event):
-        self._update_transform()
-    
-    def _update_transform(self, event=None):
-        if self.viewbox is not None:
-            # don't loop back to this method while modifying the transform.
-            ch_em = self._camera.events.transform_change
-            with ch_em.blocker(self._update_transform):
-                tr = self.camera.transform
-                tr.reset()
-                tr.translate(0.0, 0.0, -self.distance)
-                tr.rotate(self.azimuth, (0, 1, 0))
-                tr.rotate(self.elevation, (-1, 0, 0))
-                tr.translate(-np.array(self.center))
-            
-            vbs = self.viewbox.size
-            #self.camera.set_perspective(aspect=(vbs[0] / vbs[1]))
-            self.camera.set_perspective(width=self.fov,
-                                        height=self.fov * (vbs[1] / vbs[0]))
-            unit = [[-1, 1], [1, -1]]
-            vrect = [[0, 0], self.viewbox.size]
-            viewbox_tr = STTransform.from_mapping(unit, vrect)
-            proj_tr = self.camera.get_projection()
-            cam_tr = self.camera.entity_transform(self.viewbox.scene) 
-            
-            self.transform = viewbox_tr * proj_tr * cam_tr
-
-    
