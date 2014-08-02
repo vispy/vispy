@@ -85,6 +85,8 @@ class Camera(Entity):
         """
         Called by subclasses to configure the viewbox scene transform.
         """
+        # todo: check whether transform has changed, connect to 
+        # transform.changed event
         self._scene_transform = tr
         self.update()
     
@@ -131,7 +133,7 @@ class PanZoomCamera(Camera):
     def __init__(self):
         super(PanZoomCamera, self).__init__()
         self._rect = Rect((0, 0), (1, 1))  # visible range in scene
-        self._scene_transform = STTransform()
+        self.transform = STTransform()
         
     def view_mouse_event(self, event):
         """
@@ -141,37 +143,51 @@ class PanZoomCamera(Camera):
         if event.handled or not self.interactive:
             return
         
-        if 1 in event.buttons:
-            p1 = np.array(event.last_event.pos)[:2]
-            p2 = np.array(event.pos)[:2]
-            p1s = self._scene_transform.imap(p1)
-            p2s = self._scene_transform.imap(p2)
-            self.rect = self.rect + (p1s-p2s)
+        if event.type == 'mouse_wheel':
+            scale = 1.1 ** -event.delta[1]
+            center = self._scene_transform.imap(event.pos[:2])
+            self.zoom((scale, scale), center)
             event.handled = True
-        elif 2 in event.buttons:
-            # todo: just access the original event position, rather
-            # than mapping to the viewbox and back again.
-            p1 = np.array(event.last_event.pos)[:2]
-            p2 = np.array(event.pos)[:2]
-            p1c = event.map_to_canvas(p1)[:2]
-            p2c = event.map_to_canvas(p2)[:2]
             
-            s = 1.03 ** ((p1c-p2c) * np.array([1, -1]))
-            center = self._scene_transform.imap(event.press_event.pos[:2])
-            # TODO: would be nice if STTransform had a nice scale(s, center) 
-            # method like AffineTransform.
-            transform = (STTransform(translate=center) * 
-                         STTransform(scale=s) * 
-                         STTransform(translate=-center))
-            
-            self.rect = transform.map(self.rect)
-            event.handled = True
+        elif event.type == 'mouse_move':
+            if 1 in event.buttons:
+                p1 = np.array(event.last_event.pos)[:2]
+                p2 = np.array(event.pos)[:2]
+                p1s = self._scene_transform.imap(p1)
+                p2s = self._scene_transform.imap(p2)
+                self.pan(p1s-p2s)
+                event.handled = True
+            elif 2 in event.buttons:
+                # todo: just access the original event position, rather
+                # than mapping to the viewbox and back again.
+                p1 = np.array(event.last_event.pos)[:2]
+                p2 = np.array(event.pos)[:2]
+                p1c = event.map_to_canvas(p1)[:2]
+                p2c = event.map_to_canvas(p2)[:2]
+                
+                scale = 1.03 ** ((p1c-p2c) * np.array([1, -1]))
+                center = self._scene_transform.imap(event.press_event.pos[:2])
+                
+                self.zoom(scale, center)
+                event.handled = True
         
         if event.handled:
-            self.update()
+            self._update_transform()
+
+    def zoom(self, zoom, center):
+        # TODO: would be nice if STTransform had a nice scale(s, center) 
+        # method like AffineTransform.
+        transform = (STTransform(translate=center) * 
+                    STTransform(scale=zoom) * 
+                    STTransform(translate=-center))
+        
+        self.rect = transform.map(self.rect)
+        
+    def pan(self, pan):
+        self.rect = self.rect + pan
 
     def view_resize_event(self, event):
-        self.update()
+        self._update_transform()
 
     @property
     def rect(self):
@@ -190,12 +206,13 @@ class PanZoomCamera(Camera):
             self._rect = Rect(*args)
         else:
             self._rect = Rect(args)
-        self.update()
+        self._update_transform()
         
-    def update(self):
+    def _update_transform(self):
         if self.viewbox is not None:
             vbr = self.viewbox.rect.flipped(y=True, x=False)
-            self._scene_transform.set_mapping(self.rect, vbr)
+            self.transform.set_mapping(self.rect, vbr)
+            self._set_scene_transform(self.transform)
         super(PanZoomCamera, self).update()
 
         
@@ -225,18 +242,6 @@ class PerspectiveCamera(Camera):
         # camera transform
         self.transform = AffineTransform()
     
-    #@camera.setter
-    #def camera(self, cam):
-        #if self._camera is not None:
-            #trc = self._camera.events.transform_change
-            #trc.disconnect(self._update_transform)
-        ## convenience: set parent if it's an orphan
-        #if not cam.parents and self.viewbox is not None:
-            #cam.parent = self.viewbox.scene
-        #self._camera = cam
-        #self._camera.events.transform_change.connect(self._update_transform)
-        #self._update_transform()
-
     @property
     def viewbox(self):
         return self._viewbox
@@ -352,105 +357,3 @@ class ArcballCamera(PerspectiveCamera):
 class FirstPersonCamera(PerspectiveCamera):
     pass
 
-
-
-
-
-#class PerspectiveCamera(Camera):
-    #"""
-    #In progress.
-
-    #"""
-    #def __init__(self, parent=None):
-        #super(PerspectiveCamera, self).__init__(parent)
-    
-    #@property
-    #def pos(self):
-        #raise NotImplementedError()
-    
-    #@pos.setter
-    #def pos(self, pos):
-        #self.transform.reset()
-        #self.transform.translate(pos)
-
-    #def set_perspective(self, **kwds):
-        #self._perspective.update(kwds)
-        ## update camera here
-        #ar = self._perspective['aspect']
-        #near = self._perspective['near']
-        #far = self._perspective['far']
-        #fov = self._perspective['fov']
-        #self._projection.set_perspective(fov, ar, near, far)
-        #self.events.projection_change()
-
-    #def set_ortho(self, **kwds):
-        #self._perspective.update(kwds)
-        ## update camera here
-        #ar = self._perspective['aspect']
-        #near = self._perspective['near']
-        #far = self._perspective['far']
-        #fov = self._perspective['fov']
-        #self._projection.set_perspective(fov, ar, near, far)
-        #self.events.projection_change()
-
-    #def _update_transform(self):
-        ## create transform based on look, near, far, fov, and top.
-        #self._projection.set_perspective(origin=(0, 0, 0), **self.perspective)
-
-    #def get_projection(self):
-        #return self._projection
-
-    #def view_mouse_event(self, event):
-        #"""
-        #An attached ViewBox received a mouse event;
-
-        #"""
-        #pass
-
-#class OrthoCamera(Camera):
-    #"""
-    #In progress.
-
-    #"""
-    #def __init__(self, parent=None):
-        #super(OrthoCamera, self).__init__(parent)
-        #self._projection = AffineTransform()
-        #self.transform = AffineTransform()
-        ## TODO: allow self.look to be derived from an Anchor
-        #self._perspective = {
-            #'near': 1e-6,
-            #'far': 1e6,
-            #'width': 10,
-            #'height': 10,
-            #}
-    
-    #@property
-    #def pos(self):
-        #raise NotImplementedError()
-    
-    #@pos.setter
-    #def pos(self, pos):
-        #self.transform.reset()
-        #self.transform.translate(pos)
-
-    #def set_perspective(self, **kwds):
-        #self._perspective.update(kwds)
-        ## update camera here
-        #near = self._perspective['near']
-        #far = self._perspective['far']
-        #width = self._perspective['width']
-        #height = self._perspective['height']
-        #self._projection.set_ortho(-width/2., width/2., 
-                                   #-height/2., height/2., 
-                                   #near, far)
-        #self.events.projection_change()
-
-    #def get_projection(self):
-        #return self._projection
-
-    #def view_mouse_event(self, event):
-        #"""
-        #An attached ViewBox received a mouse event;
-
-        #"""
-        #pass
