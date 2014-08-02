@@ -128,7 +128,8 @@ class Rect(object):
     def __eq__(self, r):
         if not isinstance(r, Rect):
             return False
-        return r.pos == self.pos and r.size == self.size
+        return (np.all(np.equal(r.pos, self.pos)) and 
+                np.all(np.equal(r.size, self.size)))
 
     def __add__(self, a):
         """ Return this Rect translated by *a*.
