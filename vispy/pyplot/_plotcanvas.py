@@ -17,14 +17,16 @@ from ..scene.transforms import STTransform
 class PanZoomTransform(STTransform):
     pan = (0., 0.)
 
-    def move(self, dx, dy):
+    def move(self, d):
+        dx, dy = d
         """I call this when I want to translate."""
         self.pan = (self.pan[0] + dx/self.scale[0],
                     self.pan[1] + dy/self.scale[1])
         self.translate = (self.pan[0]*self.scale[0],
                           self.pan[1]*self.scale[1])
 
-    def zoom(self, (dx, dy), center=(0., 0.)):
+    def zoom(self, d, center=(0., 0.)):
+        dx, dy = d
         """I call this when I want to zoom."""
         scale = (self.scale[0] * np.exp(2.5*dx),
                  self.scale[1] * np.exp(2.5*dy))
@@ -161,7 +163,8 @@ class PlotCanvas(app.Canvas):
         self._visuals = OrderedDict()
         self.panzoom = PanZoomTransform()
 
-    def _normalize(self, (x, y)):
+    def _normalize(self, pos):
+        x, y = pos
         w, h = float(self.size[0]), float(self.size[1])
         return x/(w/2.)-1., y/(h/2.)-1.
 
