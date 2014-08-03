@@ -300,8 +300,8 @@ class ChainTransform(Transform):
 
     transforms : list of Transform instances
     """
-    glsl_map = ""
-    glsl_imap = ""
+    glsl_map = None
+    glsl_imap = None
 
     Linear = False
     Orthogonal = False
