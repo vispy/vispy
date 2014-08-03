@@ -87,6 +87,7 @@ setup(
         'vispy.ext',
         'vispy.gloo', 'vispy.gloo.tests',
         'vispy.gloo.gl', 'vispy.gloo.gl.tests',
+        'vispy.pyplot', 'vispy.pyplot.tests',
         'vispy.scene', 'vispy.scene.tests',
         'vispy.scene.components',
         'vispy.scene.shaders', 'vispy.scene.shaders.tests',

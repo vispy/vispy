@@ -145,6 +145,16 @@ install:
         fi;
         pip install -q PySDL2;
       fi;
+
+    # Install mplexporter
+    - if [ "${DEPS}" == "full" ]; then
+        cd ~;
+        git clone git://github.com/mpl3d/mplexporter.git;
+        cd mplexporter;
+        python setup.py install mplexporter;
+        cd ..;
+      fi;
+
     # after manual builds we need to update .so search
     - sudo ldconfig
 
