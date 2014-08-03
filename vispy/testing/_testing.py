@@ -7,6 +7,7 @@
 from __future__ import print_function
 
 import numpy as np
+import sys
 import os
 import subprocess
 import inspect
@@ -206,7 +207,10 @@ def glut_skip():
 def requires_img_lib():
     """Decorator for tests that require an image library"""
     from ..util.dataio import _check_img_lib
-    has_img_lib = not all(c is None for c in _check_img_lib())
+    if sys.platform.startswith('win'):
+        has_img_lib = False  # PIL breaks tests on windows (!)
+    else:
+        has_img_lib = not all(c is None for c in _check_img_lib())
     return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
 
 
@@ -265,12 +269,12 @@ def assert_image_equal(image, reference):
         'The filename on the remote ``test-data`` repository to download'
     """
     from ..gloo.util import _screenshot
-    from ..util.dataio import imread
+    from ..util.dataio import read_png
     from ..util import get_testing_file
 
     if image == "screenshot":
         image = _screenshot(alpha=False)
-    ref = imread(get_testing_file(reference))
+    ref = read_png(get_testing_file(reference))
 
     slices = [slice(0, -1), slice(0, None), slice(1, None)]
     min_diff = np.inf

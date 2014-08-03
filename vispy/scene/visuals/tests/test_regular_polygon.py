@@ -8,11 +8,10 @@ All images are of size (100,100) to keep a small file size
 from vispy import gloo
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, assert_image_equal,
-                           requires_img_lib, TestingCanvas)
+                           TestingCanvas)
 
 
 @requires_application()
-@requires_img_lib()
 def test_regular_polygon_draw1():
     """Test drawing regular polygons without transforms using RegularPolygonVisual"""  # noqa
     with TestingCanvas():
@@ -36,7 +35,6 @@ def test_regular_polygon_draw1():
 
 
 @requires_application()
-@requires_img_lib()
 def test_regular_polygon_draw2():
     """Test drawing transformed regular polygons using RegularPolygonVisual"""  # noqa
     with TestingCanvas():
@@ -53,7 +51,7 @@ def test_regular_polygon_draw2():
         rpolygon.transform = transforms.STTransform(scale=(1.5, 2.0))
         rpolygon.draw()
         assert_image_equal("screenshot", 'visuals/regular_polygon5.png')
-       
+
         gloo.clear()
         rpolygon = visuals.RegularPolygon(pos=(0., 0.), radius=0.4, sides=8,
                                           border_color=(1, 0, 0, 1))

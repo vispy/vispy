@@ -84,10 +84,10 @@ class Variable(GLObject):
 
         # Name of this variable in the program
         self._name = name
-        check = check_variable(name) 
+        check = check_variable(name)
         if check:
-            logger.warn('Invalid variable name "%s". (%s)' 
-                        % (name, check))
+            logger.warning('Invalid variable name "%s". (%s)'
+                           % (name, check))
 
         # Build dtype
         size, _, base = gl_typeinfo[gtype]

@@ -165,7 +165,7 @@ class Application(object):
                            'multiple GUI toolkits simultaneously can cause '
                            'side effects.' % 
                            (native_module_name, name, str(mod.why_not))) 
-                    logger.warn(msg)
+                    logger.warning(msg)
                 else:
                     # Inform otherwise
                     logger.info(msg)

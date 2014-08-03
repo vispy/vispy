@@ -98,6 +98,25 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
                                  name)
 
 
+def read_png(filename):
+    """Helper to read a PNG file to RGB8 or RGBA8 (with no external deps)"""
+    from ...ext.png import Reader
+    x = Reader(filename)
+    try:
+        alpha = x.asDirect()[3]['alpha']
+        if alpha:
+            y = x.asRGBA8()[2]
+            n = 4
+        else:
+            y = x.asRGB8()[2]
+            n = 3
+        y = np.array([yy for yy in y], np.uint8)
+    finally:
+        x.file.close()
+    y.shape = (y.shape[0], y.shape[1] // n, n)
+    return y
+
+
 def imread(filename, format=None):
     """ Function to read image data. Requires imageio or PIL.
     """

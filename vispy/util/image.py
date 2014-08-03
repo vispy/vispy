@@ -32,6 +32,8 @@ def make_png(data, level=6):
     png : array
         PNG formatted array
     """
+    # Eventually we might want to use ext/png.py for this, but this
+    # routine *should* be faster b/c it's speacialized for our use case
 
     def mkchunk(data, name):
         if isinstance(data, np.ndarray):
@@ -39,10 +41,13 @@ def make_png(data, level=6):
         else:
             size = len(data)
         chunk = np.empty(size + 12, dtype=np.ubyte)
-        chunk.data[0:4] = struct.pack('!I', size)
-        chunk.data[4:8] = name  # b'CPXS' # critical, public, standard, safe
+        chunk.data[0:4] = np.array(size, '>u4').tostring()
+        chunk.data[4:8] = name.encode('ASCII')
         chunk.data[8:8 + size] = data
-        chunk.data[-4:] = struct.pack('!i', zlib.crc32(chunk[4:-4]))
+        # and-ing may not be necessary, but is done for safety:
+        # https://docs.python.org/3/library/zlib.html#zlib.crc32
+        chunk.data[-4:] = np.array(zlib.crc32(chunk[4:-4]) & 0xffffffff,
+                                   '>i4').tostring()
         return chunk
 
     if data.dtype != np.ubyte:

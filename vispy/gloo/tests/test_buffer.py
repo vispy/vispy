@@ -6,6 +6,7 @@
 import unittest
 import numpy as np
 
+from vispy.util import use_log_level
 from vispy.gloo import gl
 from vispy.gloo.buffer import Buffer, DataBuffer, VertexBuffer, IndexBuffer
 
@@ -201,7 +202,9 @@ class DataBufferTest(unittest.TestCase):
         data = np.ones(100, np.float32)
         data_given = data[::2]
         
-        B = DataBuffer(data_given, store=True)
+        with use_log_level('warning', record=True, print_msg=False) as l:
+            B = DataBuffer(data_given, store=True)
+        assert len(l) == 1
         assert B._data is not data_given
         assert B.stride == 4
         

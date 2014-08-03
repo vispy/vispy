@@ -6,6 +6,7 @@
 import unittest
 import numpy as np
 
+from vispy.util import use_log_level
 from vispy.gloo.texture import Texture, Texture1D, Texture2D, Texture3D
 from vispy.gloo import gl
 from vispy.testing import requires_pyopengl
@@ -39,7 +40,9 @@ class TextureTest(unittest.TestCase):
     # ---------------------------------
     def test_init_non_contiguous_data(self):
         data = np.zeros((10, 10), dtype=np.uint8)
-        T = Texture(data=data[::2, ::2])
+        with use_log_level('warning', record=True, print_msg=False) as l:
+            T = Texture(data=data[::2, ::2])
+        assert len(l) == 1
         assert T._shape == (5, 5)
         assert T._dtype == np.uint8
         assert T._offset == (0, 0)

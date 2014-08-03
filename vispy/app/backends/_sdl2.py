@@ -212,8 +212,8 @@ class CanvasBackend(BaseCanvasBackend):
         flags |= sdl2.SDL_WINDOW_BORDERLESS if not dec else 0
         if fs is not False:
             if isinstance(fs, int):
-                logger.warn('Cannot specify monitor number for SDL2 '
-                            'fullscreen, using default')
+                logger.warning('Cannot specify monitor number for SDL2 '
+                               'fullscreen, using default')
             flags |= sdl2.SDL_WINDOW_FULLSCREEN
         self._mods = list()
         if position is None:
@@ -315,6 +315,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Force the window or widget to shut down
         if self._id is not None:
             _id = self._id.window
+            self._vispy_canvas = None
             self._id = None
             sdl2.SDL_DestroyWindow(_id)
             del _VP_SDL2_ALL_WINDOWS[self._sdl_id]

@@ -566,7 +566,7 @@ class WarningEmitter(EventEmitter):
             return
 
         traceback.print_stack()
-        logger.warn(self._message)
+        logger.warning(self._message)
         self._warned = True
 
 

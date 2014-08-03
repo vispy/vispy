@@ -97,8 +97,8 @@ def glShaderSource_compat(handle, code):
     for line in code.splitlines():
         if line.startswith('#version'):
             write_version = False
-            logger.warn('For compatibility accross different GL backends, ' +
-                        'avoid using the #version pragma.')
+            logger.warning('For compatibility accross different GL backends, '
+                           'avoid using the #version pragma.')
     if write_version:
         code = '#version 120\n#line 0\n' + code
 

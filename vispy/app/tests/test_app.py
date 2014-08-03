@@ -191,10 +191,15 @@ def test_application():
         print(canvas)  # __repr__
         assert_equal(canvas.title, title)
         canvas.title = 'you'
-        if app.backend_module.capability['position']:
-            # todo: disable more tests based on capability
-            canvas.position = pos
-        canvas.size = size
+        with use_log_level('warning', record=True, print_msg=False) as l:
+            if app.backend_module.capability['position']:
+                # todo: disable more tests based on capability
+                canvas.position = pos
+            canvas.size = size
+        if 'ipynb_vnc' in canvas.app.backend_name.lower():
+            assert_true(len(l) >= 1)
+        else:
+            assert_true(len(l) == 0)
         canvas.connect(on_mouse_move)
         assert_raises(ValueError, canvas.connect, _on_mouse_move)
         if sys.platform != 'darwin':  # XXX knownfail, prob. needs warmup
@@ -203,7 +208,7 @@ def test_application():
         app.process_events()
         assert_raises(ValueError, canvas.connect, on_nonexist)
         # deprecation of "paint"
-        with use_log_level('info', record=True) as log:
+        with use_log_level('info', record=True, print_msg=False) as log:
             olderr = sys.stderr
             try:
                 with open(os.devnull, 'w') as fid:
@@ -328,10 +333,14 @@ def test_fs():
     assert_raises(TypeError, Canvas, fullscreen='foo')
     if a.backend_name.lower() in ('glfw', 'sdl2'):  # takes over screen
         raise SkipTest('glfw and sdl2 take over screen')
-    with Canvas(fullscreen=True):
-        pass
-    with Canvas(fullscreen=0):
-        pass
+    with use_log_level('warning', record=True, print_msg=False) as l:
+        with Canvas(fullscreen=True):
+            pass
+    assert_equal(len(l), 0)
+    with use_log_level('warning', record=True, print_msg=False):
+        # some backends print a warning b/c fullscreen can't be specified
+        with Canvas(fullscreen=0):
+            pass
 
 
 @requires_application()
