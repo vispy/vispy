@@ -23,13 +23,32 @@ class RegularPolygon(Ellipse):
     def __init__(self, pos=None, color=(0, 0, 0, 0), border_color=None,
                  radius=0.1, sides=4, **kwds):
         super(Ellipse, self).__init__()
+        self._pos = pos
+        self._color = color
+        self._border_color = border_color
+        self._radius = radius
+        self._sides = sides
+        self._update()
 
-        if pos is not None or kwds:
-            self._generate_vertices(pos=pos, radius=radius,
+    @property
+    def sides(self):
+        """ The number of sides in the regular polygon.
+        """
+        return self._sides
+
+    @sides.setter
+    def sides(self, sides):
+        self._sides = sides
+        self._update()
+
+    def _update(self):
+        if self._pos is not None:
+            self._generate_vertices(pos=self._pos, radius=self._radius,
                                     start_angle=0.,
                                     span_angle=360.,
-                                    num_segments=sides)
-            self.mesh = Mesh(pos=self._vertices, color=color)
+                                    num_segments=self._sides)
+            self.mesh = Mesh(pos=self._vertices, color=self._color)
             self.mesh._primitive = gloo.gl.GL_TRIANGLE_FAN
-            if border_color:
-                self.border = Line(pos=self._vertices[1:], color=border_color)
+            if self._border_color:
+                self.border = Line(pos=self._vertices[1:],
+                                   color=self._border_color)

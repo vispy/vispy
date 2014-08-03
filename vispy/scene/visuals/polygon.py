@@ -32,14 +32,7 @@ class Polygon(Visual):
         self._color = color
         self._border_color = border_color
         self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
-        if self._pos is not None or kwds:
-            self.data.triangulate()
-            self.mesh = Mesh(pos=self.data.vertices[self.data.faces],
-                             color=self._color)
-            if self._border_color:
-                border_pos = self.data.vertices[self.data.convex_hull]
-                self.border = Line(pos=border_pos, color=self._border_color,
-                                   mode='lines')
+        self._update()
         #glopts = kwds.pop('gl_options', 'translucent')
         #self.set_gl_options(glopts)
 

@@ -33,16 +33,7 @@ default: (1,1)
         self._start_angle = start_angle
         self._span_angle = span_angle
         self._num_segments = num_segments
-        if self._pos is not None or kwds:
-            self._generate_vertices(pos=self._pos, radius=self._radius,
-                                    start_angle=self._start_angle,
-                                    span_angle=self._span_angle,
-                                    num_segments=self._num_segments)
-            self.mesh = Mesh(pos=self._vertices, color=self._color)
-            self.mesh._primitive = gloo.gl.GL_TRIANGLE_FAN
-            if self._border_color:
-                self.border = Line(pos=self._vertices[1:],
-                                   color=self._border_color)
+        self._update()
 
     def _generate_vertices(self, pos, radius, start_angle, span_angle,
                            num_segments):
