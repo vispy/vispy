@@ -31,16 +31,16 @@ line_ndc = scene.visuals.Line(pos=pos.copy(), color=color)
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
 
-vb1 = scene.ViewBox(canvas.scene, border=(1, 1, 0, 1))
-vb1.preferred_clip_method = 'fbo'
+vb1 = scene.widgets.ViewBox(parent=canvas.scene, border=(1, 1, 0, 1))
+vb1.clip_method = 'fbo'
 vb1.pos = 20, 20
 vb1.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
 vb1.camera.rect = (-1.2, -2, 2.4, 4)
 
 line_ndc.add_parent(vb1.scene)
 
-vb2 = scene.ViewBox(canvas.scene, border=(0, 0, 1, 1))
-vb2.preferred_clip_method = 'viewport'
+vb2 = scene.widgets.ViewBox(parent=canvas.scene, border=(0, 0, 1, 1))
+vb2.clip_method = 'viewport'
 vb2.pos = canvas.size[0]/2. + 20, 20
 vb2.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
 vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30)

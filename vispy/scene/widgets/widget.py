@@ -96,6 +96,27 @@ class Widget(Visual):
         self.update()
 
     @property
+    def background(self):
+        """ The background color of the Widget.
+        """
+        return self._background
+
+    @background.setter
+    def background(self, value):
+        # Check / convert
+        value = [float(v) for v in value]
+        if len(value) < 3:
+            raise ValueError('background must be 3 or 4 floats.')
+        elif len(value) == 3:
+            value.append(1.0)
+        elif len(value) == 4:
+            pass
+        else:
+            raise ValueError('background must be 3 or 4 floats.')
+        # Set
+        self._background = tuple(value)
+
+    @property
     def margin(self):
         return self._margin
 

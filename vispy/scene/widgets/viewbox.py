@@ -6,38 +6,74 @@ from __future__ import division
 
 import numpy as np
 
-from ..transforms import STTransform, NullTransform
 from .widget import Widget
 from ..subscene import SubScene
 from ...util.geometry import Rect
-from ..cameras import make_camera
+from ..cameras import make_camera, Camera
+from ...ext.six import string_types
+
 
 class ViewBox(Widget):
-    """ Provides a rectangular window to which its subscene is rendered
+    """ Provides a rectangular widget to which its subscene is rendered.
+    
+    Three classes work together when using a ViewBox:
+    * The :class:`SubScene` class describes a "world" coordinate system and the
+    entities that live inside it. 
+    * ViewBox is a "window" through which we view the
+    subscene. Multiple ViewBoxes may view the same subscene.
+    * :class:`Camera` describes both the perspective from which the 
+    subscene is rendered, and the way user interaction affects that 
+    perspective. 
+    
+    In general it is only necessary to create the ViewBox; a SubScene and 
+    Camera will be generated automatically.
+    
+    Parameters
+    ----------
+    camera : None, :class:`Camera`, or str
+        The camera through which to view the SubScene. If None, then a 
+        PanZoomCamera (2D interaction) is used. If str, then the string is
+        used as the argument to :func:`make_camera`.
+    scene : None or :class:`SubScene`
+        The :class:`SubScene` instance to view. If None, a new 
+        :class:`SubScene` is created.
+    
+    All extra keyword arguments are passed to :func:`Widget.__init__`.
     """
-
-    def __init__(self, *args, **kwds):
+    def __init__(self, camera=None, scene=None, **kwds):
+        
         self._camera = None
         
-        Widget.__init__(self, *args, **kwds)
-
-        # Background color of this viewbox. Used in glClear()
-        self._bgcolor = (0.0, 0.0, 0.0, 1.0)
+        Widget.__init__(self, **kwds)
 
         # Init preferred method to provided a pixel grid
-        self._preferred_clip_method = 'none'
+        self._clip_method = 'viewport'
 
         # Each viewbox has a scene widget, which has a transform that
         # represents the transformation imposed by camera.
-        self._scene = SubScene()
-        self._scene.parent = self
+        if scene is None:
+            self._scene = SubScene()
+        elif isinstance(scene, SubScene):
+            self._scene = scene
+        else:
+            raise TypeError('Argument "scene" must be None or SubScene.')
+        self._scene.add_parent(self)
         
         # Camera is a helper object that handles scene transformation
         # and user interaction.
-        self.camera = make_camera('panzoom')
+        if camera is None:
+            camera = 'panzoom'
+        if isinstance(camera, string_types):
+            self.camera = make_camera('panzoom')
+        elif isinstance(camera, Camera):
+            self.camera = camera
+        else:
+            raise TypeError('Argument "camera" must be None, str, or Camera.')
 
     @property
     def camera(self):
+        """ The Camera in use by this ViewBox. 
+        """
         return self._camera
     
     @camera.setter
@@ -50,38 +86,14 @@ class ViewBox(Widget):
     def set_camera(self, cam_type, *args, **kwds):
         """ Create a new Camera and attach it to this ViewBox. 
         
-        *cam_type* may be 'panzoom', 'turntable', or None.
-        All other arguments are passed to the Camera.__init__ method.
+        See :func:`make_camera` for arguments.
         """
         self.camera = make_camera(cam_type, *args, **kwds)
         return self.camera
 
     @property
-    def bgcolor(self):
-        """ The background color of the scene. within the viewbox.
-        """
-        return self._bgcolor
-
-    @bgcolor.setter
-    def bgcolor(self, value):
-        # Check / convert
-        value = [float(v) for v in value]
-        if len(value) < 3:
-            raise ValueError('bgcolor must be 3 or 4 floats.')
-        elif len(value) == 3:
-            value.append(1.0)
-        elif len(value) == 4:
-            pass
-        else:
-            raise ValueError('bgcolor must be 3 or 4 floats.')
-        # Set
-        self._bgcolor = tuple(value)
-
-    @property
     def scene(self):
-        """ The root entity of the subscene of this viewbox. This entity
-        takes care of the transformation imposed by the camera of the
-        viewbox.
+        """ The root entity of the scene viewed by this ViewBox.
         """
         return self._scene
 
@@ -94,18 +106,19 @@ class ViewBox(Widget):
         entity.add_parent(self.scene)
 
     @property
-    def preferred_clip_method(self):
-        """ The preferred way to clip the boundaries of the viewbox.
+    def clip_method(self):
+        """ The method used to clip the subscene to the boundaries of the 
+        viewbox.
 
-        There are three possible ways that the viewbox can perform
-        clipping:
-
-        * 'none' - do not perform clipping. The default for now.
-        * 'fragment' - clipping in the fragment shader TODO
+        Clipping methods are:
+        
+        * None - do not perform clipping. The default for now.
         * 'viewport' - use glViewPort to provide a clipped sub-grid
           onto the parent pixel grid, if possible.
         * 'fbo' - use an FBO to draw the subscene to a texture, and
           then render the texture in the parent scene.
+        * 'fragment' - clipping in the fragment shader TODO
+        * 'stencil' - TODO
 
         Restrictions and considerations
         -------------------------------
@@ -124,25 +137,20 @@ class ViewBox(Widget):
         restrictions).
 
         """
-        return self._preferred_clip_method
+        return self._clip_method
 
-    @preferred_clip_method.setter
-    def preferred_clip_method(self, value):
-        valid_methods = ('none', 'fragment', 'viewport', 'fbo')
+    @clip_method.setter
+    def clip_method(self, value):
+        valid_methods = (None, 'fragment', 'viewport', 'fbo')
         if value not in valid_methods:
-            t = 'preferred_clip_method should be in %s' % str(valid_methods)
+            t = 'clip_method should be in %s' % str(valid_methods)
             raise ValueError((t + ', not %r') % value)
-        self._preferred_clip_method = value
+        self._clip_method = value
 
     def draw(self, event):
-        """ Draw the viewbox.
-
-        This does not really draw *this* object, but prepare for drawing
-        our the subscene. In particular, here we calculate the transform
-        needed to project the subscene in our viewbox rectangle. Also
-        we handle setting a viewport if requested.
+        """ Draw the viewbox border/background, and prepare to draw the 
+        subscene using the configured clipping method.
         """
-        
         # todo: we could consider including some padding
         # so that we have room *inside* the viewbox to draw ticks and stuff
         
@@ -158,23 +166,17 @@ class ViewBox(Widget):
         # Set resolution (note that resolution can be non-integer)
         self._resolution = res
         
-        # -- Set the viewbox_transform 
-        
-        # Map our resolution in pixels to our size
-        mapfrom = (0, 0), res
-        mapto = (0, 0), size
-        self.scene.viewbox_transform = STTransform.from_mapping(mapfrom, mapto)
-        
         # -- Get user clipping preference
 
-        prefer = self.preferred_clip_method
-        assert prefer in ('none', 'fragment', 'viewport', 'fbo')
+        prefer = self.clip_method
         viewport, fbo = None, None
 
-        if prefer == 'none':
+        if prefer is None:
             pass
         elif prefer == 'fragment':
             raise NotImplementedError('No fragment shader clipping yet.')
+        elif prefer == 'stencil':
+            raise NotImplementedError('No stencil buffer clipping yet.')
         elif prefer == 'viewport':
             viewport = self._prepare_viewport(event)
         elif prefer == 'fbo':
@@ -311,5 +313,3 @@ class ViewBox(Widget):
         fbo.depth_buffer.resize(shape)
 
         return fbo
-
-
