@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """Test running functions"""
 
 from __future__ import print_function
@@ -47,15 +50,22 @@ def _nose(mode, verbosity, coverage):
             print(extra + '\n' + msg + '\n' + extra + '\n')  # last \n nicer
             raise SkipTest(msg)
     sys.stdout.flush()
-    if coverage:
-        covs = '--with-coverage --cover-package=vispy --cover-branches '
-    else:
-        covs = ''
-    args = ' ' + ('--verbosity=%s ' % verbosity) + covs + attrs
+    # we might as well always use coverage, since we manually disable printing!
+    # here we actually read in the Python code to avoid importing it from
+    # from vispy.testing._coverage, since doing so breaks some path stuff later
+    muted_file = op.join(op.dirname(__file__), '_coverage.py')
+    with open(muted_file, 'r') as fid:
+        imps = fid.read()
+    cv = ', addplugins=[MutedCoverage()]'
+    # if not coverage:
+    #    imps = ''
+    #    cv = ''
+    arg = ' ' + ('--verbosity=%s ' % verbosity) + attrs
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     cmd = [sys.executable, '-c',
-           'import nose; nose.main(argv="%s".split(" "))' % args]
+           '%simport nose; nose.main(argv="%s".split(" ")%s)'
+           % (imps, arg, cv)]
     env = deepcopy(os.environ)
     env.update(dict(_VISPY_TESTING_TYPE=mode))
     p = Popen(cmd, cwd=cwd, env=env)

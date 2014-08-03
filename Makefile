@@ -5,24 +5,26 @@ CTAGS ?= ctags
 all: clean inplace test
 
 clean-pyc:
-	find . -name "*.pyc" | xargs rm -f
+	@find . -name "*.pyc" | xargs rm -f
 
 clean-so:
-	find . -name "*.so" | xargs rm -f
-	find . -name "*.pyd" | xargs rm -f
+	@find . -name "*.so" | xargs rm -f
+	@find . -name "*.pyd" | xargs rm -f
 
 clean-build:
-	rm -rf build
+	@rm -rf build
 
 clean-ctags:
-	rm -f tags
+	@rm -f tags
 
 clean-cache:
-	find . -name "__pycache__" | xargs rm -rf
+	@find . -name "__pycache__" | xargs rm -rf
 
 clean: clean-build clean-pyc clean-so clean-ctags clean-cache
+	@echo "Cleaning build, pyc, so, ctags, and cache"
 
 clean-test: clean-build clean-pyc clean-ctags clean-cache
+	@echo "Cleaning build, pyc, ctags, and cache"
 
 in: inplace # just a shortcut
 inplace:
@@ -37,6 +39,9 @@ nose: clean-test
 
 nose_coverage: clean-test
 	python make test nose 1
+
+coverage_html:
+	python make coverage_html
 
 test: clean-test
 	python make test full

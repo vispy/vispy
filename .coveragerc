@@ -7,5 +7,6 @@ omit =
     */vispy/gloo/gl/angle.py
     */vispy/gloo/gl/_angle.py
     */vispy/testing/_runners.py
+    */vispy/testing/_coverage.py
     */vispy/ext/*.py
     */examples/*

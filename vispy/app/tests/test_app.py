@@ -204,7 +204,6 @@ def test_application():
         assert_raises(ValueError, canvas.connect, on_nonexist)
         # deprecation of "paint"
         with use_log_level('info', record=True) as log:
-            x = []
             olderr = sys.stderr
             try:
                 with open(os.devnull, 'w') as fid:
@@ -212,15 +211,11 @@ def test_application():
 
                     @canvas.events.paint.connect
                     def fake(event):
-                        x.append(0)
+                        pass
             finally:
                 sys.stderr = olderr
-            canvas.update()
-            canvas.app.process_events()
         assert_equal(len(log), 1)
         assert_in('deprecated', log[0])
-        if app.backend_name.lower() != 'glut':  # XXX knownfail
-            assert_true(len(x) >= 1)
 
         # screenshots
         gl.glViewport(0, 0, *size)

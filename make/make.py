@@ -14,34 +14,36 @@ from __future__ import division, print_function
 
 import sys
 import os
+from os import path as op
 import time
 import shutil
 import subprocess
 import re
+import webbrowser
 
 # Save where we came frome and where this module lives
-START_DIR = os.path.abspath(os.getcwd())
-THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+START_DIR = op.abspath(os.getcwd())
+THIS_DIR = op.abspath(op.dirname(__file__))
 
 # Get root directory of the package, by looking for setup.py
 for subdir in ['.', '..']:
-    ROOT_DIR = os.path.abspath(os.path.join(THIS_DIR, subdir))
-    if os.path.isfile(os.path.join(ROOT_DIR, 'setup.py')):
+    ROOT_DIR = op.abspath(op.join(THIS_DIR, subdir))
+    if op.isfile(op.join(ROOT_DIR, 'setup.py')):
         break
 else:
     sys.exit('Cannot find root dir')
 
 
 # Define directories and repos of interest
-DOC_DIR = os.path.join(ROOT_DIR, 'doc')
+DOC_DIR = op.join(ROOT_DIR, 'doc')
 #
-WEBSITE_DIR = os.path.join(ROOT_DIR, '_website')
+WEBSITE_DIR = op.join(ROOT_DIR, '_website')
 WEBSITE_REPO = 'git@github.com:vispy/vispy-website'
 #
-PAGES_DIR = os.path.join(ROOT_DIR, '_gh-pages')
+PAGES_DIR = op.join(ROOT_DIR, '_gh-pages')
 PAGES_REPO = 'git@github.com:vispy/vispy.github.com.git'
 #
-IMAGES_DIR = os.path.join(ROOT_DIR, '_images')
+IMAGES_DIR = op.join(ROOT_DIR, '_images')
 IMAGES_REPO = 'git@github.com:vispy/images.git'
 
 
@@ -69,6 +71,17 @@ class Maker:
         else:
             sys.exit('Invalid command: "%s"' % command)
 
+    def coverage_html(self, arg):
+        """Generate html report from .coverage and launch"""
+        print('Generating HTML...')
+        from coverage import coverage
+        cov = coverage(auto_data=False, branch=True, data_suffix=None,
+                       source=['vispy'])  # should match testing/_coverage.py
+        cov.load()
+        cov.html_report()
+        print('Done, launching browser.')
+        webbrowser.open_new_tab(op.join(os.getcwd(), 'htmlcov', 'index.html'))
+
     def help(self, arg):
         """ Show help message. Use 'help X' to get more help on command X. """
         if arg:
@@ -87,7 +100,7 @@ class Maker:
                 if command.startswith('_'):
                     continue
                 preamble = command.ljust(11)  # longest command is 9 or 10
-                #doc = getattr(self, command).__doc__.splitlines()[0].strip()
+                # doc = getattr(self, command).__doc__.splitlines()[0].strip()
                 doc = getattr(self, command).__doc__.strip()
                 print(' %s  %s' % (preamble, doc))
             print()
@@ -98,7 +111,7 @@ class Maker:
                 * show - show the docs in your browser
         """
         # Prepare
-        build_dir = os.path.join(DOC_DIR, '_build')
+        build_dir = op.join(DOC_DIR, '_build')
         if not arg:
             return self.help('doc')
         # Go
@@ -106,7 +119,7 @@ class Maker:
             sphinx_clean(build_dir)
             sphinx_build(DOC_DIR, build_dir)
         elif 'show' == arg:
-            sphinx_show(os.path.join(build_dir, 'html'))
+            sphinx_show(op.join(build_dir, 'html'))
         else:
             sys.exit('Command "doc" does not have subcommand "%s"' % arg)
 
@@ -117,11 +130,11 @@ class Maker:
                 * upload - upload (commit+push) the resulting html to github
         """
         # Prepare
-        build_dir = os.path.join(WEBSITE_DIR, '_build')
-        html_dir = os.path.join(build_dir, 'html')
-        
+        build_dir = op.join(WEBSITE_DIR, '_build')
+        html_dir = op.join(build_dir, 'html')
+
         # Clone repo for website if needed, make up-to-date otherwise
-        if not os.path.isdir(WEBSITE_DIR):
+        if not op.isdir(WEBSITE_DIR):
             os.chdir(ROOT_DIR)
             sh("git clone %s %s" % (WEBSITE_REPO, WEBSITE_DIR))
         else:
@@ -131,7 +144,7 @@ class Maker:
 
         if not arg:
             return self.help('website')
-        
+
         # Go
         if 'html' == arg:
             sphinx_clean(build_dir)
@@ -173,23 +186,23 @@ class Maker:
                 * test - make screenshots for testing
                 * upload - upload the images repository
         """
-        
+
         # Clone repo for images if needed, make up-to-date otherwise
-        if not os.path.isdir(IMAGES_DIR):
+        if not op.isdir(IMAGES_DIR):
             os.chdir(ROOT_DIR)
             sh("git clone %s %s" % (IMAGES_REPO, IMAGES_DIR))
         else:
             print('Updating images repo')
             os.chdir(IMAGES_DIR)
             sh('git pull')
-        
+
         if not arg:
             return self.help('images')
-        
+
         # Create subdirs if needed
         for subdir in ['gallery', 'thumbs', 'test']:
-            subdir = os.path.join(IMAGES_DIR, subdir)
-            if not os.path.isdir(subdir):
+            subdir = op.join(IMAGES_DIR, subdir)
+            if not op.isdir(subdir):
                 os.mkdir(subdir)
 
         # Go
@@ -208,13 +221,13 @@ class Maker:
         import imp
         from vispy.util.dataio import imsave
         from vispy.gloo import _screenshot
-        examples_dir = os.path.join(ROOT_DIR, 'examples')
-        gallery_dir = os.path.join(IMAGES_DIR, 'gallery')
+        examples_dir = op.join(ROOT_DIR, 'examples')
+        gallery_dir = op.join(IMAGES_DIR, 'gallery')
 
         # Process all files ...
         for filename, name in get_example_filenames(examples_dir):
             name = name.replace('/', '__')  # We use flat names
-            imagefilename = os.path.join(gallery_dir, name + '.png')
+            imagefilename = op.join(gallery_dir, name + '.png')
 
             # Check if should make a screenshot
             frames = []
@@ -234,7 +247,7 @@ class Maker:
                 continue  # gallery hint not found
 
             # Check if we need to take a sceenshot
-            if os.path.isfile(imagefilename):
+            if op.isfile(imagefilename):
                 print('Screenshot for %s already present (skip).' % name)
                 continue
 
@@ -273,11 +286,11 @@ class Maker:
         from vispy.util.dataio import imsave, imread
         from skimage.transform import resize
         import numpy as np
-        gallery_dir = os.path.join(IMAGES_DIR, 'gallery')
-        thumbs_dir = os.path.join(IMAGES_DIR, 'thumbs')
+        gallery_dir = op.join(IMAGES_DIR, 'gallery')
+        thumbs_dir = op.join(IMAGES_DIR, 'thumbs')
         for fname in os.listdir(gallery_dir):
-            filename1 = os.path.join(gallery_dir, fname)
-            filename2 = os.path.join(thumbs_dir, fname)
+            filename1 = op.join(gallery_dir, fname)
+            filename2 = op.join(thumbs_dir, fname)
             #
             im = imread(filename1)
             newx = 200
@@ -300,17 +313,17 @@ class Maker:
         # Processing the whole root directory
         for dirpath, dirnames, filenames in os.walk(ROOT_DIR):
             # Check if we should skip this directory
-            reldirpath = os.path.relpath(dirpath, ROOT_DIR)
+            reldirpath = op.relpath(dirpath, ROOT_DIR)
             if reldirpath[0] in '._' or reldirpath.endswith('__pycache__'):
                 continue
-            if os.path.split(reldirpath)[0] in ('build', 'dist'):
+            if op.split(reldirpath)[0] in ('build', 'dist'):
                 continue
             # Process files
             for fname in filenames:
                 if not fname.endswith('.py'):
                     continue
                 # Open and check
-                filename = os.path.join(dirpath, fname)
+                filename = op.join(dirpath, fname)
                 text = open(filename, 'rt').read()
                 if NEWTEXT in text:
                     count_ok += 1
@@ -354,7 +367,7 @@ def sh2(cmd):
 
 
 def sphinx_clean(build_dir):
-    if os.path.isdir(build_dir):
+    if op.isdir(build_dir):
         shutil.rmtree(build_dir)
     os.mkdir(build_dir)
     print('Cleared build directory.')
@@ -364,16 +377,16 @@ def sphinx_build(src_dir, build_dir):
     import sphinx
     sphinx.main(('sphinx-build',  # Dummy
                  '-b', 'html',
-                 '-d', os.path.join(build_dir, 'doctrees'),
+                 '-d', op.join(build_dir, 'doctrees'),
                  src_dir,  # Source
-                 os.path.join(build_dir, 'html'),  # Dest
+                 op.join(build_dir, 'html'),  # Dest
                  ))
     print("Build finished. The HTML pages are in %s/html." % build_dir)
 
 
 def sphinx_show(html_dir):
-    index_html = os.path.join(html_dir, 'index.html')
-    if not os.path.isfile(index_html):
+    index_html = op.join(html_dir, 'index.html')
+    if not op.isfile(index_html):
         sys.exit('Cannot show pages, build the html first.')
     import webbrowser
     webbrowser.open_new_tab(index_html)
@@ -381,7 +394,7 @@ def sphinx_show(html_dir):
 
 def sphinx_copy_pages(html_dir, pages_dir, pages_repo):
     # Create the pages repo if needed
-    if not os.path.isdir(pages_dir):
+    if not op.isdir(pages_dir):
         os.chdir(ROOT_DIR)
         sh("git clone %s %s" % (pages_repo, pages_dir))
     # Ensure that its up to date
@@ -390,19 +403,19 @@ def sphinx_copy_pages(html_dir, pages_dir, pages_repo):
     sh('git pull -q')
     # This is pretty unforgiving: we unconditionally nuke the destination
     # directory, and then copy the html tree in there
-    tmp_git_dir = os.path.join(ROOT_DIR, pages_dir + '_git')
-    shutil.move(os.path.join(pages_dir, '.git'), tmp_git_dir)
+    tmp_git_dir = op.join(ROOT_DIR, pages_dir + '_git')
+    shutil.move(op.join(pages_dir, '.git'), tmp_git_dir)
     try:
         shutil.rmtree(pages_dir)
         shutil.copytree(html_dir, pages_dir)
-        shutil.move(tmp_git_dir, os.path.join(pages_dir, '.git'))
+        shutil.move(tmp_git_dir, op.join(pages_dir, '.git'))
     finally:
-        if os.path.isdir(tmp_git_dir):
+        if op.isdir(tmp_git_dir):
             shutil.rmtree(tmp_git_dir)
     # Copy individual files
     for fname in ['CNAME', 'README.md', 'conf.py', '.nojekyll', 'Makefile']:
-        shutil.copyfile(os.path.join(WEBSITE_DIR, fname),
-                        os.path.join(pages_dir, fname))
+        shutil.copyfile(op.join(WEBSITE_DIR, fname),
+                        op.join(pages_dir, fname))
     # Messages
     os.chdir(pages_dir)
     sh('git status')
@@ -448,7 +461,7 @@ def get_example_filenames(example_dir):
         for fname in filenames:
             if not fname.endswith('.py'):
                 continue
-            filename = os.path.join(dirpath, fname)
+            filename = op.join(dirpath, fname)
             name = filename[len(example_dir):].lstrip('/\\')[:-3]
             name = name.replace('\\', '/')
             yield filename, name
