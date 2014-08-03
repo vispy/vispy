@@ -80,7 +80,10 @@ class Maker:
         cov.load()
         cov.html_report()
         print('Done, launching browser.')
-        webbrowser.open_new_tab(op.join(os.getcwd(), 'htmlcov', 'index.html'))
+        fname = op.join(os.getcwd(), 'htmlcov', 'index.html')
+        if not op.isfile(fname):
+            raise IOError('Generated file not found: %s' % fname)
+        webbrowser.open_new_tab(fname)
 
     def help(self, arg):
         """ Show help message. Use 'help X' to get more help on command X. """
