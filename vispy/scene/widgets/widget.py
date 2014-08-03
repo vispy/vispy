@@ -11,6 +11,7 @@ from ..visuals.line import Line
 from ..transforms import STTransform
 from ...util.event import Event
 from ...util.geometry import Rect
+from ...color import Color
 
 
 class Widget(Visual):
@@ -103,18 +104,8 @@ class Widget(Visual):
 
     @background.setter
     def background(self, value):
-        # Check / convert
-        value = [float(v) for v in value]
-        if len(value) < 3:
-            raise ValueError('background must be 3 or 4 floats.')
-        elif len(value) == 3:
-            value.append(1.0)
-        elif len(value) == 4:
-            pass
-        else:
-            raise ValueError('background must be 3 or 4 floats.')
-        # Set
-        self._background = tuple(value)
+        self._background = Color(value)
+        self.update()
 
     @property
     def margin(self):

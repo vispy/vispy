@@ -461,7 +461,7 @@ class TurntableCamera(PerspectiveCamera):
             if self.mode == 'ortho':
                 self.width *= s
             else:
-                self.fov *= s
+                self.fov = np.clip(self.fov * s, 0, 179)
             self._update_camera_pos()
         
         elif event.type == 'mouse_move' and 1 in event.buttons:

@@ -302,7 +302,6 @@ def affine_map(points1, points2):
     
     Arguments are specified as arrays of four 3D coordinates, shape (4, 3).
     """
-    import scipy.linalg
     A = np.ones((4, 4))
     A[:, :3] = points1
     B = np.ones((4, 4))
@@ -313,6 +312,6 @@ def affine_map(points1, points2):
     matrix = np.eye(4)
     for i in range(3):
         # solve Ax = B; x is one row of the desired transformation matrix
-        matrix[i] = scipy.linalg.solve(A, B[:, i]) 
+        matrix[i] = np.linalg.solve(A, B[:, i]) 
     
     return matrix

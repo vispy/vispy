@@ -865,7 +865,7 @@ class PerspectiveTransform(AffineTransform):
     # necessary to manually implement perspective division.. 
     # Perhaps we can find a way to avoid this.
     glsl_map = """
-        vec4 $perspective_transform_map(vec4 pos) {
+        vec4 perspective_transform_map(vec4 pos) {
             vec4 p = $matrix * pos;
             p = p / p.w;
             p.z = 0;
@@ -876,7 +876,7 @@ class PerspectiveTransform(AffineTransform):
 
     ## Note 2: Are perspective matrices invertible??
     #glsl_imap = """
-    #    vec4 $perspective_transform_imap(vec4 pos) {
+    #    vec4 perspective_transform_imap(vec4 pos) {
     #        return $inv_matrix * pos;
     #    }
     #"""
