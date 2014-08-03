@@ -380,3 +380,8 @@ class ModularVisual(Visual):
         #    t.simplify()  # Reduce number of transforms
         #self._program['map_local_to_nd'] = self.transform.shader_map()
         self._program['map_local_to_nd'] = t.shader_map()
+
+        #print('--------------', self)
+        #t.simplify()
+        #for tr in t.transforms:
+            #print(tr)

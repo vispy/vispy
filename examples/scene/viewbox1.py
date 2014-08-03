@@ -23,23 +23,19 @@ pos[:, 1] = np.random.normal(0.0, 0.5, size=N)
 pos[:20, 1] = -0.5  # So we can see which side is down
 line_ndc = scene.visuals.Line(pos=pos.copy(), color=color)
 
-pos[:, 0] = np.linspace(50, 350., N)
-pos[:, 1] = 150 + pos[:, 1] * 50
-pos[:20, 1] = 100  # So we can see which side is down
-line_pixels = scene.visuals.Line(pos=pos.copy(), color=color)
+#pos[:, 0] = np.linspace(50, 350., N)
+#pos[:, 1] = 150 + pos[:, 1] * 50
+#pos[:20, 1] = 100  # So we can see which side is down
+#line_pixels = scene.visuals.Line(pos=pos.copy(), color=color)
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
-# null camera; we will operate in the coordinate system provided by
-# the canvas.
-#canvas.scene.camera = scene.cameras.Camera()  
 
 vb1 = scene.ViewBox(canvas.scene, border=(1, 1, 0, 1))
 vb1.preferred_clip_method = 'fbo'
 vb1.pos = 20, 20
 vb1.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
 vb1.camera.rect = (-1.2, -2, 2.4, 4)
-#vb1.scene.camera = scene.cameras.TwoDCamera()
 
 line_ndc.add_parent(vb1.scene)
 
@@ -48,7 +44,7 @@ vb2.preferred_clip_method = 'viewport'
 vb2.pos = canvas.size[0]/2. + 20, 20
 vb2.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
 vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30)
-#vb2.set_camera('turntable', mode='perspective', distance=100, elevation=30, azimuth=30)
+#vb2.set_camera('turntable', mode='perspective', distance=10, elevation=0, azimuth=0)
 
 line_ndc.add_parent(vb2.scene)
 

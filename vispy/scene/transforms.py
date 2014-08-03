@@ -285,6 +285,8 @@ def arg_to_vec4(func):
             arr = arg._transform_in()
             ret = func(self, arr, *args, **kwds)
             return arg._transform_out(ret)
+        else:
+            raise TypeError("Cannot convert argument to 4D vector: %s" % arg)
     return fn
 
 
@@ -752,7 +754,7 @@ class AffineTransform(Transform):
         tr = AffineTransform()
         try:
             tr.matrix = np.linalg.inv(self.matrix)
-        except:
+        except Exception:
             print(self.matrix)
             raise
         return tr
@@ -803,8 +805,9 @@ class AffineTransform(Transform):
             self.matrix = transforms.scale(self.matrix, *scale[0, :3])
 
     def rotate(self, angle, axis):
-        tr = transforms.rotate(np.eye(4), angle, *axis)
-        self.matrix = np.dot(tr, self.matrix)
+        #tr = transforms.rotate(np.eye(4), angle, *axis)
+        #self.matrix = np.dot(tr, self.matrix)
+        self.matrix = transforms.rotate(self.matrix, angle, *axis)
 
     def set_mapping(self, points1, points2):
         """ Set to a 3D transformation matrix that maps points1 onto points2.
@@ -862,19 +865,21 @@ class PerspectiveTransform(AffineTransform):
     # necessary to manually implement perspective division.. 
     # Perhaps we can find a way to avoid this.
     glsl_map = """
-        vec4 $affine_transform_map(vec4 pos) {
+        vec4 $perspective_transform_map(vec4 pos) {
             vec4 p = $matrix * pos;
             p = p / p.w;
+            p.z = 0;
+            p.w = 1;
             return p;
         }
     """
 
-    # Note 2: Are perspective matrices invertible??
-    glsl_imap = """
-        vec4 $affine_transform_imap(vec4 pos) {
-            return $inv_matrix * pos;
-        }
-    """
+    ## Note 2: Are perspective matrices invertible??
+    #glsl_imap = """
+        #vec4 $perspective_transform_imap(vec4 pos) {
+            #return $inv_matrix * pos;
+        #}
+    #"""
 
     # todo: merge with affinetransform?
     def set_perspective(self, fov, aspect, near, far):
@@ -888,24 +893,17 @@ class PerspectiveTransform(AffineTransform):
         # looks backwards, but both matrices are transposed.
         v = np.dot(coords, self.matrix)
         v /= v[:,3]
+        v[:,2] = 0
         return v
 
-    @arg_to_vec4
-    def imap(self, coords):
-        return np.dot(coords, self.inv_matrix)
+    #@arg_to_vec4
+    #def imap(self, coords):
+        #return np.dot(coords, self.inv_matrix)
 
     def __mul__(self, tr):
         # Override multiplication -- this does not combine well with affine
         # matrices.
         return tr.__rmul__(self)
-
-
-class OrthoTransform(AffineTransform):
-    """
-    Orthographic transform
-    (possibly no need for this; just add an ortho() method to AffineTransform?)
-    """
-    # TODO
 
 
 class LogTransform(Transform):

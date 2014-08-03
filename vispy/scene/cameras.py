@@ -277,13 +277,13 @@ class PerspectiveCamera(Camera):
             vrect = [[0, 0], self.viewbox.size]
             viewbox_tr = STTransform.from_mapping(unit, vrect)
             proj_tr = self._projection
-            cam_tr = self.entity_transform(self.viewbox.scene) 
+            cam_tr = self.entity_transform(self.viewbox.scene)
             
             self._set_scene_transform(viewbox_tr * proj_tr * cam_tr)
 
     def set_perspective(self):
         vbs = self.viewbox.size
-        ar = vbs[1] / vbs[0]
+        ar = vbs[0] / vbs[1]
         fov = self._perspective['fov']
         near = self._perspective['near']
         far = self._perspective['far']
@@ -346,9 +346,9 @@ class TurntableCamera(PerspectiveCamera):
     def _update_entity_transform(self):
         tr = self.transform
         tr.reset()
-        tr.translate(0.0, 0.0, -self.distance)
-        tr.rotate(self.azimuth, (0, 1, 0))
+        tr.translate((0.0, 0.0, -self.distance))
         tr.rotate(self.elevation, (-1, 0, 0))
+        tr.rotate(self.azimuth, (0, 1, 0))
         tr.translate(-np.array(self.center))
 
 class ArcballCamera(PerspectiveCamera):
