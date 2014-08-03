@@ -134,7 +134,7 @@ class Rect(object):
     def __add__(self, a):
         """ Return this Rect translated by *a*.
         """
-        return self._transform_out(self._transform_in()[:,:2] + a[:2])
+        return self._transform_out(self._transform_in()[:, :2] + a[:2])
 
     def contains(self, x, y):
         return (x >= self.left and x <= self.right and

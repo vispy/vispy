@@ -165,6 +165,7 @@ def test_st_mapping():
     
     assert np.allclose(t.map(p1)[:, :len(p2)], p2)
 
+
 def test_affine_mapping():
     t = tr.AffineTransform()
     p1 = np.array([[0, 0, 0],

@@ -9,6 +9,7 @@ from ..util.event import EmitterGroup, Event
 from .events import SceneDrawEvent, SceneMouseEvent
 from .transforms import NullTransform
 
+
 class Entity(object):
     """ Base class to represent a citizen of a scene. Typically an
     Entity is used to visualize something, although this is not strictly

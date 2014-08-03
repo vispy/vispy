@@ -44,19 +44,32 @@ vb2.clip_method = 'viewport'
 vb2.pos = canvas.size[0]/2. + 20, 20
 vb2.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
 vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30)
-#vb2.set_camera('turntable', mode='perspective', distance=10, elevation=0, azimuth=0)
+#vb2.set_camera('turntable', mode='perspective', 
+#               distance=10, elevation=0, azimuth=0)
 
 line_ndc.add_parent(vb2.scene)
 
-box = np.array([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0], [0, 0, 0]], dtype=np.float32)
+box = np.array([[0, 0, 0], 
+                [0, 1, 0], 
+                [1, 1, 0], 
+                [1, 0, 0], 
+                [0, 0, 0]], dtype=np.float32)
 z = np.array([[0, 0, 1]], dtype=np.float32)
-unit_box1 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), name='unit box')
-nd_box1 = scene.visuals.Line(pos=(box*2-1), color=(0, 0.7, 0, 1), name='nd box')
+unit_box1 = scene.visuals.Line(pos=box, 
+                               color=(0.7, 0, 0, 1), 
+                               name='unit box')
+nd_box1 = scene.visuals.Line(pos=(box * 2 - 1), 
+                             color=(0, 0.7, 0, 1), 
+                             name='nd box')
 vb1.add(unit_box1)
 vb1.add(nd_box1)
 
-unit_box2 = scene.visuals.Line(pos=box+z, color=(1, 0, 0, 1), name='unit box')
-nd_box2 = scene.visuals.Line(pos=((box+z)*2-1), color=(0, 1, 0, 1), name='nd box')
+unit_box2 = scene.visuals.Line(pos=box + z, 
+                               color=(1, 0, 0, 1), 
+                               name='unit box')
+nd_box2 = scene.visuals.Line(pos=((box + z) * 2 - 1), 
+                             color=(0, 1, 0, 1), 
+                             name='nd box')
 vb2.add(unit_box1)
 vb2.add(nd_box1)
 vb2.add(unit_box2)

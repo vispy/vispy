@@ -384,4 +384,4 @@ class ModularVisual(Visual):
         #print('--------------', self)
         #t.simplify()
         #for tr in t.transforms:
-            #print(tr)
+        #    print(tr)

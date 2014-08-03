@@ -20,9 +20,7 @@ from __future__ import division
 
 import numpy as np
 
-from . import transforms
 from .entity import Entity
-from ..util.event import Event
 from ..util.geometry import Rect
 from .transforms import (STTransform, PerspectiveTransform, NullTransform,
                          AffineTransform)
@@ -45,7 +43,7 @@ def make_camera(cam_type, *args, **kwds):
         None: Camera,
         'panzoom': PanZoomCamera,
         'turntable': TurntableCamera,
-        }
+    }
     
     try: 
         return cam_types[cam_type](*args, **kwds)
@@ -206,8 +204,8 @@ class PanZoomCamera(Camera):
         # TODO: would be nice if STTransform had a nice scale(s, center) 
         # method like AffineTransform.
         transform = (STTransform(translate=center) * 
-                    STTransform(scale=zoom) * 
-                    STTransform(translate=-center))
+                     STTransform(scale=zoom) * 
+                     STTransform(translate=-center))
         
         self.rect = transform.map(self.rect)
         
@@ -498,4 +496,3 @@ class ArcballCamera(PerspectiveCamera):
 
 class FirstPersonCamera(PerspectiveCamera):
     pass
-

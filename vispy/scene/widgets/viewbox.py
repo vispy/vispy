@@ -8,7 +8,6 @@ import numpy as np
 
 from .widget import Widget
 from ..subscene import SubScene
-from ...util.geometry import Rect
 from ..cameras import make_camera, Camera
 from ...ext.six import string_types
 

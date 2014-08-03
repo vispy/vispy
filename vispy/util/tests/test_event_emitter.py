@@ -658,5 +658,3 @@ def test_emitter_block():
 
     e()
     assert_state(True, True)
-
-    

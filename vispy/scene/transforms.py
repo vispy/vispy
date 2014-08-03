@@ -825,9 +825,9 @@ class AffineTransform(Transform):
         self.matrix = np.eye(4)
 
     def __mul__(self, tr):
-        if (isinstance(tr, AffineTransform) and
+        if (isinstance(tr, AffineTransform) and not 
+                any(tr.matrix[:3, 3] != 0)):   
             # don't multiply if the perspective column is used
-            not any(tr.matrix[:3, 3] != 0)):   
             return AffineTransform(matrix=np.dot(tr.matrix, self.matrix))
         else:
             return tr.__rmul__(self)
@@ -876,9 +876,9 @@ class PerspectiveTransform(AffineTransform):
 
     ## Note 2: Are perspective matrices invertible??
     #glsl_imap = """
-        #vec4 $perspective_transform_imap(vec4 pos) {
-            #return $inv_matrix * pos;
-        #}
+    #    vec4 $perspective_transform_imap(vec4 pos) {
+    #        return $inv_matrix * pos;
+    #    }
     #"""
 
     # todo: merge with affinetransform?
@@ -892,13 +892,13 @@ class PerspectiveTransform(AffineTransform):
     def map(self, coords):
         # looks backwards, but both matrices are transposed.
         v = np.dot(coords, self.matrix)
-        v /= v[:,3]
-        v[:,2] = 0
+        v /= v[:, 3]
+        v[:, 2] = 0
         return v
 
     #@arg_to_vec4
     #def imap(self, coords):
-        #return np.dot(coords, self.inv_matrix)
+    #    return np.dot(coords, self.inv_matrix)
 
     def __mul__(self, tr):
         # Override multiplication -- this does not combine well with affine

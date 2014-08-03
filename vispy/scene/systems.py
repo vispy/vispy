@@ -108,5 +108,4 @@ class MouseInputSystem(object):
                     logger.warning("Error handling mouse event for entity %s" %
                                    entity)
                     
-        
         event.pop_entity()
