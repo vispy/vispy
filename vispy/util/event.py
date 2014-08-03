@@ -18,6 +18,7 @@ import sys
 import inspect
 import weakref
 import traceback
+import math
 
 from .ordereddict import OrderedDict
 from ._logging import logger
@@ -449,8 +450,14 @@ class EventEmitter(object):
                             self._err_registry[key] += 1
                             if self.print_callback_errors == 'first':
                                 this_print = None
-                            else:
-                                this_print = self._err_registry[key] - 1
+                            else:  # reminders
+                                ii = self._err_registry[key]
+                                # Use logarithmic selection
+                                # (1, 2, ..., 10, 20, ..., 100, 200, ...)
+                                if ii % (10 ** int(math.log10(ii))) == 0:
+                                    this_print = ii
+                                else:
+                                    this_print = None
                         else:
                             self._err_registry[key] = 1
                     if this_print == 'full':
