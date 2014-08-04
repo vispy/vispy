@@ -317,6 +317,8 @@ class PerspectiveCamera(Camera):
     
     @fov.setter
     def fov(self, fov):
+        if fov < 0 or fov >= 180:
+            raise ValueError("fov must be between 0 and 180.")
         self._fov = fov
         self._update_transform()
         
