@@ -35,6 +35,7 @@ def make_camera(cam_type, *args, **kwds):
         May be one of:
         * 'panzoom' : Creates :class:`PanZoomCamera`
         * 'turntable' : Creates :class:`TurntableCamera`
+        * None : Creates :class:`Camera`
 
     All extra arguments are passed to the __init__ method of the selected
     Camera class.
@@ -122,7 +123,7 @@ class Camera(Entity):
         """ Subclasses should reimplement this method to update the scene
         transform by calling self._set_scene_transform.
         """
-        pass
+        self._set_scene_transform(NullTransform())
         
     def _set_scene_transform(self, tr):
         """ Called by subclasses to configure the viewbox scene transform.

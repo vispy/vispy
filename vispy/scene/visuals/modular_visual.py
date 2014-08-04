@@ -221,10 +221,11 @@ class ModularVisual(Visual):
         # select input component based on pos.shape
         if pos is not None:
             if pos.shape[-1] == 2:
-                comp = XYPosComponent(xy=pos, z=z, index=index)
+                comp = XYPosComponent(xy=pos.astype(np.float32), 
+                                      z=z, index=index)
                 self.pos_components = [comp]
             elif pos.shape[-1] == 3:
-                comp = XYZPosComponent(pos=pos, index=index)
+                comp = XYZPosComponent(pos=pos.astype(np.float32), index=index)
                 self.pos_components = [comp]
             else:
                 raise Exception("Can't handle position data: %s" % pos)
