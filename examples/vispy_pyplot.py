@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 n = 100
 x = np.linspace(-1.0, +1.0, n)
 y = np.random.uniform(-0.5, +0.5, n)
-fig, ax = plt.subplots()
-ax.plot(x, y, 'r-o')
+fig = plt.figure()
+plt.plot(x, y, 'r-o')
 # idx = np.argmax(y)
 # ax.text(x[idx], y[idx], 'Maximum')
-canvas = show_vispy(fig)
+show_vispy(fig)
