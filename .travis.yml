@@ -149,9 +149,9 @@ install:
     # Install mplexporter
     - if [ "${DEPS}" == "full" ]; then
         cd ~;
-        git clone git://github.com/mpl3d/mplexporter.git;
+        git clone git://github.com/mpl3d/mplexporter.git > /dev/null;
         cd mplexporter;
-        python setup.py install mplexporter;
+        python setup.py install mplexporter > /dev/null;
         cd ..;
       fi;
 
