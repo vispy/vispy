@@ -13,9 +13,12 @@ canvas.show()
 img_data = np.random.normal(size=(100, 100, 3), loc=128,
                             scale=50).astype(np.ubyte)
 
-image = scene.visuals.Image(canvas.scene, img_data)
-image.transform = scene.transforms.STTransform(translate=(100, 100))
+image = scene.visuals.Image(img_data)
+image.parent = canvas.scene
 
-# todo: where is the image?
+# Map image to canvas size with 10px padding
+img_bounds = [[0, 0], list(img_data.shape[:2])]
+canvas_bounds = [[10, 10], [canvas.size[0] - 10, canvas.size[1] - 10]]
+image.transform = scene.transforms.STTransform.from_mapping(img_bounds, canvas_bounds)
 
 app.run()
