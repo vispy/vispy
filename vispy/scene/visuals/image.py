@@ -64,7 +64,6 @@ class Image(Mesh):
 
         # TODO: subdivision and impostor modes should be handled by new
         # components?
-        print method
         if method == 'subdivide':
             # quads cover area of image as closely as possible
             w = 1.0 / grid[1]
