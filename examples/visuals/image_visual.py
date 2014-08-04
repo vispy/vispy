@@ -10,7 +10,6 @@ import numpy as np
 import vispy.app
 from vispy.gloo import gl
 from vispy.scene import visuals
-from vispy.scene.transforms import STTransform
 
 image = np.random.normal(size=(100, 100, 3), loc=128,
                          scale=50).astype(np.ubyte)
@@ -19,8 +18,6 @@ image = np.random.normal(size=(100, 100, 3), loc=128,
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         self.image = visuals.Image(image)
-        #self.image.transform = STTransform(scale=(0.01, 0.01),
-                                           #translate=(-0.5, -0.5))
         vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()

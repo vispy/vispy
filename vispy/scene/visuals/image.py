@@ -87,10 +87,11 @@ class Image(Mesh):
             vertices[..., 1] *= self._data.shape[0]
             Mesh.set_data(self, pos=vertices)
 
-            tex_coord_comp = TextureCoordinateComponent(tex_coords[:,:2])
+            tex_coord_comp = TextureCoordinateComponent(tex_coords[:, :2])
 
             #self._program['map_local_to_nd'] = self.transform.shader_map()
-            self._program['map_local_to_nd'] = canvas.render_transform.shader_map()
+            tr = canvas.render_transform.shader_map()
+            self._program['map_local_to_nd'] = tr
 
         elif method == 'impostor':
             # quad covers entire view; frag. shader will deal with image shape
@@ -101,7 +102,8 @@ class Image(Mesh):
 
             self._tex_transform.scale = (1./self._data.shape[0],
                                          1./self._data.shape[1])
-            total_transform = self._tex_transform * canvas.render_transform.inverse()
+            ctr = canvas.render_transform.inverse()
+            total_transform = self._tex_transform * ctr
             tex_coord_comp = VertexTextureCoordinateComponent(total_transform)
 
             self._program['map_local_to_nd'] = NullTransform().shader_map()

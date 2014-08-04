@@ -19,6 +19,7 @@ image.parent = canvas.scene
 # Map image to canvas size with 10px padding
 img_bounds = [[0, 0], list(img_data.shape[:2])]
 canvas_bounds = [[10, 10], [canvas.size[0] - 10, canvas.size[1] - 10]]
-image.transform = scene.transforms.STTransform.from_mapping(img_bounds, canvas_bounds)
+tr = scene.transforms.STTransform.from_mapping(img_bounds, canvas_bounds)
+image.transform = tr
 
 app.run()
