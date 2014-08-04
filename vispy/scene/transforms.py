@@ -678,7 +678,11 @@ class STTransform(Transform):
         
         x0 = np.array(x0)
         x1 = np.array(x1)
-        s = (x1[1] - x1[0]) / (x0[1] - x0[0])
+        denom = (x0[1] - x0[0])
+        mask = denom == 0
+        denom[mask] = 1.0 
+        s = (x1[1] - x1[0]) / denom
+        s[mask] = 1.0
         s[x0[1] == x0[0]] = 1.0
         t = x1[0] - s * x0[0]
         self.scale = s

@@ -19,7 +19,6 @@ grid = scene.widgets.Grid(canvas.scene)
 def update_grid(event=None):
     global grid, canvas
     grid.size = canvas.size
-    print(canvas.size)
 
 update_grid()
 
