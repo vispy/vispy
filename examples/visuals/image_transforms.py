@@ -60,7 +60,7 @@ class Canvas(vispy.scene.SceneCanvas):
     def on_draw(self, ev):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glViewport(0, 0, *self.size)
+        self.push_viewport((0, 0) + self.size)
         for img in self.images:
             img.draw(self)
 
