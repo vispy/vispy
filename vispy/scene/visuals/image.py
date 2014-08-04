@@ -87,7 +87,8 @@ class Image(Mesh):
             vertices[..., 1] *= self._data.shape[0]
             Mesh.set_data(self, pos=vertices)
 
-            tex_coord_comp = TextureCoordinateComponent(tex_coords[:, :2])
+            coords = np.ascontiguousarray(tex_coords[:, :2])
+            tex_coord_comp = TextureCoordinateComponent(coords)
 
             #self._program['map_local_to_nd'] = self.transform.shader_map()
             tr = canvas.render_transform.shader_map()
