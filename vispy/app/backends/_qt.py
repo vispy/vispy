@@ -233,7 +233,11 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
             self.setFixedSize(self.size())
         if position is not None:
             self._vispy_set_position(*position)
-        if show:
+        self._init_show = show
+
+    def _vispy_init(self):
+        """Do actions that require self._vispy_canvas._backend to be set"""
+        if self._init_show:
             self._vispy_set_visible(True)
 
     @property

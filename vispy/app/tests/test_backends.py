@@ -22,7 +22,7 @@ class DummyApplication(Application):
     def _use(self, backend_namd):
         pass
 
-        
+
 def _test_module_properties(_module=None):
     """Test application module"""
     if _module is None:
@@ -37,14 +37,15 @@ def _test_module_properties(_module=None):
             continue
         key = getattr(keys, keyname)
         assert key in vispy_keys
-    
+
     # For Qt backend, we have a common implementation
     alt_modname = ''
     if _module.__name__.split('.')[-1] in ('_pyside', '_pyqt4'):
         alt_modname = _module.__name__.rsplit('.', 1)[0] + '._qt'
-    
+
     # Test that all _vispy_x methods are there.
     exceptions = (
+        '_vispy_init',
         '_vispy_get_native_canvas',
         '_vispy_get_native_timer',
         '_vispy_get_native_app',
