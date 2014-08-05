@@ -40,7 +40,7 @@ def make_png(data, level=6):
             size = len(data)
         chunk = np.empty(size + 12, dtype=np.ubyte)
         chunk.data[0:4] = struct.pack('!I', size)
-        chunk.data[4:8] = name  # b'CPXS' # critical, public, standard, safe
+        chunk.data[4:8] = name  # b'CPXS' # critical, public, standard, safe 
         chunk.data[8:8 + size] = data
         chunk.data[-4:] = struct.pack('!i', zlib.crc32(chunk[4:-4]))
         return chunk
