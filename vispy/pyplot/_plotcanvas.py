@@ -41,8 +41,8 @@ class PanZoomTransform(STTransform):
 class MarkerVisual(Visual):
     VERTEX_SHADER = """
         uniform vec3 u_color;
+        uniform float u_size;
         attribute vec2 a_position;
-        attribute float a_size;
 
         varying vec4 v_fg_color;
         varying vec4 v_bg_color;
@@ -51,7 +51,7 @@ class MarkerVisual(Visual):
         varying float v_antialias;
 
         void main(void) {
-            v_radius = a_size;
+            v_radius = u_size;
             v_linewidth = 1.0;
             v_antialias = 1.0;
             v_fg_color  = vec4(0.0,0.0,0.0,0.5);
@@ -106,7 +106,7 @@ class MarkerVisual(Visual):
         self._program.prepare()
         self._program['a_position'] = gloo.VertexBuffer(self._pos)
         self._program['u_color'] = self._color
-        self._program['a_size'] = gloo.VertexBuffer(self._size)
+        self._program['u_size'] = self._size
         self._program.draw(gloo.gl.GL_POINTS, 'points')
 
 

@@ -75,10 +75,8 @@ class VispyRenderer(Renderer):
 
     def draw_markers(self, data, coordinates, style, label, mplobj=None):
         pos = data.astype(np.float32)
-        n = pos.shape[0]
         color = Color(style['facecolor']).rgb
-        # TODO: uniform instead
-        size = np.ones(n, np.float32) * style['markersize']
+        size = float(style['markersize'])
         # TODO: marker style, linewidth, linecolor, etc.
         # TODO: take 'coordinates' into account
         self.canvas.add_visual(label,
