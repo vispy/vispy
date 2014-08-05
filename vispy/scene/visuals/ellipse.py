@@ -97,9 +97,10 @@ default: (1,1)
 
     @num_segments.setter
     def num_segments(self, num_segments):
-        if num_segments >= 1:
-            self._num_segments = num_segments
-            self._update()
+        if num_segments < 1:
+            raise ValueError('Ellipse must consist of more than 1 segment')
+        self._num_segments = num_segments
+        self._update()
     
     def _update(self):
         if self._pos is not None:

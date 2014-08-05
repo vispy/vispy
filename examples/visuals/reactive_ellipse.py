@@ -38,8 +38,7 @@ class Canvas(vispy.app.Canvas):
         self.update()
 
     def on_draw(self, ev):
-        gloo.set_clear_color(color='black')
-        gloo.clear()
+        gloo.clear(color='black')
         gloo.set_viewport(0, 0, *self.size)
         self.ellipse.draw()
         
