@@ -8,8 +8,7 @@ import numpy as np
 
 from ... import gloo
 from .visual import Visual
-from ..shaders import ModularProgram
-#from ..transforms import ChainTransform
+from ..shaders import ModularProgram, Function, FunctionChain, Variable
 from ..components import (VisualComponent, XYPosComponent, XYZPosComponent,
                           UniformColorComponent, VertexColorComponent)
 
@@ -87,6 +86,40 @@ from ..components import (VisualComponent, XYPosComponent, XYZPosComponent,
 """
 
 
+class ComponentProgram(ModularProgram):
+    """
+    Temporary class to bridge differences between current ModularProgram 
+    and old ModularProgram.    
+    """
+    def __init__(self, vert, frag):
+        self._chains = {}
+        ModularProgram.__init__(self, Function(vert), Function(frag))
+    
+    def add_chain(self, var):
+        """
+        Create a new ChainFunction and attach to $var on the appropriate 
+        main function.
+        """
+        chain = FunctionChain(var, [])
+        self._chains[var] = chain
+        self[var] = chain
+
+    def add_callback(self, hook, func):
+        self._chains[hook].append(func)
+    
+    def remove_callback(self, hook, func):
+        self._chains[hook].remove(func)
+    
+    def __setitem__(self, name, val):
+        try:
+            self.vert[name] = val
+        except Exception:
+            try:
+                self.frag[name] = val
+            except Exception:
+                ModularProgram.__setitem__(self, name, val)
+            
+
 class ModularVisual(Visual):
     """
     Abstract modular visual. This extends Visual by implementing a system
@@ -110,28 +143,12 @@ class ModularVisual(Visual):
     """
 
     VERTEX_SHADER = """
-    // local_position function must return the current vertex position
-    // in the Visual's local coordinate system.
-    vec4 local_position();
-
-    // mapping function that transforms from the Visual's local coordinate
-    // system to normalized device coordinates.
-    vec4 map_local_to_nd(vec4);
-
-    // generic hook for executing code after the vertex position has been set
-    void vert_post_hook();
-
-    // Global variable storing the results of local_position()
-    // Any component may read this variable, but it should be treated as
-    // read-only.
-    vec4 local_pos;
-
     void main(void) {
-        local_pos = local_position();
-        vec4 nd_pos = map_local_to_nd(local_pos);
+        $local_pos = $local_position();
+        vec4 nd_pos = $map_local_to_nd($local_pos);
         gl_Position = nd_pos;
 
-        vert_post_hook();
+        $vert_post_hook();
     }
     """
 
@@ -139,10 +156,8 @@ class ModularVisual(Visual):
     // Fragment shader consists of only a single hook that is usually defined
     // by a chain of functions, each which sets or modifies the curren
     // fragment color, or discards it.
-    vec4 frag_color();
-
     void main(void) {
-        gl_FragColor = frag_color();
+        gl_FragColor = $frag_color();
     }
     """
 
@@ -159,9 +174,12 @@ class ModularVisual(Visual):
         #
         self._gl_options = [None, {}]
 
-        self._program = ModularProgram(self.VERTEX_SHADER,
-                                       self.FRAGMENT_SHADER)
+        self._program = ComponentProgram(self.VERTEX_SHADER,
+                                         self.FRAGMENT_SHADER)
 
+        self._program.vert['local_pos'] = Variable('local_pos', 
+                                                   vtype='', dtype='vec4')
+        
         # Generic chains for attaching post-processing functions
         self._program.add_chain('local_position')
         self._program.add_chain('vert_post_hook')
@@ -349,10 +367,10 @@ class ModularVisual(Visual):
             comps.extend(comp._deps)
             all_comps |= set(comp._deps)
 
+        self._activate_transform(event)
+        
         for comp in all_comps:
             comp.activate(self._program, mode)
-
-        self._activate_transform(event)
 
     def _activate_transform(self, event=None):
         # TODO: this must be optimized.

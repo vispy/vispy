@@ -4,6 +4,7 @@
 # This is a strange test: vispy does not need designer or uic stuff to run!
 
 from os import path as op
+import warnings
 
 from vispy.app import Canvas, use_app
 from vispy.testing import requires_application, SkipTest
@@ -18,7 +19,8 @@ def test_qt_designer():
         raise SkipTest('Not using PyQt4 backend')  # wrong backend
     from PyQt4 import uic
     fname = op.join(op.dirname(__file__), 'qt-designer.ui')
-    WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
+    with warnings.catch_warnings(record=True):  # pyqt4 deprecation warning
+        WindowTemplate, TemplateBaseClass = uic.loadUiType(fname)
     app.create()  # make sure we have an app, or the init will fail
 
     class MainWindow(TemplateBaseClass):

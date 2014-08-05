@@ -49,8 +49,8 @@ class Transform(object):
     an object through the forward or inverse transformation, respectively.
 
     The two class variables glsl_map and glsl_imap are instances of
-    shaders.composite.Function that
-    define the forward- and inverse-mapping GLSL function code.
+    shaders.Function that define the forward- and inverse-mapping GLSL
+    function code.
 
     Optionally, an inverse() method returns a new Transform performing the
     inverse mapping.
@@ -83,8 +83,10 @@ class Transform(object):
     Isometric = None
 
     def __init__(self):
-        self._shader_map = Function(self.glsl_map)
-        self._shader_imap = Function(self.glsl_imap)
+        if self.glsl_map is not None:
+            self._shader_map = Function(self.glsl_map)
+        if self.glsl_imap is not None:
+            self._shader_imap = Function(self.glsl_imap)
 
     def map(self, obj):
         """
@@ -133,8 +135,9 @@ class Transform(object):
         """
         Called to inform any listeners that this Transform has changed.
         """
-        self._shader_map.update()
-        self._shader_imap.update()
+        pass
+        #self._shader_map.update()
+        #self._shader_imap.update()
 
     #def _resolve(self, name, var_prefix, imap):
         ## The default implemntation assumes the following:
@@ -284,8 +287,8 @@ def arg_to_vec4(func):
 
 class ChainTransform(Transform):
     """
-    Transform subclass that performs a sequence of transformations in order.
-    Internally, this class uses shaders.composite.FunctionChain to generate
+    Transform subclass that performs a sequence of transformations in
+    order. Internally, this class uses shaders.FunctionChain to generate
     its glsl_map and glsl_imap functions.
 
     Arguments:
@@ -406,7 +409,7 @@ class ChainTransform(Transform):
             #bindings.append(bound)
 
         name = "transform_%s_chain" % ('imap' if imap else 'map')
-        return FunctionChain(name, funcs, anonymous=True)
+        return FunctionChain(name, funcs)
 
     def inverse(self):
         return ChainTransform([tr.inverse()
@@ -519,8 +522,8 @@ class ChainTransform(Transform):
 class NullTransform(Transform):
     """ Transform having no effect on coordinates (identity transform).
     """
-    glsl_map = "vec4 $null_transform_map(vec4 pos) {return pos;}"
-    glsl_imap = "vec4 $null_transform_imap(vec4 pos) {return pos;}"
+    glsl_map = "vec4 null_transform_map(vec4 pos) {return pos;}"
+    glsl_imap = "vec4 null_transform_imap(vec4 pos) {return pos;}"
 
     Linear = True
     Orthogonal = True
@@ -547,13 +550,13 @@ class STTransform(Transform):
     """ Transform performing only scale and translate, in that order.
     """
     glsl_map = """
-        vec4 $st_transform_map(vec4 pos) {
+        vec4 st_transform_map(vec4 pos) {
             return (pos * $scale) + $translate;
         }
     """
 
     glsl_imap = """
-        vec4 $st_transform_imap(vec4 pos) {
+        vec4 st_transform_imap(vec4 pos) {
             return (pos - $translate) / $scale;
         }
     """
@@ -588,13 +591,13 @@ class STTransform(Transform):
         return STTransform(scale=s, translate=t)
 
     def shader_map(self):
-        self._shader_map['scale'] = ('uniform', 'vec4', self.scale)
-        self._shader_map['translate'] = ('uniform', 'vec4', self.translate)
+        self._shader_map['scale'] = self.scale
+        self._shader_map['translate'] = self.translate
         return self._shader_map
 
     def shader_imap(self):
-        self._shader_imap['scale'] = ('uniform', 'vec4', self.scale)
-        self._shader_imap['translate'] = ('uniform', 'vec4', self.translate)
+        self._shader_imap['scale'] = self.scale
+        self._shader_imap['translate'] = self.translate
         return self._shader_imap
 
     @property
@@ -605,7 +608,7 @@ class STTransform(Transform):
     def scale(self, s):
         self._scale[:len(s)] = s[:4]
         self._scale[len(s):] = 1.0
-        self.shader_map()  # update shader variables
+        self._update()
 
     @property
     def translate(self):
@@ -615,13 +618,18 @@ class STTransform(Transform):
     def translate(self, t):
         self._translate[:len(t)] = t[:4]
         self._translate[len(t):] = 0.0
-        self.shader_map()  # update shader variables
+        self._update()
 
     def as_affine(self):
         m = AffineTransform()
         m.scale(self.scale)
         m.translate(self.translate)
         return m
+    
+    def _update(self):
+        # force update of uniforms on shader functions
+        self.shader_map()
+        self.shader_imap()
 
     @classmethod
     def from_mapping(cls, x0, x1):
@@ -682,13 +690,13 @@ class STTransform(Transform):
 
 class AffineTransform(Transform):
     glsl_map = """
-        vec4 $affine_transform_map(vec4 pos) {
+        vec4 affine_transform_map(vec4 pos) {
             return $matrix * pos;
         }
     """
 
     glsl_imap = """
-        vec4 $affine_transform_imap(vec4 pos) {
+        vec4 affine_transform_imap(vec4 pos) {
             return $inv_matrix * pos;
         }
     """
@@ -716,12 +724,12 @@ class AffineTransform(Transform):
 
     def shader_map(self):
         fn = super(AffineTransform, self).shader_map()
-        fn['matrix'] = ('uniform', 'mat4', self.matrix)
+        fn['matrix'] = self.matrix  # uniform mat4
         return fn
 
     def shader_imap(self):
         fn = super(AffineTransform, self).shader_imap()
-        fn['inv_matrix'] = ('uniform', 'mat4', self.inv_matrix)
+        fn['inv_matrix'] = self.inv_matrix  # uniform mat4
         return fn
 
     def inverse(self):
@@ -847,7 +855,7 @@ class LogTransform(Transform):
     # An alternative approach is to transpose the vector before
     # log-transforming, and then transpose back afterward.
     glsl_map = """
-        vec4 $LogTransform_map(vec4 pos) {
+        vec4 LogTransform_map(vec4 pos) {
             if($base.x > 1.0)
                 pos.x = log(pos.x) / log($base.x);
             else if($base.x < -1.0)
@@ -913,12 +921,12 @@ class LogTransform(Transform):
 
     def shader_map(self):
         fn = super(LogTransform, self).shader_map()
-        fn['base'] = ('uniform', 'vec3', self.base)
+        fn['base'] = self.base  # uniform vec3
         return fn
 
     def shader_imap(self):
         fn = super(LogTransform, self).shader_imap()
-        fn['base'] = ('uniform', 'vec3', self.base)
+        fn['base'] = self.base  # uniform vec3
         return fn
 
     def __repr__(self):
@@ -932,13 +940,13 @@ class PolarTransform(Transform):
 
     """
     glsl_map = """
-        vec4 $polar_transform_map(vec4 pos) {
+        vec4 polar_transform_map(vec4 pos) {
             return vec4(pos.y * cos(pos.x), pos.y * sin(pos.x), pos.z, 1);
         }
         """
 
     glsl_imap = """
-        vec4 $polar_transform_map(vec4 pos) {
+        vec4 polar_transform_map(vec4 pos) {
             // TODO: need some modulo math to handle larger theta values..?
             float theta = atan(pos.y, pos.x);
             float r = length(pos.xy);

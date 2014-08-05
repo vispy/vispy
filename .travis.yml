@@ -24,11 +24,11 @@ env:
 before_install:
     - travis_retry sudo apt-get -qq update;
     - if [ "${PYTHON}" != "2.7" ]; then
-        wget http://repo.continuum.io/miniconda/Miniconda-2.2.2-Linux-x86_64.sh -O miniconda.sh;
+        wget -q http://repo.continuum.io/miniconda/Miniconda-2.2.2-Linux-x86_64.sh -O miniconda.sh;
         chmod +x miniconda.sh;
-        ./miniconda.sh -b;
+        ./miniconda.sh -b &> /dev/null;
         export PATH=/home/$USER/anaconda/bin:$PATH;
-        conda update --yes conda;
+        conda update --yes --quiet conda &> /dev/null;
         travis_retry sudo apt-get -qq -y install libgl1-mesa-dri;
       fi;
 
@@ -62,30 +62,30 @@ before_install:
 install:
     # Install numpy, nose, flake
     - if [ "${PYTHON}" != "2.7" ]; then
-        conda create -n testenv --yes --quiet pip python=$PYTHON;
-        source activate testenv;
-        conda install --yes --quiet numpy nose;
+        conda create -n testenv --yes --quiet pip python=$PYTHON > /dev/null;
+        source activate testenv > /dev/null;
+        conda install --yes --quiet numpy nose > /dev/null;
       else
-        travis_retry sudo apt-get -qq -y install python-numpy python-nose python-setuptools;
+        travis_retry sudo apt-get -qq -y install python-numpy python-nose python-setuptools > /dev/null;
       fi;
     - pip install -q coveralls nose-timer
     # Dont install flake8 on 2.6 to make sure tests still run without it
     - if [ "${PYTHON}" != "2.6" ]; then
         pip install -q flake8;
       else
-        pip install unittest2;
+        pip install -q unittest2;
       fi
     # helpful for debugging faults
     - if [ "${PYTHON}" != 3.3 ]; then
-        pip install nose-faulthandler;
+        pip install -q nose-faulthandler;
       fi
 
     # Install PyOpenGL
     - if [ "${DEPS}" == "full" ]; then
-        travis_retry sudo apt-get -qq -y install freeglut3;
+        travis_retry sudo apt-get -qq -y install freeglut3 > /dev/null;
         if [ "${PYTHON}" == "2.7" ]; then
           echo "Using OpenGL stable version (repos)";
-          travis_retry sudo apt-get -qq -y install python-opengl;
+          travis_retry sudo apt-get -qq -y install python-opengl > /dev/null;
         else
           echo "Using OpenGL stable version (pip)";
           pip install -q PyOpenGL;
@@ -102,47 +102,47 @@ install:
           pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         fi;
         if [ "${PYTHON}" == "3.3" ]; then
-          conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo;
-          conda install --yes --quiet pillow;
-          conda install --yes --quiet scipy;
+          conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo > /dev/null;
+          conda install --yes --quiet pillow > /dev/null;
+          conda install --yes --quiet scipy > /dev/null;
         fi;
         if [ "${PYTHON}" == "2.7" ]; then
-          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy;
+          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy > /dev/null;
         fi;
       fi;
 
     # Install vispy
     - cd ${SRC_DIR}
-    - python setup.py install
+    - python setup.py install > /dev/null
     - cd ~
 
     # GLFW: version 2 shouldn't work (so let's try on Py2.6), version 3 will
     - if [ "${PYTHON}" == "2.6" ] && [ "${DEPS}" == "full" ]; then
-        travis_retry sudo apt-get -qq install libglfw2;
+        travis_retry sudo apt-get -qq install libglfw2 > /dev/null;
       fi
     - if [ "${PYTHON}" != "2.6" ] && [ "${DEPS}" == "full" ]; then
-        travis_retry sudo apt-get -qq install xorg-dev libglu1-mesa-dev;
-        git clone git://github.com/glfw/glfw.git;
+        travis_retry sudo apt-get -qq install xorg-dev libglu1-mesa-dev > /dev/null;
+        git clone git://github.com/glfw/glfw.git > /dev/null;
         cd glfw;
-        cmake -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false .;
-        sudo make install;
+        cmake -DBUILD_SHARED_LIBS=true -DGLFW_BUILD_EXAMPLES=false -DGLFW_BUILD_TESTS=false -DGLFW_BUILD_DOCS=false . > /dev/null;
+        sudo make install > /dev/null;
       fi
 
     # Install SDL2 (on 2.6, let's only install sdl2-python to test handling)
     - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" != "2.6" ]; then
           cd ~;
-          travis_retry sudo apt-get -qq -y install mercurial libdbus-1-dev libgl1-mesa-dev libglu1-mesa-dev libpulse-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev libxrandr-dev libxss-dev libxt-dev libxv-dev libxxf86vm-dev libasound2-dev libts-dev libudev-dev;
-          wget http://www.libsdl.org/release/SDL2-2.0.3.tar.gz;
-          tar xzf SDL2-2.0.3.tar.gz;
+          travis_retry sudo apt-get -qq -y install mercurial libdbus-1-dev libgl1-mesa-dev libglu1-mesa-dev libpulse-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev libxrandr-dev libxss-dev libxt-dev libxv-dev libxxf86vm-dev libasound2-dev libts-dev libudev-dev > /dev/null;
+          wget -q http://www.libsdl.org/release/SDL2-2.0.3.tar.gz;
+          tar xzf SDL2-2.0.3.tar.gz &> /dev/null;
           cd SDL2-2.0.3;
           mkdir build;
           cd build;
-          ../configure --disable-audio --disable-render --disable-joystick --disable-haptic --disable-power --disable-cpuinfo;
-          make -j 2;
-          sudo make install;
+          ../configure --disable-audio --disable-render --disable-joystick --disable-haptic --disable-power --disable-cpuinfo &> /dev/null;
+          make -j 2 &> /dev/null;
+          sudo make install &> /dev/null;
         fi;
-        pip install PySDL2;
+        pip install -q PySDL2;
       fi;
     # after manual builds we need to update .so search
     - sudo ldconfig

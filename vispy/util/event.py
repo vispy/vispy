@@ -18,6 +18,7 @@ import sys
 import inspect
 import weakref
 import traceback
+import math
 
 from .ordereddict import OrderedDict
 from ._logging import logger
@@ -190,6 +191,7 @@ class EventEmitter(object):
         self._emitting = False  # used to detect emitter loops
         self.source = source
         self.default_args = {}
+        self._err_registry = {}
         if type is not None:
             self.default_args['type'] = type
 
@@ -197,7 +199,7 @@ class EventEmitter(object):
         self.event_class = event_class
 
         self._ignore_callback_errors = True
-        self._print_callback_errors = True
+        self.print_callback_errors = 'reminders'
 
     @property
     def ignore_callback_errors(self):
@@ -216,6 +218,10 @@ class EventEmitter(object):
     def print_callback_errors(self):
         """Print a message and stack trace if a callback raises an exception
 
+        Valid values are "first" (only show first instance), "reminders" (show
+        complete first instance, then counts), "always" (always show full
+        traceback), or "never".
+
         This assumes ignore_callback_errors=True. These will be raised as
         warnings, so ensure that the vispy logging level is set to at
         least "warning".
@@ -224,6 +230,9 @@ class EventEmitter(object):
 
     @print_callback_errors.setter
     def print_callback_errors(self, val):
+        if val not in ('first', 'reminders', 'always', 'never'):
+            raise ValueError('print_callback_errors must be "first", '
+                             '"reminders", "always", or "never"')
         self._print_callback_errors = val
 
     @property
@@ -432,10 +441,32 @@ class EventEmitter(object):
             del tb  # Get rid of it in this namespace
             # Handle
             if self.ignore_callback_errors:
-                if self.print_callback_errors:
-                    logger.log_exception()
-                    logger.warning("Error invoking callback %s for "
-                                   "event: %s" % (cb, event))
+                if self.print_callback_errors != "never":
+                    this_print = 'full'
+                    if self.print_callback_errors in ('first', 'reminders'):
+                        # need to check to see if we've hit this yet
+                        key = repr(cb) + repr(event)
+                        if key in self._err_registry:
+                            self._err_registry[key] += 1
+                            if self.print_callback_errors == 'first':
+                                this_print = None
+                            else:  # reminders
+                                ii = self._err_registry[key]
+                                # Use logarithmic selection
+                                # (1, 2, ..., 10, 20, ..., 100, 200, ...)
+                                if ii % (10 ** int(math.log10(ii))) == 0:
+                                    this_print = ii
+                                else:
+                                    this_print = None
+                        else:
+                            self._err_registry[key] = 1
+                    if this_print == 'full':
+                        logger.log_exception()
+                        logger.warning("Error invoking callback %s for "
+                                       "event: %s" % (cb, event))
+                    elif this_print is not None:
+                        logger.warning("Error invoking callback %s repeat %s"
+                                       % (cb, this_print))
             else:
                 raise
 

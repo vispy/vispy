@@ -245,7 +245,7 @@ class TestEmitters(unittest.TestCase):
     def test_emitter_error_handling(self):
         """Emitter error handling"""
         em = EventEmitter(type='test_event')
-        em.print_callback_errors = False
+        em.print_callback_errors = 'never'
 
         def cb(ev):
             raise Exception('test')
