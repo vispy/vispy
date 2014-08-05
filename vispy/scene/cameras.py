@@ -63,9 +63,9 @@ class Camera(Entity):
     """
     def __init__(self):
         self._viewbox = None
-        self._scene_transform = NullTransform()
         self._interactive = True
         super(Camera, self).__init__()
+        self.transform = NullTransform()
 
     @property
     def interactive(self):
@@ -123,7 +123,7 @@ class Camera(Entity):
         """ Subclasses should reimplement this method to update the scene
         transform by calling self._set_scene_transform.
         """
-        self._set_scene_transform(NullTransform())
+        self._set_scene_transform(self.transform)
         
     def _set_scene_transform(self, tr):
         """ Called by subclasses to configure the viewbox scene transform.
@@ -139,6 +139,10 @@ class PanZoomCamera(Camera):
     """
     Camera implementing 2D pan/zoom mouse interaction. Primarily intended for
     displaying plot data.
+
+    By default, this camera inverts the y axis of the scene. This usually 
+    results in the scene +y axis pointing upward because widgets (including 
+    ViewBox) have their +y axis pointing downward.
     
     User interaction:
     
@@ -150,8 +154,84 @@ class PanZoomCamera(Camera):
     def __init__(self):
         super(PanZoomCamera, self).__init__()
         self._rect = Rect((0, 0), (1, 1))  # visible range in scene
+        self._invert = [False, True]
         self.transform = STTransform()
         
+    def zoom(self, zoom, center):
+        """ Zoom the view around a center point.
+        
+        Parameters
+        ----------
+        zoom : length-2 sequence
+            The fraction to zoom the x and y axes.
+        center : length-2 sequence
+            The point (in the coordinate system of the scene) that will remain
+            stationary in the ViewBox while zooming.
+        """
+        # TODO: would be nice if STTransform had a nice scale(s, center) 
+        # method like AffineTransform.
+        transform = (STTransform(translate=center) * 
+                     STTransform(scale=zoom) * 
+                     STTransform(translate=-center))
+        
+        self.rect = transform.map(self.rect)
+        
+    def pan(self, pan):
+        """ Pan the view.
+        
+        Parameters
+        ----------
+        pan : length-2 sequence
+            The distance to pan the view, in the coordinate system of the 
+            scene.
+        """
+        self.rect = self.rect + pan
+
+    @property
+    def rect(self):
+        """ The rectangular border of the ViewBox visible area, expressed in
+        the coordinate system of the scene.
+        
+        By definition, the +y axis of this rect is opposite the +y axis of the
+        ViewBox. 
+        """
+        return self._rect
+        
+    @rect.setter
+    def rect(self, args):
+        """
+        Set the bounding rect of the visible area in the subscene. 
+        
+        By definition, the +y axis of this rect is opposite the +y axis of the
+        ViewBox. 
+        """
+        if isinstance(args, tuple):
+            self._rect = Rect(*args)
+        else:
+            self._rect = Rect(args)
+        self._update_transform()
+
+    @property 
+    def invert_y(self):
+        """ Boolean indicating whether the y axis of the SubScene is inverted 
+        relative to the ViewBox.
+        
+        Default is True--this camera inverts the y axis of the scene. In most
+        cases, this results in the scene +y axis pointing upward because 
+        widgets (including ViewBox) have their +y axis pointing downward.
+        """
+        return self._invert[1]
+    
+    @invert_y.setter
+    def invert_y(self, inv):
+        if not isinstance(inv, bool):
+            raise TypeError("Invert must be boolean.")
+        self._invert[1] = inv
+        self._update_transform()
+        
+    def view_resize_event(self, event):
+        self._update_transform()
+
     def view_mouse_event(self, event):
         """
         The SubScene received a mouse event; update transform 
@@ -191,68 +271,11 @@ class PanZoomCamera(Camera):
         if event.handled:
             self._update_transform()
 
-    def zoom(self, zoom, center):
-        """ Zoom the view around a center point.
-        
-        Parameters
-        ----------
-        zoom : length-2 sequence
-            The fraction to zoom the x and y axes.
-        center : length-2 sequence
-            The point (in the coordinate system of the scene) that will remain
-            stationary in the ViewBox while zooming.
-        """
-        # TODO: would be nice if STTransform had a nice scale(s, center) 
-        # method like AffineTransform.
-        transform = (STTransform(translate=center) * 
-                     STTransform(scale=zoom) * 
-                     STTransform(translate=-center))
-        
-        self.rect = transform.map(self.rect)
-        
-    def pan(self, pan):
-        """ Pan the view.
-        
-        Parameters
-        ----------
-        pan : length-2 sequence
-            The distance to pan the view, in the coordinate system of the 
-            scene.
-        """
-        self.rect = self.rect + pan
-
-    def view_resize_event(self, event):
-        self._update_transform()
-
-    @property
-    def rect(self):
-        """ The rectangular border of the ViewBox visible area, expressed in
-        the coordinate system of the scene.
-        
-        By definition, the +y axis of this rect is opposite the +y axis of the
-        ViewBox. 
-        """
-        return self._rect
-        
-    @rect.setter
-    def rect(self, args):
-        """
-        Set the bounding rect of the visible area in the subscene. 
-        
-        By definition, the +y axis of this rect is opposite the +y axis of the
-        ViewBox. 
-        """
-        if isinstance(args, tuple):
-            self._rect = Rect(*args)
-        else:
-            self._rect = Rect(args)
-        self._update_transform()
-        
     def _update_transform(self):
         if self.viewbox is None:
             return
         
-        vbr = self.viewbox.rect.flipped(y=True, x=False)
+        vbr = self.viewbox.rect.flipped(x=self._invert[0], y=self._invert[1])
         self.transform.set_mapping(self.rect, vbr)
         self._set_scene_transform(self.transform)
 
@@ -268,7 +291,6 @@ class PerspectiveCamera(Camera):
     
     Parameters are *mode*, *fov*, and *width*, 
     corresponding to the properties of the same name.
-        
     """
     def __init__(self, mode='ortho', fov=60., width=10.):
         # projection transform and associated options
