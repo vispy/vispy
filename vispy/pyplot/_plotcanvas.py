@@ -40,12 +40,8 @@ class PanZoomTransform(STTransform):
 
 class MarkerVisual(Visual):
     VERTEX_SHADER = """
-        #version 120
-
-        vec4 transform(vec4);
-
+        uniform vec3 u_color;
         attribute vec2 a_position;
-        attribute vec3 a_color;
         attribute float a_size;
 
         varying vec4 v_fg_color;
@@ -54,19 +50,18 @@ class MarkerVisual(Visual):
         varying float v_linewidth;
         varying float v_antialias;
 
-        void main (void) {
+        void main(void) {
             v_radius = a_size;
             v_linewidth = 1.0;
             v_antialias = 1.0;
             v_fg_color  = vec4(0.0,0.0,0.0,0.5);
-            v_bg_color  = vec4(a_color, 1.0);
-            gl_Position = transform(vec4(a_position, 0., 1.));
+            v_bg_color  = vec4(u_color, 1.0);
+            gl_Position = $transform(vec4(a_position, 0., 1.));
             gl_PointSize = 2.0*(v_radius + v_linewidth + 1.5*v_antialias);
         }
     """
 
     FRAGMENT_SHADER = """
-        #version 120
         varying vec4 v_fg_color;
         varying vec4 v_bg_color;
         varying float v_radius;
@@ -110,25 +105,22 @@ class MarkerVisual(Visual):
         self.set_options()
         self._program.prepare()
         self._program['a_position'] = gloo.VertexBuffer(self._pos)
-        self._program['a_color'] = gloo.VertexBuffer(self._color)
+        self._program['u_color'] = self._color
         self._program['a_size'] = gloo.VertexBuffer(self._size)
         self._program.draw(gloo.gl.GL_POINTS, 'points')
 
 
 class LineVisual(Visual):
     VERTEX_SHADER = """
-        #version 120
-        vec4 transform(vec4);
         attribute vec2 a_position;
 
-        void main (void)
+        void main(void)
         {
-            gl_Position = transform(vec4(a_position, 0., 1.0));
+            gl_Position = $transform(vec4(a_position, 0., 1.0));
         }
     """
 
     FRAGMENT_SHADER = """
-        #version 120
         uniform vec3 u_color;
         void main()
         {
@@ -171,7 +163,7 @@ class PlotCanvas(app.Canvas):
     def add_visual(self, name, value):
         assert name not in self._visuals
         self._visuals[name] = value
-        value._program['transform'] = self.panzoom.shader_map()
+        value._program.vert['transform'] = self.panzoom.shader_map()
 
     def on_mouse_move(self, event):
         if event.is_dragging:

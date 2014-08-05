@@ -61,17 +61,22 @@ class VispyRenderer(Renderer):
 
     def draw_text(self, text, position, coordinates, style,
                   text_type=None, mplobj=None):
-        raise NotImplementedError
-        # TODO We need a context already to render text...
         self._text_count += 1
         label = 'text_%s' % self._text_count
-        self.canvas.add_visual(label, Text(text))
+        color = Color(style['color'])
+        color.alpha = style['alpha']
+        color = color.rgba
+        # TODO fix FONTSIZE, allow anchor_y='baseline', and deal w/rotation
+        anchor_y = style['valign']
+        anchor_y = anchor_y if anchor_y != 'baseline' else 'bottom'
+        vis = Text(text, color=color,
+                   anchor_x=style['halign'], anchor_y=anchor_y)
+        self.canvas.add_visual(label, vis)
 
     def draw_markers(self, data, coordinates, style, label, mplobj=None):
         pos = data.astype(np.float32)
         n = pos.shape[0]
-        # TODO: uniform instead
-        color = np.tile(Color(style['facecolor']).rgb, (n, 1))
+        color = Color(style['facecolor']).rgb
         # TODO: uniform instead
         size = np.ones(n, np.float32) * style['markersize']
         # TODO: marker style, linewidth, linecolor, etc.
