@@ -363,21 +363,29 @@ def test_event_order():
             x.append('init')
 
         def on_draw(self, event):
-            x.append('draw')
+            try:
+                sz = True if self.size is not None else False
+            except Exception:
+                sz = False
+            x.append('draw size=%s show=%s' % (sz, show))
 
         def on_close(self, event):
             x.append('close')
 
-    with MyCanvas() as c:
-        c.update()
-        c.app.process_events()
+    for show in (False, True):
+        # clear our storage variable
+        while x:
+            x.pop()
+        with MyCanvas(show=show) as c:
+            c.update()
+            c.app.process_events()
 
-    print(x)
-    assert_true(len(x) >= 3)
-    assert_equal(x[0], 'init')
-    assert_equal(x[1], 'draw')
-    assert_equal(x[-2], 'draw')
-    assert_equal(x[-1], 'close')
+        print(x)
+        assert_true(len(x) >= 3)
+        assert_equal(x[0], 'init')
+        assert_in('draw size=True', x[1])
+        assert_in('draw size=True', x[-2])
+        assert_equal(x[-1], 'close')
 
 
 def test_abstract():
