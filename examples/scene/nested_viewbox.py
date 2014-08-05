@@ -43,7 +43,7 @@ from vispy import scene
 # a delibirate mismatch in screen and textue resolution)
 # Try different combinarions, like a viewport in an fbo
 CLIP_METHOD1 = 'viewport'  # none, viewport, fbo (fragment to come)
-CLIP_METHOD2 = 'viewport'
+CLIP_METHOD2 = 'fbo'
 
 
 # Create lines for use in ndc and pixel coordinates
