@@ -12,11 +12,11 @@ from vispy import gloo
 from vispy.scene import visuals
 
 # vertex positions of data to draw
-pos = np.array([[0, 0, 0],
-               [0.25, 0.22, 0],
-               [0.25, 0.5, 0],
-               [0, 0.5, 0],
-               [-0.25, 0.25, 0]])
+pos = [[0, 0, 0],
+       [0.25, 0.22, 0],
+       [0.25, 0.5, 0],
+       [0, 0.5, 0],
+       [-0.25, 0.25, 0]]
 
 
 class Canvas(vispy.app.Canvas):
@@ -25,12 +25,12 @@ class Canvas(vispy.app.Canvas):
                                        border_color=(1, 1, 1, 1))
         
         vispy.app.Canvas.__init__(self, close_keys='escape')
-        self.pos = pos
+        self.pos = np.array(pos)
         self.i = 1
         self.size = (800, 800)
         self.show()
 
-        self.timer = vispy.app.Timer(1.0 / 30)  # change rendering speed here
+        self.timer = vispy.app.Timer(1.0 / 60)  # change rendering speed here
         self.timer.connect(self.on_timer)
         self.timer.start()
 
@@ -40,8 +40,13 @@ class Canvas(vispy.app.Canvas):
         self.polygon.pos = self.pos
         self.update()
 
+    def on_mouse_press(self, event):
+        self.i = 1.
+        self.pos = np.array(pos)
+        self.update()
+
     def on_draw(self, ev):
-        gloo.set_clear_color((0, 0, 0, 1))
+        gloo.set_clear_color(color='black')
         gloo.clear()
         gloo.set_viewport(0, 0, *self.size)
         self.polygon.draw()

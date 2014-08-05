@@ -15,6 +15,7 @@ from ... import gloo
 from .visual import Visual
 from .mesh import Mesh
 from .line import Line
+from ...color import Color
 from ...util.geometry import PolygonData
 
 
@@ -31,7 +32,6 @@ class Polygon(Visual):
         self._pos = pos
         self._color = color
         self._border_color = border_color
-        self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
         self._update()
         #glopts = kwds.pop('gl_options', 'translucent')
         #self.set_gl_options(glopts)
@@ -66,11 +66,11 @@ class Polygon(Visual):
     def color(self):
         """ The color of the polygon.
         """
-        return self._pos
+        return self._color
 
     @color.setter
     def color(self, color):
-        self._color = color
+        self._color = Color(color).rgba
         self._update()
 
     @property
@@ -81,7 +81,7 @@ class Polygon(Visual):
 
     @border_color.setter
     def border_color(self, border_color):
-        self._border_color = border_color
+        self._border_color = Color(border_color).rgba
         self._update()
 
     def _update(self):

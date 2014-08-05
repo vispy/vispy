@@ -22,18 +22,23 @@ class Canvas(vispy.app.Canvas):
         self.size = (800, 800)
         self.show()
         
-        self.timer = vispy.app.Timer(1.0 / 30)  # change rendering speed here
+        self.timer = vispy.app.Timer(1.0 / 60)  # change rendering speed here
         self.timer.connect(self.on_timer)
         self.timer.start()
 
     def on_timer(self, event):
-        self.ellipse.radius[0] += 0.002
-        self.ellipse.radius[1] += 0.003
-        self.ellipse.span_angle += 1.2
+        self.ellipse.radius[0] += 0.001
+        self.ellipse.radius[1] += 0.0015
+        self.ellipse.span_angle += 0.6
+        self.update()
+
+    def on_mouse_press(self, event):
+        self.ellipse.radius = [0.4, 0.3]
+        self.ellipse.span_angle = 150.
         self.update()
 
     def on_draw(self, ev):
-        gloo.set_clear_color((0, 0, 0, 1))
+        gloo.set_clear_color(color='black')
         gloo.clear()
         gloo.set_viewport(0, 0, *self.size)
         self.ellipse.draw()

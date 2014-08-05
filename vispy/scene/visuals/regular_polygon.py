@@ -38,8 +38,9 @@ class RegularPolygon(Ellipse):
 
     @sides.setter
     def sides(self, sides):
-        self._sides = sides
-        self._update()
+        if sides >= 3:
+            self._sides = sides
+            self._update()
 
     def _update(self):
         if self._pos is not None:

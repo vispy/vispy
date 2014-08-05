@@ -37,8 +37,14 @@ class Canvas(vispy.app.Canvas):
                                np.cos(self.rpolygon.radius*2), 1.0)
         self.update()
 
+    def on_mouse_press(self, event):
+        self.rpolygon.radius = 0.2
+        self.rpolygon.sides = 4
+        self.rpolygon.color = 'red'
+        self.update()
+
     def on_draw(self, ev):
-        gloo.set_clear_color((0, 0, 0, 1))
+        gloo.set_clear_color(color='black')
         gloo.clear()
         gloo.set_viewport(0, 0, *self.size)
         self.rpolygon.draw()
