@@ -11,4 +11,5 @@ build
 dist
 MANIFEST
 .coverage
+htmlcov
 vispy.egg-info
