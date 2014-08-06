@@ -108,7 +108,7 @@ def find_font(face, bold, italic):
     if result != 0:
         raise RuntimeError('No filename or FT face for "%s"' % face)
     fname = value.u.s
-    return fname
+    return fname.decode('utf-8')
 
 
 def _list_fonts():
