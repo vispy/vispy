@@ -1,6 +1,6 @@
 language: python
 
-# Here we use anaconda for 2.6 and 3.3, since it provides the simplest
+# Here we use anaconda for 2.6 and 3.4, since it provides the simplest
 # interface for running different versions of Python. We could also use
 # it for 2.7, but the Ubuntu system has installable 2.7 Qt4-GL, which
 # allows for more complete testing.
@@ -17,8 +17,8 @@ env:
     - PYTHON=2.6 DEPS=full TEST=standard  # functionality
     - PYTHON=2.7 DEPS=full TEST=standard
     - PYTHON=2.7 DEPS=minimal TEST=standard
-    - PYTHON=3.3 DEPS=full TEST=standard
-    - PYTHON=3.3 DEPS=minimal TEST=extra  # test file sizes, style, line endings
+    - PYTHON=3.4 DEPS=full TEST=standard
+    - PYTHON=3.4 DEPS=minimal TEST=extra  # test file sizes, style, line endings
 
 
 before_install:
@@ -76,7 +76,7 @@ install:
         pip install -q unittest2;
       fi
     # helpful for debugging faults
-    - if [ "${PYTHON}" != 3.3 ]; then
+    - if [ "${PYTHON}" != 3.4 ]; then
         pip install -q nose-faulthandler;
       fi
 
@@ -92,7 +92,7 @@ install:
         fi;
       fi;
 
-    # Use Pyglet alpha to get Py3.3 support
+    # Use Pyglet alpha to get Py3.4 support
     # Also install PyQt4, imaging (PIL or pillow) and scipy
     # Test old (insufficient) version of Pyglet on 2.6
     - if [ "${DEPS}" == "full" ]; then
@@ -101,7 +101,7 @@ install:
         else
           pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         fi;
-        if [ "${PYTHON}" == "3.3" ]; then
+        if [ "${PYTHON}" == "3.4" ]; then
           conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo > /dev/null;
           conda install --yes --quiet pillow > /dev/null;
           conda install --yes --quiet scipy > /dev/null;
