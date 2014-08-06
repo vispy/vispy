@@ -8,7 +8,7 @@ import numpy as np
 
 from .widget import Widget
 from ..subscene import SubScene
-from ..cameras import make_camera, Camera
+from ..cameras import make_camera, BaseCamera
 from ...ext.six import string_types
 
 
@@ -63,8 +63,8 @@ class ViewBox(Widget):
         if camera is None:
             camera = 'panzoom'
         if isinstance(camera, string_types):
-            self.camera = make_camera('panzoom')
-        elif isinstance(camera, Camera):
+            self.camera = make_camera(camera)
+        elif isinstance(camera, BaseCamera):
             self.camera = camera
         else:
             raise TypeError('Argument "camera" must be None, str, or Camera.')

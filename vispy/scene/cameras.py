@@ -41,7 +41,7 @@ def make_camera(cam_type, *args, **kwds):
     Camera class.
     """
     cam_types = {
-        None: Camera,
+        None: BaseCamera,
         'panzoom': PanZoomCamera,
         'turntable': TurntableCamera,
     }
@@ -53,7 +53,7 @@ def make_camera(cam_type, *args, **kwds):
                        (cam_type, cam_types.keys()))
 
 
-class Camera(Entity):
+class BaseCamera(Entity):
     """ Camera describes the perspective from which a ViewBox views its 
     subscene, and the way that user interaction affects that perspective.
     
@@ -64,7 +64,7 @@ class Camera(Entity):
     def __init__(self):
         self._viewbox = None
         self._interactive = True
-        super(Camera, self).__init__()
+        super(BaseCamera, self).__init__()
         self.transform = NullTransform()
 
     @property
@@ -99,12 +99,14 @@ class Camera(Entity):
         self._viewbox.events.mouse_release.connect(self.view_mouse_event)
         self._viewbox.events.mouse_move.connect(self.view_mouse_event)
         self._viewbox.events.mouse_wheel.connect(self.view_mouse_event)
+        self._viewbox.events.resize.connect(self.view_resize_event)
     
     def disconnect(self):
         self._viewbox.events.mouse_press.disconnect(self.view_mouse_event)
         self._viewbox.events.mouse_release.disconnect(self.view_mouse_event)
         self._viewbox.events.mouse_move.disconnect(self.view_mouse_event)
         self._viewbox.events.mouse_wheel.disconnect(self.view_mouse_event)
+        self._viewbox.events.resize.disconnect(self.view_resize_event)
     
     def view_mouse_event(self, event):
         """
@@ -135,7 +137,7 @@ class Camera(Entity):
             self.viewbox.scene.transform = self._scene_transform
 
     
-class PanZoomCamera(Camera):
+class PanZoomCamera(BaseCamera):
     """
     Camera implementing 2D pan/zoom mouse interaction. Primarily intended for
     displaying plot data.
@@ -280,7 +282,7 @@ class PanZoomCamera(Camera):
         self._set_scene_transform(self.transform)
 
         
-class PerspectiveCamera(Camera):
+class PerspectiveCamera(BaseCamera):
     """ Base class for 3D cameras supporting orthographic and perspective
     projections.
     

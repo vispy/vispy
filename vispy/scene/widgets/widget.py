@@ -37,7 +37,7 @@ class Widget(Visual):
         size = kwargs.pop('size', (10, 10))
         
         Visual.__init__(self, *args, **kwargs)
-        self.events.add(rect_change=Event)
+        self.events.add(resize=Event)
         self._size = 16, 16
         self.transform = STTransform()
         # todo: TTransform (translate only for widgets)
@@ -56,7 +56,7 @@ class Widget(Visual):
         assert len(p) == 2
         self.transform.translate = p[0], p[1], 0, 0
         self._update_line()
-        self.events.rect_change()
+        self.events.resize()
 
     @property
     def size(self):
@@ -71,7 +71,7 @@ class Widget(Visual):
         assert len(s) == 2
         self._size = s
         self._update_line()
-        self.events.rect_change()
+        self.events.resize()
         self._update_child_widgets()
 
     @property
@@ -80,11 +80,11 @@ class Widget(Visual):
 
     @rect.setter
     def rect(self, r):
-        with self.events.rect_change.blocker():
+        with self.events.reesize.blocker():
             self.pos = r.pos
             self.size = r.size
         self.update()
-        self.events.rect_change()
+        self.events.resize()
 
     @property
     def border(self):
@@ -142,7 +142,7 @@ class Widget(Visual):
     def draw(self, event):
         self._visual.draw(event)
 
-    def on_rect_change(self, ev):
+    def on_resize(self, ev):
         self._update_child_widgets()
 
     def _update_child_widgets(self):
