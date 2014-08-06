@@ -141,19 +141,19 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_set_title(self, title):
         return self._backend2._vispy_set_title(title)
-        #logger.warn('IPython notebook canvas has not title.')
+        #logger.warning('IPython notebook canvas has not title.')
 
     def _vispy_set_size(self, w, h):
         #return self._backend2._vispy_set_size(w, h)
-        logger.warn('IPython notebook canvas cannot be resized.')
+        logger.warning('IPython notebook canvas cannot be resized.')
 
     def _vispy_set_position(self, x, y):
-        logger.warn('IPython notebook canvas cannot be repositioned.')
+        logger.warning('IPython notebook canvas cannot be repositioned.')
 
     def _vispy_set_visible(self, visible):
         #self._backend2._vispy_set_visible(visible)
         if not visible:
-            logger.warn('IPython notebook canvas cannot be hidden.')
+            logger.warning('IPython notebook canvas cannot be hidden.')
 
     def _vispy_update(self):
         return self._backend2._vispy_update()

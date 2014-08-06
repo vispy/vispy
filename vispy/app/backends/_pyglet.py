@@ -270,6 +270,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
     def _vispy_close(self):
         # Force the window or widget to shut down
         # In Pyglet close is equivalent to destroy (window becomes invalid)
+        self._vispy_canvas = None
         self.close()
 
     def _vispy_get_size(self):

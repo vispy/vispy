@@ -2,6 +2,7 @@ import numpy as np
 from os import path as op
 from nose.tools import assert_equal, assert_raises
 from numpy.testing import assert_allclose, assert_array_equal
+import warnings
 
 from vispy.util.dataio import write_mesh, read_mesh, crate, imsave, imread
 from vispy.util._geom import _fast_cross_3d
@@ -44,7 +45,8 @@ def test_read_write_image():
     fname = op.join(temp_dir, 'out.png')
     im1 = crate()
     imsave(fname, im1, format='png')
-    im2 = imread(fname)
+    with warnings.catch_warnings(record=True):  # PIL unclosed file
+        im2 = imread(fname)
     assert_allclose(im1, im2)
 
 

@@ -9,11 +9,10 @@ import numpy as np
 from vispy import gloo
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, assert_image_equal,
-                           requires_img_lib, requires_scipy, TestingCanvas)
+                           requires_scipy, TestingCanvas)
 
 
 @requires_application()
-@requires_img_lib()
 @requires_scipy()
 def test_square_draw():
     """Test drawing squares without transforms using PolygonVisual"""
@@ -39,7 +38,6 @@ def test_square_draw():
 
 
 @requires_application()
-@requires_img_lib()
 @requires_scipy()
 def test_rectangle_draw():
     """Test drawing rectangles with transforms using PolygonVisual"""
