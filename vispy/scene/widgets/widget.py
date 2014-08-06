@@ -80,7 +80,7 @@ class Widget(Visual):
 
     @rect.setter
     def rect(self, r):
-        with self.events.reesize.blocker():
+        with self.events.resize.blocker():
             self.pos = r.pos
             self.size = r.size
         self.update()
