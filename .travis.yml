@@ -146,8 +146,13 @@ install:
         pip install -q PySDL2;
       fi;
 
-    # Install mplexporter
+    # Install matplotlib and mplexporter
     - if [ "${DEPS}" == "full" ]; then
+        if [ "${PYTHON}" == "2.7" ]; then
+          travis_retry sudo apt-get -qq -y install python-matplotlib > ${REDIRECT_TO};
+        else
+          conda install --yes --quiet matplotlib > ${REDIRECT_TO};
+        fi;
         cd ~;
         git clone git://github.com/mpl3d/mplexporter.git > /dev/null;
         cd mplexporter;

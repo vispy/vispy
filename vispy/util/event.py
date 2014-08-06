@@ -146,6 +146,62 @@ class Event(object):
 _event_repr_depth = 0
 
 
+def _handle_exception(ignore_callback_errors, print_callback_errors, registry,
+                      cb_event=None, entity=None):
+    """Helper for prining errors in callbacks"""
+    if cb_event is not None:
+        cb, event = cb_event
+        exp_type = 'callback'
+    else:
+        exp_type = 'entity'
+    type_, value, tb = sys.exc_info()
+    tb = tb.tb_next  # Skip *this* frame
+    sys.last_type = type_
+    sys.last_value = value
+    sys.last_traceback = tb
+    del tb  # Get rid of it in this namespace
+    # Handle
+    if ignore_callback_errors:
+        if print_callback_errors != "never":
+            this_print = 'full'
+            if print_callback_errors in ('first', 'reminders'):
+                # need to check to see if we've hit this yet
+                if exp_type == 'callback':
+                    key = repr(cb) + repr(event)
+                else:
+                    key = repr(entity)
+                if key in registry:
+                    registry[key] += 1
+                    if print_callback_errors == 'first':
+                        this_print = None
+                    else:  # reminders
+                        ii = registry[key]
+                        # Use logarithmic selection
+                        # (1, 2, ..., 10, 20, ..., 100, 200, ...)
+                        if ii % (10 ** int(math.log10(ii))) == 0:
+                            this_print = ii
+                        else:
+                            this_print = None
+                else:
+                    registry[key] = 1
+            if this_print == 'full':
+                logger.log_exception()
+                if exp_type == 'callback':
+                    logger.warning("Error invoking callback %s for "
+                                   "event: %s" % (cb, event))
+                else:  # == 'entity':
+                    logger.warning("Error drawing entity %s" % entity)
+            elif this_print is not None:
+                if exp_type == 'callback':
+                    logger.warning("Error invoking callback %s repeat %s"
+                                   % (cb, this_print))
+                else:  # == 'entity':
+                    logger.warning("Error drawing entity %s repeat %s"
+                                   % (entity, this_print))
+    else:
+        raise
+
+
 class EventEmitter(object):
 
     """Encapsulates a list of event callbacks.
@@ -190,7 +246,7 @@ class EventEmitter(object):
 
         # count number of times this emitter is blocked for each callback.
         self._blocked = {None: 0}
-        
+
         # used to detect emitter loops
         self._emitting = False
         self.source = source
@@ -439,42 +495,9 @@ class EventEmitter(object):
         except Exception:
             # get traceback and store (so we can do postmortem
             # debugging)
-            type, value, tb = sys.exc_info()
-            tb = tb.tb_next  # Skip *this* frame
-            sys.last_type = type
-            sys.last_value = value
-            sys.last_traceback = tb
-            del tb  # Get rid of it in this namespace
-            # Handle
-            if self.ignore_callback_errors:
-                if self.print_callback_errors != "never":
-                    this_print = 'full'
-                    if self.print_callback_errors in ('first', 'reminders'):
-                        # need to check to see if we've hit this yet
-                        key = repr(cb) + repr(event)
-                        if key in self._err_registry:
-                            self._err_registry[key] += 1
-                            if self.print_callback_errors == 'first':
-                                this_print = None
-                            else:  # reminders
-                                ii = self._err_registry[key]
-                                # Use logarithmic selection
-                                # (1, 2, ..., 10, 20, ..., 100, 200, ...)
-                                if ii % (10 ** int(math.log10(ii))) == 0:
-                                    this_print = ii
-                                else:
-                                    this_print = None
-                        else:
-                            self._err_registry[key] = 1
-                    if this_print == 'full':
-                        logger.log_exception()
-                        logger.warning("Error invoking callback %s for "
-                                       "event: %s" % (cb, event))
-                    elif this_print is not None:
-                        logger.warning("Error invoking callback %s repeat %s"
-                                       % (cb, this_print))
-            else:
-                raise
+            _handle_exception(self.ignore_callback_errors,
+                              self.print_callback_errors,
+                              self._err_registry, cb_event=(cb, event))
 
     def _prepare_event(self, *args, **kwds):
         # When emitting, this method is called to create or otherwise alter
