@@ -10,7 +10,7 @@ Adapted to `vispy` by Eric Larson <larson.eric.d@gmail.com>.
 import numpy as np
 from os import path as op
 from ....gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
-                      VertexBuffer, Texture2D, set_viewport)
+                      VertexBuffer, Texture2D, set_viewport, set_state)
 
 this_dir = op.dirname(__file__)
 
@@ -35,8 +35,6 @@ void main( void )
 
 frag_seed = """
 uniform sampler2D u_texture;
-varying float v_stepu;
-varying float v_stepv;
 varying vec2 v_uv;
 
 void main( void )
@@ -191,6 +189,8 @@ frag_insert = """
 uniform sampler2D u_texture;
 uniform sampler2D u_pos_texture;
 uniform sampler2D u_neg_texture;
+varying float v_stepu;
+varying float v_stepv;
 varying vec2 v_uv;
 
 vec2 remap(vec4 floatdata) {
@@ -202,12 +202,17 @@ vec2 remap(vec4 floatdata) {
 void main( void )
 {
     float pixel = texture2D(u_texture, v_uv).r;
-    vec2 pos_distvec = remap(texture2D(u_pos_texture, v_uv).rgba);
-    vec2 neg_distvec = remap(texture2D(u_neg_texture, v_uv).rgba);
+    // convert distance from normalized units -> pixels
+    vec2 rescale = vec2(v_stepu, v_stepv);
+    float shrink = 8.;
+    rescale = rescale * 256. / shrink;
+    // Without the division, 1 RGB increment = 1 px distance
+    vec2 pos_distvec = remap(texture2D(u_pos_texture, v_uv).rgba) / rescale;
+    vec2 neg_distvec = remap(texture2D(u_neg_texture, v_uv).rgba) / rescale;
     if (pixel <= 0.5)
-        gl_FragColor = vec4(max(0.5 - length(pos_distvec) * 4., 0.));
+        gl_FragColor = vec4(0.5 - length(pos_distvec));
     else
-        gl_FragColor = vec4(1. - max(0.5 - length(neg_distvec) * 4., 0.));
+        gl_FragColor = vec4(0.5 - (shrink - 1.) / 256. + length(neg_distvec));
 }
 """
 
@@ -228,8 +233,8 @@ class SDFRenderer(object):
         vertices['a_position'] = [[-1., -1.], [-1., 1.], [1., -1.], [1., 1.]]
         vertices['a_texcoord'] = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]]
         vertices = VertexBuffer(vertices)
+        self.program_insert['u_step'] = 1.
         for program in self.programs:
-            program['u_step'] = 0
             program.bind(vertices)
 
     def render_to_texture(self, data, texture, offset, size):
@@ -253,6 +258,7 @@ class SDFRenderer(object):
             assert x.dtype.kind == 'i'
         assert data.ndim == 2 and data.dtype == np.uint8
         assert isinstance(texture, Texture2D)
+        set_state(blend=False, depth_test=False)
 
         # calculate the negative half (within object)
         orig_tex = Texture2D(255 - data, format='luminance')
@@ -269,10 +275,9 @@ class SDFRenderer(object):
         self.program_insert['u_pos_texture'] = edf_pos_tex
         self.program_insert['u_neg_texture'] = edf_neg_tex
         self.fbo_to[-1].color_buffer = texture
-        self.fbo_to[-1].activate()
-        set_viewport(offset[0], offset[1], size[0], size[1])
-        self.program_insert.draw('triangle_strip')
-        self.fbo_to[-1].deactivate()
+        with self.fbo_to[-1]:
+            set_viewport(offset[0], offset[1], size[0], size[1])
+            self.program_insert.draw('triangle_strip')
 
     def _render_edf(self, orig_tex):
         """Render an EDF to a texture"""
@@ -293,19 +298,17 @@ class SDFRenderer(object):
 
         # Do the rendering
         last_rend = 0
-        self.fbo_to[last_rend].activate()
-        set_viewport(0, 0, sdf_size[1], sdf_size[0])
-        self.program_seed['u_texture'] = orig_tex
-        self.program_seed.draw('triangle_strip')
-        self.fbo_to[last_rend].deactivate()
+        with self.fbo_to[last_rend]:
+            set_viewport(0, 0, sdf_size[1], sdf_size[0])
+            self.program_seed['u_texture'] = orig_tex
+            self.program_seed.draw('triangle_strip')
         stepsize = (np.array(sdf_size) // 2).max()
         while stepsize > 0:
             self.program_flood['u_step'] = stepsize
             self.program_flood['u_texture'] = comp_texs[last_rend]
             last_rend = 1 if last_rend == 0 else 0
-            self.fbo_to[last_rend].activate()
-            set_viewport(0, 0, sdf_size[1], sdf_size[0])
-            self.program_flood.draw('triangle_strip')
-            self.fbo_to[last_rend].deactivate()
+            with self.fbo_to[last_rend]:
+                set_viewport(0, 0, sdf_size[1], sdf_size[0])
+                self.program_flood.draw('triangle_strip')
             stepsize //= 2
         return comp_texs[last_rend]
