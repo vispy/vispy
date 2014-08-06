@@ -86,3 +86,31 @@ def test_rectangle_draw():
                                                    translate=(50, 50))
         c.draw_visual(polygon)
         assert_image_equal("screenshot", 'visuals/rectangle3.png')
+
+
+@requires_application()
+@requires_scipy()
+def test_reactive_draw():
+    """Test reactive polygon attributes"""
+    pos = np.array([[-0.1, 0.5, 0],
+                    [0.1, 0.5, 0],
+                    [0.1, -0.5, 0],
+                    [-0.1, -0.5, 0]])
+    with TestingCanvas():
+        polygon = visuals.Polygon(pos=pos, color='yellow')
+        polygon.draw()
+
+        gloo.clear()
+        polygon.pos += [0.1, 0.1, 0]
+        polygon.draw()
+        assert_image_equal("screenshot", 'visuals/reactive_polygon1.png')
+
+        gloo.clear()
+        polygon.color = 'red'
+        polygon.draw()
+        assert_image_equal("screenshot", 'visuals/reactive_polygon2.png')
+
+        gloo.clear()
+        polygon.border_color = 'yellow'
+        polygon.draw()
+        assert_image_equal("screenshot", 'visuals/reactive_polygon3.png')

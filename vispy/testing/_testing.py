@@ -17,7 +17,7 @@ import vispy.ext.six.moves.urllib_parse as urllib
 import base64
 from ..util import make_png
 
-###############################################################################
+##################################################z############################
 # Adapted from Python's unittest2 (which is wrapped by nose)
 # http://docs.python.org/2/license.html
 
@@ -324,3 +324,14 @@ class TestingCanvas(SceneCanvas):
         gloo.clear(color=self._clear_color)
         #gloo.set_viewport(0, 0, *self.size)
         return self
+
+
+def save_testing_image(image, location):
+    from ..gloo.util import _screenshot
+    from ..util import make_png
+    if image == "screenshot":
+        image = _screenshot(alpha=False)
+    png = make_png(image)
+    f = open(location+'.png', 'wb')
+    f.write(png)
+    f.close()

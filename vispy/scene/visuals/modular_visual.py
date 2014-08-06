@@ -234,7 +234,10 @@ class ModularVisual(Visual):
             if isinstance(color, tuple):
                 self.color_components = [UniformColorComponent(color)]
             elif isinstance(color, np.ndarray):
-                self.color_components = [VertexColorComponent(color)]
+                if color.ndim == 1:
+                    self.color_components = [UniformColorComponent(color)]
+                elif color.ndim == 2:
+                    self.color_components = [VertexColorComponent(color)]
             else:
                 raise Exception("Can't handle color data:")
 

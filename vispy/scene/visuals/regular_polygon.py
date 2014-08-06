@@ -10,6 +10,7 @@ RegularPolygon visual based on EllipseVisual
 from __future__ import division
 
 from ... import gloo
+from ...color import Color, _color_as_array_or_none
 from .ellipse import Ellipse, Mesh, Line
 
 
@@ -20,12 +21,12 @@ class RegularPolygon(Ellipse):
     rad = radius
     sides = number of sides
     """
-    def __init__(self, pos=None, color=(0, 0, 0, 0), border_color=None,
+    def __init__(self, pos=None, color='black', border_color=None,
                  radius=0.1, sides=4, **kwds):
         super(Ellipse, self).__init__()
         self._pos = pos
-        self._color = color
-        self._border_color = border_color
+        self._color = Color(color).rgba
+        self._border_color = _color_as_array_or_none(border_color)
         self._radius = radius
         self._sides = sides
         self._update()
@@ -52,6 +53,6 @@ class RegularPolygon(Ellipse):
                                     num_segments=self._sides)
             self.mesh = Mesh(pos=self._vertices, color=self._color)
             self.mesh._primitive = gloo.gl.GL_TRIANGLE_FAN
-            if self._border_color:
+            if self._border_color is not None:
                 self.border = Line(pos=self._vertices[1:],
                                    color=self._border_color)

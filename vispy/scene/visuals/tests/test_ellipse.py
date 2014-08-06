@@ -99,3 +99,47 @@ def test_arc_draw1():
                                   border_color=(1, 0, 0, 1))
         c.draw_visual(ellipse)
         assert_image_equal("screenshot", 'visuals/arc2.png')
+
+
+@requires_application()
+def test_reactive_draw():
+    """Test reactive ellipse attributes"""
+    with TestingCanvas():
+        ellipse = visuals.Ellipse(pos=[0.5, 0.3, 0.], radius=[0.4, 0.3],
+                                  color='yellow')
+        ellipse.draw()
+
+        gloo.clear()
+        ellipse.pos = [0.4, 0.2, 0.]
+        ellipse.draw()
+        assert_image_equal("screenshot", 'visuals/reactive_ellipse1.png')
+
+        gloo.clear()
+        ellipse.radius = 0.5
+        ellipse.draw()
+        assert_image_equal("screenshot", 'visuals/reactive_ellipse2.png')
+
+        gloo.clear()
+        ellipse.color = 'red'
+        ellipse.draw()
+        assert_image_equal("screenshot", 'visuals/reactive_ellipse3.png')
+
+        gloo.clear()
+        ellipse.border_color = 'yellow'
+        ellipse.draw()
+        assert_image_equal("screenshot", 'visuals/reactive_ellipse4.png')
+
+        gloo.clear()
+        ellipse.start_angle = 120.
+        ellipse.draw()
+        assert_image_equal("screenshot", 'visuals/reactive_ellipse5.png')
+
+        gloo.clear()
+        ellipse.span_angle = 100.
+        ellipse.draw()
+        assert_image_equal("screenshot", 'visuals/reactive_ellipse6.png')
+
+        gloo.clear()
+        ellipse.num_segments = 10.
+        ellipse.draw()
+        assert_image_equal("screenshot", 'visuals/reactive_ellipse7.png')

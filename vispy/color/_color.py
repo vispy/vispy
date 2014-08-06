@@ -140,6 +140,10 @@ def _hsv_to_rgb(hsvs):
     return rgbs
 
 
+def _color_as_array_or_none(color):
+    """Helper to convert color to rgba array, or return None if color is"""
+    return Color(color).rgba if color is not None else None
+
 ###############################################################################
 # RGB<->CIELab conversion
 

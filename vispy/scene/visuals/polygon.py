@@ -15,7 +15,7 @@ from ... import gloo
 from .visual import Visual
 from .mesh import Mesh
 from .line import Line
-from ...color import Color
+from ...color import Color, _color_as_array_or_none
 from ...util.geometry import PolygonData
 
 
@@ -23,15 +23,15 @@ class Polygon(Visual):
     """
     Displays a 2D polygon
     """
-    def __init__(self, pos=None, color=(0, 0, 0, 0),
+    def __init__(self, pos=None, color='black',
                  border_color=None, **kwds):
         super(Polygon, self).__init__()
 
         self.mesh = None
         self.border = None
         self._pos = pos
-        self._color = color
-        self._border_color = border_color
+        self._color = Color(color).rgba
+        self._border_color = _color_as_array_or_none(border_color)
         self._update()
         #glopts = kwds.pop('gl_options', 'translucent')
         #self.set_gl_options(glopts)
@@ -90,7 +90,7 @@ class Polygon(Visual):
             self.data.triangulate()
             self.mesh = Mesh(pos=self.data.vertices[self.data.faces],
                              color=self._color)
-            if self._border_color:
+            if self._border_color is not None:
                 border_pos = self.data.vertices[self.data.convex_hull]
                 self.border = Line(pos=border_pos, color=self._border_color,
                                    mode='lines')
