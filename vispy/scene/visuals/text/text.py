@@ -33,13 +33,13 @@ class TextureFont(object):
         self._atlas.wrapping = 'clamp_to_edge'
         self._renderer = renderer
         self._font = deepcopy(font)
-        self._font['size'] = 576  # use high resolution point size for SDF
-        self._lowres_size = 72  # end at this point size for storage
+        self._font['size'] = 256  # use high resolution point size for SDF
+        self._lowres_size = 64  # end at this point size for storage
         assert (self._font['size'] % self._lowres_size) == 0
         # spread/border at the high-res for SDF calculation; must be chosen
         # relative to fragment_insert.glsl multiplication factor to ensure we
         # get to zero at the edges of characters
-        self._spread = 72
+        self._spread = 32
         assert self._spread % self.ratio == 0
         self._glyphs = {}
 
@@ -78,7 +78,7 @@ class TextureFont(object):
 
         # convert to padded array
         data = np.zeros((bitmap.shape[0] + 2*self._spread,
-                         bitmap.shape[1] + 2*self._spread), np.ubyte)
+                         bitmap.shape[1] + 2*self._spread), np.uint8)
         data[self._spread:-self._spread, self._spread:-self._spread] = bitmap
 
         # Store, while scaling down to proper size
