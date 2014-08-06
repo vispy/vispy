@@ -23,18 +23,11 @@ class SceneEvent(Event):
         self._stack = []  # list of entities
         self._viewbox_stack = []
 
-        # Init resolution with respect to canvas
-        self._resolution = canvas.size
-
     @property
     def canvas(self):
         """ The Canvas that originated this SceneEvent
         """
         return self._canvas
-
-    @property
-    def resolution(self):
-        return self._resolution
 
     @property
     def viewbox(self):
@@ -62,14 +55,9 @@ class SceneEvent(Event):
 
     def push_viewbox(self, viewbox):
         self._viewbox_stack.append(viewbox)
-        self._resolution = self._viewbox_stack[-1]._resolution
 
     def pop_viewbox(self):
         self._viewbox_stack.pop(-1)
-        if self._viewbox_stack:
-            self._resolution = self._viewbox_stack[-1]._resolution
-        else:
-            self._resolution = self.canvas.size
 
     def push_viewport(self, viewport):
         """ Push a viewport (x, y, w, h) on the stack. It is the
@@ -235,12 +223,15 @@ class SceneMouseEvent(SceneEvent):
     def buttons(self):
         return self.mouse_event.buttons
 
+    @property
+    def delta(self):
+        return self.mouse_event.delta
+
     def copy(self):
         ev = self.__class__(self.mouse_event, self._canvas)
         ev._stack = self._stack[:]
         #ev._ra_stack = self._ra_stack[:]
         ev._viewbox_stack = self._viewbox_stack[:]
-        ev._resolution = self._resolution
         return ev
 
 

@@ -29,7 +29,7 @@ re_prog_var_declaration = ("(?:(uniform|attribute|varying)\s*(" + re_type +
 re_arg_list = "(" + re_declaration + "(?:,\s*" + re_declaration + ")*)?"
 
 # function declaration like "vec4 function_name(float x, float y)"
-re_func_decl = ("(" + re_type + ")\s+" + re_func_name + "\((void|" +
+re_func_decl = ("(" + re_type + ")\s+" + re_func_name + "\s*\((void|" +
                 re_arg_list + ")\)")
 
 # anonymous variable declarations may or may not include a name:

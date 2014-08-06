@@ -172,7 +172,7 @@ class Application(object):
             else:
                 # Success!
                 self._backend_module = mod
-                logger.info('Selected backend %s' % module_name)
+                logger.debug('Selected backend %s' % module_name)
                 break
         else:
             raise RuntimeError('Could not import any of the backends.')

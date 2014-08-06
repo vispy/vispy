@@ -8,6 +8,8 @@ import numpy as np
 
 from .shaders import Function, FunctionChain
 from ..util import transforms
+from ..util.geometry import Rect
+from ..util.event import EventEmitter
 
 """
 API Issues to work out:
@@ -83,6 +85,7 @@ class Transform(object):
     Isometric = None
 
     def __init__(self):
+        self.changed = EventEmitter(source=self, type='transform_changed')
         if self.glsl_map is not None:
             self._shader_map = Function(self.glsl_map)
         if self.glsl_imap is not None:
@@ -135,9 +138,9 @@ class Transform(object):
         """
         Called to inform any listeners that this Transform has changed.
         """
-        pass
         #self._shader_map.update()
         #self._shader_imap.update()
+        self.changed()
 
     #def _resolve(self, name, var_prefix, imap):
         ## The default implemntation assumes the following:
@@ -282,6 +285,8 @@ def arg_to_vec4(func):
             arr = arg._transform_in()
             ret = func(self, arr, *args, **kwds)
             return arg._transform_out(ret)
+        else:
+            raise TypeError("Cannot convert argument to 4D vector: %s" % arg)
     return fn
 
 
@@ -295,8 +300,8 @@ class ChainTransform(Transform):
 
     transforms : list of Transform instances
     """
-    glsl_map = ""
-    glsl_imap = ""
+    glsl_map = None
+    glsl_imap = None
 
     Linear = False
     Orthogonal = False
@@ -304,7 +309,7 @@ class ChainTransform(Transform):
     Isometric = False
 
     def __init__(self, *transforms):
-        #super(ChainTransform, self).__init__()
+        super(ChainTransform, self).__init__()
 
         # Set input transforms
         trs = []
@@ -608,6 +613,8 @@ class STTransform(Transform):
     def scale(self, s):
         self._scale[:len(s)] = s[:4]
         self._scale[len(s):] = 1.0
+        self.shader_map()  # update shader variables
+        self.shader_imap()
         self._update()
 
     @property
@@ -618,6 +625,8 @@ class STTransform(Transform):
     def translate(self, t):
         self._translate[:len(t)] = t[:4]
         self._translate[len(t):] = 0.0
+        self.shader_map()  # update shader variables
+        self.shader_imap()
         self._update()
 
     def as_affine(self):
@@ -661,9 +670,20 @@ class STTransform(Transform):
             assert tr.map(p1)[:,:2] == p2
         
         """
+        # if args are Rect, convert to array first
+        if isinstance(x0, Rect):
+            x0 = x0._transform_in()[:3]
+        if isinstance(x1, Rect):
+            x1 = x1._transform_in()[:3]
+        
         x0 = np.array(x0)
         x1 = np.array(x1)
-        s = (x1[1] - x1[0]) / (x0[1] - x0[0])
+        denom = (x0[1] - x0[0])
+        mask = denom == 0
+        denom[mask] = 1.0 
+        s = (x1[1] - x1[0]) / denom
+        s[mask] = 1.0
+        s[x0[1] == x0[0]] = 1.0
         t = x1[0] - s * x0[0]
         self.scale = s
         self.translate = t
@@ -738,7 +758,7 @@ class AffineTransform(Transform):
         tr = AffineTransform()
         try:
             tr.matrix = np.linalg.inv(self.matrix)
-        except:
+        except Exception:
             print(self.matrix)
             raise
         return tr
@@ -751,6 +771,8 @@ class AffineTransform(Transform):
     def matrix(self, m):
         self._matrix = m
         self._inv_matrix = None
+        self.shader_map()
+        self.shader_imap()
         self.update()
 
     @property
@@ -787,21 +809,36 @@ class AffineTransform(Transform):
             self.matrix = transforms.scale(self.matrix, *scale[0, :3])
 
     def rotate(self, angle, axis):
-        tr = transforms.rotate(np.eye(4), angle, *axis)
-        self.matrix = np.dot(tr, self.matrix)
+        #tr = transforms.rotate(np.eye(4), angle, *axis)
+        #self.matrix = np.dot(tr, self.matrix)
+        self.matrix = transforms.rotate(self.matrix, angle, *axis)
+
+    def set_mapping(self, points1, points2):
+        """ Set to a 3D transformation matrix that maps points1 onto points2.
+        
+        Arguments are specified as arrays of four 3D coordinates, shape (4, 3).
+        """
+        # note: need to transpose because util.functions uses opposite
+        # of standard linear algebra order.
+        self.matrix = transforms.affine_map(points1, points2).T
+
+    def set_ortho(self, l, r, b, t, n, f):
+        self.matrix = transforms.ortho(l, r, b, t, n, f)
 
     def reset(self):
         self.matrix = np.eye(4)
 
     def __mul__(self, tr):
-        if isinstance(tr, AffineTransform):
+        if (isinstance(tr, AffineTransform) and not 
+                any(tr.matrix[:3, 3] != 0)):   
+            # don't multiply if the perspective column is used
             return AffineTransform(matrix=np.dot(tr.matrix, self.matrix))
         else:
             return tr.__rmul__(self)
             #return super(AffineTransform, self).__mul__(tr)
 
     def __repr__(self):
-        s = "AffineTransform(matrix=["
+        s = "%s(matrix=[" % self.__class__.__name__
         indent = " "*len(s)
         s += str(list(self.matrix[0])) + ",\n"
         s += indent + str(list(self.matrix[1])) + ",\n"
@@ -826,20 +863,51 @@ class SRTTransform(Transform):
 class PerspectiveTransform(AffineTransform):
     """
     Matrix transform that also implements perspective division.
+    
     """
-    # TODO
-
-    @classmethod
-    def frustum(cls, l, r, t, b, n, f):
-        pass
-
-
-class OrthoTransform(AffineTransform):
+    # Note: Although OpenGL operates in homogeneouus coordinates, it may be
+    # necessary to manually implement perspective division.. 
+    # Perhaps we can find a way to avoid this.
+    glsl_map = """
+        vec4 perspective_transform_map(vec4 pos) {
+            vec4 p = $matrix * pos;
+            p = p / p.w;
+            p.z = 0;
+            p.w = 1;
+            return p;
+        }
     """
-    Orthographic transform
-    (possibly no need for this; just add an ortho() method to AffineTransform?)
-    """
-    # TODO
+
+    ## Note 2: Are perspective matrices invertible??
+    #glsl_imap = """
+    #    vec4 perspective_transform_imap(vec4 pos) {
+    #        return $inv_matrix * pos;
+    #    }
+    #"""
+
+    # todo: merge with affinetransform?
+    def set_perspective(self, fov, aspect, near, far):
+        self.matrix = transforms.perspective(fov, aspect, near, far)
+
+    def set_frustum(self, l, r, b, t, n, f):
+        self.matrix = transforms.frustum(l, r, b, t, n, f)
+
+    @arg_to_vec4
+    def map(self, coords):
+        # looks backwards, but both matrices are transposed.
+        v = np.dot(coords, self.matrix)
+        v /= v[:, 3]
+        v[:, 2] = 0
+        return v
+
+    #@arg_to_vec4
+    #def imap(self, coords):
+    #    return np.dot(coords, self.inv_matrix)
+
+    def __mul__(self, tr):
+        # Override multiplication -- this does not combine well with affine
+        # matrices.
+        return tr.__rmul__(self)
 
 
 class LogTransform(Transform):

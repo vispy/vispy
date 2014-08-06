@@ -53,7 +53,7 @@ class Image(Mesh):
         self._data = image
         self._texture = None
 
-    def _build_data(self):
+    def _build_data(self, canvas):
         # Construct complete data array with position and optionally color
         if self.transform.Linear:
             method = 'subdivide'
@@ -87,9 +87,12 @@ class Image(Mesh):
             vertices[..., 1] *= self._data.shape[0]
             Mesh.set_data(self, pos=vertices)
 
-            tex_coord_comp = TextureCoordinateComponent(tex_coords)
+            coords = np.ascontiguousarray(tex_coords[:, :2])
+            tex_coord_comp = TextureCoordinateComponent(coords)
 
-            self._program['map_local_to_nd'] = self.transform.shader_map()
+            #self._program['map_local_to_nd'] = self.transform.shader_map()
+            tr = canvas.render_transform.shader_map()
+            self._program['map_local_to_nd'] = tr
 
         elif method == 'impostor':
             # quad covers entire view; frag. shader will deal with image shape
@@ -100,7 +103,8 @@ class Image(Mesh):
 
             self._tex_transform.scale = (1./self._data.shape[0],
                                          1./self._data.shape[1])
-            total_transform = self._tex_transform * self.transform.inverse()
+            ctr = canvas.render_transform.inverse()
+            total_transform = self._tex_transform * ctr
             tex_coord_comp = VertexTextureCoordinateComponent(total_transform)
 
             self._program['map_local_to_nd'] = NullTransform().shader_map()
@@ -123,6 +127,6 @@ class Image(Mesh):
             return
 
         if self._texture is None:
-            self._build_data()
+            self._build_data(canvas)
 
         super(Image, self).draw()

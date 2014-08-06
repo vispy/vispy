@@ -43,7 +43,6 @@ Terminology
 
 from .entity import Entity  # noqa
 from .canvas import SceneCanvas  # noqa
-from .widgets.viewbox import ViewBox  # noqa
 from . import visuals  # noqa
 from . import widgets  # noqa
 from . import cameras  # noqa

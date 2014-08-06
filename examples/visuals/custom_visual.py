@@ -32,8 +32,6 @@ class MarkerVisual(Visual):
     VERTEX_SHADER = """
         #version 120
         
-        vec4 transform(vec4);
-        
         attribute vec2 a_position;
         attribute vec3 a_color;
         attribute float a_size;
@@ -51,7 +49,7 @@ class MarkerVisual(Visual):
             v_fg_color  = vec4(0.0,0.0,0.0,0.5);
             v_bg_color  = vec4(a_color,    1.0);
             
-            gl_Position = transform(vec4(a_position,0,1));
+            gl_Position = $transform(vec4(a_position,0,1));
             
             gl_PointSize = 2.0*(v_radius + v_linewidth + 1.5*v_antialias);
         }
@@ -136,7 +134,7 @@ class Canvas(app.Canvas):
         # Vispy understands that it has to create two uniforms (u_$variable 
         # for example).
         tr = self.panzoom * LogTransform(base=(0, 2, 0))
-        self.points._program['transform'] = tr.shader_map()
+        self.points._program.vert['transform'] = tr.shader_map()
 
     def _normalize(self, xy):
         x, y = xy

@@ -22,7 +22,7 @@ image = ((image-image.min()) *
          (253. / (image.max()-image.min()))).astype(np.ubyte)
 
 
-class Canvas(vispy.app.Canvas):
+class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         self.images = [visuals.Image(image, method='impostor')
                        for i in range(4)]
@@ -53,16 +53,16 @@ class Canvas(vispy.app.Canvas):
                                     STTransform(scale=(np.pi/200, 0.005),
                                                 translate=(np.pi/4., 0.1)))
 
-        vispy.app.Canvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
 
     def on_draw(self, ev):
         gl.glClearColor(0, 0, 0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glViewport(0, 0, *self.size)
+        self.push_viewport((0, 0) + self.size)
         for img in self.images:
-            img.draw()
+            img.draw(self)
 
 
 # A simple custom Transform

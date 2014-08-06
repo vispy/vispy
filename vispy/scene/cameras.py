@@ -6,240 +6,520 @@
 A brief explanation of how cameras work 
 ---------------------------------------
 
+A Camera is responsible for setting the transform of a SubScene object such 
+that a certain part of the scene is mapped to the bounding rectangle of the 
+ViewBox. 
+
 The view of a camera is determined by its transform (that it has as
 being an entity) and its projection. The former is essentially the
 position and orientation of the camera, the latter determines field of
 view and any non-linear transform (such as perspective).
 
-The projection must return such a transform that the correct view is
-mapped onto the size of the viewbox measured in pixels (i.e.
-event.resolution).
-
-The subscene actually has a thrird transform, the viewbox_transform,
-which is set by the viewbox and which takes care of the mapping from
-pixel coordinates to whatever region the viewbox takes in its parent
-viewbox.
-
 """
-
-
 from __future__ import division
 
 import numpy as np
 
-from . import transforms
 from .entity import Entity
-from .transforms import STTransform, PerspectiveTransform
+from ..util.geometry import Rect
+from .transforms import (STTransform, PerspectiveTransform, NullTransform,
+                         AffineTransform)
 
 
-class Camera(Entity):
-    """ The Camera class defines the viewpoint from which a scene is
-    visualized. It is itself an Entity (with transformations) but by
-    default does not draw anything.
-
-    Next to the normal transformation, a camera also defines a
-    projection transformation that defines the camera view. This can for
-    instance be orthographic, perspective, log, polar, etc.
+def make_camera(cam_type, *args, **kwds):
+    """ Factory function for creating new cameras. 
     
-    Cameras are also responsible for handling any user input that
-    should affect the viewpoint of projection of the camera.
+    Parameters
+    ----------
+    cam_type : str
+        May be one of:
+        * 'panzoom' : Creates :class:`PanZoomCamera`
+        * 'turntable' : Creates :class:`TurntableCamera`
+        * None : Creates :class:`Camera`
+
+    All extra arguments are passed to the __init__ method of the selected
+    Camera class.
     """
-
-    def __init__(self, parent=None):
-        Entity.__init__(self, parent)
+    cam_types = {
+        None: BaseCamera,
+        'panzoom': PanZoomCamera,
+        'turntable': TurntableCamera,
+    }
     
-    def get_projection(self, event):
-        """ Get the projection matrix. Should be overloaded by camera
-        classes to define the projection of view.
-        """
-        # We don't want people to use this base camera
-        raise NotImplementedError()
+    try: 
+        return cam_types[cam_type](*args, **kwds)
+    except KeyError:
+        raise KeyError('Unknown camera type "%s". Options are: %s' % 
+                       (cam_type, cam_types.keys()))
 
-    def scene_mouse_event(self, event):
+
+class BaseCamera(Entity):
+    """ Camera describes the perspective from which a ViewBox views its 
+    subscene, and the way that user interaction affects that perspective.
+    
+    Most functionality is implemented in subclasses. This base class has
+    no user interaction and causes the subscene to use the same coordinate
+    system as the ViewBox.
+    """
+    def __init__(self):
+        self._viewbox = None
+        self._interactive = True
+        super(BaseCamera, self).__init__()
+        self.transform = NullTransform()
+
+    @property
+    def interactive(self):
+        """ Boolean describing whether the camera should enable or disable
+        user interaction.
         """
-        This camera's SubScene received a mouse event; update transform 
+        return self._interactive
+    
+    @interactive.setter
+    def interactive(self, b):
+        self._interactive = b
+
+    @property
+    def viewbox(self):
+        """ The ViewBox that this Camera is attached to.        
+        """
+        return self._viewbox
+    
+    @viewbox.setter
+    def viewbox(self, vb):
+        if self._viewbox is not None:
+            self.disconnect()
+        self._viewbox = vb
+        if self._viewbox is not None:
+            self.connect()
+            self.parent = vb.scene
+        self._update_transform()
+    
+    def connect(self):
+        self._viewbox.events.mouse_press.connect(self.view_mouse_event)
+        self._viewbox.events.mouse_release.connect(self.view_mouse_event)
+        self._viewbox.events.mouse_move.connect(self.view_mouse_event)
+        self._viewbox.events.mouse_wheel.connect(self.view_mouse_event)
+        self._viewbox.events.resize.connect(self.view_resize_event)
+    
+    def disconnect(self):
+        self._viewbox.events.mouse_press.disconnect(self.view_mouse_event)
+        self._viewbox.events.mouse_release.disconnect(self.view_mouse_event)
+        self._viewbox.events.mouse_move.disconnect(self.view_mouse_event)
+        self._viewbox.events.mouse_wheel.disconnect(self.view_mouse_event)
+        self._viewbox.events.resize.disconnect(self.view_resize_event)
+    
+    def view_mouse_event(self, event):
+        """
+        The ViewBox received a mouse event; update transform 
         accordingly.
         """
         pass
-
-
-class PixelCamera(Camera):
-    """ Camera that presents a view on the world in pixel coordinates.
-    The coordinates map directly to the viewbox coordinates. The origin
-    is in the upper left.
-    """
-    
-    def get_projection(self, event):
-        # Map to the resolution (pixels) available in the viewbox
-        # This happens to be the NullTransform for the PixelCamera :)
-        return transforms.NullTransform()
-
-
-class UnitCamera(Camera):
-    """ Camera that presents a view on the world in unit coordinates
-    with a total size of 1. The projected range is 0..1 in x and y. The
-    origin is at the bottom left.
-    """
-    def get_projection(self, event):
-        # Map to the resolution (pixels) available in the viewbox
-        w, h = event.resolution
-        map_from = (0, 0), (1, 1)
-        map_to = (0, h), (w, 0)
-        return transforms.STTransform.from_mapping(map_from, map_to)
-
-
-class Fixed2DCamera(Camera):
-    """ Camera that presents a 2D view on the world with a given field of 
-    view. When the fov is (1, 1) this is the same as a UnitCamera.
-    """
-    def __init__(self, parent=None, fovx=None, fovy=None):
-        Camera.__init__(self, parent)
-        if fovx is None:
-            fovx = 1, 1
-        self.set_fov(fovx, fovy)
-    
-    def set_fov(self, fovx, fovy=None):
-        """ Set the field of view for x and y. Both fovx anf fovy should
-        be two-element tuples indicating the range of view. If fovy is not
-        given or None, x and y get the same fov.
+        
+    def view_resize_event(self, event):
         """
-        # Set x
-        fovx = tuple([float(v) for v in fovx])
-        assert len(fovx) == 2
-        self._fovx = fovx
-        # Set y
-        if fovy is not None:
-            fovy = tuple([float(v) for v in fovy])
-            assert len(fovy) == 2
-            self._fovy = fovy
-        else:
-            self._fovy = self._fovx
+        The ViewBox was resized; update the transform accordingly.
+        """
+        pass
     
-    def get_projection(self, event):
-        # Map to the resolution (pixels) available in the viewbox
-        fovx, fovy = self._fovx, self._fovy
-        w, h = event.resolution
-        map_from = (fovx[0], fovy[0]), (fovx[1], fovy[1])
-        map_to = (0, h), (w, 0)
-        return transforms.STTransform.from_mapping(map_from, map_to)
+    def _update_transform(self):
+        """ Subclasses should reimplement this method to update the scene
+        transform by calling self._set_scene_transform.
+        """
+        self._set_scene_transform(self.transform)
+        
+    def _set_scene_transform(self, tr):
+        """ Called by subclasses to configure the viewbox scene transform.
+        """
+        # todo: check whether transform has changed, connect to 
+        # transform.changed event
+        self._scene_transform = tr
+        if self.viewbox is not None:
+            self.viewbox.scene.transform = self._scene_transform
 
+    
+class PanZoomCamera(BaseCamera):
+    """
+    Camera implementing 2D pan/zoom mouse interaction. Primarily intended for
+    displaying plot data.
 
-class TwoDCamera(Camera):
-
-    def __init__(self, parent=None):
-        super(TwoDCamera, self).__init__(parent)
+    By default, this camera inverts the y axis of the scene. This usually 
+    results in the scene +y axis pointing upward because widgets (including 
+    ViewBox) have their +y axis pointing downward.
+    
+    User interaction:
+    
+    * Dragging left mouse button pans the view
+    * Dragging right mouse button vertically zooms the view y-axis
+    * Dragging right mouse button horizontally zooms the view x-axis
+    * Mouse wheel zooms both view axes equally.
+    """
+    def __init__(self):
+        super(PanZoomCamera, self).__init__()
+        self._rect = Rect((0, 0), (1, 1))  # visible range in scene
+        self._invert = [False, True]
         self.transform = STTransform()
-
-    def get_projection(self, event):
-        # Our starting point is the range -1..1. Maybe 0..1 makes more sense.
-        # Anyway, we should have a way of snapping to the bounds of the visuals
-        # that are shown inside our subscene.
-        w, h = event.resolution
-        map_from = (-1, -1), (1, 1)
-        map_to = (0, h), (w, 0)
-        return transforms.STTransform.from_mapping(map_from, map_to)
-    
-    ## xlim and ylim are convenience methods to set the view using limits
-    #@property
-    #def xlim(self):
-        #x = self.transform[-1, 0]
-        #dx = self.fov[0] / 2.0
-        #return x - dx, x + dx
-
-    #@property
-    #def ylim(self):
-        #y = self.transform[-1, 1]
-        #dy = self.fov[1] / 2.0
-        #return y - dy, y + dy
-
-    #@xlim.setter
-    #def xlim(self, value):
-        #x = 0.5 * (value[0] + value[1])
-        #rx = max(value) - min(value)
-        #self.fov = rx, self.fov[1]
-        #self.transform[-1, 0] = x
-
-    #@ylim.setter
-    #def ylim(self, value):
-        #y = 0.5 * (value[0] + value[1])
-        #ry = max(value) - min(value)
-        #self.fov = self.fov[0], ry
-        #self.transform[-1, 1] = y
-
-    def scene_mouse_event(self, event):
+        
+    def zoom(self, zoom, center):
+        """ Zoom the view around a center point.
+        
+        Parameters
+        ----------
+        zoom : length-2 sequence
+            The fraction to zoom the x and y axes.
+        center : length-2 sequence
+            The point (in the coordinate system of the scene) that will remain
+            stationary in the ViewBox while zooming.
         """
-        This camera's SubScene received a mouse event; update transform 
+        # TODO: would be nice if STTransform had a nice scale(s, center) 
+        # method like AffineTransform.
+        transform = (STTransform(translate=center) * 
+                     STTransform(scale=zoom) * 
+                     STTransform(translate=-center))
+        
+        self.rect = transform.map(self.rect)
+        
+    def pan(self, pan):
+        """ Pan the view.
+        
+        Parameters
+        ----------
+        pan : length-2 sequence
+            The distance to pan the view, in the coordinate system of the 
+            scene.
+        """
+        self.rect = self.rect + pan
+
+    @property
+    def rect(self):
+        """ The rectangular border of the ViewBox visible area, expressed in
+        the coordinate system of the scene.
+        
+        By definition, the +y axis of this rect is opposite the +y axis of the
+        ViewBox. 
+        """
+        return self._rect
+        
+    @rect.setter
+    def rect(self, args):
+        """
+        Set the bounding rect of the visible area in the subscene. 
+        
+        By definition, the +y axis of this rect is opposite the +y axis of the
+        ViewBox. 
+        """
+        if isinstance(args, tuple):
+            self._rect = Rect(*args)
+        else:
+            self._rect = Rect(args)
+        self._update_transform()
+
+    @property 
+    def invert_y(self):
+        """ Boolean indicating whether the y axis of the SubScene is inverted 
+        relative to the ViewBox.
+        
+        Default is True--this camera inverts the y axis of the scene. In most
+        cases, this results in the scene +y axis pointing upward because 
+        widgets (including ViewBox) have their +y axis pointing downward.
+        """
+        return self._invert[1]
+    
+    @invert_y.setter
+    def invert_y(self, inv):
+        if not isinstance(inv, bool):
+            raise TypeError("Invert must be boolean.")
+        self._invert[1] = inv
+        self._update_transform()
+        
+    def view_resize_event(self, event):
+        self._update_transform()
+
+    def view_mouse_event(self, event):
+        """
+        The SubScene received a mouse event; update transform 
         accordingly.
         """
+        if event.handled or not self.interactive:
+            return
         
-        if 1 in event.buttons:
-            p1 = np.array(event.last_event.pos)[:2]
-            p2 = np.array(event.pos)[:2]
-            #p1 = event.map_to_canvas(p1)
-            #p2 = event.map_to_canvas(p2)
-            self.transform = STTransform(translate=p1-p2) * self.transform
-            self.update()
+        if event.type == 'mouse_wheel':
+            scale = 1.1 ** -event.delta[1]
+            center = self._scene_transform.imap(event.pos[:2])
+            self.zoom((scale, scale), center)
             event.handled = True
-        elif 2 in event.buttons:
+            
+        elif event.type == 'mouse_move':
+            if 1 in event.buttons:
+                p1 = np.array(event.last_event.pos)[:2]
+                p2 = np.array(event.pos)[:2]
+                p1s = self._scene_transform.imap(p1)
+                p2s = self._scene_transform.imap(p2)
+                self.pan(p1s-p2s)
+                event.handled = True
+            elif 2 in event.buttons:
+                # todo: just access the original event position, rather
+                # than mapping to the viewbox and back again.
+                p1 = np.array(event.last_event.pos)[:2]
+                p2 = np.array(event.pos)[:2]
+                p1c = event.map_to_canvas(p1)[:2]
+                p2c = event.map_to_canvas(p2)[:2]
+                
+                scale = 1.03 ** ((p1c-p2c) * np.array([1, -1]))
+                center = self._scene_transform.imap(event.press_event.pos[:2])
+                
+                self.zoom(scale, center)
+                event.handled = True
+        
+        if event.handled:
+            self._update_transform()
+
+    def _update_transform(self):
+        if self.viewbox is None:
+            return
+        
+        vbr = self.viewbox.rect.flipped(x=self._invert[0], y=self._invert[1])
+        self.transform.set_mapping(self.rect, vbr)
+        self._set_scene_transform(self.transform)
+
+        
+class PerspectiveCamera(BaseCamera):
+    """ Base class for 3D cameras supporting orthographic and perspective
+    projections.
+    
+    User interaction:
+    
+    * Dragging left mouse button orbits the view around its center point.
+    * Mouse wheel changes the field of view angle.
+    
+    Parameters are *mode*, *fov*, and *width*, 
+    corresponding to the properties of the same name.
+    """
+    def __init__(self, mode='ortho', fov=60., width=10.):
+        # projection transform and associated options
+        self._projection = PerspectiveTransform()
+        self._mode = None
+        self._fov = None
+        self._width = None
+
+        super(PerspectiveCamera, self).__init__()
+
+        self.mode = mode
+        self.fov = fov
+        self.width = width
+        
+        # camera transform
+        self.transform = AffineTransform()
+        
+    @property
+    def mode(self):
+        """ Describes the current projection mode of the camera. 
+        
+        May be 'ortho' or 'perspective'. In orthographic mode, objects appear 
+        to have constant size regardless of their distance from the camera.
+        In perspective mode, objects appear smaller as they are farther from 
+        the camera.
+        """
+        return self._mode
+    
+    @mode.setter
+    def mode(self, mode):
+        if mode == 'ortho':
+            self._near = -1e6
+        elif mode == 'perspective':
+            self._near = 1e-6
+        else:
+            raise ValueError('Accepted modes are "ortho" and "perspective".')
+        self._far = 1e6
+        self._mode = mode
+        
+        self._update_transform()
+        
+    @property
+    def fov(self):
+        """ Field-of-view angle of the camera when in perspective mode.
+        """
+        return self._fov
+    
+    @fov.setter
+    def fov(self, fov):
+        if fov < 0 or fov >= 180:
+            raise ValueError("fov must be between 0 and 180.")
+        self._fov = fov
+        self._update_transform()
+        
+    @property
+    def width(self):
+        """ Width of the visible region when in orthographic mode.
+        """
+        return self._width
+    
+    @width.setter
+    def width(self, width):
+        self._width = width
+        self._update_transform()
+        
+    def view_resize_event(self, event):
+        self._update_transform()
+    
+    def _update_transform(self, event=None):
+        if self.viewbox is None:
+            return
+        
+        # configure projection transform
+        if self.mode == 'ortho': 
+            self.set_ortho()
+        elif self.mode == 'perspective':
+            self.set_perspective()
+        else:
+            raise ValueError("Unknown projection mode '%s'" % self.mode)
+        
+        # assemble complete transform mapping to viewbox bounds
+        unit = [[-1, 1], [1, -1]]
+        vrect = [[0, 0], self.viewbox.size]
+        viewbox_tr = STTransform.from_mapping(unit, vrect)
+        proj_tr = self._projection
+        cam_tr = self.entity_transform(self.viewbox.scene)
+        
+        self._set_scene_transform(viewbox_tr * proj_tr * cam_tr)
+
+    def set_perspective(self):
+        """ Set perspective projection matrix.
+        """
+        vbs = self.viewbox.size
+        ar = vbs[0] / vbs[1]
+        self._projection.set_perspective(self.fov, ar, self._near, self._far)
+
+    def set_ortho(self):
+        """ Set orthographic projection matrix.
+        """
+        vbs = self.viewbox.size
+        w = self.width / 2.
+        h = w * (vbs[1] / vbs[0])
+        self._projection.set_ortho(-w, w, -h, h, self._near, self._far)
+
+
+class TurntableCamera(PerspectiveCamera):
+    """ 3D camera class that orbits around a center point while maintaining a
+    fixed vertical orientation.
+    
+    Parameters are *elevation*, *azimuth*, *distance*, and *center*, 
+    corresponding to the properties of the same name.
+    """
+    def __init__(self, elevation=30., azimuth=30., 
+                 distance=10., center=(0, 0, 0), **kwds):
+        super(TurntableCamera, self).__init__(**kwds)
+        self.elevation = elevation
+        self.azimuth = azimuth
+        self.distance = distance
+        self.center = center
+        self._update_camera_pos()
+    
+    @property
+    def elevation(self):
+        """ The angle of the camera in degrees above the horizontal (x, z) 
+        plane.
+        """
+        return self._elevation
+
+    @elevation.setter
+    def elevation(self, elev):
+        self._elevation = elev
+        self._update_transform()
+    
+    @property
+    def azimuth(self):
+        """ The angle of the camera in degrees around the y axis. An angle of
+        0 places the camera within the (y, z) plane.
+        """
+        return self._azimuth
+
+    @azimuth.setter
+    def azimuth(self, azim):
+        self._azimuth = azim
+        self._update_transform()
+    
+    @property
+    def distance(self):
+        """ The distance from the camera to its center point.
+        """
+        return self._distance
+
+    @distance.setter
+    def distance(self, dist):
+        self._distance = dist
+        self._update_transform()
+    
+    @property
+    def center(self):
+        """ The position of the turntable center. This is the point around 
+        which the camera orbits.
+        """
+        return self._center
+
+    @center.setter
+    def center(self, center):
+        self._center = center
+        self._update_transform()
+    
+    def orbit(self, azim, elev):
+        """ Orbits the camera around the center position.
+        
+        Parameters
+        ----------
+        azim : float
+            Angle in degrees to rotate horizontally around the center point.
+        elev : float
+            Angle in degrees to rotate vertically around the center point.
+        """
+        self.azimuth += azim
+        self.elevation = np.clip(self.elevation + elev, -90, 90)
+        self._update_camera_pos()
+        
+    def view_mouse_event(self, event):
+        """
+        The viewbox received a mouse event; update transform 
+        accordingly.
+        """
+        if event.handled or not self.interactive:
+            return
+        
+        if event.type == 'mouse_wheel':
+            s = 1.1 ** -event.delta[1]
+            if self.mode == 'ortho':
+                self.width *= s
+            else:
+                self.fov = np.clip(self.fov * s, 0, 179)
+            self._update_camera_pos()
+        
+        elif event.type == 'mouse_move' and 1 in event.buttons:
             p1 = np.array(event.last_event.pos)[:2]
             p2 = np.array(event.pos)[:2]
             p1c = event.map_to_canvas(p1)[:2]
             p2c = event.map_to_canvas(p2)[:2]
-            s = 0.97 ** ((p2c-p1c) * np.array([1, -1]))
-            center = event.press_event.pos[:2]
-            #center[0] -= 1
-            #center[1] = (center[1] * 2) - 1
-            # TODO: would be nice if STTransform had a nice scale(s, center) 
-            # method like AffineTransform.
-            self.transform = (STTransform(translate=center) * 
-                              STTransform(scale=s) * 
-                              STTransform(translate=-center) *
-                              self.transform)
-            self.update()        
-            event.handled = True
+            d = p2c - p1c
+            
+            self.orbit(-d[0], d[1])
 
-
-class PerspectiveCamera(Camera):
-    """
-    In progress.
-
-    """
-    def __init__(self, parent=None):
-        super(PerspectiveCamera, self).__init__(parent)
-        self.transform = PerspectiveTransform()
-        # TODO: allow self.look to be derived from an Anchor
-        self._perspective = {
-            'look': np.array([0., 0., 0., 1.]),
-            'near': 1e-6,
-            'far': 1e6,
-            'fov': 60,
-            'top': np.array([0., 0., 1., 1.])}
-
-    def _update_transform(self):
-        # create transform based on look, near, far, fov, and top.
-        self.transform.set_perspective(origin=(0, 0, 0), **self.perspective)
-
-    def view_mouse_event(self, event):
+    def _update_camera_pos(self):
+        """ Set the camera position / orientation based on elevation,
+        azimuth, distance, and center properties.
         """
-        An attached ViewBox received a mouse event;
+        # transform will be updated several times; do not update camera
+        # transform until we are done.
+        ch_em = self.events.transform_change
+        with ch_em.blocker(self._update_transform):
+            tr = self.transform
+            tr.reset()
+            tr.translate((0.0, 0.0, -self.distance))
+            tr.rotate(self.elevation, (-1, 0, 0))
+            tr.rotate(self.azimuth, (0, 1, 0))
+            tr.translate(-np.array(self.center))
+        self._update_transform()
 
-        """
-        if 1 in event.buttons:
-            p1 = np.array(event.last_event.pos)
-            p2 = np.array(event.pos)
-            self.transform = self.transform * STTransform(translate=p1-p2)
-            self.update()
-            event.handled = True
-        elif 2 in event.buttons:
-            p1 = np.array(event.last_event.pos)[:2]
-            p2 = np.array(event.pos)[:2]
-            s = 0.97 ** ((p2-p1) * np.array([1, -1]))
-            center = event.press_event.pos
-            # TODO: would be nice if STTransform had a nice scale(s, center)
-            # method like AffineTransform.
-            self.transform = (self.transform *
-                              STTransform(translate=center) *
-                              STTransform(scale=s) *
-                              STTransform(translate=-center))
-            self.update()
-            event.handled = True
+
+class ArcballCamera(PerspectiveCamera):
+    pass
+
+
+class FirstPersonCamera(PerspectiveCamera):
+    pass
