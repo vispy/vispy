@@ -111,6 +111,15 @@ class ShaderObject(object):
             alldeps.extend(dep.dependencies(sort=sort))
         alldeps.append(self)
         return alldeps
+
+    def static_names(self):
+        """ Return a list of names that are declared in this object's 
+        definition (not including the name of the object itself).
+        
+        These names will be reserved by the compiler when automatically 
+        determining object names.
+        """
+        return []
     
     def _add_dep(self, dep):
         """ Increment the reference count for *dep*. If this is a new 
@@ -312,6 +321,10 @@ class Function(ShaderObject):
         
         # Stuff to do at the end
         self._post_hooks = OrderedDict()
+        
+        # Create static Variable instances for any global variables declared
+        # in the code
+        self._static_vars = parsing.find_program_variables(self._code)
     
     def __setitem__(self, key, val):
         """ Setting of replacements through a dict-like syntax.
@@ -451,6 +464,9 @@ class Function(ShaderObject):
         The return type of this function.
         """
         return self._signature[2]
+
+    def static_names(self):
+        return self._static_vars.keys()
 
     def replace(self, str1, str2):
         """ Set verbatim code replacement
@@ -1007,6 +1023,9 @@ class FunctionChain(Function):
 
         code += "}\n"
         return code
+
+    def static_names(self):
+        return []
 
     def __setitem__(self, k, v):
         raise Exception("FunctionChain does not support indexing.")

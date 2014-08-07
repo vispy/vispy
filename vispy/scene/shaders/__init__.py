@@ -3,3 +3,4 @@
 
 from .program import ModularProgram  # noqa
 from .function import Function, Variable, Varying, FunctionChain  # noqa
+from .compiler import Compiler  # noqa
