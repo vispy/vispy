@@ -38,11 +38,16 @@ def make_png(data, level=6):
             size = data.nbytes
         else:
             size = len(data)
+        name = name.encode('utf-8')
         chunk = np.empty(size + 12, dtype=np.ubyte)
         chunk.data[0:4] = struct.pack('!I', size)
         chunk.data[4:8] = name  # b'CPXS' # critical, public, standard, safe
         chunk.data[8:8 + size] = data
-        chunk.data[-4:] = struct.pack('!i', zlib.crc32(chunk[4:-4]))
+        #chunk.data[-4:] = struct.pack('!i', zlib.crc32(chunk[4:-4]))
+        checksum = zlib.crc32(name)
+        checksum = zlib.crc32(data, checksum)
+        checksum &= 2**32-1
+        chunk.data[-4:] = struct.pack("!i", checksum)
         return chunk
 
     if data.dtype != np.ubyte:
