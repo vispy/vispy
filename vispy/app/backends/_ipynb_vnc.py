@@ -297,8 +297,8 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_canvas.app.process_events()
             if self._need_draw:
                 self._on_draw()
-            #self._vispy_update()
-            #self._vispy_canvas.events.timer(type="timer")
+            self._vispy_update()
+            self._vispy_canvas.events.timer(type="timer")
 
     def _prepare_js(self):
         pkgdir = op.dirname(__file__)
