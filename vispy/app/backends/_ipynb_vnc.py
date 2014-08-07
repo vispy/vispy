@@ -76,9 +76,9 @@ else:
             available, testable, why_not = False, False, _msg
         else:
             available, testable, why_not = True, True, None
-    
+
     print('                  NOTE: this backend requires the Chromium browser')
-    
+
     # Use that backend's shared context
     KEYMAP = _app.backend_module.KEYMAP
     SharedContext = _app.backend_module.SharedContext
@@ -143,7 +143,7 @@ class CanvasBackend(BaseCanvasBackend):
 
         # Show the widget, we will hide it after the first time it's drawn
         self._backend2._vispy_set_visible(True)
-        self._need_draw = False 
+        self._need_draw = False
 
         # Prepare Javascript code by displaying on notebook
         self._prepare_js()
@@ -187,7 +187,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_update(self):
         self._need_draw = True
         return self._backend2._vispy_update()
-    
+
     def _vispy_close(self):
         self._widget.quit()
         return self._backend2._vispy_close()
@@ -215,17 +215,17 @@ class CanvasBackend(BaseCanvasBackend):
             self._initialized = True
             self._vispy_canvas.events.initialize()
             self._on_resize()
-        
+
         # We are drawn, so no need for a redraw
         self._need_draw = False
-        
+
         # We hide the widget once it has received a paint event. So at
-        # initialization and after a resize the widget is briefly visible. 
+        # initialization and after a resize the widget is briefly visible.
         # Now that it is hidden the widget is unlikely to receive paint
         # events anymore, so we need to force repaints from now on, via
         # a trigger from JS.
         self._backend2._vispy_set_visible(False)
-        
+
         # Normal behavior
         self._vispy_set_current()
         self._vispy_canvas.events.draw(region=None)
