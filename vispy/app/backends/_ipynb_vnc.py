@@ -76,7 +76,9 @@ else:
             available, testable, why_not = False, False, _msg
         else:
             available, testable, why_not = True, True, None
-
+    
+    print('                  NOTE: this backend requires the Chromium browser')
+    
     # Use that backend's shared context
     KEYMAP = _app.backend_module.KEYMAP
     SharedContext = _app.backend_module.SharedContext
@@ -138,9 +140,9 @@ class CanvasBackend(BaseCanvasBackend):
         canvas.events.resize.connect(self._on_resize)
         self._initialized = False
 
-        # Show the widget
-        canvas.show()
-        # todo: hide that canvas
+        # Show the widget, we will hide it after the first time it's drawn
+        self._backend2._vispy_set_visible(True)
+        self._need_draw = False 
 
         # Prepare Javascript code by displaying on notebook
         self._prepare_js()
@@ -167,8 +169,9 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_set_size(self, w, h):
         #logger.warn('IPython notebook canvas cannot be resized.')
-        self._widget.size = w, h
-        return self._backend2._vispy_set_size(w, h)
+        res = self._backend2._vispy_set_size(w, h)
+        self._backend2._vispy_set_visible(True)
+        return res
 
     def _vispy_set_position(self, x, y):
         logger.warn('IPython notebook canvas cannot be repositioned.')
@@ -181,8 +184,9 @@ class CanvasBackend(BaseCanvasBackend):
             display(self._widget)
 
     def _vispy_update(self):
+        self._need_draw = True
         return self._backend2._vispy_update()
-
+    
     def _vispy_close(self):
         self._widget.quit()
         return self._backend2._vispy_close()
@@ -198,6 +202,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         size = self._backend2._vispy_get_size()
+        self._widget.size = size
         self._vispy_canvas.events.resize(size=size)
 
     def _on_draw(self, event=None):
@@ -209,6 +214,17 @@ class CanvasBackend(BaseCanvasBackend):
             self._initialized = True
             self._vispy_canvas.events.initialize()
             self._on_resize()
+        
+        # We are drawn, so no need for a redraw
+        self._need_draw = False
+        
+        # We hide the widget once it has received a paint event. So at
+        # initialization and after a resize the widget is briefly visible. 
+        # Now that it is hidden the widget is unlikely to receive paint
+        # events anymore, so we need to force repaints from now on, via
+        # a trigger from JS.
+        self._backend2._vispy_set_visible(False)
+        
         # Normal behavior
         self._vispy_set_current()
         self._vispy_canvas.events.draw(region=None)
@@ -273,7 +289,11 @@ class CanvasBackend(BaseCanvasBackend):
                                                       ("modifiers"),
                                                       )
         elif ev.get("name") == "TimerEvent":  # Ticking from front-end (JS)
-            self._vispy_canvas.events.timer(type="timer")
+            self._vispy_canvas.app.process_events()
+            if self._need_draw:
+                self._on_draw()
+            #self._vispy_update()
+            #self._vispy_canvas.events.timer(type="timer")
 
     def _prepare_js(self):
         pkgdir = op.dirname(__file__)
