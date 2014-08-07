@@ -6,11 +6,11 @@
 # Author: Nicolas P .Rougier
 # Date:   04/03/2014
 # -----------------------------------------------------------------------------
-import sys
 import ctypes
 import numpy as np
 import OpenGL.GL as gl
-import OpenGL.GLUT as glut
+
+from vispy import app
 
 vertex_code = """
     uniform float scale;
@@ -31,102 +31,88 @@ fragment_code = """
     } """
 
 
-def display():
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-    gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
-    glut.glutSwapBuffers()
+class Canvas(app.Canvas):
+    def __init__(self):
+        app.Canvas.__init__(self, size=(512, 512), title='Quad (GL)',
+                            close_keys='escape')
 
+    def on_initialize(self, event):
+        # Build data
+        self.data = np.zeros(4, [("position", np.float32, 2),
+                                 ("color",    np.float32, 4)])
+        self.data['color'] = [(1, 0, 0, 1), (0, 1, 0, 1),
+                              (0, 0, 1, 1), (1, 1, 0, 1)]
+        self.data['position'] = [(-1, -1), (-1, +1),
+                                 (+1, -1), (+1, +1)]
 
-def reshape(width, height):
-    gl.glViewport(0, 0, width, height)
+        # Build & activate program
 
+        # Request a program and shader slots from GPU
+        program = gl.glCreateProgram()
+        vertex = gl.glCreateShader(gl.GL_VERTEX_SHADER)
+        fragment = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
 
-def keyboard(key, x, y):
-    if key == '\033':
-        sys.exit()
+        # Set shaders source
+        gl.glShaderSource(vertex, vertex_code)
+        gl.glShaderSource(fragment, fragment_code)
 
+        # Compile shaders
+        gl.glCompileShader(vertex)
+        gl.glCompileShader(fragment)
 
-# GLUT init
-# --------------------------------------
-glut.glutInit()
-glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA)
-glut.glutCreateWindow('Hello world!')
-glut.glutReshapeWindow(512, 512)
-glut.glutReshapeFunc(reshape)
-glut.glutDisplayFunc(display)
-glut.glutKeyboardFunc(keyboard)
+        # Attach shader objects to the program
+        gl.glAttachShader(program, vertex)
+        gl.glAttachShader(program, fragment)
 
-# Build data
-# --------------------------------------
-data = np.zeros(4, [("position", np.float32, 2),
-                    ("color",    np.float32, 4)])
-data['color'] = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (1, 1, 0, 1)]
-data['position'] = [(-1, -1),   (-1, +1),   (+1, -1),   (+1, +1)]
+        # Build program
+        gl.glLinkProgram(program)
 
-# Build & activate program
-# --------------------------------------
+        # Get rid of shaders (no more needed)
+        gl.glDetachShader(program, vertex)
+        gl.glDetachShader(program, fragment)
 
-# Request a program and shader slots from GPU
-program = gl.glCreateProgram()
-vertex = gl.glCreateShader(gl.GL_VERTEX_SHADER)
-fragment = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
+        # Make program the default program
+        gl.glUseProgram(program)
 
-# Set shaders source
-gl.glShaderSource(vertex, vertex_code)
-gl.glShaderSource(fragment, fragment_code)
+        # Build buffer
 
-# Compile shaders
-gl.glCompileShader(vertex)
-gl.glCompileShader(fragment)
+        # Request a buffer slot from GPU
+        buf = gl.glGenBuffers(1)
 
-# Attach shader objects to the program
-gl.glAttachShader(program, vertex)
-gl.glAttachShader(program, fragment)
+        # Make this buffer the default one
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buf)
 
-# Build program
-gl.glLinkProgram(program)
+        # Upload data
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data.nbytes, self.data,
+                        gl.GL_DYNAMIC_DRAW)
 
-# Get rid of shaders (no more needed)
-gl.glDetachShader(program, vertex)
-gl.glDetachShader(program, fragment)
+        # Bind attributes
+        stride = self.data.strides[0]
+        offset = ctypes.c_void_p(0)
+        loc = gl.glGetAttribLocation(program, "position")
+        gl.glEnableVertexAttribArray(loc)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buf)
+        gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, stride, offset)
 
-# Make program the default program
-gl.glUseProgram(program)
+        offset = ctypes.c_void_p(self.data.dtype["position"].itemsize)
+        loc = gl.glGetAttribLocation(program, "color")
+        gl.glEnableVertexAttribArray(loc)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buf)
+        gl.glVertexAttribPointer(loc, 4, gl.GL_FLOAT, False, stride, offset)
 
+        # Bind uniforms
+        # --------------------------------------
+        loc = gl.glGetUniformLocation(program, "scale")
+        gl.glUniform1f(loc, 1.0)
 
-# Build buffer
-# --------------------------------------
+    def on_draw(self, event):
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
 
-# Request a buffer slot from GPU
-buffer = gl.glGenBuffers(1)
+    def on_resize(self, event):
+        gl.glViewport(0, 0, *event.size)
 
-# Make this buffer the default one
-gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buffer)
-
-# Upload data
-gl.glBufferData(gl.GL_ARRAY_BUFFER, data.nbytes, data, gl.GL_DYNAMIC_DRAW)
-
-
-# Bind attributes
-# --------------------------------------
-stride = data.strides[0]
-offset = ctypes.c_void_p(0)
-loc = gl.glGetAttribLocation(program, "position")
-gl.glEnableVertexAttribArray(loc)
-gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buffer)
-gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, stride, offset)
-
-offset = ctypes.c_void_p(data.dtype["position"].itemsize)
-loc = gl.glGetAttribLocation(program, "color")
-gl.glEnableVertexAttribArray(loc)
-gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buffer)
-gl.glVertexAttribPointer(loc, 4, gl.GL_FLOAT, False, stride, offset)
-
-# Bind uniforms
-# --------------------------------------
-loc = gl.glGetUniformLocation(program, "scale")
-gl.glUniform1f(loc, 1.0)
-
-# Enter mainloop
-# --------------------------------------
-glut.glutMainLoop()
+if __name__ == '__main__':
+    c = Canvas()
+    c.show()
+    app.run()

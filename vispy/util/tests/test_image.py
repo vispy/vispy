@@ -3,13 +3,11 @@ from numpy.testing import assert_array_equal
 from os import path as op
 
 from vispy.util import make_png, _TempDir
-from vispy.util.dataio import imread
-from vispy.testing import requires_img_lib
+from vispy.util.dataio import read_png
 
 temp_dir = _TempDir()
 
 
-@requires_img_lib()
 def test_make_png():
     """ Test to ensure that make_png functions correctly.
     Save random RGBA and RGB arrays onto disk as PNGs using make_png.
@@ -29,5 +27,5 @@ def test_make_png():
             f.write(make_png(rgb_a))  # Save array with make_png
 
         # Read back with a library and check equality
-        rgb_a_read = imread(png_out, 'PNG')
+        rgb_a_read = read_png(png_out)
         assert_array_equal(rgb_a, rgb_a_read)

@@ -6,7 +6,6 @@
 # https://nose.readthedocs.org/en/latest/plugins/cover.html
 
 from nose.plugins.base import Plugin
-from coverage import coverage
 
 
 class MutedCoverage(Plugin):
@@ -15,8 +14,17 @@ class MutedCoverage(Plugin):
     def configure(self, options, conf):
         Plugin.configure(self, options, conf)
         self.enabled = True
-        self.cov = coverage(auto_data=False, branch=True, data_suffix=None,
-                            source=['vispy'])
+        try:
+            from coverage import coverage
+        except ImportError:
+            self.enabled = False
+            self.cov = None
+            print('Module "coverage" not installed, code coverage will not '
+                  'be available')
+        else:
+            self.enabled = True
+            self.cov = coverage(auto_data=False, branch=True, data_suffix=None,
+                                source=['vispy'])
 
     def begin(self):
         self.cov.load()

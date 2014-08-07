@@ -173,13 +173,16 @@ class Canvas(object):
     def _set_backend(self, backend):
         """ Set backend<->canvas references and autoswap
         """
+        # NOTE: Do *not* combine this with create_native above, since
+        # this private function is used to embed Qt widgets
         assert backend is not None  # should never happen
         self._backend = backend
-        self._backend._vispy_canvas = self  # it's okay to set this again
         if self._autoswap:
             # append to the end
             self.events.draw.connect((self, 'swap_buffers'),
                                      ref=True, position='last')
+        self._backend._vispy_canvas = self  # it's okay to set this again
+        self._backend._vispy_init()
 
     @property
     def context(self):
@@ -289,7 +292,6 @@ class Canvas(object):
             self._closed = True
             self.events.close()
             self._backend._vispy_close()
-            self._backend._vispy_canvas = None
 
     def _update_fps(self, event):
         """ Updates the fps after every window and resets the basetime

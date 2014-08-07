@@ -84,10 +84,10 @@ class Variable(GLObject):
 
         # Name of this variable in the program
         self._name = name
-        check = check_variable(name) 
+        check = check_variable(name)
         if check:
-            logger.warn('Invalid variable name "%s". (%s)' 
-                        % (name, check))
+            logger.warning('Invalid variable name "%s". (%s)'
+                           % (name, check))
 
         # Build dtype
         size, _, base = gl_typeinfo[gtype]
@@ -234,14 +234,18 @@ class Uniform(Variable):
             logger.debug("GPU: Active texture is %d" % self._unit)
             gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
             if self.data is not None:
-                self.data.activate()
-        
+                try:
+                    self.data.activate()
+                except Exception as exp:
+                    raise RuntimeError('Could not activate texture %s: %s'
+                                       % (self._unit, str(exp)))
+
         # Update if necessary. OpenGL stores uniform values at the Program
         # object, so they only have to be set once.
         if self._need_update:
             self._update()
             self._need_update = False
-    
+
     def _deactivate(self):
         if self._gtype in (gl.GL_SAMPLER_2D, GL_SAMPLER_3D):
             #gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)

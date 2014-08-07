@@ -331,7 +331,7 @@ class Program(GLObject):
             if name in self._attributes.keys():
                 self._attributes[name].set_data(data[name])
             else:
-                logger.warn("%s has not been bound" % name)
+                logger.warning("%s has not been bound" % name)
 
     def __setitem__(self, name, data):
         if name in self._uniforms.keys():

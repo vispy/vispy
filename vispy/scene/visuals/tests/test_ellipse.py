@@ -8,11 +8,10 @@ All images are of size (100,100) to keep a small file size
 from vispy import gloo
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, assert_image_equal,
-                           requires_img_lib, TestingCanvas)
+                           TestingCanvas)
 
 
 @requires_application()
-@requires_img_lib()
 def test_circle_draw():
     """Test drawing circles without transform using EllipseVisual"""
     with TestingCanvas():
@@ -36,7 +35,6 @@ def test_circle_draw():
 
 
 @requires_application()
-@requires_img_lib()
 def test_ellipse_draw():
     """Test drawing transformed ellipses using EllipseVisual"""
     with TestingCanvas():
@@ -63,7 +61,6 @@ def test_ellipse_draw():
 
 
 @requires_application()
-@requires_img_lib()
 def test_arc_draw1():
     """Test drawing arcs using EllipseVisual"""
     with TestingCanvas():

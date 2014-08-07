@@ -26,6 +26,7 @@ class SceneCanvas(app.Canvas):
         self.events.mouse_press.connect(self._process_mouse_event)
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
+        self.events.mouse_wheel.connect(self._process_mouse_event)
 
         self._scene = None
         self.scene = SubScene()
@@ -65,9 +66,9 @@ class SceneCanvas(app.Canvas):
             self.pop_viewport()
         
         if len(self._vp_stack) > 0:
-            logger.warn("Viewport stack not fully cleared after draw.")
+            logger.warning("Viewport stack not fully cleared after draw.")
         if len(self._fb_stack) > 0:
-            logger.warn("Framebuffer stack not fully cleared after draw.")
+            logger.warning("Framebuffer stack not fully cleared after draw.")
 
     def _process_mouse_event(self, event):
         scene_event = SceneMouseEvent(canvas=self, event=event)

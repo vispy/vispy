@@ -166,6 +166,37 @@ def test_st_mapping():
     assert np.allclose(t.map(p1)[:, :len(p2)], p2)
 
 
+def test_affine_mapping():
+    t = tr.AffineTransform()
+    p1 = np.array([[0, 0, 0],
+                   [1, 0, 0],
+                   [0, 1, 0],
+                   [0, 0, 1]])
+    
+    # test pure translation
+    p2 = p1 + 5.5
+    t.set_mapping(p1, p2)
+    assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
+    
+    # test pure scaling
+    p2 = p1 * 5.5
+    t.set_mapping(p1, p2)
+    assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
+    
+    # test scale + translate
+    p2 = (p1 * 5.5) + 3.5
+    t.set_mapping(p1, p2)
+    assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
+    
+    # test SRT
+    p2 = np.array([[10, 5, 3],
+                   [10, 15, 3],
+                   [30, 5, 3],
+                   [10, 5, 3.5]])
+    t.set_mapping(p1, p2)
+    assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
+
+
 if __name__ == '__main__':
     for key in [key for key in globals()]:
         if key.startswith('test_'):

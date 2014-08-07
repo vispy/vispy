@@ -7,6 +7,7 @@ from __future__ import division
 from . import transforms
 from ..util.event import EmitterGroup, Event
 from .events import SceneDrawEvent, SceneMouseEvent
+from .transforms import NullTransform
 
 
 class Entity(object):
@@ -30,9 +31,11 @@ class Entity(object):
                                    mouse_press=SceneMouseEvent,
                                    mouse_move=SceneMouseEvent,
                                    mouse_release=SceneMouseEvent,
+                                   mouse_wheel=SceneMouseEvent,
                                    draw=SceneDrawEvent,
                                    children_drawn=SceneDrawEvent,
                                    update=Event,
+                                   transform_change=Event,
                                    )
         self.name = name
 
@@ -153,8 +156,15 @@ class Entity(object):
 
     @transform.setter
     def transform(self, tr):
+        if self._transform is not None:
+            self._transform.changed.disconnect(self._transform_changed)
         assert isinstance(tr, transforms.Transform)
         self._transform = tr
+        self._transform.changed.connect(self._transform_changed)
+        self._transform_changed(None)
+
+    def _transform_changed(self, event):
+        self.events.transform_change()
         self.update()
 
     def _parent_chain(self):
@@ -194,16 +204,15 @@ class Entity(object):
         the two entities; otherwise an exception will be raised.        
         """
         cp = self.common_parent(entity)
-        
         # First map from entity to common parent
-        tr = entity.transform
-        while True:
-            entity = entity.parent
-            if entity is cp:
-                break
+        tr = NullTransform()
+        
+        while entity is not cp:
             if entity.transform is not None:
                 tr = entity.transform * tr
-                
+            
+            entity = entity.parent
+        
         if entity is self:
             return tr
         

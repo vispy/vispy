@@ -240,9 +240,9 @@ class CanvasBackend(BaseCanvasBackend):
         glut.glutSetWindow(self._id)
         _VP_GLUT_ALL_WINDOWS.append(self)
         if fs is not False:
-            if isinstance(fs, int):
-                logger.warn('Cannot specify monitor for glut fullscreen, '
-                            'using default')
+            if fs is not True:
+                logger.warning('Cannot specify monitor for glut fullscreen, '
+                               'using default')
             glut.glutFullScreen()
 
         # Cache of modifiers so we can send modifiers along with mouse motion
@@ -260,7 +260,6 @@ class CanvasBackend(BaseCanvasBackend):
         glut.glutMotionFunc(self.on_mouse_motion)
         glut.glutPassiveMotionFunc(self.on_mouse_motion)
         _set_close_fun(self._id, self.on_close)
-        self._vispy_canvas_ = None
         if position is not None:
             self._vispy_set_position(*position)
         if not show:
@@ -335,6 +334,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Force the window or widget to shut down
         if self._closed:
             return
+        self._vispy_canvas = None
         # sometimes the context is already destroyed
         try:
             # prevent segfaults during garbage col

@@ -605,7 +605,8 @@ class VertexBuffer(DataBuffer):
             elif data.shape[-1] in [1, 2, 3, 4]:
                 c = data.shape[-1]
                 if not data.flags['C_CONTIGUOUS']:
-                    logger.warn("Copying discontiguous data for struct dtype")
+                    logger.warning("Copying discontiguous data for struct "
+                                   "dtype")
                     data = data.copy()
                 data = data.view(dtype=[('f0', data.dtype.base, c)])
             else:

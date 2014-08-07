@@ -104,6 +104,16 @@ class BaseCanvasBackend(object):
         outs.append(kwargs.get('vispy_canvas', None))
         return outs
 
+    def _vispy_init(self):
+        # For any __init__-like actions that must occur *after*
+        # self._vispy_canvas._backend is not None
+
+        # Most backends won't need this. However, there are exceptions.
+        # e.g., pyqt4 with show=True, "show" can't be done until this property
+        # exists because it might call on_draw which might in turn call
+        # canvas.size... which relies on canvas._backend being set.
+        pass
+
     def _vispy_set_current(self):
         # Make this the current context
         raise NotImplementedError()

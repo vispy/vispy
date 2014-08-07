@@ -55,7 +55,7 @@ def _user_to_rgba(color, expand=True):
         color = np.concatenate((color, np.ones((color.shape[0], 1))),
                                axis=1)
     if color.min() < 0 or color.max() > 1:
-        logger.warn('Color will be clamped between 0 and 1: %s' % color)
+        logger.warning('Color will be clipped between 0 and 1: %s' % color)
         color = np.clip(color, 0, 1)
     return color
 
@@ -72,7 +72,7 @@ def _array_clip_val(val):
     """Helper to turn val into array and clip between 0 and 1"""
     val = np.array(val)
     if val.max() > 1 or val.min() < 0:
-        logger.warn('value will be clipped between 0 and 1')
+        logger.warning('value will be clipped between 0 and 1')
     val[...] = np.clip(val, 0, 1)
     return val
 

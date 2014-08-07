@@ -165,14 +165,14 @@ class Application(object):
                            'multiple GUI toolkits simultaneously can cause '
                            'side effects.' % 
                            (native_module_name, name, str(mod.why_not))) 
-                    logger.warn(msg)
+                    logger.warning(msg)
                 else:
                     # Inform otherwise
                     logger.info(msg)
             else:
                 # Success!
                 self._backend_module = mod
-                logger.info('Selected backend %s' % module_name)
+                logger.debug('Selected backend %s' % module_name)
                 break
         else:
             raise RuntimeError('Could not import any of the backends.')

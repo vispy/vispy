@@ -200,6 +200,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
                 screen = screen[fs]
         else:
             screen = None
+        self._initialize_sent = False
         pyglet.window.Window.__init__(self, width=size[0], height=size[1],
                                       caption=title, visible=show,
                                       config=config, vsync=vsync,
@@ -269,6 +270,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
     def _vispy_close(self):
         # Force the window or widget to shut down
         # In Pyglet close is equivalent to destroy (window becomes invalid)
+        self._vispy_canvas = None
         self.close()
 
     def _vispy_get_size(self):
@@ -282,8 +284,10 @@ class CanvasBackend(_Window, BaseCanvasBackend):
     def on_show(self):
         if self._vispy_canvas is None:
             return
-        self._vispy_set_current()
-        self._vispy_canvas.events.initialize()
+        if not self._initialize_sent:
+            self._initialize_sent = True
+            self._vispy_set_current()
+            self._vispy_canvas.events.initialize()
         # Set location now if we must. For some reason we get weird
         # offsets in viewport if set_location is called before the
         # widget is shown.
