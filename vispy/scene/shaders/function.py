@@ -324,7 +324,7 @@ class Function(ShaderObject):
         
         # Create static Variable instances for any global variables declared
         # in the code
-        self._static_vars = parsing.find_program_variables(self._code)
+        self._static_vars = None
     
     def __setitem__(self, key, val):
         """ Setting of replacements through a dict-like syntax.
@@ -466,6 +466,8 @@ class Function(ShaderObject):
         return self._signature[2]
 
     def static_names(self):
+        if self._static_vars is None:
+            self._static_vars = parsing.find_program_variables(self._code)
         return self._static_vars.keys()
 
     def replace(self, str1, str2):

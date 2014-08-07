@@ -50,7 +50,7 @@ class Compiler(object):
         """
         
         #
-        #  First: assign names to all objects to avoid collisions
+        #  First: collect lists of dependencies for each shader
         #
         
         # Authoritative mapping of {obj: name}
@@ -58,14 +58,15 @@ class Compiler(object):
         
         # {name: obj} mapping for finding unique names
         # initialize with reserved keywords.
-        namespace = dict([(kwd, None) for kwd in gloo.util.KEYWORDS])
-        
+        self._global_ns = dict([(kwd, None) for kwd in gloo.util.KEYWORDS])
+        # functions are local per-shader
+        self._shader_ns = dict([(shader, {}) for shader in self.shaders])
+
         # maps {shader_name: [deps]}
         shader_deps = {}
         
-        # groups together objects that all ask for the same name.
-        # maps {requested_name, [objects]}
-        requested_names = {}
+        # for each object, keep a list of shaders the object appears in
+        obj_shaders = {}
         
         for shader_name, shader in self.shaders.items():
             this_shader_deps = []
@@ -81,39 +82,28 @@ class Compiler(object):
                 
                 # Add static names to namespace
                 for name in dep.static_names():
-                    namespace[name] = None
+                    self._global_ns[name] = None
+                    
+                obj_shaders.setdefault(dep, []).append(shader_name)
                 
-                # group together objects by name
-                requested_names.setdefault(dep.name, []).append(dep)
-                
-            
         #
-        # Assign names for all objects that do not need to be renamed
-        #
-        conflicts = []
-        for name, deps in requested_names.items():
-            if len(deps) == 1 and name not in namespace:
-                # hooray, we get to keep this name.
-                dep = deps[0]
-                namespace[name] = dep
-                self._object_names[dep] = name
-            else:
-                conflicts.append(name)
-
-        #
-        # Rename all objects with name conflicts
+        # Assign new object names
         #
         name_index = {}
-        for name in conflicts:
-            objs = requested_names[name]
-            while len(objs) > 0:
-                index = name_index.get(name, 0) + 1
-                name_index[name] = index
-                new_name = name + '_%d' % index
-                if new_name not in namespace:
-                    obj = objs.pop()
-                    namespace[name] = obj
-                    self._object_names[obj] = name
+        for obj, shaders in obj_shaders.items():
+            name = obj.name
+            if self._name_available(obj, name, shaders):
+                # hooray, we get to keep this name
+                self._assign_name(obj, name, shaders)
+            else:
+                # boo, find a new name
+                while True:
+                    index = name_index.get(name, 0) + 1
+                    name_index[name] = index
+                    new_name = name + '_%d' % index
+                    if self._name_available(obj, new_name, shaders):
+                        self._assign_name(obj, new_name, shaders)
+                        break
         
         #
         # Now we have a complete namespace; concatenate all definitions
@@ -142,3 +132,40 @@ class Compiler(object):
             
         self.code = compiled
         return compiled
+
+    def _is_global(self, obj):
+        """ Return True if *obj* should be declared in the global namespace. 
+        
+        Some objects need to be declared only in per-shader namespaces:
+        functions, static variables, and const variables may all be given
+        different definitions in each shader.
+        """
+        # todo: right now we assume all Variables are global, and all 
+        # Functions are local. Is this actually correct? Are there any
+        # global functions? Are there any local variables?
+        from .function import Variable
+        return isinstance(obj, Variable)
+
+    def _name_available(self, obj, name, shaders):
+        """ Return True if *name* is available for *obj* in *shaders*.
+        """
+        if name in self._global_ns:
+            return False
+        shaders = self.shaders if self._is_global(obj) else shaders
+        for shader in shaders:
+            if name in self._shader_ns[shader]:
+                return False
+        return True
+
+    def _assign_name(self, obj, name, shaders):
+        """ Assign *name* to *obj* in *shaders*.
+        """
+        if self._is_global(obj):
+            assert name not in self._global_ns
+            self._global_ns[name] = obj
+        else:
+            for shader in shaders:
+                ns = self._shader_ns[shader]
+                assert name not in ns
+                ns[name] = obj
+        self._object_names[obj] = name
