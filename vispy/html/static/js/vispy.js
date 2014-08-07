@@ -133,7 +133,7 @@ require(["widgets/js/widget"], function(WidgetManager) {
         mouse_press: function(e) {
             ++this.c._eventinfo.is_button_pressed;
             var event = gen_mouse_event(this.c, e, "mouse_press");
-            this.c._eventinfo.press_event = event;
+            this.c._eventinfo.press_event = event.event.properties;
             this.send(event);
         },
 
