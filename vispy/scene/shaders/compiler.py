@@ -118,10 +118,11 @@ class Compiler(object):
             for dep in shader_deps[shader_name]:
                 dep_code = dep.definition(obj_names)
                 if dep_code is not None:
-                    # strip out version pragma if present; check requested version
+                    # strip out version pragma if present; 
                     regex = r'#version (\d+)'
                     m = re.search(regex, dep_code)
                     if m is not None:
+                        # check requested version
                         if m.group(1) != '120':
                             raise RuntimeError("Currently only GLSL #version "
                                                "120 is supported.")
