@@ -101,7 +101,8 @@ class ApplicationBackend(BaseApplicationBackend):
         return self._backend2._vispy_process_events()
 
     def _vispy_run(self):
-        return self._backend2._vispy_run()
+        pass  # We run in IPython, so we don't run!
+        #return self._backend2._vispy_run()
 
     def _vispy_quit(self):
         return self._backend2._vispy_quit()
@@ -288,6 +289,11 @@ class CanvasBackend(BaseCanvasBackend):
                                                       ("modifiers"),
                                                       )
         elif ev.get("name") == "TimerEvent":  # Ticking from front-end (JS)
+            # Allthough the event originates from JS, this is basically
+            # a poll event from IPyhon's event loop, which we use to
+            # update the backend app and draw stuff if necessary. If we
+            # succeed to make IPython process GUI app events directly,
+            # this "JS timer" should not be necessary.
             self._vispy_canvas.app.process_events()
             if self._need_draw:
                 self._on_draw()
