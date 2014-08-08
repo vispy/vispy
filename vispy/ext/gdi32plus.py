@@ -10,11 +10,11 @@ import atexit
 from functools import partial
 import struct
 
-from ctypes import (windll, Structure, POINTER, byref,
+from ctypes import (windll, Structure, POINTER, byref, WINFUNCTYPE,
                     c_uint, c_float, c_int, c_ulong, c_uint64,
                     c_void_p, c_uint32, c_wchar, c_wchar_p)
 from ctypes.wintypes import (LONG, BYTE, HFONT, HGDIOBJ, BOOL, UINT, INT,
-                             DWORD, LPARAM, WINFUNCTYPE)
+                             DWORD, LPARAM)
 
 try:
     import _winreg as winreg
