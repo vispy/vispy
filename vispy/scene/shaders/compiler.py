@@ -173,7 +173,8 @@ class Compiler(object):
                 while True:
                     index = name_index.get(name, 0) + 1
                     name_index[name] = index
-                    new_name = name + '_%d' % index
+                    ext = '_%d' % index
+                    new_name = name[:32-len(ext)] + ext
                     if self._name_available(obj, new_name, shaders):
                         self._assign_name(obj, new_name, shaders)
                         break
