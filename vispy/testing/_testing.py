@@ -236,7 +236,7 @@ def requires_scipy(min_version='0.13'):
                                  'Requires Scipy version >= %s' % min_version)
         
 
-def _save_failed_test(data, filename):
+def _save_failed_test(data, expect, filename):
     import httplib
     import urllib
     import base64
@@ -244,15 +244,34 @@ def _save_failed_test(data, filename):
 
     commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
     name = filename.split('/')
-    name.insert(-1, commit)
-    filename = os.path.join(*name)
+    name.insert(-1, commit.strip())
+    filename = '/'.join(name)
     host = 'data.vispy.org'
-    png = make_png(data)
+    
+    # concatenate data, expect, and diff into a single image
+    ds = data.shape
+    es = expect.shape
+    if ds == es:
+        shape = (ds[0], ds[1] * 3 + 2, 4)
+        img = np.empty(shape, dtype=np.ubyte)
+        img[:] = 255
+        img[:, :ds[1], :ds[2]] = data
+        img[:, ds[1]+1:ds[1]*2+1, :ds[2]] = expect
+        img[:, ds[1]*2 + 2:, :ds[2]] = data - expect
+    else:
+        shape = (ds[0], ds[1] * 2 + 1, 4)
+        img = np.empty(shape, dtype=np.ubyte)
+        img[:] = 255
+        img[:ds[0], :ds[1], :ds[2]] = data
+        img[:es[0], ds[1]+1+es[1]:, :es[2]] = expect 
+    
+    png = make_png(img)
     conn = httplib.HTTPConnection(host)
     req = urllib.urlencode({'name': filename, 
                             'data': base64.b64encode(png)})
     conn.request('POST', '/upload.py', req)
     response = conn.getresponse().read()
+    print("\nUpload to: http://%s/data/%s" % (host, filename))
     if not response.startswith('OK'):
         print("WARNING: Error uploading data to %s" % host)
         print(response)
@@ -276,6 +295,8 @@ def assert_image_equal(image, reference):
         image = _screenshot(alpha=False)
     ref = read_png(get_testing_file(reference))
 
+    # check for minimum number of changed pixels, allowing for overall 1-pixel 
+    # shift in any direcion
     slices = [slice(0, -1), slice(0, None), slice(1, None)]
     min_diff = np.inf
     for i in range(3):
@@ -288,7 +309,7 @@ def assert_image_equal(image, reference):
     try:
         assert min_diff <= 40
     except AssertionError:
-        _save_failed_test(image, reference)
+        _save_failed_test(image, ref, reference)
         raise
 
 

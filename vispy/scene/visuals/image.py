@@ -122,11 +122,11 @@ class Image(Mesh):
         # this is handled in _build_data instead.
         pass
 
-    def draw(self):
+    def draw(self, event):
         if self._data is None:
             return
 
         if self._texture is None:
             self._build_data(event)
 
-        super(Image, self).draw()
+        super(Image, self).draw(event)
