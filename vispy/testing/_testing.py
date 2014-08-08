@@ -271,7 +271,7 @@ def _save_failed_test(data, expect, filename):
     conn.request('POST', '/upload.py', req)
     response = conn.getresponse().read()
     conn.close()
-    print("\nUpload to: http://%s/data/%s" % (host, filename))
+    print("\nUpload to: \nhttp://%s/data/%s" % (host, filename))
     if not response.startswith(b'OK'):
         print("WARNING: Error uploading data to %s" % host)
         print(response)
