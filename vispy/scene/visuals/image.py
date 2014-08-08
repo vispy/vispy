@@ -122,7 +122,7 @@ class Image(Mesh):
         # this is handled in _build_data instead.
         pass
 
-    def draw(self, event=None):
+    def draw(self):
         if self._data is None:
             return
 

@@ -102,7 +102,7 @@ class Polygon(Visual):
     def update_gl_options(self, *args, **kwds):
         self.mesh.update_gl_options(*args, **kwds)
 
-    def draw(self, event=None):
+    def draw(self, event):
         if self.mesh:
             gloo.set_state(polygon_offset_fill=True)
             gloo.set_polygon_offset(1, 1)

@@ -44,7 +44,7 @@ class Visual(Entity):
         """
         self.events.update()
 
-    def draw(self, event=None):
+    def draw(self, event):
         """
         Draw this visual now.
         The default implementation does nothing.

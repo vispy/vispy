@@ -313,7 +313,7 @@ class ModularVisual(Visual):
 #         self._visual.transform = event.viewport_transform
 #         self.draw()
 
-    def draw(self, event=None):
+    def draw(self, event):
         """
         Draw this visual now.
 
