@@ -1,5 +1,5 @@
 from vispy.scene.shaders.function import (Function, Variable, Varying,
-                                          FunctionChain)
+                                          MainFunction, FunctionChain)
 
 # Users normally don't need these, but I want to test them
 from vispy.scene.shaders.function import FunctionCall, TextExpression
@@ -210,7 +210,7 @@ def test_Variable():
     
     # Test repr
     var = Variable('uniform float bla')
-    assert_in('uniform float bla', str(var))
+    assert_in('uniform float bla', var.compile())
     
     # Test injection, definition, dependencies
     assert_equal(var.expression({var: 'xxx'}), 'xxx')
@@ -229,19 +229,18 @@ def test_function_basics():
     # Test init fail
     assert_raises(TypeError, Function)  # no args
     assert_raises(ValueError, Function, 3)  # need string
-    assert_raises(ValueError, Function, '')  # no code
 
     # Test init success 1
     fun = Function('void main(){}')
     assert_equal(fun.name, 'main')
-    assert len(fun._template_vars) == 0
+    assert len(fun.template_vars) == 0
     
     # Test init success with template vars
     fun = Function('void main(){$foo; $bar;}')
     assert_equal(fun.name, 'main')
-    assert len(fun._template_vars) == 2
-    assert_in('foo', fun._template_vars)
-    assert_in('bar', fun._template_vars)
+    assert len(fun.template_vars) == 2
+    assert_in('foo', fun.template_vars)
+    assert_in('bar', fun.template_vars)
     
     # Test setting verbatim expressions
     assert_raises(KeyError, fun.__setitem__, 'bla', '33')  # no such template
@@ -270,7 +269,7 @@ def test_function_basics():
         assert_equal(fun[name], trans)
         
     #
-    text = str(fun)
+    text = fun.compile()
     assert_in('\ntransform_scale(2);\n', text)
     assert_in('\ntransform_scale(3);\n', text)
     assert_in('\ntransform_scale(XX);\n', text)
@@ -391,26 +390,53 @@ def test_FunctionChain():
     f5 = Function("vec3 f5(vec4 z){}")
     
     ch = FunctionChain('chain', [f1, f2])
-    assert_in('f1', str(ch))
-    assert_in('f2', str(ch))
+    assert ch.name == 'chain'
+    assert ch.args == []
+    assert ch.rtype == 'void'
+    
+    assert_in('f1', ch.compile())
+    assert_in('f2', ch.compile())
     
     ch.remove(f2)
-    assert_not_in('f2', str(ch))
+    assert_not_in('f2', ch.compile())
 
     ch.append(f2)
-    assert_in('f2', str(ch))
+    assert_in('f2', ch.compile())
 
     ch = FunctionChain(funcs=[f5, f4, f3])
     assert_equal('float', ch.rtype)
     assert_equal([('vec4', 'z')], ch.args)
-    assert_in('f3', str(ch))
-    assert_in('f4', str(ch))
-    assert_in('f5', str(ch))
+    assert_in('f3', ch.compile())
+    assert_in('f4', ch.compile())
+    assert_in('f5', ch.compile())
     assert_in(f3, ch.dependencies())
     assert_in(f4, ch.dependencies())
     assert_in(f5, ch.dependencies())
-    print(ch)
 
+
+def test_MainFunction():
+    code = """
+    const float pi = 3.0;  // close enough.
+    
+    vec4 rotate(vec4 pos) {
+        return pos;  // just kidding.
+    }
+    
+    attribute mat4 m_transform;
+    attribute vec4 a_pos;
+    void main() {
+        gl_Position = m_transform * a_pos;
+    }
+    """
+    
+    mf = MainFunction(code)
+    
+    assert mf.name == 'main'
+    assert mf.rtype == 'void'
+    assert len(mf.args) == 0
+    sn = set(mf.static_names())
+    assert sn == set(['pi', 'rotate', 'pos', 'm_transform', 'a_pos', 'main'])
+    
 
 if __name__ == '__main__':
     for key in [key for key in globals()]:

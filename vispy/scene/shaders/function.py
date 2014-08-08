@@ -149,7 +149,7 @@ class ShaderObject(object):
         logger.debug("ShaderObject changed: %r" % event.source)
         self.changed()
     
-    def __str__(self):
+    def compile(self):
         """ Return a compilation of this object and its dependencies. 
         
         Note: this is mainly for debugging purposes; the names in this code
@@ -159,6 +159,13 @@ class ShaderObject(object):
         compiler = Compiler(obj=self)
         return compiler.compile()['obj']
     
+    def __str__(self):
+        if self.name is not None:
+            return '<%s "%s" at 0x%x>' % (self.__class__.__name__, 
+                                        self.name, id(self))
+        else:
+            return '<%s at 0x%x>' % (self.__class__.__name__, id(self))
+
 
 class Function(ShaderObject):
     """ Representation of a GLSL function
@@ -305,13 +312,11 @@ class Function(ShaderObject):
                              type(code))
         self._code = self._clean_code(code)
         
-        # Get some information derived from the code
-        try:
-            self._signature = parsing.parse_function_signature(self._code)
-        except Exception as err:
-            raise ValueError('Invalid code: ' + str(err))
-        self._name = self._signature[0]
-        self._template_vars = self._parse_template_vars()
+        # (name, args, rval)
+        self._signature = None
+        
+        # $placeholders parsed from the code
+        self._template_vars = None
         
         # Expressions replace template variables (also our dependencies)
         self._expressions = OrderedDict()
@@ -349,7 +354,7 @@ class Function(ShaderObject):
             if any(map(key.startswith, 
                        ('gl_PointSize', 'gl_Position', 'gl_FragColor'))):
                 storage = self._post_hooks
-            elif key in self._template_vars:
+            elif key in self.template_vars:
                 storage = self._expressions
             else:
                 raise KeyError('Invalid template variable %r' % key)
@@ -399,8 +404,8 @@ class Function(ShaderObject):
         # In case of verbatim text, we might have added new template vars
         if isinstance(val, TextExpression):
             for var in parsing.find_template_variables(val.expression()):
-                if var not in self._template_vars:
-                    self._template_vars.add(var.lstrip('$'))
+                if var not in self.template_vars:
+                    self.template_vars.add(var.lstrip('$'))
         
         self.changed()
     
@@ -426,7 +431,7 @@ class Function(ShaderObject):
         except KeyError:
             pass
         
-        if key not in self._template_vars:
+        if key not in self.template_vars:
             raise KeyError('Invalid template variable %r' % key) 
         else:
             raise KeyError('No value known for key %r' % key)
@@ -441,13 +446,22 @@ class Function(ShaderObject):
         return "<Function '%s' at 0x%x>" % (self.name, id(self))
     
     ## Public API methods
+
+    @property
+    def signature(self):
+        if self._signature is None:
+            try:
+                self._signature = parsing.parse_function_signature(self._code)
+            except Exception as err:
+                raise ValueError('Invalid code: ' + str(err))
+        return self._signature
     
     @property
     def name(self):
         """ The function name. The name may be mangled in the final code
         to avoid name clashes.
         """
-        return self._name
+        return self.signature[0]
 
     @property
     def args(self):
@@ -456,14 +470,27 @@ class Function(ShaderObject):
 
             [(arg_name, arg_type), ...]
         """
-        return self._signature[1]
+        return self.signature[1]
 
     @property
     def rtype(self):
         """
         The return type of this function.
         """
-        return self._signature[2]
+        return self.signature[2]
+    
+    @property
+    def code(self):
+        """ The template code used to generate the definition for this 
+        function.
+        """
+        return self._code
+    
+    @property
+    def template_vars(self):
+        if self._template_vars is None:
+            self._template_vars = self._parse_template_vars()
+        return self._template_vars
 
     def static_names(self):
         if self._static_vars is None:
@@ -559,7 +586,7 @@ class Function(ShaderObject):
         """ Return *code* with indentation and leading/trailing blank lines
         removed. 
         """
-        lines = code.strip().split("\n")
+        lines = code.split("\n")
         min_indent = 100
         for line in lines:
             if line.strip() != "":
@@ -569,6 +596,29 @@ class Function(ShaderObject):
             lines = [line[min_indent:] for line in lines]
         code = "\n".join(lines)
         return code
+
+
+class MainFunction(Function):
+    """ Subclass of Function that allows multiple functions and variables to 
+    be defined in a single code string. The code must contain a main() function
+    definition.
+    """
+    @property
+    def signature(self):
+        return ('main', [], 'void')
+
+    def static_names(self):
+        # parse static variables
+        names = Function.static_names(self)
+        
+        # parse all function names + argument names
+        funcs = parsing.find_functions(self.code)
+        for f in funcs:
+            names.append(f[0])
+            for arg in f[1]:
+                names.append(arg[1])
+        
+        return names
 
 
 class Variable(ShaderObject):
@@ -825,7 +875,6 @@ class FunctionCall(Expression):
     
     Essentially this is container for a Function along with its signature. 
     """
-    
     def __init__(self, function, args):
         super(FunctionCall, self).__init__()
         
@@ -921,6 +970,7 @@ class FunctionChain(Function):
         if not (name is None or isinstance(name, string_types)):
             raise TypeError("Name argument must be string or None.")
         self._funcs = []
+        self._code = None
         self._name = name or "chain"
         self.functions = funcs
 
@@ -937,13 +987,9 @@ class FunctionChain(Function):
         self._update()
 
     @property
-    def args(self):
-        return self._args
+    def signature(self):
+        return self._name, self._args, self._rtype
     
-    @property
-    def rtype(self):
-        return self._rtype
-
     def _update(self):
         funcs = self._funcs
         if len(funcs) > 0:
