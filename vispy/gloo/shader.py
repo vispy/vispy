@@ -195,8 +195,9 @@ class Shader(GLObject):
         """ Shader uniforms obtained from source code """
 
         uniforms = []
-        regex = re.compile("""\s*uniform\s+(?P<type>\w+)\s+"""
-                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
+        regex = re.compile("""^\s*uniform\s+(?P<type>\w+)\s+"""
+                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""",
+                           flags=re.MULTILINE)
         for m in re.finditer(regex, self._code):
             size = -1
             gtype = Shader._gtypes[m.group('type')]
@@ -215,8 +216,9 @@ class Shader(GLObject):
         """ Shader attributes obtained from source code """
 
         attributes = []
-        regex = re.compile("""\s*attribute\s+(?P<type>\w+)\s+"""
-                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""")
+        regex = re.compile("""^\s*attribute\s+(?P<type>\w+)\s+"""
+                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""",
+                           flags=re.MULTILINE)
         for m in re.finditer(regex, self._code):
             size = -1
             gtype = Shader._gtypes[m.group('type')]

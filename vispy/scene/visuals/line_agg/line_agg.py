@@ -110,7 +110,7 @@ uniforms = dict(
     linewidth = 10.,
     antialias = 1.0,
     miter_limit = 4.0,
-    u_scale = (300, 300, 1, 1),
+    #u_scale = (300, 300),
     dash_phase = 0.0,
     # length=length,
     
@@ -196,10 +196,9 @@ class LineAgg(Visual):
         
         # WARNING: THIS IS TERRIBLY INEFFICIENT BECAUSE ALL DATA
         # IS SENT ON GPU AT EVERY REFRESH!!!
-        # We need to put this stuff at initialization time.
 
         # check for transform changes
-        data_doc = event.data_doc_transform.shader_map()
+        data_doc = event.full_transform.shader_map()
         doc_px = event.doc_px_transform.shader_map()
         px_ndc = event.px_ndc_transform.shader_map()
         vert = self._program.vert
