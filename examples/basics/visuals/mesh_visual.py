@@ -17,7 +17,7 @@ from vispy.scene.transforms import (STTransform, AffineTransform,
                                     ChainTransform)
 
 
-class Canvas(vispy.app.Canvas):
+class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         self.meshes = []
         self.rotation = AffineTransform()
@@ -96,7 +96,7 @@ class Canvas(vispy.app.Canvas):
                                                          scale=(s, s, s)),
                                              self.rotation])
 
-        vispy.app.Canvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
 

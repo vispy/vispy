@@ -156,9 +156,9 @@ if __name__ == '__main__':
     color[:, 0] = np.linspace(0, 1, N)
     color[:, 1] = color[::-1, 0]
     
-    class Canvas(app.Canvas):
+    class Canvas(scene.SceneCanvas):
         def __init__(self):
-            app.Canvas.__init__(self, close_keys='escape')
+            scene.SceneCanvas.__init__(self, close_keys='escape')
             
             self.line1 = Line(None, pos, (3, 9, 0))
             self.line2 = DashedLine(None, pos, color)

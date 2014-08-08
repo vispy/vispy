@@ -220,9 +220,9 @@ if __name__ == '__main__':
     colors_flat = np.random.uniform(0.2, 0.8, 
                                     (verts_flat.shape[0], 3)).astype('float32')
     
-    class Canvas(app.Canvas):
+    class Canvas(scene.SceneCanvas):
         def __init__(self):
-            app.Canvas.__init__(self, close_keys='escape')
+            scene.SceneCanvas.__init__(self, close_keys='escape')
             self.size = 700,    700
             self.meshes = []
             

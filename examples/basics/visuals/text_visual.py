@@ -7,9 +7,9 @@ from vispy.scene.visuals import Text
 from vispy.scene.transforms import STTransform
 
 
-class Canvas(app.Canvas):
+class Canvas(scene.SceneCanvas):
     def __init__(self, **kwarg):
-        app.Canvas.__init__(self, close_keys='escape', title='Glyphs', **kwarg)
+        scene.SceneCanvas.__init__(self, close_keys='escape', title='Glyphs', **kwarg)
         self.scale = 200.
 
     def on_initialize(self, event):

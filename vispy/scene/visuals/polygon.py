@@ -106,6 +106,6 @@ class Polygon(Visual):
         if self.mesh:
             gloo.set_state(polygon_offset_fill=True)
             gloo.set_polygon_offset(1, 1)
-            self.mesh.draw()
+            self.mesh.draw(event)
         if self.border:
-            self.border.draw()
+            self.border.draw(event)

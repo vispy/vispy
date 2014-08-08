@@ -12,14 +12,14 @@ from vispy.scene import visuals
 import numpy as np
 
 
-class Canvas(vispy.app.Canvas):
+class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         self.rpolygon = visuals.RegularPolygon(pos=(0.0, 0.0, 0), radius=0.2,
                                                color=(1, 0, 0, 1),
                                                border_color=(1, 1, 1, 1),
                                                sides=4)
         
-        vispy.app.Canvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
         

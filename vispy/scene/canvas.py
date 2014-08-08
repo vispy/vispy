@@ -72,6 +72,7 @@ class SceneCanvas(app.Canvas):
             # Create draw event, which keeps track of the path of transforms
             self._process_entity_count = 0  # for debugging
             scene_event = SceneDrawEvent(canvas=self, event=event)
+            scene_event.push_entity(visual)
             visual.draw(scene_event)
         finally:
             self.pop_viewport()

@@ -10,6 +10,7 @@ import numpy as np
 import vispy.app
 from vispy import gloo
 from vispy.scene import visuals
+from vispy.scene.transforms import STTransform
 
 image = np.random.normal(size=(100, 100, 3), loc=128,
                          scale=50).astype(np.ubyte)
@@ -17,7 +18,8 @@ image = np.random.normal(size=(100, 100, 3), loc=128,
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
-        self.image = visuals.Image(image)
+        self.image = visuals.Image(image, method='subdivide')
+        self.image.transform = STTransform(scale=(7,7), translate=(50, 50))
         vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
@@ -25,7 +27,7 @@ class Canvas(vispy.scene.SceneCanvas):
     def on_draw(self, ev):
         gloo.clear(color='black', depth=True)
         self.push_viewport((0, 0) + self.size)
-        self.image.draw()
+        self.draw_visual(self.image)
 
 
 if __name__ == '__main__':

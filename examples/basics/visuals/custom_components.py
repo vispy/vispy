@@ -93,7 +93,7 @@ class DashComponent(VisualComponent):
         ff = self._funcs['frag_color']
         vf['distance_attr'] = self._make_vbo()  # attribute float
         vf['output_dist'] = Varying('output_dist', dtype='float')
-        ff['dash_len'] = 20.
+        ff['dash_len'] = 200.
         ff['distance'] = vf['output_dist']
 
     @property
@@ -135,11 +135,12 @@ class WobbleComponent(VisualComponent):
         self._visual._program._need_build = True
 
 
-class Canvas(vispy.app.Canvas):
+class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
 
         self.line = visuals.Line()
-        self.line.transform = (STTransform(scale=(0.1, .3)) *
+        self.line.transform = (STTransform(scale=(40, 100), 
+                                           translate=(400, 400)) *
                                SineTransform() *
                                STTransform(scale=(10, 3)))
         self.wobbler = WobbleComponent(pos)
@@ -147,7 +148,7 @@ class Canvas(vispy.app.Canvas):
         dasher = DashComponent(pos)
         self.line.color_components = [VertexColorComponent(color), dasher]
 
-        vispy.app.Canvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
 
@@ -158,9 +159,8 @@ class Canvas(vispy.app.Canvas):
     def on_draw(self, ev):
         gloo.set_clear_color('black')
         gloo.clear(color=True, depth=True)
-        gloo.set_viewport(0, 0, *self.size)
 
-        self.line.draw()
+        self.draw_visual(self.line)
 
     def wobble(self, ev):
         self.wobbler.phase += 0.1

@@ -19,12 +19,12 @@ pos = np.array([[0, 0, 0],
                [-0.25, 0.25, 0]])
 
 
-class Canvas(vispy.app.Canvas):
+class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         self.polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
                                        border_color=(1, 1, 1, 1))
         
-        vispy.app.Canvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
         
