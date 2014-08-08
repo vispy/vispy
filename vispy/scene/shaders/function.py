@@ -492,7 +492,7 @@ class Function(ShaderObject):
     def static_names(self):
         if self._static_vars is None:
             self._static_vars = parsing.find_program_variables(self._code)
-        return self._static_vars.keys() + [arg[0] for arg in self.args]
+        return list(self._static_vars.keys()) + [arg[0] for arg in self.args]
 
     def replace(self, str1, str2):
         """ Set verbatim code replacement
