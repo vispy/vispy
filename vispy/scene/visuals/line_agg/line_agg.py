@@ -110,7 +110,7 @@ uniforms = dict(
     linewidth = 10.,
     antialias = 1.0,
     miter_limit = 4.0,
-    u_scale = (300,300),
+    u_scale = (300, 300, 1, 1),
     dash_phase = 0.0,
     # length=length,
     
