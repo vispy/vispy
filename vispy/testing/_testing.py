@@ -244,7 +244,7 @@ def _save_failed_test(data, expect, filename):
     commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
     name = filename.split('/')
     name.insert(-1, commit.strip())
-    filename = '/'.join(map(str, name))
+    filename = '/'.join(name)
     host = 'data.vispy.org'
     
     # concatenate data, expect, and diff into a single image
