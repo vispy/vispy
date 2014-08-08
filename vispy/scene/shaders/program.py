@@ -7,7 +7,7 @@ from __future__ import division, print_function
 from ...gloo import Program
 from ...util import logger
 from ...ext.six import string_types  # noqa
-from .function import Function, Variable
+from .function import MainFunction, Variable
 from .compiler import Compiler
 
 
@@ -21,8 +21,8 @@ class ModularProgram(Program):
     def __init__(self, vcode, fcode):
         Program.__init__(self, '', '')
         
-        self.vert = Function(vcode)
-        self.frag = Function(fcode)
+        self.vert = MainFunction(vcode)
+        self.frag = MainFunction(fcode)
         self.vert.changed.connect(self._source_changed)
         self.frag.changed.connect(self._source_changed)
         
@@ -32,7 +32,6 @@ class ModularProgram(Program):
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.
         """
-        #pass  # is this still needed?
         # TEMP function to fix sync issues for now
         self._create()
         self._build()

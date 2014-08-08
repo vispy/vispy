@@ -614,6 +614,8 @@ class MainFunction(Function):
         # parse all function names + argument names
         funcs = parsing.find_functions(self.code)
         for f in funcs:
+            if f[0] == 'main':
+                continue
             names.append(f[0])
             for arg in f[1]:
                 names.append(arg[1])
