@@ -11,7 +11,7 @@ import sys
 import os
 import subprocess
 import inspect
-from ..app import Canvas
+from ..scene import SceneCanvas
 
 ###############################################################################
 # Adapted from Python's unittest2 (which is wrapped by nose)
@@ -292,14 +292,14 @@ def assert_image_equal(image, reference):
         raise
 
 
-class TestingCanvas(Canvas):
+class TestingCanvas(SceneCanvas):
     def __init__(self, clear_color=(0, 0, 0, 1), size=(100, 100)):
-        Canvas.__init__(self, size=size)
+        SceneCanvas.__init__(self, size=size)
         self._clear_color = clear_color
 
     def __enter__(self):
-        Canvas.__enter__(self)
+        SceneCanvas.__enter__(self)
         from .. import gloo
         gloo.clear(color=self._clear_color)
-        gloo.set_viewport(0, 0, *self.size)
+        #gloo.set_viewport(0, 0, *self.size)
         return self

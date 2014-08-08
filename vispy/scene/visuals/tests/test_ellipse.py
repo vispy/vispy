@@ -14,23 +14,23 @@ from vispy.testing import (requires_application, assert_image_equal,
 @requires_application()
 def test_circle_draw():
     """Test drawing circles without transform using EllipseVisual"""
-    with TestingCanvas():
-        ellipse = visuals.Ellipse(pos=(0.5, 0.3, 0), radius=0.4,
+    with TestingCanvas() as c:
+        ellipse = visuals.Ellipse(pos=(75, 65, 0), radius=70,
                                   color=(1, 0, 0, 1))
-        ellipse.draw()
+        c.draw_visual(ellipse)
         assert_image_equal("screenshot", 'visuals/circle1.png')
 
         gloo.clear()
-        ellipse = visuals.Ellipse(pos=(0.5, 0.3, 0), radius=0.4,
+        ellipse = visuals.Ellipse(pos=(75, 65, 0), radius=70,
                                   color=(1, 0, 0, 1),
                                   border_color=(0, 1, 1, 1))
-        ellipse.draw()
+        c.draw_visual(ellipse)
         assert_image_equal("screenshot", 'visuals/circle2.png')
 
         gloo.clear()
-        ellipse = visuals.Ellipse(pos=(0.5, 0.3, 0), radius=0.4,
+        ellipse = visuals.Ellipse(pos=(75, 65, 0), radius=70,
                                   border_color=(0, 1, 1, 1))
-        ellipse.draw()
+        c.draw_visual(ellipse)
         assert_image_equal("screenshot", 'visuals/circle3.png')
 
 
