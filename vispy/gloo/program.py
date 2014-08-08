@@ -341,12 +341,17 @@ class Program(GLObject):
                 logger.warning("%s has not been bound" % name)
 
     def __setitem__(self, name, data):
-        if name in self._uniforms.keys():
-            self._uniforms[name].set_data(data)
-        elif name in self._attributes.keys():
-            self._attributes[name].set_data(data)
-        else:
-            raise KeyError("Unknown uniform or attribute %s" % name)
+        try:
+            if name in self._uniforms.keys():
+                self._uniforms[name].set_data(data)
+            elif name in self._attributes.keys():
+                self._attributes[name].set_data(data)
+            else:
+                raise KeyError("Unknown uniform or attribute %s" % name)
+        except Exception:
+            logger.error("Could not set variable '%s' with value %s" % 
+                         (name, data))
+            raise
 
     def __getitem__(self, name):
         if name in self._uniforms.keys():
