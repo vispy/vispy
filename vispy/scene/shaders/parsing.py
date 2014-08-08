@@ -10,6 +10,9 @@ import re
 re_type = r'(?:void|int|float|vec2|vec3|vec4|mat2|mat3|mat4)'
 re_identifier = r'(?:[a-zA-Z_][\w_]*)'
 
+# variable qualifiers
+re_qualifier = r'(const|uniform|attribute|varying)'
+
 # template variables like
 #     $func_name
 re_template_var = (r"(?:(?:\$" + re_identifier + ")|(?:\$\{"
@@ -22,8 +25,11 @@ re_func_name = r"(" + re_identifier + "|" + re_template_var + ")"
 re_declaration = "(?:(" + re_type + ")\s+(" + re_identifier + "))"
 
 # qualifier, type, and identifier like "uniform vec4 var_name"
-re_prog_var_declaration = ("(?:(uniform|attribute|varying)\s*(" + re_type +
-                           ")\s+(" + re_identifier + "))")
+# qualifier is optional.
+# may include multiple names like "attribute float x, y, z"
+re_prog_var_declaration = ("(?:" + re_qualifier + "?\s*(" + re_type +
+                           ")\s+(" + re_identifier + "(\s*,\s*(" +
+                           re_identifier + "))*))")
 
 # list of variable declarations like "vec4 var_name, float other_var_name"
 re_arg_list = "(" + re_declaration + "(?:,\s*" + re_declaration + ")*)?"
@@ -63,6 +69,29 @@ def parse_function_signature(code):
     return name, args, rtype
 
 
+def find_functions(code):
+    """
+    Return a list of (name, arguments, return type) for all function 
+    definition2 found in *code*. Arguments are returned as [(type, name), ...].
+    """
+    regex = "^\s*" + re_func_decl + "\s*{"
+    
+    funcs = []
+    while True:
+        m = re.search(regex, code, re.M)
+        if m is None:
+            return funcs
+        
+        rtype, name, args = m.groups()[:3]
+        if args == 'void' or args.strip() == '':
+            args = []
+        else:
+            args = [tuple(arg.strip().split(' ')) for arg in args.split(',')]
+        funcs.append((name, args, rtype))
+        
+        code = code[m.end():]
+
+
 def find_prototypes(code):
     """
     Return a list of signatures for each function prototype declared in *code*.
@@ -95,10 +124,11 @@ def find_program_variables(code):
     vars = {}
     lines = code.split('\n')
     for line in lines:
-        m = re.match("\s*" + re_prog_var_declaration + "\s*;", line)
+        m = re.match(r"\s*" + re_prog_var_declaration + r"\s*(=|;)", line)
         if m is not None:
-            vtype, dtype, name = m.groups()
-            vars[name] = (vtype, dtype)
+            vtype, dtype, names = m.groups()[:3]
+            for name in names.split(','):
+                vars[name.strip()] = (vtype, dtype)
     return vars
 
 
