@@ -162,7 +162,7 @@ class ShaderObject(object):
     def __str__(self):
         if self.name is not None:
             return '<%s "%s" at 0x%x>' % (self.__class__.__name__, 
-                                        self.name, id(self))
+                                          self.name, id(self))
         else:
             return '<%s at 0x%x>' % (self.__class__.__name__, id(self))
 
