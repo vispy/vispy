@@ -238,4 +238,4 @@ class SceneMouseEvent(SceneEvent):
 class SceneDrawEvent(SceneEvent):
     def __init__(self, event, canvas):
         self.draw_event = event
-        super(SceneDrawEvent, self).__init__(type=event.type, canvas=canvas)
+        super(SceneDrawEvent, self).__init__(type='draw', canvas=canvas)
