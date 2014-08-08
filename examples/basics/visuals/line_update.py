@@ -45,7 +45,7 @@ if __name__ == '__main__':
     win = Canvas()
 
     def update(ev):
-        pos[:, 1] = np.random.normal(size=N, scale=0.2)
+        pos[:, 1] = np.random.normal(size=N, scale=100, loc=400)
         win.line.set_data(pos=pos)
 
     timer = vispy.app.Timer()
