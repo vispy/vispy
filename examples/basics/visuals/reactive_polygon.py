@@ -47,8 +47,7 @@ class Canvas(vispy.scene.SceneCanvas):
 
     def on_draw(self, ev):
         gloo.clear(color='black')
-        gloo.set_viewport(0, 0, *self.size)
-        self.polygon.draw()
+        self.draw_visual(self.polygon)
         
 
 if __name__ == '__main__':
