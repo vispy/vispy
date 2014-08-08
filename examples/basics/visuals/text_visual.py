@@ -2,18 +2,18 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
 
-from vispy import app, gloo
+from vispy import scene, gloo
 from vispy.scene.visuals import Text
 from vispy.scene.transforms import STTransform
 
 
 class Canvas(scene.SceneCanvas):
-    def __init__(self, **kwarg):
-        scene.SceneCanvas.__init__(self, close_keys='escape', title='Glyphs', **kwarg)
+    def __init__(self):
+        scene.SceneCanvas.__init__(self, close_keys='escape', title='Glyphs')
         self.scale = 200.
         self.text = Text('Hello world!', bold=True)
         self.text.transform = STTransform(scale=(100, 100),
-                                          translate=400, 400))
+                                          translate=(400, 400))
         self.apply_zoom()
 
     def on_draw(self, event):
