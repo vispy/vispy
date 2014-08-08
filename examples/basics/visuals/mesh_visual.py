@@ -98,7 +98,6 @@ class Canvas(vispy.scene.SceneCanvas):
 
         vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         
-        
         self.size = (800, 800)
         self.show()
 

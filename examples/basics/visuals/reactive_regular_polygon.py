@@ -14,7 +14,8 @@ import numpy as np
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
-        self.rpolygon = visuals.RegularPolygon(pos=(400.0, 400.0, 0), radius=80.,
+        self.rpolygon = visuals.RegularPolygon(pos=(400.0, 400.0, 0), 
+                                               radius=80.,
                                                color=(1, 0, 0, 1),
                                                border_color=(1, 1, 1, 1),
                                                sides=4)
