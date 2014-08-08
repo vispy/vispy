@@ -12,6 +12,10 @@ import os
 import subprocess
 import inspect
 from ..scene import SceneCanvas
+from ..ext.six.moves import http_client as httplib
+import vispy.ext.six.moves.urllib_parse as urllib
+import base64
+from ..util import make_png
 
 ###############################################################################
 # Adapted from Python's unittest2 (which is wrapped by nose)
@@ -53,7 +57,7 @@ def run_subprocess(command):
     p = subprocess.Popen(command, **kwargs)
     stdout_, stderr = p.communicate()
 
-    output = (stdout_, stderr)
+    output = (stdout_.decode('ascii'), stderr.decode('ascii'))
     if p.returncode:
         print(stdout_)
         print(stderr)
@@ -237,18 +241,10 @@ def requires_scipy(min_version='0.13'):
         
 
 def _save_failed_test(data, expect, filename):
-    try:
-        import httplib
-    except ImportError:
-        import http.client as httplib
-    import urllib
-    import base64
-    from ..util import make_png
-
     commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
     name = filename.split('/')
     name.insert(-1, commit.strip())
-    filename = '/'.join(name)
+    filename = '/'.join(map(str, name))
     host = 'data.vispy.org'
     
     # concatenate data, expect, and diff into a single image
@@ -275,7 +271,7 @@ def _save_failed_test(data, expect, filename):
     conn.request('POST', '/upload.py', req)
     response = conn.getresponse().read()
     print("\nUpload to: http://%s/data/%s" % (host, filename))
-    if not response.startswith('OK'):
+    if not response.startswith(b'OK'):
         print("WARNING: Error uploading data to %s" % host)
         print(response)
 
