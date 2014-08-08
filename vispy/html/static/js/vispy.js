@@ -74,9 +74,9 @@ function gen_key_event(c, e, type) {
 function send_timer_event(w) {
     var event = {
         "event":
-        // Timer Event
+        // Poll Event
         {
-            "name": "TimerEvent",
+            "name": "PollEvent",
         }
     };
     w.send(event);

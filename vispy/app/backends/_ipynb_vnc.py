@@ -189,6 +189,7 @@ class CanvasBackend(BaseCanvasBackend):
         return self._backend2._vispy_update()
 
     def _vispy_close(self):
+        self._need_draw = False
         self._widget.quit()
         return self._backend2._vispy_close()
 
@@ -289,7 +290,7 @@ class CanvasBackend(BaseCanvasBackend):
                                                       modifiers=key.get
                                                       ("modifiers"),
                                                       )
-        elif ev.get("name") == "TimerEvent":  # Ticking from front-end (JS)
+        elif ev.get("name") == "PollEvent":  # Ticking from front-end (JS)
             # Allthough the event originates from JS, this is basically
             # a poll event from IPyhon's event loop, which we use to
             # update the backend app and draw stuff if necessary. If we
