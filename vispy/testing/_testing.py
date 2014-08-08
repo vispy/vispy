@@ -237,7 +237,10 @@ def requires_scipy(min_version='0.13'):
         
 
 def _save_failed_test(data, expect, filename):
-    import httplib
+    try:
+        import httplib
+    except ImportError:
+        import http.client as httplib
     import urllib
     import base64
     from ..util import make_png
