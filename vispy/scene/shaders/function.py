@@ -159,7 +159,7 @@ class ShaderObject(object):
         compiler = Compiler(obj=self)
         return compiler.compile()['obj']
     
-    def __str__(self):
+    def __repr__(self):
         if self.name is not None:
             return '<%s "%s" at 0x%x>' % (self.__class__.__name__, 
                                           self.name, id(self))
@@ -229,7 +229,7 @@ class Function(ShaderObject):
         vert_code['gl_PointSize'] = '10.'
     
     
-    If we use ``str(vert_code)`` we get::
+    If we use ``vert_code.compile()`` we get::
 
         attribute vec4 a_position;
         uniform float u_yoffset;
@@ -442,9 +442,6 @@ class Function(ShaderObject):
         """
         return FunctionCall(self, args)
     
-    def __repr__(self):
-        return "<Function '%s' at 0x%x>" % (self.name, id(self))
-    
     ## Public API methods
 
     @property
@@ -596,6 +593,14 @@ class Function(ShaderObject):
             lines = [line[min_indent:] for line in lines]
         code = "\n".join(lines)
         return code
+
+    def __repr__(self):
+        args = ', '.join([' '.join(arg) for arg in self.args])
+        return '<%s "%s %s(%s)" at 0x%x>' % (self.__class__.__name__, 
+                                             self.rtype,
+                                             self.name,
+                                             args,
+                                             id(self))
 
 
 class MainFunction(Function):
@@ -764,8 +769,9 @@ class Variable(ShaderObject):
         return id(self), self._state_counter
 
     def __repr__(self):
-        return ("<Variable \"%s %s %s\" at 0x%x>" % (self._vtype, self._dtype, 
-                                                     self.name, id(self)))
+        return ("<%s \"%s %s %s\" at 0x%x>" % (self.__class__.__name__,
+                                               self._vtype, self._dtype, 
+                                               self.name, id(self)))
     
     def expression(self, names):
         return names[self]

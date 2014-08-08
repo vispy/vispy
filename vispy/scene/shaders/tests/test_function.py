@@ -435,7 +435,7 @@ def test_MainFunction():
     assert mf.rtype == 'void'
     assert len(mf.args) == 0
     sn = set(mf.static_names())
-    assert sn == set(['pi', 'rotate', 'pos', 'm_transform', 'a_pos', 'main'])
+    assert sn == set(['pi', 'rotate', 'pos', 'm_transform', 'a_pos'])
     
 
 if __name__ == '__main__':
