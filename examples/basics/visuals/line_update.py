@@ -14,8 +14,8 @@ from vispy.scene import visuals
 # vertex positions of data to draw
 N = 200
 pos = np.zeros((N, 3), dtype=np.float32)
-pos[:, 0] = np.linspace(-0.9, 0.9, N)
-pos[:, 1] = np.random.normal(size=N, scale=0.2).astype(np.float32)
+pos[:, 0] = np.linspace(50., 750., N)
+pos[:, 1] = np.random.normal(size=N, scale=100, loc=400)
 
 # color array
 color = np.ones((N, 4), dtype=np.float32)
@@ -38,8 +38,7 @@ class Canvas(vispy.scene.SceneCanvas):
     def on_draw(self, ev):
         gloo.set_clear_color('black')
         gloo.clear(color=True, depth=True)
-        gloo.set_viewport(0, 0, *self.size)
-        self.line.draw()
+        self.draw_visual(self.line)
 
 
 if __name__ == '__main__':

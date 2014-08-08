@@ -13,7 +13,7 @@ from vispy.scene import visuals
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
-        self.ellipse = visuals.Ellipse(pos=(0.0, 0.0, 0), radius=[0.4, 0.3],
+        self.ellipse = visuals.Ellipse(pos=(400, 400, 0), radius=[320, 240],
                                        color=(1, 0, 0, 1),
                                        border_color=(1, 1, 1, 1),
                                        start_angle=180., span_angle=150.)
@@ -27,20 +27,19 @@ class Canvas(vispy.scene.SceneCanvas):
         self.timer.start()
 
     def on_timer(self, event):
-        self.ellipse.radius[0] += 0.001
-        self.ellipse.radius[1] += 0.0015
+        self.ellipse.radius[0] += 1
+        self.ellipse.radius[1] += 1.5
         self.ellipse.span_angle += 0.6
         self.update()
 
     def on_mouse_press(self, event):
-        self.ellipse.radius = [0.4, 0.3]
+        self.ellipse.radius = [320, 240]
         self.ellipse.span_angle = 150.
         self.update()
 
     def on_draw(self, ev):
         gloo.clear(color='black')
-        gloo.set_viewport(0, 0, *self.size)
-        self.ellipse.draw()
+        self.draw_visual(self.ellipse)
         
 
 if __name__ == '__main__':

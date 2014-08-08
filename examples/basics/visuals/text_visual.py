@@ -11,17 +11,14 @@ class Canvas(scene.SceneCanvas):
     def __init__(self, **kwarg):
         scene.SceneCanvas.__init__(self, close_keys='escape', title='Glyphs', **kwarg)
         self.scale = 200.
-
-    def on_initialize(self, event):
         self.text = Text('Hello world!', bold=True)
-        # We need to give a transform to our visual
-        self.transform = STTransform()
-        self.text._program.vert['transform'] = self.transform.shader_map()
+        self.text.transform = STTransform(scale=(100, 100),
+                                          translate=400, 400))
         self.apply_zoom()
 
     def on_draw(self, event):
         gloo.clear(color='white')
-        self.text.draw()
+        self.draw_visual(self.text)
         self.update()
 
     def on_mouse_wheel(self, event):
@@ -34,9 +31,8 @@ class Canvas(scene.SceneCanvas):
         self.apply_zoom()
 
     def apply_zoom(self):
-        gloo.set_viewport(0, 0, *self.size)
-        self.transform.scale = (self.scale / self.size[0],
-                                self.scale / self.size[1], 1.)
+        self.text.transform.scale = (self.scale / self.size[0],
+                                     self.scale / self.size[1], 1.)
         self.update()
 
 if __name__ == '__main__':
