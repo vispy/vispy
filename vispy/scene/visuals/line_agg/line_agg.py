@@ -191,7 +191,7 @@ class LineAgg(Visual):
         gloo.set_state(blend=True, 
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
-    def draw(self, canvas):
+    def draw(self, event):
         self.set_options()
         
         # WARNING: THIS IS TERRIBLY INEFFICIENT BECAUSE ALL DATA
@@ -199,9 +199,9 @@ class LineAgg(Visual):
         # We need to put this stuff at initialization time.
 
         # check for transform changes
-        data_doc = self.transform.shader_map()
-        doc_px = canvas.doc_px_transform.shader_map()
-        px_ndc = canvas.px_ndc_transform.shader_map()
+        data_doc = event.data_doc_transform.shader_map()
+        doc_px = event.doc_px_transform.shader_map()
+        px_ndc = event.px_ndc_transform.shader_map()
         vert = self._program.vert
         #if vert['doc_px_transform'] != doc_px:
         vert['doc_px_transform'] = doc_px

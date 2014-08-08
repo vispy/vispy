@@ -4,7 +4,7 @@ as its entire scenegraph.
 """
 from vispy import app
 from vispy.scene.visuals import LineAgg
-from vispy.scene import SceneCanvas, LineAgg, ViewBox, TwoDCamera
+from vispy.scene import SceneCanvas, LineAgg, ViewBox
 
 import numpy as np
 
@@ -12,8 +12,7 @@ canvas = SceneCanvas(close_keys='escape')
 canvas.size = 600, 600
 canvas.show()
 
-vb = ViewBox(canvas.scene)
-vb.scene.camera = TwoDCamera()
+vb = ViewBox(parent=canvas.scene)
 
 @canvas.events.resize.connect
 def resize(event):
