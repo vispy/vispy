@@ -19,7 +19,7 @@ def test_circle_draw():
     
     # TODO: remove this skip after fixing 
     # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == 3:
+    if sys.version[0] == '3':
         raise SkipTest
     
     with TestingCanvas() as c:
@@ -48,7 +48,7 @@ def test_ellipse_draw():
     
     # TODO: remove this skip after fixing 
     # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == 3:
+    if sys.version[0] == '3':
         raise SkipTest
     
     with TestingCanvas() as c:
@@ -83,7 +83,7 @@ def test_arc_draw1():
     
     # TODO: remove this skip after fixing 
     # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == 3:
+    if sys.version[0] == '3':
         raise SkipTest
     
     with TestingCanvas() as c:

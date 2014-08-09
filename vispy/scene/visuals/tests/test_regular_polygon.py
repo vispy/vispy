@@ -19,7 +19,7 @@ def test_regular_polygon_draw1():
     
     # TODO: remove this skip after fixing 
     # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == 3:
+    if sys.version[0] == '3':
         raise SkipTest
     
     with TestingCanvas() as c:
@@ -54,7 +54,7 @@ def test_regular_polygon_draw2():
     
     # TODO: remove this skip after fixing 
     # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == 3:
+    if sys.version[0] == '3':
         raise SkipTest
     
     with TestingCanvas() as c:

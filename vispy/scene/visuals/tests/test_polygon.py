@@ -21,7 +21,7 @@ def test_square_draw():
     
     # TODO: remove this skip after fixing 
     # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == 3:
+    if sys.version[0] == '3':
         raise SkipTest
     
     pos = np.array([[-0.5, 0.5, 0],
@@ -58,7 +58,7 @@ def test_rectangle_draw():
     
     # TODO: remove this skip after fixing 
     # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == 3:
+    if sys.version[0] == '3':
         raise SkipTest
     
     pos = np.array([[-0.1, 0.5, 0],
