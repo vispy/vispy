@@ -46,6 +46,9 @@ coverage_html:
 test: clean-test
 	python make test full
 
+test3: clean-test
+	python3 make test full
+
 flake: clean-test
 	python make test flake
 

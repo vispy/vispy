@@ -17,7 +17,7 @@ from vispy.scene.transforms import (STTransform, AffineTransform,
                                     ChainTransform)
 
 
-class Canvas(vispy.app.Canvas):
+class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         self.meshes = []
         self.rotation = AffineTransform()
@@ -88,15 +88,16 @@ class Canvas(vispy.app.Canvas):
 
         # Lay out meshes in a grid
         grid = (3, 3)
-        s = 0.8 / max(grid)
+        s = 300. / max(grid)
         for i, mesh in enumerate(self.meshes):
-            x = 2.0 * (i % grid[0]) / grid[0] + 4.0 / grid[0] - 2
-            y = - 2.0 * (i // grid[1]) / grid[1] - 4.0 / grid[1] + 2
+            x = 800. * (i % grid[0]) / grid[0] + 400. / grid[0] - 2
+            y = 800. * (i // grid[1]) / grid[1] + 400. / grid[1] + 2
             mesh.transform = ChainTransform([STTransform(translate=(x, y),
-                                                         scale=(s, s, s)),
+                                                         scale=(s, s, 1)),
                                              self.rotation])
 
-        vispy.app.Canvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
+        
         self.size = (800, 800)
         self.show()
 
@@ -113,9 +114,8 @@ class Canvas(vispy.app.Canvas):
     def on_draw(self, ev):
         gloo.set_clear_color('black')
         gloo.clear(color=True, depth=True)
-        gloo.set_viewport(0, 0, *self.size)
         for mesh in self.meshes:
-            mesh.draw()
+            self.draw_visual(mesh)
 
 
 if __name__ == '__main__':

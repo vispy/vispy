@@ -11,22 +11,21 @@ from vispy import gloo
 from vispy.scene import visuals
 
 
-class Canvas(vispy.app.Canvas):
+class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
-        self.rpolygon = visuals.RegularPolygon(pos=(0.5, 0.3, 0), radius=0.4,
+        self.rpolygon = visuals.RegularPolygon(pos=(600., 500., 0), radius=160,
                                                color=(1, 0, 0, 1),
                                                border_color=(1, 1, 1, 1),
                                                sides=6)
         
-        vispy.app.Canvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
         
     def on_draw(self, ev):
         gloo.set_clear_color((0, 0, 0, 1))
         gloo.clear()
-        gloo.set_viewport(0, 0, *self.size)
-        self.rpolygon.draw()
+        self.draw_visual(self.rpolygon)
         
 
 if __name__ == '__main__':

@@ -313,7 +313,7 @@ class ModularVisual(Visual):
 #         self._visual.transform = event.viewport_transform
 #         self.draw()
 
-    def draw(self, event=None):
+    def draw(self, event):
         """
         Draw this visual now.
 
@@ -377,6 +377,8 @@ class ModularVisual(Visual):
         # TODO: this must be optimized.
         # Allow using as plain visual or in a scenegraph
         t = self.transform if (event is None) else event.render_transform
+        #print(t.transforms)
+        #print(event._stack)
         #if isinstance(t, ChainTransform):
         #    t.simplify()  # Reduce number of transforms
         #self._program['map_local_to_nd'] = self.transform.shader_map()
