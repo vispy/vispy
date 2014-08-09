@@ -37,12 +37,14 @@ class VispyRenderer(Renderer):
         self._line_count = 0
         self._text_count = 0
         self._axs = {}
+        self._texts = []
         self._nt = NullTransform()
         Renderer.__init__(self, *args, **kwargs)
 
     def open_figure(self, fig, props):
-        size = (props['figwidth'] * props['dpi'],
-                props['figheight'] * props['dpi'])
+        self._dpi = props['dpi']
+        size = (props['figwidth'] * self._dpi,
+                props['figheight'] * self._dpi)
         self.canvas = SceneCanvas(size=size, show=True, close_keys='escape',
                                   bgcolor='lightgray')
 
@@ -74,6 +76,15 @@ class VispyRenderer(Renderer):
         for ax in self._axs.values():
             ax['vb'].pos = (w * ax['bounds'][0], h * ax['bounds'][1])
             ax['vb'].size = (w * ax['bounds'][2], h * ax['bounds'][3])
+        for text in self._texts:
+            xform = AffineTransform()
+            vb = text['vb']
+            scale = text['size'] / 72. * self._dpi  # pixels
+            xform.scale([scale * vb.camera.rect.size[0] / float(vb.size[0]),
+                         scale * vb.camera.rect.size[1] / float(vb.size[1])])
+            xform.rotate(text['rotation'], [0, 0, 1])
+            xform.translate(text['position'])
+            text['text'].transform = xform
 
     def close_axes(self, ax):
         pass  # not needed for now
@@ -91,6 +102,7 @@ class VispyRenderer(Renderer):
         assert imdata.ndim == 3 and imdata.shape[2] == 4
         imdata[:, :, 3] = style['alpha'] if style['alpha'] is not None else 1.
         image = Image(imdata)
+        """
         lims = self._mpl_ax_to(mplobj, 'lims')
         xprop = (extent[1] - extent[0]) / float(lims[1] - lims[0])
         yprop = (extent[3] - extent[2]) / float(lims[3] - lims[2])
@@ -99,7 +111,8 @@ class VispyRenderer(Renderer):
         xform = AffineTransform()
         xform.scale([xprop, yprop])
         xform.translate([dx, dy])
-        # image.transform = xform  # XXX WHERE TO PUT THIS?
+        image.transform = xform  # XXX WHERE TO PUT THIS?
+        """
         image.parent = self._mpl_ax_to(mplobj).scene
 
     def draw_text(self, text, position, coordinates, style,
@@ -108,15 +121,13 @@ class VispyRenderer(Renderer):
         color = Color(style['color'])
         color.alpha = style['alpha']
         color = color.rgba
-        # TODO fix FONTSIZE/aspect ratio
-        xform = AffineTransform()
-        xform.scale([1, 5])
-        xform.rotate(style['rotation'], [0, 0, 1])
-        xform.translate((position[0], position[1], 0.))
         text = Text(text, color=color,
                     anchor_x=style['halign'], anchor_y=style['valign'])
-        text.transform = xform
         text.parent = self._mpl_ax_to(mplobj).scene
+        self._texts.append(dict(position=[position[0], position[1], 1.],
+                                vb=self._mpl_ax_to(mplobj),
+                                text=text, rotation=style['rotation'],
+                                size=style['fontsize']))
 
     def draw_markers(self, data, coordinates, style, label, mplobj=None):
         _check_coords(coordinates, 'data')
@@ -148,6 +159,10 @@ class VispyRenderer(Renderer):
                 return ax[output]
         raise RuntimeError('Parent axes could not be found!')
 
+    def _vispy_done(self):
+        """Things to do once all objects have been collected"""
+        self._resize(*self.canvas.size)
+
     # def draw_path_collection(...) TODO add this for efficiency
 
 # https://github.com/mpld3/mplexporter/blob/master/mplexporter/renderers/base.py
@@ -173,6 +188,7 @@ def show_vispy(fig, run=True):
     renderer = VispyRenderer()
     exporter = Exporter(renderer)
     exporter.run(fig)
+    renderer._vispy_done()
     if run:
         renderer.canvas.app.run()
     return renderer.canvas
