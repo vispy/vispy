@@ -30,17 +30,19 @@ def _test_module_properties(_module=None):
         _module = app.backend_module
 
     # Test that the keymap contains all keys supported by vispy.
-    keymap = _module.KEYMAP
-    vispy_keys = keymap.values()
-    for keyname in dir(keys):
-        if keyname.upper() != keyname:
-            continue
-        key = getattr(keys, keyname)
-        assert_in(key, vispy_keys)
+    module_fname = _module.__name__.split('.')[-1]
+    if module_fname != '_egl':  # skip keys for EGL
+        keymap = _module.KEYMAP
+        vispy_keys = keymap.values()
+        for keyname in dir(keys):
+            if keyname.upper() != keyname:
+                continue
+            key = getattr(keys, keyname)
+            assert_in(key, vispy_keys)
 
     # For Qt backend, we have a common implementation
     alt_modname = ''
-    if _module.__name__.split('.')[-1] in ('_pyside', '_pyqt4'):
+    if module_fname in ('_pyside', '_pyqt4'):
         alt_modname = _module.__name__.rsplit('.', 1)[0] + '._qt'
 
     # Test that all _vispy_x methods are there.
@@ -113,6 +115,8 @@ def _test_module_properties(_module=None):
     # Mouse events are emitted from the CanvasBackend base class.
     ignore = set(['stylus', 'touch', 'mouse_press', 'paint',
                   'mouse_move', 'mouse_release', 'close'])
+    if module_fname == '_egl':
+        ignore += ['key_release', 'key_press']
     eventNames = set(canvas.events._emitters.keys()) - ignore
 
     if not alt_modname:  # Only check for non-proxy modules

@@ -4,7 +4,7 @@
 
 
 # Define test proxy function, so we don't have to import vispy.testing always
-def test(label='full', coverage=False, verbosity=1):
+def test(label='full', coverage=False, verbosity=1, *extra_args):
     """Test vispy software
 
     Parameters
@@ -18,4 +18,4 @@ def test(label='full', coverage=False, verbosity=1):
         Verbosity level to use when running ``nose``.
     """
     from ..testing import _tester
-    return _tester(label, coverage, verbosity)
+    return _tester(label, coverage, verbosity, extra_args)

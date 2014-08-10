@@ -585,10 +585,10 @@ def read_pixels(viewport=None, alpha=True):
     """
     if viewport is None:
         viewport = get_parameter('viewport')
-    else:
-        viewport = np.array(viewport, int)
-        if viewport.ndim != 1 or viewport.size != 4:
-            raise ValueError('viewport must be 1D 4-element array-like')
+    viewport = np.array(viewport, int)
+    if viewport.ndim != 1 or viewport.size != 4:
+        raise ValueError('viewport should be 1D 4-element array-like, not %s'
+                         % (viewport,))
     x, y, w, h = viewport
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)  # PACK, not UNPACK
     if alpha:  # gl.GL_RGBA

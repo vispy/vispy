@@ -28,7 +28,7 @@ def _get_root_dir():
     return root_dir, dev
 
 
-def _nose(mode, verbosity, coverage):
+def _nose(mode, verbosity, coverage, extra_args):
     """Run nosetests using a particular mode"""
     cwd = os.getcwd()  # this must be done before nose import
     try:
@@ -64,7 +64,8 @@ def _nose(mode, verbosity, coverage):
     # if not coverage:
     #    imps = ''
     #    cv = ''
-    arg = ' ' + ('--verbosity=%s ' % verbosity) + attrs
+    arg = (' ' + ('--verbosity=%s ' % verbosity) + attrs +
+           ' '.join(str(e) for e in extra_args))
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     cmd = [sys.executable, '-c',
@@ -145,7 +146,7 @@ def _check_line_endings():
                            % (len(report), '\n'.join(report)))
 
 
-def _tester(label='full', coverage=False, verbosity=1):
+def _tester(label='full', coverage=False, verbosity=1, extra_args=()):
     """Test vispy software. See vispy.test()
     """
     from vispy.app.backends import BACKEND_NAMES as backend_names
@@ -165,11 +166,13 @@ def _tester(label='full', coverage=False, verbosity=1):
     runs = []
     if label in ('full', 'nose'):
         for backend in backend_names:
-            runs.append([partial(_nose, backend, verbosity, cov), backend])
+            runs.append([partial(_nose, backend, verbosity, cov, extra_args),
+                         backend])
     elif label in backend_names:
-        runs.append([partial(_nose, label, verbosity, cov), label])
+        runs.append([partial(_nose, label, verbosity, cov, extra_args), label])
     if label in ('full', 'nose', 'nobackend'):
-        runs.append([partial(_nose, 'nobackend', verbosity, cov), 'nobackend'])
+        runs.append([partial(_nose, 'nobackend', verbosity, cov, extra_args),
+                     'nobackend'])
     if label in ('full', 'extra', 'lineendings'):
         runs.append([_check_line_endings, 'lineendings'])
     if label in ('full', 'extra', 'flake'):
