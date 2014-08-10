@@ -20,23 +20,40 @@ class Widget(Visual):
 
     The widget is positioned using the transform attribute (as any
     entity), and its extend (size) is kept as a separate property.
+    
+    Parameters
+    ----------
+    pos : (x, y)
+        A 2-element tuple to specify the top left corner of the widget.
+    size : (w, h)
+        A 2-element tuple to spicify the size of the widget.
+    border : color
+        The color of the border.
+    clip : bool
+        Not used :)
+    padding : int
+        The amount of padding in the widget (i.e. the space reserved between
+        the contents and the border).
+    margin : int
+        The margin to keep around the widget.
+    
     """
 
-    def __init__(self, *args, **kwargs):
-        self._border = kwargs.pop('border', (0.2, 0.2, 0.2, 0.5))
+    def __init__(self, pos=(0, 0), size=(10, 10), border='black',
+                 clip=False, padding=0, margin=0, **kwargs):
+        Visual.__init__(self, **kwargs)
+        
+         # todo: rename to bordercolor? -> borderwidth
+        self._border = tuple(Color(border).rgba)
         # for drawing border
         self._visual = Line(color=self._border)
         # whether this widget should clip its children
-        self._clip = kwargs.pop('clip', False)
+        self._clip = clip
         # reserved space inside border
-        self._padding = kwargs.pop('padding', 0)
+        self._padding = padding
         # reserved space outside border
-        self._margin = kwargs.pop('margin', 0)
+        self._margin = margin
         
-        pos = kwargs.pop('pos', (0, 0))
-        size = kwargs.pop('size', (10, 10))
-        
-        Visual.__init__(self, *args, **kwargs)
         self.events.add(resize=Event)
         self._size = 16, 16
         self.transform = STTransform()

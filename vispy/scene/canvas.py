@@ -47,9 +47,13 @@ class SceneCanvas(app.Canvas):
 
     def _scene_update(self, event):
         self.update()
-
+    
+    def on_initialize(self, event):
+        # Set default bg color
+        gloo.set_clear_color('black')
+    
     def on_draw(self, event):
-        gl.glClearColor(0, 0, 0, 1)
+        gl.glClearColor(1, 1, 1, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         if self._scene is None:

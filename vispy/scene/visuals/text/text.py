@@ -16,6 +16,7 @@ from ....ext.six import string_types
 from ....util.fonts import _load_glyph
 from ...shaders import ModularProgram
 from ..visual import Visual
+from ....color import Color
 
 
 class TextureFont(object):
@@ -166,7 +167,15 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
 
 
 class Text(Visual):
-    """Visual that displays text"""
+    """ Visual that displays text
+    
+    Parameters
+    ----------
+    text : str
+        The text to display
+    ... need more once this settles...
+    
+    """
 
     VERTEX_SHADER = """
         uniform sampler2D u_font_atlas;
@@ -204,9 +213,10 @@ class Text(Visual):
         }
         """
 
-    def __init__(self, text, color=(0., 0., 0., 1.), bold=False,
+    def __init__(self, text=None, color=(0., 0., 0., 1.), bold=False,
                  italic=False, face='OpenSans',
-                 anchor_x='center', anchor_y='center'):
+                 anchor_x='center', anchor_y='center', **kwargs):
+        Visual.__init__(self, **kwargs)
         assert isinstance(text, string_types)
         assert len(text) > 0
         assert anchor_y in ('top', 'center', 'middle', 'bottom')
@@ -215,9 +225,10 @@ class Text(Visual):
         self._font = self._font_manager.get_font(face, bold, italic)
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
+        # todo: we cannot do this here, since there might not be a context
         self._vertices = _text_to_vbo(text, self._font, anchor_x, anchor_y,
                                       self._font._lowres_size)
-        self._color = color
+        self._color = Color(color).rgba
         idx = (np.array([0, 1, 2, 0, 2, 3], np.uint32) +
                np.arange(0, 4*len(text), 4, dtype=np.uint32)[:, np.newaxis])
         self._ib = IndexBuffer(idx.ravel())
@@ -228,7 +239,7 @@ class Text(Visual):
         set_state(blend=True, depth_test=False,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
 
-    def draw(self):
+    def draw(self, event=None):
         # attributes / uniforms are not available until program is built
         self._program.prepare()  # Force ModularProgram to set shaders
         self._program['u_color'] = self._color

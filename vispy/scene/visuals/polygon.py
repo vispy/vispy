@@ -25,7 +25,7 @@ class Polygon(Visual):
     """
     def __init__(self, pos=None, color=(0, 0, 0, 0),
                  border_color=None, **kwds):
-        super(Polygon, self).__init__()
+        super(Polygon, self).__init__(**kwds)
 
         self.mesh = None
         self.border = None
