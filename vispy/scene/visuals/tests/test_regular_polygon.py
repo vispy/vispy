@@ -100,24 +100,29 @@ def test_reactive_draw():
         gloo.clear()
         rpolygon.pos = [70, 40, 0.]
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/reactive_rpolygon1.png')
+        assert_image_equal("screenshot",
+                           'visuals/reactive_regular_polygon1.png')
 
         gloo.clear()
         rpolygon.radius = 25
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/reactive_rpolygon2.png')
+        assert_image_equal("screenshot",
+                           'visuals/reactive_regular_polygon2.png')
 
         gloo.clear()
         rpolygon.color = 'red'
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/reactive_rpolygon3.png')
+        assert_image_equal("screenshot",
+                           'visuals/reactive_regular_polygon3.png')
 
         gloo.clear()
         rpolygon.border_color = 'yellow'
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/reactive_rpolygon4.png')
+        assert_image_equal("screenshot",
+                           'visuals/reactive_regular_polygon4.png')
 
         gloo.clear()
         rpolygon.sides = 6
         c.draw_visual(rpolygon)
-        assert_image_equal("screenshot", 'visuals/reactive_rpolygon5.png')
+        assert_image_equal("screenshot",
+                           'visuals/reactive_regular_polygon5.png')
