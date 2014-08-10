@@ -32,7 +32,7 @@ ax = plt.subplot(313)
 idx = np.argmax(magnitude[:flim])
 ax.text(freqs[idx], magnitude[idx], 'Max: %s Hz' % freqs[idx],
         verticalalignment='top')
-ax.plot(freqs[:flim], magnitude[:flim])  # XXX Should be .stem, but too slow
+ax.plot(freqs[:flim], magnitude[:flim], 'k-o')  # XXX Want .stem, but too slow
 
 plt.draw()
 plt.show()  # XXX Should show in final example
