@@ -101,6 +101,9 @@ class TransformCache(object):
         ending with the Entity to map *from*.
         
         Accessed items have their age reset to 0.
+        
+        Note that path[0].transform is not used because the returned transform 
+        maps to the _local_ coordinate system of path[0]
         """
         key = tuple([id(entity) for entity in path])
         item = self._cache.setdefault(key, [0, self._create(path)])
@@ -110,7 +113,7 @@ class TransformCache(object):
     def _create(self, path):
         # import here to avoid import cycle
         from .chain import ChainTransform
-        tr = [entity.transform for entity in path]
+        tr = [entity.transform for entity in path[1:]]
         return ChainTransform(tr)        
 
     def roll(self):

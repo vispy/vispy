@@ -130,7 +130,8 @@ class SceneEvent(Event):
         """ The transform that maps from the current entity to the
         top-level entity in the scene.
         """
-        return self._transform_cache.get(self._stack)
+        ind = self._stack.index(self.canvas.scene)
+        return self._transform_cache.get(self._stack[ind:])
 
     @property
     def render_transform(self):
@@ -144,17 +145,16 @@ class SceneEvent(Event):
         Most entities should use this transform when drawing.
         """
         #return self.canvas.render_transform * self.full_transform
-        return self.full_transform
-        #return SceneTransform.get(map_from=self._stack[-1], 
-                                  #map_to=self.canvas.ndc,
-                                  #path=self._stack])
+        return self._transform_cache.get(self._stack)
 
     @property
     def fb_transform(self):
         """ Transform mapping from the local coordinate system of the current
         entity to the framebuffer coordinate system.
         """
-        return self.canvas.fb_transform * self.full_transform
+        #return self.canvas.fb_transform * self.full_transform
+        ind = self._stack.index(self.canvas.framebuffer)
+        return self._transform_cache.get(self._stack[ind:])
     
     def map_to_fb(self, obj):
         return self.fb_transform.map(obj)
