@@ -11,7 +11,8 @@ import vispy.app
 from vispy import gloo
 from vispy.scene import visuals
 from vispy.scene.transforms import (AffineTransform, STTransform, arg_to_array,
-                                    LogTransform, PolarTransform, Transform)
+                                    LogTransform, PolarTransform, 
+                                    BaseTransform)
 
 image = np.random.normal(size=(100, 100, 3))
 image[20:80, 20:80] += 3.
@@ -63,7 +64,7 @@ class Canvas(vispy.scene.SceneCanvas):
 
 
 # A simple custom Transform
-class SineTransform(Transform):
+class SineTransform(BaseTransform):
     """
     Add sine wave to y-value for wavy effect.
     """
@@ -95,7 +96,7 @@ class SineTransform(Transform):
         return InvSineTransform()
 
 
-class InvSineTransform(Transform):
+class InvSineTransform(BaseTransform):
     glsl_map = SineTransform.glsl_imap
     glsl_imap = SineTransform.glsl_map
 

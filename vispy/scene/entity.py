@@ -158,7 +158,7 @@ class Entity(object):
     def transform(self, tr):
         if self._transform is not None:
             self._transform.changed.disconnect(self._transform_changed)
-        assert isinstance(tr, transforms.Transform)
+        assert isinstance(tr, transforms.BaseTransform)
         self._transform = tr
         self._transform.changed.connect(self._transform_changed)
         self._transform_changed(None)

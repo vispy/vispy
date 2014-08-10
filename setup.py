@@ -93,6 +93,7 @@ setup(
         'vispy.scene.visuals',
         'vispy.scene.visuals.text',
         'vispy.scene.widgets',
+        'vispy.scene.transforms',
         'vispy.testing', 'vispy.testing.tests',
         'vispy.util', 'vispy.util.tests',
         'vispy.util.dataio', 'vispy.util.geometry',
