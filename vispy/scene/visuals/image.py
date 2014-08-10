@@ -55,7 +55,7 @@ class Image(Mesh):
 
     @property
     def size(self):
-        return self._data.shape[:2]
+        return self._data.shape[:2][::-1]
 
     def _build_data(self, event):
         # Construct complete data array with position and optionally color
