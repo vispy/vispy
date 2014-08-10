@@ -92,7 +92,7 @@ def test_rectangle_draw():
 @requires_scipy()
 def test_reactive_draw():
     """Test reactive polygon attributes"""
-    
+
     # TODO: remove this skip after fixing 
     # https://github.com/vispy/vispy/issues/374
     if sys.version[0] == '3':
@@ -102,23 +102,23 @@ def test_reactive_draw():
                     [0.1, 0.5, 0],
                     [0.1, -0.5, 0],
                     [-0.1, -0.5, 0]])
-    with TestingCanvas():
+    with TestingCanvas() as c:
         polygon = visuals.Polygon(pos=pos, color='yellow')
         polygon.transform = transforms.STTransform(scale=(50, 50),
                                                    translate=(50, 50))
-        polygon.draw()
+        c.draw_visual(polygon)
 
         gloo.clear()
         polygon.pos += [0.1, -0.1, 0]
-        polygon.draw()
+        c.draw_visual(polygon)
         assert_image_equal("screenshot", 'visuals/reactive_polygon1.png')
 
         gloo.clear()
         polygon.color = 'red'
-        polygon.draw()
+        c.draw_visual(polygon)
         assert_image_equal("screenshot", 'visuals/reactive_polygon2.png')
 
         gloo.clear()
         polygon.border_color = 'yellow'
-        polygon.draw()
+        c.draw_visual(polygon)
         assert_image_equal("screenshot", 'visuals/reactive_polygon3.png')

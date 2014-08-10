@@ -16,6 +16,7 @@ from ..ext.six.moves import http_client as httplib
 import vispy.ext.six.moves.urllib_parse as urllib
 import base64
 from ..util import make_png
+from nose.tools import nottest
 
 ###############################################################################
 # Adapted from Python's unittest2 (which is wrapped by nose)
@@ -326,6 +327,7 @@ class TestingCanvas(SceneCanvas):
         return self
 
 
+@nottest
 def save_testing_image(image, location):
     from ..gloo.util import _screenshot
     from ..util import make_png
