@@ -8,8 +8,6 @@ from ..shaders import FunctionChain
 from .base_transform import BaseTransform
 from .linear import NullTransform
 
-__all__ = ['ChainTransform']
-
 
 class ChainTransform(BaseTransform):
     """

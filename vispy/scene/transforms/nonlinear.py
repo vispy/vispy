@@ -10,9 +10,6 @@ from ._util import arg_to_array
 from .base_transform import BaseTransform
 
 
-__all__ = ['LogTransform', 'PolarTransform', 'InvPolarTransform']
-
-
 class LogTransform(BaseTransform):
     """ Transform perfoming logarithmic transformation on three axes.
     Maps (x, y, z) => (log(base.x, x), log(base.y, y), log(base.z, z))
