@@ -520,9 +520,13 @@ class ChainTransform(Transform):
             trs = [tr]
         return ChainTransform(trs+self.transforms)
 
-    def __repr__(self):
+    def __str__(self):
         names = [tr.__class__.__name__ for tr in self.transforms]
         return "<ChainTransform [%s] at 0x%x>" % (", ".join(names), id(self))
+
+    def __repr__(self):
+        tr = ", ".join(map(repr, self.transforms))
+        return "<ChainTransform [%s] at 0x%x>" % (tr, id(self))
 
 
 class NullTransform(Transform):

@@ -42,10 +42,10 @@ class ModularProgram(Program):
     
     def _source_changed(self, ev):
         logger.debug("ModularProgram source changed: %s" % self)
-        print("program change: code: %s, value: %s" % (ev.code_changed, ev.value_changed))
         if ev.code_changed:
-            import traceback
-            traceback.print_stack()
+            print("===================== program change: code: %s, value: %s" % (ev.code_changed, ev.value_changed))
+            #import traceback
+            #traceback.print_stack()
         if ev.code_changed:
             self._need_build = True
         self.changed()

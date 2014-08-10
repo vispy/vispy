@@ -144,7 +144,11 @@ class SceneEvent(Event):
 
         Most entities should use this transform when drawing.
         """
-        return self.canvas.render_transform * self.full_transform
+        #return self.canvas.render_transform * self.full_transform
+        return self.full_transform
+        #return SceneTransform.get(map_from=self._stack[-1], 
+                                  #map_to=self.canvas.ndc,
+                                  #path=self._stack])
 
     @property
     def fb_transform(self):
