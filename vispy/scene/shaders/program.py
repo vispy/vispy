@@ -6,6 +6,7 @@ from __future__ import division, print_function
 
 from ...gloo import Program
 from ...util import logger
+from ...util.event import EventEmitter
 from ...ext.six import string_types  # noqa
 from .function import MainFunction, Variable
 from .compiler import Compiler
@@ -20,6 +21,8 @@ class ModularProgram(Program):
     """
     def __init__(self, vcode, fcode):
         Program.__init__(self, '', '')
+        
+        self.changed = EventEmitter(source=self, type='program_change')
         
         self.vert = MainFunction(vcode)
         self.frag = MainFunction(fcode)
@@ -39,7 +42,13 @@ class ModularProgram(Program):
     
     def _source_changed(self, ev):
         logger.debug("ModularProgram source changed: %s" % self)
-        self._need_build = True
+        print("program change: code: %s, value: %s" % (ev.code_changed, ev.value_changed))
+        if ev.code_changed:
+            import traceback
+            traceback.print_stack()
+        if ev.code_changed:
+            self._need_build = True
+        self.changed()
         
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s" % self)

@@ -414,7 +414,8 @@ class ChainTransform(Transform):
             #bindings.append(bound)
 
         name = "transform_%s_chain" % ('imap' if imap else 'map')
-        return FunctionChain(name, funcs)
+        ch = FunctionChain(name, funcs)
+        return ch
 
     def inverse(self):
         return ChainTransform([tr.inverse()
@@ -521,7 +522,7 @@ class ChainTransform(Transform):
 
     def __repr__(self):
         names = [tr.__class__.__name__ for tr in self.transforms]
-        return "<ChainTransform [%s]>" % (", ".join(names))
+        return "<ChainTransform [%s] at 0x%x>" % (", ".join(names), id(self))
 
 
 class NullTransform(Transform):

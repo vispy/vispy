@@ -176,7 +176,8 @@ class ModularVisual(Visual):
 
         self._program = ComponentProgram(self.VERTEX_SHADER,
                                          self.FRAGMENT_SHADER)
-
+        self._program.changed.connect(self._program_changed)
+        
         self._program.vert['local_pos'] = Variable('local_pos', 
                                                    vtype='', dtype='vec4')
         
@@ -373,18 +374,15 @@ class ModularVisual(Visual):
         for comp in all_comps:
             comp.activate(self._program, mode)
 
-    def _activate_transform(self, event=None):
+    def _activate_transform(self, event):
         # TODO: this must be optimized.
         # Allow using as plain visual or in a scenegraph
-        t = self.transform if (event is None) else event.render_transform
-        #print(t.transforms)
-        #print(event._stack)
-        #if isinstance(t, ChainTransform):
-        #    t.simplify()  # Reduce number of transforms
-        #self._program['map_local_to_nd'] = self.transform.shader_map()
-        self._program['map_local_to_nd'] = t.shader_map()
-
+        t = event.render_transform.shader_map()
+        self._program['map_local_to_nd'] = t
         #print('--------------', self)
         #t.simplify()
         #for tr in t.transforms:
         #    print(tr)
+
+    def _program_changed(self, event):
+        self.update()

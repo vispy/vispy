@@ -18,7 +18,7 @@ import re
 import numpy as np
 
 from ...util.ordereddict import OrderedDict
-from ...util.event import EventEmitter
+from ...util.event import EventEmitter, Event
 from ...util.eq import eq
 from ...util import logger
 from ...ext.six import string_types
@@ -26,6 +26,13 @@ from . import parsing
 from .compiler import Compiler
 
 VARIABLE_TYPES = ('const', 'uniform', 'attribute', 'varying', 'inout')
+
+
+class ShaderChangeEvent(Event):
+    def __init__(self, code_changed=False, value_changed=False, **kwds):
+        Event.__init__(self, type='shader_change', **kwds)
+        self.code_changed = code_changed
+        self.value_changed = value_changed
 
 
 class ShaderObject(object):
@@ -67,7 +74,7 @@ class ShaderObject(object):
     def __init__(self):
         # emitted when any part of the code for this object has changed,
         # including dependencies.
-        self.changed = EventEmitter(source=self, type="code_change")
+        self.changed = EventEmitter(source=self, event_class=ShaderChangeEvent)
         
         # objects that must be declared before this object's definition.
         # {obj: refcount}
@@ -379,6 +386,7 @@ class Function(ShaderObject):
                         variable.dtype == val.dtype and
                         variable.vtype == 'uniform'):
                     variable.value = val.value
+                    self.changed(value_changed=True)
                     return
         
         # Remove old references, if any
@@ -407,7 +415,7 @@ class Function(ShaderObject):
                 if var not in self.template_vars:
                     self.template_vars.add(var.lstrip('$'))
         
-        self.changed()
+        self.changed(code_changed=True, value_changed=True)
     
     def __getitem__(self, key):
         """ Return a reference to a program variable from this function.
@@ -980,6 +988,8 @@ class FunctionChain(Function):
         self._funcs = []
         self._code = None
         self._name = name or "chain"
+        self._args = []
+        self._rtype = 'void'
         self.functions = funcs
 
     @property
