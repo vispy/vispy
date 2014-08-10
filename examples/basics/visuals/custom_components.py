@@ -9,7 +9,7 @@ import numpy as np
 import vispy.app
 import vispy.gloo as gloo
 from vispy.scene import visuals
-from vispy.scene.transforms import Transform, STTransform, arg_to_array
+from vispy.scene.transforms import BaseTransform, STTransform, arg_to_array
 from vispy.scene.components import (VisualComponent, VertexColorComponent,
                                     XYPosComponent)
 from vispy.scene.shaders import Varying
@@ -27,7 +27,7 @@ color[:, 1] = color[::-1, 0]
 
 
 # A custom Transform
-class SineTransform(Transform):
+class SineTransform(BaseTransform):
     """
     Add sine wave to y-value for wavy effect.
     """

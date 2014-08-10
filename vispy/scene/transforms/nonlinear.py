@@ -7,13 +7,13 @@ from __future__ import division
 import numpy as np
 
 from ._util import arg_to_array
-from .transform import Transform
+from .base_transform import BaseTransform
 
 
 __all__ = ['LogTransform', 'PolarTransform', 'InvPolarTransform']
 
 
-class LogTransform(Transform):
+class LogTransform(BaseTransform):
     """ Transform perfoming logarithmic transformation on three axes.
     Maps (x, y, z) => (log(base.x, x), log(base.y, y), log(base.z, z))
 
@@ -104,7 +104,7 @@ class LogTransform(Transform):
         return "<LogTransform base=%s>" % (self.base)
 
 
-class PolarTransform(Transform):
+class PolarTransform(BaseTransform):
     """
     Polar transform maps (theta, r, z) to (x, y, z), where `x = r*cos(theta)`
     and `y = r*sin(theta)`.
@@ -152,7 +152,7 @@ class PolarTransform(Transform):
         return InvPolarTransform()
 
 
-class InvPolarTransform(Transform):
+class InvPolarTransform(BaseTransform):
     glsl_map = PolarTransform.glsl_imap
     glsl_imap = PolarTransform.glsl_map
 
@@ -168,12 +168,12 @@ class InvPolarTransform(Transform):
         return PolarTransform()
 
 
-class BilinearTransform(Transform):
+class BilinearTransform(BaseTransform):
     # TODO
     pass
 
 
-class WarpTransform(Transform):
+class WarpTransform(BaseTransform):
     """ Multiple bilinear transforms in a grid arrangement.
     """
     # TODO

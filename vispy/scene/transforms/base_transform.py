@@ -22,19 +22,19 @@ API Issues to work out:
 """
 
 
-class Transform(object):
+class BaseTransform(object):
     """
-    Transform is a base class that defines a pair of complementary
+    BaseTransform is a base class that defines a pair of complementary
     coordinate mapping functions in both python and GLSL.
 
-    All Transform subclasses define map() and imap() methods that map
+    All BaseTransform subclasses define map() and imap() methods that map
     an object through the forward or inverse transformation, respectively.
 
     The two class variables glsl_map and glsl_imap are instances of
     shaders.Function that define the forward- and inverse-mapping GLSL
     function code.
 
-    Optionally, an inverse() method returns a new Transform performing the
+    Optionally, an inverse() method returns a new transform performing the
     inverse mapping.
 
     Note that although all classes should define both map() and imap(), it
@@ -93,7 +93,7 @@ class Transform(object):
 
     def inverse(self):
         """
-        Return a new Transform that performs the inverse mapping of this
+        Return a new transform that performs the inverse mapping of this
         transform.
         """
         raise NotImplementedError()
@@ -116,7 +116,7 @@ class Transform(object):
 
     def update(self):
         """
-        Called to inform any listeners that this Transform has changed.
+        Called to inform any listeners that this transform has changed.
         """
         #self._shader_map.update()
         #self._shader_imap.update()
@@ -155,7 +155,7 @@ class Transform(object):
 
     def __mul__(self, tr):
         """
-        Transform multiplication returns a new Transform that is equivalent to
+        Transform multiplication returns a new transform that is equivalent to
         the two operands performed in series.
 
         By default, multiplying two Transforms `A * B` will return
@@ -165,23 +165,23 @@ class Transform(object):
         To ensure that both operands have a chance to simplify the operation,
         all subclasses should follow the same procedure. For `A * B`:
 
-        1. A.__mul__(B) attempts to generate an optimized Transform product.
+        1. A.__mul__(B) attempts to generate an optimized transform product.
         2. If that fails, it must:
 
                * return super(A).__mul__(B) OR
                * return NotImplemented if the superclass would return an
                  invalid result.
 
-        3. When Transform.__mul__(A, B) is called, it returns NotImplemented,
+        3. When BaseTransform.__mul__(A, B) is called, it returns NotImplemented,
            which causes B.__rmul__(A) to be invoked.
-        4. B.__rmul__(A) attempts to generate an optimized Transform product.
+        4. B.__rmul__(A) attempts to generate an optimized transform product.
         5. If that fails, it must:
 
                * return super(B).__rmul__(A) OR
                * return ChainTransform([B, A]) if the superclass would return
                  an invalid result.
 
-        6. When Transform.__rmul__(B, A) is called, ChainTransform([A, B]) is
+        6. When BaseTransform.__rmul__(B, A) is called, ChainTransform([A, B]) is
            returned.
         """
         # switch to __rmul__ attempts.

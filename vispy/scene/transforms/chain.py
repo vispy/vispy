@@ -5,21 +5,21 @@
 from __future__ import division
 
 from ..shaders import FunctionChain
-from .transform import Transform
+from .base_transform import BaseTransform
 from .linear import NullTransform
 
 __all__ = ['ChainTransform']
 
 
-class ChainTransform(Transform):
+class ChainTransform(BaseTransform):
     """
-    Transform subclass that performs a sequence of transformations in
+    BaseTransform subclass that performs a sequence of transformations in
     order. Internally, this class uses shaders.FunctionChain to generate
     its glsl_map and glsl_imap functions.
 
     Arguments:
 
-    transforms : list of Transform instances
+    transforms : list of BaseTransform instances
     """
     glsl_map = None
     glsl_imap = None
@@ -191,7 +191,7 @@ class ChainTransform(Transform):
 
     def append(self, tr):
         """
-        Add a new Transform to the end of this chain.
+        Add a new transform to the end of this chain.
         """
         self.transforms.append(tr)
         # Keep simple for now. Let's look at efficienty later
@@ -210,7 +210,7 @@ class ChainTransform(Transform):
 
     def prepend(self, tr):
         """
-        Add a new Transform to the beginning of this chain.
+        Add a new transform to the beginning of this chain.
         """
         self.transforms.insert(0, tr)
         # Keep simple for now. Let's look at efficienty later
