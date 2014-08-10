@@ -101,11 +101,12 @@ class VispyRenderer(Renderer):
         imdata = imdata.astype(np.float32) / 255.
         assert imdata.ndim == 3 and imdata.shape[2] == 4
         imdata[:, :, 3] = style['alpha'] if style['alpha'] is not None else 1.
-        image = Image(imdata)
+        img = Image(imdata)
         vb = self._mpl_ax_to(mplobj)
-        image.transform = STTransform.from_mapping([[0, 0], image.size],
-                                                   extent)
-        image.parent = vb.scene
+        img.transform = STTransform.from_mapping([[0, 0], img.size],
+                                                 [[extent[0], extent[3]],
+                                                  [extent[1], extent[2]]])
+        img.parent = vb.scene
 
     def draw_text(self, text, position, coordinates, style,
                   text_type=None, mplobj=None):
