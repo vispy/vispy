@@ -17,7 +17,7 @@ import vispy.ext.six.moves.urllib_parse as urllib
 import base64
 from ..util import make_png
 
-##################################################z############################
+###############################################################################
 # Adapted from Python's unittest2 (which is wrapped by nose)
 # http://docs.python.org/2/license.html
 
