@@ -193,4 +193,5 @@ class BaseTransform(object):
         return ChainTransform([tr, self])
 
 
+# import here to avoid import cycle; needed for BaseTransform.__mul__.
 from .chain import ChainTransform
