@@ -172,8 +172,8 @@ class BaseTransform(object):
                * return NotImplemented if the superclass would return an
                  invalid result.
 
-        3. When BaseTransform.__mul__(A, B) is called, it returns NotImplemented,
-           which causes B.__rmul__(A) to be invoked.
+        3. When BaseTransform.__mul__(A, B) is called, it returns 
+           NotImplemented, which causes B.__rmul__(A) to be invoked.
         4. B.__rmul__(A) attempts to generate an optimized transform product.
         5. If that fails, it must:
 
@@ -181,8 +181,8 @@ class BaseTransform(object):
                * return ChainTransform([B, A]) if the superclass would return
                  an invalid result.
 
-        6. When BaseTransform.__rmul__(B, A) is called, ChainTransform([A, B]) is
-           returned.
+        6. When BaseTransform.__rmul__(B, A) is called, ChainTransform([A, B])
+           is returned.
         """
         # switch to __rmul__ attempts.
         # Don't use the "return NotImplemted" trick, because that won't work if
