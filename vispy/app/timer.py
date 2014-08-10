@@ -18,7 +18,7 @@ class Timer(object):
     Parameters
     ----------
     interval : float
-        Time between events.
+        Time between events in seconds.
     connect : function | None
         The function to call.
     iterations : int

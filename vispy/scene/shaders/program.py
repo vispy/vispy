@@ -38,9 +38,11 @@ class ModularProgram(Program):
         self._need_build = False
     
     def _source_changed(self, ev):
+        logger.debug("ModularProgram source changed: %s" % self)
         self._need_build = True
         
     def _build(self):
+        logger.debug("Rebuild ModularProgram: %s" % self)
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
         code = self.compiler.compile()
         self.shaders[0].code = code['vert']
