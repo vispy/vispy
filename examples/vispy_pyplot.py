@@ -5,6 +5,7 @@
 import numpy as np
 from vispy.pyplot import show_vispy
 import matplotlib.pyplot as plt
+plt.ion()
 from vispy.util import read_png, get_data_file
 
 n = 200
@@ -36,4 +37,4 @@ ax.plot(freqs[:flim], magnitude[:flim], 'k-o')  # XXX Want .stem, but too slow
 
 plt.draw()
 plt.show()  # XXX Should show in final example
-show_vispy(fig)
+show_vispy(fig, block=False)

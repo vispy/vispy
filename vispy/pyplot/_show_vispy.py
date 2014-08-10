@@ -161,14 +161,14 @@ class VispyRenderer(Renderer):
 # https://github.com/mpld3/mplexporter/blob/master/mplexporter/renderers/base.py
 
 
-def show_vispy(fig, run=True):
+def show_vispy(fig, block=True):
     """Show matplotlib figure using vispy
 
     Parameters
     ----------
     fig : instance of matplotlib Figure
         The populated figure to display.
-    run : bool
+    block : bool
         If True, the canvas application will be run (blocking).
 
     Returns
@@ -182,6 +182,6 @@ def show_vispy(fig, run=True):
     exporter = Exporter(renderer)
     exporter.run(fig)
     renderer._vispy_done()
-    if run:
+    if block:
         renderer.canvas.app.run()
     return renderer.canvas
