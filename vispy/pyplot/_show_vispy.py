@@ -23,7 +23,7 @@ from ..util.dataio import read_png
 
 from ..scene.visuals import LineVisual, Markers, Text, Image
 from ..scene.widgets import ViewBox
-from ..scene.transforms import NullTransform, AffineTransform
+from ..scene.transforms import NullTransform, AffineTransform, STTransform
 from ..scene import SceneCanvas
 
 
@@ -102,18 +102,10 @@ class VispyRenderer(Renderer):
         assert imdata.ndim == 3 and imdata.shape[2] == 4
         imdata[:, :, 3] = style['alpha'] if style['alpha'] is not None else 1.
         image = Image(imdata)
-        """
-        lims = self._mpl_ax_to(mplobj, 'lims')
-        xprop = (extent[1] - extent[0]) / float(lims[1] - lims[0])
-        yprop = (extent[3] - extent[2]) / float(lims[3] - lims[2])
-        dx = (lims[0] + lims[1]) / 2. - (extent[0] + extent[1]) / 2.
-        dy = (lims[2] + lims[3]) / 2. - (extent[2] + extent[3]) / 2.
-        xform = AffineTransform()
-        xform.scale([xprop, yprop])
-        xform.translate([dx, dy])
-        image.transform = xform  # XXX WHERE TO PUT THIS?
-        """
-        image.parent = self._mpl_ax_to(mplobj).scene
+        vb = self._mpl_ax_to(mplobj)
+        image.transform = STTransform.from_mapping([[0, 0], image.size],
+                                                   extent)
+        image.parent = vb.scene
 
     def draw_text(self, text, position, coordinates, style,
                   text_type=None, mplobj=None):

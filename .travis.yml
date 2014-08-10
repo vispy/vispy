@@ -103,7 +103,7 @@ install:
           pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
-          conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo > /dev/null;
+          conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo > ${REDIRECT_TO};
           conda install --yes --quiet pillow > ${REDIRECT_TO};
           conda install --yes --quiet scipy > ${REDIRECT_TO};
         fi;
@@ -154,9 +154,9 @@ install:
           conda install --yes --quiet matplotlib > ${REDIRECT_TO};
         fi;
         cd ~;
-        git clone git://github.com/mpl3d/mplexporter.git > /dev/null;
+        git clone git://github.com/mpl3d/mplexporter.git > ${REDIRECT_TO};
         cd mplexporter;
-        python setup.py install mplexporter > /dev/null;
+        python setup.py install mplexporter > ${REDIRECT_TO};
         cd ..;
       fi;
 
