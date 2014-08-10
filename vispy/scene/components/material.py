@@ -43,6 +43,11 @@ class GridContourComponent(VisualComponent):
     def __init__(self, spacing):
         super(GridContourComponent, self).__init__()
         self.spacing = spacing
+        
+        # Create Varying to connect vertex / fragment shaders
+        var = Varying('pos', dtype='vec4')
+        self._funcs['frag_color']['pos'] = var
+        self._funcs['vert_post_hook']['output_pos'] = var
 
     @property
     def color(self):
@@ -54,9 +59,7 @@ class GridContourComponent(VisualComponent):
 
     def activate(self, program, mode):
         ff = self._funcs['frag_color']
-        ff['pos'] = Varying('pos', dtype='vec4')
         ff['spacing'] = self.spacing  # uniform vec3
-        self._funcs['vert_post_hook']['output_pos'] = ff['pos']
 
 
 class ShadingComponent(VisualComponent):

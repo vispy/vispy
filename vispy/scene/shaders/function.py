@@ -154,7 +154,7 @@ class ShaderObject(object):
         """ Called when a dependency's expression has changed.
         """
         logger.debug("ShaderObject changed: %r" % event.source)
-        self.changed()
+        self.changed(event)
     
     def compile(self):
         """ Return a compilation of this object and its dependencies. 
@@ -380,14 +380,17 @@ class Function(ShaderObject):
             # We are setting a value, now check it if it might be the 
             # the value of a uniform
             val = ShaderObject.create(val, ref=key)
-            if isinstance(val, Variable) and val.vtype == 'uniform':
+            if isinstance(val, Variable):
                 variable = storage.get(key, None)
                 if (isinstance(variable, Variable) and
                         variable.dtype == val.dtype and
-                        variable.vtype == 'uniform'):
+                        variable.vtype == val.vtype):
                     variable.value = val.value
                     self.changed(value_changed=True)
                     return
+        
+        #print("SET: %s[%s] = %s => %s" % 
+        #      (self, key, storage.get(key, None), val))
         
         # Remove old references, if any
         oldval = storage.pop(key, None)

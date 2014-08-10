@@ -31,6 +31,8 @@ class ModularProgram(Program):
         
         # Cache state of Variables so we know which ones require update
         self._variable_state = {}
+        
+        self._need_build = True
 
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.
@@ -46,12 +48,12 @@ class ModularProgram(Program):
             print("===================== program change: code: %s, value: %s" % (ev.code_changed, ev.value_changed))
             #import traceback
             #traceback.print_stack()
-        if ev.code_changed:
             self._need_build = True
         self.changed()
         
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s" % self)
+        print("REBUILD")
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
         code = self.compiler.compile()
         self.shaders[0].code = code['vert']

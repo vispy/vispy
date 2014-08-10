@@ -68,6 +68,11 @@ class VertexColorComponent(VisualComponent):
         super(VertexColorComponent, self).__init__()
         self._color = color
         self._vbo = None
+        
+        # Create Varying to connect vertex / fragment shaders
+        var = Varying('rgba', dtype='vec4')
+        self._funcs['frag_color']['rgba'] = var
+        self._funcs['vert_post_hook']['output_color'] = var
 
     @property
     def color(self):
@@ -85,9 +90,6 @@ class VertexColorComponent(VisualComponent):
 
     def activate(self, program, mode):
         ff = self._funcs['frag_color']
-        ff['rgba'] = Varying('rgba', dtype='vec4')
-
+        
         vf = self._funcs['vert_post_hook']
-        vf['output_color'] = ff['rgba']
-        #vf['input_color'] = ('attribute', 'vec4', self.vbo)
         vf['input_color'] = self.vbo

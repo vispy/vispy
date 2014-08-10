@@ -4,11 +4,13 @@
 
 from __future__ import division
 
+import weakref
+
 from ..gloo import gl
 from .. import app
 from .subscene import SubScene
 from .entity import Entity
-from .transforms import STTransform
+from .transforms import STTransform, TransformCache
 from .events import SceneDrawEvent, SceneMouseEvent
 from ..util import logger
 
@@ -28,6 +30,10 @@ class SceneCanvas(app.Canvas):
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
         self.events.mouse_wheel.connect(self._process_mouse_event)
+
+        # Collection of transform caches; one for each root visual used in 
+        # self.draw_visual(...)
+        self._transform_caches = weakref.WeakKeyDictionary()
 
         # Set up default entity stack: ndc -> fb -> pixels -> scene
         self.ndc = Entity()
@@ -74,12 +80,18 @@ class SceneCanvas(app.Canvas):
     def draw_visual(self, visual, event=None):
         """ Draw a *visual* and its children on the canvas.
         """
+        # Create draw event, which keeps track of the path of transforms
+        self._process_entity_count = 0  # for debugging
+        
+        # Get the cache of transforms used for this visual
+        tr_cache = self._transform_caches.setdefault(visual, TransformCache())
+        # and mark the entire cache as aged
+        tr_cache.roll()
+        
+        scene_event = SceneDrawEvent(canvas=self, event=event, 
+                                     transform_cache=tr_cache)
+        scene_event.push_viewport((0, 0) + self.size)
         try:
-            # Create draw event, which keeps track of the path of transforms
-            self._process_entity_count = 0  # for debugging
-            scene_event = SceneDrawEvent(canvas=self, event=event)
-            scene_event.push_viewport((0, 0) + self.size)
-            
             # Force update of transforms on base entities
             # TODO: this should happen as a reaction to resize, push_viewport,
             #       etc.; not here.  (but note the transforms must change

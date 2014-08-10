@@ -79,6 +79,11 @@ class VertexTextureCoordinateComponent(VisualComponent):
     def __init__(self, transform):
         super(VertexTextureCoordinateComponent, self).__init__()
         self.transform = transform
+        
+        # Create Varying to connect vertex / fragment shaders
+        var = Varying('v_tex_local_pos', dtype='vec4')
+        self.coord_shader()['tex_local_pos'] = var
+        self._funcs['vert_post_hook']['tex_local_pos'] = var
 
     def coord_shader(self):
         """
@@ -88,9 +93,7 @@ class VertexTextureCoordinateComponent(VisualComponent):
 
     def activate(self, program, mode):
         ff = self.coord_shader()
-        ff['tex_local_pos'] = Varying('v_tex_local_pos', dtype='vec4')
         ff['map_local_to_tex'] = self.transform.shader_map()
-        self._funcs['vert_post_hook']['tex_local_pos'] = ff['tex_local_pos']
         self._funcs['vert_post_hook']['local_pos'] = \
             self.visual._program.vert['local_pos']
 
@@ -122,6 +125,11 @@ class TextureCoordinateComponent(VisualComponent):
         super(TextureCoordinateComponent, self).__init__()
         self.coords = coords
         self._vbo = None
+        
+        # Create Varying to connect vertex / fragment shaders
+        var = Varying('v_tex_coord', dtype='vec2')
+        self.coord_shader()['tex_coord_input'] = var
+        self._funcs['vert_post_hook']['tex_coord_output'] = var
 
     def coord_shader(self):
         """
@@ -137,7 +145,7 @@ class TextureCoordinateComponent(VisualComponent):
 
     def activate(self, program, mode):
         vf = self._funcs['vert_post_hook']
-        vf['tex_coord_output'] = Varying('v_tex_coord', dtype='vec2')
-        self._funcs['texture_coord']['tex_coord_input'] = \
-            vf['tex_coord_output']
+        #vf['tex_coord_output'] = Varying('v_tex_coord', dtype='vec2')
+        #self._funcs['texture_coord']['tex_coord_input'] = \
+            #vf['tex_coord_output']
         vf['tex_coord'] = self.vbo  # attribute vec2
