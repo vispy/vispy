@@ -108,7 +108,10 @@ class SceneCanvas(app.Canvas):
             scene_event.pop_viewport()
 
     def _process_mouse_event(self, event):
-        scene_event = SceneMouseEvent(canvas=self, event=event)
+        tr_cache = self._transform_caches.setdefault(self.scene, 
+                                                     TransformCache())
+        scene_event = SceneMouseEvent(canvas=self, event=event,
+                                      transform_cache=tr_cache)
         scene_event.push_entity(self.ndc)
         scene_event.push_entity(self.framebuffer)
         scene_event.push_entity(self.pixels)
