@@ -4,6 +4,8 @@
 
 from __future__ import division
 
+import sys
+
 from . import transforms
 from ..util.event import EmitterGroup, Event
 from .events import SceneDrawEvent, SceneMouseEvent
@@ -144,6 +146,9 @@ class Entity(object):
         self.events.children_change(removed=ent)
         ent.events.update.disconnect(self.events.update)
 
+    def __len__(self):
+        return len(self._children)
+
     def __iter__(self):
         return self._children.__iter__()
 
@@ -183,9 +188,34 @@ class Entity(object):
             chain.append(parent)
         return chain
 
+    def print_tree(self, output=None, prefix=''):
+        """Print tree diagram of children
+
+        Parameters
+        ----------
+        output : file-like | None
+            Object with method .write() to write to.
+            If None, sys.stdout is used.
+        prefix : str
+            Prefix to use for every line.
+        """
+        # inspired by https://github.com/mbr/asciitree/blob/master/asciitree.py
+        output = sys.stdout if output is None else output
+        extra = ': %s' % self.name if self.name is not None else ''
+
+        if len(prefix) > 0:
+            output.write(prefix[:-3])
+            output.write('  +--')
+        output.write('%s%s\n' % (self.__class__.__name__, extra))
+
+        n_children = len(self)
+        for ii, child in enumerate(self):
+            sub_prefix = prefix + ('   ' if ii+1 == n_children else '  |')
+            child.print_tree(output, sub_prefix)
+
     def common_parent(self, entity):
         """
-        Return the common parent of two entities. If the entities have no 
+        Return the common parent of two entities. If the entities have no
         common parent, return None. Does not search past multi-parent branches.
         """
         p1 = self._parent_chain()
