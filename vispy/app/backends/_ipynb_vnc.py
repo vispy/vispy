@@ -18,6 +18,7 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from .. import Application, Canvas
 from ...util import logger
+from ...util.event import Event  # For timer
 
 # Imports for screenshot
 # Perhaps we should refactor these to have just one import
@@ -214,6 +215,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Handle initialization
         if not self._initialized:
             self._initialized = True
+            self._vispy_canvas.events.add(timer=Event)
             self._vispy_canvas.events.initialize()
             self._on_resize()
 
@@ -341,7 +343,7 @@ class Widget(DOMWidget):
     def __init__(self, gen_event, **kwargs):
         super(Widget, self).__init__(**kwargs)
         self.size = kwargs["size"]
-        self.interval = 10.0
+        self.interval = 50.0
         self.gen_event = gen_event
         self.on_msg(self._handle_event_msg)
 

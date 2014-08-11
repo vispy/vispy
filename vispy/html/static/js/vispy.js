@@ -108,7 +108,7 @@ require(["widgets/js/widget"], function(WidgetManager) {
                 'last_pos': [-1, -1],
             };
 
-            this.c.interval = 100.0;
+            this.c.interval = 50.0;
             this.c.timer = setInterval(send_timer_event, this.c.interval, this);
         },
 
