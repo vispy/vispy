@@ -37,6 +37,8 @@ def _string_to_rgb(color):
 
 def _user_to_rgba(color, expand=True):
     """Convert color(s) from any set of fmts (str/hex/arr) to RGB(A) array"""
+    if color is None:
+        color = np.array([0., 0., 0., 0.]).astype(np.float32)
     if isinstance(color, string_types):
         color = _string_to_rgb(color)
     elif isinstance(color, ColorArray):
@@ -539,6 +541,9 @@ class Color(ColorArray):
     @ColorArray.lab.getter
     def lab(self):
         return super(Color, self).lab[0]
+
+    def is_blank(self):
+        return self.rgba[3] == 0
 
     def __repr__(self):
         nice_str = str(tuple(self._rgba[0]))

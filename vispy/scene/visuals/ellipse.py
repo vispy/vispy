@@ -11,7 +11,7 @@ from __future__ import division
 
 import numpy as np
 from ... import gloo
-from ...color import Color, _color_as_array_or_none
+from ...color import Color
 from .polygon import Polygon, Mesh, Line
 
 
@@ -28,8 +28,8 @@ default: (1,1)
         super(Ellipse, self).__init__()
         self._vertices = None
         self._pos = pos
-        self._color = Color(color).rgba
-        self._border_color = _color_as_array_or_none(border_color)
+        self._color = Color(color)
+        self._border_color = Color(border_color)
         self._radius = radius
         self._start_angle = start_angle
         self._span_angle = span_angle
@@ -109,9 +109,9 @@ default: (1,1)
                                     start_angle=self._start_angle,
                                     span_angle=self._span_angle,
                                     num_segments=self._num_segments)
-            self.mesh = Mesh(pos=self._vertices, color=self._color)
+            self.mesh = Mesh(pos=self._vertices, color=self._color.rgba)
             self.mesh._primitive = gloo.gl.GL_TRIANGLE_FAN
-            if self._border_color is not None:
+            if not self._border_color.is_blank():
                 self.border = Line(pos=self._vertices[1:],
-                                   color=self._border_color)
+                                   color=self._border_color.rgba)
         #self.update()
