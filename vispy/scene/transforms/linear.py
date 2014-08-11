@@ -130,6 +130,7 @@ class STTransform(Transform):
         # force update of uniforms on shader functions
         self.shader_map()
         self.shader_imap()
+        self.update()
 
     @classmethod
     def from_mapping(cls, x0, x1):

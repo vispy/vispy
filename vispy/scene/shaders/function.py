@@ -377,20 +377,19 @@ class Function(ShaderObject):
         # we can set that value and return immediately to avoid triggering a
         # recompile.
         if val is not None and not isinstance(val, Variable):
-            # We are setting a value, now check it if it might be the 
-            # the value of a uniform
-            val = ShaderObject.create(val, ref=key)
-            if isinstance(val, Variable):
-                variable = storage.get(key, None)
-                if (isinstance(variable, Variable) and
-                        variable.dtype == val.dtype and
-                        variable.vtype == val.vtype):
-                    variable.value = val.value
-                    self.changed(value_changed=True)
+            # We are setting a value. If there is already a variable set here,
+            # try just updating its value.
+            variable = storage.get(key, None)
+            if isinstance(variable, Variable):
+                try:
+                    variable.value = val
                     return
+                except:
+                    pass
         
-        print("SET: %s[%s] = %s => %s" % 
-             (self, key, storage.get(key, None), val))
+        
+        #print("SET: %s[%s] = %s => %s" % 
+             #(self, key, storage.get(key, None), val))
         
         # Remove old references, if any
         oldval = storage.pop(key, None)
@@ -401,6 +400,7 @@ class Function(ShaderObject):
 
         # Add new references
         if val is not None:
+            val = ShaderObject.create(val, ref=key)
             if isinstance(key, Varying):
                 # tell this varying to inherit properties from 
                 # its source attribute / expression.
@@ -521,7 +521,7 @@ class Function(ShaderObject):
         """
         if str2 != self._replacements.get(str1, None):
             self._replacements[str1] = str2
-            self.changed()
+            self.changed(code_changed=True)
             #self._last_changed = time.time()
     
     ## Private methods
@@ -704,7 +704,7 @@ class Variable(ShaderObject):
         # See ShaderObject.create()
         if self._name != n:
             self._name = n
-            self.changed()
+            self.changed(code_changed=True)
     
     @property
     def vtype(self):
@@ -728,10 +728,6 @@ class Variable(ShaderObject):
     def value(self, value):
         self._value = value
         self._state_counter += 1
-        if self._type_locked:
-            # Don't emit here--this should not result in a code change.
-            #self.changed()
-            return
         
         if isinstance(value, (tuple, list)) and 1 < len(value) < 5:
             vtype = 'uniform'
@@ -760,6 +756,12 @@ class Variable(ShaderObject):
         else:
             raise TypeError("Unknown data type %r for variable %r" % 
                             (type(value), self))
+
+        if self._type_locked:
+            if dtype != self._dtype or vtype != self._vtype:
+                raise TypeError('Variable is type "%s"; cannot assign value '
+                                '%r.' % (self.dtype, value))
+            return
             
         # update vtype/dtype and emit changed event if necessary
         changed = False
@@ -770,7 +772,7 @@ class Variable(ShaderObject):
             self._vtype = vtype
             changed = True
         if changed:
-            self.changed()
+            self.changed(code_changed=True, value_changed=True)
     
     @property
     def state_id(self):

@@ -22,7 +22,7 @@ lines = []
 
 
 
-for i in range(1):
+for i in range(20):
     pos = pos.copy()
     pos[:, 1] = np.random.normal(scale=5, loc=(i+1)*30, size=N)
     line = scene.visuals.Line(canvas.scene, pos=pos, color=color)

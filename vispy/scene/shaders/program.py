@@ -45,15 +45,15 @@ class ModularProgram(Program):
     def _source_changed(self, ev):
         logger.debug("ModularProgram source changed: %s" % self)
         if ev.code_changed:
-            print("===================== program change: code: %s, value: %s" % (ev.code_changed, ev.value_changed))
-            import traceback
-            traceback.print_stack()
+            #print("===================== program change: code: %s, value: %s" % (ev.code_changed, ev.value_changed))
+            #import traceback
+            #traceback.print_stack()
             self._need_build = True
         self.changed()
         
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s" % self)
-        print("REBUILD")
+        #print("REBUILD")
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
         code = self.compiler.compile()
         self.shaders[0].code = code['vert']
@@ -77,7 +77,7 @@ class ModularProgram(Program):
             if not isinstance(dep, Variable) or dep.vtype not in settable_vars:
                 continue
             name = self.compiler[dep]
-            logger.debug("    %s = %s" % (name, dep.value))
+            logger.debug("    %s = %s", name, dep.value)
             state_id = dep.state_id
             if self._variable_state.get(name, None) != state_id:
                 self[name] = dep.value
