@@ -9,13 +9,10 @@ import numpy as np
 from ...util import transforms
 from ...util.geometry import Rect
 from ._util import arg_to_vec4, as_vec4
-from .transform import Transform
-
-__all__ = ['NullTransform', 'STTransform', 'SRTTransform', 'AffineTransform',
-           'PerspectiveTransform']
+from .base_transform import BaseTransform
 
 
-class NullTransform(Transform):
+class NullTransform(BaseTransform):
     """ Transform having no effect on coordinates (identity transform).
     """
     glsl_map = "vec4 null_transform_map(vec4 pos) {return pos;}"
@@ -42,7 +39,7 @@ class NullTransform(Transform):
         return tr
 
 
-class STTransform(Transform):
+class STTransform(BaseTransform):
     """ Transform performing only scale and translate, in that order.
     """
     glsl_map = """
@@ -200,7 +197,7 @@ class STTransform(Transform):
                 % (self.scale, self.translate))
 
 
-class AffineTransform(Transform):
+class AffineTransform(BaseTransform):
     glsl_map = """
         vec4 affine_transform_map(vec4 pos) {
             return $matrix * pos;
@@ -339,7 +336,7 @@ class AffineTransform(Transform):
         return s
 
 
-class SRTTransform(Transform):
+class SRTTransform(BaseTransform):
     """ Transform performing scale, rotate, and translate, in that order.
 
     This transformation allows objects to be placed arbitrarily in a scene
