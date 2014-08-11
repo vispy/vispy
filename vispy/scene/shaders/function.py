@@ -387,7 +387,6 @@ class Function(ShaderObject):
                 except:
                     pass
         
-        
         #print("SET: %s[%s] = %s => %s" % 
              #(self, key, storage.get(key, None), val))
         
@@ -726,9 +725,6 @@ class Variable(ShaderObject):
     
     @value.setter
     def value(self, value):
-        self._value = value
-        self._state_counter += 1
-        
         if isinstance(value, (tuple, list)) and 1 < len(value) < 5:
             vtype = 'uniform'
             dtype = 'vec%d' % len(value)
@@ -757,6 +753,9 @@ class Variable(ShaderObject):
             raise TypeError("Unknown data type %r for variable %r" % 
                             (type(value), self))
 
+        self._value = value
+        self._state_counter += 1
+        
         if self._type_locked:
             if dtype != self._dtype or vtype != self._vtype:
                 raise TypeError('Variable is type "%s"; cannot assign value '
@@ -1012,7 +1011,7 @@ class FunctionChain(Function):
     @property
     def signature(self):
         return self._name, self._args, self._rtype
-    
+
     def _update(self):
         funcs = self._funcs
         if len(funcs) > 0:
@@ -1022,7 +1021,7 @@ class FunctionChain(Function):
             self._rtype = 'void'
             self._args = []
         
-        self.changed()
+        self.changed(code_changed=True)
 
     @property
     def template_vars(self):
@@ -1036,6 +1035,16 @@ class FunctionChain(Function):
         if update:
             self._update()
 
+    def __setitem__(self, index, func):
+        self._remove_dep(self._funcs[index])
+        self._add_dep(func)
+        self._funcs[index] = func
+        
+        self._update()
+    
+    def __getitem__(self, k):
+        return self.functions[k]
+    
     def insert(self, index, function, update=True):
         """ Insert a new function into the chain at *index*.
         """
@@ -1098,8 +1107,6 @@ class FunctionChain(Function):
     def static_names(self):
         return []
 
-    def __setitem__(self, k, v):
-        raise Exception("FunctionChain does not support indexing.")
-    
-    def __getitem__(self, k):
-        raise Exception("FunctionChain does not support indexing.")
+    def __repr__(self):
+        fn = ",\n                ".join(map(repr, self.functions))
+        return  "<FunctionChain [%s] at 0x%x>" % (fn, id(self))

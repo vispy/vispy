@@ -42,7 +42,7 @@ class ChainTransform(Transform):
         self._transforms = trs
 
         # Post-process
-        self.flatten()
+        #self.flatten()
         #if simplify:
         #    self.simplify()
 
@@ -165,6 +165,7 @@ class ChainTransform(Transform):
         If the result is a single transform, return that transform.
         Otherwise return this chaintransform.
         """
+        raise Exception()
         self.flatten()
         if not self.transforms:
             return NullTransform()
@@ -194,6 +195,7 @@ class ChainTransform(Transform):
         Add a new Transform to the end of this chain.
         """
         self.transforms.append(tr)
+        self.update()
         # Keep simple for now. Let's look at efficienty later
         # I feel that this class should not decide when to compose transforms
 #         while len(self.transforms) > 0:
@@ -213,6 +215,7 @@ class ChainTransform(Transform):
         Add a new Transform to the beginning of this chain.
         """
         self.transforms.insert(0, tr)
+        self.update()
         # Keep simple for now. Let's look at efficienty later
 #         while len(self.transforms) > 0:
 #             pr = self.transforms[0] * tr
@@ -225,6 +228,14 @@ class ChainTransform(Transform):
 #                 if len(self.transforms)  == 0:
 #                     self._transforms = [pr]
 #                     break
+
+    def __setitem__(self, index, tr):
+        self._transforms[index] = tr
+        if self._shader_map is not None:
+            self._shader_map[-(index+1)] = tr.shader_map()
+        if self._shader_imap is not None:
+            self._shader_imap[index] = tr.shader_imap()
+        self.update()
 
     def __mul__(self, tr):
         if isinstance(tr, ChainTransform):

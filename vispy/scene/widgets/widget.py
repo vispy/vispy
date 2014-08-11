@@ -140,7 +140,8 @@ class Widget(Visual):
         self._visual.set_data(pos=pos)
 
     def draw(self, event):
-        self._visual.draw(event)
+        if self._border is not None:
+            self._visual.draw(event)
 
     def on_resize(self, ev):
         self._update_child_widgets()

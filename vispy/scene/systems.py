@@ -72,7 +72,7 @@ class MouseInputSystem(object):
     
     def _process_entity(self, event, entity):
         # Push entity and set its total transform
-        event.push_entity(entity)
+        #event.push_entity(entity)
 
         from .widgets.widget import Widget
         if isinstance(entity, Widget):
@@ -87,7 +87,11 @@ class MouseInputSystem(object):
                 
         if deliver:
             for sub_entity in entity:
-                self._process_entity(event, sub_entity)
+                event.push_entity(sub_entity)
+                try:
+                    self._process_entity(event, sub_entity)
+                finally:
+                    event.pop_entity()
                 if event.handled:
                     break
             if not event.handled:
@@ -107,4 +111,4 @@ class MouseInputSystem(object):
                     logger.warning("Error handling mouse event for entity %s" %
                                    entity)
                     
-        event.pop_entity()
+        #event.pop_entity()

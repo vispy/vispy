@@ -174,7 +174,8 @@ class SceneEvent(Event):
         For measuring distance in physical units, the use of document_transform 
         is preferred. 
         """
-        return self.full_transform
+        ind = self._stack.index(self.canvas.pixels)
+        return self._transform_cache.get(self._stack[ind:])
     
     def map_to_canvas(self, obj):
         """

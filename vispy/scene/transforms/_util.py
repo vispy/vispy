@@ -111,7 +111,14 @@ class TransformCache(object):
             item = [0, self._create(path)]
             self._cache[key] = item
         item[0] = 0  # reset age for this item 
-        return item[1]
+        
+        # make sure the chain is up to date
+        tr = item[1]
+        for i, entity in enumerate(path[1:]):
+            if tr.transforms[i] is not entity.transform:
+                tr[i] = entity.transform
+        
+        return tr
 
     def _create(self, path):
         # import here to avoid import cycle

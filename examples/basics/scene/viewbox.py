@@ -49,31 +49,31 @@ vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30)
 
 line_ndc.add_parent(vb2.scene)
 
-#box = np.array([[0, 0, 0], 
-                #[0, 1, 0], 
-                #[1, 1, 0], 
-                #[1, 0, 0], 
-                #[0, 0, 0]], dtype=np.float32)
-#z = np.array([[0, 0, 1]], dtype=np.float32)
-#unit_box1 = scene.visuals.Line(pos=box, 
-                               #color=(0.7, 0, 0, 1), 
-                               #name='unit box')
-#nd_box1 = scene.visuals.Line(pos=(box * 2 - 1), 
-                             #color=(0, 0.7, 0, 1), 
-                             #name='nd box')
-#vb1.add(unit_box1)
-#vb1.add(nd_box1)
+box = np.array([[0, 0, 0], 
+                [0, 1, 0], 
+                [1, 1, 0], 
+                [1, 0, 0], 
+                [0, 0, 0]], dtype=np.float32)
+z = np.array([[0, 0, 1]], dtype=np.float32)
+unit_box1 = scene.visuals.Line(pos=box, 
+                               color=(0.7, 0, 0, 1), 
+                               name='unit box')
+nd_box1 = scene.visuals.Line(pos=(box * 2 - 1), 
+                             color=(0, 0.7, 0, 1), 
+                             name='nd box')
+vb1.add(unit_box1)
+vb1.add(nd_box1)
 
-#unit_box2 = scene.visuals.Line(pos=box + z, 
-                               #color=(1, 0, 0, 1), 
-                               #name='unit box')
-#nd_box2 = scene.visuals.Line(pos=((box + z) * 2 - 1), 
-                             #color=(0, 1, 0, 1), 
-                             #name='nd box')
-#vb2.add(unit_box1)
-#vb2.add(nd_box1)
-#vb2.add(unit_box2)
-#vb2.add(nd_box2)
+unit_box2 = scene.visuals.Line(pos=box + z, 
+                               color=(1, 0, 0, 1), 
+                               name='unit box')
+nd_box2 = scene.visuals.Line(pos=((box + z) * 2 - 1), 
+                             color=(0, 1, 0, 1), 
+                             name='nd box')
+vb2.add(unit_box1)
+vb2.add(nd_box1)
+vb2.add(unit_box2)
+vb2.add(nd_box2)
 
 if __name__ == '__main__':
     app.run()

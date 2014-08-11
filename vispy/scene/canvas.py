@@ -103,14 +103,16 @@ class SceneCanvas(app.Canvas):
             scene_event.push_entity(self.framebuffer)
             scene_event.push_entity(self.pixels)
             scene_event.push_entity(visual)
-            tr = scene_event.render_transform
-            tr.simplify()
             visual.draw(scene_event)
         finally:
             scene_event.pop_viewport()
 
     def _process_mouse_event(self, event):
         scene_event = SceneMouseEvent(canvas=self, event=event)
+        scene_event.push_entity(self.ndc)
+        scene_event.push_entity(self.framebuffer)
+        scene_event.push_entity(self.pixels)
+        scene_event.push_entity(self._scene)
         self._scene._process_mouse_event(scene_event)
         
         # If something in the scene handled the scene_event, then we mark

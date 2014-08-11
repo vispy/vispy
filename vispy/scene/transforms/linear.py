@@ -335,7 +335,7 @@ class AffineTransform(Transform):
         s += str(list(self.matrix[0])) + ",\n"
         s += indent + str(list(self.matrix[1])) + ",\n"
         s += indent + str(list(self.matrix[2])) + ",\n"
-        s += indent + str(list(self.matrix[3])) + "])"
+        s += indent + str(list(self.matrix[3])) + "] at 0x%x)" % id(self)
         return s
 
 
