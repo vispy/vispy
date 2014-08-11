@@ -31,8 +31,8 @@ class Visual(Entity):
 
     """
 
-    def __init__(self, parent=None, **kwds):
-        Entity.__init__(self, parent, **kwds)
+    def __init__(self, **kwargs):
+        Entity.__init__(self, **kwargs)
         
         # Add event for bounds changing
         self.events.add(bounds_change=event.Event)

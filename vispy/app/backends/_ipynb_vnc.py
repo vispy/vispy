@@ -58,7 +58,7 @@ else:
         _msg = 'ipynb_vnc backend refuses to work with GLUT'
         available, testable, why_not = False, False, _msg
     else:
-        available, testable, why_not = True, True, None
+        available, testable, why_not = True, False, None
     
     # Use that backend's shared context
     KEYMAP = _app.backend_module.KEYMAP

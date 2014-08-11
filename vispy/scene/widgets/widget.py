@@ -20,23 +20,40 @@ class Widget(Visual):
 
     The widget is positioned using the transform attribute (as any
     entity), and its extend (size) is kept as a separate property.
+    
+    Parameters
+    ----------
+    pos : (x, y)
+        A 2-element tuple to specify the top left corner of the widget.
+    size : (w, h)
+        A 2-element tuple to spicify the size of the widget.
+    border_color : color
+        The color of the border.
+    clip : bool
+        Not used :)
+    padding : int
+        The amount of padding in the widget (i.e. the space reserved between
+        the contents and the border).
+    margin : int
+        The margin to keep outside the widget's border.
+    
     """
 
-    def __init__(self, *args, **kwargs):
-        self._border = kwargs.pop('border', (0.2, 0.2, 0.2, 0.5))
+    def __init__(self, pos=(0, 0), size=(10, 10), border_color='black',
+                 clip=False, padding=0, margin=0, **kwargs):
+        Visual.__init__(self, **kwargs)
+        
+        # todo: rename to bordercolor? -> borderwidth
+        self._border_color = tuple(Color(border_color).rgba)
         # for drawing border
-        self._visual = Line(color=self._border)
+        self._visual = Line(color=self._border_color)
         # whether this widget should clip its children
-        self._clip = kwargs.pop('clip', False)
+        self._clip = clip
         # reserved space inside border
-        self._padding = kwargs.pop('padding', 0)
+        self._padding = padding
         # reserved space outside border
-        self._margin = kwargs.pop('margin', 0)
+        self._margin = margin
         
-        pos = kwargs.pop('pos', (0, 0))
-        size = kwargs.pop('size', (10, 10))
-        
-        Visual.__init__(self, *args, **kwargs)
         self.events.add(resize=Event)
         self._size = 16, 16
         self.transform = STTransform()
@@ -87,24 +104,26 @@ class Widget(Visual):
         self.events.resize()
 
     @property
-    def border(self):
-        return self._border
+    def border_color(self):
+        """ The color of the border.
+        """
+        return self._border_color
 
-    @border.setter
-    def border(self, b):
-        self._border = b
+    @border_color.setter
+    def border_color(self, b):
+        self._border_color = b
         self._visual.set_data(color=b)
         self.update()
 
     @property
-    def background(self):
+    def bgcolor(self):
         """ The background color of the Widget.
         """
-        return self._background
+        return self._bgcolor
 
-    @background.setter
-    def background(self, value):
-        self._background = Color(value)
+    @bgcolor.setter
+    def bgcolor(self, value):
+        self._bgcolor = Color(value)
         self.update()
 
     @property

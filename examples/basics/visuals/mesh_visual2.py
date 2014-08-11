@@ -67,9 +67,9 @@ stub3 = Function("vec3 stub3(vec3 value) { return value; }")
 
 class Mesh(Visual):
     
-    def __init__(self, parent=None, 
-                 vertices=None, faces=None, normals=None, values=None):
-        Visual.__init__(self, parent)
+    def __init__(self, vertices=None, faces=None, normals=None, values=None,
+                 **kwargs):
+        Visual.__init__(self, **kwargs)
         
         assert vertices is not None
         
@@ -228,31 +228,31 @@ if __name__ == '__main__':
             
             # A plain mesh with uniform color
             offset = np.array([-0.7, 0.7, 0.0], 'float32')
-            mesh = Mesh(None, verts+offset, faces, None,
+            mesh = Mesh(verts+offset, faces, None,
                         values=(1.0, 0.4, 0.0, 1.0))
             self.meshes.append(mesh)
             
             # A colored mesh with one color per phase
             offset = np.array([0.0, 0.7, 0.0], 'float32')
-            mesh = Mesh(None, verts_flat+offset, None, None,
+            mesh = Mesh(verts_flat+offset, None, None,
                         values=colors_flat)
             self.meshes.append(mesh)
             
             # Same mesh but using faces, so we get interpolation of color
             offset = np.array([0.7, 0.7, 0.0], 'float32')
-            mesh = Mesh(None, verts+offset, faces, None, values=colors)
+            mesh = Mesh(verts+offset, faces, None, values=colors)
             self.meshes.append(mesh)
             
             # Flat phong shading
             offset = np.array([0.0, 0.0, 0.0], 'float32')
-            mesh = Mesh(None, verts_flat+offset, None, normals_flat, 
+            mesh = Mesh(verts_flat+offset, None, normals_flat, 
                         values=colors_flat)
             mesh.shading = 'phong'
             self.meshes.append(mesh)
             
             # Full phong shading
             offset = np.array([0.7, 0.0, 0.0], 'float32')
-            mesh = Mesh(None, verts+offset, faces, normals, values=colors)
+            mesh = Mesh(verts+offset, faces, normals, values=colors)
             mesh.shading = 'phong'
             self.meshes.append(mesh)
         

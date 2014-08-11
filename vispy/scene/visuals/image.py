@@ -34,8 +34,8 @@ class Image(Mesh):
             If method='subdivide', this tuple determines the number of rows and
             columns in the image grid.
     """
-    def __init__(self, data, method='subdivide', grid=(10, 10)):
-        super(Image, self).__init__()
+    def __init__(self, data, method='subdivide', grid=(10, 10), **kwargs):
+        super(Image, self).__init__(**kwargs)
 
         self._data = None
 

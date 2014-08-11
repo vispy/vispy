@@ -11,7 +11,7 @@ canvas = scene.SceneCanvas(close_keys='escape')
 canvas.size = 600, 600
 canvas.show()
 
-grid = scene.widgets.Grid(canvas.scene)
+grid = scene.widgets.Grid(parent=canvas.scene)
 
 
 # Ensure that grid fills the entire canvas, even after resize.

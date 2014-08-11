@@ -29,11 +29,11 @@ class Line(ModularVisual):
     """
     Displays multiple line segments.
     """
-    def __init__(self, parent=None, pos=None, color=None, z=0.0, 
-                 mode='line_strip', **kwds):
-        super(Line, self).__init__(parent, **kwds)
+    def __init__(self, pos=None, color=None, z=0.0, 
+                 mode='line_strip', **kwargs):
+        super(Line, self).__init__(**kwargs)
         
-        glopts = kwds.pop('gl_options', 'translucent')
+        glopts = kwargs.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
         if mode == 'lines':
             self._primitive = gloo.gl.GL_LINES
