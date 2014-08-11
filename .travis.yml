@@ -96,6 +96,8 @@ install:
     # Use Pyglet alpha to get Py3.4 support
     # Also install PyQt4, imaging (PIL or pillow) and scipy
     # Test old (insufficient) version of Pyglet on 2.6
+    # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
+    # which is required by matplotlib :( 
     - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" == "2.6" ]; then
           pip install -q pyglet;
@@ -103,7 +105,6 @@ install:
           pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
-          conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo > ${REDIRECT_TO};
           conda install --yes --quiet pillow > ${REDIRECT_TO};
           conda install --yes --quiet scipy > ${REDIRECT_TO};
         fi;

@@ -179,14 +179,26 @@ def has_backend(backend, has=(), capable=(), out=()):
 def requires_application(backend=None, has=(), capable=()):
     """Decorator for tests that require an application"""
     from ..app.backends import BACKEND_NAMES
-    if backend is None:
+    # avoid importing other backends if we don't need to
+    test_backend = os.getenv('_VISPY_TESTING_BACKEND', None)
+    good = True
+    if test_backend is not None:
+        # we are testing X but requires_application wants specifically Y
+        if backend is not None and test_backend != backend:
+            good = False
+            msg = 'Testing backend %s, not %s' % (test_backend, backend)
+        else:
+            # we only need to check for existence of the test backend
+            backend = test_backend
+
+    if good and backend is None:
         good = False
         for backend in BACKEND_NAMES:
             if has_backend(backend, has=has, capable=capable):
                 good = True
                 break
         msg = 'Requires application backend'
-    else:
+    elif good:
         good, why = has_backend(backend, has=has, capable=capable,
                                 out=['why_not'])
         msg = 'Requires %s: %s' % (backend, why)

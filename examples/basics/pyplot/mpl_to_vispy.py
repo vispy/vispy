@@ -36,4 +36,6 @@ ax.plot(freqs[:flim], magnitude[:flim], 'k-o')
 
 plt.draw()
 plt.show()
-mpl_to_vispy(fig, block=True)
+canvas = mpl_to_vispy(fig, block=False)
+print(canvas.scene.describe_tree())
+canvas.app.run()
