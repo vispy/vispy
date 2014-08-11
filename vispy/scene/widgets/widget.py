@@ -54,9 +54,11 @@ class Widget(Visual):
     def pos(self, p):
         assert isinstance(p, tuple)
         assert len(p) == 2
+        if p == self.pos:
+            return
         self.transform.translate = p[0], p[1], 0, 0
         self._update_line()
-        self.events.resize()
+        #self.events.resize()
 
     @property
     def size(self):
@@ -69,6 +71,8 @@ class Widget(Visual):
     def size(self, s):
         assert isinstance(s, tuple)
         assert len(s) == 2
+        if self._size == s:
+            return
         self._size = s
         self._update_line()
         self.events.resize()
@@ -127,6 +131,8 @@ class Widget(Visual):
 
     def _update_line(self):
         """ Update border line to match new shape """
+        if self._border is None:
+            return
         m = self.margin
         r = self.size[0] - m
         t = self.size[1] - m
