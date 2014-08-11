@@ -13,8 +13,8 @@ class Point(ModularVisual):
     """
     Displays multiple point sprites.
     """
-    def __init__(self, pos=None, **kwds):
-        super(Point, self).__init__()
+    def __init__(self, pos=None, **kwargs):
+        super(Point, self).__init__(**kwargs)
 
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)

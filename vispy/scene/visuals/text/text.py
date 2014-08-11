@@ -12,11 +12,12 @@ from copy import deepcopy
 
 from ._sdf import SDFRenderer
 from ....gloo import TextureAtlas, set_state, IndexBuffer, VertexBuffer
+from ....gloo.wrappers import _check_valid
 from ....ext.six import string_types
 from ....util.fonts import _load_glyph
 from ...shaders import ModularProgram
-from ..visual import Visual
 from ....color import Color
+from ..visual import Visual
 
 
 class TextureFont(object):
@@ -157,6 +158,9 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
         dy = -(height / 2 + descender)
     elif anchor_y == 'bottom':
         dy = -descender
+    # Already referenced to baseline
+    # elif anchor_y == 'baseline':
+    #     dy = -descender
     if anchor_x == 'right':
         dx = -width
     elif anchor_x == 'center':
@@ -167,15 +171,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
 
 
 class Text(Visual):
-    """ Visual that displays text
-    
-    Parameters
-    ----------
-    text : str
-        The text to display
-    ... need more once this settles...
-    
-    """
+    """Visual that displays text"""
 
     VERTEX_SHADER = """
         uniform sampler2D u_font_atlas;
@@ -213,39 +209,57 @@ class Text(Visual):
         }
         """
 
-    def __init__(self, text=None, color=(0., 0., 0., 1.), bold=False,
+    def __init__(self, text, color='black', bold=False,
                  italic=False, face='OpenSans',
                  anchor_x='center', anchor_y='center', **kwargs):
-        Visual.__init__(self, **kwargs)
         assert isinstance(text, string_types)
-        assert len(text) > 0
-        assert anchor_y in ('top', 'center', 'middle', 'bottom')
-        assert anchor_x in ('left', 'center', 'right')
+        valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
+        _check_valid('anchor_y', anchor_y, valid_keys)
+        valid_keys = ('left', 'center', 'right')
+        _check_valid('anchor_x', anchor_x, valid_keys)
         self._font_manager = FontManager()
         self._font = self._font_manager.get_font(face, bold, italic)
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
-        # todo: we cannot do this here, since there might not be a context
-        self._vertices = _text_to_vbo(text, self._font, anchor_x, anchor_y,
-                                      self._font._lowres_size)
+        self._vertices = None
+        self._anchors = (anchor_x, anchor_y)
+        self.text = text
         self._color = Color(color).rgba
-        idx = (np.array([0, 1, 2, 0, 2, 3], np.uint32) +
-               np.arange(0, 4*len(text), 4, dtype=np.uint32)[:, np.newaxis])
-        self._ib = IndexBuffer(idx.ravel())
+        Visual.__init__(self, **kwargs)
 
-    def set_options(self):
-        """Special function that is used to set the options. Automatically
-        called at initialization."""
-        set_state(blend=True, depth_test=False,
-                  blend_func=('src_alpha', 'one_minus_src_alpha'))
+    @property
+    def text(self):
+        """The text string"""
+        return self._text
+
+    @text.setter
+    def text(self, text):
+        assert isinstance(text, string_types)
+        self._text = text
+        self._vertices = None
 
     def draw(self, event=None):
         # attributes / uniforms are not available until program is built
+        if len(self.text) == 0:
+            return
+        if self._vertices is None:
+            # we delay creating vertices because it requires a context,
+            # which may or may not exist when the object is initialized
+            self._vertices = _text_to_vbo(self._text, self._font,
+                                          self._anchors[0], self._anchors[1],
+                                          self._font._lowres_size)
+            idx = (np.array([0, 1, 2, 0, 2, 3], np.uint32) +
+                   np.arange(0, 4*len(self._text), 4,
+                             dtype=np.uint32)[:, np.newaxis])
+            self._ib = IndexBuffer(idx.ravel())
+
+        if event is not None:
+            xform = event.render_transform.shader_map()
+            self._program.vert['transform'] = xform
         self._program.prepare()  # Force ModularProgram to set shaders
         self._program['u_color'] = self._color
         self._program['u_font_atlas'] = self._font._atlas
         self._program.bind(self._vertices)
-        # XXX Don't know why I need this to have it "take", but I do
         set_state(blend=True, depth_test=False,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
         self._program.draw('triangles', self._ib)

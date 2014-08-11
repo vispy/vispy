@@ -35,7 +35,7 @@ class Widget(Visual):
         The amount of padding in the widget (i.e. the space reserved between
         the contents and the border).
     margin : int
-        The margin to keep around the widget.
+        The margin to keep outside the widget's border.
     
     """
 

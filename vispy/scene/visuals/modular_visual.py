@@ -161,9 +161,8 @@ class ModularVisual(Visual):
     }
     """
 
-    def __init__(self, parent=None, **kwds):
-        Visual.__init__(self, parent=parent, **kwds)
-        # todo: remove parent arg
+    def __init__(self, **kwargs):
+        Visual.__init__(self, **kwargs)
         
         # Dict of {'GL_FLAG': bool} and {'glFunctionName': (args)} 
         # specifications. By default, these are enabled whenever the Visual 
