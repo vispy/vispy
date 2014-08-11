@@ -11,7 +11,7 @@ class Mesh(ModularVisual):
     Displays a 3D triangle mesh.
     """
     def __init__(self, gl_options='translucent', faces=None, index=None, 
-                  pos=None, z=0.0, color=None, **kwargs):
+                 pos=None, z=0.0, color=None, **kwargs):
         super(Mesh, self).__init__(**kwargs)
         
         self.set_gl_options(gl_options)

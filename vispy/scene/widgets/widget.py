@@ -43,7 +43,7 @@ class Widget(Visual):
                  clip=False, padding=0, margin=0, **kwargs):
         Visual.__init__(self, **kwargs)
         
-         # todo: rename to bordercolor? -> borderwidth
+        # todo: rename to bordercolor? -> borderwidth
         self._border = tuple(Color(border).rgba)
         # for drawing border
         self._visual = Line(color=self._border)

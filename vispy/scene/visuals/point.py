@@ -16,11 +16,11 @@ class Point(ModularVisual):
     def __init__(self, pos=None, **kwargs):
         super(Point, self).__init__(**kwargs)
 
-        glopts = kwds.pop('gl_options', 'translucent')
+        glopts = kwargs.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
 
-        if pos is not None or kwds:
-            self.set_data(pos, **kwds)
+        if pos is not None:
+            self.set_data(pos=pos)
 
         # TODO: turn this into a proper component.
         code = """
