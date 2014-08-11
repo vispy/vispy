@@ -76,5 +76,5 @@ vb2.add(unit_box2)
 vb2.add(nd_box2)
 
 if __name__ == '__main__':
-    canvas.scene.print_tree()
+    print(canvas.scene.describe_tree(with_transform=True))
     app.run()

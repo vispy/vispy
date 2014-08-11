@@ -188,30 +188,38 @@ class Entity(object):
             chain.append(parent)
         return chain
 
-    def print_tree(self, output=None, prefix=''):
-        """Print tree diagram of children
+    def describe_tree(self, with_transform=False):
+        """Create tree diagram of children
 
         Parameters
         ----------
-        output : file-like | None
-            Object with method .write() to write to.
-            If None, sys.stdout is used.
-        prefix : str
-            Prefix to use for every line.
+        with_transform : bool
+            If true, add information about entity transform types.
+
+        Returns
+        ----------
+        tree : str
+            The tree diagram.
         """
         # inspired by https://github.com/mbr/asciitree/blob/master/asciitree.py
-        output = sys.stdout if output is None else output
-        extra = ': %s' % self.name if self.name is not None else ''
+        return self._describe_tree('', with_transform)
 
+    def _describe_tree(self, prefix, with_transform):
+        """Helper function to actuall construct the tree"""
+        extra = ': "%s"' % self.name if self.name is not None else ''
+        if with_transform:
+            extra += (' [%s]' % self.transform.__class__.__name__)
+        output = ''
         if len(prefix) > 0:
-            output.write(prefix[:-3])
-            output.write('  +--')
-        output.write('%s%s\n' % (self.__class__.__name__, extra))
+            output += prefix[:-3]
+            output += '  +--'
+        output += '%s%s\n' % (self.__class__.__name__, extra)
 
         n_children = len(self)
         for ii, child in enumerate(self):
             sub_prefix = prefix + ('   ' if ii+1 == n_children else '  |')
-            child.print_tree(output, sub_prefix)
+            output += child._describe_tree(sub_prefix, with_transform)
+        return output
 
     def common_parent(self, entity):
         """
