@@ -23,7 +23,6 @@ flim = n // 2
 fig = plt.figure()
 ax = plt.subplot(311)
 ax.imshow(read_png(get_data_file('pyplot/logo.png')))
-ax.plot([0, 700], [0, 160])
 
 ax = plt.subplot(312)
 ax.plot(t, signal, 'k-')
@@ -33,8 +32,9 @@ ax = plt.subplot(313)
 idx = np.argmax(magnitude[:flim])
 ax.text(freqs[idx], magnitude[idx], 'Max: %s Hz' % freqs[idx],
         verticalalignment='top')
-ax.plot(freqs[:flim], magnitude[:flim], 'k-o')  # XXX Want .stem, but too slow
+ax.plot(freqs[:flim], magnitude[:flim], 'k-o')
 
 plt.draw()
-plt.show()  # XXX Should show in final example
+plt.show()
 show_vispy(fig, block=False)
+fig.show()

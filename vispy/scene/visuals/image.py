@@ -90,14 +90,8 @@ class Image(Mesh):
             vertices[..., 0] *= self._data.shape[1]
             vertices[..., 1] *= self._data.shape[0]
             Mesh.set_data(self, pos=vertices)
-
             coords = np.ascontiguousarray(tex_coords[:, :2])
             tex_coord_comp = TextureCoordinateComponent(coords)
-
-            #self._program['map_local_to_nd'] = self.transform.shader_map()
-            tr = event.render_transform.shader_map()
-            self._program['map_local_to_nd'] = tr
-
         elif method == 'impostor':
             # quad covers entire view; frag. shader will deal with image shape
             quad = np.array([[-1, -1, 0], [1, -1, 0], [1, 1, 0],
@@ -110,9 +104,7 @@ class Image(Mesh):
             ctr = event.render_transform.inverse()
             total_transform = self._tex_transform * ctr
             tex_coord_comp = VertexTextureCoordinateComponent(total_transform)
-
             self._program['map_local_to_nd'] = NullTransform().shader_map()
-
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
 
@@ -130,7 +122,16 @@ class Image(Mesh):
         if self._data is None:
             return
 
-        if self._texture is None:
+        if self.transform.Linear:
+            method = 'subdivide'
+        else:
+            method = self.method
+
+        # always have to rebuild for impostor, only first for subdivide
+        if self._texture is None or method == 'impostor':
             self._build_data(event)
+        if method == 'subdivide':
+            tr = event.render_transform.shader_map()
+            self._program['map_local_to_nd'] = tr
 
         super(Image, self).draw(event)

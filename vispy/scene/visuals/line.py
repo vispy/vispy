@@ -75,8 +75,10 @@ class LineModular(ModularVisual):
     """
     def __init__(self, parent=None, pos=None, color=None, z=0.0,
                  mode='line_strip', **kwds):
-        super(LineModular, self).__init__(parent, **kwds)
+        super(LineModular, self).__init__(parent=parent, **kwds)
 
+        glopts = kwds.pop('gl_options', 'translucent')
+        self.set_gl_options(glopts)
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
         if mode in ('lines', 'line_strip'):

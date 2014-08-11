@@ -56,8 +56,9 @@ class Canvas(app.Canvas):
 
     def apply_zoom(self):
         gloo.set_viewport(0, 0, *self.size)
-        self.transform.scale = (self.scale / self.size[0],
-                                self.scale / self.size[1], 1.)
+        self.transform.scale = (2 * self.scale / self.size[0],
+                                2 * self.scale / self.size[1], 1.)
+        self.transform.translate = [-1, -1]
         self.update()
 
     def on_key_press(self, event):
