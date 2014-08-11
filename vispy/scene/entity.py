@@ -4,8 +4,6 @@
 
 from __future__ import division
 
-import sys
-
 from . import transforms
 from ..util.event import EmitterGroup, Event
 from .events import SceneDrawEvent, SceneMouseEvent
