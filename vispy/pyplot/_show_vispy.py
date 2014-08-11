@@ -58,7 +58,7 @@ class VispyRenderer(Renderer):
         ylim = props['ylim']
         # for a in props['axes']:
         #    a['position']  # add borders
-        vb = ViewBox(parent=self.canvas.scene, border=(0, 0, 0, 1),
+        vb = ViewBox(parent=self.canvas.scene, border_color='black',
                      bgcolor=props['axesbg'])
         vb.clip_method = 'fbo'  # necessary for bgcolor
         vb.camera.rect = (xlim[0], ylim[0],
