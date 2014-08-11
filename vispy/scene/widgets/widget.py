@@ -27,7 +27,7 @@ class Widget(Visual):
         A 2-element tuple to specify the top left corner of the widget.
     size : (w, h)
         A 2-element tuple to spicify the size of the widget.
-    border : color
+    border_color : color
         The color of the border.
     clip : bool
         Not used :)
@@ -39,14 +39,14 @@ class Widget(Visual):
     
     """
 
-    def __init__(self, pos=(0, 0), size=(10, 10), border='black',
+    def __init__(self, pos=(0, 0), size=(10, 10), border_color='black',
                  clip=False, padding=0, margin=0, **kwargs):
         Visual.__init__(self, **kwargs)
         
         # todo: rename to bordercolor? -> borderwidth
-        self._border = tuple(Color(border).rgba)
+        self._border_color = tuple(Color(border_color).rgba)
         # for drawing border
-        self._visual = Line(color=self._border)
+        self._visual = Line(color=self._border_color)
         # whether this widget should clip its children
         self._clip = clip
         # reserved space inside border
@@ -104,24 +104,26 @@ class Widget(Visual):
         self.events.resize()
 
     @property
-    def border(self):
-        return self._border
+    def border_color(self):
+        """ The color of the border.
+        """
+        return self._border_color
 
-    @border.setter
-    def border(self, b):
-        self._border = b
+    @border_color.setter
+    def border_color(self, b):
+        self._border_color = b
         self._visual.set_data(color=b)
         self.update()
 
     @property
-    def background(self):
+    def bgcolor(self):
         """ The background color of the Widget.
         """
-        return self._background
+        return self._bgcolor
 
-    @background.setter
-    def background(self, value):
-        self._background = Color(value)
+    @bgcolor.setter
+    def bgcolor(self, value):
+        self._bgcolor = Color(value)
         self.update()
 
     @property
