@@ -105,8 +105,11 @@ class TransformCache(object):
         Note that path[0].transform is not used because the returned transform 
         maps to the _local_ coordinate system of path[0]
         """
-        key = tuple([id(entity) for entity in path])
-        item = self._cache.setdefault(key, [0, self._create(path)])
+        key = tuple(map(id, path))
+        item = self._cache.get(key, None)
+        if item is None:
+            item = [0, self._create(path)]
+            self._cache[key] = item
         item[0] = 0  # reset age for this item 
         return item[1]
 
@@ -128,5 +131,3 @@ class TransformCache(object):
         
         for key in rem:
             del self._cache[key]
-
-

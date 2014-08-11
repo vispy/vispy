@@ -389,8 +389,8 @@ class Function(ShaderObject):
                     self.changed(value_changed=True)
                     return
         
-        #print("SET: %s[%s] = %s => %s" % 
-        #      (self, key, storage.get(key, None), val))
+        print("SET: %s[%s] = %s => %s" % 
+             (self, key, storage.get(key, None), val))
         
         # Remove old references, if any
         oldval = storage.pop(key, None)
