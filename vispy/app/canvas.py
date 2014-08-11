@@ -117,8 +117,7 @@ class Canvas(object):
                                    key_release=KeyEvent,
                                    stylus=Event,
                                    touch=Event,
-                                   close=Event,
-                                   timer=Event)  # for ipynb_vnc backend
+                                   close=Event)
 
         # Deprecated paint emitter
         emitter = WarningEmitter('Canvas.events.paint and Canvas.on_paint are '
