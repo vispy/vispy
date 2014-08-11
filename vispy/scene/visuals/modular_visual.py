@@ -379,10 +379,6 @@ class ModularVisual(Visual):
         # Allow using as plain visual or in a scenegraph
         t = event.render_transform.shader_map()
         self._program['map_local_to_nd'] = t
-        #print('--------------', self)
-        #t.simplify()
-        #for tr in t.transforms:
-        #    print(tr)
 
     def _program_changed(self, event):
         self.update()

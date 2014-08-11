@@ -191,25 +191,31 @@ class ViewBox(Widget):
             offset = event.full_transform.map((0, 0))[:2]
             size = event.full_transform.map(self.size)[:2] - offset
             
+            # Draw subscene to FBO
             event.push_fbo(fbo, offset, size)
+            event.push_entity(self.scene)
+            try:
+                # Clear bg color (handy for dev)
+                from ...gloo import gl
+                gl.glClearColor(0, 0, 0, 0)
+                gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+                self.scene.draw(event)
+            finally:
+                event.pop_entity()
+                event.pop_fbo()
             
-            # Clear bg color (handy for dev)
-            from ...gloo import gl
-            gl.glClearColor(0, 0, 0, 0)
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-            # Process childen
-            self.scene.draw(event)
-            # Pop FBO and now draw the result
-            event.pop_fbo()
+            # Draw the result
             gl.glDisable(gl.GL_CULL_FACE)
             self._myprogram.draw(gl.GL_TRIANGLE_STRIP)
 
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
+            event.push_entity(self.scene)
             try:
                 self.scene.draw(event)
             finally:
+                event.pop_entity()
                 event.pop_viewport()
 
         else:

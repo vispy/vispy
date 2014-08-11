@@ -134,11 +134,13 @@ class SceneCanvas(app.Canvas):
             vp[3] *= -1
             
         self._vp_stack.append(vp)
+        self.ndc_transform # update!
         # Apply
         try:
             self._set_viewport(vp)
         except:
             self._vp_stack.pop()
+            self.ndc_transform # update!
             raise
 
     def pop_viewport(self):
@@ -148,6 +150,7 @@ class SceneCanvas(app.Canvas):
         # Activate latest
         if len(self._vp_stack) > 0:
             self._set_viewport(self._vp_stack[-1])
+            self.ndc_transform # update!
         return vp
     
     def _set_viewport(self, vp):
@@ -159,6 +162,7 @@ class SceneCanvas(app.Canvas):
         and the transform to the FBO.
         """
         self._fb_stack.append((fbo, offset, csize))
+        self.fb_transform # update!
         
         # Apply
         try:
@@ -178,6 +182,7 @@ class SceneCanvas(app.Canvas):
         if len(self._fb_stack) > 0:
             old_fbo = self._fb_stack[-1]
             old_fbo[0].activate()
+        self.fb_transform # update!
         return fbo
         
     def _current_framebuffer(self):
@@ -237,7 +242,6 @@ class SceneCanvas(app.Canvas):
         map_from = [[x, y], [x+w, y+h]]
         map_to = [[-1, -1], [1, 1]]
         
-        from ..scene.transforms import STTransform
         self.framebuffer.transform.set_mapping(map_from, map_to)
         return self.framebuffer.transform
     

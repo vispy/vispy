@@ -24,9 +24,6 @@ class DrawingSystem(object):
     def _process_entity(self, event, entity, force_recurse=False):
         event.canvas._process_entity_count += 1
 
-        # Push entity and set its total transform
-        event.push_entity(entity)
-        
         if isinstance(entity, Visual):
             try:
                 entity.draw(event)
@@ -53,9 +50,11 @@ class DrawingSystem(object):
         
         if force_recurse or not isinstance(entity, SubScene):
             for sub_entity in entity:
-                self._process_entity(event, sub_entity)
-        
-        event.pop_entity()
+                event.push_entity(sub_entity)
+                try:
+                    self._process_entity(event, sub_entity)
+                finally:
+                    event.pop_entity()
 
 
 class MouseInputSystem(object):

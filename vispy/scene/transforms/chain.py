@@ -245,6 +245,6 @@ class ChainTransform(Transform):
         return "<ChainTransform [%s] at 0x%x>" % (", ".join(names), id(self))
     
     def __repr__(self):
-        tr = ", ".join(map(repr, self.transforms))
+        tr = ",\n                 ".join(map(repr, self.transforms))
         return "<ChainTransform [%s] at 0x%x>" % (tr, id(self))
     
