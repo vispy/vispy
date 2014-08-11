@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
-from vispy.pyplot import show_vispy
+from vispy.pyplot import mpl_to_vispy
 import matplotlib.pyplot as plt
 plt.ion()
 from vispy.util import read_png, get_data_file
@@ -36,5 +36,4 @@ ax.plot(freqs[:flim], magnitude[:flim], 'k-o')
 
 plt.draw()
 plt.show()
-show_vispy(fig, block=False)
-fig.show()
+mpl_to_vispy(fig, block=True)

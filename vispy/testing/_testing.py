@@ -225,6 +225,18 @@ def requires_img_lib():
     return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
 
 
+def requires_mplexporter():
+    try:
+        import matplotlib  # noqa
+        import mplexporter  # noqa
+    except Exception:
+        has_mplex = False
+    else:
+        has_mplex = True
+    return np.testing.dec.skipif(not has_mplex, 'Requires matplotlib and '
+                                 'mplexporter')
+
+
 ###############################################################################
 # Visuals stuff
 

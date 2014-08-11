@@ -48,11 +48,11 @@ class LineVisual(Visual):
         }
     """
 
-    def __init__(self, pos=None, color=None):
+    def __init__(self, pos=None, color=None, **kwargs):
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
         self.set_data(pos=pos, color=color)
-        Visual.__init__(self)
+        Visual.__init__(self, **kwargs)
 
     def set_data(self, pos=None, color=None):
         self._vbo = VertexBuffer(np.asarray(pos, dtype=np.float32))

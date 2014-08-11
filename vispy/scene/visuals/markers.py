@@ -238,6 +238,9 @@ class Markers(Visual):
 
     def __init__(self):
         self._program = ModularProgram(vert, frag)
+        self._v_size_var = Variable('varying float v_size')
+        self._program.vert['v_size'] = self._v_size_var
+        self._program.frag['v_size'] = self._v_size_var
         Visual.__init__(self)
 
     def set_data(self, pos=None, style='o', size=10., line_width=1.,
@@ -264,6 +267,8 @@ class Markers(Visual):
     def set_style(self, style='o'):
         _check_valid('style', style, marker_types)
         self._marker_fun = Function(_marker_dict[style])
+        self._marker_fun['v_size'] = self._v_size_var
+        self._program.frag['marker'] = self._marker_fun
 
     def draw(self, event=None):
         set_state(depth_test=False, blend=True, clear_color='white',
@@ -271,11 +276,6 @@ class Markers(Visual):
         if event is not None:
             xform = event.render_transform.shader_map()
             self._program.vert['transform'] = xform
-        var = Variable('varying float v_size')
-        self._marker_fun['v_size'] = var
-        self._program.vert['v_size'] = var
-        self._program.frag['v_size'] = var
-        self._program.frag['marker'] = self._marker_fun
         self._program.prepare()
         self._program['u_antialias'] = 1
         self._program.bind(self._vbo)

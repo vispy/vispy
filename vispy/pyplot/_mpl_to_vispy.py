@@ -6,6 +6,7 @@ import numpy as np
 import base64
 
 try:
+    import matplotlib  # noqa, analysis:ignore (just a check)
     from mplexporter.exporter import Exporter
     from mplexporter.renderers import Renderer
 except ImportError as exp:
@@ -161,8 +162,11 @@ class VispyRenderer(Renderer):
 # https://github.com/mpld3/mplexporter/blob/master/mplexporter/renderers/base.py
 
 
-def show_vispy(fig, block=True):
-    """Show matplotlib figure using vispy
+def mpl_to_vispy(fig, block=True):
+    """Convert matplotlib figure to vispy
+
+    This function is experimental and subject to change!
+    Requires matplotlib and mplexporter.
 
     Parameters
     ----------
