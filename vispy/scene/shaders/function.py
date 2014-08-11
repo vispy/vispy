@@ -346,6 +346,8 @@ class Function(ShaderObject):
         * a FunctionCall: ``fun1['foo'] = fun2()``
         * a Variable: ``fun1['foo'] = Variable(...)`` (can be auto-generated)
         """
+        #import traceback
+        #traceback.print_stack()
         
         # Check the key. Must be Varying, 'gl_X' or a known template variable
         if isinstance(key, Variable): 
@@ -618,6 +620,10 @@ class MainFunction(Function):
     be defined in a single code string. The code must contain a main() function
     definition.
     """
+    def __init__(self, *args, **kwds):
+        self._chains = {}
+        Function.__init__(self, *args, **kwds)
+    
     @property
     def signature(self):
         return ('main', [], 'void')
@@ -636,6 +642,20 @@ class MainFunction(Function):
                 names.append(arg[1])
         
         return names
+
+    def add_chain(self, var):
+        """
+        Create a new ChainFunction and attach to $var.
+        """
+        chain = FunctionChain(var, [])
+        self._chains[var] = chain
+        self[var] = chain
+
+    def add_callback(self, hook, func):
+        self._chains[hook].append(func)
+    
+    def remove_callback(self, hook, func):
+        self._chains[hook].remove(func)
 
 
 class Variable(ShaderObject):

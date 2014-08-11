@@ -67,6 +67,8 @@ class STTransform(BaseTransform):
 
         self.scale = (1.0, 1.0, 1.0) if scale is None else scale
         self.translate = (0.0, 0.0, 0.0) if translate is None else translate
+        
+        self._inverse = None
 
     @arg_to_vec4
     def map(self, coords):
@@ -79,9 +81,11 @@ class STTransform(BaseTransform):
         return (coords - self.translate[:n]) / self.scale[:n]
 
     def inverse(self):
-        s = 1./self.scale
-        t = -self.translate * s
-        return STTransform(scale=s, translate=t)
+        if self._inverse is None:
+            s = 1./self.scale
+            t = -self.translate * s
+            self._inverse = STTransform(scale=s, translate=t)
+        return self._inverse
 
     def shader_map(self):
         self._shader_map['scale'] = self.scale
@@ -98,24 +102,30 @@ class STTransform(BaseTransform):
         return self._scale.copy()
 
     @scale.setter
-    def scale(self, s):
+    def scale(self, s, update=True):
+        if np.all(s == self._scale[:len(s)]):
+            return
         self._scale[:len(s)] = s[:4]
         self._scale[len(s):] = 1.0
-        self.shader_map()  # update shader variables
-        self.shader_imap()
-        self._update()
+        if update:
+            self.shader_map()  # update shader variables
+            self.shader_imap()
+            self._update()
 
     @property
     def translate(self):
         return self._translate.copy()
 
     @translate.setter
-    def translate(self, t):
+    def translate(self, t, update=True):
+        if np.all(t == self._translate[:len(t)]):
+            return
         self._translate[:len(t)] = t[:4]
         self._translate[len(t):] = 0.0
-        self.shader_map()  # update shader variables
-        self.shader_imap()
-        self._update()
+        if update:
+            self.shader_map()  # update shader variables
+            self.shader_imap()
+            self._update()
 
     def as_affine(self):
         m = AffineTransform()
@@ -125,6 +135,7 @@ class STTransform(BaseTransform):
     
     def _update(self):
         # force update of uniforms on shader functions
+        self._inverse = None
         self.shader_map()
         self.shader_imap()
         self.update()
@@ -174,7 +185,8 @@ class STTransform(BaseTransform):
         s[mask] = 1.0
         s[x0[1] == x0[0]] = 1.0
         t = x1[0] - s * x0[0]
-        self.scale = s
+        
+        STTransform.scale.fset(self, s, update=False)
         self.translate = t
 
     def __mul__(self, tr):

@@ -92,7 +92,7 @@ class Image(Mesh):
 
             #self._program['map_local_to_nd'] = self.transform.shader_map()
             tr = event.render_transform.shader_map()
-            self._program['map_local_to_nd'] = tr
+            self._program.vert['map_local_to_nd'] = tr
 
         elif method == 'impostor':
             # quad covers entire view; frag. shader will deal with image shape
@@ -107,7 +107,7 @@ class Image(Mesh):
             total_transform = self._tex_transform * ctr
             tex_coord_comp = VertexTextureCoordinateComponent(total_transform)
 
-            self._program['map_local_to_nd'] = NullTransform().shader_map()
+            self._program.vert['map_local_to_nd'] = NullTransform().shader_map()
 
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
