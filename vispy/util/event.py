@@ -14,14 +14,12 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 from __future__ import division
 
-import sys
 import inspect
 import weakref
 import traceback
-import math
 
 from .ordereddict import OrderedDict
-from ._logging import logger
+from ._logging import logger, _handle_exception
 from ..ext.six import string_types
 
 
@@ -144,64 +142,6 @@ class Event(object):
             _event_repr_depth -= 1
 
 _event_repr_depth = 0
-
-
-def _handle_exception(ignore_callback_errors, print_callback_errors, registry,
-                      cb_event=None, entity=None):
-    """Helper for prining errors in callbacks
-
-    See EventEmitter._invoke_callback for a use example.
-    """
-    if cb_event is not None:
-        cb, event = cb_event
-        exp_type = 'callback'
-    else:
-        exp_type = 'entity'
-    type_, value, tb = sys.exc_info()
-    tb = tb.tb_next  # Skip *this* frame
-    sys.last_type = type_
-    sys.last_value = value
-    sys.last_traceback = tb
-    del tb  # Get rid of it in this namespace
-    # Handle
-    if not ignore_callback_errors:
-        raise
-    if print_callback_errors != "never":
-        this_print = 'full'
-        if print_callback_errors in ('first', 'reminders'):
-            # need to check to see if we've hit this yet
-            if exp_type == 'callback':
-                key = repr(cb) + repr(event)
-            else:
-                key = repr(entity)
-            if key in registry:
-                registry[key] += 1
-                if print_callback_errors == 'first':
-                    this_print = None
-                else:  # reminders
-                    ii = registry[key]
-                    # Use logarithmic selection
-                    # (1, 2, ..., 10, 20, ..., 100, 200, ...)
-                    if ii % (10 ** int(math.log10(ii))) == 0:
-                        this_print = ii
-                    else:
-                        this_print = None
-            else:
-                registry[key] = 1
-        if this_print == 'full':
-            logger.log_exception()
-            if exp_type == 'callback':
-                logger.warning("Error invoking callback %s for "
-                               "event: %s" % (cb, event))
-            else:  # == 'entity':
-                logger.warning("Error drawing entity %s" % entity)
-        elif this_print is not None:
-            if exp_type == 'callback':
-                logger.warning("Error invoking callback %s repeat %s"
-                               % (cb, this_print))
-            else:  # == 'entity':
-                logger.warning("Error drawing entity %s repeat %s"
-                               % (entity, this_print))
 
 
 class EventEmitter(object):

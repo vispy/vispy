@@ -7,8 +7,7 @@ from __future__ import division
 import sys
 
 from .visuals.visual import Visual
-from ..util._logging import logger
-from ..util.event import _handle_exception
+from ..util._logging import logger, _handle_exception
 
 
 class DrawingSystem(object):

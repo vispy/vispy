@@ -79,7 +79,7 @@ void main()
 
 
 disc = """
-float marker(vec2 pointcoord, float size)
+float disc(vec2 pointcoord, float size)
 {
     float r = length((pointcoord.xy - vec2(0.5,0.5))*size);
     r -= $v_size/2;
@@ -89,7 +89,7 @@ float marker(vec2 pointcoord, float size)
 
 
 arrow = """
-float marker(vec2 pointcoord, float size)
+float arrow(vec2 pointcoord, float size)
 {
     float r1 = abs(pointcoord.x -.50)*size +
                abs(pointcoord.y -.5)*size - $v_size/2;
@@ -102,7 +102,7 @@ float marker(vec2 pointcoord, float size)
 
 
 ring = """
-float marker(vec2 pointcoord, float size)
+float ring(vec2 pointcoord, float size)
 {
     float r1 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/2;
     float r2 = length((pointcoord.xy - vec2(0.5,0.5))*size) - $v_size/4;
@@ -113,7 +113,7 @@ float marker(vec2 pointcoord, float size)
 
 
 clobber = """
-float marker(vec2 pointcoord, float size)
+float clobber(vec2 pointcoord, float size)
 {
     const float PI = 3.14159265358979323846264;
     const float t1 = -PI/2;
@@ -136,7 +136,7 @@ float marker(vec2 pointcoord, float size)
 
 
 square = """
-float marker(vec2 pointcoord, float size)
+float square(vec2 pointcoord, float size)
 {
     float r = max(abs(pointcoord.x -.5)*size, abs(pointcoord.y -.5)*size);
     r -= $v_size/2;
@@ -145,8 +145,26 @@ float marker(vec2 pointcoord, float size)
 """
 
 
+x_ = """
+float x_(vec2 pointcoord, float size)
+{
+    vec2 rotcoord = vec2((pointcoord.x + pointcoord.y - 1.) / sqrt(2.),
+                         (pointcoord.y - pointcoord.x) / sqrt(2.));
+    float r1 = max(abs(rotcoord.x - 0.25)*size,
+                   abs(rotcoord.x + 0.25)*size);
+    float r2 = max(abs(rotcoord.y - 0.25)*size,
+                   abs(rotcoord.y + 0.25)*size);
+    float r3 = max(abs(rotcoord.x)*size,
+                   abs(rotcoord.y)*size);
+    float r = max(min(r1,r2),r3);
+    r -= $v_size/2;
+    return r;
+}
+"""
+
+
 diamond = """
-float marker(vec2 pointcoord, float size)
+float diamond(vec2 pointcoord, float size)
 {
     float r = abs(pointcoord.x -.5)*size + abs(pointcoord.y -.5)*size;
     r -= $v_size/2;
@@ -156,7 +174,7 @@ float marker(vec2 pointcoord, float size)
 
 
 vbar = """
-float marker(vec2 pointcoord, float size)
+float vbar(vec2 pointcoord, float size)
 {
     float r1 = max(abs(pointcoord.x - 0.75)*size,
                    abs(pointcoord.x - 0.25)*size);
@@ -170,7 +188,7 @@ float marker(vec2 pointcoord, float size)
 
 
 hbar = """
-float marker(vec2 pointcoord, float size)
+float hbar(vec2 pointcoord, float size)
 {
     float r2 = max(abs(pointcoord.y - 0.75)*size,
                    abs(pointcoord.y - 0.25)*size);
@@ -184,8 +202,7 @@ float marker(vec2 pointcoord, float size)
 
 
 cross = """
-
-float marker(vec2 pointcoord, float size)
+float cross(vec2 pointcoord, float size)
 {
     float r1 = max(abs(pointcoord.x - 0.75)*size,
                    abs(pointcoord.x - 0.25)*size);
@@ -200,10 +217,9 @@ float marker(vec2 pointcoord, float size)
 """
 
 tailed_arrow = """
-float marker(vec2 pointcoord, float size)
+float tailed_arrow(vec2 pointcoord, float size)
 {
-
-   //arrow_right
+    //arrow_right
     float r1 = abs(pointcoord.x -.50)*size +
                abs(pointcoord.y -.5)*size - $v_size/2;
     float r2 = abs(pointcoord.x -.25)*size +
@@ -233,6 +249,7 @@ _marker_dict = {
     'hbar': hbar,
     'cross': cross,
     'tailed_arrow': tailed_arrow,
+    'x': x_,
     # aliases
     'o': disc,
     '+': cross,
@@ -241,7 +258,6 @@ _marker_dict = {
     '|': vbar,
     '->': tailed_arrow,
     '>': arrow,
-    'x': cross,
 }
 marker_types = tuple(sorted(list(_marker_dict.keys())))
 
