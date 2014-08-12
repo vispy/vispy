@@ -47,7 +47,7 @@ def tesst_multiplication():
 def test_transform_chain():
     # Make dummy classes for easier distinguishing the transforms
     
-    class DummyTrans(tr.Transform):
+    class DummyTrans(tr.BaseTransform):
         glsl_map = "vec4 trans(vec4 pos) {return pos;}"
         glsl_imap = "vec4 trans(vec4 pos) {return pos;}"
     

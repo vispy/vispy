@@ -161,8 +161,8 @@ class ModularVisual(Visual):
     }
     """
 
-    def __init__(self, parent=None, **kwds):
-        Visual.__init__(self, parent, **kwds)
+    def __init__(self, **kwargs):
+        Visual.__init__(self, **kwargs)
         
         # Dict of {'GL_FLAG': bool} and {'glFunctionName': (args)} 
         # specifications. By default, these are enabled whenever the Visual 
@@ -234,7 +234,10 @@ class ModularVisual(Visual):
             if isinstance(color, tuple):
                 self.color_components = [UniformColorComponent(color)]
             elif isinstance(color, np.ndarray):
-                self.color_components = [VertexColorComponent(color)]
+                if color.ndim == 1:
+                    self.color_components = [UniformColorComponent(color)]
+                elif color.ndim == 2:
+                    self.color_components = [VertexColorComponent(color)]
             else:
                 raise Exception("Can't handle color data:")
 
@@ -313,7 +316,7 @@ class ModularVisual(Visual):
 #         self._visual.transform = event.viewport_transform
 #         self.draw()
 
-    def draw(self, event=None):
+    def draw(self, event):
         """
         Draw this visual now.
 
@@ -377,6 +380,8 @@ class ModularVisual(Visual):
         # TODO: this must be optimized.
         # Allow using as plain visual or in a scenegraph
         t = self.transform if (event is None) else event.render_transform
+        #print(t.transforms)
+        #print(event._stack)
         #if isinstance(t, ChainTransform):
         #    t.simplify()  # Reduce number of transforms
         #self._program['map_local_to_nd'] = self.transform.shader_map()

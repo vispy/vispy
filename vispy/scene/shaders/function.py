@@ -111,6 +111,15 @@ class ShaderObject(object):
             alldeps.extend(dep.dependencies(sort=sort))
         alldeps.append(self)
         return alldeps
+
+    def static_names(self):
+        """ Return a list of names that are declared in this object's 
+        definition (not including the name of the object itself).
+        
+        These names will be reserved by the compiler when automatically 
+        determining object names.
+        """
+        return []
     
     def _add_dep(self, dep):
         """ Increment the reference count for *dep*. If this is a new 
@@ -140,7 +149,7 @@ class ShaderObject(object):
         logger.debug("ShaderObject changed: %r" % event.source)
         self.changed()
     
-    def __str__(self):
+    def compile(self):
         """ Return a compilation of this object and its dependencies. 
         
         Note: this is mainly for debugging purposes; the names in this code
@@ -150,6 +159,13 @@ class ShaderObject(object):
         compiler = Compiler(obj=self)
         return compiler.compile()['obj']
     
+    def __repr__(self):
+        if self.name is not None:
+            return '<%s "%s" at 0x%x>' % (self.__class__.__name__, 
+                                          self.name, id(self))
+        else:
+            return '<%s at 0x%x>' % (self.__class__.__name__, id(self))
+
 
 class Function(ShaderObject):
     """ Representation of a GLSL function
@@ -213,7 +229,7 @@ class Function(ShaderObject):
         vert_code['gl_PointSize'] = '10.'
     
     
-    If we use ``str(vert_code)`` we get::
+    If we use ``vert_code.compile()`` we get::
 
         attribute vec4 a_position;
         uniform float u_yoffset;
@@ -296,13 +312,11 @@ class Function(ShaderObject):
                              type(code))
         self._code = self._clean_code(code)
         
-        # Get some information derived from the code
-        try:
-            self._signature = parsing.parse_function_signature(self._code)
-        except Exception as err:
-            raise ValueError('Invalid code: ' + str(err))
-        self._name = self._signature[0]
-        self._template_vars = self._parse_template_vars()
+        # (name, args, rval)
+        self._signature = None
+        
+        # $placeholders parsed from the code
+        self._template_vars = None
         
         # Expressions replace template variables (also our dependencies)
         self._expressions = OrderedDict()
@@ -312,6 +326,10 @@ class Function(ShaderObject):
         
         # Stuff to do at the end
         self._post_hooks = OrderedDict()
+        
+        # Create static Variable instances for any global variables declared
+        # in the code
+        self._static_vars = None
     
     def __setitem__(self, key, val):
         """ Setting of replacements through a dict-like syntax.
@@ -336,7 +354,7 @@ class Function(ShaderObject):
             if any(map(key.startswith, 
                        ('gl_PointSize', 'gl_Position', 'gl_FragColor'))):
                 storage = self._post_hooks
-            elif key in self._template_vars:
+            elif key in self.template_vars:
                 storage = self._expressions
             else:
                 raise KeyError('Invalid template variable %r' % key)
@@ -386,8 +404,8 @@ class Function(ShaderObject):
         # In case of verbatim text, we might have added new template vars
         if isinstance(val, TextExpression):
             for var in parsing.find_template_variables(val.expression()):
-                if var not in self._template_vars:
-                    self._template_vars.add(var.lstrip('$'))
+                if var not in self.template_vars:
+                    self.template_vars.add(var.lstrip('$'))
         
         self.changed()
     
@@ -413,7 +431,7 @@ class Function(ShaderObject):
         except KeyError:
             pass
         
-        if key not in self._template_vars:
+        if key not in self.template_vars:
             raise KeyError('Invalid template variable %r' % key) 
         else:
             raise KeyError('No value known for key %r' % key)
@@ -424,17 +442,23 @@ class Function(ShaderObject):
         """
         return FunctionCall(self, args)
     
-    def __repr__(self):
-        return "<Function '%s' at 0x%x>" % (self.name, id(self))
-    
     ## Public API methods
+
+    @property
+    def signature(self):
+        if self._signature is None:
+            try:
+                self._signature = parsing.parse_function_signature(self._code)
+            except Exception as err:
+                raise ValueError('Invalid code: ' + str(err))
+        return self._signature
     
     @property
     def name(self):
         """ The function name. The name may be mangled in the final code
         to avoid name clashes.
         """
-        return self._name
+        return self.signature[0]
 
     @property
     def args(self):
@@ -443,14 +467,32 @@ class Function(ShaderObject):
 
             [(arg_name, arg_type), ...]
         """
-        return self._signature[1]
+        return self.signature[1]
 
     @property
     def rtype(self):
         """
         The return type of this function.
         """
-        return self._signature[2]
+        return self.signature[2]
+    
+    @property
+    def code(self):
+        """ The template code used to generate the definition for this 
+        function.
+        """
+        return self._code
+    
+    @property
+    def template_vars(self):
+        if self._template_vars is None:
+            self._template_vars = self._parse_template_vars()
+        return self._template_vars
+
+    def static_names(self):
+        if self._static_vars is None:
+            self._static_vars = parsing.find_program_variables(self._code)
+        return list(self._static_vars.keys()) + [arg[0] for arg in self.args]
 
     def replace(self, str1, str2):
         """ Set verbatim code replacement
@@ -541,7 +583,7 @@ class Function(ShaderObject):
         """ Return *code* with indentation and leading/trailing blank lines
         removed. 
         """
-        lines = code.strip().split("\n")
+        lines = code.split("\n")
         min_indent = 100
         for line in lines:
             if line.strip() != "":
@@ -551,6 +593,39 @@ class Function(ShaderObject):
             lines = [line[min_indent:] for line in lines]
         code = "\n".join(lines)
         return code
+
+    def __repr__(self):
+        args = ', '.join([' '.join(arg) for arg in self.args])
+        return '<%s "%s %s(%s)" at 0x%x>' % (self.__class__.__name__, 
+                                             self.rtype,
+                                             self.name,
+                                             args,
+                                             id(self))
+
+
+class MainFunction(Function):
+    """ Subclass of Function that allows multiple functions and variables to 
+    be defined in a single code string. The code must contain a main() function
+    definition.
+    """
+    @property
+    def signature(self):
+        return ('main', [], 'void')
+
+    def static_names(self):
+        # parse static variables
+        names = Function.static_names(self)
+        
+        # parse all function names + argument names
+        funcs = parsing.find_functions(self.code)
+        for f in funcs:
+            if f[0] == 'main':
+                continue
+            names.append(f[0])
+            for arg in f[1]:
+                names.append(arg[1])
+        
+        return names
 
 
 class Variable(ShaderObject):
@@ -694,8 +769,9 @@ class Variable(ShaderObject):
         return id(self), self._state_counter
 
     def __repr__(self):
-        return ("<Variable \"%s %s %s\" at 0x%x>" % (self._vtype, self._dtype, 
-                                                     self.name, id(self)))
+        return ("<%s \"%s %s %s\" at 0x%x>" % (self.__class__.__name__,
+                                               self._vtype, self._dtype, 
+                                               self.name, id(self)))
     
     def expression(self, names):
         return names[self]
@@ -807,7 +883,6 @@ class FunctionCall(Expression):
     
     Essentially this is container for a Function along with its signature. 
     """
-    
     def __init__(self, function, args):
         super(FunctionCall, self).__init__()
         
@@ -903,6 +978,7 @@ class FunctionChain(Function):
         if not (name is None or isinstance(name, string_types)):
             raise TypeError("Name argument must be string or None.")
         self._funcs = []
+        self._code = None
         self._name = name or "chain"
         self.functions = funcs
 
@@ -919,13 +995,9 @@ class FunctionChain(Function):
         self._update()
 
     @property
-    def args(self):
-        return self._args
+    def signature(self):
+        return self._name, self._args, self._rtype
     
-    @property
-    def rtype(self):
-        return self._rtype
-
     def _update(self):
         funcs = self._funcs
         if len(funcs) > 0:
@@ -1007,6 +1079,9 @@ class FunctionChain(Function):
 
         code += "}\n"
         return code
+
+    def static_names(self):
+        return []
 
     def __setitem__(self, k, v):
         raise Exception("FunctionChain does not support indexing.")

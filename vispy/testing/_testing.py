@@ -11,7 +11,18 @@ import sys
 import os
 import subprocess
 import inspect
-from ..app import Canvas
+import base64
+try:
+    from nose.tools import nottest
+except ImportError:
+    class nottest(object):
+        pass
+
+from ..scene import SceneCanvas
+from ..ext.six.moves import http_client as httplib
+from ..ext.six.moves import urllib_parse as urllib
+from ..util import make_png
+from .. import gloo
 
 ###############################################################################
 # Adapted from Python's unittest2 (which is wrapped by nose)
@@ -53,7 +64,7 @@ def run_subprocess(command):
     p = subprocess.Popen(command, **kwargs)
     stdout_, stderr = p.communicate()
 
-    output = (stdout_, stderr)
+    output = (stdout_.decode('ascii'), stderr.decode('ascii'))
     if p.returncode:
         print(stdout_)
         print(stderr)
@@ -236,24 +247,40 @@ def requires_scipy(min_version='0.13'):
                                  'Requires Scipy version >= %s' % min_version)
         
 
-def _save_failed_test(data, filename):
-    import httplib
-    import urllib
-    import base64
-    from ..util import make_png
-
+def _save_failed_test(data, expect, filename):
     commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
     name = filename.split('/')
-    name.insert(-1, commit)
-    filename = os.path.join(*name)
+    name.insert(-1, commit.strip())
+    filename = '/'.join(name)
     host = 'data.vispy.org'
-    png = make_png(data)
+    
+    # concatenate data, expect, and diff into a single image
+    ds = data.shape
+    es = expect.shape
+    if ds == es:
+        shape = (ds[0], ds[1] * 3 + 2, 4)
+        img = np.empty(shape, dtype=np.ubyte)
+        img[:] = 255
+        img[:, :ds[1], :ds[2]] = data
+        img[:, ds[1]+1:ds[1]*2+1, :ds[2]] = expect
+        img[:, ds[1]*2 + 2:, :ds[2]] = np.abs(data.astype(int) -
+                                              expect.astype(int))
+    else:
+        shape = (ds[0], ds[1] * 2 + 1, 4)
+        img = np.empty(shape, dtype=np.ubyte)
+        img[:] = 255
+        img[:ds[0], :ds[1], :ds[2]] = data
+        img[:es[0], ds[1]+1+es[1]:, :es[2]] = expect 
+    
+    png = make_png(img)
     conn = httplib.HTTPConnection(host)
     req = urllib.urlencode({'name': filename, 
                             'data': base64.b64encode(png)})
     conn.request('POST', '/upload.py', req)
     response = conn.getresponse().read()
-    if not response.startswith('OK'):
+    conn.close()
+    print("\nUpload to: \nhttp://%s/data/%s" % (host, filename))
+    if not response.startswith(b'OK'):
         print("WARNING: Error uploading data to %s" % host)
         print(response)
 
@@ -276,30 +303,46 @@ def assert_image_equal(image, reference):
         image = _screenshot(alpha=False)
     ref = read_png(get_testing_file(reference))
 
+    # check for minimum number of changed pixels, allowing for overall 1-pixel
+    # shift in any direcion
     slices = [slice(0, -1), slice(0, None), slice(1, None)]
     min_diff = np.inf
     for i in range(3):
         for j in range(3):
             a = image[slices[i], slices[j]]
             b = ref[slices[2-i], slices[2-j]]
-            diff = (a != b).sum()
+            diff = np.abs(a - b).sum()
             if diff < min_diff:
                 min_diff = diff
     try:
         assert min_diff <= 40
     except AssertionError:
-        _save_failed_test(image, reference)
+        _save_failed_test(image, ref, reference)
         raise
 
 
-class TestingCanvas(Canvas):
-    def __init__(self, clear_color=(0, 0, 0, 1), size=(100, 100)):
-        Canvas.__init__(self, size=size)
-        self._clear_color = clear_color
+class TestingCanvas(SceneCanvas):
+    def __init__(self, bgcolor='black', size=(100, 100)):
+        SceneCanvas.__init__(self, size=size, bgcolor=bgcolor)
 
     def __enter__(self):
-        Canvas.__enter__(self)
-        from .. import gloo
-        gloo.clear(color=self._clear_color)
-        gloo.set_viewport(0, 0, *self.size)
+        SceneCanvas.__enter__(self)
+        gloo.clear(color=self._bgcolor)
         return self
+
+    def draw_visual(self, visual):
+        SceneCanvas.draw_visual(self, visual)
+        gloo.gl.glFlush()
+        gloo.gl.glFinish()
+
+
+@nottest
+def save_testing_image(image, location):
+    from ..gloo.util import _screenshot
+    from ..util import make_png
+    if image == "screenshot":
+        image = _screenshot(alpha=False)
+    png = make_png(image)
+    f = open(location+'.png', 'wb')
+    f.write(png)
+    f.close()

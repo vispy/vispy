@@ -34,8 +34,8 @@ class Image(Mesh):
             If method='subdivide', this tuple determines the number of rows and
             columns in the image grid.
     """
-    def __init__(self, data, method='subdivide', grid=(10, 10)):
-        super(Image, self).__init__()
+    def __init__(self, data, method='subdivide', grid=(10, 10), **kwargs):
+        super(Image, self).__init__(**kwargs)
 
         self._data = None
 
@@ -53,7 +53,7 @@ class Image(Mesh):
         self._data = image
         self._texture = None
 
-    def _build_data(self, canvas):
+    def _build_data(self, event):
         # Construct complete data array with position and optionally color
         if self.transform.Linear:
             method = 'subdivide'
@@ -91,7 +91,7 @@ class Image(Mesh):
             tex_coord_comp = TextureCoordinateComponent(coords)
 
             #self._program['map_local_to_nd'] = self.transform.shader_map()
-            tr = canvas.render_transform.shader_map()
+            tr = event.render_transform.shader_map()
             self._program['map_local_to_nd'] = tr
 
         elif method == 'impostor':
@@ -103,14 +103,14 @@ class Image(Mesh):
 
             self._tex_transform.scale = (1./self._data.shape[0],
                                          1./self._data.shape[1])
-            ctr = canvas.render_transform.inverse()
+            ctr = event.render_transform.inverse()
             total_transform = self._tex_transform * ctr
             tex_coord_comp = VertexTextureCoordinateComponent(total_transform)
 
             self._program['map_local_to_nd'] = NullTransform().shader_map()
 
         else:
-            raise NotImplementedError
+            raise ValueError("Unknown image draw method '%s'" % method)
 
         self._texture = gloo.Texture2D(self._data)
         self._texture.interpolation = gl.GL_NEAREST
@@ -122,11 +122,11 @@ class Image(Mesh):
         # this is handled in _build_data instead.
         pass
 
-    def draw(self, canvas=None):
+    def draw(self, event):
         if self._data is None:
             return
 
         if self._texture is None:
-            self._build_data(canvas)
+            self._build_data(event)
 
-        super(Image, self).draw()
+        super(Image, self).draw(event)

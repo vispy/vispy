@@ -28,8 +28,8 @@ class SubScene(Entity):
     be a subscene.
     """
 
-    def __init__(self, parent=None):
-        Entity.__init__(self, parent)
+    def __init__(self, **kwargs):
+        Entity.__init__(self, **kwargs)
 
         # Initialize systems
         self._systems = {}

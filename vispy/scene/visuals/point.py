@@ -13,14 +13,14 @@ class Point(ModularVisual):
     """
     Displays multiple point sprites.
     """
-    def __init__(self, pos=None, **kwds):
-        super(Point, self).__init__()
+    def __init__(self, pos=None, **kwargs):
+        super(Point, self).__init__(**kwargs)
 
-        glopts = kwds.pop('gl_options', 'translucent')
+        glopts = kwargs.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
 
-        if pos is not None or kwds:
-            self.set_data(pos, **kwds)
+        if pos is not None:
+            self.set_data(pos=pos)
 
         # TODO: turn this into a proper component.
         code = """
@@ -34,7 +34,7 @@ class Point(ModularVisual):
     def primitive(self):
         return gloo.gl.GL_POINTS
 
-    def draw(self):
+    def draw(self, event):
         # HACK: True OpenGL ES does not need to enable point sprite and does
         # not define these two constants. Desktop OpenGL needs to enable these
         # two modes but we do not have these two constants because our GL
@@ -43,4 +43,4 @@ class Point(ModularVisual):
         GL_POINT_SPRITE = 34913
         gloo.gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
         gloo.gl.glEnable(GL_POINT_SPRITE)
-        super(Point, self).draw()
+        super(Point, self).draw(event)

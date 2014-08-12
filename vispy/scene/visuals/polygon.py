@@ -23,15 +23,15 @@ class Polygon(Visual):
     """
     Displays a 2D polygon
     """
-    def __init__(self, pos=None, color=(0, 0, 0, 0),
+    def __init__(self, pos=None, color='black',
                  border_color=None, **kwds):
-        super(Polygon, self).__init__()
+        super(Polygon, self).__init__(**kwds)
 
         self.mesh = None
         self.border = None
         self._pos = pos
-        self._color = color
-        self._border_color = border_color
+        self._color = Color(color)
+        self._border_color = Color(border_color)
         self._update()
         #glopts = kwds.pop('gl_options', 'translucent')
         #self.set_gl_options(glopts)
@@ -70,7 +70,7 @@ class Polygon(Visual):
 
     @color.setter
     def color(self, color):
-        self._color = Color(color).rgba
+        self._color = Color(color)
         self._update()
 
     @property
@@ -81,7 +81,7 @@ class Polygon(Visual):
 
     @border_color.setter
     def border_color(self, border_color):
-        self._border_color = Color(border_color).rgba
+        self._border_color = Color(border_color)
         self._update()
 
     def _update(self):
@@ -89,11 +89,11 @@ class Polygon(Visual):
         if self._pos is not None:
             self.data.triangulate()
             self.mesh = Mesh(pos=self.data.vertices[self.data.faces],
-                             color=self._color)
-            if self._border_color:
+                             color=self._color.rgba)
+            if not self._border_color.is_blank():
                 border_pos = self.data.vertices[self.data.convex_hull]
-                self.border = Line(pos=border_pos, color=self._border_color,
-                                   mode='lines')
+                self.border = Line(pos=border_pos,
+                                   color=self._border_color.rgba, mode='lines')
         #self.update()
 
     def set_gl_options(self, *args, **kwds):
@@ -102,10 +102,10 @@ class Polygon(Visual):
     def update_gl_options(self, *args, **kwds):
         self.mesh.update_gl_options(*args, **kwds)
 
-    def draw(self, event=None):
+    def draw(self, event):
         if self.mesh:
             gloo.set_state(polygon_offset_fill=True)
             gloo.set_polygon_offset(1, 1)
-            self.mesh.draw()
+            self.mesh.draw(event)
         if self.border:
-            self.border.draw()
+            self.border.draw(event)

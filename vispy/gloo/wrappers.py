@@ -179,7 +179,7 @@ def clear(color=True, depth=True, stencil=True):
         be used to set the stencil clear index.
     """
     bits = 0
-    if color:
+    if isinstance(color, np.ndarray) or bool(color):
         if not isinstance(color, bool):
             set_clear_color(color)
         bits |= gl.GL_COLOR_BUFFER_BIT

@@ -14,14 +14,14 @@ from vispy.scene import visuals
 # vertex positions of data to draw
 N = 200
 pos = np.zeros((N, 3), dtype=np.float32)
-pos[:, 0] = np.linspace(-0.9, 0.9, N)
-pos[:, 1] = np.random.normal(size=N, scale=0.2).astype(np.float32)
+pos[:, 0] = np.linspace(50., 750., N)
+pos[:, 1] = np.random.normal(size=N, scale=100, loc=400).astype(np.float32)
 
 
-class Canvas(vispy.app.Canvas):
+class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         self.points = visuals.Point(pos, color=(0, 1, 0, 1))
-        vispy.app.Canvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
 
@@ -29,7 +29,7 @@ class Canvas(vispy.app.Canvas):
         gloo.set_clear_color('black')
         gloo.clear(color=True, depth=True)
         gloo.set_viewport(0, 0, *self.size)
-        self.points.draw()
+        self.draw_visual(self.points)
 
 
 if __name__ == '__main__':

@@ -273,7 +273,7 @@ def _parse_command_line_arguments():
         if o.startswith('--vispy'):
             if o == '--vispy-backend':
                 config['default_backend'] = a
-                logger.info('backend', a)
+                logger.info('vispy backend: %s', a)
             elif o == '--vispy-gl-debug':
                 config['gl_debug'] = True
             elif o == '--vispy-log':

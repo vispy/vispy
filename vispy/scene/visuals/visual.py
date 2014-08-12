@@ -31,8 +31,8 @@ class Visual(Entity):
 
     """
 
-    def __init__(self, parent=None, **kwds):
-        Entity.__init__(self, parent, **kwds)
+    def __init__(self, **kwargs):
+        Entity.__init__(self, **kwargs)
         
         # Add event for bounds changing
         self.events.add(bounds_change=event.Event)
@@ -44,21 +44,18 @@ class Visual(Entity):
         """
         self.events.update()
 
-    def draw(self, canvas=None):
+    def draw(self, event):
         """
         Draw this visual now.
         The default implementation does nothing.
         
-        Visuals may be drawn in two different contexts: 
+        This function is called automatically when the visual needs to be drawn
+        as part of a scenegraph, or when calling 
+        ``SceneCanvas.draw_visual(...)``. It is uncommon to call this method 
+        manually.
         
-        1) In the absence of a scenegraph, *canvas* refers to the Canvas that
-           is currently being drawn to.
-           
-        2) When drawn from a scenegraph, *canvas* is actually an instance of
-           DrawEvent that implements many of the same transform methods as 
-           Canvas.
-        
-        In either context, *canvas* provides access transforms that the visual
+        The *event* argument is a SceneDrawEvent instance that provides access 
+        to transforms that the visual
         may use to determine its relationship to the document coordinate
         system (which provides physical measurements) and the framebuffer
         coordinate system (which is necessary for antialiasing calculations). 

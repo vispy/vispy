@@ -4,11 +4,12 @@
 
 from __future__ import division
 
-from ..gloo import gl
+from .. import gloo
 from .. import app
 from .subscene import SubScene
 from .transforms import STTransform
 from .events import SceneDrawEvent, SceneMouseEvent
+from ..color import Color
 from ..util import logger
 
 
@@ -21,14 +22,14 @@ class SceneCanvas(app.Canvas):
     def __init__(self, *args, **kwargs):
         self._fb_stack = []  # for storing information about framebuffers used
         self._vp_stack = []  # for storing information about viewports used
+        self._scene = None
+        self._bgcolor = Color(kwargs.pop('bgcolor', 'black')).rgba
 
         app.Canvas.__init__(self, *args, **kwargs)
         self.events.mouse_press.connect(self._process_mouse_event)
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
         self.events.mouse_wheel.connect(self._process_mouse_event)
-
-        self._scene = None
         self.scene = SubScene()
 
     @property
@@ -47,28 +48,33 @@ class SceneCanvas(app.Canvas):
 
     def _scene_update(self, event):
         self.update()
-
+    
     def on_draw(self, event):
-        gl.glClearColor(0, 0, 0, 1)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-
-        self.push_viewport((0, 0) + self.size)
+        gloo.clear(color=self._bgcolor, depth=True)
+        if self._scene is None:
+            return  # Can happen on initialization
+        logger.debug('Canvas draw')
         
-        try:
-            if self._scene is None:
-                return  # Can happen on initialization
-            logger.debug('Canvas draw')
-            # Create draw event, which keeps track of the path of transforms
-            self._process_entity_count = 0  # for debugging
-            scene_event = SceneDrawEvent(canvas=self, event=event)
-            self._scene.draw(scene_event)
-        finally:
-            self.pop_viewport()
+        self.draw_visual(self.scene)
         
         if len(self._vp_stack) > 0:
             logger.warning("Viewport stack not fully cleared after draw.")
         if len(self._fb_stack) > 0:
             logger.warning("Framebuffer stack not fully cleared after draw.")
+
+    def draw_visual(self, visual, event=None):
+        """ Draw a *visual* and its children on the canvas.
+        """
+        self.push_viewport((0, 0) + self.size)
+        
+        try:
+            # Create draw event, which keeps track of the path of transforms
+            self._process_entity_count = 0  # for debugging
+            scene_event = SceneDrawEvent(canvas=self, event=event)
+            scene_event.push_entity(visual)
+            visual.draw(scene_event)
+        finally:
+            self.pop_viewport()
 
     def _process_mouse_event(self, event):
         scene_event = SceneMouseEvent(canvas=self, event=event)

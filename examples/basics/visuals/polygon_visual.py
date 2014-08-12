@@ -19,20 +19,21 @@ pos = np.array([[0, 0, 0],
                [-0.25, 0.25, 0]])
 
 
-class Canvas(vispy.app.Canvas):
+class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         self.polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
                                        border_color=(1, 1, 1, 1))
-        
-        vispy.app.Canvas.__init__(self, close_keys='escape')
+        self.polygon.transform = vispy.scene.transforms.STTransform(
+            scale=(500, 500),
+            translate=(400, 400))
+        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
         self.show()
         
     def on_draw(self, ev):
         gloo.set_clear_color((0, 0, 0, 1))
         gloo.clear()
-        gloo.set_viewport(0, 0, *self.size)
-        self.polygon.draw()
+        self.draw_visual(self.polygon)
         
 
 if __name__ == '__main__':

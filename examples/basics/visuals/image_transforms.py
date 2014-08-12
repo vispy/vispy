@@ -11,7 +11,8 @@ import vispy.app
 from vispy import gloo
 from vispy.scene import visuals
 from vispy.scene.transforms import (AffineTransform, STTransform, arg_to_array,
-                                    LogTransform, PolarTransform, Transform)
+                                    LogTransform, PolarTransform, 
+                                    BaseTransform)
 
 image = np.random.normal(size=(100, 100, 3))
 image[20:80, 20:80] += 3.
@@ -26,32 +27,30 @@ class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         self.images = [visuals.Image(image, method='impostor')
                        for i in range(4)]
-        #base = STTransform(scale=(0.009, 0.009), translate=(-0.45, -0.45))
-        self.images[0].transform = (STTransform(scale=(0.06, 0.06),
-                                                translate=(-0.5, -0.5)) *
+        self.images[0].transform = (STTransform(scale=(30, 30),
+                                                translate=(600, 600)) * 
                                     SineTransform() *
                                     STTransform(scale=(0.1, 0.1),
                                                 translate=(-5, -5)))
 
         tr = AffineTransform()
         tr.rotate(30, (0, 0, 1))
-        tr.scale((0.7, 0.7))
-        self.images[1].transform = (STTransform(translate=(0.5, -0.5)) *
+        tr.scale((3, 3))
+        self.images[1].transform = (STTransform(translate=(200, 600)) *
                                     tr *
-                                    STTransform(scale=(0.009, 0.009),
-                                                translate=(-0.45, -0.45)))
+                                    STTransform(translate=(-50, -50)))
 
-        self.images[2].transform = (STTransform(scale=(1, 0.14),
-                                                translate=(-0.5, 0)) *
+        self.images[2].transform = (STTransform(scale=(3, -150),
+                                                translate=(200, 100)) *
                                     LogTransform((0, 2, 0)) *
-                                    STTransform(scale=(0.009, 1),
-                                                translate=(-0.45, 1)))
+                                    STTransform(scale=(1, -0.01),
+                                                translate=(-50, 1.3)))
 
-        self.images[3].transform = (STTransform(scale=(1, 1),
-                                                translate=(0.5, 0.2)) *
+        self.images[3].transform = (STTransform(scale=(400, 400),
+                                                translate=(600, 300)) *
                                     PolarTransform() *
                                     STTransform(scale=(np.pi/200, 0.005),
-                                                translate=(np.pi/4., 0.1)))
+                                                translate=(-3*np.pi/4., 0.1)))
 
         vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
@@ -61,11 +60,11 @@ class Canvas(vispy.scene.SceneCanvas):
         gloo.clear(color='black', depth=True)
         self.push_viewport((0, 0) + self.size)
         for img in self.images:
-            img.draw(self)
+            self.draw_visual(img)
 
 
 # A simple custom Transform
-class SineTransform(Transform):
+class SineTransform(BaseTransform):
     """
     Add sine wave to y-value for wavy effect.
     """
@@ -97,7 +96,7 @@ class SineTransform(Transform):
         return InvSineTransform()
 
 
-class InvSineTransform(Transform):
+class InvSineTransform(BaseTransform):
     glsl_map = SineTransform.glsl_imap
     glsl_imap = SineTransform.glsl_map
 

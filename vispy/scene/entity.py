@@ -144,6 +144,9 @@ class Entity(object):
         self.events.children_change(removed=ent)
         ent.events.update.disconnect(self.events.update)
 
+    def __len__(self):
+        return len(self._children)
+
     def __iter__(self):
         return self._children.__iter__()
 
@@ -158,7 +161,7 @@ class Entity(object):
     def transform(self, tr):
         if self._transform is not None:
             self._transform.changed.disconnect(self._transform_changed)
-        assert isinstance(tr, transforms.Transform)
+        assert isinstance(tr, transforms.BaseTransform)
         self._transform = tr
         self._transform.changed.connect(self._transform_changed)
         self._transform_changed(None)
@@ -183,9 +186,42 @@ class Entity(object):
             chain.append(parent)
         return chain
 
+    def describe_tree(self, with_transform=False):
+        """Create tree diagram of children
+
+        Parameters
+        ----------
+        with_transform : bool
+            If true, add information about entity transform types.
+
+        Returns
+        ----------
+        tree : str
+            The tree diagram.
+        """
+        # inspired by https://github.com/mbr/asciitree/blob/master/asciitree.py
+        return self._describe_tree('', with_transform)
+
+    def _describe_tree(self, prefix, with_transform):
+        """Helper function to actuall construct the tree"""
+        extra = ': "%s"' % self.name if self.name is not None else ''
+        if with_transform:
+            extra += (' [%s]' % self.transform.__class__.__name__)
+        output = ''
+        if len(prefix) > 0:
+            output += prefix[:-3]
+            output += '  +--'
+        output += '%s%s\n' % (self.__class__.__name__, extra)
+
+        n_children = len(self)
+        for ii, child in enumerate(self):
+            sub_prefix = prefix + ('   ' if ii+1 == n_children else '  |')
+            output += child._describe_tree(sub_prefix, with_transform)
+        return output
+
     def common_parent(self, entity):
         """
-        Return the common parent of two entities. If the entities have no 
+        Return the common parent of two entities. If the entities have no
         common parent, return None. Does not search past multi-parent branches.
         """
         p1 = self._parent_chain()
