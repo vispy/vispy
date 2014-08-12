@@ -193,7 +193,6 @@ class EventEmitter(object):
         self._emitting = False
         self.source = source
         self.default_args = {}
-        self._err_registry = {}
         if type is not None:
             self.default_args['type'] = type
 
@@ -439,7 +438,7 @@ class EventEmitter(object):
             # debugging)
             _handle_exception(self.ignore_callback_errors,
                               self.print_callback_errors,
-                              self._err_registry, cb_event=(cb, event))
+                              self, cb_event=(cb, event))
 
     def _prepare_event(self, *args, **kwds):
         # When emitting, this method is called to create or otherwise alter

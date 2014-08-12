@@ -6,7 +6,7 @@ import numpy as np
 import base64
 
 try:
-    import matplotlib  # noqa, analysis:ignore (just a check)
+    import matplotlib.pyplot as plt
     from mplexporter.exporter import Exporter
     from mplexporter.renderers import Renderer
 except ImportError as exp:
@@ -55,7 +55,8 @@ class VispyRenderer(Renderer):
         self.canvas.events.resize.connect(on_resize)
 
     def close_figure(self, fig):
-        pass  # don't close when the mpl figure closes
+        # self.canvas.close()
+        pass  # don't do this, it closes when done rendering
 
     def open_axes(self, ax, props):
         bounds = np.array(props['bounds'])
@@ -88,7 +89,8 @@ class VispyRenderer(Renderer):
             text['text'].transform = xform
 
     def close_axes(self, ax):
-        pass  # not needed for now
+        # self._axs.pop(ax)['vb'].parent = []
+        pass  # don't do anything, or all plots get closed (!)
 
     def open_legend(self, legend, props):
         raise NotImplementedError('Legends not supported yet')
@@ -161,8 +163,8 @@ class VispyRenderer(Renderer):
 # https://github.com/mpld3/mplexporter/blob/master/mplexporter/renderers/base.py
 
 
-def mpl_to_vispy(fig, block=True):
-    """Convert matplotlib figure to vispy
+def _mpl_to_vispy(fig):
+    """Convert a given matplotlib figure to vispy
 
     This function is experimental and subject to change!
     Requires matplotlib and mplexporter.
@@ -171,8 +173,6 @@ def mpl_to_vispy(fig, block=True):
     ----------
     fig : instance of matplotlib Figure
         The populated figure to display.
-    block : bool
-        If True, the canvas application will be run (blocking).
 
     Returns
     -------
@@ -185,6 +185,24 @@ def mpl_to_vispy(fig, block=True):
     exporter = Exporter(renderer)
     exporter.run(fig)
     renderer._vispy_done()
-    if block:
-        renderer.canvas.app.run()
     return renderer.canvas
+
+
+def show(block=False):
+    """Show current figures using vispy
+
+    Parameters
+    ----------
+    block : bool
+        If True, blocking mode will be used. If False, then non-blocking
+        / interactive mode will be used.
+
+    Returns
+    -------
+    canvases : list
+        List of the vispy canvases that were created.
+    """
+    cs = [_mpl_to_vispy(plt.figure(ii)) for ii in plt.get_fignums()]
+    if block and len(cs) > 0:
+        cs[0].app.run()
+    return cs

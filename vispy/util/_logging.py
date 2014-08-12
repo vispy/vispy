@@ -266,12 +266,16 @@ def log_exception(level='warning', tb_skip=2):
 logger.log_exception = log_exception  # make this easier to reach
 
 
-def _handle_exception(ignore_callback_errors, print_callback_errors, registry,
+def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
                       cb_event=None, entity=None):
     """Helper for prining errors in callbacks
 
     See EventEmitter._invoke_callback for a use example.
     """
+    if not hasattr(obj, '_vispy_err_registry'):
+        obj._vispy_err_registry = {}
+    registry = obj._vispy_err_registry
+
     if cb_event is not None:
         cb, event = cb_event
         exp_type = 'callback'

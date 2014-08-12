@@ -15,9 +15,6 @@ class DrawingSystem(object):
     per viewbox.
 
     """
-    def __init__(self):
-        self._err_registry = {}
-
     def process(self, event, subscene):
         # Iterate over entities
         #assert isinstance(subscene, SubScene)  # LC: allow any part of the
@@ -36,8 +33,7 @@ class DrawingSystem(object):
             except Exception:
                 # get traceback and store (so we can do postmortem
                 # debugging)
-                _handle_exception(False, 'reminders', self._err_registry,
-                                  entity=entity)
+                _handle_exception(False, 'reminders', self, entity=entity)
 
         # Processs children; recurse.
         # Do not go into subscenes (SubScene.draw processes the subscene)

@@ -3,9 +3,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 import numpy as np
-from vispy.pyplot import mpl_to_vispy
-import matplotlib.pyplot as plt
-plt.ion()
+
+import vispy.pyplot as plt
 from vispy.util import read_png, get_data_file
 
 n = 200
@@ -35,7 +34,10 @@ ax.text(freqs[idx], magnitude[idx], 'Max: %s Hz' % freqs[idx],
 ax.plot(freqs[:flim], magnitude[:flim], 'k-o')
 
 plt.draw()
+
+# NOTE: this has currently been overwritten to convert to vispy format, so:
+# 1. It must be called to show the results, and
+# 2. Any plotting commands executed after this will not take effect.
+# We are working to remove this limitation.
+
 plt.show()
-canvas = mpl_to_vispy(fig, block=False)
-print(canvas.scene.describe_tree())
-canvas.app.run()
