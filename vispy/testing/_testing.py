@@ -335,6 +335,7 @@ class TestingCanvas(SceneCanvas):
         gloo.gl.glFlush()
         gloo.gl.glFinish()
 
+
 @nottest
 def save_testing_image(image, location):
     from ..gloo.util import _screenshot
