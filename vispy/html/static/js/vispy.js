@@ -74,9 +74,9 @@ function gen_key_event(c, e, type) {
 function send_timer_event(w) {
     var event = {
         "event":
-        // Timer Event
+        // Poll Event
         {
-            "name": "TimerEvent",
+            "name": "PollEvent",
         }
     };
     w.send(event);
@@ -108,7 +108,7 @@ require(["widgets/js/widget"], function(WidgetManager) {
                 'last_pos': [-1, -1],
             };
 
-            this.c.interval = 50.0;
+            this.c.interval = 50.0;  // Arbitrary for now
             this.c.timer = setInterval(send_timer_event, this.c.interval, this);
         },
 
