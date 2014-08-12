@@ -91,7 +91,8 @@ class ApplicationBackend(BaseApplicationBackend):
         return self._backend2._vispy_process_events()
 
     def _vispy_run(self):
-        return self._backend2._vispy_run()
+        pass  # We run in IPython, so we don't run!
+        #return self._backend2._vispy_run()
 
     def _vispy_quit(self):
         return self._backend2._vispy_quit()
