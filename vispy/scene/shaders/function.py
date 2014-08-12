@@ -346,9 +346,6 @@ class Function(ShaderObject):
         * a FunctionCall: ``fun1['foo'] = fun2()``
         * a Variable: ``fun1['foo'] = Variable(...)`` (can be auto-generated)
         """
-        #import traceback
-        #traceback.print_stack()
-        
         # Check the key. Must be Varying, 'gl_X' or a known template variable
         if isinstance(key, Variable): 
             if key.vtype == 'varying':
@@ -386,7 +383,9 @@ class Function(ShaderObject):
                 try:
                     variable.value = val
                     return
-                except:
+                except Exception:
+                    # Setting value on existing Variable failed for some
+                    # reason; will need to create a new Variable instead. 
                     pass
         
         #print("SET: %s[%s] = %s => %s" % 
