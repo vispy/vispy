@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""
+Example demonstrating how to use vispy.pyplot, which uses mplexporter
+to convert matplotlib commands to vispy draw commands.
+
+Requires matplotlib.
+"""
 
 import numpy as np
+import sys
 
 import vispy.pyplot as plt
 from vispy.util import read_png, get_data_file
@@ -35,9 +42,10 @@ ax.plot(freqs[:flim], magnitude[:flim], 'k-o')
 
 plt.draw()
 
-# NOTE: this has currently been overwritten to convert to vispy format, so:
+# NOTE: show() has currently been overwritten to convert to vispy format, so:
 # 1. It must be called to show the results, and
 # 2. Any plotting commands executed after this will not take effect.
 # We are working to remove this limitation.
 
-plt.show()
+block = False if sys.flags.interactive else True
+plt.show(block)

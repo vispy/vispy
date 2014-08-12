@@ -94,7 +94,7 @@ install:
       fi;
 
     # Use Pyglet alpha to get Py3.4 support
-    # Also install PyQt4, imaging (PIL or pillow) and scipy
+    # Also install PyQt4, imaging (PIL or pillow), scipy, and mpl
     # Test old (insufficient) version of Pyglet on 2.6
     # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
     # which is required by matplotlib :( 
@@ -105,11 +105,10 @@ install:
           pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
-          conda install --yes --quiet pillow > ${REDIRECT_TO};
-          conda install --yes --quiet scipy > ${REDIRECT_TO};
+          conda install --yes --quiet pillow scipy matplotlib > ${REDIRECT_TO};
         fi;
         if [ "${PYTHON}" == "2.7" ]; then
-          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy > ${REDIRECT_TO};
+          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy python-matplotlib > ${REDIRECT_TO};
         fi;
       fi;
 
@@ -145,20 +144,6 @@ install:
           sudo make install &> ${REDIRECT_TO};
         fi;
         pip install -q PySDL2;
-      fi;
-
-    # Install matplotlib and mplexporter
-    - if [ "${DEPS}" == "full" ]; then
-        if [ "${PYTHON}" == "2.7" ]; then
-          travis_retry sudo apt-get -qq -y install python-matplotlib > ${REDIRECT_TO};
-        else
-          conda install --yes --quiet matplotlib > ${REDIRECT_TO};
-        fi;
-        cd ~;
-        git clone git://github.com/mpl3d/mplexporter.git > ${REDIRECT_TO};
-        cd mplexporter;
-        python setup.py install mplexporter > ${REDIRECT_TO};
-        cd ..;
       fi;
 
     # after manual builds we need to update .so search

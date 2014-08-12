@@ -7,8 +7,7 @@ import base64
 
 try:
     import matplotlib.pyplot as plt
-    from mplexporter.exporter import Exporter
-    from mplexporter.renderers import Renderer
+    from ..ext.mplexporter import Exporter, Renderer
 except ImportError as exp:
     Exporter = None
     Renderer = object
@@ -102,7 +101,9 @@ class VispyRenderer(Renderer):
         _check_coords(coordinates, 'data')
         imdata = read_png(BytesIO(base64.b64decode(imdata.encode('utf-8'))))
         assert imdata.ndim == 3 and imdata.shape[2] == 4
-        imdata[:, :, 3] *= style['alpha'] if style['alpha'] is not None else 1.
+        imdata[:, :, 3] = (imdata[:, :, 3] *
+                           (style['alpha'] if style['alpha'] is not None
+                            else 1.)).astype(np.uint8)
         img = Image(imdata)
         vb = self._mpl_ax_to(mplobj)
         img.transform = STTransform.from_mapping([[0, 0], img.size],

@@ -4,13 +4,12 @@
 
 import numpy as np
 
-from vispy.pyplot import show
 from vispy.util import read_png, get_data_file
-from vispy.testing import requires_mplexporter, requires_application
+from vispy.testing import requires_matplotlib, requires_application
 
 
 @requires_application()
-@requires_mplexporter()
+@requires_matplotlib()
 def test_show_vispy():
     """Some basic tests of show_vispy"""
     import vispy.pyplot as plt
@@ -18,7 +17,7 @@ def test_show_vispy():
     t = np.arange(n)
     noise = np.random.RandomState(0).randn(n)
     # Need, image, markers, line, axes, figure
-    fig = plt.figure()
+    plt.figure()
     ax = plt.subplot(211)
     ax.imshow(read_png(get_data_file('pyplot/logo.png')))
     ax = plt.subplot(212)

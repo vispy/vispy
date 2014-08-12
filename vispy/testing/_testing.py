@@ -17,6 +17,7 @@ try:
 except ImportError:
     class nottest(object):
         pass
+from distutils.version import LooseVersion
 
 from ..scene import SceneCanvas
 from ..ext.six.moves import http_client as httplib
@@ -237,16 +238,19 @@ def requires_img_lib():
     return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
 
 
-def requires_mplexporter():
+def requires_matplotlib(version='1.2'):
+    """Decorator for ensuring mpl is a usable version"""
     try:
-        import matplotlib  # noqa
-        import mplexporter  # noqa
+        import matplotlib
     except Exception:
-        has_mplex = False
+        has_mpl = False
     else:
-        has_mplex = True
-    return np.testing.dec.skipif(not has_mplex, 'Requires matplotlib and '
-                                 'mplexporter')
+        if LooseVersion(matplotlib.__version__) >= LooseVersion(version):
+            has_mpl = True
+        else:
+            has_mpl = False
+    return np.testing.dec.skipif(not has_mpl, 'Requires matplotlib >= %s'
+                                 % version)
 
 
 ###############################################################################
