@@ -338,7 +338,12 @@ class Canvas(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.swap_buffers()  # ensure all GL calls are complete
+        # ensure all GL calls are complete
+        from .. import gloo
+        self._backend._vispy_set_current()
+        gloo.gl.glFlush()
+        gloo.gl.glFinish()
+        self.swap_buffers()
         self.close()
 
     # def mouse_event(self, event):

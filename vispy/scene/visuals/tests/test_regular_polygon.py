@@ -5,23 +5,15 @@ Tests for RegularPolygonVisual
 All images are of size (100,100) to keep a small file size
 """
 
-import sys
-
 from vispy import gloo
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, assert_image_equal,
-                           TestingCanvas, SkipTest)
+                           TestingCanvas)
 
 
 @requires_application()
 def test_regular_polygon_draw1():
     """Test drawing regular polygons without transforms using RegularPolygonVisual"""  # noqa
-    
-    # TODO: remove this skip after fixing 
-    # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == '3':
-        raise SkipTest
-    
     with TestingCanvas() as c:
         rpolygon = visuals.RegularPolygon(pos=(0., 0.), radius=0.4, sides=8,
                                           color=(1, 0, 0, 1))
@@ -51,12 +43,6 @@ def test_regular_polygon_draw1():
 @requires_application()
 def test_regular_polygon_draw2():
     """Test drawing transformed regular polygons using RegularPolygonVisual"""  # noqa
-    
-    # TODO: remove this skip after fixing 
-    # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == '3':
-        raise SkipTest
-    
     with TestingCanvas() as c:
         rpolygon = visuals.RegularPolygon(pos=(0., 0.), radius=0.4, sides=8,
                                           color=(0, 0, 1, 1))
@@ -86,12 +72,6 @@ def test_regular_polygon_draw2():
 @requires_application()
 def test_reactive_draw():
     """Test reactive regular polygon attributes"""
-    
-    # TODO: remove this skip after fixing 
-    # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == '3':
-        raise SkipTest
-
     with TestingCanvas() as c:
         rpolygon = visuals.RegularPolygon(pos=[50, 50, 0.], radius=20, sides=8,
                                           color='yellow')

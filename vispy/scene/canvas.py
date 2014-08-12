@@ -24,14 +24,12 @@ class SceneCanvas(app.Canvas):
         self._vp_stack = []  # for storing information about viewports used
         self._scene = None
         self._bgcolor = Color(kwargs.pop('bgcolor', 'black')).rgba
-        
+
         app.Canvas.__init__(self, *args, **kwargs)
         self.events.mouse_press.connect(self._process_mouse_event)
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
         self.events.mouse_wheel.connect(self._process_mouse_event)
-
-        self._scene = None
         self.scene = SubScene()
 
     @property

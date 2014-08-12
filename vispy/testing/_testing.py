@@ -11,12 +11,18 @@ import sys
 import os
 import subprocess
 import inspect
+import base64
+try:
+    from nose.tools import nottest
+except ImportError:
+    class nottest(object):
+        pass
+
 from ..scene import SceneCanvas
 from ..ext.six.moves import http_client as httplib
-import vispy.ext.six.moves.urllib_parse as urllib
-import base64
+from ..ext.six.moves import urllib_parse as urllib
 from ..util import make_png
-from nose.tools import nottest
+from .. import gloo
 
 ###############################################################################
 # Adapted from Python's unittest2 (which is wrapped by nose)
@@ -257,7 +263,8 @@ def _save_failed_test(data, expect, filename):
         img[:] = 255
         img[:, :ds[1], :ds[2]] = data
         img[:, ds[1]+1:ds[1]*2+1, :ds[2]] = expect
-        img[:, ds[1]*2 + 2:, :ds[2]] = data - expect
+        img[:, ds[1]*2 + 2:, :ds[2]] = np.abs(data.astype(int) -
+                                              expect.astype(int))
     else:
         shape = (ds[0], ds[1] * 2 + 1, 4)
         img = np.empty(shape, dtype=np.ubyte)
@@ -296,7 +303,7 @@ def assert_image_equal(image, reference):
         image = _screenshot(alpha=False)
     ref = read_png(get_testing_file(reference))
 
-    # check for minimum number of changed pixels, allowing for overall 1-pixel 
+    # check for minimum number of changed pixels, allowing for overall 1-pixel
     # shift in any direcion
     slices = [slice(0, -1), slice(0, None), slice(1, None)]
     min_diff = np.inf
@@ -304,7 +311,7 @@ def assert_image_equal(image, reference):
         for j in range(3):
             a = image[slices[i], slices[j]]
             b = ref[slices[2-i], slices[2-j]]
-            diff = (a != b).sum()
+            diff = np.abs(a - b).sum()
             if diff < min_diff:
                 min_diff = diff
     try:
@@ -315,17 +322,18 @@ def assert_image_equal(image, reference):
 
 
 class TestingCanvas(SceneCanvas):
-    def __init__(self, clear_color=(0, 0, 0, 1), size=(100, 100)):
-        SceneCanvas.__init__(self, size=size)
-        self._clear_color = clear_color
+    def __init__(self, bgcolor='black', size=(100, 100)):
+        SceneCanvas.__init__(self, size=size, bgcolor=bgcolor)
 
     def __enter__(self):
         SceneCanvas.__enter__(self)
-        from .. import gloo
-        gloo.clear(color=self._clear_color)
-        #gloo.set_viewport(0, 0, *self.size)
+        gloo.clear(color=self._bgcolor)
         return self
 
+    def draw_visual(self, visual):
+        SceneCanvas.draw_visual(self, visual)
+        gloo.gl.glFlush()
+        gloo.gl.glFinish()
 
 @nottest
 def save_testing_image(image, location):

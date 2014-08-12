@@ -6,24 +6,17 @@ All images are of size (100,100) to keep a small file size
 """
 
 import numpy as np
-import sys
 
 from vispy import gloo
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, assert_image_equal,
-                           requires_scipy, TestingCanvas, SkipTest)
+                           requires_scipy, TestingCanvas)
 
 
 @requires_application()
 @requires_scipy()
 def test_square_draw():
     """Test drawing squares without transforms using PolygonVisual"""
-    
-    # TODO: remove this skip after fixing 
-    # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == '3':
-        raise SkipTest
-    
     pos = np.array([[-0.5, 0.5, 0],
                     [0.5, 0.5, 0],
                     [0.5, -0.5, 0],
@@ -55,12 +48,6 @@ def test_square_draw():
 @requires_scipy()
 def test_rectangle_draw():
     """Test drawing rectangles with transforms using PolygonVisual"""
-    
-    # TODO: remove this skip after fixing 
-    # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == '3':
-        raise SkipTest
-    
     pos = np.array([[-0.1, 0.5, 0],
                     [0.1, 0.5, 0],
                     [0.1, -0.5, 0],
@@ -92,12 +79,6 @@ def test_rectangle_draw():
 @requires_scipy()
 def test_reactive_draw():
     """Test reactive polygon attributes"""
-
-    # TODO: remove this skip after fixing 
-    # https://github.com/vispy/vispy/issues/374
-    if sys.version[0] == '3':
-        raise SkipTest
-
     pos = np.array([[-0.1, 0.5, 0],
                     [0.1, 0.5, 0],
                     [0.1, -0.5, 0],
