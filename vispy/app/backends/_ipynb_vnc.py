@@ -76,10 +76,9 @@ else:
             _msg = 'ipynb_vnc backend refuses to work with GLUT'
             available, testable, why_not = False, False, _msg
         else:
-            available, testable, why_not = True, True, None
+            available, testable, why_not = True, False, None
         which = _app.backend_module.which
         print('              NOTE: this backend requires the Chromium browser')
-
     # Use that backend's shared context
     KEYMAP = _app.backend_module.KEYMAP
     SharedContext = _app.backend_module.SharedContext
@@ -291,7 +290,7 @@ class CanvasBackend(BaseCanvasBackend):
                                                       modifiers=key.get
                                                       ("modifiers"),
                                                       )
-        elif ev.get("name") == "TimerEvent":  # Ticking from front-end (JS)
+        elif ev.get("name") == "PollEvent":  # Ticking from front-end (JS)
             # Allthough the event originates from JS, this is basically
             # a poll event from IPyhon's event loop, which we use to
             # update the backend app and draw stuff if necessary. If we
@@ -300,6 +299,7 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_canvas.app.process_events()
             if self._need_draw:
                 self._on_draw()
+            # Generate a timer event on every poll from JS
             self._vispy_canvas.events.timer(type="timer")
 
     def _prepare_js(self):
@@ -347,7 +347,9 @@ class Widget(DOMWidget):
         self.on_msg(self._handle_event_msg)
 
     def _handle_event_msg(self, _, content):
-        self.gen_event(content)
+        # If closing, don't bother generating the event
+        if not self.is_closing:
+            self.gen_event(content)
 
     @property
     def size(self):
