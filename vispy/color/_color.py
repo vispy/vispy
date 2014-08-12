@@ -38,7 +38,7 @@ def _string_to_rgb(color):
 def _user_to_rgba(color, expand=True):
     """Convert color(s) from any set of fmts (str/hex/arr) to RGB(A) array"""
     if color is None:
-        color = np.array([0., 0., 0., 0.]).astype(np.float32)
+        color = np.zeros(4, np.float32)
     if isinstance(color, string_types):
         color = _string_to_rgb(color)
     elif isinstance(color, ColorArray):
@@ -141,10 +141,6 @@ def _hsv_to_rgb(hsvs):
         rgbs = np.concatenate((rgbs, hsvs[:, 3]), axis=1)
     return rgbs
 
-
-def _color_as_array_or_none(color):
-    """Helper to convert color to rgba array, or return None if color is"""
-    return Color(color).rgba if color is not None else None
 
 ###############################################################################
 # RGB<->CIELab conversion
