@@ -571,6 +571,12 @@ class Texture(GLObject):
             if width % alignment == 0:
                 return alignment
 
+    def __repr__(self):
+        return "<%s shape=%r dtype=%r format=%r target=%r at 0x%x>" % (
+            self.__class__.__name__,
+            self._shape, self._dtype, self._format, self._target,
+            id(self))
+
 
 # --------------------------------------------------------- Texture1D class ---
 class Texture1D(Texture):
