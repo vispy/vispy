@@ -49,6 +49,11 @@ class VispyRenderer(Renderer):
         self.canvas = SceneCanvas(size=size, show=True, close_keys='escape',
                                   bgcolor='lightgray')
 
+        @self.canvas.events.resize.connect
+        def on_resize(event):
+            self._resize(*event.size)
+        self.canvas.events.resize.connect(on_resize)
+
     def close_figure(self, fig):
         pass  # don't close when the mpl figure closes
 
@@ -67,11 +72,6 @@ class VispyRenderer(Renderer):
         ax_dict = dict(ax=ax, bounds=bounds, vb=vb, lims=xlim+ylim)
         self._axs[ax] = ax_dict
         self._resize(*self.canvas.size)
-
-        # connect it to the proper event
-        def on_resize(event):
-            self._resize(*event.size)
-        self.canvas.events.resize.connect(on_resize)
 
     def _resize(self, w, h):
         for ax in self._axs.values():
@@ -99,9 +99,8 @@ class VispyRenderer(Renderer):
     def draw_image(self, imdata, extent, coordinates, style, mplobj=None):
         _check_coords(coordinates, 'data')
         imdata = read_png(BytesIO(base64.b64decode(imdata.encode('utf-8'))))
-        imdata = imdata.astype(np.float32) / 255.
         assert imdata.ndim == 3 and imdata.shape[2] == 4
-        imdata[:, :, 3] = style['alpha'] if style['alpha'] is not None else 1.
+        imdata[:, :, 3] *= style['alpha'] if style['alpha'] is not None else 1.
         img = Image(imdata)
         vb = self._mpl_ax_to(mplobj)
         img.transform = STTransform.from_mapping([[0, 0], img.size],
