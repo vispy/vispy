@@ -12,7 +12,7 @@ from vispy.testing import requires_matplotlib, requires_application
 @requires_matplotlib()
 def test_show_vispy():
     """Some basic tests of show_vispy"""
-    import vispy.pyplot as plt
+    import vispy.mpl_plot as plt
     n = 200
     t = np.arange(n)
     noise = np.random.RandomState(0).randn(n)
