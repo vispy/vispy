@@ -16,8 +16,8 @@ class Mesh(ModularVisual):
         
         self.set_gl_options(gl_options)
 
-        if (pos is not None) or (faces is not None) or (index is not None):
-            self.set_data(faces=faces, index=index, pos=pos, z=z, color=color)
+        #if (pos is not None) or (faces is not None) or (index is not None):
+        self.set_data(faces=faces, index=index, pos=pos, z=z, color=color)
 
     def set_data(self, **kwds):
         kwds['index'] = kwds.pop('faces', kwds.get('index', None))

@@ -236,10 +236,10 @@ class ModularVisual(Visual):
             elif isinstance(color, np.ndarray):
                 if color.ndim == 1:
                     self.color_components = [UniformColorComponent(color)]
-                elif color.ndim == 2:
+                elif color.ndim > 1:
                     self.color_components = [VertexColorComponent(color)]
             else:
-                raise Exception("Can't handle color data:")
+                raise Exception("Can't handle color data: %r" % color)
 
     def set_gl_options(self, default=-1, **kwds):
         """
