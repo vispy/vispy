@@ -23,14 +23,17 @@ def update_grid(event=None):
 update_grid()
 
 b1 = grid.add_view(row=0, col=0, col_span=2)
+b1.border_color=(0.5, 0.5, 0.5, 1)
 b1.camera.rect = (-0.5, -5), (11, 10)
 b1.border = (1, 0, 0, 1)
 
 b2 = grid.add_view(row=1, col=0)
+b2.border_color=(0.5, 0.5, 0.5, 1)
 b2.camera.rect = (-10, -5), (15, 10)
 b2.border = (1, 0, 0, 1)
 
 b3 = grid.add_view(row=1, col=1)
+b3.border_color=(0.5, 0.5, 0.5, 1)
 b3.camera.rect = (-5, -5), (10, 10)
 b3.border = (1, 0, 0, 1)
 

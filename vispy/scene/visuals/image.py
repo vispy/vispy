@@ -49,9 +49,11 @@ class Image(Mesh):
         self.method = method
         self.grid = grid
 
-    def set_data(self, image):
-        self._data = image
-        self._texture = None
+    def set_data(self, image=None, **kwds):
+        if image is not None:
+            self._data = image
+            self._texture = None
+        super(Image, self).set_data(**kwds)
 
     def _build_data(self, event):
         # Construct complete data array with position and optionally color

@@ -13,10 +13,7 @@ class Mesh(ModularVisual):
     def __init__(self, gl_options='translucent', faces=None, index=None, 
                  pos=None, z=0.0, color=None, **kwargs):
         super(Mesh, self).__init__(**kwargs)
-        
         self.set_gl_options(gl_options)
-
-        #if (pos is not None) or (faces is not None) or (index is not None):
         self.set_data(faces=faces, index=index, pos=pos, z=z, color=color)
 
     def set_data(self, **kwds):
