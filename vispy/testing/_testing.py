@@ -303,6 +303,8 @@ def assert_image_equal(image, reference):
         image = _screenshot(alpha=False)
     ref = read_png(get_testing_file(reference))
 
+    assert image.shape == ref.shape
+
     # check for minimum number of changed pixels, allowing for overall 1-pixel
     # shift in any direcion
     slices = [slice(0, -1), slice(0, None), slice(1, None)]
@@ -311,7 +313,7 @@ def assert_image_equal(image, reference):
         for j in range(3):
             a = image[slices[i], slices[j]]
             b = ref[slices[2-i], slices[2-j]]
-            diff = np.abs(a - b).sum()
+            diff = (a != b).sum()
             if diff < min_diff:
                 min_diff = diff
     try:
