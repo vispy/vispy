@@ -117,7 +117,7 @@ class ChainTransform(BaseTransform):
         return self._shader_imap
 
     def _make_shader_map(self, imap):
-        if imap is True:
+        if bool(imap) is True:
             funcs = [tr.shader_imap() for tr in self.transforms]
         else:
             funcs = [tr.shader_map() for tr in reversed(self.transforms)]
