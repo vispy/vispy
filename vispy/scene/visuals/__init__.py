@@ -7,8 +7,9 @@ be used stand-alone e.g. from a vispy.app.Canvas, or using Glut.
 """
 
 from .visual import Visual  # noqa
-from .line import LineVisual, LineModular  # noqa
+from .line import LineVisual, Line  # noqa
 from .markers import Markers, marker_types  # noqa
+from .point import Point  # noqa
 from .image import Image  # noqa
 from .mesh import Mesh  # noqa
 from .polygon import Polygon  # noqa

@@ -69,13 +69,13 @@ class LineVisual(Visual):
         self._program.draw('line_strip')
 
 
-class LineModular(ModularVisual):
+class Line(ModularVisual):
     """
     Displays multiple line segments.
     """
     def __init__(self, parent=None, pos=None, color=None, z=0.0,
                  mode='line_strip', **kwds):
-        super(LineModular, self).__init__(parent=parent, **kwds)
+        super(Line, self).__init__(parent=parent, **kwds)
 
         glopts = kwds.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
@@ -93,4 +93,4 @@ class LineModular(ModularVisual):
     def set_data(self, pos=None, **kwds):
         kwds['index'] = kwds.pop('edges', kwds.get('index', None))
         kwds.pop('width', 1)  # todo: do something with width
-        super(LineModular, self).set_data(pos, **kwds)
+        super(Line, self).set_data(pos, **kwds)

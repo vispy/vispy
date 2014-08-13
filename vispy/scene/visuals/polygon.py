@@ -14,7 +14,7 @@ import numpy as np
 from ... import gloo
 from .visual import Visual
 from .mesh import Mesh
-from .line import LineModular as Line
+from .line import Line
 from ...color import Color
 from ...util.geometry import PolygonData
 
