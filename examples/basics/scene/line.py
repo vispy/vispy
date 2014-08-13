@@ -18,6 +18,6 @@ color = np.ones((N, 4), dtype=np.float32)
 color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
-line = scene.visuals.Line(canvas.scene, pos=pos, color=color)
+line = scene.visuals.Line(pos=pos, color=color, parent=canvas.scene)
 
 app.run()

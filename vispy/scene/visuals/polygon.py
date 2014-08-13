@@ -103,9 +103,9 @@ class Polygon(Visual):
         self.mesh.update_gl_options(*args, **kwds)
 
     def draw(self, event):
-        if self.mesh:
+        if self.mesh is not None:
             gloo.set_state(polygon_offset_fill=True)
             gloo.set_polygon_offset(1, 1)
             self.mesh.draw(event)
-        if self.border:
+        if self.border is not None:
             self.border.draw(event)
