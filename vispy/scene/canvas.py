@@ -132,7 +132,7 @@ class SceneCanvas(app.Canvas):
             fbo.activate()
             h, w = fbo.color_buffer.shape[:2]
             self.push_viewport((0, 0, w, h))
-        except:
+        except Exception:
             self._fb_stack.pop()
             raise
 

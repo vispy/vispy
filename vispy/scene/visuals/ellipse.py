@@ -67,7 +67,7 @@ default: (1,1)
     def radius(self, radius):
         self._radius = radius
         self._update()
-    
+
     @property
     def start_angle(self):
         """ The start start_angle of the ellipse.
@@ -102,7 +102,7 @@ default: (1,1)
             raise ValueError('Ellipse must consist of more than 1 segment')
         self._num_segments = num_segments
         self._update()
-    
+
     def _update(self):
         if self._pos is not None:
             self._generate_vertices(pos=self._pos, radius=self._radius,

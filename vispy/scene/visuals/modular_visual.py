@@ -113,10 +113,10 @@ class ComponentProgram(ModularProgram):
     def __setitem__(self, name, val):
         try:
             self.vert[name] = val
-        except Exception:
+        except KeyError:
             try:
                 self.frag[name] = val
-            except Exception:
+            except KeyError:
                 ModularProgram.__setitem__(self, name, val)
             
 
@@ -337,7 +337,7 @@ class ModularVisual(Visual):
         """
         modes = set([VisualComponent.DRAW_PRE_INDEXED,
                      VisualComponent.DRAW_UNINDEXED])
-        for comp in self._color_components + self.pos_components:
+        for comp in (self._color_components + self.pos_components):
             modes &= comp.supported_draw_modes
 
         if len(modes) == 0:
