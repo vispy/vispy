@@ -46,9 +46,9 @@ class Polygon(Visual):
     @transform.setter
     def transform(self, tr):
         Visual.transform.fset(self, tr)
-        if self.mesh:
+        if self.mesh is not None:
             self.mesh.transform = tr
-        if self.border:
+        if self.border is not None:
             self.border.transform = tr
 
     @property
