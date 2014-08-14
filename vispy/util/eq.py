@@ -8,12 +8,14 @@ def eq(a, b):
     """
     if a is b:
         return True
-    
+    if a is None or b is None:
+        return True if a is None and b is None else False
+
     try:
         e = a == b
     except ValueError:
         return False
-    except AttributeError: 
+    except AttributeError:
         return False
     except Exception:
         print("a:", str(type(a)), str(a))

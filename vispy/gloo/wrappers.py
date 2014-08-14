@@ -21,7 +21,7 @@ __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',
            'set_color_mask', 'set_sample_coverage',
            'get_state_presets', 'set_state', 'finish', 'flush',
            'get_parameter', 'read_pixels', 'set_hint',
-           'get_gl_configuration', 'check_error')
+           'get_gl_configuration', 'check_error', '_check_valid')
 _setters = [s[4:] for s in __all__
             if s.startswith('set_') and s != 'set_state']
 
@@ -512,7 +512,7 @@ def set_state(preset=None, **kwargs):
     if 'cull_face' in kwargs:
         cull_face = kwargs.pop('cull_face')
         if isinstance(cull_face, bool):
-            func = gl.glEnable if val else gl.glDisable
+            func = gl.glEnable if cull_face else gl.glDisable
             func(_gl_attr('cull_face'))
         else:
             set_cull_face(*_to_args(cull_face))

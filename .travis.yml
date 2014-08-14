@@ -94,8 +94,10 @@ install:
       fi;
 
     # Use Pyglet alpha to get Py3.4 support
-    # Also install PyQt4, imaging (PIL or pillow) and scipy
+    # Also install PyQt4, imaging (PIL or pillow), scipy, and mpl
     # Test old (insufficient) version of Pyglet on 2.6
+    # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
+    # which is required by matplotlib :( 
     - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" == "2.6" ]; then
           pip install -q pyglet;
@@ -103,12 +105,10 @@ install:
           pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         fi;
         if [ "${PYTHON}" == "3.4" ]; then
-          conda install --yes --quiet -c https://conda.binstar.org/pyzo pyside-pyzo > /dev/null;
-          conda install --yes --quiet pillow > ${REDIRECT_TO};
-          conda install --yes --quiet scipy > ${REDIRECT_TO};
+          conda install --yes --quiet pillow scipy matplotlib > ${REDIRECT_TO};
         fi;
         if [ "${PYTHON}" == "2.7" ]; then
-          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy > ${REDIRECT_TO};
+          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy python-matplotlib > ${REDIRECT_TO};
         fi;
       fi;
 
@@ -145,6 +145,7 @@ install:
         fi;
         pip install -q PySDL2;
       fi;
+
     # after manual builds we need to update .so search
     - sudo ldconfig
 

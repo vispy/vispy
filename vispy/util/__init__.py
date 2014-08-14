@@ -18,3 +18,4 @@ from . import transforms  # noqa
 from ._run import run_subprocess  # noqa
 from ._wrapper import test  # noqa
 from .image import make_png  # noqa
+from .dataio import read_png  # noqa

@@ -7,7 +7,7 @@ from __future__ import division
 import sys
 
 from .visuals.visual import Visual
-from ..util._logging import logger
+from ..util._logging import logger, _handle_exception
 
 
 class DrawingSystem(object):
@@ -17,33 +17,25 @@ class DrawingSystem(object):
     """
     def process(self, event, subscene):
         # Iterate over entities
-        #assert isinstance(subscene, SubScene)  # LC: allow any part of the 
-                                                #     scene to be drawn 
+        #assert isinstance(subscene, SubScene)  # LC: allow any part of the
+                                                #     scene to be drawn
         self._process_entity(event, subscene, force_recurse=True)
-    
+
     def _process_entity(self, event, entity, force_recurse=False):
         event.canvas._process_entity_count += 1
 
         # Push entity and set its total transform
         event.push_entity(entity)
-        
+
         if isinstance(entity, Visual):
             try:
                 entity.draw(event)
             except Exception:
                 # get traceback and store (so we can do postmortem
                 # debugging)
-                type, value, tb = sys.exc_info()
-                tb = tb.tb_next  # Skip *this* frame
-                sys.last_type = type
-                sys.last_value = value
-                sys.last_traceback = tb
-                del tb  # Get rid of it in this namespace
-                # Handle
-                logger.log_exception()
-                logger.warning("Error drawing entity %s" % entity)
-        
-        # Processs children; recurse. 
+                _handle_exception(False, 'reminders', self, entity=entity)
+
+        # Processs children; recurse.
         # Do not go into subscenes (SubScene.draw processes the subscene)
         
         # import here to break import cycle.

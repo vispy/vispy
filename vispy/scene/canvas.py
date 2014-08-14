@@ -48,7 +48,7 @@ class SceneCanvas(app.Canvas):
 
     def _scene_update(self, event):
         self.update()
-    
+
     def on_draw(self, event):
         gloo.clear(color=self._bgcolor, depth=True)
         if self._scene is None:

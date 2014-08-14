@@ -14,14 +14,12 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 from __future__ import division
 
-import sys
 import inspect
 import weakref
 import traceback
-import math
 
 from .ordereddict import OrderedDict
-from ._logging import logger
+from ._logging import logger, _handle_exception
 from ..ext.six import string_types
 
 
@@ -190,12 +188,11 @@ class EventEmitter(object):
 
         # count number of times this emitter is blocked for each callback.
         self._blocked = {None: 0}
-        
+
         # used to detect emitter loops
         self._emitting = False
         self.source = source
         self.default_args = {}
-        self._err_registry = {}
         if type is not None:
             self.default_args['type'] = type
 
@@ -439,42 +436,9 @@ class EventEmitter(object):
         except Exception:
             # get traceback and store (so we can do postmortem
             # debugging)
-            type, value, tb = sys.exc_info()
-            tb = tb.tb_next  # Skip *this* frame
-            sys.last_type = type
-            sys.last_value = value
-            sys.last_traceback = tb
-            del tb  # Get rid of it in this namespace
-            # Handle
-            if self.ignore_callback_errors:
-                if self.print_callback_errors != "never":
-                    this_print = 'full'
-                    if self.print_callback_errors in ('first', 'reminders'):
-                        # need to check to see if we've hit this yet
-                        key = repr(cb) + repr(event)
-                        if key in self._err_registry:
-                            self._err_registry[key] += 1
-                            if self.print_callback_errors == 'first':
-                                this_print = None
-                            else:  # reminders
-                                ii = self._err_registry[key]
-                                # Use logarithmic selection
-                                # (1, 2, ..., 10, 20, ..., 100, 200, ...)
-                                if ii % (10 ** int(math.log10(ii))) == 0:
-                                    this_print = ii
-                                else:
-                                    this_print = None
-                        else:
-                            self._err_registry[key] = 1
-                    if this_print == 'full':
-                        logger.log_exception()
-                        logger.warning("Error invoking callback %s for "
-                                       "event: %s" % (cb, event))
-                    elif this_print is not None:
-                        logger.warning("Error invoking callback %s repeat %s"
-                                       % (cb, this_print))
-            else:
-                raise
+            _handle_exception(self.ignore_callback_errors,
+                              self.print_callback_errors,
+                              self, cb_event=(cb, event))
 
     def _prepare_event(self, *args, **kwds):
         # When emitting, this method is called to create or otherwise alter
