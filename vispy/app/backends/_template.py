@@ -177,6 +177,10 @@ class CanvasBackend(BaseCanvasBackend):
         # Show or hide the window or widget
         raise NotImplementedError()
 
+    def _vispy_set_fullscreen(self, fullscreen):
+        # Set the current fullscreen state
+        raise NotImplementedError()
+
     def _vispy_update(self):
         # Invoke a redraw
         raise NotImplementedError()
@@ -191,6 +195,10 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_get_position(self):
         # Should return widget position
+        raise NotImplementedError()
+
+    def _vispy_get_fullscreen(self):
+        # Should return the current fullscreen state
         raise NotImplementedError()
 
     def _vispy_get_native_canvas(self):

@@ -331,7 +331,7 @@ def test_fs():
     if not a.backend_module.capability['fullscreen']:
         return
     assert_raises(TypeError, Canvas, fullscreen='foo')
-    if a.backend_name.lower() in ('glfw', 'sdl2'):  # takes over screen
+    if a.backend_name.lower() in ('glfw'):  # takes over screen
         raise SkipTest('glfw and sdl2 take over screen')
     with use_log_level('warning', record=True, print_msg=False) as l:
         with Canvas(fullscreen=True):
@@ -346,7 +346,7 @@ def test_fs():
 @requires_application()
 def test_close_keys():
     """Test close keys"""
-    c = Canvas(close_keys='ESCAPE')
+    c = Canvas(keys=dict(close='ESCAPE'))
     x = list()
 
     @c.events.close.connect

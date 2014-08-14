@@ -22,6 +22,9 @@ def _gloo_initialize(event):
     gl_initialize()
 
 
+_key_types = dict(interactive=dict(close='escape', fullscreen='F11'))
+
+
 class Canvas(object):
     """Representation of a GUI element with an OpenGL context
 
@@ -68,8 +71,13 @@ class Canvas(object):
         ``canvas.context`` property from an existing canvas (using the
         same backend) will return a ``SharedContext`` that can be used,
         thereby sharing the existing context.
-    close_keys : str | list of str
-        Key to use that will cause the canvas to be closed.
+    keys : str | dict | None
+        Default key mapping to use. If dict, can have entries "close" and
+        "fullscreen", which define which keypresses close and fullscreen
+        the canvas. using ``keys='interactive'`` will set those to escape
+        and F11, respectively. None disables default key mapping.
+    fullscreen_keys : str | list of str
+        Key to use that will toggle fullscreen mode.
     parent : widget-object
         The parent widget if this makes sense for the used backend.
     """
@@ -77,7 +85,8 @@ class Canvas(object):
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, vsync=False, resizable=True, decorate=True,
-                 fullscreen=False, context=None, close_keys=(), parent=None):
+                 fullscreen=False, context=None, keys=None,
+                 fullscreen_keys='F11', parent=None):
 
         size = [int(s) for s in size]
         if len(size) != 2:
@@ -148,7 +157,24 @@ class Canvas(object):
         if create_native:
             self.create_native()
 
-        # Close keys
+        # Deal with special keys
+        if keys is not None:
+            if not isinstance(keys, (dict, string_types)):
+                raise TypeError('keys must be a dict')
+            elif isinstance(keys, string_types):
+                if keys not in _key_types:
+                    raise ValueError('keys, if string, must be one of %s, not '
+                                     '%s' % (list(_key_types.keys())), keys)
+                keys = _key_types[keys]
+            valid = ('close', 'fullscreen')
+            if not all(k in valid for k in keys.keys()):
+                raise KeyError('Valid key types are %s, got %s'
+                               % (valid, list(keys.keys())))
+        else:
+            keys = {}
+        close_keys = keys.get('close', ())
+        fullscreen_keys = keys.get('fullscreen', ())
+
         def close_keys_check(event):
             if event.key in self.close_keys:
                 self.close()
@@ -156,6 +182,14 @@ class Canvas(object):
             close_keys = [close_keys]
         self.close_keys = close_keys
         self.events.key_press.connect(close_keys_check, ref=True)
+
+        def fullscreen_keys_check(event):
+            if event.key in self.fullscreen_keys:
+                self.fullscreen = not self.fullscreen
+        if isinstance(fullscreen_keys, string_types):
+            fullscreen_keys = [fullscreen_keys]
+        self.fullscreen_keys = fullscreen_keys
+        self.events.key_press.connect(fullscreen_keys_check, ref=True)
 
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
@@ -233,6 +267,14 @@ class Canvas(object):
     @size.setter
     def size(self, size):
         return self._backend._vispy_set_size(size[0], size[1])
+
+    @property
+    def fullscreen(self):
+        return self._backend._vispy_get_fullscreen()
+
+    @fullscreen.setter
+    def fullscreen(self, fullscreen):
+        return self._backend._vispy_set_fullscreen(fullscreen)
 
     # ------------------------------------------------------------ position ---
     @property

@@ -240,10 +240,14 @@ class CanvasBackend(BaseCanvasBackend):
         glut.glutSetWindow(self._id)
         _VP_GLUT_ALL_WINDOWS.append(self)
         if fs is not False:
+            self._fullscreen = True
+            self._old_size = size
             if fs is not True:
                 logger.warning('Cannot specify monitor for glut fullscreen, '
                                'using default')
             glut.glutFullScreen()
+        else:
+            self._fullscreen = False
 
         # Cache of modifiers so we can send modifiers along with mouse motion
         self._modifiers_cache = ()
@@ -360,6 +364,19 @@ class CanvasBackend(BaseCanvasBackend):
         x = glut.glutGet(glut.GLUT_WINDOW_X)
         y = glut.glutGet(glut.GLUT_WINDOW_Y)
         return x, y
+
+    def _vispy_get_fullscreen(self):
+        return self._fullscreen
+
+    def _vispy_set_fullscreen(self, fullscreen):
+        old_val = self._fullscreen
+        self._fullscreen = bool(fullscreen)
+        if old_val != self._fullscreen:
+            if self._fullscreen:
+                self._old_size = self._vispy_get_size()
+                glut.glutFullScreen()
+            else:
+                self._vispy_set_size(*self._old_size)
 
     def on_resize(self, w, h):
         if self._vispy_canvas is None:

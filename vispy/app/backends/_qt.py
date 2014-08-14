@@ -226,9 +226,9 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
             if fs is not True:
                 logger.warning('Cannot specify monitor number for Qt '
                                'fullscreen, using default')
-            self._vispy_show_func = self.showFullScreen
+            self._fullscreen = True
         else:
-            self._vispy_show_func = self.show
+            self._fullscreen = False
         if not resize:
             self.setFixedSize(self.size())
         if position is not None:
@@ -280,7 +280,20 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
-        self._vispy_show_func() if visible else self.hide()
+        if visible:
+            if self._fullscreen:
+                self.showFullScreen()
+            else:
+                self.showNormal()
+        else:
+            self.hide()
+
+    def _vispy_set_fullscreen(self, fullscreen):
+        self._fullscreen = bool(fullscreen)
+        self._vispy_set_visible(True)
+
+    def _vispy_get_fullscreen(self):
+        return self._fullscreen
 
     def _vispy_update(self):
         if self._vispy_canvas is None:
