@@ -5,8 +5,6 @@
 from vispy import scene, gloo
 from vispy.scene.visuals import Text
 from vispy.scene.transforms import STTransform
-from vispy import use
-use('wx')
 
 
 class Canvas(scene.SceneCanvas):
@@ -41,5 +39,4 @@ class Canvas(scene.SceneCanvas):
 if __name__ == '__main__':
     c = Canvas()
     c.show()
-    c.update()
     c.app.run()

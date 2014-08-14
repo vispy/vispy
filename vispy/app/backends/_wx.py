@@ -115,6 +115,7 @@ class SharedContext(BaseSharedContext):
 # ------------------------------------------------------------- application ---
 
 _wx_app = None
+_timers = []
 
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -134,6 +135,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_quit(self):
         global _wx_app
+        _wx_app.ExitMainLoop()
         _wx_app.Destroy()
         _wx_app = None
 
@@ -141,6 +143,7 @@ class ApplicationBackend(BaseApplicationBackend):
         # Get native app in save way. Taken from guisupport.py
         global _wx_app
         _wx_app = wx.App() if _wx_app is None else _wx_app
+        _wx_app.SetExitOnFrameDelete(True)
         return _wx_app
 
 
@@ -186,6 +189,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self._init = False
         Frame.__init__(self, parent, wx.ID_ANY, title, position, size, style)
         _wx_app.SetTopWindow(self)
+        # need to put GLCanvas in a panel (yuck)
         self._canvas = glcanvas.GLCanvas(self)
         self._canvas.Raise()
         self._canvas.SetFocus()
@@ -207,11 +211,12 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self._vispy_set_visible(show)
 
     def on_resize(self, event):
-        event.Skip()
         size = self._vispy_get_size()
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.resize(size=size)
+        self.Refresh()
+        event.Skip()
 
     def on_paint(self, event):
         event.Skip()
@@ -273,8 +278,6 @@ class CanvasBackend(Frame, BaseCanvasBackend):
 
     def _vispy_close(self):
         # Force the window or widget to shut down
-        self._canvas.Close()
-        self._canvas.Destroy()
         self.Close()
         self.Destroy()
 
@@ -342,10 +345,17 @@ class TimerBackend(BaseTimerBackend):
 
     def __init__(self, vispy_timer):
         BaseTimerBackend.__init__(self, vispy_timer)
-        self._timer = wx.Timer(None, -1)
+        assert _wx_app is not None
+        parent = _wx_app.GetTopWindow()  # assume it's the parent window
+        self._timer = wx.Timer(parent, -1)
+        parent.Bind(wx.EVT_TIMER, self._vispy_timeout, self._timer)
 
     def _vispy_start(self, interval):
-        self._timer.Start(interval / 1000., False)
+        self._timer.Start(interval * 1000., False)
 
     def _vispy_stop(self):
         self._timer.Stop()
+
+    def _vispy_timeout(self, evt):
+        self._vispy_timer._timeout()
+        evt.Skip()
