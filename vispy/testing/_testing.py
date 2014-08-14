@@ -353,8 +353,8 @@ def assert_image_equal(image, reference):
 
 class TestingCanvas(SceneCanvas):
     def __init__(self, bgcolor='black', size=(100, 100)):
-        if sys.version[0] == '3':
-            raise SkipTest('Visual tests broken under Python 3')
+        # if sys.version[0] == '3':
+        #     raise SkipTest('Visual tests broken under Python 3')
         SceneCanvas.__init__(self, size=size, bgcolor=bgcolor)
 
     def __enter__(self):
