@@ -19,7 +19,7 @@ CORE_BACKENDS = [
     ('Glfw', '_glfw', 'vispy.ext.glfw'),
     ('SDL2', '_sdl2', 'sdl2'),
     ('wx', '_wx', 'wx'),
-    ('EGL', '_egl', 'OpenGL.EGL'),
+    ('EGL', '_egl', 'vispy.ext.egl'),
     ('Glut', '_glut', 'OpenGL.GLUT'),
 ]
 
