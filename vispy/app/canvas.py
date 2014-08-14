@@ -76,8 +76,6 @@ class Canvas(object):
         "fullscreen", which define which keypresses close and fullscreen
         the canvas. using ``keys='interactive'`` will set those to escape
         and F11, respectively. None disables default key mapping.
-    fullscreen_keys : str | list of str
-        Key to use that will toggle fullscreen mode.
     parent : widget-object
         The parent widget if this makes sense for the used backend.
     """
@@ -85,8 +83,7 @@ class Canvas(object):
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, vsync=False, resizable=True, decorate=True,
-                 fullscreen=False, context=None, keys=None,
-                 fullscreen_keys='F11', parent=None):
+                 fullscreen=False, context=None, keys=None, parent=None):
 
         size = [int(s) for s in size]
         if len(size) != 2:
