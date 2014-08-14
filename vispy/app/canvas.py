@@ -71,11 +71,9 @@ class Canvas(object):
         ``canvas.context`` property from an existing canvas (using the
         same backend) will return a ``SharedContext`` that can be used,
         thereby sharing the existing context.
-    keys : str | dict | None
-        Default key mapping to use. If dict, can have entries "close" and
-        "fullscreen", which define which keypresses close and fullscreen
-        the canvas. using ``keys='interactive'`` will set those to escape
-        and F11, respectively. None disables default key mapping.
+    keys : str | None
+        Default key mapping to use. If 'interactive', escape and F11 will
+        close the canvas and toggle full-screen mode, respectively.
     parent : widget-object
         The parent widget if this makes sense for the used backend.
     """
@@ -156,17 +154,10 @@ class Canvas(object):
 
         # Deal with special keys
         if keys is not None:
-            if not isinstance(keys, (dict, string_types)):
-                raise TypeError('keys must be a dict')
-            elif isinstance(keys, string_types):
-                if keys not in _key_types:
-                    raise ValueError('keys, if string, must be one of %s, not '
-                                     '%s' % (list(_key_types.keys())), keys)
-                keys = _key_types[keys]
-            valid = ('close', 'fullscreen')
-            if not all(k in valid for k in keys.keys()):
-                raise KeyError('Valid key types are %s, got %s'
-                               % (valid, list(keys.keys())))
+            if keys not in _key_types:
+                raise ValueError('keys, if string, must be one of %s, not '
+                                 '%s' % (list(_key_types.keys())), keys)
+            keys = _key_types[keys]
         else:
             keys = {}
         close_keys = keys.get('close', ())

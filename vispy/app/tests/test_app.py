@@ -346,7 +346,7 @@ def test_fs():
 @requires_application()
 def test_close_keys():
     """Test close keys"""
-    c = Canvas(keys=dict(close='ESCAPE'))
+    c = Canvas(keys='interactive')
     x = list()
 
     @c.events.close.connect
