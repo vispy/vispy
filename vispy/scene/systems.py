@@ -44,7 +44,7 @@ class DrawingSystem(object):
         from .subscene import SubScene
         
         if force_recurse or not isinstance(entity, SubScene):
-            for sub_entity in entity:
+            for sub_entity in entity.children:
                 self._process_entity(event, sub_entity)
         
         event.pop_entity()
@@ -79,7 +79,7 @@ class MouseInputSystem(object):
             deliver = True
                 
         if deliver:
-            for sub_entity in entity:
+            for sub_entity in entity.children:
                 self._process_entity(event, sub_entity)
                 if event.handled:
                     break
