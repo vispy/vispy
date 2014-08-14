@@ -61,6 +61,11 @@ class Entity(object):
         self._name = n
 
     @property
+    def n_children(self):
+        """The number of children"""
+        return len(self._children)
+
+    @property
     def children(self):
         """ The list of children of this entity. The children are in
         arbitrary order.
@@ -144,12 +149,6 @@ class Entity(object):
         self.events.children_change(removed=ent)
         ent.events.update.disconnect(self.events.update)
 
-    def __len__(self):
-        return len(self._children)
-
-    def __iter__(self):
-        return self._children.__iter__()
-
     @property
     def transform(self):
         """ The transform that maps the local coordinate frame to the
@@ -213,8 +212,8 @@ class Entity(object):
             output += '  +--'
         output += '%s%s\n' % (self.__class__.__name__, extra)
 
-        n_children = len(self)
-        for ii, child in enumerate(self):
+        n_children = self.n_children
+        for ii, child in enumerate(self.children):
             sub_prefix = prefix + ('   ' if ii+1 == n_children else '  |')
             output += child._describe_tree(sub_prefix, with_transform)
         return output
