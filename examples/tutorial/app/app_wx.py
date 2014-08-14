@@ -38,6 +38,7 @@ class Canvas(app.Canvas):
 
     def on_mouse_press(self, event):
         print('on_mouse_press: %d' % event.button)
+        self.size = (100, 100)
 
     def on_mouse_release(self, event):
         print('on_mouse_release')
@@ -60,4 +61,4 @@ class Canvas(app.Canvas):
 if __name__ == '__main__':
     canvas = Canvas(close_keys='escape')
     canvas.show()
-    app.run()
+    canvas.app.run()

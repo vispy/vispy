@@ -115,8 +115,8 @@ def _test_callbacks(canvas):
 def test_run():
     """Test app running"""
     a = use_app()
-    if a.backend_name.lower() == 'glut':
-        raise SkipTest('cannot test running glut')  # knownfail
+    if a.backend_name.lower() in ('glut', 'wx'):
+        raise SkipTest('cannot test running glut or wx')  # knownfail
     for _ in range(2):
         with Canvas(size=(100, 100), show=True, title=' run') as c:
             @c.events.draw.connect

@@ -5,6 +5,8 @@
 from vispy import scene, gloo
 from vispy.scene.visuals import Text
 from vispy.scene.transforms import STTransform
+from vispy import use
+use('wx')
 
 
 class Canvas(scene.SceneCanvas):
