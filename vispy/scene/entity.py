@@ -55,15 +55,10 @@ class Entity(object):
     @property
     def name(self):
         return self._name
-    
+
     @name.setter
     def name(self, n):
         self._name = n
-
-    @property
-    def n_children(self):
-        """The number of children"""
-        return len(self._children)
 
     @property
     def children(self):
@@ -212,7 +207,7 @@ class Entity(object):
             output += '  +--'
         output += '%s%s\n' % (self.__class__.__name__, extra)
 
-        n_children = self.n_children
+        n_children = len(self.children)
         for ii, child in enumerate(self.children):
             sub_prefix = prefix + ('   ' if ii+1 == n_children else '  |')
             output += child._describe_tree(sub_prefix, with_transform)
