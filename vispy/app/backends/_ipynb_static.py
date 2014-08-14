@@ -60,14 +60,15 @@ else:
     try:
         from IPython.display import display_png
     except Exception as exp:
-        available, testable, why_not = False, False, str(exp)
+        available, testable, why_not, which = False, False, str(exp), None
     else:
         # Check if not GLUT, because that is going to be too unstable
         if 'glut' in _app.backend_module.__name__:
             _msg = 'ipynb_staatic backend refuses to work with GLUT'
-            available, testable, why_not = False, False, _msg
+            available, testable, why_not, which = False, False, _msg, None
         else:
             available, testable, why_not = True, True, None
+        which = _app.backend_module.which
 
     # Use that backend's shared context
     KEYMAP = _app.backend_module.KEYMAP
