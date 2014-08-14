@@ -107,6 +107,9 @@ def _test_callbacks(canvas):
         #for key in (100, 'a'):
         #    backend.on_key_press(key, 0, 0)
         #    backend.on_key_release(key, 0, 0)
+    elif 'wx' in backend_name.lower():
+        # Constructing fake wx events is too hard
+        pass
     else:
         raise ValueError
 

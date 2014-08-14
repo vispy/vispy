@@ -127,8 +127,15 @@ class ApplicationBackend(BaseApplicationBackend):
         return 'wx'
 
     def _vispy_process_events(self):
-        # pyglet.app.platform_event_loop.step(0.0)
-        _wx_app.ProcessPendingEvents()
+        #wx.WakeUpMainThread()
+        #_wx_app.ProcessPendingEvents()
+        #_wx_app.ProcessIdle()
+        #_wx_app.ProcessPendingEvents()
+        #wx.WakeUpMainThread()
+        #parent = _wx_app.GetTopWindow()  # assume it's the parent window
+        #parent.Layout()
+        #parent.Update()
+        wx.Yield()
 
     def _vispy_run(self):
         return _wx_app.MainLoop()
@@ -211,15 +218,14 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self._vispy_set_visible(show)
 
     def on_resize(self, event):
-        size = self._vispy_get_size()
         if self._vispy_canvas is None:
             return
+        size = self._vispy_get_size()
         self._vispy_canvas.events.resize(size=size)
         self.Refresh()
         event.Skip()
 
     def on_paint(self, event):
-        event.Skip()
         if self._vispy_canvas is None:
             return
         dc = wx.PaintDC(self)  # needed for wx
@@ -228,6 +234,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self._vispy_set_current()
         self._vispy_canvas.events.draw(region=None)
         del dc
+        event.Skip()
 
     def _initialize(self):
         if self._vispy_canvas is None:
@@ -237,6 +244,8 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self._vispy_canvas.events.initialize()
 
     def _vispy_set_current(self):
+        if self._canvas is None:
+            return
         self._canvas.SetCurrent(self._context)
 
     @property
@@ -278,6 +287,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
 
     def _vispy_close(self):
         # Force the window or widget to shut down
+        self._canvas = None
         self.Close()
         self.Destroy()
 

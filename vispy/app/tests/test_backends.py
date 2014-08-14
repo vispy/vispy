@@ -13,7 +13,7 @@ from inspect import getargspec
 
 import vispy
 from vispy import keys
-from vispy.testing import requires_application
+from vispy.testing import requires_application, assert_in
 from vispy.app import use_app, Application
 from vispy.app.backends import _template
 
@@ -36,7 +36,7 @@ def _test_module_properties(_module=None):
         if keyname.upper() != keyname:
             continue
         key = getattr(keys, keyname)
-        assert key in vispy_keys
+        assert_in(key, vispy_keys)
 
     # For Qt backend, we have a common implementation
     alt_modname = ''
@@ -70,9 +70,9 @@ def _test_module_properties(_module=None):
                     mod_str = method.__module__  # Py3k
                 else:
                     mod_str = method.im_func.__module__
-                assert mod_str in (_module.__name__, alt_modname), \
-                    "Method %s.%s not defined in %s" \
-                    % (Klass, key, _module.__name__)
+                assert_in(mod_str, (_module.__name__, alt_modname),
+                          "Method %s.%s not defined in %s"
+                          % (Klass, key, _module.__name__))
 
     Klass = _module.TimerBackend
     KlassRef = vispy.app.timer.TimerBackend
@@ -82,7 +82,8 @@ def _test_module_properties(_module=None):
             if key not in exceptions:
                 if hasattr(method, '__module__'):
                     # Py3k
-                    assert method.__module__ in (_module.__name__, alt_modname)
+                    assert_in(method.__module__,
+                              (_module.__name__, alt_modname))
                 else:
                     t = method.im_func.__module__ == _module.__name__
                     assert t
@@ -95,7 +96,8 @@ def _test_module_properties(_module=None):
             if key not in exceptions:
                 if hasattr(method, '__module__'):
                     # Py3k
-                    assert method.__module__ in (_module.__name__, alt_modname)
+                    assert_in(method.__module__,
+                              (_module.__name__, alt_modname))
                 else:
                     t = method.im_func.__module__ == _module.__name__
                     assert t
@@ -115,8 +117,8 @@ def _test_module_properties(_module=None):
 
     if not alt_modname:  # Only check for non-proxy modules
         for name in eventNames:
-            assert 'events.%s' % name in text, ('events.%s does not appear '
-                                                'in %s' % (name, fname))
+            assert_in('events.%s' % name, text,
+                      'events.%s does not appear in %s' % (name, fname))
 
 
 def test_template():
