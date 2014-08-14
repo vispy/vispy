@@ -12,6 +12,7 @@ from subprocess import Popen
 from copy import deepcopy
 from functools import partial
 
+from ..util import use_log_level
 from ..util.ptime import time
 from ._testing import SkipTest, has_backend
 
@@ -41,7 +42,8 @@ def _nose(mode, verbosity, coverage):
         attrs = '-a !vispy_app_test '
         app_import = ''
     else:
-        has, why_not = has_backend(mode, out=['why_not'])
+        with use_log_level('warning', print_msg=False):
+            has, why_not = has_backend(mode, out=['why_not'])
         if has:
             print('%s\nRunning tests with %s backend' % (extra, mode))
             attrs = '-a vispy_app_test '

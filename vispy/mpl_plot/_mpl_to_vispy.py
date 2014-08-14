@@ -45,7 +45,7 @@ class VispyRenderer(Renderer):
         self._dpi = props['dpi']
         size = (props['figwidth'] * self._dpi,
                 props['figheight'] * self._dpi)
-        self.canvas = SceneCanvas(size=size, show=True, close_keys='escape',
+        self.canvas = SceneCanvas(size=size, show=True, keys='interactive',
                                   bgcolor='lightgray')
 
         @self.canvas.events.resize.connect

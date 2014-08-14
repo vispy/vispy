@@ -212,7 +212,7 @@ class CanvasBackend(BaseCanvasBackend):
         flags |= sdl2.SDL_WINDOW_BORDERLESS if not dec else 0
         if fs is not False:
             self._fullscreen = True
-            if isinstance(fs, int):
+            if fs is not True:
                 logger.warning('Cannot specify monitor number for SDL2 '
                                'fullscreen, using default')
             flags |= sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP

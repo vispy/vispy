@@ -7,6 +7,7 @@
 
 import sys
 from .. import backends
+from ...util import logger
 
 try:
     # Try importing
@@ -22,6 +23,10 @@ else:
     # Remove _qt module to force an import even if it was already imported
     sys.modules.pop(__name__.replace('_pyqt4', '_qt'), None)
     # Import _qt. Keep a ref to the module object!
-    backends.qt_lib = 'pyqt4'  # Signal to _qt what it should import
-    from . import _qt  # noqa
-    from ._qt import *  # noqa
+    if backends.qt_lib is None:
+        backends.qt_lib = 'pyqt4'  # Signal to _qt what it should import
+        from . import _qt  # noqa
+        from ._qt import *  # noqa
+    else:
+        logger.info('%s already imported, cannot switch to %s'
+                    % (backends.qt_lib, 'pyqt4'))
