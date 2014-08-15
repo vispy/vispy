@@ -6,7 +6,7 @@
 from vispy import app
 from vispy import gloo
 
-c = app.Canvas(show=True, close_keys='escape')
+c = app.Canvas(show=True, keys='interactive')
 
 
 @c.connect

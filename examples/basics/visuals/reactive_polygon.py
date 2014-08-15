@@ -27,7 +27,7 @@ class Canvas(vispy.scene.SceneCanvas):
             scale=(500, 500),
             translate=(400, 400))
         
-        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         self.pos = np.array(pos)
         self.i = 1
         self.size = (800, 800)

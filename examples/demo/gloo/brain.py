@@ -90,7 +90,7 @@ void main()
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, close_keys='escape')
+        app.Canvas.__init__(self, keys='interactive')
         self.size = 800, 600
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)

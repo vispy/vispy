@@ -6,7 +6,7 @@ from vispy import scene
 from vispy import app
 import numpy as np
 
-canvas = scene.SceneCanvas(close_keys='escape')
+canvas = scene.SceneCanvas(keys='interactive')
 canvas.size = 800, 600
 canvas.show()
 

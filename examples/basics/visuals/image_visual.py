@@ -20,7 +20,7 @@ class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         self.image = visuals.Image(image, method='subdivide')
         self.image.transform = STTransform(scale=(7, 7), translate=(50, 50))
-        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 

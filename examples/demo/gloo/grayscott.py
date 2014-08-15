@@ -124,7 +124,7 @@ void main(void)
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title='Grayscott Reaction-Diffusion',
-                            size=(512, 512), close_keys='escape')
+                            size=(512, 512), keys='interactive')
 
     def on_initialize(self, event):
         self.scale = 4

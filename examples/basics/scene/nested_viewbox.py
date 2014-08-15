@@ -62,7 +62,7 @@ line_pixels = scene.visuals.Line(pos=pos * 100, color=color)
 
 
 # Create canvas
-canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
+canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
 
 
 # Create viewboxes left ...

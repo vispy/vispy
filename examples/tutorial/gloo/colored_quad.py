@@ -31,7 +31,7 @@ fragment = """
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, size=(512, 512), title='Colored quad',
-                            close_keys='escape')
+                            keys='interactive')
 
     def on_initialize(self, event):
         # Build program & data

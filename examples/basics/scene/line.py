@@ -7,7 +7,7 @@ import numpy as np
 from vispy import app
 from vispy import scene
 
-canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
+canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
 
 N = 1000
 pos = np.empty((N, 2), np.float32)

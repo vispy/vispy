@@ -118,7 +118,7 @@ void main() {
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title='Use your wheel to zoom!', 
-                            close_keys='escape')
+                            keys='interactive')
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.program['a_position'] = y.ravel()
         self.program['a_color'] = color

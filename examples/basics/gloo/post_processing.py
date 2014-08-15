@@ -82,7 +82,7 @@ class Canvas(app.Canvas):
 
     def __init__(self):
         app.Canvas.__init__(self, title='Framebuffer post-processing',
-                            close_keys='escape', size=(512, 512))
+                            keys='interactive', size=(512, 512))
 
     def on_initialize(self, event):
         # Build cube data

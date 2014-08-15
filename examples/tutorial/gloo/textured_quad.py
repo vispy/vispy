@@ -38,7 +38,7 @@ def checkerboard(grid_num=8, grid_size=32):
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, size=(512, 512), title='Textured quad',
-                            close_keys='escape')
+                            keys='interactive')
 
     def on_initialize(self, event):
         # Build program & data

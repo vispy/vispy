@@ -18,7 +18,7 @@ class Canvas(vispy.scene.SceneCanvas):
                                                border_color=(1, 1, 1, 1),
                                                sides=6)
         
-        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
         

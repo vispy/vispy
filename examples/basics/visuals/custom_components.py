@@ -148,7 +148,7 @@ class Canvas(vispy.scene.SceneCanvas):
         dasher = DashComponent(pos)
         self.line.color_components = [VertexColorComponent(color), dasher]
 
-        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 

@@ -26,7 +26,7 @@ class Canvas(vispy.scene.SceneCanvas):
         self.polygon.transform = vispy.scene.transforms.STTransform(
             scale=(500, 500),
             translate=(400, 400))
-        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
         

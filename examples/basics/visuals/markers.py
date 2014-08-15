@@ -26,7 +26,7 @@ for i in range(500):
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, close_keys='escape', size=(512, 512 + 2*32),
+        app.Canvas.__init__(self, keys='interactive', size=(512, 512 + 2*32),
                             title="Marker demo [press space to change marker]")
         self.index = 0
         self.scale = 1.

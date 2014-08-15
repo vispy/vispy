@@ -41,7 +41,7 @@ void main()
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, size=(512, 512), title='Colored cube',
-                            close_keys='escape')
+                            keys='interactive')
         self.timer = app.Timer(1./60., self.on_timer)
 
     def on_initialize(self, event):

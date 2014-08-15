@@ -34,7 +34,7 @@ fragment_code = """
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, size=(512, 512), title='Quad (GL)',
-                            close_keys='escape')
+                            keys='interactive')
 
     def on_initialize(self, event):
         # Build data

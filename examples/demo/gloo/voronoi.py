@@ -61,7 +61,7 @@ void main() {
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, size=(600, 600), title='Voronoi diagram',
-                            close_keys='escape')
+                            keys='interactive')
         
         self.seeds = np.random.uniform(0, 1,
                                        size=(32, 2)).astype(np.float32)
