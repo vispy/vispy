@@ -134,16 +134,6 @@ class ApplicationBackend(BaseApplicationBackend):
             while self._event_loop.Pending():
                 self._event_loop.Dispatch()
             _wx_app.ProcessIdle()
-        #wx.EventLoop.SetActive(old_loop)
-        #wx.WakeUpMainThread()
-        #_wx_app.ProcessPendingEvents()
-        #_wx_app.ProcessIdle()
-        #_wx_app.ProcessPendingEvents()
-        #wx.WakeUpMainThread()
-        #parent = _wx_app.GetTopWindow()  # assume it's the parent window
-        #parent.Layout()
-        #parent.Update()
-        #wx.Yield()
 
     def _vispy_run(self):
         return _wx_app.MainLoop()
@@ -151,8 +141,6 @@ class ApplicationBackend(BaseApplicationBackend):
     def _vispy_quit(self):
         global _wx_app
         _wx_app.ExitMainLoop()
-        _wx_app.Destroy()
-        _wx_app = None
 
     def _vispy_get_native_app(self):
         # Get native app in save way. Taken from guisupport.py
@@ -234,7 +222,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self._canvas.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self._canvas.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self._canvas.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse_event)
-        self._canvas.Bind(wx.EVT_CLOSE, self.on_close)
+        self.Bind(wx.EVT_CLOSE, self.on_close)
         self._vispy_set_visible(show)
 
     def on_resize(self, event):
@@ -248,7 +236,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         event.Skip()
 
     def on_paint(self, event):
-        if self._vispy_canvas is None:
+        if self._vispy_canvas is None or self._canvas is None:
             return
         dc = wx.PaintDC(self)  # needed for wx
         if not self._init:
@@ -312,6 +300,8 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self.Refresh()
 
     def _vispy_close(self):
+        if self._vispy_canvas is None or self._canvas is None:
+            return
         # Force the window or widget to shut down
         self._canvas = None
         self.Close()
@@ -324,17 +314,18 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         return w, h
 
     def _vispy_get_position(self):
+        if self._vispy_canvas is None or self._canvas is None:
+            return
         x, y = self.GetPosition()
         return x, y
 
     def on_close(self, evt):
         if self._vispy_canvas is None:
             return
-        evt.Skip()
         self._vispy_canvas.close()
 
     def on_mouse_event(self, evt):
-        if self._vispy_canvas is None:
+        if self._vispy_canvas is None or self._canvas is None:
             return
         pos = (evt.GetX(), evt.GetY())
         mods = _get_mods(evt)
@@ -367,11 +358,15 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         evt.Skip()
 
     def on_key_down(self, evt):
+        if self._vispy_canvas is None or self._canvas is None:
+            return
         key, text = _process_key(evt)
         self._vispy_canvas.events.key_press(key=key, text=text,
                                             modifiers=_get_mods(evt))
 
     def on_key_up(self, evt):
+        if self._vispy_canvas is None or self._canvas is None:
+            return
         key, text = _process_key(evt)
         self._vispy_canvas.events.key_release(key=key, text=text,
                                               modifiers=_get_mods(evt))

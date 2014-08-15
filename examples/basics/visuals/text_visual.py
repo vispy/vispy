@@ -39,4 +39,5 @@ class Canvas(scene.SceneCanvas):
 if __name__ == '__main__':
     c = Canvas()
     c.show()
+    c.update()
     c.app.run()
