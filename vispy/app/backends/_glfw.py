@@ -231,9 +231,15 @@ class CanvasBackend(BaseCanvasBackend):
                     raise ValueError('fullscreen must be <= %s'
                                      % len(monitor))
                 monitor = monitor[fs]
+            use_size = glfw.glfwGetVideoMode(monitor)[:2]
+            if use_size != size:
+                logger.warning('Requested size %s, will be ignored to '
+                               'use fullscreen mode %s' % (size, use_size))
+            size = use_size
         else:
             self._fullscreen = False
             monitor = None
+
         self._id = glfw.glfwCreateWindow(width=size[0], height=size[1],
                                          title=title, monitor=monitor,
                                          share=share)

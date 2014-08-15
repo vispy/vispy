@@ -256,7 +256,8 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         # Make this the current context
         if self._vispy_canvas is None:
             return
-        self.makeCurrent()
+        if self.isValid():
+            self.makeCurrent()
 
     def _vispy_swap_buffers(self):
         # Swap front and back buffer

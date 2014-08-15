@@ -16,7 +16,7 @@ CORE_BACKENDS = [
     ('PyQt4', '_pyqt4', 'PyQt4'),
     ('PySide', '_pyside', 'PySide'),
     ('Pyglet', '_pyglet', 'pyglet'),
-    ('Glfw', '_glfw', 'vispy.app.backends._libglfw'),
+    ('Glfw', '_glfw', 'vispy.ext.glfw'),
     ('SDL2', '_sdl2', 'sdl2'),
     ('Glut', '_glut', 'OpenGL.GLUT'),
 ]

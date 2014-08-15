@@ -167,10 +167,6 @@ def test_application():
     assert_raises(ValueError, Canvas, keys='foo')
     assert_raises(TypeError, Canvas, keys=dict(escape=1))
     assert_raises(ValueError, Canvas, keys=dict(escape='foo'))  # not an attr
-    # Canvas
-    c = Canvas(create_native=False, keys='interactive')
-    print(c)
-    del c
 
     pos = [0, 0] if app.backend_module.capability['position'] else None
     size = (100, 100)
@@ -334,16 +330,19 @@ def test_fs():
     if not a.backend_module.capability['fullscreen']:
         return
     assert_raises(TypeError, Canvas, fullscreen='foo')
-    if a.backend_name.lower() in ('glfw'):  # takes over screen
-        raise SkipTest('glfw and sdl2 take over screen')
+    if (a.backend_name.lower() == 'glfw' or
+            (a.backend_name.lower() == 'sdl2' and sys.platform == 'darwin')):
+        raise SkipTest('Backend takes over screen')
     with use_log_level('warning', record=True, print_msg=False) as l:
-        with Canvas(fullscreen=True):
-            pass
+        with Canvas(fullscreen=False) as c:
+            assert_equal(c.fullscreen, False)
+            c.fullscreen = True
+            assert_equal(c.fullscreen, True)
     assert_equal(len(l), 0)
     with use_log_level('warning', record=True, print_msg=False):
         # some backends print a warning b/c fullscreen can't be specified
-        with Canvas(fullscreen=0):
-            pass
+        with Canvas(fullscreen=0) as c:
+            assert_equal(c.fullscreen, True)
 
 
 @requires_application()

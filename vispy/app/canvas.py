@@ -5,6 +5,7 @@
 from __future__ import division, print_function
 
 import numpy as np
+from time import sleep
 
 from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
@@ -148,10 +149,6 @@ class Canvas(object):
         else:
             raise ValueError('Invalid value for app %r' % app)
 
-        # Create widget now
-        if create_native:
-            self.create_native()
-
         # Deal with special keys
         if keys is not None:
             if isinstance(keys, string_types):
@@ -187,6 +184,10 @@ class Canvas(object):
                 if use_name in self._keys_check:
                     self._keys_check[use_name]()
             self.events.key_press.connect(keys_check, ref=True)
+
+        # Create widget now (always do this *last*, after all err checks)
+        if create_native:
+            self.create_native()
 
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
@@ -378,12 +379,12 @@ class Canvas(object):
 
     def __exit__(self, type, value, traceback):
         # ensure all GL calls are complete
-        from .. import gloo
-        self._backend._vispy_set_current()
-        gloo.gl.glFlush()
-        gloo.gl.glFinish()
-        self.swap_buffers()
-        self.close()
+        if not self._closed:
+            from ..gloo import gl
+            self._backend._vispy_set_current()
+            gl.glFinish()
+            self.close()
+        sleep(0.1)  # ensure window is really closed/destroyed
 
     # def mouse_event(self, event):
         #"""Called when a mouse input event has occurred (the mouse has moved,

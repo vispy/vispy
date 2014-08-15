@@ -188,28 +188,26 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         #self._buttons_accepted = 0
         self._draw_ok = False  # whether it is ok to draw yet
         self._pending_position = None
-        screen = pyglet.window.get_platform().get_default_display()
         if fs is not False:
-            self._fullscreen = True
+            screen = pyglet.window.get_platform().get_default_display()
+            self._vispy_fullscreen = True
             if fs is True:
-                screen = screen.get_default_screen()
+                self._vispy_screen = screen.get_default_screen()
             else:
                 screen = screen.get_screens()
                 if fs >= len(screen):
                     raise RuntimeError('fullscreen must be < %s'
                                        % len(screen))
-                screen = screen[fs]
-            self._fs_screen = screen
+                self._vispy_screen = screen[fs]
         else:
-            self._fullscreen = False
-            self._fs_screen = screen.get_default_screen()
-            screen = None
+            self._vispy_fullscreen = False
+            self._vispy_screen = None
         self._initialize_sent = False
         pyglet.window.Window.__init__(self, width=size[0], height=size[1],
                                       caption=title, visible=show,
                                       config=config, vsync=vsync,
                                       resizable=resize, style=style,
-                                      screen=screen)
+                                      screen=self._vispy_screen)
         if position is not None:
             self._vispy_set_position(*position)
 
@@ -286,11 +284,11 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         return w, h
 
     def _vispy_get_fullscreen(self):
-        return self._fullscreen
+        return self._vispy_fullscreen
 
     def _vispy_set_fullscreen(self, fullscreen):
-        self._fullscreen = bool(fullscreen)
-        self.set_fullscreen(fullscreen, self._fs_screen)
+        self._vispy_fullscreen = bool(fullscreen)
+        self.set_fullscreen(self._vispy_fullscreen, self._vispy_screen)
 
     def on_show(self):
         if self._vispy_canvas is None:
