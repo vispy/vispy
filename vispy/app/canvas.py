@@ -169,15 +169,17 @@ class Canvas(object):
         if len(keys) > 0:
             # ensure all are callable
             for key, val in keys.items():
-                if isinstance(keys[key], string_types):
-                    keys[key] = getattr(self, val, None)
-                    if val is None:
+                if isinstance(val, string_types):
+                    new_val = getattr(self, val, None)
+                    if new_val is None:
                         raise ValueError('value %s is not an attribute of '
                                          'Canvas' % val)
-                if not hasattr(keys[key], '__call__'):
+                    val = new_val
+                if not hasattr(val, '__call__'):
                     raise TypeError('Entry for key %s is not callable' % key)
                 # convert to lower-case representation
-                keys[key.lower()] = keys.pop(key)
+                keys.pop(key)
+                keys[key.lower()] = val
             self._keys_check = keys
 
             def keys_check(event):
