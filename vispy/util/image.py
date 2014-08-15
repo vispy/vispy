@@ -40,6 +40,7 @@ def make_png(data, level=6):
             size = data.nbytes
         else:
             size = len(data)
+        name = name.encode('utf-8')
         chunk = np.empty(size + 12, dtype=np.ubyte)
         chunk.data[0:4] = np.array(size, '>u4').tostring()
         chunk.data[4:8] = name.encode('ASCII')
