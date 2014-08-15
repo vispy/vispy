@@ -89,6 +89,8 @@ def test_read_pixels():
     """
 
     with Canvas() as c:
+        c.update()
+        c.app.process_events()
         c._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         c._program['a_position'] = gloo.VertexBuffer(vPosition)
         gloo.set_clear_color((0, 0, 0, 0))  # Black background

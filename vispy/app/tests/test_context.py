@@ -35,9 +35,11 @@ def test_context_properties():
                 props = get_gl_configuration()
             assert_equal(len(context), n_items)
             for key, val in context.items():
-                # XXX knownfail for windows samples
-                if not (sys.platform.startswith('win') and key == 'samples'):
-                    assert_equal(val, props[key], key)
+                # XXX knownfail for windows samples, and wx (all platforms)
+                if key == 'samples':
+                    iswx = a.backend_name.lower() == 'wx'
+                    if not (sys.platform.startswith('win') or iswx):
+                        assert_equal(val, props[key], key)
     assert_raises(TypeError, Canvas, context='foo')
     assert_raises(KeyError, Canvas, context=dict(foo=True))
     assert_raises(TypeError, Canvas, context=dict(double_buffer='foo'))

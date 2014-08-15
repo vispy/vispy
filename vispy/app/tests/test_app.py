@@ -372,10 +372,7 @@ def test_event_order():
             x.append('init')
 
         def on_draw(self, event):
-            try:
-                sz = True if self.size is not None else False
-            except Exception:
-                sz = False
+            sz = True if self.size is not None else False
             x.append('draw size=%s show=%s' % (sz, show))
 
         def on_close(self, event):

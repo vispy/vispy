@@ -9,11 +9,10 @@ vispy backend for wxPython.
 from __future__ import division
 
 from time import sleep
-import os
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
-from ...util import keys
+from ...util import keys, logger
 from ...util.ptime import time
 
 
@@ -28,6 +27,7 @@ try:
         wx.WXK_SHIFT: keys.SHIFT,
         wx.WXK_CONTROL: keys.CONTROL,
         wx.WXK_ALT: keys.ALT,
+        wx.WXK_WINDOWS_MENU: keys.META,
 
         wx.WXK_LEFT: keys.LEFT,
         wx.WXK_UP: keys.UP,
@@ -81,32 +81,30 @@ capability = dict(  # things that can be set by the backend
     position=True,
     show=True,
     vsync=True,
-    resizable=False,
+    resizable=True,
     decorate=True,
-    fullscreen=False,
+    fullscreen=True,
     context=True,
     multi_window=True,
-    scroll=False,
+    scroll=True,
     parent=True,
 )
 
 
 # ------------------------------------------------------- set_configuration ---
 
-def _set_config(config):
+def _set_config(c):
     """Set gl configuration"""
-    raise NotImplementedError
-    # config['red_size']
-    # config['green_size']
-    # config['blue_size']
-    # config['alpha_size']
-
-    # config['depth_size']
-    # config['stencil_size']
-    # config['double_buffer']
-    # config['stereo']
-    # config['samples']
-    # return pyglet_config
+    gl_attribs = [glcanvas.WX_GL_RGBA,
+                  glcanvas.WX_GL_DEPTH_SIZE, c['depth_size'],
+                  glcanvas.WX_GL_STENCIL_SIZE, c['stencil_size'],
+                  glcanvas.WX_GL_MIN_RED, c['red_size'],
+                  glcanvas.WX_GL_MIN_GREEN, c['green_size'],
+                  glcanvas.WX_GL_MIN_BLUE, c['blue_size'],
+                  glcanvas.WX_GL_MIN_ALPHA, c['alpha_size']]
+    gl_attribs += [glcanvas.WX_GL_DOUBLEBUFFER] if c['double_buffer'] else []
+    gl_attribs += [glcanvas.WX_GL_STEREO] if c['stereo'] else []
+    return gl_attribs
 
 
 class SharedContext(BaseSharedContext):
@@ -123,7 +121,8 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
-        self._event_loop = wx.GUIEventLoop()
+        self._event_loop = wx.EventLoop()
+        wx.EventLoop.SetActive(self._event_loop)
 
     def _vispy_get_backend_name(self):
         return 'wx'
@@ -131,12 +130,11 @@ class ApplicationBackend(BaseApplicationBackend):
     def _vispy_process_events(self):
         # inpsired by https://github.com/wxWidgets/wxPython/blob/master/
         #             samples/mainloop/mainloop.py
-        old_loop = wx.EventLoop.GetActive()
-        wx.EventLoop.SetActive(self._event_loop)
-        while self._event_loop.Pending():
-            self._event_loop.Dispatch()
-        self.ProcessIdle()
-        wx.EventLoop.SetActive(old_loop)
+        for _ in range(3):  # trial-and-error found this to work (!)
+            while self._event_loop.Pending():
+                self._event_loop.Dispatch()
+            _wx_app.ProcessIdle()
+        #wx.EventLoop.SetActive(old_loop)
         #wx.WakeUpMainThread()
         #_wx_app.ProcessPendingEvents()
         #_wx_app.ProcessIdle()
@@ -161,7 +159,7 @@ class ApplicationBackend(BaseApplicationBackend):
         global _wx_app
         _wx_app = wx.GetApp()  # in case the user already has one
         if _wx_app is None:
-            _wx_app = wx.PySimpleApp(redirect=True, filename=os.devnull)
+            _wx_app = wx.PySimpleApp()
         _wx_app.SetExitOnFrameDelete(True)
         return _wx_app
 
@@ -199,7 +197,6 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         BaseCanvasBackend.__init__(self, capability, SharedContext)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             vispy_canvas = self._process_backend_kwargs(kwargs)
-        self._vispy_canvas = vispy_canvas
         if not isinstance(context, (dict, SharedContext)):
             raise TypeError('context must be a dict or wx SharedContext')
         style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
@@ -207,21 +204,32 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         style |= wx.NO_BORDER if not dec else wx.RESIZE_BORDER
         self._init = False
         Frame.__init__(self, parent, wx.ID_ANY, title, position, size, style)
+        if not resize:
+            self.SetSizeHints(size[0], size[1], size[0], size[1])
+        if fs is not False:
+            if fs is not True:
+                logger.warning('Cannot specify monitor number for wx '
+                               'fullscreen, using default')
+            self._fullscreen = True
+        else:
+            self._fullscreen = False
         _wx_app.SetTopWindow(self)
-        # need to put GLCanvas in a panel (yuck)
-        self._canvas = glcanvas.GLCanvas(self)
-        self._canvas.SetDoubleBuffered(vsync)
+        if not isinstance(context, SharedContext):
+            self._gl_attribs = _set_config(context)
+        else:
+            self._gl_attribs = context.value[0]
+        self._canvas = glcanvas.GLCanvas(self, wx.ID_ANY, wx.DefaultPosition,
+                                         wx.DefaultSize, 0, 'GLCanvas',
+                                         self._gl_attribs)
         self._canvas.Raise()
         self._canvas.SetFocus()
         self._vispy_set_title(title)
         if not isinstance(context, SharedContext):
-            # config = _set_config(context)  # XXX FIX THIS
             self._context = glcanvas.GLContext(self._canvas)
         else:
-            self._context = context.value
-        if position is not None:
-            self._vispy_set_position(*position)
-        self._canvas.Bind(wx.EVT_SIZE, self.on_resize)
+            self._context = context.value[1]
+        self._size = None
+        self.Bind(wx.EVT_SIZE, self.on_resize)
         self._canvas.Bind(wx.EVT_PAINT, self.on_paint)
         self._canvas.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self._canvas.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -232,7 +240,9 @@ class CanvasBackend(Frame, BaseCanvasBackend):
     def on_resize(self, event):
         if self._vispy_canvas is None:
             return
-        size = self._vispy_get_size()
+        if not self._init:
+            self._initialize()
+        size = event.GetSize()
         self._vispy_canvas.events.resize(size=size)
         self.Refresh()
         event.Skip()
@@ -263,10 +273,10 @@ class CanvasBackend(Frame, BaseCanvasBackend):
     @property
     def _vispy_context(self):
         """Context to return for sharing"""
-        return SharedContext(self._context)
+        return SharedContext([self._gl_attribs, self._context])
 
     def _vispy_warmup(self):
-        etime = time() + 0.4  # XXX CHECK ME
+        etime = time() + 0.3
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()
@@ -274,6 +284,8 @@ class CanvasBackend(Frame, BaseCanvasBackend):
 
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
+        if self._canvas is None:
+            return
         self._vispy_set_current()
         self._canvas.SwapBuffers()
 
@@ -292,6 +304,8 @@ class CanvasBackend(Frame, BaseCanvasBackend):
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
         self.Show(visible)
+        if visible:
+            self.ShowFullScreen(self._fullscreen)
 
     def _vispy_update(self):
         # Invoke a redraw
@@ -304,6 +318,8 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self.Destroy()
 
     def _vispy_get_size(self):
+        if self._canvas is None or self._vispy_canvas is None:
+            return
         w, h = self.GetClientSize()
         return w, h
 
