@@ -24,7 +24,7 @@ width = length of the rectangle along x-axis
 radius = radius of curvature of corners
 """
     def __init__(self, pos=None, color='black', border_color=None,
-                 radius=0., height=1.0, width=1.0, **kwds):
+                 radius=0., height=1.0, width=1.0, degree=0., **kwds):
         super(RectPolygon, self).__init__()
         self._vertices = None
         self._pos = pos
@@ -36,27 +36,34 @@ radius = radius of curvature of corners
         self._update()
 
     def _generate_vertices(self, pos, degree, height, width):
-        
-        self._vertices = np.array([[pos[0], pos[1], 0.],
-                                   [pos[0], pos[1]+height/2., 0.],
-                                   [pos[0]+width/2., pos[1], 0.],
-                                   [pos[0], pos[1]-height/2., 0.],
-                                   [pos[0]-width/2., pos[1], 0.],
-                                   [pos[0], pos[1]+height/2., 0.]],
-                                   dtype=np.float32)
 
-        num_segments = int(degree * 100.0)
-        bias1 = degree * width
-        bias2 = degree * height
-        """
+        num_segments = int(degree * 10.0)
+        bias1 = (1 - degree) * width / 2.
+        bias2 = (1 - degree) * height / 2.
+
+        xr = degree * width / 2.
+        yr = degree * height / 2.
+
         corner = np.empty([num_segments+1, 3], dtype=np.float32)
-        corner[0] = np.float32([pos[0], pos[1], 0.])
-        theta = np.linspace(start_angle, start_angle + (span_angle/180.)*np.pi,
-                            curve_segments+1)
-        self._vertices[1:, 0] = pos[0] + xr * np.cos(theta)
-        self._vertices[1:, 1] = pos[1] + yr * np.sin(theta)
-        self._vertices[1:, 2] = 0
-        """
+        #corner[0] = np.float32([pos[0], pos[1], 0.])
+        start_angle = 0.
+        end_angle = np.pi / 2.
+
+        theta = np.linspace(start_angle, end_angle, num_segments+1)
+
+        corner[:, 0] = pos[0] + bias1 + xr * np.cos(theta)
+        corner[:, 1] = pos[1] - bias2 - yr * np.sin(theta)
+        corner[:, 2] = 0
+
+        array1 = np.array([[pos[0], pos[1], 0.], [pos[0]+width/2., pos[1], 0.]], dtype=np.float32)
+        array2 = np.array([[pos[0], pos[1]-height/2., 0.],
+                           [pos[0]-width/2., pos[1], 0.],
+                           [pos[0], pos[1]+height/2., 0.],
+                           [pos[0]+width/2., pos[1], 0.]], dtype=np.float32)
+        output = np.concatenate((array1,corner,array2))
+
+        self._vertices = np.array(output, dtype=np.float32)
+
 
     @property
     def degree(self):
@@ -66,7 +73,7 @@ radius = radius of curvature of corners
 
     @degree.setter
     def degree(self, degree):
-        self._radius = degree
+        self._degree = degree
         self._update()
     
     def _update(self):
