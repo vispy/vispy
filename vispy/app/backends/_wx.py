@@ -9,6 +9,7 @@ vispy backend for wxPython.
 from __future__ import division
 
 from time import sleep
+import os
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
@@ -122,11 +123,20 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
+        self._event_loop = wx.GUIEventLoop()
 
     def _vispy_get_backend_name(self):
         return 'wx'
 
     def _vispy_process_events(self):
+        # inpsired by https://github.com/wxWidgets/wxPython/blob/master/
+        #             samples/mainloop/mainloop.py
+        old_loop = wx.EventLoop.GetActive()
+        wx.EventLoop.SetActive(self._event_loop)
+        while self._event_loop.Pending():
+            self._event_loop.Dispatch()
+        self.ProcessIdle()
+        wx.EventLoop.SetActive(old_loop)
         #wx.WakeUpMainThread()
         #_wx_app.ProcessPendingEvents()
         #_wx_app.ProcessIdle()
@@ -135,7 +145,7 @@ class ApplicationBackend(BaseApplicationBackend):
         #parent = _wx_app.GetTopWindow()  # assume it's the parent window
         #parent.Layout()
         #parent.Update()
-        wx.Yield()
+        #wx.Yield()
 
     def _vispy_run(self):
         return _wx_app.MainLoop()
@@ -149,7 +159,9 @@ class ApplicationBackend(BaseApplicationBackend):
     def _vispy_get_native_app(self):
         # Get native app in save way. Taken from guisupport.py
         global _wx_app
-        _wx_app = wx.App() if _wx_app is None else _wx_app
+        _wx_app = wx.GetApp()  # in case the user already has one
+        if _wx_app is None:
+            _wx_app = wx.PySimpleApp(redirect=True, filename=os.devnull)
         _wx_app.SetExitOnFrameDelete(True)
         return _wx_app
 
@@ -198,9 +210,9 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         _wx_app.SetTopWindow(self)
         # need to put GLCanvas in a panel (yuck)
         self._canvas = glcanvas.GLCanvas(self)
+        self._canvas.SetDoubleBuffered(vsync)
         self._canvas.Raise()
         self._canvas.SetFocus()
-        self._canvas.SetDoubleBuffered(vsync)
         self._vispy_set_title(title)
         if not isinstance(context, SharedContext):
             # config = _set_config(context)  # XXX FIX THIS
