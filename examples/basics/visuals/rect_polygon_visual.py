@@ -8,14 +8,15 @@ Simple demonstration of RectPolygonVisual.
 
 import vispy.app
 from vispy import gloo
-from vispy.scene import visuals, transforms
+from vispy.scene import visuals
 
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
-        self.rectpolygon = visuals.RectPolygon(pos=(400, 400, 0), radius=10,
-                                           height=100., width=100., degree=0.3,
-                                           color='red', border_color='white')
+        self.rectpolygon = visuals.RectPolygon(pos=(400, 400, 0), height=100.,
+                                               width=200., degree=0.5,
+                                               color='red',
+                                               border_color='white')
         
         vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
         self.size = (800, 800)
