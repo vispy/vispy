@@ -164,8 +164,11 @@ def test_application():
     app.process_events()
     print(app)  # test __repr__
 
+    assert_raises(ValueError, Canvas, keys='foo')
+    assert_raises(TypeError, Canvas, keys=dict(escape=1))
+    assert_raises(ValueError, Canvas, keys=dict(escape='foo'))  # not an attr
     # Canvas
-    c = Canvas(create_native=False)
+    c = Canvas(create_native=False, keys='interactive')
     print(c)
     del c
 

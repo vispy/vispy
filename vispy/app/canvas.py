@@ -22,9 +22,6 @@ def _gloo_initialize(event):
     gl_initialize()
 
 
-_key_types = dict(interactive=dict(close='escape', fullscreen='F11'))
-
-
 class Canvas(object):
     """Representation of a GUI element with an OpenGL context
 
@@ -71,9 +68,12 @@ class Canvas(object):
         ``canvas.context`` property from an existing canvas (using the
         same backend) will return a ``SharedContext`` that can be used,
         thereby sharing the existing context.
-    keys : str | None
+    keys : str | dict | None
         Default key mapping to use. If 'interactive', escape and F11 will
         close the canvas and toggle full-screen mode, respectively.
+        If dict, maps keys to functions. If dict values are strings,
+        they are assumed to be ``Canvas`` methods, otherwise they should
+        be callable.
     parent : widget-object
         The parent widget if this makes sense for the used backend.
     """
@@ -154,30 +154,37 @@ class Canvas(object):
 
         # Deal with special keys
         if keys is not None:
-            if keys not in _key_types:
-                raise ValueError('keys, if string, must be one of %s, not '
-                                 '%s' % (list(_key_types.keys())), keys)
-            keys = _key_types[keys]
+            if isinstance(keys, string_types):
+                if keys != 'interactive':
+                    raise ValueError('keys, if string, must be "interactive", '
+                                     'not %s' % (keys,))
+
+                def toggle_fs():
+                    self.fullscreen = not self.fullscreen
+                keys = dict(escape='close', F11=toggle_fs)
         else:
             keys = {}
-        close_keys = keys.get('close', ())
-        fullscreen_keys = keys.get('fullscreen', ())
+        if not isinstance(keys, dict):
+            raise TypeError('keys must be a dict, str, or None')
+        if len(keys) > 0:
+            # ensure all are callable
+            for key, val in keys.items():
+                if isinstance(keys[key], string_types):
+                    keys[key] = getattr(self, val, None)
+                    if val is None:
+                        raise ValueError('value %s is not an attribute of '
+                                         'Canvas' % val)
+                if not hasattr(keys[key], '__call__'):
+                    raise TypeError('Entry for key %s is not callable' % key)
+                # convert to lower-case representation
+                keys[key.lower()] = keys.pop(key)
+            self._keys_check = keys
 
-        def close_keys_check(event):
-            if event.key in self.close_keys:
-                self.close()
-        if isinstance(close_keys, string_types):
-            close_keys = [close_keys]
-        self.close_keys = close_keys
-        self.events.key_press.connect(close_keys_check, ref=True)
-
-        def fullscreen_keys_check(event):
-            if event.key in self.fullscreen_keys:
-                self.fullscreen = not self.fullscreen
-        if isinstance(fullscreen_keys, string_types):
-            fullscreen_keys = [fullscreen_keys]
-        self.fullscreen_keys = fullscreen_keys
-        self.events.key_press.connect(fullscreen_keys_check, ref=True)
+            def keys_check(event):
+                use_name = event.key.name.lower()
+                if use_name in self._keys_check:
+                    self._keys_check[use_name]()
+            self.events.key_press.connect(keys_check, ref=True)
 
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
