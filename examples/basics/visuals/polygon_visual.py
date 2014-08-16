@@ -46,7 +46,7 @@ class Canvas(vispy.scene.SceneCanvas):
         self.polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
                                        border_color=(1, 1, 1, 1))
         self.polygon.transform = vispy.scene.transforms.STTransform(
-            scale=(500, 500),
+            scale=(300, 300),
             translate=(400, 400))
         vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         self.size = (800, 800)

@@ -96,13 +96,14 @@ class Polygon(Visual):
     def _update(self):
         self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
         if self._pos is not None:
-            self.data.triangulate()
-            self.mesh = Mesh(pos=self.data.vertices[self.data.faces],
+            pts, tris = self.data.triangulate()
+            print(pts, tris)
+            self.mesh = Mesh(pos=pts[tris],
                              color=self._color.rgba)
             if not self._border_color.is_blank():
                 border_pos = self.data.vertices[self.data.convex_hull]
-                self.border = Line(pos=border_pos,
-                                   color=self._border_color.rgba, mode='lines')
+                self.border = Line(pos=self._pos,
+                                   color=self._border_color.rgba, mode='line_strip')
         #self.update()
 
     def set_gl_options(self, *args, **kwds):

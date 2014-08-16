@@ -287,6 +287,8 @@ class Triangulation(object):
                     
         self.finalize()
         
+        self.tris = np.array(self.tris, dtype=int)
+        
     def finalize(self):
         ## Finalize (sec. 3.5)
 
@@ -445,14 +447,32 @@ class Triangulation(object):
                         debug("    -> hit endpoint!")
                         # reached endpoint! 
                         # update front / polygons
+                        upper_polygon.append(j)
+                        lower_polygon.append(j)
+                        self.remove_tri(*next_tri)
                         break
                     else:
-                        tri_edges = self.edges_in_tri(next_tri)
-                        tri_edges.remove(last_edge)
+                        tri_edges = self.edges_in_tri_except(next_tri, last_edge)
+                        last_last_edge = last_edge
                         # select the edge that is cut
                         last_edge = self.intersected_edge(tri_edges, (i,j))
-                        next_tri = self.adjacent_tri(last_edge, next_tri)
-
+                        print("intersected edge:", last_edge)
+                        last_tri = next_tri
+                        next_tri = self.adjacent_tri(last_edge, last_tri)
+                        self.remove_tri(*last_tri)
+                        assert next_tri is not None
+                        
+                        # update polygons:
+                        if lower_polygon[-1] == next_tri[0]:
+                            upper_polygon.append(next_tri[1])
+                        elif lower_polygon[-1] == next_tri[1]:
+                            upper_polygon.append(next_tri[0])
+                        elif upper_polygon[-1] == next_tri[0]:
+                            lower_polygon.append(next_tri[1])
+                        elif upper_polygon[-1] == next_tri[1]:
+                            lower_polygon.append(next_tri[0])
+                        else:
+                            raise RuntimeError("Something went wrong..")
                 
                 
             else:  # mode == 2
@@ -493,6 +513,8 @@ class Triangulation(object):
                 polygon.pop(i)
                 dist.pop(i)
 
+        debug("Finished filling edge_event polygons.")
+        
         # update front by removing points in the holes (places where front 
         # passes below the cut edge)
         if front_dir == 1:
@@ -501,6 +523,9 @@ class Triangulation(object):
             ind = min(hole) + 1
             for num in range(max(hole) - ind):
                 front.pop(ind)
+
+        debug("Finished updating front after edge_event.")
+
         
     def find_cut_triangle(self, edge):
         """
@@ -565,7 +590,21 @@ class Triangulation(object):
             raise RuntimeError("Edge %s and point %d do not form a triangle "
                                "in this mesh." % (edge, i))
 
+    def edges_in_tri_except(self, tri, edge):
+        """Return the edges in *tri*, excluding *edge*.
+        """
+        edges = [(tri[i], tri[(i+1)%3]) for i in range(3)]
+        try:
+            edges.remove(tuple(edge))
+        except ValueError:
+            edges.remove(tuple(edge[::-1]))
+        return edges
+
     def edge_below_front(self, edge, front_index):
+        """Return True if *edge* is below the current front. 
+        
+        One of the points in *edge* must be _on_ the front, at *front_index*.
+        """
         f0 = self.front[front_index-1]
         f1 = self.front[front_index+1]
         return (self.orientation(edge, f0) > 0 and 
@@ -576,6 +615,14 @@ class Triangulation(object):
         mask2 = self.edges == edge[1]
         return (np.any(mask1[:,0] & mask2[:,1]) or 
                 np.any(mask2[:,0] & mask1[:,1]))
+    
+    def intersected_edge(self, edges, cut_edge):
+        """ Given a list of *edges*, return the first that is intersected by
+        *cut_edge*.
+        """
+        for edge in edges:
+            if self.edges_intersect(edge, cut_edge):
+                return edge
 
     def find_edge_intersections(self):
         """
@@ -770,7 +817,7 @@ class Triangulation(object):
 
     def intersection(self, edge1, edge2):
         """Return the intercept of the line defined by edge1 onto edge2.
-        A value of 0 indicates intersection at edge2[0], and i indicates 
+        A value of 0 indicates intersection at edge2[0], and 1 indicates 
         intersection at edge2[1]."""
         global pts
         A = pts[edge1[0]]
@@ -792,9 +839,11 @@ class Triangulation(object):
         """
         Return 1 if edges intersect completely (endpoints excluded)
         """
-        h = self.intersect_edge_arrays(self.pts[np.array(edge1)], 
-                                       self.pts[np.array(edge2)])
-        return 0 < h < 1
+        h12 = self.intersect_edge_arrays(self.pts[np.array(edge1)], 
+                                         self.pts[np.array(edge2)])
+        h21 = self.intersect_edge_arrays(self.pts[np.array(edge2)], 
+                                         self.pts[np.array(edge1)])
+        return (0 < h12 < 1) and (0 < h21 < 1)
 
 
     #def intersection_point(self, edge1, edge2):
@@ -950,18 +999,21 @@ class Triangulation(object):
             del self.edges_lookup[(a, b)]
             del self.edges_lookup[(b, c)]
             del self.edges_lookup[(c, a)]
-        else:
+        elif self.edges_lookup.get((b, a), None) == c:
             #debug("    ", (b,a), (c,b), (a,c))
             del self.edges_lookup[(b, a)]
             del self.edges_lookup[(a, c)]
             del self.edges_lookup[(c, b)]
+        else:
+            raise RuntimeError("Lost edges_lookup for tri (%d, %d, %d)" % 
+                               (a, b, c))
 
         return k
 
 # Note: using custom debug instead of logging because 
 # there are MANY messages and logger might be too expensive.
 # After this becomes stable, we might just remove them altogether.
-DEBUG = False
+DEBUG = True
 def debug(*args):
     if DEBUG:
         print(*args)
@@ -977,8 +1029,19 @@ if __name__ == '__main__':
     class DebugTriangulation(Triangulation):
         """ 
         Visualize triangulation process stepwise to aid in debugging.
+        
+        *interval* specifies the diration to wait before drawing each update in
+        the triangulation procedure. Negative values cause the display to wait
+        until the user clicks on the window for each update.
+        
+        *skip* causes the display to immediately process the first N events
+        before pausing.
         """
-        def __init__(self, pts, edges):
+        def __init__(self, pts, edges, interval=0.01, skip=0):
+            self.interval = interval
+            self.iteration = 0
+            self.skip = skip 
+            
             Triangulation.__init__(self, pts, edges)
             
             # visual debugging: draw edges, front, triangles
@@ -1000,22 +1063,29 @@ if __name__ == '__main__':
             
         def draw_state(self):
             global app
+            print("State %s" % self.iteration)
+            self.iteration += 1
+            if self.iteration <= self.skip:
+                return
+            
             front_pts = self.pts[np.array(self.front)]
             self.front_line.setData(front_pts[:,0], front_pts[:,1])
             self.graph.setData(pos=self.pts, adj=self.edges) 
             
             # Auto-advance on timer
-            for i in range(1):  # sleep ~1 sec, but keep ui responsive
-                app.processEvents()
-                time.sleep(0.01)
+            if self.interval < 0:
+                #Advance once per click
+                while True:
+                    app.processEvents()
+                    time.sleep(0.01)
+                    if self.nextStep:
+                        self.nextStep = False
+                        break
+            else:
+                for i in range(int(self.interval / 0.01)):  # sleep, but keep ui responsive
+                    app.processEvents()
+                    time.sleep(0.01)
                 
-            # Advance once per click
-            #while True:
-                #app.processEvents()
-                #time.sleep(0.01)
-                #if self.nextStep:
-                    #self.nextStep = False
-                    #break
                 
 
         def draw_tri(self, tri, source=None):
@@ -1056,6 +1126,10 @@ if __name__ == '__main__':
             self.draw_state()
         
     #user input data - points and constraining edges
+    
+    #
+    #  Test 1
+    #
     pts = [(0, 0),
         (10, 0),
         (10, 10),
@@ -1082,11 +1156,24 @@ if __name__ == '__main__':
               (l+2, l+3),
               (l+3, l)]
 
-    pts = np.array(pts, dtype=float)
-    edges = np.array(edges, dtype=int)
+    pts1 = np.array(pts, dtype=float)
+    edges1 = np.array(edges, dtype=int)
 
 
-    t = DebugTriangulation(pts, edges)
+    #
+    # Test 2
+    #
+    np.random.seed(0)
+    pts2 = np.random.normal(size=(10, 2))
+    edges2 = np.zeros((10, 2), dtype=int)
+    edges2[:,0] = np.arange(10)
+    edges2[:,1] = np.arange(1,11) % 10
+    
+    
+
+ 
+
+    t = DebugTriangulation(pts2, edges2, interval=0, skip=0)
     t.triangulate()
 
 
