@@ -488,7 +488,7 @@ class Triangulation(object):
                     debug("    -> hit endpoint!")
                     # found endpoint!
                     lower_polygon.append(j)
-                    front_holes.append(front_index)
+                    #front_holes.append(front_index)
                     break
                 next_edge = tuple(front[front_index:front_index+2])
                 
@@ -1226,8 +1226,16 @@ if __name__ == '__main__':
     edges4[:,0] = np.arange(10)
     edges4[:,1] = np.arange(1,11) % 10
     
+    #
+    # Test 5
+    #
+    pts5 = np.random.normal(size=(10, 2))
+    edges5 = np.zeros((10, 2), dtype=int)
+    edges5[:,0] = np.arange(10)
+    edges5[:,1] = np.arange(1,11) % 10
     
-    t = DebugTriangulation(pts4, edges4, interval=-1, skip=50)
+    
+    t = DebugTriangulation(pts5, edges5, interval=-1, skip=35)
     t.triangulate()
 
 
