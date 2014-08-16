@@ -46,6 +46,8 @@ class Triangulation(object):
 
         # (iii) Remove duplicate edges
         # TODO
+        
+        
 
     def initialize(self):
         self.normalize()
@@ -292,6 +294,10 @@ class Triangulation(object):
         self.finalize()
         
         self.tris = np.array(self.tris, dtype=int)
+        
+        debug("Finished with %d tris:" % self.tris.shape[0])
+        debug(str(self.tris))
+        
         
     def finalize(self):
         ## Finalize (sec. 3.5)
@@ -726,8 +732,6 @@ class Triangulation(object):
             # add new edges
             new_edges = [[pt_indexes[i-1], pt_indexes[i]] for i in range(1, len(pt_indexes))] 
             add_edges.extend(new_edges)
-            
-            assert [21, 22] not in new_edges
                     
         if add_pts:
             add_pts = np.array(add_pts, dtype=self.pts.dtype)
@@ -760,13 +764,19 @@ class Triangulation(object):
             
             # rewrite edges to use i instead of j
             self.edges[self.edges == j] = i
+            
             #assert not np.any(self.edges[:,0] == self.edges[:,1])
             
             # decrement all point indexes > j
             self.edges[self.edges > j] -= 1
             dups_arr[dups_arr > j] -= 1
+            #assert not np.any(self.edges[:,0] == self.edges[:,1])
         
         self.pts = self.pts[pt_mask]
+        
+        # remove zero-length edges
+        mask = self.edges[:,0] != self.edges[:,1]
+        self.edges = self.edges[mask]
     
     # Distance between points A and B
     def distance(self, A, B):
@@ -1197,46 +1207,70 @@ if __name__ == '__main__':
               (l+2, l+3),
               (l+3, l)]
 
-    pts1 = np.array(pts, dtype=float)
-    edges1 = np.array(edges, dtype=int)
+    pts = np.array(pts, dtype=float)
+    edges = np.array(edges, dtype=int)
 
 
     #
     # Test 2
     #
+    N = 10
     np.random.seed(0)
-    pts2 = np.random.normal(size=(10, 2))
-    edges2 = np.zeros((10, 2), dtype=int)
-    edges2[:,0] = np.arange(10)
-    edges2[:,1] = np.arange(1,11) % 10
+    pts = np.random.normal(size=(N, 2))
+    edges = np.zeros((N, 2), dtype=int)
+    edges[:,0] = np.arange(N)
+    edges[:,1] = np.arange(1,N+1) % N
     
     #
     # Test 3
     #
-    pts3 = np.random.normal(size=(10, 2))
-    edges3 = np.zeros((10, 2), dtype=int)
-    edges3[:,0] = np.arange(10)
-    edges3[:,1] = np.arange(1,11) % 10
+    pts = np.random.normal(size=(N, 2))
+    edges = np.zeros((N, 2), dtype=int)
+    edges[:,0] = np.arange(N)
+    edges[:,1] = np.arange(1,N+1) % N
     
     #
     # Test 4
     #
-    pts4 = np.random.normal(size=(10, 2))
-    edges4 = np.zeros((10, 2), dtype=int)
-    edges4[:,0] = np.arange(10)
-    edges4[:,1] = np.arange(1,11) % 10
+    pts = np.random.normal(size=(N, 2))
+    edges = np.zeros((N, 2), dtype=int)
+    edges[:,0] = np.arange(N)
+    edges[:,1] = np.arange(1,N+1) % N
     
     #
     # Test 5
     #
-    pts5 = np.random.normal(size=(10, 2))
-    edges5 = np.zeros((10, 2), dtype=int)
-    edges5[:,0] = np.arange(10)
-    edges5[:,1] = np.arange(1,11) % 10
+    pts = np.random.normal(size=(N, 2))
+    edges = np.zeros((N, 2), dtype=int)
+    edges[:,0] = np.arange(N)
+    edges[:,1] = np.arange(1,N+1) % N
     
+    #
+    # Test 6
+    #
+    N = 400
+    pts = np.random.normal(size=(N, 2))
+    pts = np.cumsum(pts, axis=0)
+    edges = np.zeros((N, 2), dtype=int)
+    edges[:,0] = np.arange(N)
+    edges[:,1] = np.arange(1,N+1) % N
     
-    t = DebugTriangulation(pts5, edges5, interval=-1, skip=35)
+    #
+    # Test 7
+    #
+    theta = np.linspace(0, 2*np.pi, 11)[:-1]
+    pts = np.hstack([np.cos(theta)[:,np.newaxis], 
+                    np.sin(theta)[:,np.newaxis]])
+    pts[::2] *= 0.4
+    edges = np.empty((pts.shape[0], 2), dtype=np.uint)
+    edges[:,0] = np.arange(pts.shape[0])
+    edges[:,1] = edges[:,0] + 1
+    edges[-1, 1] = 0
+    
+    t = DebugTriangulation(pts, edges, interval=0, skip=0)
     t.triangulate()
+    
+    
 
 
 

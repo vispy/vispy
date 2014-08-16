@@ -97,8 +97,7 @@ class Polygon(Visual):
         self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
         if self._pos is not None:
             pts, tris = self.data.triangulate()
-            print(pts, tris)
-            self.mesh = Mesh(pos=pts[tris],
+            self.mesh = Mesh(pos=pts, faces=tris.astype(np.uint32),
                              color=self._color.rgba)
             if not self._border_color.is_blank():
                 border_pos = self.data.vertices[self.data.convex_hull]
@@ -114,7 +113,8 @@ class Polygon(Visual):
 
     def draw(self, event):
         if self.mesh is not None:
-            gloo.set_state(polygon_offset_fill=True)
+            gloo.set_state(polygon_offset_fill=True, 
+                           cull_face='front_and_back')
             gloo.set_polygon_offset(1, 1)
             self.mesh.draw(event)
         if self.border is not None:
