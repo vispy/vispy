@@ -167,11 +167,13 @@ class Triangulation(object):
                             front[ind2] != i)
                     self.add_tri(i, front[ind1], front[ind2], source='smooth1')
                     front.pop(ind1)
+                    if ind1 < front_index:
+                        front_index -= 1
             debug("Finished smoothing front.")
             
             # "edge event" (sec. 3.4.2)
             # remove any triangles cut by completed edges and re-fill the holes.
-            if i in self.tops:  
+            if i in self.tops:
                 for j in self.bottoms[self.tops == i]:
                     self.edge_event(i, j, front_index)  # Make sure edge (j, i) is present in mesh
                     front = self.front # because edge event may have created a new front list
@@ -398,7 +400,7 @@ class Triangulation(object):
         
         # Keep track of which section of the front must be replaced
         # and with what it should be replaced
-        front_holes = []  # contains start and stop indexes for sections of front to condense
+        front_holes = []  # contains indexes for sections of front to remove
         
         next_tri = None   # next triangle to cut (already set if in mode 1)
         last_edge = None  # or last triangle edge crossed (if in mode 1)
@@ -420,9 +422,9 @@ class Triangulation(object):
             upper_polygon.append(last_edge[0])
         else:
             mode = 2  # follow front
-            front_holes.append([front_index])
-            front_index += front_dir
-            lower_polygon.append(front[front_index])
+            #front_holes.append([front_index])
+            #front_index += front_dir
+            #lower_polygon.append(front[front_index])
             
 
         # Loop until we reach point j
@@ -435,46 +437,49 @@ class Triangulation(object):
             debug("    upper_polygon:", upper_polygon)
             debug("    lower_polygon:", lower_polygon)
             if mode == 1:
-                if self.edge_in_front(last_edge): # crossing over front
-                    debug("    -> crossed over front..")
-                    mode = 2
-                    next_tri = None
+                # crossing from one triangle into another
+                debug("    -> next triangle..")
+                if j in next_tri:
+                    debug("    -> hit endpoint!")
+                    # reached endpoint! 
                     # update front / polygons
-                    front_index = x  # where did we cross the front?
-                    front_holes.append([front_index]) 
-                    continue
-                else: # crossing from one triangle into another
-                    debug("    -> next triangle..")
-                    if j in next_tri:
-                        debug("    -> hit endpoint!")
-                        # reached endpoint! 
-                        # update front / polygons
-                        upper_polygon.append(j)
-                        lower_polygon.append(j)
-                        self.remove_tri(*next_tri)
-                        break
+                    upper_polygon.append(j)
+                    lower_polygon.append(j)
+                    self.remove_tri(*next_tri)
+                    break
+                else:
+                    tri_edges = self.edges_in_tri_except(next_tri, last_edge)
+                    last_last_edge = last_edge
+                    # select the edge that is cut
+                    last_edge = self.intersected_edge(tri_edges, (i,j))
+                    print("intersected edge:", last_edge)
+                    last_tri = next_tri
+                    next_tri = self.adjacent_tri(last_edge, last_tri)
+                    self.remove_tri(*last_tri)
+                    assert next_tri is not None
+                    
+                    # update polygons:
+                    if lower_polygon[-1] == next_tri[0]:
+                        upper_polygon.append(next_tri[1])
+                    elif lower_polygon[-1] == next_tri[1]:
+                        upper_polygon.append(next_tri[0])
+                    elif upper_polygon[-1] == next_tri[0]:
+                        lower_polygon.append(next_tri[1])
+                    elif upper_polygon[-1] == next_tri[1]:
+                        lower_polygon.append(next_tri[0])
                     else:
-                        tri_edges = self.edges_in_tri_except(next_tri, last_edge)
-                        last_last_edge = last_edge
-                        # select the edge that is cut
-                        last_edge = self.intersected_edge(tri_edges, (i,j))
-                        print("intersected edge:", last_edge)
-                        last_tri = next_tri
-                        next_tri = self.adjacent_tri(last_edge, last_tri)
-                        self.remove_tri(*last_tri)
-                        assert next_tri is not None
-                        
-                        # update polygons:
-                        if lower_polygon[-1] == next_tri[0]:
-                            upper_polygon.append(next_tri[1])
-                        elif lower_polygon[-1] == next_tri[1]:
-                            upper_polygon.append(next_tri[0])
-                        elif upper_polygon[-1] == next_tri[0]:
-                            lower_polygon.append(next_tri[1])
-                        elif upper_polygon[-1] == next_tri[1]:
-                            lower_polygon.append(next_tri[0])
-                        else:
-                            raise RuntimeError("Something went wrong..")
+                        raise RuntimeError("Something went wrong..")
+                    
+                    # If we crossed the front, go to mode 2
+                    if self.edge_in_front(last_edge): # crossing over front
+                        debug("    -> crossed over front..")
+                        mode = 2
+                        next_tri = None
+                        # update front / polygons
+                        front_index = x  # where did we cross the front?
+                        #front_holes.append(front_index)
+                        continue
+                    
                 
                 
             else:  # mode == 2
@@ -483,17 +488,23 @@ class Triangulation(object):
                     debug("    -> hit endpoint!")
                     # found endpoint!
                     lower_polygon.append(j)
-                    front_holes[-1].append(front_index)
+                    front_holes.append(front_index)
                     break
                 next_edge = tuple(front[front_index:front_index+2])
                 
                 if self.edges_intersect((i, j), next_edge): # crossing over front into triangle
                     debug("    -> crossed over front..")
                     mode = 1
-                    front_holes[-1].append(front_index)
-                    # more..
+                    front_holes.append(front_index)
+                    last_edge = next_edge
+                    # we are crossing the front, so this edge only has one
+                    # triangle. 
+                    next_tri = self.tri_from_edge(last_edge)
+                    lower_polygon.append(front[front_index])
+                    upper_polygon.append(front[front_index+1])
                 else:
                     debug("    -> next front edge..")
+                    front_holes.append(front_index)
                     lower_polygon.append(front[front_index])
                     continue  # stay in mode 2, start next point
         
@@ -522,12 +533,9 @@ class Triangulation(object):
         
         # update front by removing points in the holes (places where front 
         # passes below the cut edge)
-        if front_dir == 1:
-            front_holes = front_holes[::-1]
-        for hole in front_holes:
-            ind = min(hole) + 1
-            for num in range(max(hole) - ind):
-                front.pop(ind)
+        front_holes.sort(reverse=True)
+        for i in front_holes:
+            front.pop(i)
 
         debug("Finished updating front after edge_event.")
 
@@ -594,6 +602,22 @@ class Triangulation(object):
         else:
             raise RuntimeError("Edge %s and point %d do not form a triangle "
                                "in this mesh." % (edge, i))
+
+    def tri_from_edge(self, edge):
+        """Return the only tri that contains *edge*. If two tris share this
+        edge, raise an exception.
+        """
+        edge = tuple(edge)
+        p1 = self.edges_lookup.get(edge, None)
+        p2 = self.edges_lookup.get(edge[::-1], None)
+        if p1 is None:
+            if p2 is None:
+                raise RuntimeError("No tris connected to edge %r" % edge)
+            return edge + (p2,)
+        elif p2 is None:
+            return p1
+        else:
+            raise RuntimeError("Two triangles connected to edge %r" % edge)
 
     def edges_in_tri_except(self, tri, edge):
         """Return the edges in *tri*, excluding *edge*.
