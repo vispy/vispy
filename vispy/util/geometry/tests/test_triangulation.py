@@ -258,6 +258,49 @@ def test_projection():
     assert np.allclose(t.projection(a, b, c), [1, 2]) 
     assert np.allclose(t.projection(c, b, a), [1, 2]) 
     
+def test_random(): 
+    # Just test that these triangulate without exception.
+    # TODO: later on, we can turn this same test into an image comparison
+    # with Polygon.
+    N = 10
+    np.random.seed(0)
+    
+    for i in range(4):
+        pts = np.random.normal(size=(N, 2))
+        edges = np.zeros((N, 2), dtype=int)
+        edges[:,0] = np.arange(N)
+        edges[:,1] = np.arange(1,N+1) % N
+    
+        t = T(pts, edges)
+        t.triangulate()
+    
+    
+    
+    theta = np.linspace(0, 2*np.pi, 11)[:-1]
+    pts = np.hstack([np.cos(theta)[:,np.newaxis], 
+                    np.sin(theta)[:,np.newaxis]])
+    pts[::2] *= 0.4
+    edges = np.empty((pts.shape[0], 2), dtype=np.uint)
+    edges[:,0] = np.arange(pts.shape[0])
+    edges[:,1] = edges[:,0] + 1
+    edges[-1, 1] = 0
+    t = T(pts, edges)
+    t.triangulate()
+    
+    
+    
+    # much larger test
+    #N = 400
+    #pts = np.random.normal(size=(N, 2))
+    #pts = np.cumsum(pts, axis=0)
+    #edges = np.zeros((N, 2), dtype=int)
+    #edges[:,0] = np.arange(N)
+    #edges[:,1] = np.arange(1,N+1) % N
+    
+    #t = T(pts, edges)
+    #t.triangulate()
+    
+    
     
 
 if __name__ == '__main__':

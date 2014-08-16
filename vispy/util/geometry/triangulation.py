@@ -454,37 +454,56 @@ class Triangulation(object):
                     self.remove_tri(*next_tri)
                     break
                 else:
+                    # next triangle does not contain the end point; we will
+                    # cut one of the two far edges.
                     tri_edges = self.edges_in_tri_except(next_tri, last_edge)
                     last_last_edge = last_edge
+                    
                     # select the edge that is cut
                     last_edge = self.intersected_edge(tri_edges, (i,j))
                     print("intersected edge:", last_edge)
                     last_tri = next_tri
                     next_tri = self.adjacent_tri(last_edge, last_tri)
                     self.remove_tri(*last_tri)
-                    assert next_tri is not None
                     
-                    # update polygons:
-                    if lower_polygon[-1] == next_tri[0]:
-                        upper_polygon.append(next_tri[1])
-                    elif lower_polygon[-1] == next_tri[1]:
-                        upper_polygon.append(next_tri[0])
-                    elif upper_polygon[-1] == next_tri[0]:
-                        lower_polygon.append(next_tri[1])
-                    elif upper_polygon[-1] == next_tri[1]:
-                        lower_polygon.append(next_tri[0])
+                    # Crossing an edge adds one point to one of the polygons
+                    if lower_polygon[-1] == last_edge[0]:
+                        upper_polygon.append(last_edge[1])
+                    elif lower_polygon[-1] == last_edge[1]:
+                        upper_polygon.append(last_edge[0])
+                    elif upper_polygon[-1] == last_edge[0]:
+                        lower_polygon.append(last_edge[1])
+                    elif upper_polygon[-1] == last_edge[1]:
+                        lower_polygon.append(last_edge[0])
                     else:
                         raise RuntimeError("Something went wrong..")
                     
                     # If we crossed the front, go to mode 2
-                    if self.edge_in_front(last_edge): # crossing over front
+                    x = self.edge_in_front(last_edge)
+                    if x >= 0: # crossing over front
                         debug("    -> crossed over front..")
                         mode = 2
                         next_tri = None
                         # update front / polygons
-                        front_index = x  # where did we cross the front?
-                        #front_holes.append(front_index)
+                        front_index = x+1  # where did we cross the front?
+                        front_holes.append(front_index)
                         continue
+                    
+                    assert next_tri is not None
+                    
+                    
+                    # update polygons:
+                    # TODO: how do we know next_tri[2] isn't the index we need??
+                    #if lower_polygon[-1] == next_tri[0]:
+                        #upper_polygon.append(next_tri[1])
+                    #elif lower_polygon[-1] == next_tri[1]:
+                        #upper_polygon.append(next_tri[0])
+                    #elif upper_polygon[-1] == next_tri[0]:
+                        #lower_polygon.append(next_tri[1])
+                    #elif upper_polygon[-1] == next_tri[1]:
+                        #lower_polygon.append(next_tri[0])
+                    #else:
+                        #raise RuntimeError("Something went wrong..")
                     
                 
                 
@@ -494,14 +513,17 @@ class Triangulation(object):
                     debug("    -> hit endpoint!")
                     # found endpoint!
                     lower_polygon.append(j)
+                    upper_polygon.append(j)
                     #front_holes.append(front_index)
                     break
-                next_edge = tuple(front[front_index:front_index+2])
-                
+                next_edge = tuple(front[front_index:front_index+2*front_dir:front_dir])
+                debug("  current edge: %s" % repr(next_edge))
                 if self.edges_intersect((i, j), next_edge): # crossing over front into triangle
                     debug("    -> crossed over front..")
                     mode = 1
+                    # todo: is this right?
                     front_holes.append(front_index)
+                    
                     last_edge = next_edge
                     # we are crossing the front, so this edge only has one
                     # triangle. 
@@ -509,9 +531,12 @@ class Triangulation(object):
                     lower_polygon.append(front[front_index])
                     upper_polygon.append(front[front_index+1])
                 else:
-                    debug("    -> next front edge..")
+                    debug("    -> did not cross front..")
                     front_holes.append(front_index)
+                    
+                    # todo: this line is wrong?
                     lower_polygon.append(front[front_index])
+                    
                     continue  # stay in mode 2, start next point
         
         
@@ -571,13 +596,14 @@ class Triangulation(object):
 
     def edge_in_front(self, edge):
         """
-        Return True if *edge* is in the current front.
+        Return the index where *edge* appears in the current front.
+        If the edge is not in the front, return -1
         """
         e = (list(edge), list(edge)[::-1])
         for i in range(len(self.front)-1):
             if self.front[i:i+2] in e:
-                return True
-        return False
+                return i
+        return -1
 
     def edge_opposite_point(self, tri, i):
         """
@@ -621,7 +647,7 @@ class Triangulation(object):
                 raise RuntimeError("No tris connected to edge %r" % edge)
             return edge + (p2,)
         elif p2 is None:
-            return p1
+            return edge + (p1,)
         else:
             raise RuntimeError("Two triangles connected to edge %r" % edge)
 
@@ -1248,16 +1274,6 @@ if __name__ == '__main__':
     #
     # Test 6
     #
-    N = 400
-    pts = np.random.normal(size=(N, 2))
-    pts = np.cumsum(pts, axis=0)
-    edges = np.zeros((N, 2), dtype=int)
-    edges[:,0] = np.arange(N)
-    edges[:,1] = np.arange(1,N+1) % N
-    
-    #
-    # Test 7
-    #
     theta = np.linspace(0, 2*np.pi, 11)[:-1]
     pts = np.hstack([np.cos(theta)[:,np.newaxis], 
                     np.sin(theta)[:,np.newaxis]])
@@ -1267,7 +1283,17 @@ if __name__ == '__main__':
     edges[:,1] = edges[:,0] + 1
     edges[-1, 1] = 0
     
-    t = DebugTriangulation(pts, edges, interval=0, skip=0)
+    #
+    # Test 7
+    #
+    N = 400
+    pts = np.random.normal(size=(N, 2))
+    pts = np.cumsum(pts, axis=0)
+    edges = np.zeros((N, 2), dtype=int)
+    edges[:,0] = np.arange(N)
+    edges[:,1] = np.arange(1,N+1) % N
+    
+    t = DebugTriangulation(pts, edges, interval=-1, skip=415)
     t.triangulate()
     
     
