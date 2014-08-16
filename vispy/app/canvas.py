@@ -150,6 +150,39 @@ class Canvas(object):
             raise ValueError('Invalid value for app %r' % app)
 
         # Deal with special keys
+        self._set_keys(keys)
+
+        # Create widget now (always do this *last*, after all err checks)
+        if create_native:
+            self.create_native()
+
+    def create_native(self):
+        """ Create the native widget if not already done so. If the widget
+        is already created, this function does nothing.
+        """
+        if self._backend is not None:
+            return
+        # Make sure that the app is active
+        assert self._app.native
+        # Instantiate the backend with the right class
+        be = self._app.backend_module.CanvasBackend(**self._backend_kwargs)
+        self._set_backend(be)
+
+    def _set_backend(self, backend):
+        """ Set backend<->canvas references and autoswap
+        """
+        # NOTE: Do *not* combine this with create_native above, since
+        # this private function is used to embed Qt widgets
+        assert backend is not None  # should never happen
+        self._backend = backend
+        if self._autoswap:
+            # append to the end
+            self.events.draw.connect((self, 'swap_buffers'),
+                                     ref=True, position='last')
+        self._backend._vispy_canvas = self  # it's okay to set this again
+        self._backend._vispy_init()
+
+    def _set_keys(self, keys):
         if keys is not None:
             if isinstance(keys, string_types):
                 if keys != 'interactive':
@@ -184,36 +217,6 @@ class Canvas(object):
                 if use_name in self._keys_check:
                     self._keys_check[use_name]()
             self.events.key_press.connect(keys_check, ref=True)
-
-        # Create widget now (always do this *last*, after all err checks)
-        if create_native:
-            self.create_native()
-
-    def create_native(self):
-        """ Create the native widget if not already done so. If the widget
-        is already created, this function does nothing.
-        """
-        if self._backend is not None:
-            return
-        # Make sure that the app is active
-        assert self._app.native
-        # Instantiate the backend with the right class
-        be = self._app.backend_module.CanvasBackend(**self._backend_kwargs)
-        self._set_backend(be)
-
-    def _set_backend(self, backend):
-        """ Set backend<->canvas references and autoswap
-        """
-        # NOTE: Do *not* combine this with create_native above, since
-        # this private function is used to embed Qt widgets
-        assert backend is not None  # should never happen
-        self._backend = backend
-        if self._autoswap:
-            # append to the end
-            self.events.draw.connect((self, 'swap_buffers'),
-                                     ref=True, position='last')
-        self._backend._vispy_canvas = self  # it's okay to set this again
-        self._backend._vispy_init()
 
     @property
     def context(self):
