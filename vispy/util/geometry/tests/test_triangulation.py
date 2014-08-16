@@ -30,7 +30,7 @@ def test_intersect_edge_arrays():
         ])
     
     lines = pts[edges]
-    t = T(None, None)
+    t = T(pts, edges)
     
     # intersect array of one edge with a array of many edges
     intercepts = t.intersect_edge_arrays(lines[0:1], lines[1:])
@@ -174,7 +174,7 @@ def test_merge_duplicate_points():
         [3, 4],
         [0, 2],
         ])
-    assert np.all(t.pts == pts)
+    assert np.allclose(t.pts, pts)
     assert np.all(t.edges == edges)
 
 def test_initialize():
@@ -241,6 +241,23 @@ def test_utility_methods():
     assert t.is_constraining_edge((5, 4))
     assert not t.is_constraining_edge((3, 5))
     assert not t.is_constraining_edge((3, 2))
+
+
+def test_projection():
+    pts = np.array([[0, 0],
+                    [5, 0],
+                    [1, 2],
+                    [3, 4]])
+    t = T(pts, [])
+    
+    a, b, c, d = pts
+    assert np.allclose(t.projection(a, c, b), [1, 0]) 
+    assert np.allclose(t.projection(b, c, a), [1, 0]) 
+    assert np.allclose(t.projection(a, d, b), [3, 0]) 
+    assert np.allclose(t.projection(b, d, a), [3, 0]) 
+    assert np.allclose(t.projection(a, b, c), [1, 2]) 
+    assert np.allclose(t.projection(c, b, a), [1, 2]) 
+    
     
 
 if __name__ == '__main__':

@@ -142,6 +142,7 @@ class Triangulation(object):
                 
             # Continue adding triangles to smooth out front
             # (heuristics shown in figs. 9, 10)
+            debug("Smoothing front...")
             for direction in -1, 1:
                 while True:
                     # Find point connected to pi
@@ -166,6 +167,7 @@ class Triangulation(object):
                             front[ind2] != i)
                     self.add_tri(i, front[ind1], front[ind2], source='smooth1')
                     front.pop(ind1)
+            debug("Finished smoothing front.")
             
             # "edge event" (sec. 3.4.2)
             # remove any triangles cut by completed edges and re-fill the holes.
@@ -503,10 +505,13 @@ class Triangulation(object):
 
         # (iii) triangluate empty areas
         
+        debug("Filling edge_event polygons...")
         for polygon in [lower_polygon, upper_polygon]:
             dist = self.distances_from_line((i, j), polygon)
+            debug("Distances:", dist)
             while len(polygon) > 2:
                 i = np.argmax(dist)
+                debug("Next index: %d" % i)
                 self.add_tri(polygon[i], polygon[i-1],
                              polygon[i+1], legal=False, 
                              source='edge_event')
@@ -748,29 +753,41 @@ class Triangulation(object):
 
     # Distance of a set of points from a given line
     def distances_from_line(self, edge, points):
-        # TODO: vectorize
         e1 = self.pts[edge[0]]
         e2 = self.pts[edge[1]]
         distances = []
-        # check if e is not just a point
-        l2 = float(self.distance(e1, e2))
-        l2 *= l2
-        if l2 == 0:
-            for p in points:
-                distances.append(self.distance(e1, self.pts[p]))
-        else:
-            for p in points:
-                t = float((self.pts[p] - e1).dot(e2 - e1)) / l2
-                if (t < 0.0):
-                    distances.append(self.distance(self.pts[p], e1))
-                elif (t > 0.0):
-                    distances.append(self.distance(self.pts[p], e2))
-                else:
-                    projection = e1 + t * (e2 - e1)
-                    distances.append(self.distance(self.pts[p], projection))
-        
+        for i in points:
+            p = self.pts[i]
+            proj = self.projection(e1, p, e2)
+            distances.append(((p - proj)**2).sum()**0.5)
         return distances
+        #distances = []
+        ## check if e is not just a point
+        #l2 = float(self.distance(e1, e2))
+        #l2 *= l2
+        #if l2 == 0:
+            #for p in points:
+                #distances.append(self.distance(e1, self.pts[p]))
+        #else:
+            #for p in points:
+                #t = float((self.pts[p] - e1).dot(e2 - e1)) / l2
+                #if (t < 0.0):
+                    #distances.append(self.distance(self.pts[p], e1))
+                #elif (t > 0.0):
+                    #distances.append(self.distance(self.pts[p], e2))
+                #else:
+                    #projection = e1 + t * (e2 - e1)
+                    #distances.append(self.distance(self.pts[p], projection))
+                #debug("    point %d dist=%f" % (p, distances[-1]))
+        #return distances
 
+    def projection(self, a, b, c):
+        """Return projection of (a,b) onto (a,c)
+        Arguments are point locations, not indexes.
+        """
+        ab = b - a
+        ac = c - a
+        return a + ((ab*ac).sum() / (ac*ac).sum()) * ac
 
     # Cosine of angle ABC
     def cosine(self, A, B, C):
@@ -1169,11 +1186,24 @@ if __name__ == '__main__':
     edges2[:,0] = np.arange(10)
     edges2[:,1] = np.arange(1,11) % 10
     
+    #
+    # Test 3
+    #
+    pts3 = np.random.normal(size=(10, 2))
+    edges3 = np.zeros((10, 2), dtype=int)
+    edges3[:,0] = np.arange(10)
+    edges3[:,1] = np.arange(1,11) % 10
     
-
- 
-
-    t = DebugTriangulation(pts2, edges2, interval=0, skip=0)
+    #
+    # Test 4
+    #
+    pts4 = np.random.normal(size=(10, 2))
+    edges4 = np.zeros((10, 2), dtype=int)
+    edges4[:,0] = np.arange(10)
+    edges4[:,1] = np.arange(1,11) % 10
+    
+    
+    t = DebugTriangulation(pts4, edges4, interval=-1, skip=50)
     t.triangulate()
 
 
