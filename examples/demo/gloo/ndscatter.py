@@ -14,7 +14,6 @@ import numpy as np
 from scipy.linalg import expm, logm
 
 
-# TODO: b, a=None ==> a = eye
 class OrthogonalPath(object):
     """Implement a continuous path on the Lie group SO(n).
     
@@ -22,13 +21,16 @@ class OrthogonalPath(object):
             >>> mat = op(t)
     
     """
-    def __init__(self, a, b):
-        self.a, self.b = np.matrix(a), np.matrix(b)
+    def __init__(self, mat, origin=None):
+        if origin is None:
+            origin = np.eye(len(mat))
+        self.a, self.b = np.matrix(origin), np.matrix(mat)
         self._logainvb = logm(self.a.I * self.b)
         
     def __call__(self, t):
         return np.real(self.a * expm(t * self._logainvb))
 
+# Load the Iris dataset and normalize.
 iris = load_iris()
 position = iris['data'].astype(np.float32)
 n, ndim = position.shape
