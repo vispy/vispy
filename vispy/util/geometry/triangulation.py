@@ -129,7 +129,6 @@ class Triangulation(object):
                 # Add a single triangle connecting pi,pl,pr
                 self.add_tri(front[l], front[l+1], i)
                 front.insert(l+1, i)
-                front_index = l+1
             # "(ii) left case"
             else:
                 debug("  left case")
@@ -138,7 +137,6 @@ class Triangulation(object):
                 self.add_tri(front[l], front[l+1], i)
                 self.add_tri(front[l-1], front[l], i)
                 front[l] = i
-                front_index = l
             
             debug(front)
                 
@@ -169,128 +167,15 @@ class Triangulation(object):
                             front[ind2] != i)
                     self.add_tri(i, front[ind1], front[ind2], source='smooth1')
                     front.pop(ind1)
-                    if ind1 < front_index:
-                        front_index -= 1
             debug("Finished smoothing front.")
             
             # "edge event" (sec. 3.4.2)
             # remove any triangles cut by completed edges and re-fill the holes.
             if i in self.tops:
                 for j in self.bottoms[self.tops == i]:
-                    self.edge_event(i, j, front_index)  # Make sure edge (j, i) is present in mesh
+                    self.edge_event(i, j)  # Make sure edge (j, i) is present in mesh
                     front = self.front # because edge event may have created a new front list
                 
-                
-                
-                ## Locate the other endpoint
-                #found = False
-                #for e in edges:
-                    #if i in e:
-                        #found = True
-                        #endpoint = e[0] if (e[1] == i) else e[1]
-                        #break
-                #if not found:
-                    #debug("    Other end point not located; continuing.")
-                    #continue
-                
-                #debug("    Locate first intersected triangle")
-                ## (i) locate intersected triangles
-                #"""
-                #If the first intersected triangle contains the top point,
-                #then start traversal there. Also, if an intersected triangle
-                #contains the top point, then it has to be the first intersected
-                #triangle.
-                #"""
-                ##debug("  edges lookup:")
-                ##debug(edges_lookup)
-                
-                #vals = edges_lookup.values()
-                #edge_intersects = False
-                #for value in vals:
-                    #if value == i:          # loop over all triangles containing Pi
-                        #current_side = edges_lookup.keys()[vals.index(i)]
-                        ## todo: might be sped up by using cross product as described in fig. 11
-                        #if intersects(current_side, e):
-                            #edge_intersects = True
-                            #break
-
-                ## (ii) remove intersected triangles
-                #upper_polygon = []
-                #lower_polygon = []
-
-                #if not edge_intersects:
-                    ## find the closest intersection to point
-                    #h_max = 0
-                    #closest_edge = None
-                    #for edge in edges_lookup.keys():
-                        #h = intersection(edge, e)
-                        #if h >= 0 and h < 1 and h > h_max:
-                            #h_max = h
-                            #closest_edge = edge
-                    #if not closest_edge:
-                        ## the edge does not intersect any lines
-                        ## triangulate the points on the front lying between the edge
-                        #start = front.index(i)
-                        #end = front.index(endpoint)
-                        #upper_polygon.append(i)
-                        #lower_polygon.append(i)
-                        #c = -1 if (start > end) else 1
-                        #for k in range(start+c, end, c):
-                            #if orientation((i, endpoint), front[k]) > 0:
-                                #upper_polygon.append(front[k])
-                            #else:
-                                #lower_polygon.append(front[k])
-                                #front.pop(k)
-
-                #else:
-                    #remove_tri(*(current_side+(i,)))
-                    #upper_polygon.append(i)
-                    #lower_polygon.append(i)
-                    #if orientation((i, endpoint), current_side[0]) > 0:
-                        #upper_polygon.append(current_side[0])
-                        #lower_polygon.append(current_side[1])
-                    #else:
-                        #upper_polygon.append(current_side[1])
-                        #lower_polygon.append(current_side[0])
-                    ## now traverse and remove all intersecting triangles
-                    #try:
-                        #other_vertex = edges_lookup[current_side[::-1]]
-                        #remove_tri(*(current_side+(other_vertex, )))
-                    #except KeyError:
-                        #other_vertex = endpoint
-                    #while (other_vertex != endpoint):
-                        ## now the edge intersects one of the triangles on either sides
-                        ## of current triangle, we find which one and continue the loop
-                        #side1 = (current_side[0], other_vertex)
-                        #if intersects(side1, e):
-                            #other_vertex = edges_lookup[side1[::-1]]
-                            #current_side = side1
-                            #remove_tri(*(current_side+(other_vertex, )))
-                        #else:
-                            #side2 = (other_vertex, current_side[1])
-                            #if intersects(side2, e):
-                                #other_vertex = edges_lookup[side2[::-1]]
-                                #current_side = side2
-                                #remove_tri(*(current_side+(other_vertex, )))
-                            #else:
-                                ## edge passes through the other_vertex
-                                #debug("    does not intersect any other side, "
-                                    #"need to handle it")
-                                #break
-
-                        #if orientation((i, endpoint), current_side[0]) > 0:
-                            #upper_polygon.append(current_side[0])
-                            #lower_polygon.append(current_side[1])
-                        #else:
-                            #upper_polygon.append(current_side[1])
-                            #lower_polygon.append(current_side[0])
-
-                #upper_polygon = list(OrderedDict.fromkeys(upper_polygon))
-                #lower_polygon = list(OrderedDict.fromkeys(lower_polygon))
-                #upper_polygon.append(endpoint)
-                #lower_polygon.append(endpoint)
-
-                    
         self.finalize()
         
         self.tris = np.array(self.tris, dtype=int)
@@ -374,12 +259,14 @@ class Triangulation(object):
             if v == 0:
                 self.remove_tri(*t)
 
-    def edge_event(self, i, j, front_index):
+    def edge_event(self, i, j):
         """
         Force edge (i, j) to be present in mesh. 
         This works by removing intersected triangles and filling holes up to
         the cutting edge.
         """
+        front_index = self.front.index(i)
+        
         debug("  == edge event ==")
         pts = self.pts
         edges = self.edges
@@ -529,7 +416,7 @@ class Triangulation(object):
                     # triangle. 
                     next_tri = self.tri_from_edge(last_edge)
                     lower_polygon.append(front[front_index])
-                    upper_polygon.append(front[front_index+1])
+                    upper_polygon.append(front[front_index+front_dir])
                 else:
                     debug("    -> did not cross front..")
                     front_holes.append(front_index)
@@ -552,13 +439,13 @@ class Triangulation(object):
             dist = self.distances_from_line((i, j), polygon)
             debug("Distances:", dist)
             while len(polygon) > 2:
-                i = np.argmax(dist)
-                debug("Next index: %d" % i)
-                self.add_tri(polygon[i], polygon[i-1],
-                             polygon[i+1], legal=False, 
+                ind = np.argmax(dist)
+                debug("Next index: %d" % ind)
+                self.add_tri(polygon[ind], polygon[ind-1],
+                             polygon[ind+1], legal=False, 
                              source='edge_event')
-                polygon.pop(i)
-                dist.pop(i)
+                polygon.pop(ind)
+                dist.pop(ind)
 
         debug("Finished filling edge_event polygons.")
         
@@ -813,6 +700,7 @@ class Triangulation(object):
 
     # Distance of a set of points from a given line
     def distances_from_line(self, edge, points):
+        debug("distance from %r to %r" % (points, edge))
         e1 = self.pts[edge[0]]
         e2 = self.pts[edge[1]]
         distances = []
@@ -820,6 +708,7 @@ class Triangulation(object):
             p = self.pts[i]
             proj = self.projection(e1, p, e2)
             distances.append(((p - proj)**2).sum()**0.5)
+        assert distances[0] == 0 and distances[-1] == 0
         return distances
         #distances = []
         ## check if e is not just a point
@@ -1293,7 +1182,7 @@ if __name__ == '__main__':
     edges[:,0] = np.arange(N)
     edges[:,1] = np.arange(1,N+1) % N
     
-    t = DebugTriangulation(pts, edges, interval=-1, skip=415)
+    t = DebugTriangulation(pts, edges, interval=0, skip=725)
     t.triangulate()
     
     
