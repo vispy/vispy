@@ -18,8 +18,7 @@ TODO:
 
 """
 
-import numpy as np
-from math import exp, cos, sin
+from math import cos
 from vispy import app, gloo
 
 vertex = """
@@ -172,8 +171,10 @@ vec3 run(float x, float y, float t) {
         
         // Shadow of the spheres on the plane.
         if (object_index == PLANE) {
-            t0 = intersect_sphere(M + N * .0001, toL, sphere_position_0, sphere_radius_0);
-            t1 = intersect_sphere(M + N * .0001, toL, sphere_position_1, sphere_radius_1);
+            t0 = intersect_sphere(M + N * .0001, toL, 
+                                  sphere_position_0, sphere_radius_0);
+            t1 = intersect_sphere(M + N * .0001, toL, 
+                                  sphere_position_1, sphere_radius_1);
             if (min(t0, t1) < INFINITY) {
                 break;
             }
@@ -181,7 +182,8 @@ vec3 run(float x, float y, float t) {
         
         col_ray = vec3(ambient, ambient, ambient);
         col_ray += light_intensity * max(dot(N, toL), 0.) * object_color;
-        col_ray += light_specular.x * pow(max(dot(N, normalize(toL + toO)), 0.), light_specular.y) * light_color;
+        col_ray += light_specular.x * light_color * 
+            pow(max(dot(N, normalize(toL + toO)), 0.), light_specular.y);
         
         /* end trace_ray */
         
@@ -201,6 +203,7 @@ void main() {
     gl_FragColor = vec4(run(pos.x*u_aspect_ratio, pos.y, u_time), 1.);
 }
 """
+
 
 class Canvas(app.Canvas):
     def __init__(self):
@@ -227,7 +230,7 @@ class Canvas(app.Canvas):
         self.program['light_position'] = (5., 5., -10.)
         self.program['light_color'] = (1., 1., 1.)
         self.program['ambient'] = .05
-        self.program['O']= (0., 0., -1.)
+        self.program['O'] = (0., 0., -1.)
                                       
         self.timer = app.Timer(1.0 / 60)
         self.timer.connect(self.on_timer)
