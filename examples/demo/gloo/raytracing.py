@@ -31,14 +31,13 @@ const float M_PI = 3.14159265358979323846;
 uniform float u_time;
 varying vec2 v_position;
 
-uniform vec3 position;
-uniform float radius;
-uniform vec4 color;
-uniform float diffuse;
-uniform float specular_c;
-uniform float specular_k;
+uniform vec3 sphere_position;
+uniform float sphere_radius;
+uniform vec4 sphere_color;
+uniform float light_intensity;
+uniform vec2 light_specular;
 uniform vec3 light_position;
-uniform vec4 color_light;
+uniform vec4 light_color;
 uniform float ambient;
 uniform vec3 O;
 
@@ -70,17 +69,29 @@ float intersect_sphere(vec3 O, vec3 D, vec3 S, float R) {
     return 100000000.;
 }
 
+float intersect_plane(vec3 O, vec3 D, vec3 P, vec3 N) {
+    float denom = dot(D, N);
+    if (abs(denom) < 1e-6) {
+        return 100000000.;
+    }
+    float d = dot(P - O, N) / denom;
+    if (d < 0.) {
+        return 100000000.;
+    }
+    return d;
+}
+
 vec4 trace_ray(vec3 rayO, vec3 rayD) {
-    float t = intersect_sphere(rayO, rayD, position, radius);
+    float t = intersect_sphere(rayO, rayD, sphere_position, sphere_radius);
     if (t >= 10000000.)
         return vec4(0., 0., 0., 0.);
     vec3 M = rayO + rayD * t;
-    vec3 N = normalize(M - position);
+    vec3 N = normalize(M - sphere_position);
     vec3 toL = normalize(light_position - M);
     vec3 toO = normalize(O - M);
     vec4 col_ray = vec4(ambient, ambient, ambient, 1.);
-    col_ray += diffuse * max(dot(N, toL), 0.) * color;
-    col_ray += specular_c * pow(max(dot(N, normalize(toL + toO)), 0.), specular_k) * color_light;
+    col_ray += light_intensity * max(dot(N, toL), 0.) * sphere_color;
+    col_ray += light_specular.x * pow(max(dot(N, normalize(toL + toO)), 0.), light_specular.y) * light_color;
     return col_ray;
 }
 
@@ -107,19 +118,16 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(vertex, fragment)
         self.program['a_position'] = [(-1., -1.), (-1., +1.),
                                       (+1., -1.), (+1., +1.)]
-                                      
-        
-        self.program['position'] = (0., 0., 1.)
-        self.program['radius'] = 1.
-        self.program['color'] = (0., 0., 1., 1.)
-        self.program['diffuse'] = 1.
-        self.program['specular_c'] = 1.
-        self.program['specular_k'] = 50.
+
+        self.program['sphere_position'] = (0., 0., 1.)
+        self.program['sphere_radius'] = 1.
+        self.program['sphere_color'] = (0., 0., 1., 1.)
+        self.program['light_intensity'] = 1.
+        self.program['light_specular'] = (1., 50.)
         self.program['light_position'] = (5., 5., -10.)
-        self.program['color_light'] = (1., 1., 1., 1.)
+        self.program['light_color'] = (1., 1., 1., 1.)
         self.program['ambient'] = .05
         self.program['O']= (0., 0., -1.)
-        self.program['light_position'] = (5., 5., -10.)
                                       
         self.timer = app.Timer(1.0 / 60)
         self.timer.connect(self.on_timer)
