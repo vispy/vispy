@@ -40,16 +40,16 @@ float f(float x, float y, float t) {
     // x is in [-x_scale, +x_scale]
     // y is in [-y_scale, +y_scale]
     // t is in [0, +oo)
-    
+
     /**********************************************************
     Write your function below.
     **********************************************************/
-    
+
     float k = .25*cos(t);
     return (cos(x)+k)*(sin(y)-k);
-    
+
     /*********************************************************/
-    
+
 }
 
 vec4 jet(float x) {
@@ -82,19 +82,20 @@ void main() {
 }
 """
 
+
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, position=(300, 100), 
+        app.Canvas.__init__(self, position=(300, 100),
                             size=(800, 800), close_keys='escape')
-        
+
         self.program = gloo.Program(vertex, fragment)
         self.program['a_position'] = [(-1., -1.), (-1., +1.),
                                       (+1., -1.), (+1., +1.)]
-                                      
+
         self.timer = app.Timer(1.0 / 60)
         self.timer.connect(self.on_timer)
         self.timer.start()
-    
+
     def on_timer(self, event):
         self.program['u_time'] = event.elapsed
         self.update()
