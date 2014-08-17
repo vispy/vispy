@@ -208,7 +208,7 @@ void main() {
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, position=(300, 100), 
-                            size=(800, 600), close_keys='escape')
+                            size=(800, 600), keys='interactive')
         
         self.program = gloo.Program(vertex, fragment)
         self.program['a_position'] = [(-1., -1.), (-1., +1.),
