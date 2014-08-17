@@ -248,7 +248,7 @@ def test_projection():
                     [5, 0],
                     [1, 2],
                     [3, 4]])
-    t = T(pts, [])
+    t = T(pts, np.zeros((0,2)))
     
     a, b, c, d = pts
     assert np.allclose(t.projection(a, c, b), [1, 0]) 
@@ -287,20 +287,191 @@ def test_random():
     t = T(pts, edges)
     t.triangulate()
     
-    
-    
     # much larger test
-    N = 4000
-    pts = np.random.normal(size=(N, 2))
-    pts = np.cumsum(pts, axis=0)
-    edges = np.zeros((N, 2), dtype=int)
-    edges[:,0] = np.arange(N)
-    edges[:,1] = np.arange(1,N+1) % N
+    # this should pass, but takes forever..
+    #N = 4000
+    #pts = np.random.normal(size=(N, 2))
+    #pts = np.cumsum(pts, axis=0)
+    #edges = np.zeros((N, 2), dtype=int)
+    #edges[:,0] = np.arange(N)
+    #edges[:,1] = np.arange(1,N+1) % N
+    
+    #t = T(pts, edges)
+    #t.triangulate()
+
+    
+def test_edge_event():
+    
+    # mode 1
+    pts = np.array([[0, 0],
+                    [5, -10],
+                    [10, 0],
+                    [6, -5],
+                    [5, 5],
+                    ])
+    inds = np.arange(pts.shape[0])[:, np.newaxis]
+    edges = np.hstack([inds, np.roll(inds, -1)])
     
     t = T(pts, edges)
     t.triangulate()
+
+    t = T(pts * [-1, 1], edges)
+    t.triangulate()
     
+    # mode 2
+    pts = np.array([[0, 0],
+                    [10, 0],
+                    [20, 0],
+                    [5, 11],
+                    ])
+    inds = np.arange(pts.shape[0])[:, np.newaxis]
+    edges = np.hstack([inds, np.roll(inds, -1)])
     
+    t = T(pts, edges)
+    t.triangulate()
+
+    t = T(pts * [-1, 1], edges)
+    t.triangulate()
+    
+    # mode 1, 2
+    pts = np.array([[0, 0],
+                    [10, 0],
+                    [20, 0],
+                    [5, 11],
+                    [9, 10],
+                    [0, 20],
+                    ])
+    inds = np.arange(pts.shape[0])[:, np.newaxis]
+    edges = np.hstack([inds, np.roll(inds, -1)])
+    
+    t = T(pts, edges)
+    t.triangulate()
+
+    t = T(pts * [-1, 1], edges)
+    t.triangulate()
+
+
+    # mode 2, 1
+    pts = np.array([[0, 0],
+                    [10, 0],
+                    [20, 0],
+                    [15, 8],
+                    [15, 1],
+                    [-5, 10],
+                    ])
+    inds = np.arange(pts.shape[0])[:, np.newaxis]
+    edges = np.hstack([inds, np.roll(inds, -1)])
+    
+    t = T(pts, edges)
+    t.triangulate()
+
+    t = T(pts * [-1, 1], edges)
+    t.triangulate()
+
+    
+    # mode 2, 1 with many triangles
+    pts = np.array([[0, 10],
+                    [2, 8],
+                    [4, 6],
+                    [6, 4],
+                    [8, 2],
+                    [10, 0],
+                    
+                    [20, 5],
+                    [20, 20],
+                    
+                    [2, 13],
+                    [4, 11],
+                    [6, 9],
+                    [8, 7],
+                    [10, 5],
+                    
+                    [10, 1],
+                    [0, 15],
+                    ])
+    inds = np.arange(pts.shape[0])[:, np.newaxis]
+    edges = np.hstack([inds, np.roll(inds, -1)])
+    
+    t = T(pts, edges)
+    t.triangulate()
+
+    t = T(pts * [-1, 1], edges)
+    t.triangulate()
+
+
+    # mode 1, 2, 1, 2, 1
+    pts = np.array([[0, 10],
+                    [2, 9],
+                    [4, 8],
+                    [6, 7],
+                    [8, 6],
+                    [10, 5],
+                    
+                    [20, 5],
+                    [20, 20],
+                    
+                    [2, 11],
+                    [19, 19],
+                    [6, 9],
+                    [19, 18],
+                    [10, 7],
+                    
+                    [11, 5.1],
+                    [0, 11.1],
+                    ])
+    inds = np.arange(pts.shape[0])[:, np.newaxis]
+    edges = np.hstack([inds, np.roll(inds, -1)])
+    
+    t = T(pts, edges)
+    t.triangulate()
+
+    t = T(pts * [-1, 1], edges)
+    t.triangulate()
+
+    # mode 2, 1, 2, 1
+    pts = np.array([[0, 10],
+                    [2, 9],
+                    [4, 8],
+                    [6, 7],
+                    [8, 6],
+                    [10, 5],
+                    
+                    [20, 5],
+                    [20, 20],
+                    
+                    [6, 9],
+                    [19, 18],
+                    [10, 7],
+                    
+                    [11, 5.1],
+                    [0, 11.1],
+                    ])
+    inds = np.arange(pts.shape[0])[:, np.newaxis]
+    edges = np.hstack([inds, np.roll(inds, -1)])
+    
+    t = T(pts, edges)
+    t.triangulate()
+
+    t = T(pts * [-1, 1], edges)
+    t.triangulate()
+    
+    # 1, 2  upper/lower polygon order check
+    pts = np.array([[-5, 0],
+                    [-3, 0],
+                    [10, 0],
+                    [15, 15],
+                    [4, 9],
+                    [6, 8.8],
+                    [9, 10],
+                    ])
+    inds = np.arange(pts.shape[0])[:, np.newaxis]
+    edges = np.hstack([inds, np.roll(inds, -1)])
+    
+    t = T(pts, edges)
+    t.triangulate()
+
+    t = T(pts * [-1, 1], edges)
+    t.triangulate()
     
 
 if __name__ == '__main__':
