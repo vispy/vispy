@@ -137,6 +137,16 @@ def test_edge_intersections():
     assert_array_almost_equal(pts, t.pts)
     assert np.all(edges == t.edges)
 
+    pts = np.array([[0, 0],
+                    [1.6, 0],
+                    [1.6, -0.9],
+                    [1.1, -0.9],
+                    ])
+    edges = np.array([[0, 1], [1, 2], [2, 3], [3, 0]])
+    t = T(pts, edges)
+    for edge, cuts in t.find_edge_intersections().items():
+        assert len(cuts) == 0
+
     
 def test_merge_duplicate_points():
     global t
@@ -299,6 +309,25 @@ def test_random():
     #t = T(pts, edges)
     #t.triangulate()
 
+
+def test_orthogonal():
+    return
+    # make lines that are entirely vertical / horizontal
+    np.random.seed(1)
+    N = 100
+    pts = [[0, 0]]
+    for i in range(N):
+        p = pts[-1][:]
+        p[i%2] += np.random.normal()
+    pts = np.array(pts)
+    edges = np.zeros((N, 2), dtype=int)
+    edges[:,0] = np.arange(N)
+    edges[:,1] = np.arange(1,N+1) % N
+    
+    t = T(pts, edges)
+    t.triangulate()
+
+    
     
 def test_edge_event():
     

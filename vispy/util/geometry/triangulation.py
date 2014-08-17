@@ -355,8 +355,6 @@ class Triangulation(object):
                     debug("    set next_tri:", next_tri)
                     self.remove_tri(*last_tri)
 
-
-
                     # Crossing an edge adds one point to one of the polygons
                     if lower_polygon[-1] == last_edge[0]:
                         upper_polygon.append(last_edge[1])
@@ -372,8 +370,6 @@ class Triangulation(object):
                         debug("    Appended to lower_polygon:", lower_polygon)
                     else:
                         raise RuntimeError("Something went wrong..")
-
-
                     
                     # If we crossed the front, go to mode 2
                     x = self.edge_in_front(last_edge)
@@ -389,32 +385,24 @@ class Triangulation(object):
                         debug("    set front_index:", front_index)
                         
                         # Select the correct polygon to be lower_polygon
-                        # (because mode 2 requires this) 
-                        #debug("front_index2: %d  front: %r" % (front_index2, front))
-                        #debug("lower_polygon:", lower_polygon)
-                        #debug("upper_polygon:", upper_polygon)
+                        # (because mode 2 requires this). 
+                        # We know that last_edge is in the front, and 
+                        # front[front_index] is the point _above_ the front. 
+                        # So if this point is currently the last element in
+                        # lower_polygon, then the polys must be swapped.
                         if lower_polygon[-1] == front[front_index]:
                             upper_polygon, lower_polygon = lower_polygon, upper_polygon
                             debug('    Swap upper/lower polygons')
                         else:
                             assert upper_polygon[-1] == front[front_index]
                         
-                        # is this needed?
-                        #front_holes.append(front_index)
-                        #debug("    append front hole:", front_holes)
-                        #front_index += front_dir
-                        #debug("    increment front_index before switch:", front_index)
                     else:
                         assert next_tri is not None
-                        
-                        
-
-                
                 
             else:  # mode == 2
-                # At beginning, we require:
+                # At each iteration, we require:
                 #   * front_index is the starting index of the edge _preceding_
-                #     the edge that will be handled in this iteration:
+                #     the edge that will be handled in this iteration
                 #   * lower_polygon is the polygon to which points should be
                 #     added while traversing the front
                 
@@ -431,9 +419,7 @@ class Triangulation(object):
                     upper_polygon.append(j)
                     debug("    Appended to upper_polygon:", upper_polygon)
                     debug("    Appended to lower_polygon:", lower_polygon)
-                    #front_holes.append(front_index)
                     break
-
 
                 # Add point to lower_polygon. 
                 # The conditional is because there are cases where the 
@@ -669,10 +655,13 @@ class Triangulation(object):
             if len(cuts) == 0:
                 continue
             
+            debug("Edge intersections:", edge, self.edges[edge], self.pts[self.edges[edge]], cuts)
+            
             # add new points
             pt_offset = self.pts.shape[0] + len(add_pts)
             new_pts = [x[1] for x in cuts]
             add_pts.extend(new_pts)
+            debug("Add new points:", new_pts)
             
             # list of point indexes for all new edges
             pt_indexes = range(pt_offset, pt_offset + len(cuts))
@@ -1102,8 +1091,6 @@ if __name__ == '__main__':
                     app.processEvents()
                     time.sleep(0.01)
                 
-                
-
         def draw_tri(self, tri, source=None):
             # assign triangle color based on the source that generated it
             color = {
@@ -1175,273 +1162,27 @@ if __name__ == '__main__':
     pts = np.array(pts, dtype=float)
     edges = np.array(edges, dtype=int)
 
-
-    #
-    # Test 2
-    #
-    N = 10
-    np.random.seed(0)
-    pts = np.random.normal(size=(N, 2))
-    edges = np.zeros((N, 2), dtype=int)
-    edges[:,0] = np.arange(N)
-    edges[:,1] = np.arange(1,N+1) % N
-    
-    #
-    # Test 3
-    #
-    pts = np.random.normal(size=(N, 2))
-    edges = np.zeros((N, 2), dtype=int)
-    edges[:,0] = np.arange(N)
-    edges[:,1] = np.arange(1,N+1) % N
-    
-    #
-    # Test 4
-    #
-    pts = np.random.normal(size=(N, 2))
-    edges = np.zeros((N, 2), dtype=int)
-    edges[:,0] = np.arange(N)
-    edges[:,1] = np.arange(1,N+1) % N
-    
-    #
-    # Test 5
-    #
-    pts = np.random.normal(size=(N, 2))
-    edges = np.zeros((N, 2), dtype=int)
-    edges[:,0] = np.arange(N)
-    edges[:,1] = np.arange(1,N+1) % N
-    
-    #
-    # Test 6
-    #
-    theta = np.linspace(0, 2*np.pi, 11)[:-1]
-    pts = np.hstack([np.cos(theta)[:,np.newaxis], 
-                    np.sin(theta)[:,np.newaxis]])
-    pts[::2] *= 0.4
-    edges = np.empty((pts.shape[0], 2), dtype=np.uint)
-    edges[:,0] = np.arange(pts.shape[0])
-    edges[:,1] = edges[:,0] + 1
-    edges[-1, 1] = 0
-    
     #t = DebugTriangulation(pts, edges, interval=-1, skip=19570)
     #t.triangulate()
-    
-
-    #
-    # Test 7
-    #
-    # TODO: come back to this one..
-    #N = 4000
-    #pts = np.random.normal(size=(N, 2))
-    #pts = np.cumsum(pts, axis=0)
-    #edges = np.zeros((N, 2), dtype=int)
-    #edges[:,0] = np.arange(N)
-    #edges[:,1] = np.arange(1,N+1) % N
-    
-    #t = DebugTriangulation(pts, edges, interval=-1, skip=3415)
-    #t.triangulate()
-    
-    #N = 2000
-    #pts = np.random.normal(size=(N, 2))
-    #pts = np.cumsum(pts, axis=0)
-    #edges = np.zeros((N, 2), dtype=int)
-    #edges[:,0] = np.arange(N)
-    #edges[:,1] = np.arange(1,N+1) % N
-    
-    #t = DebugTriangulation(pts, edges, interval=-1, skip=1300)
-    #t.triangulate()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    #
-    # Edge event tests
-    #
-    
-    # 1
-    pts = np.array([[0, 0],
-                    [5, -10],
-                    [10, 0],
-                    [6, -5],
-                    [5, 5],
-                    ])
-    inds = np.arange(pts.shape[0])[:, np.newaxis]
-    edges = np.hstack([inds, np.roll(inds, -1)])
-    
-    #t = DebugTriangulation(pts, edges, interval=-1, skip=0)
-    #t.triangulate()
-
-    #t = DebugTriangulation(pts * [-1, 1], edges, interval=-1, skip=0)
-    #t.triangulate()
-    
-    # 2
-    pts = np.array([[0, 0],
-                    [10, 0],
-                    [20, 0],
-                    [5, 11],
-                    ])
-    inds = np.arange(pts.shape[0])[:, np.newaxis]
-    edges = np.hstack([inds, np.roll(inds, -1)])
-    
-    #t = DebugTriangulation(pts, edges, interval=0, skip=0)
-    #t.triangulate()
-
-    #t = DebugTriangulation(pts * [-1, 1], edges, interval=0, skip=0)
-    #t.triangulate()
-    
-    # 1, 2
-    pts = np.array([[0, 0],
-                    [10, 0],
-                    [20, 0],
-                    [5, 11],
-                    [9, 10],
-                    [0, 20],
-                    ])
-    inds = np.arange(pts.shape[0])[:, np.newaxis]
-    edges = np.hstack([inds, np.roll(inds, -1)])
-    
-    #t = DebugTriangulation(pts, edges, interval=0, skip=0)
-    #t.triangulate()
-
-    #t = DebugTriangulation(pts * [-1, 1], edges, interval=0, skip=0)
-    #t.triangulate()
-
-
-    # 2, 1
-    pts = np.array([[0, 0],
-                    [10, 0],
-                    [20, 0],
-                    [15, 8],
-                    [15, 1],
-                    [-5, 10],
-                    ])
-    inds = np.arange(pts.shape[0])[:, np.newaxis]
-    edges = np.hstack([inds, np.roll(inds, -1)])
-    
-    #t = DebugTriangulation(pts, edges, interval=-1, skip=0)
-    #t.triangulate()
-
-    #t = DebugTriangulation(pts * [-1, 1], edges, interval=-1, skip=0)
-    #t.triangulate()
-
-    
-    # 2, 1
-    pts = np.array([[0, 10],
-                    [2, 8],
-                    [4, 6],
-                    [6, 4],
-                    [8, 2],
-                    [10, 0],
-                    
-                    [20, 5],
-                    [20, 20],
-                    
-                    [2, 13],
-                    [4, 11],
-                    [6, 9],
-                    [8, 7],
-                    [10, 5],
-                    
-                    [10, 1],
-                    [0, 15],
-                    ])
-    inds = np.arange(pts.shape[0])[:, np.newaxis]
-    edges = np.hstack([inds, np.roll(inds, -1)])
-    
-    #t = DebugTriangulation(pts, edges, interval=-1, skip=0)
-    #t.triangulate()
-
-    #t = DebugTriangulation(pts * [-1, 1], edges, interval=0, skip=0)
-    #t.triangulate()
-
-
-    # 1, 2, 1, 2, 1
-    pts = np.array([[0, 10],
-                    [2, 9],
-                    [4, 8],
-                    [6, 7],
-                    [8, 6],
-                    [10, 5],
-                    
-                    [20, 5],
-                    [20, 20],
-                    
-                    [2, 11],
-                    [19, 19],
-                    [6, 9],
-                    [19, 18],
-                    [10, 7],
-                    
-                    [11, 5.1],
-                    [0, 11.1],
-                    ])
-    inds = np.arange(pts.shape[0])[:, np.newaxis]
-    edges = np.hstack([inds, np.roll(inds, -1)])
-    
-    t = DebugTriangulation(pts, edges, interval=-1, skip=0)
+    # make lines that are entirely vertical / horizontal
+    np.random.seed(1)
+    N = 4
+    pts = [[0, 0]]
+    for i in range(N-1):
+        p = pts[-1][:]
+        p[i%2] += np.random.normal()
+        pts.append(p)
+    pts = np.array(pts)
+    edges = np.zeros((N, 2), dtype=int)
+    edges[:,0] = np.arange(N)
+    edges[:,1] = np.arange(1,N+1) % N
+    print(pts)
+    print(edges)
+    t = DebugTriangulation(pts, edges)
+    t.normalize()
+    print(t.pts)
+    print(t.edges)
     t.triangulate()
-
-    #t = DebugTriangulation(pts * [-1, 1], edges, interval=0, skip=0)
-    #t.triangulate()
-
-    # 2, 1, 2, 1
-    pts = np.array([[0, 10],
-                    [2, 9],
-                    [4, 8],
-                    [6, 7],
-                    [8, 6],
-                    [10, 5],
-                    
-                    [20, 5],
-                    [20, 20],
-                    
-                    [6, 9],
-                    [19, 18],
-                    [10, 7],
-                    
-                    [11, 5.1],
-                    [0, 11.1],
-                    ])
-    inds = np.arange(pts.shape[0])[:, np.newaxis]
-    edges = np.hstack([inds, np.roll(inds, -1)])
     
-    #t = DebugTriangulation(pts, edges, interval=-1, skip=0)
-    #t.triangulate()
-
-    #t = DebugTriangulation(pts * [-1, 1], edges, interval=0, skip=0)
-    #t.triangulate()
-
-
-    # 1, 2  upper/lower polygon order check
-    pts = np.array([[-5, 0],
-                    [-3, 0],
-                    [10, 0],
-                    [15, 15],
-                    [4, 9],
-                    [6, 8.8],
-                    [9, 10],
-                    ])
-    inds = np.arange(pts.shape[0])[:, np.newaxis]
-    edges = np.hstack([inds, np.roll(inds, -1)])
-    
-    #t = DebugTriangulation(pts, edges, interval=-1, skip=0)
-    #t.triangulate()
-
-    #t = DebugTriangulation(pts * [-1, 1], edges, interval=0, skip=0)
-    #t.triangulate()
-    
-    
-
-
-
-
