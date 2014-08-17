@@ -147,7 +147,7 @@ vec3 run(float x, float y, float t) {
             object_index = PLANE;
         }
         else if (t0 < t1) {
-            // Sphere.
+            // Sphere 0.
             M = rayO + rayD * t0;
             object_normal = normalize(M - sphere_position_0);
             object_color = sphere_color_0;
@@ -155,7 +155,7 @@ vec3 run(float x, float y, float t) {
             object_index = SPHERE_0;
         }
         else if (t1 < t0) {
-            // Sphere.
+            // Sphere 1.
             M = rayO + rayD * t1;
             object_normal = normalize(M - sphere_position_1);
             object_color = sphere_color_1;
@@ -173,14 +173,9 @@ vec3 run(float x, float y, float t) {
         // Shadow of the spheres on the plane.
         if (object_index == PLANE) {
             t0 = intersect_sphere(M + N * .0001, toL, sphere_position_0, sphere_radius_0);
-            if (t0 < INFINITY) {
+            t1 = intersect_sphere(M + N * .0001, toL, sphere_position_1, sphere_radius_1);
+            if (min(t0, t1) < INFINITY) {
                 break;
-            }
-            else {
-                t1 = intersect_sphere(M + N * .0001, toL, sphere_position_1, sphere_radius_1);
-                if (t1 < INFINITY) {
-                    break;
-                }
             }
         }
         
