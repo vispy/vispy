@@ -303,6 +303,12 @@ class ColorArray(object):
         return np.array_equal(self._rgba, other._rgba)
 
     ###########################################################################
+    def __getitem__(self, item):
+        return self._rgba[item]
+        
+    def __setitem__(self, item, value):
+        self._rgba[item] = value
+    
     # RGB(A)
     @property
     def rgba(self):
