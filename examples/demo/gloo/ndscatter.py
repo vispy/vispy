@@ -9,8 +9,10 @@ Lie group SO(n).
 from vispy import gloo
 from vispy import app
 from vispy.color import ColorArray
+from vispy.datasets import load_iris
 import numpy as np
 from scipy.linalg import expm, logm
+
 
 # TODO: b, a=None ==> a = eye
 class OrthogonalPath(object):
@@ -27,8 +29,6 @@ class OrthogonalPath(object):
     def __call__(self, t):
         return np.real(self.a * expm(t * self._logainvb))
 
-# TODO: remove sklearn dependency by adding a datasets package to vispy
-from sklearn.datasets import load_iris
 iris = load_iris()
 position = iris['data'].astype(np.float32)
 n, ndim = position.shape
@@ -37,7 +37,7 @@ position /= np.abs(position).max()
 v_position = position*.75
 
 v_color = ColorArray(['orange', 'magenta', 'darkblue'])
-v_color = v_color.rgb[iris['target'],:].astype(np.float32)
+v_color = v_color.rgb[iris['group'], :].astype(np.float32)
 v_color *= np.random.uniform(.5, 1.5, (n, 3))
 v_color = np.clip(v_color, 0, 1)
 v_size = np.random.uniform(2, 12, (n, 1)).astype(np.float32)
@@ -102,9 +102,10 @@ void main()
 }
 """
 
+
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, position=(50,50), close_keys='escape')
+        app.Canvas.__init__(self, position=(50, 50), close_keys='escape')
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
 
@@ -120,17 +121,17 @@ class Canvas(app.Canvas):
             
         # Circulant matrix.
         circ = np.diagflat(np.ones(ndim-1), 1)
-        circ[-1,0] = -1 if ndim % 2 == 0 else 1
+        circ[-1, 0] = -1 if ndim % 2 == 0 else 1
         self._op = OrthogonalPath(np.eye(ndim), circ)
         
-        self._timer = app.Timer(1./60)
+        self._timer = app.Timer(1. / 60)
         self._timer.connect(self.on_timer)
         self._timer.start()
 
     def on_timer(self, event):
         mat = self._op(event.elapsed)
-        self.program['u_vec1'] = mat[:,0].squeeze()
-        self.program['u_vec2'] = mat[:,1].squeeze()
+        self.program['u_vec1'] = mat[:, 0].squeeze()
+        self.program['u_vec2'] = mat[:, 1].squeeze()
         self.update()
         
     def on_initialize(self, event):
