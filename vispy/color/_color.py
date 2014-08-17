@@ -304,9 +304,23 @@ class ColorArray(object):
 
     ###########################################################################
     def __getitem__(self, item):
-        return self._rgba[item]
+        if isinstance(item, tuple):
+            raise ValueError('ColorArray indexing is only allowed along '
+                             'the first dimension.')
+        subrgba = self._rgba[item]
+        if subrgba.ndim == 1:
+            assert len(subrgba) == 4
+        elif subrgba.ndim == 2:
+            assert subrgba.shape[1] in (3, 4)
+        return ColorArray(subrgba)
         
     def __setitem__(self, item, value):
+        if isinstance(item, tuple):
+            raise ValueError('ColorArray indexing is only allowed along '
+                             'the first dimension.')
+        # value should be a RGBA array, or a ColorArray instance
+        if isinstance(value, ColorArray):
+            value = value.rgba
         self._rgba[item] = value
     
     # RGB(A)

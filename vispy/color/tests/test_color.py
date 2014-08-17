@@ -27,11 +27,20 @@ def test_color_array():
     """Basic tests for ColorArray class"""
     x = ColorArray(['r', 'g', 'b'])
     assert_array_equal(x.rgb, np.eye(3))
+    # Test ColorArray.__getitem__.
+    assert isinstance(x[0], ColorArray)
+    assert isinstance(x[:], ColorArray)
+    assert_array_equal(x.rgba[:], x[:].rgba)
+    assert_array_equal(x.rgba[0], x[0].rgba.squeeze())
+    assert_array_equal(x.rgba[1:3], x[1:3].rgba)
+    # Test ColorArray.__setitem__.
     x[0] = 0
     assert_array_equal(x.rgba[0, :], np.zeros(4))
-    assert_array_equal(x.rgba, x[:])
-    x[1, :-1] = 1
-    assert_array_equal(x[1, :-1], np.ones(3))
+    assert_array_equal(x.rgba, x[:].rgba)
+    x[1] = 1
+    assert_array_equal(x[1].rgba, np.ones((1, 4)))
+    x[:] = .5
+    assert_array_equal(x.rgba, .5 * np.ones((3, 4)))
 
 
 def test_color_interpretation():
