@@ -100,9 +100,10 @@ class Polygon(Visual):
             self.mesh = Mesh(pos=pts, faces=tris.astype(np.uint32),
                              color=self._color.rgba)
             if not self._border_color.is_blank():
-                border_pos = self.data.vertices[self.data.convex_hull]
+                #border_pos = self.data.vertices[self.data.convex_hull]
                 self.border = Line(pos=self._pos,
-                                   color=self._border_color.rgba, mode='line_strip')
+                                   color=self._border_color.rgba, 
+                                   mode='line_strip')
         #self.update()
 
     def set_gl_options(self, *args, **kwds):

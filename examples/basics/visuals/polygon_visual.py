@@ -35,10 +35,11 @@ pos = np.array([[0, 0],
                 [0, 5]])
 
 theta = np.linspace(0, 2*np.pi, 11)
-pos = np.hstack([np.cos(theta)[:,np.newaxis], 
-                 np.sin(theta)[:,np.newaxis]])
+pos = np.hstack([np.cos(theta)[:, np.newaxis], 
+                 np.sin(theta)[:, np.newaxis]])
 pos[::2] *= 0.4
 pos[-1] = pos[0]
+
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
