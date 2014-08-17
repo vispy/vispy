@@ -889,27 +889,17 @@ class Triangulation(object):
         1 and 0 are off of the segment. 
         
         """
-        #global pts
-        #A = pts[edges1[:,0]]
-        #B = pts[edges1[:,1]]
-        #C = pts[edges2[:,0]]
-        #D = pts[edges2[:,1]]
-        
         l1 = lines1[..., 1, :] - lines1[..., 0, :]  # vector for each line in lines1
         l2 = lines2[..., 1, :] - lines2[..., 0, :]  # vector for each line in lines2
         diff = lines1[..., 0, :] - lines2[..., 0, :]  # vector between first point of each line
-        #E = B - A
-        #F = D - C
         
         p = l1.copy()[..., ::-1]  # vectors perpendicular to l1
         p[...,0] *= -1
-        #P = E.copy()[:, ::-1] # perpendicular vectors
-        #P[:,0] *= -1
         
         f = (l2 * p).sum(axis=-1)  # l2 dot p
-        f = np.where(f==0, 1, f)
+        # tempting, but bad idea! 
+        #f = np.where(f==0, 1, f)
         h = (diff * p).sum(axis=-1) / f  # diff dot p / f
-        #h = ((A - C) * P).sum(axis=1) / f  # (A-C) dot P
         return h
 
     def orientation(self, edge, point):
@@ -942,8 +932,6 @@ class Triangulation(object):
         return (f00, f11, p)
 
     def add_tri(self, a, b, c, legal=True, source=None):
-        if 186 in (a,b,c) and 262 in (a,b,c) and 188 in (a,b,c):
-            print("!!!!!!!!! Added 186, 262, 188 !!!!!!!!!!!")
         # source is just used for debugging
         debug("Add triangle [%s]:" % source, (a,b,c))
         
@@ -1168,7 +1156,7 @@ if __name__ == '__main__':
 
     # make lines that are entirely vertical / horizontal
     np.random.seed(1)
-    N = 4
+    N = 100
     pts = [[0, 0]]
     for i in range(N-1):
         p = pts[-1][:]
@@ -1178,11 +1166,6 @@ if __name__ == '__main__':
     edges = np.zeros((N, 2), dtype=int)
     edges[:,0] = np.arange(N)
     edges[:,1] = np.arange(1,N+1) % N
-    print(pts)
-    print(edges)
     t = DebugTriangulation(pts, edges)
-    t.normalize()
-    print(t.pts)
-    print(t.edges)
     t.triangulate()
     

@@ -137,11 +137,13 @@ def test_edge_intersections():
     assert_array_almost_equal(pts, t.pts)
     assert np.all(edges == t.edges)
 
-    pts = np.array([[0, 0],
-                    [1.6, 0],
-                    [1.6, -0.9],
-                    [1.1, -0.9],
-                    ])
+
+    # Test _nearly_ parallel lines. 
+    pts = np.array([[0., 0.],
+                    [1.62434542,  0.        ],
+                    [1.62434542, -0.61175638],
+                    [1.09617364, -0.61175638]])
+    
     edges = np.array([[0, 1], [1, 2], [2, 3], [3, 0]])
     t = T(pts, edges)
     for edge, cuts in t.find_edge_intersections().items():
@@ -311,14 +313,14 @@ def test_random():
 
 
 def test_orthogonal():
-    return
     # make lines that are entirely vertical / horizontal
     np.random.seed(1)
     N = 100
     pts = [[0, 0]]
-    for i in range(N):
+    for i in range(N-1):
         p = pts[-1][:]
         p[i%2] += np.random.normal()
+        pts.append(p)
     pts = np.array(pts)
     edges = np.zeros((N, 2), dtype=int)
     edges[:,0] = np.arange(N)
