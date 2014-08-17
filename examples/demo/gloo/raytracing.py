@@ -38,16 +38,22 @@ fragment = """
 #version 120
 
 const float M_PI = 3.14159265358979323846;
-const int SPHERE = 1;
-const int PLANE = 2;
+const float INFINITY = 1000000000.;
+const int PLANE = 1;
+const int SPHERE_0 = 2;
+const int SPHERE_1 = 3;
 
 uniform float u_time;
 uniform float u_aspect_ratio;
 varying vec2 v_position;
 
-uniform vec3 sphere_position;
-uniform float sphere_radius;
-uniform vec3 sphere_color;
+uniform vec3 sphere_position_0;
+uniform float sphere_radius_0;
+uniform vec3 sphere_color_0;
+
+uniform vec3 sphere_position_1;
+uniform float sphere_radius_1;
+uniform vec3 sphere_color_1;
 
 uniform vec3 plane_position;
 uniform vec3 plane_normal;
@@ -85,17 +91,17 @@ float intersect_sphere(vec3 O, vec3 D, vec3 S, float R) {
             }
         }
     }
-    return 100000000.;
+    return INFINITY;
 }
 
 float intersect_plane(vec3 O, vec3 D, vec3 P, vec3 N) {
     float denom = dot(D, N);
     if (abs(denom) < 1e-6) {
-        return 100000000.;
+        return INFINITY;
     }
     float d = dot(P - O, N) / denom;
     if (d < 0.) {
-        return 100000000.;
+        return INFINITY;
     }
     return d;
 }
@@ -104,7 +110,7 @@ vec3 run(float x, float y, float t) {
     vec3 Q = vec3(x, y, 0.);
     vec3 D = normalize(Q - O);
     int depth = 0;
-    float t0, t1;
+    float t_plane, t0, t1;
     vec3 rayO = O;
     vec3 rayD = D;
     vec3 col;
@@ -122,20 +128,13 @@ vec3 run(float x, float y, float t) {
         
         /* start trace_ray */
         
-        t0 = intersect_sphere(rayO, rayD, sphere_position, sphere_radius);
-        t1 = intersect_plane(rayO, rayD, plane_position, plane_normal);
+        t_plane = intersect_plane(rayO, rayD, plane_position, plane_normal);
+        t0 = intersect_sphere(rayO, rayD, sphere_position_0, sphere_radius_0);
+        t1 = intersect_sphere(rayO, rayD, sphere_position_1, sphere_radius_1);
         
-        if (t0 < t1) {
-            // Sphere.
-            M = rayO + rayD * t0;
-            object_normal = normalize(M - sphere_position);
-            object_color = sphere_color;
-            object_reflection = .5;
-            object_index = SPHERE;
-        }
-        else if (t1 < t0) {
+        if (t_plane < min(t0, t1)) {
             // Plane.
-            M = rayO + rayD * t1;
+            M = rayO + rayD * t_plane;
             object_normal = plane_normal;
             // Plane texture.
             if (mod(int(2*M.x), 2) == mod(int(2*M.z), 2)) {
@@ -147,6 +146,22 @@ vec3 run(float x, float y, float t) {
             object_reflection = .25;
             object_index = PLANE;
         }
+        else if (t0 < t1) {
+            // Sphere.
+            M = rayO + rayD * t0;
+            object_normal = normalize(M - sphere_position_0);
+            object_color = sphere_color_0;
+            object_reflection = .5;
+            object_index = SPHERE_0;
+        }
+        else if (t1 < t0) {
+            // Sphere.
+            M = rayO + rayD * t1;
+            object_normal = normalize(M - sphere_position_1);
+            object_color = sphere_color_1;
+            object_reflection = .5;
+            object_index = SPHERE_1;
+        }
         else {
             break;
         }
@@ -155,11 +170,17 @@ vec3 run(float x, float y, float t) {
         toL = normalize(light_position - M);
         toO = normalize(O - M);
         
-        // Shadow of the sphere on the plane.
+        // Shadow of the spheres on the plane.
         if (object_index == PLANE) {
-            t0 = intersect_sphere(M + N * .0001, toL, sphere_position, sphere_radius);
-            if (t0 < 100000.) {
-                return vec3(0., 0., 0.);
+            t0 = intersect_sphere(M + N * .0001, toL, sphere_position_0, sphere_radius_0);
+            if (t0 < INFINITY) {
+                break;
+            }
+            else {
+                t1 = intersect_sphere(M + N * .0001, toL, sphere_position_1, sphere_radius_1);
+                if (t1 < INFINITY) {
+                    break;
+                }
             }
         }
         
@@ -195,9 +216,13 @@ class Canvas(app.Canvas):
         self.program['a_position'] = [(-1., -1.), (-1., +1.),
                                       (+1., -1.), (+1., +1.)]
 
-        self.program['sphere_position'] = (.75, .1, 1.)
-        self.program['sphere_radius'] = .6
-        self.program['sphere_color'] = (0., 0., 1.)
+        self.program['sphere_position_0'] = (.75, .1, 1.)
+        self.program['sphere_radius_0'] = .6
+        self.program['sphere_color_0'] = (0., 0., 1.)
+        
+        self.program['sphere_position_1'] = (-.75, .1, 2.25)
+        self.program['sphere_radius_1'] = .6
+        self.program['sphere_color_1'] = (.5, .223, .5)
 
         self.program['plane_position'] = (0., -.5, 0.)
         self.program['plane_normal'] = (0., 1., 0.)
@@ -216,6 +241,8 @@ class Canvas(app.Canvas):
     def on_timer(self, event):
         t = event.elapsed
         self.program['u_time'] = t
+        self.program['sphere_position_0'] = (+.75, .1, 2.0 + 1.0 * cos(4*t))
+        self.program['sphere_position_1'] = (-.75, .1, 2.0 - 1.0 * cos(4*t))
         self.update()
 
     def on_resize(self, event):
