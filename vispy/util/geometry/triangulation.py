@@ -348,7 +348,7 @@ class Triangulation(object):
                     
                     # select the edge that is cut
                     last_edge = self.intersected_edge(tri_edges, (i,j))
-                    print("intersected edge:", last_edge)
+                    debug("intersected edge:", last_edge)
                     last_tri = next_tri
                     next_tri = self.adjacent_tri(last_edge, last_tri)
                     self.remove_tri(*last_tri)
@@ -371,8 +371,9 @@ class Triangulation(object):
                         debug("    -> crossed over front..")
                         mode = 2
                         next_tri = None
-                        # update front / polygons
-                        front_index = x+1  # where did we cross the front?
+                        
+                        # where did we cross the front?
+                        front_index = x + (1 if front_dir == 1 else 0)  
                         front_holes.append(front_index)
                         continue
                     
@@ -1175,14 +1176,14 @@ if __name__ == '__main__':
     #
     # Test 7
     #
-    N = 400
+    N = 4000
     pts = np.random.normal(size=(N, 2))
     pts = np.cumsum(pts, axis=0)
     edges = np.zeros((N, 2), dtype=int)
     edges[:,0] = np.arange(N)
     edges[:,1] = np.arange(1,N+1) % N
     
-    t = DebugTriangulation(pts, edges, interval=0, skip=725)
+    t = DebugTriangulation(pts, edges, interval=-1, skip=1060)
     t.triangulate()
     
     
