@@ -16,7 +16,7 @@ from .polygon import Polygon, Mesh, Line
 
 
 class RectPolygon(Polygon):
-"""
+    """
 Displays a 2D rectangle
 pos = center of rectangle
 height = length of the rectangle along y-axis
@@ -46,14 +46,14 @@ radius = radii of curvatures of corners in anti-clockwise order from top-right
                                                              len(radius)))
 
             if (radius > np.full(4, hw)).all():
-                raise ValueError('Radius of curvature cannot be greater than half\
-                                  of min(width, height)')
+                raise ValueError('Radius of curvature cannot be greater than\
+                                  half of min(width, height)')
             radius = np.array(radius, dtype=np.float32)
 
         else:
             if radius > hw:
-                raise ValueError('Radius of curvature cannot be greater than half\
-                                  of min(width, height)')
+                raise ValueError('Radius of curvature cannot be greater than\
+                                  half of min(width, height)')
             radius = np.full(4, radius)
 
         num_segments = (radius/hw * 500.).astype(int)
