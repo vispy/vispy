@@ -255,7 +255,6 @@ class Triangulation(object):
         front_index = self.front.index(i)
         
         #debug("  == edge event ==")
-        pts = self.pts
         front = self.front
 
         # First just see whether this edge is already present
@@ -1052,7 +1051,8 @@ if __name__ == '__main__':
             
         def add_tri(self, *args, **kwds):
             Triangulation.add_tri(self, *args, **kwds)
-            self.draw_tri(list(self.tris.keys())[-1], source=kwds.get('source', None))
+            self.draw_tri(list(self.tris.keys())[-1], 
+                          source=kwds.get('source', None))
         
         def remove_tri(self, *args, **kwds):
             k = Triangulation.remove_tri(self, *args, **kwds)
