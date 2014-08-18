@@ -39,10 +39,7 @@ class ChainTransform(BaseTransform):
                 trs.append(tr)
         self._transforms = trs
 
-        # Post-process
-        self.flatten()
-        #if simplify:
-        #    self.simplify()
+        self._inverse = None  # cache inverse transform
 
         # ChainTransform does not have shader maps
         self._shader_map = None
@@ -136,8 +133,10 @@ class ChainTransform(BaseTransform):
         return FunctionChain(name, funcs)
 
     def inverse(self):
-        return ChainTransform([tr.inverse()
-                               for tr in reversed(self.transforms)])
+        if self._inverse is None:
+            inv = [tr.inverse() for tr in reversed(self.transforms)]
+            self._inverse = ChainTransform(inv)
+        return self._inverse
 
     def flatten(self):
         """
@@ -156,6 +155,7 @@ class ChainTransform(BaseTransform):
                 else:
                     new_tr.append(tr)
             self._transforms = new_tr
+        self._inverse = None
 
     def simplify(self):
         """
@@ -180,6 +180,7 @@ class ChainTransform(BaseTransform):
                 else:
                     new_tr.append(t2)
             self._transforms = new_tr
+        self._inverse = None
 
         # todo: get rid of this in-place + return thing
         if len(self._transforms) == 1:
@@ -192,6 +193,8 @@ class ChainTransform(BaseTransform):
         Add a new transform to the end of this chain.
         """
         self.transforms.append(tr)
+        self._inverse = None
+        self.update()
         # Keep simple for now. Let's look at efficienty later
         # I feel that this class should not decide when to compose transforms
 #         while len(self.transforms) > 0:
@@ -211,6 +214,8 @@ class ChainTransform(BaseTransform):
         Add a new transform to the beginning of this chain.
         """
         self.transforms.insert(0, tr)
+        self._inverse = None
+        self.update()
         # Keep simple for now. Let's look at efficienty later
 #         while len(self.transforms) > 0:
 #             pr = self.transforms[0] * tr
@@ -223,6 +228,15 @@ class ChainTransform(BaseTransform):
 #                 if len(self.transforms)  == 0:
 #                     self._transforms = [pr]
 #                     break
+
+    def __setitem__(self, index, tr):
+        self._transforms[index] = tr
+        if self._shader_map is not None:
+            self._shader_map[-(index+1)] = tr.shader_map()
+        if self._shader_imap is not None:
+            self._shader_imap[index] = tr.shader_imap()
+        self._inverse = None
+        self.update()
 
     def __mul__(self, tr):
         if isinstance(tr, ChainTransform):
@@ -238,6 +252,10 @@ class ChainTransform(BaseTransform):
             trs = [tr]
         return ChainTransform(trs+self.transforms)
 
-    def __repr__(self):
+    def __str__(self):
         names = [tr.__class__.__name__ for tr in self.transforms]
-        return "<ChainTransform [%s]>" % (", ".join(names))
+        return "<ChainTransform [%s] at 0x%x>" % (", ".join(names), id(self))
+    
+    def __repr__(self):
+        tr = ",\n                 ".join(map(repr, self.transforms))
+        return "<ChainTransform [%s] at 0x%x>" % (tr, id(self))

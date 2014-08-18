@@ -106,7 +106,8 @@ class Image(Mesh):
             ctr = event.render_transform.inverse()
             total_transform = self._tex_transform * ctr
             tex_coord_comp = VertexTextureCoordinateComponent(total_transform)
-            self._program['map_local_to_nd'] = NullTransform().shader_map()
+            tr = NullTransform().shader_map()
+            self._program.vert['map_local_to_nd'] = tr
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
 
@@ -134,6 +135,6 @@ class Image(Mesh):
             self._build_data(event)
         if method == 'subdivide':
             tr = event.render_transform.shader_map()
-            self._program['map_local_to_nd'] = tr
+            self._program.vert['map_local_to_nd'] = tr
 
         super(Image, self).draw(event)

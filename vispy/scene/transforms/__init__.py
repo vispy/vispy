@@ -7,4 +7,4 @@ from .linear import (NullTransform, STTransform, SRTTransform,  # noqa
                      AffineTransform,  PerspectiveTransform)  # noqa
 from .nonlinear import LogTransform, PolarTransform, InvPolarTransform  # noqa
 from .chain import ChainTransform  # noqa
-from ._util import arg_to_array, arg_to_vec4  # noqa
+from ._util import arg_to_array, arg_to_vec4, TransformCache  # noqa

@@ -192,22 +192,27 @@ class ViewBox(Widget):
             # Ask the canvas to activate the new FBO
             offset = event.full_transform.map((0, 0))[:2]
             size = event.full_transform.map(self.size)[:2] - offset
+            
+            # Draw subscene to FBO
             event.push_fbo(fbo, offset, size)
-
-            # Clear bg color (handy for dev)
-            gloo.clear(color=self._bgcolor, depth=True)
-            # Process childen
-            self.scene.draw(event)
-            # Pop FBO and now draw the result
-            event.pop_fbo()
+            event.push_entity(self.scene)
+            try:
+                gloo.clear(color=self._bgcolor, depth=True)
+                self.scene.draw(event)
+            finally:
+                event.pop_entity()
+                event.pop_fbo()
+            
             gloo.set_state(cull_face=False)
             self._myprogram.draw('triangle_strip')
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
+            event.push_entity(self.scene)
             try:
                 self.scene.draw(event)
             finally:
+                event.pop_entity()
                 event.pop_viewport()
 
         else:

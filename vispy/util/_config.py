@@ -251,6 +251,9 @@ VisPy command line arguments:
     
   --vispy-gl-debug
     Enables error checking for all OpenGL calls.
+
+  --vispy-profile
+    Enable profiling and print the results when the program exits.
     
   --vispy-help
     Display this help message.
@@ -263,7 +266,8 @@ def _parse_command_line_arguments():
     Put into a function so that any variables dont leak in the vispy namespace.
     """
     # Get command line args for vispy
-    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-log=', 'vispy-help']
+    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-log=', 'vispy-help',
+                'vispy-profile']
     try:
         opts, args = getopt.getopt(sys.argv[1:], '', argnames)
     except getopt.GetoptError:
@@ -284,10 +288,32 @@ def _parse_command_line_arguments():
                     match = None
                 config['logging_level'] = a
                 set_log_level(verbose, match)
+            elif o == '--vispy-profile':
+                _enable_profiling()
             elif o == '--vispy-help':
                 print(VISPY_HELP)
             else:
                 logger.warning("Unsupported vispy flag: %s" % o)
+
+
+def _enable_profiling():
+    """ Start profiling and register callback to print stats when the program
+    exits.
+    """
+    import cProfile
+    import atexit
+    global _profiler
+    _profiler = cProfile.Profile()
+    _profiler.enable()
+    atexit.register(_profile_atexit)
+
+
+_profiler = None
+
+
+def _profile_atexit():
+    global _profiler
+    _profiler.print_stats(sort='cumulative')
 
 
 def sys_info(fname=None, overwrite=False):

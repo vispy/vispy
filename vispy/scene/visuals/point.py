@@ -28,7 +28,7 @@ class Point(ModularVisual):
             gl_PointSize = 10.0; //size;
         }
         """
-        self._program.add_callback('vert_post_hook', Function(code))
+        self._program.vert.add_callback('vert_post_hook', Function(code))
 
     @property
     def primitive(self):

@@ -135,6 +135,7 @@ class BaseCamera(Entity):
         self._scene_transform = tr
         if self.viewbox is not None:
             self.viewbox.scene.transform = self._scene_transform
+            self.viewbox.update()
 
     
 class PanZoomCamera(BaseCamera):
@@ -380,7 +381,8 @@ class PerspectiveCamera(BaseCamera):
         proj_tr = self._projection
         cam_tr = self.entity_transform(self.viewbox.scene)
         
-        self._set_scene_transform(viewbox_tr * proj_tr * cam_tr)
+        tr = viewbox_tr * proj_tr * cam_tr
+        self._set_scene_transform(tr)
 
     def set_perspective(self):
         """ Set perspective projection matrix.
@@ -497,7 +499,6 @@ class TurntableCamera(PerspectiveCamera):
             p1c = event.map_to_canvas(p1)[:2]
             p2c = event.map_to_canvas(p2)[:2]
             d = p2c - p1c
-            
             self.orbit(-d[0], d[1])
 
     def _update_camera_pos(self):

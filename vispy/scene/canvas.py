@@ -4,10 +4,13 @@
 
 from __future__ import division
 
+import weakref
+
 from .. import gloo
 from .. import app
 from .subscene import SubScene
-from .transforms import STTransform
+from .entity import Entity
+from .transforms import STTransform, TransformCache
 from .events import SceneDrawEvent, SceneMouseEvent
 from ..color import Color
 from ..util import logger
@@ -30,7 +33,19 @@ class SceneCanvas(app.Canvas):
         self.events.mouse_move.connect(self._process_mouse_event)
         self.events.mouse_release.connect(self._process_mouse_event)
         self.events.mouse_wheel.connect(self._process_mouse_event)
-        self.scene = SubScene()
+
+        # Collection of transform caches; one for each root visual used in 
+        # self.draw_visual(...)
+        self._transform_caches = weakref.WeakKeyDictionary()
+
+        # Set up default entity stack: ndc -> fb -> pixels -> scene
+        self.ndc = Entity()
+        self.framebuffer = Entity(parent=self.ndc)
+        self.framebuffer.transform = STTransform()
+        self.pixels = Entity(parent=self.framebuffer)
+        self.pixels.transform = STTransform()
+        
+        self.scene = SubScene(parent=self.pixels)
 
     @property
     def scene(self):
@@ -65,19 +80,42 @@ class SceneCanvas(app.Canvas):
     def draw_visual(self, visual, event=None):
         """ Draw a *visual* and its children on the canvas.
         """
-        self.push_viewport((0, 0) + self.size)
+        # Create draw event, which keeps track of the path of transforms
+        self._process_entity_count = 0  # for debugging
         
+        # Get the cache of transforms used for this visual
+        tr_cache = self._transform_caches.setdefault(visual, TransformCache())
+        # and mark the entire cache as aged
+        tr_cache.roll()
+        
+        scene_event = SceneDrawEvent(canvas=self, event=event, 
+                                     transform_cache=tr_cache)
+        scene_event.push_viewport((0, 0) + self.size)
         try:
-            # Create draw event, which keeps track of the path of transforms
-            self._process_entity_count = 0  # for debugging
-            scene_event = SceneDrawEvent(canvas=self, event=event)
+            # Force update of transforms on base entities
+            # TODO: this should happen as a reaction to resize, push_viewport,
+            #       etc.; not here.  (but note the transforms must change
+            #       following push_viewport)
+            self.ndc_transform
+            self.fb_transform
+            
+            scene_event.push_entity(self.ndc)
+            scene_event.push_entity(self.framebuffer)
+            scene_event.push_entity(self.pixels)
             scene_event.push_entity(visual)
             visual.draw(scene_event)
         finally:
-            self.pop_viewport()
+            scene_event.pop_viewport()
 
     def _process_mouse_event(self, event):
-        scene_event = SceneMouseEvent(canvas=self, event=event)
+        tr_cache = self._transform_caches.setdefault(self.scene, 
+                                                     TransformCache())
+        scene_event = SceneMouseEvent(canvas=self, event=event,
+                                      transform_cache=tr_cache)
+        scene_event.push_entity(self.ndc)
+        scene_event.push_entity(self.framebuffer)
+        scene_event.push_entity(self.pixels)
+        scene_event.push_entity(self._scene)
         self._scene._process_mouse_event(scene_event)
         
         # If something in the scene handled the scene_event, then we mark
@@ -101,11 +139,13 @@ class SceneCanvas(app.Canvas):
             vp[3] *= -1
             
         self._vp_stack.append(vp)
+        self.ndc_transform  # update!
         # Apply
         try:
             self._set_viewport(vp)
         except:
             self._vp_stack.pop()
+            self.ndc_transform  # update!
             raise
 
     def pop_viewport(self):
@@ -115,6 +155,7 @@ class SceneCanvas(app.Canvas):
         # Activate latest
         if len(self._vp_stack) > 0:
             self._set_viewport(self._vp_stack[-1])
+            self.ndc_transform  # update!
         return vp
     
     def _set_viewport(self, vp):
@@ -126,6 +167,7 @@ class SceneCanvas(app.Canvas):
         and the transform to the FBO.
         """
         self._fb_stack.append((fbo, offset, csize))
+        self.fb_transform  # update!
         
         # Apply
         try:
@@ -145,6 +187,7 @@ class SceneCanvas(app.Canvas):
         if len(self._fb_stack) > 0:
             old_fbo = self._fb_stack[-1]
             old_fbo[0].activate()
+        self.fb_transform  # update!
         return fbo
         
     def _current_framebuffer(self):
@@ -158,8 +201,6 @@ class SceneCanvas(app.Canvas):
 
     @property
     def fb_transform(self):
-        # TODO: should this be called px_transform ? 
-        #
         """ The transform that maps from the canvas coordinate system to the
         current framebuffer coordinate system. 
         
@@ -188,9 +229,8 @@ class SceneCanvas(app.Canvas):
         map_from = [list(offset), [offset[0] + csize[0], offset[1] + csize[1]]]
         map_to = [[0, fbsize[1]], [fbsize[0], 0]]
         
-        tr = STTransform()
-        tr.set_mapping(map_from, map_to)
-        return tr
+        self.pixels.transform.set_mapping(map_from, map_to)
+        return self.pixels.transform
 
     @property
     def ndc_transform(self):
@@ -205,10 +245,8 @@ class SceneCanvas(app.Canvas):
         map_from = [[x, y], [x+w, y+h]]
         map_to = [[-1, -1], [1, 1]]
         
-        from ..scene.transforms import STTransform
-        tr = STTransform()
-        tr.set_mapping(map_from, map_to)
-        return tr
+        self.framebuffer.transform.set_mapping(map_from, map_to)
+        return self.framebuffer.transform
     
     @property
     def render_transform(self):

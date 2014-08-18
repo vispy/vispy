@@ -8,7 +8,7 @@ import numpy as np
 
 from ... import gloo
 from .visual import Visual
-from ..shaders import ModularProgram, Function, FunctionChain, Variable
+from ..shaders import ModularProgram, Variable
 from ..components import (VisualComponent, XYPosComponent, XYZPosComponent,
                           UniformColorComponent, VertexColorComponent)
 
@@ -84,40 +84,6 @@ from ..components import (VisualComponent, XYPosComponent, XYZPosComponent,
             phong shading
 
 """
-
-
-class ComponentProgram(ModularProgram):
-    """
-    Temporary class to bridge differences between current ModularProgram 
-    and old ModularProgram.    
-    """
-    def __init__(self, vert, frag):
-        self._chains = {}
-        ModularProgram.__init__(self, Function(vert), Function(frag))
-    
-    def add_chain(self, var):
-        """
-        Create a new ChainFunction and attach to $var on the appropriate 
-        main function.
-        """
-        chain = FunctionChain(var, [])
-        self._chains[var] = chain
-        self[var] = chain
-
-    def add_callback(self, hook, func):
-        self._chains[hook].append(func)
-    
-    def remove_callback(self, hook, func):
-        self._chains[hook].remove(func)
-    
-    def __setitem__(self, name, val):
-        try:
-            self.vert[name] = val
-        except KeyError:
-            try:
-                self.frag[name] = val
-            except KeyError:
-                ModularProgram.__setitem__(self, name, val)
             
 
 class ModularVisual(Visual):
@@ -174,16 +140,17 @@ class ModularVisual(Visual):
         #
         self._gl_options = [None, {}]
 
-        self._program = ComponentProgram(self.VERTEX_SHADER,
-                                         self.FRAGMENT_SHADER)
-
+        self._program = ModularProgram(self.VERTEX_SHADER,
+                                       self.FRAGMENT_SHADER)
+        self._program.changed.connect(self._program_changed)
+        
         self._program.vert['local_pos'] = Variable('local_pos', 
                                                    vtype='', dtype='vec4')
         
         # Generic chains for attaching post-processing functions
-        self._program.add_chain('local_position')
-        self._program.add_chain('vert_post_hook')
-        self._program.add_chain('frag_color')
+        self._program.vert.add_chain('local_position')
+        self._program.vert.add_chain('vert_post_hook')
+        self._program.frag.add_chain('frag_color')
 
         # Components for plugging different types of position and color input.
         self._pos_components = []
@@ -376,18 +343,11 @@ class ModularVisual(Visual):
         for comp in all_comps:
             comp.activate(self._program, mode)
 
-    def _activate_transform(self, event=None):
+    def _activate_transform(self, event):
         # TODO: this must be optimized.
         # Allow using as plain visual or in a scenegraph
-        t = self.transform if (event is None) else event.render_transform
-        #print(t.transforms)
-        #print(event._stack)
-        #if isinstance(t, ChainTransform):
-        #    t.simplify()  # Reduce number of transforms
-        #self._program['map_local_to_nd'] = self.transform.shader_map()
-        self._program['map_local_to_nd'] = t.shader_map()
+        t = event.render_transform.shader_map()
+        self._program.vert['map_local_to_nd'] = t
 
-        #print('--------------', self)
-        #t.simplify()
-        #for tr in t.transforms:
-        #    print(tr)
+    def _program_changed(self, event):
+        self.update()

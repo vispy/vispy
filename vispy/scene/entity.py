@@ -315,6 +315,6 @@ class Entity(object):
         """
         self.events.update()
 
-    def __str__(self):
+    def __repr__(self):
         name = "" if self.name is None else " name="+self.name
-        return "<%s%s id=0x%x>" % (self.__class__.__name__, name, id(self))
+        return "<%s%s at 0x%x>" % (self.__class__.__name__, name, id(self))

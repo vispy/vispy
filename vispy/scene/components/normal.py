@@ -47,6 +47,11 @@ class VertexNormalComponent(VisualComponent):
         self._vbo = None
         self._vbo_mode = None
 
+        # Create Varying to connect vertex / fragment shaders
+        var = Varying('norm', dtype='vec4')
+        self._funcs['frag_normal']['norm'] = var
+        self._funcs['vert_post_hook']['output_normal'] = var
+
     def _make_vbo(self, mode):
         if self._vbo is None or self._vbo_mode != mode:
             if mode is self.DRAW_PRE_INDEXED:
@@ -71,12 +76,8 @@ class VertexNormalComponent(VisualComponent):
         return self._funcs['frag_normal']
 
     def activate(self, program, mode):
-        ff = self._funcs['frag_normal']
-        ff['norm'] = Varying('norm', dtype='vec4')
-
         vf = self._funcs['vert_post_hook']
         vf['input_normal'] = self._make_vbo(mode)  # attribute vec4
-        vf['output_normal'] = ff['norm']
         vf['map_local_to_nd'] = self.visual._program.vert['map_local_to_nd']
 
     @property

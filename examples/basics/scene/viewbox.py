@@ -21,7 +21,7 @@ pos = np.empty((N, 2), np.float32)
 pos[:, 0] = np.linspace(-1., 1., N)
 pos[:, 1] = np.random.normal(0.0, 0.5, size=N)
 pos[:20, 1] = -0.5  # So we can see which side is down
-line_ndc = scene.visuals.Line(pos=pos.copy(), color=color)
+line_ndc = scene.visuals.Line(pos=pos.copy(), color=color, name='line_ndc')
 
 #pos[:, 0] = np.linspace(50, 350., N)
 #pos[:, 1] = 150 + pos[:, 1] * 50
@@ -31,7 +31,8 @@ line_ndc = scene.visuals.Line(pos=pos.copy(), color=color)
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
 
-vb1 = scene.widgets.ViewBox(parent=canvas.scene, border_color='yellow')
+vb1 = scene.widgets.ViewBox(name='vb1', parent=canvas.scene, 
+                            border_color='yellow')
 vb1.clip_method = 'fbo'
 vb1.pos = 20, 20
 vb1.size = canvas.size[0]/2. - 40, canvas.size[1] - 40
@@ -39,7 +40,8 @@ vb1.camera.rect = (-1.2, -2, 2.4, 4)
 
 line_ndc.add_parent(vb1.scene)
 
-vb2 = scene.widgets.ViewBox(parent=canvas.scene, border_color='blue')
+vb2 = scene.widgets.ViewBox(name='vb2', parent=canvas.scene, 
+                            border_color='blue')
 vb2.clip_method = 'viewport'
 vb2.pos = canvas.size[0]/2. + 20, 20
 vb2.size = canvas.size[0]/2. - 40, canvas.size[1] - 40

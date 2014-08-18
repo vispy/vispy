@@ -61,7 +61,11 @@ class VisualComponent(object):
         self._attach_count += 1
         for hook in self._auto_attach_shaders():
             func = self._funcs[hook]
-            visual._program.add_callback(hook, func)
+            try:
+                visual._program.vert.add_callback(hook, func)
+            except KeyError:
+                visual._program.frag.add_callback(hook, func)
+                
         for comp in self._deps:
             comp._attach(visual)
 
@@ -79,7 +83,10 @@ class VisualComponent(object):
         if self._attach_count == 0:
             for hook in self._auto_attach_shaders():
                 func = self._funcs[hook]
-                self._visual._program.remove_callback(hook, func)
+                try:
+                    self._visual._program.vert.remove_callback(hook, func)
+                except KeyError:
+                    self._visual._program.frag.remove_callback(hook, func)
             self._visual = None
             for comp in self._deps:
                 comp._detach()

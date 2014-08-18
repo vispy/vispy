@@ -6,6 +6,7 @@ from __future__ import division, print_function
 
 from ...gloo import Program
 from ...util import logger
+from ...util.event import EventEmitter
 from ...ext.six import string_types  # noqa
 from .function import MainFunction, Variable
 from .compiler import Compiler
@@ -21,6 +22,8 @@ class ModularProgram(Program):
     def __init__(self, vcode, fcode):
         Program.__init__(self, '', '')
         
+        self.changed = EventEmitter(source=self, type='program_change')
+        
         self.vert = MainFunction(vcode)
         self.frag = MainFunction(fcode)
         self.vert.changed.connect(self._source_changed)
@@ -28,6 +31,8 @@ class ModularProgram(Program):
         
         # Cache state of Variables so we know which ones require update
         self._variable_state = {}
+        
+        self._need_build = True
 
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.
@@ -38,9 +43,14 @@ class ModularProgram(Program):
         self._need_build = False
     
     def _source_changed(self, ev):
-        self._need_build = True
+        logger.debug("ModularProgram source changed: %s" % self)
+        if ev.code_changed:
+            self._need_build = True
+        self.changed()
         
     def _build(self):
+        logger.debug("Rebuild ModularProgram: %s" % self)
+        #print("REBUILD")
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
         code = self.compiler.compile()
         self.shaders[0].code = code['vert']
@@ -64,7 +74,7 @@ class ModularProgram(Program):
             if not isinstance(dep, Variable) or dep.vtype not in settable_vars:
                 continue
             name = self.compiler[dep]
-            logger.debug("    %s = %s" % (name, dep.value))
+            logger.debug("    %s = %s", name, dep.value)
             state_id = dep.state_id
             if self._variable_state.get(name, None) != state_id:
                 self[name] = dep.value

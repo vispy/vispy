@@ -5,7 +5,7 @@
 from __future__ import division
 
 from ..util.event import Event
-from .transforms import ChainTransform
+from .transforms import TransformCache
 
 
 class SceneEvent(Event):
@@ -15,13 +15,16 @@ class SceneEvent(Event):
     and user interaction.
     """
 
-    def __init__(self, type, canvas):
+    def __init__(self, type, canvas, transform_cache=None):
         super(SceneEvent, self).__init__(type=type)
         self._canvas = canvas
 
         # Init stacks
         self._stack = []  # list of entities
         self._viewbox_stack = []
+        if transform_cache is None:
+            transform_cache = TransformCache()
+        self._transform_cache = transform_cache
 
     @property
     def canvas(self):
@@ -104,9 +107,7 @@ class SceneEvent(Event):
                 path = self._stack[:ind+1] + path
                 break
         
-        tr = [e.transform for e in path]
-        # TODO: cache transform chains
-        return ChainTransform(tr)
+        return self._transform_cache.get(path)
     
     def map_entity_to_doc(self, entity, obj):
         return self.entity_transform(entity).map(obj)
@@ -129,9 +130,8 @@ class SceneEvent(Event):
         """ The transform that maps from the current entity to the
         top-level entity in the scene.
         """
-        tr = [e.transform for e in self._stack]
-        # TODO: cache transform chains
-        return ChainTransform(tr)
+        ind = self._stack.index(self.canvas.scene)
+        return self._transform_cache.get(self._stack[ind:])
 
     @property
     def render_transform(self):
@@ -144,14 +144,17 @@ class SceneEvent(Event):
 
         Most entities should use this transform when drawing.
         """
-        return self.canvas.render_transform * self.full_transform
+        #return self.canvas.render_transform * self.full_transform
+        return self._transform_cache.get(self._stack)
 
     @property
     def fb_transform(self):
         """ Transform mapping from the local coordinate system of the current
         entity to the framebuffer coordinate system.
         """
-        return self.canvas.fb_transform * self.full_transform
+        #return self.canvas.fb_transform * self.full_transform
+        ind = self._stack.index(self.canvas.framebuffer)
+        return self._transform_cache.get(self._stack[ind:])
     
     def map_to_fb(self, obj):
         return self.fb_transform.map(obj)
@@ -171,7 +174,8 @@ class SceneEvent(Event):
         For measuring distance in physical units, the use of document_transform 
         is preferred. 
         """
-        return self.full_transform
+        ind = self._stack.index(self.canvas.pixels)
+        return self._transform_cache.get(self._stack[ind:])
     
     def map_to_canvas(self, obj):
         """
@@ -191,9 +195,10 @@ class SceneEvent(Event):
     
 
 class SceneMouseEvent(SceneEvent):
-    def __init__(self, event, canvas):
+    def __init__(self, event, canvas, **kwds):
         self.mouse_event = event
-        super(SceneMouseEvent, self).__init__(type=event.type, canvas=canvas)
+        super(SceneMouseEvent, self).__init__(type=event.type, canvas=canvas,
+                                              **kwds)
 
     @property
     def pos(self):
@@ -236,6 +241,7 @@ class SceneMouseEvent(SceneEvent):
 
 
 class SceneDrawEvent(SceneEvent):
-    def __init__(self, event, canvas):
+    def __init__(self, event, canvas, **kwds):
         self.draw_event = event
-        super(SceneDrawEvent, self).__init__(type='draw', canvas=canvas)
+        super(SceneDrawEvent, self).__init__(type='draw', canvas=canvas, 
+                                             **kwds)

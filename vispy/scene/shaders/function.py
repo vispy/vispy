@@ -18,7 +18,7 @@ import re
 import numpy as np
 
 from ...util.ordereddict import OrderedDict
-from ...util.event import EventEmitter
+from ...util.event import EventEmitter, Event
 from ...util.eq import eq
 from ...util import logger
 from ...ext.six import string_types
@@ -26,6 +26,13 @@ from . import parsing
 from .compiler import Compiler
 
 VARIABLE_TYPES = ('const', 'uniform', 'attribute', 'varying', 'inout')
+
+
+class ShaderChangeEvent(Event):
+    def __init__(self, code_changed=False, value_changed=False, **kwds):
+        Event.__init__(self, type='shader_change', **kwds)
+        self.code_changed = code_changed
+        self.value_changed = value_changed
 
 
 class ShaderObject(object):
@@ -67,7 +74,7 @@ class ShaderObject(object):
     def __init__(self):
         # emitted when any part of the code for this object has changed,
         # including dependencies.
-        self.changed = EventEmitter(source=self, type="code_change")
+        self.changed = EventEmitter(source=self, event_class=ShaderChangeEvent)
         
         # objects that must be declared before this object's definition.
         # {obj: refcount}
@@ -147,7 +154,7 @@ class ShaderObject(object):
         """ Called when a dependency's expression has changed.
         """
         logger.debug("ShaderObject changed: %r" % event.source)
-        self.changed()
+        self.changed(event)
     
     def compile(self):
         """ Return a compilation of this object and its dependencies. 
@@ -339,7 +346,6 @@ class Function(ShaderObject):
         * a FunctionCall: ``fun1['foo'] = fun2()``
         * a Variable: ``fun1['foo'] = Variable(...)`` (can be auto-generated)
         """
-        
         # Check the key. Must be Varying, 'gl_X' or a known template variable
         if isinstance(key, Variable): 
             if key.vtype == 'varying':
@@ -370,16 +376,20 @@ class Function(ShaderObject):
         # we can set that value and return immediately to avoid triggering a
         # recompile.
         if val is not None and not isinstance(val, Variable):
-            # We are setting a value, now check it if it might be the 
-            # the value of a uniform
-            val = ShaderObject.create(val, ref=key)
-            if isinstance(val, Variable) and val.vtype == 'uniform':
-                variable = storage.get(key, None)
-                if (isinstance(variable, Variable) and
-                        variable.dtype == val.dtype and
-                        variable.vtype == 'uniform'):
-                    variable.value = val.value
+            # We are setting a value. If there is already a variable set here,
+            # try just updating its value.
+            variable = storage.get(key, None)
+            if isinstance(variable, Variable):
+                try:
+                    variable.value = val
                     return
+                except Exception:
+                    # Setting value on existing Variable failed for some
+                    # reason; will need to create a new Variable instead. 
+                    pass
+        
+        #print("SET: %s[%s] = %s => %s" % 
+        #     (self, key, storage.get(key, None), val))
         
         # Remove old references, if any
         oldval = storage.pop(key, None)
@@ -390,6 +400,7 @@ class Function(ShaderObject):
 
         # Add new references
         if val is not None:
+            val = ShaderObject.create(val, ref=key)
             if isinstance(key, Varying):
                 # tell this varying to inherit properties from 
                 # its source attribute / expression.
@@ -407,7 +418,7 @@ class Function(ShaderObject):
                 if var not in self.template_vars:
                     self.template_vars.add(var.lstrip('$'))
         
-        self.changed()
+        self.changed(code_changed=True, value_changed=True)
     
     def __getitem__(self, key):
         """ Return a reference to a program variable from this function.
@@ -510,7 +521,7 @@ class Function(ShaderObject):
         """
         if str2 != self._replacements.get(str1, None):
             self._replacements[str1] = str2
-            self.changed()
+            self.changed(code_changed=True)
             #self._last_changed = time.time()
     
     ## Private methods
@@ -608,6 +619,10 @@ class MainFunction(Function):
     be defined in a single code string. The code must contain a main() function
     definition.
     """
+    def __init__(self, *args, **kwds):
+        self._chains = {}
+        Function.__init__(self, *args, **kwds)
+    
     @property
     def signature(self):
         return ('main', [], 'void')
@@ -626,6 +641,20 @@ class MainFunction(Function):
                 names.append(arg[1])
         
         return names
+
+    def add_chain(self, var):
+        """
+        Create a new ChainFunction and attach to $var.
+        """
+        chain = FunctionChain(var, [])
+        self._chains[var] = chain
+        self[var] = chain
+
+    def add_callback(self, hook, func):
+        self._chains[hook].append(func)
+    
+    def remove_callback(self, hook, func):
+        self._chains[hook].remove(func)
 
 
 class Variable(ShaderObject):
@@ -693,7 +722,7 @@ class Variable(ShaderObject):
         # See ShaderObject.create()
         if self._name != n:
             self._name = n
-            self.changed()
+            self.changed(code_changed=True)
     
     @property
     def vtype(self):
@@ -715,13 +744,6 @@ class Variable(ShaderObject):
     
     @value.setter
     def value(self, value):
-        self._value = value
-        self._state_counter += 1
-        if self._type_locked:
-            # Don't emit here--this should not result in a code change.
-            #self.changed()
-            return
-        
         if isinstance(value, (tuple, list)) and 1 < len(value) < 5:
             vtype = 'uniform'
             dtype = 'vec%d' % len(value)
@@ -749,6 +771,15 @@ class Variable(ShaderObject):
         else:
             raise TypeError("Unknown data type %r for variable %r" % 
                             (type(value), self))
+
+        self._value = value
+        self._state_counter += 1
+        
+        if self._type_locked:
+            if dtype != self._dtype or vtype != self._vtype:
+                raise TypeError('Variable is type "%s"; cannot assign value '
+                                '%r.' % (self.dtype, value))
+            return
             
         # update vtype/dtype and emit changed event if necessary
         changed = False
@@ -759,7 +790,7 @@ class Variable(ShaderObject):
             self._vtype = vtype
             changed = True
         if changed:
-            self.changed()
+            self.changed(code_changed=True, value_changed=True)
     
     @property
     def state_id(self):
@@ -980,6 +1011,8 @@ class FunctionChain(Function):
         self._funcs = []
         self._code = None
         self._name = name or "chain"
+        self._args = []
+        self._rtype = 'void'
         self.functions = funcs
 
     @property
@@ -997,7 +1030,7 @@ class FunctionChain(Function):
     @property
     def signature(self):
         return self._name, self._args, self._rtype
-    
+
     def _update(self):
         funcs = self._funcs
         if len(funcs) > 0:
@@ -1007,7 +1040,7 @@ class FunctionChain(Function):
             self._rtype = 'void'
             self._args = []
         
-        self.changed()
+        self.changed(code_changed=True)
 
     @property
     def template_vars(self):
@@ -1021,6 +1054,16 @@ class FunctionChain(Function):
         if update:
             self._update()
 
+    def __setitem__(self, index, func):
+        self._remove_dep(self._funcs[index])
+        self._add_dep(func)
+        self._funcs[index] = func
+        
+        self._update()
+    
+    def __getitem__(self, k):
+        return self.functions[k]
+    
     def insert(self, index, function, update=True):
         """ Insert a new function into the chain at *index*.
         """
@@ -1083,8 +1126,6 @@ class FunctionChain(Function):
     def static_names(self):
         return []
 
-    def __setitem__(self, k, v):
-        raise Exception("FunctionChain does not support indexing.")
-    
-    def __getitem__(self, k):
-        raise Exception("FunctionChain does not support indexing.")
+    def __repr__(self):
+        fn = ",\n                ".join(map(repr, self.functions))
+        return "<FunctionChain [%s] at 0x%x>" % (fn, id(self))

@@ -114,7 +114,8 @@ vb21 = scene.widgets.ViewBox(parent=vb2.scene, name='vb21',
 vb21.pos = 0, 0
 vb21.size = w2, h2
 vb21.camera.rect = (0, 0, 1, 1)
-line_unit.add_parent(vb21.scene)
+line21 = scene.visuals.Line(pos=pos, color=color)
+line21.add_parent(vb21.scene)
 
 # bottom-right (+y down)
 vb22 = scene.widgets.ViewBox(parent=vb2.scene, name='vb22', 
