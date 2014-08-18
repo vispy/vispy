@@ -9,7 +9,7 @@ from nose.tools import assert_raises
 
 from vispy.app import Canvas
 from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer,
-                        set_viewport)
+                        ColorBuffer, DepthBuffer, set_viewport, clear)
 from vispy.gloo.util import draw_texture, _screenshot
 from vispy.testing import requires_application, has_pyopengl
 
@@ -27,15 +27,30 @@ def test_use_framebuffer():
     shape = (100, 100)
     data = np.random.rand(*shape).astype(np.float32)
     orig_tex = Texture2D(data)
-    fbo_tex = Texture2D(shape=shape+(3,), dtype=np.ubyte, format='rgb')
+    use_shape = shape + (3,)
+    fbo_tex = Texture2D(shape=use_shape, dtype=np.ubyte, format='rgb')
+    rbo = ColorBuffer(shape=shape)
     fbo = FrameBuffer(color=fbo_tex)
     with Canvas(size=(100, 100)) as c:
+        set_viewport(0, 0, *c.size)
         with fbo:
-            set_viewport(0, 0, *c.size)
             draw_texture(orig_tex)
         draw_texture(fbo_tex)
-        out = _screenshot()[::-1, :, 0].astype(np.float32)
-    assert_allclose(data * 255., out, atol=1)
+        out_tex = _screenshot()[::-1, :, 0].astype(np.float32)
+        assert_raises(TypeError, FrameBuffer.color_buffer.fset, fbo, 1.)
+        assert_raises(TypeError, FrameBuffer.depth_buffer.fset, fbo, 1.)
+        assert_raises(TypeError, FrameBuffer.stencil_buffer.fset, fbo, 1.)
+        fbo.color_buffer = rbo
+        fbo.depth_buffer = DepthBuffer(shape)
+        fbo.stencil_buffer = None
+        print((fbo.color_buffer, fbo.depth_buffer, fbo.stencil_buffer))
+        clear(color='black')
+        with fbo:
+            clear(color='black')
+            draw_texture(orig_tex)
+            out_rbo = _screenshot()[:, :, 0].astype(np.float32)
+    assert_allclose(data * 255., out_tex, atol=1)
+    assert_allclose(data * 255., out_rbo, atol=1)
 
 
 @requires_application()
