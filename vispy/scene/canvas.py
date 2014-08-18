@@ -201,8 +201,6 @@ class SceneCanvas(app.Canvas):
 
     @property
     def fb_transform(self):
-        # TODO: should this be called px_transform ? 
-        #    probably not -- px is ambiguous (dpx vs lpx)
         """ The transform that maps from the canvas coordinate system to the
         current framebuffer coordinate system. 
         

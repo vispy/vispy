@@ -163,7 +163,6 @@ class ChainTransform(BaseTransform):
         If the result is a single transform, return that transform.
         Otherwise return this chaintransform.
         """
-        raise Exception()
         self.flatten()
         if len(self.transforms) == 0:
             return NullTransform()
