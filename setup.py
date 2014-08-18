@@ -64,6 +64,13 @@ for line in open(initFile).readlines():
         __doc__ += line
 
 
+def package_tree(pkgroot):
+    path = os.getcwd()
+    n = len(path.split(os.path.sep))
+    subdirs = [i[0].split(os.path.sep)[n:] for i in os.walk(os.path.join(path, pkgroot)) if '__init__.py' in i[2]]
+    return ['.'.join(p) for p in subdirs]
+
+
 setup(
     name=name,
     version=__version__,
@@ -79,28 +86,7 @@ setup(
     platforms='any',
     provides=['vispy'],
     install_requires=['numpy'],
-    packages=[
-        'vispy',
-        'vispy.app', 'vispy.app.tests',
-        'vispy.app.backends',
-        'vispy.color', 'vispy.color.tests',
-        'vispy.datasets',
-        'vispy.ext',
-        'vispy.gloo', 'vispy.gloo.tests',
-        'vispy.gloo.gl', 'vispy.gloo.gl.tests',
-        'vispy.mpl_plot', 'vispy.mpl_plot.tests',
-        'vispy.scene', 'vispy.scene.tests',
-        'vispy.scene.components',
-        'vispy.scene.shaders', 'vispy.scene.shaders.tests',
-        'vispy.scene.visuals',
-        'vispy.scene.visuals.text',
-        'vispy.scene.widgets',
-        'vispy.scene.transforms',
-        'vispy.testing', 'vispy.testing.tests',
-        'vispy.util', 'vispy.util.tests',
-        'vispy.util.dataio', 'vispy.util.geometry',
-        'vispy.util.fonts', 'vispy.util.fonts.tests',
-    ],
+    packages=package_tree('vispy'),
     package_dir={
         'vispy': 'vispy'},
     package_data={
