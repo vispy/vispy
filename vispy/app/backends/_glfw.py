@@ -20,6 +20,7 @@ from __future__ import division
 
 import atexit
 from time import sleep
+import gc
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
@@ -349,11 +350,12 @@ class CanvasBackend(BaseCanvasBackend):
         # Force the window or widget to shut down
         if self._id is not None:
             self._vispy_canvas = None
-            #glfw.glfwSetWindowShouldClose()  # Does not really cause a close
+            # glfw.glfwSetWindowShouldClose()  # Does not really cause a close
             self._vispy_set_visible(False)
             self._id, id_ = None, self._id
             glfw.glfwPollEvents()
             glfw.glfwDestroyWindow(id_)
+            gc.collect()  # help ensure context gets destroyed
 
     def _vispy_get_size(self):
         if self._id is None:

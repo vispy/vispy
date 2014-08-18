@@ -9,6 +9,7 @@ vispy backend for wxPython.
 from __future__ import division
 
 from time import sleep
+import gc
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
@@ -265,7 +266,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         return SharedContext([self._gl_attribs, self._context])
 
     def _vispy_warmup(self):
-        etime = time() + 0.3
+        etime = time() + 0.4
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()
@@ -311,9 +312,14 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         if self._vispy_canvas is None or self._canvas is None:
             return
         # Force the window or widget to shut down
+        canvas = self._canvas
         self._canvas = None
+        self._context = None  # let RC destroy this in case it's shared
+        canvas.Close()
+        canvas.Destroy()
         self.Close()
         self.Destroy()
+        gc.collect()  # ensure context gets destroyed if it should be
 
     def _vispy_get_size(self):
         if self._canvas is None or self._vispy_canvas is None:

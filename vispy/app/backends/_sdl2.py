@@ -11,6 +11,7 @@ import atexit
 import ctypes
 from time import sleep
 import warnings
+import gc
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
@@ -323,6 +324,7 @@ class CanvasBackend(BaseCanvasBackend):
             sdl2.SDL_DestroyWindow(_id)
             del _VP_SDL2_ALL_WINDOWS[self._sdl_id]
             self._sdl_id = None
+            gc.collect()  # enforce gc to help context get destroyed
 
     def _vispy_get_size(self):
         if self._id is None:
