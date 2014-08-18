@@ -15,4 +15,5 @@ from .mesh import Mesh  # noqa
 from .polygon import Polygon  # noqa
 from .ellipse import Ellipse  # noqa
 from .regular_polygon import RegularPolygon  # noqa
+from .rect_polygon import RectPolygon  # noqa
 from .text import Text  # noqa
