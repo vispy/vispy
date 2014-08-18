@@ -22,6 +22,15 @@ from ...util.geometry import PolygonData
 class Polygon(Visual):
     """
     Displays a 2D polygon
+
+    Parameters
+    ----------
+    pos : array
+        Set of vertices defining the polygon
+    color : str | tuple | list of colors
+        Fill color of the polygon
+    border_color : str | tuple | list of colors
+        Border color of the polygon
     """
     def __init__(self, pos=None, color='black',
                  border_color=None, **kwds):

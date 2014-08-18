@@ -17,9 +17,21 @@ from .ellipse import Ellipse, Mesh, Line
 class RegularPolygon(Ellipse):
     """
     Displays a regular polygon
-    pos = center of polygon
-    rad = radius
-    sides = number of sides
+
+    Parameters
+    ----------
+
+    pos : array
+        Center of the regular polygon
+    radius : float
+        Radius of the regular polygon
+        Defaults to  0.1
+    sides : int
+        Number of sides of the regular polygon
+    color : str | tuple | list of colors
+        Fill color of the polygon
+    border_color : str | tuple | list of colors
+        Border color of the polygon
     """
     def __init__(self, pos=None, color='black', border_color=None,
                  radius=0.1, sides=4, **kwds):

@@ -17,11 +17,26 @@ from .polygon import Polygon, Mesh, Line
 
 class Ellipse(Polygon):
     """
-Displays a 2D ellipse
-pos = center of ellipse
-rad = (xradius, yradius)
-default: (1,1)
-"""
+    Displays a 2D ellipse
+
+    Parameters
+    ----------
+
+    pos : array
+        Center of the ellipse
+    radius : float | tuple
+        Radius or radii of the ellipse
+        Defaults to  (0.1, 0.1)
+    start_angle : float
+        Start angle of the ellipse in degrees
+        Defaults to 0.
+    span_angle : float
+        Span angle of the ellipse in degrees
+        Defaults to 0.
+    num_segments : int
+        Number of segments to be used to draw the ellipse
+        Defaults to 100
+    """
     def __init__(self, pos=None, color='black', border_color=None,
                  radius=(0.1, 0.1), start_angle=0., span_angle=360.,
                  num_segments=100, **kwds):

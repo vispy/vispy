@@ -18,16 +18,21 @@ class RectPolygon(Polygon):
     """
     Displays a 2D rectangle with optional rounded corners
 
-    Parameters:
-        pos : (x, y, z) array
-            center of rectangle
-        height: float
-            length of the rectangle along y-axis
-        width: float
-            length of the rectangle along x-axis
-        radius: float or 1D 4 element array
-            radii of curvatures of corners in clockwise order from top-left
-"""
+    Parameters
+    ----------
+
+    pos :  array
+        Center of the rectangle
+    height : float
+        Length of the rectangle along y-axis
+        Defaults to 1.0
+    width : float
+        Length of the rectangle along x-axis
+        Defaults to 1.0
+    radius : float | array
+        Radii of curvatures of corners in clockwise order from top-left
+        Defaults to 0.
+    """
     def __init__(self, pos=None, color='black', border_color=None,
                  height=1.0, width=1.0, radius=[0., 0., 0., 0.], **kwds):
         super(RectPolygon, self).__init__()
