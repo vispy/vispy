@@ -65,7 +65,7 @@ for line in open(initFile).readlines():
 
 
 def package_tree(pkgroot):
-    path = os.getcwd()
+    path = os.path.dirname(__file__)
     n = len(path.split(os.path.sep))
     subdirs = [i[0].split(os.path.sep)[n:]
                for i in os.walk(os.path.join(path, pkgroot))
