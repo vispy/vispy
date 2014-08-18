@@ -211,10 +211,13 @@ class CanvasBackend(BaseCanvasBackend):
         flags |= sdl2.SDL_WINDOW_RESIZABLE if resize else 0
         flags |= sdl2.SDL_WINDOW_BORDERLESS if not dec else 0
         if fs is not False:
-            if isinstance(fs, int):
+            self._fullscreen = True
+            if fs is not True:
                 logger.warning('Cannot specify monitor number for SDL2 '
                                'fullscreen, using default')
-            flags |= sdl2.SDL_WINDOW_FULLSCREEN
+            flags |= sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP
+        else:
+            self._fullscreen = False
         self._mods = list()
         if position is None:
             position = [sdl2.SDL_WINDOWPOS_UNDEFINED] * 2
@@ -329,6 +332,14 @@ class CanvasBackend(BaseCanvasBackend):
                                ctypes.byref(w), ctypes.byref(h))
         w, h = w.value, h.value
         return w, h
+
+    def _vispy_get_fullscreen(self):
+        return self._fullscreen
+
+    def _vispy_set_fullscreen(self, fullscreen):
+        self._fullscreen = bool(fullscreen)
+        flags = sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP if self._fullscreen else 0
+        sdl2.SDL_SetWindowFullscreen(self._id.window, flags)
 
     def _vispy_get_position(self):
         if self._id is None:

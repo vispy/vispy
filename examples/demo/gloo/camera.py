@@ -44,7 +44,7 @@ fragment = """
 
 class Canvas(app.Canvas):
     def __init__(self):
-        app.Canvas.__init__(self, size=(640, 480), close_keys='escape')
+        app.Canvas.__init__(self, size=(640, 480), keys='interactive')
         self.program = gloo.Program(vertex, fragment, count=4)
         self.program['position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         self.program['texcoord'] = [(1, 1), (1, 0), (0, 1), (0, 0)]

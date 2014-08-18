@@ -124,7 +124,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, size=(512, 512),
                             title='Rotating cube (GL version)',
-                            close_keys='escape')
+                            keys='interactive')
         self.timer = app.Timer(1./60., self.on_timer)
 
     def on_initialize(self, event):

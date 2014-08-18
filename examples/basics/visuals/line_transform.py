@@ -70,7 +70,7 @@ class Canvas(vispy.scene.SceneCanvas):
                                    STTransform(scale=(0.01, 0.1),
                                                translate=(4, 20)))
 
-        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 

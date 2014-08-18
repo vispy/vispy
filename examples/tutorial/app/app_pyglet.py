@@ -58,6 +58,6 @@ class Canvas(app.Canvas):
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    canvas = Canvas(close_keys='escape')
+    canvas = Canvas(keys='interactive')
     canvas.show()
     app.run()

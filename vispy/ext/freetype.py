@@ -189,15 +189,16 @@ FT_Library_Version = __dll__.FT_Library_Version
 __handle__ = None
 
 
-def __del_library__(self):
-    global __handle__
-    if __handle__:
-        try:
-            FT_Done_FreeType(self)
-            __handle__ = None
-        except:
-            pass
-FT_Library.__del__ = __del_library__
+# Comment out to avoid segfaults on Py34
+# def __del_library__(self):
+#     global __handle__
+#     if __handle__:
+#         try:
+#             FT_Done_FreeType(self)
+#             __handle__ = None
+#         except:
+#             pass
+# FT_Library.__del__ = __del_library__
 
 
 def get_handle():
@@ -325,7 +326,8 @@ class Glyph(object):
         self._FT_Glyph = glyph
 
     def __del__(self):
-        FT_Done_Glyph(self._FT_Glyph)
+        if self._FT_Glyph is not None and FT_Done_Glyph is not None:
+            FT_Done_Glyph(self._FT_Glyph)
 
     def to_bitmap(self, mode, origin, destroy=False):
         error = FT_Glyph_To_Bitmap(byref(self._FT_Glyph),

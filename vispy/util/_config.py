@@ -322,7 +322,8 @@ def sys_info(fname=None, overwrite=False):
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
         out += 'Backend:  %s\n' % app.backend_name
         for backend in BACKEND_NAMES:
-            which = has_backend(backend, out=['which'])[1]
+            with use_log_level('warning', print_msg=False):
+                which = has_backend(backend, out=['which'])[1]
             out += '{0:<9} {1}\n'.format(backend + ':', which)
         out += '\n'
         # We need an OpenGL context to get GL info

@@ -22,7 +22,7 @@ from distutils.version import LooseVersion
 from ..scene import SceneCanvas
 from ..ext.six.moves import http_client as httplib
 from ..ext.six.moves import urllib_parse as urllib
-from ..util import make_png
+from ..util import make_png, use_log_level
 from .. import gloo
 
 ###############################################################################
@@ -164,7 +164,8 @@ def has_backend(backend, has=(), capable=(), out=()):
         return ret
     # let's follow the standard code path
     module_name = BACKENDMAP[backend.lower()][1]
-    mod = __import__('app.backends.%s' % module_name, globals(), level=2)
+    with use_log_level('warning', print_msg=False):
+        mod = __import__('app.backends.%s' % module_name, globals(), level=2)
     mod = getattr(mod.backends, module_name)
     good = mod.testable
     for h in has:
@@ -181,25 +182,14 @@ def requires_application(backend=None, has=(), capable=()):
     """Decorator for tests that require an application"""
     from ..app.backends import BACKEND_NAMES
     # avoid importing other backends if we don't need to
-    test_backend = os.getenv('_VISPY_TESTING_BACKEND', None)
-    good = True
-    if test_backend is not None:
-        # we are testing X but requires_application wants specifically Y
-        if backend is not None and test_backend != backend:
-            good = False
-            msg = 'Testing backend %s, not %s' % (test_backend, backend)
-        else:
-            # we only need to check for existence of the test backend
-            backend = test_backend
-
-    if good and backend is None:
+    if backend is None:
         good = False
         for backend in BACKEND_NAMES:
             if has_backend(backend, has=has, capable=capable):
                 good = True
                 break
         msg = 'Requires application backend'
-    elif good:
+    else:
         good, why = has_backend(backend, has=has, capable=capable,
                                 out=['why_not'])
         msg = 'Requires %s: %s' % (backend, why)

@@ -13,7 +13,7 @@ use('pyqt4')
 # use('pyglet')
 
 canvas = app.Canvas(size=(512, 512), title = "Do nothing benchmark (vispy)",
-                    close_keys='escape')
+                    keys='interactive')
 
 
 @canvas.connect

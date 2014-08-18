@@ -23,7 +23,7 @@ this_dir = op.abspath(op.dirname(__file__))
 class Canvas(app.Canvas):
     def __init__(self):
         self.use_shaders = True
-        app.Canvas.__init__(self, size=(512, 512), close_keys='escape')
+        app.Canvas.__init__(self, size=(512, 512), keys='interactive')
 
     def _setup_textures(self, fname):
         img = Image.open(get_data_file('jfa/' + fname))

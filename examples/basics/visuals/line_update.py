@@ -28,7 +28,7 @@ class Canvas(vispy.scene.SceneCanvas):
         self.line = visuals.Line(pos=pos, color=color)
         self.line.events.update.connect(self.line_changed)
 
-        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 

@@ -23,7 +23,7 @@ from time import sleep
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
-from ...util import keys
+from ...util import keys, logger
 from ...util.ptime import time
 
 
@@ -222,6 +222,7 @@ class CanvasBackend(BaseCanvasBackend):
         glfw.glfwWindowHint(glfw.GLFW_DECORATED, int(dec))
         glfw.glfwWindowHint(glfw.GLFW_VISIBLE, 0)  # start out hidden
         if fs is not False:
+            self._fullscreen = True
             if fs is True:
                 monitor = glfw.glfwGetPrimaryMonitor()
             else:
@@ -230,8 +231,15 @@ class CanvasBackend(BaseCanvasBackend):
                     raise ValueError('fullscreen must be <= %s'
                                      % len(monitor))
                 monitor = monitor[fs]
+            use_size = glfw.glfwGetVideoMode(monitor)[:2]
+            if use_size != size:
+                logger.warning('Requested size %s, will be ignored to '
+                               'use fullscreen mode %s' % (size, use_size))
+            size = use_size
         else:
+            self._fullscreen = False
             monitor = None
+
         self._id = glfw.glfwCreateWindow(width=size[0], height=size[1],
                                          title=title, monitor=monitor,
                                          share=share)
@@ -327,6 +335,9 @@ class CanvasBackend(BaseCanvasBackend):
         else:
             glfw.glfwHideWindow(self._id)
 
+    def _vispy_set_fullscreen(self, fullscreen):
+        logger.warn('Cannot change fullscreen mode for GLFW backend')
+
     def _vispy_update(self):
         # Invoke a redraw, passing it on to the canvas
         if self._vispy_canvas is None or self._id is None:
@@ -355,6 +366,9 @@ class CanvasBackend(BaseCanvasBackend):
             return
         x, y = glfw.glfwGetWindowPos(self._id)
         return x, y
+
+    def _vispy_get_fullscreen(self):
+        return self._fullscreen
 
     ##########################################
     # Notify vispy of events triggered by GLFW

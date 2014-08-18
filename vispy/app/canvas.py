@@ -5,6 +5,7 @@
 from __future__ import division, print_function
 
 import numpy as np
+from time import sleep
 
 from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
@@ -68,8 +69,12 @@ class Canvas(object):
         ``canvas.context`` property from an existing canvas (using the
         same backend) will return a ``SharedContext`` that can be used,
         thereby sharing the existing context.
-    close_keys : str | list of str
-        Key to use that will cause the canvas to be closed.
+    keys : str | dict | None
+        Default key mapping to use. If 'interactive', escape and F11 will
+        close the canvas and toggle full-screen mode, respectively.
+        If dict, maps keys to functions. If dict values are strings,
+        they are assumed to be ``Canvas`` methods, otherwise they should
+        be callable.
     parent : widget-object
         The parent widget if this makes sense for the used backend.
     """
@@ -77,7 +82,7 @@ class Canvas(object):
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, vsync=False, resizable=True, decorate=True,
-                 fullscreen=False, context=None, close_keys=(), parent=None):
+                 fullscreen=False, context=None, keys=None, parent=None):
 
         size = [int(s) for s in size]
         if len(size) != 2:
@@ -144,18 +149,12 @@ class Canvas(object):
         else:
             raise ValueError('Invalid value for app %r' % app)
 
-        # Create widget now
+        # Deal with special keys
+        self._set_keys(keys)
+
+        # Create widget now (always do this *last*, after all err checks)
         if create_native:
             self.create_native()
-
-        # Close keys
-        def close_keys_check(event):
-            if event.key in self.close_keys:
-                self.close()
-        if isinstance(close_keys, string_types):
-            close_keys = [close_keys]
-        self.close_keys = close_keys
-        self.events.key_press.connect(close_keys_check, ref=True)
 
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
@@ -182,6 +181,42 @@ class Canvas(object):
                                      ref=True, position='last')
         self._backend._vispy_canvas = self  # it's okay to set this again
         self._backend._vispy_init()
+
+    def _set_keys(self, keys):
+        if keys is not None:
+            if isinstance(keys, string_types):
+                if keys != 'interactive':
+                    raise ValueError('keys, if string, must be "interactive", '
+                                     'not %s' % (keys,))
+
+                def toggle_fs():
+                    self.fullscreen = not self.fullscreen
+                keys = dict(escape='close', F11=toggle_fs)
+        else:
+            keys = {}
+        if not isinstance(keys, dict):
+            raise TypeError('keys must be a dict, str, or None')
+        if len(keys) > 0:
+            # ensure all are callable
+            for key, val in keys.items():
+                if isinstance(val, string_types):
+                    new_val = getattr(self, val, None)
+                    if new_val is None:
+                        raise ValueError('value %s is not an attribute of '
+                                         'Canvas' % val)
+                    val = new_val
+                if not hasattr(val, '__call__'):
+                    raise TypeError('Entry for key %s is not callable' % key)
+                # convert to lower-case representation
+                keys.pop(key)
+                keys[key.lower()] = val
+            self._keys_check = keys
+
+            def keys_check(event):
+                use_name = event.key.name.lower()
+                if use_name in self._keys_check:
+                    self._keys_check[use_name]()
+            self.events.key_press.connect(keys_check, ref=True)
 
     @property
     def context(self):
@@ -233,6 +268,14 @@ class Canvas(object):
     @size.setter
     def size(self, size):
         return self._backend._vispy_set_size(size[0], size[1])
+
+    @property
+    def fullscreen(self):
+        return self._backend._vispy_get_fullscreen()
+
+    @fullscreen.setter
+    def fullscreen(self, fullscreen):
+        return self._backend._vispy_set_fullscreen(fullscreen)
 
     # ------------------------------------------------------------ position ---
     @property
@@ -339,12 +382,12 @@ class Canvas(object):
 
     def __exit__(self, type, value, traceback):
         # ensure all GL calls are complete
-        from .. import gloo
-        self._backend._vispy_set_current()
-        gloo.gl.glFlush()
-        gloo.gl.glFinish()
-        self.swap_buffers()
-        self.close()
+        if not self._closed:
+            from ..gloo import gl
+            self._backend._vispy_set_current()
+            gl.glFinish()
+            self.close()
+        sleep(0.1)  # ensure window is really closed/destroyed
 
     # def mouse_event(self, event):
         #"""Called when a mouse input event has occurred (the mouse has moved,

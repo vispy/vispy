@@ -19,7 +19,7 @@ class Canvas(vispy.scene.SceneCanvas):
                                        start_angle=180., span_angle=150.)
         self.ellipse.transform = transforms.STTransform(scale=(0.5, 1.5))
         
-        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
         

@@ -207,12 +207,12 @@ if __name__ == '__main__':
                         size=(width, height), position=(0, 40),
                         x=loc[:, 0], y=loc[:, 1], u=vec[:, 0], v=vec[:, 1],
                         colormap=create_colormap2d_4dirs(size=128),
-                        close_keys='escape')
+                        keys='interactive')
     c2 = Unstructured2d(title="Unstructured 2D - 1D colormap",
                         size=(width, height), position=(width + 20, 40),
                         x=loc[:, 0], y=loc[:, 1], u=vec[:, 0],
                         colormap=create_colormap1d_hot(size=128),
-                        close_keys='escape')
+                        keys='interactive')
     c1.show()
     c2.show()
     app.run()

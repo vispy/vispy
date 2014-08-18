@@ -4,6 +4,7 @@
 
 import numpy as np
 import base64
+import warnings
 
 try:
     import matplotlib.pyplot as plt
@@ -45,7 +46,7 @@ class VispyRenderer(Renderer):
         self._dpi = props['dpi']
         size = (props['figwidth'] * self._dpi,
                 props['figheight'] * self._dpi)
-        self.canvas = SceneCanvas(size=size, show=True, close_keys='escape',
+        self.canvas = SceneCanvas(size=size, show=True, keys='interactive',
                                   bgcolor='lightgray')
 
         @self.canvas.events.resize.connect
@@ -184,7 +185,8 @@ def _mpl_to_vispy(fig):
         raise ImportError('Could not import mplexporter (%s)' % why_not)
     renderer = VispyRenderer()
     exporter = Exporter(renderer)
-    exporter.run(fig)
+    with warnings.catch_warnings(record=True):  # py3k mpl warning
+        exporter.run(fig)
     renderer._vispy_done()
     return renderer.canvas
 

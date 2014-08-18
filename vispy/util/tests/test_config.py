@@ -1,4 +1,4 @@
-from nose.tools import assert_raises, assert_equal
+from nose.tools import assert_raises, assert_equal, assert_true
 from os import path as op
 import os
 
@@ -21,6 +21,7 @@ def test_sys_info():
     keys = ['Python', 'Backend', 'pyglet', 'Platform:']
     for key in keys:
         assert_in(key, out)
+    assert_true('Info-gathering error' not in out)
 
 
 def test_config():

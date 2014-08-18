@@ -29,7 +29,7 @@ line_ndc = scene.visuals.Line(pos=pos.copy(), color=color)
 #line_pixels = scene.visuals.Line(pos=pos.copy(), color=color)
 
 # Create canvas
-canvas = scene.SceneCanvas(size=(800, 600), show=True, close_keys='escape')
+canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
 
 vb1 = scene.widgets.ViewBox(parent=canvas.scene, border_color='yellow')
 vb1.clip_method = 'fbo'

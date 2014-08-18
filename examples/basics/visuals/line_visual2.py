@@ -158,7 +158,7 @@ if __name__ == '__main__':
     
     class Canvas(app.Canvas):
         def __init__(self):
-            app.Canvas.__init__(self, close_keys='escape')
+            app.Canvas.__init__(self, keys='interactive')
             
             self.line1 = Line(pos, (3, 9, 0))
             self.line2 = DashedLine(pos, color)

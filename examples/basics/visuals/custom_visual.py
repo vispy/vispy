@@ -114,7 +114,7 @@ class MarkerVisual(Visual):
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, close_keys='escape')
+        app.Canvas.__init__(self, keys='interactive')
 
         n = 10000
         pos = 0.25 * np.random.randn(n, 2).astype(np.float32)

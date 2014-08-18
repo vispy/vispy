@@ -9,7 +9,7 @@ from vispy.scene.transforms import STTransform
 
 class Canvas(scene.SceneCanvas):
     def __init__(self):
-        scene.SceneCanvas.__init__(self, close_keys='escape', title='Glyphs')
+        scene.SceneCanvas.__init__(self, title='Glyphs', keys='interactive')
         self.point_size = 48.
         self.text = Text('', bold=True)
         self.text.transform = STTransform()

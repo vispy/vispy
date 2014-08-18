@@ -96,7 +96,7 @@ class Canvas(vispy.scene.SceneCanvas):
                                                          scale=(s, s, 1)),
                                              self.rotation])
 
-        vispy.scene.SceneCanvas.__init__(self, close_keys='escape')
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         
         self.size = (800, 800)
         self.show()
