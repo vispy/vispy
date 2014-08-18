@@ -179,6 +179,17 @@ def _process_key(evt):
         return None, None
 
 
+class DummySize(object):
+    def __init__(self, size):
+        self.size = size
+
+    def GetSize(self):
+        return self.size
+
+    def Skip(self):
+        pass
+
+
 class CanvasBackend(Frame, BaseCanvasBackend):
 
     """ wxPython backend for Canvas abstract class."""
@@ -225,13 +236,13 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self._canvas.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self._canvas.Bind(wx.EVT_MOUSE_EVENTS, self.on_mouse_event)
         self.Bind(wx.EVT_CLOSE, self.on_close)
+        self._size_init = size
         self._vispy_set_visible(show)
 
     def on_resize(self, event):
-        if self._vispy_canvas is None:
+        if self._vispy_canvas is None or not self._init:
+            event.Skip()
             return
-        if not self._init:
-            self._initialize()
         size = event.GetSize()
         self._vispy_canvas.events.resize(size=size)
         self.Refresh()
@@ -254,6 +265,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self._init = True
         self._vispy_set_current()
         self._vispy_canvas.events.initialize()
+        self.on_resize(DummySize(self._size_init))
 
     def _vispy_set_current(self):
         if self._canvas is None:
@@ -285,6 +297,8 @@ class CanvasBackend(Frame, BaseCanvasBackend):
 
     def _vispy_set_size(self, w, h):
         # Set size of the widget or window
+        if not self._init:
+            self._size_init = (w, h)
         self.SetSizeWH(w, h)
 
     def _vispy_set_position(self, x, y):
