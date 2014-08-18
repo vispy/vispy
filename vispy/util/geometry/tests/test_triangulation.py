@@ -504,4 +504,5 @@ def test_edge_event():
 if __name__ == '__main__':
     #test_edge_intersections()
     #test_merge_duplicate_points()
-    test_utility_methods()
+    #test_utility_methods()
+    test_intersect_edge_arrays()
