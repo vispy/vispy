@@ -944,8 +944,6 @@ class Texture3D(Texture):
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
-        _gl.glGetTexImage(self.target, 0, self._format, self._gtype)
-
 
 # ------------------------------------------------------ TextureAtlas class ---
 class TextureAtlas(Texture2D):

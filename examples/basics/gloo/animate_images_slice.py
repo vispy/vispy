@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# author: Irwin Zaid
 # vispy: gallery 2
-"""
-Example demonstrating a 3D Texture
 
+"""
+Example demonstrating a 3D Texture. The volume contains noise that
+is smoothed in the z-direction. Shown is one slice throught that volume
+to give the effect of "morphing" noise.
 """
 
 import numpy as np
@@ -19,7 +22,10 @@ W, H, D = S, S, S
 
 # Modulated image
 I = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
-I *= np.linspace(0, 1, D)[np.newaxis, np.newaxis, :]
+I *= np.linspace(0.5, 1, D)[:, np.newaxis, np.newaxis]
+
+# Smooth it a bit in the z-direction
+I[1:-1] = 0.4 * I[1:-1] + 0.3 * I[:-2] + 0.3 * I[2:]
 
 # A simple texture quad
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),
@@ -33,7 +39,6 @@ VERT_SHADER = """
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
-uniform float u_antialias;
 
 // Attributes
 attribute vec2 a_position;
@@ -56,8 +61,8 @@ uniform float i;
 varying vec2 v_texcoord;
 void main()
 {
-// step through gradient with i
-    gl_FragColor = texture3D(u_texture, vec3(i,v_texcoord));
+    // step through gradient with i
+    gl_FragColor = texture3D(u_texture, vec3(v_texcoord, i));
     gl_FragColor.a = 1.0;
 }
 
@@ -86,8 +91,10 @@ class Canvas(app.Canvas):
         self.program['u_view'] = self.view
         self.projection = ortho(0, W, 0, H, -1, 1)
         self.program['u_projection'] = self.projection
-
+        
         self.i = 0
+        
+        self._timer = app.Timer(1/60.0, connect=self.on_timer, start=True)
 
     def on_initialize(self, event):
         gloo.set_clear_color('white')
@@ -111,12 +118,16 @@ class Canvas(app.Canvas):
             [[x, y], [x + w, y], [x, y + h], [x + w, y + h]])
         self.program.bind(gloo.VertexBuffer(data))
 
+    def on_timer(self, event):
+        self.i = (self.i + 0.001) % 1.0
+        self.update()
+        
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
         self.program['i'] = self.i
         self.program.draw('triangle_strip')
-        self.update()
-        self.i = (self.i + 0.01) % 1.0
+
+        
 
 
 if __name__ == '__main__':
