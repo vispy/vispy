@@ -249,6 +249,9 @@ VisPy command line arguments:
     or if their call location (module.class:method(line) or 
     module:function(line)) matches the string.    
     
+  --vispy-fps
+    Print the framerate (in Frames Per Second) in the console.
+    
   --vispy-gl-debug
     Enables error checking for all OpenGL calls.
     

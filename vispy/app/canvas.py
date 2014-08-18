@@ -157,6 +157,18 @@ class Canvas(object):
         if create_native:
             self.create_native()
 
+        if '--vispy-fps' in sys.argv:
+            self.measure_fps()
+            
+        # Close keys
+        def close_keys_check(event):
+            if event.key in self.close_keys:
+                self.close()
+        if isinstance(close_keys, string_types):
+            close_keys = [close_keys]
+        self.close_keys = close_keys
+        self.events.key_press.connect(close_keys_check, ref=True)
+
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
         is already created, this function does nothing.
