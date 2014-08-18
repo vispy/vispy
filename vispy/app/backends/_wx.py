@@ -290,6 +290,13 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         # Set positionof the widget or window. May have no effect for widgets
         self.SetPosition((x, y))
 
+    def _vispy_get_fullscreen(self):
+        return self._fullscreen
+
+    def _vispy_set_fullscreen(self, fullscreen):
+        self._fullscreen = bool(fullscreen)
+        self._vispy_set_visible(True)
+
     def _vispy_set_visible(self, visible):
         # Show or hide the window or widget
         self.Show(visible)
