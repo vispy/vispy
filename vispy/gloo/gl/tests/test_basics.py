@@ -146,7 +146,7 @@ def _test_setting_stuff():
     
     # And getting stuff
     try:
-        with use_log_level('warning', print_msg=False):
+        with use_log_level('error', print_msg=False):
             r, p = gl.glGetShaderPrecisionFormat(gl.GL_FRAGMENT_SHADER,
                                                  gl.GL_HIGH_FLOAT)
             gl.check_error()  # Sometimes the func is there but OpenGL errs

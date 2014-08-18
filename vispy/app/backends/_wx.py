@@ -266,7 +266,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         return SharedContext([self._gl_attribs, self._context])
 
     def _vispy_warmup(self):
-        etime = time() + 0.4
+        etime = time() + 0.3
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()
