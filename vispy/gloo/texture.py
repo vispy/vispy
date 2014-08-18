@@ -511,7 +511,7 @@ class BaseTexture(GLObject):
 
         offset = tuple([s.start for s in slices])
         shape = tuple([s.stop - s.start for s in slices])
-        size = np.prod(shape)
+        size = np.prod(shape) if len(shape) > 0 else 1
 
         # We have CPU storage
         if self.data is not None:
@@ -700,12 +700,7 @@ class Texture1D(BaseTexture):
 
         while self._pending_data:
             data, offset = self._pending_data.pop(0)
-            if offset is None:
-                x = 0
-            else:
-                x = offset[0]
-            # gl.glTexSubImage1D(self.target, 0, x, self._format,
-            #                    self._gtype, data)
+            x = 0 if offset is None else offset[0]
             gl.glTexSubImage2D(self.target, 0, x, self._format,
                                self._gtype, data)
 
@@ -746,8 +741,8 @@ class Texture2D(BaseTexture):
         base = kwargs.get("base", None)
         resizeable = kwargs.get("resizeable", True)
 
-        BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype, base=base,
-                             resizeable=resizeable, store=store,
+        BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype,
+                             base=base, resizeable=resizeable, store=store,
                              target=gl.GL_TEXTURE_2D, offset=offset,
                              format=format)
 
@@ -784,14 +779,13 @@ class Texture2D(BaseTexture):
         # Update data
         while self._pending_data:
             data, offset = self._pending_data.pop(0)
-            x, y = 0, 0
+            x = y = 0
             if offset is not None:
                 y, x = offset[0], offset[1]
             # Set alignment (width is nbytes_per_pixel * npixels_per_line)
             alignment = self._get_alignment(data.shape[-2]*data.shape[-1])
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
-            #width, height = data.shape[1], data.shape[0]
             gl.glTexSubImage2D(self.target, 0, x, y, self._format,
                                self._gtype, data)
             if alignment != 4:
@@ -839,8 +833,8 @@ class Texture3D(BaseTexture):
         base = kwargs.get("base", None)
         resizeable = kwargs.get("resizeable", True)
 
-        BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype, base=base,
-                             resizeable=resizeable, store=store,
+        BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype,
+                             base=base, resizeable=resizeable, store=store,
                              target=_gl.GL_TEXTURE_3D, offset=offset,
                              format=format)
 
@@ -881,7 +875,7 @@ class Texture3D(BaseTexture):
         """ Texture update on GPU """
         while self._pending_data:
             data, offset = self._pending_data.pop(0)
-            x, y, z = 0, 0, 0
+            x = y = z = 0
             if offset is not None:
                 z, y, x = offset[0], offset[1], offset[2]
             # Set alignment (width is nbytes_per_pixel * npixels_per_line)
