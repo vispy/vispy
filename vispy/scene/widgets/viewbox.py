@@ -10,6 +10,8 @@ from .widget import Widget
 from ..subscene import SubScene
 from ..cameras import make_camera, BaseCamera
 from ...ext.six import string_types
+from ... color import Color
+from ... import gloo
 
 
 class ViewBox(Widget):
@@ -39,10 +41,10 @@ class ViewBox(Widget):
     
     All extra keyword arguments are passed to :func:`Widget.__init__`.
     """
-    def __init__(self, camera=None, scene=None, **kwds):
+    def __init__(self, camera=None, scene=None, bgcolor='black', **kwds):
         
         self._camera = None
-        
+        self._bgcolor = Color(bgcolor).rgba
         Widget.__init__(self, **kwds)
 
         # Init preferred method to provided a pixel grid
@@ -195,19 +197,14 @@ class ViewBox(Widget):
             event.push_fbo(fbo, offset, size)
             event.push_entity(self.scene)
             try:
-                # Clear bg color (handy for dev)
-                from ...gloo import gl
-                gl.glClearColor(0, 0, 0, 0)
-                gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+                gloo.clear(color=self._bgcolor, depth=True)
                 self.scene.draw(event)
             finally:
                 event.pop_entity()
                 event.pop_fbo()
             
-            # Draw the result
-            gl.glDisable(gl.GL_CULL_FACE)
-            self._myprogram.draw(gl.GL_TRIANGLE_STRIP)
-
+            gloo.set_state(cull_face=False)
+            self._myprogram.draw('triangle_strip')
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
@@ -224,7 +221,7 @@ class ViewBox(Widget):
             self.scene.draw(event)
 
         event.pop_viewbox()
-        
+
     def _prepare_viewport(self, event):
         p1 = event.map_to_fb((0, 0))
         p2 = event.map_to_fb(self.size)

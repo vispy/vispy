@@ -50,8 +50,8 @@ stub3 = Function("vec4 stub3(vec3 value) { return value; }")
 
 class Line(Visual):
     
-    def __init__(self, parent=None, data=None, color=None):
-        Visual.__init__(self, parent)
+    def __init__(self, data=None, color=None, **kwargs):
+        Visual.__init__(self, **kwargs)
         
         # Create a program
         self._program = ModularProgram(vertex_template, fragment_template)
@@ -160,8 +160,8 @@ if __name__ == '__main__':
         def __init__(self):
             app.Canvas.__init__(self, close_keys='escape')
             
-            self.line1 = Line(None, pos, (3, 9, 0))
-            self.line2 = DashedLine(None, pos, color)
+            self.line1 = Line(pos, (3, 9, 0))
+            self.line2 = DashedLine(pos, color)
             self.line2.transform = STTransform(scale=(0.5, 0.5),
                                                translate=(0.4, 0.4))
     

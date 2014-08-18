@@ -13,14 +13,14 @@ class Point(ModularVisual):
     """
     Displays multiple point sprites.
     """
-    def __init__(self, pos=None, **kwds):
-        super(Point, self).__init__()
+    def __init__(self, pos=None, color=None, **kwargs):
+        super(Point, self).__init__(**kwargs)
 
-        glopts = kwds.pop('gl_options', 'translucent')
+        glopts = kwargs.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
 
-        if pos is not None or kwds:
-            self.set_data(pos, **kwds)
+        if pos is not None or color is not None:
+            self.set_data(pos=pos, color=color)
 
         # TODO: turn this into a proper component.
         code = """

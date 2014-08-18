@@ -84,40 +84,6 @@ from ..components import (VisualComponent, XYPosComponent, XYZPosComponent,
             phong shading
 
 """
-
-
-#class ComponentProgram(ModularProgram):
-    #"""
-    #Temporary class to bridge differences between current ModularProgram 
-    #and old ModularProgram.    
-    #"""
-    #def __init__(self, vert, frag):
-        #self._chains = {}
-        #ModularProgram.__init__(self, Function(vert), Function(frag))
-    
-    #def add_chain(self, var):
-        #"""
-        #Create a new ChainFunction and attach to $var on the appropriate 
-        #main function.
-        #"""
-        #chain = FunctionChain(var, [])
-        #self._chains[var] = chain
-        #self[var] = chain
-
-    #def add_callback(self, hook, func):
-        #self._chains[hook].append(func)
-    
-    #def remove_callback(self, hook, func):
-        #self._chains[hook].remove(func)
-    
-    #def __setitem__(self, name, val):
-        #try:
-            #self.vert[name] = val
-        #except Exception:
-            #try:
-                #self.frag[name] = val
-            #except Exception:
-                #ModularProgram.__setitem__(self, name, val)
             
 
 class ModularVisual(Visual):
@@ -161,8 +127,8 @@ class ModularVisual(Visual):
     }
     """
 
-    def __init__(self, parent=None, **kwds):
-        Visual.__init__(self, parent, **kwds)
+    def __init__(self, **kwargs):
+        Visual.__init__(self, **kwargs)
         
         # Dict of {'GL_FLAG': bool} and {'glFunctionName': (args)} 
         # specifications. By default, these are enabled whenever the Visual 
@@ -235,9 +201,12 @@ class ModularVisual(Visual):
             if isinstance(color, tuple):
                 self.color_components = [UniformColorComponent(color)]
             elif isinstance(color, np.ndarray):
-                self.color_components = [VertexColorComponent(color)]
+                if color.ndim == 1:
+                    self.color_components = [UniformColorComponent(color)]
+                elif color.ndim > 1:
+                    self.color_components = [VertexColorComponent(color)]
             else:
-                raise Exception("Can't handle color data:")
+                raise Exception("Can't handle color data: %r" % color)
 
     def set_gl_options(self, default=-1, **kwds):
         """
@@ -335,7 +304,7 @@ class ModularVisual(Visual):
         """
         modes = set([VisualComponent.DRAW_PRE_INDEXED,
                      VisualComponent.DRAW_UNINDEXED])
-        for comp in self._color_components + self.pos_components:
+        for comp in (self._color_components + self.pos_components):
             modes &= comp.supported_draw_modes
 
         if len(modes) == 0:

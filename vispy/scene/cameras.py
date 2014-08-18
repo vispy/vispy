@@ -61,10 +61,10 @@ class BaseCamera(Entity):
     no user interaction and causes the subscene to use the same coordinate
     system as the ViewBox.
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._viewbox = None
         self._interactive = True
-        super(BaseCamera, self).__init__()
+        super(BaseCamera, self).__init__(**kwargs)
         self.transform = NullTransform()
 
     @property
@@ -153,8 +153,8 @@ class PanZoomCamera(BaseCamera):
     * Dragging right mouse button horizontally zooms the view x-axis
     * Mouse wheel zooms both view axes equally.
     """
-    def __init__(self):
-        super(PanZoomCamera, self).__init__()
+    def __init__(self, **kwargs):
+        super(PanZoomCamera, self).__init__(**kwargs)
         self._rect = Rect((0, 0), (1, 1))  # visible range in scene
         self._invert = [False, True]
         self.transform = STTransform()
@@ -294,14 +294,14 @@ class PerspectiveCamera(BaseCamera):
     Parameters are *mode*, *fov*, and *width*, 
     corresponding to the properties of the same name.
     """
-    def __init__(self, mode='ortho', fov=60., width=10.):
+    def __init__(self, mode='ortho', fov=60., width=10., **kwargs):
         # projection transform and associated options
         self._projection = PerspectiveTransform()
         self._mode = None
         self._fov = None
         self._width = None
 
-        super(PerspectiveCamera, self).__init__()
+        super(PerspectiveCamera, self).__init__(**kwargs)
 
         self.mode = mode
         self.fov = fov

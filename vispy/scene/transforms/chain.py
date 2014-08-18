@@ -114,7 +114,7 @@ class ChainTransform(BaseTransform):
         return self._shader_imap
 
     def _make_shader_map(self, imap):
-        if imap:
+        if bool(imap):
             funcs = [tr.shader_imap() for tr in self.transforms]
         else:
             funcs = [tr.shader_map() for tr in reversed(self.transforms)]
@@ -129,7 +129,7 @@ class ChainTransform(BaseTransform):
             #    bound = tr.shader_map(tr_name)
             #bindings.append(bound)
 
-        name = "transform_%s_chain" % ('imap' if imap else 'map')
+        name = "transform_%s_chain" % ('imap' if imap is not None else 'map')
         return FunctionChain(name, funcs)
 
     def inverse(self):
@@ -165,24 +165,24 @@ class ChainTransform(BaseTransform):
         """
         raise Exception()
         self.flatten()
-        if not self.transforms:
+        if len(self.transforms) == 0:
             return NullTransform()
-        while True:
+        cont = True
+        while cont:
             new_tr = [self.transforms[0]]
-            exit = True
+            cont = False
             for t2 in self.transforms[1:]:
                 t1 = new_tr[-1]
                 pr = t1 * t2
                 if not isinstance(pr, ChainTransform):
-                    exit = False
+                    cont = True
                     new_tr.pop()
                     new_tr.append(pr)
                 else:
                     new_tr.append(t2)
             self._transforms = new_tr
-            if exit:
-                break
         self._inverse = None
+
         # todo: get rid of this in-place + return thing
         if len(self._transforms) == 1:
             return self._transforms[0]

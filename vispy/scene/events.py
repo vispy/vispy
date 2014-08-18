@@ -36,7 +36,7 @@ class SceneEvent(Event):
     def viewbox(self):
         """ The current viewbox.
         """
-        if self._viewbox_stack:
+        if len(self._viewbox_stack) > 0:
             return self._viewbox_stack[-1]
         else:
             return None

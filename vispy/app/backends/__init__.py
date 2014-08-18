@@ -25,10 +25,11 @@ CORE_BACKENDS = [
 # canvas, the pseudo backends act more like a proxy.
 PSEUDO_BACKENDS = [
     ('ipynb_vnc', '_ipynb_vnc', None),
+    ('ipynb_static', '_ipynb_static', None),
     ('_test', '_test', 'vispy.app.backends._test'),  # add one that will fail
 ]
 
-# Combine 
+# Combine
 BACKENDS = CORE_BACKENDS + PSEUDO_BACKENDS
 
 # Get list of backend names

@@ -104,8 +104,8 @@ class Application(object):
         # See if we're in a specific testing mode
         test_name = os.getenv('_VISPY_TESTING_TYPE', None)
         if test_name not in BACKENDMAP:
-            test_name = None 
-        
+            test_name = None
+
         # Check whether the given name is valid
         if backend_name is not None:
             if backend_name.lower() == 'default':
@@ -116,7 +116,7 @@ class Application(object):
         elif test_name is not None:
             backend_name = test_name.lower()
             assert backend_name in BACKENDMAP
-        
+
         # Should we try and load any backend, or just this specific one?
         try_others = backend_name is None
 

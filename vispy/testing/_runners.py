@@ -39,6 +39,7 @@ def _nose(mode, verbosity, coverage):
     if mode == 'nobackend':
         print(extra + '\nRunning tests with no backend')
         attrs = '-a !vispy_app_test '
+        app_import = ''
     else:
         has, why_not = has_backend(mode, out=['why_not'])
         if has:
@@ -49,6 +50,7 @@ def _nose(mode, verbosity, coverage):
                    % (mode, why_not))
             print(extra + '\n' + msg + '\n' + extra + '\n')  # last \n nicer
             raise SkipTest(msg)
+        app_import = '\nfrom vispy import use\nuse(app="%s")\n' % mode
     sys.stdout.flush()
     # we might as well always use coverage, since we manually disable printing!
     # here we actually read in the Python code to avoid importing it from
@@ -64,8 +66,8 @@ def _nose(mode, verbosity, coverage):
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     cmd = [sys.executable, '-c',
-           '%simport nose; nose.main(argv="%s".split(" ")%s)'
-           % (imps, arg, cv)]
+           '%s%simport nose; nose.main(argv="%s".split(" ")%s)'
+           % (imps, app_import, arg, cv)]
     env = deepcopy(os.environ)
     env.update(dict(_VISPY_TESTING_TYPE=mode))
     p = Popen(cmd, cwd=cwd, env=env)

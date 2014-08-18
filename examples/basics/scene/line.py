@@ -19,13 +19,10 @@ color[:, 1] = color[::-1, 0]
 
 lines = []
 
-
-
-
 for i in range(20):
     pos = pos.copy()
     pos[:, 1] = np.random.normal(scale=5, loc=(i+1)*30, size=N)
-    line = scene.visuals.Line(canvas.scene, pos=pos, color=color)
+    line = scene.visuals.Line(pos=pos, color=color, parent=canvas.scene)
     lines.append(line)
     line.transform = scene.transforms.STTransform()
 

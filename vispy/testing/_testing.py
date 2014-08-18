@@ -11,11 +11,19 @@ import sys
 import os
 import subprocess
 import inspect
+import base64
+try:
+    from nose.tools import nottest
+except ImportError:
+    class nottest(object):
+        pass
+from distutils.version import LooseVersion
+
 from ..scene import SceneCanvas
 from ..ext.six.moves import http_client as httplib
-import vispy.ext.six.moves.urllib_parse as urllib
-import base64
+from ..ext.six.moves import urllib_parse as urllib
 from ..util import make_png
+from .. import gloo
 
 ###############################################################################
 # Adapted from Python's unittest2 (which is wrapped by nose)
@@ -172,14 +180,26 @@ def has_backend(backend, has=(), capable=(), out=()):
 def requires_application(backend=None, has=(), capable=()):
     """Decorator for tests that require an application"""
     from ..app.backends import BACKEND_NAMES
-    if backend is None:
+    # avoid importing other backends if we don't need to
+    test_backend = os.getenv('_VISPY_TESTING_BACKEND', None)
+    good = True
+    if test_backend is not None:
+        # we are testing X but requires_application wants specifically Y
+        if backend is not None and test_backend != backend:
+            good = False
+            msg = 'Testing backend %s, not %s' % (test_backend, backend)
+        else:
+            # we only need to check for existence of the test backend
+            backend = test_backend
+
+    if good and backend is None:
         good = False
         for backend in BACKEND_NAMES:
             if has_backend(backend, has=has, capable=capable):
                 good = True
                 break
         msg = 'Requires application backend'
-    else:
+    elif good:
         good, why = has_backend(backend, has=has, capable=capable,
                                 out=['why_not'])
         msg = 'Requires %s: %s' % (backend, why)
@@ -216,6 +236,21 @@ def requires_img_lib():
     else:
         has_img_lib = not all(c is None for c in _check_img_lib())
     return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
+
+
+def requires_matplotlib(version='1.2'):
+    """Decorator for ensuring mpl is a usable version"""
+    try:
+        import matplotlib
+    except Exception:
+        has_mpl = False
+    else:
+        if LooseVersion(matplotlib.__version__) >= LooseVersion(version):
+            has_mpl = True
+        else:
+            has_mpl = False
+    return np.testing.dec.skipif(not has_mpl, 'Requires matplotlib >= %s'
+                                 % version)
 
 
 ###############################################################################
@@ -256,7 +291,8 @@ def _save_failed_test(data, expect, filename):
         img[:] = 255
         img[:, :ds[1], :ds[2]] = data
         img[:, ds[1]+1:ds[1]*2+1, :ds[2]] = expect
-        img[:, ds[1]*2 + 2:, :ds[2]] = data - expect
+        img[:, ds[1]*2 + 2:, :ds[2]] = np.abs(data.astype(int) -
+                                              expect.astype(int))
     else:
         shape = (ds[0], ds[1] * 2 + 1, 4)
         img = np.empty(shape, dtype=np.ubyte)
@@ -295,7 +331,9 @@ def assert_image_equal(image, reference):
         image = _screenshot(alpha=False)
     ref = read_png(get_testing_file(reference))
 
-    # check for minimum number of changed pixels, allowing for overall 1-pixel 
+    assert image.shape == ref.shape
+
+    # check for minimum number of changed pixels, allowing for overall 1-pixel
     # shift in any direcion
     slices = [slice(0, -1), slice(0, None), slice(1, None)]
     min_diff = np.inf
@@ -314,13 +352,27 @@ def assert_image_equal(image, reference):
 
 
 class TestingCanvas(SceneCanvas):
-    def __init__(self, clear_color=(0, 0, 0, 1), size=(100, 100)):
-        SceneCanvas.__init__(self, size=size)
-        self._clear_color = clear_color
+    def __init__(self, bgcolor='black', size=(100, 100)):
+        SceneCanvas.__init__(self, size=size, bgcolor=bgcolor)
 
     def __enter__(self):
         SceneCanvas.__enter__(self)
-        from .. import gloo
-        gloo.clear(color=self._clear_color)
-        #gloo.set_viewport(0, 0, *self.size)
+        gloo.clear(color=self._bgcolor)
         return self
+
+    def draw_visual(self, visual):
+        SceneCanvas.draw_visual(self, visual)
+        gloo.gl.glFlush()
+        gloo.gl.glFinish()
+
+
+@nottest
+def save_testing_image(image, location):
+    from ..gloo.util import _screenshot
+    from ..util import make_png
+    if image == "screenshot":
+        image = _screenshot(alpha=False)
+    png = make_png(image)
+    f = open(location+'.png', 'wb')
+    f.write(png)
+    f.close()

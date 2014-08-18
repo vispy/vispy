@@ -66,7 +66,7 @@ def arg_to_vec4(func):
 
     """
     def fn(self, arg, *args, **kwds):
-        if type(arg) in (tuple, list, np.ndarray):
+        if isinstance(arg, (tuple, list, np.ndarray)):
             arg = np.array(arg)
             flatten = arg.ndim == 1
             arg = as_vec4(arg)

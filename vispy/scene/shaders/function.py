@@ -221,8 +221,8 @@ class Function(ShaderObject):
         vert_code['yoffset'] = 5.0
         
         # 3) Assign a function call expression
-        pos_var = Variable('attribute a_position vec4')
-        vert_code['pos'] = trans1(trans2(pos_var))  
+        pos_var = Variable('attribute vec4 a_position')
+        vert_code['pos'] = trans1(trans2(pos_var))
         
         # Transforms also need their variables set
         trans1['scale'] = 0.5

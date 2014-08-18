@@ -6,12 +6,13 @@ from __future__ import division
 
 import weakref
 
-from ..gloo import gl
+from .. import gloo
 from .. import app
 from .subscene import SubScene
 from .entity import Entity
 from .transforms import STTransform, TransformCache
 from .events import SceneDrawEvent, SceneMouseEvent
+from ..color import Color
 from ..util import logger
 
 
@@ -24,6 +25,8 @@ class SceneCanvas(app.Canvas):
     def __init__(self, *args, **kwargs):
         self._fb_stack = []  # for storing information about framebuffers used
         self._vp_stack = []  # for storing information about viewports used
+        self._scene = None
+        self._bgcolor = Color(kwargs.pop('bgcolor', 'black')).rgba
 
         app.Canvas.__init__(self, *args, **kwargs)
         self.events.mouse_press.connect(self._process_mouse_event)
@@ -42,7 +45,6 @@ class SceneCanvas(app.Canvas):
         self.pixels = Entity(parent=self.framebuffer)
         self.pixels.transform = STTransform()
         
-        self._scene = None
         self.scene = SubScene(parent=self.pixels)
 
     @property
@@ -63,9 +65,7 @@ class SceneCanvas(app.Canvas):
         self.update()
 
     def on_draw(self, event):
-        gl.glClearColor(0, 0, 0, 1)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-
+        gloo.clear(color=self._bgcolor, depth=True)
         if self._scene is None:
             return  # Can happen on initialization
         logger.debug('Canvas draw')
@@ -174,7 +174,7 @@ class SceneCanvas(app.Canvas):
             fbo.activate()
             h, w = fbo.color_buffer.shape[:2]
             self.push_viewport((0, 0, w, h))
-        except:
+        except Exception:
             self._fb_stack.pop()
             raise
 

@@ -46,6 +46,7 @@ import zlib
 # http://www.python.org/doc/2.4.4/lib/module-warnings.html
 import warnings
 from .six.moves import map as imap
+from .six import string_types
 import itertools
 
 
@@ -1232,7 +1233,7 @@ class Reader:
         if _guess is not None:
             if isarray(_guess):
                 kw["bytes"] = _guess
-            elif isinstance(_guess, str):
+            elif isinstance(_guess, string_types):
                 kw["filename"] = _guess
             elif hasattr(_guess, 'read'):
                 kw["file"] = _guess
