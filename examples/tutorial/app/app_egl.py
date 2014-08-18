@@ -16,9 +16,10 @@ class Canvas(app.Canvas):
 
     def __init__(self, *args, **kwargs):
         app.Canvas.__init__(self, *args, **kwargs)
-        timer = app.Timer(1.0)
+        timer = app.Timer(0.01)
         timer.connect(self.on_timer)
         timer.start()
+        self.i = 0
 
     def on_initialize(self, event):
         gloo.set_clear_color('black')
@@ -32,10 +33,13 @@ class Canvas(app.Canvas):
         gloo.clear(color=True, depth=True)
 
     def on_timer(self, event):
+        self.i += 1
         print('tick !')
+        if self.i >= 10:
+            self.close()
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    canvas = Canvas(close_keys='escape')
+    canvas = Canvas(keys='interactive')
     canvas.show()
     app.run()

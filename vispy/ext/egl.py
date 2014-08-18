@@ -247,10 +247,14 @@ def eglInitialize(display):
     return majorVersion[0], minorVersion[0]
 
 
-DEFAULT_ATTRIB_LIST = (EGL_BUFFER_SIZE, 32,
+DEFAULT_ATTRIB_LIST = (EGL_RED_SIZE, 8, EGL_BLUE_SIZE, 8,
+                       EGL_GREEN_SIZE, 8, EGL_ALPHA_SIZE, 8,
+                       EGL_BIND_TO_TEXTURE_RGBA, EGL_TRUE,
+                       EGL_COLOR_BUFFER_TYPE, EGL_RGB_BUFFER,
+                       EGL_CONFORMANT, EGL_OPENGL_ES2_BIT,
                        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+                       EGL_NATIVE_RENDERABLE, EGL_TRUE,
                        EGL_SURFACE_TYPE, EGL_PBUFFER_BIT)
-#                       EGL_COLOR_BUFFER_TYPE, EGL_RGB_BUFFER)
 
 
 def _convert_attrib_list(attribList):
@@ -260,16 +264,16 @@ def _convert_attrib_list(attribList):
     return attribList
 
 
-def eglChooseConfig(display, attribList=DEFAULT_ATTRIB_LIST, maxConfigs=32):
+def eglChooseConfig(display, attribList=DEFAULT_ATTRIB_LIST):
     attribList = _convert_attrib_list(attribList)
-    config = (c_void_p*maxConfigs)()
     numConfigs = (_c_int*1)()
-    _lib.eglChooseConfig(display, attribList, config, maxConfigs, numConfigs)
+    _lib.eglChooseConfig(display, attribList, None, 0, numConfigs)
     n = numConfigs[0]
-    if not n:
+    if n <= 0:
         raise RuntimeError('Could not find any suitable config.')
-    out = config[:n]
-    return out
+    config = (c_void_p*n)()
+    _lib.eglChooseConfig(display, attribList, config, n, numConfigs)
+    return config
 
 
 def _check_res(res):
