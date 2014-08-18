@@ -16,10 +16,16 @@ from ...util.ptime import time
 # -------------------------------------------------------------------- init ---
 
 try:
+    # Inspired by http://www.mesa3d.org/egl.html, but these don't fix it :(
+    # from os import environ
+    # environ['EGL_DRIVER'] = 'egl_glx'
+    # environ['EGL_SOFTWARE'] = 'true'
     from ...ext import egl
     _EGL_DISPLAY = egl.eglGetDisplay()
-    version = egl.eglInitialize(_EGL_DISPLAY)
-    version = '.'.join(str(x) for x in version)
+    egl.eglInitialize(_EGL_DISPLAY)
+    version = [egl.eglQueryString(_EGL_DISPLAY, x) for x in
+               [egl.EGL_VERSION, egl.EGL_VENDOR, egl.EGL_CLIENT_APIS]]
+    version = version[0] + ' ' + version[1] + ': ' + version[2].strip()
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:

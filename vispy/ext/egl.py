@@ -7,7 +7,7 @@
 
 import os
 import ctypes
-from ctypes import c_int as _c_int, POINTER as _POINTER, c_void_p
+from ctypes import c_int as _c_int, POINTER as _POINTER, c_void_p, c_char_p
 
 _egl_file = None
 if 'EGL_LIBRARY' in os.environ:
@@ -219,6 +219,8 @@ _lib.eglCreateContext.argtypes = c_void_p, c_void_p, c_void_p, _POINTER(_c_int)
 _lib.eglMakeCurrent.argtypes = (c_void_p,) * 4
 _lib.eglSwapBuffers.argtypes = (c_void_p,) * 2
 _lib.eglDestroySurface.argtypes = (c_void_p,) * 2
+_lib.eglQueryString.argtypes = (c_void_p, _c_int)
+_lib.eglQueryString.restype = c_char_p
 
 
 def eglGetError():
@@ -245,6 +247,15 @@ def eglInitialize(display):
     if res == EGL_FALSE:
         raise RuntimeError('Could not initialize')
     return majorVersion[0], minorVersion[0]
+
+
+def eglQueryString(display, name):
+    """ Query string from display
+    """
+    out = _lib.eglQueryString(display, name)
+    if not out:
+        raise RuntimeError('Could not query %s' % name)
+    return out
 
 
 DEFAULT_ATTRIB_LIST = (EGL_RED_SIZE, 8, EGL_BLUE_SIZE, 8,
