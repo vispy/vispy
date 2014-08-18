@@ -40,7 +40,7 @@ class TextureTest(unittest.TestCase):
         self.assertRaises(ValueError, Texture, data=data, shape=(1, 1, 3))
         self.assertRaises(ValueError, Texture)
         self.assertRaises(ValueError, T.resize, (1,) * 4)
-        self.assertRaises(ValueError, T.resize, (5,) * 3)  # can't determine format
+        self.assertRaises(ValueError, T.resize, (5,) * 3)  # can't determ. fmt
         T.resize(T.shape)
         Z = T[2:5, 2:5]
         assert Z.interpolation == T.interpolation

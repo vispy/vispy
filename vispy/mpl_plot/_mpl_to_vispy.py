@@ -26,6 +26,7 @@ from ..scene.visuals import LineVisual, Markers, Text, Image
 from ..scene.widgets import ViewBox
 from ..scene.transforms import NullTransform, AffineTransform, STTransform
 from ..scene import SceneCanvas
+from ..testing import has_matplotlib
 
 
 def _check_coords(coords, valid):
@@ -203,8 +204,8 @@ def show(block=False):
     canvases : list
         List of the vispy canvases that were created.
     """
-    if not has_mplexporter:
-        raise ImportError('Could not import mplexporter (%s)' % why_not)
+    if not has_matplotlib():
+        raise ImportError('Requires matplotlib version >= 1.2')
     cs = [_mpl_to_vispy(plt.figure(ii)) for ii in plt.get_fignums()]
     if block and len(cs) > 0:
         cs[0].app.run()

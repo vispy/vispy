@@ -139,7 +139,7 @@ def assert_is(expr1, expr2, msg=None):
 ###############################################################################
 # GL stuff
 
-def _has_pyopengl():
+def has_pyopengl():
     try:
         from OpenGL import GL  # noqa, analysis:ignore
     except Exception:
@@ -149,7 +149,7 @@ def _has_pyopengl():
 
 
 def requires_pyopengl():
-    return np.testing.dec.skipif(not _has_pyopengl(), 'Requires PyOpenGL')
+    return np.testing.dec.skipif(not has_pyopengl(), 'Requires PyOpenGL')
 
 
 ###############################################################################
