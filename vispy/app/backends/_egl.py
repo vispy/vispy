@@ -17,9 +17,11 @@ from ...util.ptime import time
 
 try:
     # Inspired by http://www.mesa3d.org/egl.html, but these don't fix it :(
-    # from os import environ
-    # environ['EGL_DRIVER'] = 'egl_glx'
-    # environ['EGL_SOFTWARE'] = 'true'
+    #from os import environ
+    #environ['EGL_LOG_LEVEL'] = 'debug'
+    #environ['EGL_PLATFORM'] = 'fbdev'
+    #environ['EGL_DRIVER'] = 'egl_gallium'
+    #environ['EGL_SOFTWARE'] = 'true'
     from ...ext import egl
     _EGL_DISPLAY = egl.eglGetDisplay()
     egl.eglInitialize(_EGL_DISPLAY)
