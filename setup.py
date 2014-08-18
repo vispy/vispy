@@ -67,7 +67,9 @@ for line in open(initFile).readlines():
 def package_tree(pkgroot):
     path = os.getcwd()
     n = len(path.split(os.path.sep))
-    subdirs = [i[0].split(os.path.sep)[n:] for i in os.walk(os.path.join(path, pkgroot)) if '__init__.py' in i[2]]
+    subdirs = [i[0].split(os.path.sep)[n:]
+               for i in os.walk(os.path.join(path, pkgroot))
+               if '__init__.py' in i[2]]
     return ['.'.join(p) for p in subdirs]
 
 
