@@ -2,6 +2,7 @@
 branch = True
 source = vispy
 #include = */vispy/*
+# Omit fonts/_quartz.py b/c Travis can't test OSX
 omit =
     */setup.py
     */vispy/datasets/*
@@ -11,3 +12,4 @@ omit =
     */vispy/ext/*
     */vispy/util/geometry/_triangulation_debugger.py
     */examples/*
+    */vispy/util/fonts/_quartz.py
