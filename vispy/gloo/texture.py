@@ -14,14 +14,18 @@ from ..util import logger
 GL_SAMPLER_3D = 35679
 
 
-def glTexImage3D(target, level,
-                 internalformat, format, type, pixels):
-    # Import from PyOpenGL
+def _check_pyopengl_3D():
+    """Helper to ensure users have OpenGL for 3D texture support (for now)"""
     try:
         import OpenGL.GL as _gl
     except ImportError:
         raise ImportError('PyOpenGL is required for 3D texture support')
+    return _gl
 
+
+def glTexImage3D(target, level, internalformat, format, type, pixels):
+    # Import from PyOpenGL
+    _gl = _check_pyopengl_3D()
     border = 0
     if isinstance(pixels, (tuple, list)):
         depth, height, width = pixels
@@ -32,39 +36,13 @@ def glTexImage3D(target, level,
                      width, height, depth, border, format, type, pixels)
 
 
-def glTexSubImage3D(target, level,
-                    xoffset, yoffset, zoffset, format, type, pixels):
+def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
+                    format, type, pixels):
     # Import from PyOpenGL
-    try:
-        import OpenGL.GL as _gl
-    except ImportError:
-        raise ImportError('PyOpenGL is required for 3D texture support')
-
+    _gl = _check_pyopengl_3D()
     depth, height, width = pixels.shape[:3]
     _gl.glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
                         width, height, depth, format, type, pixels)
-
-
-def _check_texture_format(format_, shape):
-    valid_dict = {'luminance': gl.GL_LUMINANCE,
-                  'alpha': gl.GL_ALPHA,
-                  'luminance_alpha': gl.GL_LUMINANCE_ALPHA,
-                  'rgb': gl.GL_RGB,
-                  'rgba': gl.GL_RGBA}
-    counts = BaseTexture._inv_formats
-    if format_ is None:
-        format_ = BaseTexture._formats.get(shape[-1], None)
-        if format_ is None:
-            raise ValueError("Cannot convert data to texture")
-        return format_
-    else:
-        # check to make sure it's a valid entry
-        out_format = _check_conversion(format_, valid_dict)
-        # check to make sure that our shape does not conflict with the type
-        if shape[-1] != counts[out_format]:
-            raise ValueError('format %s size %s mismatch with input data shape'
-                             '%s' % (format_, counts[out_format], shape[-1]))
-        return out_format
 
 
 # ----------------------------------------------------------- Texture class ---
@@ -148,9 +126,9 @@ class BaseTexture(GLObject):
         # Extra stages that are handled in _activate()
         self._need_resize = False
         self._need_parameterization = True
-
-        self._interpolation = gl.GL_NEAREST
-        self._wrapping = gl.GL_CLAMP_TO_EDGE
+        if base is None:
+            self.interpolation = 'nearest'
+            self.wrapping = 'clamp_to_edge'
 
         # Do we have data to build texture upon ?
         if data is not None:
@@ -200,10 +178,52 @@ class BaseTexture(GLObject):
             raise ValueError("Type not allowed for texture")
 
         # Get and check format
-        self._format = _check_texture_format(format, self.shape)
+        valid_dict = {'luminance': gl.GL_LUMINANCE,
+                      'alpha': gl.GL_ALPHA,
+                      'luminance_alpha': gl.GL_LUMINANCE_ALPHA,
+                      'rgb': gl.GL_RGB,
+                      'rgba': gl.GL_RGBA}
+        counts = BaseTexture._inv_formats
+        if format is None:
+            format = BaseTexture._formats.get(self.shape[-1], None)
+            if format is None:
+                raise ValueError("Cannot convert data to texture")
+            self._format = format
+        else:
+            # check to make sure it's a valid entry
+            out_format = _check_conversion(format, valid_dict)
+            # check to make sure that our shape does not conflict with the type
+            if self.shape[-1] != counts[out_format]:
+                raise ValueError('format %s size %s mismatch with input shape '
+                                 '%s' % (format, counts[out_format],
+                                         self.shape[-1]))
+            self._format = out_format
 
     def _normalize_shape(self, data_or_shape):
-        return data_or_shape
+        # Get data and shape from input
+        if isinstance(data_or_shape, np.ndarray):
+            data = data_or_shape
+            shape = data.shape
+        else:
+            assert isinstance(data_or_shape, tuple)
+            data = None
+            shape = data_or_shape
+        # Check and correct
+        if shape:
+            if len(shape) < self._ndim:
+                raise ValueError("Too few dimensions for texture")
+            elif len(shape) > self._ndim + 1:
+                raise ValueError("Too many dimensions for texture")
+            elif len(shape) == self._ndim:
+                shape = shape + (1,)
+            elif len(shape) == self._ndim + 1:
+                if shape[-1] > 4:
+                    raise ValueError("Too many channels for texture")
+        # Return
+        if data is not None:
+            return data.reshape(*shape)
+        else:
+            return shape
 
     @property
     def shape(self):
@@ -491,10 +511,7 @@ class BaseTexture(GLObject):
 
         offset = tuple([s.start for s in slices])
         shape = tuple([s.stop - s.start for s in slices])
-        size = 1
-        for i in range(len(shape)):
-            size *= shape[i]
-        #size = reduce(mul, shape)
+        size = np.prod(shape)
 
         # We have CPU storage
         if self.data is not None:
@@ -640,6 +657,7 @@ class Texture1D(BaseTexture):
     supported in GL ES 2.0).
 
     """
+    _ndim = 1
 
     def __init__(self, data=None, shape=None, dtype=None, store=True,
                  format=None, **kwargs):
@@ -660,32 +678,6 @@ class Texture1D(BaseTexture):
         """ GLSL declaration strings required for a variable to hold this data.
         """
         return 'uniform', 'sampler1D'
-
-    def _normalize_shape(self, data_or_shape):
-        # Get data and shape from input
-        if isinstance(data_or_shape, np.ndarray):
-            data = data_or_shape
-            shape = data.shape
-        else:
-            assert isinstance(data_or_shape, tuple)
-            data = None
-            shape = data_or_shape
-        # Check and correct
-        if shape:
-            if len(shape) < 1:
-                raise ValueError("Too few dimensions for texture")
-            elif len(shape) > 2:
-                raise ValueError("Too many dimensions for texture")
-            elif len(shape) == 1:
-                shape = shape[0], 1
-            elif len(shape) == 2:
-                if shape[-1] > 4:
-                    raise ValueError("Too many channels for texture")
-        # Return
-        if data is not None:
-            return data.reshape(*shape)
-        else:
-            return shape
 
     @property
     def width(self):
@@ -743,6 +735,7 @@ class Texture2D(BaseTexture):
         based on the number of channels. When the data has one channel,
         'luminance' is assumed.
     """
+    _ndim = 2
 
     def __init__(self, data=None, shape=None, dtype=None, store=True,
                  format=None, **kwargs):
@@ -763,32 +756,6 @@ class Texture2D(BaseTexture):
         """ GLSL declaration strings required for a variable to hold this data.
         """
         return 'uniform', 'sampler2D'
-
-    def _normalize_shape(self, data_or_shape):
-        # Get data and shape from input
-        if isinstance(data_or_shape, np.ndarray):
-            data = data_or_shape
-            shape = data.shape
-        else:
-            assert isinstance(data_or_shape, tuple)
-            data = None
-            shape = data_or_shape
-        # Check and correct
-        if shape:
-            if len(shape) < 2:
-                raise ValueError("Too few dimensions for texture")
-            elif len(shape) > 3:
-                raise ValueError("Too many dimensions for texture")
-            elif len(shape) == 2:
-                shape = shape[0], shape[1], 1
-            elif len(shape) == 3:
-                if shape[-1] > 4:
-                    raise ValueError("Too many channels for texture")
-        # Return
-        if data is not None:
-            return data.reshape(*shape)
-        else:
-            return shape
 
     @property
     def height(self):
@@ -855,6 +822,7 @@ class Texture3D(BaseTexture):
         based on the number of channels. When the data has one channel,
         'luminance' is assumed.
     """
+    _ndim = 3
 
     def __init__(self, data=None, shape=None, dtype=None, store=True,
                  format=None, **kwargs):
@@ -881,32 +849,6 @@ class Texture3D(BaseTexture):
         """ GLSL declaration strings required for a variable to hold this data.
         """
         return 'uniform', 'sampler3D'
-
-    def _normalize_shape(self, data_or_shape):
-        # Get data and shape from input
-        if isinstance(data_or_shape, np.ndarray):
-            data = data_or_shape
-            shape = data.shape
-        else:
-            assert isinstance(data_or_shape, tuple)
-            data = None
-            shape = data_or_shape
-        # Check and correct
-        if shape:
-            if len(shape) < 3:
-                raise ValueError("Too few dimensions for texture")
-            elif len(shape) > 4:
-                raise ValueError("Too many dimensions for texture")
-            elif len(shape) == 3:
-                shape = shape[0], shape[1], shape[2], 1
-            elif len(shape) == 4:
-                if shape[-1] > 4:
-                    raise ValueError("Too many channels for texture")
-        # Return
-        if data is not None:
-            return data.reshape(*shape)
-        else:
-            return shape
 
     @property
     def height(self):
@@ -947,8 +889,7 @@ class Texture3D(BaseTexture):
                                             data.shape[-2] * data.shape[-1])
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
-            #width, height, depth = data.shape[1], data.shape[0], data.shape[2]
-            glTexSubImage3D(self.target, 0, x, y, z, self._format, 
+            glTexSubImage3D(self.target, 0, x, y, z, self._format,
                             self._gtype, data)
             if alignment != 4:
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
