@@ -62,7 +62,8 @@ def _test_basics(backend):
     """
 
     # use the backend
-    gl.use_gl(backend)
+    with use_log_level('error', print_msg=False):
+        gl.use_gl(backend)  # pyopengl throws warning on injection
 
     with Canvas():
         _test_setting_parameters()
