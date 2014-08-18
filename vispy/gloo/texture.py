@@ -534,23 +534,20 @@ class BaseTexture(GLObject):
 
     def _parameterize(self):
         """ Paramaterize texture """
-        if isinstance(self._interpolation, tuple):
-            min_filter = self._interpolation[0]
-            mag_filter = self._interpolation[1]
-        else:
-            min_filter = self._interpolation
-            mag_filter = self._interpolation
-        gl.glTexParameterf(
-            self._target, gl.GL_TEXTURE_MIN_FILTER, min_filter)
-        gl.glTexParameterf(
-            self._target, gl.GL_TEXTURE_MAG_FILTER, mag_filter)
+        # Right now we only support using a single mode
+        # if isinstance(self._interpolation, tuple):
+        #     min_filter = self._interpolation[0]
+        #     mag_filter = self._interpolation[1]
+        min_filter = self._interpolation
+        mag_filter = self._interpolation
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER, min_filter)
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER, mag_filter)
 
-        if isinstance(self._wrapping, tuple):
-            wrap_s = self._wrapping[0]
-            wrap_t = self._wrapping[1]
-        else:
-            wrap_s = self._wrapping
-            wrap_t = self._wrapping
+        # if isinstance(self._wrapping, tuple):
+        #     wrap_s = self._wrapping[0]
+        #     wrap_t = self._wrapping[1]
+        wrap_s = self._wrapping
+        wrap_t = self._wrapping
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S, wrap_s)
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrap_t)
 
@@ -667,7 +664,6 @@ class Texture1D(BaseTexture):
         offset = kwargs.get("offset", None)
         base = kwargs.get("base", None)
         resizeable = kwargs.get("resizeable", True)
-
         BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype,
                              base=base, resizeable=resizeable, store=store,
                              target=gl.GL_TEXTURE_2D, offset=offset,
@@ -740,7 +736,6 @@ class Texture2D(BaseTexture):
         offset = kwargs.get("offset", None)
         base = kwargs.get("base", None)
         resizeable = kwargs.get("resizeable", True)
-
         BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype,
                              base=base, resizeable=resizeable, store=store,
                              target=gl.GL_TEXTURE_2D, offset=offset,
@@ -832,7 +827,6 @@ class Texture3D(BaseTexture):
         offset = kwargs.get("offset", None)
         base = kwargs.get("base", None)
         resizeable = kwargs.get("resizeable", True)
-
         BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype,
                              base=base, resizeable=resizeable, store=store,
                              target=_gl.GL_TEXTURE_3D, offset=offset,
