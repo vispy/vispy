@@ -13,9 +13,9 @@ from vispy.scene import visuals
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
-        self.rectpolygon = visuals.RectPolygon(pos=(400, 400, 0), height=100.,
-                                               width=200.,
-                                               radius=[40., 0., 15., 15.],
+        self.rectpolygon = visuals.RectPolygon(pos=(400, 400, 0), height=250.,
+                                               width=300.,
+                                               radius=[80., 0., 45., 25.],
                                                color='red',
                                                border_color='white')
         
