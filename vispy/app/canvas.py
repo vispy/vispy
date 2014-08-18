@@ -4,6 +4,7 @@
 
 from __future__ import division, print_function
 
+import sys
 import numpy as np
 from time import sleep
 
@@ -155,6 +156,9 @@ class Canvas(object):
         # Create widget now (always do this *last*, after all err checks)
         if create_native:
             self.create_native()
+
+        if '--vispy-fps' in sys.argv:
+            self.measure_fps()
 
     def create_native(self):
         """ Create the native widget if not already done so. If the widget
