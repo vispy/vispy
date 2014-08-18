@@ -35,6 +35,18 @@ class TextureTest(unittest.TestCase):
         assert T._need_resize is True
         assert T._data is data
         assert len(T._pending_data) == 1
+        assert T.wrapping == gl.GL_CLAMP_TO_EDGE
+        assert T.interpolation == gl.GL_NEAREST
+        self.assertRaises(ValueError, Texture, data=data, shape=(1, 1, 3))
+        self.assertRaises(ValueError, Texture)
+        self.assertRaises(ValueError, T.resize, (1,) * 4)
+        self.assertRaises(ValueError, T.resize, (5,) * 3)  # can't determine format
+        T.resize(T.shape)
+        Z = T[2:5, 2:5]
+        assert Z.interpolation == T.interpolation
+        assert Z.wrapping == T.wrapping
+        self.assertRaises(RuntimeError, Z.resize, (3,) * 3)
+        self.assertRaises(ValueError, Z.__getitem__, 1)
 
     # Non contiguous data
     # ---------------------------------
@@ -164,6 +176,7 @@ class TextureTest(unittest.TestCase):
         assert Z._shape == (1, 1, 1)
         assert Z._resizeable is False
         assert len(Z._pending_data) == 0
+        self.assertRaises(TypeError, T.__getitem__, 0.1)
 
     # Get a partial view
     # ---------------------------------
@@ -178,6 +191,10 @@ class TextureTest(unittest.TestCase):
         assert Z._offset == (2, 2)
         assert Z._resizeable is False
         assert len(Z._pending_data) == 0
+        T[-1]  # negative indexing
+        self.assertRaises(IndexError, T.__getitem__, [0, -11])
+        # non-base access
+        self.assertRaises(ValueError, Z.__getitem__, 1)
 
     # Get non contiguous view : forbidden
     # ---------------------------------
@@ -220,6 +237,9 @@ class TextureTest(unittest.TestCase):
         T[0, 0] = 1
         assert len(T._pending_data) == 2
         assert data[0, 0] == 1, 1
+        T[-1, 0] = 1  # negative indexing
+        self.assertRaises(TypeError, T.__setitem__, 0.1, 2)
+        self.assertRaises(IndexError, T.__setitem__, -11, 1)
 
     # Set some data
     # ---------------------------------

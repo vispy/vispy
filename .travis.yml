@@ -176,5 +176,5 @@ script:
 after_success:
     # Need to run from source dir to execute appropriate "git" commands
     - if [ "${TEST}" != "extra" ]; then
-        coveralls;
+        coveralls --verbose;
       fi;

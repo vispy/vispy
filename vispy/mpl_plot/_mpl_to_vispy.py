@@ -181,8 +181,6 @@ def _mpl_to_vispy(fig):
     canvas : instance of Canvas
         The resulting vispy Canvas.
     """
-    if not has_mplexporter:
-        raise ImportError('Could not import mplexporter (%s)' % why_not)
     renderer = VispyRenderer()
     exporter = Exporter(renderer)
     with warnings.catch_warnings(record=True):  # py3k mpl warning
@@ -205,6 +203,8 @@ def show(block=False):
     canvases : list
         List of the vispy canvases that were created.
     """
+    if not has_mplexporter:
+        raise ImportError('Could not import mplexporter (%s)' % why_not)
     cs = [_mpl_to_vispy(plt.figure(ii)) for ii in plt.get_fignums()]
     if block and len(cs) > 0:
         cs[0].app.run()
