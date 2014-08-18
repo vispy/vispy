@@ -136,6 +136,7 @@ class BaseCamera(Entity):
         if self.viewbox is not None:
             self.viewbox.scene.transform = self._scene_transform
             self.viewbox.update()
+
     
 class PanZoomCamera(BaseCamera):
     """

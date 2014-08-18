@@ -89,7 +89,5 @@ class VertexColorComponent(VisualComponent):
         return self._vbo
 
     def activate(self, program, mode):
-        ff = self._funcs['frag_color']
-        
         vf = self._funcs['vert_post_hook']
         vf['input_color'] = self.vbo

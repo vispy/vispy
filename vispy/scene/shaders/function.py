@@ -389,7 +389,7 @@ class Function(ShaderObject):
                     pass
         
         #print("SET: %s[%s] = %s => %s" % 
-             #(self, key, storage.get(key, None), val))
+        #     (self, key, storage.get(key, None), val))
         
         # Remove old references, if any
         oldval = storage.pop(key, None)
@@ -1128,4 +1128,4 @@ class FunctionChain(Function):
 
     def __repr__(self):
         fn = ",\n                ".join(map(repr, self.functions))
-        return  "<FunctionChain [%s] at 0x%x>" % (fn, id(self))
+        return "<FunctionChain [%s] at 0x%x>" % (fn, id(self))

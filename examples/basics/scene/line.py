@@ -26,6 +26,7 @@ for i in range(20):
     lines.append(line)
     line.transform = scene.transforms.STTransform()
 
+
 def update(event):
     for line in lines:
         scale = [np.sin(event.elapsed)+2, np.cos(event.elapsed)+2]

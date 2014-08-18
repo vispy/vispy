@@ -147,5 +147,5 @@ class TextureCoordinateComponent(VisualComponent):
         vf = self._funcs['vert_post_hook']
         #vf['tex_coord_output'] = Varying('v_tex_coord', dtype='vec2')
         #self._funcs['texture_coord']['tex_coord_input'] = \
-            #vf['tex_coord_output']
+        #    vf['tex_coord_output']
         vf['tex_coord'] = self.vbo  # attribute vec2

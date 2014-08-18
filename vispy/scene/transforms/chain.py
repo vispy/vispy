@@ -260,4 +260,3 @@ class ChainTransform(BaseTransform):
     def __repr__(self):
         tr = ",\n                 ".join(map(repr, self.transforms))
         return "<ChainTransform [%s] at 0x%x>" % (tr, id(self))
-    

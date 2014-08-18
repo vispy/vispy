@@ -8,7 +8,7 @@ import numpy as np
 
 from ... import gloo
 from .visual import Visual
-from ..shaders import ModularProgram, Function, FunctionChain, Variable
+from ..shaders import ModularProgram, Variable
 from ..components import (VisualComponent, XYPosComponent, XYZPosComponent,
                           UniformColorComponent, VertexColorComponent)
 
