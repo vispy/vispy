@@ -590,9 +590,14 @@ class Triangulation(object):
             int2 = self.intersect_edge_arrays(edges[i+1:], edges[i:i+1])
         
             # select for pairs that intersect
-            mask1 = (int1 >= 0) & (int1 <= 1)
-            mask2 = (int2 >= 0) & (int2 <= 1)
-            mask3 = mask1 & mask2  # all intersections
+            err = np.geterr()
+            np.seterr(divide='ignore', invalid='ignore')
+            try:
+                mask1 = (int1 >= 0) & (int1 <= 1)
+                mask2 = (int2 >= 0) & (int2 <= 1)
+                mask3 = mask1 & mask2  # all intersections
+            finally:
+                np.seterr(**err)
             
             # compute points of intersection
             inds = np.argwhere(mask3)[:, 0]
@@ -846,7 +851,13 @@ class Triangulation(object):
         f = (l2 * p).sum(axis=-1)  # l2 dot p
         # tempting, but bad idea! 
         #f = np.where(f==0, 1, f)
-        h = (diff * p).sum(axis=-1) / f  # diff dot p / f
+        err = np.geterr()
+        np.seterr(divide='ignore', invalid='ignore')
+        try:
+            h = (diff * p).sum(axis=-1) / f  # diff dot p / f
+        finally:
+            np.seterr(**err)
+        
         return h
 
     def orientation(self, edge, point):
