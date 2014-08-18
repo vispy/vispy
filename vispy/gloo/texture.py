@@ -80,6 +80,7 @@ class BaseTexture(GLObject):
         based on the number of channels. When the data has one channel,
         'luminance' is assumed.
     """
+    _ndim = 2
 
     _formats = {
         1: gl.GL_LUMINANCE,  # or ALPHA,
@@ -185,6 +186,9 @@ class BaseTexture(GLObject):
                       'rgba': gl.GL_RGBA}
         counts = BaseTexture._inv_formats
         if format is None:
+            if len(self.shape) == 0:
+                raise ValueError('format must be provided if data and shape '
+                                 'are both None')
             format = BaseTexture._formats.get(self.shape[-1], None)
             if format is None:
                 raise ValueError("Cannot convert data to texture")
@@ -193,7 +197,7 @@ class BaseTexture(GLObject):
             # check to make sure it's a valid entry
             out_format = _check_conversion(format, valid_dict)
             # check to make sure that our shape does not conflict with the type
-            if self.shape[-1] != counts[out_format]:
+            if len(self.shape) > 0 and self.shape[-1] != counts[out_format]:
                 raise ValueError('format %s size %s mismatch with input shape '
                                  '%s' % (format, counts[out_format],
                                          self.shape[-1]))
@@ -221,7 +225,7 @@ class BaseTexture(GLObject):
                     raise ValueError("Too many channels for texture")
         # Return
         if data is not None:
-            return data.reshape(*shape)
+            return data.reshape(*(shape if len(shape) > 0 else ((),)))
         else:
             return shape
 
@@ -623,84 +627,6 @@ class BaseTexture(GLObject):
             id(self))
 
 
-# --------------------------------------------------------- Texture1D class ---
-class Texture1D(BaseTexture):
-    """ One dimensional texture
-
-    Parameters
-    ----------
-
-    data : ndarray
-        Texture data (optional)
-    shape : tuple of integers
-        Texture shape (optional)
-    dtype : dtype
-        Texture data type (optional)
-    store : bool
-        Specify whether this object stores a reference to the data,
-        allowing the data to be updated regardless of striding. Note
-        that modifying the data after passing it here might result in
-        undesired behavior, unless a copy is given. Default True.
-    format : str | ENUM
-        The format of the texture: 'luminance', 'alpha', 'luminance_alpha',
-        'rgb', or 'rgba' (or ENUMs GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA,
-        or GL_RGB, GL_RGBA). If not given the format is chosen automatically
-        based on the number of channels. When the data has one channel,
-        'luminance' is assumed.
-
-    Notes
-    -----
-    Under water this is really a 2D texture (1D textures are not
-    supported in GL ES 2.0).
-
-    """
-    _ndim = 1
-
-    def __init__(self, data=None, shape=None, dtype=None, store=True,
-                 format=None, **kwargs):
-
-        # We don't want these parameters to be seen from outside (because they
-        # are only used internally)
-        offset = kwargs.get("offset", None)
-        base = kwargs.get("base", None)
-        resizeable = kwargs.get("resizeable", True)
-        BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype,
-                             base=base, resizeable=resizeable, store=store,
-                             target=gl.GL_TEXTURE_2D, offset=offset,
-                             format=format)
-
-    @property
-    def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data.
-        """
-        return 'uniform', 'sampler1D'
-
-    @property
-    def width(self):
-        """ Texture width """
-
-        return self._shape[0]
-
-    def _resize(self):
-        """ Texture resize on GPU """
-
-        logger.debug("GPU: Resizing texture(%s)" % (self.width))
-        # gl.glTexImage1D(self.target, 0, self._format, self._format,
-        #                 self._gtype, (self._width,))
-        shape = self.height, self.width
-        gl.glTexImage2D(self.target, 0, self._format, self._format,
-                        self._gtype, shape)
-
-    def _update_data(self):
-        """ Texture update on GPU """
-
-        while self._pending_data:
-            data, offset = self._pending_data.pop(0)
-            x = 0 if offset is None else offset[0]
-            gl.glTexSubImage2D(self.target, 0, x, self._format,
-                               self._gtype, data)
-
-
 # --------------------------------------------------------- Texture2D class ---
 class Texture2D(BaseTexture):
     """ Two dimensional texture
@@ -817,10 +743,7 @@ class Texture3D(BaseTexture):
                  format=None, **kwargs):
 
         # Import from PyOpenGL
-        try:
-            import OpenGL.GL as _gl
-        except ImportError:
-            raise ImportError('PyOpenGL is required for 3D texture support')
+        _gl = _check_pyopengl_3D()
 
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)

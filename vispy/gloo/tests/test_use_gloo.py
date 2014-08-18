@@ -79,7 +79,7 @@ def test_use_texture3D():
     varying vec2 v_pos;
     void main()
     {
-        gl_FragColor = texture3D(u_texture, vec3(0., v_pos));
+        gl_FragColor = texture3D(u_texture, vec3(v_pos, 0.));
     }
     """
     program = Program(VERT_SHADER, FRAG_SHADER)
