@@ -56,12 +56,12 @@ def test_use_framebuffer():
 @requires_application()
 def test_use_texture3D():
     """Test using a 3D texture"""
-    data = np.zeros((5, 6, 7), np.float32)
+    data = np.zeros((16, 16, 16), np.float32)
     if not has_pyopengl():
         assert_raises(ImportError, Texture3D(data))
         return
 
-    assert_raises(ValueError, Texture3D, np.zeros((1, 1, 1, 5), np.float32))
+    assert_raises(ValueError, Texture3D, np.zeros((4, 4, 4, 5), np.float32))
 
     VERT_SHADER = """
     attribute vec2 a_pos;
@@ -80,11 +80,11 @@ def test_use_texture3D():
     void main()
     {
         gl_FragColor = texture3D(u_texture, vec3(v_pos, 0.));
+        gl_FragColor.a = 1.0;
     }
     """
     program = Program(VERT_SHADER, FRAG_SHADER)
     program['a_pos'] = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]]
     program['u_texture'] = Texture3D(data)
-    with Canvas(size=(100, 100)):
-        # program.draw()  # XXX This should work?
-        pass
+    with Canvas():
+        program.draw()

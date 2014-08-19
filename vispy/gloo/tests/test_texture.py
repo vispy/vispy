@@ -452,23 +452,28 @@ class Texture3DTest(unittest.TestCase):
     # Shape extension
     # ---------------------------------
     def test_init(self):
-        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        data = np.zeros((16, 16, 16), dtype=np.uint8)
         T = Texture3D(data=data)
-        assert T._shape == (10, 10, 10, 1)
+        assert T._shape == (16, 16, 16, 1)
+        # must all be the same power of two
+        self.assertRaises(ValueError, Texture3D, shape=(10, 10, 10),
+                          dtype=np.float32)
+        self.assertRaises(ValueError, Texture3D, shape=(8, 8, 16),
+                          dtype=np.float32)
 
     # Width & height
     # ---------------------------------
     def test_width_height_depth(self):
-        data = np.zeros((10, 20, 30), dtype=np.uint8)
+        data = np.zeros((16, 32, 64), dtype=np.uint8)
         T = Texture3D(data=data)
-        assert T.width == 20
-        assert T.height == 10
-        assert T.depth == 30
+        assert T.width == 32
+        assert T.height == 16
+        assert T.depth == 64
 
     # Resize
     # ---------------------------------
     def test_resize(self):
-        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        data = np.zeros((16, 16, 16), dtype=np.uint8)
         T = Texture3D(data=data)
         T.resize((5, 5, 5))
         assert T.shape == (5, 5, 5, 1)
@@ -480,7 +485,7 @@ class Texture3DTest(unittest.TestCase):
     # Resize with bad shape
     # ---------------------------------
     def test_resize_bad_shape(self):
-        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        data = np.zeros((16, 16, 16), dtype=np.uint8)
         T = Texture3D(data=data)
         # with self.assertRaises(ValueError):
         #    T.resize((5, 5, 5, 5))
@@ -489,7 +494,7 @@ class Texture3DTest(unittest.TestCase):
     # Resize not resizeable
     # ---------------------------------
     def test_resize_unresizeable(self):
-        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        data = np.zeros((16, 16, 16), dtype=np.uint8)
         T = Texture3D(data=data, resizeable=False)
         # with self.assertRaises(RuntimeError):
         #    T.resize((5, 5, 5))
@@ -498,17 +503,17 @@ class Texture3DTest(unittest.TestCase):
     # Set oversized data (-> resize)
     # ---------------------------------
     def test_set_oversized_data(self):
-        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        data = np.zeros((16, 16, 16), dtype=np.uint8)
         T = Texture3D(data=data)
-        T.set_data(np.ones((20, 20, 20), np.uint8))
-        assert T.shape == (20, 20, 20, 1)
-        assert T._data.shape == (20, 20, 20, 1)
+        T.set_data(np.ones((32, 32, 32), np.uint8))
+        assert T.shape == (32, 32, 32, 1)
+        assert T._data.shape == (32, 32, 32, 1)
         assert len(T._pending_data) == 1
 
     # Set undersized data
     # ---------------------------------
     def test_set_undersized_data(self):
-        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        data = np.zeros((16, 16, 16), dtype=np.uint8)
         T = Texture3D(data=data)
         T.set_data(np.ones((5, 5, 5), np.uint8))
         assert T.shape == (5, 5, 5, 1)
@@ -517,7 +522,7 @@ class Texture3DTest(unittest.TestCase):
     # Set misplaced data
     # ---------------------------------
     def test_set_misplaced_data(self):
-        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        data = np.zeros((16, 16, 16), dtype=np.uint8)
         T = Texture3D(data=data)
         # with self.assertRaises(ValueError):
         #    T.set_data(np.ones((5, 5, 5)), offset=(8, 8, 8))
@@ -527,25 +532,25 @@ class Texture3DTest(unittest.TestCase):
     # Set misshaped data
     # ---------------------------------
     def test_set_misshaped_data_3D(self):
-        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        data = np.zeros((16, 16, 16), dtype=np.uint8)
         T = Texture3D(data=data)
         # with self.assertRaises(ValueError):
-        #    T.set_data(np.ones((10, 10, 10)))
-        self.assertRaises(ValueError, T.set_data, np.ones((10,)))
+        #    T.set_data(np.ones((16, 16, 16)))
+        self.assertRaises(ValueError, T.set_data, np.ones((16,)))
 
     # Set whole data (clear pending data)
     # ---------------------------------
     def test_set_whole_data(self):
-        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        data = np.zeros((16, 16, 16), dtype=np.uint8)
         T = Texture3D(data=data)
-        T.set_data(np.ones((10, 10, 10), np.uint8))
-        assert T.shape == (10, 10, 10, 1)
+        T.set_data(np.ones((16, 16, 16), np.uint8))
+        assert T.shape == (16, 16, 16, 1)
         assert len(T._pending_data) == 1
 
     # Test view get invalidated when base is resized
     # ----------------------------------------------
     def test_invalid_views(self):
-        data = np.zeros((10, 10, 10), dtype=np.uint8)
+        data = np.zeros((16, 16, 16), dtype=np.uint8)
         T = Texture3D(data=data)
         Z = T[5:, 5:, 5:]
         T.resize((5, 5, 5))
@@ -554,39 +559,39 @@ class Texture3DTest(unittest.TestCase):
     # Test set data with different shape
     # ---------------------------------
     def test_reset_data_shape(self):
-        shape1 = 10, 10, 10
-        shape3 = 10, 10, 10, 3
+        shape1 = 16, 16, 16
+        shape3 = 16, 16, 16, 3
         
         # Init data (explicit shape)
-        data = np.zeros((10, 10, 10, 1), dtype=np.uint8)
+        data = np.zeros((16, 16, 16, 1), dtype=np.uint8)
         T = Texture3D(data=data)
-        assert T.shape == (10, 10, 10, 1)
+        assert T.shape == (16, 16, 16, 1)
         assert T._format == gl.GL_LUMINANCE
         
         # Set data to rgb
         T.set_data(np.zeros(shape3, np.uint8))
-        assert T.shape == (10, 10, 10, 3)
+        assert T.shape == (16, 16, 16, 3)
         assert T._format == gl.GL_RGB
         
         # Set data to grayscale
         T.set_data(np.zeros(shape1, np.uint8))
-        assert T.shape == (10, 10, 10, 1)
+        assert T.shape == (16, 16, 16, 1)
         assert T._format == gl.GL_LUMINANCE
         
         # Set size to rgb
         T.resize(shape3)
-        assert T.shape == (10, 10, 10, 3)
+        assert T.shape == (16, 16, 16, 3)
         assert T._format == gl.GL_RGB
         
         # Set size to grayscale
         T.resize(shape1)
-        assert T.shape == (10, 10, 10, 1)
+        assert T.shape == (16, 16, 16, 1)
         assert T._format == gl.GL_LUMINANCE
 
     # Test set data with different shape
     # ---------------------------------
     def test_reset_data_type(self):
-        shape = 10, 10, 10
+        shape = 16, 16, 16
         T = Texture3D(data=np.zeros(shape, dtype=np.uint8))
         assert T.dtype == np.uint8
         assert T._gtype == gl.GL_UNSIGNED_BYTE

@@ -690,6 +690,12 @@ class Texture2D(BaseTexture):
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
 
+def is_power2(num):
+    """Helper to determine if a number is a power of two"""
+    assert isinstance(num, int)
+    return num != 0 and ((num & (num - 1)) == 0)
+
+
 # --------------------------------------------------------- Texture3D class ---
 class Texture3D(BaseTexture):
     """ Three dimensional texture
@@ -731,6 +737,10 @@ class Texture3D(BaseTexture):
                              base=base, resizeable=resizeable, store=store,
                              target=_gl.GL_TEXTURE_3D, offset=offset,
                              format=format)
+        if not all(is_power2(x) for x in self.shape[:3]) or \
+                len(set(self.shape[:3])) > 1:
+            raise ValueError('All dimensions must be the same and a power of '
+                             'two, got %s' % (self.shape[:-1],))
 
     @property
     def glsl_type(self):
