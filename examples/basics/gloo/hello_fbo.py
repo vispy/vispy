@@ -79,12 +79,13 @@ class Canvas(app.Canvas):
         self.size = 560, 420
 
         # Create texture to render to
-        self._rendertex = gloo.Texture2D(shape=self.size + (3,),
+        shape = self.size[1], self.size[0]
+        self._rendertex = gloo.Texture2D(shape=(shape + (3,)),
                                          dtype=np.float32)
 
         # Create FBO, attach the color buffer and depth buffer
         self._fbo = gloo.FrameBuffer(self._rendertex,
-                                     gloo.DepthBuffer(self.size))
+                                     gloo.DepthBuffer(shape))
 
         # Create program to render a shape
         self._program1 = gloo.Program(gloo.VertexShader(VERT_SHADER1),
@@ -106,7 +107,7 @@ class Canvas(app.Canvas):
     def on_draw(self, event):
         # Draw the same scene as as in hello_quad.py, but draw it to the FBO
         with self._fbo:
-            gloo.set_clear_color((0, 0.0, 0.5, 1))
+            gloo.set_clear_color((0.0, 0.0, 0.5, 1))
             gloo.clear(color=True, depth=True)
             gloo.set_viewport(0, 0, *self.size)
             self._program1.draw('triangle_strip')

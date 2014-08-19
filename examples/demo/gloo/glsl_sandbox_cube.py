@@ -10,7 +10,10 @@ from vispy import app, gloo, dataio
 from vispy.util.transforms import perspective, translate, rotate
 
 # Force using qt and take QtCore+QtGui from backend module
-app_object = app.use_app('pyqt4')
+try:
+    app_object = app.use_app('pyqt4')
+except Exception:
+    app_object = app.use_app('pyside')
 QtCore = app_object.backend_module.QtCore,
 QtGui = app_object.backend_module.QtGui
 
@@ -87,7 +90,6 @@ class Canvas(app.Canvas):
         self.program['u_projection'] = self.projection
 
     def on_draw(self, event):
-
         gloo.clear()
         self.program.draw('triangles', faces_buffer)
 
@@ -167,7 +169,12 @@ class MainWindow(QtGui.QWidget):
         frag_code = str(self.fragEdit.toPlainText())
         self.canvas.program.shaders[0].code = vert_code
         self.canvas.program.shaders[1].code = frag_code
-
+        # Because the code has changed, the variables are re-created,
+        # so we need to reset them. This can be considered a bug in gloo
+        # and should be addressed at some point.
+        self.canvas.program['u_projection'] = self.canvas.projection
+        self.canvas.program['u_view'] = self.canvas.view
+        
 
 if __name__ == '__main__':
     app.create()
