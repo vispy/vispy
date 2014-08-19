@@ -56,16 +56,14 @@ pos = np.empty((N, 2), np.float32)
 pos[:, 0] = np.linspace(0., 1., N)
 pos[:, 1] = np.random.normal(loc=0.5, scale=0.03, size=N)
 pos[N/2:N/2+20, 1] = 0.9  # So we can see which side is up
-line_unit = scene.visuals.Line(pos=pos, color=color)
-
-line_pixels = scene.visuals.Line(pos=pos * 100, color=color)
 
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
 
-
-# Create viewboxes left ...
+#
+# Create viewboxes on left ...
+#
 
 w, h = canvas.size
 w2 = w / 2.
@@ -85,7 +83,7 @@ vb11 = scene.widgets.ViewBox(parent=vb1.scene, name='vb11',
 vb11.pos = 0, 0
 vb11.size = 1, 0.5
 vb11.camera.rect = (0, 0, 1, 1)
-line_unit.add_parent(vb11.scene)
+line11 = scene.visuals.Line(pos=pos, color=color, parent=vb11.scene)
 
 # top-left (+y up)
 vb12 = scene.widgets.ViewBox(parent=vb1.scene, name='vb12', 
@@ -98,7 +96,9 @@ line12 = scene.visuals.Line(pos=pos * [[1.0, 0.5]], color=color,
                             parent=vb12.scene)
 
 
-# Create viewboxes right ...
+#
+# Create viewboxes on right ...
+#
 
 # right (+y down)
 vb2 = scene.widgets.ViewBox(parent=canvas.scene, name='vb2', 
@@ -114,8 +114,7 @@ vb21 = scene.widgets.ViewBox(parent=vb2.scene, name='vb21',
 vb21.pos = 0, 0
 vb21.size = w2, h2
 vb21.camera.rect = (0, 0, 1, 1)
-line21 = scene.visuals.Line(pos=pos, color=color)
-line21.add_parent(vb21.scene)
+line21 = scene.visuals.Line(pos=pos, color=color, parent=vb21.scene)
 
 # bottom-right (+y down)
 vb22 = scene.widgets.ViewBox(parent=vb2.scene, name='vb22', 

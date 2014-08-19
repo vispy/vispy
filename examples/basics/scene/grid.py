@@ -50,18 +50,15 @@ color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
 l1 = scene.visuals.Line(pos=pos, color=color)
-
 b1.add(l1)
 
-tr1 = scene.visuals.Visual()
-tr1.transform = scene.transforms.LogTransform(base=(2, 0, 0))
-l1.add_parent(tr1)
-b2.add(tr1)
+l2 = scene.visuals.Line(pos=pos, color=color)
+l2.transform = scene.transforms.LogTransform(base=(2, 0, 0))
+b2.add(l2)
 
-tr2 = scene.visuals.Visual()
-tr2.transform = scene.transforms.PolarTransform()
-l1.add_parent(tr2)
-b3.add(tr2)
+l3 = scene.visuals.Line(pos=pos, color=color)
+l3.transform = scene.transforms.PolarTransform()
+b3.add(l3)
 
 import sys
 if sys.flags.interactive == 0:
