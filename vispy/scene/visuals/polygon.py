@@ -103,7 +103,8 @@ class Polygon(Visual):
                 # Close border if it is not already.
                 border_pos = self._pos
                 if np.any(border_pos[0] != border_pos[1]):
-                    border_pos = np.concatenate([border_pos, border_pos[:1]], axis=0)
+                    border_pos = np.concatenate([border_pos, border_pos[:1]], 
+                                                axis=0)
                 self.border = Line(pos=border_pos,
                                    color=self._border_color.rgba, 
                                    mode='line_strip')
