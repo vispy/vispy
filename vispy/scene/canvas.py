@@ -70,7 +70,11 @@ class SceneCanvas(app.Canvas):
             return  # Can happen on initialization
         logger.debug('Canvas draw')
         
-        self.draw_visual(self.scene)
+        # Draw the scene, but first disconnect its change signal--
+        # any changes that take place during the paint should not trigger
+        # a subsequent repaint.
+        with self.scene.events.update.blocker(self._scene_update):
+            self.draw_visual(self.scene)
         
         if len(self._vp_stack) > 0:
             logger.warning("Viewport stack not fully cleared after draw.")
