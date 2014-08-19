@@ -16,7 +16,9 @@ try:
     from nose.tools import nottest
 except ImportError:
     class nottest(object):
-        pass
+        def __init__(self, *args):
+            pass  # Avoid "object() takes no parameters"
+
 from distutils.version import LooseVersion
 
 from ..scene import SceneCanvas

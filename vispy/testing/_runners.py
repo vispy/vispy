@@ -190,6 +190,9 @@ def _tester(label='full', coverage=False, verbosity=1):
             # this should only happen if we've screwed up the test setup
             fail += [run[1]]
             print('Failed strangely: %s\n' % str(exp))
+            import traceback
+            type, value, tb = sys.exc_info()
+            traceback.print_exception(type, value, tb)
         else:
             print('Passed\n')
         finally:

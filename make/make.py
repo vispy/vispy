@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import re
 import webbrowser
+import traceback
 
 # Save where we came frome and where this module lives
 START_DIR = op.abspath(os.getcwd())
@@ -181,6 +182,9 @@ class Maker:
             test(*(arg.split()))
         except Exception as err:
             print(err)
+            if not isinstance(err, RuntimeError):
+                type_, value, tb = sys.exc_info()
+                traceback.print_exception(type, value, tb)
             raise SystemExit(1)
 
     def images(self, arg):
@@ -404,6 +408,7 @@ def sphinx_copy_pages(html_dir, pages_dir, pages_repo):
     os.chdir(pages_dir)
     sh('git checkout master -q')
     sh('git pull -q')
+    os.chdir('..')
     # This is pretty unforgiving: we unconditionally nuke the destination
     # directory, and then copy the html tree in there
     tmp_git_dir = op.join(ROOT_DIR, pages_dir + '_git')

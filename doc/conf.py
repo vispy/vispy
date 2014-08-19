@@ -145,7 +145,8 @@ html_static_path = []  # '_static']
 html_sidebars = {
     '**': ['navigation.html',
            'localtoc.html',
-           'versions.html'],
+           #'versions.html'
+          ],
 }
 
 # Additional templates that should be rendered to pages, maps page names to
