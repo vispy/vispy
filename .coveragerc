@@ -10,4 +10,5 @@ omit =
     */vispy/testing/_runners.py
     */vispy/testing/_coverage.py
     */vispy/ext/*.py
+    */vispy/util/geometry/_triangulation_debugger.py
     */examples/*

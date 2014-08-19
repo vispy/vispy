@@ -96,13 +96,18 @@ class Polygon(Visual):
     def _update(self):
         self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
         if self._pos is not None:
-            self.data.triangulate()
-            self.mesh = Mesh(pos=self.data.vertices[self.data.faces],
+            pts, tris = self.data.triangulate()
+            self.mesh = Mesh(pos=pts, faces=tris.astype(np.uint32),
                              color=self._color.rgba)
             if not self._border_color.is_blank():
-                border_pos = self.data.vertices[self.data.convex_hull]
+                # Close border if it is not already.
+                border_pos = self._pos
+                if np.any(border_pos[0] != border_pos[1]):
+                    border_pos = np.concatenate([border_pos, border_pos[:1]], 
+                                                axis=0)
                 self.border = Line(pos=border_pos,
-                                   color=self._border_color.rgba, mode='lines')
+                                   color=self._border_color.rgba, 
+                                   mode='line_strip')
         #self.update()
 
     def set_gl_options(self, *args, **kwds):
@@ -113,7 +118,8 @@ class Polygon(Visual):
 
     def draw(self, event):
         if self.mesh is not None:
-            gloo.set_state(polygon_offset_fill=True)
+            gloo.set_state(polygon_offset_fill=True, 
+                           cull_face='front_and_back')
             gloo.set_polygon_offset(1, 1)
             self.mesh.draw(event)
         if self.border is not None:
