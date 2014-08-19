@@ -180,7 +180,10 @@ class Maker:
         try:
             test(*(arg.split()))
         except Exception as err:
+            type_, value, tb = sys.exc_info()
+            import traceback
             print(err)
+            traceback.print_exception(type, value, tb)
             raise SystemExit(1)
 
     def images(self, arg):

@@ -33,7 +33,7 @@ def find_font(face, bold, italic):
     logfont.lfHeight = -12  # conv point to pixels
     logfont.lfWeight = FW_BOLD if bold else FW_NORMAL
     logfont.lfItalic = italic
-    logfont.lfFaceName = face.encode('utf-8')
+    logfont.lfFaceName = face  # logfont needs Unicode
     hfont = gdi32.CreateFontIndirectW(byref(logfont))
     original = gdi32.SelectObject(dc, hfont)
     n_byte = gdi32.GetOutlineTextMetricsW(dc, 0, None)
@@ -47,7 +47,8 @@ def find_font(face, bold, italic):
         warnings.warn('Could not find face match "%s", falling back to "%s"'
                       % (face, use_face))
     use_style = cast(byref(metrics, metrics.otmpStyleName), c_wchar_p).value
-    use_style = style_dict[use_style]
+    use_style = style_dict.get(use_style, 'Regular')
+    # AK: I get "Standaard" for use_style, which is Dutch for standard/regular
 
     # Now we match by creating private font collections until we find
     # the one that was used

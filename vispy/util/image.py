@@ -47,7 +47,7 @@ def make_png(data, level=6):
         # and-ing may not be necessary, but is done for safety:
         # https://docs.python.org/3/library/zlib.html#zlib.crc32
         chunk.data[-4:] = np.array(zlib.crc32(chunk[4:-4]) & 0xffffffff,
-                                   '>i4').tostring()
+                                   '>u4').tostring()
         return chunk
 
     if data.dtype != np.ubyte:
