@@ -408,6 +408,7 @@ def sphinx_copy_pages(html_dir, pages_dir, pages_repo):
     os.chdir(pages_dir)
     sh('git checkout master -q')
     sh('git pull -q')
+    os.chdir('..')
     # This is pretty unforgiving: we unconditionally nuke the destination
     # directory, and then copy the html tree in there
     tmp_git_dir = op.join(ROOT_DIR, pages_dir + '_git')
