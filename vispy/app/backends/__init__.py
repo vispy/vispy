@@ -18,6 +18,7 @@ CORE_BACKENDS = [
     ('Pyglet', '_pyglet', 'pyglet'),
     ('Glfw', '_glfw', 'vispy.ext.glfw'),
     ('SDL2', '_sdl2', 'sdl2'),
+    ('wx', '_wx', 'wx'),
     ('Glut', '_glut', 'OpenGL.GLUT'),
 ]
 

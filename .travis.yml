@@ -97,10 +97,12 @@ install:
     # Also install PyQt4, imaging (PIL or pillow), scipy, and mpl
     # Test old (insufficient) version of Pyglet on 2.6
     # On conda, can't install pyside-pyzo b/c it conflicts with pyqt4,
-    # which is required by matplotlib :( 
+    # which is required by matplotlib :(
+    # No wx on py3k, wxpython doesn't work there (!)
     - if [ "${DEPS}" == "full" ]; then
         if [ "${PYTHON}" == "2.6" ]; then
           pip install -q pyglet;
+          conda install --yes --quiet wxpython > ${REDIRECT_TO};
         else
           pip install -q http://pyglet.googlecode.com/archive/tip.zip;
         fi;
@@ -108,7 +110,7 @@ install:
           conda install --yes --quiet pillow scipy matplotlib > ${REDIRECT_TO};
         fi;
         if [ "${PYTHON}" == "2.7" ]; then
-          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy python-matplotlib > ${REDIRECT_TO};
+          travis_retry sudo apt-get -qq -y install python-qt4-gl python-imaging python-scipy python-matplotlib python-wxgtk2.8 > ${REDIRECT_TO};
         fi;
       fi;
 

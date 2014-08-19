@@ -276,12 +276,12 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         self.close()
 
     def _vispy_get_size(self):
-        x, y = self.get_size()
-        return x, y
+        w, h = self.get_size()
+        return w, h
 
     def _vispy_get_position(self):
-        w, h = self.get_location()
-        return w, h
+        x, y = self.get_location()
+        return x, y
 
     def _vispy_get_fullscreen(self):
         return self._vispy_fullscreen

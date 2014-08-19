@@ -79,6 +79,9 @@ glfw: clean-test
 sdl2: clean-test
 	python make test sdl2
 
+wx: clean-test
+	python make test wx
+
 glut: clean-test
 	python make test glut
 

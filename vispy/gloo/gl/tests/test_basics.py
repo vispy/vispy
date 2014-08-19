@@ -8,12 +8,13 @@ The only exception is glCompressedTexImage2D and glCompressedTexSubImage2D.
 import sys
 
 from nose.tools import assert_equal, assert_true  # noqa
+
 from vispy.app import Canvas
 from numpy.testing import assert_almost_equal
 from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
                            glut_skip)
 from vispy.ext.six import string_types
-
+from vispy.util import use_log_level
 from vispy.gloo import gl
 
 
@@ -61,7 +62,8 @@ def _test_basics(backend):
     """
 
     # use the backend
-    gl.use_gl(backend)
+    with use_log_level('error', print_msg=False):
+        gl.use_gl(backend)  # pyopengl throws warning on injection
 
     with Canvas():
         _test_setting_parameters()
@@ -145,10 +147,11 @@ def _test_setting_stuff():
     
     # And getting stuff
     try:
-        range, precision = gl.glGetShaderPrecisionFormat(gl.GL_FRAGMENT_SHADER, 
-                                                         gl.GL_HIGH_FLOAT)
-        gl.check_error()  # Sometimes the func is there but OpenGL yields error
-    except Exception:  
+        with use_log_level('error', print_msg=False):
+            r, p = gl.glGetShaderPrecisionFormat(gl.GL_FRAGMENT_SHADER,
+                                                 gl.GL_HIGH_FLOAT)
+            gl.check_error()  # Sometimes the func is there but OpenGL errs
+    except Exception:
         pass  # accept if the function is not there ...
         # We should catch RuntimeError and GL.error.NullFunctionError,
         # but PyOpenGL may not be available.
