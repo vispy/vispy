@@ -30,6 +30,7 @@ vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30)
 #vb2.set_camera('turntable', mode='perspective', 
 #               distance=10, elevation=0, azimuth=0)
 
+
 # Move these when the canvas changes size
 @canvas.events.resize.connect
 def resize(event=None):
