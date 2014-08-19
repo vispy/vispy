@@ -155,7 +155,12 @@ class Triangulation(object):
                     # measure angle made with front
                     p1 = pts[front[ind1]]
                     p2 = pts[front[ind2]]
-                    angle = np.arccos(self.cosine(pi, p1, p2))
+                    err = np.geterr()
+                    np.seterr(invalid='ignore')
+                    try:
+                        angle = np.arccos(self.cosine(pi, p1, p2))
+                    finally:
+                        np.seterr(**err)
                     
                     # if angle is < pi/2, make new triangle
                     #debug("Smooth angle:", pi, p1, p2, angle)
@@ -650,7 +655,7 @@ class Triangulation(object):
             #debug("Add new points:", new_pts)
             
             # list of point indexes for all new edges
-            pt_indexes = range(pt_offset, pt_offset + len(cuts))
+            pt_indexes = list(range(pt_offset, pt_offset + len(cuts)))
             pt_indexes.append(self.edges[edge, 1])
             
             # modify original edge
