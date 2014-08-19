@@ -34,7 +34,7 @@ class DebugTriangulation(Triangulation):
         # visual #debugging: draw edges, front, triangles
         self.win = pg.plot()
         self.graph = pg.GraphItem(pos=pts.copy(), adj=edges.copy(), 
-                                    pen={'width': 3, 'color': (0, 100, 0)})
+                                  pen={'width': 3, 'color': (0, 100, 0)})
         self.win.addItem(self.graph)
         self.front_line = pg.PlotCurveItem(pen={'width': 2, 
                                                 'dash': [5, 5], 
@@ -101,7 +101,7 @@ class DebugTriangulation(Triangulation):
     def add_tri(self, *args, **kwds):
         Triangulation.add_tri(self, *args, **kwds)
         self.draw_tri(list(self.tris.keys())[-1], 
-                        source=kwds.get('source', None))
+                      source=kwds.get('source', None))
     
     def remove_tri(self, *args, **kwds):
         k = Triangulation.remove_tri(self, *args, **kwds)
@@ -118,7 +118,6 @@ if __name__ == '__main__':
     
     app = pg.mkQApp()
     
-        
     #user input data - points and constraining edges
     
     #

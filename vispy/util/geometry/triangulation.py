@@ -781,25 +781,6 @@ class Triangulation(object):
         C = self.pts[c]
         return np.cross(B-A, C-B) > 0
 
-    def intersection(self, edge1, edge2):
-        """Return the intercept of the line defined by edge1 onto edge2.
-        A value of 0 indicates intersection at edge2[0], and 1 indicates 
-        intersection at edge2[1]."""
-        global pts
-        A = pts[edge1[0]]
-        B = pts[edge1[1]]
-        C = pts[edge2[0]]
-        D = pts[edge2[1]]
-
-        E = B-A
-        F = D-C
-        P = np.array([-E[1], E[0]])
-        f = float(F.dot(P))
-        if f == 0.:
-            return float('Inf')
-        h = float((A-C).dot(P))/f
-        return h
-
     def edges_intersect(self, edge1, edge2):
         """
         Return 1 if edges intersect completely (endpoints excluded)
