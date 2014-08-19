@@ -921,13 +921,6 @@ class Texture3D(Texture):
 
     def _update_data(self):
         """ Texture update on GPU """
-
-        # Import from PyOpenGL
-        try:
-            import OpenGL.GL as _gl
-        except ImportError:
-            raise ImportError('PyOpenGL is required for 3D texture support')
-
         while self._pending_data:
             data, offset = self._pending_data.pop(0)
             x, y, z = 0, 0, 0

@@ -127,8 +127,6 @@ class Canvas(app.Canvas):
         self.program['i'] = self.i
         self.program.draw('triangle_strip')
 
-        
-
 
 if __name__ == '__main__':
     c = Canvas()
