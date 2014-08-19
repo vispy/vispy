@@ -27,20 +27,17 @@ def glTexImage3D(target, level, internalformat, format, type, pixels):
     # Import from PyOpenGL
     _gl = _check_pyopengl_3D()
     border = 0
-    if isinstance(pixels, (tuple, list)):
-        height, width, depth = pixels
-        pixels = None
-    else:
-        height, width, depth = pixels.shape[:3]
+    assert isinstance(pixels, (tuple, list))  # the only way we use this now
+    width, height, depth = pixels
     _gl.glTexImage3D(target, level, internalformat,
-                     width, height, depth, border, format, type, pixels)
+                     width, height, depth, border, format, type, None)
 
 
 def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
                     format, type, pixels):
     # Import from PyOpenGL
     _gl = _check_pyopengl_3D()
-    width, height, depth = pixels.shape[:3]
+    depth, height, width = pixels.shape[:3]
     _gl.glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
                         width, height, depth, format, type, pixels)
 
@@ -296,16 +293,6 @@ class BaseTexture(GLObject):
                       'linear': gl.GL_LINEAR}
         self._interpolation = _check_value(value, valid_dict)
         self._need_parameterization = True
-
-    @property
-    def height(self):
-        """ Texture height """
-        return self._shape[0]
-
-    @property
-    def width(self):
-        """ Texture width """
-        return self._shape[1]
 
     def resize(self, shape):
         """ Resize the texture (deferred operation)
@@ -626,9 +613,9 @@ class Texture2D(BaseTexture):
     ----------
 
     data : ndarray
-        Texture data (optional)
+        Texture data (optional), shaped as HxW.
     shape : tuple of integers
-        Texture shape (optional)
+        Texture shape (optional), with shape HxW.
     dtype : dtype
         Texture data type (optional)
     store : bool
@@ -657,6 +644,16 @@ class Texture2D(BaseTexture):
                              base=base, resizeable=resizeable, store=store,
                              target=gl.GL_TEXTURE_2D, offset=offset,
                              format=format)
+
+    @property
+    def height(self):
+        """ Texture height """
+        return self._shape[0]
+
+    @property
+    def width(self):
+        """ Texture width """
+        return self._shape[1]
 
     @property
     def glsl_type(self):
@@ -690,12 +687,6 @@ class Texture2D(BaseTexture):
                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
 
-def is_power2(num):
-    """Helper to determine if a number is a power of two"""
-    assert isinstance(num, int)
-    return num != 0 and ((num & (num - 1)) == 0)
-
-
 # --------------------------------------------------------- Texture3D class ---
 class Texture3D(BaseTexture):
     """ Three dimensional texture
@@ -703,9 +694,9 @@ class Texture3D(BaseTexture):
     Parameters
     ----------
     data : ndarray
-        Texture data (optional)
+        Texture data (optional), shaped as DxHxW.
     shape : tuple of integers
-        Texture shape (optional)
+        Texture shape (optional) DxHxW.
     dtype : dtype
         Texture data type (optional)
     store : bool
@@ -739,20 +730,30 @@ class Texture3D(BaseTexture):
                              format=format)
 
     @property
+    def width(self):
+        """ Texture width """
+        return self._shape[2]
+
+    @property
+    def height(self):
+        """ Texture height """
+        return self._shape[1]
+
+    @property
+    def depth(self):
+        """ Texture depth """
+        return self._shape[0]
+
+    @property
     def glsl_type(self):
         """ GLSL declaration strings required for a variable to hold this data.
         """
         return 'uniform', 'sampler3D'
 
-    @property
-    def depth(self):
-        """ Texture depth """
-        return self._shape[2]
-
     def _resize(self):
         """ Texture resize on GPU """
         logger.debug("GPU: Resizing texture(%sx%sx%s)" %
-                     (self.width, self.height, self.depth))
+                     (self.depth, self.height, self.width))
         glTexImage3D(self.target, 0, self._format, self._format,
                      self._gtype, (self.width, self.height, self.depth))
 
@@ -760,7 +761,7 @@ class Texture3D(BaseTexture):
         """ Texture update on GPU """
         while self._pending_data:
             data, offset = self._pending_data.pop(0)
-            x = y = z = 0
+            z = y = x = 0
             if offset is not None:
                 z, y, x = offset[0], offset[1], offset[2]
             # Set alignment (width is nbytes_per_pixel * npixels_per_line)

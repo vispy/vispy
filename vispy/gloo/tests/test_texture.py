@@ -432,10 +432,10 @@ class Texture2DTest(unittest.TestCase):
         T = Texture2D(data=np.zeros(shape, dtype=np.uint8))
         assert T.dtype == np.uint8
         assert T._gtype == gl.GL_UNSIGNED_BYTE
-        
+
         newdata = np.zeros(shape, dtype=np.float32)
         self.assertRaises(ValueError, T.set_data, newdata)
-        
+
         newdata = np.zeros(shape, dtype=np.int32)
         self.assertRaises(ValueError, T.set_data, newdata)
 
@@ -461,9 +461,9 @@ class Texture3DTest(unittest.TestCase):
     def test_width_height_depth(self):
         data = np.zeros((10, 20, 30), dtype=np.uint8)
         T = Texture3D(data=data)
-        assert T.width == 20
-        assert T.height == 10
-        assert T.depth == 30
+        assert T.width == 30
+        assert T.height == 20
+        assert T.depth == 10
 
     # Resize
     # ---------------------------------

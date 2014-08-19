@@ -17,15 +17,16 @@ from vispy import app
 
 
 # Shape of image to be displayed
-S = 64
-W, H, D = S, S, S
+D, H, W = 30, 60, 90
 
 # Modulated image
-I = np.random.uniform(0, 1, (W, H, D)).astype(np.float32)
-I *= np.linspace(0.5, 1, D)[:, np.newaxis, np.newaxis]
-
-# Smooth it a bit in the z-direction
-I[1:-1] = 0.4 * I[1:-1] + 0.3 * I[:-2] + 0.3 * I[2:]
+I = np.random.uniform(0, 0.1, (D, H, W, 3)).astype(np.float32)
+# Depth slices are dark->light
+I[...] += np.linspace(0, 0.9, D)[:, np.newaxis, np.newaxis, np.newaxis]
+# Make vertical direction more green moving upward
+I[..., 1] *= np.linspace(0, 1, H)[np.newaxis, :, np.newaxis]
+# Make horizontal direction more red moving rightward
+I[..., 0] *= np.linspace(0, 1, W)[np.newaxis, np.newaxis, :]
 
 # A simple texture quad
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),
@@ -61,7 +62,7 @@ uniform float i;
 varying vec2 v_texcoord;
 void main()
 {
-    // step through gradient with i
+    // step through gradient with i, note that slice (depth) comes last here!
     gl_FragColor = texture3D(u_texture, vec3(v_texcoord, i));
     gl_FragColor.a = 1.0;
 }
@@ -77,7 +78,8 @@ class Canvas(app.Canvas):
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.texture = gloo.Texture3D(I)
-        self.texture.interpolation = 'linear'
+        self.texture.interpolation = 'nearest'
+        self.texture.wrapping = 'clamp_to_edge'
 
         self.program['u_texture'] = self.texture
         self.program['i'] = 0.0
@@ -91,9 +93,9 @@ class Canvas(app.Canvas):
         self.program['u_view'] = self.view
         self.projection = ortho(0, W, 0, H, -1, 1)
         self.program['u_projection'] = self.projection
-        
+
         self.i = 0
-        
+
         self._timer = app.Timer(1/60.0, connect=self.on_timer, start=True)
 
     def on_initialize(self, event):
@@ -119,12 +121,13 @@ class Canvas(app.Canvas):
         self.program.bind(gloo.VertexBuffer(data))
 
     def on_timer(self, event):
-        self.i = (self.i + 0.001) % 1.0
+        # cycle every 2 sec
+        self.i = (self.i + 1./120.) % 1.0
         self.update()
-        
+
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
-        self.program['i'] = self.i
+        self.program['i'] = 1.9 * np.abs(0.5 - self.i)
         self.program.draw('triangle_strip')
 
 

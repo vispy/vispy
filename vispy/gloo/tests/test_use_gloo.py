@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 import numpy as np
 from numpy.testing import assert_allclose
-from nose.tools import assert_raises
+from nose.tools import assert_raises, assert_equal
 
 from vispy.app import Canvas
 from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer,
@@ -56,7 +56,9 @@ def test_use_framebuffer():
 @requires_application()
 def test_use_texture3D():
     """Test using a 3D texture"""
-    data = np.zeros((5, 6, 7), np.float32)
+    vals = [0, 200, 100, 0, 255, 0, 100]
+    d, h, w = len(vals), 3, 5
+    data = np.zeros((d, h, w), np.float32)
     if not has_pyopengl():
         assert_raises(ImportError, Texture3D(data))
         return
@@ -75,14 +77,34 @@ def test_use_texture3D():
     FRAG_SHADER = """
     uniform sampler3D u_texture;
     varying vec2 v_pos;
+    uniform float i;
     void main()
     {
-        gl_FragColor = texture3D(u_texture, vec3(v_pos, 0.));
-        gl_FragColor.a = 1.0;
+        gl_FragColor = texture3D(u_texture,
+                                 vec3((v_pos.y+1.)/2., (v_pos.x+1.)/2., i));
+        gl_FragColor.a = 1.;
     }
     """
+    # populate the depth "slices" with different gray colors in the bottom left
+    for ii, val in enumerate(vals):
+        data[ii, :2, :3] = val / 255.
     program = Program(VERT_SHADER, FRAG_SHADER)
-    program['a_pos'] = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]]
-    program['u_texture'] = Texture3D(data)
-    with Canvas():
-        program.draw()
+    program['a_pos'] = [[-1., -1.], [1., -1.], [-1., 1.], [1., 1.]]
+    tex = Texture3D(data)
+    assert_equal(tex.width, w)
+    assert_equal(tex.height, h)
+    assert_equal(tex.depth, d)
+    tex.interpolation = 'nearest'
+    program['u_texture'] = tex
+    with Canvas(size=(100, 100)):
+        for ii, val in enumerate(vals):
+            set_viewport(0, 0, w, h)
+            clear(color='black')
+            iii = (ii + 0.5) / float(d)
+            print(ii, iii)
+            program['i'] = iii
+            program.draw('triangle_strip')
+            out = _screenshot()[:, :, 0].astype(int)[::-1]
+            expected = np.zeros_like(out)
+            expected[:2, :3] = val
+            assert_allclose(out, expected, atol=1./255.)
