@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import re
 import webbrowser
+import traceback
 
 # Save where we came frome and where this module lives
 START_DIR = op.abspath(os.getcwd())
@@ -180,10 +181,10 @@ class Maker:
         try:
             test(*(arg.split()))
         except Exception as err:
-            type_, value, tb = sys.exc_info()
-            import traceback
             print(err)
-            traceback.print_exception(type, value, tb)
+            if not isinstance(err, RuntimeError):
+                type_, value, tb = sys.exc_info()
+                traceback.print_exception(type, value, tb)
             raise SystemExit(1)
 
     def images(self, arg):

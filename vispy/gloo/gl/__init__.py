@@ -170,7 +170,7 @@ def check_error(when='periodic check'):
     errors = []
     while True:
         err = glGetError()
-        if err == GL_NO_ERROR:
+        if err == GL_NO_ERROR or (errors and err == errors[-1]):
             break
         errors.append(err)
     if errors:
