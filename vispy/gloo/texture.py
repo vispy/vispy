@@ -45,6 +45,15 @@ def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
                         width, height, depth, format, type, pixels)
 
 
+def _check_value(value, valid_dict):
+    """Helper for checking interpolation and wrapping"""
+    if not isinstance(value, (tuple, list)):
+        value = [value] * 2
+    if len(value) != 2:
+        raise ValueError('value must be a single value, or a 2-element list')
+    return tuple(_check_conversion(v, valid_dict) for v in value)
+
+
 # ----------------------------------------------------------- Texture class ---
 class BaseTexture(GLObject):
     """
@@ -220,84 +229,83 @@ class BaseTexture(GLObject):
                 raise ValueError("Too many dimensions for texture")
             elif len(shape) == self._ndim:
                 shape = shape + (1,)
-            elif len(shape) == self._ndim + 1:
+            else:  # if len(shape) == self._ndim + 1:
                 if shape[-1] > 4:
                     raise ValueError("Too many channels for texture")
         # Return
-        if data is not None:
-            return data.reshape(*(shape if len(shape) > 0 else ((),)))
-        else:
-            return shape
+        return data.reshape(shape) if data is not None else shape
 
     @property
     def shape(self):
         """ Texture shape """
-
         return self._shape
 
     @property
     def offset(self):
         """ Texture offset """
-
         return self._offset
 
     @property
     def dtype(self):
         """ Texture data type """
-
         return self._dtype
 
     @property
     def base(self):
         """ Texture base if this texture is a view on another texture """
-
         return self._base
 
     @property
     def data(self):
         """ Texture CPU storage """
-
         return self._data
 
     @property
     def wrapping(self):
         """ Texture wrapping mode """
-
         if self.base is not None:
             return self.base.wrapping
-        return self._wrapping
+        value = self._wrapping
+        return value[0] if value[0] == value[1] else value
 
     @wrapping.setter
     def wrapping(self, value):
         """ Texture wrapping mode """
-
         if self.base is not None:
             raise ValueError("Cannot set wrapping on texture view")
         valid_dict = {'repeat': gl.GL_REPEAT,
                       'clamp_to_edge': gl.GL_CLAMP_TO_EDGE,
                       'mirrored_repeat': gl.GL_MIRRORED_REPEAT}
-        self._wrapping = _check_conversion(value, valid_dict)
+        self._wrapping = _check_value(value, valid_dict)
         self._need_parameterization = True
 
     @property
     def interpolation(self):
         """ Texture interpolation for minification and magnification. """
-
         if self.base is not None:
             return self.base.interpolation
-
-        return self._interpolation
+        value = self._interpolation
+        return value[0] if value[0] == value[1] else value
 
     @interpolation.setter
     def interpolation(self, value):
         """ Texture interpolation for minication and magnification. """
-
         if self.base is not None:
             raise ValueError("Cannot set interpolation on texture view")
         valid_dict = {'nearest': gl.GL_NEAREST,
                       'linear': gl.GL_LINEAR}
-        self._interpolation = _check_conversion(value, valid_dict)
+        self._interpolation = _check_value(value, valid_dict)
         self._need_parameterization = True
+
+    @property
+    def height(self):
+        """ Texture height """
+        return self._shape[0]
+
+    @property
+    def width(self):
+        """ Texture width """
+        return self._shape[1]
 
     def resize(self, shape):
         """ Resize the texture (deferred operation)
@@ -312,7 +320,6 @@ class BaseTexture(GLObject):
         -----
         This clears any pending operations.
         """
-
         shape = self._normalize_shape(shape)
 
         if not self._resizeable:
@@ -368,7 +375,6 @@ class BaseTexture(GLObject):
         This operation implicitely resizes the texture to the shape of the data
         if given offset is None.
         """
-
         if self.base is not None and not self._valid:
             raise ValueError("This texture view has been invalidated")
 
@@ -415,7 +421,6 @@ class BaseTexture(GLObject):
 
     def __getitem__(self, key):
         """ x.__getitem__(y) <==> x[y] """
-
         if self.base is not None:
             raise ValueError("Can only access data from a base texture")
 
@@ -471,7 +476,6 @@ class BaseTexture(GLObject):
 
     def __setitem__(self, key, data):
         """ x.__getitem__(y) <==> x[y] """
-
         if self.base is not None and not self._valid:
             raise ValueError("This texture view has been invalited")
 
@@ -538,38 +542,27 @@ class BaseTexture(GLObject):
 
     def _parameterize(self):
         """ Paramaterize texture """
-        # Right now we only support using a single mode
-        # if isinstance(self._interpolation, tuple):
-        #     min_filter = self._interpolation[0]
-        #     mag_filter = self._interpolation[1]
-        min_filter = self._interpolation
-        mag_filter = self._interpolation
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER, min_filter)
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER, mag_filter)
-
-        # if isinstance(self._wrapping, tuple):
-        #     wrap_s = self._wrapping[0]
-        #     wrap_t = self._wrapping[1]
-        wrap_s = self._wrapping
-        wrap_t = self._wrapping
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S, wrap_s)
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrap_t)
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER,
+                           self._interpolation[0])
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER,
+                           self._interpolation[1])
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S,
+                           self._wrapping[0])
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T,
+                           self._wrapping[1])
 
     def _create(self):
         """ Create texture on GPU """
-
         logger.debug("GPU: Creating texture")
         self._handle = gl.glCreateTexture()
 
     def _delete(self):
         """ Delete texture from GPU """
-
         logger.debug("GPU: Deleting texture")
         gl.glDeleteTexture(self._handle)
 
     def _activate(self):
         """ Activate texture on GPU """
-
         logger.debug("GPU: Activate texture")
         gl.glBindTexture(self.target, self._handle)
 
@@ -595,7 +588,6 @@ class BaseTexture(GLObject):
 
     def _deactivate(self):
         """ Deactivate texture on GPU """
-
         logger.debug("GPU: Deactivate texture")
         gl.glBindTexture(self._target, 0)
 
@@ -609,7 +601,6 @@ class BaseTexture(GLObject):
 
         www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
         """
-
         # we know the alignment is appropriate
         # if we can divide the width by the
         # alignment cleanly
@@ -673,21 +664,8 @@ class Texture2D(BaseTexture):
         """
         return 'uniform', 'sampler2D'
 
-    @property
-    def height(self):
-        """ Texture height """
-
-        return self._shape[0]
-
-    @property
-    def width(self):
-        """ Texture width """
-
-        return self._shape[1]
-
     def _resize(self):
         """ Texture resize on GPU """
-
         logger.debug("GPU: Resizing texture(%sx%s)" %
                      (self.width, self.height))
         shape = self.height, self.width
@@ -696,7 +674,6 @@ class Texture2D(BaseTexture):
 
     def _update_data(self):
         """ Texture update on GPU """
-
         # Update data
         while self._pending_data:
             data, offset = self._pending_data.pop(0)
@@ -762,26 +739,12 @@ class Texture3D(BaseTexture):
         return 'uniform', 'sampler3D'
 
     @property
-    def height(self):
-        """ Texture height """
-
-        return self._shape[0]
-
-    @property
-    def width(self):
-        """ Texture width """
-
-        return self._shape[1]
-
-    @property
     def depth(self):
         """ Texture depth """
-
         return self._shape[2]
 
     def _resize(self):
         """ Texture resize on GPU """
-
         logger.debug("GPU: Resizing texture(%sx%sx%s)" %
                      (self.width, self.height, self.depth))
         shape = self.depth, self.height, self.width

@@ -254,7 +254,6 @@ class TextureTest(unittest.TestCase):
     # Set via get (pending data on base)
     # ---------------------------------
     def test_getitem_setitem(self):
-
         data = np.zeros((10, 10), dtype=np.uint8)
         T = Texture(data=data)
         Z = T[5:, 5:]
@@ -262,6 +261,20 @@ class TextureTest(unittest.TestCase):
         assert len(Z._pending_data) == 0
         assert len(T._pending_data) == 2
         assert np.allclose(data[5:, 5:], np.ones((5, 5)))
+
+    # Set properties
+    def test_set_texture_properties(self):
+        T = Texture(shape=(10, 10), dtype=np.float32)
+        T.interpolation = 'linear'
+        assert T.interpolation == gl.GL_LINEAR
+        T.interpolation = ['linear'] * 2
+        assert T.interpolation == gl.GL_LINEAR
+        T.interpolation = ['linear', 'nearest']
+        assert T.interpolation == (gl.GL_LINEAR, gl.GL_NEAREST)
+        self.assertRaises(ValueError, Texture.interpolation.fset, T,
+                          ['linear'] * 3)
+        T.wrapping = 'clamp_to_edge'
+        assert T.wrapping == gl.GL_CLAMP_TO_EDGE
 
 
 # --------------------------------------------------------------- Texture2D ---
