@@ -56,12 +56,10 @@ def test_use_framebuffer():
 @requires_application()
 def test_use_texture3D():
     """Test using a 3D texture"""
-    data = np.zeros((16, 16, 16), np.float32)
+    data = np.zeros((5, 6, 7), np.float32)
     if not has_pyopengl():
         assert_raises(ImportError, Texture3D(data))
         return
-
-    assert_raises(ValueError, Texture3D, np.zeros((4, 4, 4, 5), np.float32))
 
     VERT_SHADER = """
     attribute vec2 a_pos;

@@ -28,10 +28,10 @@ def glTexImage3D(target, level, internalformat, format, type, pixels):
     _gl = _check_pyopengl_3D()
     border = 0
     if isinstance(pixels, (tuple, list)):
-        depth, height, width = pixels
+        height, width, depth = pixels
         pixels = None
     else:
-        depth, height, width = pixels.shape[:3]
+        height, width, depth = pixels.shape[:3]
     _gl.glTexImage3D(target, level, internalformat,
                      width, height, depth, border, format, type, pixels)
 
@@ -40,7 +40,7 @@ def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
                     format, type, pixels):
     # Import from PyOpenGL
     _gl = _check_pyopengl_3D()
-    depth, height, width = pixels.shape[:3]
+    width, height, depth = pixels.shape[:3]
     _gl.glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
                         width, height, depth, format, type, pixels)
 
@@ -737,10 +737,6 @@ class Texture3D(BaseTexture):
                              base=base, resizeable=resizeable, store=store,
                              target=_gl.GL_TEXTURE_3D, offset=offset,
                              format=format)
-        if not all(is_power2(x) for x in self.shape[:3]) or \
-                len(set(self.shape[:3])) > 1:
-            raise ValueError('All dimensions must be the same and a power of '
-                             'two, got %s' % (self.shape[:-1],))
 
     @property
     def glsl_type(self):
@@ -757,9 +753,8 @@ class Texture3D(BaseTexture):
         """ Texture resize on GPU """
         logger.debug("GPU: Resizing texture(%sx%sx%s)" %
                      (self.width, self.height, self.depth))
-        shape = self.depth, self.height, self.width
         glTexImage3D(self.target, 0, self._format, self._format,
-                     self._gtype, shape)
+                     self._gtype, (self.width, self.height, self.depth))
 
     def _update_data(self):
         """ Texture update on GPU """
