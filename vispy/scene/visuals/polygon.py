@@ -100,8 +100,11 @@ class Polygon(Visual):
             self.mesh = Mesh(pos=pts, faces=tris.astype(np.uint32),
                              color=self._color.rgba)
             if not self._border_color.is_blank():
-                #border_pos = self.data.vertices[self.data.convex_hull]
-                self.border = Line(pos=self._pos,
+                # Close border if it is not already.
+                border_pos = self._pos
+                if np.any(border_pos[0] != border_pos[1]):
+                    border_pos = np.concatenate([border_pos, border_pos[:1]], axis=0)
+                self.border = Line(pos=border_pos,
                                    color=self._border_color.rgba, 
                                    mode='line_strip')
         #self.update()
