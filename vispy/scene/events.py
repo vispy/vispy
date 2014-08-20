@@ -134,14 +134,16 @@ class SceneEvent(Event):
         return self._doc_stack[-1]
         
     @property
-    def pixels(self):
-        """ Return entity for the current pixel coordinate system.
-        """
-        
-    @property
     def framebuffer(self):
         """ Return entity for the current framebuffer coordinate system.
         """
+        return self.canvas.framebuffer
+
+    @property
+    def ndc(self):
+        """ Return entity for the normalized device coordinate system.
+        """
+        return self.canvas.ndc
         
     def entity_transform(self, map_to=None, map_from=None):
         """ Return the transform mapping *map_from* to *map_to*, using the
@@ -150,6 +152,34 @@ class SceneEvent(Event):
         By default, *map_to* is the normalized device coordinate system,
         and *map_from* is the current top entity on the stack.
         """
+        if map_to is None:
+            map_to = self.ndc
+        if map_from is None:
+            map_from = self._stack[-1]
+        else:
+            raise NotImplementedError()
+        
+        path = [map_from]
+        
+        while path[-1] is not map_to:
+            ent = path[-1]
+            if len(ent.parents) == 1:
+                path.append(ent.parent)
+            else:
+                # can't find single parent from entity; check the path.
+                try:
+                    ind = self._stack.index(ent)
+                    if ind == 0:
+                        raise IndexError()
+                except IndexError:
+                    raise Exception("Cannot find unique path from %r to %r." % 
+                                    (map_from, map_to))
+                while path[-1] is not map_to:
+                    ind -= 1
+                    path.append(self._stack[ind])
+                break
+            
+        return self._transform_cache.get([e.transform for e in path])
     
     def doc_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
@@ -171,25 +201,25 @@ class SceneEvent(Event):
     def map_from_doc(self, obj):
         return self.doc_transform().imap(obj)
                 
-    def pixel_transform(self, entity=None):
+    def canvas_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
         pixel coordinate system. 
         
         If *entity* is not specified, then the top entity on the stack is used.
         """
-        return self.entity_transform(map_to=self.pixels, map_from=entity)
+        return self.entity_transform(map_to=self.canvas.entity, map_from=entity)
                 
-    def map_entity_to_pixel(self, entity, obj):
-        return self.pixel_transform(entity).map(obj)
+    def map_entity_to_canvas(self, entity, obj):
+        return self.canvas_transform(entity).map(obj)
     
-    def map_pixel_to_entity(self, entity, obj):
-        return self.pixel_transform(entity).imap(obj)
+    def map_canvas_to_entity(self, entity, obj):
+        return self.canvas_transform(entity).imap(obj)
                 
-    def map_to_pixel(self, obj):
-        return self.pixel_transform().map(obj)
+    def map_to_canvas(self, obj):
+        return self.canvas_transform().map(obj)
     
-    def map_from_pixel(self, obj):
-        return self.pixel_transform().imap(obj)
+    def map_from_canvas(self, obj):
+        return self.canvas_transform().imap(obj)
                 
     def fb_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
@@ -222,66 +252,72 @@ class SceneEvent(Event):
         #ind = self._stack.index(self.canvas.scene)
         #return self._transform_cache.get(self._stack[ind:])
 
-    @property
-    def render_transform(self):
-        """ The transform that maps from the current entity to
-        normalized device coordinates within the current glViewport and
-        FBO.
+    #@property
+    #def render_transform(self):
+        #""" The transform that maps from the current entity to
+        #normalized device coordinates within the current glViewport and
+        #FBO.
 
-        This transform consists of the full_transform prepended by a
-        correction for the current glViewport and/or FBO.
+        #This transform consists of the full_transform prepended by a
+        #correction for the current glViewport and/or FBO.
 
-        Most entities should use this transform when drawing.
-        """
-        #return self.canvas.render_transform * self.full_transform
-        return self._transform_cache.get(self._stack)
+        #Most entities should use this transform when drawing.
+        #"""
+        ##return self.canvas.render_transform * self.full_transform
+        #return self._transform_cache.get(self._stack)
 
-    @property
-    def fb_transform(self):
-        """ Transform mapping from the local coordinate system of the current
-        entity to the framebuffer coordinate system.
-        """
-        #return self.canvas.fb_transform * self.full_transform
-        ind = self._stack.index(self.canvas.framebuffer)
-        return self._transform_cache.get(self._stack[ind:])
+    #@property
+    #def fb_transform(self):
+        #""" Transform mapping from the local coordinate system of the current
+        #entity to the framebuffer coordinate system.
+        #"""
+        ##return self.canvas.fb_transform * self.full_transform
+        #ind = self._stack.index(self.canvas.framebuffer)
+        #return self._transform_cache.get(self._stack[ind:])
     
-    def map_to_fb(self, obj):
-        return self.fb_transform.map(obj)
+    #def map_to_fb(self, obj):
+        #return self.fb_transform.map(obj)
 
-    def map_from_fb(self, obj):
-        return self.fb_transform.imap(obj)
+    #def map_from_fb(self, obj):
+        #return self.fb_transform.imap(obj)
 
-    # todo: need to disambiguate this from the doc cs, which is *usually* the
-    #       same, but may be separate in some rare situations.
-    @property
-    def canvas_transform(self):
-        """
-        Return the transform mapping from the end of the path to Canvas
-        pixels (logical pixels).
+    ## todo: need to disambiguate this from the doc cs, which is *usually* the
+    ##       same, but may be separate in some rare situations.
+    #@property
+    #def canvas_transform(self):
+        #"""
+        #Return the transform mapping from the end of the path to Canvas
+        #pixels (logical pixels).
         
-        Canvas_transform is used mainly for mouse interaction. 
-        For measuring distance in physical units, the use of document_transform 
-        is preferred. 
-        """
-        ind = self._stack.index(self.canvas.pixels)
-        return self._transform_cache.get(self._stack[ind:])
+        #Canvas_transform is used mainly for mouse interaction. 
+        #For measuring distance in physical units, the use of document_transform 
+        #is preferred. 
+        #"""
+        #ind = self._stack.index(self.canvas.pixels)
+        #return self._transform_cache.get(self._stack[ind:])
     
-    def map_to_canvas(self, obj):
-        """
-        Convenience method that maps *obj* from the current coordinate system 
-        of the event to the canvas coordinate system (logical pixels; 
-        see SceneEvent.canvas_transform).
-        """
-        return self.canvas_transform.map(obj)
+    #def map_to_canvas(self, obj):
+        #"""
+        #Convenience method that maps *obj* from the current coordinate system 
+        #of the event to the canvas coordinate system (logical pixels; 
+        #see SceneEvent.canvas_transform).
+        #"""
+        #return self.canvas_transform.map(obj)
     
-    def map_from_canvas(self, obj):
-        """
-        Convenience method that maps *obj* from the canvas coordinate system 
-        (logical pixels; see SceneEvent.canvas_transform) to the current 
-        coordinate system of the event.
-        """
-        return self.canvas_transform.inverse().map(obj)
+    #def map_from_canvas(self, obj):
+        #"""
+        #Convenience method that maps *obj* from the canvas coordinate system 
+        #(logical pixels; see SceneEvent.canvas_transform) to the current 
+        #coordinate system of the event.
+        #"""
+        #return self.canvas_transform.inverse().map(obj)
+
     
+class SceneDrawEvent(SceneEvent):
+    def __init__(self, event, canvas, **kwds):
+        self.draw_event = event
+        super(SceneDrawEvent, self).__init__(type='draw', canvas=canvas, 
+                                             **kwds)
 
 class SceneMouseEvent(SceneEvent):
     def __init__(self, event, canvas, **kwds):
@@ -327,10 +363,3 @@ class SceneMouseEvent(SceneEvent):
         #ev._ra_stack = self._ra_stack[:]
         ev._viewbox_stack = self._viewbox_stack[:]
         return ev
-
-
-class SceneDrawEvent(SceneEvent):
-    def __init__(self, event, canvas, **kwds):
-        self.draw_event = event
-        super(SceneDrawEvent, self).__init__(type='draw', canvas=canvas, 
-                                             **kwds)
