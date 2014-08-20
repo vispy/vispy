@@ -38,14 +38,14 @@ class SceneCanvas(app.Canvas):
         # self.draw_visual(...)
         self._transform_caches = weakref.WeakKeyDictionary()
 
-        # Set up default entity stack: ndc -> fb -> pixels -> scene
+        # Set up default entity stack: ndc -> fb -> canvas -> scene
         self.ndc = Entity()
         self.framebuffer = Entity(parent=self.ndc)
         self.framebuffer.transform = STTransform()
-        self.pixels = Entity(parent=self.framebuffer)
-        self.pixels.transform = STTransform()
+        self.entity = Entity(parent=self.framebuffer)
+        self.entity.transform = STTransform()
         
-        self.scene = SubScene(parent=self.pixels)
+        self.scene = SubScene(parent=self.entity)
 
     @property
     def scene(self):
@@ -105,7 +105,7 @@ class SceneCanvas(app.Canvas):
             
             scene_event.push_entity(self.ndc)
             scene_event.push_entity(self.framebuffer)
-            scene_event.push_entity(self.pixels)
+            scene_event.push_entity(self.entity)
             scene_event.push_entity(visual)
             visual.draw(scene_event)
         finally:
@@ -118,7 +118,7 @@ class SceneCanvas(app.Canvas):
                                       transform_cache=tr_cache)
         scene_event.push_entity(self.ndc)
         scene_event.push_entity(self.framebuffer)
-        scene_event.push_entity(self.pixels)
+        scene_event.push_entity(self.entity)
         scene_event.push_entity(self._scene)
         self._scene._process_mouse_event(scene_event)
         
@@ -233,8 +233,8 @@ class SceneCanvas(app.Canvas):
         map_from = [list(offset), [offset[0] + csize[0], offset[1] + csize[1]]]
         map_to = [[0, fbsize[1]], [fbsize[0], 0]]
         
-        self.pixels.transform.set_mapping(map_from, map_to)
-        return self.pixels.transform
+        self.entity.transform.set_mapping(map_from, map_to)
+        return self.entity.transform
 
     @property
     def ndc_transform(self):
