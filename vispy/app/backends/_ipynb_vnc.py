@@ -51,6 +51,11 @@ def _set_config(c):
     _app.backend_module._set_config(c)
 
 
+# Init dummy objects needed to import this module withour errors.
+# These are all overwritten with imports from IPython (on success)
+DOMWidget = object
+Unicode = Int = Float = Bool = lambda *args, **kwargs: None
+
 # Create our "backend" backend; The toolkit that is going to provide a
 # canvas (e.g. OpenGL context) so we can render images.
 # Note that if IPython has already loaded a GUI backend, vispy is
@@ -70,16 +75,14 @@ else:
         from IPython.html.nbextensions import install_nbextension
     except Exception as exp:
         available, testable, why_not, which = False, False, str(exp), None
-        DOMWidget = object  # Dummy objects
-        Unicode = Int = Float = Bool = lambda *args, **kwargs: None
     else:
         # Check if not GLUT, because that is going to be too unstable
         if 'glut' in _app.backend_module.__name__:
             _msg = 'ipynb_vnc backend refuses to work with GLUT'
-            available, testable, why_not = False, False, _msg
+            available, testable, why_not, which = False, False, _msg, None
         else:
             available, testable, why_not = True, False, None
-        which = _app.backend_module.which
+            which = _app.backend_module.which
         print('              NOTE: this backend requires the Chromium browser')
     # Use that backend's shared context
     KEYMAP = _app.backend_module.KEYMAP
