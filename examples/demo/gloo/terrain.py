@@ -1,5 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: gallery 30
 
 """ Terrain generation using diamond-square alogrithm
 and Scipy for Delaunay triangulation

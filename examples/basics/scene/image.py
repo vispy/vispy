@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+# vispy: gallery 30
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Simple test of SceneCanvas containing a single line entity
 as its entire scenegraph.
@@ -22,4 +28,6 @@ canvas_bounds = [[10, 10], [canvas.size[0] - 10, canvas.size[1] - 10]]
 tr = scene.transforms.STTransform.from_mapping(img_bounds, canvas_bounds)
 image.transform = tr
 
-app.run()
+import sys
+if __name__ == '__main__' and sys.flags.interactive == 0:
+    app.run()

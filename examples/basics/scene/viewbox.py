@@ -1,9 +1,14 @@
+# -*- coding: utf-8 -*-
+# vispy: gallery 30
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Demonstrate ViewBox using various clipping methods.
 
 Two boxes are manually positioned on the canvas; they are not updated
 when the canvas resizes.
-
 """
 import numpy as np
 
@@ -88,6 +93,7 @@ box4 = scene.visuals.Line(pos=((box + z) * 2 - 1), color=(0, 1, 0, 1),
                           name='nd box', parent=vb2.scene)
 
 
-if __name__ == '__main__':
+import sys
+if __name__ == '__main__' and sys.flags.interactive == 0:
     print(canvas.scene.describe_tree(with_transform=True))
     app.run()

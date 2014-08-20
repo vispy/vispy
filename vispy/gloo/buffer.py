@@ -590,6 +590,8 @@ class VertexBuffer(DataBuffer):
     def __init__(self, data=None, dtype=None, size=0, store=True,
                  resizeable=True, *args, **kwargs):
 
+        if isinstance(data, (list, tuple)):
+            data = np.array(data, np.float32)
         # We don't want these two parameters to be seen from outside
         # (because they are used internally only)
         offset = kwargs.get("offset", 0)

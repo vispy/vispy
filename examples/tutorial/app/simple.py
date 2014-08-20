@@ -1,6 +1,5 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vispy: gallery 20
 
 """
 This is a very minimal example that opens a window and makes the background

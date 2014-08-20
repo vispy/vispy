@@ -1,6 +1,9 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 
 from vispy import scene, gloo
 from vispy.scene.visuals import Text

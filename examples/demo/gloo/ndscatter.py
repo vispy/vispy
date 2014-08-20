@@ -1,5 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
+# # vispy: gallery 30
 
 """N-dimensional scatter plot with GPU-based projections.
 The projection axes evolve smoothly over time, following a path on the
@@ -128,7 +128,6 @@ class Canvas(app.Canvas):
         
         self._timer = app.Timer(1. / 60)
         self._timer.connect(self.on_timer)
-        self._timer.start()
 
     def on_timer(self, event):
         mat = self._op(event.elapsed)
@@ -139,6 +138,7 @@ class Canvas(app.Canvas):
     def on_initialize(self, event):
         gloo.set_state(clear_color=(1, 1, 1, 1), blend=True, 
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
+        self._timer.start()
 
     def on_resize(self, event):
         self.width, self.height = event.size

@@ -1,6 +1,5 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vispy: gallery 2
 
 """ Show a bunch of lines.
 This example demonstrates how multiple line-pieces can be drawn

@@ -168,7 +168,7 @@ class Maker:
         """ Run tests:
                 * full - run all tests
                 * nose - run nose tests (also for each backend)
-                * any backend name (e.g. pyside, pyqt4, glut, sdl2, etc.) - 
+                * any backend name (e.g. pyside, pyqt4, glut, sdl2, etc.) -
                   run tests for the given backend
                 * nobackend - run tests that do not require a backend
                 * extra - run extra tests (line endings and style)
@@ -192,6 +192,7 @@ class Maker:
                 * gallery - make screenshots for the gallery
                 * test - make screenshots for testing
                 * upload - upload the gallery images repository
+                * clean - delete existing files
         """
 
         # Clone repo for images if needed, make up-to-date otherwise
@@ -220,8 +221,27 @@ class Maker:
             sys.exit('images test command not yet implemented')
         elif arg == 'upload':
             sphinx_upload(IMAGES_DIR)
+        elif arg == 'clean':
+            self._images_delete()
         else:
             sys.exit('Command "images" does not have subcommand "%s"' % arg)
+
+    def _images_delete(self):
+        examples_dir = op.join(ROOT_DIR, 'examples')
+        gallery_dir = op.join(IMAGES_DIR, 'gallery')
+
+        # Process all files ...
+        print('Deleting existing gallery images')
+        n = 0
+        tot = 0
+        for filename, name in get_example_filenames(examples_dir):
+            tot += 1
+            name = name.replace('/', '__')  # We use flat names
+            imagefilename = op.join(gallery_dir, name + '.png')
+            if op.isfile(imagefilename):
+                n += 1
+                os.remove(imagefilename)
+        print('Removed %s of %s possible files' % (n, tot))
 
     def _images_screenshots(self):
         # Prepare
@@ -235,6 +255,11 @@ class Maker:
         for filename, name in get_example_filenames(examples_dir):
             name = name.replace('/', '__')  # We use flat names
             imagefilename = op.join(gallery_dir, name + '.png')
+
+            # Check if we need to take a sceenshot
+            if op.isfile(imagefilename):
+                print('Skip:   %s screenshot already present.' % name)
+                continue
 
             # Check if should make a screenshot
             frames = []
@@ -251,15 +276,15 @@ class Maker:
                         frames = list(range(*frames))
                     break
             else:
+                print('Ignore: %s, no hint' % name)
                 continue  # gallery hint not found
 
-            # Check if we need to take a sceenshot
-            if op.isfile(imagefilename):
-                print('Screenshot for %s already present (skip).' % name)
-                continue
-
             # Import module and prepare
-            m = imp.load_source('vispy_example_' + name, filename)
+            print('Grab:   %s screenshots (%s)' % (name, len(frames)))
+            try:
+                m = imp.load_source('vispy_example_' + name, filename)
+            except Exception as exp:
+                print('Error:  %s, got "%s"' % (name, str(exp)))
             m.done = False
             m.frame = -1
             m.images = []
@@ -271,16 +296,25 @@ class Maker:
                 m.frame += 1
                 if m.frame in frames:
                     frames.remove(m.frame)
-                    print('Grabbing a screenshot for %s' % name)
                     im = _screenshot((0, 0, c.size[0], c.size[1]))
                     m.images.append(im)
                 if not frames:
                     m.done = True
-            c = m.Canvas()
+            if hasattr(m, 'Canvas'):
+                c = m.Canvas()
+            else:  # scene examples
+                c = m.canvas
             c.events.draw.connect(grabscreenshot)
             c.show()
-            while not m.done:
-                m.app.process_events()
+            c._backend._vispy_warmup()
+            n = 0
+            limit = 10000
+            while not m.done and n < limit:
+                c.update()
+                c.app.process_events()
+                n += 1
+            if n >= limit or len(frames) > 0:
+                raise RuntimeError('Could not collect images for %s' % name)
             c.close()
 
             # Save
@@ -437,7 +471,7 @@ def sphinx_upload(repo_dir):
     # Check head
     os.chdir(repo_dir)
     status = sh2('git status | head -1')
-    branch = re.match('\# On branch (.*)$', status).group(1)
+    branch = re.match('On branch (.*)$', status).group(1)
     if branch != 'master':
         e = 'On %r, git branch is %r, MUST be "master"' % (repo_dir,
                                                            branch)
@@ -466,7 +500,7 @@ def get_example_filenames(example_dir):
     forward slash.
     """
     for (dirpath, dirnames, filenames) in os.walk(example_dir):
-        for fname in filenames:
+        for fname in sorted(filenames):
             if not fname.endswith('.py'):
                 continue
             filename = op.join(dirpath, fname)
