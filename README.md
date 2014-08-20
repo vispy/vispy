@@ -62,7 +62,7 @@ The core development team consists of:
 
 * [Luke Campagnola](http://luke.campagnola.me/)
 * [Almar Klein](http://www.almarklein.org/)
-* Eric Larson
+* [Eric Larson] (http://larsoner.com)
 * [Cyrille Rossant](http://cyrille.rossant.net)
 * [Nicolas Rougier](http://www.loria.fr/~rougier/index.html)
 
