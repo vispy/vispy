@@ -22,7 +22,7 @@ from vispy.scene.shaders import Varying
 
 # vertex positions of data to draw
 N = 50
-pos = np.zeros((N, 3), dtype=np.float32)
+pos = np.zeros((N, 2), dtype=np.float32)
 pos[:, 0] = np.linspace(-0.9, 0.9, N)
 pos[:, 1] = np.random.normal(size=N, scale=0.2).astype(np.float32)
 
