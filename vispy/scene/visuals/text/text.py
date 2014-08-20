@@ -289,6 +289,7 @@ class Text(Visual):
                              dtype=np.uint32)[:, np.newaxis])
             self._ib = IndexBuffer(idx.ravel())
         
+        px_scale = 1.0, 1.0
         if event is not None:
             xform = event.render_transform.shader_map()
             self._program.vert['transform'] = xform
