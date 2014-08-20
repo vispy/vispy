@@ -175,6 +175,7 @@ class Text(Visual):
     """Visual that displays text"""
 
     VERTEX_SHADER = """
+        uniform vec2 u_pos;  // anchor position
         uniform vec2 u_scale;  // to scale to pixel units
         attribute vec2 a_position; // in point units
         attribute vec2 a_texcoord;
@@ -182,7 +183,7 @@ class Text(Visual):
         varying vec2 v_texcoord;
         
         void main(void) {
-            vec4 pos = $transform(vec4(0.0, 0.0, 0.0, 1.0));
+            vec4 pos = $transform(vec4(u_pos, 0.0, 1.0));
             gl_Position = pos + vec4(a_position * u_scale, 0, 0);
             //gl_Position = $transform(vec4(a_position, 0.0, 1.0));
             v_texcoord = a_texcoord;
@@ -265,19 +266,13 @@ class Text(Visual):
     def pos(self):
         """ The position of the text anchor in the local coordinate frame
         """
-        if isinstance(self.transform, STTransform):
-            return tuple(self.transform.translate[:2])
-        else:
-            return None
+        return self._pos
     
     @pos.setter
     def pos(self, pos):
         pos = [float(p) for p in pos]
         assert len(pos) == 2
-        if pos != self.pos:
-            if not isinstance(self.transform, STTransform):
-                self.transform = STTransform()
-            self.transform.translate = pos[0], pos[1], 0, 0
+        self._pos = tuple(pos)
     
     def draw(self, event=None):
         # attributes / uniforms are not available until program is built
@@ -303,6 +298,7 @@ class Text(Visual):
         # todo: @Eric what units is _vertices?
         ps = self._font_size / 72.0 * 92.0
         self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
+        self._program['u_pos'] = self._pos
         self._program['u_color'] = self._color.rgba
         self._program['u_font_atlas'] = self._font._atlas
         self._program.bind(self._vertices)
