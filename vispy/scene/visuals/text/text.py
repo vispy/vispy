@@ -291,11 +291,14 @@ class Text(Visual):
                              dtype=np.uint32)[:, np.newaxis])
             self._ib = IndexBuffer(idx.ravel())
         
-        px_scale = 1.0, 1.0
         if event is not None:
             xform = event.render_transform.shader_map()
             self._program.vert['transform'] = xform
             px_scale = event.canvas.framebuffer.transform.scale
+        else:
+            self._program.vert['transform'] = self.transform.shader_map()
+            # Rather arbitrary scale. With size=12 it takes up ~1/10 of space
+            px_scale = 0.01, 0.01
         
         self._program.prepare()  # Force ModularProgram to set shaders
         # todo: do some testing to verify that the scaling is correct
