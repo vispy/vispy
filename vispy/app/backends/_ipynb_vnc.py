@@ -69,7 +69,7 @@ else:
         from IPython.display import display, Javascript
         from IPython.html.nbextensions import install_nbextension
     except Exception as exp:
-        available, testable, why_not = False, False, str(exp)
+        available, testable, why_not, which = False, False, str(exp), None
         DOMWidget = object  # Dummy objects
         Unicode = Int = Float = Bool = lambda *args, **kwargs: None
     else:
