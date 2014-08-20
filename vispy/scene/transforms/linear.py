@@ -29,9 +29,6 @@ class NullTransform(BaseTransform):
     def imap(self, obj):
         return obj
 
-    def inverse(self):
-        return NullTransform()
-
     def __mul__(self, tr):
         return tr
 
@@ -67,8 +64,6 @@ class STTransform(BaseTransform):
 
         self.scale = (1.0, 1.0, 1.0) if scale is None else scale
         self.translate = (0.0, 0.0, 0.0) if translate is None else translate
-        
-        self._inverse = None
 
     @arg_to_vec4
     def map(self, coords):
@@ -79,13 +74,6 @@ class STTransform(BaseTransform):
     def imap(self, coords):
         n = coords.shape[-1]
         return (coords - self.translate[:n]) / self.scale[:n]
-
-    def inverse(self):
-        if self._inverse is None:
-            s = 1./self.scale
-            t = -self.translate * s
-            self._inverse = STTransform(scale=s, translate=t)
-        return self._inverse
 
     def shader_map(self):
         self._shader_map['scale'] = self.scale
@@ -135,7 +123,6 @@ class STTransform(BaseTransform):
     
     def _update(self):
         # force update of uniforms on shader functions
-        self._inverse = None
         self.shader_map()
         self.shader_imap()
         self.update()
@@ -252,17 +239,6 @@ class AffineTransform(BaseTransform):
         fn = super(AffineTransform, self).shader_imap()
         fn['inv_matrix'] = self.inv_matrix  # uniform mat4
         return fn
-
-    def inverse(self):
-        # TODO: make inverse() free; defer matrix inversion until mapping is
-        # needed
-        tr = AffineTransform()
-        try:
-            tr.matrix = np.linalg.inv(self.matrix)
-        except Exception:
-            print(self.matrix)
-            raise
-        return tr
 
     @property
     def matrix(self):

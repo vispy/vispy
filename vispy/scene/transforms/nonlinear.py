@@ -84,9 +84,6 @@ class LogTransform(BaseTransform):
     def imap(self, coords):
         return self.map(coords, -self.base)
 
-    def inverse(self):
-        return LogTransform(base=-self.base)
-
     def shader_map(self):
         fn = super(LogTransform, self).shader_map()
         fn['base'] = self.base  # uniform vec3
@@ -130,8 +127,8 @@ class PolarTransform(BaseTransform):
     @arg_to_array
     def map(self, coords):
         ret = np.empty(coords.shape, coords.dtype)
-        ret[..., 0] = coords[..., 1] * np.cos[coords[..., 0]]
-        ret[..., 1] = coords[..., 1] * np.sin[coords[..., 0]]
+        ret[..., 0] = coords[..., 1] * np.cos(coords[..., 0])
+        ret[..., 1] = coords[..., 1] * np.sin(coords[..., 0])
         for i in range(2, coords.shape[-1]):  # copy any further axes
             ret[..., i] = coords[..., i]
         return ret
@@ -139,30 +136,11 @@ class PolarTransform(BaseTransform):
     @arg_to_array
     def imap(self, coords):
         ret = np.empty(coords.shape, coords.dtype)
-        ret[..., 0] = np.atan2(coords[..., 0], coords[..., 1])
+        ret[..., 0] = np.arctan2(coords[..., 0], coords[..., 1])
         ret[..., 1] = (coords[..., 0]**2 + coords[..., 1]**2) ** 0.5
         for i in range(2, coords.shape[-1]):  # copy any further axes
             ret[..., i] = coords[..., i]
         return ret
-
-    def inverse(self):
-        return InvPolarTransform()
-
-
-class InvPolarTransform(BaseTransform):
-    glsl_map = PolarTransform.glsl_imap
-    glsl_imap = PolarTransform.glsl_map
-
-    Linear = False
-    Orthogonal = False
-    NonScaling = False
-    Isometric = False
-
-    map = PolarTransform.imap
-    imap = PolarTransform.map
-
-    def inverse(self):
-        return PolarTransform()
 
 
 class BilinearTransform(BaseTransform):

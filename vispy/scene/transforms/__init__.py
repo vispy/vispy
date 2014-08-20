@@ -5,6 +5,6 @@
 from .base_transform import BaseTransform  # noqa
 from .linear import (NullTransform, STTransform, SRTTransform,  # noqa
                      AffineTransform,  PerspectiveTransform)  # noqa
-from .nonlinear import LogTransform, PolarTransform, InvPolarTransform  # noqa
+from .nonlinear import LogTransform, PolarTransform  # noqa
 from .chain import ChainTransform  # noqa
 from ._util import arg_to_array, arg_to_vec4, TransformCache  # noqa

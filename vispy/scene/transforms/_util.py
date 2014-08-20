@@ -11,8 +11,8 @@ def arg_to_array(func):
     """
     Decorator to convert argument to array.
     """
-    def fn(self, arg):
-        return func(self, np.array(arg))
+    def fn(self, arg, *args, **kwds):
+        return func(self, np.array(arg), *args, **kwds)
     return fn
 
 
