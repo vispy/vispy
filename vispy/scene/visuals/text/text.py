@@ -18,7 +18,7 @@ from ....util.fonts import _load_glyph
 from ...shaders import ModularProgram
 from ....color import Color
 from ..visual import Visual
-
+from ...transforms import STTransform
 
 class TextureFont(object):
     """Gather a set of glyphs relative to a given font name and size
@@ -174,32 +174,29 @@ class Text(Visual):
     """Visual that displays text"""
 
     VERTEX_SHADER = """
-        uniform sampler2D u_font_atlas;
-        uniform vec4      u_color;
+        uniform vec2 u_scale;  // to scale to pixel units
+        attribute vec2 a_position; // in point units
+        attribute vec2 a_texcoord;
 
-        attribute vec2  a_position;
-        attribute vec2  a_texcoord;
-
-        varying vec2  v_texcoord;
-        varying vec4  v_color;
-
+        varying vec2 v_texcoord;
+        
         void main(void) {
-            v_color = u_color;
-            gl_Position = $transform(vec4(a_position, 0.0, 1.0));
+            vec4 pos = $transform(vec4(0.0, 0.0, 0.0, 1.0));
+            gl_Position = pos + vec4(a_position * u_scale, 0, 0);
+            //gl_Position = $transform(vec4(a_position, 0.0, 1.0));
             v_texcoord = a_texcoord;
         }
         """
 
     FRAGMENT_SHADER = """
         uniform sampler2D u_font_atlas;
-        uniform vec4      u_color;
+        uniform vec4 u_color;
 
-        varying vec2  v_texcoord;
-        varying vec4  v_color;
+        varying vec2 v_texcoord;
         const float center = 0.5;
 
         void main(void) {
-            vec4 color = v_color;
+            vec4 color = u_color;
             vec2 uv = v_texcoord.xy;
             vec4 rgb = texture2D(u_font_atlas, uv);
             float distance = rgb.r;
@@ -224,6 +221,7 @@ class Text(Visual):
         self._vertices = None
         self._anchors = (anchor_x, anchor_y)
         self.text = text
+        self.point_size = 14
         self._color = Color(color).rgba
         Visual.__init__(self, **kwargs)
 
@@ -237,7 +235,35 @@ class Text(Visual):
         assert isinstance(text, string_types)
         self._text = text
         self._vertices = None
-
+    
+    @property
+    def point_size(self):
+        """ The point size of the text
+        """
+        return self._point_size
+    
+    @point_size.setter
+    def point_size(self, size):
+        self._point_size = max(0.0, float(size))
+    
+    @property
+    def pos(self):
+        """ The potision of the text
+        """
+        if isinstance(self.transform, STTransform):
+            return tuple(self.transform.translate[:2])
+        else:
+            return None
+    
+    @pos.setter
+    def pos(self, pos):
+        pos = [float(p) for p in pos]
+        assert len(pos) == 2
+        if pos != self.pos:
+            if not isinstance(self.transform, STTransform):
+                self.transform = STTransform()
+            self.transform.translate = pos[0], pos[1], 0, 0
+    
     def draw(self, event=None):
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
@@ -252,11 +278,17 @@ class Text(Visual):
                    np.arange(0, 4*len(self._text), 4,
                              dtype=np.uint32)[:, np.newaxis])
             self._ib = IndexBuffer(idx.ravel())
-
+        
         if event is not None:
+            # todo: @Luke How can we prevent recompilation on each draw?
             xform = event.render_transform.shader_map()
             self._program.vert['transform'] = xform
+            px_scale = event.canvas.framebuffer.transform.scale
+            
         self._program.prepare()  # Force ModularProgram to set shaders
+    
+        ps = self._point_size / 72.0 * 92.0  # todo: @Eric what units is _vertices?
+        self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
         self._program['u_color'] = self._color
         self._program['u_font_atlas'] = self._font._atlas
         self._program.bind(self._vertices)

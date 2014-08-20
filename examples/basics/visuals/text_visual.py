@@ -4,7 +4,6 @@
 
 from vispy import scene, gloo
 from vispy.scene.visuals import Text
-from vispy.scene.transforms import STTransform
 
 
 class Canvas(scene.SceneCanvas):
@@ -12,7 +11,6 @@ class Canvas(scene.SceneCanvas):
         scene.SceneCanvas.__init__(self, title='Glyphs', keys='interactive')
         self.point_size = 48.
         self.text = Text('', bold=True)
-        self.text.transform = STTransform()
         self.apply_zoom()
 
     def on_draw(self, event):
@@ -30,10 +28,9 @@ class Canvas(scene.SceneCanvas):
         self.apply_zoom()
 
     def apply_zoom(self):
-        scale = (self.point_size / 72.) * 92.  # Convert from pt to px
         self.text.text = '%s pt' % round(self.point_size, 1)
-        self.text.transform.scale = (scale, -scale, 1.)
-        self.text.transform.translate = self.size[0] // 2, self.size[1] // 2
+        self.text.point_size = self.point_size
+        self.text.pos = self.size[0] // 2, self.size[1] // 2
         self.update()
 
 if __name__ == '__main__':
