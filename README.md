@@ -38,6 +38,23 @@ Vispy runs on Python 2.6+ and Python 3.3+ and depends on NumPy. You also need a 
 As Vispy is under heavy development at this time, we highly recommend you to use the development version on Github  (master branch). You need to clone the repository and install Vispy with `python setup.py install`.
 
 
+Structure of Vispy
+------------------
+
+Currently, the main subpackages are:
+
+* **app**: integrates an event processing system and offers a unified interface on top of many window backends (qt, GLUT, glfw, and others). Relatively stable API.
+* **gloo**: a Pythonic, object-oriented interface to OpenGL. Relatively stable API.
+* **mpl_plot**: an OpenGL backend for matplotlib. Experimental.
+* **scene**: the core of Vispy implements four systems for organizing graphical objects within the scene. Under heavy development and still experimental.
+    * **Visuals** are graphical abstractions representing 2D shapes, 3D meshes, text, etc.
+    * **Transforms** implement 2D/3D transformations implemented on both CPU and GPU.
+    * **Shaders** implements a shader composition system for plumbing together snippets of GLSL code.
+    * The **scene graph** tracks all objects within a transformation graph.
+
+The API of all public interfaces are subject to change in the future, although **app** and **gloo** are *relatively* stable at this point.
+
+
 About us
 --------
 
