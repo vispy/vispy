@@ -17,11 +17,8 @@ from ...util.ptime import time
 
 try:
     # Inspired by http://www.mesa3d.org/egl.html, but these don't fix it :(
-    #from os import environ
-    #environ['EGL_LOG_LEVEL'] = 'debug'
-    #environ['EGL_PLATFORM'] = 'fbdev'
-    #environ['EGL_DRIVER'] = 'egl_gallium'
-    #environ['EGL_SOFTWARE'] = 'true'
+    from os import environ
+    environ['EGL_SOFTWARE'] = 'true'
     from ...ext import egl
     _EGL_DISPLAY = egl.eglGetDisplay()
     egl.eglInitialize(_EGL_DISPLAY)
@@ -83,7 +80,7 @@ class ApplicationBackend(BaseApplicationBackend):
             self._timers.append(timer)
 
     def _vispy_get_backend_name(self):
-        return 'Glfw'
+        return 'egl'
 
     def _vispy_process_events(self):
         for timer in self._timers:
@@ -118,7 +115,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 class CanvasBackend(BaseCanvasBackend):
 
-    """ Glfw backend for Canvas abstract class."""
+    """ EGL backend for Canvas abstract class."""
 
     def __init__(self, **kwargs):
         BaseCanvasBackend.__init__(self, capability, SharedContext)
