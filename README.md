@@ -43,7 +43,7 @@ Structure of Vispy
 
 Currently, the main subpackages are:
 
-* **app**: integrates an event processing system and offers a unified interface on top of many window backends (qt, GLUT, glfw, and others). Relatively stable API.
+* **app**: integrates an event processing system and offers a unified interface on top of many window backends (Qt4, wx, glfw, GLUT, [IPython notebook](http://ipython.org/notebook.html) with/without WebGL, and others). Relatively stable API.
 * **gloo**: a Pythonic, object-oriented interface to OpenGL. Relatively stable API.
 * **mpl_plot**: an OpenGL backend for matplotlib. Experimental.
 * **scene**: the core of Vispy implements four systems for organizing graphical objects within the scene. Under heavy development and still experimental.
