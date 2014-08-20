@@ -207,7 +207,7 @@ class Text(Visual):
         """
 
     def __init__(self, text, color='black', bold=False,
-                 italic=False, face='OpenSans', point_size=12, pos=(0,0),
+                 italic=False, face='OpenSans', font_size=12, pos=(0,0),
                  anchor_x='center', anchor_y='center', **kwargs):
         Visual.__init__(self, **kwargs)
         # Check input
@@ -226,7 +226,7 @@ class Text(Visual):
         # Init text properties
         self.color = color
         self.text = text
-        self.point_size = point_size
+        self.font_size = font_size
         self.pos = pos
     
     @property
@@ -241,14 +241,14 @@ class Text(Visual):
         self._vertices = None
     
     @property
-    def point_size(self):
-        """ The point size of the text
+    def font_size(self):
+        """ The font size (in points) of the text
         """
-        return self._point_size
+        return self._font_size
     
-    @point_size.setter
-    def point_size(self, size):
-        self._point_size = max(0.0, float(size))
+    @font_size.setter
+    def font_size(self, size):
+        self._font_size = max(0.0, float(size))
     
     @property
     def color(self):
@@ -262,7 +262,7 @@ class Text(Visual):
     
     @property
     def pos(self):
-        """ The potision of the text
+        """ The position of the text anchor in the local coordinate frame
         """
         if isinstance(self.transform, STTransform):
             return tuple(self.transform.translate[:2])
@@ -299,7 +299,7 @@ class Text(Visual):
             px_scale = event.canvas.framebuffer.transform.scale
         
         self._program.prepare()  # Force ModularProgram to set shaders
-        ps = self._point_size / 72.0 * 92.0  # todo: @Eric what units is _vertices?
+        ps = self._font_size / 72.0 * 92.0  # todo: @Eric what units is _vertices?
         self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
         self._program['u_color'] = self._color.rgba
         self._program['u_font_atlas'] = self._font._atlas
