@@ -28,7 +28,7 @@ def glTexImage3D(target, level, internalformat, format, type, pixels):
     _gl = _check_pyopengl_3D()
     border = 0
     assert isinstance(pixels, (tuple, list))  # the only way we use this now
-    width, height, depth = pixels
+    depth, height, width = pixels
     _gl.glTexImage3D(target, level, internalformat,
                      width, height, depth, border, format, type, None)
 
@@ -755,7 +755,7 @@ class Texture3D(BaseTexture):
         logger.debug("GPU: Resizing texture(%sx%sx%s)" %
                      (self.depth, self.height, self.width))
         glTexImage3D(self.target, 0, self._format, self._format,
-                     self._gtype, (self.width, self.height, self.depth))
+                     self._gtype, (self.depth, self.height, self.width))
 
     def _update_data(self):
         """ Texture update on GPU """
