@@ -207,24 +207,28 @@ class Text(Visual):
         """
 
     def __init__(self, text, color='black', bold=False,
-                 italic=False, face='OpenSans',
+                 italic=False, face='OpenSans', point_size=12, pos=(0,0),
                  anchor_x='center', anchor_y='center', **kwargs):
+        Visual.__init__(self, **kwargs)
+        # Check input
         assert isinstance(text, string_types)
         valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
         _check_valid('anchor_y', anchor_y, valid_keys)
         valid_keys = ('left', 'center', 'right')
         _check_valid('anchor_x', anchor_x, valid_keys)
+        # Init font handling stuff
         self._font_manager = FontManager()
         self._font = self._font_manager.get_font(face, bold, italic)
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
         self._vertices = None
         self._anchors = (anchor_x, anchor_y)
+        # Init text properties
+        self.color = color
         self.text = text
-        self.point_size = 14
-        self._color = Color(color).rgba
-        Visual.__init__(self, **kwargs)
-
+        self.point_size = point_size
+        self.pos = pos
+    
     @property
     def text(self):
         """The text string"""
@@ -245,6 +249,16 @@ class Text(Visual):
     @point_size.setter
     def point_size(self, size):
         self._point_size = max(0.0, float(size))
+    
+    @property
+    def color(self):
+        """ The color of the text
+        """
+        return self._color
+    
+    @color.setter
+    def color(self, color):
+        self._color = Color(color)
     
     @property
     def pos(self):
@@ -289,7 +303,7 @@ class Text(Visual):
     
         ps = self._point_size / 72.0 * 92.0  # todo: @Eric what units is _vertices?
         self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
-        self._program['u_color'] = self._color
+        self._program['u_color'] = self._color.rgba
         self._program['u_font_atlas'] = self._font._atlas
         self._program.bind(self._vertices)
         set_state(blend=True, depth_test=False,
