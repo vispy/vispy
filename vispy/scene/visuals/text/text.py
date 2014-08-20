@@ -7,6 +7,9 @@
 ##############################################################################
 # Load font into texture
 
+from __future__ import division
+
+
 import numpy as np
 from copy import deepcopy
 
@@ -18,7 +21,6 @@ from ....util.fonts import _load_glyph
 from ...shaders import ModularProgram
 from ....color import Color
 from ..visual import Visual
-from ...transforms import STTransform
 
 
 class TextureFont(object):
@@ -296,8 +298,8 @@ class Text(Visual):
             px_scale = event.canvas.framebuffer.transform.scale
         
         self._program.prepare()  # Force ModularProgram to set shaders
-        # todo: @Eric what units is _vertices?
-        ps = self._font_size / 72.0 * 92.0
+        # todo: do some testing to verify that the scaling is correct
+        ps = (self._font_size / 72) * 92
         self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
         self._program['u_pos'] = self._pos
         self._program['u_color'] = self._color.rgba
