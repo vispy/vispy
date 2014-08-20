@@ -33,9 +33,9 @@ try:
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
-    # XXX restore "testable" once it works properly, and remove from
-    # ignore list in .coveragerc
-    available, testable, why_not = True, False, 'Not ready for testing'
+    # XXX restore "testable" and "available" once it works properly, and
+    # remove from ignore list in .coveragerc
+    available, testable, why_not = False, False, 'Not ready for testing'
     which = 'EGL ' + str(version)
 
 
