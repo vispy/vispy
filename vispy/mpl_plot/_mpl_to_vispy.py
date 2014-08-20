@@ -24,7 +24,7 @@ from ..util.dataio import read_png
 
 from ..scene.visuals import LineVisual, Markers, Text, Image
 from ..scene.widgets import ViewBox
-from ..scene.transforms import NullTransform, AffineTransform, STTransform
+from ..scene.transforms import STTransform
 from ..scene import SceneCanvas
 
 
@@ -36,10 +36,7 @@ def _check_coords(coords, valid):
 class VispyRenderer(Renderer):
     def __init__(self, *args, **kwargs):
         self._line_count = 0
-        self._text_count = 0
         self._axs = {}
-        self._texts = []
-        self._nt = NullTransform()
         Renderer.__init__(self, *args, **kwargs)
 
     def open_figure(self, fig, props):
@@ -78,15 +75,6 @@ class VispyRenderer(Renderer):
         for ax in self._axs.values():
             ax['vb'].pos = (w * ax['bounds'][0], h * ax['bounds'][1])
             ax['vb'].size = (w * ax['bounds'][2], h * ax['bounds'][3])
-        for text in self._texts:
-            xform = AffineTransform()
-            vb = text['vb']
-            scale = text['size'] / 72. * self._dpi  # pixels
-            xform.scale([scale * vb.camera.rect.size[0] / float(vb.size[0]),
-                         scale * vb.camera.rect.size[1] / float(vb.size[1])])
-            xform.rotate(text['rotation'], [0, 0, 1])
-            xform.translate(text['position'])
-            text['text'].transform = xform
 
     def close_axes(self, ax):
         # self._axs.pop(ax)['vb'].parent = []
@@ -118,13 +106,10 @@ class VispyRenderer(Renderer):
         color = Color(style['color'])
         color.alpha = style['alpha']
         color = color.rgba
-        text = Text(text, color=color,
+        text = Text(text, color=color, pos=position,
+                    font_size=style['fontsize'], rotation=style['rotation'],
                     anchor_x=style['halign'], anchor_y=style['valign'])
         text.parent = self._mpl_ax_to(mplobj).scene
-        self._texts.append(dict(position=[position[0], position[1], 1.],
-                                vb=self._mpl_ax_to(mplobj),
-                                text=text, rotation=style['rotation'],
-                                size=style['fontsize']))
 
     def draw_markers(self, data, coordinates, style, label, mplobj=None):
         _check_coords(coordinates, 'data')
@@ -162,7 +147,8 @@ class VispyRenderer(Renderer):
 
     # def draw_path_collection(...) TODO add this for efficiency
 
-# https://github.com/mpld3/mplexporter/blob/master/mplexporter/renderers/base.py
+# https://github.com/mpld3/mplexporter/blob/master/
+#                    mplexporter/renderers/base.py
 
 
 def _mpl_to_vispy(fig):
