@@ -8,8 +8,7 @@ import numpy as np
 from . import gl
 from .globject import GLObject
 from .buffer import VertexBuffer
-from .texture import Texture2D
-from .texture import Texture3D
+from .texture import Texture, Texture2D, Texture3D
 from .texture import GL_SAMPLER_3D
 from .framebuffer import RenderBuffer
 from ..util import logger
@@ -233,12 +232,8 @@ class Uniform(Variable):
         if self._gtype in (gl.GL_SAMPLER_2D, GL_SAMPLER_3D):
             logger.debug("GPU: Active texture is %d" % self._unit)
             gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
-            if self.data is not None:
-                try:
-                    self.data.activate()
-                except Exception as exp:
-                    raise RuntimeError('Could not activate texture %s: %s'
-                                       % (self._unit, str(exp)))
+            if isinstance(self._data, Texture):
+                self._data.activate()
 
         # Update if necessary. OpenGL stores uniform values at the Program
         # object, so they only have to be set once.

@@ -294,13 +294,11 @@ class Text(Visual):
             self._ib = IndexBuffer(idx.ravel())
         
         if event is not None:
-            # todo: @Luke How can we prevent recompilation on each draw?
             xform = event.render_transform.shader_map()
             self._program.vert['transform'] = xform
             px_scale = event.canvas.framebuffer.transform.scale
-            
+        
         self._program.prepare()  # Force ModularProgram to set shaders
-    
         ps = self._point_size / 72.0 * 92.0  # todo: @Eric what units is _vertices?
         self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
         self._program['u_color'] = self._color.rgba
