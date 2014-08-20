@@ -16,7 +16,12 @@ from ...util.ptime import time
 # -------------------------------------------------------------------- init ---
 
 try:
-    # Inspired by http://www.mesa3d.org/egl.html, but these don't fix it :(
+    # Inspired by http://www.mesa3d.org/egl.html
+    # This is likely necessary on Linux since proprietary drivers
+    # (e.g., NVIDIA) are unlikely to provide EGL support for now.
+    # XXX TODO: Add use_gl('es2') and somehow incorporate here.
+    # Also would be good to have us_gl('es3'), since libGLESv2.so on linux
+    # seems to support both.
     from os import environ
     environ['EGL_SOFTWARE'] = 'true'
     from ...ext import egl
@@ -28,7 +33,9 @@ try:
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
-    available, testable, why_not = True, True, None
+    # XXX restore "testable" once it works properly, and remove from
+    # ignore list in .coveragerc
+    available, testable, why_not = True, False, 'Not ready for testing'
     which = 'EGL ' + str(version)
 
 
