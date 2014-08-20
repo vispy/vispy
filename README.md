@@ -25,7 +25,7 @@ Vispy is a young library under heavy development at this time. It targets two ca
 1. **Users knowing OpenGL**, or willing to learn OpenGL, who want to create beautiful and fast interactive 2D/3D visualizations in Python as easily as possible.
 2. **Scientists without any knowledge of OpenGL**, who are seeking a high-level, high-performance plotting toolkit.
 
-If you're in the first category, you can already start using Vispy. Vispy offers a Pythonic, NumPy-aware, user-friendly interface for OpenGL ES 2.0 called **gloo**. You can focus on writing your GLSL code instead of dealing with the complicated OpenGL API — Vispy takes care of that automatically for you.
+If you're in the first category, you can already start using Vispy. Vispy offers a Pythonic, NumPy-aware, user-friendly interface for OpenGL ES 2.0 called **gloo**. You can focus on writing your GLSL code instead of dealing with the complicated OpenGL API - Vispy takes care of that automatically for you.
 
 If you're in the second category, we're starting to build experimental high-level plotting interfaces. Notably, Vispy now ships a very basic and experimental OpenGL backend for matplotlib.
 
