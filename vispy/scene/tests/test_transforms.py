@@ -202,6 +202,29 @@ def test_affine_mapping():
     assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
 
 
+def test_inverse():
+    m = np.random.normal(size=(4, 4))
+    transforms = [
+        NT(),
+        ST(scale=(1e-4, 2e5), translate=(10, -6e9)),
+        AT(m),
+    ]
+        
+    np.random.seed(0)
+    N = 20
+    x = np.random.normal(size=(N, 3)) 
+    pw = np.random.normal(size=(N, 3), scale=3)
+    pos = x * 10 ** pw
+    
+    for tr in transforms:
+        assert np.allclose(pos, tr.inverse.map(tr.map(pos))[:,:3])
+        
+    # log transform only works on positive values
+    #abs_pos = np.abs(pos)
+    #tr = LT(base=(2, -5, 0))
+    #assert np.allclose(pos, tr.inverse.map(tr.map(pos))[:,:3])
+    
+
 if __name__ == '__main__':
     for key in [key for key in globals()]:
         if key.startswith('test_'):

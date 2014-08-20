@@ -13,6 +13,6 @@ __all__ = ['NullTransform', 'STTransform', 'AffineTransform',
 from .base_transform import BaseTransform  # noqa
 from .linear import (NullTransform, STTransform,  # noqa
                      AffineTransform,  PerspectiveTransform)  # noqa
-from .nonlinear import LogTransform, PolarTransform, InvPolarTransform  # noqa
+from .nonlinear import LogTransform, PolarTransform  # noqa
 from .chain import ChainTransform  # noqa
 from ._util import arg_to_array, arg_to_vec4, TransformCache  # noqa
