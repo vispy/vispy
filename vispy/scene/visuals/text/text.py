@@ -7,6 +7,9 @@
 ##############################################################################
 # Load font into texture
 
+from __future__ import division
+
+
 import numpy as np
 from copy import deepcopy
 
@@ -174,32 +177,30 @@ class Text(Visual):
     """Visual that displays text"""
 
     VERTEX_SHADER = """
-        uniform sampler2D u_font_atlas;
-        uniform vec4      u_color;
+        uniform vec2 u_pos;  // anchor position
+        uniform vec2 u_scale;  // to scale to pixel units
+        attribute vec2 a_position; // in point units
+        attribute vec2 a_texcoord;
 
-        attribute vec2  a_position;
-        attribute vec2  a_texcoord;
-
-        varying vec2  v_texcoord;
-        varying vec4  v_color;
-
+        varying vec2 v_texcoord;
+        
         void main(void) {
-            v_color = u_color;
-            gl_Position = $transform(vec4(a_position, 0.0, 1.0));
+            vec4 pos = $transform(vec4(u_pos, 0.0, 1.0));
+            gl_Position = pos + vec4(a_position * u_scale, 0, 0);
+            //gl_Position = $transform(vec4(a_position, 0.0, 1.0));
             v_texcoord = a_texcoord;
         }
         """
 
     FRAGMENT_SHADER = """
         uniform sampler2D u_font_atlas;
-        uniform vec4      u_color;
+        uniform vec4 u_color;
 
-        varying vec2  v_texcoord;
-        varying vec4  v_color;
+        varying vec2 v_texcoord;
         const float center = 0.5;
 
         void main(void) {
-            vec4 color = v_color;
+            vec4 color = u_color;
             vec2 uv = v_texcoord.xy;
             vec4 rgb = texture2D(u_font_atlas, uv);
             float distance = rgb.r;
@@ -210,23 +211,28 @@ class Text(Visual):
         """
 
     def __init__(self, text, color='black', bold=False,
-                 italic=False, face='OpenSans',
+                 italic=False, face='OpenSans', font_size=12, pos=(0, 0),
                  anchor_x='center', anchor_y='center', **kwargs):
+        Visual.__init__(self, **kwargs)
+        # Check input
         assert isinstance(text, string_types)
         valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
         _check_valid('anchor_y', anchor_y, valid_keys)
         valid_keys = ('left', 'center', 'right')
         _check_valid('anchor_x', anchor_x, valid_keys)
+        # Init font handling stuff
         self._font_manager = FontManager()
         self._font = self._font_manager.get_font(face, bold, italic)
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
         self._vertices = None
         self._anchors = (anchor_x, anchor_y)
+        # Init text properties
+        self.color = color
         self.text = text
-        self._color = Color(color).rgba
-        Visual.__init__(self, **kwargs)
-
+        self.font_size = font_size
+        self.pos = pos
+    
     @property
     def text(self):
         """The text string"""
@@ -237,7 +243,39 @@ class Text(Visual):
         assert isinstance(text, string_types)
         self._text = text
         self._vertices = None
-
+    
+    @property
+    def font_size(self):
+        """ The font size (in points) of the text
+        """
+        return self._font_size
+    
+    @font_size.setter
+    def font_size(self, size):
+        self._font_size = max(0.0, float(size))
+    
+    @property
+    def color(self):
+        """ The color of the text
+        """
+        return self._color
+    
+    @color.setter
+    def color(self, color):
+        self._color = Color(color)
+    
+    @property
+    def pos(self):
+        """ The position of the text anchor in the local coordinate frame
+        """
+        return self._pos
+    
+    @pos.setter
+    def pos(self, pos):
+        pos = [float(p) for p in pos]
+        assert len(pos) == 2
+        self._pos = tuple(pos)
+    
     def draw(self, event=None):
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
@@ -252,12 +290,22 @@ class Text(Visual):
                    np.arange(0, 4*len(self._text), 4,
                              dtype=np.uint32)[:, np.newaxis])
             self._ib = IndexBuffer(idx.ravel())
-
+        
         if event is not None:
             xform = event.render_transform.shader_map()
             self._program.vert['transform'] = xform
+            px_scale = event.canvas.framebuffer.transform.scale
+        else:
+            self._program.vert['transform'] = self.transform.shader_map()
+            # Rather arbitrary scale. With size=12 it takes up ~1/10 of space
+            px_scale = 0.01, 0.01
+        
         self._program.prepare()  # Force ModularProgram to set shaders
-        self._program['u_color'] = self._color
+        # todo: do some testing to verify that the scaling is correct
+        ps = (self._font_size / 72) * 92
+        self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
+        self._program['u_pos'] = self._pos
+        self._program['u_color'] = self._color.rgba
         self._program['u_font_atlas'] = self._font._atlas
         self._program.bind(self._vertices)
         set_state(blend=True, depth_test=False,
