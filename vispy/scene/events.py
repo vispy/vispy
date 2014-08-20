@@ -22,6 +22,7 @@ class SceneEvent(Event):
         # Init stacks
         self._stack = []  # list of entities
         self._viewbox_stack = []
+        self._doc_stack = []
         if transform_cache is None:
             transform_cache = TransformCache()
         self._transform_cache = transform_cache
@@ -51,16 +52,27 @@ class SceneEvent(Event):
     def push_entity(self, entity):
         """ Push an entity on the stack. """
         self._stack.append(entity)
+        doc = entity.document
+        if doc is not None:
+            self.push_document(doc)
 
     def pop_entity(self):
         """ Pop an entity from the stack. """
         return self._stack.pop(-1)
+        if entity.document is not None:
+            self.pop_document(doc)
 
     def push_viewbox(self, viewbox):
         self._viewbox_stack.append(viewbox)
 
     def pop_viewbox(self):
-        self._viewbox_stack.pop(-1)
+        return self._viewbox_stack.pop(-1)
+
+    def push_document(self, doc):
+        self._doc_stack.append(doc)
+        
+    def pop_document(self):
+        return self._doc_stack.pop(-1)
 
     def push_viewport(self, viewport):
         """ Push a viewport (x, y, w, h) on the stack. It is the
@@ -85,53 +97,130 @@ class SceneEvent(Event):
         """ Pop an FBO from the stack.
         """
         return self.canvas.pop_fbo()
+
+
+    #
+    # Begin transforms
+    #
     
-    def entity_transform(self, entity):
-        """ Return transform that maps from local coordinate system of *entity*
-        to the root of the scenegraph.
-        """
-        # find where entity's ancestry first intersects the current path
-        path = []
-        while True:
-            if entity is None:
-                path.insert(0, entity)
-                break
-            elif entity not in self._stack:
-                path.insert(0, entity)
+    # TODO: entity_transform should map from local to *entity*
+    #def entity_transform(self, entity):
+        #""" Return transform that maps from local coordinate system of *entity*
+        #to the root of the scenegraph.
+        #"""
+        ## find where entity's ancestry first intersects the current path
+        #path = []
+        #while True:
+            #if entity is None:
+                #path.insert(0, entity)
+                #break
+            #elif entity not in self._stack:
+                #path.insert(0, entity)
                 
-                # todo: if this fails, raise a nice exception explaining
-                #       the problem.
-                entity = entity.parent
-            else:
-                ind = self._stack.index(entity)
-                path = self._stack[:ind+1] + path
-                break
+                ## todo: if this fails, raise a nice exception explaining
+                ##       the problem.
+                #entity = entity.parent
+            #else:
+                #ind = self._stack.index(entity)
+                #path = self._stack[:ind+1] + path
+                #break
         
-        return self._transform_cache.get(path)
+        #return self._transform_cache.get(path)
+
+    @property
+    def document(self):
+        """ Return entity for the current document coordinate system.
+        """
+        return self._doc_stack[-1]
+        
+    @property
+    def pixels(self):
+        """ Return entity for the current pixel coordinate system.
+        """
+        
+    @property
+    def framebuffer(self):
+        """ Return entity for the current framebuffer coordinate system.
+        """
+        
+    def entity_transform(self, map_to=None, map_from=None):
+        """ Return the transform mapping *map_from* to *map_to*, using the
+        current path to resolve parent ambiguities if needed. 
+        
+        By default, *map_to* is the normalized device coordinate system,
+        and *map_from* is the current top entity on the stack.
+        """
     
+    def doc_transform(self, entity=None):
+        """ Return the transform that maps from *entity* to the current
+        document coordinate system. 
+        
+        If *entity* is not specified, then the top entity on the stack is used.
+        """
+        return self.entity_transform(map_to=self.document, map_from=entity)
+                
     def map_entity_to_doc(self, entity, obj):
-        return self.entity_transform(entity).map(obj)
+        return self.doc_transform(entity).map(obj)
     
     def map_doc_to_entity(self, entity, obj):
-        return self.entity_transform(entity).imap(obj)
+        return self.doc_transform(entity).imap(obj)
+                
+    def map_to_doc(self, obj):
+        return self.doc_transform().map(obj)
+    
+    def map_from_doc(self, obj):
+        return self.doc_transform().imap(obj)
+                
+    def pixel_transform(self, entity=None):
+        """ Return the transform that maps from *entity* to the current
+        pixel coordinate system. 
+        
+        If *entity* is not specified, then the top entity on the stack is used.
+        """
+        return self.entity_transform(map_to=self.pixels, map_from=entity)
+                
+    def map_entity_to_pixel(self, entity, obj):
+        return self.pixel_transform(entity).map(obj)
+    
+    def map_pixel_to_entity(self, entity, obj):
+        return self.pixel_transform(entity).imap(obj)
+                
+    def map_to_pixel(self, obj):
+        return self.pixel_transform().map(obj)
+    
+    def map_from_pixel(self, obj):
+        return self.pixel_transform().imap(obj)
+                
+    def fb_transform(self, entity=None):
+        """ Return the transform that maps from *entity* to the current
+        framebuffer coordinate system. 
+        
+        If *entity* is not specified, then the top entity on the stack is used.
+        """
+        return self.entity_transform(map_to=self.framebuffer, map_from=entity)
         
     def map_entity_to_fb(self, entity, obj):
-        tr = self.canvas.fb_transform * self.entity_transform(entity)
-        return tr.map(obj)
+        return self.fb_transform(entity).map(obj)
     
     def map_fb_to_entity(self, entity, obj):
-        tr = self.canvas.fb_transform * self.entity_transform(entity)
-        return tr.imap(obj)
+        return self.fb_transform(entity).imap(obj)
+    
+    def map_to_fb(self, obj):
+        return self.fb_transform().map(obj)
+    
+    def map_from_fb(self, obj):
+        return self.fb_transform().imap(obj)
+                
     
     # todo: I think "root_transform" is more descriptive (LC)
     #       or perhaps "scene_transform"
-    @property
-    def full_transform(self):
-        """ The transform that maps from the current entity to the
-        top-level entity in the scene.
-        """
-        ind = self._stack.index(self.canvas.scene)
-        return self._transform_cache.get(self._stack[ind:])
+    #@property
+    #def full_transform(self):
+        #""" The transform that maps from the current entity to the
+        #top-level entity in the scene.
+        #"""
+        #ind = self._stack.index(self.canvas.scene)
+        #return self._transform_cache.get(self._stack[ind:])
 
     @property
     def render_transform(self):

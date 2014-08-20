@@ -55,6 +55,8 @@ class Entity(object):
         self._parents = set()
         if parent is not None:
             self.parents = parent
+            
+        self._document = None
 
         # Components that all entities in vispy have
         # todo: default transform should be trans-scale-rot transform
@@ -151,6 +153,24 @@ class Entity(object):
         self._children.remove(ent)
         self.events.children_change(removed=ent)
         ent.events.update.disconnect(self.events.update)
+
+    @property
+    def document(self):
+        """ The document property is an optional entity representing the 
+        coordinate system from which this entity should make physical 
+        measurements such as px, mm, pt, in, etc. This coordinate system 
+        should be used when determining line widths, font sizes, and any
+        other lengths specified in physical units.
+        
+        The default is None; in this case, a default document is used during
+        drawing (usually this is supplied by the SceneCanvas).
+        """
+        return self._document
+    
+    @document.setter
+    def document(self, doc):
+        self._document = doc
+        self.update()
 
     @property
     def transform(self):
@@ -258,25 +278,6 @@ class Entity(object):
         tr2 = cp.entity_transform(self)
         return tr2.inverse() * tr
         
-#     def on_draw(self, event):
-#         """
-#         Draw this entity, given that we are drawing through
-#         the given scene *path*.
-#         """
-#         pass
-
-#     def _process_draw_event(self, event):
-#         """
-#         Draw the entire tree of Entities beginning here.
-#         """
-#         for enter, path in self.walk():
-#             event._set_path(path)
-#             entity = path[-1]
-#             if enter:
-#                 entity.events.draw(event)
-#             else:
-#                 entity.events.children_drawn(event)
-
     def _process_mouse_event(self, event):
         """
         Propagate a mouse event through the scene tree starting at this Entity.
@@ -292,30 +293,6 @@ class Entity(object):
             event._set_path(path)
             entity = path[-1]
             getattr(entity.events, event.type)(event)
-
-#     def walk(self, path=None):
-#         """
-#         Return an iterator that walks the entire scene graph starting at this
-#         Entity. Yields (True, [list of Entities]) as each path in the
-#         scenegraph is visited. Yields (False, [list of Entities]) as each
-#         path is finished.
-#         """
-#         # TODO: need some control over the order..
-#         #if path is None:
-#             #path = []
-#             #yield path, self
-#         #if len(self.children) > 0:
-#             #path = path + [self]
-#             #yield path, self.children
-#             #for ch in self:
-#                 #for e in ch.walk(path):
-#                     #yield e
-#         path = (path or []) + [self]
-#         yield (True, path)
-#         for ch in self:
-#             for p in ch.walk(path):
-#                 yield p
-#         yield (False, path)
 
     def update(self):
         """

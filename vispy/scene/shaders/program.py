@@ -37,8 +37,9 @@ class ModularProgram(Program):
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.
         """
+        # TEMP function to fix sync issues for now
+        self._create()
         if self._need_build:
-            self._create()
             self._build()
             self._need_build = False
     
@@ -64,7 +65,7 @@ class ModularProgram(Program):
         
         # and continue.
         super(ModularProgram, self)._build()
-    
+
     def _activate_variables(self):
         # set all variables
         settable_vars = 'attribute', 'uniform'

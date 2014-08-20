@@ -65,6 +65,11 @@ l3 = scene.visuals.Line(pos=pos, color=color)
 l3.transform = scene.transforms.PolarTransform()
 b3.add(l3)
 
+from vispy.scene.visuals.grid import Grid
+grid = Grid(parent=b1.scene)
+
+
+
 import sys
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()
