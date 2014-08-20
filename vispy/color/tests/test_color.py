@@ -33,6 +33,7 @@ def test_color_array():
     assert_array_equal(x.rgba[:], x[:].rgba)
     assert_array_equal(x.rgba[0], x[0].rgba.squeeze())
     assert_array_equal(x.rgba[1:3], x[1:3].rgba)
+    assert_raises(ValueError, x.__getitem__, (0, 1))
     # Test ColorArray.__setitem__.
     x[0] = 0
     assert_array_equal(x.rgba[0, :], np.zeros(4))
@@ -41,6 +42,7 @@ def test_color_array():
     assert_array_equal(x[1].rgba, np.ones((1, 4)))
     x[:] = .5
     assert_array_equal(x.rgba, .5 * np.ones((3, 4)))
+    assert_raises(ValueError, x.__setitem__, (0, 1), 0)
 
 
 def test_color_interpretation():
