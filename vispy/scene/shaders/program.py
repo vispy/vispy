@@ -39,8 +39,9 @@ class ModularProgram(Program):
         """
         # TEMP function to fix sync issues for now
         self._create()
-        self._build()
-        self._need_build = False
+        if self._need_build:
+            self._build()
+            self._need_build = False
     
     def _source_changed(self, ev):
         logger.debug("ModularProgram source changed: %s" % self)
@@ -49,6 +50,8 @@ class ModularProgram(Program):
         self.changed()
         
     def _build(self):
+        import traceback
+        traceback.print_stack()
         logger.debug("Rebuild ModularProgram: %s" % self)
         #print("REBUILD")
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
