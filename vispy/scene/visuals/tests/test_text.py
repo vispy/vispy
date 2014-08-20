@@ -3,7 +3,6 @@ from nose.tools import assert_equal
 
 from vispy.app import Canvas
 from vispy.scene.visuals import Text
-from vispy.scene.transforms import STTransform
 from vispy import gloo
 from vispy.testing import requires_application
 
