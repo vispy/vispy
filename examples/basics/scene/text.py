@@ -8,13 +8,13 @@ how the point size is independent of scaling of viewbox and canvas.
 
 import numpy as np
 import vispy
-from vispy import scene, gloo
+from vispy import scene
 from vispy.scene.visuals import Text
 
 # Create canvas with a viewbox at the lower half
 canvas = scene.SceneCanvas()
 vb = scene.widgets.ViewBox(parent=canvas.scene, border_color='b')
-vb.pos = 1, canvas.size[1] // 2 -1
+vb.pos = 1, canvas.size[1] // 2 - 1
 vb.size = canvas.size[0] - 2, canvas.size[1] // 2 - 2
 vb.camera.rect = 0, 0, 1, 1
 

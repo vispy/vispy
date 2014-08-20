@@ -12,7 +12,7 @@ class Canvas(scene.SceneCanvas):
         self.font_size = 48.
         self.text = Text('', bold=True)
         self.apply_zoom()
-        self._timer = app.Timer(1.0/60, connect=lambda x:self.update)
+        self._timer = app.Timer(1.0 / 60, connect=lambda x: self.update)
         self._timer.start()
     
     def on_draw(self, event):

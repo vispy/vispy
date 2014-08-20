@@ -20,6 +20,7 @@ from ....color import Color
 from ..visual import Visual
 from ...transforms import STTransform
 
+
 class TextureFont(object):
     """Gather a set of glyphs relative to a given font name and size
 
@@ -207,7 +208,7 @@ class Text(Visual):
         """
 
     def __init__(self, text, color='black', bold=False,
-                 italic=False, face='OpenSans', font_size=12, pos=(0,0),
+                 italic=False, face='OpenSans', font_size=12, pos=(0, 0),
                  anchor_x='center', anchor_y='center', **kwargs):
         Visual.__init__(self, **kwargs)
         # Check input
@@ -299,7 +300,8 @@ class Text(Visual):
             px_scale = event.canvas.framebuffer.transform.scale
         
         self._program.prepare()  # Force ModularProgram to set shaders
-        ps = self._font_size / 72.0 * 92.0  # todo: @Eric what units is _vertices?
+        # todo: @Eric what units is _vertices?
+        ps = self._font_size / 72.0 * 92.0
         self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
         self._program['u_color'] = self._color.rgba
         self._program['u_font_atlas'] = self._font._atlas
