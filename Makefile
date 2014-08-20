@@ -43,6 +43,9 @@ nose_coverage: clean-test
 coverage_html:
 	python make coverage_html
 
+gallery:
+	python make images gallery
+
 test: clean-test
 	python make test full
 

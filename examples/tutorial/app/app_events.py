@@ -5,7 +5,8 @@ This example shows how to retrieve event information from a callback.
 You should see information displayed for any event you triggered.
 """
 
-from vispy import gloo, app
+from vispy import gloo, app, use
+use('pyqt4')  # can be another app backend name
 
 
 class Canvas(app.Canvas):
@@ -49,7 +50,7 @@ class Canvas(app.Canvas):
 
     def print_mouse_event(self, event, what):
         modifiers = ', '.join([key.name for key in event.modifiers])
-        print('%s - pos: %r, button: %i, modifiers: %s, delta: %r' %
+        print('%s - pos: %r, button: %s, modifiers: %s, delta: %r' %
               (what, event.pos, event.button, modifiers, event.delta))
 
     def on_draw(self, event):

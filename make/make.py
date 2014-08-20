@@ -191,7 +191,7 @@ class Maker:
         """ Create images (screenshots). Subcommands:
                 * gallery - make screenshots for the gallery
                 * test - make screenshots for testing
-                * upload - upload the images repository
+                * upload - upload the gallery images repository
         """
 
         # Clone repo for images if needed, make up-to-date otherwise
@@ -227,7 +227,7 @@ class Maker:
         # Prepare
         import imp
         from vispy.util.dataio import imsave
-        from vispy.gloo import _screenshot
+        from vispy.gloo.util import _screenshot
         examples_dir = op.join(ROOT_DIR, 'examples')
         gallery_dir = op.join(IMAGES_DIR, 'gallery')
 
@@ -478,6 +478,5 @@ def get_example_filenames(example_dir):
 if __name__ == '__main__':
     try:
         Maker(sys.argv)
-        # Maker(('bla', 'gallery'))
     finally:
         os.chdir(START_DIR)

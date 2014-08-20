@@ -115,7 +115,7 @@ class Canvas(app.Canvas):
                                          pan_y + 
                                          y0 * (1./scale_y - 1./scale_y_new))
             self.update()
-            
+
     def on_mouse_wheel(self, event):
         dx = np.sign(event.delta[1])*.05
         scale_x, scale_y = self.program['u_scale']     
@@ -123,7 +123,7 @@ class Canvas(app.Canvas):
                                     scale_y * math.exp(2.5*dx))
         self.program['u_scale'] = (scale_x_new, scale_y_new)
         self.update()
-        
+
 if __name__ == '__main__':
     c = Canvas()
     c.show()
