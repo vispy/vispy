@@ -70,6 +70,8 @@ else:
         from IPython.html.nbextensions import install_nbextension
     except Exception as exp:
         available, testable, why_not = False, False, str(exp)
+        DOMWidget = object  # Dummy objects
+        Unicode = Int = Float = Bool = lambda *args, **kwargs: None
     else:
         # Check if not GLUT, because that is going to be too unstable
         if 'glut' in _app.backend_module.__name__:
