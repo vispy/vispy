@@ -260,7 +260,7 @@ class Text(Visual):
         self.text = text
         self.font_size = font_size
         self.pos = pos
-        self.rotation = float(rotation)
+        self.rotation = rotation
 
     @property
     def text(self):
@@ -292,6 +292,16 @@ class Text(Visual):
     @color.setter
     def color(self, color):
         self._color = Color(color)
+
+    @property
+    def rotation(self):
+        """ The rotation of the text (clockwise, in degrees)
+        """
+        return self._rotation * 180. / np.pi
+
+    @rotation.setter
+    def rotation(self, rotation):
+        self._rotation = float(rotation) * np.pi / 180.
 
     @property
     def pos(self):
@@ -333,7 +343,7 @@ class Text(Visual):
         # todo: do some testing to verify that the scaling is correct
         ps = (self._font_size / 72) * 92
         self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
-        self._program['u_rotation'] = self.rotation * np.pi / 180.
+        self._program['u_rotation'] = self._rotation
         self._program['u_pos'] = self._pos
         self._program['u_color'] = self._color.rgba
         self._program['u_font_atlas'] = self._font._atlas
