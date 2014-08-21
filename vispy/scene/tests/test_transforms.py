@@ -221,8 +221,8 @@ def test_inverse():
         
     # log transform only works on positive values
     #abs_pos = np.abs(pos)
-    #tr = LT(base=(2, -5, 0))
-    #assert np.allclose(pos, tr.inverse.map(tr.map(pos))[:,:3])
+    #tr = LT(base=(2, 4.5, 0))
+    #assert np.allclose(abs_pos, tr.inverse.map(tr.map(abs_pos))[:,:3])
     
 
 if __name__ == '__main__':
