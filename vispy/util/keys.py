@@ -36,10 +36,13 @@ class Key(object):
         """ The primary name of the key.
         """
         return self._names[0]
-
+    
+    def __hash__(self):
+        return self._names[0].__hash__()
+    
     def __repr__(self):
         return "<Key %s>" % ', '.join([repr(v) for v in self._names])
-
+    
     def __eq__(self, other):
         if isinstance(other, string_types):
             return other.upper() in self._names_upper
