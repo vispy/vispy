@@ -2,14 +2,16 @@
 branch = True
 source = vispy
 #include = */vispy/*
+# Omit fonts/_quartz.py and _win32 for platform specificity
 omit =
     */setup.py
     */vispy/datasets/*
     */vispy/app/backends/_egl.py
     */vispy/gloo/gl/angle.py
     */vispy/gloo/gl/_angle.py
-    */vispy/testing/_runners.py
-    */vispy/testing/_coverage.py
-    */vispy/ext/*.py
+    */vispy/testing/*
+    */vispy/ext/*
     */vispy/util/geometry/_triangulation_debugger.py
     */examples/*
+    */vispy/util/fonts/_quartz.py
+    */vispy/util/fonts/_win32.py

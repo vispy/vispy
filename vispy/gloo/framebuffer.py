@@ -15,12 +15,11 @@ from ..util import logger
 
 class RenderBuffer(GLObject):
     """ Base class for render buffer object
-    
+
     Parameters
     ----------
-
     format : GLEnum
-        The buffer format: gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1, 
+        The buffer format: gl.GL_RGB565, gl.GL_RGBA4, gl.GL_RGB5_A1,
         gl.GL_DEPTH_COMPONENT16, or gl.GL_STENCIL_INDEX8
     shape : tuple of 2 ints
         Buffer shape (always two dimensional)
@@ -224,14 +223,13 @@ class FrameBuffer(GLObject):
         """Color buffer attachment"""
 
         target = gl.GL_COLOR_ATTACHMENT0
-        self._color_buffer = buffer
         if isinstance(buffer, (ColorBuffer, Texture2D)) or buffer is None:
+            self._color_buffer = buffer
             self._pending_attachments.append((target, buffer))
             self._need_attach = True
         else:
-            raise ValueError(
-                "Buffer must be a ColorBuffer, Texture2D or None. (got %s)"
-                % type(buffer))
+            raise TypeError("Buffer must be a ColorBuffer, Texture2D or None."
+                            " (got %s)" % type(buffer))
 
     @property
     def depth_buffer(self):
@@ -244,14 +242,13 @@ class FrameBuffer(GLObject):
         """Depth buffer attachment"""
 
         target = gl.GL_DEPTH_ATTACHMENT
-        self._depth_buffer = buffer
         if isinstance(buffer, (DepthBuffer, Texture2D)) or buffer is None:
+            self._depth_buffer = buffer
             self._pending_attachments.append((target, buffer))
             self._need_attach = True
         else:
-            raise ValueError(
-                "Buffer must be a DepthBuffer, Texture2D or None. (got %s)"
-                % type(buffer))
+            raise TypeError("Buffer must be a DepthBuffer, Texture2D or None."
+                            " (got %s)" % type(buffer))
 
     @property
     def stencil_buffer(self):
@@ -264,14 +261,13 @@ class FrameBuffer(GLObject):
         """Stencil buffer attachment"""
 
         target = gl.GL_STENCIL_ATTACHMENT
-        self._stencil_buffer = buffer
         if isinstance(buffer, StencilBuffer) or buffer is None:
+            self._stencil_buffer = buffer
             self._pending_attachments.append((target, buffer))
             self._need_attach = True
         else:
-            raise ValueError(
-                "Buffer must be a StencilBuffer, Texture2D or None. (got %s)"
-                % type(buffer))
+            raise TypeError("Buffer must be a StencilBuffer, Texture2D or "
+                            "None. (got %s)" % type(buffer))
 
     @property
     def shape(self):

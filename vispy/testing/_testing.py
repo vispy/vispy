@@ -139,7 +139,7 @@ def assert_is(expr1, expr2, msg=None):
 ###############################################################################
 # GL stuff
 
-def _has_pyopengl():
+def has_pyopengl():
     try:
         from OpenGL import GL  # noqa, analysis:ignore
     except Exception:
@@ -149,7 +149,7 @@ def _has_pyopengl():
 
 
 def requires_pyopengl():
-    return np.testing.dec.skipif(not _has_pyopengl(), 'Requires PyOpenGL')
+    return np.testing.dec.skipif(not has_pyopengl(), 'Requires PyOpenGL')
 
 
 ###############################################################################
@@ -230,8 +230,8 @@ def requires_img_lib():
     return np.testing.dec.skipif(not has_img_lib, 'imageio or PIL required')
 
 
-def requires_matplotlib(version='1.2'):
-    """Decorator for ensuring mpl is a usable version"""
+def has_matplotlib(version='1.2'):
+    """Determine if mpl is a usable version"""
     try:
         import matplotlib
     except Exception:
@@ -241,8 +241,7 @@ def requires_matplotlib(version='1.2'):
             has_mpl = True
         else:
             has_mpl = False
-    return np.testing.dec.skipif(not has_mpl, 'Requires matplotlib >= %s'
-                                 % version)
+    return has_mpl
 
 
 ###############################################################################

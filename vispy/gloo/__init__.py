@@ -50,7 +50,7 @@ from . import gl  # noqa
 from .globject import GLObject  # noqa
 from .buffer import VertexBuffer, IndexBuffer  # noqa
 from .initialize import gl_initialize  # noqa
-from .texture import Texture1D, Texture2D, TextureAtlas, Texture3D  # noqa
+from .texture import Texture2D, TextureAtlas, Texture3D  # noqa
 from .shader import VertexShader, FragmentShader  # noqa
 from .program import Program  # noqa
 from .framebuffer import (FrameBuffer, ColorBuffer, DepthBuffer,  # noqa

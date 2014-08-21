@@ -8,8 +8,7 @@ import numpy as np
 from . import gl
 from .globject import GLObject
 from .buffer import VertexBuffer
-from .texture import Texture, Texture2D, Texture3D
-from .texture import GL_SAMPLER_3D
+from .texture import BaseTexture, Texture2D, Texture3D, GL_SAMPLER_3D
 from .framebuffer import RenderBuffer
 from ..util import logger
 from .util import check_variable
@@ -179,21 +178,6 @@ class Uniform(Variable):
 
     def set_data(self, data):
         """ Set data (no upload) """
-
-        # Textures need special handling
-        # if self._gtype == gl.GL_SAMPLER_1D:
-        #     if isinstance(self._data, Texture1D):
-        #         self._data.set_data(data)
-
-        # Automatic texture creation if required
-        #     elif not isinstance(data,Texture1D):
-        #         data = np.array(data,copy=False)
-        #         if data.dtype in [np.float16, np.float32, np.float64]:
-        #             self._data = Texture1D(data=data.astype(np.float32))
-        #         else:
-        #             self._data = Texture1D(data=data.astype(np.uint8))
-        #     else:
-        #         self._data = data
         if self._gtype == gl.GL_SAMPLER_2D:
             if isinstance(data, Texture2D):
                 self._data = data
@@ -232,7 +216,7 @@ class Uniform(Variable):
         if self._gtype in (gl.GL_SAMPLER_2D, GL_SAMPLER_3D):
             logger.debug("GPU: Active texture is %d" % self._unit)
             gl.glActiveTexture(gl.GL_TEXTURE0 + self._unit)
-            if isinstance(self._data, Texture):
+            if isinstance(self._data, BaseTexture):
                 self._data.activate()
 
         # Update if necessary. OpenGL stores uniform values at the Program
