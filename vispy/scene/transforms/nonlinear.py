@@ -42,6 +42,8 @@ class LogTransform(BaseTransform):
         }
         """
 
+    glsl_imap = glsl_map
+
     Linear = False
     Orthogonal = True
     NonScaling = False
@@ -91,7 +93,7 @@ class LogTransform(BaseTransform):
 
     def shader_imap(self):
         fn = super(LogTransform, self).shader_imap()
-        fn['base'] = self.base  # uniform vec3
+        fn['base'] = -self.base  # uniform vec3
         return fn
 
     def __repr__(self):

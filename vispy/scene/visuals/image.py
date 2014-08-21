@@ -103,7 +103,7 @@ class Image(Mesh):
 
             self._tex_transform.scale = (1./self._data.shape[0],
                                          1./self._data.shape[1])
-            ctr = event.render_transform.inverse()
+            ctr = event.render_transform.inverse
             total_transform = self._tex_transform * ctr
             tex_coord_comp = VertexTextureCoordinateComponent(total_transform)
             tr = NullTransform().shader_map()
