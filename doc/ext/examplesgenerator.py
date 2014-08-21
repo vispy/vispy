@@ -73,14 +73,11 @@ def create_examples(examples):
         lines.append('')
 
         # Get source
-        in_gallery = False
         doclines = []
         sourcelines = []
         with open(os.path.join(EXAMPLES_DIR, name + '.py')) as f:
             for line in f.readlines():
                 line = line.rstrip()
-                if line.startswith('# vispy:') and 'gallery' in line:
-                    in_gallery = True
                 if not doclines:
                     if line.startswith('"""'):
                         doclines.append(line.lstrip('" '))
