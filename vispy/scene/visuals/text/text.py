@@ -174,20 +174,48 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
 
 
 class Text(Visual):
-    """Visual that displays text"""
+    """Visual that displays text
+
+    Parameters
+    ----------
+    text : str
+        Text to display.
+    color : instance of Color
+        Color to use.
+    bold : bool
+        Bold face.
+    italic : bool
+        Italic face.
+    face : str
+        Font face to use.
+    font_size : float
+        Point size to use.
+    pos : tuple
+        Position (x, y) of the text.
+    rotation : float
+        Rotation (in degrees) of the text clockwise.
+    anchor_x : str
+        Horizontal text anchor.
+    anchor_y : str
+        Vertical text anchor.
+    parent : instance of Entity
+        The parent of the Text visual.
+    """
 
     VERTEX_SHADER = """
         uniform vec2 u_pos;  // anchor position
         uniform vec2 u_scale;  // to scale to pixel units
+        uniform float u_rotation;  // rotation in rad
         attribute vec2 a_position; // in point units
         attribute vec2 a_texcoord;
 
         varying vec2 v_texcoord;
-        
+
         void main(void) {
             vec4 pos = $transform(vec4(u_pos, 0.0, 1.0));
-            gl_Position = pos + vec4(a_position * u_scale, 0, 0);
-            //gl_Position = $transform(vec4(a_position, 0.0, 1.0));
+            mat2 rot = mat2(cos(u_rotation), -sin(u_rotation),
+                            sin(u_rotation), cos(u_rotation));
+            gl_Position = pos + vec4(rot * a_position * u_scale, 0., 0.);
             v_texcoord = a_texcoord;
         }
         """
@@ -212,7 +240,7 @@ class Text(Visual):
 
     def __init__(self, text, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, pos=(0, 0),
-                 anchor_x='center', anchor_y='center', **kwargs):
+                 rotation=0., anchor_x='center', anchor_y='center', **kwargs):
         Visual.__init__(self, **kwargs)
         # Check input
         assert isinstance(text, string_types)
@@ -232,7 +260,8 @@ class Text(Visual):
         self.text = text
         self.font_size = font_size
         self.pos = pos
-    
+        self.rotation = rotation
+
     @property
     def text(self):
         """The text string"""
@@ -243,39 +272,49 @@ class Text(Visual):
         assert isinstance(text, string_types)
         self._text = text
         self._vertices = None
-    
+
     @property
     def font_size(self):
         """ The font size (in points) of the text
         """
         return self._font_size
-    
+
     @font_size.setter
     def font_size(self, size):
         self._font_size = max(0.0, float(size))
-    
+
     @property
     def color(self):
         """ The color of the text
         """
         return self._color
-    
+
     @color.setter
     def color(self, color):
         self._color = Color(color)
-    
+
+    @property
+    def rotation(self):
+        """ The rotation of the text (clockwise, in degrees)
+        """
+        return self._rotation * 180. / np.pi
+
+    @rotation.setter
+    def rotation(self, rotation):
+        self._rotation = float(rotation) * np.pi / 180.
+
     @property
     def pos(self):
         """ The position of the text anchor in the local coordinate frame
         """
         return self._pos
-    
+
     @pos.setter
     def pos(self, pos):
         pos = [float(p) for p in pos]
         assert len(pos) == 2
         self._pos = tuple(pos)
-    
+
     def draw(self, event=None):
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
@@ -290,7 +329,7 @@ class Text(Visual):
                    np.arange(0, 4*len(self._text), 4,
                              dtype=np.uint32)[:, np.newaxis])
             self._ib = IndexBuffer(idx.ravel())
-        
+
         if event is not None:
             xform = event.render_transform.shader_map()
             self._program.vert['transform'] = xform
@@ -299,11 +338,12 @@ class Text(Visual):
             self._program.vert['transform'] = self.transform.shader_map()
             # Rather arbitrary scale. With size=12 it takes up ~1/10 of space
             px_scale = 0.01, 0.01
-        
+
         self._program.prepare()  # Force ModularProgram to set shaders
         # todo: do some testing to verify that the scaling is correct
         ps = (self._font_size / 72) * 92
         self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
+        self._program['u_rotation'] = self._rotation
         self._program['u_pos'] = self._pos
         self._program['u_color'] = self._color.rgba
         self._program['u_font_atlas'] = self._font._atlas
