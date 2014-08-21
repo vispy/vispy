@@ -59,13 +59,13 @@ color[:, 1] = color[::-1, 0]
 # Top grid cell shows plot data in a rectangular coordinate system.
 l1 = scene.visuals.Line(pos=pos, color=color)
 b1.add(l1)
-grid1 = scene.visuals.Grid(parent=b1.scene)
+grid1 = scene.visuals.GridLines(parent=b1.scene)
 
 # Bottom-left grid cell shows the same data with log-transformed X
 e2 = scene.Entity(parent=b2.scene)
 e2.transform = scene.transforms.LogTransform(base=(2, 0, 0))
 l2 = scene.visuals.Line(pos=pos, color=color, parent=e2)
-grid2 = scene.visuals.Grid(parent=e2)
+grid2 = scene.visuals.GridLines(parent=e2)
 
 # Bottom-right grid cell shows the same data again, but with a much more
 # interesting transformation.
@@ -79,7 +79,7 @@ e3.transform = scene.transforms.ChainTransform([
     affine,
     ])
 l3 = scene.visuals.Line(pos=pos, color=color, parent=e3)
-grid3 = scene.visuals.Grid(scale=(np.pi/6., 1.0), parent=e3)
+grid3 = scene.visuals.GridLines(scale=(np.pi/6., 1.0), parent=e3)
 
 
 

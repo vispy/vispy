@@ -25,5 +25,5 @@ from .ellipse import Ellipse  # noqa
 from .regular_polygon import RegularPolygon  # noqa
 from .rect_polygon import RectPolygon  # noqa
 from .text import Text  # noqa
-from .grid import Grid  # noqa
+from .grid_lines import GridLines  # noqa
 from .line_agg import LineAgg  # noqa
