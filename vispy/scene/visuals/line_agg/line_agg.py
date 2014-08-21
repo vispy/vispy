@@ -187,12 +187,8 @@ class LineAgg(Visual):
         self.index = gloo.IndexBuffer(self._I)
         self._dash_atlas = gloo.Texture2D(self._collec.da._data)
         
-    def set_options(self):
-        gloo.set_state(blend=True, 
-                       blend_func=('src_alpha', 'one_minus_src_alpha'))
-
     def draw(self, event):
-        self.set_options()
+        gloo.set_state('translucent', depth_test=False)
         
         # check for transform changes
         data_doc = event.doc_transform()
