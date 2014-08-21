@@ -68,7 +68,7 @@ else:
             available, testable, why_not, which = False, False, _msg, None
         else:
             available, testable, why_not = True, True, None
-        which = _app.backend_module.which
+            which = _app.backend_module.which
 
     # Use that backend's shared context
     KEYMAP = _app.backend_module.KEYMAP
