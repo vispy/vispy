@@ -7,22 +7,6 @@ The util module
 
 ----
 
-vispy.util.keys
-----------------
-
-Constants for keys like control and alt.
-
-
-----
-
-vispy.util.transforms
----------------------
-.. automodule:: vispy.util.transforms
-    :members:
-
-
-----
-
 vispy.util.event
 ----------------
 .. automodule:: vispy.util.event
@@ -44,7 +28,6 @@ vispy.util.event
 .. autoclass:: vispy.app.canvas.DrawEvent
     :members:
 
-
 ----
 
 .. autoclass:: vispy.util.event.EventEmitter
@@ -52,7 +35,34 @@ vispy.util.event
     
     .. automethod:: vispy.util.event.EventEmitter.__call__
 
+
 ----
 
-.. autoclass:: vispy.util.event.EmitterGroup
+vispy.util.fonts
+----------------
+.. automodule:: vispy.util.fonts
+    :members:
+
+
+----
+
+vispy.util.geometry
+----------------
+.. automodule:: vispy.util.geometry
+    :members:
+
+
+----
+
+vispy.util.keys
+----------------
+.. automodule:: vispy.util.keys
+    :members:
+
+
+----
+
+vispy.util.transforms
+---------------------
+.. automodule:: vispy.util.transforms
     :members:

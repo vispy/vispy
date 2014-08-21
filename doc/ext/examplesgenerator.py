@@ -118,13 +118,26 @@ def create_examples_list(examples):
 
     # Create TOC
     lines = []
-    lines.append('List of examples')
+    lines.append('Full list of examples')
     lines.append('=' * len(lines[-1]))
+    lines.append('Check out the `gallery <http://vispy.org/gallery.html>`_ '
+                 'to see what some of these demos look like in action.')
     lines.append('')
+
 
     # Add entry for each example that we know
     for _, name in examples:
-        lines.append('* :doc:`examples/%s`' % name)
+        in_gallery = False
+        with open(os.path.join(EXAMPLES_DIR, name + '.py')) as f:
+            for line in f.readlines():
+                line = line.rstrip()
+                if line.startswith('# vispy:') and 'gallery' in line:
+                    in_gallery = True
+        if in_gallery:
+            extra = ' [`gallery <http://vispy.org/examples/%s.html>`_]' % name
+        else:
+            extra = ''
+        lines.append('* :doc:`examples/%s`%s' % (name, extra))
 
     # Write file
     with open(os.path.join(DOC_DIR, 'examples.rst'), 'w') as f:

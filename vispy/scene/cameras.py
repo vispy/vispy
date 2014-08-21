@@ -60,6 +60,11 @@ class BaseCamera(Entity):
     Most functionality is implemented in subclasses. This base class has
     no user interaction and causes the subscene to use the same coordinate
     system as the ViewBox.
+
+    Parameters
+    ----------
+    parent : Entity
+        The parent of the camera.
     """
     def __init__(self, **kwargs):
         self._viewbox = None
@@ -153,6 +158,11 @@ class PanZoomCamera(BaseCamera):
     * Dragging right mouse button vertically zooms the view y-axis
     * Dragging right mouse button horizontally zooms the view x-axis
     * Mouse wheel zooms both view axes equally.
+
+    Parameters
+    ----------
+    parent : Entity
+        The parent of the camera.
     """
     def __init__(self, **kwargs):
         super(PanZoomCamera, self).__init__(**kwargs)
@@ -292,8 +302,16 @@ class PerspectiveCamera(BaseCamera):
     * Dragging left mouse button orbits the view around its center point.
     * Mouse wheel changes the field of view angle.
     
-    Parameters are *mode*, *fov*, and *width*, 
-    corresponding to the properties of the same name.
+    Parameters
+    ----------
+    mode : str
+        Perspective mode.
+    fov : float
+        Field of view.
+    width : float
+        Width.
+    parent : Entity
+        The parent of the camera.
     """
     def __init__(self, mode='ortho', fov=60., width=10., **kwargs):
         # projection transform and associated options
@@ -403,11 +421,21 @@ class PerspectiveCamera(BaseCamera):
 class TurntableCamera(PerspectiveCamera):
     """ 3D camera class that orbits around a center point while maintaining a
     fixed vertical orientation.
-    
-    Parameters are *elevation*, *azimuth*, *distance*, and *center*, 
-    corresponding to the properties of the same name.
+
+    Parameters
+    ----------
+    elevation : float
+        Elevation in degrees.
+    azimuth : float
+        Azimuth in degrees.
+    distance : float
+        Distance away from the center.
+    center : array-like
+        3-element array defining the center point.
+    parent : Entity
+        The parent of the camera.
     """
-    def __init__(self, elevation=30., azimuth=30., 
+    def __init__(self, elevation=30., azimuth=30.,
                  distance=10., center=(0, 0, 0), **kwds):
         super(TurntableCamera, self).__init__(**kwds)
         self.elevation = elevation
@@ -518,9 +546,9 @@ class TurntableCamera(PerspectiveCamera):
         self._update_transform()
 
 
-class ArcballCamera(PerspectiveCamera):
-    pass
+#class ArcballCamera(PerspectiveCamera):
+#    pass
 
 
-class FirstPersonCamera(PerspectiveCamera):
-    pass
+#class FirstPersonCamera(PerspectiveCamera):
+#    pass

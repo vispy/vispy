@@ -11,15 +11,23 @@ from .transforms import NullTransform
 
 
 class Entity(object):
-    """ Base class to represent a citizen of a scene. Typically an
-    Entity is used to visualize something, although this is not strictly
-    necessary. It may for instance also be used as a container to apply
-    a certain transformation to a group of objects, or an object that
+    """ Base class to represent a citizen of a scene.
+
+    Typically an Entity is used to visualize something, although this is not
+    strictly necessary. It may for instance also be used as a container to
+    apply a certain transformation to a group of objects, or an object that
     performs a specific task without being visible.
 
     Each entity can have zero or more children. Each entity will
     typically have one parent, although multiple parents are allowed.
     It is recommended to use multi-parenting with care.
+
+    Parameters
+    ----------
+    parent : Entity
+        The parent of the Entity.
+    name : str
+        The name used to identify the entity.
     """
 
     def __init__(self, parent=None, name=None):

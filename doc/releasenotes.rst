@@ -2,6 +2,16 @@
 Release notes
 =============
 
+**Vispy 0.2.2**
+
+Many changes:
+  * Added multiple new application backends.
+  * Experimental support for high-level visualizations through
+    '`vispy.scene`` and ``vispy.scene.visuals``.
+  * Experimental support for matplotlib plotting through ``vispy.mpl_plot``.
+  * Loads of bugfixes.
+
+
 **Vispy 0.2.1**
 
 Small fix in the setup script. The buf prevented pip from working.

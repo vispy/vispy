@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 The vispy.scene namespace provides functionality for higher level
 visuals as well as scenegraph and related classes.
@@ -40,6 +43,8 @@ Terminology
   a subscene to the pixel grid of that viewbox.
 
 """
+
+__all__ = ['SceneCanvas', 'Entity']
 
 from .entity import Entity  # noqa
 from .canvas import SceneCanvas  # noqa

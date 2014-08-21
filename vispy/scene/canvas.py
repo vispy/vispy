@@ -17,11 +17,60 @@ from ..util import logger
 
 
 class SceneCanvas(app.Canvas):
-    """ SceneCanvas provides a Canvas that automatically draws the contents
-    of a scene.
+    """A Canvas that automatically draws the contents of a scene
 
+    Receives the following events:
+    initialize, resize, draw, mouse_press, mouse_release, mouse_move,
+    mouse_wheel, key_press, key_release, stylus, touch, close
+
+    Parameters
+    ----------
+    title : str
+        The widget title
+    size : (width, height)
+        The size of the window.
+    position : (x, y)
+        The position of the window in screen coordinates.
+    show : bool
+        Whether to show the widget immediately. Default False.
+    autoswap : bool
+        Whether to swap the buffers automatically after a draw event.
+        Default True. If True, the ``swap_buffers`` Canvas method will
+        be called last (by default) by the ``canvas.draw`` event handler.
+    app : Application | str
+        Give vispy Application instance to use as a backend.
+        (vispy.app is used by default.) If str, then an application
+        using the chosen backend (e.g., 'pyglet') will be created.
+        Note the canvas application can be accessed at ``canvas.app``.
+    create_native : bool
+        Whether to create the widget immediately. Default True.
+    init_gloo : bool
+        Initialize standard values in gloo (e.g., ``GL_POINT_SPRITE``).
+    vsync : bool
+        Enable vertical synchronization.
+    resizable : bool
+        Allow the window to be resized.
+    decorate : bool
+        Decorate the window.
+    fullscreen : bool | int
+        If False, windowed mode is used (default). If True, the default
+        monitor is used. If int, the given monitor number is used.
+    context : dict | instance SharedContext | None
+        OpenGL configuration to use when creating the context for the canvas,
+        or a context to share. If None, ``vispy.app.get_default_config`` will
+        be used to set the OpenGL context parameters. Alternatively, the
+        ``canvas.context`` property from an existing canvas (using the
+        same backend) will return a ``SharedContext`` that can be used,
+        thereby sharing the existing context.
+    keys : str | dict | None
+        Default key mapping to use. If 'interactive', escape and F11 will
+        close the canvas and toggle full-screen mode, respectively.
+        If dict, maps keys to functions. If dict values are strings,
+        they are assumed to be ``Canvas`` methods, otherwise they should
+        be callable.
+    parent : widget-object
+        The parent widget if this makes sense for the used backend.
     """
-
     def __init__(self, *args, **kwargs):
         self._fb_stack = []  # for storing information about framebuffers used
         self._vp_stack = []  # for storing information about viewports used

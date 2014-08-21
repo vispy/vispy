@@ -3,11 +3,8 @@
 """
 Very simple transformation library that is needed for some examples.
 
-Notes
------
-
-Functions that take a matrix as input generally operate on that matrix in
-place.
+Note that functions that take a matrix as input generally operate on that
+matrix in place.
 """
 
 # Note: we use functions (e.g. sin) from math module because they're faster
