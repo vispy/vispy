@@ -51,17 +51,17 @@ color[:, 1] = color[::-1, 0]
 
 l1 = scene.visuals.Line(pos=pos, color=color)
 b1.add(l1)
+grid1 = scene.visuals.Grid(parent=b1.scene)
 
-l2 = scene.visuals.Line(pos=pos, color=color)
-l2.transform = scene.transforms.LogTransform(base=(2, 0, 0))
-b2.add(l2)
+e2 = scene.Entity(parent=b2.scene)
+e2.transform = scene.transforms.LogTransform(base=(2, 0, 0))
+l2 = scene.visuals.Line(pos=pos, color=color, parent=e2)
+grid2 = scene.visuals.Grid(parent=e2)
 
-l3 = scene.visuals.Line(pos=pos, color=color)
-l3.transform = scene.transforms.PolarTransform()
-b3.add(l3)
-
-from vispy.scene.visuals.grid import Grid
-#grid = Grid(parent=b1.scene)
+e3 = scene.Entity(parent=b3.scene)
+e3.transform = scene.transforms.PolarTransform()
+l3 = scene.visuals.Line(pos=pos, color=color, parent=e3)
+grid3 = scene.visuals.Grid(parent=e3)
 
 
 

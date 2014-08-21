@@ -156,30 +156,60 @@ class SceneEvent(Event):
             map_to = self.ndc
         if map_from is None:
             map_from = self._stack[-1]
+        
+        fwd_path = self._entity_path(map_from, map_to)
+        fwd_path.reverse()
+        
+        if fwd_path[0] is map_to:
+            rev_path = []
+            fwd_path = fwd_path[1:]
         else:
-            raise NotImplementedError()
+            # If we have still not reached the end, try traversing from the 
+            # opposite end and stop when paths intersect
+            rev_path = self._entity_path(map_to, self._stack[0])
+            connected = False
+            for i in range(1, len(rev_path)):
+                if rev_path[i] in fwd_path:
+                    rev_path = rev_path[:i]
+                    connected = True
+            
+            if not connected:
+                raise RuntimeError("Unable to find unique path from %r to %r" %
+                                   (map_from, map_to))
+            
+        transforms = ([e.transform for e in fwd_path] +
+                      [e.transform.inverse for e in rev_path])
+        return self._transform_cache.get(transforms)
+
+    def _entity_path(self, start, end):
+        """
+        Return the path of parents leading from *start* to *end*, using the 
+        entity stack to resolve multi-parent branches. 
         
-        path = [map_from]
+        If *end* is never reached, then the path is assembled as far as 
+        possible and returned.
+        """
+        path = [start]
         
-        while path[-1] is not map_to:
+        # first, get parents directly from entity
+        while path[-1] is not end:
             ent = path[-1]
-            if len(ent.parents) == 1:
-                path.append(ent.parent)
-            else:
-                # can't find single parent from entity; check the path.
-                try:
-                    ind = self._stack.index(ent)
-                    if ind == 0:
-                        raise IndexError()
-                except IndexError:
-                    raise Exception("Cannot find unique path from %r to %r." % 
-                                    (map_from, map_to))
-                while path[-1] is not map_to:
+            if len(ent.parents) != 1:
+                break
+            path.append(ent.parent)
+            
+        # if we have not reached the end, follow _stack if possible.
+        if path[-1] is not end:
+            try:
+                ind = self._stack.index(ent)
+                # copy stack onto path one entity at a time
+                while ind > -1 and path[-1] is not map_to:
                     ind -= 1
                     path.append(self._stack[ind])
-                break
-            
-        return self._transform_cache.get([e.transform for e in path[:-1][::-1]])
+            except IndexError:
+                pass
+        
+        return path
     
     def doc_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
