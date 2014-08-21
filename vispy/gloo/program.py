@@ -7,25 +7,32 @@ import re
 import numpy as np
 
 from . import gl
-from . globject import GLObject
-from . buffer import VertexBuffer, IndexBuffer
-from . shader import VertexShader, FragmentShader
-from . texture import GL_SAMPLER_3D
-from . variable import Uniform, Attribute
+from .globject import GLObject
+from .buffer import VertexBuffer, IndexBuffer
+from .shader import VertexShader, FragmentShader
+from .texture import GL_SAMPLER_3D
+from .variable import Uniform, Attribute
+from .wrappers import _check_conversion
 from ..util import logger
-from ..ext.six import string_types
+
+
+_known_draw_modes = dict()
+for key in ('points', 'lines', 'line_strip', 'line_loop',
+            'triangles', 'triangle_strip', 'triangle_fan'):
+    x = getattr(gl, 'GL_' + key.upper())
+    _known_draw_modes[key] = x
+    _known_draw_modes[x] = x  # for speed in this case
 
 
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
     """ Shader program object
-    
+
     A Program is an object to which shaders can be attached and linked to
     create the final program.
-    
+
     Parameters
     ----------
-
     vert : str, VertexShader, or list
         The vertex shader to be used by this program
     frag : str, FragmentShader, or list
@@ -302,7 +309,7 @@ class Program(GLObject):
         for attribute in self._attributes.values():
             if attribute.enabled:
                 attribute.activate()
-    
+
     def _deactivate_variables(self):
         """ Deactivate all enabled uniforms and attributes. This method
         gets called when the Program gets deactivated.
@@ -457,7 +464,6 @@ class Program(GLObject):
         shaders.extend(self._frags)
         return shaders
 
-    # first=0, count=None):
     def draw(self, mode=gl.GL_TRIANGLES, indices=None, check_error=True):
         """ Draw the attribute arrays in the specified mode.
 
@@ -466,28 +472,24 @@ class Program(GLObject):
         mode : str | GL_ENUM
             GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP,
             GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
-        first : int
-            The starting vertex index in the vertex array. Default 0.
-        count : int
-            The number of vertices to draw. Default all.
+        indices : array
+            Array of indices to draw.
+        check_error:
+            Check error after draw.
         """
-        _known_modes = ('points', 'lines', 'line_strip', 'line_loop',
-                        'triangles', 'triangle_strip', 'triangle_fan')
-        if isinstance(mode, string_types):
-            if mode not in _known_modes:
-                raise ValueError('mode must be one of %s, not "%s"'
-                                 % (_known_modes, mode))
-            mode = getattr(gl, 'GL_%s' % mode.upper())
+        mode = _check_conversion(mode, _known_draw_modes)
         self.activate()
+        if check_error:  # need to do this after activating, too
+            gl.check_error('Check after draw activation')
 
-        # WARNING: The "list" of values from a dict is not a list (py3k)
         attributes = list(self._attributes.values())
-
-        # Get buffer size first attribute
-        # We need more tests here
-        #  - do we have at least 1 attribute ?
-        #  - does all attributes report same count ?
-        # count = (count or attributes[0].size) - first
+        sizes = [a.size for a in attributes]
+        if len(attributes) < 1:
+            raise RuntimeError('Must have at least one attribute')
+        if not all(s == sizes[0] for s in sizes[1:]):
+            msg = '\n'.join(['%s: %s' % (str(a), a.size) for a in attributes])
+            raise RuntimeError('All attributes must have the same size, got:\n'
+                               '%s' % msg)
 
         if isinstance(indices, IndexBuffer):
             indices.activate()
@@ -497,14 +499,11 @@ class Program(GLObject):
             gl.glDrawElements(mode, indices.size, gltypes[indices.dtype], None)
             indices.deactivate()
         else:
-            #count = (count or attributes[0].size) - first
-            first = 0
-            count = attributes[0].size
-            gl.glDrawArrays(mode, first, count)
+            gl.glDrawArrays(mode, 0, sizes[0])
 
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         self.deactivate()
 
         # Check ok
         if check_error:
-            gl.check_error()
+            gl.check_error('Check after drawing completes')

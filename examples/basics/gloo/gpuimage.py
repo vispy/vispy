@@ -3,7 +3,7 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-
+# vispy: gallery 100
 """
 Illustrate how to plot a 2D function (an image) y=f(x,y) on the GPU.
 """

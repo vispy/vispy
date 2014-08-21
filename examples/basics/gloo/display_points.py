@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+# vispy: gallery 2
 """ Simple example plotting 2D points.
 """
 

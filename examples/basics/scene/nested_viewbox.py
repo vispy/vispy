@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+# vispy: gallery 2
 """
 Simple test of nested viewboxes, demonstrating the three methods that
 can be used by a viewbox to provide clipping.

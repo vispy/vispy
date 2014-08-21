@@ -198,8 +198,9 @@ class Canvas(app.Canvas):
         self.program.draw('triangles')
 
 
+generate_points(8)
+
 if __name__ == '__main__':
-    generate_points(8)
     c = Canvas()
     c.show()
     app.run()

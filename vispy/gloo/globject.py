@@ -22,14 +22,14 @@ class GLObject(object):
 
         GLObject._idcount += 1
         self._id = GLObject._idcount
-    
+
     def __del__(self):
         # You never know when this is goint to happen. The window might
         # already be closed and no OpenGL context might be available.
         # Worse, there might be multiple contexts and calling delete()
         # at the wrong moment might remove other gl objects, leading to
         # very strange and hard to debug behavior.
-        # 
+        #
         # So we don't do anything. If each GLObject was aware of the
         # context in which it resides, we could do auto-cleanup though...
         # todo: it's not very Pythonic to have to delete an object.
@@ -46,7 +46,6 @@ class GLObject(object):
 
     def activate(self):
         """ Activate the object on GPU """
-        
         # As a base class, we only provide functionality for
         # automatically creating the object. The other stages are so
         # different that it's more clear if each GLObject specifies
@@ -55,7 +54,7 @@ class GLObject(object):
             self._create()
             self._need_create = False
         self._activate()
-    
+
     def deactivate(self):
         """ Deactivate the object on GPU """
 

@@ -789,7 +789,13 @@ class Triangulation(object):
                                          self.pts[np.array(edge2)])
         h21 = self.intersect_edge_arrays(self.pts[np.array(edge2)], 
                                          self.pts[np.array(edge1)])
-        return (0 < h12 < 1) and (0 < h21 < 1)
+        err = np.geterr()
+        np.seterr(divide='ignore', invalid='ignore')
+        try:
+            out = (0 < h12 < 1) and (0 < h21 < 1)
+        finally:
+            np.seterr(**err)
+        return out
 
     def intersection_matrix(self, lines):
         """
@@ -931,12 +937,12 @@ class Triangulation(object):
         del self.tris[k]
         (a, b, c) = k
 
-        if self.edges_lookup.get((a, b), None) == c:
+        if self.edges_lookup.get((a, b), -1) == c:
             #debug("    ", (a,b), (b,c), (c,a))
             del self.edges_lookup[(a, b)]
             del self.edges_lookup[(b, c)]
             del self.edges_lookup[(c, a)]
-        elif self.edges_lookup.get((b, a), None) == c:
+        elif self.edges_lookup.get((b, a), -1) == c:
             #debug("    ", (b,a), (c,b), (a,c))
             del self.edges_lookup[(b, a)]
             del self.edges_lookup[(a, c)]

@@ -602,10 +602,11 @@ class VertexBuffer(DataBuffer):
         #  -> it is not a view of another buffer
         #  -> shape if 1-D or last dimension is 1,2,3 or 4
         if data is not None and base is None and data.dtype.isbuiltin:
-            if len(data.shape) == 1:
+            c = data.shape[-1]
+            if data.ndim == 1 or (data.ndim == 2 and c == 1):
+                data.shape = (data.size,)  # necessary in case (N,1) array
                 data = data.view(dtype=[('f0', data.dtype.base, 1)])
-            elif data.shape[-1] in [1, 2, 3, 4]:
-                c = data.shape[-1]
+            elif c in [1, 2, 3, 4]:
                 if not data.flags['C_CONTIGUOUS']:
                     logger.warning("Copying discontiguous data for struct "
                                    "dtype")

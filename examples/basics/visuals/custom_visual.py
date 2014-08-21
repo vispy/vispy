@@ -3,6 +3,7 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+# vispy: gallery 2
 from __future__ import division
 import numpy as np
 from math import exp
@@ -20,7 +21,7 @@ class PanZoomTransform(STTransform):
         dx, dy = dx
         self.translate = (self.translate[0] + dx/self.scale[0],
                           self.translate[1] + dy/self.scale[1])
-        
+
     def zoom(self, dx, center=(0., 0.)):
         """I call this when I want to zoom."""
         dx, dy = dx
