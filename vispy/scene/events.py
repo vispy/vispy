@@ -179,7 +179,7 @@ class SceneEvent(Event):
                     path.append(self._stack[ind])
                 break
             
-        return self._transform_cache.get([e.transform for e in path])
+        return self._transform_cache.get([e.transform for e in path[:-1][::-1]])
     
     def doc_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
@@ -220,7 +220,7 @@ class SceneEvent(Event):
     
     def map_from_canvas(self, obj):
         return self.canvas_transform().imap(obj)
-                
+    
     def fb_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
         framebuffer coordinate system. 
@@ -252,19 +252,18 @@ class SceneEvent(Event):
         #ind = self._stack.index(self.canvas.scene)
         #return self._transform_cache.get(self._stack[ind:])
 
-    #@property
-    #def render_transform(self):
-        #""" The transform that maps from the current entity to
-        #normalized device coordinates within the current glViewport and
-        #FBO.
+    @property
+    def render_transform(self):
+        """ The transform that maps from the current entity to
+        normalized device coordinates within the current glViewport and
+        FBO.
 
-        #This transform consists of the full_transform prepended by a
-        #correction for the current glViewport and/or FBO.
+        This transform consists of the full_transform prepended by a
+        correction for the current glViewport and/or FBO.
 
-        #Most entities should use this transform when drawing.
-        #"""
-        ##return self.canvas.render_transform * self.full_transform
-        #return self._transform_cache.get(self._stack)
+        Most entities should use this transform when drawing.
+        """
+        return self._transform_cache.get([e.transform for e in self._stack])
 
     #@property
     #def fb_transform(self):

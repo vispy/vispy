@@ -66,7 +66,7 @@ l3.transform = scene.transforms.PolarTransform()
 b3.add(l3)
 
 from vispy.scene.visuals.grid import Grid
-grid = Grid(parent=b1.scene)
+#grid = Grid(parent=b1.scene)
 
 
 

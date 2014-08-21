@@ -158,7 +158,7 @@ class ViewBox(Widget):
         
         # Get current transform and calculate the 'scale' of the viewbox
         size = self.size
-        transform = event.full_transform
+        transform = event.doc_transform()
         p0, p1 = transform.map((0, 0)), transform.map(size)
         res = (p1 - p0)[:2]
         res = abs(res[0]), abs(res[1])
@@ -189,8 +189,8 @@ class ViewBox(Widget):
 
         if fbo:
             # Ask the canvas to activate the new FBO
-            offset = event.full_transform.map((0, 0))[:2]
-            size = event.full_transform.map(self.size)[:2] - offset
+            offset = event.canvas_transform().map((0, 0))[:2]
+            size = event.canvas_transform().map(self.size)[:2] - offset
             
             # Draw subscene to FBO
             event.push_fbo(fbo, offset, size)

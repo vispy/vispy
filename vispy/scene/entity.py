@@ -276,7 +276,7 @@ class Entity(object):
         
         # Now map from common parent to self
         tr2 = cp.entity_transform(self)
-        return tr2.inverse() * tr
+        return tr2.inverse * tr
         
     def _process_mouse_event(self, event):
         """

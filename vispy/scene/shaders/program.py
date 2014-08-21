@@ -51,7 +51,6 @@ class ModularProgram(Program):
         
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s" % self)
-        #print("REBUILD")
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
         code = self.compiler.compile()
         self.shaders[0].code = code['vert']
