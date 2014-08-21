@@ -41,22 +41,23 @@ void main() {
     float sx = pow(10.0, floor(log(px.x) / log10)+1) * scale.x;
     float sy = pow(10.0, floor(log(px.y) / log10)+1) * scale.y;
     
-    vec4 color = vec4(1, 1, 1, 0);
+    float x_alpha;
     if (mod(local_pos.x, 100 * sx) < px.x) {
-        color += vec4(0, 0, 0, clamp(1 * sx/px.x, 0, 0.4));
+        x_alpha = clamp(1 * sx/px.x, 0, 0.4);
     }
     else if (mod(local_pos.x, 10 * sx) < px.x) {
-        color += vec4(0, 0, 0, clamp(0.1 * sx/px.x, 0, 0.4));
+        x_alpha = clamp(0.1 * sx/px.x, 0, 0.4);
     }
     
+    float y_alpha;
     if (mod(local_pos.y, 100 * sy) < px.y) {
-        color += vec4(0, 0, 0, clamp(1 * sy/px.y, 0, 0.4));
+        y_alpha = clamp(1 * sy/px.y, 0, 0.4);
     }
     else if (mod(local_pos.y, 10 * sy) < px.y) {
-        color += vec4(0, 0, 0, clamp(0.1 * sy/px.y, 0, 0.4));
+        y_alpha = clamp(0.1 * sy/px.y, 0, 0.4);
     }
     
-    gl_FragColor = color;
+    gl_FragColor = vec4(1, 1, 1, max(x_alpha, y_alpha));
 }
 """
 
