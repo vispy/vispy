@@ -58,9 +58,10 @@ class SceneEvent(Event):
 
     def pop_entity(self):
         """ Pop an entity from the stack. """
-        return self._stack.pop(-1)
-        if entity.document is not None:
-            self.pop_document(doc)
+        ent = self._stack.pop(-1)
+        if ent.document is not None:
+            self.pop_document()
+        return ent
 
     def push_viewbox(self, viewbox):
         self._viewbox_stack.append(viewbox)
