@@ -187,6 +187,8 @@ class ModularVisual(Visual):
         """
         # select input component based on pos.shape
         if pos is not None:
+            if index is not None:
+                index = index.astype(np.uint32)
             if pos.shape[-1] == 2:
                 comp = XYPosComponent(xy=pos.astype(np.float32), 
                                       z=z, index=index)

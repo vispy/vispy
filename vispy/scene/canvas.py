@@ -14,6 +14,7 @@ from .transforms import STTransform, TransformCache
 from .events import SceneDrawEvent, SceneMouseEvent
 from ..color import Color
 from ..util import logger
+from .widgets import Widget
 
 
 class SceneCanvas(app.Canvas):
@@ -49,7 +50,9 @@ class SceneCanvas(app.Canvas):
         
         self.scene = SubScene(parent=self.entity)
         
-
+        # A default widget that follows the shape of the canvas
+        self._central_widget = None
+        
     @property
     def scene(self):
         """ The SubScene object that represents the root entity of the
@@ -63,6 +66,15 @@ class SceneCanvas(app.Canvas):
             self._scene.events.update.disconnect(self._scene_update)
         self._scene = e
         self._scene.events.update.connect(self._scene_update)
+
+    @property
+    def central_widget(self):
+        """ Returns the default widget that occupies the entire area of the
+        canvas. 
+        """
+        if self._central_widget is None:
+            self._central_widget = Widget(size=self.size, parent=self.scene)
+        return self._central_widget
 
     def _scene_update(self, event):
         self.update()
@@ -128,6 +140,10 @@ class SceneCanvas(app.Canvas):
         # If something in the scene handled the scene_event, then we mark
         # the original event accordingly.
         event.handled = scene_event.handled
+
+    def on_resize(self, event):
+        if self._central_widget is not None:
+            self._central_widget.size = self.size
 
     # -------------------------------------------------- transform handling ---
     def push_viewport(self, viewport):
