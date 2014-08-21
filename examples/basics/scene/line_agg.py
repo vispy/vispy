@@ -8,7 +8,7 @@ from vispy.scene import SceneCanvas, LineAgg, ViewBox
 
 import numpy as np
 
-canvas = SceneCanvas(close_keys='escape')
+canvas = SceneCanvas(keys='interactive')
 
 vb = ViewBox(parent=canvas.scene)
 
