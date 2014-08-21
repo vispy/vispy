@@ -5,6 +5,7 @@ source = vispy
 omit =
     */setup.py
     */vispy/datasets/*
+    */vispy/app/backends/_egl.py
     */vispy/gloo/gl/angle.py
     */vispy/gloo/gl/_angle.py
     */vispy/testing/_runners.py

@@ -82,6 +82,9 @@ sdl2: clean-test
 wx: clean-test
 	python make test wx
 
+egl: clean-test
+	python make test egl
+
 glut: clean-test
 	python make test glut
 
