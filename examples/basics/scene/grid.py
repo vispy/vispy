@@ -11,8 +11,9 @@ canvas = scene.SceneCanvas(keys='interactive')
 canvas.size = 600, 600
 canvas.show()
 
+# This is the top-level widget that will hold three ViewBoxes, which will
+# be automatically resized whenever the grid is resized.
 grid = scene.widgets.Grid(parent=canvas.scene)
-
 
 # Ensure that grid fills the entire canvas, even after resize.
 @canvas.events.resize.connect
@@ -22,6 +23,7 @@ def update_grid(event=None):
 
 update_grid()
 
+# Add 3 ViewBoxes to the grid
 b1 = grid.add_view(row=0, col=0, col_span=2)
 b1.border_color = (0.5, 0.5, 0.5, 1)
 b1.camera.rect = (-0.5, -5), (11, 10)
@@ -38,7 +40,7 @@ b3.camera.rect = (-5, -5), (10, 10)
 b3.border = (1, 0, 0, 1)
 
 
-# Add one line to all three boxes
+# Generate some random vertex data and a color gradient
 N = 10000
 pos = np.empty((N, 2), dtype=np.float32)
 pos[:, 0] = np.linspace(0, 10, N)
@@ -49,19 +51,30 @@ color = np.ones((N, 4), dtype=np.float32)
 color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
+# Top grid cell shows plot data in a rectangular coordinate system.
 l1 = scene.visuals.Line(pos=pos, color=color)
 b1.add(l1)
 grid1 = scene.visuals.Grid(parent=b1.scene)
 
+# Bottom-left grid cell shows the same data with log-transformed X
 e2 = scene.Entity(parent=b2.scene)
 e2.transform = scene.transforms.LogTransform(base=(2, 0, 0))
 l2 = scene.visuals.Line(pos=pos, color=color, parent=e2)
 grid2 = scene.visuals.Grid(parent=e2)
 
+# Bottom-right grid cell shows the same data again, but with a much more
+# interesting transformation.
 e3 = scene.Entity(parent=b3.scene)
-e3.transform = scene.transforms.PolarTransform()
+affine = scene.transforms.AffineTransform()
+affine.scale((1, 0.1))
+affine.rotate(10, (0, 0, 1))
+affine.translate((0, 1))
+e3.transform = scene.transforms.ChainTransform([
+    scene.transforms.PolarTransform(),
+    affine,
+    ])
 l3 = scene.visuals.Line(pos=pos, color=color, parent=e3)
-grid3 = scene.visuals.Grid(parent=e3)
+grid3 = scene.visuals.Grid(scale=(np.pi/6., 1.0), parent=e3)
 
 
 
