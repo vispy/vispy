@@ -103,39 +103,19 @@ class SceneEvent(Event):
     # Begin transforms
     #
     
-    # TODO: entity_transform should map from local to *entity*
-    #def entity_transform(self, entity):
-        #""" Return transform that maps from local coordinate system of *entity*
-        #to the root of the scenegraph.
-        #"""
-        ## find where entity's ancestry first intersects the current path
-        #path = []
-        #while True:
-            #if entity is None:
-                #path.insert(0, entity)
-                #break
-            #elif entity not in self._stack:
-                #path.insert(0, entity)
-                
-                ## todo: if this fails, raise a nice exception explaining
-                ##       the problem.
-                #entity = entity.parent
-            #else:
-                #ind = self._stack.index(entity)
-                #path = self._stack[:ind+1] + path
-                #break
-        
-        #return self._transform_cache.get(path)
-
     @property
     def document(self):
-        """ Return entity for the current document coordinate system.
+        """ Return entity for the current document coordinate system. The
+        coordinate system of this Entity is used for making physical 
+        measurements--px, mm, in, etc.
         """
         return self._doc_stack[-1]
         
     @property
     def framebuffer(self):
-        """ Return entity for the current framebuffer coordinate system.
+        """ Return entity for the current framebuffer coordinate system. This
+        coordinate system corresponds to the physical pixels being rendered
+        to. It is used mainly for making antialiasing measurements.
         """
         return self.canvas.framebuffer
 
@@ -145,9 +125,87 @@ class SceneEvent(Event):
         """
         return self.canvas.ndc
         
+    
+    def doc_transform(self, entity=None):
+        """ Return the transform that maps from *entity* to the current
+        document coordinate system. 
+        
+        If *entity* is not specified, then the top entity on the stack is used.
+        """
+        return self.entity_transform(map_to=self.document, map_from=entity)
+                
+    def map_entity_to_doc(self, entity, obj):
+        return self.doc_transform(entity).map(obj)
+    
+    def map_doc_to_entity(self, entity, obj):
+        return self.doc_transform(entity).imap(obj)
+                
+    def map_to_doc(self, obj):
+        return self.doc_transform().map(obj)
+    
+    def map_from_doc(self, obj):
+        return self.doc_transform().imap(obj)
+                
+    def canvas_transform(self, entity=None):
+        """ Return the transform that maps from *entity* to the current
+        logical-pixel coordinate system defined by the Canvas. 
+
+        Canvas_transform is used mainly for mouse interaction. 
+        For measuring distance in physical units, the use of document_transform 
+        is preferred. 
+        
+        If *entity* is not specified, then the top entity on the stack is used.
+        """
+        return self.entity_transform(map_to=self.canvas.entity, map_from=entity)
+                
+    def map_entity_to_canvas(self, entity, obj):
+        return self.canvas_transform(entity).map(obj)
+    
+    def map_canvas_to_entity(self, entity, obj):
+        return self.canvas_transform(entity).imap(obj)
+                
+    def map_to_canvas(self, obj):
+        return self.canvas_transform().map(obj)
+    
+    def map_from_canvas(self, obj):
+        return self.canvas_transform().imap(obj)
+    
+    def fb_transform(self, entity=None):
+        """ Return the transform that maps from *entity* to the current
+        framebuffer coordinate system. 
+        
+        If *entity* is not specified, then the top entity on the stack is used.
+        """
+        return self.entity_transform(map_to=self.framebuffer, map_from=entity)
+        
+    def map_entity_to_fb(self, entity, obj):
+        return self.fb_transform(entity).map(obj)
+    
+    def map_fb_to_entity(self, entity, obj):
+        return self.fb_transform(entity).imap(obj)
+    
+    def map_to_fb(self, obj):
+        return self.fb_transform().map(obj)
+    
+    def map_from_fb(self, obj):
+        return self.fb_transform().imap(obj)
+                
+    @property
+    def render_transform(self):
+        """ The transform that maps from the current entity to
+        normalized device coordinates within the current glViewport and
+        FBO.
+
+        This transform consists of the full_transform prepended by a
+        correction for the current glViewport and/or FBO.
+
+        Most entities will use this transform when drawing.
+        """
+        return self._transform_cache.get([e.transform for e in self._stack])
+
     def entity_transform(self, map_to=None, map_from=None):
-        """ Return the transform mapping *map_from* to *map_to*, using the
-        current path to resolve parent ambiguities if needed. 
+        """ Return the transform from *map_from* to *map_to*, using the
+        current entity stack to resolve parent ambiguities if needed. 
         
         By default, *map_to* is the normalized device coordinate system,
         and *map_from* is the current top entity on the stack.
@@ -210,136 +268,6 @@ class SceneEvent(Event):
                 pass
         
         return path
-    
-    def doc_transform(self, entity=None):
-        """ Return the transform that maps from *entity* to the current
-        document coordinate system. 
-        
-        If *entity* is not specified, then the top entity on the stack is used.
-        """
-        return self.entity_transform(map_to=self.document, map_from=entity)
-                
-    def map_entity_to_doc(self, entity, obj):
-        return self.doc_transform(entity).map(obj)
-    
-    def map_doc_to_entity(self, entity, obj):
-        return self.doc_transform(entity).imap(obj)
-                
-    def map_to_doc(self, obj):
-        return self.doc_transform().map(obj)
-    
-    def map_from_doc(self, obj):
-        return self.doc_transform().imap(obj)
-                
-    def canvas_transform(self, entity=None):
-        """ Return the transform that maps from *entity* to the current
-        pixel coordinate system. 
-        
-        If *entity* is not specified, then the top entity on the stack is used.
-        """
-        return self.entity_transform(map_to=self.canvas.entity, map_from=entity)
-                
-    def map_entity_to_canvas(self, entity, obj):
-        return self.canvas_transform(entity).map(obj)
-    
-    def map_canvas_to_entity(self, entity, obj):
-        return self.canvas_transform(entity).imap(obj)
-                
-    def map_to_canvas(self, obj):
-        return self.canvas_transform().map(obj)
-    
-    def map_from_canvas(self, obj):
-        return self.canvas_transform().imap(obj)
-    
-    def fb_transform(self, entity=None):
-        """ Return the transform that maps from *entity* to the current
-        framebuffer coordinate system. 
-        
-        If *entity* is not specified, then the top entity on the stack is used.
-        """
-        return self.entity_transform(map_to=self.framebuffer, map_from=entity)
-        
-    def map_entity_to_fb(self, entity, obj):
-        return self.fb_transform(entity).map(obj)
-    
-    def map_fb_to_entity(self, entity, obj):
-        return self.fb_transform(entity).imap(obj)
-    
-    def map_to_fb(self, obj):
-        return self.fb_transform().map(obj)
-    
-    def map_from_fb(self, obj):
-        return self.fb_transform().imap(obj)
-                
-    
-    # todo: I think "root_transform" is more descriptive (LC)
-    #       or perhaps "scene_transform"
-    #@property
-    #def full_transform(self):
-        #""" The transform that maps from the current entity to the
-        #top-level entity in the scene.
-        #"""
-        #ind = self._stack.index(self.canvas.scene)
-        #return self._transform_cache.get(self._stack[ind:])
-
-    @property
-    def render_transform(self):
-        """ The transform that maps from the current entity to
-        normalized device coordinates within the current glViewport and
-        FBO.
-
-        This transform consists of the full_transform prepended by a
-        correction for the current glViewport and/or FBO.
-
-        Most entities should use this transform when drawing.
-        """
-        return self._transform_cache.get([e.transform for e in self._stack])
-
-    #@property
-    #def fb_transform(self):
-        #""" Transform mapping from the local coordinate system of the current
-        #entity to the framebuffer coordinate system.
-        #"""
-        ##return self.canvas.fb_transform * self.full_transform
-        #ind = self._stack.index(self.canvas.framebuffer)
-        #return self._transform_cache.get(self._stack[ind:])
-    
-    #def map_to_fb(self, obj):
-        #return self.fb_transform.map(obj)
-
-    #def map_from_fb(self, obj):
-        #return self.fb_transform.imap(obj)
-
-    ## todo: need to disambiguate this from the doc cs, which is *usually* the
-    ##       same, but may be separate in some rare situations.
-    #@property
-    #def canvas_transform(self):
-        #"""
-        #Return the transform mapping from the end of the path to Canvas
-        #pixels (logical pixels).
-        
-        #Canvas_transform is used mainly for mouse interaction. 
-        #For measuring distance in physical units, the use of document_transform 
-        #is preferred. 
-        #"""
-        #ind = self._stack.index(self.canvas.pixels)
-        #return self._transform_cache.get(self._stack[ind:])
-    
-    #def map_to_canvas(self, obj):
-        #"""
-        #Convenience method that maps *obj* from the current coordinate system 
-        #of the event to the canvas coordinate system (logical pixels; 
-        #see SceneEvent.canvas_transform).
-        #"""
-        #return self.canvas_transform.map(obj)
-    
-    #def map_from_canvas(self, obj):
-        #"""
-        #Convenience method that maps *obj* from the canvas coordinate system 
-        #(logical pixels; see SceneEvent.canvas_transform) to the current 
-        #coordinate system of the event.
-        #"""
-        #return self.canvas_transform.inverse().map(obj)
 
     
 class SceneDrawEvent(SceneEvent):
