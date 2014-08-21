@@ -105,13 +105,10 @@ class TransformCache(object):
 
     def get(self, path):
         """ Get a transform from the cache that maps along *path*, which must
-        be a list of Entities beginning with the Entity to map *to*, and 
-        ending with the Entity to map *from*.
+        be a list of Transforms to apply in reverse order (last transform is
+        applied first).
         
         Accessed items have their age reset to 0.
-        
-        Note that path[0].transform is not used because the returned transform 
-        maps to the _local_ coordinate system of path[0]
         """
         key = tuple(map(id, path))
         item = self._cache.get(key, None)
@@ -121,18 +118,17 @@ class TransformCache(object):
         item[0] = 0  # reset age for this item 
         
         # make sure the chain is up to date
-        tr = item[1]
-        for i, entity in enumerate(path[1:]):
-            if tr.transforms[i] is not entity.transform:
-                tr[i] = entity.transform
+        #tr = item[1]
+        #for i, entity in enumerate(path[1:]):
+            #if tr.transforms[i] is not entity.transform:
+                #tr[i] = entity.transform
         
-        return tr
+        return item[1]
 
     def _create(self, path):
         # import here to avoid import cycle
         from .chain import ChainTransform
-        tr = [entity.transform for entity in path[1:]]
-        return ChainTransform(tr)        
+        return ChainTransform(path)
 
     def roll(self):
         """ Increase the age of all items in the cache by 1. Items whose age

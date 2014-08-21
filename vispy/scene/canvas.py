@@ -46,6 +46,9 @@ class SceneCanvas(app.Canvas):
         self.entity.transform = STTransform()
         
         self.scene = SubScene(parent=self.entity)
+        
+        # By default, the document coordinate system is the canvas.
+        self.scene.document = self.entity
 
     @property
     def scene(self):

@@ -159,6 +159,9 @@ class BaseTransform(object):
     def __rmul__(self, tr):
         return ChainTransform([tr, self])
 
+    def __repr__(self):
+        return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
+
 
 class InverseTransform(BaseTransform):
     def __init__(self, transform):

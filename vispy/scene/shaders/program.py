@@ -50,10 +50,7 @@ class ModularProgram(Program):
         self.changed()
         
     def _build(self):
-        import traceback
-        traceback.print_stack()
         logger.debug("Rebuild ModularProgram: %s" % self)
-        #print("REBUILD")
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
         code = self.compiler.compile()
         self.shaders[0].code = code['vert']
