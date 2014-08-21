@@ -1,5 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: gallery 30
 
 """ Terrain generation using diamond-square alogrithm
 and Scipy for Delaunay triangulation
@@ -198,8 +198,9 @@ class Canvas(app.Canvas):
         self.program.draw('triangles')
 
 
+generate_points(8)
+
 if __name__ == '__main__':
-    generate_points(8)
     c = Canvas()
     c.show()
     app.run()

@@ -1,5 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: gallery 30
 # -----------------------------------------------------------------------------
 # 2014, Almar Klein
 # Distributed under the terms of the new BSD License.

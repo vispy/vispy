@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-
+# vispy: gallery 2
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Test automatic layout of multiple viewboxes using Grid.
-
-
 """
+
 from vispy import scene
 from vispy import app
 import numpy as np
@@ -39,5 +44,5 @@ for i in range(10):
 
 
 import sys
-if sys.flags.interactive == 0:
+if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()

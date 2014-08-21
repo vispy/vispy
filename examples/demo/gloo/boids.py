@@ -82,9 +82,9 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
 
         # Create vertex buffers
-        self.vbo_position = gloo.VertexBuffer(particles['position'])
-        self.vbo_color = gloo.VertexBuffer(particles['color'])
-        self.vbo_size = gloo.VertexBuffer(particles['size'])
+        self.vbo_position = gloo.VertexBuffer(particles['position'].copy())
+        self.vbo_color = gloo.VertexBuffer(particles['color'].copy())
+        self.vbo_size = gloo.VertexBuffer(particles['size'].copy())
 
         # Bind vertex buffers
         self.program['color'] = self.vbo_color

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# vispy: gallery 30
+
 """
 Demo of jump flooding algoritm for EDT using GLSL
 Author: Stefan Gustavson (stefan.gustavson@gmail.com)

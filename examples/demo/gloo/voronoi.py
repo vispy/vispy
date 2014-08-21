@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vispy: gallery 30
 """Computing a Voronoi diagram on the GPU. Shows how to use uniform arrays.
 
 Original version by Xavier Olive (xoolive).

@@ -1,5 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: gallery 30
 # -----------------------------------------------------------------------------
 # 2014, Aurore Deschildre, Gael Goret, Cyrille Rossant, Nicolas P. Rougier.
 # Distributed under the terms of the new BSD License.
@@ -93,9 +93,9 @@ void main()
 """
 
 
-class MolecularViewerCanvas(app.Canvas):
+class Canvas(app.Canvas):
 
-    def __init__(self, fname):
+    def __init__(self):
         app.Canvas.__init__(self, title='Molecular viewer',
                             keys='interactive')
         self.size = 1200, 800
@@ -107,6 +107,7 @@ class MolecularViewerCanvas(app.Canvas):
         self.translate = 40
         translate(self.view, 0, 0, -self.translate)
 
+        fname = get_data_file('molecular_viewer/micelle.npz')
         self.load_molecule(fname)
         self.load_data()
 
@@ -192,11 +193,7 @@ class MolecularViewerCanvas(app.Canvas):
         self.program.draw('points')
 
 
-def main(fname):
-    mvc = MolecularViewerCanvas(fname)
+if __name__ == '__main__':
+    mvc = Canvas()
     mvc.show()
     app.run()
-
-if __name__ == '__main__':
-    fname = get_data_file('molecular_viewer/micelle.npz')
-    main(fname)

@@ -40,7 +40,6 @@ VERT_SHADER = """ // simple vertex shader
 attribute vec3 a_position;
 attribute vec2 a_texcoord;
 uniform float sizeFactor;
-//attribute float sizeFactor;
 
 void main (void) {
     // Pass tex coords

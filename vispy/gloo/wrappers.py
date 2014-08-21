@@ -59,8 +59,6 @@ def _to_args(x):
 
 def _check_conversion(key, valid_dict):
     """Check for existence of key in dict, return value or raise error"""
-    if isinstance(key, string_types):
-        key = key.lower()
     if key not in valid_dict and key not in valid_dict.values():
         # Only show users the nice string values
         keys = [v for v in valid_dict.keys() if isinstance(key, string_types)]

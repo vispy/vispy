@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Demonstrates plugging custom shaders in to a LineVisual.
 
@@ -16,7 +21,7 @@ from vispy.scene.shaders import Varying
 
 # vertex positions of data to draw
 N = 50
-pos = np.zeros((N, 3), dtype=np.float32)
+pos = np.zeros((N, 2), dtype=np.float32)
 pos[:, 0] = np.linspace(-0.9, 0.9, N)
 pos[:, 1] = np.random.normal(size=N, scale=0.2).astype(np.float32)
 
