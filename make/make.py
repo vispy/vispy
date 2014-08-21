@@ -21,6 +21,7 @@ import subprocess
 import re
 import webbrowser
 import traceback
+import numpy as np
 
 # Save where we came frome and where this module lives
 START_DIR = op.abspath(os.getcwd())
@@ -297,6 +298,9 @@ class Maker:
                 if m.frame in frames:
                     frames.remove(m.frame)
                     im = _screenshot((0, 0, c.size[0], c.size[1]))
+                    # Ensure we don't have alpha silliness
+                    im = np.array(im)
+                    im[:, :, 3] = 255
                     m.images.append(im)
                 if not frames:
                     m.done = True

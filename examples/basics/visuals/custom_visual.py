@@ -3,7 +3,6 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
-# vispy: gallery 2
 from __future__ import division
 import numpy as np
 from math import exp
