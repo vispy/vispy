@@ -27,13 +27,13 @@ varying vec4 v_pos;
 uniform vec2 scale; 
 
 void main() {
-    vec4 px_pos = $map_nd_to_canvas(v_pos);
+    vec4 px_pos = $map_nd_to_doc(v_pos);
     
     // Compute vectors representing width, height of pixel in local coords
     float s = 1.;
-    vec4 local_pos = $map_canvas_to_local(px_pos);
-    vec4 dx = $map_canvas_to_local(px_pos + vec4(1.0 / s, 0, 0, 0)) - local_pos;
-    vec4 dy = $map_canvas_to_local(px_pos + vec4(0, 1.0 / s, 0, 0)) - local_pos;
+    vec4 local_pos = $map_doc_to_local(px_pos);
+    vec4 dx = $map_doc_to_local(px_pos + vec4(1.0 / s, 0, 0, 0)) - local_pos;
+    vec4 dy = $map_doc_to_local(px_pos + vec4(0, 1.0 / s, 0, 0)) - local_pos;
     
     // Pixel length along each axis, rounded to the nearest power of 10
     vec2 px = s * vec2(abs(dx.x) + abs(dy.x), abs(dx.y) + abs(dy.y));
@@ -82,12 +82,12 @@ class Grid(Visual):
     def draw(self, event):
         gloo.set_state('translucent', cull_face='front_and_back')
 
-        canvas_to_ndc = event.entity_transform(map_from=event.canvas.entity, 
+        doc_to_ndc = event.entity_transform(map_from=event.document, 
                                               map_to=event.ndc)
-        local_to_canvas = event.canvas_transform()
+        local_to_doc = event.doc_transform()
         
-        self._program.frag['map_nd_to_canvas'] = canvas_to_ndc.shader_imap()
-        self._program.frag['map_canvas_to_local'] = local_to_canvas.shader_imap()
+        self._program.frag['map_nd_to_doc'] = doc_to_ndc.shader_imap()
+        self._program.frag['map_doc_to_local'] = local_to_doc.shader_imap()
         self._program.prepare()
         self._program['pos'] = self._buffer()
         self._program['scale'] = self._scale
