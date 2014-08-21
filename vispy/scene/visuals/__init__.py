@@ -27,3 +27,4 @@ from .rect_polygon import RectPolygon  # noqa
 from .text import Text  # noqa
 from .grid_lines import GridLines  # noqa
 from .line_agg import LineAgg  # noqa
+from .surface_plot import SurfacePlot  # noqa

@@ -14,7 +14,10 @@ class Mesh(ModularVisual):
                  pos=None, z=0.0, color=None, **kwargs):
         super(Mesh, self).__init__(**kwargs)
         self.set_gl_options(gl_options)
-        self.set_data(faces=faces, index=index, pos=pos, z=z, color=color)
+        
+        # todo: how should this be handled? Subclasses will often define
+        # different set_data signatures.
+        Mesh.set_data(self, faces=faces, index=index, pos=pos, z=z, color=color)
 
     def set_data(self, **kwds):
         kwds['index'] = kwds.pop('faces', kwds.get('index', None))
