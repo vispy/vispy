@@ -60,7 +60,7 @@ class SceneEvent(Event):
         """ Pop an entity from the stack. """
         ent = self._stack.pop(-1)
         if ent.document is not None:
-            self.pop_document()
+            assert ent.document == self.pop_document()
         return ent
 
     def push_viewbox(self, viewbox):
@@ -262,7 +262,7 @@ class SceneEvent(Event):
             try:
                 ind = self._stack.index(ent)
                 # copy stack onto path one entity at a time
-                while ind > -1 and path[-1] is not map_to:
+                while ind > -1 and path[-1] is not end:
                     ind -= 1
                     path.append(self._stack[ind])
             except IndexError:

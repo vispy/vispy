@@ -44,11 +44,11 @@ class SceneCanvas(app.Canvas):
         self.framebuffer.transform = STTransform()
         self.entity = Entity(parent=self.framebuffer)
         self.entity.transform = STTransform()
+        # By default, the document coordinate system is the canvas.
+        self.entity.document = self.entity
         
         self.scene = SubScene(parent=self.entity)
         
-        # By default, the document coordinate system is the canvas.
-        self.scene.document = self.entity
 
     @property
     def scene(self):

@@ -194,20 +194,16 @@ class LineAgg(Visual):
     def draw(self, event):
         self.set_options()
         
-        # WARNING: THIS IS TERRIBLY INEFFICIENT BECAUSE ALL DATA
-        # IS SENT ON GPU AT EVERY REFRESH!!!
-
         # check for transform changes
-        data_doc = event.full_transform.shader_map()
-        doc_px = event.doc_px_transform.shader_map()
-        px_ndc = event.px_ndc_transform.shader_map()
+        data_doc = event.doc_transform()
+        doc_px = event.entity_transform(map_from=event.document, 
+                                        map_to=event.framebuffer)
+        px_ndc = event.entity_transform(map_from=event.framebuffer, 
+                                        map_to=event.ndc)
         vert = self._program.vert
-        #if vert['doc_px_transform'] != doc_px:
-        vert['doc_px_transform'] = doc_px
-        #if vert['px_ndc_transform'] != px_ndc:
-        vert['px_ndc_transform'] = px_ndc
-        #if vert['transform'] != data_doc:
-        vert['transform'] = data_doc
+        vert['doc_px_transform'] = doc_px.shader_map()
+        vert['px_ndc_transform'] = px_ndc.shader_map()
+        vert['transform'] = data_doc.shader_map()
         
         # attributes / uniforms are not available until program is built
         self._program.prepare()
@@ -216,11 +212,11 @@ class LineAgg(Visual):
         for n, v in uniforms.iteritems():
             self._program[n] = v
             
-        # WARNING/TODO: put the different sets of uniforms and put them in attributes instead
+        # WARNING/TODO: put the different sets of uniforms and put them in 
+        # attributes instead
         for n, v in self._U[0].iteritems():
             self._program[n] = v
             
         self._program['u_dash_atlas'] = self._dash_atlas
         
         self._program.draw('triangles', indices=self.index)
-

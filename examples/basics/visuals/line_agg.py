@@ -9,7 +9,7 @@ from vispy import gloo
 from vispy.scene.visuals import LineAgg
 from vispy.scene.visuals import Visual
 from vispy.scene.transforms import STTransform, LogTransform, PolarTransform
-
+from vispy import scene
 
 class PanZoomTransform(STTransform):
     pan = (0., 0.)
@@ -28,13 +28,13 @@ class PanZoomTransform(STTransform):
 
 
 
-class PlotCanvas(app.Canvas):
+class PlotCanvas(scene.SceneCanvas):
     #def _normalize(self, (x, y)):
         #w, h = float(self.size[0]), float(self.size[1])
         #return x/(w/2.)-1., y/(h/2.)-1.
     
     def __init__(self, **kwargs):
-        app.Canvas.__init__(self, close_keys='escape', **kwargs)
+        scene.SceneCanvas.__init__(self, keys='interactive', **kwargs)
         self._visuals = []
         self.panzoom = PanZoomTransform()
         self.panzoom.scale = (200, -200)
@@ -97,7 +97,7 @@ class PlotCanvas(app.Canvas):
     def on_draw(self, event):
         gloo.clear()
         for v in self._visuals:
-            v.draw(self)
+            self.draw_visual(v)
 
     def show(self):
         super(PlotCanvas, self).show()
