@@ -24,36 +24,36 @@ void main() {
 
 FRAG = """
 varying vec4 v_pos;
+uniform vec2 scale; 
 
 void main() {
     vec4 px_pos = $map_nd_to_canvas(v_pos);
     
     // Compute vectors representing width, height of pixel in local coords
+    float s = 1.;
     vec4 local_pos = $map_canvas_to_local(px_pos);
-    vec4 dx = $map_canvas_to_local(px_pos + vec4(1, 0, 0, 0)) - local_pos;
-    vec4 dy = $map_canvas_to_local(px_pos + vec4(0, 1, 0, 0)) - local_pos;
+    vec4 dx = $map_canvas_to_local(px_pos + vec4(1.0 / s, 0, 0, 0)) - local_pos;
+    vec4 dy = $map_canvas_to_local(px_pos + vec4(0, 1.0 / s, 0, 0)) - local_pos;
     
     // Pixel length along each axis, rounded to the nearest power of 10
+    vec2 px = s * vec2(abs(dx.x) + abs(dy.x), abs(dx.y) + abs(dy.y));
     float log10 = log(10.0);
-    vec2 px = vec2(length(dx), length(dy));
-    float sx = pow(10.0, floor(log(px.x) / log10)+1);
-    float sy = pow(10.0, floor(log(px.y) / log10)+1);
+    float sx = pow(10.0, floor(log(px.x) / log10)+1) * scale.x;
+    float sy = pow(10.0, floor(log(px.y) / log10)+1) * scale.y;
     
-    vec4 color = vec4(0, 0, 0, 0);
+    vec4 color = vec4(1, 1, 1, 0);
     if (mod(local_pos.x, 100 * sx) < px.x) {
-        color = vec4(1, 1, 1, clamp(1 * sx/px.x, 0, 0.4));
-    }    
-    else if (mod(local_pos.y, 100 * sy) < px.y) {
-        color = vec4(1, 1, 1, clamp(1 * sy/px.y, 0, 0.4));
-    }    
+        color += vec4(0, 0, 0, clamp(1 * sx/px.x, 0, 0.4));
+    }
     else if (mod(local_pos.x, 10 * sx) < px.x) {
-        color = vec4(1, 1, 1, clamp(0.1 * sx/px.x, 0, 0.4));
+        color += vec4(0, 0, 0, clamp(0.1 * sx/px.x, 0, 0.4));
+    }
+    
+    if (mod(local_pos.y, 100 * sy) < px.y) {
+        color += vec4(0, 0, 0, clamp(1 * sy/px.y, 0, 0.4));
     }
     else if (mod(local_pos.y, 10 * sy) < px.y) {
-        color = vec4(1, 1, 1, clamp(0.1 * sy/px.y, 0, 0.4));
-    }
-    else {
-        discard;
+        color += vec4(0, 0, 0, clamp(0.1 * sy/px.y, 0, 0.4));
     }
     
     gl_FragColor = color;
@@ -63,10 +63,11 @@ void main() {
 class Grid(Visual):
     """
     """
-    def __init__(self, **kwds):
+    def __init__(self, scale=(1, 1), **kwds):
         super(Visual, self).__init__(**kwds)
         self._program = ModularProgram(VERT, FRAG)
         self._vbo = None
+        self._scale = scale
 
     def _buffer(self):
         if self._vbo is None:
@@ -88,5 +89,5 @@ class Grid(Visual):
         self._program.frag['map_canvas_to_local'] = local_to_canvas.shader_imap()
         self._program.prepare()
         self._program['pos'] = self._buffer()
-        #self._program['c_size'] = event.canvas.size
+        self._program['scale'] = self._scale
         self._program.draw('triangles')

@@ -61,9 +61,9 @@ class Grid(Widget):
         # determine starting/ending position of each row and column
         s2 = self.spacing / 2.
         rect = self.rect.padded(self.padding + self.margin - s2)
-        rows = np.linspace(rect.top, rect.bottom, nrows+1)
-        rowstart = rows[1:] + s2
-        rowend = rows[:-1] - s2
+        rows = np.linspace(rect.bottom, rect.top, nrows+1)
+        rowstart = rows[:-1] + s2
+        rowend = rows[1:] - s2
         cols = np.linspace(rect.left, rect.right, ncols+1)
         colstart = cols[:-1] + s2
         colend = cols[1:] - s2
