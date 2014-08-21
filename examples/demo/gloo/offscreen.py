@@ -1,6 +1,5 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# vispy: gallery 2
 
 """
 Demonstrate how to do offscreen rendering.
