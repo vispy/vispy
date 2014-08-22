@@ -262,12 +262,12 @@ def _fetch_file(url, file_name, print_destination=True):
     initial_size = 0
     try:
         # Checking file size and displaying it alongside the download url
-        u = urllib.request.urlopen(url)
+        u = urllib.request.urlopen(url, timeout=5.)
         file_size = int(u.headers['Content-Length'].strip())
         print('Downloading data from %s (%s)' % (url, sizeof_fmt(file_size)))
         # Downloading data (can be extended to resume if need be)
         local_file = open(temp_file_name, "wb")
-        data = urllib.request.urlopen(url)
+        data = urllib.request.urlopen(url, timeout=5.)
         _chunk_read(data, local_file, initial_size=initial_size)
         # temp file must be closed prior to the move
         if not local_file.closed:
