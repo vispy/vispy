@@ -15,24 +15,27 @@ from ..components import (TextureComponent, VertexTextureCoordinateComponent,
 
 
 class Image(Mesh):
-    """
-    Visual subclass displaying an image.
+    """Visual subclass displaying an image.
 
-    Parameters:
-        data : (height, width, 4) ubyte array
-        method : str
-            Selects method of rendering image in case of non-linear transforms.
-            Each method produces similar results, but may trade efficiency
-            and accuracy. If the transform is linear, this parameter is ignored
-            and a single quad is drawn around the area of the image.
-            'subdivide': Image is represented as a grid of triangles with
-                texture coordinates linearly mapped.
-            'impostor': Image is represented as a quad covering the entire
-                view, with texture coordinates determined by the transform.
-                This produces the best transformation results, but may be slow.
-        grid: (rows, cols)
-            If method='subdivide', this tuple determines the number of rows and
-            columns in the image grid.
+    Parameters
+    ----------
+    data : (height, width, 4) ubyte array
+        Image data.
+    method : str
+        Selects method of rendering image in case of non-linear transforms.
+        Each method produces similar results, but may trade efficiency
+        and accuracy. If the transform is linear, this parameter is ignored
+        and a single quad is drawn around the area of the image.
+
+            * 'subdivide': Image is represented as a grid of triangles with
+              texture coordinates linearly mapped.
+            * 'impostor': Image is represented as a quad covering the entire
+              view, with texture coordinates determined by the transform.
+              This produces the best transformation results, but may be slow.
+
+    grid: tuple (rows, cols)
+        If method='subdivide', this tuple determines the number of rows and
+        columns in the image grid.
     """
     def __init__(self, data, method='subdivide', grid=(10, 10), **kwargs):
         super(Image, self).__init__(**kwargs)

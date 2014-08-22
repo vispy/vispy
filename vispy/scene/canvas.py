@@ -30,7 +30,7 @@ class SceneCanvas(app.Canvas):
 
     See also
     --------
-    ``app.Canvas`` for other input Parameters.
+    vispy.app.Canvas for other input Parameters.
     """
     def __init__(self, *args, **kwargs):
         self._fb_stack = []  # for storing information about framebuffers used

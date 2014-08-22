@@ -48,12 +48,11 @@ Buffer classes
 Texture classes
 ===============
 
-.. autoclass:: vispy.gloo.Texture1D
-
 .. autoclass:: vispy.gloo.Texture2D
 
-.. autoclass:: vispy.gloo.texture.Texture
-    :members:
+.. autoclass:: vispy.gloo.Texture3D
+
+.. autoclass:: vispy.gloo.TextureAtlas
 
 
 Classes related to FBO

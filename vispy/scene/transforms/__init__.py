@@ -11,7 +11,7 @@ __all__ = ['NullTransform', 'STTransform', 'SRTTransform', 'AffineTransform',
            'InvPolarTransform', 'ChainTransform']
 
 from .base_transform import BaseTransform  # noqa
-from .linear import (NullTransform, STTransform, SRTTransform,  # noqa
+from .linear import (NullTransform, STTransform,  # noqa
                      AffineTransform,  PerspectiveTransform)  # noqa
 from .nonlinear import LogTransform, PolarTransform, InvPolarTransform  # noqa
 from .chain import ChainTransform  # noqa

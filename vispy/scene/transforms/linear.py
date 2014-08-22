@@ -41,6 +41,13 @@ class NullTransform(BaseTransform):
 
 class STTransform(BaseTransform):
     """ Transform performing only scale and translate, in that order.
+
+    Parameters
+    ----------
+    scale : array-like
+        Scale factors for X, Y, Z axes.
+    translate : array-like
+        Scale factors for X, Y, Z axes.
     """
     glsl_map = """
         vec4 st_transform_map(vec4 pos) {
@@ -210,6 +217,13 @@ class STTransform(BaseTransform):
 
 
 class AffineTransform(BaseTransform):
+    """Affine transformation class
+
+    Parameters
+    ----------
+    matrix : array-like
+        4x4 array to use for the transform.
+    """
     glsl_map = """
         vec4 affine_transform_map(vec4 pos) {
             return $matrix * pos;
@@ -348,17 +362,17 @@ class AffineTransform(BaseTransform):
         return s
 
 
-class SRTTransform(BaseTransform):
-    """ Transform performing scale, rotate, and translate, in that order.
-
-    This transformation allows objects to be placed arbitrarily in a scene
-    much the same way AffineTransform does. However, an incorrect order of
-    operations in AffineTransform may result in shearing the object (if scale
-    is applied after rotate) or in unpredictable translation (if scale/rotate
-    is applied after translation). SRTTransform avoids these problems by
-    enforcing the correct order of operations.
-    """
-    # TODO
+#class SRTTransform(BaseTransform):
+#    """ Transform performing scale, rotate, and translate, in that order.
+#
+#    This transformation allows objects to be placed arbitrarily in a scene
+#    much the same way AffineTransform does. However, an incorrect order of
+#    operations in AffineTransform may result in shearing the object (if scale
+#    is applied after rotate) or in unpredictable translation (if scale/rotate
+#    is applied after translation). SRTTransform avoids these problems by
+#    enforcing the correct order of operations.
+#    """
+#    # TODO
 
 
 class PerspectiveTransform(AffineTransform):

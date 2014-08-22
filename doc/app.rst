@@ -6,7 +6,7 @@ The app module
 
 ----
 
-.. autofunction:: vispy.app.use
+.. autofunction:: vispy.app.use_app
 
 .. autofunction:: vispy.app.create
 
