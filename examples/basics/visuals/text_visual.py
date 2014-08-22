@@ -15,11 +15,11 @@ class Canvas(scene.SceneCanvas):
         self.font_size = 48.
         self.text = Text('', bold=True)
         self.apply_zoom()
-    
+
     def on_draw(self, event):
         gloo.clear(color='white')
         self.draw_visual(self.text)
-    
+
     def on_mouse_wheel(self, event):
         """Use the mouse wheel to zoom."""
         self.font_size *= 1.25 if event.delta[1] > 0 else 0.8

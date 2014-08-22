@@ -1,31 +1,19 @@
 # -*- coding: utf-8 -*-
-from nose.tools import assert_equal
-
-from vispy.app import Canvas
 from vispy.scene.visuals import Text
-from vispy import gloo
-from vispy.testing import requires_application
+from vispy.testing import (requires_application, TestingCanvas,
+                           assert_image_equal)
 
 
 @requires_application()
 def test_text():
     """Test basic text support"""
-    with Canvas(size=(100, 100)) as c:
-        text = Text('X', bold=True, font_size=30, color='w')
-        gloo.set_viewport(0, 0, *c.size)
-        gloo.clear(color=(0., 0., 0., 1.))
-        text.draw()
-
-        s = gloo.util._screenshot()
-        assert_equal(s.min(), 0)
-        assert_equal(s.max(), 255)
-
-        # let's just peek at the texture, make sure it has something
-        gloo.clear(color=(0., 0., 0., 1.))
-        gloo.util.draw_texture(text._font._atlas)
-        s = gloo.util._screenshot()
-        assert_equal(s.max(), 255)
-        assert_equal(s.min(), 0)
-
-if __name__ == '__main__':
-    test_text()
+    with TestingCanvas(bgcolor='w', size=(92, 92)) as c:
+        pos = [92 // 2] * 2
+        text = Text('testing', font_size=20, color='k',
+                    pos=pos, anchor_x='center', anchor_y='baseline')
+        c.draw_visual(text)
+        # This limit seems large, but the images actually match quite well...
+        # TODO: we should probably make more "modes" for assert_image_equal
+        # at some point
+        # Test image created in Illustrator CS5, 1"x1" output @ 92 DPI
+        assert_image_equal("screenshot", 'visuals/text1.png', limit=840)
