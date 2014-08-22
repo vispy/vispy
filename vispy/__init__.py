@@ -34,7 +34,7 @@ from __future__ import division
 __all__ = ['use', 'sys_info', 'set_log_level', 'test']
 
 # Definition of the version number
-__version__ = '0.2.2'
+__version__ = '0.3'
 
 
 from .util import (_parse_command_line_arguments, config,  # noqa
