@@ -8,15 +8,31 @@ Scene graph
 ----
 
 vispy.scene.cameras
-----------------
+-------------------
 .. automodule:: vispy.scene.cameras
    :members:
 
 
 ----
 
+vispy.scene.shaders
+-------------------
+.. automodule:: vispy.scene.shaders
+   :members:
+
+
+----
+
+vispy.scene.transforms
+----------------------
+.. automodule:: vispy.scene.transforms
+   :members:
+
+
+----
+
 vispy.scene.visuals
-----------------
+-------------------
 .. automodule:: vispy.scene.visuals
    :members:
 
@@ -24,6 +40,6 @@ vispy.scene.visuals
 ----
 
 vispy.scene.widgets
-----------------
+-------------------
 .. automodule:: vispy.scene.widgets
    :members:
