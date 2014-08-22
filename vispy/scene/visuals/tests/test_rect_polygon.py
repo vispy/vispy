@@ -91,3 +91,37 @@ def test_rectpolygon_draw():
                                                        translate=(50, 50))
         c.draw_visual(rectpolygon)
         assert_image_equal("screenshot", 'visuals/rectpolygon9.png')
+
+
+@requires_application()
+def test_reactive_draw():
+    """Test reactive RectPolygon attributes"""
+    with TestingCanvas() as c:
+        rectpolygon = visuals.RectPolygon(pos=(50, 50, 0), height=40.,
+                                          width=80., color='red')
+        c.draw_visual(rectpolygon)
+
+        gloo.clear()
+        rectpolygon.radius = [20., 20, 0., 10.]
+        c.draw_visual(rectpolygon)
+        assert_image_equal("screenshot", 'visuals/reactive_rectpolygon1.png')
+
+        gloo.clear()
+        rectpolygon.pos = (60, 60, 0)
+        c.draw_visual(rectpolygon)
+        assert_image_equal("screenshot", 'visuals/reactive_rectpolygon2.png')
+
+        gloo.clear()
+        rectpolygon.color = 'blue'
+        c.draw_visual(rectpolygon)
+        assert_image_equal("screenshot", 'visuals/reactive_rectpolygon3.png')
+
+        gloo.clear()
+        rectpolygon.border_color = 'yellow'
+        c.draw_visual(rectpolygon)
+        assert_image_equal("screenshot", 'visuals/reactive_rectpolygon4.png')
+
+        gloo.clear()
+        rectpolygon.radius = 10.
+        c.draw_visual(rectpolygon)
+        assert_image_equal("screenshot", 'visuals/reactive_rectpolygon5.png')
