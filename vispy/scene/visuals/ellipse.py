@@ -21,7 +21,6 @@ class Ellipse(Polygon):
 
     Parameters
     ----------
-
     pos : array
         Center of the ellipse
     radius : float | tuple

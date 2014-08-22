@@ -10,30 +10,32 @@ can be used by a viewbox to provide clipping.
 
 In the root scene are two viewboxes: the left viewbox uses the 'viewport'
 clipping method and a PanZoomCamera, whereas the right viewbox uses the 'fbo'
-clipping method and a base Camera (null transform). 
+clipping method and a base Camera (null transform).
 
-Each of these viewboxes contains again two viewboxes, with the same 
-differences. In this way we test embedding each type of viewbox inside each 
+Each of these viewboxes contains again two viewboxes, with the same
+differences. In this way we test embedding each type of viewbox inside each
 type.
 
 This is what it should look like:
 
 The plot line has a "marker" region on the left side that points in the +y
 direction. In pixel coordinates, this is normally expected to point downward
-(because the pixel y-axis points down). However, the default behavior for 
-PanZoomCamera is to reverse its internal y-axis relative to its parent. 
+(because the pixel y-axis points down). However, the default behavior for
+PanZoomCamera is to reverse its internal y-axis relative to its parent.
 
-       vb1 uses        vb2 uses
-     PanZoomCamera   base Camera
-      (+y upward)   (+y downward)
-     _____________________________
-    |              |              |
-    |  +y upward   |  +y upward   |
-    |______________|______________|
-    |              |              |
-    | +y downward  | +y downward  |
-    |______________|______________|
-
+    +-----------------+-----------------+
+    | | vb1 uses      | | vb2 uses      |
+    | | PanZoomCamera | | base Camera   |
+    | | (+y upward)   | | (+y downward) |
+    +=================+=================+
+    |                 |                 |
+    |    +y upward    |    +y upward    |
+    |                 |                 |
+    +-----------------+-----------------+
+    |                 |                 |
+    |   +y downward   |   +y downward   |
+    |                 |                 |
+    +-----------------+-----------------+
 """
 
 import numpy as np

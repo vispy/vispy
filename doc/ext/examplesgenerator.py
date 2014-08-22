@@ -63,24 +63,23 @@ def get_example_filenames(examples_dir):
 def create_examples(examples):
 
     # Create doc file for each example
+    count = 0
     for filename, name in examples:
-        print('Writing example %s' % name)
-
         # Create title
         lines = []
+        # avoid "document isn't included in any toctree" warning
+        lines.append(':orphan:')
+        lines.append('')
         lines.append(name)
         lines.append('-' * len(lines[-1]))
         lines.append('')
 
         # Get source
-        in_gallery = False
         doclines = []
         sourcelines = []
         with open(os.path.join(EXAMPLES_DIR, name + '.py')) as f:
             for line in f.readlines():
                 line = line.rstrip()
-                if line.startswith('# vispy:') and 'gallery' in line:
-                    in_gallery = True
                 if not doclines:
                     if line.startswith('"""'):
                         doclines.append(line.lstrip('" '))
@@ -112,19 +111,33 @@ def create_examples(examples):
             os.makedirs(output_dir)
         with open(output_filename, 'w') as f:
             f.write('\n'.join(lines))
+        count += 1
+    print('Wrote %s examples.' % count)
 
 
 def create_examples_list(examples):
 
     # Create TOC
     lines = []
-    lines.append('List of examples')
+    lines.append('Full list of examples')
     lines.append('=' * len(lines[-1]))
+    lines.append('Check out the `gallery <http://vispy.org/gallery.html>`_ '
+                 'to see what some of these demos look like in action.')
     lines.append('')
 
     # Add entry for each example that we know
     for _, name in examples:
-        lines.append('* :doc:`examples/%s`' % name)
+        in_gallery = False
+        with open(os.path.join(EXAMPLES_DIR, name + '.py')) as f:
+            for line in f.readlines():
+                line = line.rstrip()
+                if line.startswith('# vispy:') and 'gallery' in line:
+                    in_gallery = True
+        if in_gallery:
+            extra = ' [`gallery <http://vispy.org/examples/%s.html>`__]' % name
+        else:
+            extra = ''
+        lines.append('* :doc:`examples/%s`%s' % (name, extra))
 
     # Write file
     with open(os.path.join(DOC_DIR, 'examples.rst'), 'w') as f:

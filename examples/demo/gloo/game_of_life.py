@@ -9,6 +9,9 @@
 # Abstract: GPU computing using the framebuffer
 # Keywords: framebuffer, GPU computing, cellular automata
 # -----------------------------------------------------------------------------
+"""
+Conway game of life.
+"""
 
 import numpy as np
 from vispy.gloo import (Program, FrameBuffer, DepthBuffer, clear, set_viewport,

@@ -12,11 +12,17 @@ from .base_transform import BaseTransform
 
 class LogTransform(BaseTransform):
     """ Transform perfoming logarithmic transformation on three axes.
+
     Maps (x, y, z) => (log(base.x, x), log(base.y, y), log(base.z, z))
 
     No transformation is applied for axes with base == 0.
 
     If base < 0, then the inverse function is applied: x => base.x ** x
+
+    Parameters
+    ----------
+    base : array-like
+        Base for the X, Y, Z axes.
     """
 
     # TODO: Evaluate the performance costs of using conditionals.
@@ -102,10 +108,10 @@ class LogTransform(BaseTransform):
 
 
 class PolarTransform(BaseTransform):
-    """
-    Polar transform maps (theta, r, z) to (x, y, z), where `x = r*cos(theta)`
-    and `y = r*sin(theta)`.
+    """Polar transform
 
+    Maps (theta, r, z) to (x, y, z), where `x = r*cos(theta)`
+    and `y = r*sin(theta)`.
     """
     glsl_map = """
         vec4 polar_transform_map(vec4 pos) {
@@ -150,6 +156,7 @@ class PolarTransform(BaseTransform):
 
 
 class InvPolarTransform(BaseTransform):
+    """Inverse polar transform"""
     glsl_map = PolarTransform.glsl_imap
     glsl_imap = PolarTransform.glsl_map
 
@@ -165,12 +172,12 @@ class InvPolarTransform(BaseTransform):
         return PolarTransform()
 
 
-class BilinearTransform(BaseTransform):
-    # TODO
-    pass
+#class BilinearTransform(BaseTransform):
+#    # TODO
+#    pass
 
 
-class WarpTransform(BaseTransform):
-    """ Multiple bilinear transforms in a grid arrangement.
-    """
-    # TODO
+#class WarpTransform(BaseTransform):
+#    """ Multiple bilinear transforms in a grid arrangement.
+#    """
+#    # TODO

@@ -19,7 +19,9 @@ def test_font_list():
 def test_font_glyph():
     """Test loading glyphs"""
     # try both a vispy and system font
-    for face in ('OpenSans', list_fonts()[0]):
+    sys_fonts = set(list_fonts()) - set(_vispy_fonts)
+    assert_true(len(sys_fonts) > 0)
+    for face in ('OpenSans', list(sys_fonts)[0]):
         font_dict = dict(face=face, size=12, bold=False, italic=False)
         glyphs_dict = dict()
         chars = 'foobar^C&#'

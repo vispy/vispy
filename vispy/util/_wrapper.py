@@ -13,7 +13,7 @@ def test(label='full', coverage=False, verbosity=1, *extra_args):
         Can be one of 'full', 'nose', 'nobackend', 'extra', 'lineendings',
         'flake', or any backend name (e.g., 'qt').
     coverage : bool
-        Produce coverage outputs (.coverage file and printing).
+        Produce coverage outputs (.coverage file).
     verbosity : int
         Verbosity level to use when running ``nose``.
     """

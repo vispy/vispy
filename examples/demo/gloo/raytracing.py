@@ -13,10 +13,9 @@ GLSL port of the following Python example:
     https://pbs.twimg.com/media/BPpbJTiCIAEoEPl.png
 
 TODO:
-* Once uniform structs are supported, refactor the code to encapsulate 
-  objects (spheres, planes, lights) in structures.
-* Customizable engine with an arbitrary number of objects.
-
+    * Once uniform structs are supported, refactor the code to encapsulate
+      objects (spheres, planes, lights) in structures.
+    * Customizable engine with an arbitrary number of objects.
 """
 
 from math import cos

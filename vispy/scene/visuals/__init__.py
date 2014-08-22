@@ -4,7 +4,15 @@ A Visual is an Entity that displays something.
 
 Visuals do not have to be used in a scenegraph per se; they can also
 be used stand-alone e.g. from a vispy.app.Canvas, or using Glut.
+
+This module provides a library of drawable objects that are intended to
+encapsulate simple graphic objects such as lines, meshes, points, 2D shapes,
+images, text, etc.
 """
+
+__all__ = ['Visual', 'LineVisual', 'Line', 'Markers', 'marker_types',
+           'Point', 'Image', 'Mesh', 'Polygon', 'Ellipse', 'RegularPolygon',
+           'RectPolygon', 'Text']
 
 from .visual import Visual  # noqa
 from .line import LineVisual, Line  # noqa

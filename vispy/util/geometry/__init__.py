@@ -3,12 +3,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Geometry module for Vispy
-
 This module implements classes and methods for handling geometric data.
 """
 
 from __future__ import division
+
+__all__ = ['PolygonData', 'Rect']
 
 from .polygon import PolygonData  # noqa
 from .rect import Rect  # noqa

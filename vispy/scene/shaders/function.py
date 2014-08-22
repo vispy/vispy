@@ -175,7 +175,7 @@ class ShaderObject(object):
 
 
 class Function(ShaderObject):
-    """ Representation of a GLSL function
+    """Representation of a GLSL function
     
     Objects of this class can be used for re-using and composing GLSL
     snippets. Each Function consists of a GLSL snippet in the form of
@@ -189,9 +189,8 @@ class Function(ShaderObject):
     * float, int, tuple are automatically turned into a uniform Variable
     * a VertexBuffer is automatically turned into an attribute Variable
     
-    Example
-    -------
-    
+    Examples
+    --------
     This example shows the basic usage of the Function class::
 
         vert_code_template = Function('''
@@ -299,7 +298,6 @@ class Function(ShaderObject):
         # Updating variables
         code['offset'].value = 4.0
         position['position'].value.set_data(...)
-    
     """
     
     def __init__(self, code, dependencies=None):
@@ -957,24 +955,25 @@ class FunctionCall(Expression):
     
 
 class FunctionChain(Function):
-    """
-    Function subclass that generates GLSL code to call a list of Functions
-    in order. Functions may be called independently, or composed such that the
+    """Subclass that generates GLSL code to call Function list in order
+
+    Functions may be called independently, or composed such that the
     output of each function provides the input to the next.
 
-    Arguments:
-
+    Parameters
+    ----------
     name : str
         The name of the generated function
     funcs : list of Functions
         The list of Functions that will be called by the generated GLSL code.
 
+    Examples
+    --------
+    This creates a function chain:
 
-    Example:
-
-        func1 = Function('void my_func_1() {}')
-        func2 = Function('void my_func_2() {}')
-        chain = FunctionChain('my_func_chain', [func1, func2])
+        >>> func1 = Function('void my_func_1() {}')
+        >>> func2 = Function('void my_func_2() {}')
+        >>> chain = FunctionChain('my_func_chain', [func1, func2])
 
     If *chain* is included in a ModularProgram, it will generate the following
     output:
@@ -1001,7 +1000,6 @@ class FunctionChain(Function):
         vec3 my_func_chain(vec3 input) {
             return my_func_2(my_func_1(input));
         }
-
     """
     def __init__(self, name=None, funcs=()):
         # bypass Function.__init__ completely.

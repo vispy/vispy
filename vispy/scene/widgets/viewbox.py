@@ -121,9 +121,8 @@ class ViewBox(Widget):
         * 'fragment' - clipping in the fragment shader TODO
         * 'stencil' - TODO
 
-        Restrictions and considerations
-        -------------------------------
-
+        Notes
+        -----
         The 'viewport' method requires that the transformation (from
         the pixel grid to this viewbox) is translate+scale only. If
         this is not the case, the method falls back to the default.
