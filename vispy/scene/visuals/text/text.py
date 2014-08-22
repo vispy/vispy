@@ -23,6 +23,7 @@ from ....util.fonts import _load_glyph
 from ...shaders import ModularProgram
 from ....color import Color
 from ..visual import Visual
+from ....io import vispy_data_dir
 
 
 class TextureFont(object):
@@ -38,8 +39,7 @@ class TextureFont(object):
     def __init__(self, font, renderer):
         self._atlas = TextureAtlas()
         self._atlas.wrapping = 'clamp_to_edge'
-        self._kernel = np.load(op.join(op.dirname(__file__), '..', '..', '..',
-                                       'data', 'spatial-filters.npy'))
+        self._kernel = np.load(op.join(vispy_data_dir, 'spatial-filters.npy'))
         self._renderer = renderer
         self._font = deepcopy(font)
         self._font['size'] = 256  # use high resolution point size for SDF

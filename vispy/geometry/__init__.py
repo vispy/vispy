@@ -8,7 +8,9 @@ This module implements classes and methods for handling geometric data.
 
 from __future__ import division
 
-__all__ = ['PolygonData', 'Rect']
+__all__ = ['Triangulation', 'PolygonData', 'Rect']
 
 from .polygon import PolygonData  # noqa
 from .rect import Rect  # noqa
+from .triangulation import Triangulation  # noqa
+from .calculations import _calculate_normals, _fast_cross_3d  # noqa

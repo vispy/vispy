@@ -10,7 +10,7 @@ from ..visuals.visual import Visual
 from ..visuals.line import Line
 from ..transforms import STTransform
 from ...util.event import Event
-from ...util.geometry import Rect
+from ...geometry import Rect
 from ...color import Color
 
 

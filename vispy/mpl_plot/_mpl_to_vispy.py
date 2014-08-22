@@ -20,7 +20,7 @@ else:
 
 from ..ext.six import BytesIO
 from ..color import Color
-from ..util.dataio import read_png
+from ..io import read_png
 
 from ..scene.visuals import LineVisual, Markers, Text, Image
 from ..scene.widgets import ViewBox

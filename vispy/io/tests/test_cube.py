@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from vispy.util.cube import cube
+from vispy.io import cube
 
 
 def test_cube():

@@ -17,7 +17,7 @@ from PIL import Image
 from vispy import app
 from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
                         VertexBuffer, Texture2D, set_viewport)
-from vispy.util import get_data_file
+from vispy.io import get_data_file
 
 this_dir = op.abspath(op.dirname(__file__))
 

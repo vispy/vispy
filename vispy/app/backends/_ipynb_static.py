@@ -20,7 +20,7 @@ from ...util import logger
 
 # Imports for screenshot
 from ...gloo.util import _screenshot
-from ...util import make_png
+from ...io import make_png
 from base64 import b64encode
 
 # -------------------------------------------------------------------- init ---
@@ -52,9 +52,9 @@ def _set_config(c):
 try:
     # Explicitly use default (avoid using test-app)
     _app = Application('default')
-except RuntimeError:
+except Exception:
     _msg = 'ipynb_static backend relies on a core backend'
-    available, testable, why_not = False, False, _msg
+    available, testable, why_not, which = False, False, _msg, None
 else:
     # Try importing IPython
     try:
@@ -67,7 +67,7 @@ else:
             _msg = 'ipynb_staatic backend refuses to work with GLUT'
             available, testable, why_not, which = False, False, _msg, None
         else:
-            available, testable, why_not = True, True, None
+            available, testable, why_not = True, False, None
             which = _app.backend_module.which
 
     # Use that backend's shared context

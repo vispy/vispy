@@ -1,11 +1,14 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
 from os import path as op
 from nose.tools import assert_equal, assert_raises
 from numpy.testing import assert_allclose, assert_array_equal
 import warnings
 
-from vispy.util.dataio import write_mesh, read_mesh, crate, imsave, imread
-from vispy.util._geom import _fast_cross_3d
+from vispy.io import write_mesh, read_mesh, crate, imsave, imread
+from vispy.geometry import _fast_cross_3d
 from vispy.util import _TempDir
 from vispy.testing import requires_img_lib
 

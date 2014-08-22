@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from ..util import get_data_file
+from ..util.fetching import get_data_file
 
 
 def load_iris():

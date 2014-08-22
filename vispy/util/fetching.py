@@ -12,7 +12,7 @@ import sys
 import shutil
 
 from ..ext.six.moves import urllib
-from ._config import config
+from ..util.config import config
 
 
 ###############################################################################

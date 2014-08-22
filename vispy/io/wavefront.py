@@ -21,8 +21,8 @@ The classes are written with compatibility of Python3 in mind.
 import numpy as np
 import time
 
-from .._geom import _calculate_normals
-from .._logging import logger
+from ..geometry import _calculate_normals
+from ..util import logger
 
 
 class WavefrontReader(object):

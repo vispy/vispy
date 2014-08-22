@@ -6,20 +6,21 @@
 """
 
 import os
+from os import path as op
 import bz2
 import numpy as np
 
 from .wavefront import WavefrontReader, WavefrontWriter
+from ..ext.png import Reader
 
-THISDIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(os.path.dirname(THISDIR), '..', 'data')
+DATA_DIR = op.join(op.dirname(__file__), '_data')
 
 
 # So we can demo image data without needing an image reading library
 def crate():
     """ Return an image of a crate (256x256 RGB).
     """
-    with open(os.path.join(DATA_DIR, 'crate.bz2'), 'rb') as f:
+    with open(op.join(DATA_DIR, 'crate.bz2'), 'rb') as f:
         bb = f.read()
     a = np.frombuffer(bz2.decompress(bb), np.uint8)
     a.shape = 256, 256, 3
@@ -59,17 +60,17 @@ def read_mesh(fname, format=None):
     Mesh files that ship with vispy always work, such as 'triceratops.obj'.
     """
     # Check file
-    if not os.path.isfile(fname):
+    if not op.isfile(fname):
         # Maybe we have it?
-        fname_ = os.path.join(DATA_DIR, fname)
-        if os.path.isfile(fname_):
+        fname_ = op.join(DATA_DIR, fname)
+        if op.isfile(fname_):
             fname = fname_
         else:
             raise ValueError('File does not exist: %s' % fname)
 
     # Check format
     if format is None:
-        format = os.path.splitext(fname)[1]
+        format = op.splitext(fname)[1]
     format = format.strip('. ').upper()
 
     if format == 'OBJ':
@@ -85,7 +86,7 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
     """ Write mesh data to file.
     """
     # Check file
-    if os.path.isfile(fname):
+    if op.isfile(fname):
         if not overwrite:
             raise IOError('file "%s" exists, use overwrite=True' % fname)
         else:
@@ -99,8 +100,18 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
 
 
 def read_png(filename):
-    """Helper to read a PNG file to RGB8 or RGBA8 (with no external deps)"""
-    from ...ext.png import Reader
+    """Helper to read a PNG file to RGB8 or RGBA8 (with no external deps)
+
+    Parameters
+    ----------
+    filename : str
+        File to read.
+
+    Returns
+    -------
+    data : array
+        Image data.
+    """
     x = Reader(filename)
     try:
         alpha = x.asDirect()[3]['alpha']
@@ -118,7 +129,19 @@ def read_png(filename):
 
 
 def imread(filename, format=None):
-    """ Function to read image data. Requires imageio or PIL.
+    """Function to read image data. Requires imageio or PIL.
+
+    Parameters
+    ----------
+    filename : str
+        Filename to read.
+    format : str | None
+        Format of the file. If None, it will be inferred from the filename.
+
+    Returns
+    -------
+    data : array
+        Image data.
     """
     imageio, PIL = _check_img_lib()
     if imageio is not None:
@@ -138,7 +161,16 @@ def imread(filename, format=None):
 
 
 def imsave(filename, im, format=None):
-    """ Function to save image data. Requires imageio or PIL.
+    """Function to save image data. Requires imageio or PIL.
+
+    Parameters
+    ----------
+    filename : str
+        Filename to write.
+    im : array
+        Image data.
+    format : str | None
+        Format of the file. If None, it will be inferred from the filename.
     """
     # Import imageio or PIL
     imageio, PIL = _check_img_lib()

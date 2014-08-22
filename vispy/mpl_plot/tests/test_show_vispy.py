@@ -5,7 +5,7 @@
 import numpy as np
 from nose.tools import assert_raises
 
-from vispy.util import read_png, get_data_file
+from vispy.io import read_png, get_data_file
 from vispy.testing import has_matplotlib, requires_application
 import vispy.mpl_plot as plt
 

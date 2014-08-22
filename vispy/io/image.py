@@ -22,9 +22,11 @@ def make_png(data, level=6):
     level : int
         https://docs.python.org/2/library/zlib.html#zlib.compress
         An integer from 0 to 9 controlling the level of compression:
-            1 is fastest and produces the least compression,
-            9 is slowest and produces the most.
-            0 is no compression.
+
+            * 1 is fastest and produces the least compression,
+            * 9 is slowest and produces the most.
+            * 0 is no compression.
+
         The default value is 6.
 
     Returns

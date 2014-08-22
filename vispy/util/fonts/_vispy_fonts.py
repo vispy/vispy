@@ -4,7 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from .._data import get_data_file
+from ..fetching import get_data_file
 
 # List the vispy fonts made available online
 _vispy_fonts = ('OpenSans', 'Cabin')

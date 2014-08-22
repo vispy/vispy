@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
 from numpy.testing import assert_array_equal
 from os import path as op
 
-from vispy.util import make_png, _TempDir
-from vispy.util.dataio import read_png
+from vispy.io import read_png, make_png
+from vispy.util import _TempDir
 
 temp_dir = _TempDir()
 

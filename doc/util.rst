@@ -46,14 +46,6 @@ vispy.util.fonts
 
 ----
 
-vispy.util.geometry
--------------------
-.. automodule:: vispy.util.geometry
-    :members:
-
-
-----
-
 vispy.util.keys
 ---------------
 .. automodule:: vispy.util.keys

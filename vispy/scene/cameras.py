@@ -21,7 +21,7 @@ from __future__ import division
 import numpy as np
 
 from .entity import Entity
-from ..util.geometry import Rect
+from ..geometry import Rect
 from .transforms import (STTransform, PerspectiveTransform, NullTransform,
                          AffineTransform)
 

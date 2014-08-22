@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Classses representing GLSL objects (functions, variables, etc) that may be
 composed together to create complete shaders. 
@@ -17,10 +20,10 @@ trigger a recompile.
 import re
 import numpy as np
 
-from ...util.ordereddict import OrderedDict
 from ...util.event import EventEmitter, Event
 from ...util.eq import eq
 from ...util import logger
+from ...ext.ordereddict import OrderedDict
 from ...ext.six import string_types
 from . import parsing
 from .compiler import Compiler
@@ -952,7 +955,7 @@ class FunctionCall(Expression):
         args = ', '.join(str_args)
         fname = self.function.expression(names)
         return '%s(%s)' % (fname, args)
-    
+
 
 class FunctionChain(Function):
     """Subclass that generates GLSL code to call Function list in order

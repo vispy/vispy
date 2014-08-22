@@ -2,7 +2,7 @@
 from __future__ import division, print_function
 
 import numpy as np
-from ..ordereddict import OrderedDict
+from ..ext.ordereddict import OrderedDict
 from itertools import permutations
 
 

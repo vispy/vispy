@@ -13,7 +13,7 @@
 import numpy as np
 from vispy import app
 
-from vispy.util.cube import cube
+from vispy.io import cube
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer, DepthBuffer, set_viewport, set_state)

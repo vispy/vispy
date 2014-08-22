@@ -26,7 +26,9 @@ from distutils.version import LooseVersion
 from ..scene import SceneCanvas
 from ..ext.six.moves import http_client as httplib
 from ..ext.six.moves import urllib_parse as urllib
-from ..util import make_png, use_log_level
+from ..io import make_png, read_png
+from ..util import use_log_level
+from ..util.fetching import get_testing_file
 from .. import gloo
 
 ###############################################################################
@@ -224,7 +226,7 @@ def glut_skip():
 
 def requires_img_lib():
     """Decorator for tests that require an image library"""
-    from ..util.dataio import _check_img_lib
+    from ..io.io import _check_img_lib
     if sys.platform.startswith('win'):
         has_img_lib = False  # PIL breaks tests on windows (!)
     else:
@@ -319,8 +321,6 @@ def assert_image_equal(image, reference, limit=40):
         Number of pixels that can differ in the image.
     """
     from ..gloo.util import _screenshot
-    from ..util.dataio import read_png
-    from ..util import get_testing_file
 
     if image == "screenshot":
         image = _screenshot(alpha=False)

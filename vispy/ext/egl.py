@@ -209,7 +209,8 @@ EGL_ALPHA_FORMAT_PRE = EGL_VG_ALPHA_FORMAT_PRE
 
 _lib.eglGetDisplay.argtypes = _c_int,
 _lib.eglGetDisplay.restype = c_void_p
-_lib.eglInitialize.argtypes = c_void_p, _POINTER(_c_int), _POINTER(_c_int),
+_lib.eglInitialize.argtypes = c_void_p, _POINTER(_c_int), _POINTER(_c_int)
+_lib.eglTerminate.argtypes = c_void_p,
 _lib.eglChooseConfig.argtypes = (c_void_p, _POINTER(_c_int),
                                  _POINTER(c_void_p), _c_int, _POINTER(_c_int))
 _lib.eglCreateWindowSurface.argtypes = (c_void_p, c_void_p,
@@ -247,6 +248,12 @@ def eglInitialize(display):
     if res == EGL_FALSE:
         raise RuntimeError('Could not initialize')
     return majorVersion[0], minorVersion[0]
+
+
+def eglTerminate(display):
+    """ Initialize EGL and return EGL version tuple.
+    """
+    _lib.eglTerminate(display)
 
 
 def eglQueryString(display, name):

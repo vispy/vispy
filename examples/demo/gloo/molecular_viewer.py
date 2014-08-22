@@ -9,7 +9,7 @@ import numpy as np
 from vispy import gloo
 from vispy import app
 from vispy.util.transforms import perspective, translate, rotate
-from vispy.util import get_data_file
+from vispy.io import get_data_file
 
 vertex = """
 #version 120

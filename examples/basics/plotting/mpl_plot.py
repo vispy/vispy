@@ -12,7 +12,7 @@ import numpy as np
 import sys
 
 import vispy.mpl_plot as plt
-from vispy.util import read_png, get_data_file
+from vispy.io import read_png, get_data_file
 
 n = 200
 freq = 10

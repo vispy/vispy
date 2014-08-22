@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""
+Some wrappers to avoid circular imports, or make certain calls easier.
+"""
 
-""" 
+"""
 The idea of a 'global' vispy.use function is that although vispy.app
 and vispy.gloo.gl can be used independently, they are not complely
 independent for some configureation. E.g. when using real ES 2.0,
@@ -14,6 +17,9 @@ This module does not have to be aware of the available app and gl
 backends, but it should be(come) aware of (in)compatibilities between
 them.
 """
+
+import subprocess
+import inspect
 
 
 def use(app=None, gl=None):
@@ -67,7 +73,7 @@ def use(app=None, gl=None):
     if app == 'ipynb_webgl':
         app = 'headless'
         gl = 'webgl'
-    
+
     # Apply now
     if app:
         import vispy.app
@@ -75,3 +81,60 @@ def use(app=None, gl=None):
     if gl:
         import vispy.gloo
         vispy.gloo.gl.use_gl(gl)
+
+
+# Define test proxy function, so we don't have to import vispy.testing always
+def test(label='full', coverage=False, verbosity=1, *extra_args):
+    """Test vispy software
+
+    Parameters
+    ----------
+    label : str
+        Can be one of 'full', 'nose', 'nobackend', 'extra', 'lineendings',
+        'flake', or any backend name (e.g., 'qt').
+    coverage : bool
+        Produce coverage outputs (.coverage file).
+    verbosity : int
+        Verbosity level to use when running ``nose``.
+    """
+    from ..testing import _tester
+    return _tester(label, coverage, verbosity, extra_args)
+
+
+def run_subprocess(command):
+    """Run command using subprocess.Popen
+
+    Run command and wait for command to complete. If the return code was zero
+    then return, otherwise raise CalledProcessError.
+    By default, this will also add stdout= and stderr=subproces.PIPE
+    to the call to Popen to suppress printing to the terminal.
+
+    Parameters
+    ----------
+    command : list of str
+        Command to run as subprocess (see subprocess.Popen documentation).
+
+    Returns
+    -------
+    stdout : str
+        Stdout returned by the process.
+    stderr : str
+        Stderr returned by the process.
+    """
+    # code adapted with permission from mne-python
+    kwargs = dict(stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+
+    p = subprocess.Popen(command, **kwargs)
+    stdout_, stderr = p.communicate()
+
+    output = (stdout_, stderr)
+    if p.returncode:
+        print(stdout_)
+        print(stderr)
+        err_fun = subprocess.CalledProcessError.__init__
+        if 'output' in inspect.getargspec(err_fun).args:
+            raise subprocess.CalledProcessError(p.returncode, command, output)
+        else:
+            raise subprocess.CalledProcessError(p.returncode, command)
+
+    return output

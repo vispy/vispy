@@ -18,8 +18,8 @@ import inspect
 import weakref
 import traceback
 
-from .ordereddict import OrderedDict
-from ._logging import logger, _handle_exception
+from .logs import logger, _handle_exception
+from ..ext.ordereddict import OrderedDict
 from ..ext.six import string_types
 
 
