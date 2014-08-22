@@ -69,6 +69,9 @@ except RuntimeError:
 else:
     # Try importing IPython
     try:
+        import IPython
+        if IPython.version_info < (2,):
+            raise RuntimeError('ipynb_vnc backend need IPython version >= 2.0')
         from IPython.html.widgets import DOMWidget
         from IPython.utils.traitlets import Unicode, Int, Float, Bool
         from IPython.display import display, Javascript
