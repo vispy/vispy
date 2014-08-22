@@ -7,7 +7,7 @@ from __future__ import division
 from . import transforms
 from ..util.event import EmitterGroup, Event
 from .events import SceneDrawEvent, SceneMouseEvent
-from .transforms import NullTransform
+from .transforms import NullTransform, create_transform
 
 
 class Entity(object):
@@ -187,6 +187,12 @@ class Entity(object):
         self._transform = tr
         self._transform.changed.connect(self._transform_changed)
         self._transform_changed(None)
+
+    def set_transform(self, type, *args, **kwds):
+        """ Create a new transform of *type* and assign it to this entity.
+        All extra arguments are used in the construction of the transform.
+        """
+        self.transform = create_transform(type, *args, **kwds)
 
     def _transform_changed(self, event):
         self.events.transform_change()

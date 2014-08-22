@@ -85,7 +85,7 @@ class VertexColorComponent(VisualComponent):
     @property
     def vbo(self):
         if self._vbo is None:
-            self._vbo = gloo.VertexBuffer(self._color)
+            self._vbo = gloo.VertexBuffer(self._color.astype(np.float32))
         return self._vbo
 
     def activate(self, program, mode):
