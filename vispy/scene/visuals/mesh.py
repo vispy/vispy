@@ -13,7 +13,8 @@ class Mesh(ModularVisual):
     def __init__(self, gl_options='translucent', faces=None, index=None, 
                  pos=None, z=0.0, color=None, **kwargs):
         super(Mesh, self).__init__(**kwargs)
-        self.set_gl_options(gl_options)
+        self.set_gl_options(depth_test=True, cull_face='front_and_back')
+        self.update_gl_options(gl_options)
         
         # todo: how should this be handled? Subclasses will often define
         # different set_data signatures.

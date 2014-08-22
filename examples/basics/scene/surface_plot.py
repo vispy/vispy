@@ -4,27 +4,42 @@ This example demonstrates the use of the SurfacePlot visual.
 """
 
 import vispy.app, vispy.scene
+import vispy.util.filter
 import numpy as np
 
 
 canvas = vispy.scene.SceneCanvas(keys='interactive')
 canvas.show()
 view = canvas.central_widget.add_view()
-view.set_camera('turntable')
+view.set_camera('turntable', mode='perspective', up='z', distance=2)
 
 ### Add a grid to the view
-g = vispy.scene.visuals.GridLines()
-view.add(g)
-
+#g = vispy.scene.visuals.GridLines()
+#view.add(g)
+axis = vispy.scene.visuals.XYZAxis(parent=view.scene)
+#axis.set_transform('st', scale=(2, 2, 2))
 
 ## Simple surface plot example
 ## x, y values are not specified, so assumed to be 0:50
-z = np.random.normal(size=(50,50))
+z = vispy.util.filter.gaussian_filter(np.random.normal(size=(50,50)), (1, 1))
 p1 = vispy.scene.visuals.SurfacePlot(z=z, color=(0.5, 0.5, 1, 1))
-#p1.transform = vispy.scene.transforms.AffineTransform()
-#p1.transform.scale([16./49., 16./49., 1.0])
-#p1.transform.translate([-18, 2, 0])
+p1.transform = vispy.scene.transforms.AffineTransform()
+p1.transform.scale([1/49., 1/49., 0.02])
+p1.transform.translate([-0.5, -0.5, 0])
+
+normal_comp = vispy.scene.components.VertexNormalComponent(p1._meshdata)
+p1.color_components = [
+    vispy.scene.components.UniformColorComponent((0.5, 0.5, 1, 1)),
+    vispy.scene.components.ShadingComponent(normal_comp,
+                                        lights=[((-1, -1, -1),
+                                                 (1.0, 1.0, 1.0))],
+                                        ambient=0.2)]
+
 view.add(p1)
+
+
+
+
 
 ### Saddle example with x and y specified
 #x = np.linspace(-8, 8, 50)
@@ -90,4 +105,4 @@ view.add(p1)
     #if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
         #QtGui.QApplication.instance().exec_()
 
-canvas.app.run()
+#canvas.app.run()

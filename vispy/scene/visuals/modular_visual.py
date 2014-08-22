@@ -228,7 +228,7 @@ class ModularVisual(Visual):
         """
         if default is not -1:
             self._gl_options[0] = default
-        self._gl_options.update(kwds)
+        self._gl_options[1].update(kwds)
 
     def gl_options(self):
         """
@@ -270,7 +270,7 @@ class ModularVisual(Visual):
         for comp in self._color_components:
             comp._attach(self)
         self.events.update()
-
+        
     def update(self):
         """
         This method is called whenever the Visual must be redrawn.
