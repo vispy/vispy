@@ -135,6 +135,9 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     width = height = ascender = descender = 0
     ratio, slop = 1. / font.ratio, font.slop
     x_off = -slop
+    # Need to store the original viewport, because the font[char] will
+    # trigger SDF rendering, which changes our viewport
+    orig_viewport = get_parameter('viewport')
     for ii, char in enumerate(text):
         glyph = font[char]
         kerning = glyph['kerning'].get(prev, 0.) * ratio
@@ -155,6 +158,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
         width += x_move
         height = max(height, glyph['size'][1] - 2*slop)
         prev = char
+    set_viewport(*orig_viewport)
 
     # Tight bounding box (loose would be width, font.height /.asc / .desc)
     width -= glyph['advance'] * ratio - (glyph['size'][0] - 2*slop)
@@ -421,7 +425,6 @@ class Text(Visual):
         if len(self.text) == 0:
             return
         if self._vertices is None:
-            orig_viewport = get_parameter('viewport')
             # we delay creating vertices because it requires a context,
             # which may or may not exist when the object is initialized
             self._vertices = _text_to_vbo(self._text, self._font,
@@ -431,7 +434,6 @@ class Text(Visual):
                    np.arange(0, 4*len(self._text), 4,
                              dtype=np.uint32)[:, np.newaxis])
             self._ib = IndexBuffer(idx.ravel())
-            set_viewport(*orig_viewport)
 
         if event is not None:
             xform = event.render_transform.shader_map()
