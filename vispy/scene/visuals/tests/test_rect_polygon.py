@@ -9,6 +9,7 @@ from vispy import gloo
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, assert_image_equal,
                            TestingCanvas)
+from nose.tools import assert_raises
 
 
 @requires_application()
@@ -125,3 +126,16 @@ def test_reactive_draw():
         rectpolygon.radius = 10.
         c.draw_visual(rectpolygon)
         assert_image_equal("screenshot", 'visuals/reactive_rectpolygon5.png')
+
+
+@requires_application()
+def test_attributes():
+    """Test if attribute checks are in place"""
+    with TestingCanvas():
+        rectpolygon = visuals.RectPolygon(pos=(50, 50, 0), height=40.,
+                                          width=80., color='red')
+        assert_raises(ValueError, setattr, rectpolygon, 'height', 0.)
+        assert_raises(ValueError, setattr, rectpolygon, 'width', 0.)
+        assert_raises(ValueError, setattr, rectpolygon, 'radius', [10, 0, 5])
+        assert_raises(ValueError, setattr, rectpolygon, 'radius', [10.])
+        assert_raises(ValueError, setattr, rectpolygon, 'radius', 21.)
