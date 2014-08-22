@@ -14,5 +14,6 @@ def test_text():
         c.draw_visual(text)
         # This limit seems large, but the images actually match quite well...
         # TODO: we should probably make more "modes" for assert_image_equal
-        # at some point 
+        # at some point
+        # Test image created in Illustrator CS5, 1"x1" output @ 92 DPI
         assert_image_equal("screenshot", 'visuals/text1.png', limit=840)
