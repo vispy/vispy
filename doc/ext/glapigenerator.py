@@ -28,7 +28,7 @@ def parse_api(ob):
 
 def main():
 
-    lines = []
+    lines = [':orphan:', '']
 
     # Get info
     gl_const_names, gl_func_names = parse_api(gl)

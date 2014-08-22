@@ -6,7 +6,7 @@ Provides classes representing different transform types suitable for
 use with visuals and scenes.
 """
 
-__all__ = ['NullTransform', 'STTransform', 'SRTTransform', 'AffineTransform',
+__all__ = ['NullTransform', 'STTransform', 'AffineTransform',
            'PerspectiveTransform', 'LogTransform', 'PolarTransform',
            'InvPolarTransform', 'ChainTransform']
 

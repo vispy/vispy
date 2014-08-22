@@ -175,7 +175,7 @@ class ShaderObject(object):
 
 
 class Function(ShaderObject):
-    """ Representation of a GLSL function
+    """Representation of a GLSL function
     
     Objects of this class can be used for re-using and composing GLSL
     snippets. Each Function consists of a GLSL snippet in the form of
@@ -189,9 +189,8 @@ class Function(ShaderObject):
     * float, int, tuple are automatically turned into a uniform Variable
     * a VertexBuffer is automatically turned into an attribute Variable
     
-    Example
-    -------
-    
+    Examples
+    --------
     This example shows the basic usage of the Function class::
 
         vert_code_template = Function('''
@@ -299,7 +298,6 @@ class Function(ShaderObject):
         # Updating variables
         code['offset'].value = 4.0
         position['position'].value.set_data(...)
-    
     """
     
     def __init__(self, code, dependencies=None):

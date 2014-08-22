@@ -63,11 +63,13 @@ def get_example_filenames(examples_dir):
 def create_examples(examples):
 
     # Create doc file for each example
+    count = 0
     for filename, name in examples:
-        print('Writing example %s' % name)
-
         # Create title
         lines = []
+        # avoid "document isn't included in any toctree" warning
+        lines.append(':orphan:')
+        lines.append('')
         lines.append(name)
         lines.append('-' * len(lines[-1]))
         lines.append('')
@@ -109,6 +111,8 @@ def create_examples(examples):
             os.makedirs(output_dir)
         with open(output_filename, 'w') as f:
             f.write('\n'.join(lines))
+        count += 1
+    print('Wrote %s examples.' % count)
 
 
 def create_examples_list(examples):

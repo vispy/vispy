@@ -23,17 +23,19 @@ direction. In pixel coordinates, this is normally expected to point downward
 (because the pixel y-axis points down). However, the default behavior for
 PanZoomCamera is to reverse its internal y-axis relative to its parent.
 
-       vb1 uses        vb2 uses
-     PanZoomCamera   base Camera
-      (+y upward)   (+y downward)
-     _____________________________
-    |              |              |
-    |  +y upward   |  +y upward   |
-    |______________|______________|
-    |              |              |
-    | +y downward  | +y downward  |
-    |______________|______________|
-
+    +-----------------+-----------------+
+    | | vb1 uses      | | vb2 uses      |
+    | | PanZoomCamera | | base Camera   |
+    | | (+y upward)   | | (+y downward) |
+    +=================+=================+
+    |                 |                 |
+    |    +y upward    |    +y upward    |
+    |                 |                 |
+    +-----------------+-----------------+
+    |                 |                 |
+    |   +y downward   |   +y downward   |
+    |                 |                 |
+    +-----------------+-----------------+
 """
 
 import numpy as np
