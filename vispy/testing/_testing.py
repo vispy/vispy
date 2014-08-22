@@ -13,8 +13,10 @@ import subprocess
 import inspect
 import base64
 try:
-    from nose.tools import nottest
+    from nose.tools import nottest, assert_equal, assert_true
 except ImportError:
+    assert_equal = assert_true = None
+
     class nottest(object):
         def __init__(self, *args):
             pass  # Avoid "object() takes no parameters"
@@ -264,7 +266,7 @@ def _has_scipy(min_version):
 def requires_scipy(min_version='0.13'):
     return np.testing.dec.skipif(not _has_scipy(min_version),
                                  'Requires Scipy version >= %s' % min_version)
-        
+
 
 def _save_failed_test(data, expect, filename):
     commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
@@ -272,7 +274,7 @@ def _save_failed_test(data, expect, filename):
     name.insert(-1, commit.strip())
     filename = '/'.join(name)
     host = 'data.vispy.org'
-    
+
     # concatenate data, expect, and diff into a single image
     ds = data.shape
     es = expect.shape
@@ -289,11 +291,11 @@ def _save_failed_test(data, expect, filename):
         img = np.empty(shape, dtype=np.ubyte)
         img[:] = 255
         img[:ds[0], :ds[1], :ds[2]] = data
-        img[:es[0], ds[1]+1+es[1]:, :es[2]] = expect 
-    
+        img[:es[0], ds[1]+1+es[1]:, :es[2]] = expect
+
     png = make_png(img)
     conn = httplib.HTTPConnection(host)
-    req = urllib.urlencode({'name': filename, 
+    req = urllib.urlencode({'name': filename,
                             'data': base64.b64encode(png)})
     conn.request('POST', '/upload.py', req)
     response = conn.getresponse().read()
@@ -304,7 +306,7 @@ def _save_failed_test(data, expect, filename):
         print(response)
 
 
-def assert_image_equal(image, reference):
+def assert_image_equal(image, reference, limit=40):
     """Downloads reference image and compares with image
 
     Parameters
@@ -313,6 +315,8 @@ def assert_image_equal(image, reference):
         'screenshot' or image data
     reference: str
         'The filename on the remote ``test-data`` repository to download'
+    limit : int
+        Number of pixels that can differ in the image.
     """
     from ..gloo.util import _screenshot
     from ..util.dataio import read_png
@@ -320,9 +324,9 @@ def assert_image_equal(image, reference):
 
     if image == "screenshot":
         image = _screenshot(alpha=False)
-    ref = read_png(get_testing_file(reference))
+    ref = read_png(get_testing_file(reference))[:, :, :3]
 
-    assert image.shape == ref.shape
+    assert_equal(image.shape, ref.shape)
 
     # check for minimum number of changed pixels, allowing for overall 1-pixel
     # shift in any direcion
@@ -332,11 +336,12 @@ def assert_image_equal(image, reference):
         for j in range(3):
             a = image[slices[i], slices[j]]
             b = ref[slices[2-i], slices[2-j]]
-            diff = (a != b).sum()
+            diff = np.any(a != b, axis=2).sum()
             if diff < min_diff:
                 min_diff = diff
     try:
-        assert min_diff <= 40
+        assert_true(min_diff <= limit,
+                    'min_diff (%s) > %s' % (min_diff, limit))
     except AssertionError:
         _save_failed_test(image, ref, reference)
         raise

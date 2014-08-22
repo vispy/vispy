@@ -12,9 +12,11 @@ from __future__ import division
 
 import numpy as np
 from copy import deepcopy
+from os import path as op
 
 from ._sdf import SDFRenderer
-from ....gloo import TextureAtlas, set_state, IndexBuffer, VertexBuffer
+from ....gloo import (TextureAtlas, set_state, IndexBuffer, VertexBuffer,
+                      set_viewport, get_parameter)
 from ....gloo.wrappers import _check_valid
 from ....ext.six import string_types
 from ....util.fonts import _load_glyph
@@ -36,6 +38,8 @@ class TextureFont(object):
     def __init__(self, font, renderer):
         self._atlas = TextureAtlas()
         self._atlas.wrapping = 'clamp_to_edge'
+        self._kernel = np.load(op.join(op.dirname(__file__), '..', '..', '..',
+                                       'data', 'spatial-filters.npy'))
         self._renderer = renderer
         self._font = deepcopy(font)
         self._font['size'] = 256  # use high resolution point size for SDF
@@ -221,19 +225,116 @@ class Text(Visual):
         """
 
     FRAGMENT_SHADER = """
+        // Adapted from glumpy with permission
+        const float M_SQRT1_2 = 0.707106781186547524400844362104849039;
+        const float kernel_bias  = -0.234377;
+        const float kernel_scale = 1.241974;
+
         uniform sampler2D u_font_atlas;
+        uniform vec2 u_font_atlas_shape;
         uniform vec4 u_color;
+        uniform float u_npix;
+        uniform sampler2D u_kernel;
 
         varying vec2 v_texcoord;
         const float center = 0.5;
 
+        // CatRom interpolation code
+        vec4 filter1D_radius2(sampler2D kernel, float index, float x,
+                              vec4 c0, vec4 c1, vec4 c2, vec4 c3) {
+            float w, w_sum = 0.0;
+            vec4 r = vec4(0.0,0.0,0.0,0.0);
+            w = texture2D(kernel, vec2(0.500000+(x/2.0),index) ).r;
+            w = w*kernel_scale + kernel_bias;
+            r += c0 * w;
+            w = texture2D(kernel, vec2(0.500000-(x/2.0),index) ).r;
+            w = w*kernel_scale + kernel_bias;
+            r += c2 * w;
+            w = texture2D(kernel, vec2(0.000000+(x/2.0),index) ).r;
+            w = w*kernel_scale + kernel_bias;
+            r += c1 * w;
+            w = texture2D(kernel, vec2(1.000000-(x/2.0),index) ).r;
+            w = w*kernel_scale + kernel_bias;
+            r += c3 * w;
+            return r;
+        }
+
+        vec4 filter2D_radius2(sampler2D texture, sampler2D kernel, float index,
+                              vec2 uv, vec2 pixel) {
+            vec2 texel = uv/pixel - vec2(0.0,0.0) ;
+            vec2 f = fract(texel);
+            texel = (texel-fract(texel)+vec2(0.001,0.001))*pixel;
+            vec4 t0 = filter1D_radius2(kernel, index, f.x,
+                texture2D( texture, texel + vec2(-1,-1)*pixel),
+                texture2D( texture, texel + vec2(0,-1)*pixel),
+                texture2D( texture, texel + vec2(1,-1)*pixel),
+                texture2D( texture, texel + vec2(2,-1)*pixel));
+            vec4 t1 = filter1D_radius2(kernel, index, f.x,
+                texture2D( texture, texel + vec2(-1,0)*pixel),
+                texture2D( texture, texel + vec2(0,0)*pixel),
+                texture2D( texture, texel + vec2(1,0)*pixel),
+                texture2D( texture, texel + vec2(2,0)*pixel));
+            vec4 t2 = filter1D_radius2(kernel, index, f.x,
+                texture2D( texture, texel + vec2(-1,1)*pixel),
+                texture2D( texture, texel + vec2(0,1)*pixel),
+                texture2D( texture, texel + vec2(1,1)*pixel),
+                texture2D( texture, texel + vec2(2,1)*pixel));
+            vec4 t3 = filter1D_radius2(kernel, index, f.x,
+                texture2D( texture, texel + vec2(-1,2)*pixel),
+                texture2D( texture, texel + vec2(0,2)*pixel),
+                texture2D( texture, texel + vec2(1,2)*pixel),
+                texture2D( texture, texel + vec2(2,2)*pixel));
+            return filter1D_radius2(kernel, index, f.y, t0, t1, t2, t3);
+        }
+
+        vec4 CatRom(sampler2D texture, vec2 shape, vec2 uv) {
+            return filter2D_radius2(texture, u_kernel, 0.468750,
+                                    uv, 1.0/shape);
+        }
+
+        float contour(in float d, in float w)
+        {
+            return smoothstep(center - w, center + w, d);
+        }
+
+        float sample(sampler2D texture, vec2 uv, float w)
+        {
+            return contour(texture2D(texture, uv).r, w);
+        }
+
         void main(void) {
             vec4 color = u_color;
             vec2 uv = v_texcoord.xy;
-            vec4 rgb = texture2D(u_font_atlas, uv);
+            vec4 rgb;
+
+            // Use interpolation at high font sizes
+            if(u_npix >= 50.0)
+                rgb = CatRom(u_font_atlas, u_font_atlas_shape, uv);
+            else
+                rgb = texture2D(u_font_atlas, uv);
             float distance = rgb.r;
-            float width = fwidth(distance);
-            float alpha = smoothstep(center - width, center + width, distance);
+
+            // GLSL's fwidth = abs(dFdx(uv)) + abs(dFdy(uv))
+            float width = 0.5 * fwidth(distance);  // sharpens a bit
+
+            // Regular SDF
+            float alpha = contour(distance, width);
+
+            if (u_npix < 30.) {
+                // Supersample, 4 extra points
+                // Half of 1/sqrt2; you can play with this
+                float dscale = 0.5 * M_SQRT1_2;
+                vec2 duv = dscale * (dFdx(v_texcoord) + dFdy(v_texcoord));
+                vec4 box = vec4(v_texcoord-duv, v_texcoord+duv);
+                float asum = sample(u_font_atlas, box.xy, width)
+                           + sample(u_font_atlas, box.zw, width)
+                           + sample(u_font_atlas, box.xw, width)
+                           + sample(u_font_atlas, box.zy, width);
+                // weighted average, with 4 extra points having 0.5 weight
+                // each, so 1 + 0.5*4 = 3 is the divisor
+                alpha = (alpha + 0.5 * asum) / 3.0;
+            }
+
             gl_FragColor = vec4(color.rgb, color.a * alpha);
         }
         """
@@ -320,6 +421,7 @@ class Text(Visual):
         if len(self.text) == 0:
             return
         if self._vertices is None:
+            orig_viewport = get_parameter('viewport')
             # we delay creating vertices because it requires a context,
             # which may or may not exist when the object is initialized
             self._vertices = _text_to_vbo(self._text, self._font,
@@ -329,6 +431,7 @@ class Text(Visual):
                    np.arange(0, 4*len(self._text), 4,
                              dtype=np.uint32)[:, np.newaxis])
             self._ib = IndexBuffer(idx.ravel())
+            set_viewport(*orig_viewport)
 
         if event is not None:
             xform = event.render_transform.shader_map()
@@ -341,7 +444,10 @@ class Text(Visual):
 
         self._program.prepare()  # Force ModularProgram to set shaders
         # todo: do some testing to verify that the scaling is correct
-        ps = (self._font_size / 72) * 92
+        ps = (self._font_size / 72.) * 92.
+        self._program['u_npix'] = ps
+        self._program['u_font_atlas_shape'] = self._font._atlas.shape[:2]
+        self._program['u_kernel'] = self._font._kernel
         self._program['u_scale'] = ps * px_scale[0], ps * px_scale[1]
         self._program['u_rotation'] = self._rotation
         self._program['u_pos'] = self._pos
