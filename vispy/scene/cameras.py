@@ -33,9 +33,9 @@ def make_camera(cam_type, *args, **kwds):
     ----------
     cam_type : str
         May be one of:
-        * 'panzoom' : Creates :class:`PanZoomCamera`
-        * 'turntable' : Creates :class:`TurntableCamera`
-        * None : Creates :class:`Camera`
+            * 'panzoom' : Creates :class:`PanZoomCamera`
+            * 'turntable' : Creates :class:`TurntableCamera`
+            * None : Creates :class:`Camera`
 
     All extra arguments are passed to the __init__ method of the selected
     Camera class.
@@ -65,6 +65,8 @@ class BaseCamera(Entity):
     ----------
     parent : Entity
         The parent of the camera.
+    name : str
+        Name used to identify the camera in the scene.
     """
     def __init__(self, **kwargs):
         self._viewbox = None
@@ -163,6 +165,8 @@ class PanZoomCamera(BaseCamera):
     ----------
     parent : Entity
         The parent of the camera.
+    name : str
+        Name used to identify the camera in the scene.
     """
     def __init__(self, **kwargs):
         super(PanZoomCamera, self).__init__(**kwargs)
@@ -305,13 +309,15 @@ class PerspectiveCamera(BaseCamera):
     Parameters
     ----------
     mode : str
-        Perspective mode.
+        Perspective mode, either 'ortho' or 'perspective'.
     fov : float
         Field of view.
     width : float
         Width.
     parent : Entity
         The parent of the camera.
+    name : str
+        Name used to identify the camera in the scene.
     """
     def __init__(self, mode='ortho', fov=60., width=10., **kwargs):
         # projection transform and associated options
@@ -434,6 +440,8 @@ class TurntableCamera(PerspectiveCamera):
         3-element array defining the center point.
     parent : Entity
         The parent of the camera.
+    name : str
+        Name used to identify the camera in the scene.
     """
     def __init__(self, elevation=30., azimuth=30.,
                  distance=10., center=(0, 0, 0), **kwds):

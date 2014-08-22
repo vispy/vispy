@@ -121,7 +121,6 @@ def create_examples_list(examples):
                  'to see what some of these demos look like in action.')
     lines.append('')
 
-
     # Add entry for each example that we know
     for _, name in examples:
         in_gallery = False
@@ -131,7 +130,7 @@ def create_examples_list(examples):
                 if line.startswith('# vispy:') and 'gallery' in line:
                     in_gallery = True
         if in_gallery:
-            extra = ' [`gallery <http://vispy.org/examples/%s.html>`_]' % name
+            extra = ' [`gallery <http://vispy.org/examples/%s.html>`__]' % name
         else:
             extra = ''
         lines.append('* :doc:`examples/%s`%s' % (name, extra))
