@@ -18,7 +18,7 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from .. import Application, Canvas
 from ...util import logger
-from ...util.event import Event  # For timer
+#from ...util.event import Event  # For timer
 
 # Imports for screenshot
 # Perhaps we should refactor these to have just one import
