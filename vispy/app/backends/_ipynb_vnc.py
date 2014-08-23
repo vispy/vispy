@@ -18,7 +18,7 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from .. import Application, Canvas
 from ...util import logger
-from ...util.event import Event  # For timer
+#from ...util.event import Event  # For timer
 
 # Imports for screenshot
 # Perhaps we should refactor these to have just one import
@@ -69,6 +69,9 @@ except RuntimeError:
 else:
     # Try importing IPython
     try:
+        import IPython
+        if IPython.version_info < (2,):
+            raise RuntimeError('ipynb_vnc backend need IPython version >= 2.0')
         from IPython.html.widgets import DOMWidget
         from IPython.utils.traitlets import Unicode, Int, Float, Bool
         from IPython.display import display, Javascript
@@ -219,7 +222,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Handle initialization
         if not self._initialized:
             self._initialized = True
-            self._vispy_canvas.events.add(timer=Event)
+            #self._vispy_canvas.events.add(timer=Event)
             self._vispy_canvas.events.initialize()
             self._on_resize()
 
@@ -305,7 +308,8 @@ class CanvasBackend(BaseCanvasBackend):
             if self._need_draw:
                 self._on_draw()
             # Generate a timer event on every poll from JS
-            self._vispy_canvas.events.timer(type="timer")
+            # AK: no, just use app.Timer as usual!
+            #self._vispy_canvas.events.timer(type="timer")
 
     def _prepare_js(self):
         pkgdir = op.dirname(__file__)
