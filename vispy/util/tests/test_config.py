@@ -3,7 +3,7 @@ from os import path as op
 import os
 
 from vispy.util import config, sys_info, _TempDir, set_data_dir, save_config
-from vispy.util.fetching import get_data_file
+from vispy.util.fetching import load_data_file
 from vispy.testing import assert_in, requires_application
 temp_dir = _TempDir()
 
@@ -38,11 +38,11 @@ def test_config():
         assert_equal(config['data_path'], data_dir)
         config['data_path'] = data_dir
         print(config)  # __repr__
-        get_data_file('CONTRIBUTING.txt')
+        load_data_file('CONTRIBUTING.txt')
         fid = open(op.join(data_dir, 'test-faked.txt'), 'w')
         fid.close()
-        get_data_file('test-faked.txt')  # this one shouldn't download
-        assert_raises(RuntimeError, get_data_file, 'foo-nonexist.txt')
+        load_data_file('test-faked.txt')  # this one shouldn't download
+        assert_raises(RuntimeError, load_data_file, 'foo-nonexist.txt')
         save_config()
     finally:
         if orig_val is not None:

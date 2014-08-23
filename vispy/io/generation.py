@@ -9,9 +9,18 @@
 import numpy as np
 
 
-def cube():
-    """ Generate vertices & indices for a filled and outlined cube """
+def create_cube():
+    """ Generate vertices & indices for a filled and outlined cube
 
+    Returns
+    -------
+    vertices : array
+        Array of vertices suitable for use as a VertexBuffer.
+    filled : array
+        Indices to use to produce a filled cube.
+    outline : array
+        Indices to use to produce an outline of the cube.
+    """
     vtype = [('position', np.float32, 3),
              ('texcoord', np.float32, 2),
              ('normal', np.float32, 3),

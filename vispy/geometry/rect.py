@@ -4,17 +4,17 @@ import numpy as np
 class Rect(object):
     """
     Representation of a rectangular area in a 2D coordinate system.
-    
-    Allowed arguments:
-    
-    Rect(x, y, w, h)
-    Rect(pos, size)
-    Rect(Rect)
+
+    Parameters
+    ----------
+    *args : arguments
+        Can be in the form `Rect(x, y, w, h)`, `Rect(pos, size)`, or
+        `Rect(Rect)`.
     """
     def __init__(self, *args, **kwds):
         self._pos = (0, 0)
         self._size = (0, 0)
-        
+
         if len(args) == 1 and isinstance(args[0], Rect):
             self._pos = args[0]._pos
             self._size = args[0]._size
@@ -27,10 +27,10 @@ class Rect(object):
         elif len(args) != 0:
             raise TypeError("Rect must be instantiated with 0, 1, 2, or 4 "
                             "non-keyword arguments.")
-            
+
         self._pos = kwds.get('pos', self._pos)
         self._size = kwds.get('size', self._size)
-        
+
         if len(self._pos) != 2 or len(self._size) != 2:
             raise ValueError("Rect pos and size arguments must have 2 "
                              "elements.")
@@ -128,7 +128,7 @@ class Rect(object):
     def __eq__(self, r):
         if not isinstance(r, Rect):
             return False
-        return (np.all(np.equal(r.pos, self.pos)) and 
+        return (np.all(np.equal(r.pos, self.pos)) and
                 np.all(np.equal(r.size, self.size)))
 
     def __add__(self, a):

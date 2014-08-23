@@ -1,5 +1,5 @@
 ==================
-The data io module
+The data IO module
 ==================
 
 .. automodule:: vispy.io

@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*- 
+# -*- coding: utf8 -*-
 from __future__ import division, print_function
 
 import numpy as np
@@ -7,20 +7,24 @@ from itertools import permutations
 
 
 class Triangulation(object):
-    """
-    Constrained delaunay implementation based on 
+    """Constrained delaunay triangulation
 
-    Domiter, V. and Žalik, B.
-    Sweep‐line algorithm for constrained Delaunay triangulation
+    Implementation based on:
 
-    Parameters:
-    pts : array((N, 2), dtype=float)
-    edges : array((N, 2), dtype=int)
-    
-    Notes:
-    
+        * Domiter, V. and Žalik, B. Sweep‐line algorithm for constrained
+          Delaunay triangulation
+
+    Parameters
+    ----------
+    pts : array
+        Nx2 array of points.
+    edges : array
+        Nx2 array of edges (dtype=int).
+
+    Notes
+    -----
     * Delaunay legalization is not yet implemented. This produces a proper
-      triangulation, but adding legalisation would broduce fewer thin 
+      triangulation, but adding legalisation would produce fewer thin
       triangles.
     * The pts and edges arrays may be modified.
     """

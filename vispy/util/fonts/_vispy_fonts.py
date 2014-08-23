@@ -4,7 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from ..fetching import get_data_file
+from ..fetching import load_data_file
 
 # List the vispy fonts made available online
 _vispy_fonts = ('OpenSans', 'Cabin')
@@ -17,4 +17,4 @@ def _get_vispy_font_filename(face, bold, italic):
     name += 'Bold' if bold else ''
     name += 'Italic' if italic else ''
     name += '.ttf'
-    return get_data_file('fonts/%s' % name)
+    return load_data_file('fonts/%s' % name)

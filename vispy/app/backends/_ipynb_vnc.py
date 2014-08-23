@@ -23,7 +23,7 @@ from ...util.event import Event  # For timer
 # Imports for screenshot
 # Perhaps we should refactor these to have just one import
 from ...gloo.util import _screenshot
-from ...io import make_png
+from ...io import _make_png
 from base64 import b64encode
 
 # Import for displaying Javascript on notebook
@@ -243,7 +243,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Take the screenshot
         img = _screenshot()
         # Convert to PNG and encode
-        self._widget.value = b64encode(make_png(img))
+        self._widget.value = b64encode(_make_png(img))
 
     # Generate vispy events according to upcoming JS events
     def _gen_event(self, ev):

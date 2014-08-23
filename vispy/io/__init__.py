@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+"""
+Utilities related to data reading, writing, fetching, and generation.
+"""
 
-__all__ = ['crate', 'read_mesh', 'write_mesh', 'imread', 'imsave',
-           'read_png', 'load_iris', 'cube', 'make_png', 'get_data_file']
+__all__ = ['create_cube', 'imread', 'imsave', 'load_iris', 'load_crate',
+           'load_data_file', 'read_mesh', 'read_png', 'write_mesh',
+           'write_png']
 
 from os import path as _op
 
-from .cube import cube  # noqa
-from .datasets import load_iris  # noqa
-from ..util.fetching import get_data_file  # noqa
-from .io import (crate, read_mesh, write_mesh, imread, imsave,  # noqa
-                 read_png, _check_img_lib)  # noqa
-from .image import make_png  # noqa
+from .generation import create_cube  # noqa
+from .datasets import load_iris, load_crate, load_data_file  # noqa
+from .mesh import read_mesh, write_mesh  # noqa
+from .image import (read_png, write_png, imread, imsave, _make_png,  # noqa
+                    _check_img_lib)  # noqa
 
 vispy_data_dir = _op.join(_op.dirname(__file__), '_data')

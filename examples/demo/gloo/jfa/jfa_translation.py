@@ -19,7 +19,7 @@ Two modifications were made for OpenGL ES 2.0 compatibility:
 import numpy as np
 from os import path as op
 from vispy.ext import glfw
-from vispy.util import get_data_file
+from vispy.io import load_data_file
 from OpenGL import GL as gl
 from OpenGL import GLU as glu
 from PIL import Image
@@ -78,7 +78,7 @@ def loadImage(filename):  # adapted for Python
 def loadShapeTexture(filename, texID):
     """loadShapeTexture - load 8-bit shape texture data
     from a TGA file and set up the corresponding texture object."""
-    data, texw, texh = loadImage(get_data_file('jfa/' + filename))
+    data, texw, texh = loadImage(load_data_file('jfa/' + filename))
     gl.glActiveTexture(gl.GL_TEXTURE0)
     gl.glBindTexture(gl.GL_TEXTURE_2D, texID)
     # Load image into texture

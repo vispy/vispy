@@ -10,32 +10,33 @@ from .triangulation import Triangulation
 
 
 class PolygonData(object):
-    """
-    Polygon class for data handling
+    """Polygon class for data handling
+
+    Parameters
+    ----------
+    vertices : (Nv, 3) array
+        Vertex coordinates. If faces is not specified, then this will instead
+        be interpreted as (Nf, 3, 3) array of coordinates.
+    faces : (Nf, 3) array
+        Indexes into the vertex array.
+    edges : (Nv, 2) array
+        Constraining edges specified by vertex indices.
+
+    Notes
+    -----
+    All arguments are optional.
     """
     def __init__(self, vertices=None, edges=None, faces=None):
-        """
-        Parameters
-        ----------
-        vertexes        (Nv, 3) array of vertex coordinates.
-                        If faces is not specified, then this will instead be
-                        interpreted as (Nf, 3, 3) array of coordinates.
-        faces           (Nf, 3) array of indexes into the vertex array.
-        edges           (Nv, 2) array of constraining edges specified by vertex
-                        indices.
-        
-        All arguments are optional.
-        """
         self._vertices = vertices
         self._edges = edges
         self._faces = faces
         self._convex_hull = None
 
-    @property  
+    @property
     def faces(self):
         """Return an array (Nf, 3) of vertex indexes, three per triangular
         face in the mesh.
-        
+
         If faces have not been computed for this mesh, the function
         computes them.
         If no vertices or faces are specified, the function returns None.
@@ -55,10 +56,10 @@ class PolygonData(object):
         """
         self._faces = f
 
-    @property  
+    @property
     def vertices(self):
         """Return an array (Nf, 3) of vertices.
-        
+
         If only faces exist, the function computes the vertices and
         returns them.
         If no vertices or faces are specified, the function returns None.
@@ -78,7 +79,7 @@ class PolygonData(object):
         """
         self._vertices = v
 
-    @property  
+    @property
     def edges(self):
         """Return an array (Nv, 2) of vertex indices.
 
@@ -93,10 +94,10 @@ class PolygonData(object):
         """
         self._edges = e
 
-    @property  
+    @property
     def convex_hull(self):
         """Return an array of vertex indexes representing the convex hull.
-        
+
         If faces have not been computed for this mesh, the function
         computes them.
         If no vertices or faces are specified, the function returns None.
@@ -124,7 +125,7 @@ class PolygonData(object):
             edges = np.empty((npts-1, 2), dtype=np.uint)
             edges[:, 0] = np.arange(npts)
             edges[:, 1] = edges[:, 0] + 1
-            
+
         tri = Triangulation(self._vertices, edges)
         tri.triangulate()
         return tri.pts, tri.tris

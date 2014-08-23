@@ -5,7 +5,7 @@
 import numpy as np
 from nose.tools import assert_raises
 
-from vispy.io import read_png, get_data_file
+from vispy.io import read_png, load_data_file
 from vispy.testing import has_matplotlib, requires_application
 import vispy.mpl_plot as plt
 
@@ -20,7 +20,7 @@ def test_show_vispy():
         # Need, image, markers, line, axes, figure
         plt.figure()
         ax = plt.subplot(211)
-        ax.imshow(read_png(get_data_file('pyplot/logo.png')))
+        ax.imshow(read_png(load_data_file('pyplot/logo.png')))
         ax = plt.subplot(212)
         ax.plot(t, noise, 'ko-')
         plt.draw()

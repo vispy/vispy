@@ -11,8 +11,10 @@ import struct
 import zlib
 import numpy as np
 
+from ..ext.png import Reader
 
-def make_png(data, level=6):
+
+def _make_png(data, level=6):
     """Convert numpy array to PNG byte array.
 
     Parameters
@@ -94,3 +96,142 @@ def make_png(data, level=6):
         p += chunk.nbytes
 
     return png
+
+
+def read_png(filename):
+    """Read a PNG file to RGB8 or RGBA8
+
+    Unlike imread, this requires no external dependencies.
+
+    Parameters
+    ----------
+    filename : str
+        File to read.
+
+    Returns
+    -------
+    data : array
+        Image data.
+
+    See also
+    --------
+    write_png, imread, imsave
+    """
+    x = Reader(filename)
+    try:
+        alpha = x.asDirect()[3]['alpha']
+        if alpha:
+            y = x.asRGBA8()[2]
+            n = 4
+        else:
+            y = x.asRGB8()[2]
+            n = 3
+        y = np.array([yy for yy in y], np.uint8)
+    finally:
+        x.file.close()
+    y.shape = (y.shape[0], y.shape[1] // n, n)
+    return y
+
+
+def write_png(filename, data):
+    """Write a PNG file
+
+    Unlike imsave, this requires no external dependencies.
+
+    Parameters
+    ----------
+    filename : str
+        File to save to.
+    data : array
+        Image data.
+
+    See also
+    --------
+    read_png, imread, imsave
+    """
+    data = np.asarray(data)
+    if not data.ndim == 3 and data.shape[-1] in (3, 4):
+        raise ValueError('data must be a 3D array with last dimension 3 or 4')
+    with open(filename, 'wb') as f:
+        f.write(_make_png(data))  # Save array with make_png
+
+
+def imread(filename, format=None):
+    """Read image data from disk
+
+    Requires imageio or PIL.
+
+    Parameters
+    ----------
+    filename : str
+        Filename to read.
+    format : str | None
+        Format of the file. If None, it will be inferred from the filename.
+
+    Returns
+    -------
+    data : array
+        Image data.
+
+    See also
+    --------
+    imsave, read_png, write_png
+    """
+    imageio, PIL = _check_img_lib()
+    if imageio is not None:
+        return imageio.imread(filename, format)
+    elif PIL is not None:
+        im = PIL.Image.open(filename)
+        if im.mode == 'P':
+            im = im.convert()
+        # Make numpy array
+        a = np.asarray(im)
+        if len(a.shape) == 0:
+            raise MemoryError("Too little memory to convert PIL image to "
+                              "array")
+        return a
+    else:
+        raise RuntimeError("imread requires the imageio or PIL package.")
+
+
+def imsave(filename, im, format=None):
+    """Save image data to disk
+
+    Requires imageio or PIL.
+
+    Parameters
+    ----------
+    filename : str
+        Filename to write.
+    im : array
+        Image data.
+    format : str | None
+        Format of the file. If None, it will be inferred from the filename.
+
+    See also
+    --------
+    imread, read_png, write_png
+    """
+    # Import imageio or PIL
+    imageio, PIL = _check_img_lib()
+    if imageio is not None:
+        return imageio.imsave(filename, im, format)
+    elif PIL is not None:
+        pim = PIL.Image.fromarray(im)
+        pim.save(filename, format)
+    else:
+        raise RuntimeError("imsave requires the imageio or PIL package.")
+
+
+def _check_img_lib():
+    """Utility to search for imageio or PIL"""
+    # Import imageio or PIL
+    imageio = PIL = None
+    try:
+        import imageio
+    except ImportError:
+        try:
+            import PIL.Image
+        except ImportError:
+            pass
+    return imageio, PIL

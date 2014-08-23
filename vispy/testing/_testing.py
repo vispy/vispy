@@ -26,7 +26,7 @@ from distutils.version import LooseVersion
 from ..scene import SceneCanvas
 from ..ext.six.moves import http_client as httplib
 from ..ext.six.moves import urllib_parse as urllib
-from ..io import make_png, read_png
+from ..io import read_png, _make_png, _check_img_lib
 from ..util import use_log_level
 from ..util.fetching import get_testing_file
 from .. import gloo
@@ -226,7 +226,6 @@ def glut_skip():
 
 def requires_img_lib():
     """Decorator for tests that require an image library"""
-    from ..io.io import _check_img_lib
     if sys.platform.startswith('win'):
         has_img_lib = False  # PIL breaks tests on windows (!)
     else:
@@ -295,7 +294,7 @@ def _save_failed_test(data, expect, filename):
         img[:ds[0], :ds[1], :ds[2]] = data
         img[:es[0], ds[1]+1+es[1]:, :es[2]] = expect
 
-    png = make_png(img)
+    png = _make_png(img)
     conn = httplib.HTTPConnection(host)
     req = urllib.urlencode({'name': filename,
                             'data': base64.b64encode(png)})

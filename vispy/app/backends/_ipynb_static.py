@@ -20,7 +20,7 @@ from ...util import logger
 
 # Imports for screenshot
 from ...gloo.util import _screenshot
-from ...io import make_png
+from ...io import _make_png
 from base64 import b64encode
 
 # -------------------------------------------------------------------- init ---
@@ -212,6 +212,6 @@ class CanvasBackend(BaseCanvasBackend):
         # Take the screenshot
         screenshot = _screenshot()
         # Convert to PNG
-        png = make_png(screenshot)
+        png = _make_png(screenshot)
         # Encode base64
         self._im = b64encode(png)
