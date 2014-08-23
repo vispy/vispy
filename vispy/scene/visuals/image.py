@@ -112,7 +112,7 @@ class Image(Mesh):
             raise ValueError("Unknown image draw method '%s'" % method)
 
         self._texture = gloo.Texture2D(self._data)
-        self._texture.interpolation = gl.GL_NEAREST
+        self._texture.interpolation = gl.GL_LINEAR
 
         self.color_components = [TextureComponent(self._texture,
                                                   tex_coord_comp)]

@@ -123,8 +123,8 @@ class ShaderObject(object):
         """ Return a list of names that are declared in this object's 
         definition (not including the name of the object itself).
         
-        These names will be reserved by the compiler when automatically 
-        determining object names.
+        These names will be reserved by the compiler when selecting
+        dynamic object names.
         """
         return []
     

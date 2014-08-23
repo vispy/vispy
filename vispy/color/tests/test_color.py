@@ -23,6 +23,28 @@ def test_color():
     assert_array_equal(x.hsv, [240, 1, 1])
 
 
+def test_color_array():
+    """Basic tests for ColorArray class"""
+    x = ColorArray(['r', 'g', 'b'])
+    assert_array_equal(x.rgb, np.eye(3))
+    # Test ColorArray.__getitem__.
+    assert isinstance(x[0], ColorArray)
+    assert isinstance(x[:], ColorArray)
+    assert_array_equal(x.rgba[:], x[:].rgba)
+    assert_array_equal(x.rgba[0], x[0].rgba.squeeze())
+    assert_array_equal(x.rgba[1:3], x[1:3].rgba)
+    assert_raises(ValueError, x.__getitem__, (0, 1))
+    # Test ColorArray.__setitem__.
+    x[0] = 0
+    assert_array_equal(x.rgba[0, :], np.zeros(4))
+    assert_array_equal(x.rgba, x[:].rgba)
+    x[1] = 1
+    assert_array_equal(x[1].rgba, np.ones((1, 4)))
+    x[:] = .5
+    assert_array_equal(x.rgba, .5 * np.ones((3, 4)))
+    assert_raises(ValueError, x.__setitem__, (0, 1), 0)
+
+
 def test_color_interpretation():
     """Test basic color interpretation API"""
     # test useful ways of single color init

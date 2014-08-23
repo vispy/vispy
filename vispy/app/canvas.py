@@ -346,7 +346,7 @@ class Canvas(object):
         self._frame_count += 1
         diff = time() - self._basetime
         if (diff > self._fps_window):
-            self._fps = self._frame_count/diff
+            self._fps = self._frame_count / diff
             self._basetime = time()
             self._frame_count = 0
             self._fps_callback(self.fps)

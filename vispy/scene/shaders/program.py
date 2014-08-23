@@ -36,10 +36,18 @@ class ModularProgram(Program):
 
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.
+        
+        This must be called before setting any variables on the program using 
+        __setitem__. Prior to calling prepare(), there is no guarantee that
+        the shader code has been generated yet, and thus the program may not 
+        have access to information about its variables. 
         """
-        # TEMP function to fix sync issues for now
-        self._create()
+        # todo: Function already parses static variables, so we can remove 
+        # this if we can make it possible for Program to override the way
+        # that uniforms/attributes are created.
+        
         if self._need_build:
+            self._create()
             self._build()
             self._need_build = False
     
@@ -64,7 +72,7 @@ class ModularProgram(Program):
         
         # and continue.
         super(ModularProgram, self)._build()
-
+    
     def _activate_variables(self):
         # set all variables
         settable_vars = 'attribute', 'uniform'
