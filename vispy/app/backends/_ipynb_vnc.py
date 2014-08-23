@@ -222,7 +222,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Handle initialization
         if not self._initialized:
             self._initialized = True
-            self._vispy_canvas.events.add(timer=Event)
+            #self._vispy_canvas.events.add(timer=Event)
             self._vispy_canvas.events.initialize()
             self._on_resize()
 
@@ -308,7 +308,8 @@ class CanvasBackend(BaseCanvasBackend):
             if self._need_draw:
                 self._on_draw()
             # Generate a timer event on every poll from JS
-            self._vispy_canvas.events.timer(type="timer")
+            # AK: no, just use app.Timer as usual!
+            #self._vispy_canvas.events.timer(type="timer")
 
     def _prepare_js(self):
         pkgdir = op.dirname(__file__)
