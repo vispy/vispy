@@ -200,15 +200,21 @@ class ModularVisual(Visual):
                 raise Exception("Can't handle position data: %s" % pos)
 
         if color is not None:
+            components = self.color_components
+            if len(components) == 0:
+                components = [None]
+                
             if isinstance(color, tuple):
-                self.color_components = [UniformColorComponent(color)]
+                components[0] = [UniformColorComponent(color)]
             elif isinstance(color, np.ndarray):
                 if color.ndim == 1:
-                    self.color_components = [UniformColorComponent(color)]
+                    components[0] = [UniformColorComponent(color)]
                 elif color.ndim > 1:
-                    self.color_components = [VertexColorComponent(color)]
+                    components[0] = [VertexColorComponent(color)]
             else:
                 raise Exception("Can't handle color data: %r" % color)
+            
+            self.color_components = components
 
     def set_gl_options(self, default=-1, **kwds):
         """
