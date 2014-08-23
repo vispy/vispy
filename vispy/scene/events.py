@@ -162,6 +162,14 @@ class SceneEvent(Event):
     def map_from_fb(self, obj):
         return self.fb_transform.imap(obj)
 
+    @property
+    def doc_px_transform(self):
+        return self.canvas.fb_transform
+    
+    @property
+    def px_ndc_transform(self):
+        return self.canvas.ndc_transform
+
     # todo: need to disambiguate this from the doc cs, which is *usually* the
     #       same, but may be separate in some rare situations.
     @property
