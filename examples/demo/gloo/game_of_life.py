@@ -111,7 +111,8 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title="Conway game of life",
                             size=(512, 512), keys='interactive')
-
+        self._timer = app.Timer(1.0 / 60, connect=self.update, start=True)
+    
     def on_initialize(self, event):
         # Build programs
         # --------------
@@ -170,7 +171,6 @@ class Canvas(app.Canvas):
         self.pingpong = 1 - self.pingpong
         self.compute["pingpong"] = self.pingpong
         self.render["pingpong"] = self.pingpong
-        self.update()
 
     def on_reshape(self, event):
         set_viewport(0, 0, *event.size)

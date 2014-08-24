@@ -79,7 +79,9 @@ class Canvas(app.Canvas):
         self._program.bind(self._vbo)  # This does:
         #self._program['a_position'] = self._vbo['a_position']
         #self._program['a_texcoords'] = self._vbo['a_texcoords']
-
+        
+        self._timer = app.Timer(1.0 / 60, connect=self.update, start=True)
+    
     def on_initialize(self, event):
         gloo.set_clear_color('white')
 
@@ -100,8 +102,6 @@ class Canvas(app.Canvas):
         self._program.draw('triangles', indices_buffer)
         # self._program.draw('triangles', client_indices_buffer)  # Not
         # recommended
-
-        self.update()
 
 
 if __name__ == '__main__':

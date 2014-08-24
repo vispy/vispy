@@ -45,7 +45,6 @@ class Canvas(app.Canvas):
     def on_draw(self, event):
         gloo.clear(color='white')
         self.markers.draw()
-        self.update()
 
     def on_mouse_wheel(self, event):
         """Use the mouse wheel to zoom."""
