@@ -187,8 +187,6 @@ class ModularVisual(Visual):
         """
         # select input component based on pos.shape
         if pos is not None:
-            if index is not None:
-                index = index.astype(np.uint32)
             if pos.shape[-1] == 2:
                 comp = XYPosComponent(xy=pos.astype(np.float32), 
                                       z=z, index=index)
@@ -200,21 +198,15 @@ class ModularVisual(Visual):
                 raise Exception("Can't handle position data: %s" % pos)
 
         if color is not None:
-            components = self.color_components
-            if len(components) == 0:
-                components = [None]
-                
             if isinstance(color, tuple):
-                components[0] = [UniformColorComponent(color)]
+                self.color_components = [UniformColorComponent(color)]
             elif isinstance(color, np.ndarray):
                 if color.ndim == 1:
-                    components[0] = [UniformColorComponent(color)]
+                    self.color_components = [UniformColorComponent(color)]
                 elif color.ndim > 1:
-                    components[0] = [VertexColorComponent(color)]
+                    self.color_components = [VertexColorComponent(color)]
             else:
                 raise Exception("Can't handle color data: %r" % color)
-            
-            self.color_components = components
 
     def set_gl_options(self, default=-1, **kwds):
         """
@@ -234,7 +226,7 @@ class ModularVisual(Visual):
         """
         if default is not -1:
             self._gl_options[0] = default
-        self._gl_options[1].update(kwds)
+        self._gl_options.update(kwds)
 
     def gl_options(self):
         """
@@ -276,7 +268,7 @@ class ModularVisual(Visual):
         for comp in self._color_components:
             comp._attach(self)
         self.events.update()
-        
+
     def update(self):
         """
         This method is called whenever the Visual must be redrawn.
