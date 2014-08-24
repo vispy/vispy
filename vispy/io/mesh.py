@@ -5,23 +5,20 @@
 """ Reading and writing of data like images and meshes.
 """
 
-import os
 from os import path as op
 
 from .wavefront import WavefrontReader, WavefrontWriter
 from .datasets import DATA_DIR
 
 
-def read_mesh(fname, format=None):
+def read_mesh(fname):
     """Read mesh data from file.
 
     Parameters
     ----------
     fname : str
-        File name to read.
-    format : str | None
-        Format of file to read in. Currently only ``"obj"`` is supported.
-        If None, format will be inferred from the filename.
+        File name to read. Format will be inferred from the filename.
+        Currently only '.obj' and '.obj.gz' are supported.
 
     Returns
     -------
@@ -33,31 +30,18 @@ def read_mesh(fname, format=None):
         Normals for the mesh.
     texcoords : array | None
         Texture coordinates.
-
-    Notes
-    -----
-    Mesh files that ship with vispy always work, such as 'triceratops.obj'.
     """
-    # Check file
-    if not op.isfile(fname):
-        # Maybe we have it?
-        fname_ = op.join(DATA_DIR, fname)
-        if op.isfile(fname_):
-            fname = fname_
-        else:
-            raise ValueError('File does not exist: %s' % fname)
-
     # Check format
-    if format is None:
-        format = op.splitext(fname)[1]
-    format = format.strip('. ').upper()
+    fmt = op.splitext(fname)[1].lower()
+    if fmt == '.gz':
+        fmt = op.splitext(op.splitext(fname)[0])[1].lower()
 
-    if format == 'OBJ':
+    if fmt in ('.obj'):
         return WavefrontReader.read(fname)
     elif not format:
         raise ValueError('read_mesh needs could not determine format.')
     else:
-        raise ValueError('read_mesh does not understand format %s.' % format)
+        raise ValueError('read_mesh does not understand format %s.' % fmt)
 
 
 def write_mesh(fname, vertices, faces, normals, texcoords, name='',
@@ -67,7 +51,7 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
     Parameters
     ----------
     fname : str
-        Filename to write.
+        Filename to write. Must end with ".obj" or ".gz".
     vertices : array
         Vertices.
     faces : array | None
@@ -84,11 +68,8 @@ def write_mesh(fname, vertices, faces, normals, texcoords, name='',
         If the file exists, overwrite it.
     """
     # Check file
-    if op.isfile(fname):
-        if not overwrite:
-            raise IOError('file "%s" exists, use overwrite=True' % fname)
-        else:
-            os.remove(fname)
+    if op.isfile(fname) and not overwrite:
+        raise IOError('file "%s" exists, use overwrite=True' % fname)
 
     # Check format
     if format not in ('obj'):

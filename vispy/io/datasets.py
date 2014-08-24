@@ -4,7 +4,6 @@
 
 import numpy as np
 from os import path as op
-import bz2
 
 from ..util.fetching import load_data_file
 
@@ -32,8 +31,4 @@ def load_crate():
     crate : array
         256x256x3 crate image.
     """
-    with open(op.join(DATA_DIR, 'crate.bz2'), 'rb') as f:
-        bb = f.read()
-    a = np.frombuffer(bz2.decompress(bb), np.uint8)
-    a.shape = 256, 256, 3
-    return a
+    return np.load(load_data_file('orig/crate.npz'))['crate']
