@@ -7,8 +7,7 @@
 
 import numpy as np
 from vispy import app
-from vispy import gloo
-from vispy.gloo import clear, set_clear_color, set_viewport
+from vispy.gloo import clear, set_clear_color, set_viewport, Program
 
 
 # Image
@@ -95,7 +94,7 @@ void main()
 
 class Canvas(app.Canvas):
     def __init__(self):
-        self.image = gloo.Program(img_vertex, img_fragment, 4)
+        self.image = Program(img_vertex, img_fragment, 4)
         self.image['position'] = (-1, -1), (-1, +1), (+1, -1), (+1, +1)
         self.image['texcoord'] = (0, 0), (0, +1), (+1, 0), (+1, +1)
         self.image['vmin'] = +0.1
