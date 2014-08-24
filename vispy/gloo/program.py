@@ -501,11 +501,14 @@ class Program(GLObject):
                        np.dtype(np.uint32): gl.GL_UNSIGNED_INT}
             gl.glDrawElements(mode, indices.size, gltypes[indices.dtype], None)
             indices.deactivate()
-        else:
+        elif indices is None:
             #count = (count or attributes[0].size) - first
             first = 0
             count = attributes[0].size
             gl.glDrawArrays(mode, first, count)
+        else:
+            raise TypeError("Invalid index: %r (must be IndexBuffer)" % 
+                            indices)
 
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         self.deactivate()
