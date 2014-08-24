@@ -16,19 +16,22 @@ import numpy as np
 from vispy.scene.visuals.visual import Visual
 from vispy.scene.shaders import ModularProgram, Function, Variable, Varying
 from vispy import gloo
-
+from vispy.util.meshdata import MeshData
 
 ## Snippet templates (defined as string to force user to create fresh Function)
 # Consider these stored in a central location in vispy ...
 
 
 vertex_template = """
+
 void main() {
+   gl_Position = $transform($position);
 }
 """
 
 fragment_template = """
 void main() {
+  gl_FragColor = vec4(1, 0, 0, 1); // $color;
 }
 """
 
@@ -52,14 +55,12 @@ vec4 phong_shading(vec4 color) {
 ## Functions that can be used as is (don't have template variables)
 # Consider these stored in a central location in vispy ...
 
-color3to4 = Function("""
-vec4 color3to4(vec3 rgb) {
-    return vec4(rgb, 1.0);
+vec3to4 = Function("""
+vec4 vec3to4(vec3 xyz) {
+    return vec4(xyz, 1.0);
 }
 """)
 
-stub4 = Function("vec4 stub4(vec4 value) { return value; }")
-stub3 = Function("vec3 stub3(vec3 value) { return value; }")
 
 
 ## Actual code
@@ -68,44 +69,39 @@ stub3 = Function("vec3 stub3(vec3 value) { return value; }")
 class Mesh(Visual):
     
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
-                 face_colors=None, meshdata=None, shading='plain',
-                 **kwargs):
-        Visual.__init__(self, **kwargs)
+                 face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None, 
+                 shading='plain', **kwds):
+        Visual.__init__(self, **kwds)
         
         assert vertices is not None
         
         # Create a program
         self._program = ModularProgram(vertex_template, fragment_template)
         
-        # Define how we are going to specify position and color
-        self._program.vert['gl_Position'] = 'vec4($position, 1.0)'
-        self._program.frag['gl_FragColor'] = '$light($color)'
-        
         # Define variables related to color. Only one is in use at all times
-        self._variables = {}
-        self._variables['u_color3'] = Variable('uniform vec3 u_color')
-        self._variables['u_color4'] = Variable('uniform vec4 u_color')
-        self._variables['a_color3'] = Variable('attribute vec3 a_color')
-        self._variables['a_color4'] = Variable('attribute vec4 a_color')
+        #self._variables = {}
+        #self._variables['u_color3'] = Variable('uniform vec3 u_color')
+        #self._variables['u_color4'] = Variable('uniform vec4 u_color')
+        #self._variables['a_color3'] = Variable('attribute vec3 a_color')
+        #self._variables['a_color4'] = Variable('attribute vec4 a_color')
 
         # Define buffers
-        self._vertices = gloo.VertexBuffer()
-        self._normals = gloo.VertexBuffer()
+        self._vertices = gloo.VertexBuffer(np.zeros((0, 3), dtype=np.float32))
+        self._normals = gloo.VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         self._faces = gloo.IndexBuffer()
-        self._colors = gloo.VertexBuffer()
+        self._colors = gloo.VertexBuffer(np.zeros((0, 4), dtype=np.float32))
         
         # Whether to use _faces index
         self._indexed = None
         
         # Uniform color
-        self._color = None
+        self._color = color
         
         # Set color to a varying
-        self._program.frag['color'] = Varying('v_color')
+        self._program.frag['color'] = Varying('v_color', dtype='vec4')
         
         # Init
         self.shading = shading
-        
         self.set_data(vertices=vertices, faces=faces, 
                       vertex_colors=vertex_colors,
                       face_colors=face_colors, meshdata=meshdata)
@@ -121,7 +117,9 @@ class Mesh(Visual):
             self._meshdata = MeshData(vertices=vertices, faces=faces, 
                                       vertex_colors=vertex_colors,
                                       face_colors=face_colors)
-        self._color = color
+
+        if color is not None:
+            self._color = color
         self.mesh_data_changed()
     
     def mesh_data_changed(self):
@@ -130,80 +128,97 @@ class Mesh(Visual):
         
     def _update_data(self):
         md = self._meshdata
-        if self.shading == 'smooth' and not md.hasFaceIndexedData():
-            self._vertexes.set_data(md.vertexes())
-            self._normals.set_data(md.vertexNormals())
+        # Update vertex/index buffers
+        if self.shading == 'smooth' and not md.has_face_indexed_data():
+            self._vertices.set_data(md.vertices())
+            self._normals.set_data(md.vertex_normals())
             self._faces.set_data(md.faces())
             self._indexed = True
-            if md.hasVertexColor():
-                self._colors.set_data(md.vertexColors())
-            if md.hasFaceColor():
-                self._colors.set_data(md.faceColors())
+            if md.has_vertex_color():
+                self._colors.set_data(md.vertex_colors())
+            if md.has_face_color():
+                self._colors.set_data(md.face_colors())
         else:
-            self._vertexes.set_data(md.vertexes(indexed='faces'))
+            v = md.vertices(indexed='faces')
+            v = v.reshape((v.shape[0]*v.shape[1], v.shape[2]))
+            self._vertices.set_data(v)
             if self.shading == 'smooth':
-                self._normals.set_data(md.vertexNormals(indexed='faces'))
-            else:
-                self._normals.set_data(md.faceNormals(indexed='faces'))
+                self._normals.set_data(md.vertex_normals(indexed='faces'))
+            elif self.shading == 'flat':
+                self._normals.set_data(md.face_normals(indexed='faces'))
             self._indexed = False
-            if md.hasVertexColor():
-                self._colors.set_data(md.vertexColors(indexed='faces'))
-            elif md.hasFaceColor():
-                self.colors.set_data(md.faceColors(indexed='faces'))
+            if md.has_vertex_color():
+                self._colors.set_data(md.vertex_colors(indexed='faces'))
+            elif md.has_face_color():
+                self._colors.set_data(md.face_colors(indexed='faces'))
         
-        self._program.vert['position'] = self._vertices
-    
-    def set_values(self, values):
+        # Update program
+        self._program.vert['position'] = vec3to4(self._vertices)
         
-        # todo: reuse vertex buffer is possible (use set_data)
-        # todo: we may want to clear any color vertex buffers
         
-        if isinstance(values, tuple):
-            # Single value (via a uniform)
-            values = [float(v) for v in values]
-            if len(values) == 3:
-                variable = self._variables['u_color3']
-                variable.value = values
-                self._program.frag['color'] = color3to4(variable)
-            elif len(values) == 4:
-                variable = self._variables['u_color4']
-                variable.value = values
-                self._program.frag['color'] = variable
-            else:
-                raise ValueError('Color tuple must have 3 or 4 values.')
-        
-        elif isinstance(values, np.ndarray):
-            # A value per vertex, via a VBO
-            
-            if values.shape[1] == 1:
-                # Look color up in a colormap
-                raise NotImplementedError()
-            
-            elif values.shape[1] == 2:
-                # Look color up in a texture
-                raise NotImplementedError()
-            
-            elif values.shape[1] == 3:
-                # Explicitly set color per vertex
-                varying = Varying('v_color')
-                self._program.frag['color'] = color3to4(varying)
-                variable = self._variables['a_color3']
-                variable.value = gloo.VertexBuffer(values)
-                self._program.vert[varying] = variable
-            
-            elif values.shape[1] == 4:
-                # Explicitly set color per vertex
-                # Fragment shader
-                varying = Varying('v_color')
-                self._program.frag['color'] = varying
-                variable = self._variables['a_color4']
-                variable.value = gloo.VertexBuffer(values)
-                self._program.vert[varying] = variable
-            
-            else:
-                raise ValueError('Mesh values must be NxM, with M 1,2,3 or 4.')
+        if not md.has_vertex_color() and not md.has_face_color():
+            # assign uniform to color varying
+            self._program.vert[self._program.frag['color']] = self._color
         else:
-            raise ValueError('Mesh values must be NxM array or color tuple')
+            # assign attribute to color varying
+            self._program.vert[self._program.frag['color']] = self._colors
+            
+        #if self.shading == 'smooth':
+            #self._program.frag['color'] = phong_template
+            #self._variables['a_color4'].value = self._colors
+            #self._program.vert[varying] = self._program.frag['color']
+    
+    #def set_values(self, values):
+        
+        ## todo: reuse vertex buffer is possible (use set_data)
+        ## todo: we may want to clear any color vertex buffers
+        
+        #if isinstance(values, tuple):
+            ## Single value (via a uniform)
+            #values = [float(v) for v in values]
+            #if len(values) == 3:
+                #variable = self._variables['u_color3']
+                #variable.value = values
+                #self._program.frag['color'] = color3to4(variable)
+            #elif len(values) == 4:
+                #variable = self._variables['u_color4']
+                #variable.value = values
+                #self._program.frag['color'] = variable
+            #else:
+                #raise ValueError('Color tuple must have 3 or 4 values.')
+        
+        #elif isinstance(values, np.ndarray):
+            ## A value per vertex, via a VBO
+            
+            #if values.shape[1] == 1:
+                ## Look color up in a colormap
+                #raise NotImplementedError()
+            
+            #elif values.shape[1] == 2:
+                ## Look color up in a texture
+                #raise NotImplementedError()
+            
+            #elif values.shape[1] == 3:
+                ## Explicitly set color per vertex
+                #varying = Varying('v_color')
+                #self._program.frag['color'] = color3to4(varying)
+                #variable = self._variables['a_color3']
+                #variable.value = gloo.VertexBuffer(values)
+                #self._program.vert[varying] = variable
+            
+            #elif values.shape[1] == 4:
+                ## Explicitly set color per vertex
+                ## Fragment shader
+                #varying = Varying('v_color')
+                #self._program.frag['color'] = varying
+                #variable = self._variables['a_color4']
+                #variable.value = gloo.VertexBuffer(values)
+                #self._program.vert[varying] = variable
+            
+            #else:
+                #raise ValueError('Mesh values must be NxM, with M 1,2,3 or 4.')
+        #else:
+            #raise ValueError('Mesh values must be NxM array or color tuple')
     
     @property
     def shading(self):
@@ -215,6 +230,7 @@ class Mesh(Visual):
     def shading(self, value):
         assert value in ('plain', 'flat', 'phong')
         self._shading = value
+        return
         # todo: add gouroud shading
         # todo: allow flat shading even if vertices+faces is specified.
         if value == 'plain':
@@ -240,72 +256,22 @@ class Mesh(Visual):
             # instance.
     
     def draw(self, event):
+        gloo.set_state('translucent', depth_test=True, cull_face='front_and_back')
         if self._data_changed:
             self._update_data()
+
+        tr = event.render_transform.simplified()
+        self._program.vert['transform'] = tr.shader_map()
+        
+        v = self._vertices._pending_data[0][0]
+        print("Vertex data:", v.shape, v.dtype)
+        print(tr.map(v.max(axis=0)))
+        print(tr.map(v.min(axis=0)))
+        print(tr.map(v.mean(axis=0)))
         
         # Draw
-        self._program.draw('triangles', self._faces)
-
-
-## The code to show it ...
-
-if __name__ == '__main__':
-    
-    from vispy import app
-    from vispy.util.meshdata import sphere
-    
-    mdata = sphere(20, 20)
-    faces = mdata.faces()
-    verts = mdata.vertices() / 4.0
-    verts_flat = mdata.vertices(indexed='faces').reshape(-1, 3) / 4.0
-    normals = mdata.vertex_normals()
-    normals_flat = mdata.vertices(indexed='faces').reshape(-1, 3) / 4.0
-    colors = np.random.uniform(0.2, 0.8, (verts.shape[0], 3)).astype('float32')
-    colors_flat = np.random.uniform(0.2, 0.8, 
-                                    (verts_flat.shape[0], 3)).astype('float32')
-    
-    class Canvas(app.Canvas):
-        def __init__(self):
-            app.Canvas.__init__(self, keys='interactive')
-            self.size = 700,    700
-            self.meshes = []
-            
-            # A plain mesh with uniform color
-            offset = np.array([-0.7, 0.7, 0.0], 'float32')
-            mesh = Mesh(verts+offset, faces, None,
-                        values=(1.0, 0.4, 0.0, 1.0))
-            self.meshes.append(mesh)
-            
-            # A colored mesh with one color per phase
-            offset = np.array([0.0, 0.7, 0.0], 'float32')
-            mesh = Mesh(verts_flat+offset, None, None,
-                        values=colors_flat)
-            self.meshes.append(mesh)
-            
-            # Same mesh but using faces, so we get interpolation of color
-            offset = np.array([0.7, 0.7, 0.0], 'float32')
-            mesh = Mesh(verts+offset, faces, None, values=colors)
-            self.meshes.append(mesh)
-            
-            # Flat phong shading
-            offset = np.array([0.0, 0.0, 0.0], 'float32')
-            mesh = Mesh(verts_flat+offset, None, normals_flat, 
-                        values=colors_flat)
-            mesh.shading = 'phong'
-            self.meshes.append(mesh)
-            
-            # Full phong shading
-            offset = np.array([0.7, 0.0, 0.0], 'float32')
-            mesh = Mesh(verts+offset, faces, normals, values=colors)
-            mesh.shading = 'phong'
-            self.meshes.append(mesh)
-        
-        def on_draw(self, event):
-            gloo.clear()
-            gloo.set_viewport(0, 0, *self.size)
-            for mesh in self.meshes:
-                mesh.draw(self)
-    
-    c = Canvas()
-    c.show()
-    app.run()
+        print(self._indexed)
+        if self._indexed:
+            self._program.draw('triangles', self._faces)
+        else:
+            self._program.draw('triangles')

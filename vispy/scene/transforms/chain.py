@@ -117,12 +117,12 @@ class ChainTransform(BaseTransform):
         else:
             funcs = [tr.shader_map() for tr in reversed(self.transforms)]
 
-        name = "transform_%s_chain" % ('imap' if imap is not None else 'map')
+        name = "transform_%s_chain" % ('imap' if bool(imap) else 'map')
         return FunctionChain(name, funcs)
 
-    def flatten(self):
+    def flat(self):
         """
-        Attempt to simplify the chain by expanding any nested chains.
+        Return a simplified chain by expanding any nested chains.
         """
         # Flatten untill there is nothing more to flatten
         encountered_chains = True
@@ -136,22 +136,22 @@ class ChainTransform(BaseTransform):
                     new_tr.extend(tr.transforms)
                 else:
                     new_tr.append(tr)
-            self._transforms = new_tr
+        return ChainTransform(new_tr)
 
-    def simplify(self):
+    def simplified(self):
         """
-        Attempt to simplify the chain by joining adjacent transforms.
+        Return a simplified chain by joining adjacent transforms.
         If the result is a single transform, return that transform.
-        Otherwise return this chaintransform.
         """
-        self.flatten()
-        if len(self.transforms) == 0:
+        tr = self.flat()
+        if len(tr.transforms) == 0:
             return NullTransform()
         cont = True
+        tr = tr.transforms
         while cont:
-            new_tr = [self.transforms[0]]
+            new_tr = [tr[0]]
             cont = False
-            for t2 in self.transforms[1:]:
+            for t2 in tr[1:]:
                 t1 = new_tr[-1]
                 pr = t1 * t2
                 if not isinstance(pr, ChainTransform):
@@ -160,13 +160,12 @@ class ChainTransform(BaseTransform):
                     new_tr.append(pr)
                 else:
                     new_tr.append(t2)
-            self._transforms = new_tr
+            tr = new_tr
 
-        # todo: get rid of this in-place + return thing
-        if len(self._transforms) == 1:
-            return self._transforms[0]
+        if len(tr) == 1:
+            return tr[0]
         else:
-            return self
+            return ChainTransform(tr)
 
     def append(self, tr):
         """
