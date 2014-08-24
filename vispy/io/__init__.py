@@ -5,16 +5,15 @@
 Utilities related to data reading, writing, fetching, and generation.
 """
 
-__all__ = ['create_cube', 'imread', 'imsave', 'load_iris', 'load_crate',
+__all__ = ['imread', 'imsave', 'load_iris', 'load_crate',
            'load_data_file', 'read_mesh', 'read_png', 'write_mesh',
            'write_png']
 
 from os import path as _op
 
-from .generation import create_cube  # noqa
 from .datasets import load_iris, load_crate, load_data_file  # noqa
 from .mesh import read_mesh, write_mesh  # noqa
 from .image import (read_png, write_png, imread, imsave, _make_png,  # noqa
                     _check_img_lib)  # noqa
 
-vispy_data_dir = _op.join(_op.dirname(__file__), '_data')
+_data_dir = _op.join(_op.dirname(__file__), '_data')

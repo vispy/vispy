@@ -12,7 +12,7 @@ import numpy as np
 from vispy import gloo, app
 from vispy.gloo import Program, VertexBuffer, IndexBuffer
 from vispy.util.transforms import perspective, translate, rotate
-from vispy.io import create_cube
+from vispy.geometry import create_cube
 
 vertex = """
 uniform mat4 u_model;

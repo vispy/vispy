@@ -12,7 +12,7 @@ import numpy as np
 from vispy import app, gloo
 from vispy.gloo import Program, VertexBuffer, IndexBuffer
 from vispy.util.transforms import perspective, translate, rotate
-from vispy.io import create_cube
+from vispy.geometry import create_cube
 
 
 vertex = """

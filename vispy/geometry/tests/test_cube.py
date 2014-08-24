@@ -4,7 +4,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from vispy.io import create_cube
+from vispy.geometry import create_cube
 
 
 def test_cube():
