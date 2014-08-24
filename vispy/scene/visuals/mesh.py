@@ -70,7 +70,7 @@ class Mesh(Visual):
     
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None, 
-                 shading='plain', **kwds):
+                 shading=None, **kwds):
         Visual.__init__(self, **kwds)
         
         # Create a program
@@ -95,8 +95,9 @@ class Mesh(Visual):
         # Uniform color
         self._color = color
         
-        # Set color to a varying
-        self._program.frag['color'] = Varying('v_color', dtype='vec4')
+        # varyings
+        self._color_var = Varying('v_color', dtype='vec4')
+        self._normal_var = Varying('v_normal', dtype='vec3')
         
         # Init
         self.shading = shading
@@ -126,6 +127,7 @@ class Mesh(Visual):
         
     def _update_data(self):
         md = self._meshdata
+        
         # Update vertex/index buffers
         if self.shading == 'smooth' and not md.has_face_indexed_data():
             self._vertices.set_data(md.vertices())
@@ -138,7 +140,7 @@ class Mesh(Visual):
                 self._colors.set_data(md.face_colors())
         else:
             v = md.vertices(indexed='faces')
-            #self._vertices.set_data(v)
+            #self._vertices.set_data(v)  # preferred but buggy (#450)
             self._vertices = gloo.VertexBuffer(v)
             if self.shading == 'smooth':
                 self._normals.set_data(md.vertex_normals(indexed='faces'))
@@ -150,73 +152,34 @@ class Mesh(Visual):
             elif md.has_face_color():
                 self._colors.set_data(md.face_colors(indexed='faces'))
         
-        # Update program
+        # Position input handling
         self._program.vert['position'] = vec3to4(self._vertices)
         
-        
+        # Color input handling
         if not md.has_vertex_color() and not md.has_face_color():
             # assign uniform to color varying
-            self._program.vert[self._program.frag['color']] = self._color
+            color = self._color
         else:
             # assign attribute to color varying
-            self._program.vert[self._program.frag['color']] = self._colors
+            color = self._colors
+        self._program.vert[self._color_var] = color
             
-        #if self.shading == 'smooth':
-            #self._program.frag['color'] = phong_template
-            #self._variables['a_color4'].value = self._colors
-            #self._program.vert[varying] = self._program.frag['color']
-    
-    #def set_values(self, values):
-        
-        ## todo: reuse vertex buffer is possible (use set_data)
-        ## todo: we may want to clear any color vertex buffers
-        
-        #if isinstance(values, tuple):
-            ## Single value (via a uniform)
-            #values = [float(v) for v in values]
-            #if len(values) == 3:
-                #variable = self._variables['u_color3']
-                #variable.value = values
-                #self._program.frag['color'] = color3to4(variable)
-            #elif len(values) == 4:
-                #variable = self._variables['u_color4']
-                #variable.value = values
-                #self._program.frag['color'] = variable
-            #else:
-                #raise ValueError('Color tuple must have 3 or 4 values.')
-        
-        #elif isinstance(values, np.ndarray):
-            ## A value per vertex, via a VBO
+        # Shading
+        if self.shading is None:
+            self._program.frag['color'] = self._color_var
+        else:
+            phong = Function(phong_template)
             
-            #if values.shape[1] == 1:
-                ## Look color up in a colormap
-                #raise NotImplementedError()
+            # Normal data comes via vertex shader
+            self._program.vert[self._normal_var] = self._normals
+            phong['normal'] = self._normal_var
             
-            #elif values.shape[1] == 2:
-                ## Look color up in a texture
-                #raise NotImplementedError()
+            # Additional phong proprties
+            phong['light_dir'] = (1.0, 1.0, 1.0)
+            phong['light_color'] = (1.0, 1.0, 1.0, 1.0)
+            phong['ambient'] = (0.3, 0.3, 0.3, 1.0)
             
-            #elif values.shape[1] == 3:
-                ## Explicitly set color per vertex
-                #varying = Varying('v_color')
-                #self._program.frag['color'] = color3to4(varying)
-                #variable = self._variables['a_color3']
-                #variable.value = gloo.VertexBuffer(values)
-                #self._program.vert[varying] = variable
-            
-            #elif values.shape[1] == 4:
-                ## Explicitly set color per vertex
-                ## Fragment shader
-                #varying = Varying('v_color')
-                #self._program.frag['color'] = varying
-                #variable = self._variables['a_color4']
-                #variable.value = gloo.VertexBuffer(values)
-                #self._program.vert[varying] = variable
-            
-            #else:
-                #raise ValueError('Mesh values must be NxM, with M 1,2,3 or 4.')
-        #else:
-            #raise ValueError('Mesh values must be NxM array or color tuple')
+            self._program.frag['color'] = phong(self._color_var)
     
     @property
     def shading(self):
@@ -226,32 +189,8 @@ class Mesh(Visual):
     
     @shading.setter
     def shading(self, value):
-        assert value in ('plain', 'flat', 'phong')
+        assert value in (None, 'flat', 'smooth')
         self._shading = value
-        return
-        # todo: add gouroud shading
-        # todo: allow flat shading even if vertices+faces is specified.
-        if value == 'plain':
-            self._program.frag['light'] = stub4
-        
-        elif value == 'flat':
-            pass
-            
-        elif value == 'phong':
-            assert self._normals is not None
-            # Apply phonmg function, 
-            phong = Function(phong_template)
-            self._program.frag['light'] = phong
-            # Normal data comes via vertex shader
-            phong['normal'] = Varying('v_normal')
-            var = gloo.VertexBuffer(self._normals)
-            self._program.vert[phong['normal']] = var
-            # Additional phong proprties
-            phong['light_dir'] = 'vec3(1.0, 1.0, 1.0)'
-            phong['light_color'] = 'vec4(1.0, 1.0, 1.0, 1.0)'
-            phong['ambient'] = 'vec4(0.3, 0.3, 0.3, 1.0)'
-            # todo: light properties should be queried from the SubScene
-            # instance.
     
     def draw(self, event):
         gloo.set_state('translucent', depth_test=True, cull_face='front_and_back')

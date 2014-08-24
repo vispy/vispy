@@ -58,6 +58,16 @@ class Canvas(vispy.scene.SceneCanvas):
         mesh = visuals.Mesh(vertices=verts, faces=faces, vertex_colors=vcolor)
         self.meshes.append(mesh)
 
+        mesh = visuals.Mesh(vertices=verts, faces=faces, vertex_colors=vcolor,
+                            shading='flat')
+        self.meshes.append(mesh)
+
+        mesh = visuals.Mesh(vertices=verts, faces=faces, vertex_colors=vcolor,
+                            shading='smooth')
+        self.meshes.append(mesh)
+
+
+
         ## Mesh colored by vertices + grid contours
         #mesh = visuals.Mesh(pos=verts, faces=faces)
         #mesh.color_components = [VertexColorComponent(vcolor),
