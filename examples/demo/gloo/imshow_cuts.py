@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+Show an image using gloo, with on-mouseover cross-section visualizations.
+"""
 
 import numpy as np
 from vispy import app
