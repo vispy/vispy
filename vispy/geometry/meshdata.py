@@ -1,8 +1,10 @@
-import sys
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 import numpy as np
 
-if sys.version_info >= (3,):
-    xrange = range
+from ..ext.six.moves import xrange
 
 
 class MeshData(object):
@@ -413,7 +415,6 @@ class MeshData(object):
 
             # remove duplicate entries
             self._edges = np.unique(edges)['i']
-            #print self._edges
         elif self._vertices_indexed_by_faces is not None:
             verts = self._vertices_indexed_by_faces
             edges = np.empty((verts.shape[0], 3, 2), dtype=np.uint)
@@ -456,91 +457,5 @@ class MeshData(object):
         state = pickle.loads(state)
         for k in state:
             if isinstance(state[k], list):
-                #if isinstance(state[k][0], QtGui.QVector3D):
-                #    state[k] = [[v.x(), v.y(), v.z()] for v in state[k]]
                 state[k] = np.array(state[k])
             setattr(self, k, state[k])
-
-
-def sphere(rows, cols, radius=1.0, offset=True):
-    """
-    Return a MeshData instance with vertices and faces computed
-    for a spherical surface.
-    """
-    verts = np.empty((rows+1, cols, 3), dtype=np.float32)
-
-    ## compute vertices
-    phi = (np.arange(rows+1) * np.pi / rows).reshape(rows+1, 1)
-    s = radius * np.sin(phi)
-    verts[..., 2] = radius * np.cos(phi)
-    th = ((np.arange(cols) * 2 * np.pi / cols).reshape(1, cols))
-    if offset:
-        # rotate each row by 1/2 column
-        th = th + ((np.pi / cols) * np.arange(rows+1).reshape(rows+1, 1))
-    verts[..., 0] = s * np.cos(th)
-    verts[..., 1] = s * np.sin(th)
-    ## remove redundant vertices from top and bottom
-    verts = verts.reshape((rows+1)*cols, 3)[cols-1:-(cols-1)]
-
-    ## compute faces
-    faces = np.empty((rows*cols*2, 3), dtype=np.uint32)
-    rowtemplate1 = (((np.arange(cols).reshape(cols, 1) +
-                      np.array([[1, 0, 0]])) % cols)
-                    + np.array([[0, 0, cols]]))
-    rowtemplate2 = (((np.arange(cols).reshape(cols, 1) +
-                      np.array([[1, 0, 1]])) % cols)
-                    + np.array([[0, cols, cols]]))
-    for row in range(rows):
-        start = row * cols * 2
-        faces[start:start+cols] = rowtemplate1 + row * cols
-        faces[start+cols:start+(cols*2)] = rowtemplate2 + row * cols
-    ## cut off zero-area triangles at top and bottom
-    faces = faces[cols:-cols]
-
-    ## adjust for redundant vertices that were removed from top and bottom
-    vmin = cols-1
-    faces[faces < vmin] = vmin
-    faces -= vmin
-    vmax = verts.shape[0]-1
-    faces[faces > vmax] = vmax
-    return MeshData(vertices=verts, faces=faces)
-
-
-def cylinder(rows, cols, radius=[1.0, 1.0], length=1.0, offset=False):
-    """
-    Return a MeshData instance with vertices and faces computed
-    for a cylindrical surface.
-    The cylinder may be tapered with different radii at each end
-    (truncated cone)
-    """
-    verts = np.empty((rows+1, cols, 3), dtype=np.float32)
-    if isinstance(radius, int):
-        radius = [radius, radius]  # convert to list
-    ## compute vertices
-    th = np.linspace(2 * np.pi, 0, cols).reshape(1, cols)
-    # radius as a function of z
-    r = np.linspace(radius[0], radius[1], num=rows+1,
-                    endpoint=True).reshape(rows+1, 1)
-    verts[..., 2] = np.linspace(0, length, num=rows+1,
-                                endpoint=True).reshape(rows+1, 1)  # z
-    if offset:
-        ## rotate each row by 1/2 column
-        th = th + ((np.pi / cols) * np.arange(rows+1).reshape(rows+1, 1))
-    verts[..., 0] = r * np.cos(th)  # x = r cos(th)
-    verts[..., 1] = r * np.sin(th)  # y = r sin(th)
-    # just reshape: no redundant vertices...
-    verts = verts.reshape((rows+1)*cols, 3)
-    ## compute faces
-    faces = np.empty((rows*cols*2, 3), dtype=np.uint)
-    rowtemplate1 = (((np.arange(cols).reshape(cols, 1) +
-                      np.array([[0, 1, 0]])) % cols)
-                    + np.array([[0, 0, cols]]))
-    rowtemplate2 = (((np.arange(cols).reshape(cols, 1) +
-                      np.array([[0, 1, 1]])) % cols)
-                    + np.array([[cols, 0, cols]]))
-    for row in range(rows):
-        start = row * cols * 2
-        faces[start:start+cols] = rowtemplate1 + row * cols
-        faces[start+cols:start+(cols*2)] = rowtemplate2 + row * cols
-
-    return MeshData(vertices=verts, faces=faces)

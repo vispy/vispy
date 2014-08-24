@@ -8,7 +8,6 @@
 from os import path as op
 
 from .wavefront import WavefrontReader, WavefrontWriter
-from .datasets import DATA_DIR
 
 
 def read_mesh(fname):
