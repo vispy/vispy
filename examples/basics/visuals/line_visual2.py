@@ -2,7 +2,7 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-""" A Line Visual that uses the new shader Function.
+""" Example of a custom visual (line) with dashing
 """
 
 from __future__ import division
