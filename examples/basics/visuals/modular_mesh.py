@@ -9,7 +9,7 @@ Simple demonstration of LineVisual.
 import numpy as np
 import vispy.app
 from vispy import gloo
-from vispy.scene import visuals
+from vispy.scene.visuals.modular_mesh import ModularMesh
 from vispy.scene.components import (VertexColorComponent, GridContourComponent,
                                     VertexNormalComponent, ShadingComponent)
 from vispy.util.meshdata import sphere
@@ -28,7 +28,7 @@ class Canvas(vispy.scene.SceneCanvas):
 
         # Mesh with pre-indexed vertices, uniform color
         verts = mdata.vertices(indexed='faces')
-        mesh = visuals.Mesh(pos=verts, color=(1, 0, 0, 1))
+        mesh = ModularMesh(pos=verts, color=(1, 0, 0, 1))
         self.meshes.append(mesh)
 
         # Mesh with pre-indexed vertices, per-face color
@@ -40,7 +40,7 @@ class Canvas(vispy.scene.SceneCanvas):
         fcolor[..., 0] = np.linspace(1, 0, nf)[:, np.newaxis]
         fcolor[..., 1] = np.random.normal(size=nf)[:, np.newaxis]
         fcolor[..., 2] = np.linspace(0, 1, nf)[:, np.newaxis]
-        mesh = visuals.Mesh(pos=verts, color=fcolor)
+        mesh = ModularMesh(pos=verts, color=fcolor)
         self.meshes.append(mesh)
 
         # Mesh with unindexed vertices, per-vertex color
@@ -54,18 +54,18 @@ class Canvas(vispy.scene.SceneCanvas):
         vcolor[:, 0] = np.linspace(1, 0, nv)
         vcolor[:, 1] = np.random.normal(size=nv)
         vcolor[:, 2] = np.linspace(0, 1, nv)
-        mesh = visuals.Mesh(pos=verts, faces=faces, color=vcolor)
+        mesh = ModularMesh(pos=verts, faces=faces, color=vcolor)
         self.meshes.append(mesh)
 
         # Mesh colored by vertices + grid contours
-        mesh = visuals.Mesh(pos=verts, faces=faces)
+        mesh = ModularMesh(pos=verts, faces=faces)
         mesh.color_components = [VertexColorComponent(vcolor),
                                  GridContourComponent(spacing=(0.13, 0.13,
                                                                0.13))]
         self.meshes.append(mesh)
 
         # Phong shaded mesh
-        mesh = visuals.Mesh(pos=verts, faces=faces)
+        mesh = ModularMesh(pos=verts, faces=faces)
         normal_comp = VertexNormalComponent(mdata)
         mesh.color_components = [VertexColorComponent(vcolor),
                                  GridContourComponent(spacing=(0.1, 0.1, 0.1)),
@@ -76,7 +76,7 @@ class Canvas(vispy.scene.SceneCanvas):
         self.meshes.append(mesh)
 
         # Phong shaded mesh, flat faces
-        mesh = visuals.Mesh(pos=mdata.vertices(indexed='faces'))
+        mesh = ModularMesh(pos=mdata.vertices(indexed='faces'))
         normal_comp = VertexNormalComponent(mdata, smooth=False)
         mesh.color_components = [VertexColorComponent(vcolor[mdata.faces()]),
                                  GridContourComponent(spacing=(0.1, 0.1, 0.1)),

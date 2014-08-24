@@ -7,11 +7,10 @@ be used stand-alone e.g. from a vispy.app.Canvas, or using Glut.
 """
 
 from .visual import Visual  # noqa
-from .line import LineVisual, Line  # noqa
+from .line import Line  # noqa
 from .markers import Markers, marker_types  # noqa
-#from .point import Point  # noqa
-from .image import Image  # noqa
 from .mesh import Mesh  # noqa
+from .image import Image  # noqa
 from .polygon import Polygon  # noqa
 from .ellipse import Ellipse  # noqa
 from .regular_polygon import RegularPolygon  # noqa

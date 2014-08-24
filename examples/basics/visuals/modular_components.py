@@ -1,14 +1,14 @@
 """
-Demonstrates plugging custom shaders in to a LineVisual.
+Demonstrates plugging custom shaders in to a ModularLine visual.
 
 This allows to modify the appearance of the visual without modifying or
-subclassing the original LineVisual class.
+subclassing the original ModularLine class.
 """
 
 import numpy as np
 import vispy.app
 import vispy.gloo as gloo
-from vispy.scene import visuals
+from vispy.scene.visuals.modular_line import ModularLine
 from vispy.scene.transforms import BaseTransform, STTransform, arg_to_array
 from vispy.scene.components import (VisualComponent, VertexColorComponent,
                                     XYPosComponent)
@@ -79,7 +79,7 @@ class DashComponent(VisualComponent):
         if self._vbo is None:
             # measure distance along line
             # TODO: this should be recomputed if the line data changes.
-            pixel_tr = STTransform(scale=(400, 400)) * self.visual.transform
+            pixel_tr = self.visual.transform
             pixel_pos = pixel_tr.map(self.pos)
             dist = np.empty(pos.shape[0], dtype=np.float32)
             diff = ((pixel_pos[1:] - pixel_pos[:-1]) ** 2).sum(axis=1) ** 0.5
@@ -93,7 +93,7 @@ class DashComponent(VisualComponent):
         ff = self._funcs['frag_color']
         vf['distance_attr'] = self._make_vbo()  # attribute float
         vf['output_dist'] = Varying('output_dist', dtype='float')
-        ff['dash_len'] = 200.
+        ff['dash_len'] = 20.
         ff['distance'] = vf['output_dist']
 
     @property
@@ -138,7 +138,7 @@ class WobbleComponent(VisualComponent):
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
 
-        self.line = visuals.Line()
+        self.line = ModularLine()
         self.line.transform = (STTransform(scale=(40, 100), 
                                            translate=(400, 400)) *
                                SineTransform() *
