@@ -24,39 +24,39 @@ class Canvas(vispy.scene.SceneCanvas):
 
         # Generate some data to work with
         global mdata
-        mdata = sphere(20, 40, 100.0)
+        mdata = sphere(20, 40, 1.0)
 
         # Mesh with pre-indexed vertices, uniform color
-        verts = mdata.vertices(indexed='faces')
-        mesh = visuals.Mesh(vertices=verts, color=(1, 0, 0, 1))
+        mesh = visuals.Mesh(meshdata=mdata, color=(1, 0, 0, 1))
         self.meshes.append(mesh)
-        mesh.transform = STTransform(scale=(1, 1, .001), translate=(400, 400))
+        #mesh.transform = STTransform(scale=(1, 1, .001), translate=(400, 400))
 
         ## Mesh with pre-indexed vertices, per-face color
         ##   Because vertices are pre-indexed, we get a different color
         ##   every time a vertex is visited, resulting in sharp color
         ##   differences between edges.
-        #nf = verts.size//9
-        #fcolor = np.ones((nf, 3, 4), dtype=np.float32)
-        #fcolor[..., 0] = np.linspace(1, 0, nf)[:, np.newaxis]
-        #fcolor[..., 1] = np.random.normal(size=nf)[:, np.newaxis]
-        #fcolor[..., 2] = np.linspace(0, 1, nf)[:, np.newaxis]
-        #mesh = visuals.Mesh(pos=verts, color=fcolor)
-        #self.meshes.append(mesh)
+        verts = mdata.vertices(indexed='faces')
+        nf = verts.size//9
+        fcolor = np.ones((nf, 3, 4), dtype=np.float32)
+        fcolor[..., 0] = np.linspace(1, 0, nf)[:, np.newaxis]
+        fcolor[..., 1] = np.random.normal(size=nf)[:, np.newaxis]
+        fcolor[..., 2] = np.linspace(0, 1, nf)[:, np.newaxis]
+        mesh = visuals.Mesh(vertices=verts, face_colors=fcolor)
+        self.meshes.append(mesh)
 
         ## Mesh with unindexed vertices, per-vertex color
         ##   Because vertices are unindexed, we get the same color
         ##   every time a vertex is visited, resulting in no color differences
         ##   between edges.
-        #verts = mdata.vertices()
-        #faces = mdata.faces()
-        #nv = verts.size//3
-        #vcolor = np.ones((nv, 4), dtype=np.float32)
-        #vcolor[:, 0] = np.linspace(1, 0, nv)
-        #vcolor[:, 1] = np.random.normal(size=nv)
-        #vcolor[:, 2] = np.linspace(0, 1, nv)
-        #mesh = visuals.Mesh(pos=verts, faces=faces, color=vcolor)
-        #self.meshes.append(mesh)
+        verts = mdata.vertices()
+        faces = mdata.faces()
+        nv = verts.size//3
+        vcolor = np.ones((nv, 4), dtype=np.float32)
+        vcolor[:, 0] = np.linspace(1, 0, nv)
+        vcolor[:, 1] = np.random.normal(size=nv)
+        vcolor[:, 2] = np.linspace(0, 1, nv)
+        mesh = visuals.Mesh(vertices=verts, faces=faces, vertex_colors=vcolor)
+        self.meshes.append(mesh)
 
         ## Mesh colored by vertices + grid contours
         #mesh = visuals.Mesh(pos=verts, faces=faces)
@@ -88,28 +88,28 @@ class Canvas(vispy.scene.SceneCanvas):
         #self.meshes.append(mesh)
 
         # Lay out meshes in a grid
-        #grid = (3, 3)
-        #s = 300. / max(grid)
-        #for i, mesh in enumerate(self.meshes):
-            #x = 800. * (i % grid[0]) / grid[0] + 400. / grid[0] - 2
-            #y = 800. * (i // grid[1]) / grid[1] + 400. / grid[1] + 2
-            #mesh.transform = ChainTransform([STTransform(translate=(x, y),
-                                                         #scale=(s, s, 1)),
-                                             #self.rotation])
+        grid = (3, 3)
+        s = 300. / max(grid)
+        for i, mesh in enumerate(self.meshes):
+            x = 800. * (i % grid[0]) / grid[0] + 400. / grid[0] - 2
+            y = 800. * (i // grid[1]) / grid[1] + 400. / grid[1] + 2
+            mesh.transform = ChainTransform([STTransform(translate=(x, y),
+                                                         scale=(s, s, 1)),
+                                             self.rotation])
 
         vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         
         self.size = (800, 800)
         self.show()
 
-        #self.timer = vispy.app.Timer(connect=self.rotate)
-        #self.timer.start(0.016)
+        self.timer = vispy.app.Timer(connect=self.rotate)
+        self.timer.start(0.016)
 
     def rotate(self, event):
         self.rotation.rotate(1, (0, 1, 0))
         # TODO: altering rotation should trigger this automatically.
-        #for m in self.meshes:
-            #m._program._need_build = True
+        for m in self.meshes:
+            m._program._need_build = True
         self.update()
 
     def on_draw(self, ev):
