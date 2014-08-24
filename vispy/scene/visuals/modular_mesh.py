@@ -6,7 +6,7 @@ from __future__ import division
 from .modular_visual import ModularVisual
 
 
-class Mesh(ModularVisual):
+class ModularMesh(ModularVisual):
     """
     Displays a 3D triangle mesh.
     """
@@ -14,13 +14,13 @@ class Mesh(ModularVisual):
                  pos=None, z=0.0, color=None, shading=None, **kwargs):
         self._meshdata = None
         
-        super(Mesh, self).__init__(**kwargs)
+        super(ModularMesh, self).__init__(**kwargs)
         self.set_gl_options(depth_test=True, cull_face='front_and_back')
         self.update_gl_options(gl_options)
         
         # todo: how should this be handled? Subclasses will often define
         # different set_data signatures.
-        Mesh.set_data(self, faces=faces, index=index, pos=pos, z=z, color=color)
+        ModularMesh.set_data(self, faces=faces, index=index, pos=pos, z=z)
         
         if shading is not None:
             self.set_shading(shading)
