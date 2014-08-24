@@ -319,7 +319,7 @@ class Canvas(object):
         """ Show (or hide) the canvas """
         return self._backend._vispy_set_visible(visible)
 
-    def update(self):
+    def update(self, event=None):
         """ Inform the backend that the Canvas needs to be redrawn """
         if self._backend is not None:
             return self._backend._vispy_update()
@@ -351,20 +351,23 @@ class Canvas(object):
             self._frame_count = 0
             self._fps_callback(self.fps)
 
-    def measure_fps(self, window=1, callback=print):
+    def measure_fps(self, window=1, callback=None):
         """Measure the current FPS
 
-        Sets the update window, connects the draw event to
-        update_fps and sets the callback function
-        If no callback is passed, measurement stops.
+        Sets the update window, connects the draw event to update_fps
+        and sets the callback function. 
 
         Parameters
         ----------
-        window : int
-            The window number.
+        window : float
+            The time-window (in seconds) to calculate FPS. Default 1.0.
         callback : function
-            The function to call with the FPS. Default is ``print``.
+            The function to call with the float FPS value. The default
+            prints the FPS. If False is given, the FPS measurement is
+            stopped.
         """
+        if callback is None:
+            callback = lambda x: print('%1.1f FPS' % x)
         # Connect update_fps function to draw
         self.events.draw.disconnect(self._update_fps)
         if callback:
