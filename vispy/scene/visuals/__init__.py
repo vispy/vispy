@@ -17,7 +17,7 @@ __all__ = ['Visual', 'LineVisual', 'Line', 'Markers', 'marker_types',
 from .visual import Visual  # noqa
 from .line import LineVisual, Line  # noqa
 from .markers import Markers, marker_types  # noqa
-from .point import Point  # noqa
+#from .point import Point  # noqa
 from .image import Image  # noqa
 from .mesh import Mesh  # noqa
 from .polygon import Polygon  # noqa
