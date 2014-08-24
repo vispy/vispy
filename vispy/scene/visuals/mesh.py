@@ -31,7 +31,7 @@ void main() {
 
 fragment_template = """
 void main() {
-  gl_FragColor = vec4(1, 0, 0, 1); // $color;
+  gl_FragColor = $color;
 }
 """
 
@@ -73,8 +73,6 @@ class Mesh(Visual):
                  shading='plain', **kwds):
         Visual.__init__(self, **kwds)
         
-        assert vertices is not None
-        
         # Create a program
         self._program = ModularProgram(vertex_template, fragment_template)
         
@@ -86,7 +84,7 @@ class Mesh(Visual):
         #self._variables['a_color4'] = Variable('attribute vec4 a_color')
 
         # Define buffers
-        self._vertices = gloo.VertexBuffer(np.zeros((0, 3), dtype=np.float32))
+        self._vertices = gloo.VertexBuffer(np.zeros((300, 3), dtype=np.float32))
         self._normals = gloo.VertexBuffer(np.zeros((0, 3), dtype=np.float32))
         self._faces = gloo.IndexBuffer()
         self._colors = gloo.VertexBuffer(np.zeros((0, 4), dtype=np.float32))
@@ -140,8 +138,8 @@ class Mesh(Visual):
                 self._colors.set_data(md.face_colors())
         else:
             v = md.vertices(indexed='faces')
-            v = v.reshape((v.shape[0]*v.shape[1], v.shape[2]))
-            self._vertices.set_data(v)
+            #self._vertices.set_data(v)
+            self._vertices = gloo.VertexBuffer(v)
             if self.shading == 'smooth':
                 self._normals.set_data(md.vertex_normals(indexed='faces'))
             elif self.shading == 'flat':
@@ -259,18 +257,10 @@ class Mesh(Visual):
         gloo.set_state('translucent', depth_test=True, cull_face='front_and_back')
         if self._data_changed:
             self._update_data()
-
-        tr = event.render_transform.simplified()
-        self._program.vert['transform'] = tr.shader_map()
         
-        v = self._vertices._pending_data[0][0]
-        print("Vertex data:", v.shape, v.dtype)
-        print(tr.map(v.max(axis=0)))
-        print(tr.map(v.min(axis=0)))
-        print(tr.map(v.mean(axis=0)))
+        self._program.vert['transform'] = event.render_transform.shader_map()
         
         # Draw
-        print(self._indexed)
         if self._indexed:
             self._program.draw('triangles', self._faces)
         else:
