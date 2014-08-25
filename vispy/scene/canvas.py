@@ -84,6 +84,9 @@ class SceneCanvas(app.Canvas):
         self._vp_stack = []  # for storing information about viewports used
         self._scene = None
         self._bgcolor = Color(kwargs.pop('bgcolor', 'black')).rgba
+        
+        # A default widget that follows the shape of the canvas
+        self._central_widget = None
 
         app.Canvas.__init__(self, *args, **kwargs)
         self.events.mouse_press.connect(self._process_mouse_event)
@@ -106,8 +109,6 @@ class SceneCanvas(app.Canvas):
         
         self.scene = SubScene(parent=self.entity)
         
-        # A default widget that follows the shape of the canvas
-        self._central_widget = None
         
     @property
     def scene(self):
