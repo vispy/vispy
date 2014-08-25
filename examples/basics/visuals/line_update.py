@@ -25,7 +25,7 @@ color[:, 1] = color[::-1, 0]
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
-        self.line = visuals.Line(pos=pos, color=color)
+        self.line = visuals.Line(pos=pos, color=color, mode='gl')
         self.line.events.update.connect(self.line_changed)
 
         vispy.scene.SceneCanvas.__init__(self, keys='interactive')
