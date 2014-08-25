@@ -3,15 +3,15 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Simple demonstration of PolygonVisual. 
+Demonstration of Polygon and subclasses
 """
 
 import numpy as np
 import vispy.app
 from vispy import gloo
-from vispy.scene import visuals
+from vispy.scene import visuals, transforms
 
-# vertex positions of data to draw
+# vertex positions of polygon data to draw
 pos = np.array([[0, 0, 0],
                [0.25, 0.22, 0],
                [0.25, 0.5, 0],
@@ -45,11 +45,36 @@ class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         global pos
         
-        self.polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
-                                       border_color=(1, 1, 1, 1))
-        self.polygon.transform = vispy.scene.transforms.STTransform(
-            scale=(300, 300),
-            translate=(400, 400))
+        self.visuals = []
+        
+        polygon = visuals.Polygon(pos=pos, color=(0.8, .2, 0, 1),
+                                  border_color=(1, 1, 1, 1))
+        polygon.transform = transforms.STTransform(
+            scale=(200, 200),
+            translate=(600, 600))
+        self.visuals.append(polygon)
+        
+        ellipse = visuals.Ellipse(pos=(0, 0, 0), radius=(100, 150),
+                                  color=(0.2, 0.2, 0.8, 1),
+                                  border_color=(1, 1, 1, 1),
+                                  start_angle=180., span_angle=150.)
+        ellipse.transform = transforms.STTransform(scale=(0.9, 1.5),
+                                                   translate=(200, 300))
+        self.visuals.append(ellipse)
+
+        rect = visuals.Rectangle(pos=(600, 200, 0), height=200.,
+                                 width=300.,
+                                 radius=[30., 30., 0., 0.],
+                                 color=(0.5, 0.5, 0.2, 1),
+                                 border_color='white')
+        self.visuals.append(rect)
+
+        rpolygon = visuals.RegularPolygon(pos=(200., 600., 0), radius=160,
+                                          color=(0.2, 0.8, 0.2, 1),
+                                          border_color=(1, 1, 1, 1),
+                                          sides=6)
+        self.visuals.append(rpolygon)
+        
         vispy.scene.SceneCanvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
@@ -57,7 +82,8 @@ class Canvas(vispy.scene.SceneCanvas):
     def on_draw(self, ev):
         gloo.set_clear_color((0, 0, 0, 1))
         gloo.clear()
-        self.draw_visual(self.polygon)
+        for vis in self.visuals:
+            self.draw_visual(vis)
         
 
 if __name__ == '__main__':
