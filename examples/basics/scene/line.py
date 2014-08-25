@@ -41,7 +41,7 @@ def update(event):
                  np.cos(np.pi * event.elapsed)+2]
         line.transform.scale = scale
 
-timer = app.Timer(interval=1./60., connect=update, start=True)
+timer = app.Timer('auto', connect=update, start=True)
 
 if sys.flags.interactive == 0:
     app.run()
