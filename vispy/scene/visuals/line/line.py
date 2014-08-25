@@ -4,19 +4,14 @@
 
 
 """
-Simple visual based on GL_LINE_STRIP / GL_LINES
+Line visual implementing Agg- and GL-based drawing modes.
 
+TODO: 
 
-API issues to work out:
-
-  * Currently this only uses GL_LINE_STRIP. Should add a 'method' argument like
-    Image.method that can be used to select higher-quality triangle
-    methods.
-
-  * Add a few different position input components:
-        - X values from vertex buffer of index values, Xmin, and Xstep
-        - position from float texture
-
+* Agg support is very minimal; needs attention.
+* Optimization--avoid creating new buffers, avoid triggering program 
+  recompile.
+  
 """
 
 from __future__ import division
@@ -189,7 +184,10 @@ class Line(Visual):
             'width': self._width,
             'antialias': self._antialias,
         }
-        self._agg_line = LineAgg(paths=[pos], style=[style])
+        if pos is not None:
+            self._agg_line = LineAgg(paths=[pos], style=[style])
+        else:
+            self._agg_line = None
         self.update()
 
     def draw(self, event):

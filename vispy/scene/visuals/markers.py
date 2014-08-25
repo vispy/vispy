@@ -271,11 +271,11 @@ class Markers(Visual):
         self._program.frag['v_size'] = self._v_size_var
         Visual.__init__(self)
 
-    def set_data(self, pos=None, style='o', size=10., line_width=1.,
+    def set_data(self, pos=None, style='o', size=10., edge_width=1.,
                  edge_color='black', face_color='white'):
         assert (isinstance(pos, np.ndarray) and
                 pos.ndim == 2 and pos.shape[1] in (2, 3))
-        assert line_width > 0
+        assert edge_width > 0
         self.set_style(style)
         edge_color = Color(edge_color).rgba
         face_color = Color(face_color).rgba
@@ -287,7 +287,7 @@ class Markers(Visual):
                                   ('a_linewidth', np.float32, 1)])
         data['a_fg_color'] = edge_color
         data['a_bg_color'] = face_color
-        data['a_linewidth'] = line_width
+        data['a_linewidth'] = edge_width
         data['a_position'][:, :pos.shape[1]] = pos
         data['a_size'] = size
         self._vbo = VertexBuffer(data)
