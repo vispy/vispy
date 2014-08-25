@@ -13,15 +13,8 @@ canvas.show()
 
 # This is the top-level widget that will hold three ViewBoxes, which will
 # be automatically resized whenever the grid is resized.
-grid = scene.widgets.Grid(parent=canvas.scene)
+grid = canvas.central_widget.add_grid()
 
-# Ensure that grid fills the entire canvas, even after resize.
-@canvas.events.resize.connect
-def update_grid(event=None):
-    global grid, canvas
-    grid.size = canvas.size
-
-update_grid()
 
 # Add 3 ViewBoxes to the grid
 b1 = grid.add_view(row=0, col=0, col_span=2)
