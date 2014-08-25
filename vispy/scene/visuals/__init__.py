@@ -14,7 +14,7 @@ from .image import Image  # noqa
 from .polygon import Polygon  # noqa
 from .ellipse import Ellipse  # noqa
 from .regular_polygon import RegularPolygon  # noqa
-from .rect_polygon import RectPolygon  # noqa
+from .rectangle import Rectangle  # noqa
 from .text import Text  # noqa
 from .grid_lines import GridLines  # noqa
 from .surface_plot import SurfacePlot  # noqa

@@ -14,7 +14,7 @@ from ...color import Color
 from .polygon import Polygon, Mesh, Line
 
 
-class RectPolygon(Polygon):
+class Rectangle(Polygon):
     """
     Displays a 2D rectangle with optional rounded corners
 
@@ -35,7 +35,7 @@ class RectPolygon(Polygon):
     """
     def __init__(self, pos=None, color='black', border_color=None,
                  height=1.0, width=1.0, radius=[0., 0., 0., 0.], **kwds):
-        super(RectPolygon, self).__init__()
+        super(Rectangle, self).__init__()
         self._vertices = None
         self._pos = pos
         self._color = Color(color)
