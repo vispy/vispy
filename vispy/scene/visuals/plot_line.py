@@ -17,8 +17,6 @@ class PlotLine(Visual):
     PlotLine(x_vals, y_vals)
     PlotLine(xy_vals)
     
-    
-    
     """
     def __init__(self, *args, **kwds):
         my_kwds = {}
