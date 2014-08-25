@@ -25,9 +25,9 @@ class SurfacePlot(Mesh):
         self._x = None
         self._y = None
         self._z = None
-        self._color = None
-        self._vertices = None
-        self._meshdata = MeshData()
+        self.__color = None
+        self.__vertices = None
+        self.__meshdata = MeshData()
         Mesh.__init__(self, **kwds)
         
         self.set_data(x, y, z, colors)
@@ -57,12 +57,12 @@ class SurfacePlot(Mesh):
         """
         if x is not None:
             if self._x is None or len(x) != len(self._x):
-                self._vertices = None
+                self.__vertices = None
             self._x = x
         
         if y is not None:
             if self._y is None or len(y) != len(self._y):
-                self._vertices = None
+                self.__vertices = None
             self._y = y
         
         if z is not None:
@@ -71,13 +71,13 @@ class SurfacePlot(Mesh):
             if self._y is not None and z.shape[1] != len(self._y):
                 raise TypeError('Z values must have shape (len(x), len(y))')
             self._z = z
-            if (self._vertices is not None and 
-                self._z.shape != self._vertices.shape[:2]):
-                self._vertices = None
+            if (self.__vertices is not None and 
+                self._z.shape != self.__vertices.shape[:2]):
+                self.__vertices = None
         
         if colors is not None:
-            self._colors = colors
-            self._meshdata.set_vertex_colors(colors)
+            self.__colors = colors
+            self.__meshdata.set_vertex_colors(colors)
         
         if self._z is None:
             return
@@ -86,12 +86,12 @@ class SurfacePlot(Mesh):
         new_vertices = False
         
         ## Generate vertex and face array
-        if self._vertices is None:
+        if self.__vertices is None:
             new_vertices = True
-            self._vertices = np.empty((self._z.shape[0], self._z.shape[1], 3), 
+            self.__vertices = np.empty((self._z.shape[0], self._z.shape[1], 3), 
                                       dtype=float)
             self.generate_faces()
-            self._meshdata.set_faces(self._faces)
+            self.__meshdata.set_faces(self.__faces)
             update_mesh = True
         
         ## Copy x, y, z data into vertex array
@@ -101,7 +101,7 @@ class SurfacePlot(Mesh):
                     x = np.arange(self._z.shape[0])
                 else:
                     x = self._x
-            self._vertices[:, :, 0] = x.reshape(len(x), 1)
+            self.__vertices[:, :, 0] = x.reshape(len(x), 1)
             update_mesh = True
         
         if new_vertices or y is not None:
@@ -110,21 +110,20 @@ class SurfacePlot(Mesh):
                     y = np.arange(self._z.shape[1])
                 else:
                     y = self._y
-            self._vertices[:, :, 1] = y.reshape(1, len(y))
+            self.__vertices[:, :, 1] = y.reshape(1, len(y))
             update_mesh = True
         
         if new_vertices or z is not None:
-            self._vertices[...,2] = self._z
+            self.__vertices[...,2] = self._z
             update_mesh = True
         
         ## Update MeshData
         if update_mesh:
-            self._meshdata.set_vertices(
-                self._vertices.reshape(self._vertices.shape[0] * 
-                                       self._vertices.shape[1], 3))
+            self.__meshdata.set_vertices(
+                self.__vertices.reshape(self.__vertices.shape[0] * 
+                                       self.__vertices.shape[1], 3))
             Mesh.set_data(self, 
-                          pos=self._meshdata.vertices(),
-                          faces=self._meshdata.faces())
+                          meshdata=self.__meshdata)
         
     def generate_faces(self):
         cols = self._z.shape[1]-1
@@ -136,4 +135,4 @@ class SurfacePlot(Mesh):
             start = row * cols * 2 
             faces[start:start+cols] = rowtemplate1 + row * (cols+1)
             faces[start+cols:start+(cols*2)] = rowtemplate2 + row * (cols+1)
-        self._faces = faces
+        self.__faces = faces
