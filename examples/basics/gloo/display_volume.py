@@ -86,10 +86,11 @@ varying vec2 v_texcoord;
 void main()
 {
 //    vec4 start = texture2D(u_start, v_texcoord);
-//    vec4 stop = texture2D(u_stop, v_texcoord);
-//    texture3D(u_data, vec3(0, 0, 0));
 
-    gl_FragColor = start;
+//    vec4 stop = texture2D(u_stop, v_texcoord);
+//    gl_FragColor = stop;
+
+    texture3D(u_data, vec3(0, 0, 0));
 }
 """
 
