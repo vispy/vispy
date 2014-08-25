@@ -37,7 +37,9 @@ void main() {
 
 phong_template = """
 vec4 phong_shading(vec4 color) {
-    vec3 norm = normalize($normal.xyz);
+    vec4 o = $transform(vec4(0, 0, 0, 1));
+    vec4 n = $transform(vec4($normal, 1));
+    vec3 norm = normalize((n-o).xyz);
     vec3 light = normalize($light_dir.xyz);
     float p = dot(light, norm);
     p = (p < 0. ? 0. : p);
@@ -107,6 +109,9 @@ class Mesh(Visual):
         # varyings
         self._color_var = Varying('v_color', dtype='vec4')
         self._normal_var = Varying('v_normal', dtype='vec3')
+        
+        # Function for computing phong shading
+        self._phong = None
         
         # Init
         self.shading = shading
@@ -184,19 +189,20 @@ class Mesh(Visual):
         # Shading
         if self.shading is None:
             self._program.frag['color'] = self._color_var
+            self._phong = None            
         else:
-            phong = Function(phong_template)
+            self._phong = Function(phong_template)
             
             # Normal data comes via vertex shader
             self._program.vert[self._normal_var] = self._normals
-            phong['normal'] = self._normal_var
+            self._phong['normal'] = self._normal_var
             
             # Additional phong proprties
-            phong['light_dir'] = (1.0, 1.0, 1.0)
-            phong['light_color'] = (1.0, 1.0, 1.0, 1.0)
-            phong['ambient'] = (0.3, 0.3, 0.3, 1.0)
+            self._phong['light_dir'] = (1.0, 1.0, 1.0)
+            self._phong['light_color'] = (1.0, 1.0, 1.0, 1.0)
+            self._phong['ambient'] = (0.3, 0.3, 0.3, 1.0)
             
-            self._program.frag['color'] = phong(self._color_var)
+            self._program.frag['color'] = self._phong(self._color_var)
     
     @property
     def shading(self):
@@ -215,6 +221,8 @@ class Mesh(Visual):
             self._update_data()
         
         self._program.vert['transform'] = event.render_transform.shader_map()
+        if self._phong is not None:
+            self._phong['transform'] = event.doc_transform().shader_map()
         
         # Draw
         if self._indexed:
