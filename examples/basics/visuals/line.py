@@ -45,7 +45,10 @@ class Canvas(vispy.scene.SceneCanvas):
             
             # wide
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), width=5),
-            
+
+            # per-vertex color
+            visuals.Line(pos=pos, color=color),
+
             #
             # GL-mode lines:
             #
@@ -71,7 +74,6 @@ class Canvas(vispy.scene.SceneCanvas):
             # gl-mode width
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), width=4, 
                          antialias=False, mode='gl'),
-            
         ]
         
         for i,line in enumerate(self.lines):
@@ -106,7 +108,7 @@ if __name__ == '__main__':
 
     timer = vispy.app.Timer()
     timer.connect(update)
-    timer.start(0)
+    #timer.start(0)
     
     import sys
     if sys.flags.interactive != 1:

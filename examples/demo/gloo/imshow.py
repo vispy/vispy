@@ -125,5 +125,7 @@ class Canvas(app.Canvas):
         clear(color=True, depth=True)
         self.image.draw('triangle_strip')
 
-canvas = Canvas()
-app.run()
+
+if __name__ == '__main__':
+    canvas = Canvas()
+    app.run()

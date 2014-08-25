@@ -171,11 +171,7 @@ class Line(Visual):
             self._connect = connect
         
         if color is not None:
-            if isinstance(color, np.ndarray) and color.ndim > 1:
-                raise NotImplementedError("Color arrays not implemented for "
-                                          "agg mode lines.")
-            
-            self._color = Color(color).rgba
+            self._color = color
             
         if width is not None:
             self._width = width
@@ -186,7 +182,7 @@ class Line(Visual):
             'antialias': self._antialias,
         }
         if pos is not None:
-            self._agg_line = LineAgg(paths=[pos], style=[style])
+            self._agg_line = LineAgg(path=pos, **style)
         else:
             self._agg_line = None
         self.update()
