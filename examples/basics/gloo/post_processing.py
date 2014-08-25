@@ -121,7 +121,7 @@ class Canvas(app.Canvas):
         # OpenGL and Timer initalization
         # --------------------------------------
         set_state(clear_color=(.3, .3, .35, 1), depth_test=True)
-        self.timer = app.Timer(1.0 / 60, connect=self.on_timer, start=True)
+        self.timer = app.Timer('auto', connect=self.on_timer, start=True)
         self._set_projection(self.size)
 
     def on_draw(self, event):

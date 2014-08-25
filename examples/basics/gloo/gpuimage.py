@@ -92,7 +92,7 @@ class Canvas(app.Canvas):
         self.program['a_position'] = [(-1., -1.), (-1., +1.),
                                       (+1., -1.), (+1., +1.)]
 
-        self.timer = app.Timer(1.0 / 60, connect=self.on_timer, start=True)
+        self.timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_timer(self, event):
         self.program['u_time'] = event.elapsed

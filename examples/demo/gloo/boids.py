@@ -91,7 +91,7 @@ class Canvas(app.Canvas):
         self.program['size'] = self.vbo_size
         self.program['position'] = self.vbo_position
         
-        self._timer = app.Timer(1.0 / 60, connect=self.update, start=True)
+        self._timer = app.Timer('auto', connect=self.update, start=True)
     
     def on_initialize(self, event):
         gloo.set_state(clear_color=(0, 0, 0, 1), blend=True,

@@ -114,7 +114,7 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
-        self._timer = app.Timer(1.0 / 60, connect=self.on_timer, start=True)
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def load_molecule(self, fname):
         molecule = np.load(fname)['molecule']

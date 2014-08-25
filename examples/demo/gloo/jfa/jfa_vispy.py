@@ -26,7 +26,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         self.use_shaders = True
         app.Canvas.__init__(self, size=(512, 512), keys='interactive')
-        self._timer = app.Timer(1.0 / 60, self.update, start=True)
+        self._timer = app.Timer('auto', self.update, start=True)
 
     def _setup_textures(self, fname):
         img = Image.open(get_data_file('jfa/' + fname))

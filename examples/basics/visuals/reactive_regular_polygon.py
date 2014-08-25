@@ -25,7 +25,7 @@ class Canvas(vispy.scene.SceneCanvas):
         self.show()
         
         self.rfactor = 0.01
-        self._timer = app.Timer(1.0 / 60, connect=self.on_timer, start=True)
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_timer(self, event):
         if (self.rpolygon.radius > 400. or self.rpolygon.radius < 80.):

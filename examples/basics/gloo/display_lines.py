@@ -71,7 +71,7 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
-        self.timer = app.Timer(1.0 / 60, connect=self.on_timer)
+        self.timer = app.Timer('auto', connect=self.on_timer)
 
     # ---------------------------------
     def on_initialize(self, event):

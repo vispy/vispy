@@ -75,7 +75,7 @@ class Canvas(app.Canvas):
         # Handle transformations
         self.init_transforms()
         
-        self._timer = app.Timer(1.0 / 60, connect=self.update_transforms)
+        self._timer = app.Timer('auto', connect=self.update_transforms)
         self._timer.start()
     
     def on_initialize(self, event):

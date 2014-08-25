@@ -77,7 +77,7 @@ class Canvas(app.Canvas):
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
         
-        self.timer = app.Timer(1.0 / 60, connect=self.update, start=True)
+        self.timer = app.Timer('auto', connect=self.update, start=True)
         
         # Set uniforms (some are set later)
         self.program['u_model'] = self.model

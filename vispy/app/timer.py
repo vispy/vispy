@@ -17,8 +17,10 @@ class Timer(object):
 
     Parameters
     ----------
-    interval : float
-        Time between events in seconds.
+    interval : float | 'auto'
+        Time between events in seconds. The default is 'auto', which
+        attempts to find the interval that matches the refresh rate of
+        the current monitor. Currently this is simply 1/60.
     connect : function | None
         The function to call.
     iterations : int
@@ -29,7 +31,7 @@ class Timer(object):
         The application to attach the timer to.
     """
 
-    def __init__(self, interval=0.0, connect=None, iterations=-1, start=False,
+    def __init__(self, interval='auto', connect=None, iterations=-1, start=False,
                  app=None):
         self.events = EmitterGroup(source=self,
                                    start=Event,
@@ -53,8 +55,10 @@ class Timer(object):
         
         # Instantiate the backed with the right class
         self._backend = self._app.backend_module.TimerBackend(self)
-
-        self._interval = interval
+        
+        if interval == 'auto':
+            interval = 1.0 / 60
+        self._interval = float(interval)
         self._running = False
         self._first_emit_time = None
         self._last_emit_time = None

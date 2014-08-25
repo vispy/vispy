@@ -80,7 +80,7 @@ class Canvas(app.Canvas):
         #self._program['a_position'] = self._vbo['a_position']
         #self._program['a_texcoords'] = self._vbo['a_texcoords']
         
-        self._timer = app.Timer(1.0 / 60, connect=self.update, start=True)
+        self._timer = app.Timer('auto', connect=self.update, start=True)
     
     def on_initialize(self, event):
         gloo.set_clear_color('white')

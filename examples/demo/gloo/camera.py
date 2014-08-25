@@ -51,7 +51,7 @@ class Canvas(app.Canvas):
         self.cap = cv2.VideoCapture(0)
         if not self.cap.isOpened():
             raise Exception("There's no available camera.")
-        self._timer = app.Timer(1.0 / 60, connect=self.on_timer, start=True)
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_resize(self, event):
         width, height = event.size

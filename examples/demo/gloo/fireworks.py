@@ -94,7 +94,7 @@ class Canvas(app.Canvas):
         # Create first explosion
         self._new_explosion()
         
-        self._timer = app.Timer(1.0 / 60, connect=self.update, start=True)
+        self._timer = app.Timer('auto', connect=self.update, start=True)
     
     def on_initialize(self, event):
         # Enable blending

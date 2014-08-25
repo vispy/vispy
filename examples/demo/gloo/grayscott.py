@@ -126,7 +126,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title='Grayscott Reaction-Diffusion',
                             size=(512, 512), keys='interactive')
-        self._timer = app.Timer(1.0 / 60, connect=self.update, start=True)
+        self._timer = app.Timer('auto', connect=self.update, start=True)
     
     def on_initialize(self, event):
         self.scale = 4

@@ -79,7 +79,7 @@ class Canvas(app.Canvas):
         self.projection = ortho(0, W, 0, H, -1, 1)
         self.program['u_projection'] = self.projection
         
-        self._timer = app.Timer(1.0 / 60, connect=self.update, start=True)
+        self._timer = app.Timer('auto', connect=self.update, start=True)
 
     def on_initialize(self, event):
         gloo.set_clear_color('white')
