@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Demonstration of animated LineVisual.
+Demonstration of various features of Line visual.
 """
 
 import numpy as np
@@ -29,27 +29,45 @@ connect[:, 0] = np.arange(N-1)
 connect[:, 1] = connect[:, 0] + 1
 connect[N/2, 1] = N/2  # put a break in the middle
 
+
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         
         # Create several visuals demonstrating different 
         # features of Line
         self.lines = [
+            #
+            # agg-mode lines:
+            #
+            
             # solid color
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1)),
             
+            # wide
+            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), width=5),
+            
+            
+            #
+            # GL-mode lines:
+            #
+            
+            # solid color
+            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), mode='gl'),
+            
             # per-vertex color
-            visuals.Line(pos=pos, color=color),
+            visuals.Line(pos=pos, color=color, mode='gl'),
             
             # updating (see the "update" function below)
-            visuals.Line(pos=pos, color=color),
+            visuals.Line(pos=pos, color=color, mode='gl'),
             
             # only connect alternate pairs of vertices
-            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect='segments'),
+            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect='segments', 
+                         mode='gl'),
             
             # connect specific pairs of vertices, specified in an adjacency
             # matrix
-            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect=connect),
+            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect=connect, 
+                         mode='gl'),
         ]
         
         for i,line in enumerate(self.lines):
@@ -80,7 +98,7 @@ if __name__ == '__main__':
 
     def update(ev):
         pos[:, 1] = np.random.normal(size=N, scale=30, loc=0)
-        win.lines[2].set_data(pos=pos)
+        win.lines[4].set_data(pos=pos)
 
     timer = vispy.app.Timer()
     timer.connect(update)
