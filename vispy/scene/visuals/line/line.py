@@ -18,7 +18,7 @@ from __future__ import division
 
 import numpy as np
 
-from vispy import gloo
+from .... import gloo
 from ....color import Color
 from ...shaders import ModularProgram, Function
 from ..visual import Visual
