@@ -320,7 +320,11 @@ class Canvas(object):
         return self._backend._vispy_set_visible(visible)
 
     def update(self, event=None):
-        """ Inform the backend that the Canvas needs to be redrawn """
+        """ Inform the backend that the Canvas needs to be redrawn
+        
+        This method accepts an optional ``event`` argument so it can be used
+        as an event handler (the argument is ignored). 
+        """
         if self._backend is not None:
             return self._backend._vispy_update()
         else:
