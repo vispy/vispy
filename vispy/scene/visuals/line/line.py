@@ -1,218 +1,200 @@
-from .... import gloo
-#from vispy import app
-import os
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+
+"""
+Simple visual based on GL_LINE_STRIP / GL_LINES
+
+
+API issues to work out:
+
+  * Currently this only uses GL_LINE_STRIP. Should add a 'method' argument like
+    Image.method that can be used to select higher-quality triangle
+    methods.
+
+  * Add a few different position input components:
+        - X values from vertex buffer of index values, Xmin, and Xstep
+        - position from float texture
+
+"""
+
+from __future__ import division
+
 import numpy as np
-import math
 
-from ...shaders import ModularProgram
+from vispy import gloo
+from ....color import Color
+from ...shaders import ModularProgram, Function
 from ..visual import Visual
+from .line_agg import LineAgg
 
-from .dash_atlas import DashAtlas
-from .vertex import VERTEX_SHADER
-from .fragment import FRAGMENT_SHADER
+vec2to4 = Function("""
+    vec4 vec2to4(vec2 input) {
+        return vec4(input, 0, 1);
+    }
+""")
 
-join = { 'miter' : 0,
-         'round' : 1,
-         'bevel' : 2 }
+vec3to4 = Function("""
+    vec4 vec3to4(vec3 input) {
+        return vec4(input, 1);
+    }
+""")
 
-caps = { ''             : 0,
-         'none'         : 0,
-         '.'            : 0,
-         'round'        : 1,
-         ')'            : 1,
-         '('            : 1,
-         'o'            : 1,
-         'triangle in'  : 2,
-         '<'            : 2,
-         'triangle out' : 3,
-         '>'            : 3,
-         'square'       : 4,
-         '='            : 4,
-         'butt'         : 4,
-         '|'            : 5 }
-
-def bake(vtype, vertices, closed=False):
-    """
-    Bake a list of 2D vertices for rendering them as thick line. Each line
-    segment must have its own vertices because of antialias (this means no
-    vertex sharing between two adjacent line segments).
+class Line(Visual):
+    VERTEX_SHADER = """
+        varying vec4 v_color;
+        
+        void main(void)
+        {
+            gl_Position = $transform($position);
+            v_color = $color;
+        }
     """
 
-    n = len(vertices)
-    P = np.array(vertices).reshape(n,2).astype(float)
+    FRAGMENT_SHADER = """
+        varying vec4 v_color;
+        void main()
+        {
+            gl_FragColor = v_color;
+        }
+    """
 
-    dx,dy = P[0] - P[-1]
-    d = np.sqrt(dx*dx+dy*dy)
-
-    # If closed, make sure first vertex = last vertex (+/- epsilon=1e-10)
-    if closed and d > 1e-10:
-        P = np.append(P, P[0]).reshape(n+1,2)
-        n+= 1
-
-    V = np.zeros(len(P), dtype = vtype)
-    V['a_position'] = P
-
-    # Tangents & norms
-    T = P[1:] - P[:-1]
-    
-    N = np.sqrt(T[:,0]**2 + T[:,1]**2)
-    # T /= N.reshape(len(T),1)
-    V['a_tangents'][+1:, :2] = T
-    if closed: V['a_tangents'][0  , :2] = T[-1]
-    else:      V['a_tangents'][0  , :2] = T[0]
-    V['a_tangents'][:-1, 2:] = T
-    if closed: V['a_tangents'][ -1, 2:] = T[0]
-    else:      V['a_tangents'][ -1, 2:] = T[-1]
-
-    # Angles
-    T1 = V['a_tangents'][:,:2]
-    T2 = V['a_tangents'][:,2:]
-    A = np.arctan2( T1[:,0]*T2[:,1]-T1[:,1]*T2[:,0],
-                    T1[:,0]*T2[:,0]+T1[:,1]*T2[:,1])
-    V['a_angles'][:-1,0] = A[:-1] 
-    V['a_angles'][:-1,1] = A[+1:]
-
-    # Segment
-    L = np.cumsum(N)
-    V['a_segment'][+1:,0] = L
-    V['a_segment'][:-1,1] = L
-    #V['a_lengths'][:,2] = L[-1]
-
-    # Step 1: A -- B -- C  =>  A -- B, B' -- C
-    V = np.repeat(V,2,axis=0)[+1:-1]
-    V['a_segment'][1:] = V['a_segment'][:-1] 
-    V['a_angles'][1:] = V['a_angles'][:-1] 
-    V['a_texcoord'][0::2] = -1
-    V['a_texcoord'][1::2] = +1
-
-    # Step 2: A -- B, B' -- C  -> A0/A1 -- B0/B1, B'0/B'1 -- C0/C1
-    V = np.repeat(V,2,axis=0)
-    V['a_texcoord'][0::2,1] = -1
-    V['a_texcoord'][1::2,1] = +1
-
-    I = np.resize( np.array([0,1,2,1,2,3], dtype=np.uint32), (n-1)*(2*3))
-    I += np.repeat( 4*np.arange(n-1), 6)
-
-    return V, I, L[-1]
-
-vtype = np.dtype( [('a_position', 'f4', 2),
-                    ('a_tangents', 'f4', 4),
-                    ('a_segment',  'f4', 2),
-                    ('a_angles',   'f4', 2),
-                    ('a_texcoord', 'f4', 2),
-                    ('alength', 'f4', 1),
-                    ('color', 'f4', 4),
-                    ])
-
-uniforms = dict(
-    closed = False,
-    # color = (0.,0.,0.,1),
-    linewidth = 10.,
-    antialias = 1.0,
-    miter_limit = 4.0,
-    #u_scale = (300, 300),
-    dash_phase = 0.0,
-    # length=length,
-    
-    )
-
-
-
-class LineCollection(object):
-    def __init__(self, paths=None, style=None):
+    def __init__(self, pos=None, color=None, width=1, 
+                 connect='strip', mode='agg', **kwds):
+        Visual.__init__(self, **kwds)
         
-        self.da = DashAtlas()
-        self._index = 0
-        self._Vs = []
-        self._Is = []
-        self._Us = []
+        # todo: move this to set_data and allow mode switch after init
+        if mode not in ('agg', 'gl'):
+            raise ValueError('mode argument must be "agg" or "gl".')
+        self._mode = mode
         
+        self._vbo = None
+        self._color = None
+        self._pos_expr = None
+        self._connect = None
+        self._width = None
         
-        if style is None:
-            style = [{}]*len(paths)
+        # Reference to a LineAgg visual that will do our drawing if mode=='agg'
+        # todo: this is a bit of a hack to get agg and gl_lines available via
+        # the same class. It can probably be cleaned up..
+        self._agg_line = None
+        
+        self._program = ModularProgram(self.VERTEX_SHADER,
+                                       self.FRAGMENT_SHADER)
+        self.set_data(pos, color, width, connect)
+
+    def set_data(self, pos=None, color=None, width=None, connect=None, mode=None):
+        """ Set the data used to draw this visual.
+        
+        Parameters
+        ----------
+        pos : array 
+            Array of shape (..., 2) or (..., 3) specifying vertex coordinates.
+        color : Color, tuple, or array
+            The color to use when drawing the line. If an array is given, it
+            must be of shape (..., 4) and provide one rgba color per vertex.
+        width:
+            The width of the line in px. Line widths > 1px are only
+            guaranteed to work when using 'agg' mode. 
+        connect : str or array
+            Determines which vertices are connected by lines.
+            * "strip" causes the line to be drawn with each vertex 
+              connected to the next.
+            * "segments" causes each pair of vertices to draw an 
+              independent line segment
+            * numpy arrays specify the exact set of segment pairs to 
+              connect.
+        mode : str
+            * "agg" uses anti-grain geometry to draw nicely antialiased lines
+              with proper joins and endcaps. 
+            * "gl" uses OpenGL's built-in line rendering. This is much faster,
+              but produces much lower-quality results and is not guaranteed to
+              obey the requested line width or join/endcap styles.
+        """
+        if mode is not None:
+            raise NotImplementedError("Line mode can only be set during "
+                                      "initialization (for now).")
+
+        if self._mode == 'agg':
+            # use a separate method for updating agg lines
+            self._agg_set_data(pos, color, width, connect)
+            return
+        
+        # for non-agg lines:
+        
+        if pos is not None:
+            vbo = gloo.VertexBuffer(np.asarray(pos, dtype=np.float32))
+            if pos.shape[-1] == 2:
+                self._pos_expr = vec2to4(vbo)
+            elif pos.shape[-1] == 3:
+                self._pos_expr = vec3to4(vbo)
+            else:
+                raise TypeError("pos array should have 2 or 3 elements in last"
+                                " axis.")
+            self._vbo = vbo
+        
+        if color is not None:
+            if isinstance(color, np.ndarray) and color.ndim > 1:
+                self._color = gloo.VertexBuffer(color.astype(np.float32))
+            else:
+                self._color = Color(color).rgba
+                
+        if connect is not None:
+            if isinstance(connect, np.ndarray):
+                self._connect = gloo.IndexBuffer(connect.astype(np.uint32))
+            else:
+                self._connect = connect
             
-        for vertices, s in zip(paths, style):
-            self.add(vertices, **s)
-            
-        
-    def add(self, vertices, dash_pattern='solid', 
-            color=(0.,0.,0.,1.)):
-            
-        linecaps = ('round','round')
-        dash_caps = ('round', 'round')
-        linejoin = 'round'
-        
-        dash_index, dash_period = self.da[dash_pattern]
-        
-    
-        V, I, length = bake(vtype, vertices)
-        V['alength'] = length * np.ones(len(V))
-        V['color'] = np.tile(color, (len(V), 1))
-        
-        self._Vs.append(V)
-        self._Is.append(I + self._index)
-        
-        self._Us.append(dict(
-            dash_index=dash_index,
-            dash_period=dash_period,
-            linejoin    = join.get(linejoin, 'round'),
-            
-            linecaps    = (caps.get(linecaps[0], 'round'),
-                           caps.get(linecaps[1], 'round')),
-                           
-            dash_caps   = (caps.get(dash_caps[0], 'round'),
-                           caps.get(dash_caps[1], 'round'))
-        ))
-        
-        self._index += len(V)
-        
-    
-    def build_buffers(self):
-        V = np.concatenate(self._Vs)
-        I = np.concatenate(self._Is)
-        return V, I, self._Us
+        self.update()
 
+    def _agg_set_data(self, pos=None, color=None, width=None, connect=None):
+        if connect is not None:
+            if connect != 'strip':
+                raise NotImplementedError("Only 'strip' connection mode "
+                                          "allowed for agg-mode lines.")
+            self._connect = connect
+        
+        if color is not None:
+            if isinstance(color, np.ndarray) and color.ndim > 1:
+                raise NotImplementedError("Color arrays not implemented for "
+                                          "agg mode lines.")
+            self._color = color
+            
+        if width is not None:
+            self._width = width
+        
+        style = {
+            'color': self._color,
+            'width': self._width,
+        }
+        self._agg_line = LineAgg(paths=[pos], style=[style])
+        self.update()
 
-class LineAgg(Visual):
-    VERTEX_SHADER = VERTEX_SHADER
-    FRAGMENT_SHADER = FRAGMENT_SHADER
-    
-    def __init__(self, **kwargs):
-        super(LineAgg, self).__init__()
-        
-        self._program = ModularProgram(self.VERTEX_SHADER, self.FRAGMENT_SHADER)
-        self._collec = LineCollection(**kwargs)
-        self._V, self._I, self._U = self._collec.build_buffers()
-        self._V_buf = gloo.VertexBuffer(self._V)
-        self.index = gloo.IndexBuffer(self._I)
-        self._dash_atlas = gloo.Texture2D(self._collec.da._data)
-        
     def draw(self, event):
-        gloo.set_state('translucent', depth_test=False)
+        if self._mode == 'agg':
+            self._agg_draw(event)
+            return
         
-        # check for transform changes
-        data_doc = event.doc_transform()
-        doc_px = event.entity_transform(map_from=event.document, 
-                                        map_to=event.framebuffer)
-        px_ndc = event.entity_transform(map_from=event.framebuffer, 
-                                        map_to=event.ndc)
-        vert = self._program.vert
-        vert['doc_px_transform'] = doc_px.shader_map()
-        vert['px_ndc_transform'] = px_ndc.shader_map()
-        vert['transform'] = data_doc.shader_map()
+        if self._pos_expr is None:
+            return
         
-        # attributes / uniforms are not available until program is built
-        self._program.prepare()
+        xform = event.render_transform.shader_map()
+        self._program.vert['transform'] = xform
+        self._program.vert['position'] = self._pos_expr
+        self._program.vert['color'] = self._color
         
-        self._program.bind(self._V_buf)
-        for n, v in uniforms.iteritems():
-            self._program[n] = v
-            
-        # WARNING/TODO: put the different sets of uniforms and put them in 
-        # attributes instead
-        for n, v in self._U[0].iteritems():
-            self._program[n] = v
-            
-        self._program['u_dash_atlas'] = self._dash_atlas
+        gloo.set_state('translucent')
         
-        self._program.draw('triangles', indices=self.index)
+        if self._connect == 'strip':
+            self._program.draw('line_strip')
+        elif self._connect == 'segments':
+            self._program.draw('lines')
+        elif isinstance(self._connect, gloo.IndexBuffer):
+            self._program.draw('lines', self._connect)
+        else:
+            raise ValueError("Invalid line connect mode: %r" % self._connect)
+
+    def _agg_draw(self, event):
+        self._agg_line.transform = self.transform
+        self._agg_line.draw(event)
