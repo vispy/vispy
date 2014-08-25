@@ -167,6 +167,15 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
         width += x_move
         height = max(height, glyph['size'][1] - 2*slop)
         prev = char
+    # Also analyse chars with large ascender and descender, otherwise the
+    # vertical alignment can be very inconsistent
+    for char in 'hy':
+        glyph = font[char]
+        y0 = glyph['offset'][1] * ratio + slop
+        y1 = y0 - glyph['size'][1]
+        ascender = max(ascender, y0 - slop)
+        descender = min(descender, y1 + slop)
+        height = max(height, glyph['size'][1] - 2*slop)
     set_viewport(*orig_viewport)
 
     # Tight bounding box (loose would be width, font.height /.asc / .desc)
