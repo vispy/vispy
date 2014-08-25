@@ -40,7 +40,8 @@ class Canvas(vispy.scene.SceneCanvas):
         colors = [color, (1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1),
                   (1, 1, 0, 1), (1, 1, 1, 1)]
 
-        self.lines = [visuals.Line(pos=pos, color=colors[i]) for i in range(6)]
+        self.lines = [visuals.Line(pos=pos, color=colors[i], mode='gl') 
+                      for i in range(6)]
 
         center = STTransform(translate=(400, 400))
 
