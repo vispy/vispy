@@ -16,16 +16,8 @@ canvas = scene.SceneCanvas(keys='interactive')
 canvas.size = 600, 600
 canvas.show()
 
-grid = scene.widgets.Grid(parent=canvas.scene)
+grid = canvas.central_widget.add_grid()
 
-
-# Ensure that grid fills the entire canvas, even after resize.
-@canvas.events.resize.connect
-def update_grid(event=None):
-    global grid, canvas
-    grid.size = canvas.size
-
-update_grid()
 
 N = 10000
 lines = []
