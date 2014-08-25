@@ -19,3 +19,4 @@ from .text import Text  # noqa
 from .grid_lines import GridLines  # noqa
 from .surface_plot import SurfacePlot  # noqa
 from .xyz_axis import XYZAxis  # noqa
+from .plot_line import PlotLine  # noqa

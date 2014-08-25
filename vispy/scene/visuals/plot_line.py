@@ -2,6 +2,7 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+import numpy as np
 
 from .line import Line
 from .markers import Markers
@@ -17,11 +18,17 @@ class PlotLine(Visual):
     PlotLine(x_vals, y_vals)
     PlotLine(xy_vals)
     
+    
+    
     """
+    _line_kwds = ['width', 'connect', 'color']
+    _marker_kwds = ['edge_color', 'face_color', 'edge_width']
+    
     def __init__(self, *args, **kwds):
         my_kwds = {}
-        for k in ['color', 'width', 'connect']:
-            my_kwds[k] = kwds.pop(k, None)
+        for k in self._line_kwds + self._marker_kwds:
+            if k in kwds:
+                my_kwds[k] = kwds.pop(k)
         
         Visual.__init__(self, **kwds)
         self._line = Line()
@@ -53,20 +60,25 @@ class PlotLine(Visual):
         
         # todo: have both sub-visuals share the same buffers.
         line_kwds = {}
-        for k in ['width', 'connect', 'color']:
-            line_kwds[k] = kwds.pop(k, None)
+        for k in self._line_kwds:
+            if k in kwds:
+                line_kwds[k] = kwds.pop(k)
         self._line.set_data(pos=pos, **line_kwds)
         
-        self._markers.set_data(pos=pos)
+        marker_kwds = {}
+        for k in self._marker_kwds:
+            if k in kwds:
+                marker_kwds[k] = kwds.pop(k)
+        self._markers.set_data(pos=pos, **marker_kwds)
         
         if len(kwds) > 0:
             raise TypeError("Invalid keyword arguments: %s" % kwds.keys())
         
     def draw(self, event):
         for v in self._line, self._markers:
-            event.push_visual(v)
+            event.push_entity(v)
             try:
                 v.draw(event)
             finally:
-                event.pop_visual(v)
+                event.pop_entity()
     
