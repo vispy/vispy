@@ -31,8 +31,8 @@ class Timer(object):
         The application to attach the timer to.
     """
 
-    def __init__(self, interval='auto', connect=None, iterations=-1, start=False,
-                 app=None):
+    def __init__(self, interval='auto', connect=None, iterations=-1, 
+                 start=False, app=None):
         self.events = EmitterGroup(source=self,
                                    start=Event,
                                    stop=Event,
