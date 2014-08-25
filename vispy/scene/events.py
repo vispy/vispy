@@ -71,7 +71,7 @@ class SceneEvent(Event):
 
     def push_document(self, doc):
         self._doc_stack.append(doc)
-        
+
     def pop_document(self):
         return self._doc_stack.pop(-1)
 
@@ -99,19 +99,18 @@ class SceneEvent(Event):
         """
         return self.canvas.pop_fbo()
 
-
     #
     # Begin transforms
     #
-    
+
     @property
     def document(self):
         """ Return entity for the current document coordinate system. The
-        coordinate system of this Entity is used for making physical 
+        coordinate system of this Entity is used for making physical
         measurements--px, mm, in, etc.
         """
         return self._doc_stack[-1]
-        
+
     @property
     def framebuffer(self):
         """ Return entity for the current framebuffer coordinate system. This
@@ -125,72 +124,72 @@ class SceneEvent(Event):
         """ Return entity for the normalized device coordinate system.
         """
         return self.canvas.ndc
-        
-    
+
     def doc_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
-        document coordinate system. 
-        
+        document coordinate system.
+
         If *entity* is not specified, then the top entity on the stack is used.
         """
         return self.entity_transform(map_to=self.document, map_from=entity)
-                
+
     def map_entity_to_doc(self, entity, obj):
         return self.doc_transform(entity).map(obj)
-    
+
     def map_doc_to_entity(self, entity, obj):
         return self.doc_transform(entity).imap(obj)
-                
+
     def map_to_doc(self, obj):
         return self.doc_transform().map(obj)
-    
+
     def map_from_doc(self, obj):
         return self.doc_transform().imap(obj)
-                
+
     def canvas_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
-        logical-pixel coordinate system defined by the Canvas. 
+        logical-pixel coordinate system defined by the Canvas.
 
-        Canvas_transform is used mainly for mouse interaction. 
-        For measuring distance in physical units, the use of document_transform 
-        is preferred. 
-        
+        Canvas_transform is used mainly for mouse interaction.
+        For measuring distance in physical units, the use of document_transform
+        is preferred.
+
         If *entity* is not specified, then the top entity on the stack is used.
         """
-        return self.entity_transform(map_to=self.canvas.entity, map_from=entity)
-                
+        return self.entity_transform(map_to=self.canvas.entity,
+                                     map_from=entity)
+
     def map_entity_to_canvas(self, entity, obj):
         return self.canvas_transform(entity).map(obj)
-    
+
     def map_canvas_to_entity(self, entity, obj):
         return self.canvas_transform(entity).imap(obj)
-                
+
     def map_to_canvas(self, obj):
         return self.canvas_transform().map(obj)
-    
+
     def map_from_canvas(self, obj):
         return self.canvas_transform().imap(obj)
-    
+
     def fb_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
-        framebuffer coordinate system. 
-        
+        framebuffer coordinate system.
+
         If *entity* is not specified, then the top entity on the stack is used.
         """
         return self.entity_transform(map_to=self.framebuffer, map_from=entity)
-        
+
     def map_entity_to_fb(self, entity, obj):
         return self.fb_transform(entity).map(obj)
-    
+
     def map_fb_to_entity(self, entity, obj):
         return self.fb_transform(entity).imap(obj)
-    
+
     def map_to_fb(self, obj):
         return self.fb_transform().map(obj)
-    
+
     def map_from_fb(self, obj):
         return self.fb_transform().imap(obj)
-                
+
     @property
     def render_transform(self):
         """ The transform that maps from the current entity to
@@ -222,8 +221,8 @@ class SceneEvent(Event):
 
     def entity_transform(self, map_to=None, map_from=None):
         """ Return the transform from *map_from* to *map_to*, using the
-        current entity stack to resolve parent ambiguities if needed. 
-        
+        current entity stack to resolve parent ambiguities if needed.
+
         By default, *map_to* is the normalized device coordinate system,
         and *map_from* is the current top entity on the stack.
         """
@@ -231,15 +230,15 @@ class SceneEvent(Event):
             map_to = self.ndc
         if map_from is None:
             map_from = self._stack[-1]
-        
+
         fwd_path = self._entity_path(map_from, map_to)
         fwd_path.reverse()
-        
+
         if fwd_path[0] is map_to:
             rev_path = []
             fwd_path = fwd_path[1:]
         else:
-            # If we have still not reached the end, try traversing from the 
+            # If we have still not reached the end, try traversing from the
             # opposite end and stop when paths intersect
             rev_path = self._entity_path(map_to, self._stack[0])
             connected = False
@@ -247,32 +246,32 @@ class SceneEvent(Event):
                 if rev_path[i] in fwd_path:
                     rev_path = rev_path[:i]
                     connected = True
-            
+
             if not connected:
                 raise RuntimeError("Unable to find unique path from %r to %r" %
                                    (map_from, map_to))
-            
+
         transforms = ([e.transform for e in fwd_path] +
                       [e.transform.inverse for e in rev_path])
         return self._transform_cache.get(transforms)
 
     def _entity_path(self, start, end):
         """
-        Return the path of parents leading from *start* to *end*, using the 
-        entity stack to resolve multi-parent branches. 
-        
-        If *end* is never reached, then the path is assembled as far as 
+        Return the path of parents leading from *start* to *end*, using the
+        entity stack to resolve multi-parent branches.
+
+        If *end* is never reached, then the path is assembled as far as
         possible and returned.
         """
         path = [start]
-        
+
         # first, get parents directly from entity
         while path[-1] is not end:
             ent = path[-1]
             if len(ent.parents) != 1:
                 break
             path.append(ent.parent)
-            
+
         # if we have not reached the end, follow _stack if possible.
         if path[-1] is not end:
             try:
@@ -283,15 +282,16 @@ class SceneEvent(Event):
                     path.append(self._stack[ind])
             except IndexError:
                 pass
-        
+
         return path
 
-    
+
 class SceneDrawEvent(SceneEvent):
     def __init__(self, event, canvas, **kwds):
         self.draw_event = event
-        super(SceneDrawEvent, self).__init__(type='draw', canvas=canvas, 
+        super(SceneDrawEvent, self).__init__(type='draw', canvas=canvas,
                                              **kwds)
+
 
 class SceneMouseEvent(SceneEvent):
     def __init__(self, event, canvas, **kwds):

@@ -68,7 +68,7 @@ class VertexColorComponent(VisualComponent):
         super(VertexColorComponent, self).__init__()
         self._color = color
         self._vbo = None
-        
+
         # Create Varying to connect vertex / fragment shaders
         var = Varying('rgba', dtype='vec4')
         self._funcs['frag_color']['rgba'] = var

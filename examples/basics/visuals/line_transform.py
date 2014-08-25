@@ -4,9 +4,9 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Demonstration of LineVisual with arbitrary transforms.
+Demonstration of Line visual with arbitrary transforms.
 
-Several LineVisuals are displayed that all have the same vertex position
+Several Line visuals are displayed that all have the same vertex position
 information, but different transformations.
 """
 
@@ -22,7 +22,7 @@ vispy.util.use_log_level('debug')
 
 # vertex positions of data to draw
 N = 200
-pos = np.zeros((N, 3), dtype=np.float32)
+pos = np.zeros((N, 2), dtype=np.float32)
 pos[:, 0] = np.linspace(-350, 350, N)
 pos[:, 1] = np.random.normal(size=N, scale=50, loc=0)
 
@@ -35,12 +35,12 @@ color[:, 1] = color[::-1, 0]
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
 
-        # Define several LineVisuals that use the same position data
+        # Define several Line visuals that use the same position data
         # but have different colors and transformations
         colors = [color, (1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1),
                   (1, 1, 0, 1), (1, 1, 1, 1)]
 
-        self.lines = [visuals.Line(pos=pos, color=colors[i], mode='gl') 
+        self.lines = [visuals.Line(pos=pos, color=colors[i])
                       for i in range(6)]
 
         center = STTransform(translate=(400, 400))

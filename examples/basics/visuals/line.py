@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014, Vispy Development Team.
+# vispy: gallery 30
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-
+# -----------------------------------------------------------------------------
 """
 Demonstration of various features of Line visual.
 """
-
+import sys
 import numpy as np
+
 import vispy.app
 from vispy.scene import visuals
 from vispy.scene.transforms import STTransform
@@ -15,7 +18,7 @@ from vispy.scene.transforms import STTransform
 N = 200
 pos = np.zeros((N, 2), dtype=np.float32)
 pos[:, 0] = np.linspace(10, 390, N)
-pos[:, 1] = np.random.normal(size=N, scale=30, loc=0)
+pos[:, 1] = np.random.normal(size=N, scale=20, loc=0)
 
 # color array
 color = np.ones((N, 4), dtype=np.float32)
@@ -32,7 +35,7 @@ connect[N/2, 1] = N/2  # put a break in the middle
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         vispy.scene.SceneCanvas.__init__(self, keys='interactive',
-                                         size=(800, 800))
+                                         size=(800, 800), show=True)
         # Create several visuals demonstrating different features of Line
         self.lines = [
             # agg-mode lines:
@@ -54,14 +57,16 @@ class Canvas(vispy.scene.SceneCanvas):
             # arrange lines in a grid
             tidx = (line.mode == 'agg')
             x = 400 * tidx
-            y = 160 * (counts[tidx] + 1)
+            y = 140 * (counts[tidx] + 1)
             counts[tidx] += 1
             line.transform = STTransform(translate=[x, y])
             # redraw the canvas if any visuals request an update
             line.events.update.connect(lambda evt: self.update())
             line.parent = self.central_widget
-        self.size = (800, 800)
-        self.show()
+        self.texts = [visuals.Text('GL', bold=True, font_size=24, color='w',
+                                   pos=(200, 40), parent=self.central_widget),
+                      visuals.Text('Agg', bold=True, font_size=24, color='w',
+                                   pos=(600, 40), parent=self.central_widget)]
 
 
 if __name__ == '__main__':
@@ -76,6 +81,5 @@ if __name__ == '__main__':
     timer.connect(update)
     timer.start(0)
 
-    import sys
     if sys.flags.interactive != 1:
         vispy.app.run()

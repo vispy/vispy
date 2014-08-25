@@ -158,7 +158,7 @@ class Rectangle(Polygon):
 
         self._radius = radius
         self._update()
-    
+
     def _update(self):
         if self._pos is not None:
             self._generate_vertices(pos=self._pos, radius=self._radius,
@@ -167,6 +167,6 @@ class Rectangle(Polygon):
             self.mesh = Mesh(vertices=self._vertices, color=self._color.rgba,
                              mode='triangle_fan')
             if not self._border_color.is_blank():
-                self.border = Line(pos=self._vertices[1:,...,:2],
+                self.border = Line(pos=self._vertices[1:, ..., :2],
                                    color=self._border_color.rgba)
         #self.update()

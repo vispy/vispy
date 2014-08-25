@@ -165,8 +165,28 @@ GL_FRAGMENT_SHADER = """
 
 
 class Line(Visual):
-    """
-        mode : str
+    """Line visual
+
+    Parameters
+    ----------
+    pos : array
+        Array of shape (..., 2) or (..., 3) specifying vertex coordinates.
+    color : Color, tuple, or array
+        The color to use when drawing the line. If an array is given, it
+        must be of shape (..., 4) and provide one rgba color per vertex.
+    width:
+        The width of the line in px. Line widths > 1px are only
+        guaranteed to work when using 'agg' mode.
+    connect : str or array
+        Determines which vertices are connected by lines.
+            * "strip" causes the line to be drawn with each vertex
+              connected to the next.
+            * "segments" causes each pair of vertices to draw an
+              independent line segment
+            * numpy arrays specify the exact set of segment pairs to
+              connect.
+    mode : str
+        Mode to use for drawing.
             * "agg" uses anti-grain geometry to draw nicely antialiased lines
               with proper joins and endcaps.
             * "gl" uses OpenGL's built-in line rendering. This is much faster,
@@ -213,6 +233,7 @@ class Line(Visual):
 
     @property
     def mode(self):
+        """The current drawing mode"""
         return self._mode
 
     @mode.setter

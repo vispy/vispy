@@ -7,7 +7,6 @@ from __future__ import division
 import numpy as np
 
 from ... import gloo
-from ...gloo import gl
 from ..transforms import STTransform, NullTransform
 from .modular_mesh import ModularMesh
 from ..components import (TextureComponent, VertexTextureCoordinateComponent,
@@ -62,7 +61,7 @@ class Image(ModularMesh):
     @property
     def interpolation(self):
         return self._interpolation
-    
+
     @interpolation.setter
     def interpolation(self, interp):
         self._interpolation = interp

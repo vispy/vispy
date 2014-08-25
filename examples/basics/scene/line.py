@@ -1,11 +1,17 @@
+# -*- coding: utf-8 -*-
+# vispy: gallery 30
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
-Simple test of SceneCanvas containing a single line entity
+Simple demonstration of SceneCanvas containing a single line entity
 as its entire scenegraph.
 """
+import sys
 import numpy as np
 
-from vispy import app
-from vispy import scene
+from vispy import app, scene
 
 canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
 
@@ -31,11 +37,11 @@ print('Done')
 
 def update(event):
     for line in lines:
-        scale = [np.sin(event.elapsed)+2, np.cos(event.elapsed)+2]
+        scale = [np.sin(np.pi * event.elapsed)+2,
+                 np.cos(np.pi * event.elapsed)+2]
         line.transform.scale = scale
 
 timer = app.Timer(interval=1./60., connect=update, start=True)
 
-import sys
 if sys.flags.interactive == 0:
     app.run()

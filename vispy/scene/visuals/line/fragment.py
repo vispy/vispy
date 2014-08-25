@@ -26,8 +26,8 @@ cap( int type, float dx, float dy, float t )
 }
 
 float
-join( in int type, in float d, in vec2 segment, in vec2 texcoord, in vec2 miter,
-      in float miter_limit, in float linewidth )
+join( in int type, in float d, in vec2 segment, in vec2 texcoord,
+      in vec2 miter, in float miter_limit, in float linewidth )
 {
     float dx = texcoord.x;
 
@@ -56,9 +56,10 @@ join( in int type, in float d, in vec2 segment, in vec2 texcoord, in vec2 miter,
     // --------------------------------
     if( (dx < segment.x) ||  (dx > segment.y) )
     {
-        d = max(d, min(abs(miter.x),abs(miter.y)) - miter_limit*linewidth/2.0 );
+        d = max(d, min(abs(miter.x),
+                       abs(miter.y)) - miter_limit*linewidth/2.0 );
     }
-    
+
     return d;
 }
 
@@ -83,7 +84,7 @@ varying float v_dash_period;
 varying float v_dash_index;
 varying vec2  v_dash_caps;
 varying float v_closed;
-void main() 
+void main()
 {
     // gl_FragColor = v_color; return;
     // vec4 color = v_color;
@@ -114,7 +115,7 @@ void main()
     // ------------------------------------------------------------------------
     if( solid ) {
         d = abs(dy);
-        
+
         if( (!closed) && (dx < line_start) )
         {
             d = cap( int(v_linecaps.x), abs(dx), abs(dy), t );
@@ -147,13 +148,13 @@ void main()
         float dash_stop  = dx - u + _stop;
 
         // This test if the we are dealing with a discontinuous angle
-        bool discontinuous = ((dx <  segment_center) && abs(v_angles.x) > THETA) ||
-                             ((dx >= segment_center) && abs(v_angles.y) > THETA);
-        if( dx < line_start) discontinuous = false;
-        if( dx > line_stop)  discontinuous = false;
+        bool discont = ((dx <  segment_center) && abs(v_angles.x) > THETA) ||
+                       ((dx >= segment_center) && abs(v_angles.y) > THETA);
+        if( dx < line_start) discont = false;
+        if( dx > line_stop)  discont = false;
 
-        // When path is closed, we do not have room for linecaps, so we make room
-        // by shortening the total length
+        // When path is closed, we do not have room for linecaps, so we make
+        // room by shortening the total length
         if (closed){
             line_start += v_linewidth/2.0;
             line_stop  -= v_linewidth/2.0;
@@ -173,7 +174,7 @@ void main()
         }
 
         // Check if current pattern start is beyond segment stop
-        if( discontinuous )
+        if( discont )
         {
             // Dash start is beyond segment, we discard
             if( dash_start > segment_stop )
@@ -187,23 +188,25 @@ void main()
                 discard;
             }
 
-            
             // Special case for round caps (nicer with this)
-            if( (u > _stop) && (dash_stop > segment_stop )  && (abs(v_angles.y) < PI/2.0))
+            if( (u > _stop) && (dash_stop > segment_stop ) &&
+                (abs(v_angles.y) < PI/2.0))
             {
                 if( dash_caps.x == 1.0) discard;
             }
             // Special case for round caps  (nicer with this)
-            else if( (u < _start) && (dash_start < segment_start )  && (abs(v_angles.x) < PI/2.0))
+            else if( (u < _start) && (dash_start < segment_start ) &&
+                     (abs(v_angles.x) < PI/2.0))
             {
                 if( dash_caps.y == 1.0) discard;
             }
-            
+
             // Special case for triangle caps (in & out) and square
             // We make sure the cap stop at crossing frontier
             if( (dash_caps.x != 1.0) && (dash_caps.x != 5.0) )
             {
-                if( (dash_start < segment_start )  && (abs(v_angles.x) < PI/2.0) )
+                if( (dash_start < segment_start ) &&
+                    (abs(v_angles.x) < PI/2.0) )
                 {
                     float a = v_angles.x/2.0;
                     float x = (segment_start-dx)*cos(a) - dy*sin(a);
@@ -217,26 +220,28 @@ void main()
             // We make sure the cap stop at crossing frontier
             if( (dash_caps.y != 1.0) && (dash_caps.y != 5.0) )
             {
-                if( (dash_stop > segment_stop )  && (abs(v_angles.y) < PI/2.0) )
+                if( (dash_stop > segment_stop ) &&
+                    (abs(v_angles.y) < PI/2.0) )
                 {
                     float a = v_angles.y/2.0;
                     float x = (dx-segment_stop)*cos(a) - dy*sin(a);
                     float y = (dx-segment_stop)*sin(a) + dy*cos(a);
                     if( (x > 0.0) ) discard;
-                    
                     // We transform the caps into square to avoid holes
                     dash_caps.y = 4.0;
                 }
             }
         }
-        
+
         // Line cap at start
-        if( (dx < line_start) && (dash_start < line_start) && (dash_stop > line_start) )
+        if( (dx < line_start) && (dash_start < line_start) &&
+            (dash_stop > line_start) )
         {
             d = cap( int(linecaps.x), dx-line_start, dy, t);
         }
         // Line cap at stop
-        else if( (dx > line_stop) && (dash_stop > line_stop) && (dash_start < line_stop)  )
+        else if( (dx > line_stop) && (dash_stop > line_stop) &&
+                 (dash_start < line_stop)  )
         {
             d = cap( int(linecaps.y), dx-line_stop, dy, t);
         }
@@ -257,14 +262,15 @@ void main()
         {
             d = abs(dy);
         }
-        
+
         // Antialiasing at segment angles region
-        if( discontinuous )
+        if( discont )
         {
             if( dx < segment_start )
             {
                 // For sharp angles, we do not enforce cap shape
-                if( (dash_start < segment_start )  && (abs(v_angles.x) > PI/2.0))
+                if( (dash_start < segment_start ) &&
+                    (abs(v_angles.x) > PI/2.0))
                 {
                     d = abs(dy);
                 }
@@ -277,7 +283,8 @@ void main()
             else if( (dx > segment_stop) )
             {
                 // For sharp angles, we do not enforce cap shape
-                if( (dash_stop > segment_stop )  && (abs(v_angles.y) > PI/2.0) )
+                if( (dash_stop > segment_stop ) &&
+                    (abs(v_angles.y) > PI/2.0) )
                 {
                     d = abs(dy);
                 }
@@ -288,7 +295,7 @@ void main()
                 d = max(f,d);
             }
         }
-        
+
         // Line join
         //if( (dx > line_start) && (dx < line_stop) )
         {

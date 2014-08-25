@@ -109,7 +109,6 @@ class SceneCanvas(app.Canvas):
         
         self.scene = SubScene(parent=self.entity)
         
-        
     @property
     def scene(self):
         """ The SubScene object that represents the root entity of the

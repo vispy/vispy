@@ -87,14 +87,14 @@ def arg_to_vec4(func):
 class TransformCache(object):
     """ Utility class for managing a cache of transforms that map along an
     Entity path.
-    
-    This is an LRU cache; items are removed if they are not accessed after 
+
+    This is an LRU cache; items are removed if they are not accessed after
     *max_age* calls to roll().
-    
-    Notes:
-    
+
+    Notes
+    -----
     This class is used by SceneCanvas to ensure that ChainTransform instances
-    are re-used across calls to draw_visual(). SceneCanvas creates one 
+    are re-used across calls to draw_visual(). SceneCanvas creates one
     TransformCache instance for each top-level visual drawn, and calls
     roll() on each cache before drawing, which removes from the cache any
     transforms that were not accessed during the last draw cycle.
@@ -107,7 +107,7 @@ class TransformCache(object):
         """ Get a transform from the cache that maps along *path*, which must
         be a list of Transforms to apply in reverse order (last transform is
         applied first).
-        
+
         Accessed items have their age reset to 0.
         """
         key = tuple(map(id, path))
@@ -115,14 +115,14 @@ class TransformCache(object):
         if item is None:
             item = [0, self._create(path)]
             self._cache[key] = item
-        item[0] = 0  # reset age for this item 
-        
+        item[0] = 0  # reset age for this item
+
         # make sure the chain is up to date
         #tr = item[1]
         #for i, entity in enumerate(path[1:]):
-            #if tr.transforms[i] is not entity.transform:
-                #tr[i] = entity.transform
-        
+        #    if tr.transforms[i] is not entity.transform:
+        #        tr[i] = entity.transform
+
         return item[1]
 
     def _create(self, path):
@@ -139,6 +139,6 @@ class TransformCache(object):
             if item[0] > self.max_age:
                 rem.append(key)
             item[0] += 1
-        
+
         for key in rem:
             del self._cache[key]

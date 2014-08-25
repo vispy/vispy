@@ -9,7 +9,6 @@ RegularPolygon visual based on EllipseVisual
 
 from __future__ import division
 
-from ... import gloo
 from ...color import Color
 from .ellipse import Ellipse, Mesh, Line
 
@@ -52,7 +51,7 @@ class RegularPolygon(Ellipse):
     @sides.setter
     def sides(self, sides):
         if sides < 3:
-            raise ValueError('Polygon must have at least 3 sides, not %s' 
+            raise ValueError('Polygon must have at least 3 sides, not %s'
                              % sides)
         self._sides = sides
         self._update()

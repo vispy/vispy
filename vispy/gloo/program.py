@@ -510,7 +510,7 @@ class Program(GLObject):
             count = attributes[0].size
             gl.glDrawArrays(mode, first, count)
         else:
-            raise TypeError("Invalid index: %r (must be IndexBuffer)" % 
+            raise TypeError("Invalid index: %r (must be IndexBuffer)" %
                             indices)
 
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)

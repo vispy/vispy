@@ -3,17 +3,16 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Demonstration of animated LineVisual.
+Demonstration of animated Line visual.
 """
 
 import numpy as np
 import vispy.app
-from vispy import gloo
 from vispy.scene import visuals
 
 # vertex positions of data to draw
 N = 200
-pos = np.zeros((N, 3), dtype=np.float32)
+pos = np.zeros((N, 2), dtype=np.float32)
 pos[:, 0] = np.linspace(50., 750., N)
 pos[:, 1] = np.random.normal(size=N, scale=100, loc=400)
 
@@ -25,20 +24,10 @@ color[:, 1] = color[::-1, 0]
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
-        self.line = visuals.Line(pos=pos, color=color, mode='gl')
-        self.line.events.update.connect(self.line_changed)
-
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
-        self.size = (800, 800)
-        self.show()
-
-    def line_changed(self, ev):
-        self.update()
-
-    def on_draw(self, ev):
-        gloo.set_clear_color('black')
-        gloo.clear(color=True, depth=True)
-        self.draw_visual(self.line)
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive',
+                                         size=(800, 800), show=True)
+        self.line = visuals.Line(pos, color, parent=self.scene)
+        self.line.events.update.connect(lambda evt: self.update)
 
 
 if __name__ == '__main__':
@@ -51,10 +40,6 @@ if __name__ == '__main__':
     timer = vispy.app.Timer()
     timer.connect(update)
     timer.start(0)
-    #update(0)
-    #vispy.app.process_events()
-    #update(0)
-    #vispy.app.process_events()
 
     import sys
     if sys.flags.interactive != 1:

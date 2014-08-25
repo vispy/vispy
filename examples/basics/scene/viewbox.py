@@ -10,6 +10,7 @@ Demonstrate ViewBox using various clipping methods.
 Two boxes are manually positioned on the canvas; they are not updated
 when the canvas resizes.
 """
+import sys
 import numpy as np
 
 from vispy import app
@@ -32,7 +33,7 @@ vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue', parent=grid)
 vb2.parent = canvas.scene
 vb2.clip_method = 'viewport'
 vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30, up='y')
-#vb2.set_camera('turntable', mode='perspective', 
+#vb2.set_camera('turntable', mode='perspective',
 #               distance=10, elevation=0, azimuth=0)
 
 
@@ -70,30 +71,29 @@ line1.add_parent(vb2.scene)
 
 
 # And some squares:
-box = np.array([[0, 0, 0], 
-                [0, 1, 0], 
-                [1, 1, 0], 
-                [1, 0, 0], 
+box = np.array([[0, 0, 0],
+                [0, 1, 0],
+                [1, 1, 0],
+                [1, 0, 0],
                 [0, 0, 0]], dtype=np.float32)
 z = np.array([[0, 0, 1]], dtype=np.float32)
 
 # First two boxes are added to both views
-box1 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), mode='gl', 
+box1 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), mode='gl',
                           name='unit box', parent=vb1.scene)
 box1.add_parent(vb2.scene)
 
-box2 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1), mode='gl', 
+box2 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1), mode='gl',
                           name='nd box', parent=vb1.scene)
 box2.add_parent(vb2.scene)
 
 # These boxes are only added to the 3D view.
 box3 = scene.visuals.Line(pos=box + z, color=(1, 0, 0, 1), mode='gl',
                           name='unit box', parent=vb2.scene)
-box4 = scene.visuals.Line(pos=((box + z) * 2 - 1), color=(0, 1, 0, 1), 
-                           mode='gl', name='nd box', parent=vb2.scene)
+box4 = scene.visuals.Line(pos=((box + z) * 2 - 1), color=(0, 1, 0, 1),
+                          mode='gl', name='nd box', parent=vb2.scene)
 
 
-import sys
 if __name__ == '__main__' and sys.flags.interactive == 0:
     print(canvas.scene.describe_tree(with_transform=True))
     app.run()

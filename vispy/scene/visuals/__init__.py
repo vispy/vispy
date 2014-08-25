@@ -13,9 +13,9 @@ encapsulate simple graphic objects such as lines, meshes, points, 2D shapes,
 images, text, etc.
 """
 
-__all__ = ['Visual', 'Ellipse', 'GridLines', 'Image', 'Line', 'Markers',
-           'marker_types', 'Mesh', 'PlotLine', 'Polygon', 'Rectangle',
-           'RegularPolygon', 'SurfacePlot', 'Text', 'XYZAxis']
+__all__ = ['Visual', 'Ellipse', 'GridLines', 'Image', 'Line', 'LineMarkers',
+           'Markers', 'marker_types', 'Mesh', 'Polygon', 'Rectangle',
+           'RegularPolygon', 'SurfaceGrid', 'Text', 'XYZAxis']
 
 from .visual import Visual  # noqa
 from .line import Line  # noqa
@@ -28,6 +28,6 @@ from .regular_polygon import RegularPolygon  # noqa
 from .rectangle import Rectangle  # noqa
 from .text import Text  # noqa
 from .grid_lines import GridLines  # noqa
-from .surface_plot import SurfacePlot  # noqa
+from .surface_grid import SurfaceGrid  # noqa
 from .xyz_axis import XYZAxis  # noqa
-from .plot_line import PlotLine  # noqa
+from .line_markers import LineMarkers  # noqa

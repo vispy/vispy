@@ -3,14 +3,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Simple demonstration of PlotLine visual.
+Simple demonstration of LineMarkers visual.
 """
 
 import numpy as np
 import vispy.app
-from vispy import gloo
 from vispy.scene import visuals
-from vispy.scene.transforms import STTransform
 
 # vertex positions of data to draw
 N = 20
@@ -19,27 +17,17 @@ pos[:, 0] = np.linspace(10, 790, N)
 pos[:, 1] = np.random.normal(size=N, scale=100, loc=400)
 
 
-
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
-        
-        self.line = visuals.PlotLine(pos, color=(1, 1, 1, 1), 
-                                     edge_color=(1, 1, 1, 1), 
-                                     face_color=(0.2, 0.2, 1, 1))
-
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
-        self.size = (800, 800)
-        self.show()
-
-    def on_draw(self, ev):
-        gloo.set_clear_color('black')
-        gloo.clear(color=True, depth=True)
-        self.draw_visual(self.line)
+        self.line = visuals.LineMarkers(pos, color='w', edge_color='w',
+                                        face_color=(0.2, 0.2, 1))
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive',
+                                         size=(800, 800), show=True)
+        self.line.parent = self.scene
 
 
 if __name__ == '__main__':
     win = Canvas()
-
     import sys
     if sys.flags.interactive != 1:
         vispy.app.run()

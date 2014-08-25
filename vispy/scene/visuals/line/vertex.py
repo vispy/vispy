@@ -56,7 +56,7 @@ attribute vec2 a_texcoord;
 
 // Varying
 varying vec4  v_color;
-varying vec2  v_segment;  
+varying vec2  v_segment;
 varying vec2  v_angles;
 varying vec2  v_linecaps;
 varying vec2  v_texcoord;
@@ -117,8 +117,7 @@ void main()
     vec2 position = $transform(vec4(a_position,0.,1.)).xy;
     // At this point, position must be in _doc_ coordinates because the line
     // width will be added to it.
-    
-    
+
     //vec2 t1 = normalize(tr_scale*a_tangents.xy);
     //vec2 t2 = normalize(tr_scale*a_tangents.zw);
     vec2 t1 = normalize(transform_vector(a_tangents.xy, a_position));
@@ -246,7 +245,7 @@ void main()
     }
 
     v_texcoord = vec2( u, v*w );
-    
-    gl_Position = $px_ndc_transform($doc_px_transform(vec4(position, 0.0, 1.0)));
+    gl_Position = $px_ndc_transform($doc_px_transform(vec4(position,
+                                                           0.0, 1.0)));
 }
 """
