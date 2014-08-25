@@ -13,16 +13,12 @@ canvas.show()
 view = canvas.central_widget.add_view()
 view.set_camera('turntable', mode='perspective', up='z', distance=2)
 
-### Add a grid to the view
-#g = vispy.scene.visuals.GridLines()
-#view.add(g)
-axis = vispy.scene.visuals.XYZAxis(parent=view.scene)
-#axis.set_transform('st', scale=(2, 2, 2))
 
 ## Simple surface plot example
 ## x, y values are not specified, so assumed to be 0:50
 z = vispy.util.filter.gaussian_filter(np.random.normal(size=(50,50)), (1, 1))
-p1 = vispy.scene.visuals.SurfacePlot(z=z, color=(0.5, 0.5, 1, 1))
+p1 = vispy.scene.visuals.SurfacePlot(z=z, color=(0.5, 0.5, 1, 1), 
+                                     shading='smooth')
 p1.transform = vispy.scene.transforms.AffineTransform()
 p1.transform.scale([1/49., 1/49., 0.02])
 p1.transform.translate([-0.5, -0.5, 0])
@@ -38,6 +34,8 @@ p1.color_components = [
 view.add(p1)
 
 
+# Add a 3D axis to keep us oriented
+axis = vispy.scene.visuals.XYZAxis(parent=view.scene)
 
 
 
