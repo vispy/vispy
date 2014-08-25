@@ -62,7 +62,7 @@ class Line(Visual):
         }
     """
 
-    def __init__(self, pos=None, color=None, width=1, 
+    def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1, 
                  connect='strip', mode='agg', antialias=True, **kwds):
         Visual.__init__(self, **kwds)
         
