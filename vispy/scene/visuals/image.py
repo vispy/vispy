@@ -9,12 +9,12 @@ import numpy as np
 from ... import gloo
 from ...gloo import gl
 from ..transforms import STTransform, NullTransform
-from .mesh import Mesh
+from .modular_mesh import ModularMesh
 from ..components import (TextureComponent, VertexTextureCoordinateComponent,
                           TextureCoordinateComponent)
 
 
-class Image(Mesh):
+class Image(ModularMesh):
     """Visual subclass displaying an image.
 
     Parameters
@@ -46,6 +46,7 @@ class Image(Mesh):
         self._tex_transform = STTransform()
 
         self._texture = None
+        self._interpolation = 'nearest'
         self.set_data(data)
         self.set_gl_options(cull_face=('front_and_back',))
 
@@ -57,6 +58,15 @@ class Image(Mesh):
             self._data = image
             self._texture = None
         super(Image, self).set_data(**kwds)
+
+    @property
+    def interpolation(self):
+        return self._interpolation
+    
+    @interpolation.setter
+    def interpolation(self, interp):
+        self._interpolation = interp
+        self.update()
 
     @property
     def size(self):
@@ -94,7 +104,7 @@ class Image(Mesh):
             vertices = tex_coords.copy()
             vertices[..., 0] *= self._data.shape[1]
             vertices[..., 1] *= self._data.shape[0]
-            Mesh.set_data(self, pos=vertices)
+            ModularMesh.set_data(self, pos=vertices)
             coords = np.ascontiguousarray(tex_coords[:, :2])
             tex_coord_comp = TextureCoordinateComponent(coords)
         elif method == 'impostor':
@@ -102,7 +112,7 @@ class Image(Mesh):
             quad = np.array([[-1, -1, 0], [1, -1, 0], [1, 1, 0],
                              [-1, -1, 0], [1, 1, 0], [-1, 1, 0]],
                             dtype=np.float32)
-            Mesh.set_data(self, pos=quad)
+            ModularMesh.set_data(self, pos=quad)
 
             self._tex_transform.scale = (1./self._data.shape[0],
                                          1./self._data.shape[1])
@@ -115,7 +125,7 @@ class Image(Mesh):
             raise ValueError("Unknown image draw method '%s'" % method)
 
         self._texture = gloo.Texture2D(self._data)
-        self._texture.interpolation = gl.GL_LINEAR
+        self._texture.interpolation = self._interpolation
 
         self.color_components = [TextureComponent(self._texture,
                                                   tex_coord_comp)]
