@@ -110,9 +110,11 @@ class TextureFont(object):
 
 class FontManager(object):
     """ Helper class to create TextureFont instances and reuse these
-    where possible. I is recommended to use the global instance of this
-    class for optimal reuse of font textures.
+    where possible. 
     """ 
+    
+    # todo: store a font-manager on each context, 
+    # or let TextureFont use a TextureAtlas for each context
     
     def __init__(self):
         self._fonts = {}
@@ -125,10 +127,6 @@ class FontManager(object):
             font = dict(face=face, bold=bold, italic=italic)
             self._fonts[key] = TextureFont(font, self._renderer)
         return self._fonts[key]
-
-
-# Global font manager
-font_manager = FontManager()
 
 
 ##############################################################################
@@ -363,7 +361,9 @@ class Text(Visual):
 
     def __init__(self, text, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, pos=(0, 0),
-                 rotation=0., anchor_x='center', anchor_y='center', **kwargs):
+                 rotation=0., anchor_x='center', anchor_y='center', 
+                 font_manager=None,  # temp solution to use global mananger
+                 **kwargs):
         Visual.__init__(self, **kwargs)
         # Check input
         assert isinstance(text, string_types)
@@ -372,7 +372,7 @@ class Text(Visual):
         valid_keys = ('left', 'center', 'right')
         _check_valid('anchor_x', anchor_x, valid_keys)
         # Init font handling stuff
-        self._font_manager = font_manager  # FontManager()
+        self._font_manager = font_manager or FontManager()
         self._font = self._font_manager.get_font(face, bold, italic)
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
