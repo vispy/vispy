@@ -12,7 +12,7 @@ from vispy import scene
 from vispy.scene.visuals import Text
 
 # Create canvas with a viewbox at the lower half
-canvas = scene.SceneCanvas()
+canvas = scene.SceneCanvas(keys='interactive')
 vb = scene.widgets.ViewBox(parent=canvas.scene, border_color='b')
 vb.pos = 1, canvas.size[1] // 2 - 1
 vb.size = canvas.size[0] - 2, canvas.size[1] // 2 - 2
@@ -31,7 +31,7 @@ N = 1000
 linedata = np.empty((N, 2), np.float32)
 linedata[:, 0] = np.linspace(0, 1, N)
 linedata[:, 1] = np.random.uniform(0.5, 0.1, (N,))
-vispy.scene.visuals.LineVisual(pos=linedata, color='#f006', parent=vb.scene)
+vispy.scene.visuals.Line(pos=linedata, color='#f006', parent=vb.scene)
 
 canvas.show()
 canvas.app.run()
