@@ -174,7 +174,8 @@ class Line(Visual):
             if isinstance(color, np.ndarray) and color.ndim > 1:
                 raise NotImplementedError("Color arrays not implemented for "
                                           "agg mode lines.")
-            self._color = color
+            
+            self._color = Color(color).rgba
             
         if width is not None:
             self._width = width
