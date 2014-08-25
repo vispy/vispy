@@ -26,7 +26,7 @@ vb1.camera.rect = (-1.2, -2, 2.4, 4)
 vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue')
 vb2.parent = canvas.scene
 vb2.clip_method = 'viewport'
-vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30)
+vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30, up='y')
 #vb2.set_camera('turntable', mode='perspective', 
 #               distance=10, elevation=0, azimuth=0)
 
@@ -58,8 +58,8 @@ pos[:, 1] = np.random.normal(0.0, 0.5, size=N)
 pos[:20, 1] = -0.5  # So we can see which side is down
 
 # make a single plot line and display in both viewboxes
-line1 = scene.visuals.Line(pos=pos.copy(), color=color, 
-                           name='line1', parent=vb1.scene)
+line1 = scene.visuals.Line(pos=pos.copy(), color=color, mode='gl',
+                           antialias=False, name='line1', parent=vb1.scene)
 line1.add_parent(vb1.scene)
 line1.add_parent(vb2.scene)
 
@@ -73,19 +73,19 @@ box = np.array([[0, 0, 0],
 z = np.array([[0, 0, 1]], dtype=np.float32)
 
 # First two boxes are added to both views
-box1 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), 
+box1 = scene.visuals.Line(pos=box, color=(0.7, 0, 0, 1), mode='gl', 
                           name='unit box', parent=vb1.scene)
 box1.add_parent(vb2.scene)
 
-box2 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1), 
+box2 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1), mode='gl', 
                           name='nd box', parent=vb1.scene)
 box2.add_parent(vb2.scene)
 
 # These boxes are only added to the 3D view.
-box3 = scene.visuals.Line(pos=box + z, color=(1, 0, 0, 1), 
+box3 = scene.visuals.Line(pos=box + z, color=(1, 0, 0, 1), mode='gl',
                           name='unit box', parent=vb2.scene)
 box4 = scene.visuals.Line(pos=((box + z) * 2 - 1), color=(0, 1, 0, 1), 
-                          name='nd box', parent=vb2.scene)
+                           mode='gl', name='nd box', parent=vb2.scene)
 
 
 if __name__ == '__main__':

@@ -222,5 +222,7 @@ class Line(Visual):
             raise ValueError("Invalid line connect mode: %r" % self._connect)
 
     def _agg_draw(self, event):
+        if self._agg_line is None:
+            return
         self._agg_line.transform = self.transform
         self._agg_line.draw(event)

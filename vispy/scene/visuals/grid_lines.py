@@ -57,7 +57,11 @@ void main() {
         y_alpha = clamp(0.1 * sy/px.y, 0, 0.4);
     }
     
-    gl_FragColor = vec4(1, 1, 1, max(x_alpha, y_alpha));
+    float alpha = max(x_alpha, y_alpha);
+    if (alpha == 0) {
+        discard;
+    }
+    gl_FragColor = vec4(1, 1, 1, alpha);
 }
 """
 

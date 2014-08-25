@@ -22,7 +22,8 @@ lines = []
 for i in range(20):
     pos = pos.copy()
     pos[:, 1] = np.random.normal(scale=5, loc=(i+1)*30, size=N)
-    line = scene.visuals.Line(pos=pos, color=color, parent=canvas.scene)
+    line = scene.visuals.Line(pos=pos, color=color, parent=canvas.scene,
+                              mode='gl')
     lines.append(line)
     line.transform = scene.transforms.STTransform()
 
