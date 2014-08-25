@@ -29,6 +29,13 @@ from ...shaders import ModularProgram, Function
 from ..visual import Visual
 from .line_agg import LineAgg
 
+try:
+    import OpenGL.GL
+    HAVE_PYOPENGL = True
+except ImportError:
+    HAVE_PYOPENGL = False
+
+
 vec2to4 = Function("""
     vec4 vec2to4(vec2 input) {
         return vec4(input, 0, 1);
@@ -61,7 +68,7 @@ class Line(Visual):
     """
 
     def __init__(self, pos=None, color=None, width=1, 
-                 connect='strip', mode='agg', **kwds):
+                 connect='strip', mode='agg', antialias=True, **kwds):
         Visual.__init__(self, **kwds)
         
         # todo: move this to set_data and allow mode switch after init
@@ -74,6 +81,7 @@ class Line(Visual):
         self._pos_expr = None
         self._connect = None
         self._width = None
+        self._antialias = antialias
         
         # Reference to a LineAgg visual that will do our drawing if mode=='agg'
         # todo: this is a bit of a hack to get agg and gl_lines available via
@@ -83,6 +91,15 @@ class Line(Visual):
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
         self.set_data(pos, color, width, connect)
+
+    @property
+    def antialias(self):
+        return self._antialias
+    
+    @antialias.setter
+    def antialias(self, aa):
+        self._antialias = aa
+        self.update()
 
     def set_data(self, pos=None, color=None, width=None, connect=None, mode=None):
         """ Set the data used to draw this visual.
@@ -122,6 +139,9 @@ class Line(Visual):
             return
         
         # for non-agg lines:
+
+        if width is not None:
+            self._width = width
         
         if pos is not None:
             vbo = gloo.VertexBuffer(np.asarray(pos, dtype=np.float32))
@@ -167,6 +187,7 @@ class Line(Visual):
         style = {
             'color': self._color,
             'width': self._width,
+            'antialias': self._antialias,
         }
         self._agg_line = LineAgg(paths=[pos], style=[style])
         self.update()
@@ -185,6 +206,13 @@ class Line(Visual):
         self._program.vert['color'] = self._color
         
         gloo.set_state('translucent')
+
+        if HAVE_PYOPENGL:
+            OpenGL.GL.glLineWidth(self._width)
+            if self._antialias:
+                OpenGL.GL.glEnable(OpenGL.GL.GL_LINE_SMOOTH)
+            else:
+                OpenGL.GL.glDisable(OpenGL.GL.GL_LINE_SMOOTH)
         
         if self._connect == 'strip':
             self._program.draw('line_strip')

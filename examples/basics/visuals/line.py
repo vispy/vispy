@@ -46,7 +46,6 @@ class Canvas(vispy.scene.SceneCanvas):
             # wide
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), width=5),
             
-            
             #
             # GL-mode lines:
             #
@@ -68,6 +67,11 @@ class Canvas(vispy.scene.SceneCanvas):
             # matrix
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect=connect, 
                          mode='gl'),
+            
+            # gl-mode width
+            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), width=4, 
+                         antialias=False, mode='gl'),
+            
         ]
         
         for i,line in enumerate(self.lines):

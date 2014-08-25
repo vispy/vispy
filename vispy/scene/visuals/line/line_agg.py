@@ -137,7 +137,7 @@ class LineCollection(object):
         
     def add(self, vertices, dash_pattern='solid', color=(0.,0.,0.,1.),
             width=2, linecaps=('round','round'), dash_caps=('round', 'round'),
-            linejoin='round'):
+            linejoin='round', antialias=True):
             
         dash_index, dash_period = self.da[dash_pattern]
     
@@ -159,6 +159,7 @@ class LineCollection(object):
             dash_caps   = (caps.get(dash_caps[0], 'round'),
                            caps.get(dash_caps[1], 'round')),
             linewidth   = width,
+            antialias   = antialias,
         ))
         
         self._index += len(V)
