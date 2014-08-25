@@ -251,9 +251,7 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
-        self.timer = app.Timer(1.0 / 60)
-        self.timer.connect(self.on_timer)
-        self.timer.start()
+        self.timer = app.Timer(1.0 / 60, connect=self.on_timer, start=True)
 
     def on_initialize(self, event):
         gloo.set_state('translucent', clear_color='white')

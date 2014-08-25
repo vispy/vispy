@@ -74,11 +74,10 @@ class Canvas(app.Canvas):
 
         # Handle transformations
         self.init_transforms()
-
-        self.timer = app.Timer(1.0 / 60)
-        self.timer.connect(self.update_transforms)
-        self.timer.start()
-
+        
+        self._timer = app.Timer(1.0 / 60, connect=self.update_transforms)
+        self._timer.start()
+    
     def on_initialize(self, event):
         gloo.set_clear_color((1, 1, 1, 1))
         gloo.set_state(depth_test=True)

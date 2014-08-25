@@ -6,8 +6,8 @@
 Simple demonstration of reactive EllipseVisual. 
 """
 
-import vispy.app
-from vispy import gloo
+import vispy
+from vispy import gloo, app
 from vispy.scene import visuals
 
 
@@ -22,9 +22,7 @@ class Canvas(vispy.scene.SceneCanvas):
         self.size = (800, 800)
         self.show()
         
-        self.timer = vispy.app.Timer(1.0 / 60)  # change rendering speed here
-        self.timer.connect(self.on_timer)
-        self.timer.start()
+        self._timer = app.Timer(1.0 / 60, connect=self.on_timer, start=True)
 
     def on_timer(self, event):
         self.ellipse.radius[0] += 1

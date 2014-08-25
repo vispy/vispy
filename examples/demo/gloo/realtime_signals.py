@@ -127,10 +127,8 @@ class Canvas(app.Canvas):
         self.program['u_size'] = (nrows, ncols)
         self.program['u_n'] = n
         
-        self.timer = app.Timer(1. / 60)
-        self.timer.connect(self.on_timer)
-        self.timer.start()
-
+        self._timer = app.Timer(1.0 / 60, connect=self.on_timer, start=True)
+    
     def on_initialize(self, event):
         gloo.set_state(clear_color='black', blend=True, 
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
