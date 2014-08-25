@@ -204,6 +204,22 @@ class SceneEvent(Event):
         """
         return self._transform_cache.get([e.transform for e in self._stack])
 
+    @property
+    def scene_transform(self):
+        """ The transform that maps from the current entity to the first
+        scene in its ancestry.
+        """
+        view = self._viewbox_stack[-1]
+        return self.entity_transform(map_to=view.scene)
+
+    @property
+    def view_transform(self):
+        """ The transform that maps from the current entity to the first
+        viewbox in its ancestry.
+        """
+        view = self._viewbox_stack[-1]
+        return self.entity_transform(map_to=view)
+
     def entity_transform(self, map_to=None, map_from=None):
         """ Return the transform from *map_from* to *map_to*, using the
         current entity stack to resolve parent ambiguities if needed. 
