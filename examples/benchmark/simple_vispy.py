@@ -5,13 +5,14 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from vispy import app, use
+from vispy import app
 from vispy.gloo import clear
 
-# use('pyqt4')  # or pyside, glut, pyglet, sdl2, etc.
+# app.use_app('pyqt4')  # or pyside, glut, pyglet, sdl2, etc.
 
 canvas = app.Canvas(size=(512, 512), title = "Do nothing benchmark (vispy)",
                     keys='interactive')
+
 
 @canvas.connect
 def on_draw(event):
