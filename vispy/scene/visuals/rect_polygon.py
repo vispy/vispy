@@ -164,9 +164,9 @@ class RectPolygon(Polygon):
             self._generate_vertices(pos=self._pos, radius=self._radius,
                                     height=self._height, width=self._width,
                                     )
-            self.mesh = Mesh(pos=self._vertices, color=self._color.rgba)
-            self.mesh._primitive = 'triangle_fan'
+            self.mesh = Mesh(vertices=self._vertices, color=self._color.rgba,
+                             mode='triangle_fan')
             if not self._border_color.is_blank():
-                self.border = Line(pos=self._vertices[1:],
+                self.border = Line(pos=self._vertices[1:,...,:2],
                                    color=self._border_color.rgba)
         #self.update()

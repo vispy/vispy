@@ -63,13 +63,12 @@ class Ellipse(Polygon):
             xr = yr = radius
         curve_segments = int(num_segments * span_angle / 360.)
         start_angle *= (np.pi/180.)
-        self._vertices = np.empty([curve_segments+2, 3], dtype=np.float32)
-        self._vertices[0] = np.float32([pos[0], pos[1], 0.])
+        self._vertices = np.empty([curve_segments+2, 2], dtype=np.float32)
+        self._vertices[0] = np.float32([pos[0], pos[1]])
         theta = np.linspace(start_angle, start_angle + (span_angle/180.)*np.pi,
                             curve_segments+1)
         self._vertices[1:, 0] = pos[0] + xr * np.cos(theta)
         self._vertices[1:, 1] = pos[1] + yr * np.sin(theta)
-        self._vertices[1:, 2] = 0
 
     @property
     def radius(self):
@@ -123,8 +122,8 @@ class Ellipse(Polygon):
                                     start_angle=self._start_angle,
                                     span_angle=self._span_angle,
                                     num_segments=self._num_segments)
-            self.mesh = Mesh(pos=self._vertices, color=self._color.rgba)
-            self.mesh._primitive = gloo.gl.GL_TRIANGLE_FAN
+            self.mesh = Mesh(vertices=self._vertices, color=self._color.rgba,
+                             mode='triangle_fan')
             if not self._border_color.is_blank():
                 self.border = Line(pos=self._vertices[1:],
                                    color=self._border_color.rgba)
