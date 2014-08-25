@@ -22,4 +22,5 @@ class XYZAxis(Line):
                             [0, 1, 0, 1],
                             [0, 0, 1, 1],
                             [0, 0, 1, 1]])
-        Line.__init__(self, pos=verts, color=color, mode='lines', **kwds)
+        Line.__init__(self, pos=verts, color=color, connect='segments', 
+                      mode='gl', **kwds)

@@ -63,8 +63,8 @@ class RegularPolygon(Ellipse):
                                     start_angle=0.,
                                     span_angle=360.,
                                     num_segments=self._sides)
-            self.mesh = Mesh(pos=self._vertices, color=self._color.rgba)
-            self.mesh._primitive = gloo.gl.GL_TRIANGLE_FAN
+            self.mesh = Mesh(vertices=self._vertices, color=self._color.rgba,
+                             mode='triangle_fan')
             if not self._border_color.is_blank():
                 self.border = Line(pos=self._vertices[1:],
                                    color=self._border_color.rgba)

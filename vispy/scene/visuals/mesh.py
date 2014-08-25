@@ -61,6 +61,12 @@ vec4 vec3to4(vec3 xyz) {
 }
 """)
 
+vec2to4 = Function("""
+vec4 vec2to4(vec2 xyz) {
+    return vec4(xyz, 0.0, 1.0);
+}
+""")
+
 
 
 ## Actual code
@@ -70,7 +76,7 @@ class Mesh(Visual):
     
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None, 
-                 shading=None, **kwds):
+                 shading=None, mode='triangles', **kwds):
         Visual.__init__(self, **kwds)
         
         # Create a program
@@ -95,13 +101,18 @@ class Mesh(Visual):
         # Uniform color
         self._color = color
         
+        # primtive mode
+        self._mode = mode
+        
         # varyings
         self._color_var = Varying('v_color', dtype='vec4')
         self._normal_var = Varying('v_normal', dtype='vec3')
         
         # Init
         self.shading = shading
-        self.set_data(vertices=vertices, faces=faces, 
+        # Note we do not call subclass set_data -- often the signatures
+        # do no match.
+        Mesh.set_data(self, vertices=vertices, faces=faces, 
                       vertex_colors=vertex_colors,
                       face_colors=face_colors, meshdata=meshdata)
 
@@ -130,7 +141,8 @@ class Mesh(Visual):
         
         # Update vertex/index buffers
         if self.shading == 'smooth' and not md.has_face_indexed_data():
-            self._vertices.set_data(md.vertices())
+            v = md.vertices().astype(np.float32)
+            self._vertices.set_data(v)
             self._normals.set_data(md.vertex_normals())
             self._faces.set_data(md.faces())
             self._indexed = True
@@ -139,7 +151,7 @@ class Mesh(Visual):
             if md.has_face_color():
                 self._colors.set_data(md.face_colors())
         else:
-            v = md.vertices(indexed='faces')
+            v = md.vertices(indexed='faces').astype(np.float32)
             #self._vertices.set_data(v)  # preferred but buggy (#450)
             self._vertices = gloo.VertexBuffer(v)
             if self.shading == 'smooth':
@@ -153,8 +165,13 @@ class Mesh(Visual):
                 self._colors.set_data(md.face_colors(indexed='faces'))
         
         # Position input handling
-        self._program.vert['position'] = vec3to4(self._vertices)
-        
+        if v.shape[-1] == 2:
+            self._program.vert['position'] = vec2to4(self._vertices)
+        elif v.shape[-1] == 3:
+            self._program.vert['position'] = vec3to4(self._vertices)
+        else:
+            raise TypeError("Vertex data must have shape (...,2) or (...,3).")
+            
         # Color input handling
         if not md.has_vertex_color() and not md.has_face_color():
             # assign uniform to color varying
@@ -201,6 +218,6 @@ class Mesh(Visual):
         
         # Draw
         if self._indexed:
-            self._program.draw('triangles', self._faces)
+            self._program.draw(self._mode, self._faces)
         else:
-            self._program.draw('triangles')
+            self._program.draw(self._mode)
