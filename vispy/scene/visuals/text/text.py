@@ -109,6 +109,13 @@ class TextureFont(object):
 
 
 class FontManager(object):
+    """ Helper class to create TextureFont instances and reuse these
+    where possible. 
+    """ 
+    
+    # todo: store a font-manager on each context, 
+    # or let TextureFont use a TextureAtlas for each context
+    
     def __init__(self):
         self._fonts = {}
         self._renderer = SDFRenderer()
@@ -158,6 +165,15 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
         width += x_move
         height = max(height, glyph['size'][1] - 2*slop)
         prev = char
+    # Also analyse chars with large ascender and descender, otherwise the
+    # vertical alignment can be very inconsistent
+    for char in 'hy':
+        glyph = font[char]
+        y0 = glyph['offset'][1] * ratio + slop
+        y1 = y0 - glyph['size'][1]
+        ascender = max(ascender, y0 - slop)
+        descender = min(descender, y1 + slop)
+        height = max(height, glyph['size'][1] - 2*slop)
     set_viewport(*orig_viewport)
 
     # Tight bounding box (loose would be width, font.height /.asc / .desc)
@@ -345,7 +361,9 @@ class Text(Visual):
 
     def __init__(self, text, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, pos=(0, 0),
-                 rotation=0., anchor_x='center', anchor_y='center', **kwargs):
+                 rotation=0., anchor_x='center', anchor_y='center', 
+                 font_manager=None,  # temp solution to use global mananger
+                 **kwargs):
         Visual.__init__(self, **kwargs)
         # Check input
         assert isinstance(text, string_types)
@@ -354,7 +372,7 @@ class Text(Visual):
         valid_keys = ('left', 'center', 'right')
         _check_valid('anchor_x', anchor_x, valid_keys)
         # Init font handling stuff
-        self._font_manager = FontManager()
+        self._font_manager = font_manager or FontManager()
         self._font = self._font_manager.get_font(face, bold, italic)
         self._program = ModularProgram(self.VERTEX_SHADER,
                                        self.FRAGMENT_SHADER)
