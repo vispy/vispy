@@ -356,7 +356,8 @@ class Function(ShaderObject):
                 storage = self._post_hooks
             else:
                 raise TypeError("Variable assignment only allowed for "
-                                "varyings, not %s" % key.vtype)
+                                "varyings, not %s (in %s)"
+                                % (key.vtype, self.name))
         elif isinstance(key, string_types):
             if any(map(key.startswith, 
                        ('gl_PointSize', 'gl_Position', 'gl_FragColor'))):
@@ -756,8 +757,8 @@ class Variable(ShaderObject):
                 vtype = 'uniform'
                 dtype = 'mat%d' % value.shape[0]                
             else:
-                raise ValueError("Cannot make uniform value from array of "
-                                 "shape %s." % (value.shape))
+                raise ValueError("Cannot make uniform value for %s from array "
+                                 "of shape %s." % (self.name, value.shape))
         elif np.isscalar(value):
             vtype = 'uniform'
             if isinstance(value, (float, np.floating)):

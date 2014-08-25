@@ -334,6 +334,10 @@ class DataBuffer(Buffer):
         else:
             offset = offset * self.itemsize
             Buffer.set_data(self, data=data, offset=offset, copy=copy)
+            # A bit of a hacko but we need to do this here
+            # b/c _size and .resize() only belong to
+            # DataBuffer, but Buffer.set_data does (deferred) resizing itself
+            self._size = self.nbytes // self.itemsize
 
     @property
     def dtype(self):
@@ -362,7 +366,6 @@ class DataBuffer(Buffer):
     @property
     def size(self):
         """ Number of elements in the buffer """
-
         return self._size
 
     @property
@@ -379,7 +382,7 @@ class DataBuffer(Buffer):
 
     @property
     def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data. 
+        """ GLSL declaration strings required for a variable to hold this data.
         """
         dtshape = self.dtype[0].shape
         n = dtshape[0] if dtshape else 1

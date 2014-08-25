@@ -46,7 +46,7 @@ class Widget(Visual):
         # todo: rename to bordercolor? -> borderwidth
         self._border_color = tuple(Color(border_color).rgba)
         # for drawing border
-        self._visual = Line(color=self._border_color)
+        self._visual = Line(color=self._border_color, mode='gl')
         # whether this widget should clip its children
         self._clip = clip
         # reserved space inside border

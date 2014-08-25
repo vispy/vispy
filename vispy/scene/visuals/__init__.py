@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 The vispy.scene.visuals namespace provides a wide range of visuals.
 A Visual is an Entity that displays something.
@@ -10,18 +13,21 @@ encapsulate simple graphic objects such as lines, meshes, points, 2D shapes,
 images, text, etc.
 """
 
-__all__ = ['Visual', 'LineVisual', 'Line', 'Markers', 'marker_types',
-           'Point', 'Image', 'Mesh', 'Polygon', 'Ellipse', 'RegularPolygon',
-           'RectPolygon', 'Text']
+__all__ = ['Visual', 'Ellipse', 'GridLines', 'Image', 'Line', 'LineMarkers',
+           'Markers', 'marker_types', 'Mesh', 'Polygon', 'Rectangle',
+           'RegularPolygon', 'SurfaceGrid', 'Text', 'XYZAxis']
 
 from .visual import Visual  # noqa
-from .line import LineVisual, Line  # noqa
+from .line import Line  # noqa
 from .markers import Markers, marker_types  # noqa
-from .point import Point  # noqa
-from .image import Image  # noqa
 from .mesh import Mesh  # noqa
+from .image import Image  # noqa
 from .polygon import Polygon  # noqa
 from .ellipse import Ellipse  # noqa
 from .regular_polygon import RegularPolygon  # noqa
-from .rect_polygon import RectPolygon  # noqa
+from .rectangle import Rectangle  # noqa
 from .text import Text  # noqa
+from .grid_lines import GridLines  # noqa
+from .surface_grid import SurfaceGrid  # noqa
+from .xyz_axis import XYZAxis  # noqa
+from .line_markers import LineMarkers  # noqa

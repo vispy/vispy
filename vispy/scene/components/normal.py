@@ -28,10 +28,11 @@ class VertexNormalComponent(VisualComponent):
         """,
         vert_post_hook="""
             void normal_support() {
-                vec3 o = vec3(0,0,0);
-                vec3 i = o + $input_normal.xyz;
-                $output_normal = $map_local_to_nd(vec4(i,1)) -
-                                 $map_local_to_nd(vec4(o,1));
+                //vec3 o = vec3(0,0,0);
+                //vec3 i = o + $input_normal.xyz;
+                //$output_normal = $map_local_to_nd(vec4(i,1)) -
+                //                 $map_local_to_nd(vec4(o,1));
+                $output_normal = vec4($input_normal, 1);
             }
         """)
 

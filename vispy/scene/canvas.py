@@ -14,10 +14,12 @@ from .transforms import STTransform, TransformCache
 from .events import SceneDrawEvent, SceneMouseEvent
 from ..color import Color
 from ..util import logger
+from .widgets import Widget
 
 
 class SceneCanvas(app.Canvas):
-    """A Canvas that automatically draws the contents of a scene
+    """ SceneCanvas provides a Canvas that automatically draws the contents
+    of a scene.
 
     Receives the following events:
     initialize, resize, draw, mouse_press, mouse_release, mouse_move,
@@ -82,6 +84,9 @@ class SceneCanvas(app.Canvas):
         self._vp_stack = []  # for storing information about viewports used
         self._scene = None
         self._bgcolor = Color(kwargs.pop('bgcolor', 'black')).rgba
+        
+        # A default widget that follows the shape of the canvas
+        self._central_widget = None
 
         app.Canvas.__init__(self, *args, **kwargs)
         self.events.mouse_press.connect(self._process_mouse_event)
@@ -89,19 +94,21 @@ class SceneCanvas(app.Canvas):
         self.events.mouse_release.connect(self._process_mouse_event)
         self.events.mouse_wheel.connect(self._process_mouse_event)
 
-        # Collection of transform caches; one for each root visual used in
+        # Collection of transform caches; one for each root visual used in 
         # self.draw_visual(...)
         self._transform_caches = weakref.WeakKeyDictionary()
 
-        # Set up default entity stack: ndc -> fb -> pixels -> scene
+        # Set up default entity stack: ndc -> fb -> canvas -> scene
         self.ndc = Entity()
         self.framebuffer = Entity(parent=self.ndc)
         self.framebuffer.transform = STTransform()
-        self.pixels = Entity(parent=self.framebuffer)
-        self.pixels.transform = STTransform()
-
-        self.scene = SubScene(parent=self.pixels)
-
+        self.entity = Entity(parent=self.framebuffer)
+        self.entity.transform = STTransform()
+        # By default, the document coordinate system is the canvas.
+        self.entity.document = self.entity
+        
+        self.scene = SubScene(parent=self.entity)
+        
     @property
     def scene(self):
         """ The SubScene object that represents the root entity of the
@@ -115,6 +122,15 @@ class SceneCanvas(app.Canvas):
             self._scene.events.update.disconnect(self._scene_update)
         self._scene = e
         self._scene.events.update.connect(self._scene_update)
+
+    @property
+    def central_widget(self):
+        """ Returns the default widget that occupies the entire area of the
+        canvas. 
+        """
+        if self._central_widget is None:
+            self._central_widget = Widget(size=self.size, parent=self.scene)
+        return self._central_widget
 
     def _scene_update(self, event):
         self.update()
@@ -160,7 +176,7 @@ class SceneCanvas(app.Canvas):
             
             scene_event.push_entity(self.ndc)
             scene_event.push_entity(self.framebuffer)
-            scene_event.push_entity(self.pixels)
+            scene_event.push_entity(self.entity)
             scene_event.push_entity(visual)
             visual.draw(scene_event)
         finally:
@@ -173,13 +189,17 @@ class SceneCanvas(app.Canvas):
                                       transform_cache=tr_cache)
         scene_event.push_entity(self.ndc)
         scene_event.push_entity(self.framebuffer)
-        scene_event.push_entity(self.pixels)
+        scene_event.push_entity(self.entity)
         scene_event.push_entity(self._scene)
         self._scene._process_mouse_event(scene_event)
         
         # If something in the scene handled the scene_event, then we mark
         # the original event accordingly.
         event.handled = scene_event.handled
+
+    def on_resize(self, event):
+        if self._central_widget is not None:
+            self._central_widget.size = self.size
 
     # -------------------------------------------------- transform handling ---
     def push_viewport(self, viewport):
@@ -288,8 +308,8 @@ class SceneCanvas(app.Canvas):
         map_from = [list(offset), [offset[0] + csize[0], offset[1] + csize[1]]]
         map_to = [[0, fbsize[1]], [fbsize[0], 0]]
         
-        self.pixels.transform.set_mapping(map_from, map_to)
-        return self.pixels.transform
+        self.entity.transform.set_mapping(map_from, map_to)
+        return self.entity.transform
 
     @property
     def ndc_transform(self):

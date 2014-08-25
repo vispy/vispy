@@ -52,11 +52,11 @@ def tesst_multiplication():
 
 def test_transform_chain():
     # Make dummy classes for easier distinguishing the transforms
-    
+
     class DummyTrans(tr.BaseTransform):
         glsl_map = "vec4 trans(vec4 pos) {return pos;}"
         glsl_imap = "vec4 trans(vec4 pos) {return pos;}"
-    
+
     class TransA(DummyTrans):
         pass
 
@@ -68,7 +68,7 @@ def test_transform_chain():
 
     # Create test transforms
     a, b, c = TransA(), TransB(), TransC()
-    
+
     # Test Chain creation
     assert tr.ChainTransform().transforms == []
     assert tr.ChainTransform(a).transforms == [a]
@@ -164,10 +164,10 @@ def test_map_rect():
 def test_st_mapping():
     p1 = [[5., 7.], [23., 8.]]
     p2 = [[-1.3, -1.4], [1.1, 1.2]]
-    
+
     t = tr.STTransform()
     t.set_mapping(p1, p2)
-    
+
     assert np.allclose(t.map(p1)[:, :len(p2)], p2)
 
 
@@ -177,22 +177,22 @@ def test_affine_mapping():
                    [1, 0, 0],
                    [0, 1, 0],
                    [0, 0, 1]])
-    
+
     # test pure translation
     p2 = p1 + 5.5
     t.set_mapping(p1, p2)
     assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
-    
+
     # test pure scaling
     p2 = p1 * 5.5
     t.set_mapping(p1, p2)
     assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
-    
+
     # test scale + translate
     p2 = (p1 * 5.5) + 3.5
     t.set_mapping(p1, p2)
     assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
-    
+
     # test SRT
     p2 = np.array([[10, 5, 3],
                    [10, 15, 3],
@@ -200,6 +200,29 @@ def test_affine_mapping():
                    [10, 5, 3.5]])
     t.set_mapping(p1, p2)
     assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
+
+
+def test_inverse():
+    m = np.random.normal(size=(4, 4))
+    transforms = [
+        NT(),
+        ST(scale=(1e-4, 2e5), translate=(10, -6e9)),
+        AT(m),
+    ]
+
+    np.random.seed(0)
+    N = 20
+    x = np.random.normal(size=(N, 3))
+    pw = np.random.normal(size=(N, 3), scale=3)
+    pos = x * 10 ** pw
+
+    for trn in transforms:
+        assert np.allclose(pos, trn.inverse.map(tr.map(pos))[:, :3])
+
+    # log transform only works on positive values
+    #abs_pos = np.abs(pos)
+    #tr = LT(base=(2, 4.5, 0))
+    #assert np.allclose(abs_pos, tr.inverse.map(tr.map(abs_pos))[:,:3])
 
 
 if __name__ == '__main__':

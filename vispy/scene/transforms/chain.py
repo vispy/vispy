@@ -39,8 +39,6 @@ class ChainTransform(BaseTransform):
                 trs.append(tr)
         self._transforms = trs
 
-        self._inverse = None  # cache inverse transform
-
         # ChainTransform does not have shader maps
         self._shader_map = None
         self._shader_imap = None
@@ -119,28 +117,12 @@ class ChainTransform(BaseTransform):
         else:
             funcs = [tr.shader_map() for tr in reversed(self.transforms)]
 
-        #bindings = []
-        #for i,tr in enumerate(transforms):
-
-            #tr_name = '%s_%d_%s' % (name, i, type(tr).__name__)
-            #if imap:
-            #    bound = tr.shader_imap(tr_name)
-            #else:
-            #    bound = tr.shader_map(tr_name)
-            #bindings.append(bound)
-
-        name = "transform_%s_chain" % ('imap' if imap is not None else 'map')
+        name = "transform_%s_chain" % ('imap' if bool(imap) else 'map')
         return FunctionChain(name, funcs)
 
-    def inverse(self):
-        if self._inverse is None:
-            inv = [tr.inverse() for tr in reversed(self.transforms)]
-            self._inverse = ChainTransform(inv)
-        return self._inverse
-
-    def flatten(self):
+    def flat(self):
         """
-        Attempt to simplify the chain by expanding any nested chains.
+        Return a simplified chain by expanding any nested chains.
         """
         # Flatten untill there is nothing more to flatten
         encountered_chains = True
@@ -154,23 +136,22 @@ class ChainTransform(BaseTransform):
                     new_tr.extend(tr.transforms)
                 else:
                     new_tr.append(tr)
-            self._transforms = new_tr
-        self._inverse = None
+        return ChainTransform(new_tr)
 
-    def simplify(self):
+    def simplified(self):
         """
-        Attempt to simplify the chain by joining adjacent transforms.
+        Return a simplified chain by joining adjacent transforms.
         If the result is a single transform, return that transform.
-        Otherwise return this chaintransform.
         """
-        self.flatten()
-        if len(self.transforms) == 0:
+        tr = self.flat()
+        if len(tr.transforms) == 0:
             return NullTransform()
         cont = True
+        tr = tr.transforms
         while cont:
-            new_tr = [self.transforms[0]]
+            new_tr = [tr[0]]
             cont = False
-            for t2 in self.transforms[1:]:
+            for t2 in tr[1:]:
                 t1 = new_tr[-1]
                 pr = t1 * t2
                 if not isinstance(pr, ChainTransform):
@@ -179,21 +160,18 @@ class ChainTransform(BaseTransform):
                     new_tr.append(pr)
                 else:
                     new_tr.append(t2)
-            self._transforms = new_tr
-        self._inverse = None
+            tr = new_tr
 
-        # todo: get rid of this in-place + return thing
-        if len(self._transforms) == 1:
-            return self._transforms[0]
+        if len(tr) == 1:
+            return tr[0]
         else:
-            return self
+            return ChainTransform(tr)
 
     def append(self, tr):
         """
         Add a new transform to the end of this chain.
         """
         self.transforms.append(tr)
-        self._inverse = None
         self.update()
         # Keep simple for now. Let's look at efficienty later
         # I feel that this class should not decide when to compose transforms
@@ -214,7 +192,6 @@ class ChainTransform(BaseTransform):
         Add a new transform to the beginning of this chain.
         """
         self.transforms.insert(0, tr)
-        self._inverse = None
         self.update()
         # Keep simple for now. Let's look at efficienty later
 #         while len(self.transforms) > 0:
@@ -235,7 +212,6 @@ class ChainTransform(BaseTransform):
             self._shader_map[-(index+1)] = tr.shader_map()
         if self._shader_imap is not None:
             self._shader_imap[index] = tr.shader_imap()
-        self._inverse = None
         self.update()
 
     def __mul__(self, tr):

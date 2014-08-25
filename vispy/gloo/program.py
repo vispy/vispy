@@ -341,12 +341,17 @@ class Program(GLObject):
                 logger.warning("%s has not been bound" % name)
 
     def __setitem__(self, name, data):
-        if name in self._uniforms.keys():
-            self._uniforms[name].set_data(data)
-        elif name in self._attributes.keys():
-            self._attributes[name].set_data(data)
-        else:
-            raise KeyError("Unknown uniform or attribute %s" % name)
+        try:
+            if name in self._uniforms.keys():
+                self._uniforms[name].set_data(data)
+            elif name in self._attributes.keys():
+                self._attributes[name].set_data(data)
+            else:
+                raise KeyError("Unknown uniform or attribute %s" % name)
+        except Exception:
+            logger.error("Could not set variable '%s' with value %s" % 
+                         (name, data))
+            raise
 
     def __getitem__(self, name):
         if name in self._uniforms.keys():
@@ -482,6 +487,7 @@ class Program(GLObject):
         if check_error:  # need to do this after activating, too
             gl.check_error('Check after draw activation')
 
+        # WARNING: The "list" of values from a dict is not a list (py3k)
         attributes = list(self._attributes.values())
         sizes = [a.size for a in attributes]
         if len(attributes) < 1:
@@ -498,8 +504,14 @@ class Program(GLObject):
                        np.dtype(np.uint32): gl.GL_UNSIGNED_INT}
             gl.glDrawElements(mode, indices.size, gltypes[indices.dtype], None)
             indices.deactivate()
+        elif indices is None:
+            #count = (count or attributes[0].size) - first
+            first = 0
+            count = attributes[0].size
+            gl.glDrawArrays(mode, first, count)
         else:
-            gl.glDrawArrays(mode, 0, sizes[0])
+            raise TypeError("Invalid index: %r (must be IndexBuffer)" %
+                            indices)
 
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         self.deactivate()
