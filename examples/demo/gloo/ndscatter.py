@@ -9,7 +9,7 @@ Lie group SO(n).
 from vispy import gloo
 from vispy import app
 from vispy.color import ColorArray
-from vispy.datasets import load_iris
+from vispy.io import load_iris
 import numpy as np
 from scipy.linalg import expm, logm
 

@@ -1,5 +1,11 @@
-import vispy.scene.transforms as tr
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
 import numpy as np
+
+import vispy.scene.transforms as tr
+from vispy.geometry import Rect
 
 NT = tr.NullTransform
 ST = tr.STTransform
@@ -150,7 +156,6 @@ def test_transform_chain():
 
 
 def test_map_rect():
-    from vispy.util.geometry import Rect
     r = Rect((2, 7), (13, 19))
     r1 = ST(scale=(2, 2), translate=(-10, 10)).map(r)
     assert r1 == Rect((-6, 24), (26, 38))

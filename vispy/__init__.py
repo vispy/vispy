@@ -39,6 +39,6 @@ __version__ = '0.3'
 
 from .util import (_parse_command_line_arguments, config,  # noqa
                    set_log_level, keys, sys_info, test)  # noqa
-from .util._use import use  # noqa
+from .util.wrappers import use  # noqa
 
 _parse_command_line_arguments()

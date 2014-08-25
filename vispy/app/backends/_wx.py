@@ -10,6 +10,7 @@ from __future__ import division
 
 from time import sleep
 import gc
+import warnings
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend, BaseSharedContext)
@@ -20,8 +21,10 @@ from ...util.ptime import time
 # -------------------------------------------------------------------- init ---
 
 try:
-    import wx
-    from wx import Frame, glcanvas
+    # avoid silly locale warning on OSX
+    with warnings.catch_warnings(record=True):
+        import wx
+        from wx import Frame, glcanvas
 
     # Map native keys to vispy keys
     KEYMAP = {

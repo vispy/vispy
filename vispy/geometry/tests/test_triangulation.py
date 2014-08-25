@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from vispy.util.geometry.triangulation import Triangulation as T
+from vispy.geometry.triangulation import Triangulation as T
 
 
 def assert_array_eq(a, b):

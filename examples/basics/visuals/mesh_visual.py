@@ -13,7 +13,7 @@ from vispy import gloo
 from vispy.scene import visuals
 from vispy.scene.components import (VertexColorComponent, GridContourComponent,
                                     VertexNormalComponent, ShadingComponent)
-from vispy.util.meshdata import sphere
+from vispy.geometry import create_sphere
 from vispy.scene.transforms import (STTransform, AffineTransform,
                                     ChainTransform)
 
@@ -25,7 +25,7 @@ class Canvas(vispy.scene.SceneCanvas):
 
         # Generate some data to work with
         global mdata
-        mdata = sphere(20, 40, 1.0)
+        mdata = create_sphere(20, 40, 1.0)
 
         # Mesh with pre-indexed vertices, uniform color
         verts = mdata.vertices(indexed='faces')
@@ -98,7 +98,7 @@ class Canvas(vispy.scene.SceneCanvas):
                                              self.rotation])
 
         vispy.scene.SceneCanvas.__init__(self, keys='interactive')
-        
+
         self.size = (800, 800)
         self.show()
 

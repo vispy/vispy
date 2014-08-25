@@ -18,7 +18,7 @@ from shutil import rmtree
 
 from .event import EmitterGroup, EventEmitter, Event
 from ..ext.six import string_types
-from ._logging import logger, set_log_level, use_log_level
+from .logs import logger, set_log_level, use_log_level
 
 
 class _TempDir(str):

@@ -17,10 +17,12 @@ Functionality is split across different submodules:
    vispy - Module configuration tools <vispy>
    vispy.app - Application API <app>
    vispy.color - Tools for manipulating colors <color>
+   vispy.geometry - Functions related to geometry <geometry>
    vispy.gloo - Object-oriented GL API <gloo>
-   vispy.scene - High-level visualization interface [experimental] <scene>
+   vispy.io - Utilities for data IO <io>
    vispy.mpl_plot - Wrapper for matplotlib [experimental] <mpl_plot>
-   vispy.util - Utilities <util>
+   vispy.scene - High-level visualization interface [experimental] <scene>
+   vispy.util - Miscellaneous utilities <util>
    
    examples
    releasenotes

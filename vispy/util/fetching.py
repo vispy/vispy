@@ -12,13 +12,13 @@ import sys
 import shutil
 
 from ..ext.six.moves import urllib
-from ._config import config
+from ..util.config import config
 
 
 ###############################################################################
 # Vispy data directory
 
-def get_data_file(fname, directory=None, force_download=False):
+def load_data_file(fname, directory=None, force_download=False):
     """Get a standard vispy demo data file
 
     Parameters

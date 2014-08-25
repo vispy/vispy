@@ -14,12 +14,12 @@ import numpy as np
 from vispy import gloo
 from vispy import app
 from vispy.util.transforms import perspective, translate, rotate
-from vispy.util import get_data_file
+from vispy.io import load_data_file
 
-brain = np.load(get_data_file('brain/brain.npz'))
+brain = np.load(load_data_file('brain/brain.npz'))
 data = brain['vertex_buffer']
 faces = brain['index_buffer']
-    
+
 VERT_SHADER = """
 #version 120
 uniform mat4 u_model;

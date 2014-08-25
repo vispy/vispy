@@ -9,10 +9,6 @@ from __future__ import division
 
 import numpy as np
 
-#from .visual import Visual
-#from ..shader.function import Function, Variable
-#from ...import gloo
-
 from vispy.scene.visuals.visual import Visual
 from vispy.scene.shaders import ModularProgram, Function, Variable, Varying
 from vispy import gloo
@@ -208,9 +204,9 @@ class Mesh(Visual):
 if __name__ == '__main__':
     
     from vispy import app
-    from vispy.util.meshdata import sphere
+    from vispy.geometry import create_sphere
     
-    mdata = sphere(20, 20)
+    mdata = create_sphere(20, 20)
     faces = mdata.faces()
     verts = mdata.vertices() / 4.0
     verts_flat = mdata.vertices(indexed='faces').reshape(-1, 3) / 4.0

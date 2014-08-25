@@ -23,7 +23,7 @@ from ...util import logger
 # Imports for screenshot
 # Perhaps we should refactor these to have just one import
 from ...gloo.util import _screenshot
-from ...util import make_png
+from ...io import _make_png
 from base64 import b64encode
 
 # Import for displaying Javascript on notebook
@@ -63,7 +63,7 @@ Unicode = Int = Float = Bool = lambda *args, **kwargs: None
 try:
     # Explicitly use default (avoid using test-app)
     _app = Application('default')
-except RuntimeError:
+except Exception:
     _msg = 'ipynb_vnc backend relies on a core backend'
     available, testable, why_not, which = False, False, _msg, None
 else:
@@ -246,7 +246,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Take the screenshot
         img = _screenshot()
         # Convert to PNG and encode
-        self._widget.value = b64encode(make_png(img))
+        self._widget.value = b64encode(_make_png(img))
 
     # Generate vispy events according to upcoming JS events
     def _gen_event(self, ev):

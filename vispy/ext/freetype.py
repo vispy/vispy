@@ -19,7 +19,7 @@ from ctypes import (byref, c_char_p, c_ushort, cast, util, CDLL, Structure,
                     c_char, c_ubyte, CFUNCTYPE)
 
 from .six import string_types
-from ..util import get_data_file
+from ..util.fetching import load_data_file
 
 FT_LOAD_RENDER = 4
 FT_KERNING_DEFAULT = 0
@@ -176,7 +176,7 @@ __dll__ = None
 FT_Library_filename = util.find_library('freetype')
 if not FT_Library_filename and sys.platform.startswith('win'):
     fname_end = '_x64.dll' if _64_bit else '.dll'
-    FT_Library_filename = get_data_file('freetype/freetype253' + fname_end)
+    FT_Library_filename = load_data_file('freetype/freetype253' + fname_end)
 if not FT_Library_filename:
     raise ImportError('Freetype library not found')
 if not __dll__:

@@ -1,53 +1,39 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
 from os import path as op
 from nose.tools import assert_equal, assert_raises
 from numpy.testing import assert_allclose, assert_array_equal
-import warnings
 
-from vispy.util.dataio import write_mesh, read_mesh, crate, imsave, imread
-from vispy.util._geom import _fast_cross_3d
+from vispy.io import write_mesh, read_mesh, load_data_file
+from vispy.geometry import _fast_cross_3d
 from vispy.util import _TempDir
-from vispy.testing import requires_img_lib
 
 temp_dir = _TempDir()
 
 
 def test_wavefront():
     """Test wavefront reader"""
-    fname_mesh = 'triceratops.obj'
-
+    fname_mesh = load_data_file('orig/triceratops.obj.gz')
     fname_out = op.join(temp_dir, 'temp.obj')
     mesh1 = read_mesh(fname_mesh)
-    assert_raises(ValueError, read_mesh, 'foo')
+    assert_raises(IOError, read_mesh, 'foo.obj')
     assert_raises(ValueError, read_mesh, op.abspath(__file__))
-    assert_raises(ValueError, write_mesh, fname_out, mesh1[0], mesh1[1],
-                  mesh1[2], mesh1[3], format='foo')
+    assert_raises(ValueError, write_mesh, fname_out, *mesh1, format='foo')
     write_mesh(fname_out, mesh1[0], mesh1[1], mesh1[2], mesh1[3])
-    assert_raises(IOError, write_mesh, fname_out, mesh1[0], mesh1[1],
-                  mesh1[2], mesh1[3])
-    write_mesh(fname_out, mesh1[0], mesh1[1], mesh1[2], mesh1[3],
-               overwrite=True)
+    assert_raises(IOError, write_mesh, fname_out, *mesh1)
+    write_mesh(fname_out, *mesh1, overwrite=True)
     mesh2 = read_mesh(fname_out)
     assert_equal(len(mesh1), len(mesh2))
     for m1, m2 in zip(mesh1, mesh2):
         if m1 is None:
             assert_equal(m2, None)
         else:
-            assert_allclose(m1, m2)
+            assert_allclose(m1, m2, rtol=1e-5)
     # test our efficient normal calculation routine
     assert_allclose(mesh1[2], _slow_calculate_normals(mesh1[0], mesh1[1]),
-                    rtol=1e-10, atol=1e-10)
-
-
-@requires_img_lib()
-def test_read_write_image():
-    """Test reading and writing of images"""
-    fname = op.join(temp_dir, 'out.png')
-    im1 = crate()
-    imsave(fname, im1, format='png')
-    with warnings.catch_warnings(record=True):  # PIL unclosed file
-        im2 = imread(fname)
-    assert_allclose(im1, im2)
+                    rtol=1e-7, atol=1e-7)
 
 
 def _slow_calculate_normals(rr, tris):

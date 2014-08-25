@@ -7,6 +7,7 @@ vispy headless backend for egl.
 
 from __future__ import division
 
+import atexit
 from time import sleep
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -30,6 +31,7 @@ try:
     version = [egl.eglQueryString(_EGL_DISPLAY, x) for x in
                [egl.EGL_VERSION, egl.EGL_VENDOR, egl.EGL_CLIENT_APIS]]
     version = version[0] + ' ' + version[1] + ': ' + version[2].strip()
+    atexit.register(egl.eglTerminate, _EGL_DISPLAY)
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:

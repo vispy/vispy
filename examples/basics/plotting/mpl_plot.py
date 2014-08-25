@@ -12,7 +12,7 @@ import numpy as np
 import sys
 
 import vispy.mpl_plot as plt
-from vispy.util import read_png, get_data_file
+from vispy.io import read_png, load_data_file
 
 n = 200
 freq = 10
@@ -28,7 +28,7 @@ flim = n // 2
 # Signal
 fig = plt.figure()
 ax = plt.subplot(311)
-ax.imshow(read_png(get_data_file('pyplot/logo.png')))
+ax.imshow(read_png(load_data_file('pyplot/logo.png')))
 
 ax = plt.subplot(312)
 ax.plot(t, signal, 'k-')

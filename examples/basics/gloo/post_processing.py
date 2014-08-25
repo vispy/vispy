@@ -13,7 +13,7 @@
 import numpy as np
 from vispy import app
 
-from vispy.util.cube import cube
+from vispy.geometry import create_cube
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer, DepthBuffer, set_viewport, set_state)
@@ -88,7 +88,7 @@ class Canvas(app.Canvas):
     def on_initialize(self, event):
         # Build cube data
         # --------------------------------------
-        vertices, indices, _ = cube()
+        vertices, indices, _ = create_cube()
         vertices = VertexBuffer(vertices)
         self.indices = IndexBuffer(indices)
 

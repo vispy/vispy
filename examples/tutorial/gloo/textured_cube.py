@@ -11,7 +11,7 @@ import numpy as np
 from vispy import gloo, app
 from vispy.gloo import Program, VertexBuffer, IndexBuffer
 from vispy.util.transforms import perspective, translate, rotate
-from vispy.util.cube import cube
+from vispy.geometry import create_cube
 
 
 vertex = """
@@ -56,7 +56,7 @@ class Canvas(app.Canvas):
 
     def on_initialize(self, event):
         # Build cube data
-        V, I, _ = cube()
+        V, I, _ = create_cube()
         vertices = VertexBuffer(V)
         self.indices = IndexBuffer(I)
 

@@ -9,7 +9,7 @@ import numpy as np
 from vispy import gloo
 from vispy import app
 from vispy.util.transforms import perspective, translate, rotate
-from vispy.util import get_data_file
+from vispy.io import load_data_file
 
 vertex = """
 #version 120
@@ -107,7 +107,7 @@ class Canvas(app.Canvas):
         self.translate = 40
         translate(self.view, 0, 0, -self.translate)
 
-        fname = get_data_file('molecular_viewer/micelle.npz')
+        fname = load_data_file('molecular_viewer/micelle.npz')
         self.load_molecule(fname)
         self.load_data()
 

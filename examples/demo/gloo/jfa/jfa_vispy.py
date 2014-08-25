@@ -17,7 +17,7 @@ from PIL import Image
 from vispy import app
 from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
                         VertexBuffer, Texture2D, set_viewport)
-from vispy.util import get_data_file
+from vispy.io import load_data_file
 
 this_dir = op.abspath(op.dirname(__file__))
 
@@ -28,7 +28,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, size=(512, 512), keys='interactive')
 
     def _setup_textures(self, fname):
-        img = Image.open(get_data_file('jfa/' + fname))
+        img = Image.open(load_data_file('jfa/' + fname))
         self.texture_size = tuple(img.size)
         data = np.array(img, np.ubyte)[::-1].copy()
         self.orig_tex = Texture2D(data, format='luminance')

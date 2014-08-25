@@ -20,9 +20,11 @@ The classes are written with compatibility of Python3 in mind.
 
 import numpy as np
 import time
+from os import path as op
 
-from .._geom import _calculate_normals
-from .._logging import logger
+from ..ext.gzip_open import gzip_open
+from ..geometry import _calculate_normals
+from ..util import logger
 
 
 class WavefrontReader(object):
@@ -50,19 +52,23 @@ class WavefrontReader(object):
         self._facemap = {}
 
     @classmethod
-    def read(cls, fname, check='ignored'):
-        """ read(fname)
+    def read(cls, fname):
+        """ read(fname, fmt)
 
         This classmethod is the entry point for reading OBJ files.
 
         Parameters
         ----------
-        fname : string
+        fname : str
             The name of the file to read.
-
+        fmt : str
+            Can be "obj" or "gz" to specify the file format.
         """
         # Open file
-        with open(fname, 'rb') as f:
+        fmt = op.splitext(fname)[1].lower()
+        assert fmt in ('.obj', '.gz')
+        opener = open if fmt == '.obj' else gzip_open
+        with opener(fname, 'rb') as f:
             try:
                 reader = WavefrontReader(f)
                 while True:
@@ -87,7 +93,7 @@ class WavefrontReader(object):
         line = line.strip()
 
         if line.startswith('v '):
-            #self._vertices.append( *self.readTuple(line) )
+            # self._vertices.append( *self.readTuple(line) )
             self._v.append(self.readTuple(line))
         elif line.startswith('vt '):
             self._vt.append(self.readTuple(line, 3))
@@ -224,20 +230,23 @@ class WavefrontWriter(object):
         Parameters
         ----------
         fname : string
-            The filename to write to.
+            The filename to write to. Must end with ".obj" or ".gz".
         vertices : numpy array
             The vertex data
         faces : numpy array
             The face data
         texcoords : numpy array
             The texture coordinate per vertex
-        name : string
+        name : str
             The name of the object (e.g. 'teapot')
-
         """
-
         # Open file
-        f = open(fname, 'wb')
+        fmt = op.splitext(fname)[1].lower()
+        if fmt not in ('.obj', '.gz'):
+            raise ValueError('Filename must end with .obj or .gz, not "%s"'
+                             % (fmt,))
+        opener = open if fmt == '.obj' else gzip_open
+        f = opener(fname, 'wb')
         try:
             writer = WavefrontWriter(f)
             writer.writeMesh(vertices, faces, normals, texcoords, name)

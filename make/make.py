@@ -247,7 +247,7 @@ class Maker:
     def _images_screenshots(self):
         # Prepare
         import imp
-        from vispy.util.dataio import imsave
+        from vispy.io import imsave
         from vispy.gloo.util import _screenshot
         examples_dir = op.join(ROOT_DIR, 'examples')
         gallery_dir = op.join(IMAGES_DIR, 'gallery')
@@ -285,7 +285,7 @@ class Maker:
             try:
                 m = imp.load_source('vispy_example_' + name, filename)
             except Exception as exp:
-                print('Error:  %s, got "%s"' % (name, str(exp)))
+                print('*Err*:  %s, got "%s"' % (name, str(exp)))
             m.done = False
             m.frame = -1
             m.images = []
@@ -328,7 +328,7 @@ class Maker:
                 imageio.mimsave(imagefilename[:-3] + '.gif', m.images)
 
     def _images_thumbnails(self):
-        from vispy.util.dataio import imsave, imread
+        from vispy.io import imsave, imread
         from skimage.transform import resize
         import numpy as np
         gallery_dir = op.join(IMAGES_DIR, 'gallery')

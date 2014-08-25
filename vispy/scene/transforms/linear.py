@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from ...util import transforms
-from ...util.geometry import Rect
+from ...geometry import Rect
 from ._util import arg_to_vec4, as_vec4
 from .base_transform import BaseTransform
 

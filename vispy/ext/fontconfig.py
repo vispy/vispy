@@ -3,7 +3,7 @@
 import warnings
 from ctypes import (util, cdll, c_void_p, c_char_p, c_double, c_int, c_bool,
                     Union, Structure, byref, POINTER)
-from ..util._run import run_subprocess
+from ..util.wrappers import run_subprocess
 
 # Some code adapted from Pyglet
 

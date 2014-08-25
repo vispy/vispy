@@ -16,7 +16,7 @@ from .visual import Visual
 from .mesh import Mesh
 from .line import Line
 from ...color import Color
-from ...util.geometry import PolygonData
+from ...geometry import PolygonData
 
 
 class Polygon(Visual):
