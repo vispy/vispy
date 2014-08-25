@@ -143,8 +143,7 @@ class Canvas(app.Canvas):
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
 
-        self.timer = app.Timer(1.0 / 60)
-        self.timer.connect(self.on_timer)
+        self.timer = app.Timer('auto', connect=self.on_timer)
 
     def on_initialize(self, event):
         gloo.set_state(depth_test=False, blend=True,

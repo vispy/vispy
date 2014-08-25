@@ -126,8 +126,7 @@ class Canvas(app.Canvas):
         circ[-1, 0] = -1 if ndim % 2 == 0 else 1
         self._op = OrthogonalPath(np.eye(ndim), circ)
         
-        self._timer = app.Timer(1. / 60)
-        self._timer.connect(self.on_timer)
+        self._timer = app.Timer(1. / 60, connect=self.on_timer)
 
     def on_timer(self, event):
         mat = self._op(event.elapsed)

@@ -90,7 +90,9 @@ class Canvas(app.Canvas):
         self.program['color'] = self.vbo_color
         self.program['size'] = self.vbo_size
         self.program['position'] = self.vbo_position
-
+        
+        self._timer = app.Timer('auto', connect=self.update, start=True)
+    
     def on_initialize(self, event):
         gloo.set_state(clear_color=(0, 0, 0, 1), blend=True,
                        blend_func=('src_alpha', 'one'))
@@ -122,15 +124,10 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear()
-
         # Draw
         self.program.draw('points')
-
         # Next iteration
         self._t = self.iteration(time.time() - self._t)
-
-        # Invoke a new draw
-        self.update()
 
     def iteration(self, dt):
         t = self._t

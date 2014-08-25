@@ -77,9 +77,7 @@ class Canvas(app.Canvas):
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
         
-        self.timer = app.Timer(1.0 / 30)  # change rendering speed here
-        self.timer.connect(lambda x: self.update())
-        self.timer.start()
+        self.timer = app.Timer('auto', connect=self.update, start=True)
         
         # Set uniforms (some are set later)
         self.program['u_model'] = self.model

@@ -26,6 +26,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         self.use_shaders = True
         app.Canvas.__init__(self, size=(512, 512), keys='interactive')
+        self._timer = app.Timer('auto', self.update, start=True)
 
     def _setup_textures(self, fname):
         img = Image.open(load_data_file('jfa/' + fname))
@@ -95,7 +96,6 @@ class Canvas(app.Canvas):
             self.programs[2]['texture'] = self.orig_tex
         set_viewport(0, 0, *self.size)
         self.programs[2].draw('triangle_strip')
-        self.update()
 
     def on_key_press(self, event):
         if event.key is not None and event.key.name in '1234':

@@ -96,7 +96,7 @@ class Canvas(app.Canvas):
 
         self.i = 0
 
-        self._timer = app.Timer(1/60.0, connect=self.on_timer, start=True)
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_initialize(self, event):
         gloo.set_clear_color('white')

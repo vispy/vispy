@@ -100,9 +100,7 @@ class Canvas(app.Canvas):
         self.min_scale = 0.00005
         self.max_scale = 4
 
-        self.timer = app.Timer(1.0 / 60)  # change rendering speed here
-        self.timer.connect(lambda x: self.update())
-        self.timer.start()
+        self._timer = app.Timer('auto', connect=self.update, start=True)
 
     def on_initialize(self, event):
         gloo.set_clear_color(color='black')

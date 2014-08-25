@@ -93,7 +93,9 @@ class Canvas(app.Canvas):
 
         # Create first explosion
         self._new_explosion()
-
+        
+        self._timer = app.Timer('auto', connect=self.update, start=True)
+    
     def on_initialize(self, event):
         # Enable blending
         gloo.set_state(blend=True, clear_color='black',
@@ -111,9 +113,6 @@ class Canvas(app.Canvas):
         # Draw
         self._program['u_time'] = time.time() - self._starttime
         self._program.draw('points')
-
-        # Invoke a new draw
-        self.update()
 
         # New explosion?
         if time.time() - self._starttime > 1.5:

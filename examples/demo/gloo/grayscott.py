@@ -126,7 +126,8 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title='Grayscott Reaction-Diffusion',
                             size=(512, 512), keys='interactive')
-
+        self._timer = app.Timer('auto', connect=self.update, start=True)
+    
     def on_initialize(self, event):
         self.scale = 4
         self.comp_size = (256, 256)
@@ -195,7 +196,6 @@ class Canvas(app.Canvas):
         self.pingpong = 1 - self.pingpong
         self.compute["pingpong"] = self.pingpong
         self.render["pingpong"] = self.pingpong
-        self.update()
 
     def on_resize(self, event):
         set_viewport(0, 0, *self.size)
