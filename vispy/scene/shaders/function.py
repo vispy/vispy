@@ -757,7 +757,7 @@ class Variable(ShaderObject):
                 dtype = 'mat%d' % value.shape[0]                
             else:
                 raise ValueError("Cannot make uniform value from array of "
-                                 "shape %s." % (value.shape))
+                                 "shape %s." % (value.shape,))
         elif np.isscalar(value):
             vtype = 'uniform'
             if isinstance(value, (float, np.floating)):

@@ -14,9 +14,9 @@ import numpy as np
 #from ...import gloo
 
 from vispy.scene.visuals.visual import Visual
-from vispy.scene.shaders import ModularProgram, Function, Variable, Varying
+from vispy.scene.shaders import ModularProgram, Function, Varying
 from vispy import gloo
-from vispy.util.meshdata import MeshData
+from vispy.geometry import MeshData
 
 ## Snippet templates (defined as string to force user to create fresh Function)
 # Consider these stored in a central location in vispy ...

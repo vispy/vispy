@@ -8,7 +8,7 @@ use with visuals and scenes.
 
 __all__ = ['NullTransform', 'STTransform', 'AffineTransform',
            'PerspectiveTransform', 'LogTransform', 'PolarTransform',
-           'InvPolarTransform', 'ChainTransform']
+           'ChainTransform']
 
 from .base_transform import BaseTransform  # noqa
 from .linear import (NullTransform, STTransform,  # noqa

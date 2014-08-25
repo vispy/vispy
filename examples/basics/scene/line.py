@@ -19,24 +19,23 @@ color[:, 1] = color[::-1, 0]
 
 lines = []
 
+print('Generating points...')
 for i in range(20):
     pos = pos.copy()
     pos[:, 1] = np.random.normal(scale=5, loc=(i+1)*30, size=N)
-    line = scene.visuals.Line(pos=pos, color=color, parent=canvas.scene,
-                              mode='gl')
+    line = scene.visuals.Line(pos=pos, color=color, parent=canvas.scene)
     lines.append(line)
     line.transform = scene.transforms.STTransform()
+print('Done')
 
 
 def update(event):
     for line in lines:
         scale = [np.sin(event.elapsed)+2, np.cos(event.elapsed)+2]
-        #line.transform = scene.transforms.STTransform(scale=scale)
         line.transform.scale = scale
 
-timer = app.Timer(interval=0.016, connect=update)
+timer = app.Timer(interval=1./60., connect=update, start=True)
 
 import sys
 if sys.flags.interactive == 0:
-    timer.start()
     app.run()

@@ -8,7 +8,6 @@ Demonstration of various features of Line visual.
 
 import numpy as np
 import vispy.app
-from vispy import gloo
 from vispy.scene import visuals
 from vispy.scene.transforms import STTransform
 
@@ -32,71 +31,37 @@ connect[N/2, 1] = N/2  # put a break in the middle
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
-        
-        # Create several visuals demonstrating different 
-        # features of Line
+        vispy.scene.SceneCanvas.__init__(self, keys='interactive',
+                                         size=(800, 800))
+        # Create several visuals demonstrating different features of Line
         self.lines = [
-            #
             # agg-mode lines:
-            #
-            
-            # solid color
-            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1)),
-            
-            # wide
-            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), width=5),
-
-            # per-vertex color
-            visuals.Line(pos=pos, color=color),
-
-            #
+            visuals.Line(pos=pos, color=color),  # per-vertex color
+            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1)),  # solid
+            visuals.Line(pos=pos, color=color, width=5),  # wide
             # GL-mode lines:
-            #
-            
-            # solid color
+            visuals.Line(pos=pos, color=color, mode='gl'),
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), mode='gl'),
-            
-            # per-vertex color
-            visuals.Line(pos=pos, color=color, mode='gl'),
-            
-            # updating (see the "update" function below)
-            visuals.Line(pos=pos, color=color, mode='gl'),
-            
-            # only connect alternate pairs of vertices
-            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect='segments', 
-                         mode='gl'),
-            
-            # connect specific pairs of vertices, specified in an adjacency
-            # matrix
-            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect=connect, 
-                         mode='gl'),
-            
-            # gl-mode width
-            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), width=4, 
-                         antialias=False, mode='gl'),
+            visuals.Line(pos=pos, color=color, width=5, mode='gl'),
+            # GL-mode: "connect" not available in AGG mode yet
+            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect='segments',
+                         mode='gl'),  # only connect alternate vert pairs
+            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect=connect,
+                         mode='gl'),  # connect specific pairs
         ]
-        
-        for i,line in enumerate(self.lines):
+        counts = [0, 0]
+        for i, line in enumerate(self.lines):
             # arrange lines in a grid
-            x = 400 * (i % 2)
-            y = 160 * ((i // 2) + 1)
+            tidx = (line.mode == 'agg')
+            x = 400 * tidx
+            y = 160 * (counts[tidx] + 1)
+            counts[tidx] += 1
             line.transform = STTransform(translate=[x, y])
-            
             # redraw the canvas if any visuals request an update
-            line.events.update.connect(self.line_changed)
-
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+            line.events.update.connect(lambda evt: self.update())
+            line.parent = self.central_widget
         self.size = (800, 800)
         self.show()
-
-    def line_changed(self, ev):
-        self.update()
-
-    def on_draw(self, ev):
-        gloo.set_clear_color('black')
-        gloo.clear(color=True, depth=True)
-        for line in self.lines:
-            self.draw_visual(line)
 
 
 if __name__ == '__main__':
@@ -104,12 +69,13 @@ if __name__ == '__main__':
 
     def update(ev):
         pos[:, 1] = np.random.normal(size=N, scale=30, loc=0)
-        win.lines[4].set_data(pos=pos)
+        win.lines[0].set_data(pos)
+        win.lines[3].set_data(pos)
 
     timer = vispy.app.Timer()
     timer.connect(update)
-    #timer.start(0)
-    
+    timer.start(0)
+
     import sys
     if sys.flags.interactive != 1:
         vispy.app.run()

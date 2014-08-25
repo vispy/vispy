@@ -6,10 +6,8 @@ from __future__ import division
 
 import numpy as np
 
-from ... import gloo
-from ...gloo import gl
 from .mesh import Mesh
-from ...util.meshdata import MeshData
+from ...geometry import MeshData
 
 
 class SurfacePlot(Mesh):
