@@ -307,7 +307,7 @@ class Maker:
             # Get canvas
             if hasattr(m, 'canvas'):
                 c = m.canvas  # scene examples
-            elif  hasattr(m, 'Canvas'):  
+            elif hasattr(m, 'Canvas'):  
                 c = m.Canvas()
             else:
                 print('Ignore: %s, no canvas' % name)
@@ -321,7 +321,7 @@ class Maker:
                     c.app.process_events()
                     n += 1
                 if n >= limit or len(frames) > 0:
-                    raise RuntimeError('Could not collect images for %s' % name)
+                    raise RuntimeError('Could not collect image for %s' % name)
             # Save
             imsave(imagefilename, m.images[0])  # Alwats show one image
             if len(m.images) > 1:
