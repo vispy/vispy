@@ -698,6 +698,5 @@ class IndexBuffer(DataBuffer):
         else:
             if convert is True and data.dtype is not np.uint32:
                 data = data.astype(np.uint32)
-            dtype = data.dtype
 
         DataBuffer.set_data(self, data, offset, copy)

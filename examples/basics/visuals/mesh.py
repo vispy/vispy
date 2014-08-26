@@ -10,8 +10,6 @@ import numpy as np
 import vispy.app
 from vispy import gloo
 from vispy.scene.visuals import Mesh
-from vispy.scene.components import (VertexColorComponent, GridContourComponent,
-                                    VertexNormalComponent, ShadingComponent)
 from vispy.geometry import create_sphere
 from vispy.scene.transforms import (STTransform, AffineTransform,
                                     ChainTransform)
@@ -57,7 +55,6 @@ class Canvas(vispy.scene.SceneCanvas):
         self.meshes.append(Mesh(verts, faces, vcolor))
         self.meshes.append(Mesh(verts, faces, vcolor, shading='flat'))
         self.meshes.append(Mesh(verts, faces, vcolor, shading='smooth'))
-
 
         # Lay out meshes in a grid
         grid = (3, 3)

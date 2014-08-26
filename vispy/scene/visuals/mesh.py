@@ -141,7 +141,7 @@ class Mesh(Visual):
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
         else:
             v = md.vertices(indexed='faces')
-            self._vertices.set_data(v, convert=True)  # preferred but buggy (#450)
+            self._vertices.set_data(v, convert=True)
             if self.shading == 'smooth':
                 normals = md.vertex_normals(indexed='faces')
                 self._normals.set_data(normals, convert=True)

@@ -251,10 +251,10 @@ class Line(Visual):
             self._da = DashAtlas()
             dash_index, dash_period = self._da['solid']
             self._U = dict(dash_index=dash_index, dash_period=dash_period,
-                        linejoin=joins['round'],
-                        linecaps=(caps['round'], caps['round']),
-                        dash_caps=(caps['round'], caps['round']),
-                        linewidth=self._width, antialias=self._antialias)
+                           linejoin=joins['round'],
+                           linecaps=(caps['round'], caps['round']),
+                           dash_caps=(caps['round'], caps['round']),
+                           linewidth=self._width, antialias=self._antialias)
             self._dash_atlas = gloo.Texture2D(self._da._data)
             
         self.set_data(self._pos, self._color, self._width, self._connect)
