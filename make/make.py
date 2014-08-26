@@ -304,23 +304,24 @@ class Maker:
                     m.images.append(im)
                 if not frames:
                     m.done = True
-            if hasattr(m, 'Canvas'):
+            # Get canvas
+            if hasattr(m, 'canvas'):
+                c = m.canvas  # scene examples
+            elif  hasattr(m, 'Canvas'):  
                 c = m.Canvas()
-            else:  # scene examples
-                c = m.canvas
+            else:
+                print('Ignore: %s, no canvas' % name)
             c.events.draw.connect(grabscreenshot)
-            c.show()
-            c._backend._vispy_warmup()
-            n = 0
-            limit = 10000
-            while not m.done and n < limit:
-                c.update()
-                c.app.process_events()
-                n += 1
-            if n >= limit or len(frames) > 0:
-                raise RuntimeError('Could not collect images for %s' % name)
-            c.close()
-
+            # Show it and draw as many frames as needed
+            with c:
+                n = 0
+                limit = 10000
+                while not m.done and n < limit:
+                    c.update()
+                    c.app.process_events()
+                    n += 1
+                if n >= limit or len(frames) > 0:
+                    raise RuntimeError('Could not collect images for %s' % name)
             # Save
             imsave(imagefilename, m.images[0])  # Alwats show one image
             if len(m.images) > 1:

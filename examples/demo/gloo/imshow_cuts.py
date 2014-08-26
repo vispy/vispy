@@ -174,5 +174,6 @@ class Canvas(app.Canvas):
         self.lines["position"] = P
         self.update()
 
-canvas = Canvas()
-app.run()
+if __name__ == '__main__':
+    canvas = Canvas()
+    app.run()
