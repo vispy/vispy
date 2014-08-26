@@ -363,7 +363,7 @@ class PerspectiveTransform(AffineTransform):
         vec4 perspective_transform_map(vec4 pos) {
             vec4 p = $matrix * pos;
             p = p / p.w;
-            p.z = 0;
+            //p.z = 0;
             p.w = 1;
             return p;
         }

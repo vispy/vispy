@@ -349,9 +349,9 @@ class PerspectiveCamera(BaseCamera):
     @mode.setter
     def mode(self, mode):
         if mode == 'ortho':
-            self._near = -1e6
+            self._near = -1e3
         elif mode == 'perspective':
-            self._near = 1e-6
+            self._near = 1e-2
         else:
             raise ValueError('Accepted modes are "ortho" and "perspective".')
         self._far = 1e6

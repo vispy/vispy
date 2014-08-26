@@ -211,14 +211,11 @@ class Line(Visual):
         # Set up the AGG program
         self._agg_program = ModularProgram(AGG_VERTEX_SHADER,
                                            AGG_FRAGMENT_SHADER)
-        self._da = DashAtlas()
-        dash_index, dash_period = self._da['solid']
-        self._U = dict(dash_index=dash_index, dash_period=dash_period,
-                       linejoin=joins['round'],
-                       linecaps=(caps['round'], caps['round']),
-                       dash_caps=(caps['round'], caps['round']),
-                       linewidth=self._width, antialias=self._antialias)
-        self._dash_atlas = gloo.Texture2D(self._da._data)
+        # agg attributes
+        self._da = None
+        self._U = None
+        self._dash_atlas = None
+        
         # now actually set the mode, which will call set_data
         self.mode = mode
 
@@ -250,6 +247,16 @@ class Line(Visual):
         else:
             self.draw = self._agg_draw
             self._set_data = self._agg_set_data
+            
+            self._da = DashAtlas()
+            dash_index, dash_period = self._da['solid']
+            self._U = dict(dash_index=dash_index, dash_period=dash_period,
+                        linejoin=joins['round'],
+                        linecaps=(caps['round'], caps['round']),
+                        dash_caps=(caps['round'], caps['round']),
+                        linewidth=self._width, antialias=self._antialias)
+            self._dash_atlas = gloo.Texture2D(self._da._data)
+            
         self.set_data(self._pos, self._color, self._width, self._connect)
 
     def set_data(self, pos=None, color=None, width=None, connect=None):

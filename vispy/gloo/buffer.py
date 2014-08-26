@@ -248,19 +248,6 @@ class DataBuffer(Buffer):
                 data = np.array(data, dtype=dtype, copy=False)
             else:
                 data = np.array(data, copy=False)
-            # Handle storage
-            if self._store:
-                if not data.flags["C_CONTIGUOUS"]:
-                    logger.warning("Copying discontiguous data as CPU storage")
-                    self._copy = True
-                    data = data.copy()
-                self._data = data.ravel()  # Makes a copy if not contiguous
-            # Store meta data (AFTER flattening, or stride would be wrong)
-            self._dtype = data.dtype
-            self._size = data.size
-            self._stride = data.strides[-1]
-            self._nbytes = data.nbytes
-            self._itemsize = self._dtype.itemsize
             # Set data
             self.set_data(data, copy=False)
 
@@ -332,12 +319,21 @@ class DataBuffer(Buffer):
         if self.base is not None:
             raise ValueError("Cannot set data on a non-base buffer")
         else:
+            # Handle storage
+            if self._store:
+                if not data.flags["C_CONTIGUOUS"]:
+                    logger.warning("Copying discontiguous data as CPU storage")
+                    self._copy = True
+                    data = data.copy()
+                self._data = data.ravel()  # Makes a copy if not contiguous
+            # Store meta data (AFTER flattening, or stride would be wrong)
+            self._dtype = data.dtype
+            self._stride = data.strides[-1]
+            self._nbytes = data.nbytes
+            self._itemsize = self._dtype.itemsize
+            self.resize(data.size)
             offset = offset * self.itemsize
             Buffer.set_data(self, data=data, offset=offset, copy=copy)
-            # A bit of a hacko but we need to do this here
-            # b/c _size and .resize() only belong to
-            # DataBuffer, but Buffer.set_data does (deferred) resizing itself
-            self._size = self.nbytes // self.itemsize
 
     @property
     def dtype(self):
@@ -600,25 +596,7 @@ class VertexBuffer(DataBuffer):
         offset = kwargs.get("offset", 0)
         base = kwargs.get("base", None)
 
-        # Build a structured view of the data if:
-        #  -> it is not already a structured array
-        #  -> it is not a view of another buffer
-        #  -> shape if 1-D or last dimension is 1,2,3 or 4
-        if data is not None and base is None and data.dtype.isbuiltin:
-            c = data.shape[-1]
-            if data.ndim == 1 or (data.ndim == 2 and c == 1):
-                data.shape = (data.size,)  # necessary in case (N,1) array
-                data = data.view(dtype=[('f0', data.dtype.base, 1)])
-            elif c in [1, 2, 3, 4]:
-                if not data.flags['C_CONTIGUOUS']:
-                    logger.warning("Copying discontiguous data for struct "
-                                   "dtype")
-                    data = data.copy()
-                data = data.view(dtype=[('f0', data.dtype.base, c)])
-            else:
-                data = data.view(dtype=[('f0', data.dtype.base, 1)])
-
-        elif dtype is not None:
+        if dtype is not None:
             dtype = np.dtype(dtype)
             if dtype.isbuiltin:
                 dtype = np.dtype([('f0', dtype, 1)])
@@ -648,6 +626,28 @@ class VertexBuffer(DataBuffer):
                     msg = ("Data basecount %s not allowed for Buffer/%s"
                            % (count, name))
                     raise TypeError(msg)
+
+    def set_data(self, data, offset=0, copy=False, convert=False):
+        # Build a structured view of the data if:
+        #  -> it is not already a structured array
+        #  -> shape if 1-D or last dimension is 1,2,3 or 4
+        if data.dtype.isbuiltin:
+            if convert is True and data.dtype is not np.float32:
+                data = data.astype(np.float32)
+            c = data.shape[-1]
+            if data.ndim == 1 or (data.ndim == 2 and c == 1):
+                data.shape = (data.size,)  # necessary in case (N,1) array
+                data = data.view(dtype=[('f0', data.dtype.base, 1)])
+            elif c in [1, 2, 3, 4]:
+                if not data.flags['C_CONTIGUOUS']:
+                    logger.warning("Copying discontiguous data for struct "
+                                   "dtype")
+                    data = data.copy()
+                data = data.view(dtype=[('f0', data.dtype.base, c)])
+            else:
+                data = data.view(dtype=[('f0', data.dtype.base, 1)])
+
+        DataBuffer.set_data(self, data, offset, copy)
 
 
 # ------------------------------------------------------- IndexBuffer class ---
@@ -684,13 +684,20 @@ class IndexBuffer(DataBuffer):
             raise TypeError("Element buffer dtype cannot be structured")
 
         if isinstance(data, np.ndarray):
-            if not data.dtype.isbuiltin:
-                raise TypeError("Element buffer dtype cannot be structured")
-            else:
-                dtype = data.dtype
+            pass
         elif dtype not in [np.uint8, np.uint16, np.uint32]:
             raise TypeError("Data type not allowed for IndexBuffer")
 
         DataBuffer.__init__(self, data=data, dtype=dtype, size=size, base=base,
                             offset=offset, target=gl.GL_ELEMENT_ARRAY_BUFFER,
                             store=store, resizeable=resizeable)
+
+    def set_data(self, data, offset=0, copy=False, convert=False):
+        if not data.dtype.isbuiltin:
+            raise TypeError("Element buffer dtype cannot be structured")
+        else:
+            if convert is True and data.dtype is not np.uint32:
+                data = data.astype(np.uint32)
+            dtype = data.dtype
+
+        DataBuffer.set_data(self, data, offset, copy)

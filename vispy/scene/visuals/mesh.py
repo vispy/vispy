@@ -128,33 +128,37 @@ class Mesh(Visual):
 
         # Update vertex/index buffers
         if self.shading == 'smooth' and not md.has_face_indexed_data():
-            v = md.vertices().astype(np.float32)
-            self._vertices.set_data(v)
-            self._normals.set_data(md.vertex_normals())
-            self._faces.set_data(md.faces())
+            v = md.vertices()
+            self._vertices.set_data(v, convert=True)
+            self._normals.set_data(md.vertex_normals(), convert=True)
+            self._faces.set_data(md.faces(), convert=True)
             self._indexed = True
             if md.has_vertex_color():
-                self._colors.set_data(md.vertex_colors())
+                self._colors.set_data(md.vertex_colors(), convert=True)
             elif md.has_face_color():
-                self._colors.set_data(md.face_colors())
+                self._colors.set_data(md.face_colors(), convert=True)
             else:
-                self._colors.set_data(np.zeros((0, 4)))
+                self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
         else:
-            v = md.vertices(indexed='faces').astype(np.float32)
-            self._vertices.set_data(v)  # preferred but buggy (#450)
+            v = md.vertices(indexed='faces')
+            self._vertices.set_data(v, convert=True)  # preferred but buggy (#450)
             if self.shading == 'smooth':
-                self._normals.set_data(md.vertex_normals(indexed='faces'))
+                normals = md.vertex_normals(indexed='faces')
+                self._normals.set_data(normals, convert=True)
             elif self.shading == 'flat':
-                self._normals.set_data(md.face_normals(indexed='faces'))
+                normals = md.face_normals(indexed='faces')
+                self._normals.set_data(normals, convert=True)
             else:
-                self._normals.set_data(np.zeros((0, 3)))
+                self._normals.set_data(np.zeros((0, 3), dtype=np.float32))
             self._indexed = False
             if md.has_vertex_color():
-                self._colors.set_data(md.vertex_colors(indexed='faces'))
+                self._colors.set_data(md.vertex_colors(indexed='faces'), 
+                                      convert=True)
             elif md.has_face_color():
-                self._colors.set_data(md.face_colors(indexed='faces'))
+                self._colors.set_data(md.face_colors(indexed='faces'), 
+                                      convert=True)
             else:
-                self._colors.set_data(np.zeros((0, 4)))
+                self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
 
         # Position input handling
         if v.shape[-1] == 2:
@@ -185,7 +189,7 @@ class Mesh(Visual):
             self._phong['normal'] = self._normal_var
 
             # Additional phong proprties
-            self._phong['light_dir'] = (1.0, 1.0, 1.0)
+            self._phong['light_dir'] = (1.0, 1.0, 5.0)
             self._phong['light_color'] = (1.0, 1.0, 1.0, 1.0)
             self._phong['ambient'] = (0.3, 0.3, 0.3, 1.0)
 

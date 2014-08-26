@@ -58,34 +58,6 @@ class Canvas(vispy.scene.SceneCanvas):
         self.meshes.append(Mesh(verts, faces, vcolor, shading='flat'))
         self.meshes.append(Mesh(verts, faces, vcolor, shading='smooth'))
 
-        ## Mesh colored by vertices + grid contours
-        mesh = Mesh(verts, faces)
-        mesh.color_components = [VertexColorComponent(vcolor),
-                                 GridContourComponent(spacing=(0.13, 0.13,
-                                                               0.13))]
-        self.meshes.append(mesh)
-
-        ## Phong shaded mesh
-        mesh = Mesh(verts, faces)
-        normal_comp = VertexNormalComponent(mdata)
-        mesh.color_components = [VertexColorComponent(vcolor),
-                                 GridContourComponent(spacing=(0.1, 0.1, 0.1)),
-                                 ShadingComponent(normal_comp,
-                                                  lights=[((-1, 1, -1),
-                                                          (1.0, 1.0, 1.0))],
-                                                  ambient=0.2)]
-        self.meshes.append(mesh)
-
-        ## Phong shaded mesh, flat faces
-        mesh = Mesh(mdata.vertices(indexed='faces'))
-        normal_comp = VertexNormalComponent(mdata, smooth=False)
-        mesh.color_components = [VertexColorComponent(vcolor[mdata.faces()]),
-                                 GridContourComponent(spacing=(0.1, 0.1, 0.1)),
-                                 ShadingComponent(normal_comp,
-                                                  lights=[((-1, 1, -1),
-                                                           (1.0, 1.0, 1.0))],
-                                                  ambient=0.2)]
-        self.meshes.append(mesh)
 
         # Lay out meshes in a grid
         grid = (3, 3)

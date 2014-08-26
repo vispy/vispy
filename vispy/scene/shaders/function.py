@@ -768,7 +768,8 @@ class Variable(ShaderObject):
             else:
                 raise TypeError("Unknown data type %r for variable %r" % 
                                 (type(value), self))
-        elif hasattr(value, 'glsl_type'):
+        elif getattr(value, 'glsl_type', None) is not None:
+            # Note: hasattr() is broken by design--swallows all exceptions!
             vtype, dtype = value.glsl_type
         else:
             raise TypeError("Unknown data type %r for variable %r" % 
