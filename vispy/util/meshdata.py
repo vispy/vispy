@@ -54,12 +54,10 @@ class MeshData(object):
 
         ## mappings between vertices, faces, and edges
         self._faces = None  # Nx3 indices into self._vertices, 3 verts/face
-        self._faces_indexed_by_faces = None  # (Nf, 3) indices
         # into self._vertices_indexed_by_faces
         self._edges = None  # Nx2 indices into self._vertices, 2 verts/edge
-        self._edges_indexed_by_faces = None  # (Ne, 3, 2) indoces into 
+        self._edges_indexed_by_faces = None  # (Ne, 3, 2) indoces into
         # self._vertices, 3 edge / face and 2 verts/edge
-        
         # inverse mappings
         self._vertex_faces = None  # maps vertex ID to a list of face IDs
         self._vertex_edges = None  # maps vertex ID to a list of edge IDs
@@ -110,13 +108,13 @@ class MeshData(object):
         if indexed is None:
             return self._faces
         elif indexed == 'faces':
-            if self._faces_indexed_by_faces is None:
-                verts = self.vertices(indexed='faces')
-                if verts is not None:
-                    nF = verts.shape[0]
-                    faces = np.arange(nF*3, dtype=np.uint)
-                    self._faces_indexed_by_faces = faces.reshape((nF, 3))
-                return self._faces_indexed_by_faces
+            verts = self.vertices(indexed='faces')
+            if verts is not None:
+                nF = verts.shape[0]
+                faces = np.arange(nF*3, dtype=np.uint)
+                return faces.reshape((nF, 3))
+            else:
+                return None
         else:
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
@@ -129,7 +127,7 @@ class MeshData(object):
                 self._compute_edges(indexed=None)
             return self._edges
         elif indexed == 'faces':
-            if self._edges is None:
+            if self._edges_indexed_by_faces is None:
                 self._compute_edges(indexed='faces')
             return self._edges_indexed_by_faces
         else:
@@ -142,7 +140,6 @@ class MeshData(object):
         self._faces = faces
         self._edges = None
         self._edges_indexed_by_faces = None
-        self._faces_indexed_by_faces = None
         self._vertex_faces = None
         self._vertices_indexed_by_faces = None
         self.reset_normals()
