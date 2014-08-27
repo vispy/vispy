@@ -226,8 +226,7 @@ class DataBuffer(Buffer):
 
     def __init__(self, data=None, dtype=None, target=gl.GL_ARRAY_BUFFER,
                  size=0, base=None, offset=0, store=True, resizeable=True):
-
-        self._base = base
+        self._base = None
         self._offset = offset
         self._data = None
         self._store = store
@@ -268,6 +267,7 @@ class DataBuffer(Buffer):
             raise ValueError("data/dtype/base cannot be all set to None")
         
         Buffer.__init__(self, data=data, target=target, resizeable=resizeable)
+        self._base = base
         
 
     @property

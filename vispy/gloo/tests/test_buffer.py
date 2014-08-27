@@ -253,7 +253,7 @@ class DataBufferTest(unittest.TestCase):
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
-        Z = B[0]
+        Z = B[0:1]
         assert Z.nbytes == 1 * (3 + 2 + 4) * np.dtype(np.float32).itemsize
         assert Z.offset == 0
         assert Z.size == 1
@@ -430,7 +430,7 @@ class DataBufferTest(unittest.TestCase):
         data = np.zeros(20)
         # with self.assertRaises(ValueError):
         #    B.set_data(data)
-        self.assertRaises(ValueError, B.set_data, data)
+        self.assertRaises(RuntimeError, B.set_data, data)
 
 
 # -----------------------------------------------------------------------------
