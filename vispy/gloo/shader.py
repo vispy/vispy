@@ -53,6 +53,9 @@ class Shader(GLObject):
         self._code = None
         self._source = None
         self._need_compile = False
+        self.__clean_code = None
+        self._attributes = None
+        self._uniforms = None
         if code is not None:
             self.code = code
 
@@ -73,6 +76,8 @@ class Shader(GLObject):
             self._source = '<string>'
         self._need_compile = True
         self.__clean_code = None
+        self._attributes = None
+        self._uniforms = None
 
     @property
     def source(self):
@@ -194,45 +199,47 @@ class Shader(GLObject):
     @property
     def uniforms(self):
         """ Shader uniforms obtained from source code """
-
-        uniforms = []
-        regex = re.compile("""\s*uniform\s+(?P<type>\w+)\s+"""
-                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""",
-                           flags=re.MULTILINE)
-        for m in re.finditer(regex, self._clean_code):
-            size = -1
-            gtype = Shader._gtypes[m.group('type')]
-            if m.group('size'):
-                size = int(m.group('size'))
-            if size >= 1:
-                for i in range(size):
-                    name = '%s[%d]' % (m.group('name'), i)
-                    uniforms.append((name, gtype))
-            else:
-                uniforms.append((m.group('name'), gtype))
-        return uniforms
+        if self._uniforms is None:
+            uniforms = []
+            regex = re.compile("""\s*uniform\s+(?P<type>\w+)\s+"""
+                            """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""",
+                            flags=re.MULTILINE)
+            for m in re.finditer(regex, self._clean_code):
+                size = -1
+                gtype = Shader._gtypes[m.group('type')]
+                if m.group('size'):
+                    size = int(m.group('size'))
+                if size >= 1:
+                    for i in range(size):
+                        name = '%s[%d]' % (m.group('name'), i)
+                        uniforms.append((name, gtype))
+                else:
+                    uniforms.append((m.group('name'), gtype))
+            self._uniforms = uniforms
+        return self._uniforms
 
     @property
     def attributes(self):
         """ Shader attributes obtained from source code """
+        if self._attributes is None:
+            attributes = []
+            regex = re.compile("""\s*attribute\s+(?P<type>\w+)\s+"""
+                            """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""",
+                            flags=re.MULTILINE)
+            for m in re.finditer(regex, self._clean_code):
+                size = -1
+                gtype = Shader._gtypes[m.group('type')]
+                if m.group('size'):
+                    size = int(m.group('size'))
+                if size >= 1:
+                    for i in range(size):
+                        name = '%s[%d]' % (m.group('name'), i)
+                        attributes.append((name, gtype))
+                else:
+                    attributes.append((m.group('name'), gtype))
+            self._attributes = attributes
+        return self._attributes
 
-        attributes = []
-        regex = re.compile("""\s*attribute\s+(?P<type>\w+)\s+"""
-                           """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""",
-                           flags=re.MULTILINE)
-        for m in re.finditer(regex, self._clean_code):
-            size = -1
-            gtype = Shader._gtypes[m.group('type')]
-            if m.group('size'):
-                size = int(m.group('size'))
-            if size >= 1:
-                for i in range(size):
-                    name = '%s[%d]' % (m.group('name'), i)
-                    attributes.append((name, gtype))
-            else:
-                attributes.append((m.group('name'), gtype))
-        return attributes
-    
     @property
     def _clean_code(self):
         # Return code with comments stripped
