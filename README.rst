@@ -18,6 +18,7 @@ large datasets. Applications of Vispy include:
 -  Scientific GUIs with fast, scalable visualization widgets (Qt or
    `IPython notebook <http://ipython.org/notebook.html>`__ with WebGL).
 
+
 Using Vispy
 -----------
 
@@ -40,6 +41,7 @@ If you're in the second category, we're starting to build experimental
 high-level plotting interfaces. Notably, Vispy now ships a very basic
 and experimental OpenGL backend for matplotlib.
 
+
 Installation
 ------------
 
@@ -50,6 +52,7 @@ As Vispy is under heavy development at this time, we highly recommend
 you to use the development version on Github (master branch). You need
 to clone the repository and install Vispy with
 ``python setup.py install``.
+
 
 Structure of Vispy
 ------------------
@@ -78,6 +81,7 @@ Currently, the main subpackages are:
 The API of all public interfaces are subject to change in the future,
 although **app** and **gloo** are *relatively* stable at this point.
 
+
 About us
 --------
 
@@ -96,6 +100,7 @@ Four of us have written our own Python visualization toolkit
 `Galry <https://github.com/rossant/galry>`__ by CR), and we decided to
 team up to create a unique high-performance, high-quality interactive
 visualization library.
+
 
 External links
 --------------
