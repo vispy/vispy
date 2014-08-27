@@ -4,8 +4,6 @@
 
 from __future__ import division
 
-import numpy as np
-
 from .mesh import Mesh
 from ...geometry.isosurface import isosurface
 
@@ -38,6 +36,7 @@ class Isosurface(Mesh):
         """
         return self._level
     
+    @level.setter
     def level(self, level):
         self._level = level
         self._recompute = True

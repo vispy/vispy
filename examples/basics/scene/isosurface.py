@@ -26,16 +26,15 @@ def psi(i, j, k, offset=(25, 25, 50)):
     y = j-offset[1]
     z = k-offset[2]
     th = np.arctan2(z, (x**2+y**2)**0.5)
-    phi = np.arctan2(y, x)
-    r = (x**2 + y**2 + z **2)**0.5
+    r = (x**2 + y**2 + z**2)**0.5
     a0 = 1
-    #ps = (1./81.) * (2./np.pi)**0.5 * (1./a0)**(3/2) * (6 - r/a0) * (r/a0) * np.exp(-r/(3*a0)) * np.cos(th)
-    ps = (1./81.) * 1./(6.*np.pi)**0.5 * (1./a0)**(3/2) * (r/a0)**2 * np.exp(-r/(3*a0)) * (3 * np.cos(th)**2 - 1)
+    ps = ((1./81.) * 1./(6.*np.pi)**0.5 * (1./a0)**(3/2) * (r/a0)**2 * 
+          np.exp(-r/(3*a0)) * (3 * np.cos(th)**2 - 1))
     
     return ps
 
 print("Generating scalar field..")
-data = np.abs(np.fromfunction(psi, (50,50,100)))
+data = np.abs(np.fromfunction(psi, (50, 50, 100)))
 
 # Create isosurface visual
 surface = scene.visuals.Isosurface(data, level=data.max()/4., 

@@ -307,6 +307,7 @@ class SceneDrawEvent(SceneEvent):
         super(SceneDrawEvent, self).__init__(type='draw', canvas=canvas,
                                              **kwds)
 
+
 class SceneMouseEvent(SceneEvent):
     """ Represents a mouse event that occurred on a SceneCanvas. This event is
     delivered to all entities whose mouse interaction area is under the event. 

@@ -37,37 +37,37 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
         d2[-1, 1:-1] = data[-1]
         d2[1:-1, 0] = data[:, 0]
         d2[1:-1, -1] = data[:, -1]
-        d2[0,0] = d2[0,1]
-        d2[0,-1] = d2[1,-1]
-        d2[-1,0] = d2[-1,1]
-        d2[-1,-1] = d2[-1,-2]
+        d2[0, 0] = d2[0, 1]
+        d2[0, -1] = d2[1, -1]
+        d2[-1, 0] = d2[-1, 1]
+        d2[-1, -1] = d2[-1, -2]
         data = d2
     
     side_table = [
         [],
-        [0,1],
-        [1,2],
-        [0,2],
-        [0,3],
-        [1,3],
-        [0,1,2,3],
-        [2,3],
-        [2,3],
-        [0,1,2,3],
-        [1,3],
-        [0,3],
-        [0,2],
-        [1,2],
-        [0,1],
+        [0, 1],
+        [1, 2],
+        [0, 2],
+        [0, 3],
+        [1, 3],
+        [0, 1, 2, 3],
+        [2, 3],
+        [2, 3],
+        [0, 1, 2, 3],
+        [1, 3],
+        [0, 3],
+        [0, 2],
+        [1, 2],
+        [0, 1],
         []
-        ]
+    ]
     
-    edge_key=[
-        [(0,1), (0,0)],
-        [(0,0), (1,0)],
-        [(1,0), (1,1)],
-        [(1,1), (0,1)]
-        ]
+    edge_key = [
+        [(0, 1), (0, 0)],
+        [(0, 0), (1, 0)],
+        [(1, 0), (1, 1)],
+        [(1, 1), (0, 1)]
+    ]
     
     level = float(level)
     lines = []
@@ -77,22 +77,22 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
     
     ## make four sub-fields and compute indexes for grid cells
     index = np.zeros([x-1 for x in data.shape], dtype=np.ubyte)
-    fields = np.empty((2,2), dtype=object)
-    slices = [slice(0,-1), slice(1,None)]
-    for i in [0,1]:
-        for j in [0,1]:
-            fields[i,j] = mask[slices[i], slices[j]]
+    fields = np.empty((2, 2), dtype=object)
+    slices = [slice(0, -1), slice(1, None)]
+    for i in [0, 1]:
+        for j in [0, 1]:
+            fields[i, j] = mask[slices[i], slices[j]]
             vertIndex = i+2*j
-            index += fields[i,j] * 2**vertIndex
+            index += fields[i, j] * 2**vertIndex
     
     # add lines
     for i in range(index.shape[0]):                 # data x-axis
         for j in range(index.shape[1]):             # data y-axis     
-            sides = side_table[index[i,j]]
+            sides = side_table[index[i, j]]
             for l in range(0, len(sides), 2):     # faces for this grid cell
                 edges = sides[l:l+2]
                 pts = []
-                for m in [0,1]:      # points in this face
+                for m in [0, 1]:      # points in this face
                     # p1, p2 are points at either side of an edge
                     p1 = edge_key[edges[m]][0] 
                     p2 = edge_key[edges[m]][1]
@@ -109,9 +109,9 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
                         p = (min(data.shape[0]-2, max(0, p[0]-1)),
                              min(data.shape[1]-2, max(0, p[1]-1)))
                     if connected:
-                        gridKey = (i + (1 if edges[m]==2 else 0), 
-                                   j + (1 if edges[m]==3 else 0), 
-                                   edges[m]%2)
+                        gridKey = (i + (1 if edges[m] == 2 else 0), 
+                                   j + (1 if edges[m] == 3 else 0), 
+                                   edges[m] % 2)
                         # give the actual position and a key identifying the 
                         # grid location (for connecting segments)
                         pts.append((p, gridKey))
@@ -126,25 +126,25 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
     # turn disjoint list of segments into continuous lines
 
     points = {}  # maps each point to its connections
-    for a,b in lines:
+    for a, b in lines:
         if a[1] not in points:
             points[a[1]] = []
-        points[a[1]].append([a,b])
+        points[a[1]].append([a, b])
         if b[1] not in points:
             points[b[1]] = []
-        points[b[1]].append([b,a])
+        points[b[1]].append([b, a])
 
     # rearrange into chains
     for k in list(points.keys()):
         try:
             chains = points[k]
-        except KeyError:   # already used this point elsewhere
+        except KeyError:  # already used this point elsewhere
             continue
         for chain in chains:
             x = None
             while True:
                 if x == chain[-1][1]:
-                    break # nothing left to do on this chain
+                    break  # nothing left to do on this chain
                     
                 x = chain[-1][1]
                 if x == k:
@@ -170,6 +170,6 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
             chain = chain[1][1:][::-1] + chain[0]
         else:
             chain = chain[0]
-        lines.append([p[0] for p in chain])
+        lines.append([pt[0] for pt in chain])
     
-    return lines # a list of pairs of points
+    return lines  # a list of pairs of points

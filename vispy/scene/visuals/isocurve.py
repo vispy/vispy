@@ -40,6 +40,7 @@ class Isocurve(Line):
         """
         return self._level
     
+    @level.setter
     def level(self, level):
         self._level = level
         self._recompute = True
