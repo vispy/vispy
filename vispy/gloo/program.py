@@ -193,10 +193,12 @@ class Program(GLObject):
         
         # Check whether we need to rebuild shaders and create variables
         if any(s._need_compile for s in self.shaders):
-            self._build()
+            self._need_build = True
         
         # Stuff we need to do *before* glUse-ing the program
+        did_build = False
         if self._need_build:
+            did_build = True
             self._build()
             self._need_build = False
         
@@ -205,6 +207,15 @@ class Program(GLObject):
         
         # Stuff we need to do *after* glUse-ing the program
         self._activate_variables()
+        
+        # Validate. We need to validate after textures units get assigned
+        # (glUniform1i() gets called in _update() in variable.py)
+        if did_build:
+            gl.glValidateProgram(self._handle)
+            if not gl.glGetProgramParameter(self._handle, 
+                                            gl.GL_VALIDATE_STATUS):
+                print(gl.glGetProgramInfoLog(self._handle))
+                raise RuntimeError('Program validation error')
     
     def _deactivate(self):
         """Deactivate the program."""
@@ -245,12 +256,6 @@ class Program(GLObject):
         if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
             print(gl.glGetProgramInfoLog(self._handle))
             raise RuntimeError('Program linking error')
-
-        # Validate
-        gl.glValidateProgram(self._handle)
-        if not gl.glGetProgramParameter(self._handle, gl.GL_VALIDATE_STATUS):
-            print(gl.glGetProgramInfoLog(self._handle))
-            raise RuntimeError('Program validation error')
         
         # Now we know what variable will be used by the program
         self._enable_variables()
