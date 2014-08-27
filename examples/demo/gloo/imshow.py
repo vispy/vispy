@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# vispy: gallery 30
+# vispy: gallery 1
 # -----------------------------------------------------------------------------
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
@@ -124,7 +124,6 @@ class Canvas(app.Canvas):
     def on_draw(self, event):
         clear(color=True, depth=True)
         self.image.draw('triangle_strip')
-
 
 if __name__ == '__main__':
     canvas = Canvas()
