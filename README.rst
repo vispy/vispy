@@ -5,6 +5,8 @@ Main website: http://vispy.org
 
 |Build Status| |Coverage Status|
 
+----
+
 Vispy is a **high-performance interactive 2D/3D data visualization
 library**. Vispy leverages the computational power of modern **Graphics
 Processing Units (GPUs)** through the **OpenGL** library to display very
@@ -101,6 +103,7 @@ Four of us have written our own Python visualization toolkit
 team up to create a unique high-performance, high-quality interactive
 visualization library.
 
+----
 
 External links
 --------------
