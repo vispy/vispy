@@ -70,6 +70,21 @@ class ShaderTest(unittest.TestCase):
     def test_attribute_vec4(self):
         shader = VertexShader("attribute vec4 color;")
         assert shader.attributes == [("color", gl.GL_FLOAT_VEC4)]
+        
+    def test_ignore_comments(self):
+        shader = VertexShader("""
+            attribute vec4 color; attribute float x;
+            // attribute float y;
+            attribute float z; //attribute float w;
+        """)
+        names = [attr[0] for attr in shader.attributes]
+        assert "color" in names
+        assert "x" in names
+        assert "z" in names
+        assert "y" not in names
+        assert "w" not in names
+        
+        
 
 
 if __name__ == "__main__":

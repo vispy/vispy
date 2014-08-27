@@ -72,6 +72,7 @@ class Shader(GLObject):
             self._code = code
             self._source = '<string>'
         self._need_compile = True
+        self.__clean_code = None
 
     @property
     def source(self):
@@ -195,10 +196,10 @@ class Shader(GLObject):
         """ Shader uniforms obtained from source code """
 
         uniforms = []
-        regex = re.compile("""^\s*uniform\s+(?P<type>\w+)\s+"""
+        regex = re.compile("""\s*uniform\s+(?P<type>\w+)\s+"""
                            """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""",
                            flags=re.MULTILINE)
-        for m in re.finditer(regex, self._code):
+        for m in re.finditer(regex, self._clean_code):
             size = -1
             gtype = Shader._gtypes[m.group('type')]
             if m.group('size'):
@@ -216,10 +217,10 @@ class Shader(GLObject):
         """ Shader attributes obtained from source code """
 
         attributes = []
-        regex = re.compile("""^\s*attribute\s+(?P<type>\w+)\s+"""
+        regex = re.compile("""\s*attribute\s+(?P<type>\w+)\s+"""
                            """(?P<name>\w+)\s*(\[(?P<size>\d+)\])?\s*;""",
                            flags=re.MULTILINE)
-        for m in re.finditer(regex, self._code):
+        for m in re.finditer(regex, self._clean_code):
             size = -1
             gtype = Shader._gtypes[m.group('type')]
             if m.group('size'):
@@ -231,6 +232,13 @@ class Shader(GLObject):
             else:
                 attributes.append((m.group('name'), gtype))
         return attributes
+    
+    @property
+    def _clean_code(self):
+        # Return code with comments stripped
+        if self.__clean_code is None:
+            self.__clean_code = re.sub(r'(.*)(//.*)', r'\1', self._code, re.M)
+        return self.__clean_code
 
 
 # ------------------------------------------------------ VertexShader class ---
