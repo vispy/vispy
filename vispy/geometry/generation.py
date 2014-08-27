@@ -196,3 +196,90 @@ def create_cylinder(rows, cols, radius=[1.0, 1.0], length=1.0, offset=False):
         faces[start+cols:start+(cols*2)] = rowtemplate2 + row * cols
 
     return MeshData(vertices=verts, faces=faces)
+
+def create_cone(cols, radius=3.0, length=10.0):
+    """Create a cone
+
+    Parameters
+    ----------
+    cols : int
+        Number of face.
+    radius : float
+        Base cone radius.
+    length : float
+        Length of the cone.
+
+    Returns
+    -------
+    cone : MeshData
+        Vertices and faces computed for a cone surface.
+    """
+    verts = np.empty((cols+1, 3), dtype=float)
+    ## compute vertexes
+    th = np.linspace(2 * np.pi, 0, cols+1).reshape(1, cols+1)
+    verts[:-1, 2] = 0.0
+    verts[:-1, 0] = radius * np.cos(th[0, :-1])  # x = r cos(th)
+    verts[:-1, 1] = radius * np.sin(th[0, :-1])  # y = r sin(th)
+    # Add the extremity
+    verts[-1, 0] = 0.0
+    verts[-1, 1] = 0.0
+    verts[-1, 2] = length
+    verts = verts.reshape((cols+1), 3)  # just reshape: no redundant vertices
+    ## compute faces
+    faces = np.empty((cols, 3), dtype=np.uint)
+    template = np.array([[0, 1]])
+    for pos in range(cols):
+        faces[pos, :-1] = template + pos
+    faces[:, 2] = cols
+    faces[-1, 1] = 0
+
+    return MeshData(vertices=verts, faces=faces)
+
+
+def create_arrow(rows, cols, radius=0.1, length=1.0, fRC=2.0, fLC=0.3):
+    """Create an arrow (it's a cylinder + a cone)
+
+    Parameters
+    ----------
+    rows : int
+        Number of rows.
+    cols : int
+        Number of columns.
+
+    radius : float
+        Base cylinder radius.
+
+    length : float
+        Length of the arrow.
+    
+    fRC : float
+       factor Cone Radius : Cone radius = fCR*radius
+
+    fLC : float
+       factor Cone length of arrow length : Cone length = fLC*length
+                                            Cylinder length =
+                                    length - fLC*length if fLC < 1.0 else = 0.0
+            0 < flc < 1.0
+    Returns
+    -------
+    arrow : MeshData
+        Vertices and faces computed for a cone surface.
+    """
+    # create the cylinder
+    mdCyl = None
+    conL = length * fLC
+    if abs(fLC) < 1.0:
+        cylL = length * (1.0 - fLC)
+        mdCyl = create_cylinder(rows, cols, 
+                                radius=[radius, radius], length=cylL)
+    # create the cone
+    mdCon = create_cone(cols, radius=radius*fRC, length=conL)
+    verts = mdCon.vertices()
+    nbrVertsCon = verts.size/3
+    faces = mdCon.faces()
+    if mdCyl is not None:
+        trans = np.array([[0.0, 0.0, cylL]])
+        verts = np.vstack((verts+trans, mdCyl.vertices()))
+        faces = np.vstack((faces, mdCyl.faces()+nbrVertsCon))
+
+    return MeshData(vertices=verts, faces=faces)
