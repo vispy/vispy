@@ -1,6 +1,6 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 This is a very minimal example that opens a window and makes the background
 color to change from black to white to black ...
