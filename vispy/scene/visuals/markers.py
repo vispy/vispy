@@ -263,7 +263,8 @@ marker_types = tuple(sorted(list(_marker_dict.keys())))
 
 
 class Markers(Visual):
-
+    """ Visual displaying marker symbols. 
+    """
     def __init__(self):
         self._program = ModularProgram(vert, frag)
         self._v_size_var = Variable('varying float v_size')
@@ -273,6 +274,29 @@ class Markers(Visual):
 
     def set_data(self, pos=None, style='o', size=10., edge_width=1.,
                  edge_color='black', face_color='white'):
+        """ Set the data used to display this visual.
+        
+        Parameters
+        ----------
+        pos : array
+            The array of locations to display each symbol.
+        style : str
+            The style of symbol to draw (see Notes).
+        size : float
+            The symbol size in px.
+        edge_width : float
+            The width of the symbol outline in px.
+        edge_color : Color
+            The color used to draw the symbol outline.
+        face_color : Color
+            The color used to draw the symbol interior.
+            
+        Notes
+        -----
+        
+        Allowed style strings are: disc, arrow, ring, clobber, square, diamond,
+        vbar, hbar, cross, tailed_arrow, and x.
+        """
         assert (isinstance(pos, np.ndarray) and
                 pos.ndim == 2 and pos.shape[1] in (2, 3))
         assert edge_width > 0

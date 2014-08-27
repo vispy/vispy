@@ -15,7 +15,7 @@ class PlotCanvas(SceneCanvas):
 
 def plot(*args, **kwds):
     canvas = PlotCanvas()
-    line = visuals.LineMarkers(*args, **kwds)
+    line = visuals.LinePlot(*args, **kwds)
     canvas.view.add(line)
     canvas.show()
     plots.append(canvas)

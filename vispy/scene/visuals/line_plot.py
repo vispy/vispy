@@ -9,7 +9,7 @@ from .markers import Markers
 from .visual import Visual
 
 
-class LineMarkers(Visual):
+class LinePlot(Visual):
     """Visual displaying a plot line with optional markers.
 
     Parameters
@@ -18,14 +18,16 @@ class LineMarkers(Visual):
         Arguments can be passed as (Y,), (X, Y) or (np.array((X, Y))).
     **kwargs : keyword arguments
         Keyword arguments to pass on to the Line and Marker visuals.
+        Supported arguments are width, connect, color, edge_color, face_color,
+        and edge_width.
 
     Examples
     --------
     All of these syntaxes will work:
 
-        >>> LineMarkers(y_vals)
-        >>> LineMarkers(x_vals, y_vals)
-        >>> LineMarkers(xy_vals)
+        >>> LinePlot(y_vals)
+        >>> LinePlot(x_vals, y_vals)
+        >>> LinePlot(xy_vals)
 
     See also
     --------

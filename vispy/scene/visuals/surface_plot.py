@@ -10,7 +10,7 @@ from .mesh import Mesh
 from ...geometry import MeshData
 
 
-class SurfaceGrid(Mesh):
+class SurfacePlot(Mesh):
     """Displays a surface plot on a regular x,y grid
 
     Parameters

@@ -5,10 +5,8 @@
 # -----------------------------------------------------------------------------
 
 """
-This example demonstrates the use of the SurfaceGrid visual.
+This example demonstrates the use of the Isosurface visual.
 """
-
-# TODO: The clipping is broken on this example :(
 
 import sys
 import numpy as np

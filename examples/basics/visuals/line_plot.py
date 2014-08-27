@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Simple demonstration of LineMarkers visual.
+Simple demonstration of LinePlot visual.
 """
 
 import numpy as np
@@ -19,8 +19,8 @@ pos[:, 1] = np.random.normal(size=N, scale=100, loc=400)
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
-        self.line = visuals.LineMarkers(pos, color='w', edge_color='w',
-                                        face_color=(0.2, 0.2, 1))
+        self.line = visuals.LinePlot(pos, color='w', edge_color='w',
+                                     face_color=(0.2, 0.2, 1))
         vispy.scene.SceneCanvas.__init__(self, keys='interactive',
                                          size=(800, 800), show=True)
         self.line.parent = self.scene
