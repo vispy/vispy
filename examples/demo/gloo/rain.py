@@ -108,13 +108,11 @@ class Canvas(app.Canvas):
         gloo.set_clear_color('white')
         gloo.set_state(blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
-        self.timer = app.Timer(1. / 60., self.on_timer)
-        self.timer.start()
+        self.timer = app.Timer(1. / 60., self.on_timer, start=True)
 
     def on_draw(self, event):
         gloo.clear()
         self.program.draw('points')
-        self.update()
 
     def on_resize(self, event):
         gloo.set_viewport(0, 0, *event.size)
@@ -125,6 +123,7 @@ class Canvas(app.Canvas):
         self.data['a_fg_color'][..., 3] -= 0.01
         self.data['a_size'] += 1.0
         self.vdata.set_data(self.data)
+        self.update()
 
     def on_mouse_move(self, event):
         x, y = event.pos

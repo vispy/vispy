@@ -167,23 +167,9 @@ class Canvas(app.Canvas):
         self.program_e = gloo.Program(vs, fs)
         self.program_e.bind(self.vbo)
 
-        # self.timer = app.Timer(.01)
-        # self.timer.connect(self.on_timer)
-        # self.timer.start()
-
     def on_initialize(self, event):
         set_state(clear_color='white', depth_test=False, blend=True,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
-
-    def on_key_press(self, event):
-        if event.text == ' ':
-            if self.timer.running:
-                self.timer.stop()
-            else:
-                self.timer.start()
-
-    def on_timer(self, event):
-        self.update()
 
     def on_resize(self, event):
         width, height = event.size

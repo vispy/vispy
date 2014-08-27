@@ -79,14 +79,13 @@ class Canvas(app.Canvas):
         self.program['a_size'] = gloo.VertexBuffer(v_size)
         gloo.set_state(clear_color='white', blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
-
+    
     def on_resize(self, event):
         gloo.set_viewport(0, 0, *event.size)
 
     def on_draw(self, event):
         gloo.clear(color=True, depth=True)
         self.program.draw('points')
-        self.update()
 
 
 if __name__ == '__main__':

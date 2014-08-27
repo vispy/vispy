@@ -319,8 +319,12 @@ class Canvas(object):
         """ Show (or hide) the canvas """
         return self._backend._vispy_set_visible(visible)
 
-    def update(self):
-        """ Inform the backend that the Canvas needs to be redrawn """
+    def update(self, event=None):
+        """ Inform the backend that the Canvas needs to be redrawn
+        
+        This method accepts an optional ``event`` argument so it can be used
+        as an event handler (the argument is ignored). 
+        """
         if self._backend is not None:
             return self._backend._vispy_update()
         else:
@@ -351,23 +355,28 @@ class Canvas(object):
             self._frame_count = 0
             self._fps_callback(self.fps)
 
-    def measure_fps(self, window=1, callback=print):
+    def measure_fps(self, window=1, callback='%1.1f FPS'):
         """Measure the current FPS
 
-        Sets the update window, connects the draw event to
-        update_fps and sets the callback function
-        If no callback is passed, measurement stops.
+        Sets the update window, connects the draw event to update_fps
+        and sets the callback function. 
 
         Parameters
         ----------
-        window : int
-            The window number.
-        callback : function
-            The function to call with the FPS. Default is ``print``.
+        window : float
+            The time-window (in seconds) to calculate FPS. Default 1.0.
+        callback : function | str
+            The function to call with the float FPS value, or the string
+            to be formatted with the fps value and then printed. The
+            default is '%1.1f FPS'. If callback evaluates to False, the
+            FPS measurement is stopped.
         """
         # Connect update_fps function to draw
         self.events.draw.disconnect(self._update_fps)
         if callback:
+            if isinstance(callback, string_types):
+                callback_str = callback  # because callback gets overwritten
+                callback = lambda x: print(callback_str % x)
             self._fps_window = window
             self.events.draw.connect(self._update_fps)
             self._fps_callback = callback

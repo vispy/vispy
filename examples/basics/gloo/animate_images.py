@@ -78,6 +78,8 @@ class Canvas(app.Canvas):
         self.program['u_view'] = self.view
         self.projection = ortho(0, W, 0, H, -1, 1)
         self.program['u_projection'] = self.projection
+        
+        self._timer = app.Timer('auto', connect=self.update, start=True)
 
     def on_initialize(self, event):
         gloo.set_clear_color('white')
@@ -106,7 +108,6 @@ class Canvas(app.Canvas):
         I[...] = np.random.uniform(0, 1, (W, H)).astype(np.float32)
         self.texture.set_data(I)
         self.program.draw('triangle_strip')
-        self.update()
 
 
 if __name__ == '__main__':

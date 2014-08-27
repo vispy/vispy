@@ -42,7 +42,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, size=(512, 512), title='Colored cube',
                             keys='interactive')
-        self.timer = app.Timer(1./60., self.on_timer)
+        self.timer = app.Timer('auto', self.on_timer)
 
     def on_initialize(self, event):
         # Build cube data

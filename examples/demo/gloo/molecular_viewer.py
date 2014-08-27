@@ -114,9 +114,7 @@ class Canvas(app.Canvas):
         self.theta = 0
         self.phi = 0
 
-        self.timer = app.Timer(1.0 / 30)  # change rendering speed here
-        self.timer.connect(self.on_timer)
-        self.timer.start()
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def load_molecule(self, fname):
         molecule = np.load(fname)['molecule']
@@ -162,8 +160,8 @@ class Canvas(app.Canvas):
             # self.
 
     def on_timer(self, event):
-        self.theta += .5
-        self.phi += .5
+        self.theta += .25
+        self.phi += .25
         self.model = np.eye(4, dtype=np.float32)
 
         rotate(self.model, self.theta, 0, 0, 1)

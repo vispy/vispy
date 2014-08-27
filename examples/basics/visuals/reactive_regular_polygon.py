@@ -6,8 +6,8 @@
 Simple demonstration of reactive RegularPolygonVisual. 
 """
 
-import vispy.app
-from vispy import gloo
+import vispy
+from vispy import gloo, app
 from vispy.scene import visuals
 import numpy as np
 
@@ -25,9 +25,7 @@ class Canvas(vispy.scene.SceneCanvas):
         self.show()
         
         self.rfactor = 0.01
-        self.timer = vispy.app.Timer(1.0 / 10)  # change rendering speed here
-        self.timer.connect(self.on_timer)
-        self.timer.start()
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_timer(self, event):
         if (self.rpolygon.radius > 400. or self.rpolygon.radius < 80.):
