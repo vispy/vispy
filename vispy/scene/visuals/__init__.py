@@ -28,8 +28,8 @@ from .regular_polygon import RegularPolygon  # noqa
 from .rectangle import Rectangle  # noqa
 from .text import Text  # noqa
 from .grid_lines import GridLines  # noqa
-from .surface_grid import SurfaceGrid  # noqa
+from .surface_plot import SurfaceGrid  # noqa
 from .isosurface import Isosurface  # noqa
 from .isocurve import Isocurve  # noqa
 from .xyz_axis import XYZAxis  # noqa
-from .line_markers import LineMarkers  # noqa
+from .line_plot import LineMarkers  # noqa
