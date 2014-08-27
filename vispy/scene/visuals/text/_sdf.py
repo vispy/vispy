@@ -251,12 +251,6 @@ class SDFRenderer(object):
         size : tuple of int
             Size (w, h) to render inside the texture.
         """
-        offset = np.array(offset)
-        size = np.array(size)
-        for x in (offset, size):
-            assert x.size == 2 and x.ndim == 1
-            assert x.dtype.kind == 'i'
-        assert data.ndim == 2 and data.dtype == np.uint8
         assert isinstance(texture, Texture2D)
         set_state(blend=False, depth_test=False)
 
@@ -276,7 +270,7 @@ class SDFRenderer(object):
         self.program_insert['u_neg_texture'] = edf_neg_tex
         self.fbo_to[-1].color_buffer = texture
         with self.fbo_to[-1]:
-            set_viewport(offset[0], offset[1], size[0], size[1])
+            set_viewport(tuple(offset) + tuple(size))
             self.program_insert.draw('triangle_strip')
 
     def _render_edf(self, orig_tex):
