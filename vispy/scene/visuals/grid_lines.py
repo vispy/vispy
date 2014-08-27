@@ -93,8 +93,8 @@ class GridLines(Visual):
     def draw(self, event):
         gloo.set_state('additive', cull_face='front_and_back')
 
-        doc_to_ndc = event.entity_transform(map_from=event.document,
-                                            map_to=event.ndc)
+        doc_to_ndc = event.entity_transform(map_from=event.document_cs,
+                                            map_to=event.render_cs)
         local_to_doc = event.doc_transform()
 
         self._program.frag['map_nd_to_doc'] = doc_to_ndc.shader_imap()

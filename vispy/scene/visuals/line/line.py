@@ -379,10 +379,10 @@ class Line(Visual):
             return
         gloo.set_state('translucent', depth_test=False)
         data_doc = event.doc_transform()
-        doc_px = event.entity_transform(map_from=event.document,
-                                        map_to=event.framebuffer)
-        px_ndc = event.entity_transform(map_from=event.framebuffer,
-                                        map_to=event.ndc)
+        doc_px = event.entity_transform(map_from=event.document_cs,
+                                        map_to=event.framebuffer_cs)
+        px_ndc = event.entity_transform(map_from=event.framebuffer_cs,
+                                        map_to=event.render_cs)
         vert = self._agg_program.vert
         vert['doc_px_transform'] = doc_px.shader_map()
         vert['px_ndc_transform'] = px_ndc.shader_map()

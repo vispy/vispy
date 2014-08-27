@@ -104,26 +104,41 @@ class SceneEvent(Event):
     #
 
     @property
-    def document(self):
-        """ Return entity for the current document coordinate system. The
+    def document_cs(self):
+        """ The entity for the current document coordinate system. The
         coordinate system of this Entity is used for making physical
         measurements--px, mm, in, etc.
         """
         return self._doc_stack[-1]
 
     @property
-    def framebuffer(self):
-        """ Return entity for the current framebuffer coordinate system. This
-        coordinate system corresponds to the physical pixels being rendered
-        to. It is used mainly for making antialiasing measurements.
+    def canvas_cs(self):
+        """ The entity for the current canvas coordinate system. This cs 
+        represents the logical pixels of the canvas being drawn, with the 
+        origin in upper-left, and the canvas (width, height) in the bottom 
+        right. This coordinate system is most often used for handling mouse
+        input.
         """
-        return self.canvas.framebuffer
+        return self.canvas.canvas_cs
 
     @property
-    def ndc(self):
-        """ Return entity for the normalized device coordinate system.
+    def framebuffer_cs(self):
+        """ The entity for the current framebuffer coordinate system. This
+        coordinate system corresponds to the physical pixels being rendered
+        to, with the origin in lower-right, and the framebufer (width, height)
+        in upper-left. It is used mainly for making antialiasing measurements.
         """
-        return self.canvas.ndc
+        return self.canvas.framebuffer_cs
+
+    @property
+    def render_cs(self):
+        """ Return entity for the normalized device coordinate system. This
+        coordinate system is the obligatory output of GLSL vertex shaders, 
+        with (-1, -1) in bottom-left, and (1, 1) in top-right. This coordinate
+        system is frequently used for rendering visuals because all vertices
+        must ultimately be mapped here.
+        """
+        return self.canvas.render_cs
 
     def doc_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
@@ -131,7 +146,7 @@ class SceneEvent(Event):
 
         If *entity* is not specified, then the top entity on the stack is used.
         """
-        return self.entity_transform(map_to=self.document, map_from=entity)
+        return self.entity_transform(map_to=self.document_cs, map_from=entity)
 
     def map_entity_to_doc(self, entity, obj):
         return self.doc_transform(entity).map(obj)
@@ -155,8 +170,7 @@ class SceneEvent(Event):
 
         If *entity* is not specified, then the top entity on the stack is used.
         """
-        return self.entity_transform(map_to=self.canvas.entity,
-                                     map_from=entity)
+        return self.entity_transform(map_to=self.canvas_cs, map_from=entity)
 
     def map_entity_to_canvas(self, entity, obj):
         return self.canvas_transform(entity).map(obj)
@@ -176,7 +190,8 @@ class SceneEvent(Event):
 
         If *entity* is not specified, then the top entity on the stack is used.
         """
-        return self.entity_transform(map_to=self.framebuffer, map_from=entity)
+        return self.entity_transform(map_to=self.framebuffer_cs, 
+                                     map_from=entity)
 
     def map_entity_to_fb(self, entity, obj):
         return self.fb_transform(entity).map(obj)
@@ -227,7 +242,7 @@ class SceneEvent(Event):
         and *map_from* is the current top entity on the stack.
         """
         if map_to is None:
-            map_to = self.ndc
+            map_to = self.render_cs
         if map_from is None:
             map_from = self._stack[-1]
 
@@ -292,8 +307,10 @@ class SceneDrawEvent(SceneEvent):
         super(SceneDrawEvent, self).__init__(type='draw', canvas=canvas,
                                              **kwds)
 
-
 class SceneMouseEvent(SceneEvent):
+    """ Represents a mouse event that occurred on a SceneCanvas. This event is
+    delivered to all entities whose mouse interaction area is under the event. 
+    """
     def __init__(self, event, canvas, **kwds):
         self.mouse_event = event
         super(SceneMouseEvent, self).__init__(type=event.type, canvas=canvas,
@@ -301,10 +318,16 @@ class SceneMouseEvent(SceneEvent):
 
     @property
     def pos(self):
+        """ The position of this event in the local coordinate system of the 
+        visual.
+        """
         return self.map_from_canvas(self.mouse_event.pos)
 
     @property
     def last_event(self):
+        """ The mouse event immediately prior to this one. This
+        property is None when no mouse buttons are pressed.
+        """
         if self.mouse_event.last_event is None:
             return None
         ev = self.copy()
@@ -313,6 +336,8 @@ class SceneMouseEvent(SceneEvent):
 
     @property
     def press_event(self):
+        """ The mouse press event that initiated a mouse drag, if any. 
+        """
         if self.mouse_event.press_event is None:
             return None
         ev = self.copy()
@@ -321,14 +346,20 @@ class SceneMouseEvent(SceneEvent):
 
     @property
     def button(self):
+        """ The button pressed or released on this event.
+        """
         return self.mouse_event.button
 
     @property
     def buttons(self):
+        """ A list of all buttons currently pressed on the mouse.
+        """
         return self.mouse_event.buttons
 
     @property
     def delta(self):
+        """ The increment by which the mouse wheel has moved.
+        """
         return self.mouse_event.delta
 
     def copy(self):

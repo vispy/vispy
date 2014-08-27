@@ -452,7 +452,7 @@ class Text(Visual):
         if event is not None:
             xform = event.render_transform.shader_map()
             self._program.vert['transform'] = xform
-            px_scale = event.canvas.framebuffer.transform.scale
+            px_scale = event.framebuffer_cs.transform.scale
         else:
             self._program.vert['transform'] = self.transform.shader_map()
             # Rather arbitrary scale. With size=12 it takes up ~1/10 of space
