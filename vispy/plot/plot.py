@@ -25,9 +25,10 @@ def image(*args, **kwds):
     
     For arguments, see scene.visuals.Image.
     """
-    canvas = PlotCanvas(keys='interactive')
+    canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
     image = visuals.Image(*args, **kwds)
     canvas.view.add(image)
     canvas.show()
+    canvas.view.camera.rect = (0, 0) + image.size
     plots.append(canvas)
