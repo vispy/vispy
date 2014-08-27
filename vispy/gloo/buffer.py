@@ -46,7 +46,7 @@ class Buffer(GLObject):
 
         GLObject.__init__(self)
         self._need_resize = True
-        self._resizeable = resizeable
+        self._resizeable = True
         self._views = []
         self._valid = True
 
@@ -69,6 +69,9 @@ class Buffer(GLObject):
         if data is not None:
             self._nbytes = data.nbytes
             self.set_data(data, copy=False)
+        
+        # set resizeable flag only after data has been set
+        self._resizeable = resizeable
 
     @property
     def nbytes(self):
@@ -224,7 +227,6 @@ class DataBuffer(Buffer):
     def __init__(self, data=None, dtype=None, target=gl.GL_ARRAY_BUFFER,
                  size=0, base=None, offset=0, store=True, resizeable=True):
 
-        Buffer.__init__(self, target=target, resizeable=resizeable)
         self._base = base
         self._offset = offset
         self._data = None
@@ -242,14 +244,12 @@ class DataBuffer(Buffer):
             self._itemsize = self._dtype.itemsize
             self._nbytes = self._size * self._itemsize
 
-        # Create buffer from data
+        # Convert data to array+dtype if needed
         elif data is not None:
             if dtype is not None:
                 data = np.array(data, dtype=dtype, copy=False)
             else:
                 data = np.array(data, copy=False)
-            # Set data
-            self.set_data(data, copy=False)
 
         # Create buffer from dtype and size
         elif dtype is not None:
@@ -266,6 +266,9 @@ class DataBuffer(Buffer):
         # We need a minimum amount of information
         else:
             raise ValueError("data/dtype/base cannot be all set to None")
+        
+        Buffer.__init__(self, data=data, target=target, resizeable=resizeable)
+        
 
     @property
     def handle(self):
