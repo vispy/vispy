@@ -22,22 +22,22 @@ uniform float u_antialias;
 attribute vec3  a_position;
 attribute vec4  a_fg_color;
 attribute vec4  a_bg_color;
-attribute float a_linewidth;
+attribute float a_edgewidth;
 attribute float a_size;
 
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
-varying float v_linewidth;
+varying float v_edgewidth;
 varying float v_antialias;
 
 void main (void) {
     $v_size = a_size;
-    v_linewidth = a_linewidth;
+    v_edgewidth = a_edgewidth;
     v_antialias = u_antialias;
     v_fg_color  = a_fg_color;
     v_bg_color  = a_bg_color;
     gl_Position = $transform(vec4(a_position,1.0));
-    gl_PointSize = $v_size + 2*(v_linewidth + 1.5*v_antialias);
+    gl_PointSize = $v_size + 2*(v_edgewidth + 1.5*v_antialias);
 }
 """
 
@@ -45,19 +45,19 @@ void main (void) {
 frag = """
 varying vec4 v_fg_color;
 varying vec4 v_bg_color;
-varying float v_linewidth;
+varying float v_edgewidth;
 varying float v_antialias;
 
 void main()
 {
-    float size = $v_size +2*(v_linewidth + 1.5*v_antialias);
-    float t = v_linewidth/2.0-v_antialias;
+    float size = $v_size +2*(v_edgewidth + 1.5*v_antialias);
+    float t = v_edgewidth/2.0-v_antialias;
 
     // The marker function needs to be linked with this shader
     float r = $marker(gl_PointCoord, size);
 
     float d = abs(r) - t;
-    if( r > (v_linewidth/2.0+v_antialias))
+    if( r > (v_edgewidth/2.0+v_antialias))
     {
         discard;
     }
@@ -308,10 +308,10 @@ class Markers(Visual):
                                   ('a_fg_color', np.float32, 4),
                                   ('a_bg_color', np.float32, 4),
                                   ('a_size', np.float32, 1),
-                                  ('a_linewidth', np.float32, 1)])
+                                  ('a_edgewidth', np.float32, 1)])
         data['a_fg_color'] = edge_color
         data['a_bg_color'] = face_color
-        data['a_linewidth'] = edge_width
+        data['a_edgewidth'] = edge_width
         data['a_position'][:, :pos.shape[1]] = pos
         data['a_size'] = size
         self._vbo = VertexBuffer(data)
