@@ -39,23 +39,31 @@ void main() {
     float sx = pow(10.0, floor(log(px.x) / log10)+1) * scale.x;
     float sy = pow(10.0, floor(log(px.y) / log10)+1) * scale.y;
 
+    float max_alpha = 0.6;
     float x_alpha;
-    if (mod(local_pos.x, 100 * sx) < px.x) {
-        x_alpha = clamp(1 * sx/px.x, 0, 0.4);
+    
+    if (mod(local_pos.x, 1000 * sx) < px.x) {
+        x_alpha = clamp(1 * sx/px.x, 0, max_alpha);
+    }
+    else if (mod(local_pos.x, 100 * sx) < px.x) {
+        x_alpha = clamp(.1 * sx/px.x, 0, max_alpha);
     }
     else if (mod(local_pos.x, 10 * sx) < px.x) {
-        x_alpha = clamp(0.1 * sx/px.x, 0, 0.4);
+        x_alpha = clamp(0.01 * sx/px.x, 0, max_alpha);
     }
 
     float y_alpha;
-    if (mod(local_pos.y, 100 * sy) < px.y) {
-        y_alpha = clamp(1 * sy/px.y, 0, 0.4);
+    if (mod(local_pos.y, 1000 * sy) < px.y) {
+        y_alpha = clamp(1 * sy/px.y, 0, max_alpha);
+    }
+    else if (mod(local_pos.y, 100 * sy) < px.y) {
+        y_alpha = clamp(.1 * sy/px.y, 0, max_alpha);
     }
     else if (mod(local_pos.y, 10 * sy) < px.y) {
-        y_alpha = clamp(0.1 * sy/px.y, 0, 0.4);
+        y_alpha = clamp(0.01 * sy/px.y, 0, max_alpha);
     }
 
-    float alpha = max(x_alpha, y_alpha);
+    float alpha = (((log(max(x_alpha, y_alpha))/log(10.))+2) / 3);
     if (alpha == 0) {
         discard;
     }
@@ -83,7 +91,7 @@ class GridLines(Visual):
         return self._vbo
 
     def draw(self, event):
-        gloo.set_state('translucent', cull_face='front_and_back')
+        gloo.set_state('additive', cull_face='front_and_back')
 
         doc_to_ndc = event.entity_transform(map_from=event.document,
                                             map_to=event.ndc)

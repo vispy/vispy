@@ -18,7 +18,7 @@ def gaussian_filter(data, sigma):
     baseline = data.mean()
     filtered = data - baseline
     for ax in range(data.ndim):
-        s = sigma[ax]
+        s = float(sigma[ax])
         if s == 0:
             continue
 

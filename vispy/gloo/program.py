@@ -499,6 +499,8 @@ class Program(GLObject):
 
         if isinstance(indices, IndexBuffer):
             indices.activate()
+            logger.debug("Program drawing %d %r (using index buffer)", 
+                         indices.size, mode)
             gltypes = {np.dtype(np.uint8): gl.GL_UNSIGNED_BYTE,
                        np.dtype(np.uint16): gl.GL_UNSIGNED_SHORT,
                        np.dtype(np.uint32): gl.GL_UNSIGNED_INT}
@@ -508,6 +510,8 @@ class Program(GLObject):
             #count = (count or attributes[0].size) - first
             first = 0
             count = attributes[0].size
+            logger.debug("Program drawing %d %r (no index buffer)", 
+                         count, mode)
             gl.glDrawArrays(mode, first, count)
         else:
             raise TypeError("Invalid index: %r (must be IndexBuffer)" %
