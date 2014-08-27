@@ -7,14 +7,13 @@ from ..scene import SceneCanvas, visuals
 plots = []
 
 
-class PlotCanvas(SceneCanvas):
-    def __init__(self, keys='interactive', *args, **kwds):
-        SceneCanvas.__init__(self, *args, **kwds)
-        self.view = self.central_widget.add_view()
-
-
 def plot(*args, **kwds):
-    canvas = PlotCanvas()
+    """ Create a new canvas and plot the given data. 
+    
+    For arguments, see scene.visuals.LinePlot.
+    """
+    canvas = SceneCanvas(keys='interactive')
+    canvas.view = canvas.central_widget.add_view()
     line = visuals.LinePlot(*args, **kwds)
     canvas.view.add(line)
     canvas.show()
@@ -22,7 +21,12 @@ def plot(*args, **kwds):
 
 
 def image(*args, **kwds):
-    canvas = PlotCanvas()
+    """ Create a new canvas and display the given image data.
+    
+    For arguments, see scene.visuals.Image.
+    """
+    canvas = PlotCanvas(keys='interactive')
+    canvas.view = canvas.central_widget.add_view()
     image = visuals.Image(*args, **kwds)
     canvas.view.add(image)
     canvas.show()

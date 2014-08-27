@@ -8,4 +8,4 @@ command-line interface.
 
 __all__ = ['PlotCanvas', 'plot', 'image']
 
-from .plot import plot, image, PlotCanvas
+from .plot import plot, image
