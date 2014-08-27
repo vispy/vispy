@@ -156,8 +156,8 @@ class Entity(object):
 
     @property
     def document(self):
-        """ The document property is an optional entity representing the 
-        coordinate system from which this entity should make physical 
+        """ The document is an optional property that is an entity representing
+        the coordinate system from which this entity should make physical 
         measurements such as px, mm, pt, in, etc. This coordinate system 
         should be used when determining line widths, font sizes, and any
         other lengths specified in physical units.

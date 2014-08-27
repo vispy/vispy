@@ -241,7 +241,7 @@ class Line(Visual):
             return
         # If the mode changed, reset everything
         self._mode = mode
-        if self._mode == 'agg':
+        if self._mode == 'agg' and self._da is None:
             self._da = DashAtlas()
             dash_index, dash_period = self._da['solid']
             self._U = dict(dash_index=dash_index, dash_period=dash_period,
