@@ -10,15 +10,50 @@ large datasets.
 Overview
 --------
 
+Vispy is a young library under heavy development at this time. It
+targets two categories of users:
+
+1. **Users knowing OpenGL**, or willing to learn OpenGL, who want to
+   create beautiful and fast interactive 2D/3D visualizations in Python
+   as easily as possible.
+2. **Scientists without any knowledge of OpenGL**, who are seeking a
+   high-level, high-performance plotting toolkit.
+
+If you're in the first category, you can already start using Vispy.
+Vispy offers a Pythonic, NumPy-aware, user-friendly interface for OpenGL
+ES 2.0 called **gloo**. You can focus on writing your GLSL code (a GPU 
+language) instead of dealing with the complicated OpenGL API - Vispy takes 
+care of that automatically for you.
+
+If you're in the second category, we're starting to build experimental
+high-level plotting interfaces. Notably, Vispy now ships a very basic
+and experimental OpenGL backend for matplotlib.
 
 
+Getting started
+---------------
 
-User guide
-----------
+We are still working on a complete user guide for Vispy. In the meantime, you
+can:
 
-Coming soon...
+  * Check out the `gallery <http://vispy.org/gallery.html>`_
+  * Use the ``mpl_plot`` experimental OpenGL backend for matplotlib
+  * Start learning OpenGL (see below)
+  * Write your own visualizations with **gloo** (require knowing some 
+    OpenGL/GLSL)
+  * Start using the higher-level interfaces (visuals, scene graph)
+  
 
-In the meantime, you can check out the following references:
+Learning the fundamentals of modern OpenGL
+------------------------------------------
+
+Vispy will eventually provide high-level facilities to let scientists create
+high-quality, high-performance plots without any knowledge of OpenGL. In the 
+meantime, you can learn more about modern OpenGL in the references below.
+
+Even when Vispy is mature enough, knowing OpenGL will still let you write 
+entirely custom interactive visualizations that fully leverage the power of
+GPUs.
 
   * `A tutorial about modern OpenGL and Vispy, by Nicolas Rougier <http://www.loria.fr/~rougier/teaching/opengl/>`_
   * A paper on the fundamentals behing Vispy: `Rossant C and Harris KD, Hardware-accelerated interactive data visualization for neuroscience in Python, Frontiers in Neuroinformatics 2013 <http://journal.frontiersin.org/Journal/10.3389/fninf.2013.00036/full>`_
