@@ -73,22 +73,18 @@ def _check_conversion(key, valid_dict):
 # Viewport, DepthRangef, CullFace, FrontFace, LineWidth, PolygonOffset
 #
 
-def set_viewport(x, y, w, h):
+def set_viewport(*args):
     """Set the OpenGL viewport
 
     This is a wrapper for gl.glViewport.
 
     Parameters
     ----------
-    x : int
-        X coordinate.
-    y : int
-        Y coordinate.
-    w : int
-        Viewport width.
-    h : int
-        Viewport height.
+    x, y, w, h : int | tuple
+        X and Y coordinates, plus width and height. Can be passed in as
+        individual components, or as a single tuple with four values.
     """
+    x, y, w, h = args[0] if len(args) == 1 else args
     gl.glViewport(int(x), int(y), int(w), int(h))
 
 
