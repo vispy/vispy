@@ -241,13 +241,7 @@ class Line(Visual):
             return
         # If the mode changed, reset everything
         self._mode = mode
-        if self._mode == 'gl':
-            self.draw = self._gl_draw
-            self._set_data = self._gl_set_data
-        else:
-            self.draw = self._agg_draw
-            self._set_data = self._agg_set_data
-            
+        if self._mode == 'agg':
             self._da = DashAtlas()
             dash_index, dash_period = self._da['solid']
             self._U = dict(dash_index=dash_index, dash_period=dash_period,
@@ -257,7 +251,9 @@ class Line(Visual):
                            linewidth=self._width, antialias=self._antialias)
             self._dash_atlas = gloo.Texture2D(self._da._data)
             
-        self.set_data(self._pos, self._color, self._width, self._connect)
+        # do not call subclass set_data; this is often overridden with a 
+        # different signature.
+        Line.set_data(self, self._pos, self._color, self._width, self._connect)
 
     def set_data(self, pos=None, color=None, width=None, connect=None):
         """ Set the data used to draw this visual.
@@ -278,18 +274,36 @@ class Line(Visual):
               connected to the next.
             * "segments" causes each pair of vertices to draw an
               independent line segment
-            * numpy arrays specify the exact set of segment pairs to
+            * int numpy arrays specify the exact set of segment pairs to
               connect.
+            * bool numpy arrays specify which _adjacent_ pairs to connect.
         """
+        if isinstance(connect, np.ndarray) and connect.dtype == bool:
+            connect = self._convert_bool_connect(connect)
+        
         self._origs = (pos, color, width, connect)
+        
         if color is not None:
             self._color = ColorArray(color).rgba
             if len(self._color) == 1:
                 self._color = self._color[0]
+                
         if width is not None:
             self._width = width
-        self._set_data(*self._origs)
+            
+        if self.mode == 'gl':
+            self._gl_set_data(*self._origs)
+        else:
+            self._agg_set_data(*self._origs)
 
+    def _convert_bool_connect(self, connect):
+        # Convert a boolean connection array to a vertex index array
+        assert connect.ndim == 1
+        index = np.empty((len(connect), 2), dtype=np.uint32)
+        index[:] = np.arange(len(connect))[:, np.newaxis]
+        index[:, 1] += 1
+        return index[connect]
+            
     def _gl_set_data(self, pos, color, width, connect):
         if connect is not None:
             if isinstance(connect, np.ndarray):
@@ -298,14 +312,15 @@ class Line(Visual):
                 self._connect = connect
         if pos is not None:
             self._pos = pos
-            vbo = gloo.VertexBuffer(np.asarray(pos, dtype=np.float32))
-            if pos.shape[-1] == 2:
+            pos_arr = np.asarray(pos, dtype=np.float32)
+            vbo = gloo.VertexBuffer(pos_arr)
+            if pos_arr.shape[-1] == 2:
                 self._pos_expr = vec2to4(vbo)
-            elif pos.shape[-1] == 3:
+            elif pos_arr.shape[-1] == 3:
                 self._pos_expr = vec3to4(vbo)
             else:
                 raise TypeError("pos array should have 2 or 3 elements in last"
-                                " axis.")
+                                " axis. shape=%r" % pos_arr.shape)
             self._vbo = vbo
         else:
             self._pos = None
@@ -324,6 +339,12 @@ class Line(Visual):
             self._pos = None
 
         self.update()
+
+    def draw(self, event):
+        if self.mode == 'gl':
+            self._gl_draw(event)
+        else:
+            self._agg_draw(event)
 
     def _gl_draw(self, event):
         if self._pos is None:
