@@ -30,12 +30,6 @@ p1.transform = scene.transforms.AffineTransform()
 p1.transform.scale([1/49., 1/49., 0.02])
 p1.transform.translate([-0.5, -0.5, 0])
 
-normal_comp = scene.components.VertexNormalComponent(p1._meshdata)
-p1.color_components = [
-    scene.components.UniformColorComponent((0.5, 0.5, 1, 1)),
-    scene.components.ShadingComponent(normal_comp, lights=[((-1, -1, -1),
-                                                           (1.0, 1.0, 1.0))],
-                                      ambient=0.2)]
 view.add(p1)
 
 # Add a 3D axis to keep us oriented
