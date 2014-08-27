@@ -9,9 +9,6 @@
 import sys
 import numpy as np
 
-from ...ext.freetype import (FT_LOAD_RENDER, FT_LOAD_NO_HINTING,
-                             FT_LOAD_NO_AUTOHINT, Face)
-
 
 # Convert face to filename
 from ._vispy_fonts import _vispy_fonts, _get_vispy_font_filename
@@ -25,7 +22,11 @@ else:
 _font_dict = {}
 
 
+# Nest freetype imports in case someone doesn't have freetype on their system
+# and isn't using fonts (Windows)
+
 def _load_font(face, bold, italic):
+    from ...ext.freetype import Face
     key = '%s-%s-%s' % (face, bold, italic)
     if key in _font_dict:
         return _font_dict[key]
@@ -40,6 +41,8 @@ def _load_font(face, bold, italic):
 
 def _load_glyph(f, char, glyphs_dict):
     """Load glyph from font into dict"""
+    from ...ext.freetype import (FT_LOAD_RENDER, FT_LOAD_NO_HINTING,
+                                 FT_LOAD_NO_AUTOHINT)
     flags = FT_LOAD_RENDER | FT_LOAD_NO_HINTING | FT_LOAD_NO_AUTOHINT
     face = _load_font(f['face'], f['bold'], f['italic'])
     face.set_char_size(f['size'] * 64)
