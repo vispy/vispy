@@ -95,7 +95,7 @@ class GridLines(Visual):
 
         doc_to_ndc = event.entity_transform(map_from=event.document_cs,
                                             map_to=event.render_cs)
-        local_to_doc = event.doc_transform()
+        local_to_doc = event.document_transform()
 
         self._program.frag['map_nd_to_doc'] = doc_to_ndc.shader_imap()
         self._program.frag['map_doc_to_local'] = local_to_doc.shader_imap()

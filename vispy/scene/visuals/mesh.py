@@ -215,7 +215,7 @@ class Mesh(Visual):
 
         self._program.vert['transform'] = event.render_transform.shader_map()
         if self._phong is not None:
-            self._phong['transform'] = event.doc_transform().shader_map()
+            self._phong['transform'] = event.document_transform().shader_map()
 
         # Draw
         if self._indexed:

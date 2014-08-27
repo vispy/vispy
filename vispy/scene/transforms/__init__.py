@@ -19,7 +19,7 @@ from ._util import arg_to_array, arg_to_vec4, TransformCache  # noqa
 
 
 transform_types = {}
-for o in globals().values():
+for o in list(globals().values()):
     try:
         if issubclass(o, BaseTransform) and o is not BaseTransform:
             name = o.__name__[:-len('Transform')].lower()

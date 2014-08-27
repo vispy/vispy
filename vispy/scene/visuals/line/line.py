@@ -378,7 +378,7 @@ class Line(Visual):
         if self._pos is None:
             return
         gloo.set_state('translucent', depth_test=False)
-        data_doc = event.doc_transform()
+        data_doc = event.document_transform()
         doc_px = event.entity_transform(map_from=event.document_cs,
                                         map_to=event.framebuffer_cs)
         px_ndc = event.entity_transform(map_from=event.framebuffer_cs,
