@@ -57,6 +57,8 @@ class MeshData(object):
         ## mappings between vertices, faces, and edges
         self._faces = None  # Nx3 indices into self._vertices, 3 verts/face
         self._edges = None  # Nx2 indices into self._vertices, 2 verts/edge
+        self._edges_indexed_by_faces = None  # (Ne, 3, 2) indoces into
+        # self._vertices, 3 edge / face and 2 verts/edge
         # inverse mappings
         self._vertex_faces = None  # maps vertex ID to a list of face IDs
         self._vertex_edges = None  # maps vertex ID to a list of edge IDs
@@ -96,18 +98,41 @@ class MeshData(object):
                 if face_colors is not None:
                     self.set_face_colors(face_colors)
 
-    def faces(self):
+    def faces(self, indexed=None):
         """Array (Nf, 3) of vertex indices, three per triangular face.
+           "If indexed is 'faces', then return (Nf, 3, 2)
+           array of vertex indices with 3 edges per face,
+           and two vertices per edge.
 
         If faces have not been computed for this mesh, returns None.
         """
-        return self._faces
+        if indexed is None:
+            return self._faces
+        elif indexed == 'faces':
+            verts = self.vertices(indexed='faces')
+            if verts is not None:
+                nF = verts.shape[0]
+                faces = np.arange(nF*3, dtype=np.uint)
+                return faces.reshape((nF, 3))
+            else:
+                return None
+        else:
+            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
-    def edges(self):
-        """Array (Nf, 3) of vertex indices, two per edge in the mesh."""
-        if self._edges is None:
-            self._compute_edges()
-        return self._edges
+    def edges(self, indexed=None):
+        """Array (Nf, 3) of vertex indices, two per edge in the mesh.
+           If indexed is 'faces', then return (Nf, 3, 2) array of vertex
+           indices with 3 edges per face, and two vertices per edge."""
+        if indexed is None:
+            if self._edges is None:
+                self._compute_edges(indexed=None)
+            return self._edges
+        elif indexed == 'faces':
+            if self._edges_indexed_by_faces is None:
+                self._compute_edges(indexed='faces')
+            return self._edges_indexed_by_faces
+        else:
+            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def set_faces(self, faces):
         """Set the (Nf, 3) array of faces. Each rown in the array contains
@@ -115,6 +140,7 @@ class MeshData(object):
         of a triangular face."""
         self._faces = faces
         self._edges = None
+        self._edges_indexed_by_faces = None
         self._vertex_faces = None
         self._vertices_indexed_by_faces = None
         self.reset_normals()
@@ -399,36 +425,41 @@ class MeshData(object):
         #"""
         #pass
 
-    def _compute_edges(self):
-        if not self.has_face_indexed_data:
-            ## generate self._edges from self._faces
-            nf = len(self._faces)
-            edges = np.empty(nf*3, dtype=[('i', np.uint, 2)])
-            edges['i'][0:nf] = self._faces[:, :2]
-            edges['i'][nf:2*nf] = self._faces[:, 1:3]
-            edges['i'][-nf:, 0] = self._faces[:, 2]
-            edges['i'][-nf:, 1] = self._faces[:, 0]
-
-            # sort per-edge
-            mask = edges['i'][:, 0] > edges['i'][:, 1]
-            edges['i'][mask] = edges['i'][mask][:, ::-1]
-
-            # remove duplicate entries
-            self._edges = np.unique(edges)['i']
-        elif self._vertices_indexed_by_faces is not None:
-            verts = self._vertices_indexed_by_faces
-            edges = np.empty((verts.shape[0], 3, 2), dtype=np.uint)
-            nf = verts.shape[0]
-            edges[:, 0, 0] = np.arange(nf) * 3
-            edges[:, 0, 1] = edges[:, 0, 0] + 1
-            edges[:, 1, 0] = edges[:, 0, 1]
-            edges[:, 1, 1] = edges[:, 1, 0] + 1
-            edges[:, 2, 0] = edges[:, 1, 1]
-            edges[:, 2, 1] = edges[:, 0, 0]
-            self._edges = edges
+    def _compute_edges(self, indexed=None):
+        if indexed is None:
+            if self._faces is not None:
+                ## generate self._edges from self._faces
+                nf = len(self._faces)
+                edges = np.empty(nf*3, dtype=[('i', np.uint, 2)])
+                edges['i'][0:nf] = self._faces[:, :2]
+                edges['i'][nf:2*nf] = self._faces[:, 1:3]
+                edges['i'][-nf:, 0] = self._faces[:, 2]
+                edges['i'][-nf:, 1] = self._faces[:, 0]
+                # sort per-edge
+                mask = edges['i'][:, 0] > edges['i'][:, 1]
+                edges['i'][mask] = edges['i'][mask][:, ::-1]
+                # remove duplicate entries
+                self._edges = np.unique(edges)['i']
+            else:
+                raise Exception("MeshData cannot generate edges--no faces in "
+                                "this data.")
+        elif indexed == 'faces':
+            if self._vertices_indexed_by_faces is not None:
+                verts = self._vertices_indexed_by_faces
+                edges = np.empty((verts.shape[0], 3, 2), dtype=np.uint)
+                nf = verts.shape[0]
+                edges[:, 0, 0] = np.arange(nf) * 3
+                edges[:, 0, 1] = edges[:, 0, 0] + 1
+                edges[:, 1, 0] = edges[:, 0, 1]
+                edges[:, 1, 1] = edges[:, 1, 0] + 1
+                edges[:, 2, 0] = edges[:, 1, 1]
+                edges[:, 2, 1] = edges[:, 0, 0]
+                self._edges_indexed_by_faces = edges
+            else:
+                raise Exception("MeshData cannot generate edges--no faces in "
+                                "this data.")
         else:
-            raise Exception("MeshData cannot generate edges--no faces in "
-                            "this data.")
+            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def save(self):
         """Serialize this mesh to a string appropriate for disk storage"""
@@ -457,5 +488,7 @@ class MeshData(object):
         state = pickle.loads(state)
         for k in state:
             if isinstance(state[k], list):
+                #if isinstance(state[k][0], QtGui.QVector3D):
+                #    state[k] = [[v.x(), v.y(), v.z()] for v in state[k]]
                 state[k] = np.array(state[k])
             setattr(self, k, state[k])
