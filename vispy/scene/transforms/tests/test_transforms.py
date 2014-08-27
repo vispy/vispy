@@ -98,8 +98,8 @@ def test_transform_chain():
     chain2 = tr.ChainTransform(c)
     chain3 = tr.ChainTransform(chain1, chain2)
     chain4 = tr.ChainTransform(a, b, c, chain3)
-    chain4.flatten()
-    assert chain4.transforms == [a, b, c, a, b, c]
+    chain5 = chain4.flat()
+    assert chain5.transforms == [a, b, c, a, b, c]
 
     # Test simplifying
     t1 = tr.STTransform(scale=(2, 3))
@@ -110,17 +110,17 @@ def test_transform_chain():
     t321 = t3*t2*t1
     c123 = tr.ChainTransform(t1, t2, t3)
     c321 = tr.ChainTransform(t3, t2, t1)
-    c123.simplify()
-    c321.simplify()
+    c123s = c123.simplified()
+    c321s = c321.simplified()
     #
     assert isinstance(t123, tr.STTransform)  # or the test is useless
     assert isinstance(t321, tr.STTransform)  # or the test is useless
-    assert len(c123.transforms) == 1
-    assert len(c321.transforms) == 1
-    assert np.all(c123.transforms[0].scale == t123.scale)
-    assert np.all(c123.transforms[0].translate == t123.translate)
-    assert np.all(c321.transforms[0].scale == t321.scale)
-    assert np.all(c321.transforms[0].translate == t321.translate)
+    assert isinstance(c123s, tr.STTransform)  # or the test is useless
+    assert isinstance(c321s, tr.STTransform)  # or the test is useless
+    assert np.all(c123s.scale == t123.scale)
+    assert np.all(c123s.translate == t123.translate)
+    assert np.all(c321s.scale == t321.scale)
+    assert np.all(c321s.translate == t321.translate)
 
     # Test Mapping
     t1 = tr.STTransform(scale=(2, 3))
@@ -217,7 +217,7 @@ def test_inverse():
     pos = x * 10 ** pw
 
     for trn in transforms:
-        assert np.allclose(pos, trn.inverse.map(tr.map(pos))[:, :3])
+        assert np.allclose(pos, trn.inverse.map(trn.map(pos))[:, :3])
 
     # log transform only works on positive values
     #abs_pos = np.abs(pos)

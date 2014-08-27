@@ -124,19 +124,16 @@ class ChainTransform(BaseTransform):
         """
         Return a simplified chain by expanding any nested chains.
         """
-        # Flatten untill there is nothing more to flatten
-        encountered_chains = True
-        while encountered_chains:
-            encountered_chains = False
-            #
-            new_tr = []
-            for tr in self.transforms:
-                if isinstance(tr, ChainTransform):
-                    encountered_chains = True
-                    new_tr.extend(tr.transforms)
-                else:
-                    new_tr.append(tr)
-        return ChainTransform(new_tr)
+        transforms = self.transforms[:]
+        new_chain = []
+        while len(transforms) > 0:
+            tr = transforms.pop(0)
+            if isinstance(tr, ChainTransform):
+                transforms = tr.transforms[:] + transforms
+            else:
+                new_chain.append(tr)
+        
+        return ChainTransform(new_chain)
 
     def simplified(self):
         """
