@@ -140,7 +140,7 @@ class SceneEvent(Event):
         """
         return self.canvas.render_cs
 
-    def doc_transform(self, entity=None):
+    def document_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
         document coordinate system.
 
@@ -148,17 +148,17 @@ class SceneEvent(Event):
         """
         return self.entity_transform(map_to=self.document_cs, map_from=entity)
 
-    def map_entity_to_doc(self, entity, obj):
-        return self.doc_transform(entity).map(obj)
+    def map_entity_to_document(self, entity, obj):
+        return self.document_transform(entity).map(obj)
 
-    def map_doc_to_entity(self, entity, obj):
-        return self.doc_transform(entity).imap(obj)
+    def map_document_to_entity(self, entity, obj):
+        return self.document_transform(entity).imap(obj)
 
-    def map_to_doc(self, obj):
-        return self.doc_transform().map(obj)
+    def map_to_document(self, obj):
+        return self.document_transform().map(obj)
 
-    def map_from_doc(self, obj):
-        return self.doc_transform().imap(obj)
+    def map_from_document(self, obj):
+        return self.document_transform().imap(obj)
 
     def canvas_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
@@ -184,7 +184,7 @@ class SceneEvent(Event):
     def map_from_canvas(self, obj):
         return self.canvas_transform().imap(obj)
 
-    def fb_transform(self, entity=None):
+    def framebuffer_transform(self, entity=None):
         """ Return the transform that maps from *entity* to the current
         framebuffer coordinate system.
 
@@ -193,17 +193,17 @@ class SceneEvent(Event):
         return self.entity_transform(map_to=self.framebuffer_cs, 
                                      map_from=entity)
 
-    def map_entity_to_fb(self, entity, obj):
-        return self.fb_transform(entity).map(obj)
+    def map_entity_to_framebuffer(self, entity, obj):
+        return self.framebuffer_transform(entity).map(obj)
 
-    def map_fb_to_entity(self, entity, obj):
-        return self.fb_transform(entity).imap(obj)
+    def map_framebuffer_to_entity(self, entity, obj):
+        return self.framebuffer_transform(entity).imap(obj)
 
-    def map_to_fb(self, obj):
-        return self.fb_transform().map(obj)
+    def map_to_framebuffer(self, obj):
+        return self.framebuffer_transform().map(obj)
 
-    def map_from_fb(self, obj):
-        return self.fb_transform().imap(obj)
+    def map_from_framebuffer(self, obj):
+        return self.framebuffer_transform().imap(obj)
 
     @property
     def render_transform(self):
