@@ -463,11 +463,22 @@ class DataBuffer(Buffer):
 
 
 class DataBufferView(DataBuffer):
-    """ Read-only view on DataBuffer.
+    """ View on a sub-region of a DataBuffer.
 
     Parameters
     ----------
-
+    base : DataBuffer
+        The buffer accessed by this view.
+    key : str, int, slice, or Ellpsis
+        The index into the base buffer that defines a sub-region of the buffer
+        to view. String arguments select a single field from multi-field 
+        dtypes, and other allowed types select a subset of rows. 
+        
+    Notes
+    -----
+    
+    It is gnerally not necessary to instantiate this class manually; use 
+    ``base_buffer[key]`` instead.
     """
 
     def __init__(self, base, key):
