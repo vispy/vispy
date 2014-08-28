@@ -21,6 +21,7 @@ class SceneEvent(Event):
 
         # Init stacks
         self._stack = []  # list of entities
+        self._stack_ids = set()
         self._viewbox_stack = []
         self._doc_stack = []
         if transform_cache is None:
@@ -52,6 +53,9 @@ class SceneEvent(Event):
     def push_entity(self, entity):
         """ Push an entity on the stack. """
         self._stack.append(entity)
+        if id(entity) in self._stack_ids:
+            raise RuntimeError("Scenegraph cycle detected; cannot push %r" % entity)
+        self._stack_ids.add(id(entity))
         doc = entity.document
         if doc is not None:
             self.push_document(doc)
@@ -59,6 +63,7 @@ class SceneEvent(Event):
     def pop_entity(self):
         """ Pop an entity from the stack. """
         ent = self._stack.pop(-1)
+        self._stack_ids.remove(id(ent))
         if ent.document is not None:
             assert ent.document == self.pop_document()
         return ent
@@ -281,16 +286,17 @@ class SceneEvent(Event):
         path = [start]
 
         # first, get parents directly from entity
-        while path[-1] is not end:
-            ent = path[-1]
-            if len(ent.parents) != 1:
-                break
-            path.append(ent.parent)
+        entity = start
+        while id(entity) not in self._stack_ids:
+            if entity is end or len(entity.parents) != 1:
+                return path
+            entity = entity.parent
+            path.append(entity)
 
         # if we have not reached the end, follow _stack if possible.
         if path[-1] is not end:
             try:
-                ind = self._stack.index(ent)
+                ind = self._stack.index(entity)
                 # copy stack onto path one entity at a time
                 while ind > -1 and path[-1] is not end:
                     ind -= 1
