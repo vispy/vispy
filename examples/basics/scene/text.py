@@ -36,7 +36,8 @@ N = 1000
 linedata = np.empty((N, 2), np.float32)
 linedata[:, 0] = np.linspace(0, 1, N)
 linedata[:, 1] = np.random.uniform(0.5, 0.1, (N,))
-vispy.scene.visuals.Line(pos=linedata, color='#f006', parent=vb.scene)
+vispy.scene.visuals.Line(pos=linedata, color='#f006', mode='gl', 
+                         parent=vb.scene)
 
 canvas.show()
 canvas.app.run()
