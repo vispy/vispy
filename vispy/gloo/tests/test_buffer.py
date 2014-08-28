@@ -255,7 +255,7 @@ class DataBufferTest(unittest.TestCase):
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         Z = B[5:]
-        B.resize(5)
+        B.resize_bytes(5)
         assert Z._valid is False
 
     # View get invalidated after setting oversized data

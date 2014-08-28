@@ -75,7 +75,7 @@ class Buffer(GLObject):
         """ Buffer byte size """
 
         return self._nbytes
-
+    
     def set_subdata(self, data, offset=0, copy=False):
         """ Set a sub-region of the buffer (deferred operation).
         
@@ -124,12 +124,12 @@ class Buffer(GLObject):
         nbytes = data.nbytes
 
         if nbytes != self._nbytes:
-            self.resize(nbytes)
+            self.resize_bytes(nbytes)
 
         # We can discard any other pending operations here.
         self._pending_data = [(data, nbytes, 0)]
 
-    def resize(self, size):
+    def resize_bytes(self, size):
         """ Resize this buffer (deferred operation). 
         
         Parameters
@@ -156,7 +156,7 @@ class Buffer(GLObject):
         logger.debug("GPU: Deleting buffer")
         gl.glDeleteBuffer(self._handle)
 
-    def _resize(self):
+    def _resize_bytes(self):
         """ """
 
         logger.debug("GPU: Resizing buffer(%d bytes)" % self._nbytes)
@@ -171,7 +171,7 @@ class Buffer(GLObject):
         
         # Resize if necessary
         if self._buffer_size != self._nbytes:
-            self._resize()
+            self._resize_bytes()
         
         # Update pending data if necessary
         if self._pending_data:
@@ -370,7 +370,7 @@ class DataBuffer(Buffer):
             dtype = 'float' if 'f' in self.dtype[0].base.kind else 'int'
         return 'attribute', dtype
 
-    def resize(self, size):
+    def resize_bytes(self, size):
         """ Resize the buffer (in-place, deferred operation)
 
         Parameters
@@ -382,7 +382,7 @@ class DataBuffer(Buffer):
         -----
         This clears any pending operations.
         """
-        Buffer.resize(self, size)
+        Buffer.resize_bytes(self, size)
 
         self._size = size // self.itemsize
         
@@ -598,7 +598,7 @@ class DataBufferView(DataBuffer):
             dtype = 'float' if 'f' in self.dtype[0].base.kind else 'int'
         return 'attribute', dtype
 
-    def resize(self, size):
+    def resize_bytes(self, size):
         raise TypeError("Cannot resize buffer view.")
 
     def __getitem__(self, key):
