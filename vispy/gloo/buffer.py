@@ -627,7 +627,7 @@ class DataBufferView(DataBuffer):
             if stop < start:
                 start, stop = stop, start
         elif key == Ellipsis:
-            start, stop, step = 0, self.size, 1
+            start, stop = 0, self.size
         else:
             raise TypeError("Buffer indices must be integers or strings")
 
@@ -698,13 +698,13 @@ class VertexBuffer(DataBuffer):
             else:
                 count = 1
             if btype not in [np.int8,  np.uint8,  np.float16,
-                                np.int16, np.uint16, np.float32]:
+                             np.int16, np.uint16, np.float32]:
                 msg = ("Data basetype %r not allowed for Buffer/%s" 
-                        % (btype, name))
+                       % (btype, name))
                 raise TypeError(msg)
             elif count not in [1, 2, 3, 4]:
                 msg = ("Data basecount %s not allowed for Buffer/%s"
-                        % (count, name))
+                       % (count, name))
                 raise TypeError(msg)
 
     def _prepare_data(self, data, convert=False):

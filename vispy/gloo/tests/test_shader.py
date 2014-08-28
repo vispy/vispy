@@ -83,9 +83,7 @@ class ShaderTest(unittest.TestCase):
         assert "z" in names
         assert "y" not in names
         assert "w" not in names
-        
-        
 
-
+        
 if __name__ == "__main__":
     unittest.main()
