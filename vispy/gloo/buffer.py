@@ -44,7 +44,6 @@ class Buffer(GLObject):
         GLObject.__init__(self)
         self._views = []
         self._valid = True
-        self._handle = -1
 
         # For ATI bug
         self._bufferSubDataOk = False
@@ -289,6 +288,9 @@ class DataBuffer(Buffer):
         return self._target
 
     def _prepare_data(self, data, **kwds):
+        if len(kwds) > 0:
+            raise ValueError("Unexpected keyword arguments: %r" %
+                             list(kwds.keys()))
         # Subclasses override this
         return data
 
@@ -325,7 +327,6 @@ class DataBuffer(Buffer):
         self._dtype = data.dtype
         self._stride = data.strides[-1]
         self._itemsize = self._dtype.itemsize
-        self.resize(data.size)
         Buffer.set_data(self, data=data, copy=copy)
 
     @property
@@ -381,23 +382,21 @@ class DataBuffer(Buffer):
         Parameters
         ----------
         size : integer
-            New buffer size
+            New buffer size in bytes
 
         Notes
         -----
         This clears any pending operations.
         """
+        Buffer.resize(self, size)
 
-        if size == self.size:
-            return
-
-        self._size = size
-        if self._data is not None and self._store:
-            self._data = np.resize(self._data, self._size)
+        self._size = size // self.itemsize
+        
+        if self._data is not None and self._store: 
+            if self._data.size != self._size:
+                self._data = np.resize(self._data, self._size)
         else:
             self._data = None
-            
-        Buffer.resize(self, size * self.itemsize)
 
     def __getitem__(self, key):
         """ Create a view on this buffer. """
@@ -420,14 +419,9 @@ class DataBuffer(Buffer):
             # WARNING: do we check data size
             #          or do we let numpy raises an error ?
             self._data[key] = data
-            self.set_data(self._data, offset=0, copy=False)
+            self.set_data(self._data, copy=False)
             return
 
-        elif key == Ellipsis and self.base is not None:
-            # WARNING: do we check data size
-            #          or do we let numpy raises an error ?
-            self.base[self._key] = data
-            return
         # Setting one or several elements
         elif isinstance(key, int):
             if key < 0:
@@ -450,8 +444,8 @@ class DataBuffer(Buffer):
             #          or do we let numpy raises an error ?
             self.data[key] = data
             offset = start  # * self.itemsize
-            self.set_data(data=self.data[start:stop],
-                          offset=offset, copy=False)
+            self.set_subdata(data=self.data[start:stop],
+                             offset=offset, copy=False)
 
         # Buffer is a base buffer but we do not have CPU storage
         # If 'key' points to a contiguous chunk of buffer, it's ok
@@ -466,7 +460,7 @@ class DataBuffer(Buffer):
             if data.size != stop - start:
                 data = np.resize(data, stop - start)
 
-            self.set_data(data=data, offset=offset, copy=True)
+            self.set_subdata(data=data, offset=offset, copy=True)
 
         # All the above fails, we raise an error
         else:
@@ -498,25 +492,27 @@ class DataBufferView(DataBuffer):
         
         if isinstance(key, int):
             if key < 0:
-                key += self.size
-            if key < 0 or key > self.size:
+                key += base.size
+            if key < 0 or key > base.size:
                 raise IndexError("Buffer assignment index out of range")
             start, stop, step = key, key + 1, 1
         elif isinstance(key, slice):
-            start, stop, step = key.indices(self.size)
+            start, stop, step = key.indices(base.size)
             if stop < start:
                 start, stop = stop, start
         elif key == Ellipsis:
-            start, stop, step = 0, self.size, 1
+            start, stop, step = 0, base.size, 1
         else:
             raise TypeError("Buffer indices must be integers or strings")
 
         if step != 1:
             raise ValueError("Cannot access non-contiguous data")
 
+        self._itemsize = base.itemsize
         self._offset = start * self.itemsize
         self._size = stop - start
         self._dtype = base.dtype
+        self._nbytes = self.size * self.itemsize
 
     @property
     def handle(self):
@@ -541,7 +537,7 @@ class DataBufferView(DataBuffer):
         self._base.deactivate()
 
     def set_data(self, data, offset=0, copy=False):
-        raise TypeError("Cannot set data on read-only buffer view.")
+        raise ValueError("Cannot set data on read-only buffer view.")
 
     @property
     def dtype(self):

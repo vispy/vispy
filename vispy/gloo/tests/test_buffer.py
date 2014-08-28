@@ -21,11 +21,9 @@ class BufferTest(unittest.TestCase):
         assert B._target == gl.GL_ARRAY_BUFFER
         assert B._handle == -1
         assert B._need_create is True
-        assert B._need_resize is True
         assert B._need_delete is False
         assert B._nbytes == 0
         assert B._usage == gl.GL_DYNAMIC_DRAW
-        assert B._resizeable is True
 
     # Unknown target
     # --------------
@@ -75,10 +73,10 @@ class BufferTest(unittest.TestCase):
     # ----------------------------
     def test_oversized_data(self):
         data = np.zeros(10)
-        B = Buffer(data=data, resizeable=False)
+        B = Buffer(data=data)
         # with self.assertRaises(ValueError):
         #    B.set_data(np.ones(20))
-        self.assertRaises(ValueError, B.set_data, np.ones(20))
+        self.assertRaises(ValueError, B.set_subdata, np.ones(20), offset=0)
 
     # Check negative offset
     # ---------------------
@@ -87,7 +85,7 @@ class BufferTest(unittest.TestCase):
         B = Buffer(data=data)
         # with self.assertRaises(ValueError):
         #    B.set_data(np.ones(1), offset=-1)
-        self.assertRaises(ValueError, B.set_data, np.ones(1), offset=-1)
+        self.assertRaises(ValueError, B.set_subdata, np.ones(1), offset=-1)
 
     # Check offlimit offset
     # ---------------------
@@ -96,7 +94,7 @@ class BufferTest(unittest.TestCase):
         B = Buffer(data=data)
         # with self.assertRaises(ValueError):
         #    B.set_data(np.ones(1), offset=10 * data.dtype.itemsize)
-        self.assertRaises(ValueError, B.set_data,
+        self.assertRaises(ValueError, B.set_subdata,
                           np.ones(1), offset=10 * data.dtype.itemsize)
 
     # Buffer size
@@ -126,14 +124,13 @@ class DataBufferTest(unittest.TestCase):
         data = np.ones(100)
         B = DataBuffer(data)
         assert B._store is True
-        assert B._copy is False
+        assert B._copied is False
         assert B.nbytes == data.nbytes
         assert B.offset == 0
         assert B.size == 100
         assert B.itemsize == data.itemsize
         assert B.stride == data.itemsize
         assert B.dtype == data.dtype
-        assert B._resizeable is True
 
     # Default init with structured data
     # ---------------------------------
@@ -306,11 +303,8 @@ class DataBufferTest(unittest.TestCase):
         data = np.zeros(100, np.float32)
         subdata = data[:10]
         
-        print(">>> CREATE BUFFER")
         B = DataBuffer(data)
-        print("buffer size:", B._nbytes)
-        print("<<< CREATE BUFFER")
-        B.set_data(subdata, offset=10)
+        B.set_subdata(subdata, offset=10)
         offset = B._pending_data[-1][2]
         assert offset == 10*4
 
@@ -322,7 +316,9 @@ class DataBufferTest(unittest.TestCase):
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data, store=True)
+        assert B._data is data
         B['position'] = 1, 2, 3
+        assert B._data is data
         assert np.allclose(data['position'].ravel(), np.resize([1, 2, 3], 30))
 
     # Setitem ellipsis
@@ -401,7 +397,6 @@ class DataBufferTest(unittest.TestCase):
         data = np.zeros(20)
         B.set_data(data)
         assert B.nbytes == data.nbytes
-        assert B._need_resize is True
 
     # Resize not allowed using ellipsis
     # --------------------------------
@@ -412,16 +407,6 @@ class DataBufferTest(unittest.TestCase):
         # with self.assertRaises(ValueError):
         #    B[...] = data
         self.assertRaises(ValueError, B.__setitem__, Ellipsis, data)
-
-    # Resize when no resizeable
-    # -------------------------
-    def test_resize_no_resizeable(self):
-        data = np.zeros(10)
-        B = DataBuffer(data=data, resizeable=False)
-        data = np.zeros(20)
-        # with self.assertRaises(ValueError):
-        #    B.set_data(data)
-        self.assertRaises(RuntimeError, B.set_data, data)
 
 
 # -----------------------------------------------------------------------------
