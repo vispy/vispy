@@ -316,9 +316,7 @@ class DataBufferTest(unittest.TestCase):
                           ('color',    np.float32, 4)])
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data, store=True)
-        assert B._data is data
         B['position'] = 1, 2, 3
-        assert B._data is data
         assert np.allclose(data['position'].ravel(), np.resize([1, 2, 3], 30))
 
     # Setitem ellipsis
