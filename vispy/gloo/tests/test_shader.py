@@ -7,6 +7,7 @@ import unittest
 
 from vispy.gloo import gl
 from vispy.gloo.shader import VertexShader, FragmentShader
+from vispy.testing import assert_in, assert_not_in
 
 
 # -----------------------------------------------------------------------------
@@ -78,11 +79,11 @@ class ShaderTest(unittest.TestCase):
             attribute float z; //attribute float w;
         """)
         names = [attr[0] for attr in shader.attributes]
-        assert "color" in names
-        assert "x" in names
-        assert "z" in names
-        assert "y" not in names
-        assert "w" not in names
+        assert_in("color", names)
+        assert_in("x", names)
+        assert_in("z", names)
+        assert_not_in("y", names)
+        assert_not_in("w", names)
 
         
 if __name__ == "__main__":
