@@ -492,6 +492,7 @@ class DataBufferView(DataBuffer):
             self._dtype = base.dtype[key]
             self._offset = base.dtype.fields[key][1]
             self._nbytes = base.size * self._dtype.itemsize
+            self._size = base.size
             self._itemsize = self._dtype.itemsize
             return
         
