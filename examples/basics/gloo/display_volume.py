@@ -4,9 +4,13 @@ from vispy.util.transforms import perspective, translate, rotate
 
 from vispy.gloo import gl
 
+a = np.load('walnut.npy')
 
-D, H, W = 30, 30, 30
+D, H, W = a.shape
 data = np.random.uniform(0, 0.1, (D, H, W, 3)).astype(np.float32)
+data[:, :, :, 0] = a > 0
+data[:, :, :, 1] = a > 0
+data[:, :, :, 2] = a > 0
 
 
 cube_vert = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1],
@@ -85,12 +89,32 @@ varying vec2 v_texcoord;
 
 void main()
 {
-//    vec4 start = texture2D(u_start, v_texcoord);
+    vec4 start = texture2D(u_start, v_texcoord);
+    if (start.r == 1.0 && start.g == 1.0 && start.b == 1.0)
+    {
+        gl_FragColor = vec4(1, 0, 0, 1);
+    }
+    else
+    {
+        vec4 stop = texture2D(u_stop, v_texcoord);
 
-//    vec4 stop = texture2D(u_stop, v_texcoord);
-//    gl_FragColor = stop;
+        vec3 step = stop.rgb - start.rgb; 
+        float dist = length(step);
+        step /= dist * 1000.0;
 
-    texture3D(u_data, vec3(0, 0, 0));
+        float step_length = length(step);
+
+        vec3 tex_coord = start.rgb;
+
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        for (float x = 0.0; x < dist; x += step_length)
+        {
+            gl_FragColor += texture3D(u_data, tex_coord);
+
+            tex_coord += step;
+        }
+        gl_FragColor /= 1000.0;
+    }
 }
 """
 
