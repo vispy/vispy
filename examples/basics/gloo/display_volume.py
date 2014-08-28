@@ -4,13 +4,12 @@ from vispy.util.transforms import perspective, translate, rotate
 
 from vispy.gloo import gl
 
-a = np.load('walnut.npy')
+raw_data = np.load('walnut.npy')
 
-D, H, W = a.shape
-data = np.random.uniform(0, 0.1, (D, H, W, 3)).astype(np.float32)
-data[:, :, :, 0] = a > 0
-data[:, :, :, 1] = a > 0
-data[:, :, :, 2] = a > 0
+data = np.zeros(raw_data.shape + (3,), np.float32)
+data[:, :, :, 0] += (raw_data == 4)
+data[:, :, :, 1] += (raw_data == 3)
+data[:, :, :, 2] += (raw_data == 1) + (raw_data == 2)
 
 
 cube_vert = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1],
@@ -92,7 +91,7 @@ void main()
     vec4 start = texture2D(u_start, v_texcoord);
     if (start.r == 1.0 && start.g == 1.0 && start.b == 1.0)
     {
-        gl_FragColor = vec4(1, 0, 0, 1);
+        gl_FragColor = vec4(1, 1, 1, 1);
     }
     else
     {
@@ -115,6 +114,11 @@ void main()
         }
         gl_FragColor /= 1000.0;
     }
+        if (gl_FragColor.r == 0.0 && gl_FragColor.g == 0.0 && gl_FragColor.b == 0.0)
+        {
+            gl_FragColor = vec4(1, 1, 1, 1);
+        }
+
 }
 """
 
@@ -170,6 +174,20 @@ class Canvas(app.Canvas):
         self.cube_program['u_projection'] = self.projection
         self.rays_program['u_projection'] = self.projection
 
+    def on_mouse_move(self, event):
+       if event.is_dragging:
+            prev = event.last_event.pos
+            curr = event.pos
+
+            if (event.button == 1):
+                translate(self.view, (curr[0] - prev[0]) / 1000.0, -(curr[1] - prev[1]) / 1000.0, 0.0)
+                self.cube_program['u_view'] = self.view
+            elif (event.button == 2):
+                rotate(self.model, curr[0] - prev[0], 0, 0, 1)
+                rotate(self.model, curr[1] - prev[1], 0, 1, 0)
+                self.cube_program['u_model'] = self.model
+            self.update()
+
     def on_draw(self, event):
         gl.glEnable(gl.GL_CULL_FACE)
 
@@ -190,6 +208,17 @@ class Canvas(app.Canvas):
         gloo.clear()
 
         self.rays_program.draw('triangle_strip')
+
+"""
+    def on_draw(self, event):
+        gl.glEnable(gl.GL_CULL_FACE)
+
+        gloo.clear()
+
+#        gl.glCullFace(gl.GL_FRONT)
+        self.cube_program.draw('triangles', self.cube_ind_buf)
+"""
+
 
 
 if __name__ == '__main__':
