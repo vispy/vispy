@@ -54,7 +54,8 @@ class SceneEvent(Event):
         """ Push an entity on the stack. """
         self._stack.append(entity)
         if id(entity) in self._stack_ids:
-            raise RuntimeError("Scenegraph cycle detected; cannot push %r" % entity)
+            raise RuntimeError("Scenegraph cycle detected; cannot push %r" % 
+                               entity)
         self._stack_ids.add(id(entity))
         doc = entity.document
         if doc is not None:
