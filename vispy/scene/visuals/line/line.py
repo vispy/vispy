@@ -194,7 +194,7 @@ class Line(Visual):
               obey the requested line width or join/endcap styles.
     """
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
-                 connect='strip', mode='agg', antialias=True, **kwds):
+                 connect='strip', mode='gl', antialias=False, **kwds):
         Visual.__init__(self, **kwds)
         self._pos = pos
         self._color = ColorArray(color)
