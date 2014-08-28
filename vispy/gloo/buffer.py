@@ -37,17 +37,14 @@ class Buffer(GLObject):
         Buffer data
     nbytes : int
         Buffer byte size
-    resizeable : bool
-        Indicates whether buffer is resizeable
     """
 
-    def __init__(self, data=None, target=gl.GL_ARRAY_BUFFER, nbytes=None,
-                 resizeable=True):
+    def __init__(self, data=None, target=gl.GL_ARRAY_BUFFER, nbytes=None):
 
         GLObject.__init__(self)
-        self._resizeable = True
         self._views = []
         self._valid = True
+        self._handle = None
 
         # For ATI bug
         self._bufferSubDataOk = False
@@ -74,14 +71,17 @@ class Buffer(GLObject):
         elif nbytes is not None:
             self._nbytes = nbytes
         
-        # set resizeable flag only after data has been set
-        self._resizeable = resizeable
-
     @property
     def nbytes(self):
         """ Buffer byte size """
 
         return self._nbytes
+
+    @property
+    def handle(self):
+        """ Name of this object on the GPU """
+
+        return self._handle
 
     def set_subdata(self, data, offset=0, copy=False):
         """ Set a sub-region of the buffer (deferred operation).
@@ -134,7 +134,7 @@ class Buffer(GLObject):
             self.resize(nbytes)
 
         # We can discard any other pending operations here.
-        self._pending_data = [(data, nbytes, offset)]
+        self._pending_data = [(data, nbytes, 0)]
 
     def resize(self, size):
         """ Resize this buffer (deferred operation). 
@@ -144,11 +144,8 @@ class Buffer(GLObject):
         size : int
             New buffer size in bytes.
         """
-        if not self._resizeable:
-            raise ValueError("Cannot set data size %d for buffer size %d "
-                             "(buffer is non-resizeable)" % 
-                             (nbytes, self._nbytes))
         self._nbytes = size
+        self._pending_data = []
         # Invalidate any view on this buffer
         for view in self._views:
             view._valid = False
@@ -178,9 +175,6 @@ class Buffer(GLObject):
 
         logger.debug("GPU: Activating buffer")
         gl.glBindBuffer(self._target, self._handle)
-        
-        if self.base is not None:
-            return
         
         # Resize if necessary
         if self._buffer_size != self._nbytes:
@@ -244,7 +238,7 @@ class DataBuffer(Buffer):
     dtype : dtype
         Buffer data type
     size : int
-        Buffer element size
+        Number of elements in buffer
     base : DataBuffer
         Base buffer of this buffer
     offset : int
@@ -254,31 +248,17 @@ class DataBuffer(Buffer):
         allowing the data to be updated regardless of striding. Note
         that modifying the data after passing it here might result in
         undesired behavior, unless a copy is given. Default True.
-    resizeable : bool
-        Indicates whether buffer is resizeable
     """
 
     def __init__(self, data=None, dtype=None, target=gl.GL_ARRAY_BUFFER,
-                 size=0, base=None, offset=0, store=True, resizeable=True):
-        self._base = None
-        self._offset = offset
+                 size=0, store=True):
         self._data = None
         self._store = store
         self._copied = False  # flag to indicate that a copy is made
         self._size = size  # number of elements in buffer
 
-        # This buffer is a view on another
-        if base is not None:
-            self._dtype = base.dtype
-            if dtype is not None:
-                self._dtype = dtype
-            self._stride = base.stride
-            #self._size = size or base.size
-            self._itemsize = self._dtype.itemsize
-            self._nbytes = self._size * self._itemsize
-
         # Convert data to array+dtype if needed
-        elif data is not None:
+        if data is not None:
             if dtype is not None:
                 data = np.array(data, dtype=dtype, copy=False)
             else:
@@ -300,45 +280,24 @@ class DataBuffer(Buffer):
         else:
             raise ValueError("data/dtype/base cannot be all set to None")
         
-        Buffer.__init__(self, data=data, target=target, resizeable=resizeable)
-        self._base = base
-        
-
-    @property
-    def handle(self):
-        """ Name of this object on the GPU """
-
-        if self._base:
-            return self._base.handle
-        else:
-            return self._handle
+        Buffer.__init__(self, data=data, target=target)
 
     @property
     def target(self):
         """ OpenGL type of object. """
 
-        if self._base:
-            return self._base.target
-        else:
-            return self._target
+        return self._target
 
-    def activate(self):
-        """ Activate the object on GPU """
+    def _prepare_data(self, data, **kwds):
+        # Subclasses override this
+        return data
 
-        if self._base is not None:
-            self._base.activate()
-        else:
-            GLObject.activate(self)
-
-    def deactivate(self):
-        """ Deactivate the object on GPU """
-
-        if self._base is not None:
-            self._base.deactivate()
-        else:
-            GLObject.deactivate(self)
-
-    def set_data(self, data, offset=0, copy=False):
+    def set_subdata(self, data, offset=0, copy=False, **kwds):
+        data = self._prepare_data(data, **kwds)
+        offset = offset * self.itemsize
+        Buffer.set_subdata(self, data=data, offset=offset, copy=copy)
+    
+    def set_data(self, data, copy=False, **kwds):
         """ Set data (deferred operation)
 
         Parameters
@@ -353,24 +312,21 @@ class DataBuffer(Buffer):
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         """
-        if self.base is not None:
-            raise ValueError("Cannot set data on a non-base buffer")
-        else:
-            # Handle storage
-            if self._store:
-                if not data.flags["C_CONTIGUOUS"]:
-                    logger.warning("Copying discontiguous data as CPU storage")
-                    self._copied = True
-                    data = data.copy()
-                self._data = data.ravel()  # Makes a copy if not contiguous
-            # Store meta data (AFTER flattening, or stride would be wrong)
-            self._dtype = data.dtype
-            self._stride = data.strides[-1]
-            self._nbytes = data.nbytes
-            self._itemsize = self._dtype.itemsize
-            self.resize(data.size)
-            offset = offset * self.itemsize
-            Buffer.set_data(self, data=data, offset=offset, copy=copy)
+        data = self._prepare_data(data, **kwds)
+        
+        # Handle storage
+        if self._store:
+            if not data.flags["C_CONTIGUOUS"]:
+                logger.warning("Copying discontiguous data as CPU storage")
+                self._copied = True
+                data = data.copy()
+            self._data = data.ravel()  # Makes a copy if not contiguous
+        # Store meta data (AFTER flattening, or stride would be wrong)
+        self._dtype = data.dtype
+        self._stride = data.strides[-1]
+        self._itemsize = self._dtype.itemsize
+        self.resize(data.size)
+        Buffer.set_data(self, data=data, copy=copy)
 
     @property
     def dtype(self):
@@ -382,19 +338,13 @@ class DataBuffer(Buffer):
     def offset(self):
         """ Buffer offset (in bytes) relative to base """
 
-        return self._offset
+        return 0
 
     @property
     def stride(self):
         """ Stride of data in memory """
 
         return self._stride
-
-    @property
-    def base(self):
-        """Buffer base if this buffer is a view on another buffer. """
-
-        return self._base
 
     @property
     def size(self):
@@ -438,90 +388,30 @@ class DataBuffer(Buffer):
         This clears any pending operations.
         """
 
-        if not self._resizeable:
-            raise RuntimeError("Buffer is not resizeable")
-
-        if self._base is not None:
-            raise RuntimeError("Buffer view is not resizeable")
-
         if size == self.size:
             return
 
-        # Invalidate any view on this texture
-        for view in self._views:
-            view._valid = False
-        self._views = []
-
-        self._pending_data = []
-        self._need_resize = True
         self._size = size
         if self._data is not None and self._store:
             self._data = np.resize(self._data, self._size)
         else:
             self._data = None
+            
+        Buffer.resize(self, size * self.itemsize)
 
     def __getitem__(self, key):
         """ Create a view on this buffer. """
 
-        if self.base is not None:
-            raise ValueError("Can only access data from a base buffer")
-
-        if isinstance(key, str):
-            dtype = self.dtype[key]
-            offset = self.dtype.fields[key][1]
-            target = self.target
-            base = self
-            V = self.__class__(target=target, dtype=dtype, base=base,
-                               size=self.size, offset=offset)
-            V._nbytes = self.size * dtype.itemsize
-            V._itemsize = dtype.itemsize
-            V._key = key
-            self._views.append(V)
-            return V
-
-        if isinstance(key, int):
-            if key < 0:
-                key += self.size
-            if key < 0 or key > self.size:
-                raise IndexError("Buffer assignment index out of range")
-            start, stop, step = key, key + 1, 1
-        elif isinstance(key, slice):
-            start, stop, step = key.indices(self.size)
-            if stop < start:
-                start, stop = stop, start
-        elif key == Ellipsis:
-            start, stop, step = 0, self.size, 1
-        else:
-            raise TypeError("Buffer indices must be integers or strings")
-
-        if step != 1:
-            raise ValueError("Cannot access non-contiguous data")
-
-        if self.data is not None:
-            data = self.data[key]
-            V = self.__class__(target=self.target, base=self,
-                               data=data, size=stop - start,
-                               offset=start * self.itemsize, resizeable=False)
-        else:
-            V = self.__class__(target=self.target, base=self,
-                               dtype=self.dtype, size=stop - start,
-                               offset=start * self.itemsize, resizeable=False)
-        V._key = key
-        self._views.append(V)
-        return V
+        view = DataBufferView(self, key)
+        self._views.append(view)
+        return view
 
     def __setitem__(self, key, data):
         """ Set data (deferred operation) """
 
-        if self.base is not None and not self._valid:
-            raise ValueError("This texture view has been invalited")
-
         # Setting a whole field of the buffer: only allowed if we have CPU
         # storage. Note this case (key is str) only happen with base buffer
         if isinstance(key, str):
-            if self.base is not None:
-                raise ValueError(
-                    "Cannot set a specific field on a non-base buffer")
             if self._data is None:
                 raise ValueError(
                     """Cannot set non contiguous """
@@ -554,25 +444,8 @@ class DataBuffer(Buffer):
         else:
             raise TypeError("Buffer indices must be integers or strings")
 
-        # Buffer is a view on a base buffer
-        if self.base is not None:
-            base = self.base
-            # Base buffer has CPU storage
-            if base.data is not None:
-                # WARNING: do we check data size
-                #          or do we let numpy raises an error ?
-                base.data[key] = data
-                offset = start * base.itemsize
-                data = base.data[start:stop]
-                base.set_data(data=data, offset=offset, copy=False)
-            # Base buffer has no CPU storage, we cannot do operation
-            else:
-                raise ValueError(
-                    """Cannot set non contiguous data """
-                    """on buffer without CPU storage""")
-
         # Buffer is a base buffer and we have CPU storage
-        elif self.data is not None:
+        if self.data is not None:
             # WARNING: do we check data size
             #          or do we let numpy raises an error ?
             self.data[key] = data
@@ -601,6 +474,187 @@ class DataBuffer(Buffer):
                 "Cannot set non contiguous data on buffer without CPU storage")
 
 
+class DataBufferView(DataBuffer):
+    """ Read-only view on DataBuffer.
+
+    Parameters
+    ----------
+
+    """
+
+    def __init__(self, base, key):
+        self._base = base
+        self._key = key
+        self._target = base.target
+        self._stride = base.stride
+
+        if isinstance(key, str):
+            self._dtype = base.dtype[key]
+            self._offset = base.dtype.fields[key][1]
+            self._nbytes = base.size * self._dtype.itemsize
+            self._itemsize = self._dtype.itemsize
+            return
+        
+        if isinstance(key, int):
+            if key < 0:
+                key += self.size
+            if key < 0 or key > self.size:
+                raise IndexError("Buffer assignment index out of range")
+            start, stop, step = key, key + 1, 1
+        elif isinstance(key, slice):
+            start, stop, step = key.indices(self.size)
+            if stop < start:
+                start, stop = stop, start
+        elif key == Ellipsis:
+            start, stop, step = 0, self.size, 1
+        else:
+            raise TypeError("Buffer indices must be integers or strings")
+
+        if step != 1:
+            raise ValueError("Cannot access non-contiguous data")
+
+        self._offset = start * self.itemsize
+        self._size = stop - start
+        self._dtype = base.dtype
+
+    @property
+    def handle(self):
+        """ Name of this object on the GPU """
+
+        return self._base.handle
+
+    @property
+    def target(self):
+        """ OpenGL type of object. """
+
+        return self._base.target
+
+    def activate(self):
+        """ Activate the object on GPU """
+
+        self._base.activate()
+
+    def deactivate(self):
+        """ Deactivate the object on GPU """
+
+        self._base.deactivate()
+
+    def set_data(self, data, offset=0, copy=False):
+        raise TypeError("Cannot set data on read-only buffer view.")
+
+    @property
+    def dtype(self):
+        """ Buffer dtype """
+
+        return self._dtype
+
+    @property
+    def offset(self):
+        """ Buffer offset (in bytes) relative to base """
+
+        return self._offset
+
+    @property
+    def stride(self):
+        """ Stride of data in memory """
+
+        return self._stride
+
+    @property
+    def base(self):
+        """Buffer base if this buffer is a view on another buffer. """
+
+        return self._base
+
+    @property
+    def size(self):
+        """ Number of elements in the buffer """
+        return self._size
+
+    @property
+    def data(self):
+        """ Buffer CPU storage """
+
+        return self.base.data
+
+    @property
+    def itemsize(self):
+        """ The total number of bytes required to store the array data """
+
+        return self._itemsize
+
+    @property
+    def glsl_type(self):
+        """ GLSL declaration strings required for a variable to hold this data.
+        """
+        dtshape = self.dtype[0].shape
+        n = dtshape[0] if dtshape else 1
+        if n > 1:
+            dtype = 'vec%d' % n
+        else:
+            dtype = 'float' if 'f' in self.dtype[0].base.kind else 'int'
+        return 'attribute', dtype
+
+    def resize(self, size):
+        raise TypeError("Cannot resize read-only buffer view.")
+
+    def __getitem__(self, key):
+        """ Create a view on this buffer. """
+
+        raise ValueError("Can only access data from a base buffer")
+
+    def __setitem__(self, key, data):
+        """ Set data (deferred operation) """
+
+        if not self._valid:
+            raise ValueError("This buffer view has been invalidated")
+
+        if isinstance(key, str):
+            raise ValueError(
+                "Cannot set a specific field on a non-base buffer")
+
+        elif key == Ellipsis and self.base is not None:
+            # WARNING: do we check data size
+            #          or do we let numpy raises an error ?
+            self.base[self._key] = data
+            return
+        # Setting one or several elements
+        elif isinstance(key, int):
+            if key < 0:
+                key += self.size
+            if key < 0 or key > self.size:
+                raise IndexError("Buffer assignment index out of range")
+            start, stop, step = key, key + 1, 1
+        elif isinstance(key, slice):
+            start, stop, step = key.indices(self.size)
+            if stop < start:
+                start, stop = stop, start
+        elif key == Ellipsis:
+            start, stop, step = 0, self.size, 1
+        else:
+            raise TypeError("Buffer indices must be integers or strings")
+
+        # Set data on base buffer
+        base = self.base
+        # Base buffer has CPU storage
+        if base.data is not None:
+            # WARNING: do we check data size
+            #          or do we let numpy raises an error ?
+            base.data[key] = data
+            offset = start * base.itemsize
+            data = base.data[start:stop]
+            base.set_subdata(data=data, offset=offset, copy=False)
+        # Base buffer has no CPU storage, we cannot do operation
+        else:
+            raise ValueError(
+                """Cannot set non contiguous data """
+                """on buffer without CPU storage""")
+
+    def __repr__(self):
+        return ("<DataBufferView on %r at offset=%d size=%d>" % 
+                (self.base, self.offset, self.size))
+
+    
 # ------------------------------------------------------ VertexBuffer class ---
 class VertexBuffer(DataBuffer):
     """ Buffer for vertex attribute data
@@ -619,52 +673,44 @@ class VertexBuffer(DataBuffer):
         allowing the data to be updated regardless of striding. Note
         that modifying the data after passing it here might result in
         undesired behavior, unless a copy is given. Default True.
-    resizeable : bool
-        Indicates whether buffer is resizeable
     """
 
-    def __init__(self, data=None, dtype=None, size=0, store=True,
-                 resizeable=True, *args, **kwargs):
+    def __init__(self, data=None, dtype=None, size=0, store=True):
 
         if isinstance(data, (list, tuple)):
             data = np.array(data, np.float32)
-        # We don't want these two parameters to be seen from outside
-        # (because they are used internally only)
-        offset = kwargs.get("offset", 0)
-        base = kwargs.get("base", None)
 
         if dtype is not None:
             dtype = np.dtype(dtype)
             if dtype.isbuiltin:
                 dtype = np.dtype([('f0', dtype, 1)])
 
-        DataBuffer.__init__(self, data=data, dtype=dtype, size=size, base=base,
-                            offset=offset, target=gl.GL_ARRAY_BUFFER,
-                            store=store, resizeable=resizeable)
+        DataBuffer.__init__(self, data=data, dtype=dtype, size=size,
+                            target=gl.GL_ARRAY_BUFFER,
+                            store=store)
 
         # Check base type and count for each dtype fields (if buffer is a base)
-        if base is None:
-            for name in self.dtype.names:
-                btype = self.dtype[name].base
-                if len(self.dtype[name].shape):
-                    count = 1
-                    s = self.dtype[name].shape
-                    for i in range(len(s)):
-                        count *= s[i]
-                    #count = reduce(mul, self.dtype[name].shape)
-                else:
-                    count = 1
-                if btype not in [np.int8,  np.uint8,  np.float16,
-                                 np.int16, np.uint16, np.float32]:
-                    msg = ("Data basetype %r not allowed for Buffer/%s" 
-                           % (btype, name))
-                    raise TypeError(msg)
-                elif count not in [1, 2, 3, 4]:
-                    msg = ("Data basecount %s not allowed for Buffer/%s"
-                           % (count, name))
-                    raise TypeError(msg)
+        for name in self.dtype.names:
+            btype = self.dtype[name].base
+            if len(self.dtype[name].shape):
+                count = 1
+                s = self.dtype[name].shape
+                for i in range(len(s)):
+                    count *= s[i]
+                #count = reduce(mul, self.dtype[name].shape)
+            else:
+                count = 1
+            if btype not in [np.int8,  np.uint8,  np.float16,
+                                np.int16, np.uint16, np.float32]:
+                msg = ("Data basetype %r not allowed for Buffer/%s" 
+                        % (btype, name))
+                raise TypeError(msg)
+            elif count not in [1, 2, 3, 4]:
+                msg = ("Data basecount %s not allowed for Buffer/%s"
+                        % (count, name))
+                raise TypeError(msg)
 
-    def set_data(self, data, offset=0, copy=False, convert=False):
+    def _prepare_data(self, data, convert=False):
         # Build a structured view of the data if:
         #  -> it is not already a structured array
         #  -> shape if 1-D or last dimension is 1,2,3 or 4
@@ -683,8 +729,7 @@ class VertexBuffer(DataBuffer):
                 data = data.view(dtype=[('f0', data.dtype.base, c)])
             else:
                 data = data.view(dtype=[('f0', data.dtype.base, 1)])
-
-        DataBuffer.set_data(self, data, offset, copy)
+        return data
 
 
 # ------------------------------------------------------- IndexBuffer class ---
@@ -705,17 +750,9 @@ class IndexBuffer(DataBuffer):
         allowing the data to be updated regardless of striding. Note
         that modifying the data after passing it here might result in
         undesired behavior, unless a copy is given. Default True.
-    resizeable : bool
-        Indicates whether buffer is resizeable
     """
 
-    def __init__(self, data=None, dtype=np.uint32, size=0, store=True,
-                 resizeable=True, *args, **kwargs):
-
-        # We don't want these two parameters to be seen from outside
-        # (because they are used internally only)
-        offset = kwargs.get("offset", 0)
-        base = kwargs.get("base", None)
+    def __init__(self, data=None, dtype=np.uint32, size=0, store=True):
 
         if dtype and not np.dtype(dtype).isbuiltin:
             raise TypeError("Element buffer dtype cannot be structured")
@@ -725,15 +762,13 @@ class IndexBuffer(DataBuffer):
         elif dtype not in [np.uint8, np.uint16, np.uint32]:
             raise TypeError("Data type not allowed for IndexBuffer")
 
-        DataBuffer.__init__(self, data=data, dtype=dtype, size=size, base=base,
-                            offset=offset, target=gl.GL_ELEMENT_ARRAY_BUFFER,
-                            store=store, resizeable=resizeable)
+        DataBuffer.__init__(self, data=data, dtype=dtype, size=size,
+                            target=gl.GL_ELEMENT_ARRAY_BUFFER,
+                            store=store)
 
-    def set_data(self, data, offset=0, copy=False, convert=False):
+    def _prepare_data(self, data, convert=False):
         if not data.dtype.isbuiltin:
             raise TypeError("Element buffer dtype cannot be structured")
         else:
             if convert is True and data.dtype is not np.uint32:
                 data = data.astype(np.uint32)
-
-        DataBuffer.set_data(self, data, offset, copy)
