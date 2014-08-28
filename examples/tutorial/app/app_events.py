@@ -1,5 +1,6 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 This example shows how to retrieve event information from a callback.
 You should see information displayed for any event you triggered.
