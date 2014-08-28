@@ -26,7 +26,7 @@ Announcements
 
 - **Release!** Version 0.3, August 27, 2014
 - **EuroSciPy 2014**: talk at Saturday 30, and sprint at Sunday 31, August 2014
-- `Article in **Linux Magazine**, French Edition <https://github.com/vispy/linuxmag-article>`__, July 2014
+- `Article in Linux Magazine, French Edition <https://github.com/vispy/linuxmag-article>`__, July 2014
 - **GSoC 2014**: `two GSoC students are currently working on Vispy under the PSF umbrella <https://github.com/vispy/vispy/wiki/Project.%20GSoC-2014>`__
 - **Release!**, Version 0.2.1 04-11-2013
 - **Presentation at BI forum**, Budapest, 6 November 2013
