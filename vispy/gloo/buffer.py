@@ -541,8 +541,9 @@ class DataBufferView(DataBuffer):
 
         self._base.deactivate()
 
-    def set_data(self, data, offset=0, copy=False):
-        raise ValueError("Cannot set data on read-only buffer view.")
+    def set_data(self, data, copy=False):
+        raise ValueError("Cannot set_data on buffer view; only set_subdata is "
+                         "allowed.")
 
     @property
     def dtype(self):
@@ -598,7 +599,7 @@ class DataBufferView(DataBuffer):
         return 'attribute', dtype
 
     def resize(self, size):
-        raise TypeError("Cannot resize read-only buffer view.")
+        raise TypeError("Cannot resize buffer view.")
 
     def __getitem__(self, key):
         """ Create a view on this buffer. """
