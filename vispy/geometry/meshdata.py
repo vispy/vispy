@@ -54,7 +54,7 @@ class MeshData(object):
         self._vertices_indexed_by_faces = None  # (Nf, 3, 3) vertex coordinates
         self._vertices_indexed_by_edges = None  # (Ne, 2, 3) vertex coordinates
 
-        ## mappings between vertices, faces, and edges
+        # mappings between vertices, faces, and edges
         self._faces = None  # Nx3 indices into self._vertices, 3 verts/face
         self._edges = None  # Nx2 indices into self._vertices, 2 verts/edge
         self._edges_indexed_by_faces = None  # (Ne, 3, 2) indoces into
@@ -63,25 +63,25 @@ class MeshData(object):
         self._vertex_faces = None  # maps vertex ID to a list of face IDs
         self._vertex_edges = None  # maps vertex ID to a list of edge IDs
 
-        ## Per-vertex data
+        # Per-vertex data
         self._vertex_normals = None                # (Nv, 3) normals
         self._vertex_normals_indexed_by_faces = None  # (Nf, 3, 3) normals
         self._vertex_colors = None                 # (Nv, 3) colors
         self._vertex_colors_indexed_by_faces = None   # (Nf, 3, 4) colors
         self._vertex_colors_indexed_by_edges = None   # (Nf, 2, 4) colors
 
-        ## Per-face data
+        # Per-face data
         self._face_normals = None                # (Nf, 3) face normals
         self._face_normals_indexed_by_faces = None  # (Nf, 3, 3) face normals
         self._face_colors = None                 # (Nf, 4) face colors
         self._face_colors_indexed_by_faces = None   # (Nf, 3, 4) face colors
         self._face_colors_indexed_by_edges = None   # (Ne, 2, 4) face colors
 
-        ## Per-edge data
+        # Per-edge data
         self._edge_colors = None                # (Ne, 4) edge colors
         self._edge_colors_indexed_by_edges = None  # (Ne, 2, 4) edge colors
         # default color to use if no face/edge/vertex colors are given
-        #self._meshColor = (1, 1, 1, 0.1)
+        # self._meshColor = (1, 1, 1, 0.1)
 
         if vertices is not None:
             if faces is None:
@@ -351,18 +351,13 @@ class MeshData(object):
     def edge_colors(self):
         return self._edge_colors
 
-    #def _set_indexed_faces(self, faces, vertex_colors=None, face_colors=None):
-        #self._vertices_indexed_by_faces = faces
-        #self._vertex_colors_indexed_by_faces = vertex_colors
-        #self._face_colors_indexed_by_faces = face_colors
-
     def _compute_unindexed_vertices(self):
-        ## Given (Nv, 3, 3) array of vertices-indexed-by-face, convert
-        ## backward to unindexed vertices
-        ## This is done by collapsing into a list of 'unique' vertices
-        ## (difference < 1e-14)
+        # Given (Nv, 3, 3) array of vertices-indexed-by-face, convert
+        # backward to unindexed vertices
+        # This is done by collapsing into a list of 'unique' vertices
+        # (difference < 1e-14)
 
-        ## I think generally this should be discouraged..
+        # I think generally this should be discouraged..
         faces = self._vertices_indexed_by_faces
         verts = {}  # used to remember the index of each vertex position
         self._faces = np.empty(faces.shape[:2], dtype=np.uint)
@@ -378,7 +373,6 @@ class MeshData(object):
                 pt2 = tuple([round(x*1e14) for x in pt])
                 index = verts.get(pt2, None)
                 if index is None:
-                    #self._vertices.append(QtGui.QVector3D(*pt))
                     self._vertices.append(pt)
                     self._vertex_faces.append([])
                     index = len(self._vertices)-1
@@ -387,17 +381,6 @@ class MeshData(object):
                 self._vertex_faces[index].append(i)
                 self._faces[i, j] = index
         self._vertices = np.array(self._vertices, dtype=np.float32)
-
-    #def _setUnindexedFaces(self, faces, vertices, vertex_colors=None,
-        #                   face_colors=None):
-        #self._vertices = vertices #[QtGui.QVector3D(*v) for v in vertices]
-        #self._faces = faces.astype(np.uint)
-        #self._edges = None
-        #self._vertex_faces = None
-        #self._face_normals = None
-        #self._vertex_normals = None
-        #self._vertex_colors = vertex_colors
-        #self._face_colors = face_colors
 
     def vertex_faces(self):
         """
@@ -411,24 +394,10 @@ class MeshData(object):
                     self._vertex_faces[ind].append(i)
         return self._vertex_faces
 
-    #def reverseNormals(self):
-        #"""
-        #Reverses the direction of all normal vectors.
-        #"""
-        #pass
-
-    #def generateEdgesFromFaces(self):
-        #"""
-        #Generate a set of edges by listing all the edges of faces and
-        #removing any duplicates.
-        #Useful for displaying wireframe meshes.
-        #"""
-        #pass
-
     def _compute_edges(self, indexed=None):
         if indexed is None:
             if self._faces is not None:
-                ## generate self._edges from self._faces
+                # generate self._edges from self._faces
                 nf = len(self._faces)
                 edges = np.empty(nf*3, dtype=[('i', np.uint, 2)])
                 edges['i'][0:nf] = self._faces[:, :2]
@@ -488,7 +457,5 @@ class MeshData(object):
         state = pickle.loads(state)
         for k in state:
             if isinstance(state[k], list):
-                #if isinstance(state[k][0], QtGui.QVector3D):
-                #    state[k] = [[v.x(), v.y(), v.z()] for v in state[k]]
                 state[k] = np.array(state[k])
             setattr(self, k, state[k])
