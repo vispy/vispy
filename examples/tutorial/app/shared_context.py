@@ -6,7 +6,7 @@ This is a very simple example that demonstrates using a shared context
 between two Qt widgets.
 """
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore  # can also use pyside
 from functools import partial
 
 from vispy.app import Timer
@@ -23,7 +23,7 @@ def on_resize(canvas, vb, event):
 class Window(QtGui.QWidget):
     def __init__(self):
         super(Window, self).__init__()
-        box = QtGui.QBoxLayout(0, self)
+        box = QtGui.QBoxLayout(QtGui.QBoxLayout.LeftToRight, self)
         self.resize(500, 200)
         self.setLayout(box)
 
@@ -59,6 +59,12 @@ class Window(QtGui.QWidget):
         self.text.text = 'Tick #%s' % self.tick_count
         self.canvas_0.update()
         self.canvas_1.update()
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Escape:
+            self.close()
+        elif event.key() == QtCore.Qt.Key_F11:
+            self.showNormal() if self.isFullScreen() else self.showFullScreen()
 
 if __name__ == '__main__':
     qt_app = QtGui.QApplication([])
