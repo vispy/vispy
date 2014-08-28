@@ -169,6 +169,8 @@ class Entity(object):
     
     @document.setter
     def document(self, doc):
+        if doc is not None and not isinstance(doc, Entity):
+            raise TypeError("Document property must be Entity or None.")
         self._document = doc
         self.update()
 
