@@ -84,7 +84,7 @@ def _array_clip_val(val):
 
 def _hex_to_rgba(hexs):
     """Convert hex to rgba, permitting alpha values in hex"""
-    hexs = np.atleast_1d(np.array(hexs, '|S9'))
+    hexs = np.atleast_1d(np.array(hexs, '|U9'))
     out = np.ones((len(hexs), 4), np.float32)
     for hi, h in enumerate(hexs):
         assert isinstance(h, string_types)
@@ -100,7 +100,7 @@ def _rgb_to_hex(rgbs):
     """Convert rgb to hex triplet"""
     rgbs, n_dim = _check_color_dim(rgbs)
     return np.array(['#%02x%02x%02x' % tuple(255*rgb[:3]) for rgb in rgbs],
-                    '|S7')
+                    '|U7')
 
 
 ###############################################################################
