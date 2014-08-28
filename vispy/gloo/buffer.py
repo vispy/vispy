@@ -44,7 +44,7 @@ class Buffer(GLObject):
         GLObject.__init__(self)
         self._views = []
         self._valid = True
-        self._handle = None
+        self._handle = -1
 
         # For ATI bug
         self._bufferSubDataOk = False

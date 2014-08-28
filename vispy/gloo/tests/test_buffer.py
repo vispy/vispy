@@ -60,7 +60,7 @@ class BufferTest(unittest.TestCase):
     def test_data_storage(self):
         data = np.zeros(100)
         B = Buffer(data=data)
-        B.set_data(data=data[:50], offset=0, copy=False)
+        B.set_data(data=data[:50], copy=False)
         assert B._pending_data[-1][0].base is data
 
     # Check stored data is a copy
@@ -68,7 +68,7 @@ class BufferTest(unittest.TestCase):
     def test_data_copy(self):
         data = np.zeros(100)
         B = Buffer(data=data)
-        B.set_data(data=data[:50], offset=0, copy=True)
+        B.set_data(data=data[:50], copy=True)
         assert B._pending_data[-1][0].base is not data
 
     # Check setting oversized data
@@ -84,7 +84,7 @@ class BufferTest(unittest.TestCase):
     # ---------------------
     def test_negative_offset(self):
         data = np.zeros(10)
-        B = Buffer(data=data, resizeable=False)
+        B = Buffer(data=data)
         # with self.assertRaises(ValueError):
         #    B.set_data(np.ones(1), offset=-1)
         self.assertRaises(ValueError, B.set_data, np.ones(1), offset=-1)
@@ -93,7 +93,7 @@ class BufferTest(unittest.TestCase):
     # ---------------------
     def test_offlimit_offset(self):
         data = np.zeros(10)
-        B = Buffer(data=data, resizeable=False)
+        B = Buffer(data=data)
         # with self.assertRaises(ValueError):
         #    B.set_data(np.ones(1), offset=10 * data.dtype.itemsize)
         self.assertRaises(ValueError, B.set_data,
@@ -112,20 +112,8 @@ class BufferTest(unittest.TestCase):
         data = np.zeros(10)
         B = Buffer(data=data)
         data = np.zeros(20)
-        B._need_resize = False
         B.set_data(data)
         assert B.nbytes == data.nbytes
-        assert B._need_resize is True
-
-    # Forbidden resize
-    # ----------------
-    def test_buffer_forbidden_resize(self):
-        data = np.zeros(10)
-        B = Buffer(data=data, resizeable=False)
-        data = np.zeros(20)
-        # with self.assertRaises(ValueError):
-        #    B.set_data(data)
-        self.assertRaises(ValueError, B.set_data, data)
 
 
 # -----------------------------------------------------------------------------
