@@ -76,12 +76,6 @@ class Buffer(GLObject):
 
         return self._nbytes
 
-    @property
-    def handle(self):
-        """ Name of this object on the GPU """
-
-        return self._handle
-
     def set_subdata(self, data, offset=0, copy=False):
         """ Set a sub-region of the buffer (deferred operation).
         
