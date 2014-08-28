@@ -318,7 +318,10 @@ class DataBufferTest(unittest.TestCase):
         data = np.zeros(100, np.float32)
         subdata = data[:10]
         
+        print(">>> CREATE BUFFER")
         B = DataBuffer(data)
+        print("buffer size:", B._nbytes)
+        print("<<< CREATE BUFFER")
         B.set_data(subdata, offset=10)
         offset = B._pending_data[-1][2]
         assert offset == 10*4

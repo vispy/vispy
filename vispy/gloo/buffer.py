@@ -41,11 +41,10 @@ class Buffer(GLObject):
         Indicates whether buffer is resizeable
     """
 
-    def __init__(self, data=None, target=gl.GL_ARRAY_BUFFER, nbytes=0,
+    def __init__(self, data=None, target=gl.GL_ARRAY_BUFFER, nbytes=None,
                  resizeable=True):
 
         GLObject.__init__(self)
-        self._need_resize = True
         self._resizeable = True
         self._views = []
         self._valid = True
@@ -59,7 +58,9 @@ class Buffer(GLObject):
         self._target = target
 
         # Bytesize of buffer in GPU memory
-        self._nbytes = nbytes
+        self._buffer_size = None
+        # Bytesize of buffer in CPU memory
+        self._nbytes = 0
 
         # Buffer usage (GL_STATIC_DRAW, G_STREAM_DRAW or GL_DYNAMIC_DRAW)
         self._usage = gl.GL_DYNAMIC_DRAW
@@ -67,8 +68,11 @@ class Buffer(GLObject):
         # Set data
         self._pending_data = []
         if data is not None:
-            self._nbytes = data.nbytes
+            if nbytes is not None:
+                raise ValueError("Cannot specify both data and nbytes.")
             self.set_data(data, copy=False)
+        elif nbytes is not None:
+            self._nbytes = nbytes
         
         # set resizeable flag only after data has been set
         self._resizeable = resizeable
@@ -79,9 +83,9 @@ class Buffer(GLObject):
 
         return self._nbytes
 
-    def set_data(self, data, offset=0, copy=False):
-        """ Set data (deferred operation)
-
+    def set_subdata(self, data, offset=0, copy=False):
+        """ Set a sub-region of the buffer (deferred operation).
+        
         Parameters
         ----------
 
@@ -94,23 +98,11 @@ class Buffer(GLObject):
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         """
-
         data = np.array(data, copy=copy)
         nbytes = data.nbytes
 
         if offset < 0:
             raise ValueError("Offset must be positive")
-        elif offset == 0 and nbytes > self._nbytes:
-            if not self._resizeable:
-                raise ValueError("Data does not fit into buffer")
-            else:
-                self._nbytes = nbytes
-                self._need_resize = True
-                # Invalidate any view on this buffer
-                for view in self._views:
-                    view._valid = False
-                self._views = []
-
         elif (offset + nbytes) > self._nbytes:
             raise ValueError("Data does not fit into buffer")
 
@@ -119,6 +111,48 @@ class Buffer(GLObject):
         if nbytes == self._nbytes and offset == 0:
             self._pending_data = []
         self._pending_data.append((data, nbytes, offset))
+
+    def set_data(self, data, copy=False):
+        """ Set data in the buffer (deferred operation).
+        
+        This completely resets the size and contents of the buffer.
+
+        Parameters
+        ----------
+
+        data : ndarray
+            Data to be uploaded
+        copy: bool
+            Since the operation is deferred, data may change before
+            data is actually uploaded to GPU memory.
+            Asking explicitly for a copy will prevent this behavior.
+        """
+        data = np.array(data, copy=copy)
+        nbytes = data.nbytes
+
+        if nbytes != self._nbytes:
+            self.resize(nbytes)
+
+        # We can discard any other pending operations here.
+        self._pending_data = [(data, nbytes, offset)]
+
+    def resize(self, size):
+        """ Resize this buffer (deferred operation). 
+        
+        Parameters
+        ----------
+        size : int
+            New buffer size in bytes.
+        """
+        if not self._resizeable:
+            raise ValueError("Cannot set data size %d for buffer size %d "
+                             "(buffer is non-resizeable)" % 
+                             (nbytes, self._nbytes))
+        self._nbytes = size
+        # Invalidate any view on this buffer
+        for view in self._views:
+            view._valid = False
+        self._views = []
 
     def _create(self):
         """ Create buffer on GPU """
@@ -137,6 +171,7 @@ class Buffer(GLObject):
 
         logger.debug("GPU: Resizing buffer(%d bytes)" % self._nbytes)
         gl.glBufferData(self._target, self._nbytes, self._usage)
+        self._buffer_size = self._nbytes
 
     def _activate(self):
         """ Bind the buffer to some target """
@@ -148,9 +183,8 @@ class Buffer(GLObject):
             return
         
         # Resize if necessary
-        if self._need_resize:
+        if self._buffer_size != self._nbytes:
             self._resize()
-            self._need_resize = False
         
         # Update pending data if necessary
         if self._pending_data:
@@ -206,9 +240,9 @@ class DataBuffer(Buffer):
     target : GLENUM
         gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER
     data : ndarray
-        Buffer data (optional)
+        Buffer data
     dtype : dtype
-        Buffer data type (optional)
+        Buffer data type
     size : int
         Buffer element size
     base : DataBuffer
@@ -230,8 +264,8 @@ class DataBuffer(Buffer):
         self._offset = offset
         self._data = None
         self._store = store
-        self._copy = False  # flag to indicate that a copy is made
-        self._size = size
+        self._copied = False  # flag to indicate that a copy is made
+        self._size = size  # number of elements in buffer
 
         # This buffer is a view on another
         if base is not None:
@@ -326,7 +360,7 @@ class DataBuffer(Buffer):
             if self._store:
                 if not data.flags["C_CONTIGUOUS"]:
                     logger.warning("Copying discontiguous data as CPU storage")
-                    self._copy = True
+                    self._copied = True
                     data = data.copy()
                 self._data = data.ravel()  # Makes a copy if not contiguous
             # Store meta data (AFTER flattening, or stride would be wrong)
