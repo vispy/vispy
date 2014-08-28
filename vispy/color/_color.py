@@ -80,6 +80,30 @@ def _array_clip_val(val):
 
 
 ###############################################################################
+# RGB<->HEX conversion
+
+def _hex_to_rgba(hexs):
+    """Convert hex to rgba, permitting alpha values in hex"""
+    hexs = np.atleast_1d(np.array(hexs, '|U9'))
+    out = np.ones((len(hexs), 4), np.float32)
+    for hi, h in enumerate(hexs):
+        assert isinstance(h, string_types)
+        off = 1 if h[0] == '#' else 0
+        assert len(h) in (6+off, 8+off)
+        e = (len(h)-off) // 2
+        out[hi, :e] = [int(h[i:i+2], 16) / 255.
+                       for i in range(off, len(h), 2)]
+    return out
+
+
+def _rgb_to_hex(rgbs):
+    """Convert rgb to hex triplet"""
+    rgbs, n_dim = _check_color_dim(rgbs)
+    return np.array(['#%02x%02x%02x' % tuple((255*rgb[:3]).astype(np.uint8))
+                     for rgb in rgbs], '|U7')
+
+
+###############################################################################
 # RGB<->HSV conversion
 
 def _rgb_to_hsv(rgbs):
@@ -313,7 +337,7 @@ class ColorArray(object):
         elif subrgba.ndim == 2:
             assert subrgba.shape[1] in (3, 4)
         return ColorArray(subrgba)
-        
+
     def __setitem__(self, item, value):
         if isinstance(item, tuple):
             raise ValueError('ColorArray indexing is only allowed along '
@@ -322,7 +346,7 @@ class ColorArray(object):
         if isinstance(value, ColorArray):
             value = value.rgba
         self._rgba[item] = value
-    
+
     # RGB(A)
     @property
     def rgba(self):
@@ -383,6 +407,18 @@ class ColorArray(object):
     def alpha(self, val):
         """Set the color using alpha"""
         self._rgba[:, 3] = _array_clip_val(val)
+
+    ###########################################################################
+    # HEX
+    @property
+    def hex(self):
+        """Numpy array with N elements, each one a hex triplet string"""
+        return _rgb_to_hex(self._rgba)
+
+    @hex.setter
+    def hex(self, val):
+        """Set the color values using a list of hex strings"""
+        self.rgba = _hex_to_rgba(val)
 
     ###########################################################################
     # HSV
@@ -545,6 +581,10 @@ class Color(ColorArray):
     @ColorArray.alpha.getter
     def alpha(self):
         return super(Color, self).alpha[0]
+
+    @ColorArray.hex.getter
+    def hex(self):
+        return super(Color, self).hex[0]
 
     @ColorArray.hsv.getter
     def hsv(self):

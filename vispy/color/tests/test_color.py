@@ -21,6 +21,9 @@ def test_color():
     assert_equal(x.alpha, 1.)
     x.rgb = [0, 0, 1]
     assert_array_equal(x.hsv, [240, 1, 1])
+    assert_equal(x.hex, '#0000ff')
+    x.hex = '#00000000'
+    assert_array_equal(x.rgba, [0.]*4)
 
 
 def test_color_array():
@@ -85,8 +88,9 @@ def test_color_interpretation():
     r.alpha = 0
     r.rgb = (1, 0, 0)
     assert_equal(r.alpha, 0)
+    assert_equal(r.hex, ['#ff0000'])
     r.alpha = 1
-    r.rgb = 0, 1, 0
+    r.hex = '00ff00'
     assert_equal(r, ColorArray('g'))
     assert_array_equal(r.rgb.ravel(), (0., 1., 0.))
     r.RGB = 255, 0, 0
