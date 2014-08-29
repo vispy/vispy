@@ -305,7 +305,7 @@ class Attribute(Variable):
             self._data = data
         elif isinstance(self._data, VertexBuffer):
             # We already have a vertex buffer
-            self._data[...] = data
+            self._data.set_data(data)
         elif (isnumeric or (isinstance(data, (tuple, list)) and
                             len(data) in (1, 2, 3, 4) and
                             isinstance(data[0], (float, int)))):

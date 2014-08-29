@@ -140,7 +140,11 @@ class Canvas(app.Canvas):
         # for example).
         tr = self.panzoom * LogTransform(base=(0, 2, 0))
         self.points._program.vert['transform'] = tr.shader_map()
-
+    
+    def on_initialize(self, even):
+        gloo.set_state(blend=True,
+                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+    
     def _normalize(self, xy):
         x, y = xy
         w, h = float(self.width), float(self.height)

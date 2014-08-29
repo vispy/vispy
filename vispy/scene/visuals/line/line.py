@@ -18,12 +18,6 @@ from .dash_atlas import DashAtlas
 from .vertex import VERTEX_SHADER as AGG_VERTEX_SHADER
 from .fragment import FRAGMENT_SHADER as AGG_FRAGMENT_SHADER
 
-try:
-    import OpenGL.GL
-    HAVE_PYOPENGL = True
-except ImportError:
-    HAVE_PYOPENGL = False
-
 
 vec2to4 = Function("""
     vec4 vec2to4(vec2 input) {
@@ -192,9 +186,14 @@ class Line(Visual):
             * "gl" uses OpenGL's built-in line rendering. This is much faster,
               but produces much lower-quality results and is not guaranteed to
               obey the requested line width or join/endcap styles.
+    antialias : bool 
+        For mode='gl', specifies whether to use line smoothing or not.
     """
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', mode='gl', antialias=False, **kwds):
+        # todo: Get rid of aa argument? It's a bit awkward since ...
+        # - line_smooth is not supported on ES 2.0
+        # - why on earth would you turn off aa with agg?
         Visual.__init__(self, **kwds)
         self._pos = pos
         self._color = ColorArray(color)
@@ -202,8 +201,8 @@ class Line(Visual):
         assert connect is not None  # can't be to start
         self._connect = connect
         self._mode = 'none'
-        self._antialias = antialias
         self._origs = {}
+        self.antialias = antialias
         self._vbo = None
         self._I = None
         # Set up the GL program
@@ -226,7 +225,7 @@ class Line(Visual):
 
     @antialias.setter
     def antialias(self, aa):
-        self._antialias = aa
+        self._antialias = bool(aa)
         self.update()
 
     @property
@@ -249,7 +248,7 @@ class Line(Visual):
                            linejoin=joins['round'],
                            linecaps=(caps['round'], caps['round']),
                            dash_caps=(caps['round'], caps['round']),
-                           linewidth=self._width, antialias=self._antialias)
+                           linewidth=self._width, antialias=1.0)
             self._dash_atlas = gloo.Texture2D(self._da._data)
             
         # do not call subclass set_data; this is often overridden with a 
@@ -369,12 +368,15 @@ class Line(Visual):
             self._gl_program.vert['color'] = gloo.VertexBuffer(self._color)
         gloo.set_state('translucent')
 
-        if HAVE_PYOPENGL:
-            OpenGL.GL.glLineWidth(self._width)
-            if self._antialias:
-                OpenGL.GL.glEnable(OpenGL.GL.GL_LINE_SMOOTH)
-            else:
-                OpenGL.GL.glDisable(OpenGL.GL.GL_LINE_SMOOTH)
+        # Turn on line smooth?
+        aaGL = None
+        if self._antialias:
+            try:
+                import OpenGL.GL as aaGL
+            except ImportError:
+                pass
+        if aaGL:
+            aaGL.glEnable(aaGL.GL_LINE_SMOOTH)
 
         if self._connect == 'strip':
             self._gl_program.draw('line_strip')
@@ -384,6 +386,10 @@ class Line(Visual):
             self._gl_program.draw('lines', self._connect)
         else:
             raise ValueError("Invalid line connect mode: %r" % self._connect)
+        
+        # Turn line smooth back off?
+        if aaGL:
+            aaGL.glDisable(aaGL.GL_LINE_SMOOTH)
 
     def _agg_draw(self, event):
         if self._pos is None:
