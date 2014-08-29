@@ -16,9 +16,10 @@ def plot(*args, **kwds):
     canvas.view = canvas.central_widget.add_view()
     line = visuals.LinePlot(*args, **kwds)
     canvas.view.add(line)
+    canvas.view.camera.auto_zoom(line)
     canvas.show()
     plots.append(canvas)
-
+    return canvas
 
 def image(*args, **kwds):
     """ Create a new canvas and display the given image data.
@@ -30,5 +31,6 @@ def image(*args, **kwds):
     image = visuals.Image(*args, **kwds)
     canvas.view.add(image)
     canvas.show()
-    canvas.view.camera.rect = (0, 0) + image.size
+    canvas.view.camera.auto_zoom(image)
     plots.append(canvas)
+    return canvas

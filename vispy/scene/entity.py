@@ -302,6 +302,24 @@ class Entity(object):
             entity = path[-1]
             getattr(entity.events, event.type)(event)
 
+    def bounds(self, mode, axis):
+        """ Return the (min, max) bounding values describing the location of
+        this entity in its local coordinate system.
+        
+        Parameters
+        ----------
+        mode : str
+            Describes the type of boundary requested. Can be "visual", "data",
+            or "mouse".
+        axis : 0, 1, 2
+            The axis along which to measure the bounding values.
+        
+        Returns
+        -------
+        None or (min, max) tuple. 
+        """
+        return None
+
     def update(self):
         """
         Emit an event to inform Canvases that this Entity needs to be redrawn.

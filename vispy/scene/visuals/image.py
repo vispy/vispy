@@ -133,6 +133,12 @@ class Image(ModularMesh):
         # this is handled in _build_data instead.
         pass
 
+    def bounds(self, mode, axis):
+        if axis > 1:
+            return (0, 0)
+        else:
+            return (0, self.size[axis])
+
     def draw(self, event):
         if self._data is None:
             return
