@@ -73,7 +73,7 @@ class Image(ModularMesh):
 
     def _build_data(self, event):
         # Construct complete data array with position and optionally color
-        if self.transform.Linear:
+        if event.render_transform.Linear:
             method = 'subdivide'
             grid = (1, 1)
         else:
@@ -144,7 +144,7 @@ class Image(ModularMesh):
         if self._data is None:
             return
 
-        if self.transform.Linear:
+        if event.render_transform.Linear:
             method = 'subdivide'
         else:
             method = self.method
@@ -153,6 +153,7 @@ class Image(ModularMesh):
         if self._texture is None or method == 'impostor':
             self._build_data(event)
         if method == 'subdivide':
+            print(repr(event.render_transform))
             tr = event.render_transform.shader_map()
             self._program.vert['map_local_to_nd'] = tr
 
