@@ -155,7 +155,7 @@ class Canvas(app.Canvas):
             x0, y0 = event.press_event.pos
             x1, y1 = event.last_event.pos
             x, y = event.pos
-            dxy = ((x - x1) / self.size[0], -(y - y1) / self.size[1])
+            dxy = ((x - x1) / self.size[0] * 2, -(y - y1) / self.size[1] * 2)
             button = event.press_event.button
             
             # This just updates my private PanZoom instance. Nothing magic
