@@ -21,6 +21,7 @@ def plot(*args, **kwds):
     plots.append(canvas)
     return canvas
 
+
 def image(*args, **kwds):
     """ Create a new canvas and display the given image data.
     

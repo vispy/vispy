@@ -223,8 +223,8 @@ class PanZoomCamera(BaseCamera):
             ph = bounds.height * padding * 0.5
             bounds.left = bounds.left - pw
             bounds.right = bounds.right + pw
-            bounds.top = bounds.top + pw
-            bounds.bottom = bounds.bottom - pw
+            bounds.top = bounds.top + ph
+            bounds.bottom = bounds.bottom - ph
         self.rect = bounds
 
     @property
