@@ -151,7 +151,7 @@ class Canvas(app.Canvas):
         w, h = self.size
         yf = 1 - y/(h/2.)
         xf = x/(w/2.) - 1
-        P = np.zeros((4+4+514+514, 2))
+        P = np.zeros((4+4+514+514, 2), np.float32)
 
         x_baseline = P[:4]
         y_baseline = P[4:8]

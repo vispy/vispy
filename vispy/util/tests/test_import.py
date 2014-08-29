@@ -109,7 +109,14 @@ def test_import_vispy_gloo():
 
 def test_import_vispy_no_pyopengl():
     """ Importing vispy.gloo.gl.desktop should not import PyOpenGL. """
+    # vispy.gloo desktop backend
     allmodnames = loaded_vispy_modules('vispy.gloo.gl.desktop', 2, True)
+    assert_not_in('OpenGL', allmodnames)
+    # vispy.app 
+    allmodnames = loaded_vispy_modules('vispy.app', 2, True)
+    assert_not_in('OpenGL', allmodnames)
+    # vispy.scene
+    allmodnames = loaded_vispy_modules('vispy.scene', 2, True)
     assert_not_in('OpenGL', allmodnames)
 
 
@@ -118,3 +125,11 @@ def test_import_vispy_pyopengl():
     """ Importing vispy.gloo.gl.pyopengl should import PyOpenGL. """
     allmodnames = loaded_vispy_modules('vispy.gloo.gl.pyopengl', 2, True)
     assert_in('OpenGL', allmodnames)
+
+
+def test_import_vispy_scene():
+    """ Importing vispy.gloo.gl.desktop should not import PyOpenGL. """
+    modnames = loaded_vispy_modules('vispy.scene', 2)
+    more_modules = ['vispy.app', 'vispy.gloo', 'vispy.scene', 'vispy.color', 
+                    'vispy.io', 'vispy.geometry']
+    assert_equal(modnames, set(_min_modules + more_modules))

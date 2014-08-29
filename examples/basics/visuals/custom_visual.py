@@ -140,7 +140,11 @@ class Canvas(app.Canvas):
         # for example).
         tr = self.panzoom * LogTransform(base=(0, 2, 0))
         self.points._program.vert['transform'] = tr.shader_map()
-
+    
+    def on_initialize(self, even):
+        gloo.set_state(blend=True,
+                       blend_func=('src_alpha', 'one_minus_src_alpha'))
+    
     def _normalize(self, xy):
         x, y = xy
         w, h = float(self.width), float(self.height)
@@ -151,7 +155,7 @@ class Canvas(app.Canvas):
             x0, y0 = event.press_event.pos
             x1, y1 = event.last_event.pos
             x, y = event.pos
-            dxy = ((x - x1) / self.size[0], -(y - y1) / self.size[1])
+            dxy = ((x - x1) / self.size[0] * 2, -(y - y1) / self.size[1] * 2)
             button = event.press_event.button
             
             # This just updates my private PanZoom instance. Nothing magic
