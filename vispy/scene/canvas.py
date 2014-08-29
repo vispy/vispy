@@ -14,10 +14,12 @@ from .transforms import STTransform, TransformCache
 from .events import SceneDrawEvent, SceneMouseEvent
 from ..color import Color
 from ..util import logger
+from .widgets import Widget
 
 
 class SceneCanvas(app.Canvas):
-    """A Canvas that automatically draws the contents of a scene
+    """ SceneCanvas provides a Canvas that automatically draws the contents
+    of a scene.
 
     Receives the following events:
     initialize, resize, draw, mouse_press, mouse_release, mouse_move,
@@ -82,6 +84,9 @@ class SceneCanvas(app.Canvas):
         self._vp_stack = []  # for storing information about viewports used
         self._scene = None
         self._bgcolor = Color(kwargs.pop('bgcolor', 'black')).rgba
+        
+        # A default widget that follows the shape of the canvas
+        self._central_widget = None
 
         app.Canvas.__init__(self, *args, **kwargs)
         self.events.mouse_press.connect(self._process_mouse_event)
@@ -89,19 +94,21 @@ class SceneCanvas(app.Canvas):
         self.events.mouse_release.connect(self._process_mouse_event)
         self.events.mouse_wheel.connect(self._process_mouse_event)
 
-        # Collection of transform caches; one for each root visual used in
+        # Collection of transform caches; one for each root visual used in 
         # self.draw_visual(...)
         self._transform_caches = weakref.WeakKeyDictionary()
 
-        # Set up default entity stack: ndc -> fb -> pixels -> scene
-        self.ndc = Entity()
-        self.framebuffer = Entity(parent=self.ndc)
-        self.framebuffer.transform = STTransform()
-        self.pixels = Entity(parent=self.framebuffer)
-        self.pixels.transform = STTransform()
-
-        self.scene = SubScene(parent=self.pixels)
-
+        # Set up default entity stack: ndc -> fb -> canvas -> scene
+        self.render_cs = Entity()
+        self.framebuffer_cs = Entity(parent=self.render_cs)
+        self.framebuffer_cs.transform = STTransform()
+        self.canvas_cs = Entity(parent=self.framebuffer_cs)
+        self.canvas_cs.transform = STTransform()
+        # By default, the document coordinate system is the canvas.
+        self.canvas_cs.document = self.canvas_cs
+        
+        self.scene = SubScene(parent=self.canvas_cs)
+        
     @property
     def scene(self):
         """ The SubScene object that represents the root entity of the
@@ -115,6 +122,15 @@ class SceneCanvas(app.Canvas):
             self._scene.events.update.disconnect(self._scene_update)
         self._scene = e
         self._scene.events.update.connect(self._scene_update)
+
+    @property
+    def central_widget(self):
+        """ Returns the default widget that occupies the entire area of the
+        canvas. 
+        """
+        if self._central_widget is None:
+            self._central_widget = Widget(size=self.size, parent=self.scene)
+        return self._central_widget
 
     def _scene_update(self, event):
         self.update()
@@ -155,12 +171,12 @@ class SceneCanvas(app.Canvas):
             # TODO: this should happen as a reaction to resize, push_viewport,
             #       etc.; not here.  (but note the transforms must change
             #       following push_viewport)
-            self.ndc_transform
-            self.fb_transform
+            self.fb_ndc_transform
+            self.canvas_fb_transform
             
-            scene_event.push_entity(self.ndc)
-            scene_event.push_entity(self.framebuffer)
-            scene_event.push_entity(self.pixels)
+            scene_event.push_entity(self.render_cs)
+            scene_event.push_entity(self.framebuffer_cs)
+            scene_event.push_entity(self.canvas_cs)
             scene_event.push_entity(visual)
             visual.draw(scene_event)
         finally:
@@ -171,15 +187,19 @@ class SceneCanvas(app.Canvas):
                                                      TransformCache())
         scene_event = SceneMouseEvent(canvas=self, event=event,
                                       transform_cache=tr_cache)
-        scene_event.push_entity(self.ndc)
-        scene_event.push_entity(self.framebuffer)
-        scene_event.push_entity(self.pixels)
+        scene_event.push_entity(self.render_cs)
+        scene_event.push_entity(self.framebuffer_cs)
+        scene_event.push_entity(self.canvas_cs)
         scene_event.push_entity(self._scene)
         self._scene._process_mouse_event(scene_event)
         
         # If something in the scene handled the scene_event, then we mark
         # the original event accordingly.
         event.handled = scene_event.handled
+
+    def on_resize(self, event):
+        if self._central_widget is not None:
+            self._central_widget.size = self.size
 
     # -------------------------------------------------- transform handling ---
     def push_viewport(self, viewport):
@@ -198,13 +218,13 @@ class SceneCanvas(app.Canvas):
             vp[3] *= -1
             
         self._vp_stack.append(vp)
-        self.ndc_transform  # update!
+        self.fb_ndc_transform  # update!
         # Apply
         try:
             self._set_viewport(vp)
         except:
             self._vp_stack.pop()
-            self.ndc_transform  # update!
+            self.fb_ndc_transform  # update!
             raise
 
     def pop_viewport(self):
@@ -214,7 +234,7 @@ class SceneCanvas(app.Canvas):
         # Activate latest
         if len(self._vp_stack) > 0:
             self._set_viewport(self._vp_stack[-1])
-            self.ndc_transform  # update!
+            self.fb_ndc_transform  # update!
         return vp
     
     def _set_viewport(self, vp):
@@ -226,7 +246,7 @@ class SceneCanvas(app.Canvas):
         and the transform to the FBO.
         """
         self._fb_stack.append((fbo, offset, csize))
-        self.fb_transform  # update!
+        self.canvas_fb_transform  # update!
         
         # Apply
         try:
@@ -246,7 +266,7 @@ class SceneCanvas(app.Canvas):
         if len(self._fb_stack) > 0:
             old_fbo = self._fb_stack[-1]
             old_fbo[0].activate()
-        self.fb_transform  # update!
+        self.canvas_fb_transform  # update!
         return fbo
         
     def _current_framebuffer(self):
@@ -259,7 +279,7 @@ class SceneCanvas(app.Canvas):
             return self._fb_stack[-1]
 
     @property
-    def fb_transform(self):
+    def canvas_fb_transform(self):
         """ The transform that maps from the canvas coordinate system to the
         current framebuffer coordinate system. 
         
@@ -288,11 +308,11 @@ class SceneCanvas(app.Canvas):
         map_from = [list(offset), [offset[0] + csize[0], offset[1] + csize[1]]]
         map_to = [[0, fbsize[1]], [fbsize[0], 0]]
         
-        self.pixels.transform.set_mapping(map_from, map_to)
-        return self.pixels.transform
+        self.canvas_cs.transform.set_mapping(map_from, map_to)
+        return self.canvas_cs.transform
 
     @property
-    def ndc_transform(self):
+    def fb_ndc_transform(self):
         """ The transform that maps from the framebuffer coordinate system to
         normalized device coordinates (which is the obligatory output 
         coordinate system for all vertex shaders). This transform accounts for
@@ -304,8 +324,8 @@ class SceneCanvas(app.Canvas):
         map_from = [[x, y], [x+w, y+h]]
         map_to = [[-1, -1], [1, 1]]
         
-        self.framebuffer.transform.set_mapping(map_from, map_to)
-        return self.framebuffer.transform
+        self.framebuffer_cs.transform.set_mapping(map_from, map_to)
+        return self.framebuffer_cs.transform
     
     @property
     def render_transform(self):
@@ -315,4 +335,4 @@ class SceneCanvas(app.Canvas):
 
         Most visuals should use this transform when drawing.
         """
-        return self.ndc_transform * self.fb_transform
+        return self.fb_ndc_transform * self.canvas_fb_transform

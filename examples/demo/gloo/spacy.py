@@ -145,7 +145,7 @@ class Canvas(app.Canvas):
         pos[:, :2] = np.random.normal(0.0, SIZE/2, (blocksize, 2))  # x-y
         pos[:, 2] = np.random.uniform(0, SIZE, (blocksize,))  # z
         start_index = self._active_block * blocksize
-        self.program['a_position'].set_data(pos, offset=start_index) 
+        self.program['a_position'].set_subdata(pos, offset=start_index) 
         
         #print(start_index)
         
@@ -156,7 +156,7 @@ class Canvas(app.Canvas):
                 val += NBLOCKS
             values = np.ones((blocksize, 1), 'float32') * val * SIZE
             start_index = i*blocksize
-            self.program['a_offset'].set_data(values, offset=start_index) 
+            self.program['a_offset'].set_subdata(values, offset=start_index) 
         
         # Reset timer
         self._timeout += SPEED

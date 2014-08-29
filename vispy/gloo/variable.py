@@ -7,7 +7,7 @@ import numpy as np
 
 from . import gl
 from .globject import GLObject
-from .buffer import VertexBuffer
+from .buffer import VertexBuffer, DataBufferView
 from .texture import BaseTexture, Texture2D, Texture3D, GL_SAMPLER_3D
 from .framebuffer import RenderBuffer
 from ..util import logger
@@ -298,7 +298,9 @@ class Attribute(Variable):
         
         isnumeric = isinstance(data, (float, int))
         
-        if isinstance(data, VertexBuffer):
+        if (isinstance(data, VertexBuffer) or
+            (isinstance(data, DataBufferView) and 
+             isinstance(data.base, VertexBuffer))):
             # New vertex buffer
             self._data = data
         elif isinstance(self._data, VertexBuffer):

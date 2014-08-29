@@ -349,9 +349,9 @@ class PerspectiveCamera(BaseCamera):
     @mode.setter
     def mode(self, mode):
         if mode == 'ortho':
-            self._near = -1e6
+            self._near = -1e3
         elif mode == 'perspective':
-            self._near = 1e-6
+            self._near = 1e-2
         else:
             raise ValueError('Accepted modes are "ortho" and "perspective".')
         self._far = 1e6
@@ -444,12 +444,13 @@ class TurntableCamera(PerspectiveCamera):
         Name used to identify the camera in the scene.
     """
     def __init__(self, elevation=30., azimuth=30.,
-                 distance=10., center=(0, 0, 0), **kwds):
+                 distance=10., center=(0, 0, 0), up='z', **kwds):
         super(TurntableCamera, self).__init__(**kwds)
         self.elevation = elevation
         self.azimuth = azimuth
         self.distance = distance
         self.center = center
+        self.up = up
         self._update_camera_pos()
     
     @property
@@ -547,9 +548,18 @@ class TurntableCamera(PerspectiveCamera):
         with ch_em.blocker(self._update_transform):
             tr = self.transform
             tr.reset()
-            tr.translate((0.0, 0.0, -self.distance))
-            tr.rotate(self.elevation, (-1, 0, 0))
-            tr.rotate(self.azimuth, (0, 1, 0))
+            if self.up == 'y':
+                tr.translate((0.0, 0.0, -self.distance))
+                tr.rotate(self.elevation, (-1, 0, 0))
+                tr.rotate(self.azimuth, (0, 1, 0))
+            elif self.up == 'z':
+                tr.rotate(90, (1, 0, 0))
+                tr.translate((0.0, -self.distance, 0.0))
+                tr.rotate(self.elevation, (-1, 0, 0))
+                tr.rotate(self.azimuth, (0, 0, 1))
+            else:
+                raise ValueError('TurntableCamera.up must be "y" or "z".')
+                
             tr.translate(-np.array(self.center))
         self._update_transform()
 

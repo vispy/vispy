@@ -52,11 +52,11 @@ def tesst_multiplication():
 
 def test_transform_chain():
     # Make dummy classes for easier distinguishing the transforms
-    
+
     class DummyTrans(tr.BaseTransform):
         glsl_map = "vec4 trans(vec4 pos) {return pos;}"
         glsl_imap = "vec4 trans(vec4 pos) {return pos;}"
-    
+
     class TransA(DummyTrans):
         pass
 
@@ -68,7 +68,7 @@ def test_transform_chain():
 
     # Create test transforms
     a, b, c = TransA(), TransB(), TransC()
-    
+
     # Test Chain creation
     assert tr.ChainTransform().transforms == []
     assert tr.ChainTransform(a).transforms == [a]
@@ -98,8 +98,8 @@ def test_transform_chain():
     chain2 = tr.ChainTransform(c)
     chain3 = tr.ChainTransform(chain1, chain2)
     chain4 = tr.ChainTransform(a, b, c, chain3)
-    chain4.flatten()
-    assert chain4.transforms == [a, b, c, a, b, c]
+    chain5 = chain4.flat()
+    assert chain5.transforms == [a, b, c, a, b, c]
 
     # Test simplifying
     t1 = tr.STTransform(scale=(2, 3))
@@ -110,17 +110,17 @@ def test_transform_chain():
     t321 = t3*t2*t1
     c123 = tr.ChainTransform(t1, t2, t3)
     c321 = tr.ChainTransform(t3, t2, t1)
-    c123.simplify()
-    c321.simplify()
+    c123s = c123.simplified()
+    c321s = c321.simplified()
     #
     assert isinstance(t123, tr.STTransform)  # or the test is useless
     assert isinstance(t321, tr.STTransform)  # or the test is useless
-    assert len(c123.transforms) == 1
-    assert len(c321.transforms) == 1
-    assert np.all(c123.transforms[0].scale == t123.scale)
-    assert np.all(c123.transforms[0].translate == t123.translate)
-    assert np.all(c321.transforms[0].scale == t321.scale)
-    assert np.all(c321.transforms[0].translate == t321.translate)
+    assert isinstance(c123s, tr.STTransform)  # or the test is useless
+    assert isinstance(c321s, tr.STTransform)  # or the test is useless
+    assert np.all(c123s.scale == t123.scale)
+    assert np.all(c123s.translate == t123.translate)
+    assert np.all(c321s.scale == t321.scale)
+    assert np.all(c321s.translate == t321.translate)
 
     # Test Mapping
     t1 = tr.STTransform(scale=(2, 3))
@@ -164,10 +164,10 @@ def test_map_rect():
 def test_st_mapping():
     p1 = [[5., 7.], [23., 8.]]
     p2 = [[-1.3, -1.4], [1.1, 1.2]]
-    
+
     t = tr.STTransform()
     t.set_mapping(p1, p2)
-    
+
     assert np.allclose(t.map(p1)[:, :len(p2)], p2)
 
 
@@ -177,22 +177,22 @@ def test_affine_mapping():
                    [1, 0, 0],
                    [0, 1, 0],
                    [0, 0, 1]])
-    
+
     # test pure translation
     p2 = p1 + 5.5
     t.set_mapping(p1, p2)
     assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
-    
+
     # test pure scaling
     p2 = p1 * 5.5
     t.set_mapping(p1, p2)
     assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
-    
+
     # test scale + translate
     p2 = (p1 * 5.5) + 3.5
     t.set_mapping(p1, p2)
     assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
-    
+
     # test SRT
     p2 = np.array([[10, 5, 3],
                    [10, 15, 3],
@@ -200,6 +200,29 @@ def test_affine_mapping():
                    [10, 5, 3.5]])
     t.set_mapping(p1, p2)
     assert np.allclose(t.map(p1)[:, :p2.shape[1]], p2)
+
+
+def test_inverse():
+    m = np.random.normal(size=(4, 4))
+    transforms = [
+        NT(),
+        ST(scale=(1e-4, 2e5), translate=(10, -6e9)),
+        AT(m),
+    ]
+
+    np.random.seed(0)
+    N = 20
+    x = np.random.normal(size=(N, 3))
+    pw = np.random.normal(size=(N, 3), scale=3)
+    pos = x * 10 ** pw
+
+    for trn in transforms:
+        assert np.allclose(pos, trn.inverse.map(trn.map(pos))[:, :3])
+
+    # log transform only works on positive values
+    #abs_pos = np.abs(pos)
+    #tr = LT(base=(2, 4.5, 0))
+    #assert np.allclose(abs_pos, tr.inverse.map(tr.map(abs_pos))[:,:3])
 
 
 if __name__ == '__main__':

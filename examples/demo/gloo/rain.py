@@ -108,7 +108,7 @@ class Canvas(app.Canvas):
         gloo.set_clear_color('white')
         gloo.set_state(blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
-        self.timer = app.Timer(1. / 60., self.on_timer, start=True)
+        self.timer = app.Timer('auto', self.on_timer, start=True)
 
     def on_draw(self, event):
         gloo.clear()

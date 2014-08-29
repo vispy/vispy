@@ -22,7 +22,7 @@ from ..ext.six import BytesIO
 from ..color import Color
 from ..io import read_png
 
-from ..scene.visuals import LineVisual, Markers, Text, Image
+from ..scene.visuals import Line, Markers, Text, Image
 from ..scene.widgets import ViewBox
 from ..scene.transforms import STTransform
 from ..scene import SceneCanvas
@@ -129,10 +129,11 @@ class VispyRenderer(Renderer):
         if offset is not None:
             raise NotImplementedError('cannot handle offset')
             _check_coords(offset_coordinates, 'data')
-        # TODO linewidth, etc.
+        # TODO --, :, etc.
         color = Color(style['edgecolor'])
         color.alpha = style['alpha']
-        line = LineVisual(data, color=color)
+        line = Line(data, color=color, width=style['edgewidth'],
+                    mode='gl')  # XXX Looks bad with agg :(
         line.parent = self._mpl_ax_to(mplobj).scene
 
     def _mpl_ax_to(self, mplobj, output='vb'):

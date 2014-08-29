@@ -97,7 +97,7 @@ class Polygon(Visual):
         self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
         if self._pos is not None:
             pts, tris = self.data.triangulate()
-            self.mesh = Mesh(pos=pts, faces=tris.astype(np.uint32),
+            self.mesh = Mesh(vertices=pts, faces=tris.astype(np.uint32),
                              color=self._color.rgba)
             if not self._border_color.is_blank():
                 # Close border if it is not already.
@@ -107,7 +107,7 @@ class Polygon(Visual):
                                                 axis=0)
                 self.border = Line(pos=border_pos,
                                    color=self._border_color.rgba, 
-                                   mode='line_strip')
+                                   connect='strip')
         #self.update()
 
     def set_gl_options(self, *args, **kwds):

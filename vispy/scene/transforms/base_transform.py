@@ -65,6 +65,7 @@ class BaseTransform(object):
     Isometric = None
 
     def __init__(self):
+        self._inverse = None
         self.changed = EventEmitter(source=self, type='transform_changed')
         if self.glsl_map is not None:
             self._shader_map = Function(self.glsl_map)
@@ -91,12 +92,13 @@ class BaseTransform(object):
         """
         raise NotImplementedError()
 
+    @property
     def inverse(self):
+        """ The inverse of this transform. 
         """
-        Return a new transform that performs the inverse mapping of this
-        transform.
-        """
-        raise NotImplementedError()
+        if self._inverse is None:
+            self._inverse = InverseTransform(self)
+        return self._inverse
 
     def shader_map(self):
         """
@@ -104,54 +106,19 @@ class BaseTransform(object):
         and defines new attributes / uniforms supplying the Function with
         any static input.
         """
-        #return self._resolve(name, var_prefix, imap=False)
         return self._shader_map
 
     def shader_imap(self):
         """
         see shader_map.
         """
-        #return self._resolve(name, var_prefix, imap=True)
         return self._shader_imap
 
     def update(self):
         """
         Called to inform any listeners that this transform has changed.
         """
-        #self._shader_map.update()
-        #self._shader_imap.update()
         self.changed()
-
-    #def _resolve(self, name, var_prefix, imap):
-        ## The default implemntation assumes the following:
-        ## * The first argument to the GLSL function should not be bound
-        ## * All remaining arguments should be bound using self.property of the
-        ##   same name to determine the value.
-        #function = self.glsl_imap if imap else self.glsl_map
-
-        #if var_prefix is None:
-        #    if name is None:
-        #        var_prefix = function._template_name.lstrip('$') + '_'
-        #    else:
-        #        #var_prefix = name + "_"
-
-        ## map all extra args to uniforms
-        #uniforms = {}
-        ##for arg_type, arg_name in function.args[1:]:
-        #for var_name in function.template_vars:
-        #    if var_name == function.args[0][1]:
-        #        continue
-        #    uniforms[var_name] = ('uniform', var_prefix+var_name)
-
-        ## bind to a new function + variables
-        #bound = function.resolve(name, **uniforms)
-
-        ## set uniform values based on properties having same name as
-        ## bound argument
-        #for var_name in uniforms:
-        #    bound[var_name] = getattr(self, var_name)
-
-        #return bound
 
     def __mul__(self, tr):
         """
@@ -192,6 +159,25 @@ class BaseTransform(object):
     def __rmul__(self, tr):
         return ChainTransform([tr, self])
 
+    def __repr__(self):
+        return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
+
+
+class InverseTransform(BaseTransform):
+    def __init__(self, transform):
+        self._transform = transform
+        self.shader_map = self._transform.shader_imap
+        self.shader_imap = self._transform.shader_map
+        self.map = self._transform.imap
+        self.imap = self._transform.map
+        
+    @property
+    def inverse(self):
+        return self._transform
+    
+    def __repr__(self):
+        return ("<Inverse of %r>" % repr(self._transform))
+        
 
 # import here to avoid import cycle; needed for BaseTransform.__mul__.
 from .chain import ChainTransform

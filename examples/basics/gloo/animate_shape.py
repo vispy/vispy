@@ -32,7 +32,7 @@ vertex_data['a_texcoord'] = np.array([[0.0, 0.0], [0.0, 1.0],
 # Create indices and an ElementBuffer for it
 indices = np.array([0, 1, 2, 1, 2, 3], np.uint16)
 indices_buffer = gloo.IndexBuffer(indices)
-client_indices_buffer = gloo.IndexBuffer(indices, client=True)
+client_indices_buffer = gloo.IndexBuffer(indices)
 
 
 VERT_SHADER = """ // simple vertex shader
