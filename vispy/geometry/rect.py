@@ -75,7 +75,8 @@ class Rect(object):
 
     @left.setter
     def left(self, x):
-        self.pos[0] = x
+        self.size = (self.size[0] + (self.pos[0] - x), self.size[1])
+        self.pos = (x, self.pos[1])
 
     @property
     def right(self):
@@ -83,7 +84,7 @@ class Rect(object):
 
     @right.setter
     def right(self, x):
-        self.size[0] = x - self.pos[0]
+        self.size = (x - self.pos[0], self.size[1])
 
     @property
     def bottom(self):
@@ -91,7 +92,8 @@ class Rect(object):
 
     @bottom.setter
     def bottom(self, y):
-        self.pos[1] = y
+        self.size = (self.size[0], self.size[1] + (self.pos[1] - y))
+        self.pos = (self.pos[0], y)
 
     @property
     def top(self):
@@ -99,7 +101,7 @@ class Rect(object):
 
     @top.setter
     def top(self, y):
-        self.size[1] = y - self.pos[1]
+        self.size = (self.size[0], y - self.pos[1])
 
     def padded(self, padding):
         """Return a new Rect padded (smaller) by *padding* on all sides."""

@@ -204,6 +204,29 @@ class PanZoomCamera(BaseCamera):
         """
         self.rect = self.rect + pan
 
+    def auto_zoom(self, visual=None, padding=0.1):
+        """ Automatically configure the camera to fit a visual inside the
+        visible region.
+        """
+        bx = visual.bounds('visual', 0)
+        by = visual.bounds('visual', 1)
+        bounds = self.rect
+        if bx is not None:
+            bounds.left = bx[0]
+            bounds.right = bx[1]
+        if by is not None:
+            bounds.bottom = by[0]
+            bounds.top = by[1]
+            
+        if padding != 0:
+            pw = bounds.width * padding * 0.5
+            ph = bounds.height * padding * 0.5
+            bounds.left = bounds.left - pw
+            bounds.right = bounds.right + pw
+            bounds.top = bounds.top + ph
+            bounds.bottom = bounds.bottom - ph
+        self.rect = bounds
+
     @property
     def rect(self):
         """ The rectangular border of the ViewBox visible area, expressed in

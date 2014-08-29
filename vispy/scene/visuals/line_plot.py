@@ -84,6 +84,9 @@ class LinePlot(Visual):
         if len(kwds) > 0:
             raise TypeError("Invalid keyword arguments: %s" % kwds.keys())
 
+    def bounds(self, mode, axis):
+        return self._line.bounds(mode, axis)
+
     def draw(self, event):
         for v in self._line, self._markers:
             event.push_entity(v)

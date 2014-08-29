@@ -203,6 +203,7 @@ class Line(Visual):
         self._connect = connect
         self._mode = 'none'
         self._antialias = antialias
+        self._origs = {}
         self._vbo = None
         self._I = None
         # Set up the GL program
@@ -281,7 +282,8 @@ class Line(Visual):
         if isinstance(connect, np.ndarray) and connect.dtype == bool:
             connect = self._convert_bool_connect(connect)
         
-        self._origs = (pos, color, width, connect)
+        self._origs = {'pos': pos, 'color': color, 
+                       'width': width, 'connect': connect}
         
         if color is not None:
             self._color = ColorArray(color).rgba
@@ -292,9 +294,9 @@ class Line(Visual):
             self._width = width
             
         if self.mode == 'gl':
-            self._gl_set_data(*self._origs)
+            self._gl_set_data(**self._origs)
         else:
-            self._agg_set_data(*self._origs)
+            self._agg_set_data(**self._origs)
 
     def _convert_bool_connect(self, connect):
         # Convert a boolean connection array to a vertex index array
@@ -339,6 +341,15 @@ class Line(Visual):
             self._pos = None
 
         self.update()
+
+    def bounds(self, mode, axis):
+        if 'pos' not in self._origs:
+            return None
+        data = self._origs['pos']
+        if data.shape[1] > axis:
+            return (data[:, axis].min(), data[:, axis].max())
+        else:
+            return (0, 0)
 
     def draw(self, event):
         if self.mode == 'gl':
