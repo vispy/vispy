@@ -112,7 +112,7 @@ vec3 run(float x, float y, float t) {
     float t_plane, t0, t1;
     vec3 rayO = O;
     vec3 rayD = D;
-    vec3 col;
+    vec3 col = vec3(0.0, 0.0, 0.0);
     vec3 col_ray;
     float reflection = 1.;
     
