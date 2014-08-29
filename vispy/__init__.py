@@ -22,8 +22,10 @@ from __future__ import division
 __all__ = ['use', 'sys_info', 'set_log_level', 'test']
 
 # Definition of the version number
-__version__ = '0.3'
+version_info = 0, 3, 0, ''  # major, minor, patch, extra
 
+# Nice string for the version (mimic how IPython composes its version str)
+__version__ = '-'.join(map(str, version_info)).replace('-', '.', 2).strip('-')
 
 from .util import (_parse_command_line_arguments, config,  # noqa
                    set_log_level, keys, sys_info, test)  # noqa

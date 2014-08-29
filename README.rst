@@ -24,7 +24,7 @@ large datasets. Applications of Vispy include:
 Announcements
 -------------
 
-- **Release!** Version 0.3, August 27, 2014
+- **Release!** Version 0.3, August 29, 2014
 - **EuroSciPy 2014**: talk at Saturday 30, and sprint at Sunday 31, August 2014
 - `Article in Linux Magazine, French Edition <https://github.com/vispy/linuxmag-article>`__, July 2014
 - **GSoC 2014**: `two GSoC students are currently working on Vispy under the PSF umbrella <https://github.com/vispy/vispy/wiki/Project.%20GSoC-2014>`__

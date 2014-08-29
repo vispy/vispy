@@ -527,6 +527,6 @@ def get_example_filenames(example_dir):
 
 if __name__ == '__main__':
     try:
-        Maker(sys.argv)
+        m = Maker(sys.argv)
     finally:
         os.chdir(START_DIR)
