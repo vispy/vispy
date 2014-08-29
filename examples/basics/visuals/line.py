@@ -39,9 +39,9 @@ class Canvas(vispy.scene.SceneCanvas):
         # Create several visuals demonstrating different features of Line
         self.lines = [
             # agg-mode lines:
-            visuals.Line(pos=pos, color=color),  # per-vertex color
-            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1)),  # solid
-            visuals.Line(pos=pos, color=color, width=5),  # wide
+            visuals.Line(pos=pos, color=color, mode='agg'),  # per-vertex color
+            visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), mode='agg'),  # solid
+            visuals.Line(pos=pos, color=color, width=5, mode='agg'),  # wide
             # GL-mode lines:
             visuals.Line(pos=pos, color=color, mode='gl'),
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), mode='gl'),
