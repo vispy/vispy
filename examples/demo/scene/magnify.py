@@ -100,6 +100,28 @@ class MagnifyTransform(BaseTransform):
         return ret
 
 
+class Magnify1DTransform(MagnifyTransform):
+    """
+    """
+    glsl_map = """
+        vec4 mag_transform(vec4 pos) {
+            float dist = pos.x - $center.x;
+            if (dist == 0) {
+                return pos;
+            }
+            
+            // gaussian profile
+            float m = 1 / ((dist/$radius)*(dist/$radius) + 1);
+            // flatten to make nearly linear in the center
+            m = pow(1 - pow((1 - m), 100), 100);
+            dist = dist * (1 + ($mag-1) * m);
+
+            return vec4($center.x + dist, pos.y, pos.z, pos.w);
+        }"""
+    
+    glsl_imap = glsl_map
+
+
 class MagCamera(vispy.scene.cameras.PanZoomCamera):
     def __init__(self, *args, **kwds):
         self.mag = MagnifyTransform()
@@ -117,6 +139,17 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
         super(MagCamera, self)._set_scene_transform(self.mag * tr)
 
 
+class Mag1DCamera(MagCamera):
+    def __init__(self, *args, **kwds):
+        self.mag = Magnify1DTransform()
+        self.mag._mag = 3
+        super(MagCamera, self).__init__(*args, **kwds)
+
+    def _set_scene_transform(self, tr):
+        vbs = self.viewbox.size
+        self.mag.radius = vbs[0] / 4
+        super(MagCamera, self)._set_scene_transform(self.mag * tr)
+
 canvas = vispy.scene.SceneCanvas(keys='interactive', show=True)
 grid = canvas.central_widget.add_grid()
 
@@ -124,26 +157,31 @@ vb1 = grid.add_view(row=0, col=0, col_span=2)
 vb2 = grid.add_view(row=1, col=0)
 vb3 = grid.add_view(row=1, col=1)
 
+# Top viewbox
+vb1.camera = Mag1DCamera()
+pos = np.empty((100, 2))
+pos[:,0] = np.arange(100)
+pos[:,1] = np.random.normal(size=100, loc=50, scale=10)
+line = visuals.Line(pos, color='white', parent=vb1.scene)
+line.transform = STTransform(translate=(0, 0, -0.1))
+vb1.camera.rect = 0, 0, 100, 100
+
+grid = visuals.GridLines(parent=vb1.scene)
+
+
+# bottom-left viewbox
 img_data = np.random.normal(size=(100, 100, 3), loc=58,
                             scale=20).astype(np.ubyte)
 
 
 image = visuals.Image(img_data, method='impostor', grid=(100, 100), parent=vb2.scene)
-#vb2.camera.auto_zoom(image)
 vb2.camera = MagCamera()
+#vb2.camera.auto_zoom(image)
 vb2.camera.rect = (-1, -1, image.size[0]+2, image.size[1]+2) 
 
 
-pos = np.empty((100, 2))
-pos[:,0] = np.arange(100)
-pos[:,1] = np.random.normal(size=100, loc=50, scale=10)
-pos[0] = [0, 0]
-pos[1] = [100, 0]
-pos[2] = [100, 100]
-pos[3] = [0, 100]
-pos[4] = [0, 0]
-#line = visuals.Line(pos, color='white', parent=mag)
-#line.transform = STTransform(translate=(0, 0, -0.1))
+
+
 
 
 
