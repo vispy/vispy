@@ -3,6 +3,17 @@
 """
 Test the fps capability of Vispy with meshdata primitive
 """
+try:
+    from sip import setapi
+    setapi("QDate", 2)
+    setapi("QDateTime", 2)
+    setapi("QTextStream", 2)
+    setapi("QTime", 2)
+    setapi("QVariant", 2)
+    setapi("QString", 2)
+    setapi("QUrl", 2)
+except:
+    pass
 
 from PyQt4 import QtGui, QtCore
 import sys
