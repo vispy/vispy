@@ -367,17 +367,23 @@ class Line(Visual):
         else:
             self._gl_program.vert['color'] = gloo.VertexBuffer(self._color)
         gloo.set_state('translucent')
-
-        # Turn on line smooth?
-        aaGL = None
-        if self._antialias:
+        
+        # Do we want to use OpenGL, and can we?
+        GL = None
+        if self._width > 1 or self._antialias:
             try:
-                import OpenGL.GL as aaGL
+                import OpenGL.GL as GL
             except ImportError:
                 pass
-        if aaGL:
-            aaGL.glEnable(aaGL.GL_LINE_SMOOTH)
-
+        
+        # Turn on line smooth and/or line width
+        if GL:
+            if self._antialias:
+                GL.glEnable(GL.GL_LINE_SMOOTH)
+            if GL and self._width > 1:
+                GL.glLineWidth(self._width)
+        
+        # Draw
         if self._connect == 'strip':
             self._gl_program.draw('line_strip')
         elif self._connect == 'segments':
@@ -387,9 +393,12 @@ class Line(Visual):
         else:
             raise ValueError("Invalid line connect mode: %r" % self._connect)
         
-        # Turn line smooth back off?
-        if aaGL:
-            aaGL.glDisable(aaGL.GL_LINE_SMOOTH)
+        # Turn off line smooth and/or line width
+        if GL:
+            if self._antialias:
+                GL.glDisable(GL.GL_LINE_SMOOTH)
+            if GL and self._width > 1:
+                GL.glLineWidth(1)
 
     def _agg_draw(self, event):
         if self._pos is None:
