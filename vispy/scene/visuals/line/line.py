@@ -377,7 +377,8 @@ class Line(Visual):
         self._gl_program.vert['transform'] = xform
         self._gl_program.vert['position'] = self._pos_expr
         if isinstance(self._color, Function):
-            self._gl_program.vert['color'] = self._color('(gl_Position.x + 1.0) / 2.0')
+            self._gl_program.vert['color'] = self._color(
+                '(gl_Position.x + 1.0) / 2.0')
         else:
             if self._color.ndim == 1:
                 self._gl_program.vert['color'] = self._color

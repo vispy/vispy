@@ -13,8 +13,6 @@ import numpy as np
 import vispy.app
 from vispy.scene import visuals
 from vispy.scene.transforms import STTransform
-from vispy.scene.shaders import Function
-from vispy.color import gray, hot, cool
 
 # vertex positions of data to draw
 N = 200

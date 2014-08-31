@@ -680,12 +680,9 @@ winter = """
     }
 """
 
+
 def get_colormap(name):
     return globals()[name]
 
 colormaps = ['autumn', 'blues', 'cool', 'fire', 'grays', 'greens', 'hot',
     'ice', 'fire', 'reds', 'spring', 'summer', 'winter']
-
-
-#colormaps = {'autumn': autumn, 'blues': blues, 'cool': cool, 'fire': fire, 'grays': grays, 'greens': greens,
-#    'hot': hot, 'ice': ice, 'reds': reds, 'spring': spring, 'summer': summer, 'winter': winter}
