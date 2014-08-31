@@ -221,9 +221,9 @@ class STTransform(BaseTransform):
         s[mask] = 1.0
         s[x0[1] == x0[0]] = 1.0
         t = x1[0] - s * x0[0]
-        s = as_vec4(s, default=(1, 1, 1, 1))
-        t = as_vec4(t, default=(0, 0, 0, 0))
-        self._set_st(scale=s, translate=t)
+        
+        STTransform.scale.fset(self, s, update=False)
+        self.translate = t
 
     def __mul__(self, tr):
         if isinstance(tr, STTransform):
@@ -322,7 +322,7 @@ class AffineTransform(BaseTransform):
         The translation is applied *after* the transformations already present
         in the matrix.
         """
-        self.matrix = transforms.translate(self.matrix, *pos[0, :3])
+        self.matrix[...] = transforms.translate(pos[0, :3]) * self.matrix
 
     def scale(self, scale, center=None):
         """
@@ -341,13 +341,16 @@ class AffineTransform(BaseTransform):
         """
         scale = as_vec4(scale, default=(1, 1, 1, 1))
         if center is not None:
+            # TODO: check if the order is correct here!
             center = as_vec4(center)[0, :3]
-            m = transforms.translate(self.matrix, *(-center))
-            m = transforms.scale(m, *scale[0, :3])
-            m = transforms.translate(self.matrix, *center)
+            self.matrix[...] = (
+                transforms.translate(-center) *
+                transforms.scale(scale[0, :3]) *
+                transforms.translate(center) *
+                self.matrix)
             self.matrix = m
         else:
-            self.matrix = transforms.scale(self.matrix, *scale[0, :3])
+            self.matrix[...] = transforms.scale(scale[0, :3]) * self.matrix
 
     def rotate(self, angle, axis):
         """
@@ -365,7 +368,8 @@ class AffineTransform(BaseTransform):
         """
         #tr = transforms.rotate(np.eye(4), angle, *axis)
         #self.matrix = np.dot(tr, self.matrix)
-        self.matrix = transforms.rotate(self.matrix, angle, *axis)
+        #self.matrix = transforms.rotate(self.matrix, angle, *axis)
+        self.matrix[...] = transforms.rotated(angle, axis) * self.matrix
 
     def set_mapping(self, points1, points2):
         """ Set to a 3D transformation matrix that maps points1 onto points2.

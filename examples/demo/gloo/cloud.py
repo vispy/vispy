@@ -231,11 +231,11 @@ class Canvas(app.Canvas):
         u_linewidth = 1.0
         u_antialias = 1.0
 
+		self.translate = 5
         self.program = gloo.Program(vert, frag)
-        self.view = np.eye(4, dtype=np.float32)
+        self.view = translate((0, 0, -self.translate))
         self.model = np.eye(4, dtype=np.float32)
-        self.translate = 5
-        translate(self.view, 0, 0, -self.translate)
+        self.projection = np.eye(4, dtype=np.float32)
 
         self.apply_zoom()
 
@@ -263,11 +263,9 @@ class Canvas(app.Canvas):
                 self.timer.start()
 
     def on_timer(self, event):
-        self.theta += .5
-        self.phi += .5
-        self.model = np.eye(4, dtype=np.float32)
-        rotate(self.model, self.theta, 0, 0, 1)
-        rotate(self.model, self.phi, 0, 1, 0)
+        self.theta += .02
+        self.phi += .02
+        self.model = rotate(self.phi, (0, 1, 0)) * rotate(self.theta, (0, 0, 1))
         self.program['u_model'] = self.model
         self.update()
 
