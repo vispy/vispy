@@ -20,14 +20,14 @@ from .fragment import FRAGMENT_SHADER as AGG_FRAGMENT_SHADER
 
 
 vec2to4 = Function("""
-    vec4 vec2to4(vec2 input) {
-        return vec4(input, 0, 1);
+    vec4 vec2to4(vec2 inputvec) {
+        return vec4(inputvec, 0, 1);
     }
 """)
 
 vec3to4 = Function("""
-    vec4 vec3to4(vec3 input) {
-        return vec4(input, 1);
+    vec4 vec3to4(vec3 inputvec) {
+        return vec4(inputvec, 1);
     }
 """)
 

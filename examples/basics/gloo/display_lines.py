@@ -59,12 +59,12 @@ class Canvas(app.Canvas):
         self.program['a_id'] = gloo.VertexBuffer(a_id)
         self.program['a_position'] = gloo.VertexBuffer(a_position)
 
-        self.view = np.eye(4, dtype=np.float32)
+        self.translate = 5
+        self.view = translate((0,0,-self.translate), dtype = np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
 
-        self.translate = 5
-        translate(self.view, 0, 0, -self.translate)
+
         self.program['u_model'] = self.model
         self.program['u_view'] = self.view
 
@@ -88,11 +88,9 @@ class Canvas(app.Canvas):
 
     # ---------------------------------
     def on_timer(self, event):
-        self.theta += .5
-        self.phi += .5
-        self.model = np.eye(4, dtype=np.float32)
-        rotate(self.model, self.theta, 0, 0, 1)
-        rotate(self.model, self.phi, 0, 1, 0)
+        self.theta += .02
+        self.phi += .02
+        self.model = rotate(self.theta, (0, 0, 1)) * rotate(self.phi, (0, 1, 0))
         self.program['u_model'] = self.model
         self.update()
 
@@ -107,8 +105,7 @@ class Canvas(app.Canvas):
     def on_mouse_wheel(self, event):
         self.translate += event.delta[1]
         self.translate = max(2, self.translate)
-        self.view = np.eye(4, dtype=np.float32)
-        translate(self.view, 0, 0, -self.translate)
+        self.view = translate((0, 0, -self.translate))
         self.program['u_view'] = self.view
         self.update()
 

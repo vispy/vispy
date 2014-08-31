@@ -2,26 +2,24 @@ import numpy as np
 from nose.tools import assert_equal
 from numpy.testing import assert_allclose
 
-from vispy.util.transforms import (translate, scale, xrotate, yrotate,
-                                   zrotate, rotate, ortho, frustum,
+from vispy.util.transforms import (translate, scale, rotate, ortho, frustum,
                                    perspective)
+
 
 
 def test_transforms():
     """Test basic transforms"""
     xfm = np.random.randn(4, 4).astype(np.float32)
 
-    for rot in [xrotate, yrotate, zrotate]:
-        new_xfm = rot(rot(xfm, 90), -90)
-        assert_allclose(xfm, new_xfm)
-
+    # Todo: this should really be more rigorous, e.g. check that the order
+    # of computation is all correct
     new_xfm = rotate(rotate(xfm, 90, 1, 0, 0), 90, -1, 0, 0)
     assert_allclose(xfm, new_xfm)
 
-    new_xfm = translate(translate(xfm, 1, -1), 1, -1, 1)
+    new_xfm = translate((1, -1, 1)) * translate((1, -1, 1))
     assert_allclose(xfm, new_xfm)
 
-    new_xfm = scale(scale(xfm, 1, 2, 3), 1, 1. / 2., 1. / 3.)
+    new_xfm = scale((1, 2, 3)) * scale((1, 1. / 2., 1. / 3.))
     assert_allclose(xfm, new_xfm)
 
     # These could be more complex...
