@@ -31,6 +31,7 @@ connect[:, 0] = np.arange(N-1)
 connect[:, 1] = connect[:, 0] + 1
 connect[N/2, 1] = N/2  # put a break in the middle
 
+
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         vispy.scene.SceneCanvas.__init__(self, keys='interactive',
