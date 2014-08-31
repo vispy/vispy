@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: gallery 20
 # -----------------------------------------------------------------------------
 # Copyright (c) 2014, Nicolas P. Rougier, Guillaume Bâty. All Rights Reserved.
 # Distributed under the (new) BSD License.
@@ -12,21 +13,21 @@
 from vispy import gloo, app, keys
 
 VERT_SHADER = """
-attribute vec2 position;
+attribute vec2 a_position;
 void main (void)
 {
-    gl_Position = vec4(position, 0.0, 1.0);
+    gl_Position = vec4(a_position, 0.0, 1.0);
 }
 """
 
 FRAG_SHADER = """
-uniform vec2 iResolution;
-uniform float iGlobalTime;
+uniform vec2 u_resolution;
+uniform float u_global_time;
 
 // --- Your function here ---
 float function( float x )
 {
-    float d = 3.0 - 2.0*(1.0+cos(iGlobalTime/5.0))/2.0;
+    float d = 3.0 - 2.0*(1.0+cos(u_global_time/5.0))/2.0;
     return sin(pow(x,d))*sin(x);
 }
 // --- Your function here ---
@@ -58,11 +59,11 @@ float sample(vec2 uv)
 
 void main(void)
 {
-    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+    vec2 uv = gl_FragCoord.xy / u_resolution.xy;
     float ymin = -2.0;
     float ymax = +2.0;
     float xmin = 0.0;
-    float xmax = xmin + (ymax-ymin)* iResolution.x / iResolution.y;
+    float xmax = xmin + (ymax-ymin)* u_resolution.x / u_resolution.y;
 
     vec2 xy = vec2(xmin,ymin) + uv*vec2(xmax-xmin, ymax-ymin);
     gl_FragColor = vec4(0.0,0.0,0.0, sample(xy));
@@ -73,15 +74,16 @@ class Canvas(app.Canvas):
     def __init__(self, pause=False):
         app.Canvas.__init__(self, size=(2350, 600), keys='interactive')
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.program["iGlobalTime"] = 0
-        self.program['position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        self.program["u_global_time"] = 0
+        self.program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         self._timer = app.Timer('auto', connect=self.on_timer_event, start=True)
 
     def on_initialize(self, event):
-        gloo.set_state(blend=True, blend_func=('src_alpha', 'one_minus_src_alpha'))
+        gloo.set_state(blend=True,
+                       blend_func=('src_alpha', 'one_minus_src_alpha'))
 
     def on_resize(self, event):
-        self.program["iResolution"] = event.size
+        self.program["u_resolution"] = event.size
         gloo.set_viewport(0, 0, *event.size)
 
     def on_draw(self, event):
@@ -90,7 +92,7 @@ class Canvas(app.Canvas):
 
     def on_timer_event(self, event):
         if self._timer.running:
-            self.program["iGlobalTime"] += event.dt
+            self.program["u_global_time"] += event.dt
         self.update()
 
     def on_key_press(self, event):
@@ -99,6 +101,7 @@ class Canvas(app.Canvas):
                 self._timer.stop()
             else:
                 self._timer.start()
+
 
 if __name__ == '__main__':
     c = Canvas()
