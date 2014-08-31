@@ -10,7 +10,7 @@ from __future__ import division
 import numpy as np
 
 from .... import gloo
-from ....color import ColorArray
+from ....color import ColorArray, get_colormap
 from ...shaders import ModularProgram, Function
 from ..visual import Visual
 
@@ -158,12 +158,6 @@ GL_FRAGMENT_SHADER = """
 """
 
 
-func = Function("""
-    float func(float t) {
-        return -t;
-    }
-""")
-
 class Line(Visual):
     """Line visual
 
@@ -202,10 +196,12 @@ class Line(Visual):
         # - why on earth would you turn off aa with agg?
         Visual.__init__(self, **kwds)
         self._pos = pos
-        if isinstance(color, str):
-            self._color = Function(color)
-        elif isinstance(color, Function):
+        try:
+            color = get_colormap(color)
+        except KeyError:
             pass
+        if isinstance(color, (str, Function)):
+            self._color = Function(color)
         else:
             self._color = ColorArray(color)
         self._width = float(width)
@@ -296,7 +292,10 @@ class Line(Visual):
                        'width': width, 'connect': connect}
         
         if color is not None:
-            print color
+            try:
+                color = get_colormap(color)
+            except KeyError:
+                pass
             if isinstance(color, (str, Function)):
                 self._color = Function(color)
             else:
@@ -378,7 +377,7 @@ class Line(Visual):
         self._gl_program.vert['transform'] = xform
         self._gl_program.vert['position'] = self._pos_expr
         if isinstance(self._color, Function):
-            self._gl_program.vert['color'] = self._color(func("gl_Position.x"))
+            self._gl_program.vert['color'] = self._color('(gl_Position.x + 1.0) / 2.0')
         else:
             if self._color.ndim == 1:
                 self._gl_program.vert['color'] = self._color

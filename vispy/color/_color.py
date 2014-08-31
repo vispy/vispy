@@ -606,17 +606,16 @@ class Color(ColorArray):
         return ('<%s: %s>' % (self._name(), nice_str))
 
 
-gray = """
-    vec4 gray(float t) {
-        return vec4(t,t,t,1.0);
+autumn = """
+    vec4 autumn(float t) {
+        return vec4(mix(vec3(1.0,0.0,0.0),vec3(1.0,1.0,0.0),t),1.0);
     }
 """
 
-hot = """
-    vec4 hot(float t) {
-        return vec4(vec3(smoothstep(0.00,0.33,t),smoothstep(0.33,0.66,t),
-            smoothstep(0.66,1.00,t)),1.0);
-}
+blues = """
+    vec4 blues(float t) {
+        return vec4(mix(vec3(1.0,1.0,1.0),vec3(0.0,0.0,1.0),t),1.0);
+    }
 """
 
 cool = """
@@ -624,3 +623,69 @@ cool = """
         return vec4(mix(vec3(0.0,1.0,1.0),vec3(1.0,0.0,1.0),t),1.0);
     }
 """
+
+fire = """
+    vec4 fire(float t) {
+        return vec4(mix(mix(vec3(1.0,1.0,1.0),vec3(1.0,1.0,0.0),t),
+            mix(vec3(1.0,1.0,0.0),vec3(1.0,0.0,0.0),t*t),t),1.0);
+    }
+"""
+
+grays = """
+    vec4 gray(float t) {
+        return vec4(t,t,t,1.0);
+    }
+"""
+
+greens = """
+    vec4 greens(float t) {
+        return vec4(mix(vec3(1.0,1.0,1.0),vec3(0.0,1.0,0.0),t),1.0);
+    }
+"""
+
+hot = """
+    vec4 hot(float t) {
+        return vec4(smoothstep(0.00,0.33,t),smoothstep(0.33,0.66,t),
+            smoothstep(0.66,1.00,t),1.0);
+}
+"""
+
+ice = """
+    vec4 ice(float t) {
+        return vec4(t,t,1.0,1.0);
+    }
+"""
+
+reds = """
+    vec4 reds(float t) {
+        return vec4(mix(vec3(1.0,1.0,1.0),vec3(1.0,0.0,0.0),t),1.0);
+    }
+"""
+
+spring = """
+    vec4 spring(float t) {
+        return vec4(mix(vec3(1.0,0.0,1.0),vec3(1.0,1.0,0.0),t),1.0);
+    }
+"""
+
+summer = """
+    vec4 summer(float t) {
+        return vec4(mix(vec3(0.0,0.5,0.4),vec3(1.0,1.0,0.4),t),1.0);
+    }
+"""
+
+winter = """
+    vec4 winter(float t) {
+        return vec4(mix(vec3(0.0,0.0,1.0),vec3(0.0,1.0,0.5),sqrt(t)),1.0);
+    }
+"""
+
+def get_colormap(name):
+    return globals()[name]
+
+colormaps = ['autumn', 'blues', 'cool', 'fire', 'grays', 'greens', 'hot',
+    'ice', 'fire', 'reds', 'spring', 'summer', 'winter']
+
+
+#colormaps = {'autumn': autumn, 'blues': blues, 'cool': cool, 'fire': fire, 'grays': grays, 'greens': greens,
+#    'hot': hot, 'ice': ice, 'reds': reds, 'spring': spring, 'summer': summer, 'winter': winter}
