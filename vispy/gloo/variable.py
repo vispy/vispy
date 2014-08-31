@@ -322,6 +322,7 @@ class Attribute(Variable):
             # For array-like, we need to build a proper VertexBuffer
             # to be able to upload it later to GPU memory.
             name, base, count = self.dtype
+            assert count == data.shape[1]
             data = np.array(data, dtype=base, copy=False)
             data = data.ravel().view([self.dtype])
             # WARNING : transform data with the right type
