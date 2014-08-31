@@ -20,14 +20,14 @@ from .fragment import FRAGMENT_SHADER as AGG_FRAGMENT_SHADER
 
 
 vec2to4 = Function("""
-    vec4 vec2to4(vec2 input) {
-        return vec4(input, 0, 1);
+    vec4 vec2to4(vec2 inp) {
+        return vec4(inp, 0, 1);
     }
 """)
 
 vec3to4 = Function("""
-    vec4 vec3to4(vec3 input) {
-        return vec4(input, 1);
+    vec4 vec3to4(vec3 inp) {
+        return vec4(inp, 1);
     }
 """)
 
@@ -158,6 +158,12 @@ GL_FRAGMENT_SHADER = """
 """
 
 
+func = Function("""
+    float func(float t) {
+        return -t;
+    }
+""")
+
 class Line(Visual):
     """Line visual
 
@@ -196,7 +202,12 @@ class Line(Visual):
         # - why on earth would you turn off aa with agg?
         Visual.__init__(self, **kwds)
         self._pos = pos
-        self._color = ColorArray(color)
+        if isinstance(color, str):
+            self._color = Function(color)
+        elif isinstance(color, Function):
+            pass
+        else:
+            self._color = ColorArray(color)
         self._width = float(width)
         assert connect is not None  # can't be to start
         self._connect = connect
@@ -285,9 +296,13 @@ class Line(Visual):
                        'width': width, 'connect': connect}
         
         if color is not None:
-            self._color = ColorArray(color).rgba
-            if len(self._color) == 1:
-                self._color = self._color[0]
+            print color
+            if isinstance(color, (str, Function)):
+                self._color = Function(color)
+            else:
+                self._color = ColorArray(color).rgba
+                if len(self._color) == 1:
+                    self._color = self._color[0]
                 
         if width is not None:
             self._width = width
@@ -362,10 +377,13 @@ class Line(Visual):
         xform = event.render_transform.shader_map()
         self._gl_program.vert['transform'] = xform
         self._gl_program.vert['position'] = self._pos_expr
-        if self._color.ndim == 1:
-            self._gl_program.vert['color'] = self._color
+        if isinstance(self._color, Function):
+            self._gl_program.vert['color'] = self._color(func("gl_Position.x"))
         else:
-            self._gl_program.vert['color'] = gloo.VertexBuffer(self._color)
+            if self._color.ndim == 1:
+                self._gl_program.vert['color'] = self._color
+            else:
+                self._gl_program.vert['color'] = gloo.VertexBuffer(self._color)
         gloo.set_state('translucent')
         
         # Do we want to use OpenGL, and can we?

@@ -604,3 +604,23 @@ class Color(ColorArray):
     def __repr__(self):
         nice_str = str(tuple(self._rgba[0]))
         return ('<%s: %s>' % (self._name(), nice_str))
+
+
+gray = """
+    vec4 gray(float t) {
+        return vec4(t,t,t,1.0);
+    }
+"""
+
+hot = """
+    vec4 hot(float t) {
+        return vec4(vec3(smoothstep(0.00,0.33,t),smoothstep(0.33,0.66,t),
+            smoothstep(0.66,1.00,t)),1.0);
+}
+"""
+
+cool = """
+    vec4 cool(float t) {
+        return vec4(mix(vec3(0.0,1.0,1.0),vec3(1.0,0.0,1.0),t),1.0);
+    }
+"""

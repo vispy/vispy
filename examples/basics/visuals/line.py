@@ -13,6 +13,8 @@ import numpy as np
 import vispy.app
 from vispy.scene import visuals
 from vispy.scene.transforms import STTransform
+from vispy.scene.shaders import Function
+from vispy.color import gray, hot, cool
 
 # vertex positions of data to draw
 N = 200
@@ -31,6 +33,7 @@ connect[:, 0] = np.arange(N-1)
 connect[:, 1] = connect[:, 0] + 1
 connect[N/2, 1] = N/2  # put a break in the middle
 
+#print func(hot)
 
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
@@ -46,7 +49,9 @@ class Canvas(vispy.scene.SceneCanvas):
             visuals.Line(pos=pos, color=color, mode='gl'),
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), mode='gl'),
             visuals.Line(pos=pos, color=color, width=5, mode='gl'),
+            visuals.Line(pos=pos, color=cool, mode='gl'),
             # GL-mode: "connect" not available in AGG mode yet
+            
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect='segments',
                          mode='gl'),  # only connect alternate vert pairs
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect=connect,

@@ -11,3 +11,4 @@ __all__ = ['Color', 'ColorArray', 'LinearGradient', 'get_color_names']
 
 from ._color_dict import get_color_names  # noqa
 from ._color import Color, ColorArray, LinearGradient  # noqa
+from ._color import gray, hot, cool  # noqa
