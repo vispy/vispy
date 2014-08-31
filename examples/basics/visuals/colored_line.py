@@ -8,15 +8,13 @@
 Demonstration of various features of Line visual.
 """
 import itertools
-import sys
 import numpy as np
 
 import vispy.app
 from vispy import app
+from vispy.color import colormaps
 from vispy.scene import visuals
 from vispy.scene.transforms import STTransform
-from vispy.scene.shaders import Function
-from vispy.color import colormaps
 
 colormaps = itertools.cycle(colormaps)
 
@@ -37,6 +35,7 @@ connect[:, 0] = np.arange(N-1)
 connect[:, 1] = connect[:, 0] + 1
 connect[N/2, 1] = N/2  # put a break in the middle
 
+
 class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         vispy.scene.SceneCanvas.__init__(self, keys='interactive',
@@ -48,7 +47,7 @@ class Canvas(vispy.scene.SceneCanvas):
         # redraw the canvas if any visuals request an update
         self.line.parent = self.central_widget
         self.text = visuals.Text(color, bold=True, font_size=24, color='w',
-                                   pos=(200, 40), parent=self.central_widget)
+                                 pos=(200, 40), parent=self.central_widget)
 
         self._timer = vispy.app.Timer(1.0, connect=self.on_timer, start=True)
 
