@@ -323,6 +323,7 @@ class Attribute(Variable):
             # to be able to upload it later to GPU memory.
             name, base, count = self.dtype
             data = np.array(data, dtype=base, copy=False)
+            assert count == data.shape[1]
             data = data.ravel().view([self.dtype])
             # WARNING : transform data with the right type
             # data = np.array(data,copy=False)
