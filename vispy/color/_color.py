@@ -685,4 +685,4 @@ def get_colormap(name):
     return globals()[name]
 
 colormaps = ['autumn', 'blues', 'cool', 'fire', 'grays', 'greens', 'hot',
-        'ice', 'fire', 'reds', 'spring', 'summer', 'winter']
+             'ice', 'fire', 'reds', 'spring', 'summer', 'winter']

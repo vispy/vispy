@@ -32,6 +32,7 @@ vec3to4 = Function("""
 """)
 
 
+
 """
 TODO:
 
@@ -196,11 +197,12 @@ class Line(Visual):
         # - why on earth would you turn off aa with agg?
         Visual.__init__(self, **kwds)
         self._pos = pos
-        try:
-            color = get_colormap(color)
-        except KeyError:
-            pass
-        if isinstance(color, (str, Function)):
+        if isinstance(color, str):
+            try:
+                self._color = Function(get_colormap(color))
+            except KeyError:
+                pass
+        elif isinstance(color, Function):
             self._color = Function(color)
         else:
             self._color = ColorArray(color)
@@ -292,11 +294,12 @@ class Line(Visual):
                        'width': width, 'connect': connect}
         
         if color is not None:
-            try:
-                color = get_colormap(color)
-            except KeyError:
-                pass
-            if isinstance(color, (str, Function)):
+            if isinstance(color, str):
+                try:
+                    self._color = Function(get_colormap(color))
+                except KeyError:
+                    pass
+            elif isinstance(color, Function):
                 self._color = Function(color)
             else:
                 self._color = ColorArray(color).rgba
@@ -377,6 +380,7 @@ class Line(Visual):
         self._gl_program.vert['transform'] = xform
         self._gl_program.vert['position'] = self._pos_expr
         if isinstance(self._color, Function):
+            # TODO: Change to the parametric coordinate once that is done
             self._gl_program.vert['color'] = self._color(
                 '(gl_Position.x + 1.0) / 2.0')
         else:
