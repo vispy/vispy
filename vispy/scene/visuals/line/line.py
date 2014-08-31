@@ -200,7 +200,7 @@ class Line(Visual):
             try:
                 self._color = Function(get_colormap(color))
             except KeyError:
-                pass
+                self._color = Function(color)
         elif isinstance(color, Function):
             self._color = Function(color)
         else:
@@ -297,7 +297,7 @@ class Line(Visual):
                 try:
                     self._color = Function(get_colormap(color))
                 except KeyError:
-                    pass
+                    self._color = Function(color)
             elif isinstance(color, Function):
                 self._color = Function(color)
             else:
