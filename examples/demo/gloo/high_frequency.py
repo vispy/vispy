@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2014, Nicolas P. Rougier. All Rights Reserved.
+# Copyright (c) 2014, Nicolas P. Rougier, Guillaume Bâty. All Rights Reserved.
 # Distributed under the (new) BSD License.
 # -----------------------------------------------------------------------------
 # High frequency (below pixel resolution) function plot
@@ -100,6 +100,7 @@ class Canvas(app.Canvas):
             else:
                 self._timer.start()
 
-c = Canvas()
-c.show()
-app.run()
+if __name__ == '__main__':
+    c = Canvas()
+    c.show()
+    app.run()
