@@ -7,7 +7,8 @@
 # -----------------------------------------------------------------------------
 # High frequency (below pixel resolution) function plot
 #
-#  -> http://blog.hvidtfeldts.net/index.php/2011/07/plotting-high-frequency-functions-using-a-gpu/
+#  -> http://blog.hvidtfeldts.net/index.php/2011/07/plotting-high-frequency-fun
+#     ctions-using-a-gpu/
 #  -> https://www.shadertoy.com/view/4sB3zz
 # -----------------------------------------------------------------------------
 from vispy import gloo, app, keys
@@ -70,13 +71,16 @@ void main(void)
 }
 """
 
+
 class Canvas(app.Canvas):
     def __init__(self, pause=False):
-        app.Canvas.__init__(self, size=(2350, 600), keys='interactive')
+        app.Canvas.__init__(self, size=(800, 600), keys='interactive')
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.program["u_global_time"] = 0
-        self.program['a_position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
-        self._timer = app.Timer('auto', connect=self.on_timer_event, start=True)
+        self.program['a_position'] = [(-1, -1), (-1, +1),
+                                      (+1, -1), (+1, +1)]
+        self._timer = app.Timer('auto', connect=self.on_timer_event,
+                                start=True)
 
     def on_initialize(self, event):
         gloo.set_state(blend=True,
