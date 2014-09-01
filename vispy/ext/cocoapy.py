@@ -923,7 +923,7 @@ CFAllocatorRef = c_void_p
 CFStringEncoding = c_uint32
 
 cf.CFStringCreateWithCString.restype = c_void_p
-cf.CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_char_p,
+cf.CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_void_p,
                                          CFStringEncoding]
 
 cf.CFRelease.restype = c_void_p
@@ -967,7 +967,7 @@ def cfstring_to_string(cfstring):
     result = cf.CFStringGetCString(cfstring, buffer, len(buffer),
                                    kCFStringEncodingUTF8)
     if result:
-        return buffer.value.decode('utf-8')
+        return buffer.value.decode('utf8')
 
 
 cf.CFDataCreate.restype = c_void_p
