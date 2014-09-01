@@ -141,7 +141,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     x_off = -slop
     # Need to make sure we have a unicode string here (Py2.7 mis-interprets
     # characters like "•" otherwise)
-    if sys.version[0] == '2':
+    if sys.version[0] == '2' and isinstance(text, str):
         text = text.decode('utf-8')
     # Need to store the original viewport, because the font[char] will
     # trigger SDF rendering, which changes our viewport
