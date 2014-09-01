@@ -25,10 +25,10 @@ before_install:
     - REDIRECT_TO=/dev/stdout  # change to /dev/null to silence Travis
     - travis_retry sudo apt-get -qq update;
     - if [ "${PYTHON}" != "2.7" ]; then
-        wget -q http://repo.continuum.io/miniconda/Miniconda-2.2.2-Linux-x86_64.sh -O miniconda.sh;
+        wget -q http://repo.continuum.io/miniconda/Miniconda-3.6.0-Linux-x86_64.sh -O miniconda.sh;
         chmod +x miniconda.sh;
-        ./miniconda.sh -b &> ${REDIRECT_TO};
-        export PATH=/home/$USER/anaconda/bin:$PATH;
+        ./miniconda.sh -b -p ~/anaconda &> ${REDIRECT_TO};
+        export PATH=~/anaconda/bin:$PATH;
         conda update --yes --quiet conda &> ${REDIRECT_TO};
         travis_retry sudo apt-get -qq -y install libgl1-mesa-dri;
       fi;
