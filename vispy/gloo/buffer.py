@@ -12,6 +12,7 @@ from traceback import extract_stack
 from . import gl
 from . globject import GLObject
 from ..util import logger
+from ..ext.six import string_types
 
 
 # ------------------------------------------------------------ Buffer class ---
@@ -405,8 +406,8 @@ class DataBuffer(Buffer):
         """ Set data (deferred operation) """
 
         # Setting a whole field of the buffer: only allowed if we have CPU
-        # storage. Note this case (key is str) only happen with base buffer
-        if isinstance(key, str):
+        # storage. Note this case (key is string_types) only happen with base buffer
+        if isinstance(key, string_types):
             if self._data is None:
                 raise ValueError(
                     """Cannot set non contiguous """
@@ -489,7 +490,7 @@ class DataBufferView(DataBuffer):
         self._target = base.target
         self._stride = base.stride
 
-        if isinstance(key, str):
+        if isinstance(key, string_types):
             self._dtype = base.dtype[key]
             self._offset = base.dtype.fields[key][1]
             self._nbytes = base.size * self._dtype.itemsize
@@ -614,7 +615,7 @@ class DataBufferView(DataBuffer):
         if not self._valid:
             raise ValueError("This buffer view has been invalidated")
 
-        if isinstance(key, str):
+        if isinstance(key, string_types):
             raise ValueError(
                 "Cannot set a specific field on a non-base buffer")
 
