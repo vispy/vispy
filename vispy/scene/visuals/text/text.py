@@ -455,13 +455,12 @@ class Text(Visual):
 
         if event is not None:
             xform = event.render_transform.shader_map()
-            self._program.vert['transform'] = xform
             px_scale = event.framebuffer_cs.transform.scale
         else:
-            self._program.vert['transform'] = self.transform.shader_map()
+            xform = self.transform.shader_map()
             # Rather arbitrary scale. With size=12 it takes up ~1/10 of space
             px_scale = 0.01, 0.01
-
+        self._program.vert['transform'] = xform
         self._program.prepare()  # Force ModularProgram to set shaders
         # todo: do some testing to verify that the scaling is correct
         ps = (self._font_size / 72.) * 92.
