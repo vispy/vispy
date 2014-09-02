@@ -11,6 +11,7 @@ import numpy as np
 
 from .... import gloo
 from ....color import ColorArray, get_colormap
+from ....ext.six import string_types
 from ...shaders import ModularProgram, Function
 from ..visual import Visual
 
@@ -196,7 +197,7 @@ class Line(Visual):
         # - why on earth would you turn off aa with agg?
         Visual.__init__(self, **kwds)
         self._pos = pos
-        if isinstance(color, str):
+        if isinstance(color, string_types):
             try:
                 self._color = Function(get_colormap(color))
             except KeyError:
@@ -293,7 +294,7 @@ class Line(Visual):
                        'width': width, 'connect': connect}
         
         if color is not None:
-            if isinstance(color, str):
+            if isinstance(color, string_types):
                 try:
                     self._color = Function(get_colormap(color))
                 except KeyError:
