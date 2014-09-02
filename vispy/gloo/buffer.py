@@ -406,7 +406,7 @@ class DataBuffer(Buffer):
         """ Set data (deferred operation) """
 
         # Setting a whole field of the buffer: only allowed if we have CPU
-        # storage. Note this case (key is string_types) only happen with base buffer
+        # storage. Note this case (key is string) only happen with base buffer
         if isinstance(key, string_types):
             if self._data is None:
                 raise ValueError(
