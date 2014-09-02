@@ -7,7 +7,7 @@ import numpy as np
 
 from . import gl
 from .globject import GLObject
-from .buffer import VertexBuffer
+from .buffer import VertexBuffer, DataBufferView
 from .texture import BaseTexture, Texture2D, Texture3D, GL_SAMPLER_3D
 from .framebuffer import RenderBuffer
 from ..util import logger
@@ -298,12 +298,14 @@ class Attribute(Variable):
         
         isnumeric = isinstance(data, (float, int))
         
-        if isinstance(data, VertexBuffer):
+        if (isinstance(data, VertexBuffer) or
+            (isinstance(data, DataBufferView) and 
+             isinstance(data.base, VertexBuffer))):
             # New vertex buffer
             self._data = data
         elif isinstance(self._data, VertexBuffer):
             # We already have a vertex buffer
-            self._data[...] = data
+            self._data.set_data(data)
         elif (isnumeric or (isinstance(data, (tuple, list)) and
                             len(data) in (1, 2, 3, 4) and
                             isinstance(data[0], (float, int)))):
@@ -321,6 +323,7 @@ class Attribute(Variable):
             # to be able to upload it later to GPU memory.
             name, base, count = self.dtype
             data = np.array(data, dtype=base, copy=False)
+            assert count == data.shape[1]
             data = data.ravel().view([self.dtype])
             # WARNING : transform data with the right type
             # data = np.array(data,copy=False)

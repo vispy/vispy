@@ -16,16 +16,8 @@ canvas = scene.SceneCanvas(keys='interactive')
 canvas.size = 600, 600
 canvas.show()
 
-grid = scene.widgets.Grid(parent=canvas.scene)
+grid = canvas.central_widget.add_grid()
 
-
-# Ensure that grid fills the entire canvas, even after resize.
-@canvas.events.resize.connect
-def update_grid(event=None):
-    global grid, canvas
-    grid.size = canvas.size
-
-update_grid()
 
 N = 10000
 lines = []
@@ -39,7 +31,7 @@ for i in range(10):
         pos = np.empty((N, 2), dtype=np.float32)
         pos[:, 0] = np.linspace(0, 100, N)
         pos[:, 1] = np.random.normal(size=N)
-        line = scene.visuals.Line(pos=pos, color=(1, 1, 1, 0.5))
+        line = scene.visuals.Line(pos=pos, color=(1, 1, 1, 0.5), mode='gl')
         vb.add(line)
 
 

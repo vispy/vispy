@@ -73,22 +73,18 @@ def _check_conversion(key, valid_dict):
 # Viewport, DepthRangef, CullFace, FrontFace, LineWidth, PolygonOffset
 #
 
-def set_viewport(x, y, w, h):
+def set_viewport(*args):
     """Set the OpenGL viewport
 
     This is a wrapper for gl.glViewport.
 
     Parameters
     ----------
-    x : int
-        X coordinate.
-    y : int
-        Y coordinate.
-    w : int
-        Viewport width.
-    h : int
-        Viewport height.
+    x, y, w, h : int | tuple
+        X and Y coordinates, plus width and height. Can be passed in as
+        individual components, or as a single tuple with four values.
     """
+    x, y, w, h = args[0] if len(args) == 1 else args
     gl.glViewport(int(x), int(y), int(w), int(h))
 
 
@@ -192,7 +188,7 @@ def clear(color=True, depth=True, stencil=True):
     gl.glClear(bits)
 
 
-def set_clear_color(color='black'):
+def set_clear_color(color='black', alpha=None):
     """Set the screen clear color
 
     This is a wrapper for gl.glClearColor.
@@ -202,7 +198,7 @@ def set_clear_color(color='black'):
     color : str | tuple | instance of Color
         Color to use. See vispy.color.Color for options.
     """
-    gl.glClearColor(*Color(color).rgba)
+    gl.glClearColor(*Color(color, alpha).rgba)
 
 
 def set_clear_depth(depth=1.0):

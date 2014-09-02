@@ -209,7 +209,7 @@ class Maker:
             return self.help('images')
 
         # Create subdirs if needed
-        for subdir in ['gallery', 'thumbs', 'test']:
+        for subdir in ['gallery', 'thumbs', 'carousel', 'test']:
             subdir = op.join(IMAGES_DIR, subdir)
             if not op.isdir(subdir):
                 os.mkdir(subdir)
@@ -307,7 +307,7 @@ class Maker:
             # Get canvas
             if hasattr(m, 'canvas'):
                 c = m.canvas  # scene examples
-            elif hasattr(m, 'Canvas'):  
+            elif hasattr(m, 'Canvas'):
                 c = m.Canvas()
             else:
                 print('Ignore: %s, no canvas' % name)
@@ -334,16 +334,25 @@ class Maker:
         import numpy as np
         gallery_dir = op.join(IMAGES_DIR, 'gallery')
         thumbs_dir = op.join(IMAGES_DIR, 'thumbs')
+        carousel_dir = op.join(IMAGES_DIR, 'carousel')
         for fname in os.listdir(gallery_dir):
             filename1 = op.join(gallery_dir, fname)
             filename2 = op.join(thumbs_dir, fname)
+            filename3 = op.join(carousel_dir, fname)
             #
             im = imread(filename1)
+
             newx = 200
             newy = int(newx * im.shape[0] / im.shape[1])
             im = (resize(im, (newy, newx), 2) * 255).astype(np.uint8)
             imsave(filename2, im)
-            print('Created thumbnail %s' % fname)
+
+            newy = 160  # This should match the carousel size!
+            newx = int(newy * im.shape[1] / im.shape[0])
+            im = (resize(im, (newy, newx), 1) * 255).astype(np.uint8)
+            imsave(filename3, im)
+
+            print('Created thumbnail and carousel %s' % fname)
 
     def copyright(self, arg):
         """ Update all copyright notices to the current year.
@@ -421,12 +430,14 @@ def sphinx_clean(build_dir):
 
 def sphinx_build(src_dir, build_dir):
     import sphinx
-    sphinx.main(('sphinx-build',  # Dummy
-                 '-b', 'html',
-                 '-d', op.join(build_dir, 'doctrees'),
-                 src_dir,  # Source
-                 op.join(build_dir, 'html'),  # Dest
-                 ))
+    ret = sphinx.main(('sphinx-build',  # Dummy
+                       '-b', 'html',
+                       '-d', op.join(build_dir, 'doctrees'),
+                       src_dir,  # Source
+                       op.join(build_dir, 'html'),  # Dest
+                       ))
+    if ret != 0:
+        raise RuntimeError('Sphinx error: %s' % ret)
     print("Build finished. The HTML pages are in %s/html." % build_dir)
 
 
@@ -516,6 +527,6 @@ def get_example_filenames(example_dir):
 
 if __name__ == '__main__':
     try:
-        Maker(sys.argv)
+        m = Maker(sys.argv)
     finally:
         os.chdir(START_DIR)

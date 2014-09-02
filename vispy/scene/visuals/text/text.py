@@ -13,6 +13,7 @@ from __future__ import division
 import numpy as np
 from copy import deepcopy
 from os import path as op
+import sys
 
 from ._sdf import SDFRenderer
 from ....gloo import (TextureAtlas, set_state, IndexBuffer, VertexBuffer,
@@ -109,13 +110,9 @@ class TextureFont(object):
 
 
 class FontManager(object):
-    """ Helper class to create TextureFont instances and reuse these
-    where possible. 
-    """ 
-    
-    # todo: store a font-manager on each context, 
+    """Helper to create TextureFont instances and reuse them when possible"""
+    # todo: store a font-manager on each context,
     # or let TextureFont use a TextureAtlas for each context
-    
     def __init__(self):
         self._fonts = {}
         self._renderer = SDFRenderer()
@@ -142,6 +139,10 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     width = height = ascender = descender = 0
     ratio, slop = 1. / font.ratio, font.slop
     x_off = -slop
+    # Need to make sure we have a unicode string here (Py2.7 mis-interprets
+    # characters like "•" otherwise)
+    if sys.version[0] == '2' and isinstance(text, str):
+        text = text.decode('utf-8')
     # Need to store the original viewport, because the font[char] will
     # trigger SDF rendering, which changes our viewport
     orig_viewport = get_parameter('viewport')
@@ -361,17 +362,16 @@ class Text(Visual):
 
     def __init__(self, text, color='black', bold=False,
                  italic=False, face='OpenSans', font_size=12, pos=(0, 0),
-                 rotation=0., anchor_x='center', anchor_y='center', 
-                 font_manager=None,  # temp solution to use global mananger
-                 **kwargs):
+                 rotation=0., anchor_x='center', anchor_y='center',
+                 font_manager=None, **kwargs):
         Visual.__init__(self, **kwargs)
         # Check input
-        assert isinstance(text, string_types)
         valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
         _check_valid('anchor_y', anchor_y, valid_keys)
         valid_keys = ('left', 'center', 'right')
         _check_valid('anchor_x', anchor_x, valid_keys)
         # Init font handling stuff
+        # _font_manager is a temporary solution to use global mananger
         self._font_manager = font_manager or FontManager()
         self._font = self._font_manager.get_font(face, bold, italic)
         self._program = ModularProgram(self.VERTEX_SHADER,
@@ -456,7 +456,7 @@ class Text(Visual):
         if event is not None:
             xform = event.render_transform.shader_map()
             self._program.vert['transform'] = xform
-            px_scale = event.canvas.framebuffer.transform.scale
+            px_scale = event.framebuffer_cs.transform.scale
         else:
             self._program.vert['transform'] = self.transform.shader_map()
             # Rather arbitrary scale. With size=12 it takes up ~1/10 of space

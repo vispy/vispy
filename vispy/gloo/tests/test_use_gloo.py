@@ -32,7 +32,7 @@ def test_use_framebuffer():
     rbo = ColorBuffer(shape=shape)
     fbo = FrameBuffer(color=fbo_tex)
     with Canvas(size=(100, 100)) as c:
-        set_viewport(0, 0, *c.size)
+        set_viewport((0, 0) + c.size)
         with fbo:
             draw_texture(orig_tex)
         draw_texture(fbo_tex)

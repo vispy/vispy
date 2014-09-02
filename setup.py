@@ -52,7 +52,7 @@ __doc__ = ''
 docStatus = 0  # Not started, in progress, done
 initFile = os.path.join(os.path.dirname(__file__), 'vispy', '__init__.py')
 for line in open(initFile).readlines():
-    if (line.startswith('__version__')):
+    if (line.startswith('version_info') or line.startswith('__version__')):
         exec(line.strip())
     elif line.startswith('"""'):
         if docStatus == 0:

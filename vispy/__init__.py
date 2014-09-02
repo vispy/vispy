@@ -8,25 +8,13 @@
 Vispy
 =====
 
-Vispy is a collaborative project that has the goal to allow more sharing
-of code between visualization projects based on OpenGL. It does this
-by providing powerful interfaces to OpenGL, at different levels of
-abstraction and generality.
+Vispy is a **high-performance interactive 2D/3D data visualization
+library**. Vispy leverages the computational power of modern **Graphics
+Processing Units (GPUs)** through the **OpenGL** library to display very
+large datasets.
 
-Vispy consists of the following modules:
-  * vispy.app: for creating windows, timers and mainloops for various backends
-  * vispy.gloo: Object oriented GL API
-  * vispy.gloo.gl: Low level OpenGL API
-  * vispy.util: various utilities
-  * vispy.scene: Higher level visualization objects (work in progress)
-  * vispy.mpl_plot: matplotlib interface (work in progress)
-  * ... more to come
+For more information, see http://vispy.org.
 
-Vispy comes with a powerful event system and a simple application
-framework that works on multiple backends. This allows easy creation
-of figures, and enables integrating visualizations in a GUI application.
-
-For more information see http://vispy.org.
 """
 
 from __future__ import division
@@ -34,8 +22,10 @@ from __future__ import division
 __all__ = ['use', 'sys_info', 'set_log_level', 'test']
 
 # Definition of the version number
-__version__ = '0.3'
+version_info = 0, 3, 0, ''  # major, minor, patch, extra
 
+# Nice string for the version (mimic how IPython composes its version str)
+__version__ = '-'.join(map(str, version_info)).replace('-', '.', 2).strip('-')
 
 from .util import (_parse_command_line_arguments, config,  # noqa
                    set_log_level, keys, sys_info, test)  # noqa

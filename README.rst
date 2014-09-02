@@ -3,7 +3,9 @@ Vispy: interactive scientific visualization in Python
 
 Main website: http://vispy.org
 
-|Build Status| |Coverage Status|
+|Build Status| |Coverage Status| |Zenodo Link|
+
+----
 
 Vispy is a **high-performance interactive 2D/3D data visualization
 library**. Vispy leverages the computational power of modern **Graphics
@@ -17,6 +19,21 @@ large datasets. Applications of Vispy include:
 -  OpenGL visualization demos.
 -  Scientific GUIs with fast, scalable visualization widgets (Qt or
    `IPython notebook <http://ipython.org/notebook.html>`__ with WebGL).
+
+
+Announcements
+-------------
+
+- **Release!** Version 0.3, August 29, 2014
+- **EuroSciPy 2014**: talk at Saturday 30, and sprint at Sunday 31, August 2014
+- `Article in Linux Magazine, French Edition <https://github.com/vispy/linuxmag-article>`__, July 2014
+- **GSoC 2014**: `two GSoC students are currently working on Vispy under the PSF umbrella <https://github.com/vispy/vispy/wiki/Project.%20GSoC-2014>`__
+- **Release!**, Version 0.2.1 04-11-2013
+- **Presentation at BI forum**, Budapest, 6 November 2013
+- **Presentation at Euroscipy**, Belgium, August 2013
+- **EuroSciPy Sprint**, Belgium, August 2013
+- **Release!** Version 0.1.0 14-08-2013
+
 
 Using Vispy
 -----------
@@ -40,6 +57,7 @@ If you're in the second category, we're starting to build experimental
 high-level plotting interfaces. Notably, Vispy now ships a very basic
 and experimental OpenGL backend for matplotlib.
 
+
 Installation
 ------------
 
@@ -50,6 +68,7 @@ As Vispy is under heavy development at this time, we highly recommend
 you to use the development version on Github (master branch). You need
 to clone the repository and install Vispy with
 ``python setup.py install``.
+
 
 Structure of Vispy
 ------------------
@@ -78,6 +97,7 @@ Currently, the main subpackages are:
 The API of all public interfaces are subject to change in the future,
 although **app** and **gloo** are *relatively* stable at this point.
 
+
 About us
 --------
 
@@ -97,6 +117,8 @@ Four of us have written our own Python visualization toolkit
 team up to create a unique high-performance, high-quality interactive
 visualization library.
 
+----
+
 External links
 --------------
 
@@ -113,3 +135,5 @@ External links
    :target: https://travis-ci.org/vispy/vispy
 .. |Coverage Status| image:: https://coveralls.io/repos/vispy/vispy/badge.png?branch=master
    :target: https://coveralls.io/r/vispy/vispy?branch=master
+.. |Zenodo Link| image:: https://zenodo.org/badge/5822/vispy/vispy.png
+   :target: http://dx.doi.org/10.5281/zenodo.11532

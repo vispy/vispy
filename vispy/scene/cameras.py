@@ -204,6 +204,29 @@ class PanZoomCamera(BaseCamera):
         """
         self.rect = self.rect + pan
 
+    def auto_zoom(self, visual=None, padding=0.1):
+        """ Automatically configure the camera to fit a visual inside the
+        visible region.
+        """
+        bx = visual.bounds('visual', 0)
+        by = visual.bounds('visual', 1)
+        bounds = self.rect
+        if bx is not None:
+            bounds.left = bx[0]
+            bounds.right = bx[1]
+        if by is not None:
+            bounds.bottom = by[0]
+            bounds.top = by[1]
+            
+        if padding != 0:
+            pw = bounds.width * padding * 0.5
+            ph = bounds.height * padding * 0.5
+            bounds.left = bounds.left - pw
+            bounds.right = bounds.right + pw
+            bounds.top = bounds.top + ph
+            bounds.bottom = bounds.bottom - ph
+        self.rect = bounds
+
     @property
     def rect(self):
         """ The rectangular border of the ViewBox visible area, expressed in
@@ -349,9 +372,9 @@ class PerspectiveCamera(BaseCamera):
     @mode.setter
     def mode(self, mode):
         if mode == 'ortho':
-            self._near = -1e6
+            self._near = -1e3
         elif mode == 'perspective':
-            self._near = 1e-6
+            self._near = 1e-2
         else:
             raise ValueError('Accepted modes are "ortho" and "perspective".')
         self._far = 1e6
@@ -444,12 +467,13 @@ class TurntableCamera(PerspectiveCamera):
         Name used to identify the camera in the scene.
     """
     def __init__(self, elevation=30., azimuth=30.,
-                 distance=10., center=(0, 0, 0), **kwds):
+                 distance=10., center=(0, 0, 0), up='z', **kwds):
         super(TurntableCamera, self).__init__(**kwds)
         self.elevation = elevation
         self.azimuth = azimuth
         self.distance = distance
         self.center = center
+        self.up = up
         self._update_camera_pos()
     
     @property
@@ -547,9 +571,18 @@ class TurntableCamera(PerspectiveCamera):
         with ch_em.blocker(self._update_transform):
             tr = self.transform
             tr.reset()
-            tr.translate((0.0, 0.0, -self.distance))
-            tr.rotate(self.elevation, (-1, 0, 0))
-            tr.rotate(self.azimuth, (0, 1, 0))
+            if self.up == 'y':
+                tr.translate((0.0, 0.0, -self.distance))
+                tr.rotate(self.elevation, (-1, 0, 0))
+                tr.rotate(self.azimuth, (0, 1, 0))
+            elif self.up == 'z':
+                tr.rotate(90, (1, 0, 0))
+                tr.translate((0.0, -self.distance, 0.0))
+                tr.rotate(self.elevation, (-1, 0, 0))
+                tr.rotate(self.azimuth, (0, 0, 1))
+            else:
+                raise ValueError('TurntableCamera.up must be "y" or "z".')
+                
             tr.translate(-np.array(self.center))
         self._update_transform()
 
