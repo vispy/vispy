@@ -148,21 +148,27 @@ class SceneCanvas(app.Canvas):
     def render(self, event):
         gloo.clear((0, 0, 0, 1))
         
+        nfb = len(self._fb_stack)
+        nvp = len(self._vp_stack)
+        
         if len(self._fb_stack) == 0:
             self.push_viewport((0, 0) + self.size)
         else:
             self.push_viewport((0, 0) + 
                                self._fb_stack[-1][0].color_buffer.shape[::-1])
         
-        # Draw the scene, but first disconnect its change signal--
-        # any changes that take place during the paint should not trigger
-        # a subsequent repaint.
-        with self.scene.events.update.blocker(self._scene_update):
-            self.draw_visual(self.scene)
+        try:
+            # Draw the scene, but first disconnect its change signal--
+            # any changes that take place during the paint should not trigger
+            # a subsequent repaint.
+            with self.scene.events.update.blocker(self._scene_update):
+                self.draw_visual(self.scene)
+        finally:
+            self.pop_viewport()
         
-        if len(self._vp_stack) > 0:
+        if len(self._vp_stack) > nvp:
             logger.warning("Viewport stack not fully cleared after draw.")
-        if len(self._fb_stack) > 0:
+        if len(self._fb_stack) > nfb:
             logger.warning("Framebuffer stack not fully cleared after draw.")
 
     def draw_visual(self, visual, event=None):
@@ -195,7 +201,14 @@ class SceneCanvas(app.Canvas):
         finally:
             scene_event.pop_viewport()
 
-    def screenshot(self, size=None, region=None):
+    def screenshot(self):
+        """ Return an image array copy of the onscreen buffer.
+        """
+        fb = self._current_framebuffer()
+        viewport = fb[1] + fb[2]
+        return gloo.read_pixels(viewport, alpha=True)[::-1]
+
+    def export(self, size=None, region=None):
         """ Render the scene to an offscreen buffer and return the image array.
         """
         offset = (0, 0) if region is None else region[:2]
