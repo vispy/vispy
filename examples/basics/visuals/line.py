@@ -47,6 +47,7 @@ class Canvas(vispy.scene.SceneCanvas):
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), mode='gl'),
             visuals.Line(pos=pos, color=color, width=5, mode='gl'),
             # GL-mode: "connect" not available in AGG mode yet
+            
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect='segments',
                          mode='gl'),  # only connect alternate vert pairs
             visuals.Line(pos=pos, color=(0, 0.5, 0.3, 1), connect=connect,

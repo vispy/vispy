@@ -188,7 +188,7 @@ def clear(color=True, depth=True, stencil=True):
     gl.glClear(bits)
 
 
-def set_clear_color(color='black'):
+def set_clear_color(color='black', alpha=None):
     """Set the screen clear color
 
     This is a wrapper for gl.glClearColor.
@@ -198,7 +198,7 @@ def set_clear_color(color='black'):
     color : str | tuple | instance of Color
         Color to use. See vispy.color.Color for options.
     """
-    gl.glClearColor(*Color(color).rgba)
+    gl.glClearColor(*Color(color, alpha).rgba)
 
 
 def set_clear_depth(depth=1.0):
