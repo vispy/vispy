@@ -10,7 +10,7 @@
 import numpy as np
 
 from ..shaders import ModularProgram
-from .visual import Visual
+from .widget import Widget
 from ...gloo import VertexBuffer, set_state, _check_valid
 from ...color import Color
 from ...ext.six import string_types
@@ -71,7 +71,6 @@ __font_6x8__ = np.array([
 ], dtype=np.float32)
 
 VERTEX_SHADER = """
-uniform vec2 u_pos;
 uniform float u_scale;
 uniform vec2 u_px_scale;
 uniform vec4 u_color;
@@ -85,7 +84,7 @@ varying vec3 v_bytes_012, v_bytes_345;
 
 void main (void)
 {
-    vec4 pos = $transform(vec4(u_pos, 0.0, 1.0));
+    vec4 pos = $transform(vec4(0., 0., 0., 1.));
     gl_Position = pos + vec4(a_position * u_px_scale * u_scale, 0., 0.);
     gl_PointSize = 8.0 * u_scale;
     v_color = u_color;
@@ -124,104 +123,84 @@ void main(void)
 """
 
 
-class Console(Visual):
+class Console(Widget):
     """Fast and failsafe text console
 
     Parameters
     ----------
-    pos : tuple
-        Position (x, y) of the console.
-    color : instance of Color
+    text_color : instance of Color
         Color to use.
-    scale : int
+    text_scale : int
         Scale factor for the text.
     rows : int
         Number of rows.
     cols : int
-        Nmuber of columns.
+        Number of columns.
     orientation : str
         Either "scroll-up" (like a terminal), or "scroll-down".
         In "scroll-up", the most recent message is at the bottom.
-    border : color
-        Color to use for the border.
-    parent : instance of Entity
-        The parent of the Text visual.
     """
-    def __init__(self, pos=(0, 0), color='black', scale=1, rows=24, cols=80,
-                 orientation='scroll-up', anchor_x='left', anchor_y='top',
-                 **kwargs):
+    def __init__(self, text_color='black', text_scale=1, rows=24, cols=80,
+                 orientation='scroll-up', **kwargs):
         _check_valid('orientation', orientation, ('scroll-up', 'scroll-down'))
-        _check_valid('anchor_x', anchor_x, ('left', 'right', 'center'))
-        _check_valid('anchor_y', anchor_y, ('top', 'middle', 'center',
-                                            'bottom'))
-        Visual.__init__(self, **kwargs)
+
         # Harcoded because of font above and shader program
-        self.color = color
-        self.scale = scale
-        self.pos = pos
-        self._rows, self._cols = rows, cols
-        self._cwidth = 6
-        self._cheight = 10
-        self._row = -1
-        self._ori = orientation
+        self.text_color = text_color
+        self.text_scale = text_scale
+        self._char_width = 6
+        self._char_height = 10
         self._program = ModularProgram(VERTEX_SHADER, FRAGMENT_SHADER)
-
-        # Initialize glyph position (they won't move)
-        self._bytes_012 = np.zeros((self.rows, self.cols, 3), np.float32)
-        self._bytes_345 = np.zeros((self.rows, self.cols, 3), np.float32)
-        C, R = np.meshgrid(np.arange(self.cols), np.arange(self.rows))
-        # by default we are in left, bottom orientation
-        x_off = 0.
-        if anchor_x in ('right', 'center'):
-            x_off = -self._cwidth * self.cols
-            if anchor_x == 'center':
-                x_off /= 2.
-        if anchor_y in ('top', 'center', 'middle'):
-            y_off = -self._cheight * self.rows
-            if anchor_y in ('center', 'middle'):
-                y_off /= 2.
-        pos = np.empty((self.rows, self.cols, 2), np.float32)
-        pos[..., 0] = 4.0 + self._cwidth * C + x_off
-        pos[..., 1] = 4.0 + self._cheight * R + y_off
-        self._position = VertexBuffer(pos)
+        self._ori = orientation
+        self._text_lines = []
+        self._row = -1
+        Widget.__init__(self, **kwargs)
 
     @property
-    def pos(self):
-        """ The position of the text anchor in the local coordinate frame
-        """
-        return self._pos
-
-    @pos.setter
-    def pos(self, pos):
-        pos = [float(p) for p in pos]
-        assert len(pos) == 2
-        self._pos = tuple(pos)
-
-    @property
-    def color(self):
+    def text_color(self):
         return self._color
 
-    @color.setter
-    def color(self, color):
+    @property
+    def size(self):
+        return super(Console, self).size
+
+    @size.setter
+    def size(self, *size):
+        Widget.size.fset(self, *size)
+        # Resize buffers
+        self._n_rows = int(max(self.size[1] / (self._char_height *
+                                               self.text_scale), 1))
+        self._n_cols = int(max(self.size[0] / (self._char_width *
+                                               self.text_scale), 1))
+        self._bytes_012 = np.zeros((self._n_rows, self._n_cols, 3), np.float32)
+        self._bytes_345 = np.zeros((self._n_rows, self._n_cols, 3), np.float32)
+        pos = np.empty((self._n_rows, self._n_cols, 2), np.float32)
+        C, R = np.meshgrid(np.arange(self._n_cols), np.arange(self._n_rows))
+        # We are in left, top orientation
+        x_off = 4.
+        y_off = 4. - self._char_height * self._n_rows
+        pos[..., 0] = x_off + self._char_width * C
+        pos[..., 1] = y_off + self._char_height * R
+        self._position = VertexBuffer(pos)
+
+        # Restore lines
+        sl = slice(None, None, (-1 if self._ori == 'scroll-down' else 1))
+        for ii, line in enumerate(self._text_lines[sl][:self._n_rows]):
+            self._insert_text_buf(line, ii)
+
+    @text_color.setter
+    def text_color(self, color):
         self._color = Color(color)
 
     @property
-    def scale(self):
-        return self._scale
+    def text_scale(self):
+        return self._text_scale
 
-    @scale.setter
-    def scale(self, scale):
-        self._scale = int(max(scale, 1))
-
-    @property
-    def rows(self):
-        return self._rows
-
-    @property
-    def cols(self):
-        return self._cols
+    @text_scale.setter
+    def text_scale(self, text_scale):
+        self._text_scale = int(max(text_scale, 1))
 
     def draw(self, event):
+        super(Console, self).draw(event)
         if event is not None:
             xform = event.render_transform.shader_map()
             px_scale = event.framebuffer_cs.transform.scale[:2]
@@ -232,9 +211,8 @@ class Console(Visual):
         self._program.vert['transform'] = xform
         self._program.prepare()
         self._program['u_px_scale'] = px_scale
-        self._program['u_color'] = self.color.rgba
-        self._program['u_scale'] = self.scale
-        self._program['u_pos'] = self.pos
+        self._program['u_color'] = self.text_color.rgba
+        self._program['u_scale'] = self.text_scale
         self._program['a_position'] = self._position
         self._program['a_bytes_012'] = VertexBuffer(self._bytes_012)
         self._program['a_bytes_345'] = VertexBuffer(self._bytes_345)
@@ -247,6 +225,7 @@ class Console(Visual):
         self._bytes_012.fill(0)
         self._bytes_345.fill(0)
         self._row = -1
+        self._text_lines = [] * self._n_rows
 
     def write(self, line=''):
         """Write text and scroll
@@ -262,8 +241,10 @@ class Console(Visual):
         # ensure we only have ASCII chars
         line = line.encode('utf-8').decode('ascii', errors='replace')
         # Update row and scroll if necessary
-        n = self.rows
+        n = self._n_rows
         self._row += 1 if self._ori == 'scroll-down' else -1
+        self._text_lines.insert(0, line)
+        self._text_lines = self._text_lines[:self._n_rows]
         if self._row >= n:
             self._bytes_012[:-1] = self._bytes_012[1:]
             self._bytes_345[:-1] = self._bytes_345[1:]
@@ -272,11 +253,15 @@ class Console(Visual):
             self._bytes_012[1:] = self._bytes_012[:-1]
             self._bytes_345[1:] = self._bytes_345[:-1]
             self._row = 0
-        self._bytes_012[self._row] = 0
-        self._bytes_345[self._row] = 0
-        line = line[:self._cols]  # Crop text if necessary
-        I = np.array([ord(c) - 32 for c in line])
+        self._insert_text_buf(line, self._row)
+
+    def _insert_text_buf(self, line, idx):
+        """Insert text into bytes buffers"""
+        self._bytes_012[idx] = 0
+        self._bytes_345[idx] = 0
+        # Crop text if necessary
+        I = np.array([ord(c) - 32 for c in line[:self._n_cols]])
         I = np.clip(I, 0, len(__font_6x8__)-1)
         b = __font_6x8__[I]
-        self._bytes_012[self._row, :len(line)] = b[:, :3]
-        self._bytes_345[self._row, :len(line)] = b[:, 3:]
+        self._bytes_012[idx, :len(I)] = b[:, :3]
+        self._bytes_345[idx, :len(I)] = b[:, 3:]

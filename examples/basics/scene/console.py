@@ -9,13 +9,23 @@ independent of the canvas scaling.
 """
 
 from vispy import scene, app
-from vispy.scene.visuals import Console
+from vispy.scene.widgets import Console
+from vispy.scene.visuals import Text
 
-canvas = scene.SceneCanvas(keys='interactive')
-console = Console(color='g', rows=5, parent=canvas.scene)
+canvas = scene.SceneCanvas(keys='interactive', size=(300, 300))
+vb = scene.widgets.ViewBox(parent=canvas.scene, border_color='b')
+vb.camera.rect = -1, -1, 2, 2
+text = Text('Starting timer...', color='w', font_size=24, parent=vb.scene)
+
+console = Console(text_color='g', text_scale=2, border_color='g')
+
+grid = canvas.central_widget.add_grid()
+grid.add_widget(vb, row=0, col=0)
+grid.add_widget(console, row=1, col=0)
 
 
 def on_timer(event):
+    text.text = 'Tick #%s' % event.iteration
     if event.iteration % 10 == 0:
         console.clear()
     console.write('Elapsed: %s' % event.elapsed)
