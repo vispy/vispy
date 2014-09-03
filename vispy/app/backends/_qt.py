@@ -25,7 +25,7 @@ from time import sleep, time
 from ...util import logger
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, BaseSharedContext)
+                    BaseTimerBackend)
 from ...util import keys
 from ...ext.six import text_type
 
@@ -145,10 +145,6 @@ def _set_config(c):
     return glformat
 
 
-class SharedContext(BaseSharedContext):
-    _backend = 'qt'
-
-
 # ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -195,25 +191,34 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     """Qt backend for Canvas abstract class."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, vispy_canvas, **kwargs):
         self._initialized = False
-        BaseCanvasBackend.__init__(self, capability, SharedContext)
+        BaseCanvasBackend.__init__(self, vispy_canvas)
+        # todo: why _process_backend_kwargs instead of just passing kwargs?
+        # Maybe to ensure that exactly all arguments are passed?
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
-        self._vispy_canvas = vispy_canvas
-        if isinstance(context, dict):
-            glformat = _set_config(context)
-            glformat.setSwapInterval(1 if vsync else 0)
-            widget = kwargs.pop('shareWidget', None)
-        else:
+            = self._process_backend_kwargs(kwargs)
+        # Deal with context
+        if context.istaken:
+            # Can we share this context?
+            if context.backend != 'qt':
+                raise ValueError('Cannot share %r context' % context.backend)
             glformat = QtOpenGL.QGLFormat.defaultFormat()
             if 'shareWidget' in kwargs:
                 raise RuntimeError('cannot use vispy to share context and '
                                    'use built-in shareWidget')
-            widget = context.value
+        else:
+            # We take the context
+            glformat = _set_config(context.config)
+            glformat.setSwapInterval(1 if vsync else 0)
+            widget = kwargs.pop('shareWidget', None) or self
+            context.take('qt', widget)
+        self._vispy_context = context
+        
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
 
-        # first arg can be glformat, or a shared context
+        # first arg can be glformat, or a gl context
+        widget = None if context.value is self else context.value
         QtOpenGL.QGLWidget.__init__(self, glformat, parent, widget, f)
         self._initialized = True
         if not self.isValid():
@@ -240,11 +245,6 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if self._init_show:
             self._vispy_set_visible(True)
 
-    @property
-    def _vispy_context(self):
-        """Context to return for sharing"""
-        return SharedContext(self)
-
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:
@@ -254,6 +254,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     def _vispy_set_current(self):
         # Make this the current context
+        # todo: we can get rid of all the if self._vispy_canvas
         if self._vispy_canvas is None:
             return
         if self.isValid():

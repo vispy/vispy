@@ -63,12 +63,12 @@ class Canvas(object):
     fullscreen : bool | int
         If False, windowed mode is used (default). If True, the default
         monitor is used. If int, the given monitor number is used.
-    context : dict | instance SharedContext | None
+    context : dict | instance GLContext | None
         OpenGL configuration to use when creating the context for the canvas,
         or a context to share. If None, ``vispy.app.get_default_config`` will
         be used to set the OpenGL context parameters. Alternatively, the
         ``canvas.context`` property from an existing canvas (using the
-        same backend) will return a ``SharedContext`` that can be used,
+        same backend) will return a ``GLContext`` that can be used,
         thereby sharing the existing context.
     keys : str | dict | None
         Default key mapping to use. If 'interactive', escape and F11 will
@@ -136,8 +136,7 @@ class Canvas(object):
         # store arguments that get set on Canvas init
         kwargs = dict(title=title, size=size, position=position, show=show,
                       vsync=vsync, resizable=resizable, decorate=decorate,
-                      fullscreen=fullscreen, context=context, parent=parent,
-                      vispy_canvas=self)
+                      fullscreen=fullscreen, context=context, parent=parent)
         self._backend_kwargs = kwargs
 
         # Get app instance
@@ -169,7 +168,8 @@ class Canvas(object):
         # Make sure that the app is active
         assert self._app.native
         # Instantiate the backend with the right class
-        be = self._app.backend_module.CanvasBackend(**self._backend_kwargs)
+        be = self._app.backend_module.CanvasBackend(self, 
+                                                    **self._backend_kwargs)
         self._set_backend(be)
 
     def _set_backend(self, backend):
@@ -183,7 +183,6 @@ class Canvas(object):
             # append to the end
             self.events.draw.connect((self, 'swap_buffers'),
                                      ref=True, position='last')
-        self._backend._vispy_canvas = self  # it's okay to set this again
         self._backend._vispy_init()
 
     def _set_keys(self, keys):
