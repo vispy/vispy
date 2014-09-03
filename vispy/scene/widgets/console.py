@@ -134,21 +134,14 @@ class Console(Widget):
         Scale factor to use for the font. A scale factor of 1 will use
         glyphs that are 6 pixels wide, with larger factors being
         multiplicatively larger.
-    orientation : str
-        Either "scroll-up" (like a terminal), or "scroll-down".
-        In "scroll-up", the most recent message is at the bottom.
     """
-    def __init__(self, text_color='black', font_scale=12.,
-                 orientation='scroll-up', **kwargs):
-        _check_valid('orientation', orientation, ('scroll-up', 'scroll-down'))
-
+    def __init__(self, text_color='black', font_scale=12., **kwargs):
         # Harcoded because of font above and shader program
         self.text_color = text_color
         self.font_scale = font_scale
         self._char_width = 6
         self._char_height = 10
         self._program = ModularProgram(VERTEX_SHADER, FRAGMENT_SHADER)
-        self._ori = orientation
         self._text_lines = []
         self._row = -1
         self._col = -1
@@ -176,14 +169,13 @@ class Console(Widget):
         C, R = np.meshgrid(np.arange(self._n_cols), np.arange(self._n_rows))
         # We are in left, top orientation
         x_off = 4.
-        y_off = 4. - self._char_height * self._n_rows
+        y_off = 4 - self.size[1] / self.font_scale
         pos[..., 0] = x_off + self._char_width * C
         pos[..., 1] = y_off + self._char_height * R
         self._position = VertexBuffer(pos)
 
         # Restore lines
-        sl = slice(None, None, (-1 if self._ori == 'scroll-down' else 1))
-        for ii, line in enumerate(self._text_lines[sl][:self._n_rows]):
+        for ii, line in enumerate(self._text_lines[:self._n_rows]):
             self._insert_text_buf(line, ii)
 
     @text_color.setter
@@ -223,8 +215,7 @@ class Console(Widget):
         """ Clear console """
         self._bytes_012.fill(0)
         self._bytes_345.fill(0)
-        self._row = -1
-        self._col = 0
+        self._row = 0
         self._text_lines = [] * self._n_rows
 
     def write(self, text='', wrap=True):
@@ -233,7 +224,8 @@ class Console(Widget):
         Parameters
         ----------
         text : str
-            Text to write. ``''`` can be used for a blank line.
+            Text to write. ``''`` can be used for a blank line, as a newline
+            is automatically added to the end of each line.
         wrap : str
             If True, long messages will be wrapped to span multiple lines.
         """
@@ -245,24 +237,19 @@ class Console(Widget):
         # truncate in case of *really* long messages
         text = text[-self._n_cols*self._n_rows:]
         text = text.split('\n')
+        text = [t if len(t) > 0 else '' for t in text]
         nr, nc = self._n_rows, self._n_cols
         for para in text:
             para = para[:nc] if not wrap else para
             lines = [para[ii:(ii+nc)] for ii in range(0, len(para), nc)]
+            lines = [''] if len(lines) == 0 else lines
             for line in lines:
                 # Update row and scroll if necessary
-                self._row += 1 if self._ori == 'scroll-down' else -1
                 self._text_lines.insert(0, line)
                 self._text_lines = self._text_lines[:nr]
-                if self._row >= nr:
-                    self._bytes_012[:-1] = self._bytes_012[1:]
-                    self._bytes_345[:-1] = self._bytes_345[1:]
-                    self._row = nr - 1
-                elif self._row < nr:
-                    self._bytes_012[1:] = self._bytes_012[:-1]
-                    self._bytes_345[1:] = self._bytes_345[:-1]
-                    self._row = 0
-                self._insert_text_buf(line, self._row)
+                self._bytes_012[1:] = self._bytes_012[:-1]
+                self._bytes_345[1:] = self._bytes_345[:-1]
+                self._insert_text_buf(line, 0)
 
     def _insert_text_buf(self, line, idx):
         """Insert text into bytes buffers"""
@@ -271,6 +258,7 @@ class Console(Widget):
         # Crop text if necessary
         I = np.array([ord(c) - 32 for c in line[:self._n_cols]])
         I = np.clip(I, 0, len(__font_6x8__)-1)
-        b = __font_6x8__[I]
-        self._bytes_012[idx, :len(I)] = b[:, :3]
-        self._bytes_345[idx, :len(I)] = b[:, 3:]
+        if len(I) > 0:
+            b = __font_6x8__[I]
+            self._bytes_012[idx, :len(I)] = b[:, :3]
+            self._bytes_345[idx, :len(I)] = b[:, 3:]
