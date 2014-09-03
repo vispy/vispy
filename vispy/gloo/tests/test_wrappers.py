@@ -37,10 +37,7 @@ def test_wrappers():
         assert_true(isinstance(x, np.ndarray))
         assert_true(isinstance(gloo.read_pixels((0, 0, 1, 1)), np.ndarray))
         assert_raises(ValueError, gloo.read_pixels, (0, 0, 1))  # bad port
-        y = gloo.read_pixels(alpha='only')
-        assert_equal(y.shape, x.shape[:2] + (1,))
-        assert_array_equal(x[..., 3], y[..., 0])
-        y = gloo.read_pixels(alpha=False)
+        y = gloo.read_pixels(alpha=False, out_type=np.ubyte)
         assert_equal(y.shape, x.shape[:2] + (3,))
         assert_array_equal(x[..., :3], y)
         y = gloo.read_pixels(out_type='float')
