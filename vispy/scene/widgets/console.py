@@ -130,29 +130,28 @@ class Console(Widget):
     ----------
     text_color : instance of Color
         Color to use.
-    text_scale : int
-        Scale factor for the text.
-    rows : int
-        Number of rows.
-    cols : int
-        Number of columns.
+    font_scale : int
+        Scale factor to use for the font. A scale factor of 1 will use
+        glyphs that are 6 pixels wide, with larger factors being
+        multiplicatively larger.
     orientation : str
         Either "scroll-up" (like a terminal), or "scroll-down".
         In "scroll-up", the most recent message is at the bottom.
     """
-    def __init__(self, text_color='black', text_scale=1, rows=24, cols=80,
+    def __init__(self, text_color='black', font_scale=12.,
                  orientation='scroll-up', **kwargs):
         _check_valid('orientation', orientation, ('scroll-up', 'scroll-down'))
 
         # Harcoded because of font above and shader program
         self.text_color = text_color
-        self.text_scale = text_scale
+        self.font_scale = font_scale
         self._char_width = 6
         self._char_height = 10
         self._program = ModularProgram(VERTEX_SHADER, FRAGMENT_SHADER)
         self._ori = orientation
         self._text_lines = []
         self._row = -1
+        self._col = -1
         Widget.__init__(self, **kwargs)
 
     @property
@@ -168,9 +167,9 @@ class Console(Widget):
         Widget.size.fset(self, *size)
         # Resize buffers
         self._n_rows = int(max(self.size[1] / (self._char_height *
-                                               self.text_scale), 1))
+                                               self.font_scale), 1))
         self._n_cols = int(max(self.size[0] / (self._char_width *
-                                               self.text_scale), 1))
+                                               self.font_scale), 1))
         self._bytes_012 = np.zeros((self._n_rows, self._n_cols, 3), np.float32)
         self._bytes_345 = np.zeros((self._n_rows, self._n_cols, 3), np.float32)
         pos = np.empty((self._n_rows, self._n_cols, 2), np.float32)
@@ -192,12 +191,12 @@ class Console(Widget):
         self._color = Color(color)
 
     @property
-    def text_scale(self):
-        return self._text_scale
+    def font_scale(self):
+        return self._font_scale
 
-    @text_scale.setter
-    def text_scale(self, text_scale):
-        self._text_scale = int(max(text_scale, 1))
+    @font_scale.setter
+    def font_scale(self, font_scale):
+        self._font_scale = int(max(font_scale, 1))
 
     def draw(self, event):
         super(Console, self).draw(event)
@@ -212,7 +211,7 @@ class Console(Widget):
         self._program.prepare()
         self._program['u_px_scale'] = px_scale
         self._program['u_color'] = self.text_color.rgba
-        self._program['u_scale'] = self.text_scale
+        self._program['u_scale'] = self.font_scale
         self._program['a_position'] = self._position
         self._program['a_bytes_012'] = VertexBuffer(self._bytes_012)
         self._program['a_bytes_345'] = VertexBuffer(self._bytes_345)
@@ -225,35 +224,45 @@ class Console(Widget):
         self._bytes_012.fill(0)
         self._bytes_345.fill(0)
         self._row = -1
+        self._col = 0
         self._text_lines = [] * self._n_rows
 
-    def write(self, line=''):
+    def write(self, text='', wrap=True):
         """Write text and scroll
 
         Parameters
         ----------
-        line : str
-            Line of text to write. ``''`` can be used for a blank line.
+        text : str
+            Text to write. ``''`` can be used for a blank line.
+        wrap : str
+            If True, long messages will be wrapped to span multiple lines.
         """
         # Clear line
-        if not isinstance(line, string_types):
+        if not isinstance(text, string_types):
             raise TypeError('text must be a string')
         # ensure we only have ASCII chars
-        line = line.encode('utf-8').decode('ascii', errors='replace')
-        # Update row and scroll if necessary
-        n = self._n_rows
-        self._row += 1 if self._ori == 'scroll-down' else -1
-        self._text_lines.insert(0, line)
-        self._text_lines = self._text_lines[:self._n_rows]
-        if self._row >= n:
-            self._bytes_012[:-1] = self._bytes_012[1:]
-            self._bytes_345[:-1] = self._bytes_345[1:]
-            self._row = n - 1
-        elif self._row < 0:
-            self._bytes_012[1:] = self._bytes_012[:-1]
-            self._bytes_345[1:] = self._bytes_345[:-1]
-            self._row = 0
-        self._insert_text_buf(line, self._row)
+        text = text.encode('utf-8').decode('ascii', errors='replace')
+        # truncate in case of *really* long messages
+        text = text[-self._n_cols*self._n_rows:]
+        text = text.split('\n')
+        nr, nc = self._n_rows, self._n_cols
+        for para in text:
+            para = para[:nc] if not wrap else para
+            lines = [para[ii:(ii+nc)] for ii in range(0, len(para), nc)]
+            for line in lines:
+                # Update row and scroll if necessary
+                self._row += 1 if self._ori == 'scroll-down' else -1
+                self._text_lines.insert(0, line)
+                self._text_lines = self._text_lines[:nr]
+                if self._row >= nr:
+                    self._bytes_012[:-1] = self._bytes_012[1:]
+                    self._bytes_345[:-1] = self._bytes_345[1:]
+                    self._row = nr - 1
+                elif self._row < nr:
+                    self._bytes_012[1:] = self._bytes_012[:-1]
+                    self._bytes_345[1:] = self._bytes_345[:-1]
+                    self._row = 0
+                self._insert_text_buf(line, self._row)
 
     def _insert_text_buf(self, line, idx):
         """Insert text into bytes buffers"""
