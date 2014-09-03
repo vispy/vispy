@@ -35,10 +35,10 @@ as possible, it's not always that easy to read. In effect this code is
 not so easy to maintain. I hope it is at least clear enough so it can be
 used to maintain the GL API itself.
 
+This function must be run using Python3.
 """
 
 import os
-import sys
 import ctypes  # not actually used, but handy to have imported during dev
 
 import headerparser

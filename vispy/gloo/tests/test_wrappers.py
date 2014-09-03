@@ -4,7 +4,7 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_allclose
 from nose.tools import assert_true, assert_equal, assert_raises
 
 from vispy import gloo
@@ -19,6 +19,7 @@ def test_wrappers():
     """Test gloo wrappers"""
     with Canvas():
         gl.use_gl('desktop debug')
+        gloo.clear('#112233')  # make it so that there's something non-zero
         # check presets
         assert_raises(ValueError, gloo.set_state, preset='foo')
         for state in gloo.get_state_presets().keys():
@@ -32,9 +33,18 @@ def test_wrappers():
         assert_raises(RuntimeError, gloo.set_line_width, -1)
 
         # check read_pixels
-        assert_true(isinstance(gloo.read_pixels(), np.ndarray))
+        x = gloo.read_pixels()
+        assert_true(isinstance(x, np.ndarray))
         assert_true(isinstance(gloo.read_pixels((0, 0, 1, 1)), np.ndarray))
         assert_raises(ValueError, gloo.read_pixels, (0, 0, 1))  # bad port
+        y = gloo.read_pixels(alpha='only')
+        assert_equal(y.shape, x.shape[:2] + (1,))
+        assert_array_equal(x[..., 3], y[..., 0])
+        y = gloo.read_pixels(alpha=False)
+        assert_equal(y.shape, x.shape[:2] + (3,))
+        assert_array_equal(x[..., :3], y)
+        y = gloo.read_pixels(out_type='float')
+        assert_allclose(x/255., y)
 
         # now let's (indirectly) check our set_* functions
         viewport = (0, 0, 1, 1)
