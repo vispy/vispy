@@ -33,8 +33,8 @@ class Canvas(SceneCanvas):
         self.cube.transform.reset()
         self.cube.transform.rotate(self.theta, (0, 0, 1))
         self.cube.transform.rotate(self.phi, (0, 1, 0))
-        self.cube.transform.scale((100, 100, 0.5))
-        self.cube.transform.translate((200, 200, -1))
+        self.cube.transform.scale((100, 100, 0.001))
+        self.cube.transform.translate((200, 200))
         self.update()
 
 if __name__ == '__main__':
