@@ -372,4 +372,4 @@ if __name__ == '__main__':
     appQt = QtGui.QApplication(sys.argv)
     win = MainWindow()
     win.show()
-    sys.exit(appQt.exec_())
+    appQt.exec_()

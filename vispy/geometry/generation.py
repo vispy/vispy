@@ -254,7 +254,7 @@ def create_arrow(rows, cols, radius=0.1, length=1.0,
     length : float
         Length of the arrow.
     cone_factor_radius : float
-       factor Cone Radius : Cone radius = fCR*radius
+       factor Cone Radius : Cone radius = cone_factor_radius*radius
     cone_factor_lenght : float
        factor Cone length of arrow length :
           Cone length = cone_factor_lenght*length
