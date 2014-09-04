@@ -14,9 +14,9 @@ def plot(*args, **kwds):
     """
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
-    line = visuals.LinePlot(*args, **kwds)
-    canvas.view.add(line)
-    canvas.view.camera.auto_zoom(line)
+    canvas.line = visuals.LinePlot(*args, **kwds)
+    canvas.view.add(canvas.line)
+    canvas.view.camera.auto_zoom(canvas.line)
     canvas.show()
     plots.append(canvas)
     return canvas
@@ -29,9 +29,10 @@ def image(*args, **kwds):
     """
     canvas = SceneCanvas(keys='interactive')
     canvas.view = canvas.central_widget.add_view()
-    image = visuals.Image(*args, **kwds)
-    canvas.view.add(image)
+    canvas.image = visuals.Image(*args, **kwds)
+    canvas.view.add(canvas.image)
     canvas.show()
-    canvas.view.camera.auto_zoom(image)
+    canvas.view.camera.invert_y = False
+    canvas.view.camera.auto_zoom(canvas.image)
     plots.append(canvas)
     return canvas

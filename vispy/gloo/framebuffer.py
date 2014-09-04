@@ -317,10 +317,7 @@ class FrameBuffer(GLObject):
         # todo: this is ostensibly required, but not available in gloo.gl
         #gl.glReadBuffer(buffer._target)
         
-        px = gl.glReadPixels(0, 0, h, w, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
-        #px = read_pixels((0, 0, h, w), alpha=alpha)
-        array = np.fromstring(px, dtype=np.ubyte).reshape(w, h, 4)
-        return array
+        return read_pixels((0, 0, h, w), alpha=alpha)
 
     def _create(self):
         """ Create framebuffer on GPU """

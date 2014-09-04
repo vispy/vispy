@@ -561,7 +561,8 @@ def get_parameter(name):
 
 
 def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
-    """Read pixels from the front buffer
+    """Read pixels from the currently selected buffer (ordinarily, this is
+    the front buffer). 
 
     Parameters
     ----------
@@ -580,7 +581,9 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
     Returns
     -------
     pixels : array
-        3D array of pixels in np.uint8 or np.float32 format.
+        3D array of pixels in np.uint8 or np.float32 format. 
+        The array shape is (h, w, 3) or (h, w, 4), with the botton-left corner 
+        of the framebuffer at index [0, 0] in the returned array.
     """
     type_dict = {'unsigned_byte': gl.GL_UNSIGNED_BYTE,
                  np.uint8: gl.GL_UNSIGNED_BYTE,

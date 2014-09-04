@@ -142,7 +142,7 @@ class SceneCanvas(app.Canvas):
             return  # Can happen on initialization
         logger.debug('Canvas draw')
 
-        self.draw_scene(event)
+        self.draw_scene()
 
     def export(self, size=None, region=None):
         """ Render the scene to an offscreen buffer and return the image array.
@@ -169,14 +169,13 @@ class SceneCanvas(app.Canvas):
         
         
         self.push_fbo(fbo, offset, csize)
-        event = app.canvas.DrawEvent('draw', region=region)
         try:
-            self.draw_scene(event)
+            self.draw_scene()
             return fbo.read()
         finally:
             self.pop_fbo()
         
-    def draw_scene(self, event):
+    def draw_scene(self):
         """ 
         
         """
@@ -185,11 +184,14 @@ class SceneCanvas(app.Canvas):
         nfb = len(self._fb_stack)
         nvp = len(self._vp_stack)
         
+        # Set up default viewport if no external framebuffers are in use
+        pop_vp = False
         if len(self._fb_stack) == 0:
             self.push_viewport((0, 0) + self.size)
-        else:
-            self.push_viewport((0, 0) + 
-                               self._fb_stack[-1][0].color_buffer.shape[::-1])
+            pop_vp = True
+        #else:
+            #self.push_viewport((0, 0) + 
+                               #self._fb_stack[-1][0].color_buffer.shape[::-1])
         
         try:
             # Draw the scene, but first disconnect its change signal--
@@ -198,7 +200,8 @@ class SceneCanvas(app.Canvas):
             with self.scene.events.update.blocker(self._scene_update):
                 self.draw_visual(self.scene)
         finally:
-            self.pop_viewport()
+            if pop_vp:
+                self.pop_viewport()
         
         if len(self._vp_stack) > nvp:
             logger.warning("Viewport stack not fully cleared after draw.")
@@ -240,7 +243,7 @@ class SceneCanvas(app.Canvas):
         """
         fb = self._current_framebuffer()
         viewport = fb[1] + fb[2]
-        return gloo.read_pixels(viewport, alpha=True)[::-1]
+        return gloo.read_pixels(viewport, alpha=True)
 
     def _process_mouse_event(self, event):
         tr_cache = self._transform_caches.setdefault(self.scene, 
