@@ -11,8 +11,7 @@ from .mesh import Mesh
 
 class Cuboid(Mesh):
     def __init__(self, length=1.0, width=1.0, depth=1.0, vertex_colors=None,
-                 face_colors=None, color=(0.5, 0.5, 1, 1), outline=False,
-                 **kwds):
+                 face_colors=None, color=(0.5, 0.5, 1, 1), outline=False):
         vertices, filled_indices, outline_indices = create_cube()
         vertices['position'][:, 0] *= length
         vertices['position'][:, 1] *= width
