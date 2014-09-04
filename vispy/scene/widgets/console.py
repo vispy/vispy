@@ -11,7 +11,7 @@ import numpy as np
 
 from ..shaders import ModularProgram
 from .widget import Widget
-from ...gloo import VertexBuffer, set_state, _check_valid
+from ...gloo import VertexBuffer, set_state
 from ...color import Color
 from ...ext.six import string_types
 
@@ -102,23 +102,38 @@ float segment(float edge0, float edge1, float x)
 varying vec4 v_color;
 varying vec3 v_bytes_012, v_bytes_345;
 
+vec4 glyph_color(vec2 uv) {
+    if(uv.x > 5.0 || uv.y > 7.0)
+        return vec4(0, 0, 0, 0);
+    else {
+        float index  = floor( (uv.y*6.0+uv.x)/8.0 );
+        float offset = floor( mod(uv.y*6.0+uv.x,8.0));
+        float byte = segment(0.0,1.0,index) * v_bytes_012.x
+                   + segment(1.0,2.0,index) * v_bytes_012.y
+                   + segment(2.0,3.0,index) * v_bytes_012.z
+                   + segment(3.0,4.0,index) * v_bytes_345.x
+                   + segment(4.0,5.0,index) * v_bytes_345.y
+                   + segment(5.0,6.0,index) * v_bytes_345.z;
+        if( floor(mod(byte / (128.0/pow(2.0,offset)), 2.0)) > 0.0 )
+            return v_color;
+        else
+            return vec4(0, 0, 0, 0);
+    }
+}
+
 void main(void)
 {
-    vec2 uv = floor(gl_PointCoord.xy * 8.0);
-    if(uv.x > 5.0) discard;
-    if(uv.y > 7.0) discard;
-    float index  = floor( (uv.y*6.0+uv.x)/8.0 );
-    float offset = floor( mod(uv.y*6.0+uv.x,8.0));
-    float byte = segment(0.0,1.0,index) * v_bytes_012.x
-               + segment(1.0,2.0,index) * v_bytes_012.y
-               + segment(2.0,3.0,index) * v_bytes_012.z
-               + segment(3.0,4.0,index) * v_bytes_345.x
-               + segment(4.0,5.0,index) * v_bytes_345.y
-               + segment(5.0,6.0,index) * v_bytes_345.z;
-    if( floor(mod(byte / (128.0/pow(2.0,offset)), 2.0)) > 0.0 )
-        gl_FragColor = v_color;
-    else
-        discard;
+    vec2 loc = gl_PointCoord.xy * 8.0;
+    vec2 uv = floor(loc);
+    // use multi-sampling to make the text look nicer
+    vec2 dxy = 0.25*(abs(dFdx(loc)) + abs(dFdy(loc)));
+    vec4 box = floor(vec4(loc-dxy, loc+dxy));
+    vec4 color = glyph_color(floor(loc)) +
+                 0.25 * glyph_color(box.xy) +
+                 0.25 * glyph_color(box.xw) +
+                 0.25 * glyph_color(box.zy) +
+                 0.25 * glyph_color(box.zw);
+    gl_FragColor = color / 2.;
 }
 """
 
@@ -130,46 +145,56 @@ class Console(Widget):
     ----------
     text_color : instance of Color
         Color to use.
-    font_scale : int
-        Scale factor to use for the font. A scale factor of 1 will use
-        glyphs that are 6 pixels wide, with larger factors being
-        multiplicatively larger.
+    font_size : float
+        Point size to use.
     """
-    def __init__(self, text_color='black', font_scale=12., **kwargs):
+    def __init__(self, text_color='black', font_size=12., **kwargs):
         # Harcoded because of font above and shader program
         self.text_color = text_color
-        self.font_scale = font_scale
+        self.font_size = font_size
         self._char_width = 6
         self._char_height = 10
         self._program = ModularProgram(VERTEX_SHADER, FRAGMENT_SHADER)
+        self._pending_writes = []
         self._text_lines = []
-        self._row = -1
-        self._col = -1
+        self._col = 0
+        self._current_sizes = (-1,) * 3
         Widget.__init__(self, **kwargs)
 
     @property
     def text_color(self):
-        return self._color
+        """The color of the text"""
+        return self._text_color
+
+    @text_color.setter
+    def text_color(self, color):
+        self._text_color = Color(color)
 
     @property
-    def size(self):
-        return super(Console, self).size
+    def font_size(self):
+        """The font size (in points) of the text"""
+        return self._font_size
 
-    @size.setter
-    def size(self, *size):
-        Widget.size.fset(self, *size)
-        # Resize buffers
-        self._n_rows = int(max(self.size[1] / (self._char_height *
-                                               self.font_scale), 1))
-        self._n_cols = int(max(self.size[0] / (self._char_width *
-                                               self.font_scale), 1))
+    @font_size.setter
+    def font_size(self, font_size):
+        self._font_size = float(font_size)
+
+    def _resize_buffers(self, font_scale):
+        """Resize buffers only if necessary"""
+        new_sizes = (font_scale,) + self.size
+        if new_sizes == self._current_sizes:  # don't need resize
+            return
+        self._n_rows = int(max(self.size[1] /
+                               (self._char_height * font_scale), 1))
+        self._n_cols = int(max(self.size[0] /
+                               (self._char_width * font_scale), 1))
         self._bytes_012 = np.zeros((self._n_rows, self._n_cols, 3), np.float32)
         self._bytes_345 = np.zeros((self._n_rows, self._n_cols, 3), np.float32)
         pos = np.empty((self._n_rows, self._n_cols, 2), np.float32)
         C, R = np.meshgrid(np.arange(self._n_cols), np.arange(self._n_rows))
         # We are in left, top orientation
         x_off = 4.
-        y_off = 4 - self.size[1] / self.font_scale
+        y_off = 4 - self.size[1] / font_scale
         pos[..., 0] = x_off + self._char_width * C
         pos[..., 1] = y_off + self._char_height * R
         self._position = VertexBuffer(pos)
@@ -177,33 +202,24 @@ class Console(Widget):
         # Restore lines
         for ii, line in enumerate(self._text_lines[:self._n_rows]):
             self._insert_text_buf(line, ii)
-
-    @text_color.setter
-    def text_color(self, color):
-        self._color = Color(color)
-
-    @property
-    def font_scale(self):
-        return self._font_scale
-
-    @font_scale.setter
-    def font_scale(self, font_scale):
-        self._font_scale = int(max(font_scale, 1))
+        self._current_sizes = new_sizes
 
     def draw(self, event):
         super(Console, self).draw(event)
-        if event is not None:
-            xform = event.render_transform.shader_map()
-            px_scale = event.framebuffer_cs.transform.scale[:2]
-        else:
-            xform = self.transform.shader_map()
-            # Rather arbitrary scale
-            px_scale = 0.01, 0.01
+        if event is None:
+            raise RuntimeError('Event cannot be None')
+        xform = event.render_transform.shader_map()
+        px_scale = event.framebuffer_cs.transform.scale[:2]
+        n_pix = (self.font_size / 72.) * 92.  # num of pixels tall
+        # The -2 here is because the char_height has a gap built in
+        font_scale = max(n_pix / float((self._char_height-2)), 1)
+        self._resize_buffers(font_scale)
+        self._do_pending_writes()
         self._program.vert['transform'] = xform
         self._program.prepare()
         self._program['u_px_scale'] = px_scale
         self._program['u_color'] = self.text_color.rgba
-        self._program['u_scale'] = self.font_scale
+        self._program['u_scale'] = font_scale
         self._program['a_position'] = self._position
         self._program['a_bytes_012'] = VertexBuffer(self._bytes_012)
         self._program['a_bytes_345'] = VertexBuffer(self._bytes_345)
@@ -212,11 +228,12 @@ class Console(Widget):
         self._program.draw('points')
 
     def clear(self):
-        """ Clear console """
-        self._bytes_012.fill(0)
-        self._bytes_345.fill(0)
-        self._row = 0
+        """Clear the console"""
+        if hasattr(self, '_bytes_012'):
+            self._bytes_012.fill(0)
+            self._bytes_345.fill(0)
         self._text_lines = [] * self._n_rows
+        self._pending_writes = []
 
     def write(self, text='', wrap=True):
         """Write text and scroll
@@ -234,22 +251,28 @@ class Console(Widget):
             raise TypeError('text must be a string')
         # ensure we only have ASCII chars
         text = text.encode('utf-8').decode('ascii', errors='replace')
-        # truncate in case of *really* long messages
-        text = text[-self._n_cols*self._n_rows:]
-        text = text.split('\n')
-        text = [t if len(t) > 0 else '' for t in text]
-        nr, nc = self._n_rows, self._n_cols
-        for para in text:
-            para = para[:nc] if not wrap else para
-            lines = [para[ii:(ii+nc)] for ii in range(0, len(para), nc)]
-            lines = [''] if len(lines) == 0 else lines
-            for line in lines:
-                # Update row and scroll if necessary
-                self._text_lines.insert(0, line)
-                self._text_lines = self._text_lines[:nr]
-                self._bytes_012[1:] = self._bytes_012[:-1]
-                self._bytes_345[1:] = self._bytes_345[:-1]
-                self._insert_text_buf(line, 0)
+        self._pending_writes.append((text, wrap))
+
+    def _do_pending_writes(self):
+        """Do any pending text writes"""
+        for text, wrap in self._pending_writes:
+            # truncate in case of *really* long messages
+            text = text[-self._n_cols*self._n_rows:]
+            text = text.split('\n')
+            text = [t if len(t) > 0 else '' for t in text]
+            nr, nc = self._n_rows, self._n_cols
+            for para in text:
+                para = para[:nc] if not wrap else para
+                lines = [para[ii:(ii+nc)] for ii in range(0, len(para), nc)]
+                lines = [''] if len(lines) == 0 else lines
+                for line in lines:
+                    # Update row and scroll if necessary
+                    self._text_lines.insert(0, line)
+                    self._text_lines = self._text_lines[:nr]
+                    self._bytes_012[1:] = self._bytes_012[:-1]
+                    self._bytes_345[1:] = self._bytes_345[:-1]
+                    self._insert_text_buf(line, 0)
+        self._pending_writes = []
 
     def _insert_text_buf(self, line, idx):
         """Insert text into bytes buffers"""

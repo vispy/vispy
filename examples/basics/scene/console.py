@@ -8,6 +8,7 @@
 Demonstrate the use of the vispy console. Note how the console size is
 independent of the canvas scaling.
 """
+import sys
 
 from vispy import scene, app
 from vispy.scene.widgets import Console
@@ -18,7 +19,7 @@ vb = scene.widgets.ViewBox(parent=canvas.scene, border_color='b')
 vb.camera.rect = -1, -1, 2, 2
 text = Text('Starting timer...', color='w', font_size=24, parent=vb.scene)
 
-console = Console(text_color='g', font_scale=2, border_color='g')
+console = Console(text_color='g', font_size=12., border_color='g')
 
 grid = canvas.central_widget.add_grid()
 grid.add_widget(vb, row=0, col=0)
@@ -34,10 +35,12 @@ def on_timer(event):
 
 timer = app.Timer(2.0, connect=on_timer, start=True)
 
-console.write('This is a line that will be wrapped automatically by the'
+console.write('This is a line that will be wrapped automatically by the '
               'console.\n')
 console.write('This line will be truncated ....................,\n'
               'but this next line will survive.\n', wrap=False)
 
-canvas.show()
-canvas.app.run()
+if __name__ == '__main__':
+    canvas.show()
+    if sys.flags.interactive != 1:
+        canvas.app.run()
