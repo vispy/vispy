@@ -179,11 +179,12 @@ def _examples():
     if not dev:
         reason = 'Cannot test examples unless in vispy git directory'
     else:
-        good, backend = has_application(capable=('multi_window',))
+        with use_log_level('warning', print_msg=False):
+            good, backend = has_application(capable=('multi_window',))
         if not good:
             reason = 'Must have suitable app backend'
     if reason is not None:
-        msg = 'Skipping example test:\n\n%s\n' % reason
+        msg = 'Skipping example test: %s' % reason
         print(msg)
         raise SkipTest(msg)
     print(_line_sep + '\nRunning examples using %s backend' % backend)
@@ -192,16 +193,17 @@ def _examples():
               for fname in d[2] if fname.endswith('.py')]
     fnames = sorted(fnames, key=lambda x: x.lower())
     excludes = [
-        op.join('basics', 'plotting', 'mpl_plot.py'),
-        op.join('basics', 'scene', 'modular_shaders', 'editor.py'),
-        op.join('basics', 'scene', 'modular_shaders', 'sandbox.py'),
-        op.join('benchmark', 'simple_glut.py'),
-        op.join('demo', 'gloo', 'camera.py'),
-        op.join('demo', 'gloo', 'jfa', 'jfa_translation.py'),
-        op.join('demo', 'gloo', 'markers.py'),
-        op.join('demo', 'gloo', 'offscreen.py'),
-        op.join('demo', 'gloo', 'unstructured_2d.py'),
-        op.join('tutorial', 'app', 'shared_context.py'),
+        op.join('basics', 'plotting', 'mpl_plot.py'),  # non-standard
+        op.join('basics', 'scene', 'modular_shaders', 'editor.py'),  # qt app
+        op.join('basics', 'scene', 'modular_shaders', 'sandbox.py'),  # qt app
+        op.join('benchmark', 'simple_glut.py'),  # glut specific
+        op.join('demo', 'gloo', 'camera.py'),  # req webcam
+        op.join('demo', 'gloo', 'jfa', 'jfa_translation.py'),  # glfw-specific
+        op.join('demo', 'gloo', 'markers.py'),  # not a script
+        op.join('demo', 'gloo', 'offscreen.py'),  # non-standard
+        op.join('demo', 'gloo', 'terrain.py'),  # req scipy
+        op.join('demo', 'gloo', 'unstructured_2d.py'),  # non-standard
+        op.join('tutorial', 'app', 'shared_context.py'),  # non-standard
     ]
     fails = []
     n_ran = n_skipped = 0
@@ -225,7 +227,7 @@ def _examples():
         stdout, stderr = p.communicate()
         sys.stdout.flush()
         if(p.returncode):
-            if stdout.strip().endswith('Skipping'):
+            if stdout.decode('utf-8').strip().endswith('Skipping'):
                 reason = 'Bad formatting: fix or add to exclude list'
             else:
                 reason = stderr
