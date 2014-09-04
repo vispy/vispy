@@ -141,7 +141,7 @@ def test_capability():
     good_kwargs = dict()
     bad_kwargs = dict()
     with Canvas() as c:
-        for key, val in c._backend._vispy_capability.items():
+        for key, val in c.app.backend_module.capability.items():
             if key in non_default_vals:
                 if val:
                     good_kwargs[key] = non_default_vals[key]

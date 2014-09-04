@@ -191,34 +191,37 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     """Qt backend for Canvas abstract class."""
 
-    def __init__(self, vispy_canvas, **kwargs):
+    # args are for BaseCanvasBackend, kwargs are for us.
+    def __init__(self, *args, **kwargs):
+        BaseCanvasBackend.__init__(self, *args)
         self._initialized = False
-        BaseCanvasBackend.__init__(self, vispy_canvas)
+        
         # todo: why _process_backend_kwargs instead of just passing kwargs?
         # Maybe to ensure that exactly all arguments are passed?
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             = self._process_backend_kwargs(kwargs)
+        
         # Deal with context
-        if context.istaken:
-            # Can we share this context?
-            if context.backend != 'qt':
-                raise ValueError('Cannot share %r context' % context.backend)
+        self._vispy_context = context
+        if context.istaken == 'qt':
+            widget = context.value
             glformat = QtOpenGL.QGLFormat.defaultFormat()
             if 'shareWidget' in kwargs:
-                raise RuntimeError('cannot use vispy to share context and '
-                                   'use built-in shareWidget')
+                raise RuntimeError('Cannot use vispy to share context and '
+                                   'use built-in shareWidget.')
+        elif context.istaken:
+            raise RuntimeError('Cannot share context between backends.')
         else:
-            # We take the context
             glformat = _set_config(context.config)
             glformat.setSwapInterval(1 if vsync else 0)
             widget = kwargs.pop('shareWidget', None) or self
-            context.take('qt', widget)
-        self._vispy_context = context
+            context.take(widget, 'qt')
+            if widget is self:
+                widget = None  # QGLWidget does not accept self ;)
         
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
 
         # first arg can be glformat, or a gl context
-        widget = None if context.value is self else context.value
         QtOpenGL.QGLWidget.__init__(self, glformat, parent, widget, f)
         self._initialized = True
         if not self.isValid():
@@ -238,7 +241,8 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
             self.setFixedSize(self.size())
         if position is not None:
             self._vispy_set_position(*position)
-        self._init_show = show
+        if show:
+            self._vispy_set_visible(True)
     
     def embed(self, widget):
         """ Convenience function to embed the canvas in an application.
@@ -250,11 +254,6 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self)
     
-    def _vispy_init(self):
-        """Do actions that require self._vispy_canvas._backend to be set"""
-        if self._init_show:
-            self._vispy_set_visible(True)
-
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:

@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-
-from inspect import getargspec
-from copy import deepcopy
-
-from ._config import get_default_config
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
 class BaseApplicationBackend(object):
@@ -46,8 +43,10 @@ class BaseCanvasBackend(object):
     """
 
     def __init__(self, vispy_canvas):
+        from .canvas import Canvas
+        assert isinstance(vispy_canvas, Canvas)
         self._vispy_canvas = vispy_canvas
-
+        
         # Data used in the construction of new mouse events
         self._vispy_mouse_data = {
             'buttons': [],
@@ -56,65 +55,12 @@ class BaseCanvasBackend(object):
         }
 
     def _process_backend_kwargs(self, kwargs):
-        """Removes vispy-specific kwargs for CanvasBackend"""
-        # these are the output arguments
+        """ Simple utility to retrieve kwargs in predetermined order.
+        """
         keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
-                'decorate', 'fullscreen', 'parent']
-        from .canvas import Canvas
-        outs = []
-        spec = getargspec(Canvas.__init__)
-        capability = self._vispy_canvas.app.backend_module.capability
-        for key in keys:
-            default = spec.defaults[spec.args.index(key) - 1]
-            out = kwargs.get(key, default)
-            if out != default and capability[key] is False:
-                raise RuntimeError('Cannot set property %s using this '
-                                   'backend' % key)
-            outs.append(out)
+                'decorate', 'fullscreen', 'parent', 'context']
+        return [kwargs[k] for k in keys]
     
-        # todo: can we just move this context relates stuff to canvas
-        # and begone with this method?
-        # Ensure that context is a GLContext instance
-        context = kwargs.get('context', GLContext())
-        if isinstance(context, dict):
-            context = GLContext(context=deepcopy(context))
-        elif isinstance(context, GLContext):
-            if not capability['context']:
-                raise RuntimeError('Cannot share context with this backend')
-        else:
-            raise TypeError('context must be a dict or GLContext from '
-                            'a Canvas with the same backend, not %s'
-                            % type(context))
-        
-        # Ensure that the context has all the right fields
-        default_config = get_default_config()
-        # first, fill in context with any missing entries
-        config = context.config
-        for key, val in default_config.items():
-            config[key] = config.get(key, default_config[key])
-        # now make sure everything is of the proper type
-        for key, val in config.items():
-            if key not in default_config:
-                raise KeyError('context.config has unknown key %s' % key)
-            needed = type(default_config[key])
-            if not isinstance(val, needed):
-                raise TypeError('context.config["%s"] is of incorrect type (got '
-                                '%s need %s)' % (key, type(val), needed))
-        
-        # Finalize outs and return
-        outs.append(context)
-        return outs
-
-    def _vispy_init(self):
-        # For any __init__-like actions that must occur *after*
-        # self._vispy_canvas._backend is not None
-
-        # Most backends won't need this. However, there are exceptions.
-        # e.g., pyqt4 with show=True, "show" can't be done until this property
-        # exists because it might call on_draw which might in turn call
-        # canvas.size... which relies on canvas._backend being set.
-        pass
-
     def _vispy_set_current(self):
         # Make this the current context
         raise NotImplementedError()
@@ -240,39 +186,3 @@ class BaseTimerBackend(object):
 
 # todo:  XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 # get rid of SharedContext and _vispy_shared_context _vispy_capability
-class GLContext(object):
-    """An object encapsulating data necessary for a shared OpenGL context
-
-    The data are backend dependent.
-    """
-    
-    def __init__(self, context=None):
-        self._value = None  # Used by vispy.app to store a ref
-        self._backend = None  # Used by vispy.app to say what backend owns it
-        self._config = context or {}  # Used by vispy.app to set context config
-    
-    def take(self, backend, value):
-        if self._value is not None:
-            raise RuntimeError('This GLContext is already owned.')
-        self._backend = str(backend)
-        self._value = value
-    
-    @property
-    def istaken(self):
-        return self._value is not None
-    
-    @property
-    def value(self):
-        return self._value
-    
-    @property
-    def backend(self):
-        return self._backend
-    
-    @property
-    def config(self):
-        return self._config
-    
-    def __repr__(self):
-        backend = self._backend or 'no'
-        return "<GLContext of %s backend at 0x%x>" % (backend, id(self))

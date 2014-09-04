@@ -9,7 +9,6 @@ implementation is corect.
 """
 
 from nose.tools import assert_raises
-from inspect import getargspec
 
 import vispy
 from vispy import keys
@@ -47,7 +46,6 @@ def _test_module_properties(_module=None):
 
     # Test that all _vispy_x methods are there.
     exceptions = (
-        '_vispy_init',
         '_vispy_get_native_canvas',
         '_vispy_get_native_timer',
         '_vispy_get_native_app',
@@ -58,16 +56,13 @@ def _test_module_properties(_module=None):
         '_process_backend_kwargs')  # defined in base class
 
     Klass = _module.CanvasBackend
-    KlassRef = vispy.app.base.BaseCanvasBackend
-    base = KlassRef(None, None)
+    KlassRef = vispy.app.base.BaseCanvasBackend  
+    # We cannot instantiate KlassRef if we have no Canvas
     for key in dir(KlassRef):
         if not key.startswith('__'):
             method = getattr(Klass, key)
             if key not in exceptions:
                 print(key)
-                args = [None] * (len(getargspec(method).args) - 1)
-                assert_raises(NotImplementedError, getattr(base, key),
-                              *args)
                 if hasattr(method, '__module__'):
                     mod_str = method.__module__  # Py3k
                 else:

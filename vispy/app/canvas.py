@@ -12,7 +12,7 @@ from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..ext.six import string_types
 from . import Application, use_app
-from ._config import get_default_config
+from ..util.context import GLContext
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -91,9 +91,7 @@ class Canvas(object):
         title = str(title)
         if not isinstance(fullscreen, (bool, int)):
             raise TypeError('fullscreen must be bool or int')
-        if context is None:
-            context = get_default_config()
-
+        
         # Initialize some values
         self._autoswap = autoswap
         self._title = title
@@ -103,7 +101,7 @@ class Canvas(object):
         self._fps_callback = None
         self._backend = None
         self._closed = False
-
+        
         # Create events
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
@@ -132,13 +130,7 @@ class Canvas(object):
         if init_gloo:
             self.events.initialize.connect(_gloo_initialize,
                                            ref='gloo_initialize')
-
-        # store arguments that get set on Canvas init
-        kwargs = dict(title=title, size=size, position=position, show=show,
-                      vsync=vsync, resizable=resizable, decorate=decorate,
-                      fullscreen=fullscreen, context=context, parent=parent)
-        self._backend_kwargs = kwargs
-
+        
         # Get app instance
         if app is None:
             self._app = use_app()
@@ -148,10 +140,31 @@ class Canvas(object):
             self._app = Application(app)
         else:
             raise ValueError('Invalid value for app %r' % app)
-
+        
+        # Ensure context is a GLContext object
+        context = context or GLContext()
+        if isinstance(context, dict):
+            context = GLContext(context)
+        elif not isinstance(context, GLContext):
+            raise TypeError('context must be a dict or GLContext from '
+                            'a Canvas with the same backend, not %s'
+                            % type(context))
+        # If this is a shared context, check whether that's ok
+        # We test for inter-backend interop in the backends themselves
+        if context.istaken:
+            capability = self.app.backend_module.capability
+            if not capability['context']:
+                raise RuntimeError('Cannot share context with this backend')
+        
         # Deal with special keys
         self._set_keys(keys)
-
+        
+        # store arguments that get set on Canvas init
+        kwargs = dict(title=title, size=size, position=position, show=show,
+                      vsync=vsync, resizable=resizable, decorate=decorate,
+                      fullscreen=fullscreen, context=context, parent=parent)
+        self._backend_kwargs = kwargs
+        
         # Create widget now (always do this *last*, after all err checks)
         if create_native:
             self.create_native()
@@ -168,22 +181,14 @@ class Canvas(object):
         # Make sure that the app is active
         assert self._app.native
         # Instantiate the backend with the right class
-        be = self._app.backend_module.CanvasBackend(self, 
-                                                    **self._backend_kwargs)
-        self._set_backend(be)
-
-    def _set_backend(self, backend):
-        """ Set backend<->canvas references and autoswap
-        """
-        # NOTE: Do *not* combine this with create_native above, since
-        # this private function is used to embed Qt widgets
-        assert backend is not None  # should never happen
-        self._backend = backend
+        CanvasBackend = self._app.backend_module.CanvasBackend
+        self._backend = CanvasBackend(self, **self._backend_kwargs)
+        self._backend_kwargs = None  # Clean up
+        
         if self._autoswap:
             # append to the end
             self.events.draw.connect((self, 'swap_buffers'),
                                      ref=True, position='last')
-        self._backend._vispy_init()
 
     def _set_keys(self, keys):
         if keys is not None:
