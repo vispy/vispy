@@ -216,7 +216,6 @@ def _examples():
             n_ran -= 1
             n_skipped += 1
             continue
-        print(root_name, end='')
         sys.stdout.flush()
         cwd = op.dirname(fname)
         cmd = [sys.executable, '-c', _script.format(op.split(fname)[1][:-3])]
@@ -224,7 +223,6 @@ def _examples():
         env.update(dict(_VISPY_TESTING_TYPE='examples'))
         p = Popen(cmd, cwd=cwd, env=env, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
-        print(''.join(x * len(root_name) for x in '\b \b'), end='')
         sys.stdout.flush()
         if(p.returncode):
             if stdout.strip().endswith('Skipping'):
