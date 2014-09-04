@@ -560,7 +560,7 @@ def get_parameter(name):
     return gl.glGetParameter(_gl_attr(name))
 
 
-def read_pixels(viewport=None, alpha=True):
+def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
     """Read pixels from the front buffer
 
     Parameters
@@ -570,13 +570,23 @@ def read_pixels(viewport=None, alpha=True):
         the current GL viewport will be queried and used.
     alpha : bool
         If True (default), the returned array has 4 elements (RGBA).
-        Otherwise, it has 3 (RGB).
+        If False, it has 3 (RGB).
+    out_type : str | dtype
+        Can be 'unsigned_byte' or 'float'. Note that this does not
+        use casting, but instead determines how values are read from
+        the current buffer. Can also be numpy dtypes ``np.uint8``,
+        ``np.ubyte``, or ``np.float32``.
 
     Returns
     -------
     pixels : array
-        3D array of pixels in np.uint8 format.
+        3D array of pixels in np.uint8 or np.float32 format.
     """
+    type_dict = {'unsigned_byte': gl.GL_UNSIGNED_BYTE,
+                 np.uint8: gl.GL_UNSIGNED_BYTE,
+                 'float': gl.GL_FLOAT,
+                 np.float32: gl.GL_FLOAT}
+    type_ = _check_conversion(out_type, type_dict)
     if viewport is None:
         viewport = get_parameter('viewport')
     viewport = np.array(viewport, int)
@@ -585,19 +595,15 @@ def read_pixels(viewport=None, alpha=True):
                          % (viewport,))
     x, y, w, h = viewport
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)  # PACK, not UNPACK
-    if alpha:  # gl.GL_RGBA
-        im = gl.glReadPixels(x, y, w, h, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
-    else:  # gl.gl_RGB
-        im = gl.glReadPixels(x, y, w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
+    fmt = gl.GL_RGBA if alpha else gl.GL_RGB
+    im = gl.glReadPixels(x, y, w, h, fmt, type_)
     gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
     # reshape, flip, and return
     if not isinstance(im, np.ndarray):
-        im = np.frombuffer(im, np.uint8)
+        np_dtype = np.uint8 if type_ == gl.GL_UNSIGNED_BYTE else np.float32
+        im = np.frombuffer(im, np_dtype)
 
-    if alpha:
-        im.shape = h, w, 4  # RGBA
-    else:
-        im.shape = h, w, 3  # RGB
+    im.shape = h, w, (4 if alpha else 3)  # RGBA vs RGB
     im = im[::-1, :, :]  # flip the image
     return im
 
