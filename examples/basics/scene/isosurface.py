@@ -15,7 +15,6 @@ from vispy import app, scene
 
 # Create a canvas with a 3D viewport
 canvas = scene.SceneCanvas(keys='interactive')
-canvas.show()
 view = canvas.central_widget.add_view()
 view.set_camera('turntable', mode='perspective', up='z', distance=50)
 
@@ -28,16 +27,15 @@ def psi(i, j, k, offset=(25, 25, 50)):
     th = np.arctan2(z, (x**2+y**2)**0.5)
     r = (x**2 + y**2 + z**2)**0.5
     a0 = 1
-    ps = ((1./81.) * 1./(6.*np.pi)**0.5 * (1./a0)**(3/2) * (r/a0)**2 * 
+    ps = ((1./81.) * 1./(6.*np.pi)**0.5 * (1./a0)**(3/2) * (r/a0)**2 *
           np.exp(-r/(3*a0)) * (3 * np.cos(th)**2 - 1))
-    
     return ps
 
 print("Generating scalar field..")
 data = np.abs(np.fromfunction(psi, (50, 50, 100)))
 
 # Create isosurface visual
-surface = scene.visuals.Isosurface(data, level=data.max()/4., 
+surface = scene.visuals.Isosurface(data, level=data.max()/4.,
                                    color=(0.5, 0.6, 1, 1), shading='smooth',
                                    parent=view.scene)
 surface.transform = scene.transforms.STTransform(translate=(-25, -25, -50))
@@ -46,5 +44,7 @@ surface.transform = scene.transforms.STTransform(translate=(-25, -25, -50))
 axis = scene.visuals.XYZAxis(parent=view.scene)
 
 
-if sys.flags.interactive == 0:
-    app.run()
+if __name__ == '__main__':
+    canvas.show()
+    if sys.flags.interactive == 0:
+        app.run()

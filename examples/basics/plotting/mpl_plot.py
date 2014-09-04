@@ -47,5 +47,6 @@ plt.draw()
 # 2. Any plotting commands executed after this will not take effect.
 # We are working to remove this limitation.
 
-block = False if sys.flags.interactive else True
-plt.show(block)
+block = False if sys.flags.interactive == 0 else True
+if __name__ == '__main__':
+    plt.show(block)

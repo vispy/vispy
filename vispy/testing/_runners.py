@@ -8,13 +8,16 @@ from __future__ import print_function
 import sys
 import os
 from os import path as op
-from subprocess import Popen
+from subprocess import Popen, PIPE
 from copy import deepcopy
 from functools import partial
 
 from ..util import use_log_level
 from ..util.ptime import time
-from ._testing import SkipTest, has_backend
+from ._testing import SkipTest, has_backend, has_application
+
+
+_line_sep = '-' * 70
 
 
 def _get_root_dir():
@@ -36,21 +39,20 @@ def _nose(mode, verbosity, coverage, extra_args):
     except ImportError:
         print('Skipping nosetests, nose not installed')
         raise SkipTest()
-    extra = ('-' * 70)
     if mode == 'nobackend':
-        print(extra + '\nRunning tests with no backend')
+        print(_line_sep + '\nRunning tests with no backend')
         attrs = '-a !vispy_app_test '
         app_import = ''
     else:
         with use_log_level('warning', print_msg=False):
             has, why_not = has_backend(mode, out=['why_not'])
         if has:
-            print('%s\nRunning tests with %s backend' % (extra, mode))
+            print('%s\nRunning tests with %s backend' % (_line_sep, mode))
             attrs = '-a vispy_app_test '
         else:
             msg = ('Skipping tests for backend %s, not found (%s)'
                    % (mode, why_not))
-            print(extra + '\n' + msg + '\n' + extra + '\n')  # last \n nicer
+            print(_line_sep + '\n' + msg + '\n' + _line_sep + '\n')
             raise SkipTest(msg)
         app_import = '\nfrom vispy import use\nuse(app="%s")\n' % mode
     sys.stdout.flush()
@@ -146,6 +148,102 @@ def _check_line_endings():
                            % (len(report), '\n'.join(report)))
 
 
+_script = """
+import sys
+import time
+import {0}
+
+if hasattr({0}, 'canvas'):
+    canvas = {0}.canvas
+elif hasattr({0}, 'Canvas'):
+    canvas = {0}.Canvas()
+else:
+    canvas = None
+if canvas is None:
+    print('Skipping')
+    sys.exit(-1)
+
+with canvas as c:
+    for _ in range(30):
+        c.update()
+        c.app.process_events()
+        time.sleep(1./60.)
+"""
+
+
+def _examples():
+    """Run all examples and make sure they work
+    """
+    root_dir, dev = _get_root_dir()
+    reason = None
+    if not dev:
+        reason = 'Cannot test examples unless in vispy git directory'
+    elif not has_application(capable=('multi_window',)):
+        reason = 'Must have suitable app backend'
+    if reason is not None:
+        msg = 'Skipping example test:\n\n%s\n' % reason
+        print(msg)
+        raise SkipTest(msg)
+    fnames = [op.join(d[0], fname)
+              for d in os.walk(op.join(root_dir, 'examples'))
+              for fname in d[2] if fname.endswith('.py')]
+    fnames = sorted(fnames, key=lambda x: x.lower())
+    excludes = [
+        op.join('basics', 'plotting', 'mpl_plot.py'),
+        op.join('basics', 'scene', 'modular_shaders', 'editor.py'),
+        op.join('basics', 'scene', 'modular_shaders', 'sandbox.py'),
+        op.join('benchmark', 'simple_glut.py'),
+        op.join('demo', 'gloo', 'camera.py'),
+        op.join('demo', 'gloo', 'jfa', 'jfa_translation.py'),
+        op.join('demo', 'gloo', 'markers.py'),
+        op.join('demo', 'gloo', 'offscreen.py'),
+        op.join('demo', 'gloo', 'unstructured_2d.py'),
+        op.join('tutorial', 'app', 'shared_context.py'),
+    ]
+    print(_line_sep + '\nRunning examples')
+    fails = []
+    n_ran = n_skipped = 0
+    t0 = time()
+    for fname in fnames:
+        n_ran += 1
+        root_name = op.split(fname)
+        root_name = op.join(op.split(op.split(root_name[0])[0])[1],
+                            op.split(root_name[0])[1], root_name[1])
+        if any(e in fname for e in excludes):
+            # Don't print here, since these are known excludes
+            n_ran -= 1
+            n_skipped += 1
+            continue
+        print(root_name, end='')
+        sys.stdout.flush()
+        cwd = op.dirname(fname)
+        cmd = [sys.executable, '-c', _script.format(op.split(fname)[1][:-3])]
+        env = deepcopy(os.environ)
+        env.update(dict(_VISPY_TESTING_TYPE='examples'))
+        p = Popen(cmd, cwd=cwd, env=env, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        print(''.join(x * len(root_name) for x in '\b \b'), end='')
+        sys.stdout.flush()
+        if(p.returncode):
+            if stdout.strip().endswith('Skipping'):
+                reason = 'Bad formatting: fix or add to exclude list'
+            else:
+                reason = stderr
+            ext = '\n' + _line_sep + '\n'
+            fails.append('%sExample %s failed:%s%s%s'
+                         % (ext, root_name, ext, reason, ext))
+            print(fails[-1])
+        else:
+            print('.', end='')
+            sys.stdout.flush()
+    print('')
+    t = (': %s failed, %s succeeded, %s skipped in %s seconds'
+         % (len(fails), n_ran - len(fails), n_skipped, round(time()-t0)))
+    if len(fails) > 0:
+        raise RuntimeError('Failed%s' % t)
+    print('Success%s' % t)
+
+
 def _tester(label='full', coverage=False, verbosity=1, extra_args=()):
     """Test vispy software. See vispy.test()
     """
@@ -156,7 +254,7 @@ def _tester(label='full', coverage=False, verbosity=1, extra_args=()):
     if cov and op.isfile('.coverage'):
         os.remove('.coverage')
     known_types = ['full', 'nose', 'lineendings', 'extra', 'flake',
-                   'nobackend'] + backend_names
+                   'nobackend', 'examples'] + backend_names
     if label not in known_types:
         raise ValueError('label must be one of %s, or a backend name %s'
                          % (known_types, backend_names))
@@ -170,6 +268,8 @@ def _tester(label='full', coverage=False, verbosity=1, extra_args=()):
                          backend])
     elif label in backend_names:
         runs.append([partial(_nose, label, verbosity, cov, extra_args), label])
+    if label in ('full', 'examples'):
+        runs.append([_examples, 'examples'])
     if label in ('full', 'nose', 'nobackend'):
         runs.append([partial(_nose, 'nobackend', verbosity, cov, extra_args),
                      'nobackend'])
@@ -192,10 +292,10 @@ def _tester(label='full', coverage=False, verbosity=1, extra_args=()):
         except Exception as exp:
             # this should only happen if we've screwed up the test setup
             fail += [run[1]]
-            print('Failed strangely: %s\n' % str(exp))
+            print('Failed strangely (%s): %s\n' % (type(exp), str(exp)))
             import traceback
-            type, value, tb = sys.exc_info()
-            traceback.print_exception(type, value, tb)
+            type_, value, tb = sys.exc_info()
+            traceback.print_exception(type_, value, tb)
         else:
             print('Passed\n')
         finally:

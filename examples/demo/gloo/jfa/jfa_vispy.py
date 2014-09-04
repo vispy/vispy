@@ -14,6 +14,8 @@ This version is a vispy-ized translation of jfa_translate.py.
 import numpy as np
 from os import path as op
 from PIL import Image
+import sys
+
 from vispy import app
 from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
                         VertexBuffer, Texture2D, set_viewport)
@@ -111,4 +113,5 @@ if __name__ == '__main__':
     c = Canvas()
     c.show()
     c.measure_fps(callback=fun)
-    c.app.run()
+    if sys.flags.interactive != 1:
+        c.app.run()

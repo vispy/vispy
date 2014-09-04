@@ -590,14 +590,17 @@ def update():
         vert = glob['VERTEX']
         frag = glob['FRAGMENT']
         editor.clear_marker()
-    except:
+    except Exception:
         vert = traceback.format_exc()
         frag = ""
         tb = sys.exc_info()[2]
         while tb is not None:
             #print(tb.tb_lineno, tb.tb_frame.f_code.co_filename)
-            if tb.tb_frame.f_code.co_filename == '<string>':
-                editor.set_marker(tb.tb_lineno-1)
+            try:
+                if tb.tb_frame.f_code.co_filename == '<string>':
+                    editor.set_marker(tb.tb_lineno-1)
+            except Exception:
+                pass
             tb = tb.tb_next
 
     vertex.setText(vert)
@@ -606,4 +609,5 @@ def update():
 editor.textChanged.connect(update)
 update()
 
-app.exec_()
+if __name__ == '__main__':
+    app.exec_()

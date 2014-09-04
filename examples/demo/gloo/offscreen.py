@@ -19,12 +19,12 @@ The method consists of:
      scenario).
 
 """
+import numpy as np
 
 from vispy import gloo
 from vispy import app
 from vispy.util.ptime import time
 from vispy.gloo.util import _screenshot
-import numpy as np
 
 # WARNING: doesn't work with Qt4 (update() does not call on_draw()??)
 app.use_app('glfw')
@@ -96,7 +96,7 @@ void main() {
 
 
 class Canvas(app.Canvas):
-    def __init__(self, size=None):
+    def __init__(self, size=(600, 600)):
         # We hide the canvas upon creation.
         app.Canvas.__init__(self, show=False, size=size)
         self._t0 = time()
@@ -129,13 +129,14 @@ class Canvas(app.Canvas):
         app.quit()
 
 if __name__ == '__main__':
-    size = (600, 600)
-    c = Canvas(size=size)
+    c = Canvas()
+    size = c.size
     app.run()
+
     # The rendering is done, we get the rendering output (4D NumPy array)
     render = c.im
     print('Finished in %.1fms.' % (c._time*1e3))
-    
+
     # Now, we display this image with matplotlib to check.
     import matplotlib.pyplot as plt
     plt.figure(figsize=(size[0]/100., size[1]/100.), dpi=100)

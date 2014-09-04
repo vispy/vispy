@@ -15,16 +15,17 @@ Takes unstructured 2D locations, with corresponding 1 or 2 dimensional
 scalar "values". Plots the values looked up from colormaps and
 interpolated between the locations.
 """
-
+import sys
 import numpy as np
+import scipy.spatial
+
 from vispy import gloo
 from vispy import app
 from vispy.util.transforms import ortho
 
-import scipy.spatial
 
 
-class Unstructured2d(app.Canvas):
+class Canvas(app.Canvas):
 
     def __init__(self,
                  x=None, y=None, u=None, v=None,
@@ -195,6 +196,7 @@ def create_colormap1d_hot(size=512):
     rgb[hs:, 2] = 1 - u
     return rgb
 
+
 if __name__ == '__main__':
     loc = np.random.random_sample(size=(100, 2))
     np.random.shuffle(loc)
@@ -203,16 +205,17 @@ if __name__ == '__main__':
     vec[:, 1] = np.cos(loc[:, 1] * 13)
     width = 500
     height = 500
-    c1 = Unstructured2d(title="Unstructured 2D - 2D colormap",
-                        size=(width, height), position=(0, 40),
-                        x=loc[:, 0], y=loc[:, 1], u=vec[:, 0], v=vec[:, 1],
-                        colormap=create_colormap2d_4dirs(size=128),
-                        keys='interactive')
-    c2 = Unstructured2d(title="Unstructured 2D - 1D colormap",
-                        size=(width, height), position=(width + 20, 40),
-                        x=loc[:, 0], y=loc[:, 1], u=vec[:, 0],
-                        colormap=create_colormap1d_hot(size=128),
-                        keys='interactive')
+    c1 = Canvas(title="Unstructured 2D - 2D colormap",
+                size=(width, height), position=(0, 40),
+                x=loc[:, 0], y=loc[:, 1], u=vec[:, 0], v=vec[:, 1],
+                colormap=create_colormap2d_4dirs(size=128),
+                keys='interactive')
+    c2 = Canvas(title="Unstructured 2D - 1D colormap",
+                size=(width, height), position=(width + 20, 40),
+                x=loc[:, 0], y=loc[:, 1], u=vec[:, 0],
+                colormap=create_colormap1d_hot(size=128),
+                keys='interactive')
     c1.show()
     c2.show()
-    app.run()
+    if sys.flags.interactive == 0:
+        app.run()

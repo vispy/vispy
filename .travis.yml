@@ -164,6 +164,9 @@ script:
     - if [ "${TEST}" != "extra" ]; then
         make nose_coverage;
       fi;
+    - if [ "${TEST}" != "extra" ]; then
+        make examples;
+      fi;
     # Require strict adherence to PEP8 and pyflakes (can use "# noqa" to skip)
     - if [ "${TEST}" == "extra" ]; then
         make extra;

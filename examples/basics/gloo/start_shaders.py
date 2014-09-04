@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import sys
+
 from vispy import gloo
 from vispy import app
 import numpy as np
@@ -33,6 +37,8 @@ class Canvas(app.Canvas):
         gloo.clear('white')
         self.program.draw('points')
 
-c = Canvas()
-c.show()
-app.run()
+if __name__ == '__main__':
+    c = Canvas()
+    c.show()
+    if sys.flags.interactive != 1:
+        app.run()
