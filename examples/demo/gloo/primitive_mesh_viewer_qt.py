@@ -47,8 +47,8 @@ OBJECT = {'sphere': [('rows', 3, 1000, 'int', 3),
                     ('cols', 4, 1000, 'int', 4),
                     ('radius', 0.01, 10, 'double', 0.1),
                     ('length', 0.1, 10, 'double', 1.0),
-                    ('cone_factor_radius', 0.1, 10, 'double', 2.0),
-                    ('cone_factor_length', 0.0, 1.0, 'double', 0.3)]}
+                    ('cone_radius', 0.1, 10, 'double', 0.2),
+                    ('cone_length', 0.0, 10., 'double', 0.3)]}
 
 vert = """
 // Uniforms
@@ -293,7 +293,7 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
 
-        self.resize(300, 300)
+        self.resize(700, 500)
         self.setWindowTitle('vispy example ...')
 
         self.list_object = QtGui.QListWidget()
@@ -360,11 +360,11 @@ class MainWindow(QtGui.QMainWindow):
         elif param.name == 'arrow':
             length = param.props['length']
             rows = param.props['rows']
-            cone_factor_radius = param.props['cone_factor_radius']
-            cone_factor_length = param.props['cone_factor_length']
+            cone_radius = param.props['cone_radius']
+            cone_length = param.props['cone_length']
             mesh = gen.create_arrow(rows, cols, radius=radius, length=length,
-                                    cone_factor_radius=cone_factor_radius,
-                                    cone_factor_length=cone_factor_length)
+                                    cone_radius=cone_radius,
+                                    cone_length=cone_length)
         else:
             return
 

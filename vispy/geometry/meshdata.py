@@ -57,7 +57,7 @@ class MeshData(object):
         # mappings between vertices, faces, and edges
         self._faces = None  # Nx3 indices into self._vertices, 3 verts/face
         self._edges = None  # Nx2 indices into self._vertices, 2 verts/edge
-        self._edges_indexed_by_faces = None  # (Ne, 3, 2) indoces into
+        self._edges_indexed_by_faces = None  # (Ne, 3, 2) indices into
         # self._vertices, 3 edge / face and 2 verts/edge
         # inverse mappings
         self._vertex_faces = None  # maps vertex ID to a list of face IDs
