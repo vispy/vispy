@@ -131,13 +131,14 @@ class Canvas(app.Canvas):
         set_state(depth_test=True)
         self.cube.draw('triangles', self.indices)
         self.framebuffer.deactivate()
+        set_viewport(0, 0, *self.size)
         clear(color=True)
         set_state(depth_test=False)
         self.quad.draw('triangle_strip')
 
     def on_resize(self, event):
         self._set_projection(event.size)
-
+    
     def _set_projection(self, size):
         width, height = size
         set_viewport(0, 0, width, height)
