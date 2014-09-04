@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-# vispy: gallery 30
+# vispy: gallery 30, testskip
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 
 """ Terrain generation using diamond-square alogrithm
 and Scipy for Delaunay triangulation

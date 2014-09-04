@@ -268,7 +268,7 @@ class Maker:
             for line in lines[:10]:
                 if line.startswith('# vispy:') and 'gallery' in line:
                     # Get what frames to grab
-                    frames = line.split('gallery')[1].strip()
+                    frames = line.split('gallery')[1].split(',')[0].strip()
                     frames = frames or '0'
                     frames = [int(i) for i in frames.split(':')]
                     if not frames:

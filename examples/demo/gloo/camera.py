@@ -1,8 +1,9 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# vispy: testskip
+# -----------------------------------------------------------------------------
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-
+# -----------------------------------------------------------------------------
 """Display a live webcam feed. Require OpenCV (Python 2 only).
 """
 
@@ -10,7 +11,7 @@ try:
     import cv2
 except Exception:
     raise ImportError("You need OpenCV for this example.")
-    
+
 import numpy as np
 from vispy import app
 from vispy import gloo
@@ -32,7 +33,7 @@ fragment = """
     void main()
     {
         gl_FragColor = texture2D(texture, v_texcoord);
-        
+
         // HACK: the image is in BGR instead of RGB.
         float temp = gl_FragColor.r;
         gl_FragColor.r = gl_FragColor.b;

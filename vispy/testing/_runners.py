@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vispy: testskip
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """Test running functions"""
@@ -192,19 +193,8 @@ def _examples():
               for d in os.walk(op.join(root_dir, 'examples'))
               for fname in d[2] if fname.endswith('.py')]
     fnames = sorted(fnames, key=lambda x: x.lower())
-    excludes = [
-        op.join('basics', 'plotting', 'mpl_plot.py'),  # non-standard
-        op.join('basics', 'scene', 'modular_shaders', 'editor.py'),  # qt app
-        op.join('basics', 'scene', 'modular_shaders', 'sandbox.py'),  # qt app
-        op.join('benchmark', 'simple_glut.py'),  # glut specific
-        op.join('demo', 'gloo', 'camera.py'),  # req webcam
-        op.join('demo', 'gloo', 'jfa', 'jfa_translation.py'),  # glfw-specific
-        op.join('demo', 'gloo', 'markers.py'),  # not a script
-        op.join('demo', 'gloo', 'offscreen.py'),  # non-standard
-        op.join('demo', 'gloo', 'terrain.py'),  # req scipy
-        op.join('demo', 'gloo', 'unstructured_2d.py'),  # non-standard
-        op.join('tutorial', 'app', 'shared_context.py'),  # non-standard
-    ]
+    op.join('tutorial', 'app', 'shared_context.py'),  # non-standard
+
     fails = []
     n_ran = n_skipped = 0
     t0 = time()
@@ -213,8 +203,16 @@ def _examples():
         root_name = op.split(fname)
         root_name = op.join(op.split(op.split(root_name[0])[0])[1],
                             op.split(root_name[0])[1], root_name[1])
-        if any(e in fname for e in excludes):
-            # Don't print here, since these are known excludes
+        good = True
+        with open(fname, 'r') as fid:
+            for _ in range(10):  # just check the first 10 lines
+                line = fid.readline()
+                if line == '':
+                    break
+                elif line.startswith('# vispy: ') and 'testskip' in line:
+                    good = False
+                    break
+        if not good:
             n_ran -= 1
             n_skipped += 1
             continue
@@ -230,7 +228,7 @@ def _examples():
             if stdout.decode('utf-8').strip().endswith('Skipping'):
                 reason = 'Bad formatting: fix or add to exclude list'
             else:
-                reason = stderr
+                reason = stderr.decode('utf-8')
             ext = '\n' + _line_sep + '\n'
             fails.append('%sExample %s failed:%s%s%s'
                          % (ext, root_name, ext, reason, ext))

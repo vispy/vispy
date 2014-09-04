@@ -1,6 +1,11 @@
+# -*- coding: utf-8 -*-
+# vispy: testskip
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Sandbox for experimenting with vispy.scene.shaders
-
 """
 from PyQt4 import QtCore
 from PyQt4.QtGui import *  # noqa

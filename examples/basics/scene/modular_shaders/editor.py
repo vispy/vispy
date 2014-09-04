@@ -1,4 +1,10 @@
-#-------------------------------------------------------------------------
+# -*- coding: utf-8 -*-
+# vispy: testskip
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+"""
 # QScintilla editor
 #
 # Adapted from Eli Bendersky (eliben@gmail.com)
@@ -6,7 +12,8 @@
 #
 # API: http://pyqt.sourceforge.net/Docs/QScintilla2/classQsciScintilla.html
 #
-#-------------------------------------------------------------------------
+"""
+
 import sys
 import re
 from PyQt4.QtCore import *  # noqa
