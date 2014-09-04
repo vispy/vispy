@@ -6,49 +6,39 @@
 Demonstration of Cube
 """
 
-import numpy as np
-import vispy.app
-from vispy import gloo
-from vispy.scene import visuals, transforms
+import sys
 
-class Canvas(vispy.scene.SceneCanvas):
+from vispy import gloo
+from vispy.app import Timer
+from vispy.scene import visuals, transforms, SceneCanvas
+
+
+class Canvas(SceneCanvas):
     def __init__(self):
         self.cube = visuals.Cube()
-        self.cube.transform = transforms.AffineTransform()
-        self.cube.transform.scale((100, 100))
-        self.cube.transform.translate((200, 200))
-
         self.theta = 0
         self.phi = 0
 
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
-        self.size = (800, 800)
-        self.show()
-
-#        self._timer = vispy.app.Timer('auto', connect=self.on_timer, start=True)
+        SceneCanvas.__init__(self, 'Cube', keys='interactive', size=(800, 800))
+        self.cube.transform = transforms.AffineTransform()
+        self._timer = Timer('auto', connect=self.on_timer, start=True)
 
     def on_draw(self, event):
-        gloo.set_clear_color('white')
-        gloo.clear()
-        self.draw_visual(self.cube)
+        gloo.clear('white')
+        self.draw_visual(self.cube, event)
 
     def on_timer(self, event):
-        self.theta += .05
-        self.phi += .05
+        self.theta += .5
+        self.phi += .5
+        self.cube.transform.reset()
         self.cube.transform.rotate(self.theta, (0, 0, 1))
         self.cube.transform.rotate(self.phi, (0, 1, 0))
+        self.cube.transform.scale((100, 100, 0.5))
+        self.cube.transform.translate((200, 200, -1))
         self.update()
 
 if __name__ == '__main__':
-    win = Canvas() 
-    import sys
+    win = Canvas()
+    win.show()
     if sys.flags.interactive != 1:
-        vispy.app.run()
-
-
-"""
-        self.cube.transform = transforms.STTransform(
-            scale=(200, 200),
-            translate=(200, 200))
-"""
-
+        win.app.run()
