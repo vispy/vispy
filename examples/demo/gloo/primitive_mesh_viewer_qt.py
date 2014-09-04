@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
+# Abstract: show mesh primitive
+# Keywords: cone, arrow, sphere, cylinder, qt
+# -----------------------------------------------------------------------------
+
 """
 Test the fps capability of Vispy with meshdata primitive
 """
