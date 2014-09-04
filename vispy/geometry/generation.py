@@ -240,7 +240,7 @@ def create_cone(cols, radius=3.0, length=10.0):
 
 
 def create_arrow(rows, cols, radius=0.1, length=1.0,
-                 cone_factor_radius=2.0, cone_factor_lenght=0.3):
+                 cone_factor_radius=2.0, cone_factor_length=0.3):
     """Create a 3D arrow using a cylinder plus cone
 
     Parameters
@@ -255,11 +255,11 @@ def create_arrow(rows, cols, radius=0.1, length=1.0,
         Length of the arrow.
     cone_factor_radius : float
        factor Cone Radius : Cone radius = cone_factor_radius*radius
-    cone_factor_lenght : float
+    cone_factor_length : float
        factor Cone length of arrow length :
-          Cone length = cone_factor_lenght*length
-          Cylinder length = length - cone_factor_lenght*length
-              if cone_factor_lenght < 1.0 else = 0.0
+          Cone length = cone_factor_length*length
+          Cylinder length = length - cone_factor_length*length
+              if cone_factor_length < 1.0 else = 0.0
 
     Returns
     -------
@@ -268,9 +268,9 @@ def create_arrow(rows, cols, radius=0.1, length=1.0,
     """
     # create the cylinder
     md_cyl = None
-    con_L = length * cone_factor_lenght
-    if abs(cone_factor_lenght) < 1.0:
-        cyl_L = length * (1.0 - cone_factor_lenght)
+    con_L = length * cone_factor_length
+    if abs(cone_factor_length) < 1.0:
+        cyl_L = length * (1.0 - cone_factor_length)
         md_cyl = create_cylinder(rows, cols, radius=[radius, radius],
                                  length=cyl_L)
     # create the cone

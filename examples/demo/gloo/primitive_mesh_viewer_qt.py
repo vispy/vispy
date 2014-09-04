@@ -48,7 +48,7 @@ OBJECT = {'sphere': [('rows', 3, 1000, 'int', 3),
                     ('radius', 0.01, 10, 'double', 0.1),
                     ('length', 0.1, 10, 'double', 1.0),
                     ('cone_factor_radius', 0.1, 10, 'double', 2.0),
-                    ('cone_factor_lenght', 0.0, 1.0, 'double', 0.3)]}
+                    ('cone_factor_length', 0.0, 1.0, 'double', 0.3)]}
 
 vert = """
 // Uniforms
@@ -360,10 +360,10 @@ class MainWindow(QtGui.QMainWindow):
             length = param.props['length']
             rows = param.props['rows']
             cone_factor_radius = param.props['cone_factor_radius']
-            cone_factor_lenght = param.props['cone_factor_lenght']
+            cone_factor_length = param.props['cone_factor_length']
             mesh = gen.create_arrow(rows, cols, radius=radius, length=length,
                                     cone_factor_radius=cone_factor_radius,
-                                    cone_factor_lenght=cone_factor_lenght)
+                                    cone_factor_length=cone_factor_length)
         else:
             return
 
