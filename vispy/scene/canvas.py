@@ -138,15 +138,49 @@ class SceneCanvas(app.Canvas):
         self.update()
 
     def on_draw(self, event):
-        gloo.clear(color=self._bgcolor, depth=True)
         if self._scene is None:
             return  # Can happen on initialization
         logger.debug('Canvas draw')
 
-        self.render(event)
+        self.draw_scene(event)
+
+    def export(self, size=None, region=None):
+        """ Render the scene to an offscreen buffer and return the image array.
         
-    def render(self, event):
-        gloo.clear((0, 0, 0, 1))
+        Parameters
+        ----------
+        size : tuple | None
+            Specifies the size of the image array to return. If no size is 
+            given, then the size of the current on-screen buffer is used. 
+        
+        
+        Notes
+        -----
+        
+        If no arguments are supplied, this function immediately returns the
+        contents of the on-screen buffer without rendering a new frame.
+        """
+        # Set up a framebuffer to render to
+        offset = (0, 0) if region is None else region[:2]
+        csize = self.size if region is None else region[2:]
+        size = size or self.size
+        fbo = gloo.FrameBuffer(color=gloo.ColorBuffer(size[::-1]), 
+                               depth=gloo.DepthBuffer(size[::-1]))
+        
+        
+        self.push_fbo(fbo, offset, csize)
+        event = app.canvas.DrawEvent('draw', region=region)
+        try:
+            self.draw_scene(event)
+            return fbo.read()
+        finally:
+            self.pop_fbo()
+        
+    def draw_scene(self, event):
+        """ 
+        
+        """
+        gloo.clear(color=self._bgcolor, depth=True)
         
         nfb = len(self._fb_stack)
         nvp = len(self._vp_stack)
@@ -202,27 +236,11 @@ class SceneCanvas(app.Canvas):
             scene_event.pop_viewport()
 
     def screenshot(self):
-        """ Return an image array copy of the onscreen buffer.
+        """ Return an image array of the current on-screen buffer.
         """
         fb = self._current_framebuffer()
         viewport = fb[1] + fb[2]
         return gloo.read_pixels(viewport, alpha=True)[::-1]
-
-    def export(self, size=None, region=None):
-        """ Render the scene to an offscreen buffer and return the image array.
-        """
-        offset = (0, 0) if region is None else region[:2]
-        csize = self.size if region is None else region[2:]
-        size = size or self.size
-        fbo = gloo.FrameBuffer(color=gloo.ColorBuffer(size[::-1]), 
-                               depth=gloo.DepthBuffer(size[::-1]))
-        self.push_fbo(fbo, offset, csize)
-        event = app.canvas.DrawEvent('draw', region=region)
-        try:
-            self.render(event)
-            return fbo.read()
-        finally:
-            self.pop_fbo()
 
     def _process_mouse_event(self, event):
         tr_cache = self._transform_caches.setdefault(self.scene, 

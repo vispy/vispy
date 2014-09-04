@@ -299,21 +299,24 @@ class FrameBuffer(GLObject):
         if self.stencil_buffer is not None:
             self.stencil_buffer.resize(shape)
 
-    def read(self, mode='color'):
+    def read(self, mode='color', alpha=True):
         """ Return array of pixel values in an attached buffer
         
-        *mode* may be 'color', 'depth', or 'stencil'.
+        Parameters
+        ----------
+        mode : str
+            The buffer type to read. May be 'color', 'depth', or 'stencil'.
+        alpha : bool
+            If True, returns RGBA array. Otherwise, returns RGB.
         """
-        if mode not in ['color', 'depth', 'stencil']:
-            raise ValueError("mode argument must be 'color', 'depth', or "
-                             "'stencil'.")
+        gloo.wrappers._check_valid('mode', mode, ['color', 'depth', 'stencil'])
         buffer = getattr(self, mode+'_buffer')
         w, h = buffer._shape
             
         # todo: this is ostensibly required, but not available in gloo.gl
         #gl.glReadBuffer(buffer._target)
         
-        px = gl.glReadPixels(0, 0, h, w, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
+        px = gloo.read_pixels((0, 0, h, w), alpha=alpha)
         array = np.fromstring(px, dtype=np.ubyte).reshape(w, h, 4)
         return array
 
