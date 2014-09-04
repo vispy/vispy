@@ -239,7 +239,17 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if position is not None:
             self._vispy_set_position(*position)
         self._init_show = show
-
+    
+    def embed(self, widget):
+        """ Convenience function to embed the canvas in an application.
+        The native CanvasBackend (subclass of QGLWidget) is made to fully
+        cover the given widget.
+        """
+        layout = QtGui.QHBoxLayout(widget)
+        widget.setLayout(layout)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self)
+    
     def _vispy_init(self):
         """Do actions that require self._vispy_canvas._backend to be set"""
         if self._init_show:

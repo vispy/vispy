@@ -146,10 +146,8 @@ class MainWindow(QtGui.QWidget):
         self.fragEdit.setPlainText(FRAG_CODE)
 
         # Create a canvas
-        self.canvas = Canvas()
-        self.canvas.create_native()
-        self.canvas.native.setParent(self)
-
+        self.canvas = Canvas(parent=self)
+        
         # Layout
         hlayout = QtGui.QHBoxLayout(self)
         self.setLayout(hlayout)

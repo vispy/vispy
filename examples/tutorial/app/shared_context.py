@@ -9,7 +9,7 @@ This is a very simple example that demonstrates using a shared context
 between two Qt widgets.
 """
 
-from PyQt4 import QtGui, QtCore  # can also use pyside
+from PySide import QtGui, QtCore  # can also use pyside
 from functools import partial
 
 from vispy.app import Timer

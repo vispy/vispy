@@ -24,28 +24,31 @@ def test_qt_designer():
     app.create()  # make sure we have an app, or the init will fail
 
     class MainWindow(TemplateBaseClass):
-
         def __init__(self):
             TemplateBaseClass.__init__(self)
-
+            
             self.ui = WindowTemplate()
             self.ui.setupUi(self)
-            self.show()
 
     win = MainWindow()
+    
     try:
         win.show()
-        canvas = Canvas(create_native=False)
-        canvas._set_backend(win.ui.canvas)
-        canvas.create_native()
+        canvas = Canvas(parent=win.ui.canvas_placeholder)
+        canvas.native.embed(win.ui.canvas_placeholder)
 
         @canvas.events.draw.connect
         def on_draw(ev):
-            gl.glClearColor(0.0, 0.0, 0.0, 0.0)
+            gl.glClearColor(0.0, 1.0, 0.0, 1.0)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT)
             canvas.swap_buffers()
     finally:
         win.close()
+    
+    return win
 
 
-run_tests_if_main()
+# Don't use run_tests_if_main(), because we want to show the win
+if __name__ == '__main__':
+    win = test_qt_designer()
+    win.show()
