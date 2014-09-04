@@ -7,25 +7,22 @@
 import numpy as np
 
 from ...geometry import create_cube
-from ...gloo import set_state
+from ...gloo import set_state, set_depth_mask, set_polygon_offset
 from .mesh import Mesh
 
-#        vert_colors = np.empty((len(vert), 4), dtype = np.float32)
-#        vert_colors[:, :3] = (vert['position'] + 1.0) / 2.0
-#        vert_colors[:, 3] = 1.0
-
-
 class Cube(Mesh):
-    def __init__(self, outline=True, **kwds):
-        vertices, filled_ind, outline_ind = create_cube()
+    def __init__(self, vertex_colors=None, **kwds):
+        vertices, filled_faces, outline_faces = create_cube()
+        outline = True
 
-        Mesh.__init__(self, vertices['position'], filled_ind)
+        Mesh.__init__(self, vertices['position'], filled_faces, vertex_colors)
         if outline:
-            self._outline = Mesh(vertices['position'], outline_ind, color = 'black', mode = 'lines')
+            self._outline = Mesh(vertices['position'], outline_faces, color = 'black', mode = 'lines')
         else:
             self._outline = None
 
     def draw(self, event):
         Mesh.draw(self, event)
         if self._outline:
+            set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
             self._outline.draw(event)
