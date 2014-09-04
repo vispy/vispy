@@ -85,7 +85,7 @@ class Canvas(app.Canvas):
         
         # Set attributes
         self.program['a_position'] = np.zeros((N, 3), np.float32)
-        self.program['a_offset'] = np.zeros((N,), np.float32)
+        self.program['a_offset'] = np.zeros((N, 1), np.float32)
         
         # Init
         self._timeout = 0
