@@ -15,6 +15,7 @@ from vispy import app
 from vispy.color import colormaps
 from vispy.scene import visuals
 from vispy.scene.transforms import STTransform
+from vispy.ext.six import next
 
 colormaps = itertools.cycle(colormaps)
 
@@ -30,7 +31,7 @@ class Canvas(vispy.scene.SceneCanvas):
         vispy.scene.SceneCanvas.__init__(self, keys='interactive',
                                          size=(400, 200), show=True)
         # Create a visual that updates the line with different colormaps
-        color = colormaps.next()
+        color = next(colormaps)
         self.line = visuals.Line(pos=pos, color=color, mode='gl')
         self.line.transform = STTransform(translate=[0, 140])
         # redraw the canvas if the visual requests an update

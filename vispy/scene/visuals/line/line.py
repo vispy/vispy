@@ -169,6 +169,7 @@ class Line(Visual):
     color : Color, tuple, or array
         The color to use when drawing the line. If an array is given, it
         must be of shape (..., 4) and provide one rgba color per vertex.
+        Can also be a colormap name, or appropriate `Function`.
     width:
         The width of the line in px. Line widths > 1px are only
         guaranteed to work when using 'agg' mode.
@@ -187,7 +188,7 @@ class Line(Visual):
             * "gl" uses OpenGL's built-in line rendering. This is much faster,
               but produces much lower-quality results and is not guaranteed to
               obey the requested line width or join/endcap styles.
-    antialias : bool 
+    antialias : bool
         For mode='gl', specifies whether to use line smoothing or not.
     """
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
@@ -201,7 +202,7 @@ class Line(Visual):
             try:
                 self._color = Function(get_colormap(color))
             except KeyError:
-                self._color = Function(color)
+                self._color = ColorArray(color)
         elif isinstance(color, Function):
             self._color = Function(color)
         else:
@@ -224,7 +225,7 @@ class Line(Visual):
         self._da = None
         self._U = None
         self._dash_atlas = None
-        
+
         # now actually set the mode, which will call set_data
         self.mode = mode
 
