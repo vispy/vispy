@@ -10,6 +10,7 @@ from . import gl
 from .globject import GLObject
 from .texture import Texture2D
 from ..util import logger
+from .wrappers import _check_valid, read_pixels
 
 # ------------------------------------------------------ RenderBuffer class ---
 
@@ -309,14 +310,15 @@ class FrameBuffer(GLObject):
         alpha : bool
             If True, returns RGBA array. Otherwise, returns RGB.
         """
-        gloo.wrappers._check_valid('mode', mode, ['color', 'depth', 'stencil'])
+        _check_valid('mode', mode, ['color', 'depth', 'stencil'])
         buffer = getattr(self, mode+'_buffer')
         w, h = buffer._shape
             
         # todo: this is ostensibly required, but not available in gloo.gl
         #gl.glReadBuffer(buffer._target)
         
-        px = gloo.read_pixels((0, 0, h, w), alpha=alpha)
+        px = gl.glReadPixels(0, 0, h, w, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
+        #px = read_pixels((0, 0, h, w), alpha=alpha)
         array = np.fromstring(px, dtype=np.ubyte).reshape(w, h, 4)
         return array
 
