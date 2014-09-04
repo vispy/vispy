@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Demonstration of Cube
+Demonstration of Cuboid
 """
 
 import sys
@@ -15,11 +15,11 @@ from vispy.scene import visuals, transforms, SceneCanvas
 
 class Canvas(SceneCanvas):
     def __init__(self):
-        self.cube = visuals.Cube()
+        self.cube = visuals.Cuboid(1.0, 0.5, 0.25, color='red', outline=True)
         self.theta = 0
         self.phi = 0
 
-        SceneCanvas.__init__(self, 'Cube', keys='interactive', size=(800, 800))
+        SceneCanvas.__init__(self, 'Cuboid', keys='interactive', size=(400, 400))
         self.cube.transform = transforms.AffineTransform()
         self._timer = Timer('auto', connect=self.on_timer, start=True)
 

@@ -33,4 +33,5 @@ from .isosurface import Isosurface  # noqa
 from .isocurve import Isocurve  # noqa
 from .xyz_axis import XYZAxis  # noqa
 from .line_plot import LinePlot  # noqa
+from .cuboid import Cuboid  # noqa
 from .cube import Cube  # noqa
