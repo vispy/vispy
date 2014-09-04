@@ -4,11 +4,10 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-import numpy as np
-
 from ...geometry import create_cube
-from ...gloo import set_state, set_depth_mask, set_polygon_offset
+from ...gloo import set_state
 from .mesh import Mesh
+
 
 class Cuboid(Mesh):
     def __init__(self, length=1.0, width=1.0, depth=1.0, vertex_colors=None,

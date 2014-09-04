@@ -19,7 +19,8 @@ class Canvas(SceneCanvas):
         self.theta = 0
         self.phi = 0
 
-        SceneCanvas.__init__(self, 'Cuboid', keys='interactive', size=(400, 400))
+        SceneCanvas.__init__(self, 'Cuboid', keys='interactive',
+                             size=(400, 400))
         self.cube.transform = transforms.AffineTransform()
         self._timer = Timer('auto', connect=self.on_timer, start=True)
 
