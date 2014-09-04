@@ -166,6 +166,7 @@ class ObjectWidget(QtGui.QWidget):
             if typeV == 'double':
                 self.sp.append(QtGui.QDoubleSpinBox(self.gb_c))
                 self.sp[-1].setDecimals(2)
+                self.sp[-1].setSingleStep(0.1)
                 self.sp[-1].setLocale(QtCore.QLocale(QtCore.QLocale.English))
             elif typeV == 'int':
                 self.sp.append(QtGui.QSpinBox(self.gb_c))
