@@ -178,12 +178,15 @@ def _examples():
     reason = None
     if not dev:
         reason = 'Cannot test examples unless in vispy git directory'
-    elif not has_application(capable=('multi_window',)):
-        reason = 'Must have suitable app backend'
+    else:
+        good, backend = has_application(capable=('multi_window',))
+        if not good:
+            reason = 'Must have suitable app backend'
     if reason is not None:
         msg = 'Skipping example test:\n\n%s\n' % reason
         print(msg)
         raise SkipTest(msg)
+    print(_line_sep + '\nRunning examples using %s backend' % backend)
     fnames = [op.join(d[0], fname)
               for d in os.walk(op.join(root_dir, 'examples'))
               for fname in d[2] if fname.endswith('.py')]
@@ -200,7 +203,6 @@ def _examples():
         op.join('demo', 'gloo', 'unstructured_2d.py'),
         op.join('tutorial', 'app', 'shared_context.py'),
     ]
-    print(_line_sep + '\nRunning examples')
     fails = []
     n_ran = n_skipped = 0
     t0 = time()

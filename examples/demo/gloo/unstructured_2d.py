@@ -19,10 +19,8 @@ import sys
 import numpy as np
 import scipy.spatial
 
-from vispy import gloo
-from vispy import app
+from vispy import gloo, app
 from vispy.util.transforms import ortho
-
 
 
 class Canvas(app.Canvas):

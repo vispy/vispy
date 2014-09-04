@@ -190,17 +190,21 @@ def has_application(backend=None, has=(), capable=()):
     from ..app.backends import BACKEND_NAMES
     # avoid importing other backends if we don't need to
     if backend is None:
-        good = False
         for backend in BACKEND_NAMES:
             if has_backend(backend, has=has, capable=capable):
                 good = True
-                msg = ''
+                msg = backend
                 break
-        msg = 'Requires application backend'
+        else:
+            good = False
+            msg = 'Requires application backend'
     else:
         good, why = has_backend(backend, has=has, capable=capable,
                                 out=['why_not'])
-        msg = 'Requires %s: %s' % (backend, why)
+        if not good:
+            msg = 'Requires %s: %s' % (backend, why)
+        else:
+            msg = backend
     return good, msg
 
 
