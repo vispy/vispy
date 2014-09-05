@@ -54,32 +54,34 @@ class MeshData(object):
         self._vertices_indexed_by_faces = None  # (Nf, 3, 3) vertex coordinates
         self._vertices_indexed_by_edges = None  # (Ne, 2, 3) vertex coordinates
 
-        ## mappings between vertices, faces, and edges
+        # mappings between vertices, faces, and edges
         self._faces = None  # Nx3 indices into self._vertices, 3 verts/face
         self._edges = None  # Nx2 indices into self._vertices, 2 verts/edge
+        self._edges_indexed_by_faces = None  # (Ne, 3, 2) indices into
+        # self._vertices, 3 edge / face and 2 verts/edge
         # inverse mappings
         self._vertex_faces = None  # maps vertex ID to a list of face IDs
         self._vertex_edges = None  # maps vertex ID to a list of edge IDs
 
-        ## Per-vertex data
+        # Per-vertex data
         self._vertex_normals = None                # (Nv, 3) normals
         self._vertex_normals_indexed_by_faces = None  # (Nf, 3, 3) normals
         self._vertex_colors = None                 # (Nv, 3) colors
         self._vertex_colors_indexed_by_faces = None   # (Nf, 3, 4) colors
         self._vertex_colors_indexed_by_edges = None   # (Nf, 2, 4) colors
 
-        ## Per-face data
+        # Per-face data
         self._face_normals = None                # (Nf, 3) face normals
         self._face_normals_indexed_by_faces = None  # (Nf, 3, 3) face normals
         self._face_colors = None                 # (Nf, 4) face colors
         self._face_colors_indexed_by_faces = None   # (Nf, 3, 4) face colors
         self._face_colors_indexed_by_edges = None   # (Ne, 2, 4) face colors
 
-        ## Per-edge data
+        # Per-edge data
         self._edge_colors = None                # (Ne, 4) edge colors
         self._edge_colors_indexed_by_edges = None  # (Ne, 2, 4) edge colors
         # default color to use if no face/edge/vertex colors are given
-        #self._meshColor = (1, 1, 1, 0.1)
+        # self._meshColor = (1, 1, 1, 0.1)
 
         if vertices is not None:
             if faces is None:
@@ -103,11 +105,20 @@ class MeshData(object):
         """
         return self._faces
 
-    def edges(self):
-        """Array (Nf, 3) of vertex indices, two per edge in the mesh."""
-        if self._edges is None:
-            self._compute_edges()
-        return self._edges
+    def edges(self, indexed=None):
+        """Array (Nf, 3) of vertex indices, two per edge in the mesh.
+           If indexed is 'faces', then return (Nf, 3, 2) array of vertex
+           indices with 3 edges per face, and two vertices per edge."""
+        if indexed is None:
+            if self._edges is None:
+                self._compute_edges(indexed=None)
+            return self._edges
+        elif indexed == 'faces':
+            if self._edges_indexed_by_faces is None:
+                self._compute_edges(indexed='faces')
+            return self._edges_indexed_by_faces
+        else:
+            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def set_faces(self, faces):
         """Set the (Nf, 3) array of faces. Each rown in the array contains
@@ -115,6 +126,7 @@ class MeshData(object):
         of a triangular face."""
         self._faces = faces
         self._edges = None
+        self._edges_indexed_by_faces = None
         self._vertex_faces = None
         self._vertices_indexed_by_faces = None
         self.reset_normals()
@@ -325,18 +337,13 @@ class MeshData(object):
     def edge_colors(self):
         return self._edge_colors
 
-    #def _set_indexed_faces(self, faces, vertex_colors=None, face_colors=None):
-        #self._vertices_indexed_by_faces = faces
-        #self._vertex_colors_indexed_by_faces = vertex_colors
-        #self._face_colors_indexed_by_faces = face_colors
-
     def _compute_unindexed_vertices(self):
-        ## Given (Nv, 3, 3) array of vertices-indexed-by-face, convert
-        ## backward to unindexed vertices
-        ## This is done by collapsing into a list of 'unique' vertices
-        ## (difference < 1e-14)
+        # Given (Nv, 3, 3) array of vertices-indexed-by-face, convert
+        # backward to unindexed vertices
+        # This is done by collapsing into a list of 'unique' vertices
+        # (difference < 1e-14)
 
-        ## I think generally this should be discouraged..
+        # I think generally this should be discouraged..
         faces = self._vertices_indexed_by_faces
         verts = {}  # used to remember the index of each vertex position
         self._faces = np.empty(faces.shape[:2], dtype=np.uint)
@@ -352,7 +359,6 @@ class MeshData(object):
                 pt2 = tuple([round(x*1e14) for x in pt])
                 index = verts.get(pt2, None)
                 if index is None:
-                    #self._vertices.append(QtGui.QVector3D(*pt))
                     self._vertices.append(pt)
                     self._vertex_faces.append([])
                     index = len(self._vertices)-1
@@ -361,17 +367,6 @@ class MeshData(object):
                 self._vertex_faces[index].append(i)
                 self._faces[i, j] = index
         self._vertices = np.array(self._vertices, dtype=np.float32)
-
-    #def _setUnindexedFaces(self, faces, vertices, vertex_colors=None,
-        #                   face_colors=None):
-        #self._vertices = vertices #[QtGui.QVector3D(*v) for v in vertices]
-        #self._faces = faces.astype(np.uint)
-        #self._edges = None
-        #self._vertex_faces = None
-        #self._face_normals = None
-        #self._vertex_normals = None
-        #self._vertex_colors = vertex_colors
-        #self._face_colors = face_colors
 
     def vertex_faces(self):
         """
@@ -385,50 +380,41 @@ class MeshData(object):
                     self._vertex_faces[ind].append(i)
         return self._vertex_faces
 
-    #def reverseNormals(self):
-        #"""
-        #Reverses the direction of all normal vectors.
-        #"""
-        #pass
-
-    #def generateEdgesFromFaces(self):
-        #"""
-        #Generate a set of edges by listing all the edges of faces and
-        #removing any duplicates.
-        #Useful for displaying wireframe meshes.
-        #"""
-        #pass
-
-    def _compute_edges(self):
-        if not self.has_face_indexed_data:
-            ## generate self._edges from self._faces
-            nf = len(self._faces)
-            edges = np.empty(nf*3, dtype=[('i', np.uint, 2)])
-            edges['i'][0:nf] = self._faces[:, :2]
-            edges['i'][nf:2*nf] = self._faces[:, 1:3]
-            edges['i'][-nf:, 0] = self._faces[:, 2]
-            edges['i'][-nf:, 1] = self._faces[:, 0]
-
-            # sort per-edge
-            mask = edges['i'][:, 0] > edges['i'][:, 1]
-            edges['i'][mask] = edges['i'][mask][:, ::-1]
-
-            # remove duplicate entries
-            self._edges = np.unique(edges)['i']
-        elif self._vertices_indexed_by_faces is not None:
-            verts = self._vertices_indexed_by_faces
-            edges = np.empty((verts.shape[0], 3, 2), dtype=np.uint)
-            nf = verts.shape[0]
-            edges[:, 0, 0] = np.arange(nf) * 3
-            edges[:, 0, 1] = edges[:, 0, 0] + 1
-            edges[:, 1, 0] = edges[:, 0, 1]
-            edges[:, 1, 1] = edges[:, 1, 0] + 1
-            edges[:, 2, 0] = edges[:, 1, 1]
-            edges[:, 2, 1] = edges[:, 0, 0]
-            self._edges = edges
+    def _compute_edges(self, indexed=None):
+        if indexed is None:
+            if self._faces is not None:
+                # generate self._edges from self._faces
+                nf = len(self._faces)
+                edges = np.empty(nf*3, dtype=[('i', np.uint, 2)])
+                edges['i'][0:nf] = self._faces[:, :2]
+                edges['i'][nf:2*nf] = self._faces[:, 1:3]
+                edges['i'][-nf:, 0] = self._faces[:, 2]
+                edges['i'][-nf:, 1] = self._faces[:, 0]
+                # sort per-edge
+                mask = edges['i'][:, 0] > edges['i'][:, 1]
+                edges['i'][mask] = edges['i'][mask][:, ::-1]
+                # remove duplicate entries
+                self._edges = np.unique(edges)['i']
+            else:
+                raise Exception("MeshData cannot generate edges--no faces in "
+                                "this data.")
+        elif indexed == 'faces':
+            if self._vertices_indexed_by_faces is not None:
+                verts = self._vertices_indexed_by_faces
+                edges = np.empty((verts.shape[0], 3, 2), dtype=np.uint)
+                nf = verts.shape[0]
+                edges[:, 0, 0] = np.arange(nf) * 3
+                edges[:, 0, 1] = edges[:, 0, 0] + 1
+                edges[:, 1, 0] = edges[:, 0, 1]
+                edges[:, 1, 1] = edges[:, 1, 0] + 1
+                edges[:, 2, 0] = edges[:, 1, 1]
+                edges[:, 2, 1] = edges[:, 0, 0]
+                self._edges_indexed_by_faces = edges
+            else:
+                raise Exception("MeshData cannot generate edges--no faces in "
+                                "this data.")
         else:
-            raise Exception("MeshData cannot generate edges--no faces in "
-                            "this data.")
+            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def save(self):
         """Serialize this mesh to a string appropriate for disk storage"""
