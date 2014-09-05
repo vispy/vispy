@@ -96,8 +96,8 @@ class MyMeshData(md.MeshData):
         """
         Build vertices for a colored mesh.
             V  is the vertices
-            I1 is the indices for a filled cube (use with GL_TRIANGLES)
-            I2 is the indices for an outline cube (use with GL_LINES)
+            I1 is the indices for a filled mesh (use with GL_TRIANGLES)
+            I2 is the indices for an outline mesh (use with GL_LINES)
         """
         vtype = [('a_position', np.float32, 3),
                  ('a_normal', np.float32, 3),
