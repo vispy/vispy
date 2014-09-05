@@ -10,16 +10,28 @@ from .mesh import Mesh
 
 
 class Cube(Mesh):
+    """Visual that displays a cube or cuboid. 
+
+    Parameters
+    ----------
+    size : float or tuple 
+        The size of the cuboid. Float values give a cube, whereas 
+        tuples may specify the size of each axis (x, y, z) independently. 
+    color : tuple or Color
+        The color to use when drawing the cube faces.
+    edge_color : tuple or Color
+        The color to use when drawing the cube edges.
+    """
     def __init__(self, size=1.0, vertex_colors=None,
-                 face_colors=None, color=(0.5, 0.5, 1, 1), outline=False):
+                 face_colors=None, color=(0.5, 0.5, 1, 1), edge_color=None):
         vertices, filled_indices, outline_indices = create_cube()
         vertices['position'] *= size
 
         Mesh.__init__(self, vertices['position'], filled_indices,
                       vertex_colors, face_colors, color)
-        if outline:
+        if edge_color:
             self._outline = Mesh(vertices['position'], outline_indices,
-                                 color='black', mode='lines')
+                                 color=edge_color, mode='lines')
         else:
             self._outline = None
 

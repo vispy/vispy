@@ -15,7 +15,7 @@ from vispy.scene import visuals, transforms, SceneCanvas
 
 class Canvas(SceneCanvas):
     def __init__(self):
-        self.cube = visuals.Cube((1.0, 0.5, 0.25), color='red', outline=True)
+        self.cube = visuals.Cube((1.0, 0.5, 0.25), color='red', edge_color='black')
         self.theta = 0
         self.phi = 0
 
