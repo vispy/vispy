@@ -35,7 +35,7 @@ def load_data_file(fname, directory=None, force_download=False):
         configuration directory is used.
     force_download : bool | str
         If True, the file will be downloaded even if a local copy exists
-        (and this copy will be overwritten). Can also be a YYYY/MM/DD date
+        (and this copy will be overwritten). Can also be a YYYY-MM-DD date
         to ensure a file is up-to-date (modified date of a file on disk,
         if present, is checked).
 
@@ -57,7 +57,7 @@ def load_data_file(fname, directory=None, force_download=False):
         if not force_download:  # we're done
             return fname
         if isinstance(force_download, string_types):
-            ntime = datetime.datetime.strptime(force_download, '%Y/%m/%d')
+            ntime = datetime.datetime.strptime(force_download, '%Y-%m-%d')
             ftime = datetime.datetime.strptime(time.ctime(op.getctime(fname)),
                                                '%a %b %d %H:%M:%S %Y')
             if ftime >= ntime:
