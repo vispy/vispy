@@ -37,7 +37,7 @@ class Grid(Widget):
         _row = self._cells.setdefault(row, {})
         _row[col] = widget
         self._grid_widgets[widget] = row, col, row_span, col_span
-        widget.add_parent(self)
+        widget.parent = self
 
         self._next_cell = [row, col+col_span]
         self._update_child_widgets()
