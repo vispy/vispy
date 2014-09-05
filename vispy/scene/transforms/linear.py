@@ -281,7 +281,6 @@ class AffineTransform(BaseTransform):
         in the matrix.
         """
         self.matrix[...] = transforms.translate(pos[0, :3]) * self.matrix
-        #self.matrix = transforms.translate(self.matrix, *pos[0, :3])
 
     def scale(self, scale, center=None):
         """
@@ -299,15 +298,15 @@ class AffineTransform(BaseTransform):
                 transforms.scale(scale[0, :3]) *
                 transforms.translate(center) *
                 self.matrix)
-            self.matrix = m
         else:
             self.matrix[...] = transforms.scale(scale[0, :3]) * self.matrix
 
-    def rotate(self, angle, axis):
-        #tr = transforms.rotate(np.eye(4), angle, *axis)
-        #self.matrix = np.dot(tr, self.matrix)
-        #self.matrix = transforms.rotate(self.matrix, angle, *axis)
-        self.matrix[...] = transforms.rotated(angle, axis) * self.matrix
+    def rotated(self, degrees, axis):
+        self.matrix[...] = transforms.rotated(degrees, axis) * self.matrix
+
+    def rotate(self, radians, axis):
+        self.matrix[...] = transforms.rotate(radians, axis) * self.matrix
+
 
     def set_mapping(self, points1, points2):
         """ Set to a 3D transformation matrix that maps points1 onto points2.
