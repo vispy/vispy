@@ -14,6 +14,7 @@ Test the fps capability of Vispy with meshdata primitive
 try:
     from sip import setapi
     setapi("QVariant", 2)
+    setapi("QString", 2)
 except ImportError:
     pass
 
