@@ -18,9 +18,9 @@ class Cube(Mesh):
         The size of the cuboid. A float gives a cube, whereas tuples may
         specify the size of each axis (x, y, z) independently. 
     vertex_colors : ndarray
-        Same as for the `Mesh` class.
+        Same as for `Mesh` class. See `create_cube` for vertex ordering.
     face_colors : ndarray
-        Same as for the `Mesh` class.
+        Same as for `Mesh` class. See `create_cube` for vertex ordering.
     color : Color
         The `Color` to use when drawing the cube faces.
     edge_color : tuple or Color
