@@ -13,7 +13,7 @@ import gc
 import warnings
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, BaseSharedContext)
+                    BaseTimerBackend)
 from ...util import keys, logger
 from ...util.ptime import time
 
@@ -111,10 +111,6 @@ def _set_config(c):
     return gl_attribs
 
 
-class SharedContext(BaseSharedContext):
-    _backend = 'pyglet'
-
-
 # ------------------------------------------------------------- application ---
 
 _wx_app = None
@@ -197,12 +193,22 @@ class CanvasBackend(Frame, BaseCanvasBackend):
 
     """ wxPython backend for Canvas abstract class."""
 
-    def __init__(self, **kwargs):
-        BaseCanvasBackend.__init__(self, capability, SharedContext)
+    # args are for BaseCanvasBackend, kwargs are for us.
+    def __init__(self, *args, **kwargs):
+        BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             vispy_canvas = self._process_backend_kwargs(kwargs)
-        if not isinstance(context, (dict, SharedContext)):
-            raise TypeError('context must be a dict or wx SharedContext')
+        
+        # Deal with context
+        self._vispy_context = context
+        if context.istaken == 'wx':
+            self._gl_attribs = context.value[0]
+        elif context.istaken:
+            raise RuntimeError('Cannot share context between backends.')
+        else:
+            self._gl_attribs = _set_config(context.config)
+            # We take the context below
+        
         style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
                  wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)
         style |= wx.NO_BORDER if not dec else wx.RESIZE_BORDER
@@ -218,20 +224,16 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         else:
             self._fullscreen = False
         _wx_app.SetTopWindow(self)
-        if not isinstance(context, SharedContext):
-            self._gl_attribs = _set_config(context)
-        else:
-            self._gl_attribs = context.value[0]
+        
         self._canvas = glcanvas.GLCanvas(self, wx.ID_ANY, wx.DefaultPosition,
                                          wx.DefaultSize, 0, 'GLCanvas',
                                          self._gl_attribs)
         self._canvas.Raise()
         self._canvas.SetFocus()
         self._vispy_set_title(title)
-        if not isinstance(context, SharedContext):
-            self._context = glcanvas.GLContext(self._canvas)
-        else:
-            self._context = context.value[1]
+        if not context.istaken:
+            native_context = self._gl_attribs, glcanvas.GLContext(self._canvas)
+            context.take(native_context, 'wx')
         self._size = None
         self.Bind(wx.EVT_SIZE, self.on_resize)
         self._canvas.Bind(wx.EVT_PAINT, self.on_paint)
@@ -273,13 +275,8 @@ class CanvasBackend(Frame, BaseCanvasBackend):
     def _vispy_set_current(self):
         if self._canvas is None:
             return
-        self._canvas.SetCurrent(self._context)
-
-    @property
-    def _vispy_context(self):
-        """Context to return for sharing"""
-        return SharedContext([self._gl_attribs, self._context])
-
+        self._canvas.SetCurrent(self._vispy_context.value[1])
+    
     def _vispy_warmup(self):
         etime = time() + 0.3
         while time() < etime:

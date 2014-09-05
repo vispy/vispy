@@ -182,7 +182,3 @@ class BaseTimerBackend(object):
         # Should return the native timer object
         # Most backends would not need to implement this
         return self
-
-
-# todo:  XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-# get rid of SharedContext and _vispy_shared_context _vispy_capability

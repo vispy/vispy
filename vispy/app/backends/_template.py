@@ -10,7 +10,7 @@ should be emitted.
 from __future__ import division
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, BaseSharedContext)
+                    BaseTimerBackend)
 from ...util import keys
 
 
@@ -84,10 +84,6 @@ def _set_config(c):
     raise NotImplementedError
 
 
-class SharedContext(BaseSharedContext):
-    _backend = 'template'
-
-
 # ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -149,10 +145,24 @@ class CanvasBackend(BaseCanvasBackend):
     events can be triggered.
     """
 
-    def __init__(self, vispy_canvas, *args, **kwargs):
-        # NativeWidgetClass.__init__(self, *args, **kwargs)
-        BaseCanvasBackend.__init__(self, vispy_canvas, SharedContext)
-
+    # args are for BaseCanvasBackend, kwargs are for us.
+    def __init__(self, *args, **kwargs):
+        BaseCanvasBackend.__init__(self, *args)
+        title, size, position, show, vsync, resize, dec, fs, parent, context, \
+            vispy_canvas = self._process_backend_kwargs(kwargs)
+        
+        # Deal with context
+        self._vispy_context = context
+        if context.istaken == 'backend-name':
+            native_context = context.value
+        elif context.istaken:
+            raise RuntimeError('Cannot share context between backends.')
+        else:
+            native_context = None  # ...
+            context.take(native_context, 'backend-name')
+        
+        # NativeWidgetClass.__init__(self, foo, bar)
+    
     def _vispy_set_current(self):
         # Make this the current context
         raise NotImplementedError()

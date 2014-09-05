@@ -12,7 +12,7 @@ import sys
 from time import sleep, time
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, BaseSharedContext)
+                    BaseTimerBackend)
 from ...util import ptime, keys, logger
 
 # -------------------------------------------------------------------- init ---
@@ -138,10 +138,6 @@ def _set_config(config):
     glut.glutInitDisplayString(s.encode('ASCII'))
 
 
-class SharedContext(BaseSharedContext):
-    _backend = 'glut'
-
-
 # ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -228,11 +224,20 @@ class CanvasBackend(BaseCanvasBackend):
 
     """ GLUT backend for Canvas abstract class."""
 
-    def __init__(self, **kwargs):
-        BaseCanvasBackend.__init__(self, capability, SharedContext)
+    # args are for BaseCanvasBackend, kwargs are for us.
+    def __init__(self, *args, **kwargs):
+        BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             vispy_canvas = self._process_backend_kwargs(kwargs)
-        _set_config(context)
+        
+        # Deal with context
+        self._vispy_context = context
+        if context.istaken:
+            raise RuntimeError('Glut cannot share contexts.')
+        else:
+            _set_config(context.config)
+            context.take(0, 'glut')
+        
         glut.glutInitWindowSize(size[0], size[1])
         self._id = glut.glutCreateWindow(title.encode('ASCII'))
         if not self._id:
@@ -270,12 +275,7 @@ class CanvasBackend(BaseCanvasBackend):
             glut.glutHideWindow()
         self._initialized = False
         self._vispy_canvas = vispy_canvas
-
-    @property
-    def _vispy_context(self):
-        """Context to return for sharing"""
-        return SharedContext(None)  # cannot share in GLUT
-
+    
     def _vispy_warmup(self):
         etime = time() + 0.4  # empirically determined :(
         while time() < etime:

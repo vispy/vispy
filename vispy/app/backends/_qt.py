@@ -215,7 +215,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
             glformat = _set_config(context.config)
             glformat.setSwapInterval(1 if vsync else 0)
             widget = kwargs.pop('shareWidget', None) or self
-            context.take(widget, 'qt')
+            context.take(widget, 'qt', weak=True)  # use weakref
             if widget is self:
                 widget = None  # QGLWidget does not accept self ;)
         

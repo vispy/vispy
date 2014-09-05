@@ -89,7 +89,6 @@ else:
         print('              NOTE: this backend requires the Chromium browser')
     # Use that backend's shared context
     KEYMAP = _app.backend_module.KEYMAP
-    SharedContext = _app.backend_module.SharedContext
 
 
 # ------------------------------------------------------------- application ---
@@ -123,8 +122,9 @@ class ApplicationBackend(BaseApplicationBackend):
 
 class CanvasBackend(BaseCanvasBackend):
 
+    # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, capability, SharedContext)
+        BaseCanvasBackend.__init__(self, *args)
 
         # Test kwargs
 #         if kwargs['size']:
@@ -141,7 +141,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Create real canvas. It is a backend to this backend
         kwargs.pop('vispy_canvas', None)
         kwargs['autoswap'] = False
-        canvas = Canvas(app=_app, **kwargs)
+        canvas = Canvas(app=_app, **kwargs)  # Pass kwargs to underlying canvas
         self._backend2 = canvas.native
 
         # Connect to events of canvas to keep up to date with size and draws
