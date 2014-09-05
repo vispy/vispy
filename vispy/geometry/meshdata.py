@@ -98,26 +98,12 @@ class MeshData(object):
                 if face_colors is not None:
                     self.set_face_colors(face_colors)
 
-    def faces(self, indexed=None):
+    def faces(self):
         """Array (Nf, 3) of vertex indices, three per triangular face.
-           "If indexed is 'faces', then return (Nf, 3, 2)
-           array of vertex indices with 3 edges per face,
-           and two vertices per edge.
 
         If faces have not been computed for this mesh, returns None.
         """
-        if indexed is None:
-            return self._faces
-        elif indexed == 'faces':
-            verts = self.vertices(indexed='faces')
-            if verts is not None:
-                nF = verts.shape[0]
-                faces = np.arange(nF*3, dtype=np.uint)
-                return faces.reshape((nF, 3))
-            else:
-                return None
-        else:
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+        return self._faces
 
     def edges(self, indexed=None):
         """Array (Nf, 3) of vertex indices, two per edge in the mesh.
