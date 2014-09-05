@@ -2,6 +2,7 @@ import unittest
 import copy
 
 from vispy.util.event import Event, EventEmitter, EmitterGroup
+from vispy.util import use_log_level
 
 
 class BasicEvent(Event):
@@ -90,6 +91,20 @@ class TestGroups(unittest.TestCase):
         finally:
             grp.unblock_all()
         assert self.result is None
+
+    def test_group_ignore(self):
+        """EmitterGroup.block_all"""
+        grp = EmitterGroup(em1=Event)
+        grp.em1.connect(self.error_event)
+        with use_log_level('warning', record=True, print_msg=False) as l:
+            grp.em1()
+        self.assertGreaterEqual(len(l), 1)
+        grp.ignore_callback_errors = False
+        self.assertRaises(RuntimeError, grp.em1)
+        grp.ignore_callback_errors = True
+        with use_log_level('warning', record=True, print_msg=False) as l:
+            grp.em1()
+        self.assertGreaterEqual(len(l), 1)
 
     def test_group_disconnect(self):
         """EmitterGroup.disconnect"""
@@ -209,6 +224,9 @@ class TestGroups(unittest.TestCase):
             if not hasattr(self, 'result') or self.result is None:
                 self.result = {}
             self.result[key] = ev, attrs
+
+    def error_event(self, ev, key=None):
+        raise RuntimeError('Errored')
 
     def assert_result(self, key=None, **kwds):
         assert (hasattr(self, 'result') and self.result is not None), \

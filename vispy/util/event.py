@@ -723,6 +723,19 @@ class EmitterGroup(EventEmitter):
 
         self._emitters_connected = connect
 
+    @property
+    def ignore_callback_errors(self):
+        return super(EventEmitter, self).ignore_callback_errors
+
+    @ignore_callback_errors.setter
+    def ignore_callback_errors(self, ignore):
+        EventEmitter.ignore_callback_errors.fset(self, ignore)
+        for emitter in self._emitters.values():
+            if isinstance(emitter, EventEmitter):
+                emitter.ignore_callback_errors = ignore
+            elif isinstance(emitter, EmitterGroup):
+                emitter.ignore_callback_errors_all(ignore)
+
 
 class EventBlocker(object):
 

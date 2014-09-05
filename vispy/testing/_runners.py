@@ -224,7 +224,7 @@ def _examples():
         p = Popen(cmd, cwd=cwd, env=env, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         sys.stdout.flush()
-        if(p.returncode):
+        if p.returncode or len(stderr) > 0:
             if stdout.decode('utf-8').strip().endswith('Skipping'):
                 reason = 'Bad formatting: fix or add to exclude list'
             else:
