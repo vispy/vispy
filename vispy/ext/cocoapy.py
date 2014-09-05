@@ -10,7 +10,12 @@ from ctypes import (cdll, util, Structure, cast, byref, POINTER, CFUNCTYPE,
 
 import platform
 import struct
+import sys
 
+if sys.version_info[0] >= 3:
+    string_types = str,
+else:
+    string_types = basestring,  # noqa
 
 # Based on Pyglet code
 
@@ -378,7 +383,7 @@ def should_use_fpret(restype):
 
 
 def send_message(receiver, selName, *args, **kwargs):
-    if isinstance(receiver, str):
+    if isinstance(receiver, string_types):
         receiver = get_class(receiver)
     selector = get_selector(selName)
     restype = kwargs.get('restype', c_void_p)
@@ -506,7 +511,7 @@ def cfunctype_for_encoding(encoding):
 
 
 def create_subclass(superclass, name):
-    if isinstance(superclass, str):
+    if isinstance(superclass, string_types):
         superclass = get_class(superclass)
     return c_void_p(objc.objc_allocateClassPair(superclass,
                                                 ensure_bytes(name), 0))
@@ -657,7 +662,7 @@ class ObjCClass(object):
     _registered_classes = {}
 
     def __new__(cls, class_name_or_ptr):
-        if isinstance(class_name_or_ptr, str):
+        if isinstance(class_name_or_ptr, string_types):
             name = class_name_or_ptr
             ptr = get_class(name)
         else:
@@ -923,7 +928,7 @@ CFAllocatorRef = c_void_p
 CFStringEncoding = c_uint32
 
 cf.CFStringCreateWithCString.restype = c_void_p
-cf.CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_char_p,
+cf.CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_void_p,
                                          CFStringEncoding]
 
 cf.CFRelease.restype = c_void_p
@@ -967,7 +972,7 @@ def cfstring_to_string(cfstring):
     result = cf.CFStringGetCString(cfstring, buffer, len(buffer),
                                    kCFStringEncodingUTF8)
     if result:
-        return buffer.value.decode('utf-8')
+        return buffer.value.decode('utf8')
 
 
 cf.CFDataCreate.restype = c_void_p

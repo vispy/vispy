@@ -13,6 +13,7 @@ from __future__ import division
 import numpy as np
 from copy import deepcopy
 from os import path as op
+import sys
 
 from ._sdf import SDFRenderer
 from ....gloo import (TextureAtlas, set_state, IndexBuffer, VertexBuffer,
@@ -138,6 +139,10 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     width = height = ascender = descender = 0
     ratio, slop = 1. / font.ratio, font.slop
     x_off = -slop
+    # Need to make sure we have a unicode string here (Py2.7 mis-interprets
+    # characters like "•" otherwise)
+    if sys.version[0] == '2' and isinstance(text, str):
+        text = text.decode('utf-8')
     # Need to store the original viewport, because the font[char] will
     # trigger SDF rendering, which changes our viewport
     orig_viewport = get_parameter('viewport')
@@ -361,7 +366,6 @@ class Text(Visual):
                  font_manager=None, **kwargs):
         Visual.__init__(self, **kwargs)
         # Check input
-        assert isinstance(text, string_types)
         valid_keys = ('top', 'center', 'middle', 'baseline', 'bottom')
         _check_valid('anchor_y', anchor_y, valid_keys)
         valid_keys = ('left', 'center', 'right')

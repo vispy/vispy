@@ -7,10 +7,12 @@
 import sys
 
 import numpy as np
+from traceback import extract_stack
 
 from . import gl
 from . globject import GLObject
 from ..util import logger
+from ..ext.six import string_types
 
 
 # ------------------------------------------------------------ Buffer class ---
@@ -309,11 +311,12 @@ class DataBuffer(Buffer):
             Asking explicitly for a copy will prevent this behavior.
         """
         data = self._prepare_data(data, **kwds)
-        
+
         # Handle storage
         if self._store:
             if not data.flags["C_CONTIGUOUS"]:
-                logger.warning("Copying discontiguous data as CPU storage")
+                logger.warning("Copying discontiguous data as CPU storage:%s\n"
+                               % _last_stack_str())
                 self._copied = True
                 data = data.copy()
             self._data = data.ravel()  # Makes a copy if not contiguous
@@ -403,8 +406,8 @@ class DataBuffer(Buffer):
         """ Set data (deferred operation) """
 
         # Setting a whole field of the buffer: only allowed if we have CPU
-        # storage. Note this case (key is str) only happen with base buffer
-        if isinstance(key, str):
+        # storage. Note this case (key is string) only happen with base buffer
+        if isinstance(key, string_types):
             if self._data is None:
                 raise ValueError(
                     """Cannot set non contiguous """
@@ -487,7 +490,7 @@ class DataBufferView(DataBuffer):
         self._target = base.target
         self._stride = base.stride
 
-        if isinstance(key, str):
+        if isinstance(key, string_types):
             self._dtype = base.dtype[key]
             self._offset = base.dtype.fields[key][1]
             self._nbytes = base.size * self._dtype.itemsize
@@ -612,7 +615,7 @@ class DataBufferView(DataBuffer):
         if not self._valid:
             raise ValueError("This buffer view has been invalidated")
 
-        if isinstance(key, str):
+        if isinstance(key, string_types):
             raise ValueError(
                 "Cannot set a specific field on a non-base buffer")
 
@@ -705,7 +708,7 @@ class VertexBuffer(DataBuffer):
                 count = 1
             if btype not in [np.int8,  np.uint8,  np.float16,
                              np.int16, np.uint16, np.float32]:
-                msg = ("Data basetype %r not allowed for Buffer/%s" 
+                msg = ("Data basetype %r not allowed for Buffer/%s"
                        % (btype, name))
                 raise TypeError(msg)
             elif count not in [1, 2, 3, 4]:
@@ -726,13 +729,22 @@ class VertexBuffer(DataBuffer):
                 data = data.view(dtype=[('f0', data.dtype.base, 1)])
             elif c in [1, 2, 3, 4]:
                 if not data.flags['C_CONTIGUOUS']:
-                    logger.warning("Copying discontiguous data for struct "
-                                   "dtype")
+                    logger.warning('Copying discontiguous data for struct '
+                                   'dtype:\n%s' % _last_stack_str())
                     data = data.copy()
                 data = data.view(dtype=[('f0', data.dtype.base, c)])
             else:
                 data = data.view(dtype=[('f0', data.dtype.base, 1)])
         return data
+
+
+def _last_stack_str():
+    """Print stack trace from call that didn't originate from here"""
+    stack = extract_stack()
+    for s in stack[::-1]:
+        if s[0] != __file__:
+            break
+    return '  File "%s", line %s, in %s:\n    %s' % s
 
 
 # ------------------------------------------------------- IndexBuffer class ---

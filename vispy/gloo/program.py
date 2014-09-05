@@ -14,7 +14,7 @@ from .texture import GL_SAMPLER_3D
 from .variable import Uniform, Attribute
 from .wrappers import _check_conversion
 from ..util import logger
-
+from ..ext.six import string_types
 
 _known_draw_modes = dict()
 for key in ('points', 'lines', 'line_strip', 'line_loop',
@@ -70,7 +70,7 @@ class Program(GLObject):
             raise ValueError('Vert must be str, VertexShader or list')
         # Apply
         for shader in verts:
-            if isinstance(shader, str):
+            if isinstance(shader, string_types):
                 self._verts.append(VertexShader(shader))
             elif isinstance(shader, VertexShader):
                 if shader not in self._verts:
@@ -89,7 +89,7 @@ class Program(GLObject):
             raise ValueError('Frag must be str, FragmentShader or list')
         # Apply
         for shader in frags:
-            if isinstance(shader, str):
+            if isinstance(shader, string_types):
                 self._frags.append(FragmentShader(shader))
             elif isinstance(shader, FragmentShader):
                 if shader not in self._frags:

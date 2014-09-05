@@ -26,6 +26,7 @@ from distutils.version import LooseVersion
 from ..scene import SceneCanvas
 from ..ext.six.moves import http_client as httplib
 from ..ext.six.moves import urllib_parse as urllib
+from ..ext.six import string_types
 from ..io import read_png, _make_png, _check_img_lib
 from ..util import use_log_level
 from ..util.fetching import get_testing_file
@@ -252,7 +253,7 @@ def has_matplotlib(version='1.2'):
 
 def _has_scipy(min_version):
     try:
-        assert isinstance(min_version, str)
+        assert isinstance(min_version, string_types)
         import scipy  # noqa, analysis:ignore
         from distutils.version import LooseVersion
         this_version = LooseVersion(scipy.__version__)

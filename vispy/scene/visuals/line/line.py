@@ -10,7 +10,8 @@ from __future__ import division
 import numpy as np
 
 from .... import gloo
-from ....color import ColorArray
+from ....color import ColorArray, get_colormap
+from ....ext.six import string_types
 from ...shaders import ModularProgram, Function
 from ..visual import Visual
 
@@ -20,14 +21,14 @@ from .fragment import FRAGMENT_SHADER as AGG_FRAGMENT_SHADER
 
 
 vec2to4 = Function("""
-    vec4 vec2to4(vec2 inputvec) {
-        return vec4(inputvec, 0, 1);
+    vec4 vec2to4(vec2 inp) {
+        return vec4(inp, 0, 1);
     }
 """)
 
 vec3to4 = Function("""
-    vec4 vec3to4(vec3 inputvec) {
-        return vec4(inputvec, 1);
+    vec4 vec3to4(vec3 inp) {
+        return vec4(inp, 1);
     }
 """)
 
@@ -168,6 +169,7 @@ class Line(Visual):
     color : Color, tuple, or array
         The color to use when drawing the line. If an array is given, it
         must be of shape (..., 4) and provide one rgba color per vertex.
+        Can also be a colormap name, or appropriate `Function`.
     width:
         The width of the line in px. Line widths > 1px are only
         guaranteed to work when using 'agg' mode.
@@ -186,7 +188,7 @@ class Line(Visual):
             * "gl" uses OpenGL's built-in line rendering. This is much faster,
               but produces much lower-quality results and is not guaranteed to
               obey the requested line width or join/endcap styles.
-    antialias : bool 
+    antialias : bool
         For mode='gl', specifies whether to use line smoothing or not.
     """
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
@@ -196,7 +198,15 @@ class Line(Visual):
         # - why on earth would you turn off aa with agg?
         Visual.__init__(self, **kwds)
         self._pos = pos
-        self._color = ColorArray(color)
+        if isinstance(color, string_types):
+            try:
+                self._color = Function(get_colormap(color))
+            except KeyError:
+                self._color = ColorArray(color)
+        elif isinstance(color, Function):
+            self._color = Function(color)
+        else:
+            self._color = ColorArray(color)
         self._width = float(width)
         assert connect is not None  # can't be to start
         self._connect = connect
@@ -215,7 +225,7 @@ class Line(Visual):
         self._da = None
         self._U = None
         self._dash_atlas = None
-        
+
         # now actually set the mode, which will call set_data
         self.mode = mode
 
@@ -285,9 +295,17 @@ class Line(Visual):
                        'width': width, 'connect': connect}
         
         if color is not None:
-            self._color = ColorArray(color).rgba
-            if len(self._color) == 1:
-                self._color = self._color[0]
+            if isinstance(color, string_types):
+                try:
+                    self._color = Function(get_colormap(color))
+                except KeyError:
+                    self._color = Function(color)
+            elif isinstance(color, Function):
+                self._color = Function(color)
+            else:
+                self._color = ColorArray(color).rgba
+                if len(self._color) == 1:
+                    self._color = self._color[0]
                 
         if width is not None:
             self._width = width
@@ -362,10 +380,15 @@ class Line(Visual):
         xform = event.render_transform.shader_map()
         self._gl_program.vert['transform'] = xform
         self._gl_program.vert['position'] = self._pos_expr
-        if self._color.ndim == 1:
-            self._gl_program.vert['color'] = self._color
+        if isinstance(self._color, Function):
+            # TODO: Change to the parametric coordinate once that is done
+            self._gl_program.vert['color'] = self._color(
+                '(gl_Position.x + 1.0) / 2.0')
         else:
-            self._gl_program.vert['color'] = gloo.VertexBuffer(self._color)
+            if self._color.ndim == 1:
+                self._gl_program.vert['color'] = self._color
+            else:
+                self._gl_program.vert['color'] = gloo.VertexBuffer(self._color)
         gloo.set_state('translucent')
         
         # Do we want to use OpenGL, and can we?
