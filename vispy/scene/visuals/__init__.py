@@ -13,7 +13,7 @@ encapsulate simple graphic objects such as lines, meshes, points, 2D shapes,
 images, text, etc.
 """
 
-__all__ = ['Visual', 'Ellipse', 'GridLines', 'Image', 'Line',
+__all__ = ['Visual', 'Cube', 'Ellipse', 'GridLines', 'Image', 'Line',
            'LinePlot', 'Markers', 'marker_types', 'Mesh', 'Polygon',
            'Rectangle', 'RegularPolygon', 'SurfacePlot', 'Text', 'XYZAxis']
 
@@ -33,3 +33,4 @@ from .isosurface import Isosurface  # noqa
 from .isocurve import Isocurve  # noqa
 from .xyz_axis import XYZAxis  # noqa
 from .line_plot import LinePlot  # noqa
+from .cube import Cube  # noqa

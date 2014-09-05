@@ -70,7 +70,6 @@ vec4 vec2to4(vec2 xyz) {
 
 
 class Mesh(Visual):
-
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None,
                  shading=None, mode='triangles', **kwds):
