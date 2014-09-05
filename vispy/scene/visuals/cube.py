@@ -15,15 +15,20 @@ class Cube(Mesh):
     Parameters
     ----------
     size : float or tuple 
-        The size of the cuboid. Float values give a cube, whereas 
-        tuples may specify the size of each axis (x, y, z) independently. 
-    color : tuple or Color
-        The color to use when drawing the cube faces.
+        The size of the cuboid. A float gives a cube, whereas tuples may
+        specify the size of each axis (x, y, z) independently. 
+    vertex_colors : ndarray
+        Same as for the `Mesh` class.
+    face_colors : ndarray
+        Same as for the `Mesh` class.
+    color : Color
+        The `Color` to use when drawing the cube faces.
     edge_color : tuple or Color
-        The color to use when drawing the cube edges.
+        The `Color` to use when drawing the cube edges. If `None`, then no
+        cube edges are drawn.
     """
-    def __init__(self, size=1.0, vertex_colors=None,
-                 face_colors=None, color=(0.5, 0.5, 1, 1), edge_color=None):
+    def __init__(self, size=1.0, vertex_colors=None, face_colors=None,
+                 color=(0.5, 0.5, 1, 1), edge_color=None):
         vertices, filled_indices, outline_indices = create_cube()
         vertices['position'] *= size
 
