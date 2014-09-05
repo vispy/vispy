@@ -1,5 +1,6 @@
 import unittest
 import copy
+from nose.tools import assert_true, assert_raises
 
 from vispy.util.event import Event, EventEmitter, EmitterGroup
 from vispy.util import use_log_level
@@ -98,13 +99,13 @@ class TestGroups(unittest.TestCase):
         grp.em1.connect(self.error_event)
         with use_log_level('warning', record=True, print_msg=False) as l:
             grp.em1()
-        self.assertGreaterEqual(len(l), 1)
+        assert_true(len(l) >= 1)
         grp.ignore_callback_errors = False
-        self.assertRaises(RuntimeError, grp.em1)
+        assert_raises(RuntimeError, grp.em1)
         grp.ignore_callback_errors = True
         with use_log_level('warning', record=True, print_msg=False) as l:
             grp.em1()
-        self.assertGreaterEqual(len(l), 1)
+        assert_true(len(l) >= 1)
 
     def test_group_disconnect(self):
         """EmitterGroup.disconnect"""
