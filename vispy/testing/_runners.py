@@ -188,11 +188,12 @@ def _examples():
         msg = 'Skipping example test: %s' % reason
         print(msg)
         raise SkipTest(msg)
-    print(_line_sep + '\nRunning examples using %s backend' % backend)
     fnames = [op.join(d[0], fname)
               for d in os.walk(op.join(root_dir, 'examples'))
               for fname in d[2] if fname.endswith('.py')]
     fnames = sorted(fnames, key=lambda x: x.lower())
+    print(_line_sep + '\nRunning %s examples using %s backend'
+          % (len(fnames), backend))
     op.join('tutorial', 'app', 'shared_context.py'),  # non-standard
 
     fails = []
