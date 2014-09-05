@@ -43,7 +43,7 @@ class Canvas(vispy.scene.SceneCanvas):
 
     # ---------------------------------
     def on_timer(self, event):
-        color = colormaps.next()
+        color = next(colormaps)
         self.line.set_data(pos=pos, color=color)
         self.text.text = color
         self.update()

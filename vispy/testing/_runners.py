@@ -224,9 +224,10 @@ def _examples():
         env.update(dict(_VISPY_TESTING_TYPE='examples'))
         p = Popen(cmd, cwd=cwd, env=env, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
+        stdout, stderr = stdout.decode('utf-8'), stderr.decode('utf-8')
         sys.stdout.flush()
-        if p.returncode or len(stderr) > 0:
-            if stdout.decode('utf-8').strip().endswith('Skipping'):
+        if p.returncode or len(stderr.strip()) > 0:
+            if stdout.strip().endswith('Skipping'):
                 reason = 'Bad formatting: fix or add to exclude list'
             else:
                 reason = stderr.decode('utf-8')
