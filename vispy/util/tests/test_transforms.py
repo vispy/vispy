@@ -13,7 +13,7 @@ def test_transforms():
 
     # Todo: this should really be more rigorous, e.g. check that the order
     # of computation is all correct
-    new_xfm = rotate(rotate(xfm, 90, 1, 0, 0), 90, -1, 0, 0)
+    new_xfm = rotated(90, (1,0,0)) * rotated(90, (-1, 0, 0))
     assert_allclose(xfm, new_xfm)
 
     new_xfm = translate((1, -1, 1)) * translate((1, -1, 1))
