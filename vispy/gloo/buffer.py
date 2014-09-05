@@ -7,7 +7,8 @@
 import sys
 
 import numpy as np
-from traceback import extract_stack
+from os import path as op
+from traceback import extract_stack, format_list
 
 from . import gl
 from . globject import GLObject
@@ -742,9 +743,9 @@ def _last_stack_str():
     """Print stack trace from call that didn't originate from here"""
     stack = extract_stack()
     for s in stack[::-1]:
-        if s[0] != __file__:
+        if op.join('vispy', 'gloo', 'buffer.py') not in __file__:
             break
-    return '  File "%s", line %s, in %s:\n    %s' % s
+    return format_list([s])[0]
 
 
 # ------------------------------------------------------- IndexBuffer class ---

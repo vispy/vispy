@@ -331,7 +331,7 @@ class Line(Visual):
                 self._connect = connect
         if pos is not None:
             self._pos = pos
-            pos_arr = np.asarray(pos, dtype=np.float32)
+            pos_arr = np.ascontiguousarray(pos, dtype=np.float32)
             vbo = gloo.VertexBuffer(pos_arr)
             if pos_arr.shape[-1] == 2:
                 self._pos_expr = vec2to4(vbo)

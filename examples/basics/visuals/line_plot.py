@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vispy: testskip (KNOWNFAIL)
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
@@ -7,6 +8,8 @@ Simple demonstration of LinePlot visual.
 """
 
 import numpy as np
+import sys
+
 import vispy.app
 from vispy.scene import visuals
 
@@ -28,6 +31,5 @@ class Canvas(vispy.scene.SceneCanvas):
 
 if __name__ == '__main__':
     win = Canvas()
-    import sys
     if sys.flags.interactive != 1:
         vispy.app.run()

@@ -91,7 +91,7 @@ def makecube():
 
     indices = np.resize(
         np.array([0, 1, 2, 0, 2, 3], dtype=itype), 6 * (2 * 3))
-    indices += np.repeat(4 * np.arange(6), 6)
+    indices += np.repeat(4 * np.arange(6), 6).astype(np.uint32)
 
     return vertices, indices
 

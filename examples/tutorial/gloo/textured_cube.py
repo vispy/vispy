@@ -22,6 +22,8 @@ uniform sampler2D texture;
 
 attribute vec3 position;
 attribute vec2 texcoord;
+attribute vec3 normal;
+attribute vec4 color;
 
 varying vec2 v_texcoord;
 void main()

@@ -83,7 +83,7 @@ def isocurve(data, level, connected=False, extend_to_edge=False):
         for j in [0, 1]:
             fields[i, j] = mask[slices[i], slices[j]]
             vertIndex = i+2*j
-            index += fields[i, j] * 2**vertIndex
+            index += (fields[i, j] * 2**vertIndex).astype(np.ubyte)
     
     # add lines
     for i in range(index.shape[0]):                 # data x-axis
