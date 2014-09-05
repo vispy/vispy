@@ -13,7 +13,7 @@ encapsulate simple graphic objects such as lines, meshes, points, 2D shapes,
 images, text, etc.
 """
 
-__all__ = ['Visual', 'Ellipse', 'GridLines', 'Image', 'Line',
+__all__ = ['Visual', 'Cube', 'Ellipse', 'GridLines', 'Image', 'Line',
            'LinePlot', 'Markers', 'marker_types', 'Mesh', 'Polygon',
            'Rectangle', 'RegularPolygon', 'SurfacePlot', 'Text', 'XYZAxis']
 
