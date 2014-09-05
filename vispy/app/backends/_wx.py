@@ -201,13 +201,13 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         
         # Deal with context
         self._vispy_context = context
-        if context.istaken == 'wx':
-            self._gl_attribs = context.value[0]
-        elif context.istaken:
-            raise RuntimeError('Cannot share context between backends.')
-        else:
+        if not context.istaken:
             self._gl_attribs = _set_config(context.config)
             # We take the context below
+        elif context.istaken == 'wx':
+            self._gl_attribs = context.value[0]
+        else:
+            raise RuntimeError('Cannot share context between backends.')
         
         style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
                  wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)

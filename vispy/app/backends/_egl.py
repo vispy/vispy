@@ -128,14 +128,17 @@ class CanvasBackend(BaseCanvasBackend):
         
         # Deal with context
         self._vispy_context = context
-        if context.istaken == 'egl':
-            self._native_config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
-        elif context.istaken:
-            raise RuntimeError('Cannot share context between backends.')
+        if not context.istaken:
+            _config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
+            _context = egl.eglCreateContext(_EGL_DISPLAY, context.config, None)
+            context.take((_config, _context), 'egl')
+        elif context.istaken == 'egl':
+            pass
         else:
-            c = egl.eglCreateContext(_EGL_DISPLAY, context.config, None)
-            self._native_config = context.config
-            context.take(c, 'egl')
+            raise RuntimeError('Cannot share context between backends.')
+        # Store for easy access
+        self._native_config = context.value[0]
+        self._native_context = context.value[1]
         
         self._surface = None
         self._vispy_set_size(*size)
@@ -189,7 +192,7 @@ class CanvasBackend(BaseCanvasBackend):
             return
         # Make this the current context
         egl.eglMakeCurrent(_EGL_DISPLAY, self._surface, self._surface,
-                           self._vispy_context.value)
+                           self._native_context)
 
     def _vispy_swap_buffers(self):
         if self._surface is None:

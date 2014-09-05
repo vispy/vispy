@@ -196,16 +196,16 @@ class CanvasBackend(BaseCanvasBackend):
         
         # Deal with context
         self._vispy_context = context
-        if context.istaken == 'sdl2':
-            share = context.value
-            sdl2.SDL_GL_MakeCurrent(*share)  # old window must be current
-            sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
-        elif context.istaken:
-            raise RuntimeError('Cannot share context between backends.')
-        else:
+        if not context.isaken:
             # We take the context below as soon as we have an id
             _set_config(context.config)
             share = None
+        elif context.istaken == 'sdl2':
+            share = context.value
+            sdl2.SDL_GL_MakeCurrent(*share)  # old window must be current
+            sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
+        else:
+            raise RuntimeError('Cannot share context between backends.')
         
         sdl2.SDL_GL_SetSwapInterval(1 if vsync else 0)
         flags = sdl2.SDL_WINDOW_OPENGL

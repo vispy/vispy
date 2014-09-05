@@ -153,13 +153,13 @@ class CanvasBackend(BaseCanvasBackend):
         
         # Deal with context
         self._vispy_context = context
-        if context.istaken == 'backend-name':
-            native_context = context.value
-        elif context.istaken:
-            raise RuntimeError('Cannot share context between backends.')
-        else:
+        if not context.istaken:
             native_context = None  # ...
             context.take(native_context, 'backend-name')
+        elif context.istaken == 'backend-name':
+            native_context = context.value
+        else:
+            raise RuntimeError('Cannot share context between backends.')
         
         # NativeWidgetClass.__init__(self, foo, bar)
     

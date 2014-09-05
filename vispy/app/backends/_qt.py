@@ -203,21 +203,21 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         
         # Deal with context
         self._vispy_context = context
-        if context.istaken == 'qt':
-            widget = context.value
-            glformat = QtOpenGL.QGLFormat.defaultFormat()
-            if 'shareWidget' in kwargs:
-                raise RuntimeError('Cannot use vispy to share context and '
-                                   'use built-in shareWidget.')
-        elif context.istaken:
-            raise RuntimeError('Cannot share context between backends.')
-        else:
+        if not context.istaken:
             glformat = _set_config(context.config)
             glformat.setSwapInterval(1 if vsync else 0)
             widget = kwargs.pop('shareWidget', None) or self
             context.take(widget, 'qt', weak=True)  # use weakref
             if widget is self:
                 widget = None  # QGLWidget does not accept self ;)
+        elif context.istaken == 'qt':
+            widget = context.value
+            glformat = QtOpenGL.QGLFormat.defaultFormat()
+            if 'shareWidget' in kwargs:
+                raise RuntimeError('Cannot use vispy to share context and '
+                                   'use built-in shareWidget.')
+        else:
+            raise RuntimeError('Cannot share context between backends.')
         
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
 

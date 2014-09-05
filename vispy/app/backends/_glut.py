@@ -232,11 +232,11 @@ class CanvasBackend(BaseCanvasBackend):
         
         # Deal with context
         self._vispy_context = context
-        if context.istaken:
-            raise RuntimeError('Glut cannot share contexts.')
-        else:
+        if not context.istaken:
             _set_config(context.config)
             context.take(0, 'glut')
+        else:
+            raise RuntimeError('Glut cannot share contexts.')
         
         glut.glutInitWindowSize(size[0], size[1])
         self._id = glut.glutCreateWindow(title.encode('ASCII'))
