@@ -172,7 +172,7 @@ class ObjectWidget(QtGui.QWidget):
         for pos in range(len(lL)):
             gb_c_lay.addWidget(lL[pos], pos, 0)
             gb_c_lay.addWidget(self.sp[pos], pos, 1)
-            # Les signaux
+            # Signal
             self.sp[pos].valueChanged.connect(self.update_param)
 
         self.gb_c.setLayout(gb_c_lay)
