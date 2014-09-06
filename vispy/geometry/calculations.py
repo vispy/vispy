@@ -91,7 +91,7 @@ def _bbox(vertices):
 
     Parameters
     ----------
-    vertices : ndarray, shape (Nv, 3)
+    vertices : ndarray, shape (Nv, 3 or 4)
         Vertex coordinates.
 
     Returns
@@ -109,10 +109,15 @@ def _bbox(vertices):
        [ 3.  3.  0.]]
     """
     bbox = None
-    if np.asarray(vertices) is vertices:
+    if isinstance(vertices, np.ndarray):
         if vertices.shape[1] <= 3:
-            bbox = np.row_stack([vertices.min(axis=0), vertices.max(axis=0)])
-
+            verts = vertices
+        elif vertices.shape[1] == 4:
+            verts = vertices[:, :-1]
+        else:
+            verts = None
+        if verts is not None:
+            bbox = np.row_stack([verts.min(axis=0), verts.max(axis=0)])
     return bbox
 
 
@@ -124,7 +129,7 @@ def _mean_center(vertices):
 
     Parameters
     ----------
-    vertices : ndarray, shape (Nv, 3)
+    vertices : ndarray, shape (Nv, 3 or 4)
         Vertex coordinates.
 
     Returns
@@ -140,9 +145,15 @@ def _mean_center(vertices):
       [ 1.  1.  0.]
     """
     center = None
-    if np.asarray(vertices) is vertices:
+    if isinstance(vertices, np.ndarray):
         if vertices.shape[1] <= 3:
-            center = vertices.mean(axis=0)
+            verts = vertices
+        elif vertices.shape[1] == 4:
+            verts = vertices[:, :-1]
+        else:
+            verts = None
+        if verts is not None:
+            center = verts.mean(axis=0)
     return center
 
 
@@ -151,9 +162,9 @@ def _distance_from_point(point, vertices):
 
     Parameters
     ----------
-    point : ndarray, shape (3,)
+    point : ndarray, shape (3 or 4,)
         Vertice coordinate.
-    vertices : ndarray, shape (Nv, 3)
+    vertices : ndarray, shape (Nv, 3 or 4)
         Vertex coordinates.
     Returns
     -------
@@ -170,9 +181,22 @@ def _distance_from_point(point, vertices):
       [ 0.  3.  3.]
     """
     cdist = None
-    if np.asarray(vertices) is vertices and np.asarray(point) is point:
-        if vertices.shape[1] <= 3 and point.ndim == 1 and point.size == 3:
-            cdist = vertices-point
+    if isinstance(vertices, np.ndarray) and isinstance(point, np.ndarray):
+        if vertices.shape[1] <= 3:
+            verts = vertices
+        elif vertices.shape[1] == 4:
+            verts = vertices[:, :-1]
+        else:
+            verts = None
+        if point.ndim == 1 and point.size <= 3:
+            p = point
+        elif point.ndim == 1 and point.size == 4:
+            p = point[:-1]
+        else:
+            p = None
+
+        if verts is not None and p is not None:
+            cdist = verts-p
             cdist = np.sqrt(np.sum(cdist*cdist, -1))
     return cdist
 
@@ -194,16 +218,23 @@ def _bsphere(vertices):
     Example
     -------
 
-      >>> vertices = Coords([[[0.,0.,0.],[3.,0.,0.],[0.,3.,0.]]])
+      >>> vertices = array([[0.,0.,0.],[3.,0.,0.],[0.,3.,0.]])
       print(_bsphere(vertices))
       [ 1.5,  1.5,  0. ], 2.1213203435596424
     """
     radius = 0
     center = None
-    if np.asarray(vertices) is vertices:
+    if isinstance(vertices, np.ndarray):
         if vertices.shape[1] <= 3:
-            center = _mean_center(_bbox(vertices))
-            radius = _distance_from_point(center, vertices).max()
+            verts = vertices
+        elif vertices.shape[1] == 4:
+            verts = vertices[:, :-1]
+        else:
+            verts = None
+
+        if verts is not None:
+            center = _mean_center(_bbox(verts))
+            radius = _distance_from_point(center, verts).max()
     return center, radius
 
 
@@ -218,9 +249,9 @@ def _besphere(vertices, tol=1e-3, kmax=100):
     vertices : ndarray, shape (Nv, 3)
         Vertex coordinates.
     tol: float
-        read the publication
-    niter_max: int
-        read the publication
+        it's an (1+tol) approximation of the minimum enclosing sphere
+    kmax: int
+        max number of iteration
 
     Returns
     -------
@@ -234,31 +265,42 @@ def _besphere(vertices, tol=1e-3, kmax=100):
       print(_besphere(vertices))
       [ 1.5,  1.5,  0. ], 2.1213203435596424
     """
-    # Initialisation of algorithm
-    alpha = np.argmax(_distance_from_point(vertices[0, :], vertices))
-    point = vertices[alpha, :]
-    beta = np.argmax(_distance_from_point(point, vertices))
-    point1 = vertices[beta, :]
-    ck = 0.5*point+0.5*point1
-    gammak = 0.25*np.linalg.norm(point-point1)**2
-    kk = np.argmax(_distance_from_point(ck, vertices))
-    point = vertices[kk, :]
-    dist = np.linalg.norm(point-ck)
-    deltak = 0.0
-    if (gammak != 0.0):
-        deltak = dist**2/gammak-1.0
+    radius = 0
+    center = None
+    if isinstance(vertices, np.ndarray):
+        if vertices.shape[1] <= 3:
+            verts = vertices
+        elif vertices.shape[1] == 4:
+            verts = vertices[:, :-1]
+        else:
+            verts = None
 
-    for k in range(kmax):
-        if (np.abs(deltak) < ((1.0+tol)**2-1.0)):
-            break
-        lambdak = deltak/(2.0*(1.0+deltak))
-        ck = (1.0-lambdak)*ck+lambdak*point
-        gammak = gammak*(1.0+deltak**2/(1.0+deltak))
-        kk = np.argmax(_distance_from_point(ck, vertices))
-        point = vertices[kk, :]
-        dist = np.linalg.norm(point-ck)
-        deltak = dist**2/gammak-1.0
+        if verts is not None:
+            # Initialisation of algorithm
+            alpha = np.argmax(_distance_from_point(verts[0, :], verts))
+            point = verts[alpha, :]
+            beta = np.argmax(_distance_from_point(point, verts))
+            point1 = verts[beta, :]
+            ck = 0.5*point+0.5*point1
+            gammak = 0.25*np.linalg.norm(point-point1)**2
+            kk = np.argmax(_distance_from_point(ck, verts))
+            point = verts[kk, :]
+            dist = np.linalg.norm(point-ck)
+            deltak = 0.0
+            if (gammak != 0.0):
+                deltak = dist**2/gammak-1.0
 
-    radius = np.sqrt((1.0+deltak)*gammak)
+            for k in range(kmax):
+                if (np.abs(deltak) < ((1.0+tol)**2-1.0)):
+                    break
+                lambdak = deltak/(2.0*(1.0+deltak))
+                ck = (1.0-lambdak)*ck+lambdak*point
+                gammak = gammak*(1.0+deltak**2/(1.0+deltak))
+                kk = np.argmax(_distance_from_point(ck, verts))
+                point = verts[kk, :]
+                dist = np.linalg.norm(point-ck)
+                deltak = dist**2/gammak-1.0
+
+            radius = np.sqrt((1.0+deltak)*gammak)
 
     return ck, radius
