@@ -77,10 +77,8 @@ class Canvas(app.Canvas):
         self.size = W * 5, H * 5
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = gloo.Texture3D(I)
-        self.texture.interpolation = 'nearest'
-        self.texture.wrapping = 'clamp_to_edge'
-
+        self.texture = gloo.Texture3D(I, interpolation='nearest', 
+                                      wrapping='clamp_to_edge')
         self.program['u_texture'] = self.texture
         self.program['i'] = 0.0
         self.program.bind(gloo.VertexBuffer(data))
