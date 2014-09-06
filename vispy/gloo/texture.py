@@ -117,6 +117,7 @@ class BaseTexture(GLObject):
 
     def __init__(self, data=None, shape=None, dtype=None, base=None,
                  target=None, offset=None, store=True, resizeable=True,
+                 interpolation=None, wrapping=None,
                  format=None):
         GLObject.__init__(self)
         self._data = None
@@ -209,6 +210,11 @@ class BaseTexture(GLObject):
                                          self.shape[-1]))
             self._format = out_format
 
+        if interpolation is not None:
+            self.interpolation = interpolation
+        if wrapping is not None:
+            self.wrapping = wrapping
+            
     def _normalize_shape(self, data_or_shape):
         # Get data and shape from input
         if isinstance(data_or_shape, np.ndarray):
@@ -633,7 +639,7 @@ class Texture2D(BaseTexture):
     _ndim = 2
 
     def __init__(self, data=None, shape=None, dtype=None, store=True,
-                 format=None, **kwargs):
+                 format=None, interpolation=None, wrapping=None, **kwargs):
 
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
@@ -643,6 +649,7 @@ class Texture2D(BaseTexture):
         BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype,
                              base=base, resizeable=resizeable, store=store,
                              target=gl.GL_TEXTURE_2D, offset=offset,
+                             interpolation=interpolation, wrapping=wrapping,
                              format=format)
 
     @property
@@ -714,6 +721,7 @@ class Texture3D(BaseTexture):
     _ndim = 3
 
     def __init__(self, data=None, shape=None, dtype=None, store=True,
+                 interpolation=None, wrapping=None,
                  format=None, **kwargs):
 
         # Import from PyOpenGL
@@ -727,6 +735,7 @@ class Texture3D(BaseTexture):
         BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype,
                              base=base, resizeable=resizeable, store=store,
                              target=_gl.GL_TEXTURE_3D, offset=offset,
+                             interpolation=interpolation, wrapping=wrapping,
                              format=format)
 
     @property
