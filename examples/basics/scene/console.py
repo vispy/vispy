@@ -26,7 +26,6 @@ console = Console(text_color='g', font_size=12., border_color='g')
 grid.add_widget(console, row=1, col=0)
 
 
-
 def on_timer(event):
     text.text = 'Tick #%s' % event.iteration
     if event.iteration > 1 and event.iteration % 10 == 0:
