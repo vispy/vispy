@@ -230,7 +230,7 @@ def _examples():
             if stdout.strip().endswith('Skipping'):
                 reason = 'Bad formatting: fix or add to exclude list'
             else:
-                reason = stderr.decode('utf-8')
+                reason = stderr
             ext = '\n' + _line_sep + '\n'
             fails.append('%sExample %s failed:%s%s%s'
                          % (ext, root_name, ext, reason, ext))
