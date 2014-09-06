@@ -32,16 +32,13 @@ class Canvas(app.Canvas):
         img = Image.open(load_data_file('jfa/' + fname))
         self.texture_size = tuple(img.size)
         data = np.array(img, np.ubyte)[::-1].copy()
-        self.orig_tex = Texture2D(data, format='luminance')
-        self.orig_tex.wrapping = 'repeat'
-        self.orig_tex.interpolation = 'nearest'
-
+        self.orig_tex = Texture2D(data, format='luminance', wrapping='repeat',
+                                  interpolation='nearest')
         self.comp_texs = []
         data = np.zeros(self.texture_size + (4,), np.float32)
         for _ in range(2):
-            tex = Texture2D(data, format='rgba')
-            tex.interpolation = 'nearest'
-            tex.wrapping = 'clamp_to_edge'
+            tex = Texture2D(data, format='rgba', wrapping='clamp_to_edge',
+                            interpolation='nearest')
             self.comp_texs.append(tex)
         self.fbo_to[0].color_buffer = self.comp_texs[0]
         self.fbo_to[1].color_buffer = self.comp_texs[1]
