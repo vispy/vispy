@@ -418,10 +418,10 @@ void main(void)
 # -------------------------------------------------------------------------
 
 canvas = Canvas(SHADERTOY)
+# Input data.
+canvas.set_channel_input(noise(resolution=256, nchannels=1), i=0)
     
 if __name__ == '__main__':
-    # Input data.
-    canvas.set_channel_input(noise(resolution=256, nchannels=1), i=0)
     
     canvas.show()
     if sys.flags.interactive == 0:
