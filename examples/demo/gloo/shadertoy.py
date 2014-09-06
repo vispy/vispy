@@ -13,11 +13,11 @@ are supported).
 
 """
 
-from vispy import gloo
-from vispy import app
+import sys
 from datetime import datetime, time
 import numpy as np
-from scipy.misc import imread
+from vispy import gloo
+from vispy import app
 
 
 vertex = """
@@ -64,17 +64,17 @@ def noise(resolution=64, nchannels=1):
                              ).astype(np.uint8)
 
 
-def load_image(path):
-    # Load an image.
-    im = imread(path)
-    im = np.atleast_3d(im)
-    return im
-
-
 class Canvas(app.Canvas):
 
-    def __init__(self, shadertoy):
+    def __init__(self, shadertoy=None):
         app.Canvas.__init__(self, keys='interactive')
+        if shadertoy is None:
+            shadertoy = """
+            void main(void)
+            {
+                vec2 uv = gl_FragCoord.xy / iResolution.xy;
+                gl_FragColor = vec4(uv,0.5+0.5*sin(iGlobalTime),1.0);
+            }"""
         self.program = gloo.Program(vertex, fragment % shadertoy)
 
         self.program["position"] = [(-1, -1), (-1, 1), (1, 1),
@@ -424,4 +424,5 @@ if __name__ == '__main__':
     c.set_channel_input(noise(resolution=256, nchannels=1), i=0)
     
     c.show()
-    app.run()
+    if sys.flags.interactive == 0:
+        app.run()
