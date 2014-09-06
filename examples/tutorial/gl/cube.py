@@ -7,11 +7,10 @@
 # Date:   04/03/2014
 # -----------------------------------------------------------------------------
 import math
-import ctypes
 import numpy as np
 
 from vispy import app
-from OpenGL import GL as gl
+from vispy.gloo import gl
 
 
 def checkerboard(grid_num=8, grid_size=32):
@@ -145,31 +144,29 @@ class Canvas(app.Canvas):
 
         # Get data & build cube buffers
         vcube_data, self.icube_data = makecube()
-        vcube = gl.glGenBuffers(1)
+        vcube = gl.glCreateBuffer()
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vcube)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, vcube_data.nbytes,
-                        vcube_data, gl.GL_STATIC_DRAW)
-        icube = gl.glGenBuffers(1)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, vcube_data, gl.GL_STATIC_DRAW)
+        icube = gl.glCreateBuffer()
         gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, icube)
         gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER,
-                        self.icube_data.nbytes, self.icube_data,
-                        gl.GL_STATIC_DRAW)
+                        self.icube_data, gl.GL_STATIC_DRAW)
 
         # Bind cube attributes
         stride = vcube_data.strides[0]
-        offset = ctypes.c_void_p(0)
+        offset = 0
         loc = gl.glGetAttribLocation(self.cube, "a_position")
         gl.glEnableVertexAttribArray(loc)
         gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, stride, offset)
 
-        offset = ctypes.c_void_p(vcube_data.dtype["a_position"].itemsize)
+        offset = vcube_data.dtype["a_position"].itemsize
         loc = gl.glGetAttribLocation(self.cube, "a_texcoord")
         gl.glEnableVertexAttribArray(loc)
         gl.glVertexAttribPointer(loc, 2, gl.GL_FLOAT, False, stride, offset)
 
         # Create & bind cube texture
         crate = checkerboard()
-        texture = gl.glGenTextures(1)
+        texture = gl.glCreateTexture()
         gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER,
                            gl.GL_LINEAR)
         gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER,
@@ -178,9 +175,10 @@ class Canvas(app.Canvas):
                            gl.GL_CLAMP_TO_EDGE)
         gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T,
                            gl.GL_CLAMP_TO_EDGE)
-        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_INTENSITY,
-                        crate.shape[1], crate.shape[0],
-                        0, gl.GL_RED, gl.GL_UNSIGNED_BYTE, crate)
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_LUMINANCE, gl.GL_LUMINANCE,
+                        gl.GL_UNSIGNED_BYTE, crate.shape[:2])
+        gl.glTexSubImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, gl.GL_LUMINANCE,
+                           gl.GL_UNSIGNED_BYTE, crate)
         loc = gl.glGetUniformLocation(self.cube, "u_texture")
         gl.glUniform1i(loc, texture)
         gl.glBindTexture(gl.GL_TEXTURE_2D, 0)

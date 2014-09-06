@@ -18,16 +18,13 @@ visualization during the explosion is highly optimized using a Vertex Buffer
 Object (VBO). After each explosion, vertex data for the next explosion are
 calculated, such that each explostion is unique.
 """
-import ctypes
 import numpy as np
-import OpenGL.GL as gl
 
 from vispy import app
+from vispy.gloo import gl
 
 
 vertex_code = """
-#version 120
-
 uniform float time;
 uniform vec3 center;
 attribute float lifetime;
@@ -48,8 +45,6 @@ void main () {
 """
 
 fragment_code = """
-#version 120
-
 uniform vec4 color;
 varying float v_lifetime;
 void main()
@@ -89,25 +84,24 @@ class Canvas(app.Canvas):
         self.data = np.zeros(n, dtype=[('lifetime', np.float32, 1),
                                        ('start',    np.float32, 3),
                                        ('end',      np.float32, 3)])
-        vbuffer = gl.glGenBuffers(1)
+        vbuffer = gl.glCreateBuffer()
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbuffer)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data.nbytes, self.data,
-                        gl.GL_DYNAMIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data, gl.GL_DYNAMIC_DRAW)
 
         # Bind buffer attributes
         stride = self.data.strides[0]
 
-        offset = ctypes.c_void_p(0)
+        offset = 0
         loc = gl.glGetAttribLocation(self.program, "lifetime")
         gl.glEnableVertexAttribArray(loc)
         gl.glVertexAttribPointer(loc, 1, gl.GL_FLOAT, False, stride, offset)
 
-        offset = ctypes.c_void_p(self.data.dtype["lifetime"].itemsize)
+        offset = self.data.dtype["lifetime"].itemsize
         loc = gl.glGetAttribLocation(self.program, "start")
         gl.glEnableVertexAttribArray(loc)
         gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, stride, offset)
 
-        offset = ctypes.c_void_p(self.data.dtype["start"].itemsize)
+        offset = self.data.dtype["start"].itemsize
         loc = gl.glGetAttribLocation(self.program, "end")
         gl.glEnableVertexAttribArray(loc)
         gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, stride, offset)
@@ -118,8 +112,8 @@ class Canvas(app.Canvas):
         gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-        gl.glEnable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(gl.GL_POINT_SPRITE)
+        gl.glEnable(34370)  # gl.GL_VERTEX_PROGRAM_POINT_SIZE
+        gl.glEnable(34913)  # gl.GL_POINT_SPRITE
         self.new_explosion()
         self.timer.start()
 
@@ -154,8 +148,7 @@ class Canvas(app.Canvas):
         self.data['lifetime'] = np.random.normal(2.0, 0.5, (n,))
         self.data['start'] = np.random.normal(0.0, 0.2, (n, 3))
         self.data['end'] = np.random.normal(0.0, 1.2, (n, 3))
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data.nbytes, self.data,
-                        gl.GL_DYNAMIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data, gl.GL_DYNAMIC_DRAW)
 
 if __name__ == '__main__':
     c = Canvas()
