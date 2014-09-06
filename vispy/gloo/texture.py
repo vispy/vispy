@@ -79,6 +79,11 @@ class BaseTexture(GLObject):
         undesired behavior, unless a copy is given. Default True.
     resizeable : bool
         Indicates whether texture can be resized
+    interpolation : str
+        Interpolation mode, must be one of: 'nearest', 'linear'.
+    wrapping : str
+        Wrapping mode, must be one of: 'repeat', 'clamp_to_edge', 
+        'mirrored_repeat'.
     format : str | ENUM
         The format of the texture: 'luminance', 'alpha', 'luminance_alpha',
         'rgb', or 'rgba' (or ENUMs GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA,
