@@ -266,7 +266,7 @@ def _besphere(vertices, tol=1e-3, kmax=100):
       [ 1.5,  1.5,  0. ], 2.1213203435596424
     """
     radius = 0
-    center = None
+    ck = None
     if isinstance(vertices, np.ndarray):
         if vertices.shape[1] <= 3:
             verts = vertices
