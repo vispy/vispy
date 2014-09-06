@@ -117,312 +117,312 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, width, height)
         self.program['iResolution'] = (width, height, 0.)
         
+# -------------------------------------------------------------------------
+# COPY-PASTE SHADERTOY CODE BELOW
+# -------------------------------------------------------------------------
+SHADERTOY = """
+// From: https://www.shadertoy.com/view/MdX3Rr
+
+// Created by inigo quilez - iq/2013
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 
+// Unported License.
+
+//stereo thanks to Croqueteer
+//#define STEREO
+
+// value noise, and its analytical derivatives
+vec3 noised( in vec2 x )
+{
+    vec2 p = floor(x);
+    vec2 f = fract(x);
+
+    vec2 u = f*f*(3.0-2.0*f);
+
+    float a = texture2D(iChannel0,(p+vec2(0.5,0.5))/256.0,-100.0).x;
+    float b = texture2D(iChannel0,(p+vec2(1.5,0.5))/256.0,-100.0).x;
+    float c = texture2D(iChannel0,(p+vec2(0.5,1.5))/256.0,-100.0).x;
+    float d = texture2D(iChannel0,(p+vec2(1.5,1.5))/256.0,-100.0).x;
+    
+    return vec3(a+(b-a)*u.x+(c-a)*u.y+(a-b-c+d)*u.x*u.y,
+                6.0*f*(1.0-f)*(vec2(b-a,c-a)+(a-b-c+d)*u.yx));
+}
+
+const mat2 m2 = mat2(0.8,-0.6,0.6,0.8);
+
+float terrain( in vec2 x )
+{
+    vec2  p = x*0.003;
+    float a = 0.0;
+    float b = 1.0;
+    vec2  d = vec2(0.0);
+    for( int i=0; i<6; i++ )
+    {
+        vec3 n = noised(p);
+        d += n.yz;
+        a += b*n.x/(1.0+dot(d,d));
+        b *= 0.5;
+        p = m2*p*2.0;
+    }
+
+    return 140.0*a;
+}
+
+float terrain2( in vec2 x )
+{
+    vec2  p = x*0.003;
+    float a = 0.0;
+    float b = 1.0;
+    vec2  d = vec2(0.0);
+    for( int i=0; i<14; i++ )
+    {
+        vec3 n = noised(p);
+        d += n.yz;
+        a += b*n.x/(1.0+dot(d,d));
+        b *= 0.5;
+        p=m2*p*2.0;
+    }
+
+    return 140.0*a;
+}
+
+float terrain3( in vec2 x )
+{
+    vec2  p = x*0.003;
+    float a = 0.0;
+    float b = 1.0;
+    vec2  d = vec2(0.0);
+    for( int i=0; i<4; i++ )
+    {
+        vec3 n = noised(p);
+        d += n.yz;
+        a += b*n.x/(1.0+dot(d,d));
+        b *= 0.5;
+        p = m2*p*2.0;
+    }
+
+    return 140.0*a;
+}
+
+float map( in vec3 p )
+{
+    float h = terrain(p.xz);
+    return p.y - h;
+}
+
+float map2( in vec3 p )
+{
+    float h = terrain2(p.xz);
+    return p.y - h;
+}
+
+float interesct( in vec3 ro, in vec3 rd )
+{
+    float h = 1.0;
+    float t = 1.0;
+    for( int i=0; i<120; i++ )
+    {
+        if( h<0.01 || t>2000.0 ) break;
+        t += 0.5*h;
+        h = map( ro + t*rd );
+    }
+
+    if( t>2000.0 ) t = -1.0;
+    return t;
+}
+
+float sinteresct(in vec3 ro, in vec3 rd )
+{
+#if 0
+    // no shadows	
+    return 1.0;
+#endif
+    
+#if 0
+    // fake shadows
+    vec3 nor;
+    vec3  eps = vec3(20.0,0.0,0.0);
+    nor.x = terrain3(ro.xz-eps.xy) - terrain3(ro.xz+eps.xy);
+    nor.y = 1.0*eps.x;
+    nor.z = terrain3(ro.xz-eps.yx) - terrain3(ro.xz+eps.yx);
+    nor = normalize(nor);
+    return clamp( 4.0*dot(nor,rd), 0.0, 1.0 );
+#endif
+    
+#if 1
+    // real shadows	
+    float res = 1.0;
+    float t = 0.0;
+    for( int j=0; j<48; j++ )
+    {
+        vec3 p = ro + t*rd;
+        float h = map( p );
+        res = min( res, 16.0*h/t );
+        t += h;
+        if( res<0.001 ||p.y>300.0 ) break;
+    }
+
+    return clamp( res, 0.0, 1.0 );
+#endif
+}
+
+vec3 calcNormal( in vec3 pos, float t )
+{
+    float e = 0.001;
+    e = 0.001*t;
+    vec3  eps = vec3(e,0.0,0.0);
+    vec3 nor;
+#if 0
+    nor.x = map2(pos+eps.xyy) - map2(pos-eps.xyy);
+    nor.y = map2(pos+eps.yxy) - map2(pos-eps.yxy);
+    nor.z = map2(pos+eps.yyx) - map2(pos-eps.yyx);
+#else
+    nor.x = terrain2(pos.xz-eps.xy) - terrain2(pos.xz+eps.xy);
+    nor.y = 2.0*e;
+    nor.z = terrain2(pos.xz-eps.yx) - terrain2(pos.xz+eps.yx);
+#endif	
+    return normalize(nor);
+}
+
+vec3 camPath( float time )
+{
+    vec2 p = 1100.0*vec2( cos(0.0+0.23*time), cos(1.5+0.21*time) );
+
+    return vec3( p.x, 0.0, p.y );
+}
+
+    
+float fbm( vec2 p )
+{
+    float f = 0.0;
+
+    f += 0.5000*texture2D( iChannel0, p/256.0 ).x; p = m2*p*2.02;
+    f += 0.2500*texture2D( iChannel0, p/256.0 ).x; p = m2*p*2.03;
+    f += 0.1250*texture2D( iChannel0, p/256.0 ).x; p = m2*p*2.01;
+    f += 0.0625*texture2D( iChannel0, p/256.0 ).x;
+
+    return f/0.9375;
+}
+
+
+void main(void)
+{
+    vec2 xy = -1.0 + 2.0*gl_FragCoord.xy / iResolution.xy;
+
+    vec2 s = xy*vec2(iResolution.x/iResolution.y,1.0);
+
+    #ifdef STEREO
+    float isCyan = mod(gl_FragCoord.x + mod(gl_FragCoord.y,2.0),2.0);
+    #endif
+    
+    float time = iGlobalTime*0.15 + 0.3 + 4.0*iMouse.x/iResolution.x;
+    
+    vec3 light1 = normalize( vec3(-0.8,0.4,-0.3) );
+    
+
+
+    vec3 ro = camPath( time );
+    vec3 ta = camPath( time + 3.0 );
+    ro.y = terrain3( ro.xz ) + 11.0;
+    ta.y = ro.y - 20.0;
+
+    float cr = 0.2*cos(0.1*time);
+    vec3  cw = normalize(ta-ro);
+    vec3  cp = vec3(sin(cr), cos(cr),0.0);
+    vec3  cu = normalize( cross(cw,cp) );
+    vec3  cv = normalize( cross(cu,cw) );
+    vec3  rd = normalize( s.x*cu + s.y*cv + 2.0*cw );
+
+    #ifdef STEREO
+    ro += 2.0*cu*isCyan;
+    #endif
+
+    float sundot = clamp(dot(rd,light1),0.0,1.0);
+    vec3 col;
+    float t = interesct( ro, rd );
+    if( t<0.0 )
+    {
+        // sky		
+        col = vec3(0.3,.55,0.8)*(1.0-0.8*rd.y);
+        col += 0.25*vec3(1.0,0.7,0.4)*pow( sundot,5.0 );
+        col += 0.25*vec3(1.0,0.8,0.6)*pow( sundot,64.0 );
+        col += 0.2*vec3(1.0,0.8,0.6)*pow( sundot,512.0 );
+        vec2 sc = ro.xz + rd.xz*(1000.0-ro.y)/rd.y;
+        col = mix( col, vec3(1.0,0.95,1.0), 
+            0.5*smoothstep(0.5,0.8,fbm(0.0005*sc)) );
+    }
+    else
+    {
+        // mountains		
+        vec3 pos = ro + t*rd;
+
+        vec3 nor = calcNormal( pos, t );
+
+        float r = texture2D( iChannel0, 7.0*pos.xz/256.0 ).x;
+
+        col = (r*0.25+0.75)*0.9*mix( vec3(0.08,0.05,0.03), 
+            vec3(0.10,0.09,0.08), texture2D(iChannel0,0.00007*vec2(
+                pos.x,pos.y*48.0)).x );
+        col = mix( col, 0.20*vec3(0.45,.30,0.15)*(0.50+0.50*r),
+            smoothstep(0.70,0.9,nor.y) );
+        col = mix( col, 0.15*vec3(0.30,.30,0.10)*(0.25+0.75*r),
+            smoothstep(0.95,1.0,nor.y) );
+
+        // snow
+        float h = smoothstep(55.0,80.0,pos.y + 25.0*fbm(0.01*pos.xz) );
+        float e = smoothstep(1.0-0.5*h,1.0-0.1*h,nor.y);
+        float o = 0.3 + 0.7*smoothstep(0.0,0.1,nor.x+h*h);
+        float s = h*e*o;
+        col = mix( col, 0.29*vec3(0.62,0.65,0.7), smoothstep( 
+            0.1, 0.9, s ) );
+        
+         // lighting		
+        float amb = clamp(0.5+0.5*nor.y,0.0,1.0);
+        float dif = clamp( dot( light1, nor ), 0.0, 1.0 );
+        float bac = clamp( 0.2 + 0.8*dot( normalize( 
+            vec3(-light1.x, 0.0, light1.z ) ), nor ), 0.0, 1.0 );
+        float sh = 1.0; if( dif>=0.0001 ) sh = sinteresct(
+            pos+light1*20.0,light1);
+        
+        vec3 lin  = vec3(0.0);
+        lin += dif*vec3(7.00,5.00,3.00)*vec3( sh, sh*sh*0.5+0.5*sh, 
+            sh*sh*0.8+0.2*sh );
+        lin += amb*vec3(0.40,0.60,0.80)*1.5;
+        lin += bac*vec3(0.40,0.50,0.60);
+        col *= lin;
+
+        
+        float fo = 1.0-exp(-0.0005*t);
+        vec3 fco = 0.55*vec3(0.55,0.65,0.75) + 0.1*vec3(1.0,0.8,0.5)*pow( 
+            sundot, 4.0 );
+        col = mix( col, fco, fo );
+
+        col += 0.3*vec3(1.0,0.8,0.4)*pow( sundot, 
+                    8.0 )*(1.0-exp(-0.002*t));
+    }
+
+    col = pow(col,vec3(0.4545));
+
+    // vignetting	
+    col *= 0.5 + 0.5*pow( (xy.x+1.0)*(xy.y+1.0)*(xy.x-1.0)*(xy.y-1.0), 
+                         0.1 );
+    
+    #ifdef STEREO	
+    col *= vec3( isCyan, 1.0-isCyan, 1.0-isCyan );	
+    #endif
+    
+//	col *= smoothstep( 0.0, 2.0, iGlobalTime );
+
+    gl_FragColor=vec4(col,1.0);
+}
+"""
+# -------------------------------------------------------------------------
+
+canvas = Canvas(SHADERTOY)
+    
 if __name__ == '__main__':
-    # -------------------------------------------------------------------------
-    # COPY-PASTE SHADERTOY CODE BELOW
-    # -------------------------------------------------------------------------
-    SHADERTOY = """
-    // From: https://www.shadertoy.com/view/MdX3Rr
-    
-    // Created by inigo quilez - iq/2013
-    // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 
-    // Unported License.
-
-    //stereo thanks to Croqueteer
-    //#define STEREO
-
-    // value noise, and its analytical derivatives
-    vec3 noised( in vec2 x )
-    {
-        vec2 p = floor(x);
-        vec2 f = fract(x);
-
-        vec2 u = f*f*(3.0-2.0*f);
-
-        float a = texture2D(iChannel0,(p+vec2(0.5,0.5))/256.0,-100.0).x;
-        float b = texture2D(iChannel0,(p+vec2(1.5,0.5))/256.0,-100.0).x;
-        float c = texture2D(iChannel0,(p+vec2(0.5,1.5))/256.0,-100.0).x;
-        float d = texture2D(iChannel0,(p+vec2(1.5,1.5))/256.0,-100.0).x;
-        
-        return vec3(a+(b-a)*u.x+(c-a)*u.y+(a-b-c+d)*u.x*u.y,
-                    6.0*f*(1.0-f)*(vec2(b-a,c-a)+(a-b-c+d)*u.yx));
-    }
-
-    const mat2 m2 = mat2(0.8,-0.6,0.6,0.8);
-
-    float terrain( in vec2 x )
-    {
-        vec2  p = x*0.003;
-        float a = 0.0;
-        float b = 1.0;
-        vec2  d = vec2(0.0);
-        for( int i=0; i<6; i++ )
-        {
-            vec3 n = noised(p);
-            d += n.yz;
-            a += b*n.x/(1.0+dot(d,d));
-            b *= 0.5;
-            p = m2*p*2.0;
-        }
-
-        return 140.0*a;
-    }
-
-    float terrain2( in vec2 x )
-    {
-        vec2  p = x*0.003;
-        float a = 0.0;
-        float b = 1.0;
-        vec2  d = vec2(0.0);
-        for( int i=0; i<14; i++ )
-        {
-            vec3 n = noised(p);
-            d += n.yz;
-            a += b*n.x/(1.0+dot(d,d));
-            b *= 0.5;
-            p=m2*p*2.0;
-        }
-
-        return 140.0*a;
-    }
-
-    float terrain3( in vec2 x )
-    {
-        vec2  p = x*0.003;
-        float a = 0.0;
-        float b = 1.0;
-        vec2  d = vec2(0.0);
-        for( int i=0; i<4; i++ )
-        {
-            vec3 n = noised(p);
-            d += n.yz;
-            a += b*n.x/(1.0+dot(d,d));
-            b *= 0.5;
-            p = m2*p*2.0;
-        }
-
-        return 140.0*a;
-    }
-
-    float map( in vec3 p )
-    {
-        float h = terrain(p.xz);
-        return p.y - h;
-    }
-
-    float map2( in vec3 p )
-    {
-        float h = terrain2(p.xz);
-        return p.y - h;
-    }
-
-    float interesct( in vec3 ro, in vec3 rd )
-    {
-        float h = 1.0;
-        float t = 1.0;
-        for( int i=0; i<120; i++ )
-        {
-            if( h<0.01 || t>2000.0 ) break;
-            t += 0.5*h;
-            h = map( ro + t*rd );
-        }
-
-        if( t>2000.0 ) t = -1.0;
-        return t;
-    }
-
-    float sinteresct(in vec3 ro, in vec3 rd )
-    {
-    #if 0
-        // no shadows	
-        return 1.0;
-    #endif
-        
-    #if 0
-        // fake shadows
-        vec3 nor;
-        vec3  eps = vec3(20.0,0.0,0.0);
-        nor.x = terrain3(ro.xz-eps.xy) - terrain3(ro.xz+eps.xy);
-        nor.y = 1.0*eps.x;
-        nor.z = terrain3(ro.xz-eps.yx) - terrain3(ro.xz+eps.yx);
-        nor = normalize(nor);
-        return clamp( 4.0*dot(nor,rd), 0.0, 1.0 );
-    #endif
-        
-    #if 1
-        // real shadows	
-        float res = 1.0;
-        float t = 0.0;
-        for( int j=0; j<48; j++ )
-        {
-            vec3 p = ro + t*rd;
-            float h = map( p );
-            res = min( res, 16.0*h/t );
-            t += h;
-            if( res<0.001 ||p.y>300.0 ) break;
-        }
-
-        return clamp( res, 0.0, 1.0 );
-    #endif
-    }
-
-    vec3 calcNormal( in vec3 pos, float t )
-    {
-        float e = 0.001;
-        e = 0.001*t;
-        vec3  eps = vec3(e,0.0,0.0);
-        vec3 nor;
-    #if 0
-        nor.x = map2(pos+eps.xyy) - map2(pos-eps.xyy);
-        nor.y = map2(pos+eps.yxy) - map2(pos-eps.yxy);
-        nor.z = map2(pos+eps.yyx) - map2(pos-eps.yyx);
-    #else
-        nor.x = terrain2(pos.xz-eps.xy) - terrain2(pos.xz+eps.xy);
-        nor.y = 2.0*e;
-        nor.z = terrain2(pos.xz-eps.yx) - terrain2(pos.xz+eps.yx);
-    #endif	
-        return normalize(nor);
-    }
-
-    vec3 camPath( float time )
-    {
-        vec2 p = 1100.0*vec2( cos(0.0+0.23*time), cos(1.5+0.21*time) );
-
-        return vec3( p.x, 0.0, p.y );
-    }
-
-        
-    float fbm( vec2 p )
-    {
-        float f = 0.0;
-
-        f += 0.5000*texture2D( iChannel0, p/256.0 ).x; p = m2*p*2.02;
-        f += 0.2500*texture2D( iChannel0, p/256.0 ).x; p = m2*p*2.03;
-        f += 0.1250*texture2D( iChannel0, p/256.0 ).x; p = m2*p*2.01;
-        f += 0.0625*texture2D( iChannel0, p/256.0 ).x;
-
-        return f/0.9375;
-    }
-
-
-    void main(void)
-    {
-        vec2 xy = -1.0 + 2.0*gl_FragCoord.xy / iResolution.xy;
-
-        vec2 s = xy*vec2(iResolution.x/iResolution.y,1.0);
-
-        #ifdef STEREO
-        float isCyan = mod(gl_FragCoord.x + mod(gl_FragCoord.y,2.0),2.0);
-        #endif
-        
-        float time = iGlobalTime*0.15 + 0.3 + 4.0*iMouse.x/iResolution.x;
-        
-        vec3 light1 = normalize( vec3(-0.8,0.4,-0.3) );
-        
-
-
-        vec3 ro = camPath( time );
-        vec3 ta = camPath( time + 3.0 );
-        ro.y = terrain3( ro.xz ) + 11.0;
-        ta.y = ro.y - 20.0;
-
-        float cr = 0.2*cos(0.1*time);
-        vec3  cw = normalize(ta-ro);
-        vec3  cp = vec3(sin(cr), cos(cr),0.0);
-        vec3  cu = normalize( cross(cw,cp) );
-        vec3  cv = normalize( cross(cu,cw) );
-        vec3  rd = normalize( s.x*cu + s.y*cv + 2.0*cw );
-
-        #ifdef STEREO
-        ro += 2.0*cu*isCyan;
-        #endif
-
-        float sundot = clamp(dot(rd,light1),0.0,1.0);
-        vec3 col;
-        float t = interesct( ro, rd );
-        if( t<0.0 )
-        {
-            // sky		
-            col = vec3(0.3,.55,0.8)*(1.0-0.8*rd.y);
-            col += 0.25*vec3(1.0,0.7,0.4)*pow( sundot,5.0 );
-            col += 0.25*vec3(1.0,0.8,0.6)*pow( sundot,64.0 );
-            col += 0.2*vec3(1.0,0.8,0.6)*pow( sundot,512.0 );
-            vec2 sc = ro.xz + rd.xz*(1000.0-ro.y)/rd.y;
-            col = mix( col, vec3(1.0,0.95,1.0), 
-                0.5*smoothstep(0.5,0.8,fbm(0.0005*sc)) );
-        }
-        else
-        {
-            // mountains		
-            vec3 pos = ro + t*rd;
-
-            vec3 nor = calcNormal( pos, t );
-
-            float r = texture2D( iChannel0, 7.0*pos.xz/256.0 ).x;
-
-            col = (r*0.25+0.75)*0.9*mix( vec3(0.08,0.05,0.03), 
-                vec3(0.10,0.09,0.08), texture2D(iChannel0,0.00007*vec2(
-                    pos.x,pos.y*48.0)).x );
-            col = mix( col, 0.20*vec3(0.45,.30,0.15)*(0.50+0.50*r),
-                smoothstep(0.70,0.9,nor.y) );
-            col = mix( col, 0.15*vec3(0.30,.30,0.10)*(0.25+0.75*r),
-                smoothstep(0.95,1.0,nor.y) );
-
-            // snow
-            float h = smoothstep(55.0,80.0,pos.y + 25.0*fbm(0.01*pos.xz) );
-            float e = smoothstep(1.0-0.5*h,1.0-0.1*h,nor.y);
-            float o = 0.3 + 0.7*smoothstep(0.0,0.1,nor.x+h*h);
-            float s = h*e*o;
-            col = mix( col, 0.29*vec3(0.62,0.65,0.7), smoothstep( 
-                0.1, 0.9, s ) );
-            
-             // lighting		
-            float amb = clamp(0.5+0.5*nor.y,0.0,1.0);
-            float dif = clamp( dot( light1, nor ), 0.0, 1.0 );
-            float bac = clamp( 0.2 + 0.8*dot( normalize( 
-                vec3(-light1.x, 0.0, light1.z ) ), nor ), 0.0, 1.0 );
-            float sh = 1.0; if( dif>=0.0001 ) sh = sinteresct(
-                pos+light1*20.0,light1);
-            
-            vec3 lin  = vec3(0.0);
-            lin += dif*vec3(7.00,5.00,3.00)*vec3( sh, sh*sh*0.5+0.5*sh, 
-                sh*sh*0.8+0.2*sh );
-            lin += amb*vec3(0.40,0.60,0.80)*1.5;
-            lin += bac*vec3(0.40,0.50,0.60);
-            col *= lin;
-
-            
-            float fo = 1.0-exp(-0.0005*t);
-            vec3 fco = 0.55*vec3(0.55,0.65,0.75) + 0.1*vec3(1.0,0.8,0.5)*pow( 
-                sundot, 4.0 );
-            col = mix( col, fco, fo );
-
-            col += 0.3*vec3(1.0,0.8,0.4)*pow( sundot, 
-                        8.0 )*(1.0-exp(-0.002*t));
-        }
-
-        col = pow(col,vec3(0.4545));
-
-        // vignetting	
-        col *= 0.5 + 0.5*pow( (xy.x+1.0)*(xy.y+1.0)*(xy.x-1.0)*(xy.y-1.0), 
-                             0.1 );
-        
-        #ifdef STEREO	
-        col *= vec3( isCyan, 1.0-isCyan, 1.0-isCyan );	
-        #endif
-        
-    //	col *= smoothstep( 0.0, 2.0, iGlobalTime );
-
-        gl_FragColor=vec4(col,1.0);
-    }
-    """
-    # -------------------------------------------------------------------------
-    
-    c = Canvas(SHADERTOY)
-    
     # Input data.
-    c.set_channel_input(noise(resolution=256, nchannels=1), i=0)
+    canvas.set_channel_input(noise(resolution=256, nchannels=1), i=0)
     
-    c.show()
+    canvas.show()
     if sys.flags.interactive == 0:
-        app.run()
+        canvas.app.run()
