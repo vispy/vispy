@@ -255,9 +255,8 @@ class SDFRenderer(object):
         set_state(blend=False, depth_test=False)
 
         # calculate the negative half (within object)
-        orig_tex = Texture2D(255 - data, format='luminance')
-        orig_tex.wrapping = 'clamp_to_edge'
-        orig_tex.interpolation = 'nearest'
+        orig_tex = Texture2D(255 - data, format='luminance', 
+                             wrapping='clamp_to_edge', interpolation='nearest')
         edf_neg_tex = self._render_edf(orig_tex)
 
         # calculate positive half (outside object)
