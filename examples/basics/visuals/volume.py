@@ -12,32 +12,31 @@ from vispy import gloo
 from vispy.app import Timer
 from vispy.scene import visuals, transforms, SceneCanvas
 
-
 class Canvas(SceneCanvas):
     def __init__(self):
-        self.cube = visuals.Volume()
+        self.volume = visuals.Volume()
+        self.theta = 0
+        self.phi = 0
 
         SceneCanvas.__init__(self, 'Volume', keys='interactive',
                              size=(400, 400))
-        self.cube.transform = transforms.AffineTransform()
-#        self._timer = Timer('auto', connect=self.on_timer, start=True)
+        self.volume.transform = transforms.AffineTransform()
+        self._timer = Timer('auto', connect=self.on_timer, start=True)
+
+    def on_timer(self, event):
+        self.theta += 0.5
+        self.phi += 0.5
+        self.volume.transform.reset()
+        self.volume.transform.rotate(self.theta, (0, 0, 1))
+        self.volume.transform.rotate(self.phi, (0, 1, 0))
+        self.volume.transform.scale((100, 100, 0.001))
+        self.volume.transform.translate((200, 200))
+        self.update()
 
     def on_draw(self, event):
         gloo.clear('white')
+        self.draw_visual(self.volume, event)
 
-#        self.draw_visual(self.cube, event)
-
-"""
-    def on_timer(self, event):
-        self.theta += .5
-        self.phi += .5
-        self.cube.transform.reset()
-        self.cube.transform.rotate(self.theta, (0, 0, 1))
-        self.cube.transform.rotate(self.phi, (0, 1, 0))
-        self.cube.transform.scale((100, 100, 0.001))
-        self.cube.transform.translate((200, 200))
-        self.update()
-"""
 
 if __name__ == '__main__':
     win = Canvas()
