@@ -109,14 +109,14 @@ class Canvas(app.Canvas):
         self.cube['view'] = view
 
         depth = DepthBuffer((512, 512))
-        color = Texture2D(shape=(512, 512, 3), dtype=np.dtype(np.float32))
+        color = Texture2D(shape=(512, 512, 3), interpolation='linear',
+                          dtype=np.dtype(np.float32))
         self.framebuffer = FrameBuffer(color=color, depth=depth)
 
         self.quad = Program(quad_vertex, quad_fragment, count=4)
         self.quad['texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
         self.quad['position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         self.quad['texture'] = color
-        self.quad["texture"].interpolation = 'linear'
 
         # OpenGL and Timer initalization
         # --------------------------------------
@@ -131,13 +131,14 @@ class Canvas(app.Canvas):
         set_state(depth_test=True)
         self.cube.draw('triangles', self.indices)
         self.framebuffer.deactivate()
+        set_viewport(0, 0, *self.size)
         clear(color=True)
         set_state(depth_test=False)
         self.quad.draw('triangle_strip')
 
     def on_resize(self, event):
         self._set_projection(event.size)
-
+    
     def _set_projection(self, size):
         width, height = size
         set_viewport(0, 0, width, height)

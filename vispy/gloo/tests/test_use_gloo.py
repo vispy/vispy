@@ -90,11 +90,10 @@ def test_use_texture3D():
         data[ii, :2, :3] = val / 255.
     program = Program(VERT_SHADER, FRAG_SHADER)
     program['a_pos'] = [[-1., -1.], [1., -1.], [-1., 1.], [1., 1.]]
-    tex = Texture3D(data)
+    tex = Texture3D(data, interpolation='nearest')
     assert_equal(tex.width, w)
     assert_equal(tex.height, h)
     assert_equal(tex.depth, d)
-    tex.interpolation = 'nearest'
     program['u_texture'] = tex
     with Canvas(size=(100, 100)):
         for ii, val in enumerate(vals):

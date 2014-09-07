@@ -1,5 +1,8 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 
 """
 Demonstrate the use of text in the root scene and a viewbox. Note
@@ -7,7 +10,6 @@ how the point size is independent of scaling of viewbox and canvas.
 """
 
 import numpy as np
-import vispy
 from vispy import scene
 from vispy.scene.visuals import Text
 
@@ -36,8 +38,7 @@ N = 1000
 linedata = np.empty((N, 2), np.float32)
 linedata[:, 0] = np.linspace(0, 1, N)
 linedata[:, 1] = np.random.uniform(0.5, 0.1, (N,))
-vispy.scene.visuals.Line(pos=linedata, color='#f006', mode='gl', 
-                         parent=vb.scene)
+scene.visuals.Line(pos=linedata, color='#f006', mode='gl', parent=vb.scene)
 
 canvas.show()
 canvas.app.run()

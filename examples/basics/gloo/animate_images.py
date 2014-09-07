@@ -64,8 +64,7 @@ class Canvas(app.Canvas):
         self.size = W * 5, H * 5
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = gloo.Texture2D(I)
-        self.texture.interpolation = 'linear'
+        self.texture = gloo.Texture2D(I, interpolation='linear')
 
         self.program['u_texture'] = self.texture
         self.program.bind(gloo.VertexBuffer(data))

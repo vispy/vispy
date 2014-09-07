@@ -227,7 +227,7 @@ class ConstantDefinition(Definition):
         """
         self.value = None
         line = line.split('/*', 1)[0]
-        _, *args = getwords(line)
+        args = getwords(line)[1:]
         self.isvalid = False
         if len(args) == 1:
             pass
@@ -278,7 +278,8 @@ class FunctionDefinition(Definition):
         # Parse components
         beforeBrace, args = line.split('(', 1)
         betweenBraces, _ = args.split(')', 1)
-        *prefix, name = getwords(beforeBrace)
+        outs = getwords(beforeBrace)
+        prefix, name = outs[:-1], outs[-1]
 
         # Store name
         self._set_name(name)
