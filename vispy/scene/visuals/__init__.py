@@ -15,7 +15,8 @@ images, text, etc.
 
 __all__ = ['Visual', 'Cube', 'Ellipse', 'GridLines', 'Image', 'Line',
            'LinePlot', 'Markers', 'marker_types', 'Mesh', 'Polygon',
-           'Rectangle', 'RegularPolygon', 'SurfacePlot', 'Text', 'XYZAxis']
+           'Rectangle', 'RegularPolygon', 'SurfacePlot', 'Text', 'XYZAxis',
+           'Volume']
 
 from .visual import Visual  # noqa
 from .line import Line  # noqa
