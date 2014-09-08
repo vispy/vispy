@@ -24,7 +24,27 @@ class Grid(Widget):
     def add_widget(self, widget=None, row=None, col=None, row_span=1, 
                    col_span=1):
         """
-        Add a new widget to this grid.
+        Add a new widget to this grid. This will cause other widgets in the
+        grid to be resized to make room for the new widget.
+        
+        Parameters
+        ----------
+        widget : Widget
+            The Widget to add
+        row : int
+            The row in which to add the widget (0 is the topmost row)
+        col : int
+            The column in which to add the widget (0 is the leftmost column)
+        row_span : int
+            The number of rows to be occupied by this widget. Default is 1.
+        col_span : int
+            The number of columns to be occupied by this widget. Default is 1.
+        
+        Notes
+        -----
+        
+        The widget's parent is automatically set to this grid, and all other 
+        parent(s) are removed.
         """
         if row is None:
             row = self._next_cell[0]
