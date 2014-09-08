@@ -217,9 +217,10 @@ class Canvas(object):
             self._keys_check = keys
 
             def keys_check(event):
-                use_name = event.key.name.lower()
-                if use_name in self._keys_check:
-                    self._keys_check[use_name]()
+                if event.key is not None:
+                    use_name = event.key.name.lower()
+                    if use_name in self._keys_check:
+                        self._keys_check[use_name]()
             self.events.key_press.connect(keys_check, ref=True)
 
     @property
