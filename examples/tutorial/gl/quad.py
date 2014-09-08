@@ -6,11 +6,10 @@
 # Author: Nicolas P .Rougier
 # Date:   04/03/2014
 # -----------------------------------------------------------------------------
-import ctypes
 import numpy as np
-import OpenGL.GL as gl
 
 from vispy import app
+from vispy.gloo import gl
 
 vertex_code = """
     uniform float scale;
@@ -77,24 +76,23 @@ class Canvas(app.Canvas):
         # Build buffer
 
         # Request a buffer slot from GPU
-        buf = gl.glGenBuffers(1)
+        buf = gl.glCreateBuffer()
 
         # Make this buffer the default one
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buf)
 
         # Upload data
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data.nbytes, self.data,
-                        gl.GL_DYNAMIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.data, gl.GL_DYNAMIC_DRAW)
 
         # Bind attributes
         stride = self.data.strides[0]
-        offset = ctypes.c_void_p(0)
+        offset = 0
         loc = gl.glGetAttribLocation(program, "position")
         gl.glEnableVertexAttribArray(loc)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buf)
         gl.glVertexAttribPointer(loc, 3, gl.GL_FLOAT, False, stride, offset)
 
-        offset = ctypes.c_void_p(self.data.dtype["position"].itemsize)
+        offset = self.data.dtype["position"].itemsize
         loc = gl.glGetAttribLocation(program, "color")
         gl.glEnableVertexAttribArray(loc)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, buf)

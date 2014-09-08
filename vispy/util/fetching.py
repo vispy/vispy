@@ -10,8 +10,11 @@ import os
 from os import path as op
 import sys
 import shutil
+import time
+import datetime
 
 from ..ext.six.moves import urllib
+from ..ext.six import string_types
 from ..util.config import config
 
 
@@ -30,9 +33,11 @@ def load_data_file(fname, directory=None, force_download=False):
     directory : str | None
         Directory to use to save the file. By default, the vispy
         configuration directory is used.
-    force_download : bool
+    force_download : bool | str
         If True, the file will be downloaded even if a local copy exists
-        (and this copy will be overwritten).
+        (and this copy will be overwritten). Can also be a YYYY-MM-DD date
+        to ensure a file is up-to-date (modified date of a file on disk,
+        if present, is checked).
 
     Returns
     -------
@@ -48,8 +53,17 @@ def load_data_file(fname, directory=None, force_download=False):
                              'so directory must be supplied')
 
     fname = op.join(directory, op.normcase(fname))  # convert to native
-    if op.isfile(fname) and not force_download:  # we're done
-        return fname
+    if op.isfile(fname):
+        if not force_download:  # we're done
+            return fname
+        if isinstance(force_download, string_types):
+            ntime = datetime.datetime.strptime(force_download, '%Y-%m-%d')
+            ftime = datetime.datetime.strptime(time.ctime(op.getctime(fname)),
+                                               '%a %b %d %H:%M:%S %Y')
+            if ftime >= ntime:
+                return fname
+            else:
+                print('File older than %s, updating...' % force_download)
     if not op.isdir(op.dirname(fname)):
         os.makedirs(op.abspath(op.dirname(fname)))
     # let's go get the file

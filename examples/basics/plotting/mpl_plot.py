@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+# vispy: testskip
+# -----------------------------------------------------------------------------
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Example demonstrating how to use vispy.pyplot, which uses mplexporter
 to convert matplotlib commands to vispy draw commands.
@@ -47,5 +50,6 @@ plt.draw()
 # 2. Any plotting commands executed after this will not take effect.
 # We are working to remove this limitation.
 
-block = False if sys.flags.interactive else True
-plt.show(block)
+block = False if sys.flags.interactive == 0 else True
+if __name__ == '__main__':
+    plt.show(block)

@@ -13,7 +13,7 @@ import numpy as np
 
 from vispy import app, scene
 
-canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
+canvas = scene.SceneCanvas(size=(800, 600), keys='interactive')
 
 N = 1000
 pos = np.empty((N, 2), np.float32)
@@ -43,5 +43,7 @@ def update(event):
 
 timer = app.Timer('auto', connect=update, start=True)
 
-if sys.flags.interactive == 0:
-    app.run()
+if __name__ == '__main__':
+    canvas.show()
+    if sys.flags.interactive == 0:
+        app.run()

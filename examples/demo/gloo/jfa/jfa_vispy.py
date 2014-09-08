@@ -13,11 +13,12 @@ This version is a vispy-ized translation of jfa_translate.py.
 
 import numpy as np
 from os import path as op
-from PIL import Image
+import sys
+
 from vispy import app
 from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
                         VertexBuffer, Texture2D, set_viewport)
-from vispy.io import load_data_file
+from vispy.io import load_data_file, imread
 
 this_dir = op.abspath(op.dirname(__file__))
 
@@ -29,9 +30,8 @@ class Canvas(app.Canvas):
         self._timer = app.Timer('auto', self.update, start=True)
 
     def _setup_textures(self, fname):
-        img = Image.open(load_data_file('jfa/' + fname))
-        self.texture_size = tuple(img.size)
-        data = np.array(img, np.ubyte)[::-1].copy()
+        data = imread(load_data_file('jfa/' + fname))[::-1].copy()
+        self.texture_size = data.shape
         self.orig_tex = Texture2D(data, format='luminance', wrapping='repeat',
                                   interpolation='nearest')
         self.comp_texs = []
@@ -111,4 +111,5 @@ if __name__ == '__main__':
     c = Canvas()
     c.show()
     c.measure_fps(callback=fun)
-    c.app.run()
+    if sys.flags.interactive != 1:
+        c.app.run()

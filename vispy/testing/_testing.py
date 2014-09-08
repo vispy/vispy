@@ -185,23 +185,33 @@ def has_backend(backend, has=(), capable=(), out=()):
     return ret
 
 
-def requires_application(backend=None, has=(), capable=()):
-    """Decorator for tests that require an application"""
+def has_application(backend=None, has=(), capable=()):
+    """Determine if a suitable app backend exists"""
     from ..app.backends import BACKEND_NAMES
     # avoid importing other backends if we don't need to
     if backend is None:
-        good = False
         for backend in BACKEND_NAMES:
             if has_backend(backend, has=has, capable=capable):
                 good = True
+                msg = backend
                 break
-        msg = 'Requires application backend'
+        else:
+            good = False
+            msg = 'Requires application backend'
     else:
         good, why = has_backend(backend, has=has, capable=capable,
                                 out=['why_not'])
-        msg = 'Requires %s: %s' % (backend, why)
+        if not good:
+            msg = 'Requires %s: %s' % (backend, why)
+        else:
+            msg = backend
+    return good, msg
 
-    # Actually construct the decorator
+
+def requires_application(backend=None, has=(), capable=()):
+    """Decorator for tests that require an application"""
+    good, msg = has_application(backend, has, capable)
+
     def skip_decorator(f):
         import nose
         f.vispy_app_test = True  # set attribute for easy run or not

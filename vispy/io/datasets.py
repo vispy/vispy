@@ -20,7 +20,8 @@ def load_iris():
         data['data'] : a (150, 4) NumPy array with the iris' features
         data['group'] : a (150,) NumPy array with the iris' group
     """
-    return np.load(load_data_file('iris/iris.npz'))
+    return np.load(load_data_file('iris/iris.npz',
+                                  force_download='2014-09-04'))
 
 
 def load_crate():

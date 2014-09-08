@@ -4,6 +4,7 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+import sys
 
 from vispy import app
 from vispy.gloo import clear
@@ -19,6 +20,8 @@ def on_draw(event):
     clear(color=True, depth=True)
     canvas.update()  # Draw frames as fast as possible
 
-canvas.show()
-canvas.measure_fps()
-app.run()
+if __name__ == '__main__':
+    canvas.show()
+    canvas.measure_fps()
+    if sys.flags.interactive == 0:
+        app.run()

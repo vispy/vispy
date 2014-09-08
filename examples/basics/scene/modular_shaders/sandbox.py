@@ -1,6 +1,11 @@
+# -*- coding: utf-8 -*-
+# vispy: testskip
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Sandbox for experimenting with vispy.scene.shaders
-
 """
 from PyQt4 import QtCore
 from PyQt4.QtGui import *  # noqa
@@ -590,14 +595,17 @@ def update():
         vert = glob['VERTEX']
         frag = glob['FRAGMENT']
         editor.clear_marker()
-    except:
+    except Exception:
         vert = traceback.format_exc()
         frag = ""
         tb = sys.exc_info()[2]
         while tb is not None:
             #print(tb.tb_lineno, tb.tb_frame.f_code.co_filename)
-            if tb.tb_frame.f_code.co_filename == '<string>':
-                editor.set_marker(tb.tb_lineno-1)
+            try:
+                if tb.tb_frame.f_code.co_filename == '<string>':
+                    editor.set_marker(tb.tb_lineno-1)
+            except Exception:
+                pass
             tb = tb.tb_next
 
     vertex.setText(vert)
@@ -606,4 +614,5 @@ def update():
 editor.textChanged.connect(update)
 update()
 
-app.exec_()
+if __name__ == '__main__':
+    app.exec_()

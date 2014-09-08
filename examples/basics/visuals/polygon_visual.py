@@ -6,10 +6,11 @@
 Demonstration of Polygon and subclasses
 """
 
+import sys
 import numpy as np
-import vispy.app
+
 from vispy import gloo
-from vispy.scene import visuals, transforms
+from vispy.scene import visuals, transforms, SceneCanvas
 
 # vertex positions of polygon data to draw
 pos = np.array([[0, 0, 0],
@@ -35,25 +36,22 @@ pos = np.array([[0, 0],
                 [0, 5]])
 
 theta = np.linspace(0, 2*np.pi, 11)
-pos = np.hstack([np.cos(theta)[:, np.newaxis], 
+pos = np.hstack([np.cos(theta)[:, np.newaxis],
                  np.sin(theta)[:, np.newaxis]])
 pos[::2] *= 0.4
 pos[-1] = pos[0]
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(SceneCanvas):
     def __init__(self):
         global pos
-        
         self.visuals = []
-        
         polygon = visuals.Polygon(pos=pos, color=(0.8, .2, 0, 1),
                                   border_color=(1, 1, 1, 1))
-        polygon.transform = transforms.STTransform(
-            scale=(200, 200),
-            translate=(600, 600))
+        polygon.transform = transforms.STTransform(scale=(200, 200),
+                                                   translate=(600, 600))
         self.visuals.append(polygon)
-        
+
         ellipse = visuals.Ellipse(pos=(0, 0, 0), radius=(100, 150),
                                   color=(0.2, 0.2, 0.8, 1),
                                   border_color=(1, 1, 1, 1),
@@ -74,20 +72,19 @@ class Canvas(vispy.scene.SceneCanvas):
                                           border_color=(1, 1, 1, 1),
                                           sides=6)
         self.visuals.append(rpolygon)
-        
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+
+        SceneCanvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
-        
+
     def on_draw(self, ev):
         gloo.set_clear_color((0, 0, 0, 1))
         gloo.clear()
         for vis in self.visuals:
             self.draw_visual(vis)
-        
+
 
 if __name__ == '__main__':
     win = Canvas() 
-    import sys
     if sys.flags.interactive != 1:
-        vispy.app.run()
+        win.app.run()

@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+# vispy: testskip
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 """
 Demo of jump flooding algoritm for EDT using GLSL
 Author: Stefan Gustavson (stefan.gustavson@gmail.com)

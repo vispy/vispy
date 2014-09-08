@@ -16,7 +16,7 @@ from vispy import app
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.io import load_data_file
 
-brain = np.load(load_data_file('brain/brain.npz'))
+brain = np.load(load_data_file('brain/brain.npz', force_download='2014-09-04'))
 data = brain['vertex_buffer']
 faces = brain['index_buffer']
 

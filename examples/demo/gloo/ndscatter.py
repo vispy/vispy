@@ -16,17 +16,17 @@ from scipy.linalg import expm, logm
 
 class OrthogonalPath(object):
     """Implement a continuous path on the Lie group SO(n).
-    
+
             >>> op = OrthogonalPath(mat1, mat2)
             >>> mat = op(t)
-    
+
     """
     def __init__(self, mat, origin=None):
         if origin is None:
             origin = np.eye(len(mat))
         self.a, self.b = np.matrix(origin), np.matrix(mat)
         self._logainvb = logm(self.a.I * self.b)
-        
+
     def __call__(self, t):
         return np.real(self.a * expm(t * self._logainvb))
 
