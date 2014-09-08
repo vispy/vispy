@@ -15,14 +15,14 @@ from vispy.scene.widgets import Console
 from vispy.scene.visuals import Text
 
 canvas = scene.SceneCanvas(keys='interactive', size=(400, 400))
-vb = scene.widgets.ViewBox(parent=canvas.scene, border_color='b')
+grid = canvas.central_widget.add_grid()
+
+vb = scene.widgets.ViewBox(border_color='b')
 vb.camera.rect = -1, -1, 2, 2
+grid.add_widget(vb, row=0, col=0)
 text = Text('Starting timer...', color='w', font_size=24, parent=vb.scene)
 
 console = Console(text_color='g', font_size=12., border_color='g')
-
-grid = canvas.central_widget.add_grid()
-grid.add_widget(vb, row=0, col=0)
 grid.add_widget(console, row=1, col=0)
 
 

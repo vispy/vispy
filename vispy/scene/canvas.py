@@ -99,10 +99,12 @@ class SceneCanvas(app.Canvas):
         self._transform_caches = weakref.WeakKeyDictionary()
 
         # Set up default entity stack: ndc -> fb -> canvas -> scene
-        self.render_cs = Entity()
-        self.framebuffer_cs = Entity(parent=self.render_cs)
+        self.render_cs = Entity(name="render_cs")
+        self.framebuffer_cs = Entity(parent=self.render_cs, 
+                                     name="framebuffer_cs")
         self.framebuffer_cs.transform = STTransform()
-        self.canvas_cs = Entity(parent=self.framebuffer_cs)
+        self.canvas_cs = Entity(parent=self.framebuffer_cs,
+                                name="canvas_cs")
         self.canvas_cs.transform = STTransform()
         # By default, the document coordinate system is the canvas.
         self.canvas_cs.document = self.canvas_cs
