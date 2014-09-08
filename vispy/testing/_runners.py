@@ -152,6 +152,7 @@ def _check_line_endings():
 _script = """
 import sys
 import time
+import warnings
 import {0}
 
 if hasattr({0}, 'canvas'):
@@ -159,10 +160,7 @@ if hasattr({0}, 'canvas'):
 elif hasattr({0}, 'Canvas'):
     canvas = {0}.Canvas()
 else:
-    canvas = None
-if canvas is None:
-    print('Skipping')
-    sys.exit(-1)
+    raise RuntimeError('Bad example formatting: fix or add to exclude list')
 
 with canvas as c:
     for _ in range(30):
@@ -224,16 +222,12 @@ def _examples():
         env.update(dict(_VISPY_TESTING_TYPE='examples'))
         p = Popen(cmd, cwd=cwd, env=env, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
-        stdout, stderr = stdout.decode('utf-8'), stderr.decode('utf-8')
+        stdout, stderr = stdout.decode('utf-8'), stderr.decode('utf-8').strip()
         sys.stdout.flush()
-        if p.returncode or len(stderr.strip()) > 0:
-            if stdout.strip().endswith('Skipping'):
-                reason = 'Bad formatting: fix or add to exclude list'
-            else:
-                reason = stderr
+        if p.returncode or len(stderr) > 0:
             ext = '\n' + _line_sep + '\n'
-            fails.append('%sExample %s failed:%s%s%s'
-                         % (ext, root_name, ext, reason, ext))
+            fails.append('%sExample %s failed (%s):%s%s%s'
+                         % (ext, root_name, p.returncode, ext, stderr, ext))
             print(fails[-1])
         else:
             print('.', end='')
