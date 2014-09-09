@@ -160,8 +160,9 @@ class SceneCanvas(app.Canvas):
 
         Returns
         -------
-        Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
-        upper-left corner of the rendered region.
+        array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
+            upper-left corner of the rendered region.
         
         Notes
         -----
@@ -248,9 +249,10 @@ class SceneCanvas(app.Canvas):
         
         Returns
         -------
-        Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
-        upper-left corner of the canvas. Note that if the canvas has not been 
-        drawn yet, the returned array data may not be initialized.
+        array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
+            upper-left corner of the canvas. Note that if the canvas has not
+            been drawn yet, the returned array data may not be initialized.
         
         Notes
         -----
