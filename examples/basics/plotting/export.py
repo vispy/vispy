@@ -6,7 +6,7 @@ plt = vp.plot([1, 6, 2, 4, 3, 8, 5, 7, 6, 3])
 # Render the canvas scene to a numpy array image with higher resolution 
 # than the original canvas
 scale = 4
-image = plt.export(size=(plt.size[0]*scale, plt.size[1]*scale))
+image = plt.render(size=(plt.size[0]*scale, plt.size[1]*scale))
 
 # Display the data in the array, sub-sampled down to the original canvas
 # resolution

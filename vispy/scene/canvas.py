@@ -144,7 +144,7 @@ class SceneCanvas(app.Canvas):
 
         self._draw_scene()
 
-    def export(self, region=None, size=None):
+    def render(self, region=None, size=None):
         """ Render the scene to an offscreen buffer and return the image array.
         
         Parameters
