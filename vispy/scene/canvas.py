@@ -207,7 +207,6 @@ class SceneCanvas(app.Canvas):
         nfb = len(self._fb_stack)
         nvp = len(self._vp_stack)
         
-        
         # Create draw event, which keeps track of the path of transforms
         self._process_entity_count = 0  # for debugging
         
