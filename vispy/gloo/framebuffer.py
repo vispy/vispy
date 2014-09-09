@@ -318,12 +318,12 @@ class FrameBuffer(GLObject):
         """
         _check_valid('mode', mode, ['color', 'depth', 'stencil'])
         buffer = getattr(self, mode+'_buffer')
-        w, h = buffer._shape
-            
+        h, w = buffer._shape
+        
         # todo: this is ostensibly required, but not available in gloo.gl
         #gl.glReadBuffer(buffer._target)
         
-        return read_pixels((0, 0, h, w), alpha=alpha)
+        return read_pixels((0, 0, w, h), alpha=alpha)
 
     def _create(self):
         """ Create framebuffer on GPU """
