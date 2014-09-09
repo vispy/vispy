@@ -561,8 +561,9 @@ def get_parameter(name):
 
 
 def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
-    """Read pixels from the currently selected buffer (ordinarily, this is
-    the front buffer). 
+    """Read pixels from the currently selected buffer. 
+    
+    Under most circumstances, this function reads from the front buffer.
 
     Parameters
     ----------
