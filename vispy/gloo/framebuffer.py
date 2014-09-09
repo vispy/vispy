@@ -4,8 +4,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-import numpy as np
-
 from . import gl
 from .globject import GLObject
 from .texture import Texture2D
