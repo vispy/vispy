@@ -251,6 +251,14 @@ class SceneCanvas(app.Canvas):
         Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
         upper-left corner of the canvas. Note that if the canvas has not been 
         drawn yet, the returned array data may not be initialized.
+        
+        Notes
+        -----
+        
+        This method copies the on-screen data directly from the canvas
+        framebuffer; it does not cause the scene to be redrawn. 
+        To render the scene to an offscreen buffer, see
+        :func:`SceneCanvas.render`.
         """
         fb = self._current_framebuffer()
         viewport = fb[1] + fb[2]
