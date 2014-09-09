@@ -15,8 +15,8 @@ from vispy.scene import visuals, transforms, SceneCanvas
 class Canvas(SceneCanvas):
     def __init__(self):
         self.volume = visuals.Volume()
-        self.theta = 0
-        self.phi = 0
+        self.theta = 30
+        self.phi = 30
 
         SceneCanvas.__init__(self, 'Volume', keys='interactive',
                              size=(400, 400))
@@ -24,8 +24,8 @@ class Canvas(SceneCanvas):
         self._timer = Timer('auto', connect=self.on_timer, start=True)
 
     def on_timer(self, event):
-        self.theta += 0.5
-        self.phi += 0.5
+        self.theta += 0.5 * 0
+        self.phi += 0.5 * 0
         self.volume.transform.reset()
         self.volume.transform.rotate(self.theta, (0, 0, 1))
         self.volume.transform.rotate(self.phi, (0, 1, 0))

@@ -8,34 +8,73 @@ import numpy as np
 
 from ... import gloo
 from ...geometry import create_cube
-from ...gloo import set_state
+from ...gloo import set_state, Program, gl
 from ..transforms import STTransform, NullTransform
 from .modular_mesh import ModularMesh
 from .cube import Cube
 from ..components import (TextureComponent, VertexTextureCoordinateComponent,
                           TextureCoordinateComponent)
+from .visual import Visual
+from ..shaders import ModularProgram
 
+W, H = 1.0, 1.0
+rays_vert = np.array([[-W, -H], [W, -H], [-W, H], [W, H]], dtype=np.float32)
 
-class Volume(ModularMesh):
+class Volume(Visual):
+    VERTEX_SHADER = """
+        attribute vec2 a_position;
+        varying vec2 v_texcoord;
+
+        void main(void) {
+            gl_Position = vec4(a_position,0.0,1.0);
+            v_texcoord = (gl_Position.xy + 1.0) / 2.0;
+        }
+
+        """
+
+    FRAGMENT_SHADER = """
+        varying vec2 v_texcoord;
+        uniform sampler2D u_start;
+
+        void main(void) {
+            vec4 start = texture2D(u_start, v_texcoord);
+
+            gl_FragColor = start;
+        }
+        """
+
     def __init__(self, **kwds):
+        Visual.__init__(self)
+
         pos = np.asarray([[-1.0, -1.0], [-1.0, 1.0], [1.0, -1.0], [1.0, 1.0]])
 
-        ModularMesh.__init__(self, pos=pos, color=(1.0, 0.0, 0.0, 1.0), **kwds)
-        self._primitive = gloo.gl.GL_TRIANGLE_STRIP
-
         vertices, filled_indices, outline_indices = create_cube()
-        self._cube = Cube(vertex_colors = vertices['color'], edge_color='black')
+        self.cube = Cube(vertex_colors = vertices['color'], edge_color='black')
 
-        w, h = 512, 512
+        w, h = 400, 400
         self.start_tex = gloo.Texture2D(shape=((w, h) + (4,)), dtype=np.float32)
         self.start_frame_buf = gloo.FrameBuffer(self.start_tex)
 
-        tex_coord_comp = VertexTextureCoordinateComponent(NullTransform())
-        self.color_components = [TextureComponent(self.start_tex, tex_coord_comp)]
+        self._program = Program(self.VERTEX_SHADER, self.FRAGMENT_SHADER)
+        self._program['a_position'] = gloo.VertexBuffer(rays_vert)
+        self._program['u_start'] = self.start_tex
 
     def draw(self, event):
-        with self.start_frame_buf:
-            gloo.clear('black')
-            self._cube.draw(event)
+        draw_to_screen = False
+        if draw_to_screen:
+            gloo.clear('white', depth=True)
+            self.cube.draw(event)
+            return 
 
-        ModularMesh.draw(self, event)
+        event.push_fbo(self.start_frame_buf, (0, 0), (400, 400))
+        event.push_entity(self.cube)
+
+        try:
+            gloo.clear('white', depth=True)
+            self.cube.draw(event)
+        finally:
+            event.pop_entity()
+            event.pop_fbo()
+
+        gloo.set_state(cull_face=False)
+        self._program.draw('triangle_strip')
