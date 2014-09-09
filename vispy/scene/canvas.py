@@ -157,6 +157,13 @@ class SceneCanvas(app.Canvas):
             given, then the size of the *region* is used. This argument allows
             the scene to be rendered at resolutions different from the native
             canvas resolution.
+            
+        Notes
+        -----
+        
+        This method causes the scene to be rendered to generate the image data.
+        To copy the on-screen data directly from the canvas, see 
+        :func:`SceneCanvas.screenshot`.
         """
         # Set up a framebuffer to render to
         offset = (0, 0) if region is None else region[:2]
