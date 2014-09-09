@@ -583,7 +583,7 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
     -------
     pixels : array
         3D array of pixels in np.uint8 or np.float32 format. 
-        The array shape is (h, w, 3) or (h, w, 4), with the botton-left corner 
+        The array shape is (h, w, 3) or (h, w, 4), with the top-left corner 
         of the framebuffer at index [0, 0] in the returned array.
     """
     type_dict = {'unsigned_byte': gl.GL_UNSIGNED_BYTE,

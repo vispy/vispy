@@ -307,6 +307,14 @@ class FrameBuffer(GLObject):
             The buffer type to read. May be 'color', 'depth', or 'stencil'.
         alpha : bool
             If True, returns RGBA array. Otherwise, returns RGB.
+        
+        Returns
+        -------
+        array
+            3D array of pixels in np.uint8 format. 
+            The array shape is (h, w, 3) or (h, w, 4), with the top-left 
+            corner of the framebuffer at index [0, 0] in the returned array.
+        
         """
         _check_valid('mode', mode, ['color', 'depth', 'stencil'])
         buffer = getattr(self, mode+'_buffer')
