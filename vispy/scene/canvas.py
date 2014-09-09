@@ -186,22 +186,20 @@ class SceneCanvas(app.Canvas):
             self.pop_fbo()
         
     def _draw_scene(self):
+        gloo.clear(color=self._bgcolor, depth=True)
         # Draw the scene, but first disconnect its change signal--
         # any changes that take place during the paint should not trigger
         # a subsequent repaint.
         with self.scene.events.update.blocker(self._scene_update):
             self.draw_visual(self.scene)
 
-    def draw_visual(self, visual, clear=True, event=None):
+    def draw_visual(self, visual, event=None):
         """ Draw a visual to the canvas or currently active framebuffer.
         
         Parameters
         ----------
         visual : Visual
             The visual to draw
-        clear : bool
-            If True, clear the framebuffer before drawing using the background
-            color.
         event : None or DrawEvent
             Optionally specifies the original canvas draw event that initiated
             this draw.
@@ -209,8 +207,6 @@ class SceneCanvas(app.Canvas):
         nfb = len(self._fb_stack)
         nvp = len(self._vp_stack)
         
-        if clear:
-            gloo.clear(color=self._bgcolor, depth=True)
         
         # Create draw event, which keeps track of the path of transforms
         self._process_entity_count = 0  # for debugging
