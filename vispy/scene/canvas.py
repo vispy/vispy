@@ -157,7 +157,12 @@ class SceneCanvas(app.Canvas):
             given, then the size of the *region* is used. This argument allows
             the scene to be rendered at resolutions different from the native
             canvas resolution.
-            
+
+        Returns
+        -------
+        Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
+        upper-left corner of the rendered region.
+        
         Notes
         -----
         
@@ -187,7 +192,18 @@ class SceneCanvas(app.Canvas):
             self.draw_visual(self.scene)
 
     def draw_visual(self, visual, clear=True, event=None):
-        """ Draw a *visual* and its children on the canvas.
+        """ Draw a visual to the canvas or currently active framebuffer.
+        
+        Parameters
+        ----------
+        visual : Visual
+            The visual to draw
+        clear : bool
+            If True, clear the framebuffer before drawing using the background
+            color.
+        event : None or DrawEvent
+            Optionally specifies the original canvas draw event that initiated
+            this draw.
         """
         nfb = len(self._fb_stack)
         nvp = len(self._vp_stack)
@@ -229,6 +245,12 @@ class SceneCanvas(app.Canvas):
 
     def screenshot(self):
         """ Return an image array of the current on-screen buffer.
+        
+        Returns
+        -------
+        Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
+        upper-left corner of the canvas. Note that if the canvas has not been 
+        drawn yet, the returned array data may not be initialized.
         """
         fb = self._current_framebuffer()
         viewport = fb[1] + fb[2]
