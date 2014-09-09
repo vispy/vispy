@@ -124,9 +124,7 @@ class Image(ModularMesh):
             raise ValueError("Unknown image draw method '%s'" % method)
 
         data = self._data
-        if not data.flags['C_CONTIGUOUS']:
-            data = np.ascontiguousarray(data)
-        self._texture = gloo.Texture2D(data)
+        self._texture = gloo.Texture2D(data, store=False)
         self._texture.interpolation = self._interpolation
 
         self.color_components = [TextureComponent(self._texture,
