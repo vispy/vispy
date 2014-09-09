@@ -185,7 +185,8 @@ class ApplicationBackend(BaseApplicationBackend):
         # Close windows
         wins = _get_glfw_windows()
         for win in wins:
-            win._vispy_close()
+            if win._vispy_canvas is not None:
+                win._vispy_canvas.close()
         # tear down timers
         for timer in self._timers:
             timer._vispy_stop()

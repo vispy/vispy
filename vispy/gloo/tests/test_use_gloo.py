@@ -24,19 +24,21 @@ def test_use_textures():
 @requires_application()
 def test_use_framebuffer():
     """Test drawing to a framebuffer"""
-    shape = (100, 100)
+    shape = (100, 300)  # for some reason Windows wants a tall window...
     data = np.random.rand(*shape).astype(np.float32)
     orig_tex = Texture2D(data)
     use_shape = shape + (3,)
     fbo_tex = Texture2D(shape=use_shape, dtype=np.ubyte, format='rgb')
     rbo = ColorBuffer(shape=shape)
     fbo = FrameBuffer(color=fbo_tex)
-    with Canvas(size=(100, 100)) as c:
+    with Canvas(size=shape[::-1]) as c:
+        assert_equal(c.size, shape[::-1])
         set_viewport((0, 0) + c.size)
         with fbo:
             draw_texture(orig_tex)
         draw_texture(fbo_tex)
         out_tex = _screenshot()[::-1, :, 0].astype(np.float32)
+        assert_equal(out_tex.shape, c.size[::-1])
         assert_raises(TypeError, FrameBuffer.color_buffer.fset, fbo, 1.)
         assert_raises(TypeError, FrameBuffer.depth_buffer.fset, fbo, 1.)
         assert_raises(TypeError, FrameBuffer.stencil_buffer.fset, fbo, 1.)
@@ -60,7 +62,7 @@ def test_use_texture3D():
     d, h, w = len(vals), 3, 5
     data = np.zeros((d, h, w), np.float32)
     if not has_pyopengl():
-        assert_raises(ImportError, Texture3D(data))
+        assert_raises(ImportError, Texture3D, data)
         return
 
     VERT_SHADER = """

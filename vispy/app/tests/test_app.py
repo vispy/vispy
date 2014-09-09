@@ -121,7 +121,7 @@ def test_run():
     if a.backend_name.lower() == 'glut':
         raise SkipTest('cannot test running glut')  # knownfail
     for _ in range(2):
-        with Canvas(size=(100, 100), show=True, title=' run') as c:
+        with Canvas(size=(100, 100), show=True, title='run') as c:
             @c.events.draw.connect
             def draw(event):
                 print(event)  # test event __repr__
