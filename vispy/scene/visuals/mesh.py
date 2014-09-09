@@ -120,6 +120,11 @@ class Mesh(Visual):
             self._color = Color(color).rgba
         self.mesh_data_changed()
 
+    @property
+    def mesh_data(self):
+        """The mesh data"""
+        return self._meshdata
+
     def mesh_data_changed(self):
         self._data_changed = True
         self.update()
@@ -195,6 +200,11 @@ class Mesh(Visual):
             self._phong['ambient'] = (0.3, 0.3, 0.3, 1.0)
 
             self._program.frag['color'] = self._phong(self._color_var)
+
+    def bounds(self, mode, axis):
+        assert mode == 'visual'
+        data = self._meshdata.vertices()
+        return (data[:, axis].min(), data[:, axis].max())
 
     @property
     def shading(self):

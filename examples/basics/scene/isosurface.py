@@ -16,7 +16,8 @@ from vispy import app, scene
 # Create a canvas with a 3D viewport
 canvas = scene.SceneCanvas(keys='interactive')
 view = canvas.central_widget.add_view()
-view.set_camera('turntable', mode='perspective', up='z', distance=50)
+view.set_camera('turntable', mode='perspective', up='z', distance=50,
+                azimuth=30., elevation=30.)
 
 
 ## Define a scalar field from which we will generate an isosurface

@@ -6,6 +6,6 @@
 command-line interface.
 """
 
-__all__ = ['plot', 'image']
+__all__ = ['plot', 'image', 'mesh']
 
-from .plot import plot, image
+from .plot import plot, image, mesh

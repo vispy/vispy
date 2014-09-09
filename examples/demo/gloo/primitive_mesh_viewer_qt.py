@@ -335,7 +335,7 @@ class MainWindow(QtGui.QMainWindow):
             self.update_view(self.props_widget.param)
 
     def show_fps(self, fps):
-        nbr_tri = self.mesh.face_count()
+        nbr_tri = self.mesh.n_faces
         self.status.showMessage("FPS - %.2f and nbr Tri %s " % (fps, nbr_tri))
 
     def update_view(self, param):

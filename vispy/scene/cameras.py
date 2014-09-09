@@ -466,8 +466,8 @@ class TurntableCamera(PerspectiveCamera):
     name : str
         Name used to identify the camera in the scene.
     """
-    def __init__(self, elevation=30., azimuth=30.,
-                 distance=10., center=(0, 0, 0), up='z', **kwds):
+    def __init__(self, elevation=0., azimuth=0.,
+                 distance=1., center=(0, 0, 0), up='z', **kwds):
         super(TurntableCamera, self).__init__(**kwds)
         self.elevation = elevation
         self.azimuth = azimuth
