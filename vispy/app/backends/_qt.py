@@ -252,16 +252,6 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if show:
             self._vispy_set_visible(True)
     
-    def embed(self, widget):
-        """ Convenience function to embed the canvas in an application.
-        The native CanvasBackend (subclass of QGLWidget) is made to fully
-        cover the given widget.
-        """
-        layout = QtGui.QHBoxLayout(widget)
-        widget.setLayout(layout)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self)
-    
     def _vispy_set_current(self):
         if self._vispy_canvas is None:
             return  # todo: can we get rid of this now?
