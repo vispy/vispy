@@ -137,7 +137,7 @@ class CanvasBackend(BaseCanvasBackend):
             self._native_config = context.backend_canvas._native_config
             self._native_context = context.backend_canvas._native_context
         else:
-            raise RuntimeError('Cannot share context between backends.')
+            raise RuntimeError('Different backends cannot share a context.')
         
         self._surface = None
         self._vispy_set_size(*size)

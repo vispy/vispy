@@ -206,7 +206,7 @@ class CanvasBackend(BaseCanvasBackend):
             sdl2.SDL_GL_MakeCurrent(*share)
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
         else:
-            raise RuntimeError('Cannot share context between backends.')
+            raise RuntimeError('Different backends cannot share a context.')
         
         sdl2.SDL_GL_SetSwapInterval(1 if vsync else 0)
         flags = sdl2.SDL_WINDOW_OPENGL

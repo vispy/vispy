@@ -208,7 +208,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
             self._gl_attribs = context.backend_canvas._gl_attribs
             self._gl_context = context.backend_canvas._gl_context
         else:
-            raise RuntimeError('Cannot share context between backends.')
+            raise RuntimeError('Different backends cannot share a context.')
         
         style = (wx.MINIMIZE_BOX | wx.MAXIMIZE_BOX | wx.CLOSE_BOX |
                  wx.SYSTEM_MENU | wx.CAPTION | wx.CLIP_CHILDREN)

@@ -177,7 +177,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         elif context.istaken == 'pyglet':
             config = None  # contexts are shared by default in Pyglet
         else:
-            raise RuntimeError('Cannot share context between backends.')
+            raise RuntimeError('Different backends cannot share a context.')
         
         style = (pyglet.window.Window.WINDOW_STYLE_DEFAULT if dec else
                  pyglet.window.Window.WINDOW_STYLE_BORDERLESS)

@@ -7,8 +7,9 @@ from os import path as op
 import warnings
 
 from vispy.app import Canvas, use_app
-from vispy.testing import requires_application, SkipTest, run_tests_if_main
-from vispy.gloo import gl
+
+from vispy.testing import requires_application, SkipTest
+from vispy import gloo
 
 
 @requires_application('pyqt4', has=['uic'])
@@ -39,8 +40,7 @@ def test_qt_designer():
 
         @canvas.events.draw.connect
         def on_draw(ev):
-            gl.glClearColor(0.0, 1.0, 0.0, 1.0)
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+            gloo.clear('g')
             canvas.swap_buffers()
     finally:
         win.close()

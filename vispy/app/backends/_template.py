@@ -148,6 +148,8 @@ class CanvasBackend(BaseCanvasBackend):
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
+        # We use _process_backend_kwargs() to "serialize" the kwargs
+        # and to check whether they match this backend's capability
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             = self._process_backend_kwargs(kwargs)
         
@@ -158,7 +160,7 @@ class CanvasBackend(BaseCanvasBackend):
         elif context.istaken == 'backend-name':
             self._native_context = context.backend_canvas._native_context
         else:
-            raise RuntimeError('Cannot share context between backends.')
+            raise RuntimeError('Different backends cannot share a context.')
         
         # NativeWidgetClass.__init__(self, foo, bar)
     

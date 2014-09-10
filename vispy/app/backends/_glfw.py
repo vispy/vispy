@@ -219,7 +219,7 @@ class CanvasBackend(BaseCanvasBackend):
         elif context.istaken == 'glfw':
             share = context.backend_canvas._id
         else:
-            raise RuntimeError('Cannot share context between backends.')
+            raise RuntimeError('Different backends cannot share a context.')
         
         glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)  # highest possible
         glfw.glfwSwapInterval(1 if vsync else 0)

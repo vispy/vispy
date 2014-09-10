@@ -194,7 +194,6 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
-        # todo: why _process_backend_kwargs instead of just passing kwargs?
         # Maybe to ensure that exactly all arguments are passed?
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             = self._process_backend_kwargs(kwargs)
@@ -215,7 +214,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
                 raise RuntimeError('Cannot use vispy to share context and '
                                    'use built-in shareWidget.')
         else:
-            raise RuntimeError('Cannot share context between backends.')
+            raise RuntimeError('Different backends cannot share a context.')
         
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
 

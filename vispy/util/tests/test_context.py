@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import gc
 
 from nose.tools import assert_raises, assert_equal, assert_not_equal
@@ -17,6 +19,8 @@ class DummyCanvasBackend(object):
 
 
 def test_context_config():
+    """ Test GLContext handling of config dict
+    """
     default_config = get_default_config()
     
     # Pass default config unchanged
@@ -43,7 +47,8 @@ def test_context_config():
     
 
 def test_context_taking():
-    
+    """ Test GLContext ownership and taking
+    """
     def get_canvas(c):
         return c.backend_canvas
     
@@ -73,7 +78,8 @@ def test_context_taking():
 
 
 def test_context_activating():
-    
+    """ Test GLContext activation and obtaining current context
+    """
     c1 = GLContext()
     c2 = GLContext()
     
