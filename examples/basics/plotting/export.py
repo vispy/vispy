@@ -27,10 +27,5 @@ canvas2 = vp.image(image)
 # canvas:
 canvas2.view.camera.auto_zoom(canvas2.image, padding=0)
 
-# Now take a screenshot. This requires having drawn the canvas at least once,
-# so we need to call process_events first.
-canvas.app.process_events()
-image = canvas.screenshot()
-
 if __name__ == '__main__' and sys.flags.interactive == 0:
     canvas.app.run()
