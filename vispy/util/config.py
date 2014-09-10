@@ -351,6 +351,8 @@ def sys_info(fname=None, overwrite=False):
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
         out += 'Backend:  %s\n' % app.backend_name
         for backend in BACKEND_NAMES:
+            if backend.startswith('ipynb_'):
+                continue
             with use_log_level('warning', print_msg=False):
                 which = has_backend(backend, out=['which'])[1]
             out += '{0:<9} {1}\n'.format(backend + ':', which)

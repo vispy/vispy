@@ -84,7 +84,7 @@ def use(app=None, gl=None):
 
 
 # Define test proxy function, so we don't have to import vispy.testing always
-def test(label='full', coverage=False, verbosity=1, *extra_args):
+def test(label='full', verbosity=1, *extra_args):
     """Test vispy software
 
     Parameters
@@ -92,13 +92,11 @@ def test(label='full', coverage=False, verbosity=1, *extra_args):
     label : str
         Can be one of 'full', 'nose', 'nobackend', 'extra', 'lineendings',
         'flake', or any backend name (e.g., 'qt').
-    coverage : bool
-        Produce coverage outputs (.coverage file).
     verbosity : int
         Verbosity level to use when running ``nose``.
     """
     from ..testing import _tester
-    return _tester(label, coverage, verbosity, extra_args)
+    return _tester(label, verbosity, extra_args)
 
 
 def run_subprocess(command):
