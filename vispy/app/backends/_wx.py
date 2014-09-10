@@ -199,14 +199,12 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             = self._process_backend_kwargs(kwargs)
         
-        # Deal with context
+        # Deal with context (we set self._gl_context once we know self._canvas)
         if not context.istaken:
             context.take('wx', self)
             self._gl_attribs = _set_config(context.config)
-            self._gl_context = glcanvas.GLContext(self._canvas)
         elif context.istaken == 'wx':
             self._gl_attribs = context.backend_canvas._gl_attribs
-            self._gl_context = context.backend_canvas._gl_context
         else:
             raise RuntimeError('Cannot share context between backends.')
         
@@ -229,6 +227,11 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self._canvas = glcanvas.GLCanvas(self, wx.ID_ANY, wx.DefaultPosition,
                                          wx.DefaultSize, 0, 'GLCanvas',
                                          self._gl_attribs)
+        if not context.istaken:
+            self._gl_context = glcanvas.GLContext(self._canvas)
+        else:
+            self._gl_context = context.backend_canvas._gl_context
+        
         self._canvas.Raise()
         self._canvas.SetFocus()
         self._vispy_set_title(title)

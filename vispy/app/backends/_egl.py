@@ -129,10 +129,10 @@ class CanvasBackend(BaseCanvasBackend):
         
         # Deal with context
         if not context.istaken:
+            context.take('egl', self)
             self._native_config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
             self._native_context = egl.eglCreateContext(_EGL_DISPLAY, 
                                                         context.config, None)
-            context.take('egl', self)
         elif context.istaken == 'egl':
             self._native_config = context.backend_canvas._native_config
             self._native_context = context.backend_canvas._native_context
