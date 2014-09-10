@@ -149,15 +149,15 @@ class CanvasBackend(BaseCanvasBackend):
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
+            = self._process_backend_kwargs(kwargs)
         
         # Deal with context
         self._vispy_context = context
         if not context.istaken:
-            native_context = None  # ...
-            context.take(native_context, 'backend-name')
+            context.take('backend-name', self)
+            self._native_context = None  # ...
         elif context.istaken == 'backend-name':
-            native_context = context.value
+            self._native_context = context.backend_canvas._native_context
         else:
             raise RuntimeError('Cannot share context between backends.')
         

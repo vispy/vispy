@@ -2,6 +2,8 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+from ..util.context import GLContext
+
 
 class BaseApplicationBackend(object):
     """BaseApplicationBackend()
@@ -56,7 +58,24 @@ class BaseCanvasBackend(object):
 
     def _process_backend_kwargs(self, kwargs):
         """ Simple utility to retrieve kwargs in predetermined order.
+        Also checks whether the values of the backend arguments do not
+        violate the backend capabilities.
         """
+        # Verify given argument with capability of the backend
+        app = self._vispy_canvas.app
+        capability = app.backend_module.capability
+        if kwargs['context'].istaken:
+            if not capability['context']:
+                raise RuntimeError('Cannot share context with this backend')
+        for key in [key for (key, val) in capability.items() if not val]:
+            if key in ['context', 'multi_window', 'scroll']:
+                continue
+            invert = key in ['resizable', 'decorate']
+            if bool(kwargs[key]) - invert:
+                raise RuntimeError('Config %s is not supported by backend %s'
+                                   % (key, app.backend_name))
+        
+        # Return items in sequence
         keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
                 'decorate', 'fullscreen', 'parent', 'context']
         return [kwargs[k] for k in keys]

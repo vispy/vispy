@@ -129,8 +129,11 @@ def test_template():
     for method in (a._vispy_process_events, a._vispy_run, a._vispy_quit,
                    a._vispy_get_native_app):
         assert_raises(NotImplementedError, method)
-
-    c = _template.CanvasBackend(None)
+    
+    class TemplateCanvasBackend(_template.CanvasBackend):
+        def __init__(self, *args, **kwargs):
+            pass  # Do not call the base class, since it will check for Canvas
+    c = TemplateCanvasBackend()  # _template.CanvasBackend(None)
     print(c._vispy_get_native_canvas())
     for method in (c._vispy_set_current, c._vispy_swap_buffers, c._vispy_close,
                    c._vispy_update, c._vispy_get_size, c._vispy_get_position):

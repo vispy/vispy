@@ -59,7 +59,7 @@ class Canvas(object):
     resizable : bool
         Allow the window to be resized.
     decorate : bool
-        Decorate the window.
+        Decorate the window. Default True.
     fullscreen : bool | int
         If False, windowed mode is used (default). If True, the default
         monitor is used. If int, the given monitor number is used.
@@ -79,6 +79,7 @@ class Canvas(object):
     parent : widget-object
         The parent widget if this makes sense for the used backend.
     """
+
 
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
@@ -144,17 +145,11 @@ class Canvas(object):
         # Ensure context is a GLContext object
         context = context or GLContext()
         if isinstance(context, dict):
-            context = GLContext(context)
+            context = GLContext(context)  # GLContext checks the dict keys
         elif not isinstance(context, GLContext):
             raise TypeError('context must be a dict or GLContext from '
                             'a Canvas with the same backend, not %s'
                             % type(context))
-        # If this is a shared context, check whether that's ok
-        # We test for inter-backend interop in the backends themselves
-        if context.istaken:
-            capability = self.app.backend_module.capability
-            if not capability['context']:
-                raise RuntimeError('Cannot share context with this backend')
         
         # Deal with special keys
         self._set_keys(keys)

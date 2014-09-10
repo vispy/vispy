@@ -168,15 +168,15 @@ class CanvasBackend(_Window, BaseCanvasBackend):
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
+            = self._process_backend_kwargs(kwargs)
         
         # Deal with context
         # contexts are shared by default in Pyglet
         self._vispy_context = context
         if not context.istaken:
+            context.take('pyglet', self)
             config = context.config  # Also used further below
             _set_config(config)
-            context.take(0, 'pyglet')
         elif context.istaken == 'pyglet':
             config = None
         else:

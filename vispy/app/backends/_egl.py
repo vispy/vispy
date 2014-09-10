@@ -124,29 +124,31 @@ class CanvasBackend(BaseCanvasBackend):
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
+            = self._process_backend_kwargs(kwargs)
+        self._initialized = False
         
         # Deal with context
-        self._vispy_context = context
         if not context.istaken:
-            _config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
-            _context = egl.eglCreateContext(_EGL_DISPLAY, context.config, None)
-            context.take((_config, _context), 'egl')
+            self._native_config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
+            self._native_context = egl.eglCreateContext(_EGL_DISPLAY, 
+                                                        context.config, None)
+            context.take('egl', (self._native_config, self._native_context))
         elif context.istaken == 'egl':
-            pass
+            self._native_config = context.backend_canvas._native_config
+            self._native_context = context.backend_canvas._native_context
         else:
             raise RuntimeError('Cannot share context between backends.')
-        # Store for easy access
-        self._native_config = context.value[0]
-        self._native_context = context.value[1]
+        self._vispy_context = context
         
         self._surface = None
         self._vispy_set_size(*size)
         _VP_EGL_ALL_WINDOWS.append(self)
-        self._initialized = False
+        
+        # Init
+        self._initialized = True
         self._vispy_set_current()
-        self._vispy_canvas = vispy_canvas
-
+        self._vispy_canvas.events.initialize()
+    
     def _destroy_surface(self):
         if self._surface is not None:
             egl.eglDestroySurface(_EGL_DISPLAY, self._surface)
@@ -156,30 +158,14 @@ class CanvasBackend(BaseCanvasBackend):
         if self._surface is not None:
             self._destroy_surface()
         attrib_list = (egl.EGL_WIDTH, w, egl.EGL_HEIGHT, h)
+        config = self._vispy_context.backend_context[0]
         self._surface = egl.eglCreatePbufferSurface(_EGL_DISPLAY, 
-                                                    self._native_config, 
-                                                    attrib_list)
+                                                    config, attrib_list)
         if self._surface == egl.EGL_NO_SURFACE:
             raise RuntimeError('Could not create rendering surface')
         self._size = (w, h)
         self._vispy_update()
-
-    ####################################
-    # Deal with events we get from vispy
-    @property
-    def _vispy_canvas(self):
-        """ The parent canvas/window """
-        return self._vispy_canvas_
-
-    @_vispy_canvas.setter
-    def _vispy_canvas(self, vc):
-        # Init events when the property is set by Canvas
-        self._vispy_canvas_ = vc
-        if vc is not None and not self._initialized:
-            self._initialized = True
-            self._vispy_set_current()
-            self._vispy_canvas.events.initialize()
-
+    
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:

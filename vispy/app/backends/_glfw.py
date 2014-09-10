@@ -208,16 +208,17 @@ class CanvasBackend(BaseCanvasBackend):
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
+            = self._process_backend_kwargs(kwargs)
+        self._initialized = False
         
         # Deal with context
         self._vispy_context = context
-        if not contex.istaken:
-            # We take it below as soon as we get the id
+        if not context.istaken:
+            context.take('glfw', self)
             _set_config(context.config)
             share = None
         elif context.istaken == 'glfw':
-            share = context.value
+            share = context.backend_canvas._id
         else:
             raise RuntimeError('Cannot share context between backends.')
         
@@ -250,8 +251,6 @@ class CanvasBackend(BaseCanvasBackend):
                                          share=share)
         if not self._id:
             raise RuntimeError('Could not create window')
-        if not context.istaken:
-            context.take(self._id, 'glfw')
         
         _VP_GLFW_ALL_WINDOWS.append(self)
         self._mod = list()
@@ -271,25 +270,12 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_set_position(*position)
         if show:
             glfw.glfwShowWindow(self._id)
-        self._initialized = False
-        self._vispy_canvas = vispy_canvas
-
-    ####################################
-    # Deal with events we get from vispy
-    @property
-    def _vispy_canvas(self):
-        """ The parent canvas/window """
-        return self._vispy_canvas_
-
-    @_vispy_canvas.setter
-    def _vispy_canvas(self, vc):
-        # Init events when the property is set by Canvas
-        self._vispy_canvas_ = vc
-        if vc is not None and not self._initialized:
-            self._initialized = True
-            self._vispy_set_current()
-            self._vispy_canvas.events.initialize()
-
+        
+        # Init
+        self._initialized = True
+        self._vispy_set_current()
+        self._vispy_canvas.events.initialize()
+    
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:

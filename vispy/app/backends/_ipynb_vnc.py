@@ -125,6 +125,7 @@ class CanvasBackend(BaseCanvasBackend):
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
+        self._initialized = False
 
         # Test kwargs
 #         if kwargs['size']:
@@ -147,7 +148,6 @@ class CanvasBackend(BaseCanvasBackend):
         # Connect to events of canvas to keep up to date with size and draws
         canvas.events.draw.connect(self._on_draw)
         canvas.events.resize.connect(self._on_resize)
-        self._initialized = False
 
         # Show the widget, we will hide it after the first time it's drawn
         self._backend2._vispy_set_visible(True)

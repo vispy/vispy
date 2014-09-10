@@ -194,30 +194,29 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
-        self._initialized = False
-        
         # todo: why _process_backend_kwargs instead of just passing kwargs?
         # Maybe to ensure that exactly all arguments are passed?
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             = self._process_backend_kwargs(kwargs)
+        self._initialized = False
         
         # Deal with context
-        self._vispy_context = context
         if not context.istaken:
+            widget = kwargs.pop('shareWidget', None) or self
+            context.take('qt', widget)
             glformat = _set_config(context.config)
             glformat.setSwapInterval(1 if vsync else 0)
-            widget = kwargs.pop('shareWidget', None) or self
-            context.take(widget, 'qt', weak=True)  # use weakref
             if widget is self:
                 widget = None  # QGLWidget does not accept self ;)
         elif context.istaken == 'qt':
-            widget = context.value
+            widget = context.backend_canvas
             glformat = QtOpenGL.QGLFormat.defaultFormat()
             if 'shareWidget' in kwargs:
                 raise RuntimeError('Cannot use vispy to share context and '
                                    'use built-in shareWidget.')
         else:
             raise RuntimeError('Cannot share context between backends.')
+        self._vispy_context = context
         
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
 
@@ -254,21 +253,19 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self)
     
+    def _vispy_set_current(self):
+        if self._vispy_canvas is None:
+            return  # todo: can we get rid of this now?
+        if self.isValid():
+            self.makeCurrent()
+    
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()
             self._vispy_canvas.app.process_events()
-
-    def _vispy_set_current(self):
-        # Make this the current context
-        # todo: we can get rid of all the if self._vispy_canvas
-        if self._vispy_canvas is None:
-            return
-        if self.isValid():
-            self.makeCurrent()
-
+    
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
         if self._vispy_canvas is None:

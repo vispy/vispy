@@ -197,15 +197,18 @@ class CanvasBackend(Frame, BaseCanvasBackend):
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
+            = self._process_backend_kwargs(kwargs)
         
         # Deal with context
         self._vispy_context = context
         if not context.istaken:
+            native_context = self._gl_attribs, glcanvas.GLContext(self._canvas)
             self._gl_attribs = _set_config(context.config)
+            self._gl_context = glcanvas.GLContext(self._canvas)
             # We take the context below
         elif context.istaken == 'wx':
-            self._gl_attribs = context.value[0]
+            self._gl_attribs = context.backend_canvas._gl_attribs
+            self._gl_context = context.backend_canvas._gl_context
         else:
             raise RuntimeError('Cannot share context between backends.')
         
@@ -231,9 +234,6 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         self._canvas.Raise()
         self._canvas.SetFocus()
         self._vispy_set_title(title)
-        if not context.istaken:
-            native_context = self._gl_attribs, glcanvas.GLContext(self._canvas)
-            context.take(native_context, 'wx')
         self._size = None
         self.Bind(wx.EVT_SIZE, self.on_resize)
         self._canvas.Bind(wx.EVT_PAINT, self.on_paint)
@@ -275,7 +275,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
     def _vispy_set_current(self):
         if self._canvas is None:
             return
-        self._canvas.SetCurrent(self._vispy_context.value[1])
+        self._canvas.SetCurrent(self._gl_context)
     
     def _vispy_warmup(self):
         etime = time() + 0.3
