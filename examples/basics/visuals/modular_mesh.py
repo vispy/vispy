@@ -28,7 +28,7 @@ class Canvas(vispy.scene.SceneCanvas):
         mdata = create_sphere(20, 40, 1.0)
 
         # Mesh with pre-indexed vertices, uniform color
-        verts = mdata.vertices(indexed='faces')
+        verts = mdata.get_vertices(indexed='faces')
         mesh = ModularMesh(pos=verts, color=(1, 0, 0, 1))
         self.meshes.append(mesh)
 
@@ -48,8 +48,8 @@ class Canvas(vispy.scene.SceneCanvas):
         #   Because vertices are unindexed, we get the same color
         #   every time a vertex is visited, resulting in no color differences
         #   between edges.
-        verts = mdata.vertices()
-        faces = mdata.faces()
+        verts = mdata.get_vertices()
+        faces = mdata.get_faces()
         nv = verts.size//3
         vcolor = np.ones((nv, 4), dtype=np.float32)
         vcolor[:, 0] = np.linspace(1, 0, nv)
@@ -77,14 +77,14 @@ class Canvas(vispy.scene.SceneCanvas):
         self.meshes.append(mesh)
 
         # Phong shaded mesh, flat faces
-        mesh = ModularMesh(pos=mdata.vertices(indexed='faces'))
+        mesh = ModularMesh(pos=mdata.get_vertices(indexed='faces'))
         normal_comp = VertexNormalComponent(mdata, smooth=False)
-        mesh.color_components = [VertexColorComponent(vcolor[mdata.faces()]),
-                                 GridContourComponent(spacing=(0.1, 0.1, 0.1)),
-                                 ShadingComponent(normal_comp,
-                                                  lights=[((-1, 1, -1),
-                                                           (1.0, 1.0, 1.0))],
-                                                  ambient=0.2)]
+        mesh.color_components = [
+            VertexColorComponent(vcolor[mdata.get_faces()]),
+            GridContourComponent(spacing=(0.1, 0.1, 0.1)),
+            ShadingComponent(normal_comp, lights=[((-1, 1, -1),
+                                                  (1.0, 1.0, 1.0))],
+                             ambient=0.2)]
         self.meshes.append(mesh)
 
         # Lay out meshes in a grid

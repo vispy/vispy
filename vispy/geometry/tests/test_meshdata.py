@@ -22,9 +22,9 @@ def test_meshdata():
 
     mesh = MeshData(vertices=square_vertices, faces=square_faces)
     # test vertices and faces assignement
-    assert_array_equal(square_vertices, mesh.vertices())
-    assert_array_equal(square_faces, mesh.faces())
+    assert_array_equal(square_vertices, mesh.get_vertices())
+    assert_array_equal(square_faces, mesh.get_faces())
     # test normals calculus
-    assert_array_equal(square_normals, mesh.vertex_normals())
+    assert_array_equal(square_normals, mesh.get_vertex_normals())
     # test edge calculus
-    assert_array_equal(square_edges, mesh.edges())
+    assert_array_equal(square_edges, mesh.get_edges())

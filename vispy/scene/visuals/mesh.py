@@ -130,38 +130,38 @@ class Mesh(Visual):
         self.update()
 
     def _update_data(self):
-        md = self._meshdata
+        md = self.mesh_data
 
         # Update vertex/index buffers
         if self.shading == 'smooth' and not md.has_face_indexed_data():
-            v = md.vertices()
+            v = md.get_vertices()
             self._vertices.set_data(v, convert=True)
-            self._normals.set_data(md.vertex_normals(), convert=True)
-            self._faces.set_data(md.faces(), convert=True)
+            self._normals.set_data(md.get_vertex_normals(), convert=True)
+            self._faces.set_data(md.get_faces(), convert=True)
             self._indexed = True
             if md.has_vertex_color():
-                self._colors.set_data(md.vertex_colors(), convert=True)
+                self._colors.set_data(md.get_vertex_colors(), convert=True)
             elif md.has_face_color():
-                self._colors.set_data(md.face_colors(), convert=True)
+                self._colors.set_data(md.get_face_colors(), convert=True)
             else:
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
         else:
-            v = md.vertices(indexed='faces')
+            v = md.get_vertices(indexed='faces')
             self._vertices.set_data(v, convert=True)
             if self.shading == 'smooth':
-                normals = md.vertex_normals(indexed='faces')
+                normals = md.get_vertex_normals(indexed='faces')
                 self._normals.set_data(normals, convert=True)
             elif self.shading == 'flat':
-                normals = md.face_normals(indexed='faces')
+                normals = md.get_face_normals(indexed='faces')
                 self._normals.set_data(normals, convert=True)
             else:
                 self._normals.set_data(np.zeros((0, 3), dtype=np.float32))
             self._indexed = False
             if md.has_vertex_color():
-                self._colors.set_data(md.vertex_colors(indexed='faces'), 
+                self._colors.set_data(md.get_vertex_colors(indexed='faces'), 
                                       convert=True)
             elif md.has_face_color():
-                self._colors.set_data(md.face_colors(indexed='faces'), 
+                self._colors.set_data(md.get_face_colors(indexed='faces'), 
                                       convert=True)
             else:
                 self._colors.set_data(np.zeros((0, 4), dtype=np.float32))
@@ -203,7 +203,7 @@ class Mesh(Visual):
 
     def bounds(self, mode, axis):
         assert mode == 'visual'
-        data = self._meshdata.vertices()
+        data = self.mesh_data.get_vertices()
         return (data[:, axis].min(), data[:, axis].max())
 
     @property
