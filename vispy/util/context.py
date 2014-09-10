@@ -95,12 +95,12 @@ class GLContext(object):
         """
         return self._config
     
-    def make_current(self, apply_backend=True):
+    def set_current(self, apply_backend=True):
         """ Make this the current context. If apply_backend is True
         (default) the canvas_backend is set to be current.
         """
         if apply_backend:
-            self.backend_canvas._vispy_make_current()
+            self.backend_canvas._vispy_set_current()
         GLContext._current_context = self
     
     @property
