@@ -5,7 +5,8 @@
 from os import path as op
 import warnings
 
-from vispy.testing import requires_application, SkipTest
+from vispy.testing import requires_application
+
 
 @requires_application('pyqt4', has=['uic'])
 def test_qt_designer():
@@ -28,7 +29,8 @@ def test_qt_designer():
     
     try:
         canvas = win.ui.canvas
-        vb = canvas.central_widget.add_view()
+        # test we can access properties of the internal canvas:
+        canvas.central_widget.add_view()
         win.show()
         app.processEvents()
     finally:
