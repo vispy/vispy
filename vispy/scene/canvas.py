@@ -164,12 +164,6 @@ class SceneCanvas(app.Canvas):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
             upper-left corner of the rendered region.
         
-        Notes
-        -----
-        
-        This method causes the scene to be rendered to generate the image data.
-        To copy the on-screen data directly from the canvas, see 
-        :func:`SceneCanvas.screenshot`.
         """
         # Set up a framebuffer to render to
         offset = (0, 0) if region is None else region[:2]
@@ -238,28 +232,6 @@ class SceneCanvas(app.Canvas):
             logger.warning("Viewport stack not fully cleared after draw.")
         if len(self._fb_stack) > nfb:
             logger.warning("Framebuffer stack not fully cleared after draw.")
-
-    def screenshot(self):
-        """ Return an image array of the current on-screen buffer.
-        
-        Returns
-        -------
-        array
-            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
-            upper-left corner of the canvas. Note that if the canvas has not
-            been drawn yet, the returned array data may not be initialized.
-        
-        Notes
-        -----
-        
-        This method copies the on-screen data directly from the canvas
-        framebuffer; it does not cause the scene to be redrawn. 
-        To render the scene to an offscreen buffer, see
-        :func:`SceneCanvas.render`.
-        """
-        fb = self._current_framebuffer()
-        viewport = fb[1] + fb[2]
-        return gloo.read_pixels(viewport, alpha=True)
 
     def _process_mouse_event(self, event):
         tr_cache = self._transform_caches.setdefault(self.scene, 
