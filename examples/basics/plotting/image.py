@@ -10,9 +10,9 @@ Example of simple image plotting.
 import sys
 import numpy as np
 
-import vispy.plot as vplt
+import vispy.plot as vp
 
-canvas = vplt.image(np.random.normal(128, 60, (20, 20)).astype(np.ubyte))
+canvas = vp.image(np.random.normal(128, 60, (20, 20)).astype(np.ubyte))
 
 # Start up the event loop if this is not an interactive prompt.
 if __name__ == '__main__' and sys.flags.interactive == 0:
