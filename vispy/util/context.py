@@ -34,6 +34,14 @@ def get_default_config():
     return deepcopy(_default_dict)
 
 
+def get_active_context():
+    """ Return the currently active GLContext object
+    
+    Can return None if there is no context set yet.
+    """
+    return GLContext._active_context
+
+
 class GLContext(object):
     """An object encapsulating data necessary for a shared OpenGL context.
     The intended use is to subclass this and implement _vispy_activate().
@@ -59,7 +67,7 @@ class GLContext(object):
         not already taken. 
         """
         if self.istaken:
-            raise ValueError('Cannot take an GLContext that is already taken')
+            raise RuntimeError('Cannot take an GLContext that is already taken')
         self._name = name
         self._backend_canvas = weakref.ref(backend_canvas)
     
