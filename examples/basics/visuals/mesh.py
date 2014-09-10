@@ -32,7 +32,7 @@ class Canvas(vispy.scene.SceneCanvas):
         ##   Because vertices are pre-indexed, we get a different color
         ##   every time a vertex is visited, resulting in sharp color
         ##   differences between edges.
-        verts = mdata.vertices(indexed='faces')
+        verts = mdata.get_vertices(indexed='faces')
         nf = verts.size//9
         fcolor = np.ones((nf, 3, 4), dtype=np.float32)
         fcolor[..., 0] = np.linspace(1, 0, nf)[:, np.newaxis]
@@ -45,8 +45,8 @@ class Canvas(vispy.scene.SceneCanvas):
         ##   Because vertices are unindexed, we get the same color
         ##   every time a vertex is visited, resulting in no color differences
         ##   between edges.
-        verts = mdata.vertices()
-        faces = mdata.faces()
+        verts = mdata.get_vertices()
+        faces = mdata.get_faces()
         nv = verts.size//3
         vcolor = np.ones((nv, 4), dtype=np.float32)
         vcolor[:, 0] = np.linspace(1, 0, nv)

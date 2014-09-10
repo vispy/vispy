@@ -7,6 +7,20 @@ import numpy as np
 from ..ext.six.moves import xrange
 
 
+def _fix_colors(colors):
+    colors = np.asarray(colors)
+    if colors.ndim not in (2, 3):
+        raise ValueError('colors must have 2 or 3 dimensions')
+    if colors.shape[-1] not in (3, 4):
+        raise ValueError('colors must have 3 or 4 elements')
+    if colors.shape[-1] == 3:
+        pad = np.ones((len(colors), 1), colors.dtype)
+        if colors.ndim == 3:
+            pad = pad[:, :, np.newaxis]
+        colors = np.concatenate((colors, pad), axis=-1)
+    return colors
+
+
 class MeshData(object):
     """
     Class for storing and operating on 3D mesh data.
@@ -98,14 +112,14 @@ class MeshData(object):
                 if face_colors is not None:
                     self.set_face_colors(face_colors)
 
-    def faces(self):
+    def get_faces(self):
         """Array (Nf, 3) of vertex indices, three per triangular face.
 
         If faces have not been computed for this mesh, returns None.
         """
         return self._faces
 
-    def edges(self, indexed=None):
+    def get_edges(self, indexed=None):
         """Array (Nf, 3) of vertex indices, two per edge in the mesh.
            If indexed is 'faces', then return (Nf, 3, 2) array of vertex
            indices with 3 edges per face, and two vertices per edge."""
@@ -133,7 +147,7 @@ class MeshData(object):
         self._vertex_colors_indexed_by_faces = None
         self._face_colors_indexed_by_faces = None
 
-    def vertices(self, indexed=None):
+    def get_vertices(self, indexed=None):
         """Return an array (N,3) of the positions of vertices in the mesh.
         By default, each unique vertex appears only once in the array.
         If indexed is 'faces', then the array will instead contain three
@@ -147,7 +161,8 @@ class MeshData(object):
         elif indexed == 'faces':
             if (self._vertices_indexed_by_faces is None and
                     self._vertices is not None):
-                self._vertices_indexed_by_faces = self._vertices[self.faces()]
+                self._vertices_indexed_by_faces = \
+                    self._vertices[self.get_faces()]
             return self._vertices_indexed_by_faces
         else:
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
@@ -204,7 +219,7 @@ class MeshData(object):
                 return True
         return False
 
-    def face_normals(self, indexed=None):
+    def get_face_normals(self, indexed=None):
         """
         Return an array (Nf, 3) of normal vectors for each face.
         If indexed='faces', then instead return an indexed array
@@ -212,7 +227,7 @@ class MeshData(object):
         copied three times).
         """
         if self._face_normals is None:
-            v = self.vertices(indexed='faces')
+            v = self.get_vertices(indexed='faces')
             self._face_normals = np.cross(v[:, 1] - v[:, 0],
                                           v[:, 2] - v[:, 0])
 
@@ -228,7 +243,7 @@ class MeshData(object):
         else:
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
-    def vertex_normals(self, indexed=None):
+    def get_vertex_normals(self, indexed=None):
         """
         Return an array of normal vectors.
         By default, the array will be (N, 3) with one entry per unique
@@ -237,8 +252,8 @@ class MeshData(object):
         repeated).
         """
         if self._vertex_normals is None:
-            faceNorms = self.face_normals()
-            vertFaces = self.vertex_faces()
+            faceNorms = self.get_face_normals()
+            vertFaces = self.get_vertex_faces()
             self._vertex_normals = np.empty(self._vertices.shape,
                                             dtype=np.float32)
             for vindex in xrange(self._vertices.shape[0]):
@@ -254,11 +269,11 @@ class MeshData(object):
         if indexed is None:
             return self._vertex_normals
         elif indexed == 'faces':
-            return self._vertex_normals[self.faces()]
+            return self._vertex_normals[self.get_faces()]
         else:
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
-    def vertex_colors(self, indexed=None):
+    def get_vertex_colors(self, indexed=None):
         """
         Return an array (Nv, 4) of vertex colors.
         If indexed=='faces', then instead return an indexed array
@@ -269,27 +284,41 @@ class MeshData(object):
         elif indexed == 'faces':
             if self._vertex_colors_indexed_by_faces is None:
                 self._vertex_colors_indexed_by_faces = \
-                    self._vertex_colors[self.faces()]
+                    self._vertex_colors[self.get_faces()]
             return self._vertex_colors_indexed_by_faces
         else:
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def set_vertex_colors(self, colors, indexed=None):
+        """Set the vertex color array
+
+        Parameters
+        ----------
+        colors : array
+            Array of colors. Must have shape (Nv, 4) (indexing by vertex)
+            or shape (Nf, 3, 4) (vertices indexed by face).
+        indexed : str | None
+            Should be 'faces' if colors are indexed by faces.
         """
-        Set the vertex color array (Nv, 4).
-        If indexed=='faces', then the array will be interpreted
-        as indexed and should have shape (Nf, 3, 4)
-        """
+        colors = _fix_colors(np.asarray(colors))
         if indexed is None:
+            if colors.ndim != 2:
+                raise ValueError('colors must be 2D if indexed is None')
+            if colors.shape[0] != self.n_vertices:
+                raise ValueError('incorrect number of colors')
             self._vertex_colors = colors
             self._vertex_colors_indexed_by_faces = None
         elif indexed == 'faces':
+            if colors.ndim != 3:
+                raise ValueError('colors must be 3D if indexed is "faces"')
+            if colors.shape[0] != self.n_faces:
+                raise ValueError('incorrect number of faces')
             self._vertex_colors = None
             self._vertex_colors_indexed_by_faces = colors
         else:
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+            raise ValueError('indexed must be None or "faces"')
 
-    def face_colors(self, indexed=None):
+    def get_face_colors(self, indexed=None):
         """
         Return an array (Nf, 4) of face colors.
         If indexed=='faces', then instead return an indexed array
@@ -311,30 +340,48 @@ class MeshData(object):
             raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
 
     def set_face_colors(self, colors, indexed=None):
+        """Set the face color array
+
+        Parameters
+        ----------
+        colors : array
+            Array of colors. Must have shape (Nf, 4) (indexed by face),
+            or shape (Nf, 3, 4) (face colors indexed by faces).
+        indexed : str | None
+            Should be 'faces' if colors are indexed by faces.
         """
-        Set the face color array (Nf, 4).
-        If indexed=='faces', then the array will be interpreted
-        as indexed and should have shape (Nf, 3, 4)
-        """
+        colors = _fix_colors(colors)
+        if colors.shape[0] != self.n_faces:
+            raise ValueError('incorrect number of colors')
         if indexed is None:
+            if colors.ndim != 2:
+                raise ValueError('colors must be 2D if indexed is None')
             self._face_colors = colors
             self._face_colors_indexed_by_faces = None
         elif indexed == 'faces':
+            if colors.ndim != 3:
+                raise ValueError('colors must be 3D if indexed is "faces"')
             self._face_colors = None
             self._face_colors_indexed_by_faces = colors
         else:
-            raise Exception("Invalid indexing mode. Accepts: None, 'faces'")
+            raise ValueError('indexed must be None or "faces"')
 
-    def face_count(self):
-        """
-        Return the number of faces in the mesh.
-        """
+    @property
+    def n_faces(self):
+        """The number of faces in the mesh"""
         if self._faces is not None:
             return self._faces.shape[0]
         elif self._vertices_indexed_by_faces is not None:
             return self._vertices_indexed_by_faces.shape[0]
 
-    def edge_colors(self):
+    @property
+    def n_vertices(self):
+        """The number of vertices in the mesh"""
+        if self._vertices is None:
+            self._compute_unindexed_vertices()
+        return len(self._vertices)
+
+    def get_edge_colors(self):
         return self._edge_colors
 
     def _compute_unindexed_vertices(self):
@@ -368,12 +415,12 @@ class MeshData(object):
                 self._faces[i, j] = index
         self._vertices = np.array(self._vertices, dtype=np.float32)
 
-    def vertex_faces(self):
+    def get_vertex_faces(self):
         """
         List mapping each vertex index to a list of face indices that use it.
         """
         if self._vertex_faces is None:
-            self._vertex_faces = [[] for i in xrange(len(self.vertices()))]
+            self._vertex_faces = [[] for i in xrange(len(self.get_vertices()))]
             for i in xrange(self._faces.shape[0]):
                 face = self._faces[i]
                 for ind in face:
