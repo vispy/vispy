@@ -173,8 +173,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
         # Deal with context
         if not context.istaken:
             context.take('pyglet', self)
-            config = context.config  # Also used further below
-            _set_config(config)
+            config = _set_config(context.config)  # Also used further below
         elif context.istaken == 'pyglet':
             config = None  # contexts are shared by default in Pyglet
         else:
