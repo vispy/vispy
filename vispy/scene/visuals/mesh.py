@@ -201,11 +201,6 @@ class Mesh(Visual):
 
             self._program.frag['color'] = self._phong(self._color_var)
 
-    def bounds(self, mode, axis):
-        assert mode == 'visual'
-        data = self.mesh_data.get_vertices()
-        return (data[:, axis].min(), data[:, axis].max())
-
     @property
     def shading(self):
         """ The shading method used.
