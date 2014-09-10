@@ -4,6 +4,8 @@
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
 import unittest
+
+from vispy.testing import run_tests_if_main
 from vispy.gloo.globject import GLObject
 
 
@@ -21,5 +23,5 @@ class GLObjectTest(unittest.TestCase):
         assert O._need_delete is False
         assert O._id > 0
         assert O._id == GLObject._idcount
-if __name__ == "__main__":
-    unittest.main()
+
+run_tests_if_main()

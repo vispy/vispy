@@ -6,6 +6,7 @@ import numpy as np
 
 import vispy.scene.transforms as tr
 from vispy.geometry import Rect
+from vispy.testing import run_tests_if_main
 
 NT = tr.NullTransform
 ST = tr.STTransform
@@ -225,9 +226,4 @@ def test_inverse():
     #assert np.allclose(abs_pos, tr.inverse.map(tr.map(abs_pos))[:,:3])
 
 
-if __name__ == '__main__':
-    for key in [key for key in globals()]:
-        if key.startswith('test_'):
-            func = globals()[key]
-            print('running', func.__name__)
-            func()
+run_tests_if_main()

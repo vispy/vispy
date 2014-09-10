@@ -1,9 +1,13 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import unittest
 import copy
 from nose.tools import assert_true, assert_raises
 
 from vispy.util.event import Event, EventEmitter, EmitterGroup
 from vispy.util import use_log_level
+from vispy.testing import run_tests_if_main
 
 
 class BasicEvent(Event):
@@ -252,3 +256,6 @@ class TestGroups(unittest.TestCase):
                 attr = event_attrs[name]
                 assert (attr == val), "Event.%s != %s  (%s)" % (
                     name, str(val), str(attr))
+
+
+run_tests_if_main()

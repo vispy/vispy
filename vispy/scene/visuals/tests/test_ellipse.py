@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
 Tests for EllipseVisual
@@ -8,7 +10,7 @@ All images are of size (100,100) to keep a small file size
 from vispy import gloo
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, assert_image_equal,
-                           TestingCanvas)
+                           TestingCanvas, run_tests_if_main)
 
 
 @requires_application()
@@ -123,3 +125,6 @@ def test_reactive_draw():
         ellipse.num_segments = 10.
         c.draw_visual(ellipse)
         assert_image_equal("screenshot", 'visuals/reactive_ellipse7.png')
+
+
+run_tests_if_main()

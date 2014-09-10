@@ -384,3 +384,17 @@ def save_testing_image(image, location):
     f = open(location+'.png', 'wb')
     f.write(png)
     f.close()
+
+
+@nottest
+def run_tests_if_main():
+    """Run tests in a given file if it is run as a script"""
+    local_vars = inspect.currentframe().f_back.f_locals
+    if not local_vars['__name__'] == '__main__':
+        return
+    # we are in a "__main__"
+    fname = local_vars['__file__']
+    if not os.path.isfile(fname):
+        raise IOError('Could not find file "%s"' % fname)
+    from ._runners import _nose
+    _nose('singlefile', 2, [fname])

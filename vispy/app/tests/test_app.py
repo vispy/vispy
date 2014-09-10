@@ -8,7 +8,8 @@ from nose.tools import assert_equal, assert_true, assert_raises
 
 from vispy.app import use_app, Canvas, Timer, MouseEvent, KeyEvent
 from vispy.app.base import BaseApplicationBackend
-from vispy.testing import requires_application, SkipTest, assert_is, assert_in
+from vispy.testing import (requires_application, SkipTest, assert_is,
+                           assert_in, run_tests_if_main)
 from vispy.util import keys, use_log_level
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
@@ -415,3 +416,6 @@ def test_mouse_key_events():
     ke.key
     ke.text
     ke.modifiers
+
+
+run_tests_if_main()

@@ -7,7 +7,7 @@ from os import path as op
 import warnings
 
 from vispy.app import Canvas, use_app
-from vispy.testing import requires_application, SkipTest
+from vispy.testing import requires_application, SkipTest, run_tests_if_main
 from vispy.gloo import gl
 
 
@@ -46,3 +46,6 @@ def test_qt_designer():
             canvas.swap_buffers()
     finally:
         win.close()
+
+
+run_tests_if_main()

@@ -11,7 +11,7 @@ from vispy.app import Canvas
 from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer,
                         ColorBuffer, DepthBuffer, set_viewport, clear)
 from vispy.gloo.util import draw_texture, _screenshot
-from vispy.testing import requires_application, has_pyopengl
+from vispy.testing import requires_application, has_pyopengl, run_tests_if_main
 
 
 @requires_application()
@@ -109,3 +109,6 @@ def test_use_texture3D():
             expected = np.zeros_like(out)
             expected[:2, :3] = val
             assert_allclose(out, expected, atol=1./255.)
+
+
+run_tests_if_main()

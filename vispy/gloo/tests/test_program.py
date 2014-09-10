@@ -8,6 +8,7 @@ import unittest
 from vispy.gloo import gl
 from vispy.gloo.program import Program
 from vispy.gloo.shader import VertexShader, FragmentShader
+from vispy.testing import run_tests_if_main
 from vispy.util import use_log_level
 
 
@@ -94,5 +95,4 @@ class ProgramTest(unittest.TestCase):
             self.assertRaises(KeyError, program.__setitem__, "A", 1)
 
 
-if __name__ == "__main__":
-    unittest.main()
+run_tests_if_main()

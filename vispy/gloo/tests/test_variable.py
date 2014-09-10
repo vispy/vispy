@@ -8,6 +8,7 @@ import numpy as np
 
 from vispy.gloo import gl
 from vispy.gloo.variable import Uniform, Variable, Attribute
+from vispy.testing import run_tests_if_main
 
 
 # -----------------------------------------------------------------------------
@@ -135,5 +136,4 @@ class AttributeTest(unittest.TestCase):
 #        assert type(attribute.data) is np.ndarray
 
 
-if __name__ == "__main__":
-    unittest.main()
+run_tests_if_main()

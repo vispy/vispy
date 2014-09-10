@@ -6,7 +6,8 @@ import numpy as np
 from nose.tools import assert_raises
 
 from vispy.io import read_png, load_data_file
-from vispy.testing import has_matplotlib, requires_application
+from vispy.testing import (has_matplotlib, requires_application,
+                           run_tests_if_main)
 import vispy.mpl_plot as plt
 
 
@@ -28,3 +29,6 @@ def test_show_vispy():
         canvases[0].close()
     else:
         assert_raises(ImportError, plt.show)
+
+
+run_tests_if_main()

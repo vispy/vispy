@@ -6,6 +6,7 @@ from nose.tools import assert_equal
 from vispy.testing import requires_pyopengl
 
 from vispy.gloo import gl
+from vispy.testing import run_tests_if_main
 
 
 class _DummyObject:
@@ -228,5 +229,4 @@ function_names = set([n for n in function_names if n])
 constant_names = [n.strip() for n in constant_names.split(' ')]
 constant_names = set([n for n in constant_names if n])
 
-if __name__ == '__main__':
-    _main()
+run_tests_if_main()

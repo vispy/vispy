@@ -6,7 +6,7 @@ from nose.tools import assert_true
 from time import sleep
 
 from vispy.app import use_app, Canvas, Timer
-from vispy.testing import requires_application, SkipTest
+from vispy.testing import requires_application, SkipTest, run_tests_if_main
 from vispy.util.ptime import time
 from vispy.gloo import gl
 from vispy.gloo.util import _screenshot
@@ -126,3 +126,6 @@ def test_multiple_canvases():
                 _update_process_check(canvas, 255)
                 bgcolors[ci] = [0.25, 0.25, 0.25, 0.25]
                 _update_process_check(canvas, 64)
+
+
+run_tests_if_main()

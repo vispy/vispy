@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from nose.tools import assert_equal
 import logging
 
 from vispy.util import logger, use_log_level
-from vispy.testing import assert_in, assert_not_in
+from vispy.testing import assert_in, assert_not_in, run_tests_if_main
 
 
 def test_logging():
@@ -37,3 +40,6 @@ def test_debug_logging():
         logger.info('bar')
     assert_equal(len(l), 1)
     assert_not_in('unknown', l[0])
+
+
+run_tests_if_main()

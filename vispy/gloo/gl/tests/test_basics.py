@@ -12,7 +12,7 @@ from nose.tools import assert_equal, assert_true  # noqa
 from vispy.app import Canvas
 from numpy.testing import assert_almost_equal
 from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
-                           glut_skip)
+                           glut_skip, run_tests_if_main)
 from vispy.ext.six import string_types
 from vispy.util import use_log_level
 from vispy.gloo import gl
@@ -274,3 +274,6 @@ def _test_fbo():
     gl.glDeleteFramebuffer(hframebuf)
     
     gl.check_error()
+
+
+run_tests_if_main()

@@ -2,7 +2,7 @@ import os
 import sys
 from nose.tools import assert_equal, assert_raises
 
-from vispy.testing import requires_application, SkipTest
+from vispy.testing import requires_application, SkipTest, run_tests_if_main
 from vispy.app import Canvas, use_app
 from vispy.gloo import (get_gl_configuration, VertexShader, FragmentShader,
                         Program, check_error)
@@ -70,3 +70,6 @@ def test_context_sharing():
         else:
             with Canvas(context=c1.context):
                 check()
+
+
+run_tests_if_main()

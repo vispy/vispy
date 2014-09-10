@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
+from vispy.testing import run_tests_if_main
 from vispy.geometry.triangulation import Triangulation as T
 
 
@@ -499,10 +500,6 @@ def test_edge_event():
 
     t = T(pts * [-1, 1], edges)
     t.triangulate()
-    
 
-if __name__ == '__main__':
-    #test_edge_intersections()
-    #test_merge_duplicate_points()
-    #test_utility_methods()
-    test_intersect_edge_arrays()
+
+run_tests_if_main()

@@ -1,6 +1,10 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from nose.tools import assert_raises, assert_true, assert_equal
 
 from vispy.util.keys import Key, ENTER
+from vispy.testing import run_tests_if_main
 
 
 def test_key():
@@ -13,3 +17,6 @@ def test_key():
     print(ENTER.name)
     print(ENTER)  # __repr__
     assert_equal(Key('1'), 49)  # ASCII code
+
+
+run_tests_if_main()

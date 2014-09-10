@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from vispy.scene.shaders.function import (Function, Variable, Varying,
                                           MainFunction, FunctionChain)
 
@@ -5,7 +8,8 @@ from vispy.scene.shaders.function import (Function, Variable, Varying,
 from vispy.scene.shaders.function import FunctionCall, TextExpression
 
 from nose.tools import assert_raises, assert_equal, assert_not_equal  # noqa
-from vispy.testing import assert_in, assert_not_in, assert_is  # noqa
+from vispy.testing import (assert_in, assert_not_in, assert_is,
+                           run_tests_if_main)
 
 
 ## Define some snippets
@@ -448,3 +452,6 @@ if __name__ == '__main__':
     # Uncomment to run example
     print('='*80)
     test_example1()
+
+
+run_tests_if_main()
