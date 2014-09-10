@@ -8,6 +8,7 @@ import unittest
 from vispy.gloo import gl
 from vispy.gloo.program import Program
 from vispy.gloo.shader import VertexShader, FragmentShader
+from vispy.util import use_log_level
 
 
 class ProgramTest(unittest.TestCase):
@@ -89,7 +90,8 @@ class ProgramTest(unittest.TestCase):
         program = Program(vert, frag)
         #with self.assertRaises(ValueError):
         #    program["A"] = 1
-        self.assertRaises(KeyError, program.__setitem__, "A", 1)
+        with use_log_level('error', record=True, print_msg=False):
+            self.assertRaises(KeyError, program.__setitem__, "A", 1)
 
 
 if __name__ == "__main__":

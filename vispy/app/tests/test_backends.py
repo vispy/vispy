@@ -106,7 +106,7 @@ def _test_module_properties(_module=None):
 
     # Test that all events seem to be emitted.
     # Get text
-    fname = _module.__file__.strip('c')
+    fname = _module.__file__.rstrip('c')  # "strip" will break windows!
     with open(fname, 'rb') as fid:
         text = fid.read().decode('utf-8')
 

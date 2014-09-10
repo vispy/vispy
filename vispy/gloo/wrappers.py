@@ -131,7 +131,10 @@ def set_line_width(width=1.):
     width : float
         The line width.
     """
-    gl.glLineWidth(float(width))
+    width = float(width)
+    if width < 0:
+        raise RuntimeError('Cannot have width < 0')
+    gl.glLineWidth(width)
 
 
 def set_polygon_offset(factor=0., units=0.):

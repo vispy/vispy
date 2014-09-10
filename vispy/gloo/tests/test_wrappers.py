@@ -96,18 +96,19 @@ def test_read_pixels():
     """
 
     with Canvas() as c:
+        gloo.set_viewport(0, 0, *c.size)
         c._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         c._program['a_position'] = gloo.VertexBuffer(vPosition)
-        gloo.set_clear_color((0, 0, 0, 0))  # Black background
-        gloo.clear()
+        gloo.clear(color='black')
         c._program.draw('triangle_strip')
 
         # Check if the return of read_pixels is the same as our drawing
-        img = read_pixels()
-        top_left = sum(img[0][0])
+        img = read_pixels(alpha=False)
+        assert_equal(img.shape[:2], c.size[::-1])
+        top_left = sum(img[0, 0])
         assert_true(top_left > 0)  # Should be > 0 (255*4)
         # Sum of the pixels in top right + bottom left + bottom right corners
-        corners = sum(img[0][-1] + img[-1][0] + img[-1][-1])
+        corners = sum(img[0, -1] + img[-1, 0] + img[-1, -1])
         assert_true(corners == 0)  # Should be all 0
         gloo.flush()
         gloo.finish()

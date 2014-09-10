@@ -32,6 +32,18 @@ def _get_root_dir():
     return root_dir, dev
 
 
+_nose_script = """
+try:
+    import faulthandler
+    faulthandler.enable()
+except Exception:
+    pass
+%s%s
+import nose
+nose.main(argv="%s".split(" ")%s)
+"""
+
+
 def _nose(mode, verbosity, coverage, extra_args):
     """Run nosetests using a particular mode"""
     cwd = os.getcwd()  # this must be done before nose import
@@ -71,9 +83,7 @@ def _nose(mode, verbosity, coverage, extra_args):
            ' '.join(str(e) for e in extra_args))
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
-    cmd = [sys.executable, '-c',
-           '%s%simport nose; nose.main(argv="%s".split(" ")%s)'
-           % (imps, app_import, arg, cv)]
+    cmd = [sys.executable, '-c', _nose_script % (imps, app_import, arg, cv)]
     env = deepcopy(os.environ)
     env.update(dict(_VISPY_TESTING_TYPE=mode))
     p = Popen(cmd, cwd=cwd, env=env)
@@ -153,6 +163,11 @@ _script = """
 import sys
 import time
 import warnings
+try:
+    import faulthandler
+    faulthandler.enable()
+except Exception:
+    pass
 import {0}
 
 if hasattr({0}, 'canvas'):
