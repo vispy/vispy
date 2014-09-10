@@ -22,23 +22,34 @@ and segfaults.
 from __future__ import division
 
 from time import sleep, time
-from ...util import logger
+import sys
 
+from ...util import logger
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import keys
 from ...ext.six import text_type
-
 from . import qt_lib
 
 
 # -------------------------------------------------------------------- init ---
 
+def _check_imports(lib):
+    # Make sure no conflicting libraries have been imported.
+    libs = ['PyQt4', 'PyQt5', 'PySide']
+    libs.remove(lib)
+    for lib2 in libs:
+        if lib2 in sys.modules:
+            raise RuntimeError("Refusing to import %s because %s is already "
+                               "imported." % (lib, lib2))
+
 # Get what qt lib to try. This tells us wheter this module is imported
 # via _pyside or _pyqt4
 if qt_lib == 'pyqt4':
+    _check_imports('PyQt4')
     from PyQt4 import QtGui, QtCore, QtOpenGL
 elif qt_lib == 'pyside':
+    _check_imports('PySide')
     from PySide import QtGui, QtCore, QtOpenGL
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)

@@ -68,6 +68,8 @@ def use(app=None, gl=None):
     'default_backend' provided in the vispy config. If still not
     succesful, it will try each backend in a predetermined order.
     """
+    if app is None and gl is None:
+        raise TypeError('Must specify at least one of "app" or "gl".')
 
     # Example for future. This wont work (yet).
     if app == 'ipynb_webgl':
