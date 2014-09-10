@@ -232,7 +232,6 @@ class CanvasBackend(BaseCanvasBackend):
         self._initialized = False
         
         # Deal with context
-        self._vispy_context = context
         if not context.istaken:
             context.take('glut', self)
             _set_config(context.config)

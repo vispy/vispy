@@ -171,14 +171,12 @@ class CanvasBackend(_Window, BaseCanvasBackend):
             = self._process_backend_kwargs(kwargs)
         
         # Deal with context
-        # contexts are shared by default in Pyglet
-        self._vispy_context = context
         if not context.istaken:
             context.take('pyglet', self)
             config = context.config  # Also used further below
             _set_config(config)
         elif context.istaken == 'pyglet':
-            config = None
+            config = None  # contexts are shared by default in Pyglet
         else:
             raise RuntimeError('Cannot share context between backends.')
         

@@ -200,12 +200,10 @@ class CanvasBackend(Frame, BaseCanvasBackend):
             = self._process_backend_kwargs(kwargs)
         
         # Deal with context
-        self._vispy_context = context
         if not context.istaken:
-            native_context = self._gl_attribs, glcanvas.GLContext(self._canvas)
+            context.take('wx', self)
             self._gl_attribs = _set_config(context.config)
             self._gl_context = glcanvas.GLContext(self._canvas)
-            # We take the context below
         elif context.istaken == 'wx':
             self._gl_attribs = context.backend_canvas._gl_attribs
             self._gl_context = context.backend_canvas._gl_context
@@ -328,7 +326,7 @@ class CanvasBackend(Frame, BaseCanvasBackend):
         # Force the window or widget to shut down
         canvas = self._canvas
         self._canvas = None
-        self._context = None  # let RC destroy this in case it's shared
+        self._gl_context = None  # let RC destroy this in case it's shared
         canvas.Close()
         canvas.Destroy()
         self.Close()

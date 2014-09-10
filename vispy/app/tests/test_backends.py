@@ -8,6 +8,8 @@ implementation is corect.
 
 """
 
+from inspect import getargspec
+
 from nose.tools import assert_raises
 
 import vispy
@@ -54,15 +56,19 @@ def _test_module_properties(_module=None):
         '_vispy_mouse_release',
         '_vispy_get_geometry',
         '_process_backend_kwargs')  # defined in base class
-
+    
+    class KlassRef(vispy.app.base.BaseCanvasBackend):
+        def __init__(self, *args, **kwargs):
+            pass  # Do not call the base class, since it will check for Canvas
     Klass = _module.CanvasBackend
-    KlassRef = vispy.app.base.BaseCanvasBackend  
-    # We cannot instantiate KlassRef if we have no Canvas
+    base = KlassRef()
     for key in dir(KlassRef):
         if not key.startswith('__'):
             method = getattr(Klass, key)
             if key not in exceptions:
                 print(key)
+                args = [None] * (len(getargspec(method).args) - 1)
+                assert_raises(NotImplementedError, getattr(base, key), *args)
                 if hasattr(method, '__module__'):
                     mod_str = method.__module__  # Py3k
                 else:

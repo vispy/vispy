@@ -132,13 +132,12 @@ class CanvasBackend(BaseCanvasBackend):
             self._native_config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
             self._native_context = egl.eglCreateContext(_EGL_DISPLAY, 
                                                         context.config, None)
-            context.take('egl', (self._native_config, self._native_context))
+            context.take('egl', self)
         elif context.istaken == 'egl':
             self._native_config = context.backend_canvas._native_config
             self._native_context = context.backend_canvas._native_context
         else:
             raise RuntimeError('Cannot share context between backends.')
-        self._vispy_context = context
         
         self._surface = None
         self._vispy_set_size(*size)
@@ -158,9 +157,9 @@ class CanvasBackend(BaseCanvasBackend):
         if self._surface is not None:
             self._destroy_surface()
         attrib_list = (egl.EGL_WIDTH, w, egl.EGL_HEIGHT, h)
-        config = self._vispy_context.backend_context[0]
         self._surface = egl.eglCreatePbufferSurface(_EGL_DISPLAY, 
-                                                    config, attrib_list)
+                                                    self._native_config, 
+                                                    attrib_list)
         if self._surface == egl.EGL_NO_SURFACE:
             raise RuntimeError('Could not create rendering surface')
         self._size = (w, h)

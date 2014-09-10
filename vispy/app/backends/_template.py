@@ -152,7 +152,6 @@ class CanvasBackend(BaseCanvasBackend):
             = self._process_backend_kwargs(kwargs)
         
         # Deal with context
-        self._vispy_context = context
         if not context.istaken:
             context.take('backend-name', self)
             self._native_context = None  # ...

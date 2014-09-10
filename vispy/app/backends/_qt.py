@@ -216,7 +216,6 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
                                    'use built-in shareWidget.')
         else:
             raise RuntimeError('Cannot share context between backends.')
-        self._vispy_context = context
         
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
 

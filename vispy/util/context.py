@@ -4,10 +4,13 @@
 
 """
 Functionality to deal with GL Contexts in vispy. This module is not in
-app, because we want to make it possible to use parts of vispy without
-relying on app (and vice versa).
+vispy.app, because we want to make it possible to use parts of vispy
+without relying on app (and vice versa). Although this *looks* like
+something from vispy.app (for practical reasons), it should be possible
+to use GLContext without using vispy.app by overloading it in an
+appropriate manner.
 
-The GLContext object is more like a placeholder on which different parts
+An GLContext object acts as a placeholder on which different parts
 of vispy (or other systems) can keep track of information related to
 an OpenGL context.
 """
@@ -48,7 +51,7 @@ class GLContext(object):
             if not isinstance(val, type(_default_dict[key])):
                 raise TypeError('Context value of %r has invalid type.' % key)
         # Init backend canvas and name
-        self._backend_canvas = lambda x=None:None
+        self._backend_canvas = lambda x=None: None
         self._name = None
     
     def take(self, name, backend_canvas):

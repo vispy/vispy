@@ -79,8 +79,7 @@ class Canvas(object):
     parent : widget-object
         The parent widget if this makes sense for the used backend.
     """
-
-
+    
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, vsync=False, resizable=True, decorate=True,

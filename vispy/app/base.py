@@ -2,8 +2,6 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from ..util.context import GLContext
-
 
 class BaseApplicationBackend(object):
     """BaseApplicationBackend()
@@ -45,7 +43,7 @@ class BaseCanvasBackend(object):
     """
 
     def __init__(self, vispy_canvas):
-        from .canvas import Canvas
+        from .canvas import Canvas  # Avoid circular import
         assert isinstance(vispy_canvas, Canvas)
         self._vispy_canvas = vispy_canvas
         
@@ -61,6 +59,10 @@ class BaseCanvasBackend(object):
         Also checks whether the values of the backend arguments do not
         violate the backend capabilities.
         """
+        
+        # Store context here
+        self._vispy_context = kwargs['context']
+        
         # Verify given argument with capability of the backend
         app = self._vispy_canvas.app
         capability = app.backend_module.capability

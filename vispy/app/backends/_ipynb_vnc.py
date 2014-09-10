@@ -162,7 +162,11 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_context(self):
         """Context to return for sharing"""
         return self._backend2._vispy_context
-
+    
+    @_vispy_context.setter
+    def _vispy_context(self, context):
+        self._backend2._vispy_context = context
+    
     def _vispy_warmup(self):
         return self._backend2._vispy_warmup()
 
