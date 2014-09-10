@@ -34,12 +34,12 @@ def get_default_config():
     return deepcopy(_default_dict)
 
 
-def get_active_context():
+def get_current_context():
     """ Return the currently active GLContext object
     
     Can return None if there is no context set yet.
     """
-    return GLContext._active_context
+    return GLContext._current_context
 
 
 class GLContext(object):
@@ -47,7 +47,7 @@ class GLContext(object):
     The intended use is to subclass this and implement _vispy_activate().
     """
     
-    _active_context = None
+    _current_context = None
     
     def __init__(self, config=None):
         self._config = deepcopy(_default_dict)
@@ -67,21 +67,21 @@ class GLContext(object):
         not already taken. 
         """
         if self.istaken:
-            raise RuntimeError('Cannot take an GLContext that is already taken')
+            raise RuntimeError('Cannot take a GLContext that is already taken')
         self._name = name
         self._backend_canvas = weakref.ref(backend_canvas)
     
     @property
     def istaken(self):
-        """ Whether this context currently is taken.
+        """ Whether this context it currently taken.
         """
         return self._name or False
     
     @property
     def backend_canvas(self):
-        """ The backend canvas that claimed ownership for this context. 
-        If the context is not yet taken or if the backend canvas has been
-        deleted, an error is raised.
+        """ The backend canvas that claimed ownership for this context.
+        If the context is not yet taken or if the backend canvas has
+        been deleted, an error is raised.
         """
         backend_canvas = self._backend_canvas()
         if backend_canvas is not None:
@@ -95,18 +95,19 @@ class GLContext(object):
         """
         return self._config
     
-    def activate(self):
-        """ Activate this context. There can only be one active context at 
-        all times.
+    def make_current(self, apply_backend=True):
+        """ Make this the current context. If apply_backend is True
+        (default) the canvas_backend is set to be current.
         """
-        self.backend_canvas._vispy_make_current()
-        GLContext._active_context = self
+        if apply_backend:
+            self.backend_canvas._vispy_make_current()
+        GLContext._current_context = self
     
     @property
-    def isactive(self):
+    def iscurrent(self):
         """ Whether this is currentlty the active context.
         """
-        return GLContext._active_context is self
+        return GLContext._current_context is self
     
     def __repr__(self):
         backend = self.istaken or 'no'

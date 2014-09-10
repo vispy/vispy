@@ -286,6 +286,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         # Make this the current context
+        self._vispy_context.set_current(False)  # Mark as current
         glfw.glfwMakeContextCurrent(self._id)
 
     def _vispy_swap_buffers(self):

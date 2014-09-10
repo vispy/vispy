@@ -256,6 +256,7 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
         if self._vispy_canvas is None:
             return  # todo: can we get rid of this now?
         if self.isValid():
+            self._vispy_context.set_current(False)  # Mark as current
             self.makeCurrent()
     
     def _vispy_warmup(self):
