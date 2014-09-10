@@ -160,7 +160,7 @@ class SceneCanvas(app.Canvas):
 
         Returns
         -------
-        array
+        image : array
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
             upper-left corner of the rendered region.
         

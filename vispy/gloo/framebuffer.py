@@ -310,7 +310,7 @@ class FrameBuffer(GLObject):
         
         Returns
         -------
-        array
+        buffer : array
             3D array of pixels in np.uint8 format. 
             The array shape is (h, w, 3) or (h, w, 4), with the top-left 
             corner of the framebuffer at index [0, 0] in the returned array.
