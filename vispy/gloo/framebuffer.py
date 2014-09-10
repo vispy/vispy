@@ -4,11 +4,11 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-#import OpenGL.GL as gl
 from . import gl
 from .globject import GLObject
 from .texture import Texture2D
 from ..util import logger
+from .wrappers import _check_valid, read_pixels
 
 # ------------------------------------------------------ RenderBuffer class ---
 
@@ -297,6 +297,33 @@ class FrameBuffer(GLObject):
             self.depth_buffer.resize(shape)
         if self.stencil_buffer is not None:
             self.stencil_buffer.resize(shape)
+
+    def read(self, mode='color', alpha=True):
+        """ Return array of pixel values in an attached buffer
+        
+        Parameters
+        ----------
+        mode : str
+            The buffer type to read. May be 'color', 'depth', or 'stencil'.
+        alpha : bool
+            If True, returns RGBA array. Otherwise, returns RGB.
+        
+        Returns
+        -------
+        buffer : array
+            3D array of pixels in np.uint8 format. 
+            The array shape is (h, w, 3) or (h, w, 4), with the top-left 
+            corner of the framebuffer at index [0, 0] in the returned array.
+        
+        """
+        _check_valid('mode', mode, ['color', 'depth', 'stencil'])
+        buffer = getattr(self, mode+'_buffer')
+        h, w = buffer._shape
+        
+        # todo: this is ostensibly required, but not available in gloo.gl
+        #gl.glReadBuffer(buffer._target)
+        
+        return read_pixels((0, 0, w, h), alpha=alpha)
 
     def _create(self):
         """ Create framebuffer on GPU """

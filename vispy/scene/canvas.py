@@ -138,25 +138,69 @@ class SceneCanvas(app.Canvas):
         self.update()
 
     def on_draw(self, event):
-        gloo.clear(color=self._bgcolor, depth=True)
         if self._scene is None:
             return  # Can happen on initialization
         logger.debug('Canvas draw')
+
+        self._draw_scene()
+
+    def render(self, region=None, size=None):
+        """ Render the scene to an offscreen buffer and return the image array.
         
+        Parameters
+        ----------
+        region : tuple | None
+            Specifies the region of the canvas to render. Format is 
+            (x, y, w, h). By default, the entire canvas is rendered.
+        size : tuple | None
+            Specifies the size of the image array to return. If no size is 
+            given, then the size of the *region* is used. This argument allows
+            the scene to be rendered at resolutions different from the native
+            canvas resolution.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the 
+            upper-left corner of the rendered region.
+        
+        """
+        # Set up a framebuffer to render to
+        offset = (0, 0) if region is None else region[:2]
+        csize = self.size if region is None else region[2:]
+        size = csize if size is None else size
+        fbo = gloo.FrameBuffer(color=gloo.ColorBuffer(size[::-1]), 
+                               depth=gloo.DepthBuffer(size[::-1]))
+        
+        self.push_fbo(fbo, offset, csize)
+        try:
+            self._draw_scene()
+            return fbo.read()
+        finally:
+            self.pop_fbo()
+        
+    def _draw_scene(self):
+        gloo.clear(color=self._bgcolor, depth=True)
         # Draw the scene, but first disconnect its change signal--
         # any changes that take place during the paint should not trigger
         # a subsequent repaint.
         with self.scene.events.update.blocker(self._scene_update):
             self.draw_visual(self.scene)
-        
-        if len(self._vp_stack) > 0:
-            logger.warning("Viewport stack not fully cleared after draw.")
-        if len(self._fb_stack) > 0:
-            logger.warning("Framebuffer stack not fully cleared after draw.")
 
     def draw_visual(self, visual, event=None):
-        """ Draw a *visual* and its children on the canvas.
+        """ Draw a visual to the canvas or currently active framebuffer.
+        
+        Parameters
+        ----------
+        visual : Visual
+            The visual to draw
+        event : None or DrawEvent
+            Optionally specifies the original canvas draw event that initiated
+            this draw.
         """
+        nfb = len(self._fb_stack)
+        nvp = len(self._vp_stack)
+        
         # Create draw event, which keeps track of the path of transforms
         self._process_entity_count = 0  # for debugging
         
@@ -183,6 +227,11 @@ class SceneCanvas(app.Canvas):
             visual.draw(scene_event)
         finally:
             scene_event.pop_viewport()
+
+        if len(self._vp_stack) > nvp:
+            logger.warning("Viewport stack not fully cleared after draw.")
+        if len(self._fb_stack) > nfb:
+            logger.warning("Framebuffer stack not fully cleared after draw.")
 
     def _process_mouse_event(self, event):
         tr_cache = self._transform_caches.setdefault(self.scene, 

@@ -15,6 +15,30 @@ vispy.scene.cameras
 
 ----
 
+vispy.scene.canvas
+-------------------
+.. automodule:: vispy.scene.canvas
+   :members:
+
+
+----
+
+vispy.scene.entity
+------------------
+.. automodule:: vispy.scene.entity
+   :members:
+
+
+----
+
+vispy.scene.events
+------------------
+.. automodule:: vispy.scene.entity
+   :members:
+
+
+----
+
 vispy.scene.shaders
 -------------------
 .. automodule:: vispy.scene.shaders

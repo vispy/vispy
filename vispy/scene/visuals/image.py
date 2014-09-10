@@ -123,7 +123,8 @@ class Image(ModularMesh):
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
 
-        self._texture = gloo.Texture2D(self._data)
+        data = self._data
+        self._texture = gloo.Texture2D(data, store=False)
         self._texture.interpolation = self._interpolation
 
         self.color_components = [TextureComponent(self._texture,

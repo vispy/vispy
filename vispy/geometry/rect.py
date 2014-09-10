@@ -37,7 +37,7 @@ class Rect(object):
 
     @property
     def pos(self):
-        return self._pos
+        return tuple(self._pos)
 
     @pos.setter
     def pos(self, p):
@@ -46,7 +46,7 @@ class Rect(object):
 
     @property
     def size(self):
-        return self._size
+        return tuple(self._size)
 
     @size.setter
     def size(self, s):

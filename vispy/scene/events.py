@@ -115,7 +115,10 @@ class SceneEvent(Event):
         coordinate system of this Entity is used for making physical
         measurements--px, mm, in, etc.
         """
-        return self._doc_stack[-1]
+        if len(self._doc_stack) > 0:
+            return self._doc_stack[-1]
+        else:
+            return self.canvas_cs
 
     @property
     def canvas_cs(self):
@@ -229,16 +232,22 @@ class SceneEvent(Event):
         """ The transform that maps from the current entity to the first
         scene in its ancestry.
         """
-        view = self._viewbox_stack[-1]
-        return self.entity_transform(map_to=view.scene)
+        if len(self._viewbox_stack) > 1:
+            view = self._viewbox_stack[-1]
+            return self.entity_transform(map_to=view.scene)
+        else:
+            return None
 
     @property
     def view_transform(self):
         """ The transform that maps from the current entity to the first
         viewbox in its ancestry.
         """
-        view = self._viewbox_stack[-1]
-        return self.entity_transform(map_to=view)
+        if len(self._viewbox_stack) > 1:
+            view = self._viewbox_stack[-1]
+            return self.entity_transform(map_to=view)
+        else:
+            return None
 
     def entity_transform(self, map_to=None, map_from=None):
         """ Return the transform from *map_from* to *map_to*, using the
