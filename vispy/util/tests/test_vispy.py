@@ -23,7 +23,7 @@ def test_use():
     
     try:
         # With no arguments, should do nothing
-        vispy.use()
+        assert_raises(TypeError, vispy.use)
         assert_equal(vispy.app._default_app.default_app, None)
         
         # With only gl args, should do nothing to app
