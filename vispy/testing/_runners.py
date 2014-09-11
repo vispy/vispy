@@ -82,36 +82,37 @@ nose.main(argv="%s".split(" ")%s)
 def _nose(mode, verbosity, extra_args):
     """Run nosetests using a particular mode"""
     cwd = os.getcwd()  # this must be done before nose import
-    coverage = True
     try:
         import nose  # noqa, analysis:ignore
     except ImportError:
         print('Skipping nosetests, nose not installed')
         raise SkipTest()
+
     if mode == 'nobackend':
-        print(_line_sep + '\nRunning tests with no backend')
+        msg = 'Running tests with no backend'
         attrs = '-a !vispy_app_test '
         app_import = ''
+        coverage = True
     elif mode == 'singlefile':
         assert len(extra_args) == 1
         assert op.isfile(extra_args[0])
+        msg = ''
         attrs = ''
         app_import = ''
         coverage = False
     else:
         with use_log_level('warning', print_msg=False):
             has, why_not = has_backend(mode, out=['why_not'])
-        if has:
-            print('%s\nRunning tests with %s backend' % (_line_sep, mode))
-            attrs = '-a vispy_app_test '
-        else:
+        if not has:
             msg = ('Skipping tests for backend %s, not found (%s)'
                    % (mode, why_not))
             print(_line_sep + '\n' + msg + '\n' + _line_sep + '\n')
             raise SkipTest(msg)
+        msg = 'Running tests with %s backend' % mode
+        attrs = '-a vispy_app_test '
         app_import = '\nfrom vispy import use\nuse(app="%s")\n' % mode
+        coverage = True
     coverage = ', addplugins=[MutedCoverage()]' if coverage else ''
-    sys.stdout.flush()
     arg = (' ' + ('--verbosity=%s ' % verbosity) + attrs +
            ' '.join(str(e) for e in extra_args))
     # make a call to "python" so that it inherits whatever the system
@@ -119,6 +120,11 @@ def _nose(mode, verbosity, extra_args):
     cmd = [sys.executable, '-c', _nose_script % (app_import, arg, coverage)]
     env = deepcopy(os.environ)
     env.update(dict(_VISPY_TESTING_TYPE=mode))
+    if len(msg) > 0:
+        msg = ('%s\n%s:\n_VISPY_TESTING_TYPE=%s nosetests %s'
+               % (_line_sep, msg, mode, arg.strip()))
+        print(msg)
+    sys.stdout.flush()
     p = Popen(cmd, cwd=cwd, env=env)
     stdout, stderr = p.communicate()
     if(p.returncode):
