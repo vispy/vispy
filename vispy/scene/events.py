@@ -5,7 +5,7 @@
 from __future__ import division
 
 from ..util.event import Event
-from .transforms import TransformCache
+from ..visuals.transforms import TransformCache
 
 
 class SceneEvent(Event):

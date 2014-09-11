@@ -4,8 +4,8 @@
 
 from __future__ import division
 
-from ...util import event
-from ..entity import Entity
+from ..util import event
+from .entity import Entity
 
 """
 API Issues to work out:

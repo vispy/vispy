@@ -22,8 +22,8 @@ import numpy as np
 
 from .entity import Entity
 from ..geometry import Rect
-from .transforms import (STTransform, PerspectiveTransform, NullTransform,
-                         AffineTransform)
+from ..visuals.transforms import (STTransform, PerspectiveTransform, 
+                                  NullTransform, AffineTransform)
 
 
 def make_camera(cam_type, *args, **kwds):

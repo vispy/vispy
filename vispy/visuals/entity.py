@@ -4,10 +4,9 @@
 
 from __future__ import division
 
-from . import transforms
 from ..util.event import EmitterGroup, Event
 from .events import SceneDrawEvent, SceneMouseEvent
-from .transforms import NullTransform, create_transform
+from ..visuals.transforms import NullTransform, BaseTransform, create_transform
 
 
 class Entity(object):
@@ -60,7 +59,7 @@ class Entity(object):
 
         # Components that all entities in vispy have
         # todo: default transform should be trans-scale-rot transform
-        self._transform = transforms.NullTransform()
+        self._transform = NullTransform()
     
     @property
     def name(self):
@@ -185,7 +184,7 @@ class Entity(object):
     def transform(self, tr):
         if self._transform is not None:
             self._transform.changed.disconnect(self._transform_changed)
-        assert isinstance(tr, transforms.BaseTransform)
+        assert isinstance(tr, BaseTransform)
         self._transform = tr
         self._transform.changed.connect(self._transform_changed)
         self._transform_changed(None)
