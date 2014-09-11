@@ -159,13 +159,14 @@ def requires_pyopengl():
 
 def has_backend(backend, has=(), capable=(), out=()):
     from ..app.backends import BACKENDMAP
-    using = os.getenv('_VISPY_TESTING_MODE', None)
+    using = os.getenv('_VISPY_TESTING_APP', None)
     if using is not None and using != backend:
         # e.g., we are on  a 'pyglet' run but the test requires PyQt4
         ret = (False,) if len(out) > 0 else False
         for o in out:
             ret += (None,)
         return ret
+
     # let's follow the standard code path
     module_name = BACKENDMAP[backend.lower()][1]
     with use_log_level('warning', print_msg=False):
@@ -359,6 +360,7 @@ def assert_image_equal(image, reference, limit=40):
         raise
 
 
+@nottest
 def TestingCanvas(bgcolor='black', size=(100, 100)):
     """Class wrapper to avoid importing scene until necessary"""
     from ..scene import SceneCanvas

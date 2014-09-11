@@ -113,13 +113,13 @@ def _nose(mode, extra_arg_string):
     # thinks is "python" (e.g., virtualenvs)
     cmd = [sys.executable, '-c', _nose_script % (args, coverage)]
     env = deepcopy(os.environ)
-    if mode not in ('singlefile',):
-        # We do want to set this for "nobackend" to help ensure that app
-        # tests are appropriately decorated
-        env.update(dict(_VISPY_TESTING_TYPE=mode))
-        env_str = '_VISPY_TESTING_TYPE=%s ' % mode
-    else:
+    if mode == 'singlefile':
         env_str = ''
+    else:
+        # We want to set this for all app backends plus "nobackend" to 
+        # help ensure that app tests are appropriately decorated
+        env.update(dict(_VISPY_TESTING_APP=mode))
+        env_str = '_VISPY_TESTING_APP=%s ' % mode
     if len(msg) > 0:
         msg = ('%s\n%s:\n%s%s'
                % (_line_sep, msg, env_str, args))
@@ -273,7 +273,7 @@ def _examples():
         cwd = op.dirname(fname)
         cmd = [sys.executable, '-c', _script.format(op.split(fname)[1][:-3])]
         env = deepcopy(os.environ)
-        env.update(dict(_VISPY_TESTING_TYPE='examples'))
+        env.update(dict(_VISPY_TESTING_APP='examples'))
         p = Popen(cmd, cwd=cwd, env=env, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         stdout, stderr = stdout.decode('utf-8'), stderr.decode('utf-8').strip()
