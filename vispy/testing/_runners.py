@@ -15,7 +15,7 @@ from functools import partial
 
 from ..util import use_log_level
 from ..util.ptime import time
-from ._testing import SkipTest, has_backend, has_application
+from ._testing import SkipTest, has_backend, has_application, nottest
 
 
 _line_sep = '-' * 70
@@ -74,12 +74,11 @@ try:
 except Exception:
     pass
 
-%s
 nose.main(argv="%s".split(" ")%s)
 """
 
 
-def _nose(mode, verbosity, extra_args):
+def _nose(mode, extra_arg_string):
     """Run nosetests using a particular mode"""
     cwd = os.getcwd()  # this must be done before nose import
     try:
@@ -90,15 +89,12 @@ def _nose(mode, verbosity, extra_args):
 
     if mode == 'nobackend':
         msg = 'Running tests with no backend'
-        attrs = '-a !vispy_app_test '
-        app_import = ''
+        extra_arg_string = '-a !vispy_app_test ' + extra_arg_string
         coverage = True
     elif mode == 'singlefile':
-        assert len(extra_args) == 1
-        assert op.isfile(extra_args[0])
-        msg = ''
-        attrs = ''
-        app_import = ''
+        fname = extra_arg_string.split(' ')[0]
+        assert op.isfile(fname)
+        msg = 'Running tests for individual file'
         coverage = False
     else:
         with use_log_level('warning', print_msg=False):
@@ -109,20 +105,24 @@ def _nose(mode, verbosity, extra_args):
             print(_line_sep + '\n' + msg + '\n' + _line_sep + '\n')
             raise SkipTest(msg)
         msg = 'Running tests with %s backend' % mode
-        attrs = '-a vispy_app_test '
-        app_import = '\nfrom vispy import use\nuse(app="%s")\n' % mode
+        extra_arg_string = '-a vispy_app_test ' + extra_arg_string
         coverage = True
     coverage = ', addplugins=[MutedCoverage()]' if coverage else ''
-    arg = (' ' + ('--verbosity=%s ' % verbosity) + attrs +
-           ' '.join(str(e) for e in extra_args))
+    args = 'nosetests %s' % extra_arg_string.strip()
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
-    cmd = [sys.executable, '-c', _nose_script % (app_import, arg, coverage)]
+    cmd = [sys.executable, '-c', _nose_script % (args, coverage)]
     env = deepcopy(os.environ)
-    env.update(dict(_VISPY_TESTING_TYPE=mode))
+    if mode not in ('singlefile',):
+        # We do want to set this for "nobackend" to help ensure that app
+        # tests are appropriately decorated
+        env.update(dict(_VISPY_TESTING_TYPE=mode))
+        env_str = '_VISPY_TESTING_TYPE=%s ' % mode
+    else:
+        env_str = ''
     if len(msg) > 0:
-        msg = ('%s\n%s:\n_VISPY_TESTING_TYPE=%s nosetests %s'
-               % (_line_sep, msg, mode, arg.strip()))
+        msg = ('%s\n%s:\n%s%s'
+               % (_line_sep, msg, env_str, args))
         print(msg)
     sys.stdout.flush()
     p = Popen(cmd, cwd=cwd, env=env)
@@ -294,12 +294,20 @@ def _examples():
     print('Success%s' % t)
 
 
-def _tester(label='full', verbosity=1, extra_args=()):
-    """Test vispy software. See vispy.test()
+@nottest
+def test(label='full', extra_arg_string=''):
+    """Test vispy software
+
+    Parameters
+    ----------
+    label : str
+        Can be one of 'full', 'nose', 'nobackend', 'extra', 'lineendings',
+        'flake', or any backend name (e.g., 'qt').
+    extra_arg_string : str
+        Extra arguments to sent to ``nose``, e.g. ``'-x --verbosity=2'``.
     """
     from vispy.app.backends import BACKEND_NAMES as backend_names
     label = label.lower()
-    verbosity = int(verbosity)
     if op.isfile('.coverage'):
         os.remove('.coverage')
     known_types = ['full', 'nose', 'lineendings', 'extra', 'flake',
@@ -313,14 +321,14 @@ def _tester(label='full', verbosity=1, extra_args=()):
     runs = []
     if label in ('full', 'nose'):
         for backend in backend_names:
-            runs.append([partial(_nose, backend, verbosity, extra_args),
+            runs.append([partial(_nose, backend, extra_arg_string),
                          backend])
     elif label in backend_names:
-        runs.append([partial(_nose, label, verbosity, extra_args), label])
+        runs.append([partial(_nose, label, extra_arg_string), label])
     if label in ('full', 'examples'):
         runs.append([_examples, 'examples'])
     if label in ('full', 'nose', 'nobackend'):
-        runs.append([partial(_nose, 'nobackend', verbosity, extra_args),
+        runs.append([partial(_nose, 'nobackend', extra_arg_string),
                      'nobackend'])
     if label in ('full', 'extra', 'lineendings'):
         runs.append([_check_line_endings, 'lineendings'])

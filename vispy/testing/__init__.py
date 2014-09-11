@@ -8,4 +8,4 @@ from ._testing import (SkipTest, requires_application, requires_img_lib,  # noqa
                       has_matplotlib, assert_image_equal,  # noqa
                       save_testing_image, TestingCanvas, has_pyopengl,  # noqa
                       run_tests_if_main)  # noqa
-from ._runners import _tester  # noqa
+from ._runners import test  # noqa

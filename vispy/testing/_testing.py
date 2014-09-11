@@ -23,14 +23,11 @@ except ImportError:
 
 from distutils.version import LooseVersion
 
-from ..scene import SceneCanvas
 from ..ext.six.moves import http_client as httplib
 from ..ext.six.moves import urllib_parse as urllib
 from ..ext.six import string_types
-from ..io import read_png, _make_png, _check_img_lib
 from ..util import use_log_level
 from ..util.fetching import get_testing_file
-from .. import gloo
 
 ###############################################################################
 # Adapted from Python's unittest2 (which is wrapped by nose)
@@ -237,6 +234,7 @@ def glut_skip():
 
 def requires_img_lib():
     """Decorator for tests that require an image library"""
+    from ..io import _check_img_lib
     if sys.platform.startswith('win'):
         has_img_lib = False  # PIL breaks tests on windows (!)
     else:
@@ -281,6 +279,7 @@ def requires_scipy(min_version='0.13'):
 
 
 def _save_failed_test(data, expect, filename):
+    from ..io import _make_png
     commit, error = run_subprocess(['git', 'rev-parse',  'HEAD'])
     name = filename.split('/')
     name.insert(-1, commit.strip())
@@ -333,6 +332,7 @@ def assert_image_equal(image, reference, limit=40):
     raise SkipTest("Image comparison disabled until polygon visual "
                    "output is finalized.")
     from ..gloo.util import _screenshot
+    from ..io import read_png
 
     if image == "screenshot":
         image = _screenshot(alpha=False)
@@ -359,19 +359,26 @@ def assert_image_equal(image, reference, limit=40):
         raise
 
 
-class TestingCanvas(SceneCanvas):
-    def __init__(self, bgcolor='black', size=(100, 100)):
-        SceneCanvas.__init__(self, size=size, bgcolor=bgcolor)
+def TestingCanvas(bgcolor='black', size=(100, 100)):
+    """Class wrapper to avoid importing scene until necessary"""
+    from ..scene import SceneCanvas
+    from .. import gloo
 
-    def __enter__(self):
-        SceneCanvas.__enter__(self)
-        gloo.clear(color=self._bgcolor)
-        return self
+    class TestingCanvas(SceneCanvas):
+        def __init__(self, bgcolor, size):
+            SceneCanvas.__init__(self, size=size, bgcolor=bgcolor)
 
-    def draw_visual(self, visual):
-        SceneCanvas.draw_visual(self, visual)
-        gloo.gl.glFlush()
-        gloo.gl.glFinish()
+        def __enter__(self):
+            SceneCanvas.__enter__(self)
+            gloo.clear(color=self._bgcolor)
+            return self
+
+        def draw_visual(self, visual):
+            SceneCanvas.draw_visual(self, visual)
+            gloo.gl.glFlush()
+            gloo.gl.glFinish()
+
+    return TestingCanvas(bgcolor, size)
 
 
 @nottest
@@ -397,4 +404,4 @@ def run_tests_if_main():
     if not os.path.isfile(fname):
         raise IOError('Could not find file "%s"' % fname)
     from ._runners import _nose
-    _nose('singlefile', 2, [fname])
+    _nose('singlefile', fname + ' --verbosity=2')

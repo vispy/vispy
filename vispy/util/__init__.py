@@ -13,4 +13,4 @@ from .config import (_parse_command_line_arguments, config, sys_info,  # noqa
 
 from . import fonts       # noqa
 from . import transforms  # noqa
-from .wrappers import test, use, run_subprocess  # noqa
+from .wrappers import use, run_subprocess  # noqa

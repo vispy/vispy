@@ -18,7 +18,7 @@ import vispy
 
 
 # minimum that will be imported when importing vispy
-_min_modules = ['vispy', 'vispy.util', 'vispy.ext']
+_min_modules = ['vispy', 'vispy.util', 'vispy.ext', 'vispy.testing']
 
 
 def check_output(*popenargs, **kwargs):
