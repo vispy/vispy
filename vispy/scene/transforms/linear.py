@@ -300,6 +300,12 @@ class AffineTransform(BaseTransform):
             self.matrix = transforms.scale(self.matrix, *scale[0, :3])
 
     def rotate(self, angle, axis):
+        """
+        Rotate the matrix by *angle* about the vector *axis*. 
+
+        The rotation is applied *after* the transformations already present
+        in the matrix.
+        """
         #tr = transforms.rotate(np.eye(4), angle, *axis)
         #self.matrix = np.dot(tr, self.matrix)
         self.matrix = transforms.rotate(self.matrix, angle, *axis)
