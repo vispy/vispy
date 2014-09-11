@@ -6,9 +6,9 @@ from __future__ import division
 
 import numpy as np
 
-from ... import gloo
+from .. import gloo
 from .visual import Visual
-from ..shaders import ModularProgram
+from .shaders import ModularProgram
 
 
 VERT = """

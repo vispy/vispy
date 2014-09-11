@@ -6,9 +6,9 @@ from __future__ import division
 
 import numpy as np
 
-from ..visuals.visual import Visual
-from ..visuals.line import Line
-from ..transforms import STTransform
+from ...visuals.visual import Visual
+from ...visuals.line import Line
+from ...visuals.transforms import STTransform
 from ...util.event import Event
 from ...geometry import Rect
 from ...color import Color

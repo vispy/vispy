@@ -6,10 +6,10 @@ from __future__ import division
 
 import numpy as np
 
-from ... import gloo
-from ..transforms import STTransform, NullTransform
+from .. import gloo
+from .transforms import STTransform, NullTransform
 from .modular_mesh import ModularMesh
-from ..components import (TextureComponent, VertexTextureCoordinateComponent,
+from .components import (TextureComponent, VertexTextureCoordinateComponent,
                           TextureCoordinateComponent)
 
 

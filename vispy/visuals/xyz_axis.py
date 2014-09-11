@@ -1,7 +1,7 @@
 
 import numpy as np
 
-from vispy.scene.visuals import Line
+from .line import Line
 
 
 class XYZAxis(Line):

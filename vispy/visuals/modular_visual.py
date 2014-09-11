@@ -6,10 +6,10 @@ from __future__ import division, print_function
 
 import numpy as np
 
-from ... import gloo
+from .. import gloo
 from .visual import Visual
-from ..shaders import ModularProgram, Variable
-from ..components import (VisualComponent, XYPosComponent, XYZPosComponent,
+from .shaders import ModularProgram, Variable
+from .components import (VisualComponent, XYPosComponent, XYZPosComponent,
                           UniformColorComponent, VertexColorComponent)
 
 """

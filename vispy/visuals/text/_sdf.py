@@ -9,7 +9,7 @@ Adapted to `vispy` by Eric Larson <larson.eric.d@gmail.com>.
 
 import numpy as np
 from os import path as op
-from ....gloo import (Program, FrameBuffer, VertexBuffer, Texture2D, 
+from ...gloo import (Program, FrameBuffer, VertexBuffer, Texture2D, 
                       set_viewport, set_state)
 
 this_dir = op.dirname(__file__)

@@ -46,12 +46,12 @@ Terminology
 
 __all__ = ['SceneCanvas', 'Entity']
 
-from .entity import Entity  # noqa
 from .canvas import SceneCanvas  # noqa
-from . import visuals  # noqa
+from .. import visuals  # noqa
+from ..visuals import transforms  # noqa
 from . import widgets  # noqa
 from . import cameras  # noqa
-from .visuals import *  # noqa
+from ..visuals import *  # noqa
 from .cameras import *  # noqa
-from .transforms import *  # noqa
+from ..visuals.transforms import *  # noqa
 from .widgets import *  # noqa

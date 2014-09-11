@@ -5,7 +5,7 @@
 from __future__ import division
 
 from .mesh import Mesh
-from ...geometry.isosurface import isosurface
+from ..geometry.isosurface import isosurface
 
 
 class Isosurface(Mesh):

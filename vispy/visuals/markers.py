@@ -9,9 +9,9 @@ Marker Visual and shader definitions.
 
 import numpy as np
 
-from ...color import Color
-from ...gloo import set_state, VertexBuffer, _check_valid
-from ..shaders import ModularProgram, Function, Variable
+from ..color import Color
+from ..gloo import set_state, VertexBuffer, _check_valid
+from .shaders import ModularProgram, Function, Variable
 from .visual import Visual
 
 

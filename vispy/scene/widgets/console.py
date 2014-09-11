@@ -9,7 +9,7 @@
 
 import numpy as np
 
-from ..shaders import ModularProgram
+from ...visuals.shaders import ModularProgram
 from .widget import Widget
 from ...gloo import VertexBuffer, set_state
 from ...color import Color

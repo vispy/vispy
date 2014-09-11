@@ -16,16 +16,16 @@ from os import path as op
 import sys
 
 from ._sdf import SDFRenderer
-from ....gloo import (TextureAtlas, set_state, IndexBuffer, VertexBuffer,
+from ...gloo import (TextureAtlas, set_state, IndexBuffer, VertexBuffer,
                       set_viewport)
-from ....gloo import gl
-from ....gloo.wrappers import _check_valid
-from ....ext.six import string_types
-from ....util.fonts import _load_glyph
-from ...shaders import ModularProgram
-from ....color import Color
+from ...gloo import gl
+from ...gloo.wrappers import _check_valid
+from ...ext.six import string_types
+from ...util.fonts import _load_glyph
+from ..shaders import ModularProgram
+from ...color import Color
 from ..visual import Visual
-from ....io import _data_dir
+from ...io import _data_dir
 
 
 class TextureFont(object):

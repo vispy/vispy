@@ -8,12 +8,12 @@ import weakref
 
 from .. import gloo
 from .. import app
-from .subscene import SubScene
-from .entity import Entity
-from .transforms import STTransform, TransformCache
-from .events import SceneDrawEvent, SceneMouseEvent
+from ..visuals.entity import Entity
+from ..visuals.transforms import STTransform, TransformCache
 from ..color import Color
 from ..util import logger
+from .subscene import SubScene
+from .events import SceneDrawEvent, SceneMouseEvent
 from .widgets import Widget
 
 

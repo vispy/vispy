@@ -11,12 +11,12 @@ from __future__ import division
 
 import numpy as np
 
-from ... import gloo
+from .. import gloo
 from .visual import Visual
 from .mesh import Mesh
 from .line import Line
-from ...color import Color
-from ...geometry import PolygonData
+from ..color import Color
+from ..geometry import PolygonData
 
 
 class Polygon(Visual):

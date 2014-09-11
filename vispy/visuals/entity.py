@@ -5,7 +5,6 @@
 from __future__ import division
 
 from ..util.event import EmitterGroup, Event
-from .events import SceneDrawEvent, SceneMouseEvent
 from ..visuals.transforms import NullTransform, BaseTransform, create_transform
 
 
@@ -35,12 +34,10 @@ class Entity(object):
                                    parents_change=Event,
                                    active_parent_change=Event,
                                    children_change=Event,
-                                   mouse_press=SceneMouseEvent,
-                                   mouse_move=SceneMouseEvent,
-                                   mouse_release=SceneMouseEvent,
-                                   mouse_wheel=SceneMouseEvent,
-                                   draw=SceneDrawEvent,
-                                   children_drawn=SceneDrawEvent,
+                                   mouse_press=Event,
+                                   mouse_move=Event,
+                                   mouse_release=Event,
+                                   mouse_wheel=Event,
                                    update=Event,
                                    transform_change=Event,
                                    )

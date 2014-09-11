@@ -4,8 +4,8 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from ...geometry import create_cube
-from ...gloo import set_state
+from ..geometry import create_cube
+from ..gloo import set_state
 from .mesh import Mesh
 
 

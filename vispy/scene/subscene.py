@@ -4,7 +4,7 @@
 
 from __future__ import division
 
-from .entity import Entity
+from ..visuals import Entity
 from .systems import DrawingSystem, MouseInputSystem
 
 

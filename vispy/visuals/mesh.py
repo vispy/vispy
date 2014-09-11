@@ -12,10 +12,10 @@ from __future__ import division
 import numpy as np
 
 from .visual import Visual
-from ..shaders import ModularProgram, Function, Varying
-from ...gloo import VertexBuffer, IndexBuffer, set_state
-from ...geometry import MeshData
-from ...color import Color
+from .shaders import ModularProgram, Function, Varying
+from ..gloo import VertexBuffer, IndexBuffer, set_state
+from ..geometry import MeshData
+from ..color import Color
 
 ## Snippet templates (defined as string to force user to create fresh Function)
 # Consider these stored in a central location in vispy ...

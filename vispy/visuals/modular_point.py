@@ -4,9 +4,9 @@
 
 from __future__ import division
 
-from ... import gloo
+from .. import gloo
 from .modular_visual import ModularVisual
-from ..shaders import Function
+from .shaders import Function
 
 
 class ModularPoint(ModularVisual):

@@ -9,10 +9,10 @@ from __future__ import division
 
 import numpy as np
 
-from .... import gloo
-from ....color import ColorArray, get_colormap
-from ....ext.six import string_types
-from ...shaders import ModularProgram, Function
+from ... import gloo
+from ...color import ColorArray, get_colormap
+from ...ext.six import string_types
+from ..shaders import ModularProgram, Function
 from ..visual import Visual
 
 from .dash_atlas import DashAtlas

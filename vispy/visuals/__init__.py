@@ -17,6 +17,7 @@ __all__ = ['Visual', 'Cube', 'Ellipse', 'GridLines', 'Image', 'Line',
            'LinePlot', 'Markers', 'marker_types', 'Mesh', 'Polygon',
            'Rectangle', 'RegularPolygon', 'SurfacePlot', 'Text', 'XYZAxis']
 
+from .entity import Entity  # noqa
 from .visual import Visual  # noqa
 from .line import Line  # noqa
 from .markers import Markers, marker_types  # noqa

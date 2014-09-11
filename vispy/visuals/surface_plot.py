@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from .mesh import Mesh
-from ...geometry import MeshData
+from ..geometry import MeshData
 
 
 class SurfacePlot(Mesh):

@@ -9,7 +9,7 @@ RegularPolygon visual based on EllipseVisual
 
 from __future__ import division
 
-from ...color import Color
+from ..color import Color
 from .ellipse import Ellipse, Mesh, Line
 
 
