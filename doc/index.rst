@@ -44,6 +44,15 @@ can:
   * Start using the higher-level interfaces (visuals, scene graph)
   
 
+VisPy user guide
+----------------
+
+
+
+VisPy developer guide
+---------------------
+
+
 Learning the fundamentals of modern OpenGL
 ------------------------------------------
 
@@ -76,7 +85,7 @@ API reference
    vispy.gloo - User-friendly, Pythonic, object-oriented interface to OpenGL <gloo>
    vispy.io - Data IO <io>
    vispy.mpl_plot - OpenGL backend for matplotlib [experimental] <mpl_plot>
-   vispy.scene - The system underlying the upcoming high-level visualization interfaces [highly experimental] <scene>
+   vispy.scene - The system underlying the upcoming high-level visualization interfaces [experimental] <scene>
    vispy.util - Miscellaneous utilities <util>
    
    examples

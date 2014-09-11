@@ -1,6 +1,6 @@
-===========
-Scene graph
-===========
+==========
+Scenegraph
+==========
 
 .. automodule:: vispy.scene
    :members:
