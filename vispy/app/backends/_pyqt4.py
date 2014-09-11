@@ -9,6 +9,7 @@ import sys
 from .. import backends
 from ...util import logger
 
+
 try:
     # Make sure no conflicting libraries have been imported.
     for lib in ['PySide', 'PyQt5']:

@@ -16,7 +16,6 @@ try:
         if lib in sys.modules:
             raise RuntimeError("Refusing to import PySide because %s is "
                                "already imported." % lib)
-
     # Try importing
     from PySide import QtGui, QtCore, QtOpenGL  # noqa
 except Exception as exp:
