@@ -47,6 +47,12 @@ class BaseCanvasBackend(object):
         assert isinstance(vispy_canvas, Canvas)
         self._vispy_canvas = vispy_canvas
         
+        # We set the _backend attribute of the vispy_canvas to self,
+        # because at the end of the __init__ of the CanvasBackend
+        # implementation there might be a call to show or draw. By
+        # setting it here, we ensure that the Canvas is "ready to go".
+        vispy_canvas._backend = self
+        
         # Data used in the construction of new mouse events
         self._vispy_mouse_data = {
             'buttons': [],
