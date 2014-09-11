@@ -207,7 +207,7 @@ def has_application(backend=None, has=(), capable=()):
 
 
 def requires_application(backend=None, has=(), capable=()):
-    """Decorator for tests that require an application"""
+    """Return a decorator for tests that require an application"""
     good, msg = has_application(backend, has, capable)
 
     def skip_decorator(f):

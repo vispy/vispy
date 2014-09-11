@@ -10,6 +10,11 @@ from .. import backends
 from ...util import logger
 
 try:
+    # Make sure no conflicting libraries have been imported.
+    for lib in ['PySide', 'PyQt5']:
+        if lib in sys.modules:
+            raise RuntimeError("Refusing to import PySide because %s is "
+                               "already imported." % lib)
     # Try importing
     from PyQt4 import QtGui, QtCore, QtOpenGL  # noqa
 except Exception as exp:

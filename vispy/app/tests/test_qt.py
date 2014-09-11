@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
+from PyQt4 import QtGui, uic
+if QtGui.QApplication.instance() is None:
+    app = QtGui.QApplication([])
 
 from os import path as op
 import warnings
@@ -11,8 +14,6 @@ from vispy.testing import requires_application
 @requires_application('pyqt4', has=['uic'])
 def test_qt_designer():
     """Embed Canvas via Qt Designer"""
-    from PyQt4 import QtGui, uic
-    app = QtGui.QApplication([])
     
     fname = op.join(op.dirname(__file__), 'qt-designer.ui')
     with warnings.catch_warnings(record=True):  # pyqt4 deprecation warning
