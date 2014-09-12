@@ -292,7 +292,7 @@ class AffineTransform(BaseTransform):
         Parameters
         ----------
         scale : array-like
-            Scale factor, with array length <= 4.
+            Scale factors along x, y and z axes.
         center : array-like or None
             The x, y and z coordinates to scale around. If None,
             `(0, 0, 0)` will be used.
