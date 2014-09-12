@@ -10,7 +10,8 @@ import numpy as np
 from vispy import gloo
 from vispy.scene import visuals, transforms
 from vispy.testing import (requires_application, assert_image_equal,
-                           requires_scipy, TestingCanvas)
+                           requires_scipy, TestingCanvas,
+                           run_tests_if_main)
 
 
 @requires_application()
@@ -103,3 +104,6 @@ def test_reactive_draw():
         polygon.border_color = 'yellow'
         c.draw_visual(polygon)
         assert_image_equal("screenshot", 'visuals/reactive_polygon3.png')
+
+
+run_tests_if_main()

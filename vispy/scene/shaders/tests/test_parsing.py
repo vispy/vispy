@@ -1,5 +1,10 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import re
+
 from vispy.scene.shaders.parsing import re_identifier, find_program_variables
+from vispy.testing import run_tests_if_main
 
 
 def test_identifier():
@@ -47,3 +52,6 @@ def test_find_variables():
         assert expect[k] == vars.pop(k)
         
     assert len(vars) == 0
+
+
+run_tests_if_main()

@@ -4,6 +4,7 @@
 from vispy.testing import assert_is, requires_pyopengl
 
 from vispy.gloo import gl
+from vispy.testing import run_tests_if_main
 
 
 def teardown_module():
@@ -54,5 +55,4 @@ def test_use_desktop():
             assert_is(val1, val2)
 
 
-if __name__ == '__main__':
-    test_use_desktop()
+run_tests_if_main()

@@ -6,6 +6,7 @@
 import unittest
 import numpy as np
 
+from vispy.testing import run_tests_if_main
 from vispy.util import use_log_level
 from vispy.gloo import gl
 from vispy.gloo.buffer import Buffer, DataBuffer, VertexBuffer, IndexBuffer
@@ -448,5 +449,4 @@ class IndexBufferTest(unittest.TestCase):
             #    V = IndexBuffer(dtype=dtype)
             self.assertRaises(TypeError, IndexBuffer, dtype=dtype)
 
-if __name__ == "__main__":
-    unittest.main()
+run_tests_if_main()

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from vispy.scene.visuals import Text
 from vispy.testing import (requires_application, TestingCanvas,
-                           assert_image_equal)
+                           assert_image_equal, run_tests_if_main)
 
 
 @requires_application()
@@ -17,3 +17,6 @@ def test_text():
         # at some point
         # Test image created in Illustrator CS5, 1"x1" output @ 92 DPI
         assert_image_equal("screenshot", 'visuals/text1.png', limit=840)
+
+
+run_tests_if_main()

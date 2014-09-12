@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import numpy as np
 from numpy.testing import assert_allclose
 
 from vispy.app import Canvas
 from vispy.scene.visuals.text._sdf import SDFRenderer
 from vispy import gloo
-from vispy.testing import requires_application
+from vispy.testing import requires_application, run_tests_if_main
 
 
 @requires_application()
@@ -37,3 +39,6 @@ def test_text():
         print(result)
         print(expd)
         assert_allclose(result, expd, atol=1)
+
+
+run_tests_if_main()

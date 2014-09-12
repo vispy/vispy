@@ -83,24 +83,6 @@ def use(app=None, gl=None):
         vispy.gloo.gl.use_gl(gl)
 
 
-# Define test proxy function, so we don't have to import vispy.testing always
-def test(label='full', coverage=False, verbosity=1, *extra_args):
-    """Test vispy software
-
-    Parameters
-    ----------
-    label : str
-        Can be one of 'full', 'nose', 'nobackend', 'extra', 'lineendings',
-        'flake', or any backend name (e.g., 'qt').
-    coverage : bool
-        Produce coverage outputs (.coverage file).
-    verbosity : int
-        Verbosity level to use when running ``nose``.
-    """
-    from ..testing import _tester
-    return _tester(label, coverage, verbosity, extra_args)
-
-
 def run_subprocess(command):
     """Run command using subprocess.Popen
 

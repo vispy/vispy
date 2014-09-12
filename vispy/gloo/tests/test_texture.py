@@ -8,7 +8,7 @@ import numpy as np
 
 from vispy.util import use_log_level
 from vispy.gloo import Texture2D, Texture3D, gl
-from vispy.testing import requires_pyopengl
+from vispy.testing import requires_pyopengl, run_tests_if_main
 
 # here we test some things that will be true of all Texture types:
 Texture = Texture2D
@@ -600,6 +600,4 @@ class Texture3DTest(unittest.TestCase):
         self.assertRaises(ValueError, T.set_data, newdata)
 
 
-# -----------------------------------------------------------------------------
-if __name__ == "__main__":
-    unittest.main()
+run_tests_if_main()

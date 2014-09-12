@@ -13,7 +13,7 @@ from inspect import getargspec
 
 import vispy
 from vispy import keys
-from vispy.testing import requires_application, assert_in
+from vispy.testing import requires_application, assert_in, run_tests_if_main
 from vispy.app import use_app, Application
 from vispy.app.backends import _template
 
@@ -150,3 +150,6 @@ def test_template():
 def test_actual():
     """Test actual application module"""
     _test_module_properties(None)
+
+
+run_tests_if_main()

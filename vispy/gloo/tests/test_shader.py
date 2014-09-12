@@ -7,7 +7,7 @@ import unittest
 
 from vispy.gloo import gl
 from vispy.gloo.shader import VertexShader, FragmentShader
-from vispy.testing import assert_in, assert_not_in
+from vispy.testing import assert_in, assert_not_in, run_tests_if_main
 
 
 # -----------------------------------------------------------------------------
@@ -85,6 +85,5 @@ class ShaderTest(unittest.TestCase):
         assert_not_in("y", names)
         assert_not_in("w", names)
 
-        
-if __name__ == "__main__":
-    unittest.main()
+
+run_tests_if_main()

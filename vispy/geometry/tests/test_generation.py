@@ -4,6 +4,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal, assert_allclose
 
+from vispy.testing import run_tests_if_main
 from vispy.geometry import create_cube, create_cylinder, create_sphere
 
 
@@ -26,3 +27,6 @@ def test_cylinder():
     md = create_cylinder(10, 20, radius=[10, 10])
     radii = np.sqrt((md.get_vertices()[:, :2] ** 2).sum(axis=1))
     assert_allclose(radii, np.ones_like(radii) * 10)
+
+
+run_tests_if_main()

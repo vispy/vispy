@@ -8,6 +8,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 
 from vispy.color import Color, ColorArray, LinearGradient, get_color_names
 from vispy.util import use_log_level
+from vispy.testing import run_tests_if_main
 
 
 def test_color():
@@ -198,3 +199,6 @@ def test_linear_gradient():
     xs.extend([0.5, 10, -10])
     for x, c in zip(xs, colors):
         assert_array_equal(grad[x], ColorArray(c).rgba[0])
+
+
+run_tests_if_main()

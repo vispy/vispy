@@ -351,6 +351,8 @@ def sys_info(fname=None, overwrite=False):
         out += 'Python:   %s\n' % str(sys.version).replace('\n', ' ')
         out += 'Backend:  %s\n' % app.backend_name
         for backend in BACKEND_NAMES:
+            if backend.startswith('ipynb_'):
+                continue
             with use_log_level('warning', print_msg=False):
                 which = has_backend(backend, out=['which'])[1]
             out += '{0:<9} {1}\n'.format(backend + ':', which)
@@ -362,10 +364,10 @@ def sys_info(fname=None, overwrite=False):
         else:
             canvas = Canvas('Test', (10, 10), show=False, app=app)
             canvas._backend._vispy_set_current()
-            out += 'GL version:  %s\n' % gl.glGetParameter(gl.GL_VERSION)
+            out += 'GL version:  %r\n' % (gl.glGetParameter(gl.GL_VERSION),)
             x_ = gl.GL_MAX_TEXTURE_SIZE
-            out += 'MAX_TEXTURE_SIZE: %d\n' % gl.glGetParameter(x_)
-            out += 'Extensions: %s\n' % gl.glGetParameter(gl.GL_EXTENSIONS)
+            out += 'MAX_TEXTURE_SIZE: %r\n' % (gl.glGetParameter(x_),)
+            out += 'Extensions: %r\n' % (gl.glGetParameter(gl.GL_EXTENSIONS),)
             canvas.close()
     except Exception:  # don't stop printing info
         out += '\nInfo-gathering error:\n%s' % traceback.format_exc()

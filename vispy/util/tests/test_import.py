@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
 Test that importing vispy subpackages do not pull
 in any more vispy submodules than strictly necessary.
@@ -8,13 +11,14 @@ import os
 import subprocess
 
 from nose.tools import assert_equal
-from vispy.testing import assert_in, assert_not_in, requires_pyopengl
+from vispy.testing import (assert_in, assert_not_in, requires_pyopengl,
+                           run_tests_if_main)
 
 import vispy
 
 
 # minimum that will be imported when importing vispy
-_min_modules = ['vispy', 'vispy.util', 'vispy.ext']
+_min_modules = ['vispy', 'vispy.util', 'vispy.ext', 'vispy.testing']
 
 
 def check_output(*popenargs, **kwargs):
@@ -133,3 +137,6 @@ def test_import_vispy_scene():
     more_modules = ['vispy.app', 'vispy.gloo', 'vispy.scene', 'vispy.color', 
                     'vispy.io', 'vispy.geometry']
     assert_equal(modnames, set(_min_modules + more_modules))
+
+
+run_tests_if_main()

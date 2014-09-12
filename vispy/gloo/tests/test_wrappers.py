@@ -10,7 +10,7 @@ from nose.tools import assert_true, assert_equal, assert_raises
 from vispy import gloo
 from vispy.gloo import gl
 from vispy.app import Canvas
-from vispy.testing import requires_application
+from vispy.testing import requires_application, run_tests_if_main
 from vispy.gloo import read_pixels
 
 
@@ -112,3 +112,6 @@ def test_read_pixels():
         assert_true(corners == 0)  # Should be all 0
         gloo.flush()
         gloo.finish()
+
+
+run_tests_if_main()

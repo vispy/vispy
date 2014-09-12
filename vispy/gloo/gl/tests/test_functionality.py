@@ -23,7 +23,7 @@ from nose.tools import assert_equal, assert_true
 from vispy.app import Canvas
 from numpy.testing import assert_almost_equal  # noqa
 from vispy.testing import (requires_application, requires_pyopengl, SkipTest,
-                           glut_skip)
+                           glut_skip, run_tests_if_main)
 
 from vispy.gloo import gl
 
@@ -551,7 +551,4 @@ def _check_result(assert_result=True):
         assert_equal(pix4, (0, 0, 255))
 
 
-if __name__ == '__main__':
-    test_functionality_desktop()
-    test_functionality_pyopengl()
-    test_functionality_proxy()
+run_tests_if_main()

@@ -180,7 +180,8 @@ class Maker:
             return self.help('test')
         from vispy import test
         try:
-            test(*(arg.split()))
+            args = arg.split(' ')
+            test(args[0], ' '.join(args[1:]))
         except Exception as err:
             print(err)
             if not isinstance(err, RuntimeError):

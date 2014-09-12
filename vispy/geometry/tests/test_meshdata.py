@@ -5,6 +5,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 
+from vispy.testing import run_tests_if_main
 from vispy.geometry.meshdata import MeshData
 
 
@@ -28,3 +29,6 @@ def test_meshdata():
     assert_array_equal(square_normals, mesh.get_vertex_normals())
     # test edge calculus
     assert_array_equal(square_edges, mesh.get_edges())
+
+
+run_tests_if_main()

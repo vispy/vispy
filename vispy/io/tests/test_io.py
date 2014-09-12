@@ -9,6 +9,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from vispy.io import write_mesh, read_mesh, load_data_file
 from vispy.geometry import _fast_cross_3d
 from vispy.util import _TempDir
+from vispy.testing import run_tests_if_main
 
 temp_dir = _TempDir()
 
@@ -69,3 +70,6 @@ def test_huge_cross():
     z = np.cross(x, y)
     zz = _fast_cross_3d(x, y)
     assert_array_equal(z, zz)
+
+
+run_tests_if_main()

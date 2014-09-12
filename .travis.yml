@@ -166,7 +166,7 @@ before_script:
 script:
     - cd ${SRC_DIR}
     - if [ "${TEST}" == "standard" ]; then
-        make nose_coverage;
+        make nose;
       fi;
     - if [ "${TEST}" == "examples" ] || [ "${DEPS}" == "minimal" ]; then
         make examples;

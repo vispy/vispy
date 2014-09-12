@@ -7,7 +7,7 @@ from os import path as op
 import warnings
 
 from vispy.io import load_crate, imsave, imread, read_png, write_png
-from vispy.testing import requires_img_lib
+from vispy.testing import requires_img_lib, run_tests_if_main
 from vispy.util import _TempDir
 
 temp_dir = _TempDir()
@@ -43,3 +43,6 @@ def test_read_write_image():
     with warnings.catch_warnings(record=True):  # PIL unclosed file
         im2 = imread(fname)
     assert_allclose(im1, im2)
+
+
+run_tests_if_main()

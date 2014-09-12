@@ -6,7 +6,7 @@ import numpy as np
 from nose.tools import assert_true, assert_equal
 import warnings
 
-from vispy.testing import assert_in
+from vispy.testing import assert_in, run_tests_if_main
 from vispy.util.fonts import list_fonts, _load_glyph, _vispy_fonts
 
 warnings.simplefilter('always')
@@ -33,3 +33,6 @@ def test_font_glyph():
             # Warning that Arial might not exist
             _load_glyph(font_dict, char, glyphs_dict)
         assert_equal(len(glyphs_dict), np.unique([c for c in chars]).size)
+
+
+run_tests_if_main()
