@@ -94,12 +94,10 @@ class Canvas(app.Canvas):
 
         # Build program
         # --------------------------------------
-        view = np.eye(4, dtype=np.float32)
-        model = np.eye(4, dtype=np.float32)
-        translate(view, 0, 0, -7)
-        self.phi, self.theta = 60, 20
-        rotate(model, self.theta, 0, 0, 1)
-        rotate(model, self.phi, 0, 1, 0)
+        view = translate((0,0,-7))
+        self.phi, self.theta = np.radians(60), np.radians(20)
+        model = rotate(self.theta, (0, 0, 1)) * rotate(self.phi, (0, 1, 0))
+
 
         self.cube = Program(cube_vertex, cube_fragment)
         self.cube.bind(vertices)
@@ -146,11 +144,9 @@ class Canvas(app.Canvas):
         self.cube['projection'] = projection
 
     def on_timer(self, event):
-        self.theta += .5
-        self.phi += .5
-        model = np.eye(4, dtype=np.float32)
-        rotate(model, self.theta, 0, 0, 1)
-        rotate(model, self.phi, 0, 1, 0)
+        self.theta += .02
+        self.phi += .02
+        model = rotate(self.theta, (0, 0, 1)) * rotate(self.phi, (0, 1, 0))
         self.cube['model'] = model
         self.update()
 

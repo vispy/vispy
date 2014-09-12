@@ -100,12 +100,11 @@ class Canvas(app.Canvas):
                             keys='interactive')
         self.size = 1200, 800
 
+        self.translate = 40
         self.program = gloo.Program(vertex, fragment)
-        self.view = np.eye(4, dtype=np.float32)
+        self.view = translate((0, 0, -self.translate))
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        self.translate = 40
-        translate(self.view, 0, 0, -self.translate)
 
         fname = load_data_file('molecular_viewer/micelle.npz')
         self.load_molecule(fname)
@@ -160,13 +159,10 @@ class Canvas(app.Canvas):
             # self.
 
     def on_timer(self, event):
-        self.theta += .25
-        self.phi += .25
-        self.model = np.eye(4, dtype=np.float32)
-
-        rotate(self.model, self.theta, 0, 0, 1)
-        rotate(self.model, self.phi, 0, 1, 0)
-
+        self.theta += .005
+        self.phi += .005
+        self.model = rotate(self.phi, (0, 1, 0)) * rotate(self.theta, (0, 0, 1))
+        
         self.program['u_model'] = self.model
         self.update()
 

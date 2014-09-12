@@ -106,12 +106,11 @@ class Canvas(app.Canvas):
         self.size = 800, 800
         self.title = "Atom [zoom with mouse scroll"
 
+        self.translate = 6.5
         self.program = gloo.Program(vert, frag)
-        self.view = np.eye(4, dtype=np.float32)
+        self.view = translate((0,0,-self.translate))
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        self.translate = 6.5
-        translate(self.view, 0, 0, -self.translate)
 
         self.program.bind(gloo.VertexBuffer(data))
         self.program['u_model'] = self.model
@@ -134,11 +133,9 @@ class Canvas(app.Canvas):
 
     def on_timer(self, event):
         if not self.stop_rotation:
-            self.theta += .05
-            self.phi += .05
-            self.model = np.eye(4, dtype=np.float32)
-            rotate(self.model, self.theta, 0, 0, 1)
-            rotate(self.model, self.phi, 0, 1, 0)
+            self.theta += .001
+            self.phi += .001
+            self.model = rotate(self.phi, (0,1,0)) * rotate(self.theta, (0,0,1))
             self.program['u_model'] = self.model
         self.clock += np.pi / 100
         self.program['u_clock'] = self.clock

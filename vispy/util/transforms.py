@@ -13,186 +13,83 @@ import math
 import numpy as np
 
 
-def translate(M, x, y=None, z=None):
+def translate(offset, dtype = None):
     """Translate by an offset (x, y, z) .
 
     Parameters
     ----------
-    M : array
-        Original transformation (4x4).
-    x : float
-        X coordinate of a translation vector.
-    y : float | None
-        Y coordinate of translation vector. If None, `x` will be used.
-    z : float | None
-        Z coordinate of translation vector. If None, `x` will be used.
+    offset : 3-item iterable (e.g. tuple, np array, list) describing
+        translation in x, y, z
 
+ 
     Returns
     -------
-    M : array
-        Updated transformation (4x4). Note that this function operates
-        in-place.
+    M : matrix
+        transformation matrix describing the translation
     """
-    y = x if y is None else y
-    z = x if z is None else z
-    T = np.array([[1.0, 0.0, 0.0, x],
+    x, y, z = offset
+    M = np.matrix([[1.0, 0.0, 0.0, x],
                   [0.0, 1.0, 0.0, y],
                   [0.0, 0.0, 1.0, z],
-                  [0.0, 0.0, 0.0, 1.0]], dtype=M.dtype).T
-    M[...] = np.dot(M, T)
+                  [0.0, 0.0, 0.0, 1.0]], dtype).T
     return M
 
 
-def scale(M, x, y=None, z=None):
+def scale(s, dtype = None):
     """Non-uniform scaling along the x, y, and z axes
 
     Parameters
     ----------
-    M : array
-        Original transformation (4x4).
-    x : float
-        X coordinate of the translation vector.
-    y : float | None
-        Y coordinate of the translation vector. If None, `x` will be used.
-    z : float | None
-        Z coordinate of the translation vector. If None, `x` will be used.
+    s : 3-item iterable (e.g. tuple, np array, list) describing
+        scaling in x, y, z
 
+ 
     Returns
     -------
-    M : array
-        Updated transformation (4x4). Note that this function operates
-        in-place.
+    M : matrix
+        transformation matrix describing the scaling
     """
-    y = x if y is None else y
-    z = x if z is None else z
-    S = np.array([[x, 0.0, 0.0, 0.0],
-                  [0.0, y, 0.0, 0.0],
-                  [0.0, 0.0, z, 0.0],
-                  [0.0, 0.0, 0.0, 1.0]], dtype=M.dtype).T
-    M[...] = np.dot(M, S)
-    return M
+    x, y, z = s
+    return np.matrix(np.diag((x,y,z,1.0)), dtype)
+   
 
 
-def xrotate(M, theta):
-    """Rotate about the X axis
+def rotate(radians, axis, dtype = None):
+    """
+    Returns a homogeneous transformation matrix that represents a rotation
+    around axis by angle (in radians) using Rodrigues' formula
+    http://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
 
     Parameters
     ----------
-    M : array
-        Original transformation (4x4).
-    theta : float
-        Specifies the angle of rotation, in degrees.
 
-    Returns
-    -------
-    M : array
-        Updated transformation (4x4). Note that this function operates
-        in-place.
+    radians: angle, in radians, to rotate around the axis
+    
+    axis: list, tuple or np array (1D) representing the axis to rotate about
+        (does not need to be unit length)
     """
-    t = math.pi * theta / 180.
-    cosT = math.cos(t)
-    sinT = math.sin(t)
-    R = np.array([[1.0, 0.0, 0.0, 0.0],
-                  [0.0, cosT, -sinT, 0.0],
-                  [0.0, sinT, cosT, 0.0],
-                  [0.0, 0.0, 0.0, 1.0]], dtype=M.dtype)
-    M[...] = np.dot(M, R)
-    return M
 
+    z=np.matrix(axis, dtype = np.double).T
+    #Normalize z
+    z=z/math.sqrt(z.T*z)
+    ztilde=np.matrix([[0,-z[2],z[1]],[z[2],0,-z[0]],[-z[1],z[0],0]])
+    
+    # Compute 3x3 rotation matrix
+    R=np.eye(3) + math.sin(radians)*ztilde + ((1-math.cos(radians))* ((z*z.T)-np.eye(3)))
+    M = np.eye(4)
+    M[:3,:3] = R
+    
+    return np.matrix(M, dtype)
 
-def yrotate(M, theta):
-    """Rotate about the Y axis
-
-    Parameters
-    ----------
-    M : array
-        Original transformation (4x4).
-    theta : float
-        Specifies the angle of rotation, in degrees.
-
-    Returns
-    -------
-    M : array
-        Updated transformation (4x4). Note that this function operates
-        in-place.
+# Actually, param 'degrees' should be called 'angle' since that is the 
+# quantity but it is called degrees since that makes it explicit that it is
+# in degrees
+def rotated(degrees, axis, dtype = None):
     """
-    t = math.pi * theta / 180
-    cosT = math.cos(t)
-    sinT = math.sin(t)
-    R = np.array(
-        [[cosT, 0.0, sinT, 0.0],
-         [0.0, 1.0, 0.0, 0.0],
-         [-sinT, 0.0, cosT, 0.0],
-         [0.0, 0.0, 0.0, 1.0]], dtype=M.dtype)
-    M[...] = np.dot(M, R)
-    return M
-
-
-def zrotate(M, theta):
-    """Rotate about the Z axis
-
-    Parameters
-    ----------
-    M : array
-        Original transformation (4x4).
-    theta : float
-        Specifies the angle of rotation, in degrees.
-
-    Returns
-    -------
-    M : array
-        Updated transformation (4x4). Note that this function operates
-        in-place.
+    Convenience wrapper for @see rotate that accepts angle in degrees
     """
-    t = math.pi * theta / 180
-    cosT = math.cos(t)
-    sinT = math.sin(t)
-    R = np.array(
-        [[cosT, -sinT, 0.0, 0.0],
-         [sinT, cosT, 0.0, 0.0],
-         [0.0, 0.0, 1.0, 0.0],
-         [0.0, 0.0, 0.0, 1.0]], dtype=M.dtype)
-    M[...] = np.dot(M, R)
-    return M
-
-
-def rotate(M, angle, x, y, z, point=None):
-    """Rotation about a vector
-
-    Parameters
-    ----------
-    M : array
-        Original transformation (4x4).
-    angle : float
-        Specifies the angle of rotation, in degrees.
-    x : float
-        X coordinate of the angle of rotation vector.
-    y : float | None
-        Y coordinate of the angle of rotation vector.
-    z : float | None
-        Z coordinate of the angle of rotation vector.
-
-    Returns
-    -------
-    M : array
-        Updated transformation (4x4). Note that this function operates
-        in-place.
-    """
-    angle = math.pi * angle / 180
-    c, s = math.cos(angle), math.sin(angle)
-    n = math.sqrt(x * x + y * y + z * z)
-    x /= n
-    y /= n
-    z /= n
-    cx, cy, cz = (1 - c) * x, (1 - c) * y, (1 - c) * z
-    R = np.array([[cx * x + c, cy * x - z * s, cz * x + y * s, 0],
-                  [cx * y + z * s, cy * y + c, cz * y - x * s, 0],
-                  [cx * z - y * s, cy * z + x * s, cz * z + c, 0],
-                  [0, 0, 0, 1]], dtype=M.dtype).T
-    M[...] = np.dot(M, R)
-    return M
-
-
+    return rotate(np.radians(degrees), axis, dtype)
+    
 def ortho(left, right, bottom, top, znear, zfar):
     """Create orthographic projection matrix
 
