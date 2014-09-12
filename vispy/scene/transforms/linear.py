@@ -301,10 +301,19 @@ class AffineTransform(BaseTransform):
 
     def rotate(self, angle, axis):
         """
-        Rotate the matrix by *angle* about the vector *axis*. 
+        Rotate the matrix by some angle about a given axis, implemented using
+        :func:`vispy.utils.rotate`.
 
         The rotation is applied *after* the transformations already present
         in the matrix.
+
+        Parameters
+        ----------
+        angle : float
+            The angle of rotation, in degrees.
+        axis : array-like
+            The x, y and z parameters of the axis vector to rotate around.
+
         """
         #tr = transforms.rotate(np.eye(4), angle, *axis)
         #self.matrix = np.dot(tr, self.matrix)
