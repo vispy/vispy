@@ -23,7 +23,7 @@ from time import sleep
 import gc
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, BaseSharedContext)
+                    BaseTimerBackend)
 from ...util import keys, logger
 from ...util.ptime import time
 
@@ -145,10 +145,6 @@ def _set_config(c):
                            'different backend, or using double buffering')
 
 
-class SharedContext(BaseSharedContext):
-    _backend = 'glfw'
-
-
 # ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -208,16 +204,23 @@ class CanvasBackend(BaseCanvasBackend):
 
     """ Glfw backend for Canvas abstract class."""
 
-    def __init__(self, **kwargs):
-        BaseCanvasBackend.__init__(self, capability, SharedContext)
+    # args are for BaseCanvasBackend, kwargs are for us.
+    def __init__(self, *args, **kwargs):
+        BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
-        # Init GLFW, add window hints, and create window
-        if isinstance(context, dict):
-            _set_config(context)
+            = self._process_backend_kwargs(kwargs)
+        self._initialized = False
+        
+        # Deal with context
+        if not context.istaken:
+            context.take('glfw', self)
+            _set_config(context.config)
             share = None
+        elif context.istaken == 'glfw':
+            share = context.backend_canvas._id
         else:
-            share = context.value
+            raise RuntimeError('Different backends cannot share a context.')
+        
         glfw.glfwWindowHint(glfw.GLFW_REFRESH_RATE, 0)  # highest possible
         glfw.glfwSwapInterval(1 if vsync else 0)
         glfw.glfwWindowHint(glfw.GLFW_RESIZABLE, int(resize))
@@ -247,6 +250,7 @@ class CanvasBackend(BaseCanvasBackend):
                                          share=share)
         if not self._id:
             raise RuntimeError('Could not create window')
+        
         _VP_GLFW_ALL_WINDOWS.append(self)
         self._mod = list()
 
@@ -265,30 +269,12 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_set_position(*position)
         if show:
             glfw.glfwShowWindow(self._id)
-        self._initialized = False
-        self._vispy_canvas = vispy_canvas
-
-    @property
-    def _vispy_context(self):
-        """Context to return for sharing"""
-        return SharedContext(self._id)
-
-    ####################################
-    # Deal with events we get from vispy
-    @property
-    def _vispy_canvas(self):
-        """ The parent canvas/window """
-        return self._vispy_canvas_
-
-    @_vispy_canvas.setter
-    def _vispy_canvas(self, vc):
-        # Init events when the property is set by Canvas
-        self._vispy_canvas_ = vc
-        if vc is not None and not self._initialized:
-            self._initialized = True
-            self._vispy_set_current()
-            self._vispy_canvas.events.initialize()
-
+        
+        # Init
+        self._initialized = True
+        self._vispy_set_current()
+        self._vispy_canvas.events.initialize()
+    
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:
@@ -300,6 +286,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         # Make this the current context
+        self._vispy_context.set_current(False)  # Mark as current
         glfw.glfwMakeContextCurrent(self._id)
 
     def _vispy_swap_buffers(self):

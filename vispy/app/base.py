@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-
-from inspect import getargspec
-from copy import deepcopy
-
-from ._config import get_default_config
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 
 class BaseApplicationBackend(object):
@@ -45,75 +42,52 @@ class BaseCanvasBackend(object):
     the canvas itself.
     """
 
-    def __init__(self, capability, context_type):
-        # Initially the backend starts out with no canvas.
-        # Canvas takes care of setting this for us.
-        self._vispy_canvas = None
-
+    def __init__(self, vispy_canvas):
+        from .canvas import Canvas  # Avoid circular import
+        assert isinstance(vispy_canvas, Canvas)
+        self._vispy_canvas = vispy_canvas
+        
+        # We set the _backend attribute of the vispy_canvas to self,
+        # because at the end of the __init__ of the CanvasBackend
+        # implementation there might be a call to show or draw. By
+        # setting it here, we ensure that the Canvas is "ready to go".
+        vispy_canvas._backend = self
+        
         # Data used in the construction of new mouse events
         self._vispy_mouse_data = {
             'buttons': [],
             'press_event': None,
             'last_event': None,
         }
-        self._vispy_capability = capability
-        self._vispy_context_type = context_type
 
     def _process_backend_kwargs(self, kwargs):
-        """Removes vispy-specific kwargs for CanvasBackend"""
-        # these are the output arguments
-        keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
-                'decorate', 'fullscreen', 'parent']
-        from .canvas import Canvas
-        outs = []
-        spec = getargspec(Canvas.__init__)
-        for key in keys:
-            default = spec.defaults[spec.args.index(key) - 1]
-            out = kwargs.get(key, default)
-            if out != default and self._vispy_capability[key] is False:
-                raise RuntimeError('Cannot set property %s using this '
-                                   'backend' % key)
-            outs.append(out)
-
-        # now we add context, which we have to treat slightly differently
-        default_config = get_default_config()
-        context = kwargs.get('context', default_config)
-        can_share = self._vispy_capability['context']
-        # check the type
-        if isinstance(context, self._vispy_context_type):
-            if not can_share:
+        """ Simple utility to retrieve kwargs in predetermined order.
+        Also checks whether the values of the backend arguments do not
+        violate the backend capabilities.
+        """
+        
+        # Store context here
+        self._vispy_context = kwargs['context']
+        
+        # Verify given argument with capability of the backend
+        app = self._vispy_canvas.app
+        capability = app.backend_module.capability
+        if kwargs['context'].istaken:
+            if not capability['context']:
                 raise RuntimeError('Cannot share context with this backend')
-        elif isinstance(context, dict):
-            # first, fill in context with any missing entries
-            context = deepcopy(context)
-            for key, val in default_config.items():
-                context[key] = context.get(key, default_config[key])
-            # now make sure everything is of the proper type
-            for key, val in context.items():
-                if key not in default_config:
-                    raise KeyError('context has unknown key %s' % key)
-                needed = type(default_config[key])
-                if not isinstance(val, needed):
-                    raise TypeError('context["%s"] is of incorrect type (got '
-                                    '%s need %s)' % (key, type(val), needed))
-        else:
-            raise TypeError('context must be a dict or SharedContext from '
-                            'a Canvas with the same backend, not %s'
-                            % type(context))
-        outs.append(context)
-        outs.append(kwargs.get('vispy_canvas', None))
-        return outs
-
-    def _vispy_init(self):
-        # For any __init__-like actions that must occur *after*
-        # self._vispy_canvas._backend is not None
-
-        # Most backends won't need this. However, there are exceptions.
-        # e.g., pyqt4 with show=True, "show" can't be done until this property
-        # exists because it might call on_draw which might in turn call
-        # canvas.size... which relies on canvas._backend being set.
-        pass
-
+        for key in [key for (key, val) in capability.items() if not val]:
+            if key in ['context', 'multi_window', 'scroll']:
+                continue
+            invert = key in ['resizable', 'decorate']
+            if bool(kwargs[key]) - invert:
+                raise RuntimeError('Config %s is not supported by backend %s'
+                                   % (key, app.backend_name))
+        
+        # Return items in sequence
+        keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
+                'decorate', 'fullscreen', 'parent', 'context']
+        return [kwargs[k] for k in keys]
+    
     def _vispy_set_current(self):
         # Make this the current context
         raise NotImplementedError()
@@ -235,18 +209,3 @@ class BaseTimerBackend(object):
         # Should return the native timer object
         # Most backends would not need to implement this
         return self
-
-
-class BaseSharedContext(object):
-    """An object encapsulating data necessary for a shared OpenGL context
-
-    The data are backend dependent."""
-    def __init__(self, value):
-        self._value = value
-
-    @property
-    def value(self):
-        return self._value
-
-    def __repr__(self):
-        return ("<SharedContext for %s backend" % self._backend)

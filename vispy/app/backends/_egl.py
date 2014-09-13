@@ -11,7 +11,7 @@ import atexit
 from time import sleep
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, BaseSharedContext)
+                    BaseTimerBackend)
 from ...util.ptime import time
 
 # -------------------------------------------------------------------- init ---
@@ -70,12 +70,6 @@ capability = dict(  # things that can be set by the backend
 )
 
 
-# ------------------------------------------------------- set_configuration ---
-
-class SharedContext(BaseSharedContext):
-    _backend = 'egl'
-
-
 # ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -126,25 +120,34 @@ class CanvasBackend(BaseCanvasBackend):
 
     """ EGL backend for Canvas abstract class."""
 
-    def __init__(self, **kwargs):
-        BaseCanvasBackend.__init__(self, capability, SharedContext)
+    # args are for BaseCanvasBackend, kwargs are for us.
+    def __init__(self, *args, **kwargs):
+        BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
-        # Create "window"
-        if isinstance(context, dict):
-            self._config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
-            self._context = egl.eglCreateContext(_EGL_DISPLAY, self._config,
-                                                 None)
+            = self._process_backend_kwargs(kwargs)
+        self._initialized = False
+        
+        # Deal with context
+        if not context.istaken:
+            context.take('egl', self)
+            self._native_config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
+            self._native_context = egl.eglCreateContext(_EGL_DISPLAY, 
+                                                        context.config, None)
+        elif context.istaken == 'egl':
+            self._native_config = context.backend_canvas._native_config
+            self._native_context = context.backend_canvas._native_context
         else:
-            self._config, self._context = context.value
-
+            raise RuntimeError('Different backends cannot share a context.')
+        
         self._surface = None
         self._vispy_set_size(*size)
         _VP_EGL_ALL_WINDOWS.append(self)
-        self._initialized = False
+        
+        # Init
+        self._initialized = True
         self._vispy_set_current()
-        self._vispy_canvas = vispy_canvas
-
+        self._vispy_canvas.events.initialize()
+    
     def _destroy_surface(self):
         if self._surface is not None:
             egl.eglDestroySurface(_EGL_DISPLAY, self._surface)
@@ -154,34 +157,14 @@ class CanvasBackend(BaseCanvasBackend):
         if self._surface is not None:
             self._destroy_surface()
         attrib_list = (egl.EGL_WIDTH, w, egl.EGL_HEIGHT, h)
-        self._surface = egl.eglCreatePbufferSurface(_EGL_DISPLAY, self._config,
+        self._surface = egl.eglCreatePbufferSurface(_EGL_DISPLAY, 
+                                                    self._native_config, 
                                                     attrib_list)
         if self._surface == egl.EGL_NO_SURFACE:
             raise RuntimeError('Could not create rendering surface')
         self._size = (w, h)
         self._vispy_update()
-
-    @property
-    def _vispy_context(self):
-        """Context to return for sharing"""
-        return SharedContext((self._config, self._context))
-
-    ####################################
-    # Deal with events we get from vispy
-    @property
-    def _vispy_canvas(self):
-        """ The parent canvas/window """
-        return self._vispy_canvas_
-
-    @_vispy_canvas.setter
-    def _vispy_canvas(self, vc):
-        # Init events when the property is set by Canvas
-        self._vispy_canvas_ = vc
-        if vc is not None and not self._initialized:
-            self._initialized = True
-            self._vispy_set_current()
-            self._vispy_canvas.events.initialize()
-
+    
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:
@@ -193,8 +176,9 @@ class CanvasBackend(BaseCanvasBackend):
         if self._surface is None:
             return
         # Make this the current context
+        self._vispy_context.set_current(False)  # Mark as current
         egl.eglMakeCurrent(_EGL_DISPLAY, self._surface, self._surface,
-                           self._context)
+                           self._native_context)
 
     def _vispy_swap_buffers(self):
         if self._surface is None:

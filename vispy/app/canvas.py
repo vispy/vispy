@@ -12,7 +12,7 @@ from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..ext.six import string_types
 from . import Application, use_app
-from ._config import get_default_config
+from ..gloo.context import GLContext
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -59,16 +59,16 @@ class Canvas(object):
     resizable : bool
         Allow the window to be resized.
     decorate : bool
-        Decorate the window.
+        Decorate the window. Default True.
     fullscreen : bool | int
         If False, windowed mode is used (default). If True, the default
         monitor is used. If int, the given monitor number is used.
-    context : dict | instance SharedContext | None
+    context : dict | instance GLContext | None
         OpenGL configuration to use when creating the context for the canvas,
-        or a context to share. If None, ``vispy.app.get_default_config`` will
+        or a context to share. If None, ``vispy.gloo.get_default_config`` will
         be used to set the OpenGL context parameters. Alternatively, the
         ``canvas.context`` property from an existing canvas (using the
-        same backend) will return a ``SharedContext`` that can be used,
+        same backend) will return a ``GLContext`` that can be used,
         thereby sharing the existing context.
     keys : str | dict | None
         Default key mapping to use. If 'interactive', escape and F11 will
@@ -79,7 +79,7 @@ class Canvas(object):
     parent : widget-object
         The parent widget if this makes sense for the used backend.
     """
-
+    
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, vsync=False, resizable=True, decorate=True,
@@ -91,9 +91,7 @@ class Canvas(object):
         title = str(title)
         if not isinstance(fullscreen, (bool, int)):
             raise TypeError('fullscreen must be bool or int')
-        if context is None:
-            context = get_default_config()
-
+        
         # Initialize some values
         self._autoswap = autoswap
         self._title = title
@@ -103,7 +101,7 @@ class Canvas(object):
         self._fps_callback = None
         self._backend = None
         self._closed = False
-
+        
         # Create events
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
@@ -132,14 +130,7 @@ class Canvas(object):
         if init_gloo:
             self.events.initialize.connect(_gloo_initialize,
                                            ref='gloo_initialize')
-
-        # store arguments that get set on Canvas init
-        kwargs = dict(title=title, size=size, position=position, show=show,
-                      vsync=vsync, resizable=resizable, decorate=decorate,
-                      fullscreen=fullscreen, context=context, parent=parent,
-                      vispy_canvas=self)
-        self._backend_kwargs = kwargs
-
+        
         # Get app instance
         if app is None:
             self._app = use_app()
@@ -149,10 +140,25 @@ class Canvas(object):
             self._app = Application(app)
         else:
             raise ValueError('Invalid value for app %r' % app)
-
+        
+        # Ensure context is a GLContext object
+        context = context or GLContext()
+        if isinstance(context, dict):
+            context = GLContext(context)  # GLContext checks the dict keys
+        elif not isinstance(context, GLContext):
+            raise TypeError('context must be a dict or GLContext from '
+                            'a Canvas with the same backend, not %s'
+                            % type(context))
+        
         # Deal with special keys
         self._set_keys(keys)
-
+        
+        # store arguments that get set on Canvas init
+        kwargs = dict(title=title, size=size, position=position, show=show,
+                      vsync=vsync, resizable=resizable, decorate=decorate,
+                      fullscreen=fullscreen, context=context, parent=parent)
+        self._backend_kwargs = kwargs
+        
         # Create widget now (always do this *last*, after all err checks)
         if create_native:
             self.create_native()
@@ -169,22 +175,14 @@ class Canvas(object):
         # Make sure that the app is active
         assert self._app.native
         # Instantiate the backend with the right class
-        be = self._app.backend_module.CanvasBackend(**self._backend_kwargs)
-        self._set_backend(be)
-
-    def _set_backend(self, backend):
-        """ Set backend<->canvas references and autoswap
-        """
-        # NOTE: Do *not* combine this with create_native above, since
-        # this private function is used to embed Qt widgets
-        assert backend is not None  # should never happen
-        self._backend = backend
+        self._app.backend_module.CanvasBackend(self, **self._backend_kwargs)
+        # self._backend = set by BaseCanvasBackend 
+        self._backend_kwargs = None  # Clean up
+        
         if self._autoswap:
             # append to the end
             self.events.draw.connect((self, 'swap_buffers'),
                                      ref=True, position='last')
-        self._backend._vispy_canvas = self  # it's okay to set this again
-        self._backend._vispy_init()
 
     def _set_keys(self, keys):
         if keys is not None:

@@ -61,14 +61,15 @@ def test_context_sharing():
             program.activate()
             check_error()
 
-        with Canvas() as c:
+        with Canvas() as c2:
             # pyglet always shares
-            if 'pyglet' not in c.app.backend_name.lower():
+            if 'pyglet' not in c2.app.backend_name.lower():
                 assert_raises(RuntimeError, check)
         if c1.app.backend_name.lower() in ('glut',):
             assert_raises(RuntimeError, Canvas, context=c1.context)
         else:
-            with Canvas(context=c1.context):
+            with Canvas(context=c1.context) as c2:
+                assert c1.context is c2.context  # Same context object
                 check()
 
 

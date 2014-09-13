@@ -25,7 +25,7 @@ from time import sleep, time
 from ...util import logger
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, BaseSharedContext)
+                    BaseTimerBackend)
 from ...util import keys
 from ...ext.six import text_type
 
@@ -145,10 +145,6 @@ def _set_config(c):
     return glformat
 
 
-class SharedContext(BaseSharedContext):
-    _backend = 'qt'
-
-
 # ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -195,25 +191,34 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 
     """Qt backend for Canvas abstract class."""
 
+    # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
-        self._initialized = False
-        BaseCanvasBackend.__init__(self, capability, SharedContext)
+        BaseCanvasBackend.__init__(self, *args)
+        # Maybe to ensure that exactly all arguments are passed?
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
-        self._vispy_canvas = vispy_canvas
-        if isinstance(context, dict):
-            glformat = _set_config(context)
+            = self._process_backend_kwargs(kwargs)
+        self._initialized = False
+        
+        # Deal with context
+        if not context.istaken:
+            widget = kwargs.pop('shareWidget', None) or self
+            context.take('qt', widget)
+            glformat = _set_config(context.config)
             glformat.setSwapInterval(1 if vsync else 0)
-            widget = kwargs.pop('shareWidget', None)
-        else:
+            if widget is self:
+                widget = None  # QGLWidget does not accept self ;)
+        elif context.istaken == 'qt':
+            widget = context.backend_canvas
             glformat = QtOpenGL.QGLFormat.defaultFormat()
             if 'shareWidget' in kwargs:
-                raise RuntimeError('cannot use vispy to share context and '
-                                   'use built-in shareWidget')
-            widget = context.value
+                raise RuntimeError('Cannot use vispy to share context and '
+                                   'use built-in shareWidget.')
+        else:
+            raise RuntimeError('Different backends cannot share a context.')
+        
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
 
-        # first arg can be glformat, or a shared context
+        # first arg can be glformat, or a gl context
         QtOpenGL.QGLWidget.__init__(self, glformat, parent, widget, f)
         self._initialized = True
         if not self.isValid():
@@ -233,32 +238,33 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
             self.setFixedSize(self.size())
         if position is not None:
             self._vispy_set_position(*position)
-        self._init_show = show
-
-    def _vispy_init(self):
-        """Do actions that require self._vispy_canvas._backend to be set"""
-        if self._init_show:
+        if show:
             self._vispy_set_visible(True)
-
-    @property
-    def _vispy_context(self):
-        """Context to return for sharing"""
-        return SharedContext(self)
-
+    
+    def embed(self, widget):
+        """ Convenience function to embed the canvas in an application.
+        The native CanvasBackend (subclass of QGLWidget) is made to fully
+        cover the given widget.
+        """
+        layout = QtGui.QHBoxLayout(widget)
+        widget.setLayout(layout)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self)
+    
+    def _vispy_set_current(self):
+        if self._vispy_canvas is None:
+            return  # todo: can we get rid of this now?
+        if self.isValid():
+            self._vispy_context.set_current(False)  # Mark as current
+            self.makeCurrent()
+    
     def _vispy_warmup(self):
         etime = time() + 0.25
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()
             self._vispy_canvas.app.process_events()
-
-    def _vispy_set_current(self):
-        # Make this the current context
-        if self._vispy_canvas is None:
-            return
-        if self.isValid():
-            self.makeCurrent()
-
+    
     def _vispy_swap_buffers(self):
         # Swap front and back buffer
         if self._vispy_canvas is None:

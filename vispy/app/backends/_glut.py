@@ -12,7 +12,7 @@ import sys
 from time import sleep, time
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, BaseSharedContext)
+                    BaseTimerBackend)
 from ...util import ptime, keys, logger
 
 # -------------------------------------------------------------------- init ---
@@ -138,10 +138,6 @@ def _set_config(config):
     glut.glutInitDisplayString(s.encode('ASCII'))
 
 
-class SharedContext(BaseSharedContext):
-    _backend = 'glut'
-
-
 # ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -228,11 +224,20 @@ class CanvasBackend(BaseCanvasBackend):
 
     """ GLUT backend for Canvas abstract class."""
 
-    def __init__(self, **kwargs):
-        BaseCanvasBackend.__init__(self, capability, SharedContext)
+    # args are for BaseCanvasBackend, kwargs are for us.
+    def __init__(self, *args, **kwargs):
+        BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
-        _set_config(context)
+            = self._process_backend_kwargs(kwargs)
+        self._initialized = False
+        
+        # Deal with context
+        if not context.istaken:
+            context.take('glut', self)
+            _set_config(context.config)
+        else:
+            raise RuntimeError('Glut cannot share contexts.')
+        
         glut.glutInitWindowSize(size[0], size[1])
         self._id = glut.glutCreateWindow(title.encode('ASCII'))
         if not self._id:
@@ -252,7 +257,7 @@ class CanvasBackend(BaseCanvasBackend):
         # Cache of modifiers so we can send modifiers along with mouse motion
         self._modifiers_cache = ()
         self._closed = False  # Keep track whether the widget is closed
-
+        
         # Register callbacks
         glut.glutDisplayFunc(self.on_draw)
         glut.glutReshapeFunc(self.on_resize)
@@ -268,37 +273,22 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_set_position(*position)
         if not show:
             glut.glutHideWindow()
-        self._initialized = False
-        self._vispy_canvas = vispy_canvas
-
-    @property
-    def _vispy_context(self):
-        """Context to return for sharing"""
-        return SharedContext(None)  # cannot share in GLUT
-
+        
+        # Init
+        self._initialized = True
+        self._vispy_set_current()
+        self._vispy_canvas.events.initialize()
+    
     def _vispy_warmup(self):
         etime = time() + 0.4  # empirically determined :(
         while time() < etime:
             sleep(0.01)
             self._vispy_set_current()
             self._vispy_canvas.app.process_events()
-
-    @property
-    def _vispy_canvas(self):
-        """ The parent canvas/window """
-        return self._vispy_canvas_
-
-    @_vispy_canvas.setter
-    def _vispy_canvas(self, vc):
-        # Init events when the property is set by Canvas
-        self._vispy_canvas_ = vc
-        if vc is not None and not self._initialized:
-            self._initialized = True
-            self._vispy_set_current()
-            self._vispy_canvas.events.initialize()
-
+    
     def _vispy_set_current(self):
         # Make this the current context
+        self._vispy_context.set_current(False)  # Mark as current
         glut.glutSetWindow(self._id)
 
     def _vispy_swap_buffers(self):

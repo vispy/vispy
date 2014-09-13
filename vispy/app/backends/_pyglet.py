@@ -12,7 +12,7 @@ from distutils.version import LooseVersion
 from time import sleep
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, BaseSharedContext)
+                    BaseTimerBackend)
 from ...util import keys
 from ...util.ptime import time
 
@@ -130,10 +130,6 @@ def _set_config(config):
     return pyglet_config
 
 
-class SharedContext(BaseSharedContext):
-    _backend = 'pyglet'
-
-
 # ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -168,19 +164,21 @@ class CanvasBackend(_Window, BaseCanvasBackend):
 
     """ Pyglet backend for Canvas abstract class."""
 
-    def __init__(self, **kwargs):
-        BaseCanvasBackend.__init__(self, capability, SharedContext)
+    # args are for BaseCanvasBackend, kwargs are for us.
+    def __init__(self, *args, **kwargs):
+        BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
-        self._vispy_canvas = vispy_canvas
-        if not isinstance(context, (dict, SharedContext)):
-            raise TypeError('context must be a dict or pyglet SharedContext')
-        if not isinstance(context, SharedContext):
-            config = _set_config(context)  # transform to Pyglet config
+            = self._process_backend_kwargs(kwargs)
+        
+        # Deal with context
+        if not context.istaken:
+            context.take('pyglet', self)
+            config = _set_config(context.config)  # Also used further below
+        elif context.istaken == 'pyglet':
+            config = None  # contexts are shared by default in Pyglet
         else:
-            # contexts are shared by default in Pyglet, so we shouldn't need
-            # to do anything to share them...
-            config = None
+            raise RuntimeError('Different backends cannot share a context.')
+        
         style = (pyglet.window.Window.WINDOW_STYLE_DEFAULT if dec else
                  pyglet.window.Window.WINDOW_STYLE_BORDERLESS)
         # We keep track of modifier keys so we can pass them to mouse_motion
@@ -210,12 +208,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
                                       screen=self._vispy_screen)
         if position is not None:
             self._vispy_set_position(*position)
-
-    @property
-    def _vispy_context(self):
-        """Context to return for sharing"""
-        return SharedContext(None)
-
+    
     def _vispy_warmup(self):
         etime = time() + 0.1
         while time() < etime:
@@ -240,6 +233,7 @@ class CanvasBackend(_Window, BaseCanvasBackend):
 
     def _vispy_set_current(self):
         # Make this the current context
+        self._vispy_context.set_current(False)  # Mark as current
         self.switch_to()
 
     def _vispy_swap_buffers(self):

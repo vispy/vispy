@@ -14,7 +14,7 @@ import warnings
 import gc
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, BaseSharedContext)
+                    BaseTimerBackend)
 from ...util import keys, logger
 from ...util.ptime import time
 
@@ -125,10 +125,6 @@ def _set_config(c):
     func(sdl2.SDL_GL_STEREO, c['stereo'])
 
 
-class SharedContext(BaseSharedContext):
-    _backend = 'sdl2'
-
-
 # ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -192,19 +188,26 @@ class CanvasBackend(BaseCanvasBackend):
 
     """ SDL2 backend for Canvas abstract class."""
 
-    def __init__(self, **kwargs):
-        BaseCanvasBackend.__init__(self, capability, SharedContext)
+    # args are for BaseCanvasBackend, kwargs are for us.
+    def __init__(self, *args, **kwargs):
+        BaseCanvasBackend.__init__(self, *args)
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
-            vispy_canvas = self._process_backend_kwargs(kwargs)
-        # Init SDL2, add window hints, and create window
-        if isinstance(context, dict):
-            _set_config(context)
+            = self._process_backend_kwargs(kwargs)
+        self._initialized = False
+        
+        # Deal with context
+        if not context.istaken:
+            context.take('sdl2', self)
+            _set_config(context.config)
             share = None
-        else:
-            share = context.value
-            sdl2.SDL_GL_MakeCurrent(*share)  # old window must be current
+        elif context.istaken == 'sdl2':
+            other = context.backend_canvas
+            share = other._id.window, other._native_context
+            sdl2.SDL_GL_MakeCurrent(*share)
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1)
-
+        else:
+            raise RuntimeError('Different backends cannot share a context.')
+        
         sdl2.SDL_GL_SetSwapInterval(1 if vsync else 0)
         flags = sdl2.SDL_WINDOW_OPENGL
         flags |= sdl2.SDL_WINDOW_SHOWN  # start out shown
@@ -231,35 +234,15 @@ class CanvasBackend(BaseCanvasBackend):
             self._native_context = sdl2.SDL_GL_CreateContext(share[0])
         self._sdl_id = sdl2.SDL_GetWindowID(self._id.window)
         _VP_SDL2_ALL_WINDOWS[self._sdl_id] = self
-        self._vispy_canvas_ = None
+        
+        # Init
+        self._initialized = True
         self._needs_draw = False
         self._vispy_set_current()
+        self._vispy_canvas.events.initialize()
         if not show:
             self._vispy_set_visible(False)
-        self._initialized = False
-        self._vispy_canvas = vispy_canvas
-
-    @property
-    def _vispy_context(self):
-        """Context to return for sharing"""
-        return SharedContext((self._id.window, self._native_context))
-
-    ####################################
-    # Deal with events we get from vispy
-    @property
-    def _vispy_canvas(self):
-        """ The parent canvas/window """
-        return self._vispy_canvas_
-
-    @_vispy_canvas.setter
-    def _vispy_canvas(self, vc):
-        # Init events when the property is set by Canvas
-        self._vispy_canvas_ = vc
-        if vc is not None and not self._initialized:
-            self._initialized = True
-            self._vispy_set_current()
-            self._vispy_canvas.events.initialize()
-
+    
     def _vispy_warmup(self):
         etime = time() + 0.1
         while time() < etime:
@@ -271,6 +254,7 @@ class CanvasBackend(BaseCanvasBackend):
         if self._id is None:
             return
         # Make this the current context
+        self._vispy_context.set_current(False)  # Mark as current
         sdl2.SDL_GL_MakeCurrent(self._id.window, self._native_context)
 
     def _vispy_swap_buffers(self):

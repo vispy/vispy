@@ -10,7 +10,7 @@ should be emitted.
 from __future__ import division
 
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
-                    BaseTimerBackend, BaseSharedContext)
+                    BaseTimerBackend)
 from ...util import keys
 
 
@@ -84,10 +84,6 @@ def _set_config(c):
     raise NotImplementedError
 
 
-class SharedContext(BaseSharedContext):
-    _backend = 'template'
-
-
 # ------------------------------------------------------------- application ---
 
 class ApplicationBackend(BaseApplicationBackend):
@@ -149,13 +145,29 @@ class CanvasBackend(BaseCanvasBackend):
     events can be triggered.
     """
 
-    def __init__(self, vispy_canvas, *args, **kwargs):
-        # NativeWidgetClass.__init__(self, *args, **kwargs)
-        BaseCanvasBackend.__init__(self, vispy_canvas, SharedContext)
-
+    # args are for BaseCanvasBackend, kwargs are for us.
+    def __init__(self, *args, **kwargs):
+        BaseCanvasBackend.__init__(self, *args)
+        # We use _process_backend_kwargs() to "serialize" the kwargs
+        # and to check whether they match this backend's capability
+        title, size, position, show, vsync, resize, dec, fs, parent, context, \
+            = self._process_backend_kwargs(kwargs)
+        
+        # Deal with context
+        if not context.istaken:
+            context.take('backend-name', self)
+            self._native_context = None  # ...
+        elif context.istaken == 'backend-name':
+            self._native_context = context.backend_canvas._native_context
+        else:
+            raise RuntimeError('Different backends cannot share a context.')
+        
+        # NativeWidgetClass.__init__(self, foo, bar)
+    
     def _vispy_set_current(self):
         # Make this the current context
         raise NotImplementedError()
+        self._vispy_context.set_current(False)  # Mark as current
 
     def _vispy_swap_buffers(self):
         # Swap front and back buffer

@@ -92,8 +92,10 @@ def test_import_vispy_util():
 
 def test_import_vispy_app1():
     """ Importing vispy.app should not pull in other vispy submodules. """
+    # Since the introduction of the GLContext to gloo, app depends on gloo
     modnames = loaded_vispy_modules('vispy.app', 2)
-    assert_equal(modnames, set(_min_modules + ['vispy.app']))
+    assert_equal(modnames, set(_min_modules + ['vispy.app', 
+                                               'vispy.gloo', 'vispy.color']))
 
 
 def test_import_vispy_app2():
