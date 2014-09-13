@@ -5,8 +5,7 @@
 from __future__ import division
 
 import numpy as np
-from functools import wraps
-
+from ...ext.decorator import decorator
 
 def arg_to_array(func):
     """
@@ -44,6 +43,7 @@ def as_vec4(obj, default=(0, 0, 0, 1)):
     return obj
 
 
+@decorator
 def arg_to_vec4(func):
     """
     Decorator for converting argument to vec4 format suitable for 4x4 matrix
@@ -66,7 +66,6 @@ def arg_to_vec4(func):
     and returns a new (mapped) object.
 
     """
-    @wraps(func)
     def fn(self, arg, *args, **kwds):
         if isinstance(arg, (tuple, list, np.ndarray)):
             arg = np.array(arg)
