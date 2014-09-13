@@ -5,6 +5,7 @@
 from __future__ import division
 
 import numpy as np
+from functools import wraps
 
 
 def arg_to_array(func):
@@ -65,6 +66,7 @@ def arg_to_vec4(func):
     and returns a new (mapped) object.
 
     """
+    @wraps(func)
     def fn(self, arg, *args, **kwds):
         if isinstance(arg, (tuple, list, np.ndarray)):
             arg = np.array(arg)
