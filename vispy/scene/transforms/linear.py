@@ -284,7 +284,7 @@ class AffineTransform(BaseTransform):
 
     def scale(self, scale, center=None):
         """
-        Scale the matrix by `scale` around the origin `center`.
+        Scale the matrix about a given origin.
 
         The scaling is applied *after* the transformations already present
         in the matrix.
@@ -295,7 +295,7 @@ class AffineTransform(BaseTransform):
             Scale factors along x, y and z axes.
         center : array-like or None
             The x, y and z coordinates to scale around. If None,
-            `(0, 0, 0)` will be used.
+            (0, 0, 0) will be used.
         """
         scale = as_vec4(scale, default=(1, 1, 1, 1))
         if center is not None:
@@ -319,7 +319,7 @@ class AffineTransform(BaseTransform):
         angle : float
             The angle of rotation, in degrees.
         axis : array-like
-            The x, y and z parameters of the axis vector to rotate around.
+            The x, y and z coordinates of the axis vector to rotate around.
         """
         #tr = transforms.rotate(np.eye(4), angle, *axis)
         #self.matrix = np.dot(tr, self.matrix)
