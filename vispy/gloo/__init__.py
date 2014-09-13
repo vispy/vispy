@@ -47,6 +47,7 @@ Example::
 from __future__ import division
 
 from . import gl  # noqa
+from .context import GLContext, get_default_config, get_current_context  # noqa
 from .globject import GLObject  # noqa
 from .buffer import VertexBuffer, IndexBuffer  # noqa
 from .initialize import gl_initialize  # noqa

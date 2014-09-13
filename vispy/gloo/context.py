@@ -3,12 +3,13 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Functionality to deal with GL Contexts in vispy. This module is not in
-vispy.app, because we want to make it possible to use parts of vispy
-without relying on app (and vice versa). Although this *looks* like
-something from vispy.app (for practical reasons), it should be possible
-to use GLContext without using vispy.app by overloading it in an
-appropriate manner.
+Functionality to deal with GL Contexts in vispy. This module is defined
+in gloo, because gloo (and the layers that depend on it) need to be
+context aware. The vispy.app module "provides" a context, and therefore
+depends on this module. Although the GLContext class is aimed for use
+by vispy.app (for practical reasons), it should be possible to use
+GLContext without using vispy.app by overloading it in an appropriate
+manner.
 
 An GLContext object acts as a placeholder on which different parts
 of vispy (or other systems) can keep track of information related to

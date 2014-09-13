@@ -12,7 +12,7 @@ from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..ext.six import string_types
 from . import Application, use_app
-from ..util.context import GLContext
+from ..gloo.context import GLContext
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -65,7 +65,7 @@ class Canvas(object):
         monitor is used. If int, the given monitor number is used.
     context : dict | instance GLContext | None
         OpenGL configuration to use when creating the context for the canvas,
-        or a context to share. If None, ``vispy.app.get_default_config`` will
+        or a context to share. If None, ``vispy.gloo.get_default_config`` will
         be used to set the OpenGL context parameters. Alternatively, the
         ``canvas.context`` property from an existing canvas (using the
         same backend) will return a ``GLContext`` that can be used,

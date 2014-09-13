@@ -3,10 +3,10 @@
 import gc
 
 from nose.tools import assert_raises, assert_equal, assert_not_equal
-from vispy.testing import assert_in
+from vispy.testing import assert_in, run_tests_if_main
 
-from vispy.util.context import (GLContext, get_current_context, 
-                                get_default_config)
+from vispy.gloo import (GLContext, get_current_context, 
+                        get_default_config)
 
 
 class DummyCanvasBackend(object):
@@ -106,7 +106,4 @@ def test_context_activating():
     assert cb1.set_current is True
 
 
-if __name__ == '__main__':
-    test_context_config()
-    test_context_taking()
-    test_context_activating()
+run_tests_if_main()

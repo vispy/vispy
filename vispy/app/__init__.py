@@ -15,4 +15,3 @@ from ._default_app import use_app, create, run, quit, process_events  # noqa
 from .canvas import Canvas, MouseEvent, KeyEvent  # noqa
 from .timer import Timer  # noqa
 from . import base  # noqa
-from ..util.context import get_default_config  # noqa
