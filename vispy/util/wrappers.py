@@ -83,7 +83,7 @@ def use(app=None, gl=None):
         vispy.gloo.gl.use_gl(gl)
 
 
-def run_subprocess(command):
+def run_subprocess(command, return_code=False, **kwargs):
     """Run command using subprocess.Popen
 
     Run command and wait for command to complete. If the return code was zero
@@ -95,6 +95,12 @@ def run_subprocess(command):
     ----------
     command : list of str
         Command to run as subprocess (see subprocess.Popen documentation).
+    return_code : bool
+        If True, the returncode will be returned, and no error checking
+        will be performed (so this function should always return without
+        error).
+    **kwargs : dict
+        Additional kwargs to pass to ``subprocess.Popen``.
 
     Returns
     -------
@@ -102,16 +108,19 @@ def run_subprocess(command):
         Stdout returned by the process.
     stderr : str
         Stderr returned by the process.
+    code : int
+        The command exit code. Only returned if ``return_code`` is True.
     """
     # code adapted with permission from mne-python
-    kwargs = dict(stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    use_kwargs = dict(stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    use_kwargs.update(kwargs)
 
-    p = subprocess.Popen(command, **kwargs)
+    p = subprocess.Popen(command, **use_kwargs)
     stdout_, stderr = p.communicate()
     stdout_, stderr = stdout_.decode('utf-8'), stderr.decode('utf-8')
 
     output = (stdout_, stderr)
-    if p.returncode:
+    if not return_code and p.returncode:
         print(stdout_)
         print(stderr)
         err_fun = subprocess.CalledProcessError.__init__
@@ -119,5 +128,6 @@ def run_subprocess(command):
             raise subprocess.CalledProcessError(p.returncode, command, output)
         else:
             raise subprocess.CalledProcessError(p.returncode, command)
-
+    if return_code:
+        output = output + (p.returncode,)
     return output

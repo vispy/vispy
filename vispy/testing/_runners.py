@@ -13,7 +13,7 @@ from subprocess import Popen, PIPE
 from copy import deepcopy
 from functools import partial
 
-from ..util import use_log_level
+from ..util import use_log_level, run_subprocess
 from ..util.ptime import time
 from ._testing import SkipTest, has_backend, has_application, nottest
 
@@ -183,7 +183,8 @@ def _check_line_endings():
             relfilename = op.relpath(filename, root_dir)
             # Open and check
             try:
-                text = open(filename, 'rb').read().decode('utf-8')
+                with open(filename, 'rb') as fid:
+                    text = fid.read().decode('utf-8')
             except UnicodeDecodeError:
                 continue  # Probably a binary file
             crcount = text.count('\r')
@@ -272,14 +273,13 @@ def _examples():
         sys.stdout.flush()
         cwd = op.dirname(fname)
         cmd = [sys.executable, '-c', _script.format(op.split(fname)[1][:-3])]
-        p = Popen(cmd, cwd=cwd, env=os.environ, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate()
-        stdout, stderr = stdout.decode('utf-8'), stderr.decode('utf-8').strip()
         sys.stdout.flush()
-        if p.returncode or len(stderr) > 0:
+        stdout, stderr, retcode = run_subprocess(cmd, return_code=True,
+                                                 cwd=cwd, env=os.environ)
+        if retcode or len(stderr) > 0:
             ext = '\n' + _line_sep + '\n'
             fails.append('%sExample %s failed (%s):%s%s%s'
-                         % (ext, root_name, p.returncode, ext, stderr, ext))
+                         % (ext, root_name, retcode, ext, stderr, ext))
             print(fails[-1])
         else:
             print('.', end='')

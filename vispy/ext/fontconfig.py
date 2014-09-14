@@ -114,6 +114,5 @@ def find_font(face, bold, italic):
 def _list_fonts():
     """List system fonts"""
     stdout_, stderr = run_subprocess(['fc-list', ':', 'family'])
-    vals = stdout_.decode('utf-8').strip().split('\n')
-    vals = [v.split(',')[0] for v in vals]
+    vals = [v.split(',')[0] for v in stdout_.strip().splitlines(False)]
     return vals
