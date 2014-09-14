@@ -117,8 +117,8 @@ def run_subprocess(command, return_code=False, **kwargs):
 
     p = subprocess.Popen(command, **use_kwargs)
     stdout_, stderr = p.communicate()
-    stdout_, stderr = stdout_.decode('utf-8'), stderr.decode('utf-8')
-
+    stdout_ = stdout_.decode('utf-8') if stdout_ is not None else ''
+    stderr = stderr.decode('utf-8') if stderr is not None else ''
     output = (stdout_, stderr)
     if not return_code and p.returncode:
         print(stdout_)

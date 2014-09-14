@@ -9,7 +9,6 @@ from __future__ import print_function
 import sys
 import os
 from os import path as op
-from subprocess import Popen, PIPE
 from copy import deepcopy
 from functools import partial
 
@@ -125,10 +124,10 @@ def _nose(mode, extra_arg_string):
                % (_line_sep, msg, env_str, ' '.join(args)))
         print(msg)
     sys.stdout.flush()
-    p = Popen(cmd, cwd=cwd, env=env)
-    stdout, stderr = p.communicate()
-    if(p.returncode):
-        raise RuntimeError('Nose failure (%s):\n%r' % (p.returncode, stdout))
+    return_code = run_subprocess(cmd, return_code=True, cwd=cwd, env=env,
+                                 stdout=None, stderr=None)[2]
+    if return_code:
+        raise RuntimeError('Nose failure (%s)' % return_code)
 
 
 def _flake():
