@@ -16,7 +16,5 @@ def get_dpi():
     v_size = gdi32.GetDeviceCaps(dc, VERTSIZE)
     h_res = gdi32.GetDeviceCaps(dc, HORZRES)
     v_res = gdi32.GetDeviceCaps(dc, VERTRES)
-    h_ppi = h_res / float(h_size) * 25.4
-    v_ppi = v_res / float(v_size) * 25.4
     user32.ReleaseDC(None, dc)
-    return (h_ppi + v_ppi) * 0.5
+    return (h_res/float(h_size) + v_res/float(v_size)) * 0.5 * 25.4
