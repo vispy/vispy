@@ -275,14 +275,14 @@ def _examples():
         sys.stdout.flush()
         stdout, stderr, retcode = run_subprocess(cmd, return_code=True,
                                                  cwd=cwd, env=os.environ)
-        if retcode or len(stderr) > 0:
+        if retcode or len(stderr.strip()) > 0:
             ext = '\n' + _line_sep + '\n'
             fails.append('%sExample %s failed (%s):%s%s%s'
                          % (ext, root_name, retcode, ext, stderr, ext))
             print(fails[-1])
         else:
             print('.', end='')
-            sys.stdout.flush()
+        sys.stdout.flush()
     print('')
     t = (': %s failed, %s succeeded, %s skipped in %s seconds'
          % (len(fails), n_ran - len(fails), n_skipped, round(time()-t0)))
