@@ -7,6 +7,7 @@ from __future__ import division
 import numpy as np
 from ...ext.decorator import decorator
 
+
 def arg_to_array(func):
     """
     Decorator to convert argument to array.
