@@ -5,7 +5,7 @@
 import numpy as np
 from os import path as op
 
-from ..util.fetching import load_data_file
+from ..util import load_data_file
 
 # This is the package data dir, not the dir for config, etc.
 DATA_DIR = op.join(op.dirname(__file__), '_data')

@@ -57,6 +57,12 @@ UINT32 = c_uint32
 HDC = c_void_p
 PSTR = c_uint64 if _64_bit else c_uint
 
+HORZSIZE = 4
+VERTSIZE = 6
+
+HORZRES = 8
+VERTRES = 10
+
 
 # gdi32
 
@@ -145,10 +151,18 @@ gdi32.GetOutlineTextMetricsW.restype = UINT
 gdi32.GetOutlineTextMetricsW.argtypes = [HDC, UINT,
                                          POINTER(OUTLINETEXTMETRIC)]
 
+
+gdi32.GetDeviceCaps.argtypes = [HDC, INT]
+gdi32.GetDeviceCaps.restype = INT
+
 user32 = windll.user32
 
 user32.GetDC.restype = HDC  # HDC
 user32.GetDC.argtypes = [UINT32]  # HWND
+
+user32.ReleaseDC.argtypes = [c_void_p, HDC]
+
+user32.SetProcessDPIAware.argtypes = []
 
 
 # gdiplus

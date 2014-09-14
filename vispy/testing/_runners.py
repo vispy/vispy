@@ -74,7 +74,7 @@ try:
 except Exception:
     pass
 
-nose.main(argv="%s".split(" ")%s)
+nose.main(argv=%r%s)
 """
 
 
@@ -108,7 +108,7 @@ def _nose(mode, extra_arg_string):
         extra_arg_string = '-a vispy_app_test ' + extra_arg_string
         coverage = True
     coverage = ', addplugins=[MutedCoverage()]' if coverage else ''
-    args = 'nosetests %s' % extra_arg_string.strip()
+    args = ['nosetests'] + extra_arg_string.strip().split(' ')
     # make a call to "python" so that it inherits whatever the system
     # thinks is "python" (e.g., virtualenvs)
     cmd = [sys.executable, '-c', _nose_script % (args, coverage)]
@@ -122,13 +122,13 @@ def _nose(mode, extra_arg_string):
         env_str = '_VISPY_TESTING_APP=%s ' % mode
     if len(msg) > 0:
         msg = ('%s\n%s:\n%s%s'
-               % (_line_sep, msg, env_str, args))
+               % (_line_sep, msg, env_str, ' '.join(args)))
         print(msg)
     sys.stdout.flush()
     p = Popen(cmd, cwd=cwd, env=env)
     stdout, stderr = p.communicate()
     if(p.returncode):
-        raise RuntimeError('Nose failure (%s):\n%s' % (p.returncode, stderr))
+        raise RuntimeError('Nose failure (%s):\n%r' % (p.returncode, stdout))
 
 
 def _flake():

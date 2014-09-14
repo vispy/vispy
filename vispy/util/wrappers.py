@@ -108,6 +108,7 @@ def run_subprocess(command):
 
     p = subprocess.Popen(command, **kwargs)
     stdout_, stderr = p.communicate()
+    stdout_, stderr = stdout_.decode('utf-8'), stderr.decode('utf-8')
 
     output = (stdout_, stderr)
     if p.returncode:

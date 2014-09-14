@@ -9,7 +9,6 @@ from __future__ import print_function
 import numpy as np
 import sys
 import os
-import subprocess
 import inspect
 import base64
 try:
@@ -26,8 +25,7 @@ from distutils.version import LooseVersion
 from ..ext.six.moves import http_client as httplib
 from ..ext.six.moves import urllib_parse as urllib
 from ..ext.six import string_types
-from ..util import use_log_level
-from ..util.fetching import get_testing_file
+from ..util import use_log_level, run_subprocess, get_testing_file
 
 ###############################################################################
 # Adapted from Python's unittest2 (which is wrapped by nose)
@@ -41,45 +39,6 @@ except ImportError:
     except ImportError:
         class SkipTest(Exception):
             pass
-
-
-def run_subprocess(command):
-    """Run command using subprocess.Popen
-
-    Run command and wait for command to complete. If the return code was zero
-    then return, otherwise raise CalledProcessError.
-    By default, this will also add stdout= and stderr=subproces.PIPE
-    to the call to Popen to suppress printing to the terminal.
-
-    Parameters
-    ----------
-    command : list of str
-        Command to run as subprocess (see subprocess.Popen documentation).
-
-    Returns
-    -------
-    stdout : str
-        Stdout returned by the process.
-    stderr : str
-        Stderr returned by the process.
-    """
-    # code adapted with permission from mne-python
-    kwargs = dict(stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-
-    p = subprocess.Popen(command, **kwargs)
-    stdout_, stderr = p.communicate()
-
-    output = (stdout_.decode('ascii'), stderr.decode('ascii'))
-    if p.returncode:
-        print(stdout_)
-        print(stderr)
-        err_fun = subprocess.CalledProcessError.__init__
-        if 'output' in inspect.getargspec(err_fun).args:
-            raise subprocess.CalledProcessError(p.returncode, command, output)
-        else:
-            raise subprocess.CalledProcessError(p.returncode, command)
-
-    return output
 
 
 def _safe_rep(obj, short=False):

@@ -10,7 +10,7 @@ from .logs import logger, set_log_level, use_log_level  # noqa
 from .config import (_parse_command_line_arguments, config, sys_info,  # noqa
                      save_config, get_config_keys, set_data_dir,  # noqa
                      _TempDir)  # noqa
-
+from .fetching import get_testing_file, load_data_file
 from . import fonts       # noqa
 from . import transforms  # noqa
 from .wrappers import use, run_subprocess  # noqa
