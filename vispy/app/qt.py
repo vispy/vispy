@@ -2,13 +2,16 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+# Force the selection of an application backend. If the user has already
+# imported PyQt or PySide, this should result in selection of the corresponding
+# backend.
 from . import use_app
+app = use_app()
 try:
-    app_object = use_app('pyqt4')
-except Exception:
-    app_object = use_app('pyside')
-
-from .backends._qt import QtGui
+    QtGui = app.backend_module.QtGui
+except AttributeError:
+    raise RuntimeError("Cannot import Qt library; non-Qt backend is already "
+                       "in use.")
 
 
 class QtCanvas(QtGui.QWidget):
