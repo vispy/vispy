@@ -8,36 +8,16 @@ in any more vispy submodules than strictly necessary.
 
 import sys
 import os
-import subprocess
 
 from nose.tools import assert_equal
 from vispy.testing import (assert_in, assert_not_in, requires_pyopengl,
                            run_tests_if_main)
-
+from vispy.util import run_subprocess
 import vispy
 
 
 # minimum that will be imported when importing vispy
 _min_modules = ['vispy', 'vispy.util', 'vispy.ext', 'vispy.testing']
-
-
-def check_output(*popenargs, **kwargs):
-    """ Minimal py 2.6 compatible version of subprocess.check_output()
-
-    Py2.6 does not have check_output.
-    Taken from https://gist.github.com/edufelipe/1027906
-    """
-    process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
-    output, unused_err = process.communicate()
-    retcode = process.poll()
-    if retcode:
-        cmd = kwargs.get("args")
-        if cmd is None:
-            cmd = popenargs[0]
-        error = subprocess.CalledProcessError(retcode, cmd)
-        error.output = output
-        raise error
-    return output
 
 
 def loaded_vispy_modules(import_module, depth=None, all_modules=False):
@@ -53,13 +33,12 @@ def loaded_vispy_modules(import_module, depth=None, all_modules=False):
 
     # Get the loaded modules in a clean interpreter
     code = "import sys, %s; print(', '.join(sys.modules))" % import_module
-    res = check_output([sys.executable, '-c', code], cwd=vispy_dir)
-    res = res.decode('utf-8')
+    res = run_subprocess([sys.executable, '-c', code], cwd=vispy_dir)[0]
     loaded_modules = [name.strip() for name in res.split(',')]
-    
+
     if all_modules:
         return loaded_modules
-    
+
     # Get only vispy modules at the given depth
     vispy_modules = set()
     for m in loaded_modules:

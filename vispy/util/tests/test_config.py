@@ -5,8 +5,8 @@ from nose.tools import assert_raises, assert_equal, assert_true
 from os import path as op
 import os
 
-from vispy.util import config, sys_info, _TempDir, set_data_dir, save_config
-from vispy.util.fetching import load_data_file
+from vispy.util import (config, sys_info, _TempDir, set_data_dir, save_config,
+                        load_data_file)
 from vispy.testing import assert_in, requires_application, run_tests_if_main
 temp_dir = _TempDir()
 

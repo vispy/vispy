@@ -42,6 +42,7 @@ def find_font(face, bold, italic):
     assert sizeof(metrics) >= n_byte
     assert gdi32.GetOutlineTextMetricsW(dc, n_byte, byref(metrics))
     gdi32.SelectObject(dc, original)
+    user32.ReleaseDC(None, dc)
     use_face = cast(byref(metrics, metrics.otmpFamilyName), c_wchar_p).value
     if use_face != face:
         warnings.warn('Could not find face match "%s", falling back to "%s"'
@@ -100,4 +101,5 @@ def _list_fonts():
         return 1
 
     gdi32.EnumFontFamiliesExW(dc, byref(logfont), FONTENUMPROC(enum_fun), 0, 0)
+    user32.ReleaseDC(None, dc)
     return fonts

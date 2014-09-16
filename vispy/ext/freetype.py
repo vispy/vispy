@@ -19,7 +19,7 @@ from ctypes import (byref, c_char_p, c_ushort, cast, util, CDLL, Structure,
                     c_char, c_ubyte, CFUNCTYPE)
 
 from .six import string_types
-from ..util.fetching import load_data_file
+from ..util import load_data_file
 
 FT_LOAD_RENDER = 4
 FT_KERNING_DEFAULT = 0

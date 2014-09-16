@@ -1422,6 +1422,12 @@ quartz.CGDataProviderCreateWithURL.argtypes = [c_void_p]
 quartz.CGFontCreateWithDataProvider.restype = c_void_p
 quartz.CGFontCreateWithDataProvider.argtypes = [c_void_p]
 
+quartz.CGDisplayScreenSize.argtypes = [CGDirectDisplayID]
+quartz.CGDisplayScreenSize.restype = CGSize
+
+quartz.CGDisplayBounds.argtypes = [CGDirectDisplayID]
+quartz.CGDisplayBounds.restype = CGRect
+
 ######################################################################
 
 # CORETEXT
