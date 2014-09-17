@@ -44,13 +44,22 @@ class MagnifyTransform(BaseTransform):
     
     Linear = False
     
+    _trans_resolution = 100
+    
     def __init__(self):
         self._center = (0, 0)
         self._mag = 5
         self._radii = (7, 10)
         self._trans = None
-        self._trans_tex = (gloo.Texture2D(shape=(1000,1,1), format=gloo.gl.GL_LUMINANCE, dtype=np.float32), 
-                           gloo.Texture2D(shape=(1000,1,1), format=gloo.gl.GL_LUMINANCE, dtype=np.float32))
+        res = self._trans_resolution
+        self._trans_tex = (gloo.Texture2D(shape=(res,1,1), 
+                                          format=gloo.gl.GL_LUMINANCE, 
+                                          dtype=np.float32, 
+                                          interpolation='linear'), 
+                           gloo.Texture2D(shape=(res,1,1), 
+                                          format=gloo.gl.GL_LUMINANCE, 
+                                          dtype=np.float32, 
+                                          interpolation='linear'))
         self._trans_tex_max = None
         super(MagnifyTransform, self).__init__()
         
@@ -159,11 +168,12 @@ class MagnifyTransform(BaseTransform):
         
         if self._trans is None:
             m, r1, r2 = self.magnification, self.radii[0], self.radii[1]
+            res = self._trans_resolution
             
-            xi = np.linspace(r1, r2, 1000)
+            xi = np.linspace(r1, r2, res)
             t = 0.5 * (1 + np.cos((xi - r2) * np.pi / (r2 - r1)))
             yi = (xi * t + xi * (1-t) / m).astype(np.float32)
-            x = np.linspace(r1/m, r2, 1000)
+            x = np.linspace(r1/m, r2, res)
             y = np.interp(x, yi, xi).astype(np.float32)
             
             self._trans = (y, yi)
@@ -171,7 +181,6 @@ class MagnifyTransform(BaseTransform):
             mx = y.max(), yi.max()
             self._trans_tex_max = mx
             tt = y / mx[0]
-            print tt.min(), tt.max()
             self._trans_tex[0].set_data((y / mx[0])[:,np.newaxis,np.newaxis])
             self._trans_tex[1].set_data((yi / mx[1])[:,np.newaxis,np.newaxis])
             
@@ -182,24 +191,28 @@ class MagnifyTransform(BaseTransform):
 class Magnify1DTransform(MagnifyTransform):
     """
     """
-    pass
-    #glsl_map = """
-        #vec4 mag_transform(vec4 pos) {
-            #float dist = pos.x - $center.x;
-            #if (dist == 0) {
-                #return pos;
-            #}
+    glsl_map = """
+        vec4 mag_transform(vec4 pos) {
+            float dist = pos.x - $center.x;
+            if (dist == 0 || abs(dist) > $radii.y) {
+                return pos;
+            }
+            float dir = dist / abs(dist);
             
-            #// gaussian profile
-            #float m = 1 / ((dist/$radius)*(dist/$radius) + 1);
-            #// flatten to make nearly linear in the center
-            #m = pow(1 - pow((1 - m), 100), 100);
-            #dist = dist * (1 + ($mag-1) * m);
+            if( abs(dist) < $radii.x ) {
+                dist = dist * $mag;
+            }
+            else {
+                float r1 = $radii.x;
+                float r2 = $radii.y;
+                float x = (abs(dist) - r1) / (r2 - r1);
+                dist = dir * texture2D($trans, vec2(0, x)).r * $trans_max;
+            }
 
-            #return vec4($center.x + dist, pos.y, pos.z, pos.w);
-        #}"""
+            return vec4($center.x + dist, pos.y, pos.z, pos.w);
+        }"""
     
-    #glsl_imap = glsl_map
+    glsl_imap = glsl_map
 
 
 class MagCamera(vispy.scene.cameras.PanZoomCamera):
@@ -215,8 +228,8 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
     
     def _set_scene_transform(self, tr):
         vbs = self.viewbox.size
-        r = min(vbs) / 4
-        self.mag.radii = r*0.6, r
+        r = min(vbs) / 2
+        self.mag.radii = r*0.7, r
         super(MagCamera, self)._set_scene_transform(self.mag * tr)
 
 
@@ -228,9 +241,10 @@ class Mag1DCamera(MagCamera):
 
     def _set_scene_transform(self, tr):
         vbs = self.viewbox.size
-        r = vbs[0] / 4
-        self.mag.radii = r*0.6, r 
+        r = vbs[0] / 2
+        self.mag.radii = r*0.7, r 
         super(MagCamera, self)._set_scene_transform(self.mag * tr)
+
 
 canvas = vispy.scene.SceneCanvas(keys='interactive', show=True)
 grid = canvas.central_widget.add_grid()
@@ -241,12 +255,12 @@ vb3 = grid.add_view(row=1, col=1)
 
 # Top viewbox
 vb1.camera = Mag1DCamera()
-pos = np.empty((100, 2))
-pos[:,0] = np.arange(100)
-pos[:,1] = np.random.normal(size=100, loc=50, scale=10)
+pos = np.empty((1000, 2))
+pos[:,0] = np.arange(1000)
+pos[:,1] = np.random.normal(size=1000, loc=50, scale=10)
 line = visuals.Line(pos, color='white', parent=vb1.scene)
 line.transform = STTransform(translate=(0, 0, -0.1))
-vb1.camera.rect = 0, 0, 100, 100
+vb1.camera.rect = 0, 0, 1000, 100
 
 grid1 = visuals.GridLines(parent=vb1.scene)
 
@@ -259,7 +273,7 @@ img_data = np.random.normal(size=(100, 100, 3), loc=58,
 image = visuals.Image(img_data, method='impostor', grid=(100, 100), parent=vb2.scene)
 vb2.camera = MagCamera()
 #vb2.camera.auto_zoom(image)
-vb2.camera.rect = (-1, -1, image.size[0]+2, image.size[1]+2) 
+vb2.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20) 
 
 
 vb3.camera = MagCamera()
