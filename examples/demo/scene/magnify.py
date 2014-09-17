@@ -15,7 +15,36 @@ from vispy.util import filter
 
 
 class MagnifyTransform(BaseTransform):
-    """
+    """ Magnifying lens transform. 
+
+    This transform causes a circular region to appear with larger scale around
+    its center point. 
+    
+    Parameters
+    ----------
+    mag : float
+        Magnification factor. Objects around the transform's center point will
+        appear scaled by this amount relative to objects outside the circle.
+    radii : (float, float)
+        Inner and outer radii of the "lens". Objects inside the inner radius
+        appear scaled, whereas objects outside the outer radius are unscaled,
+        and the scale factor transitions smoothly between the two radii.
+    center: (float, float)
+        The center (x, y) point of the "lens".
+        
+    Notes
+    -----
+    
+    This transform works by segmenting its input coordinates into three
+    regions--inner, outer, and transition. Coordinates in the inner region are
+    multiplied by a constant scale factor around the center point, and 
+    coordinates in the transition region are scaled by a factor that 
+    transitions smoothly from the inner radius to the outer radius. 
+    
+    Smooth functions that are appropriate for the transition region also tend 
+    to be difficult to invert analytically, so this transform instead samples
+    the function numerically to allow trivial inversion. In OpenGL, the 
+    sampling is implemented as a texture holding a lookup table.
     """
     glsl_map = """
         vec4 mag_transform(vec4 pos) {
@@ -49,10 +78,10 @@ class MagnifyTransform(BaseTransform):
     
     _trans_resolution = 1000
     
-    def __init__(self):
-        self._center = (0, 0)
-        self._mag = 5
-        self._radii = (7, 10)
+    def __init__(self, mag=3, radii=(7, 10), center=(0, 0)):
+        self._center = center
+        self._mag = mag
+        self._radii = radii
         self._trans = None
         res = self._trans_resolution
         self._trans_tex = (gloo.Texture2D(shape=(res, 1, 1), 
@@ -68,6 +97,8 @@ class MagnifyTransform(BaseTransform):
         
     @property
     def center(self):
+        """ The (x, y) center point of the transform.
+        """
         return self._center
     
     @center.setter
@@ -79,11 +110,13 @@ class MagnifyTransform(BaseTransform):
         self.shader_imap()
 
     @property
-    def magnification(self):
+    def mag(self):
+        """ The scale factor used in the central region of the transform.
+        """
         return self._mag
     
-    @magnification.setter
-    def magnification(self, mag):
+    @mag.setter
+    def mag(self, mag):
         if self._mag == mag:
             return
         self._mag = mag
@@ -93,6 +126,9 @@ class MagnifyTransform(BaseTransform):
 
     @property
     def radii(self):
+        """ The inner and outer radii of the circular area bounding the 
+        transform.
+        """
         return self._radii
     
     @radii.setter
@@ -127,7 +163,7 @@ class MagnifyTransform(BaseTransform):
     @arg_to_vec4
     def map(self, x, _inverse=False):
         c = as_vec4(self.center)
-        m = self.magnification
+        m = self.mag
         r1, r2 = self.radii
         
         #c = np.array(c).reshape(1,2)
@@ -173,10 +209,10 @@ class MagnifyTransform(BaseTransform):
     def _get_transition(self):
         # Generate forward/reverse transition templates.
         # We would prefer to express this with an invertible function, but that
-        # turns out to be tricky. The trans makes any function invertible.
+        # turns out to be tricky. The templates make any function invertible.
         
         if self._trans is None:
-            m, r1, r2 = self.magnification, self.radii[0], self.radii[1]
+            m, r1, r2 = self.mag, self.radii[0], self.radii[1]
             res = self._trans_resolution
             
             xi = np.linspace(r1, r2, res)
@@ -196,7 +232,8 @@ class MagnifyTransform(BaseTransform):
 
 
 class Magnify1DTransform(MagnifyTransform):
-    """
+    """ A 1-dimensional analog of MagnifyTransform. This transform expands 
+    its input along the x-axis, around a center x value.
     """
     glsl_map = """
         vec4 mag_transform(vec4 pos) {
@@ -223,6 +260,12 @@ class Magnify1DTransform(MagnifyTransform):
 
 
 class MagCamera(vispy.scene.cameras.PanZoomCamera):
+    """ Camera implementing a MagnifyTransform combined with PanZoomCamera.
+    
+    This Camera uses the mouse cursor position to set the center position of
+    the MagnifyTransform, and uses mouse wheel events to adjust the 
+    magnification factor.
+    """
     def __init__(self, *args, **kwds):
         self.mag = MagnifyTransform()
         self.mag_target = 3
@@ -253,14 +296,14 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
         s = 0.0001**dt
         c1 = c * s + self.mouse_pos * (1-s)
         
-        m = self.mag.magnification * s + self.mag_target * (1-s)
+        m = self.mag.mag * s + self.mag_target * (1-s)
         
         if (np.all(np.abs((c - c1) / c1) < 1e-5) and 
-            (np.abs(np.log(m / self.mag.magnification)) < 1e-3)):
+            (np.abs(np.log(m / self.mag.mag)) < 1e-3)):
             self.timer.stop()
             
         self.mag.center = c1
-        self.mag.magnification = m
+        self.mag.mag = m
             
         self._update_transform()
     
@@ -291,7 +334,10 @@ vb1 = grid.add_view(row=0, col=0, col_span=2)
 vb2 = grid.add_view(row=1, col=0)
 vb3 = grid.add_view(row=1, col=1)
 
-# Top viewbox
+#
+# Top viewbox: Show a plot line containing fine structure with a 1D 
+# magnigication transform.
+#
 vb1.camera = Mag1DCamera()
 pos = np.empty((100000, 2))
 pos[:, 0] = np.arange(100000)
@@ -308,7 +354,7 @@ grid1 = visuals.GridLines(parent=vb1.scene)
 
 
 #
-# bottom-left viewbox
+# Bottom-left viewbox: Image with circular magnification lens.
 #
 img_data = np.random.normal(size=(100, 100, 3), loc=58,
                             scale=20).astype(np.ubyte)
@@ -320,15 +366,15 @@ vb2.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20)
 
 
 #
-# bottom-right viewbox
+# Bottom-right viewbox: Scatter plot with many clusters of varying scale.
 #
-centers = np.random.normal(size=(20, 2))
+centers = np.random.normal(size=(50, 2))
 pos = np.random.normal(size=(100000, 2), scale=0.2)
 
 indexes = np.random.normal(size=100000, loc=centers.shape[0]/2., 
                            scale=centers.shape[0]/3.)
 indexes = np.clip(indexes, 0, centers.shape[0]-1).astype(int)
-scales = np.linspace(0.1, 1, centers.shape[0])[indexes][:, np.newaxis]
+scales = np.log10(np.linspace(-2, 1, centers.shape[0]))[indexes][:, np.newaxis]
 
 pos *= scales
 pos += centers[indexes]
@@ -340,6 +386,7 @@ vb3.add(scatter)
 vb3.camera.rect = (-5, -5, 10, 10)
 grid2 = visuals.GridLines(parent=vb3.scene)
 
+# Add helpful text
 text = visuals.Text("mouse wheel = zoom", pos=(100, 15), font_size=14, 
                     color='white', parent=canvas.scene)
 
