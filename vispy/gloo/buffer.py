@@ -112,9 +112,10 @@ class Buffer(GLObject):
 
         if nbytes != self._nbytes:
             self.resize_bytes(nbytes)
-
-        # We can discard any other pending operations here.
-        self._context.glir.command('SET_SIZE', self._id, nbytes)
+        else:
+            # Use SET_SIZE to discard any previous data setting
+            self._context.glir.command('SET_SIZE', self._id, nbytes)
+        
         self._context.glir.command('SET_DATA', self._id, 0, data)
     
     def resize_bytes(self, size):
@@ -173,16 +174,9 @@ class DataBuffer(Buffer):
         Base buffer of this buffer
     offset : int
         Byte offset of this buffer relative to base buffer
-    store : bool
-        Specify whether this object stores a reference to the data,
-        allowing the data to be updated regardless of striding. Note
-        that modifying the data after passing it here might result in
-        undesired behavior, unless a copy is given. Default True.
     """
 
-    def __init__(self, data=None, dtype=None, size=0, store=True):
-        self._data = None
-        self._store = store
+    def __init__(self, data=None, dtype=None, size=0):
         self._copied = False  # flag to indicate that a copy is made
         self._size = size  # number of elements in buffer
 
@@ -200,10 +194,6 @@ class DataBuffer(Buffer):
             self._stride = self._dtype.itemsize
             self._itemsize = self._dtype.itemsize
             self._nbytes = self._size * self._itemsize
-            if self._store:
-                self._data = np.empty(self._size, dtype=self._dtype)
-            # else:
-            #    self.set_data(data,copy=True)
 
         # We need a minimum amount of information
         else:
@@ -239,16 +229,7 @@ class DataBuffer(Buffer):
             Asking explicitly for a copy will prevent this behavior.
         """
         data = self._prepare_data(data, **kwds)
-
-        # Handle storage
-        if self._store:
-            if not data.flags["C_CONTIGUOUS"]:
-                logger.warning("Copying discontiguous data as CPU storage:%s\n"
-                               % _last_stack_str())
-                self._copied = True
-                data = data.copy()
-            self._data = data.ravel()  # Makes a copy if not contiguous
-        # Store meta data (AFTER flattening, or stride would be wrong)
+        
         self._dtype = data.dtype
         self._stride = data.strides[-1]
         self._itemsize = self._dtype.itemsize
@@ -276,12 +257,6 @@ class DataBuffer(Buffer):
     def size(self):
         """ Number of elements in the buffer """
         return self._size
-
-    @property
-    def data(self):
-        """ Buffer CPU storage """
-
-        return self._data
 
     @property
     def itemsize(self):
@@ -314,14 +289,7 @@ class DataBuffer(Buffer):
         This clears any pending operations.
         """
         Buffer.resize_bytes(self, size)
-
         self._size = size // self.itemsize
-        
-        if self._data is not None and self._store: 
-            if self._data.size != self._size:
-                self._data = np.resize(self._data, self._size)
-        else:
-            self._data = None
 
     def __getitem__(self, key):
         """ Create a view on this buffer. """
@@ -336,17 +304,8 @@ class DataBuffer(Buffer):
         # Setting a whole field of the buffer: only allowed if we have CPU
         # storage. Note this case (key is string) only happen with base buffer
         if isinstance(key, string_types):
-            if self._data is None:
-                raise ValueError(
-                    """Cannot set non contiguous """
-                    """data on buffer without CPU storage""")
-
-            # WARNING: do we check data size
-            #          or do we let numpy raises an error ?
-            self._data[key] = data
-            self.set_data(self._data, copy=False)
-            return
-
+            raise ValueError("Cannot set non-contiguous data on buffer")
+        
         # Setting one or several elements
         elif isinstance(key, int):
             if key < 0:
@@ -363,34 +322,23 @@ class DataBuffer(Buffer):
         else:
             raise TypeError("Buffer indices must be integers or strings")
 
-        # Buffer is a base buffer and we have CPU storage
-        if self.data is not None:
-            # WARNING: do we check data size
-            #          or do we let numpy raises an error ?
-            self.data[key] = data
-            offset = start  # * self.itemsize
-            self.set_subdata(data=self.data[start:stop],
-                             offset=offset, copy=False)
+        # Contiguous update?
+        if step != 1:
+            raise ValueError("Cannot set non-contiguous data on buffer")
 
-        # Buffer is a base buffer but we do not have CPU storage
-        # If 'key' points to a contiguous chunk of buffer, it's ok
-        elif step == 1:
-            offset = start  # * self.itemsize
+        # Make sure data is an array
+        if not isinstance(data, np.ndarray):
+            data = np.array(data, dtype=self.dtype, copy=False)
 
-            # Make sure data is an array
-            if not isinstance(data, np.ndarray):
-                data = np.array(data, dtype=self.dtype, copy=False)
+        # Make sure data is big enough
+        # todo: are the new data elements filled as we want them to?
+        if data.size != stop - start:
+            data = np.resize(data, stop - start)
 
-            # Make sure data is big enough
-            if data.size != stop - start:
-                data = np.resize(data, stop - start)
+        # Set data
+        offset = start  # * self.itemsize
+        self.set_subdata(data=data, offset=offset, copy=True)
 
-            self.set_subdata(data=data, offset=offset, copy=True)
-
-        # All the above fails, we raise an error
-        else:
-            raise ValueError(
-                "Cannot set non contiguous data on buffer without CPU storage")
 
 
 class DataBufferView(DataBuffer):
@@ -601,16 +549,11 @@ class VertexBuffer(DataBuffer):
         Buffer data type (optional)
     size : int
         Buffer size (optional)
-    store : bool
-        Specify whether this object stores a reference to the data,
-        allowing the data to be updated regardless of striding. Note
-        that modifying the data after passing it here might result in
-        undesired behavior, unless a copy is given. Default True.
     """
     
     _GLIR_TYPE = 'VERTEXBUFFER'
 
-    def __init__(self, data=None, dtype=None, size=0, store=True):
+    def __init__(self, data=None, dtype=None, size=0):
 
         if isinstance(data, (list, tuple)):
             data = np.array(data, np.float32)
@@ -620,8 +563,7 @@ class VertexBuffer(DataBuffer):
             if dtype.isbuiltin:
                 dtype = np.dtype([('f0', dtype, 1)])
 
-        DataBuffer.__init__(self, data=data, dtype=dtype, size=size,
-                            store=store)
+        DataBuffer.__init__(self, data=data, dtype=dtype, size=size)
 
         # Check base type and count for each dtype fields (if buffer is a base)
         for name in self.dtype.names:
@@ -688,16 +630,11 @@ class IndexBuffer(DataBuffer):
         Buffer data type (optional)
     size : int
         Buffer size (optional)
-    store : bool
-        Specify whether this object stores a reference to the data,
-        allowing the data to be updated regardless of striding. Note
-        that modifying the data after passing it here might result in
-        undesired behavior, unless a copy is given. Default True.
     """
     
     _GLIR_TYPE = 'INDEXBUFFER'
     
-    def __init__(self, data=None, dtype=np.uint32, size=0, store=True):
+    def __init__(self, data=None, dtype=np.uint32, size=0):
 
         if dtype and not np.dtype(dtype).isbuiltin:
             raise TypeError("Element buffer dtype cannot be structured")
@@ -707,8 +644,7 @@ class IndexBuffer(DataBuffer):
         elif dtype not in [np.uint8, np.uint16, np.uint32]:
             raise TypeError("Data type not allowed for IndexBuffer")
 
-        DataBuffer.__init__(self, data=data, dtype=dtype, size=size,
-                            store=store)
+        DataBuffer.__init__(self, data=data, dtype=dtype, size=size)
 
     def _prepare_data(self, data, convert=False):
         if not data.dtype.isbuiltin:
