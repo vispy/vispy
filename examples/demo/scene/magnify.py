@@ -116,9 +116,6 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
     def view_changed(self):
         # make sure radii are updated when a view is attached.
         self.view_resize_event(None)
-    
-    #def _set_scene_transform(self, tr):
-        #super(MagCamera, self)._set_scene_transform(self.mag * tr)
 
 
 class Mag1DCamera(MagCamera):
