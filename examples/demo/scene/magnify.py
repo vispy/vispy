@@ -45,13 +45,27 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
         # ratio of inner to outer lens radius
         self.radius_ratio = radius_ratio
         
+        # Create the mag transform
         self.mag = self.transform_class(**kwds)
+        
+        # for handling smooth transitions
         self.mag_target = self.mag.mag
         self.mag._mag = self.mag_target
         self.mouse_pos = None
         self.timer = app.Timer(interval=0.016, connect=self.on_timer)
+        
         super(MagCamera, self).__init__()
 
+        # This tells the camera to insert the magnification transform at the
+        # beginning of the transform it applies to the scene. This is the 
+        # correct place for the mag transform because:
+        # 1. We want it to apply to everything inside the scene, and not to
+        #    the ViewBox itself or anything outside of the ViewBox.
+        # 2. We do _not_ want the pan/zoom transforms applied first, because
+        #    the scale factors implemented there should not change the shape
+        #    of the lens.
+        self.pre_transform = self.mag
+        
     def view_mouse_event(self, event):
         # When the attached ViewBox reseives a mouse event, it is sent to the
         # camera here.
@@ -103,8 +117,8 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
         # make sure radii are updated when a view is attached.
         self.view_resize_event(None)
     
-    def _set_scene_transform(self, tr):
-        super(MagCamera, self)._set_scene_transform(self.mag * tr)
+    #def _set_scene_transform(self, tr):
+        #super(MagCamera, self)._set_scene_transform(self.mag * tr)
 
 
 class Mag1DCamera(MagCamera):
@@ -126,6 +140,8 @@ vb3 = grid.add_view(row=1, col=1)
 # magnigication transform.
 #
 vb1.camera = Mag1DCamera(mag=4, size_factor=0.6, radius_ratio=0.8)
+vb1.camera.rect = 0, 30, 100000, 100
+
 pos = np.empty((100000, 2))
 pos[:, 0] = np.arange(100000)
 pos[:, 1] = np.random.normal(size=100000, loc=50, scale=10)
@@ -135,7 +151,6 @@ pos[:, 1][pos[:, 1] > 55] += 100
 pos[:, 1] = filter.gaussian_filter(pos[:, 1], 2)
 line = visuals.Line(pos, color='white', parent=vb1.scene)
 line.transform = STTransform(translate=(0, 0, -0.1))
-vb1.camera.rect = 0, 30, 100000, 100
 
 grid1 = visuals.GridLines(parent=vb1.scene)
 
@@ -143,35 +158,35 @@ grid1 = visuals.GridLines(parent=vb1.scene)
 #
 # Bottom-left viewbox: Image with circular magnification lens.
 #
-img_data = np.random.normal(size=(100, 100, 3), loc=58,
-                            scale=20).astype(np.ubyte)
-
-image = visuals.Image(img_data, method='impostor', grid=(100, 100), 
-                      parent=vb2.scene)
+size = (100, 100)
 vb2.camera = MagCamera(mag=3, size_factor=0.3, radius_ratio=0.6)
-vb2.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20) 
+vb2.camera.rect = (-10, -10, size[0]+20, size[1]+20) 
+
+img_data = np.random.normal(size=size+(3,), loc=58, scale=20).astype(np.ubyte)
+image = visuals.Image(img_data, method='impostor', parent=vb2.scene)
 
 
 #
 # Bottom-right viewbox: Scatter plot with many clusters of varying scale.
 #
+vb3.camera = MagCamera(mag=3, size_factor=0.3, radius_ratio=0.9)
+vb3.camera.rect = (-5, -5, 10, 10)
+
 centers = np.random.normal(size=(50, 2))
 pos = np.random.normal(size=(100000, 2), scale=0.2)
-
 indexes = np.random.normal(size=100000, loc=centers.shape[0]/2., 
                            scale=centers.shape[0]/3.)
 indexes = np.clip(indexes, 0, centers.shape[0]-1).astype(int)
 scales = np.log10(np.linspace(-2, 1, centers.shape[0]))[indexes][:, np.newaxis]
-
 pos *= scales
 pos += centers[indexes]
 
-vb3.camera = MagCamera(mag=3, size_factor=0.3, radius_ratio=0.9)
 scatter = visuals.Markers()
 scatter.set_data(pos, edge_color=None, face_color=(1, 1, 1, 0.3), size=5)
 vb3.add(scatter)
-vb3.camera.rect = (-5, -5, 10, 10)
+
 grid2 = visuals.GridLines(parent=vb3.scene)
+
 
 # Add helpful text
 text = visuals.Text("mouse wheel = zoom", pos=(100, 15), font_size=14, 

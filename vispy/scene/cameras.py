@@ -71,6 +71,7 @@ class BaseCamera(Entity):
     def __init__(self, **kwargs):
         self._viewbox = None
         self._interactive = True
+        self._pre_transform = None
         super(BaseCamera, self).__init__(**kwargs)
         self.transform = NullTransform()
 
@@ -120,6 +121,18 @@ class BaseCamera(Entity):
         self._viewbox.events.mouse_wheel.disconnect(self.view_mouse_event)
         self._viewbox.events.resize.disconnect(self.view_resize_event)
     
+    @property
+    def pre_transform(self):
+        """ A transform to apply to the beginning of the scene transform, in
+        addition to anything else provided by this Camera.
+        """
+        return self._pre_transform
+    
+    @pre_transform.setter
+    def pre_transform(self, tr):
+        self._pre_transform = tr
+        self._update_transform()
+    
     def view_mouse_event(self, event):
         """
         The ViewBox received a mouse event; update transform 
@@ -144,7 +157,12 @@ class BaseCamera(Entity):
         """
         # todo: check whether transform has changed, connect to 
         # transform.changed event
-        self._scene_transform = tr
+        pre_tr = self.pre_transform
+        if pre_tr is None:
+            self._scene_transform = tr
+        else:
+            self._scene_transform = pre_tr * tr
+            
         if self.viewbox is not None:
             self.viewbox.scene.transform = self._scene_transform
             self.viewbox.update()
