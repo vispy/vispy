@@ -9,7 +9,7 @@ import numpy as np
 import vispy.scene
 from vispy import gloo, app
 from vispy.scene import visuals
-from vispy.scene.transforms import STTransform, BaseTransform, arg_to_array
+from vispy.scene.transforms import STTransform, BaseTransform, arg_to_vec4, as_vec4
 from vispy.util import filter 
 
 class MagnifyTransform(BaseTransform):
@@ -122,13 +122,13 @@ class MagnifyTransform(BaseTransform):
         fn['trans_max'] = self._trans_tex_max[1]
         return fn
 
-    @arg_to_array
+    @arg_to_vec4
     def map(self, x, _inverse=False):
-        c = self.center
+        c = as_vec4(self.center)
         m = self.magnification
         r1, r2 = self.radii
         
-        c = np.array(c).reshape(1,2)
+        #c = np.array(c).reshape(1,2)
         xm = np.empty(x.shape, dtype=x.dtype)
         
         dx = (x - c)
@@ -318,6 +318,8 @@ vb3.add(scatter)
 vb3.camera.rect = (-5, -5, 10, 10)
 grid2 = visuals.GridLines(parent=vb3.scene)
 
+
+text = visuals.Text("mouse wheel = zoom", pos=(100, 15), font_size=14, color='white', parent=canvas.scene)
 
 
 
