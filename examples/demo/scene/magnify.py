@@ -7,9 +7,10 @@
 
 import numpy as np
 import vispy.scene
-from vispy import gloo
+from vispy import gloo, app
 from vispy.scene import visuals
 from vispy.scene.transforms import STTransform, BaseTransform, arg_to_array
+from vispy.util import filter 
 
 class MagnifyTransform(BaseTransform):
     """
@@ -18,7 +19,7 @@ class MagnifyTransform(BaseTransform):
         vec4 mag_transform(vec4 pos) {
             vec2 d = vec2(pos.x - $center.x, pos.y - $center.y);
             float dist = length(d);
-            if (dist == 0 || dist > $radii.y) {
+            if (dist == 0 || dist > $radii.y || $mag == 1) {
                 return pos;
             }
             vec2 dir = d / dist;
@@ -44,7 +45,7 @@ class MagnifyTransform(BaseTransform):
     
     Linear = False
     
-    _trans_resolution = 100
+    _trans_resolution = 1000
     
     def __init__(self):
         self._center = (0, 0)
@@ -69,6 +70,8 @@ class MagnifyTransform(BaseTransform):
     
     @center.setter
     def center(self, center):
+        if np.allclose(self._center, center):
+            return
         self._center = center
         self.shader_map()
         self.shader_imap()
@@ -79,6 +82,8 @@ class MagnifyTransform(BaseTransform):
     
     @magnification.setter
     def magnification(self, mag):
+        if self._mag == mag:
+            return
         self._mag = mag
         self._trans = None
         self.shader_map()
@@ -90,6 +95,8 @@ class MagnifyTransform(BaseTransform):
     
     @radii.setter
     def radii(self, radii):
+        if np.allclose(self._radii, radii):
+            return
         self._radii = radii
         self._trans = None
         self.shader_map()
@@ -194,7 +201,7 @@ class Magnify1DTransform(MagnifyTransform):
     glsl_map = """
         vec4 mag_transform(vec4 pos) {
             float dist = pos.x - $center.x;
-            if (dist == 0 || abs(dist) > $radii.y) {
+            if (dist == 0 || abs(dist) > $radii.y || $mag == 1) {
                 return pos;
             }
             float dir = dist / abs(dist);
@@ -219,11 +226,34 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
     def __init__(self, *args, **kwds):
         self.mag = MagnifyTransform()
         self.mag._mag = 3
+        self.mouse_pos = None
+        self.timer = app.Timer(interval=0.016, connect=self.on_timer)
         super(MagCamera, self).__init__(*args, **kwds)
 
     def view_mouse_event(self, event):
-        self.mag.center = event.pos[:2]
-        super(MagCamera, self).view_mouse_event(event)
+        self.mouse_pos = event.pos[:2]
+        self.on_timer()
+        self.timer.start()
+        if event.type == 'mouse_wheel':
+            m = self.mag.magnification 
+            m *= 1.2 ** event.delta[1]
+            m = m if m > 1 else 1
+            self.mag.magnification = m
+        else:
+            super(MagCamera, self).view_mouse_event(event)
+        self._update_transform()
+    
+    def on_timer(self, event=None):
+        c = np.array(self.mag.center)
+        if event is None:
+            dt = 0.001
+        else:
+            dt = event.dt
+        s = 0.0001**dt
+        c1 = c * s + self.mouse_pos * (1-s)
+        if np.all(np.abs((c - c1) / c1) < 0.00001):
+            self.timer.stop()
+        self.mag.center = c1
         self._update_transform()
     
     def _set_scene_transform(self, tr):
@@ -235,13 +265,13 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
 
 class Mag1DCamera(MagCamera):
     def __init__(self, *args, **kwds):
+        super(Mag1DCamera, self).__init__(*args, **kwds)
         self.mag = Magnify1DTransform()
         self.mag._mag = 3
-        super(MagCamera, self).__init__(*args, **kwds)
 
     def _set_scene_transform(self, tr):
         vbs = self.viewbox.size
-        r = vbs[0] / 2
+        r = vbs[0] / 4
         self.mag.radii = r*0.7, r 
         super(MagCamera, self)._set_scene_transform(self.mag * tr)
 
@@ -255,12 +285,16 @@ vb3 = grid.add_view(row=1, col=1)
 
 # Top viewbox
 vb1.camera = Mag1DCamera()
-pos = np.empty((1000, 2))
-pos[:,0] = np.arange(1000)
-pos[:,1] = np.random.normal(size=1000, loc=50, scale=10)
+pos = np.empty((100000, 2))
+pos[:,0] = np.arange(100000)
+pos[:,1] = np.random.normal(size=100000, loc=50, scale=10)
+pos[:,1] = filter.gaussian_filter(pos[:,1], 20)
+pos[:,1] += np.random.normal(size=100000, loc=0, scale=2)
+pos[:,1][pos[:,1] > 55] += 100
+pos[:,1] = filter.gaussian_filter(pos[:,1], 2)
 line = visuals.Line(pos, color='white', parent=vb1.scene)
 line.transform = STTransform(translate=(0, 0, -0.1))
-vb1.camera.rect = 0, 0, 1000, 100
+vb1.camera.rect = 0, 30, 100000, 100
 
 grid1 = visuals.GridLines(parent=vb1.scene)
 
