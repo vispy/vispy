@@ -7,14 +7,12 @@
 
 import numpy as np
 import vispy.scene
-from vispy import gloo, app
+from vispy import app
 from vispy.scene import visuals
 from vispy.scene.transforms.nonlinear import (MagnifyTransform, 
                                               Magnify1DTransform)
 from vispy.scene.transforms import STTransform
 from vispy.util import filter 
-
-
 
 
 class MagCamera(vispy.scene.cameras.PanZoomCamera):

@@ -10,6 +10,7 @@ from ._util import arg_to_array, arg_to_vec4, as_vec4
 from .base_transform import BaseTransform
 from ... import gloo
 
+
 class LogTransform(BaseTransform):
     """ Transform perfoming logarithmic transformation on three axes.
 
