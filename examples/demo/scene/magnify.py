@@ -2,7 +2,14 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
+""" Demonstrates use of custom Camera subclasses combined with MagnifyTransform
+to implement a (flashy) data-exploration tool.
+
+Here we use MagnifyTransform to allow the user to zoom in on a particular 
+region of data, while also keeping the entire data set visible for reference.
+The custom camera classes are responsible for inserting MagnifyTransform
+at the transform of each viewbox scene, while also updating those transforms
+to respond to user input.
 """
 
 import numpy as np
@@ -21,39 +28,61 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
     This Camera uses the mouse cursor position to set the center position of
     the MagnifyTransform, and uses mouse wheel events to adjust the 
     magnification factor.
+    
+    At high magnification, very small mouse movements can result in large
+    changes, so we use a timer to animate transitions in the transform 
+    properties.
+    
+    The camera also adjusts the size of its "lens" area when the view is
+    resized.
     """
-    def __init__(self, *args, **kwds):
-        self.mag = MagnifyTransform()
-        self.mag_target = 3
+    transform_class = MagnifyTransform
+    
+    def __init__(self, size_factor=0.25, radius_ratio=0.9, **kwds):
+        # what fraction of the view width to use for radius
+        self.size_factor = size_factor
+        
+        # ratio of inner to outer lens radius
+        self.radius_ratio = radius_ratio
+        
+        self.mag = self.transform_class(**kwds)
+        self.mag_target = self.mag.mag
         self.mag._mag = self.mag_target
         self.mouse_pos = None
         self.timer = app.Timer(interval=0.016, connect=self.on_timer)
-        super(MagCamera, self).__init__(*args, **kwds)
+        super(MagCamera, self).__init__()
 
     def view_mouse_event(self, event):
+        # When the attached ViewBox reseives a mouse event, it is sent to the
+        # camera here.
+        
         self.mouse_pos = event.pos[:2]
         if event.type == 'mouse_wheel':
+            # wheel rolled; adjust the magnification factor and hide the 
+            # event from the superclass
             m = self.mag_target 
             m *= 1.2 ** event.delta[1]
             m = m if m > 1 else 1
             self.mag_target = m
         else:
+            # send everything _except_ wheel events to the superclass
             super(MagCamera, self).view_mouse_event(event)
-        self.on_timer()
+            
+        # start the timer to smoothly modify the transform properties. 
         self.timer.start()
+        
         self._update_transform()
     
     def on_timer(self, event=None):
+        # Smoothly update center and magnification properties of the transform
+        s = 0.0001**event.dt
+            
         c = np.array(self.mag.center)
-        if event is None:
-            dt = 0.001
-        else:
-            dt = event.dt
-        s = 0.0001**dt
         c1 = c * s + self.mouse_pos * (1-s)
         
         m = self.mag.mag * s + self.mag_target * (1-s)
         
+        # If changes are very small, then it is safe to stop the timer.
         if (np.all(np.abs((c - c1) / c1) < 1e-5) and 
                 (np.abs(np.log(m / self.mag.mag)) < 1e-3)):
             self.timer.stop()
@@ -62,27 +91,29 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
         self.mag.mag = m
             
         self._update_transform()
+
+    def view_resize_event(self, event):
+        # when the view resizes, we change the lens radii to match.
+        vbs = self.viewbox.size
+        r = min(vbs) * self.size_factor
+        self.mag.radii = r * self.radius_ratio, r
+        self._update_transform()
+
+    def view_changed(self):
+        # make sure radii are updated when a view is attached.
+        self.view_resize_event(None)
     
     def _set_scene_transform(self, tr):
-        vbs = self.viewbox.size
-        r = min(vbs) / 2
-        self.mag.radii = r*0.7, r
         super(MagCamera, self)._set_scene_transform(self.mag * tr)
 
 
 class Mag1DCamera(MagCamera):
-    def __init__(self, *args, **kwds):
-        super(Mag1DCamera, self).__init__(*args, **kwds)
-        self.mag = Magnify1DTransform()
-        self.mag._mag = 3
-
-    def _set_scene_transform(self, tr):
-        vbs = self.viewbox.size
-        r = vbs[0] / 4
-        self.mag.radii = r*0.7, r 
-        super(MagCamera, self)._set_scene_transform(self.mag * tr)
+    transform_class = Magnify1DTransform
 
 
+# 
+# Make a canvas and partition it into 3 viewboxes.
+#
 canvas = vispy.scene.SceneCanvas(keys='interactive', show=True)
 grid = canvas.central_widget.add_grid()
 
@@ -94,7 +125,7 @@ vb3 = grid.add_view(row=1, col=1)
 # Top viewbox: Show a plot line containing fine structure with a 1D 
 # magnigication transform.
 #
-vb1.camera = Mag1DCamera()
+vb1.camera = Mag1DCamera(mag=4, size_factor=0.6, radius_ratio=0.8)
 pos = np.empty((100000, 2))
 pos[:, 0] = np.arange(100000)
 pos[:, 1] = np.random.normal(size=100000, loc=50, scale=10)
@@ -117,7 +148,7 @@ img_data = np.random.normal(size=(100, 100, 3), loc=58,
 
 image = visuals.Image(img_data, method='impostor', grid=(100, 100), 
                       parent=vb2.scene)
-vb2.camera = MagCamera()
+vb2.camera = MagCamera(mag=3, size_factor=0.3, radius_ratio=0.6)
 vb2.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20) 
 
 
@@ -135,7 +166,7 @@ scales = np.log10(np.linspace(-2, 1, centers.shape[0]))[indexes][:, np.newaxis]
 pos *= scales
 pos += centers[indexes]
 
-vb3.camera = MagCamera()
+vb3.camera = MagCamera(mag=3, size_factor=0.3, radius_ratio=0.9)
 scatter = visuals.Markers()
 scatter.set_data(pos, edge_color=None, face_color=(1, 1, 1, 0.3), size=5)
 vb3.add(scatter)

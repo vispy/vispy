@@ -99,6 +99,11 @@ class BaseCamera(Entity):
         if self._viewbox is not None:
             self.connect()
             self.parent = vb.scene
+        self.view_changed()
+        
+    def view_changed(self):
+        """ Called when this camera is connected to a new view.
+        """
         self._update_transform()
     
     def connect(self):
