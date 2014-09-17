@@ -5,10 +5,16 @@
 # -----------------------------------------------------------------------------
 
 
+from .context import get_a_context
+from .glir import GlirQueue
+
+
 class GLObject(object):
     """ Generic GL object that may live both on CPU and GPU 
     """
-
+    
+    _GLIR_TYPE = None
+    
     # Internal id counter to keep track of GPU objects
     _idcount = 0
 
@@ -19,10 +25,21 @@ class GLObject(object):
         self._target = None
         self._need_create = True
         self._need_delete = False
-
+        
         GLObject._idcount += 1
         self._id = GLObject._idcount
-
+        
+        # Store context that this object is in
+        self._context = get_a_context()
+        if not hasattr(self._context, 'glir'):
+            self._context.glir = GlirQueue()
+        
+        # Give glir command to create GL representation of this object
+        if not self._GLIR_TYPE:
+            #raise ValueError('GLObject %r must set GLIR_TYPE' % type(self))
+            print('TODO: GLObject %r must set GLIR_TYPE' % type(self))
+        self._context.glir.command('CREATE', self._id, self._GLIR_TYPE)
+    
     def __del__(self):
         # You never know when this is goint to happen. The window might
         # already be closed and no OpenGL context might be available.
@@ -43,7 +60,9 @@ class GLObject(object):
         self._handle = -1
         self._need_create = True
         self._need_delete = False
-
+        
+        self._context.glir.command('DELETE', self._id)
+    
     def activate(self):
         """ Activate the object on GPU """
         # As a base class, we only provide functionality for
@@ -54,24 +73,21 @@ class GLObject(object):
             self._create()
             self._need_create = False
         self._activate()
+        self._context.glir.command('ACTIVATE', self._id)
+        
 
     def deactivate(self):
         """ Deactivate the object on GPU """
 
         self._deactivate()
+        self._context.glir.command('DEACTIVATE', self._id)
 
     @property
     def handle(self):
         """ Name of this object on the GPU """
 
         return self._handle
-
-    @property
-    def target(self):
-        """ OpenGL type of object. """
-
-        return self._target
-
+    
     def _create(self):
         """ Dummy create method """
         raise NotImplementedError()

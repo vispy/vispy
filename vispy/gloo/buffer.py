@@ -10,7 +10,7 @@ import numpy as np
 from os import path as op
 from traceback import extract_stack, format_list
 
-from . import gl
+# from . import gl  Ha, no more gl here!
 from . globject import GLObject
 from ..util import logger
 from ..ext.six import string_types
@@ -34,38 +34,21 @@ class Buffer(GLObject):
 
     Parameters
     ----------
-    target : GLenum
-        gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER
     data : ndarray
         Buffer data
     nbytes : int
         Buffer byte size
     """
 
-    def __init__(self, data=None, target=gl.GL_ARRAY_BUFFER, nbytes=None):
-
+    def __init__(self, data=None, nbytes=None):
         GLObject.__init__(self)
         self._views = []
         self._valid = True
-
-        # For ATI bug
-        self._bufferSubDataOk = False
-
-        # Store and check target
-        if target not in (gl.GL_ARRAY_BUFFER, gl.GL_ELEMENT_ARRAY_BUFFER):
-            raise ValueError("Invalid target for buffer object")
-        self._target = target
-
-        # Bytesize of buffer in GPU memory
-        self._buffer_size = None
+        
         # Bytesize of buffer in CPU memory
         self._nbytes = 0
-
-        # Buffer usage (GL_STATIC_DRAW, G_STREAM_DRAW or GL_DYNAMIC_DRAW)
-        self._usage = gl.GL_DYNAMIC_DRAW
-
+        
         # Set data
-        self._pending_data = []
         if data is not None:
             if nbytes is not None:
                 raise ValueError("Cannot specify both data and nbytes.")
@@ -105,8 +88,9 @@ class Buffer(GLObject):
         # If the whole buffer is to be written, we clear any pending data
         # (because they will be overwritten anyway)
         if nbytes == self._nbytes and offset == 0:
-            self._pending_data = []
-        self._pending_data.append((data, nbytes, offset))
+            self._context.glir.command('SET_SIZE', self._id, nbytes)
+        self._context.glir.command('SET_DATA', self._id, offset, data)
+    
 
     def set_data(self, data, copy=False):
         """ Set data in the buffer (deferred operation).
@@ -130,8 +114,9 @@ class Buffer(GLObject):
             self.resize_bytes(nbytes)
 
         # We can discard any other pending operations here.
-        self._pending_data = [(data, nbytes, 0)]
-
+        self._context.glir.command('SET_SIZE', self._id, nbytes)
+        self._context.glir.command('SET_DATA', self._id, 0, data)
+    
     def resize_bytes(self, size):
         """ Resize this buffer (deferred operation). 
         
@@ -141,83 +126,34 @@ class Buffer(GLObject):
             New buffer size in bytes.
         """
         self._nbytes = size
-        self._pending_data = []
+        self._context.glir.command('SET_SIZE', self._id, size)
         # Invalidate any view on this buffer
         for view in self._views:
             view._valid = False
         self._views = []
 
     def _create(self):
-        """ Create buffer on GPU """
-
-        logger.debug("GPU: Creating buffer")
-        self._handle = gl.glCreateBuffer()
+        pass
 
     def _delete(self):
-        """ Delete buffer from GPU """
-
-        logger.debug("GPU: Deleting buffer")
-        gl.glDeleteBuffer(self._handle)
+        pass
 
     def _resize_bytes(self):
-        """ """
-
-        logger.debug("GPU: Resizing buffer(%d bytes)" % self._nbytes)
-        gl.glBufferData(self._target, self._nbytes, self._usage)
-        self._buffer_size = self._nbytes
+        pass
 
     def _activate(self):
-        """ Bind the buffer to some target """
-
-        logger.debug("GPU: Activating buffer")
-        gl.glBindBuffer(self._target, self._handle)
-        
-        # Resize if necessary
-        if self._buffer_size != self._nbytes:
-            self._resize_bytes()
-        
-        # Update pending data if necessary
-        if self._pending_data:
-            logger.debug("GPU: Updating buffer (%d pending operation(s))" %
-                         len(self._pending_data))
-            self._update_data()
-    
+        pass
+       
     def _deactivate(self):
-        """ Unbind the current bound buffer """
-
-        logger.debug("GPU: Deactivating buffer")
-        gl.glBindBuffer(self._target, 0)
-
+        from . import gl
+        target = gl.GL_ARRAY_BUFFER
+        if isinstance(self, IndexBuffer):
+            target = gl.GL_ELEMENT_ARRAY_BUFFER
+        gl.glBindBuffer(target, 0)
+        # todo: remove when Program uses GLIR
+    
     def _update_data(self):
-        """ Upload all pending data to GPU. """
-
-        # Update data
-        while self._pending_data:
-            data, nbytes, offset = self._pending_data.pop(0)
-
-            # Determine whether to check errors to try handling the ATI bug
-            check_ati_bug = ((not self._bufferSubDataOk) and
-                             (gl.current_backend is gl.desktop) and
-                             sys.platform.startswith('win'))
-
-            # flush any pending errors
-            if check_ati_bug:
-                gl.check_error('periodic check')
-
-            try:
-                gl.glBufferSubData(self._target, offset, data)
-                if check_ati_bug:
-                    gl.check_error('glBufferSubData')
-                self._bufferSubDataOk = True  # glBufferSubData seems to work
-            except Exception:
-                # This might be due to a driver error (seen on ATI), issue #64.
-                # We try to detect this, and if we can use glBufferData instead
-                if offset == 0 and nbytes == self._nbytes:
-                    gl.glBufferData(self._target, data, self._usage)
-                    logger.debug("Using glBufferData instead of " +
-                                 "glBufferSubData (known ATI bug).")
-                else:
-                    raise
+       pass
 
 
 # -------------------------------------------------------- DataBuffer class ---
@@ -227,8 +163,6 @@ class DataBuffer(Buffer):
     Parameters
     ----------
 
-    target : GLENUM
-        gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER
     data : ndarray
         Buffer data
     dtype : dtype
@@ -246,8 +180,7 @@ class DataBuffer(Buffer):
         undesired behavior, unless a copy is given. Default True.
     """
 
-    def __init__(self, data=None, dtype=None, target=gl.GL_ARRAY_BUFFER,
-                 size=0, store=True):
+    def __init__(self, data=None, dtype=None, size=0, store=True):
         self._data = None
         self._store = store
         self._copied = False  # flag to indicate that a copy is made
@@ -276,14 +209,8 @@ class DataBuffer(Buffer):
         else:
             raise ValueError("data/dtype/base cannot be all set to None")
         
-        Buffer.__init__(self, data=data, target=target)
-
-    @property
-    def target(self):
-        """ OpenGL type of object. """
-
-        return self._target
-
+        Buffer.__init__(self, data=data)
+    
     def _prepare_data(self, data, **kwds):
         if len(kwds) > 0:
             raise ValueError("Unexpected keyword arguments: %r" %
@@ -488,7 +415,6 @@ class DataBufferView(DataBuffer):
     def __init__(self, base, key):
         self._base = base
         self._key = key
-        self._target = base.target
         self._stride = base.stride
 
         if isinstance(key, string_types):
@@ -681,6 +607,8 @@ class VertexBuffer(DataBuffer):
         that modifying the data after passing it here might result in
         undesired behavior, unless a copy is given. Default True.
     """
+    
+    _GLIR_TYPE = 'VERTEXBUFFER'
 
     def __init__(self, data=None, dtype=None, size=0, store=True):
 
@@ -693,7 +621,6 @@ class VertexBuffer(DataBuffer):
                 dtype = np.dtype([('f0', dtype, 1)])
 
         DataBuffer.__init__(self, data=data, dtype=dtype, size=size,
-                            target=gl.GL_ARRAY_BUFFER,
                             store=store)
 
         # Check base type and count for each dtype fields (if buffer is a base)
@@ -767,7 +694,9 @@ class IndexBuffer(DataBuffer):
         that modifying the data after passing it here might result in
         undesired behavior, unless a copy is given. Default True.
     """
-
+    
+    _GLIR_TYPE = 'INDEXBUFFER'
+    
     def __init__(self, data=None, dtype=np.uint32, size=0, store=True):
 
         if dtype and not np.dtype(dtype).isbuiltin:
@@ -779,7 +708,6 @@ class IndexBuffer(DataBuffer):
             raise TypeError("Data type not allowed for IndexBuffer")
 
         DataBuffer.__init__(self, data=data, dtype=dtype, size=size,
-                            target=gl.GL_ELEMENT_ARRAY_BUFFER,
                             store=store)
 
     def _prepare_data(self, data, convert=False):

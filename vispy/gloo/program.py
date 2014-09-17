@@ -487,6 +487,10 @@ class Program(GLObject):
         check_error:
             Check error after draw.
         """
+        
+        #self._context.glir.show()
+        self._context.glir.parse()
+        
         mode = _check_conversion(mode, _known_draw_modes)
         self.activate()
         if check_error:  # need to do this after activating, too

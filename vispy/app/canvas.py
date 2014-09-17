@@ -12,7 +12,7 @@ from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..ext.six import string_types
 from . import Application, use_app
-from ..gloo.context import GLContext
+from ..gloo.context import GLContext, get_new_context
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -144,7 +144,8 @@ class Canvas(object):
         # Ensure context is a GLContext object
         context = context or GLContext()
         if isinstance(context, dict):
-            context = GLContext(context)  # GLContext checks the dict keys
+            config, context = context, get_new_context()
+            context.set_config(config)  # GLContext checks the dict keys
         elif not isinstance(context, GLContext):
             raise TypeError('context must be a dict or GLContext from '
                             'a Canvas with the same backend, not %s'

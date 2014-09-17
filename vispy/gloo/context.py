@@ -43,14 +43,55 @@ def get_current_context():
     return GLContext._current_context
 
 
+def get_a_context():
+    """ Return a GLContext object
+    
+    This returns the current context, or a "pending" context object if
+    there is currently no active context. This pending context will be
+    the first context used by `vispy.app` and made active when drawn.
+    This function is used in `vispy.gloo`.
+    """
+    # Ensure that there is a default context
+    if GLContext._default_context is None:
+        GLContext._default_context = GLContext()
+    # Return a context
+    return GLContext._current_context or GLContext._default_context
+
+
+def get_new_context():
+    """ Return a new GLContext object that is not yet taken
+    
+    This function is preferred over simply instantiating a GLContext,
+    because it allows code that relies on a context to obtain an
+    instance before it is taken by a context "provider". This function
+    is used in `vispy.app`.
+    """
+    # Ensure that there is default context and that it is not taken
+    if GLContext._default_context is None:
+        GLContext._default_context = GLContext()
+    elif GLContext._default_context.istaken:
+        GLContext._default_context = GLContext()
+    # Return context
+    return GLContext._default_context
+
+
 class GLContext(object):
     """An object encapsulating data necessary for a shared OpenGL context.
     The intended use is to subclass this and implement _vispy_activate().
     """
     
-    _current_context = None
+    _current_context = None  # The currently active context (always taken)
+    _default_context = None  # The context that is likely to become active soon
     
     def __init__(self, config=None):
+        self._backend_canvas = lambda x=None: None
+        self._name = None
+        self.set_config(config)
+    
+    def set_config(self, config):
+        """ Set the config of this context. Setting the config after
+        it it claimed generally has no effect.
+        """
         self._config = deepcopy(_default_dict)
         self._config.update(config or {})
         # Check the config dict
@@ -59,9 +100,6 @@ class GLContext(object):
                 raise KeyError('Key %r is not a valid GL config key.' % key)
             if not isinstance(val, type(_default_dict[key])):
                 raise TypeError('Context value of %r has invalid type.' % key)
-        # Init backend canvas and name
-        self._backend_canvas = lambda x=None: None
-        self._name = None
     
     def take(self, name, backend_canvas):
         """ Claim ownership for this context. This can only be done if it is
