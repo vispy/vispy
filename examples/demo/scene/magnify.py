@@ -174,7 +174,7 @@ pos = np.random.normal(size=(100000, 2), scale=0.2)
 indexes = np.random.normal(size=100000, loc=centers.shape[0]/2., 
                            scale=centers.shape[0]/3.)
 indexes = np.clip(indexes, 0, centers.shape[0]-1).astype(int)
-scales = np.log10(np.linspace(-2, 1, centers.shape[0]))[indexes][:, np.newaxis]
+scales = 10**(np.linspace(-2, 0.5, centers.shape[0]))[indexes][:, np.newaxis]
 pos *= scales
 pos += centers[indexes]
 
