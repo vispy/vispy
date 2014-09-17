@@ -201,8 +201,6 @@ class Canvas(app.Canvas):
         self.min_scale = 1e-12
         self.max_scale = 4
 
-        self._timer = app.Timer('auto', connect=self.update, start=True)
-
     def on_initialize(self, event):
         gloo.set_clear_color(color='black')
 
@@ -223,6 +221,7 @@ class Canvas(app.Canvas):
             X0, Y0 = self.pixel_to_coords(float(x0), float(y0))
             X1, Y1 = self.pixel_to_coords(float(x1), float(y1))
             self.translate_center(X1 - X0, Y1 - Y0)
+            self.update()
 
     def translate_center(self, dx, dy):
         """Translates the center point, and keeps it in bounds."""
@@ -254,6 +253,7 @@ class Canvas(app.Canvas):
             factor = 1 / 0.9
         for _ in range(int(abs(delta))):
             self.zoom(factor, event.pos)
+        self.update()
 
     def on_key_press(self, event):
         """Use + or - to zoom in and out.
@@ -266,6 +266,7 @@ class Canvas(app.Canvas):
             self.zoom(0.9)
         elif event.text == '-':
             self.zoom(1/0.9)
+        self.update()
 
     def zoom(self, factor, mouse_coords=None):
         """Factors less than zero zoom in, and greater than zero zoom out.
