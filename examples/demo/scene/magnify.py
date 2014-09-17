@@ -9,8 +9,10 @@ import numpy as np
 import vispy.scene
 from vispy import gloo, app
 from vispy.scene import visuals
-from vispy.scene.transforms import STTransform, BaseTransform, arg_to_vec4, as_vec4
+from vispy.scene.transforms import (STTransform, BaseTransform, arg_to_vec4, 
+                                    as_vec4)
 from vispy.util import filter 
+
 
 class MagnifyTransform(BaseTransform):
     """
@@ -53,11 +55,11 @@ class MagnifyTransform(BaseTransform):
         self._radii = (7, 10)
         self._trans = None
         res = self._trans_resolution
-        self._trans_tex = (gloo.Texture2D(shape=(res,1,1), 
+        self._trans_tex = (gloo.Texture2D(shape=(res, 1, 1), 
                                           format=gloo.gl.GL_LUMINANCE, 
                                           dtype=np.float32, 
                                           interpolation='linear'), 
-                           gloo.Texture2D(shape=(res,1,1), 
+                           gloo.Texture2D(shape=(res, 1, 1), 
                                           format=gloo.gl.GL_LUMINANCE, 
                                           dtype=np.float32, 
                                           interpolation='linear'))
@@ -107,7 +109,7 @@ class MagnifyTransform(BaseTransform):
         fn['center'] = self._center  # uniform vec2
         fn['mag'] = self._mag
         fn['radii'] = (self._radii[0] / self._mag, self._radii[1])
-        self._get_transition() # make sure transition texture is up to date
+        self._get_transition()  # make sure transition texture is up to date
         fn['trans'] = self._trans_tex[0]
         fn['trans_max'] = self._trans_tex_max[0]
         return fn
@@ -117,7 +119,7 @@ class MagnifyTransform(BaseTransform):
         fn['center'] = self._center  # uniform vec2
         fn['mag'] = 1. / self._mag
         fn['radii'] = self._radii
-        self._get_transition() # make sure transition texture is up to date
+        self._get_transition()  # make sure transition texture is up to date
         fn['trans'] = self._trans_tex[1]
         fn['trans_max'] = self._trans_tex_max[1]
         return fn
@@ -138,15 +140,15 @@ class MagnifyTransform(BaseTransform):
         
         # magnified center region
         if _inverse:
-            inner = (dist < r1)[:,0]
+            inner = (dist < r1)[:, 0]
             s = dist / m
         else:
-            inner = (dist < (r1 / m))[:,0]
+            inner = (dist < (r1 / m))[:, 0]
             s = dist * m
         xm[inner] = c + unit[inner] * s[inner]
         
         # unmagnified outer region
-        outer = (dist > r2)[:,0]  
+        outer = (dist > r2)[:, 0]  
         xm[outer] = x[outer]
         
         # smooth transition region, interpolated from trans
@@ -180,19 +182,17 @@ class MagnifyTransform(BaseTransform):
             xi = np.linspace(r1, r2, res)
             t = 0.5 * (1 + np.cos((xi - r2) * np.pi / (r2 - r1)))
             yi = (xi * t + xi * (1-t) / m).astype(np.float32)
-            x = np.linspace(r1/m, r2, res)
+            x = np.linspace(r1 / m, r2, res)
             y = np.interp(x, yi, xi).astype(np.float32)
             
             self._trans = (y, yi)
             # scale to 0.0-1.0 to prevent clipping (is this necessary?)
             mx = y.max(), yi.max()
             self._trans_tex_max = mx
-            tt = y / mx[0]
-            self._trans_tex[0].set_data((y / mx[0])[:,np.newaxis,np.newaxis])
-            self._trans_tex[1].set_data((yi / mx[1])[:,np.newaxis,np.newaxis])
+            self._trans_tex[0].set_data((y/mx[0])[:, np.newaxis, np.newaxis])
+            self._trans_tex[1].set_data((yi/mx[1])[:, np.newaxis, np.newaxis])
             
         return self._trans
-
 
 
 class Magnify1DTransform(MagnifyTransform):
@@ -286,12 +286,12 @@ vb3 = grid.add_view(row=1, col=1)
 # Top viewbox
 vb1.camera = Mag1DCamera()
 pos = np.empty((100000, 2))
-pos[:,0] = np.arange(100000)
-pos[:,1] = np.random.normal(size=100000, loc=50, scale=10)
-pos[:,1] = filter.gaussian_filter(pos[:,1], 20)
-pos[:,1] += np.random.normal(size=100000, loc=0, scale=2)
-pos[:,1][pos[:,1] > 55] += 100
-pos[:,1] = filter.gaussian_filter(pos[:,1], 2)
+pos[:, 0] = np.arange(100000)
+pos[:, 1] = np.random.normal(size=100000, loc=50, scale=10)
+pos[:, 1] = filter.gaussian_filter(pos[:, 1], 20)
+pos[:, 1] += np.random.normal(size=100000, loc=0, scale=2)
+pos[:, 1][pos[:, 1] > 55] += 100
+pos[:, 1] = filter.gaussian_filter(pos[:, 1], 2)
 line = visuals.Line(pos, color='white', parent=vb1.scene)
 line.transform = STTransform(translate=(0, 0, -0.1))
 vb1.camera.rect = 0, 30, 100000, 100
@@ -299,39 +299,41 @@ vb1.camera.rect = 0, 30, 100000, 100
 grid1 = visuals.GridLines(parent=vb1.scene)
 
 
+#
 # bottom-left viewbox
+#
 img_data = np.random.normal(size=(100, 100, 3), loc=58,
                             scale=20).astype(np.ubyte)
 
-
-image = visuals.Image(img_data, method='impostor', grid=(100, 100), parent=vb2.scene)
+image = visuals.Image(img_data, method='impostor', grid=(100, 100), 
+                      parent=vb2.scene)
 vb2.camera = MagCamera()
 vb2.camera.rect = (-10, -10, image.size[0]+20, image.size[1]+20) 
 
 
+#
 # bottom-right viewbox
-vb3.camera = MagCamera()
-centers = np.random.normal(size=(20,2))
-pos = np.random.normal(size=(100000,2), scale=0.2)
+#
+centers = np.random.normal(size=(20, 2))
+pos = np.random.normal(size=(100000, 2), scale=0.2)
 
-indexes = np.random.normal(size=100000, loc=centers.shape[0]/2., scale=centers.shape[0]/3.)
+indexes = np.random.normal(size=100000, loc=centers.shape[0]/2., 
+                           scale=centers.shape[0]/3.)
 indexes = np.clip(indexes, 0, centers.shape[0]-1).astype(int)
-scales = np.linspace(0.1, 1, centers.shape[0])[indexes][:,np.newaxis]
+scales = np.linspace(0.1, 1, centers.shape[0])[indexes][:, np.newaxis]
 
 pos *= scales
 pos += centers[indexes]
 
+vb3.camera = MagCamera()
 scatter = visuals.Markers()
 scatter.set_data(pos, edge_color=None, face_color=(1, 1, 1, 0.3), size=5)
 vb3.add(scatter)
 vb3.camera.rect = (-5, -5, 10, 10)
 grid2 = visuals.GridLines(parent=vb3.scene)
 
-
-text = visuals.Text("mouse wheel = zoom", pos=(100, 15), font_size=14, color='white', parent=canvas.scene)
-
-
-
+text = visuals.Text("mouse wheel = zoom", pos=(100, 15), font_size=14, 
+                    color='white', parent=canvas.scene)
 
 
 if __name__ == '__main__':
