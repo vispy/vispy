@@ -299,7 +299,7 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
         m = self.mag.mag * s + self.mag_target * (1-s)
         
         if (np.all(np.abs((c - c1) / c1) < 1e-5) and 
-            (np.abs(np.log(m / self.mag.mag)) < 1e-3)):
+                (np.abs(np.log(m / self.mag.mag)) < 1e-3)):
             self.timer.stop()
             
         self.mag.center = c1
