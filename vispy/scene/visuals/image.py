@@ -153,7 +153,6 @@ class Image(ModularMesh):
         if self._texture is None or method == 'impostor':
             self._build_data(event)
         if method == 'subdivide':
-            print(repr(event.render_transform))
             tr = event.render_transform.shader_map()
             self._program.vert['map_local_to_nd'] = tr
 

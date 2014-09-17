@@ -225,22 +225,23 @@ class Magnify1DTransform(MagnifyTransform):
 class MagCamera(vispy.scene.cameras.PanZoomCamera):
     def __init__(self, *args, **kwds):
         self.mag = MagnifyTransform()
-        self.mag._mag = 3
+        self.mag_target = 3
+        self.mag._mag = self.mag_target
         self.mouse_pos = None
         self.timer = app.Timer(interval=0.016, connect=self.on_timer)
         super(MagCamera, self).__init__(*args, **kwds)
 
     def view_mouse_event(self, event):
         self.mouse_pos = event.pos[:2]
-        self.on_timer()
-        self.timer.start()
         if event.type == 'mouse_wheel':
-            m = self.mag.magnification 
+            m = self.mag_target 
             m *= 1.2 ** event.delta[1]
             m = m if m > 1 else 1
-            self.mag.magnification = m
+            self.mag_target = m
         else:
             super(MagCamera, self).view_mouse_event(event)
+        self.on_timer()
+        self.timer.start()
         self._update_transform()
     
     def on_timer(self, event=None):
@@ -251,9 +252,16 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
             dt = event.dt
         s = 0.0001**dt
         c1 = c * s + self.mouse_pos * (1-s)
-        if np.all(np.abs((c - c1) / c1) < 0.00001):
+        
+        m = self.mag.magnification * s + self.mag_target * (1-s)
+        
+        if (np.all(np.abs((c - c1) / c1) < 1e-5) and 
+            (np.abs(np.log(m / self.mag.magnification)) < 1e-3)):
             self.timer.stop()
+            
         self.mag.center = c1
+        self.mag.magnification = m
+            
         self._update_transform()
     
     def _set_scene_transform(self, tr):
