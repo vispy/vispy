@@ -4,8 +4,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-import sys
-
 import numpy as np
 from os import path as op
 from traceback import extract_stack, format_list
@@ -91,7 +89,6 @@ class Buffer(GLObject):
             self._context.glir.command('SET_SIZE', self._id, nbytes)
         self._context.glir.command('SET_DATA', self._id, offset, data)
     
-
     def set_data(self, data, copy=False):
         """ Set data in the buffer (deferred operation).
         
@@ -154,7 +151,7 @@ class Buffer(GLObject):
         # todo: remove when Program uses GLIR
     
     def _update_data(self):
-       pass
+        pass
 
 
 # -------------------------------------------------------- DataBuffer class ---
@@ -338,7 +335,6 @@ class DataBuffer(Buffer):
         # Set data
         offset = start  # * self.itemsize
         self.set_subdata(data=data, offset=offset, copy=True)
-
 
 
 class DataBufferView(DataBuffer):

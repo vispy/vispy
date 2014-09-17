@@ -74,8 +74,7 @@ class GLObject(object):
             self._need_create = False
         self._activate()
         self._context.glir.command('ACTIVATE', self._id)
-        
-
+    
     def deactivate(self):
         """ Deactivate the object on GPU """
 

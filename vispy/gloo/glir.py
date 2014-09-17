@@ -7,7 +7,7 @@ import sys
 import numpy as np
 
 from . import gl
-
+from ..util import logger
 
 
 class GlirQueue(object):
@@ -54,7 +54,6 @@ class GlirQueue(object):
         self._commands = []
 
 
-
 class GlirParser(object):
     """ A class for interpreting GLIR commands
     
@@ -76,7 +75,8 @@ class GlirParser(object):
         """
         
         for command in commands:
-            cmd, id, *args = command
+            cmd, id = command[:2]
+            args = command[2:]
             
             if cmd == 'CREATE':
                 # Creating an object
@@ -151,8 +151,8 @@ class GlirBuffer(GlirObject):
         
         # Determine whether to check errors to try handling the ATI bug
         check_ati_bug = ((not self._bufferSubDataOk) and
-                            (gl.current_backend is gl.desktop) and
-                            sys.platform.startswith('win'))
+                         (gl.current_backend is gl.desktop) and
+                         sys.platform.startswith('win'))
 
         # flush any pending errors
         if check_ati_bug:
@@ -169,7 +169,7 @@ class GlirBuffer(GlirObject):
             if offset == 0 and nbytes == self._buffer_size:
                 gl.glBufferData(self._target, data, self._usage)
                 logger.debug("Using glBufferData instead of " +
-                                "glBufferSubData (known ATI bug).")
+                             "glBufferSubData (known ATI bug).")
             else:
                 raise
     
@@ -195,5 +195,3 @@ class GlirVertexBuffer(GlirBuffer):
 
 class GlirIndexBuffer(GlirBuffer):
     _target = gl.GL_ELEMENT_ARRAY_BUFFER,
-
-    
