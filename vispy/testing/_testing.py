@@ -355,14 +355,59 @@ def save_testing_image(image, location):
 
 
 @nottest
-def run_tests_if_main():
+def run_tests_if_main(nose=False):
     """Run tests in a given file if it is run as a script"""
     local_vars = inspect.currentframe().f_back.f_locals
-    if not local_vars['__name__'] == '__main__':
+    if not local_vars.get('__name__', '') == '__main__':
         return
     # we are in a "__main__"
     fname = local_vars['__file__']
-    if not os.path.isfile(fname):
-        raise IOError('Could not find file "%s"' % fname)
-    from ._runners import _nose
-    _nose('singlefile', fname + ' --verbosity=2')
+    if nose:
+        # Run using nose. More similar to normal test
+        if not os.path.isfile(fname):
+            raise IOError('Could not find file "%s"' % fname)
+        from ._runners import _nose
+        _nose('singlefile', fname + ' --verbosity=2')
+    else:
+        # Run ourselves. post-mortem debugging!
+        try:
+            import faulthandler
+            faulthandler.enable()
+        except Exception:
+            pass
+        import __main__
+        print('==== Running tests in script\n==== %s' % fname)
+        run_tests_in_object(__main__)
+        print('==== Tests pass')
+
+
+def run_tests_in_object(ob):
+    # Setup
+    for name in dir(ob):
+        if name.lower().startswith('setup'):
+            print('Calling %s' % name)
+            getattr(ob, name)()
+    # Exec
+    for name in sorted(dir(ob), key=lambda x: x.lower()):  # consistent order
+        val = getattr(ob, name)
+        if name.startswith('_'):
+            continue
+        elif callable(val) and (name[:4] == 'test' or name[-4:] == 'test'):
+            print('Running test-func %s ... ' % name, end='')
+            try:
+                val()
+                print('ok')
+            except Exception as err:
+                if 'skiptest' in err.__class__.__name__.lower():
+                    print('skip')
+                else:
+                    raise
+        elif isinstance(val, type) and 'Test' in name:
+            print('== Running test-class %s' % name)
+            run_tests_in_object(val())
+            print('== Done with test-class %s' % name)
+    # Teardown
+    for name in dir(ob):
+        if name.lower().startswith('teardown'):
+            print('Calling %s' % name)
+            getattr(ob, name)()
