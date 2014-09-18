@@ -106,10 +106,14 @@ class Timer(object):
         negative, then the timer will continue running until stop() is called.
         """
         self.iter_count = 0
+        interval_changed = False
         if interval is not None:
             self.interval = interval
+            interval_changed = True
         if iterations is not None:
             self.max_iterations = iterations
+        if self.running and not interval_changed:
+            return
         self._backend._vispy_start(self.interval)
         self._running = True
         self._first_emit_time = precision_time()

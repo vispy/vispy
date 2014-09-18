@@ -150,7 +150,7 @@ class Image(ModularMesh):
             method = self.method
 
         # always have to rebuild for impostor, only first for subdivide
-        if self._texture is None or method == 'impostor':
+        if self._texture is None:
             self._build_data(event)
         if method == 'subdivide':
             tr = event.render_transform.shader_map()
