@@ -81,6 +81,12 @@ class GLObject(object):
         self._deactivate()
         self._context.glir.command('DEACTIVATE', self._id)
 
+    # todo: everything below needs removed
+    
+    @property
+    def target(self):
+        return self._target
+    
     @property
     def handle(self):
         """ Name of this object on the GPU """
