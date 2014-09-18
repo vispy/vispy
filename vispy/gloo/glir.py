@@ -75,8 +75,7 @@ class GlirParser(object):
         """
         
         for command in commands:
-            cmd, id = command[:2]
-            args = command[2:]
+            cmd, id, args = command[0], command[1], command[2:]
             
             if cmd == 'CREATE':
                 # Creating an object

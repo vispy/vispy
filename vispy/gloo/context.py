@@ -36,20 +36,29 @@ def get_default_config():
 
 
 def get_current_context():
-    """ Return the currently active GLContext object
+    """ Get the currently active GLContext object
     
-    Can return None if there is no context set yet.
+    Returns
+    -------
+    context : GLContext or None
+        The context object that is now active, or None if there is no
+        active context.
     """
     return GLContext._current_context
 
 
 def get_a_context():
-    """ Return a GLContext object
+    """ Get a GLContext object
     
-    This returns the current context, or a "pending" context object if
-    there is currently no active context. This pending context will be
-    the first context used by `vispy.app` and made active when drawn.
-    This function is used in `vispy.gloo`.
+    This function is recommended to be used by context "consumers" (code
+    that needs a context), and is used as such by `vispy.gloo`.
+    
+    Returns
+    -------
+    context : GLContext
+        The currently active context, or a "pending" context object if
+        there is currently no active context. This pending context will be
+        the first context to be taken by a context "provider".
     """
     # Ensure that there is a default context
     if GLContext._default_context is None:
@@ -59,12 +68,18 @@ def get_a_context():
 
 
 def get_new_context():
-    """ Return a new GLContext object that is not yet taken
+    """ Get a new GLContext object that is not yet taken
     
-    This function is preferred over simply instantiating a GLContext,
-    because it allows code that relies on a context to obtain an
-    instance before it is taken by a context "provider". This function
-    is used in `vispy.app`.
+    This function is recommended to be used by context "providers" (code
+    that takes the context and provides a native GL context), and is used
+    as such by `vispy.app`.
+    
+    Returns
+    -------
+    context : GLContext
+        A context object that is guaranteed to have not been taken.
+        This may be a "pending" context that is already passed to 
+        context "consumers".
     """
     # Ensure that there is default context and that it is not taken
     if GLContext._default_context is None:
