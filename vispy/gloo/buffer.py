@@ -131,7 +131,12 @@ class Buffer(GLObject):
     def _create(self):
         # Big hack in transition phase
         # variables.py needs the handle :(
-        self._handle = self._context.glir._parser._objects[self._id]._handle
+        glir = self._context.glir
+        try:
+            self._handle = glir._parser._objects[self._id]._handle
+        except KeyError:
+            glir.parse()
+            self._handle = glir._parser._objects[self._id]._handle
 
     def _delete(self):
         pass
