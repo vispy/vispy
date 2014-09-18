@@ -25,6 +25,7 @@ class GlirQueue(object):
     def __init__(self):
         self._commands = []
         self._parser = GlirParser()
+        self._invalid_objects = set()
         # todo: allow different kind of parsers, like a parser that sends to JS
     
     def command(self, *args):
@@ -32,12 +33,14 @@ class GlirQueue(object):
         https://github.com/vispy/vispy/wiki/Spec.-Gloo-IR
         """
         self._commands.append(args)
+        if args[0] == 'CREATE' and args[-1] is None:
+            self._invalid_objects.add(args[1])
     
     def show(self):
         """ Print the list of commands currently in the queue.
         """
         for command in self._commands:
-            if command[0] is None:
+            if command[0] is None or command[1] in self._invalid_objects:
                 continue  # Skip nill commands 
             t = []
             for e in command:
@@ -139,8 +142,7 @@ class GlirBuffer(GlirObject):
         gl.glBindBuffer(self._target, self._handle)
     
     def deactivate(self):
-        pass  # Can only do this if Program uses GLIR too 
-        # gl.glBindBuffer(self._target, 0)
+        gl.glBindBuffer(self._target, 0)
     
     def set_size(self, nbytes):  # in bytes
         gl.glBindBuffer(self._target, self._handle)

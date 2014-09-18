@@ -7,8 +7,6 @@ import unittest
 import numpy as np
 
 from vispy.testing import run_tests_if_main
-from vispy.util import use_log_level
-from vispy.gloo import gl
 from vispy.gloo.buffer import Buffer, DataBuffer, VertexBuffer, IndexBuffer
 
 
@@ -141,7 +139,7 @@ class DataBufferTest(unittest.TestCase):
     # --------------
     def test_no_storage_copy(self):
         data = np.ones(100, np.float32)
-        B = DataBuffer(data )
+        B = DataBuffer(data)
         assert B.stride == 4
 
     # Empty init (not allowed)
@@ -268,7 +266,6 @@ class DataBufferTest(unittest.TestCase):
         data = np.zeros(10, dtype=dtype)
         B = DataBuffer(data)
         self.assertRaises(ValueError, B.__setitem__, 'position', (1, 2, 3))
-        
 
     # Set every 2 item
     # ------------------------------------------------------
@@ -281,7 +278,6 @@ class DataBufferTest(unittest.TestCase):
         B = DataBuffer(data1)
         s = slice(None, None, 2)
         self.assertRaises(ValueError, B.__setitem__, s, data2[::2])
-        
 
     # Set half the array
     # ------------------------------------------------------
@@ -300,7 +296,6 @@ class DataBufferTest(unittest.TestCase):
         assert np.allclose(set_data['position'], data2['position'][:5])
         assert np.allclose(set_data['texcoord'][:5], data2['texcoord'][:5])
         assert np.allclose(set_data['color'][:5], data2['color'][:5])
-        
 
     # Set field without storage: error
     # --------------------------------
@@ -350,6 +345,7 @@ class DataBufferTest(unittest.TestCase):
         B[Ellipsis] = data
         glir_cmd = B._context.glir.clear()[-1]
         assert glir_cmd[-1].shape == (10,)
+
 
 # -----------------------------------------------------------------------------
 class VertexBufferTest(unittest.TestCase):

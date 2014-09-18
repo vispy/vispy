@@ -488,11 +488,17 @@ class Program(GLObject):
             Check error after draw.
         """
         
+        # Process all glir commands
         #self._context.glir.show()
         self._context.glir.parse()
         
         mode = _check_conversion(mode, _known_draw_modes)
         self.activate()
+        
+        # Process new commands that activate may have pushed
+        #self._context.glir.show()
+        self._context.glir.parse()
+        
         if check_error:  # need to do this after activating, too
             gl.check_error('Check after draw activation')
 
@@ -528,7 +534,11 @@ class Program(GLObject):
 
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         self.deactivate()
-
+        
+        # Process new commands that deactivate may have pushed
+        #self._context.glir.show()
+        self._context.glir.parse()
+        
         # Check ok
         if check_error:
             gl.check_error('Check after drawing completes')

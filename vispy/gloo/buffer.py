@@ -129,7 +129,9 @@ class Buffer(GLObject):
         self._views = []
 
     def _create(self):
-        pass
+        # Big hack in transition phase
+        # variables.py needs the handle :(
+        self._handle = self._context.glir._parser._objects[self._id]._handle
 
     def _delete(self):
         pass
@@ -138,7 +140,13 @@ class Buffer(GLObject):
         pass
 
     def _activate(self):
-        pass
+        # Big hack in transition phase
+        # variables.py needs to activate us
+        from . import gl
+        target = gl.GL_ARRAY_BUFFER
+        if isinstance(self, IndexBuffer):
+            target = gl.GL_ELEMENT_ARRAY_BUFFER
+        gl.glBindBuffer(target, self._handle)
        
     def _deactivate(self):
         from . import gl
@@ -558,9 +566,9 @@ class VertexBuffer(DataBuffer):
         # Make data structured. This makes things more consistent; our data
         # is always consistent (AK: at least, that is why I *think* this is)
         if dtype is not None:
-           dtype = np.dtype(dtype)
-           if dtype.isbuiltin:
-               dtype = np.dtype([('f0', dtype, 1)])
+            dtype = np.dtype(dtype)
+            if dtype.isbuiltin:
+                dtype = np.dtype([('f0', dtype, 1)])
 
         DataBuffer.__init__(self, data=data, dtype=dtype, size=size)
 
