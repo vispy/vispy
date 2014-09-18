@@ -19,7 +19,7 @@ class Widget(Visual):
     a 2D pixel coordinate frame.
 
     The widget is positioned using the transform attribute (as any
-    entity), and its extent (size) is kept as a separate property.
+    node), and its extent (size) is kept as a separate property.
     
     Parameters
     ----------

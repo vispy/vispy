@@ -8,24 +8,24 @@ from ..util.event import EmitterGroup, Event
 from ..visuals.transforms import NullTransform, BaseTransform, create_transform
 
 
-class Entity(object):
-    """ Base class to represent a citizen of a scene.
+class Node(object):
+    """ Mixin class to represent a citizen of a scene.
 
-    Typically an Entity is used to visualize something, although this is not
+    Typically an Node is used to visualize something, although this is not
     strictly necessary. It may for instance also be used as a container to
     apply a certain transformation to a group of objects, or an object that
     performs a specific task without being visible.
 
-    Each entity can have zero or more children. Each entity will
+    Each node can have zero or more children. Each node will
     typically have one parent, although multiple parents are allowed.
     It is recommended to use multi-parenting with care.
 
     Parameters
     ----------
-    parent : Entity
-        The parent of the Entity.
+    parent : Node
+        The parent of the Node.
     name : str
-        The name used to identify the entity.
+        The name used to identify the node.
     """
 
     def __init__(self, parent=None, name=None):
@@ -68,14 +68,14 @@ class Entity(object):
 
     @property
     def children(self):
-        """ The list of children of this entity. The children are in
+        """ The list of children of this node. The children are in
         arbitrary order.
         """
         return list(self._children)
 
     @property
     def parent(self):
-        """ Get/set the parent. If the entity has multiple parents while
+        """ Get/set the parent. If the node has multiple parents while
         using this property as a getter, an error is raised.
         """
         if not self._parents:
@@ -99,16 +99,16 @@ class Entity(object):
     @parents.setter
     def parents(self, parents):
         # Test input
-        if isinstance(parents, Entity):
+        if isinstance(parents, Node):
             parents = (parents,)
         if not hasattr(parents, '__iter__'):
-            raise ValueError("Entity.parents must be iterable (got %s)"
+            raise ValueError("Node.parents must be iterable (got %s)"
                              % type(parents))
 
         # Test that all parents are entities
         for p in parents:
-            if not isinstance(p, Entity):
-                raise ValueError('A parent of an entity must be an entity too,'
+            if not isinstance(p, Node):
+                raise ValueError('A parent of an node must be an node too,'
                                  ' not %s.' % p.__class__.__name__)
 
         # convert to set
@@ -135,7 +135,7 @@ class Entity(object):
 
     def remove_parent(self, parent):
         if parent not in self._parents:
-            raise ValueError("Parent not in set of parents for this entity.")
+            raise ValueError("Parent not in set of parents for this node.")
         self._parents.remove(parent)
         parent._remove_child(self)
         self.events.parents_change(removed=parent)
@@ -152,8 +152,8 @@ class Entity(object):
 
     @property
     def document(self):
-        """ The document is an optional property that is an entity representing
-        the coordinate system from which this entity should make physical 
+        """ The document is an optional property that is an node representing
+        the coordinate system from which this node should make physical 
         measurements such as px, mm, pt, in, etc. This coordinate system 
         should be used when determining line widths, font sizes, and any
         other lengths specified in physical units.
@@ -165,8 +165,8 @@ class Entity(object):
     
     @document.setter
     def document(self, doc):
-        if doc is not None and not isinstance(doc, Entity):
-            raise TypeError("Document property must be Entity or None.")
+        if doc is not None and not isinstance(doc, Node):
+            raise TypeError("Document property must be Node or None.")
         self._document = doc
         self.update()
 
@@ -187,7 +187,7 @@ class Entity(object):
         self._transform_changed(None)
 
     def set_transform(self, type, *args, **kwds):
-        """ Create a new transform of *type* and assign it to this entity.
+        """ Create a new transform of *type* and assign it to this node.
         All extra arguments are used in the construction of the transform.
         """
         self.transform = create_transform(type, *args, **kwds)
@@ -198,8 +198,8 @@ class Entity(object):
 
     def _parent_chain(self):
         """
-        Return the chain of parents starting from this entity. The chain ends
-        at the first entity with either no parents or multiple parents.
+        Return the chain of parents starting from this node. The chain ends
+        at the first node with either no parents or multiple parents.
         """
         chain = [self]
         while True:
@@ -218,7 +218,7 @@ class Entity(object):
         Parameters
         ----------
         with_transform : bool
-            If true, add information about entity transform types.
+            If true, add information about node transform types.
 
         Returns
         ----------
@@ -245,49 +245,49 @@ class Entity(object):
             output += child._describe_tree(sub_prefix, with_transform)
         return output
 
-    def common_parent(self, entity):
+    def common_parent(self, node):
         """
         Return the common parent of two entities. If the entities have no
         common parent, return None. Does not search past multi-parent branches.
         """
         p1 = self._parent_chain()
-        p2 = entity._parent_chain()
+        p2 = node._parent_chain()
         for p in p1:
             if p in p2:
                 return p
         return None
         
-    def entity_transform(self, entity):
+    def node_transform(self, node):
         """
         Return the transform that maps from the coordinate system of
-        *entity* to the local coordinate system of *self*.
+        *node* to the local coordinate system of *self*.
         
         Note that there must be a _single_ path in the scenegraph that connects
         the two entities; otherwise an exception will be raised.        
         """
-        cp = self.common_parent(entity)
-        # First map from entity to common parent
+        cp = self.common_parent(node)
+        # First map from node to common parent
         tr = NullTransform()
         
-        while entity is not cp:
-            if entity.transform is not None:
-                tr = entity.transform * tr
+        while node is not cp:
+            if node.transform is not None:
+                tr = node.transform * tr
             
-            entity = entity.parent
+            node = node.parent
         
-        if entity is self:
+        if node is self:
             return tr
         
         # Now map from common parent to self
-        tr2 = cp.entity_transform(self)
+        tr2 = cp.node_transform(self)
         return tr2.inverse * tr
         
     def _process_mouse_event(self, event):
         """
-        Propagate a mouse event through the scene tree starting at this Entity.
+        Propagate a mouse event through the scene tree starting at this Node.
         """
         # 1. find all entities whose mouse-area includes the click point.
-        # 2. send the event to each entity one at a time
+        # 2. send the event to each node one at a time
         #    (we should use a specialized emitter for this, rather than
         #     rebuild the emitter machinery!)
 
@@ -295,12 +295,12 @@ class Entity(object):
         # picking to decide which entities should receive the event.
         for enter, path in self.walk():
             event._set_path(path)
-            entity = path[-1]
-            getattr(entity.events, event.type)(event)
+            node = path[-1]
+            getattr(node.events, event.type)(event)
 
     def bounds(self, mode, axis):
         """ Return the (min, max) bounding values describing the location of
-        this entity in its local coordinate system.
+        this node in its local coordinate system.
         
         Parameters
         ----------
@@ -318,7 +318,7 @@ class Entity(object):
 
     def update(self):
         """
-        Emit an event to inform Canvases that this Entity needs to be redrawn.
+        Emit an event to inform Canvases that this Node needs to be redrawn.
         """
         self.events.update()
 

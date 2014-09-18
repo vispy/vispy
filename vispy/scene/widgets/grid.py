@@ -91,7 +91,7 @@ class Grid(Widget):
         for ch in self._grid_widgets:
             row, col, rspan, cspan = self._grid_widgets[ch]
 
-            # Translate the origin of the entity to the corner of the area
+            # Translate the origin of the node to the corner of the area
             #ch.transform.reset()
             #ch.transform.translate((colstart[col], rowstart[row]))
             ch.pos = colstart[col], rowstart[row]

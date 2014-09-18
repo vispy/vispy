@@ -225,7 +225,7 @@ class Text(Visual):
         Horizontal text anchor.
     anchor_y : str
         Vertical text anchor.
-    parent : instance of Entity
+    parent : instance of Node
         The parent of the Text visual.
     """
 

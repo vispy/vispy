@@ -2,22 +2,20 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 """
-The vispy.scene.visuals namespace provides a wide range of visuals.
-A Visual is an Entity that displays something.
+This module provides a library of Visual classes, which are drawable objects 
+intended to encapsulate simple graphic objects such as lines, meshes, points, 
+2D shapes, images, text, etc.
 
-Visuals do not have to be used in a scenegraph per se; they can also
-be used stand-alone e.g. from a vispy.app.Canvas, or using Glut.
-
-This module provides a library of drawable objects that are intended to
-encapsulate simple graphic objects such as lines, meshes, points, 2D shapes,
-images, text, etc.
+These classes define only the OpenGL machinery and connot be used directly in
+a scenegraph. For scenegraph use, see the complementary Visual+Node classes 
+defined in vispy.scene.
 """
 
 __all__ = ['Visual', 'Cube', 'Ellipse', 'GridLines', 'Image', 'Line',
            'LinePlot', 'Markers', 'marker_types', 'Mesh', 'Polygon',
            'Rectangle', 'RegularPolygon', 'SurfacePlot', 'Text', 'XYZAxis']
 
-from .entity import Entity  # noqa
+from .node import Node  # noqa
 from .visual import Visual  # noqa
 from .line import Line  # noqa
 from .markers import Markers, marker_types  # noqa

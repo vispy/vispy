@@ -4,11 +4,11 @@
 
 from __future__ import division
 
-from ..visuals import Entity
+from ..visuals import Node
 from .systems import DrawingSystem, MouseInputSystem
 
 
-class SubScene(Entity):
+class SubScene(Node):
     """ A subscene with entities.
 
     A subscene can be a child of a Canvas or a ViewBox. It is a
@@ -29,7 +29,7 @@ class SubScene(Entity):
     """
 
     def __init__(self, **kwargs):
-        Entity.__init__(self, **kwargs)
+        Node.__init__(self, **kwargs)
 
         # Initialize systems
         self._systems = {}

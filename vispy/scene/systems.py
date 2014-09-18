@@ -19,18 +19,18 @@ class DrawingSystem(object):
         # Iterate over entities
         #assert isinstance(subscene, SubScene)  # LC: allow any part of the
                                                 #     scene to be drawn
-        self._process_entity(event, subscene, force_recurse=True)
+        self._process_node(event, subscene, force_recurse=True)
 
-    def _process_entity(self, event, entity, force_recurse=False):
-        event.canvas._process_entity_count += 1
+    def _process_node(self, event, node, force_recurse=False):
+        event.canvas._process_node_count += 1
 
-        if isinstance(entity, Visual):
+        if isinstance(node, Visual):
             try:
-                entity.draw(event)
+                node.draw(event)
             except Exception:
                 # get traceback and store (so we can do postmortem
                 # debugging)
-                _handle_exception(False, 'reminders', self, entity=entity)
+                _handle_exception(False, 'reminders', self, node=node)
 
         # Processs children; recurse.
         # Do not go into subscenes (SubScene.draw processes the subscene)
@@ -40,55 +40,55 @@ class DrawingSystem(object):
         # check entirely.)
         from .subscene import SubScene
         
-        if force_recurse or not isinstance(entity, SubScene):
-            for sub_entity in entity.children:
-                event.push_entity(sub_entity)
+        if force_recurse or not isinstance(node, SubScene):
+            for sub_node in node.children:
+                event.push_node(sub_node)
                 try:
-                    self._process_entity(event, sub_entity)
+                    self._process_node(event, sub_node)
                 finally:
-                    event.pop_entity()
+                    event.pop_node()
 
 
 class MouseInputSystem(object):
     def process(self, event, subscene):
-        # For simplicity, this system delivers the event to each entity
+        # For simplicity, this system delivers the event to each node
         # in the scenegraph, except for widgets that are not under the 
         # press_event. 
         # TODO: 
         #  1. This eventually should be replaced with a picking system.
-        #  2. We also need to ensure that if one entity accepts a press 
+        #  2. We also need to ensure that if one node accepts a press 
         #     event, it will also receive all subsequent mouse events
         #     until the button is released.
         
-        self._process_entity(event, subscene)
+        self._process_node(event, subscene)
     
-    def _process_entity(self, event, entity):
-        # Push entity and set its total transform
-        #event.push_entity(entity)
+    def _process_node(self, event, node):
+        # Push node and set its total transform
+        #event.push_node(node)
 
         from .widgets.widget import Widget
-        if isinstance(entity, Widget):
+        if isinstance(node, Widget):
             # widgets are rectangular; easy to do mouse collision 
             # testing
             if event.press_event is None:
-                deliver = entity.rect.contains(*event.pos[:2])
+                deliver = node.rect.contains(*event.pos[:2])
             else:
-                deliver = entity.rect.contains(*event.press_event.pos[:2])
+                deliver = node.rect.contains(*event.press_event.pos[:2])
         else:
             deliver = True
                 
         if deliver:
-            for sub_entity in entity.children:
-                event.push_entity(sub_entity)
+            for sub_node in node.children:
+                event.push_node(sub_node)
                 try:
-                    self._process_entity(event, sub_entity)
+                    self._process_node(event, sub_node)
                 finally:
-                    event.pop_entity()
+                    event.pop_node()
                 if event.handled:
                     break
             if not event.handled:
                 try:
-                    getattr(entity.events, event.type)(event)
+                    getattr(node.events, event.type)(event)
                 except Exception:
                     # get traceback and store (so we can do postmortem
                     # debugging)
@@ -100,7 +100,7 @@ class MouseInputSystem(object):
                     del tb  # Get rid of it in this namespace
                     # Handle
                     logger.log_exception()
-                    logger.warning("Error handling mouse event for entity %s" %
-                                   entity)
+                    logger.warning("Error handling mouse event for node %s" %
+                                   node)
                     
-        #event.pop_entity()
+        #event.pop_node()

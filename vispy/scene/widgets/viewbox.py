@@ -94,17 +94,17 @@ class ViewBox(Widget):
 
     @property
     def scene(self):
-        """ The root entity of the scene viewed by this ViewBox.
+        """ The root node of the scene viewed by this ViewBox.
         """
         return self._scene
 
-    def add(self, entity):
-        """ Add an Entity to the scene for this ViewBox. 
+    def add(self, node):
+        """ Add an Node to the scene for this ViewBox. 
         
         This is a convenience method equivalent to 
-        `entity.add_parent(viewbox.scene)`
+        `node.add_parent(viewbox.scene)`
         """
-        entity.add_parent(self.scene)
+        node.add_parent(self.scene)
 
     @property
     def clip_method(self):
@@ -194,12 +194,12 @@ class ViewBox(Widget):
             
             # Draw subscene to FBO
             event.push_fbo(fbo, offset, size)
-            event.push_entity(self.scene)
+            event.push_node(self.scene)
             try:
                 gloo.clear(color=self._bgcolor, depth=True)
                 self.scene.draw(event)
             finally:
-                event.pop_entity()
+                event.pop_node()
                 event.pop_fbo()
             
             gloo.set_state(cull_face=False)
@@ -207,11 +207,11 @@ class ViewBox(Widget):
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
-            event.push_entity(self.scene)
+            event.push_node(self.scene)
             try:
                 self.scene.draw(event)
             finally:
-                event.pop_entity()
+                event.pop_node()
                 event.pop_viewport()
 
         else:

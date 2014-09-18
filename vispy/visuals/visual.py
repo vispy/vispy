@@ -5,7 +5,6 @@
 from __future__ import division
 
 from ..util import event
-from .entity import Entity
 
 """
 API Issues to work out:
@@ -16,7 +15,7 @@ API Issues to work out:
 """
 
 
-class Visual(Entity):
+class Visual(object):
     """
     Abstract class representing a drawable object.
 
@@ -32,8 +31,6 @@ class Visual(Entity):
     """
 
     def __init__(self, **kwargs):
-        Entity.__init__(self, **kwargs)
-        
         # Add event for bounds changing
         self.events.add(bounds_change=event.Event)
 

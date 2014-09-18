@@ -428,9 +428,9 @@ class Line(Visual):
             return
         gloo.set_state('translucent', depth_test=False)
         data_doc = event.document_transform()
-        doc_px = event.entity_transform(map_from=event.document_cs,
+        doc_px = event.node_transform(map_from=event.document_cs,
                                         map_to=event.framebuffer_cs)
-        px_ndc = event.entity_transform(map_from=event.framebuffer_cs,
+        px_ndc = event.node_transform(map_from=event.framebuffer_cs,
                                         map_to=event.render_cs)
         vert = self._agg_program.vert
         vert['doc_px_transform'] = doc_px.shader_map()

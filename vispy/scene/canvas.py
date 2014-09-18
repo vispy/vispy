@@ -8,7 +8,7 @@ import weakref
 
 from .. import gloo
 from .. import app
-from ..visuals.entity import Entity
+from .node import Node
 from ..visuals.transforms import STTransform, TransformCache
 from ..color import Color
 from ..util import logger
@@ -98,12 +98,12 @@ class SceneCanvas(app.Canvas):
         # self.draw_visual(...)
         self._transform_caches = weakref.WeakKeyDictionary()
 
-        # Set up default entity stack: ndc -> fb -> canvas -> scene
-        self.render_cs = Entity(name="render_cs")
-        self.framebuffer_cs = Entity(parent=self.render_cs, 
+        # Set up default node stack: ndc -> fb -> canvas -> scene
+        self.render_cs = Node(name="render_cs")
+        self.framebuffer_cs = Node(parent=self.render_cs, 
                                      name="framebuffer_cs")
         self.framebuffer_cs.transform = STTransform()
-        self.canvas_cs = Entity(parent=self.framebuffer_cs,
+        self.canvas_cs = Node(parent=self.framebuffer_cs,
                                 name="canvas_cs")
         self.canvas_cs.transform = STTransform()
         # By default, the document coordinate system is the canvas.
@@ -113,7 +113,7 @@ class SceneCanvas(app.Canvas):
         
     @property
     def scene(self):
-        """ The SubScene object that represents the root entity of the
+        """ The SubScene object that represents the root node of the
         scene graph to be displayed.
         """
         return self._scene
@@ -202,7 +202,7 @@ class SceneCanvas(app.Canvas):
         nvp = len(self._vp_stack)
         
         # Create draw event, which keeps track of the path of transforms
-        self._process_entity_count = 0  # for debugging
+        self._process_node_count = 0  # for debugging
         
         # Get the cache of transforms used for this visual
         tr_cache = self._transform_caches.setdefault(visual, TransformCache())
@@ -220,10 +220,10 @@ class SceneCanvas(app.Canvas):
             self.fb_ndc_transform
             self.canvas_fb_transform
             
-            scene_event.push_entity(self.render_cs)
-            scene_event.push_entity(self.framebuffer_cs)
-            scene_event.push_entity(self.canvas_cs)
-            scene_event.push_entity(visual)
+            scene_event.push_node(self.render_cs)
+            scene_event.push_node(self.framebuffer_cs)
+            scene_event.push_node(self.canvas_cs)
+            scene_event.push_node(visual)
             visual.draw(scene_event)
         finally:
             scene_event.pop_viewport()
@@ -238,10 +238,10 @@ class SceneCanvas(app.Canvas):
                                                      TransformCache())
         scene_event = SceneMouseEvent(canvas=self, event=event,
                                       transform_cache=tr_cache)
-        scene_event.push_entity(self.render_cs)
-        scene_event.push_entity(self.framebuffer_cs)
-        scene_event.push_entity(self.canvas_cs)
-        scene_event.push_entity(self._scene)
+        scene_event.push_node(self.render_cs)
+        scene_event.push_node(self.framebuffer_cs)
+        scene_event.push_node(self.canvas_cs)
+        scene_event.push_node(self._scene)
         self._scene._process_mouse_event(scene_event)
         
         # If something in the scene handled the scene_event, then we mark

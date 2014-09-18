@@ -89,8 +89,8 @@ class LinePlot(Visual):
 
     def draw(self, event):
         for v in self._line, self._markers:
-            event.push_entity(v)
+            event.push_node(v)
             try:
                 v.draw(event)
             finally:
-                event.pop_entity()
+                event.pop_node()

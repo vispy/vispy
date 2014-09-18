@@ -50,19 +50,19 @@ class SceneEvent(Event):
         """
         return self._stack
 
-    def push_entity(self, entity):
-        """ Push an entity on the stack. """
-        self._stack.append(entity)
-        if id(entity) in self._stack_ids:
+    def push_node(self, node):
+        """ Push an node on the stack. """
+        self._stack.append(node)
+        if id(node) in self._stack_ids:
             raise RuntimeError("Scenegraph cycle detected; cannot push %r" % 
-                               entity)
-        self._stack_ids.add(id(entity))
-        doc = entity.document
+                               node)
+        self._stack_ids.add(id(node))
+        doc = node.document
         if doc is not None:
             self.push_document(doc)
 
-    def pop_entity(self):
-        """ Pop an entity from the stack. """
+    def pop_node(self):
+        """ Pop an node from the stack. """
         ent = self._stack.pop(-1)
         self._stack_ids.remove(id(ent))
         if ent.document is not None:
@@ -111,8 +111,8 @@ class SceneEvent(Event):
 
     @property
     def document_cs(self):
-        """ The entity for the current document coordinate system. The
-        coordinate system of this Entity is used for making physical
+        """ The node for the current document coordinate system. The
+        coordinate system of this Node is used for making physical
         measurements--px, mm, in, etc.
         """
         if len(self._doc_stack) > 0:
@@ -122,7 +122,7 @@ class SceneEvent(Event):
 
     @property
     def canvas_cs(self):
-        """ The entity for the current canvas coordinate system. This cs 
+        """ The node for the current canvas coordinate system. This cs 
         represents the logical pixels of the canvas being drawn, with the 
         origin in upper-left, and the canvas (width, height) in the bottom 
         right. This coordinate system is most often used for handling mouse
@@ -132,7 +132,7 @@ class SceneEvent(Event):
 
     @property
     def framebuffer_cs(self):
-        """ The entity for the current framebuffer coordinate system. This
+        """ The node for the current framebuffer coordinate system. This
         coordinate system corresponds to the physical pixels being rendered
         to, with the origin in lower-right, and the framebufer (width, height)
         in upper-left. It is used mainly for making antialiasing measurements.
@@ -141,7 +141,7 @@ class SceneEvent(Event):
 
     @property
     def render_cs(self):
-        """ Return entity for the normalized device coordinate system. This
+        """ Return node for the normalized device coordinate system. This
         coordinate system is the obligatory output of GLSL vertex shaders, 
         with (-1, -1) in bottom-left, and (1, 1) in top-right. This coordinate
         system is frequently used for rendering visuals because all vertices
@@ -149,19 +149,19 @@ class SceneEvent(Event):
         """
         return self.canvas.render_cs
 
-    def document_transform(self, entity=None):
-        """ Return the transform that maps from *entity* to the current
+    def document_transform(self, node=None):
+        """ Return the transform that maps from *node* to the current
         document coordinate system.
 
-        If *entity* is not specified, then the top entity on the stack is used.
+        If *node* is not specified, then the top node on the stack is used.
         """
-        return self.entity_transform(map_to=self.document_cs, map_from=entity)
+        return self.node_transform(map_to=self.document_cs, map_from=node)
 
-    def map_entity_to_document(self, entity, obj):
-        return self.document_transform(entity).map(obj)
+    def map_node_to_document(self, node, obj):
+        return self.document_transform(node).map(obj)
 
-    def map_document_to_entity(self, entity, obj):
-        return self.document_transform(entity).imap(obj)
+    def map_document_to_node(self, node, obj):
+        return self.document_transform(node).imap(obj)
 
     def map_to_document(self, obj):
         return self.document_transform().map(obj)
@@ -169,23 +169,23 @@ class SceneEvent(Event):
     def map_from_document(self, obj):
         return self.document_transform().imap(obj)
 
-    def canvas_transform(self, entity=None):
-        """ Return the transform that maps from *entity* to the current
+    def canvas_transform(self, node=None):
+        """ Return the transform that maps from *node* to the current
         logical-pixel coordinate system defined by the Canvas.
 
         Canvas_transform is used mainly for mouse interaction.
         For measuring distance in physical units, the use of document_transform
         is preferred.
 
-        If *entity* is not specified, then the top entity on the stack is used.
+        If *node* is not specified, then the top node on the stack is used.
         """
-        return self.entity_transform(map_to=self.canvas_cs, map_from=entity)
+        return self.node_transform(map_to=self.canvas_cs, map_from=node)
 
-    def map_entity_to_canvas(self, entity, obj):
-        return self.canvas_transform(entity).map(obj)
+    def map_node_to_canvas(self, node, obj):
+        return self.canvas_transform(node).map(obj)
 
-    def map_canvas_to_entity(self, entity, obj):
-        return self.canvas_transform(entity).imap(obj)
+    def map_canvas_to_node(self, node, obj):
+        return self.canvas_transform(node).imap(obj)
 
     def map_to_canvas(self, obj):
         return self.canvas_transform().map(obj)
@@ -193,20 +193,20 @@ class SceneEvent(Event):
     def map_from_canvas(self, obj):
         return self.canvas_transform().imap(obj)
 
-    def framebuffer_transform(self, entity=None):
-        """ Return the transform that maps from *entity* to the current
+    def framebuffer_transform(self, node=None):
+        """ Return the transform that maps from *node* to the current
         framebuffer coordinate system.
 
-        If *entity* is not specified, then the top entity on the stack is used.
+        If *node* is not specified, then the top node on the stack is used.
         """
-        return self.entity_transform(map_to=self.framebuffer_cs, 
-                                     map_from=entity)
+        return self.node_transform(map_to=self.framebuffer_cs, 
+                                     map_from=node)
 
-    def map_entity_to_framebuffer(self, entity, obj):
-        return self.framebuffer_transform(entity).map(obj)
+    def map_node_to_framebuffer(self, node, obj):
+        return self.framebuffer_transform(node).map(obj)
 
-    def map_framebuffer_to_entity(self, entity, obj):
-        return self.framebuffer_transform(entity).imap(obj)
+    def map_framebuffer_to_node(self, node, obj):
+        return self.framebuffer_transform(node).imap(obj)
 
     def map_to_framebuffer(self, obj):
         return self.framebuffer_transform().map(obj)
@@ -216,7 +216,7 @@ class SceneEvent(Event):
 
     @property
     def render_transform(self):
-        """ The transform that maps from the current entity to
+        """ The transform that maps from the current node to
         normalized device coordinates within the current glViewport and
         FBO.
 
@@ -229,39 +229,39 @@ class SceneEvent(Event):
 
     @property
     def scene_transform(self):
-        """ The transform that maps from the current entity to the first
+        """ The transform that maps from the current node to the first
         scene in its ancestry.
         """
         if len(self._viewbox_stack) > 1:
             view = self._viewbox_stack[-1]
-            return self.entity_transform(map_to=view.scene)
+            return self.node_transform(map_to=view.scene)
         else:
             return None
 
     @property
     def view_transform(self):
-        """ The transform that maps from the current entity to the first
+        """ The transform that maps from the current node to the first
         viewbox in its ancestry.
         """
         if len(self._viewbox_stack) > 1:
             view = self._viewbox_stack[-1]
-            return self.entity_transform(map_to=view)
+            return self.node_transform(map_to=view)
         else:
             return None
 
-    def entity_transform(self, map_to=None, map_from=None):
+    def node_transform(self, map_to=None, map_from=None):
         """ Return the transform from *map_from* to *map_to*, using the
-        current entity stack to resolve parent ambiguities if needed.
+        current node stack to resolve parent ambiguities if needed.
 
         By default, *map_to* is the normalized device coordinate system,
-        and *map_from* is the current top entity on the stack.
+        and *map_from* is the current top node on the stack.
         """
         if map_to is None:
             map_to = self.render_cs
         if map_from is None:
             map_from = self._stack[-1]
 
-        fwd_path = self._entity_path(map_from, map_to)
+        fwd_path = self._node_path(map_from, map_to)
         fwd_path.reverse()
 
         if fwd_path[0] is map_to:
@@ -270,7 +270,7 @@ class SceneEvent(Event):
         else:
             # If we have still not reached the end, try traversing from the
             # opposite end and stop when paths intersect
-            rev_path = self._entity_path(map_to, self._stack[0])
+            rev_path = self._node_path(map_to, self._stack[0])
             connected = False
             for i in range(1, len(rev_path)):
                 if rev_path[i] in fwd_path:
@@ -285,29 +285,29 @@ class SceneEvent(Event):
                       [e.transform.inverse for e in rev_path])
         return self._transform_cache.get(transforms)
 
-    def _entity_path(self, start, end):
+    def _node_path(self, start, end):
         """
         Return the path of parents leading from *start* to *end*, using the
-        entity stack to resolve multi-parent branches.
+        node stack to resolve multi-parent branches.
 
         If *end* is never reached, then the path is assembled as far as
         possible and returned.
         """
         path = [start]
 
-        # first, get parents directly from entity
-        entity = start
-        while id(entity) not in self._stack_ids:
-            if entity is end or len(entity.parents) != 1:
+        # first, get parents directly from node
+        node = start
+        while id(node) not in self._stack_ids:
+            if node is end or len(node.parents) != 1:
                 return path
-            entity = entity.parent
-            path.append(entity)
+            node = node.parent
+            path.append(node)
 
         # if we have not reached the end, follow _stack if possible.
         if path[-1] is not end:
             try:
-                ind = self._stack.index(entity)
-                # copy stack onto path one entity at a time
+                ind = self._stack.index(node)
+                # copy stack onto path one node at a time
                 while ind > -1 and path[-1] is not end:
                     ind -= 1
                     path.append(self._stack[ind])
