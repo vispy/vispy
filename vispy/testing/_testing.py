@@ -362,7 +362,13 @@ def run_tests_if_main():
         return
     # we are in a "__main__"
     fname = local_vars['__file__']
-    if not os.path.isfile(fname):
-        raise IOError('Could not find file "%s"' % fname)
-    from ._runners import _nose
-    _nose('singlefile', fname + ' --verbosity=2')
+    print('Running tests for %s' % fname)
+    for name, ob in local_vars.items():
+        if name.startswith('test_') and callable(ob):
+            print('Running test %s ... ' % name, end='')
+            ob()
+            print('ok')
+    #if not os.path.isfile(fname):
+    #    raise IOError('Could not find file "%s"' % fname)
+    #from ._runners import _nose
+    #_nose('singlefile', fname + ' --verbosity=2')
