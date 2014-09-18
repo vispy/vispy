@@ -40,11 +40,9 @@ class Buffer(GLObject):
 
     def __init__(self, data=None, nbytes=None):
         GLObject.__init__(self)
-        self._views = []
-        self._valid = True
-        
-        # Bytesize of buffer in CPU memory
-        self._nbytes = 0
+        self._views = []  # Views on this buffer
+        self._valid = True  # To invalidate buffer views
+        self._nbytes = 0  # Bytesize in bytes, set in resize_bytes()
         
         # Set data
         if data is not None:
@@ -52,11 +50,11 @@ class Buffer(GLObject):
                 raise ValueError("Cannot specify both data and nbytes.")
             self.set_data(data, copy=False)
         elif nbytes is not None:
-            self._nbytes = nbytes
+            self.resize_bytes(nbytes)
         
     @property
     def nbytes(self):
-        """ Buffer byte size """
+        """ Buffer size in bytes """
 
         return self._nbytes
     
@@ -174,11 +172,11 @@ class DataBuffer(Buffer):
     """
 
     def __init__(self, data=None, dtype=None, size=0):
-        self._copied = False  # flag to indicate that a copy is made
-        self._size = size  # number of elements in buffer
-
+        self._size = 0  # number of elements in buffer, set in resize_bytes()
+        
         # Convert data to array+dtype if needed
         if data is not None:
+            nbytes = None
             if dtype is not None:
                 data = np.array(data, dtype=dtype, copy=False)
             else:
@@ -187,16 +185,15 @@ class DataBuffer(Buffer):
         # Create buffer from dtype and size
         elif dtype is not None:
             self._dtype = np.dtype(dtype)
-            self._size = size
             self._stride = self._dtype.itemsize
             self._itemsize = self._dtype.itemsize
-            self._nbytes = self._size * self._itemsize
+            nbytes = size * self._itemsize
 
         # We need a minimum amount of information
         else:
             raise ValueError("data/dtype/base cannot be all set to None")
         
-        Buffer.__init__(self, data=data)
+        Buffer.__init__(self, data=data, nbytes=nbytes)
     
     def _prepare_data(self, data, **kwds):
         if len(kwds) > 0:
@@ -358,6 +355,9 @@ class DataBufferView(DataBuffer):
     """
 
     def __init__(self, base, key):
+        # Note how this never runs the super's __init__,
+        # all attributes must thus be set here ...
+        
         self._base = base
         self._key = key
         self._stride = base.stride
@@ -555,10 +555,12 @@ class VertexBuffer(DataBuffer):
         if isinstance(data, (list, tuple)):
             data = np.array(data, np.float32)
 
+        # Make data structured. This makes things more consistent; our data
+        # is always consistent (AK: at least, that is why I *think* this is)
         if dtype is not None:
-            dtype = np.dtype(dtype)
-            if dtype.isbuiltin:
-                dtype = np.dtype([('f0', dtype, 1)])
+           dtype = np.dtype(dtype)
+           if dtype.isbuiltin:
+               dtype = np.dtype([('f0', dtype, 1)])
 
         DataBuffer.__init__(self, data=data, dtype=dtype, size=size)
 

@@ -114,7 +114,6 @@ class DataBufferTest(unittest.TestCase):
         # Check default storage and copy flags
         data = np.ones(100)
         B = DataBuffer(data)
-        assert B._copied is False
         assert B.nbytes == data.nbytes
         assert B.offset == 0
         assert B.size == 100
