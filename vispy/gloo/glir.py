@@ -47,11 +47,16 @@ class GlirQueue(object):
                     t.append(e)
             print(tuple(t))
     
+    def clear(self):
+        """ Pop the whole queue and return it as a list.
+        """
+        self._commands, ret = [], self._commands
+        return ret
+        
     def parse(self):
         """ Interpret all commands; do the OpenGL calls.
         """
-        self._parser.parse(self._commands)
-        self._commands = []
+        self._parser.parse(self.clear())
 
 
 class GlirParser(object):
@@ -59,7 +64,7 @@ class GlirParser(object):
     
     We make use of relatively light GLIR objects that are instantiated
     on CREATE commands. These objects are stored by their id in a
-    dictionary so that commands like ACTIVATE and SET_DATA can easily
+    dictionary so that commands like ACTIVATE and DATA can easily
     be executed on the corresponding objects.
     """
     
@@ -102,9 +107,9 @@ class GlirParser(object):
                     ob.activate()
                 elif cmd == 'DEACTIVATE':
                     ob.deactivate()
-                elif cmd == 'SET_SIZE':
+                elif cmd == 'SIZE':
                     ob.set_size(*args)
-                elif cmd == 'SET_DATA':
+                elif cmd == 'DATA':
                     ob.set_data(*args)
                 else:
                     print('Invalud GLIR command %r' % cmd)

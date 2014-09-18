@@ -86,8 +86,8 @@ class Buffer(GLObject):
         # If the whole buffer is to be written, we clear any pending data
         # (because they will be overwritten anyway)
         if nbytes == self._nbytes and offset == 0:
-            self._context.glir.command('SET_SIZE', self._id, nbytes)
-        self._context.glir.command('SET_DATA', self._id, offset, data)
+            self._context.glir.command('SIZE', self._id, nbytes)
+        self._context.glir.command('DATA', self._id, offset, data)
     
     def set_data(self, data, copy=False):
         """ Set data in the buffer (deferred operation).
@@ -110,10 +110,10 @@ class Buffer(GLObject):
         if nbytes != self._nbytes:
             self.resize_bytes(nbytes)
         else:
-            # Use SET_SIZE to discard any previous data setting
-            self._context.glir.command('SET_SIZE', self._id, nbytes)
+            # Use SIZE to discard any previous data setting
+            self._context.glir.command('SIZE', self._id, nbytes)
         
-        self._context.glir.command('SET_DATA', self._id, 0, data)
+        self._context.glir.command('DATA', self._id, 0, data)
     
     def resize_bytes(self, size):
         """ Resize this buffer (deferred operation). 
@@ -124,7 +124,7 @@ class Buffer(GLObject):
             New buffer size in bytes.
         """
         self._nbytes = size
-        self._context.glir.command('SET_SIZE', self._id, size)
+        self._context.glir.command('SIZE', self._id, size)
         # Invalidate any view on this buffer
         for view in self._views:
             view._valid = False
@@ -328,10 +328,11 @@ class DataBuffer(Buffer):
             data = np.array(data, dtype=self.dtype, copy=False)
 
         # Make sure data is big enough
-        # todo: are the new data elements filled as we want them to?
-        if data.size != stop - start:
+        if data.size < stop - start:
             data = np.resize(data, stop - start)
-
+        elif data.size > stop - start:
+            raise ValueError('Data too big to fit GPU data.')
+        
         # Set data
         offset = start  # * self.itemsize
         self.set_subdata(data=data, offset=offset, copy=True)
