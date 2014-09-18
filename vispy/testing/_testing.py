@@ -358,6 +358,8 @@ def save_testing_image(image, location):
 def run_tests_if_main():
     """Run tests in a given file if it is run as a script"""
     local_vars = inspect.currentframe().f_back.f_locals
+    if '__name__' not in local_vars:
+        return
     if not local_vars['__name__'] == '__main__':
         return
     # we are in a "__main__"
@@ -373,9 +375,11 @@ def run_tests_if_main():
 
 
 def run_tests_in_object(ob):
-    for name in dir(ob):
+    for name in sorted(dir(ob), key=lambda x: x.lower()):  # consistent order
         val = getattr(ob, name)
-        if callable(val) and name.startswith('test_'):
+        if name.startswith('_'):
+            continue
+        elif callable(val) and (name[:4] == 'test' or name[-4:] == 'test'):
             print('Running test-func %s ... ' % name, end='')
             val()
             print('ok')
