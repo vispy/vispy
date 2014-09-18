@@ -358,9 +358,7 @@ def save_testing_image(image, location):
 def run_tests_if_main():
     """Run tests in a given file if it is run as a script"""
     local_vars = inspect.currentframe().f_back.f_locals
-    if '__name__' not in local_vars:
-        return
-    if not local_vars['__name__'] == '__main__':
+    if not local_vars.get('__name__', '') == '__main__':
         return
     # we are in a "__main__"
     fname = local_vars['__file__']
