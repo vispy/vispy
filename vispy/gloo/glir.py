@@ -193,4 +193,4 @@ class GlirVertexBuffer(GlirBuffer):
     
 
 class GlirIndexBuffer(GlirBuffer):
-    _target = gl.GL_ELEMENT_ARRAY_BUFFER,
+    _target = gl.GL_ELEMENT_ARRAY_BUFFER
