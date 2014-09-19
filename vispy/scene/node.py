@@ -9,16 +9,24 @@ from ..visuals.transforms import NullTransform, BaseTransform, create_transform
 
 
 class Node(object):
-    """ Mixin class to represent a citizen of a scene.
+    """ Base class representing an object in a scene. 
 
-    Typically an Node is used to visualize something, although this is not
-    strictly necessary. It may for instance also be used as a container to
-    apply a certain transformation to a group of objects, or an object that
-    performs a specific task without being visible.
+    A group of nodes connected through parent-child relationships define a 
+    scenegraph. Nodes may have any number of children or parents, although 
+    it is uncommon to have more than one parent.
 
-    Each node can have zero or more children. Each node will
-    typically have one parent, although multiple parents are allowed.
-    It is recommended to use multi-parenting with care.
+    Each Node defines a ``transform`` property, which describes the position,
+    orientation, scale, etc. of the Node relative to its parent. The Node's
+    children inherit this property, and then further apply their own
+    transformations on top of that. 
+    
+    With the ``transform`` property, each Node implicitly defines a "local" 
+    coordinate system, and the Nodes and edges in the scenegraph can be though
+    of as coordinate systems connected by transformation functions.
+    
+    Although Nodes are typically used to represent a visual object, the Node
+    class itself does not define any visual or interactive properties; these 
+    are defined in subclasses that also inherit from Visual.
 
     Parameters
     ----------
