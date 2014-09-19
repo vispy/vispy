@@ -6,10 +6,10 @@
 
 from ..geometry import create_cube
 from ..gloo import set_state
-from .mesh import Mesh
+from .mesh import MeshVisual
 
 
-class Cube(Mesh):
+class CubeVisual(MeshVisual):
     """Visual that displays a cube or cuboid. 
 
     Parameters
@@ -18,9 +18,9 @@ class Cube(Mesh):
         The size of the cuboid. A float gives a cube, whereas tuples may
         specify the size of each axis (x, y, z) independently. 
     vertex_colors : ndarray
-        Same as for `Mesh` class. See `create_cube` for vertex ordering.
+        Same as for `MeshVisual` class. See `create_cube` for vertex ordering.
     face_colors : ndarray
-        Same as for `Mesh` class. See `create_cube` for vertex ordering.
+        Same as for `MeshVisual` class. See `create_cube` for vertex ordering.
     color : Color
         The `Color` to use when drawing the cube faces.
     edge_color : tuple or Color
@@ -32,16 +32,16 @@ class Cube(Mesh):
         vertices, filled_indices, outline_indices = create_cube()
         vertices['position'] *= size
 
-        Mesh.__init__(self, vertices['position'], filled_indices,
+        MeshVisual.__init__(self, vertices['position'], filled_indices,
                       vertex_colors, face_colors, color)
         if edge_color:
-            self._outline = Mesh(vertices['position'], outline_indices,
+            self._outline = MeshVisual(vertices['position'], outline_indices,
                                  color=edge_color, mode='lines')
         else:
             self._outline = None
 
     def draw(self, event):
-        Mesh.draw(self, event)
+        MeshVisual.draw(self, event)
         if self._outline:
             set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
             self._outline.draw(event)

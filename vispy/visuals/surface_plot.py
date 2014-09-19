@@ -6,11 +6,11 @@ from __future__ import division
 
 import numpy as np
 
-from .mesh import Mesh
+from .mesh import MeshVisual
 from ..geometry import MeshData
 
 
-class SurfacePlot(Mesh):
+class SurfacePlotVisual(MeshVisual):
     """Displays a surface plot on a regular x,y grid
 
     Parameters
@@ -38,14 +38,14 @@ class SurfacePlot(Mesh):
     """
     def __init__(self, x=None, y=None, z=None, colors=None, **kwds):
         # The x, y, z, and colors arguments are passed to set_data().
-        # All other keyword arguments are passed to Mesh.__init__().
+        # All other keyword arguments are passed to MeshVisual.__init__().
         self._x = None
         self._y = None
         self._z = None
         self.__color = None
         self.__vertices = None
         self.__meshdata = MeshData()
-        Mesh.__init__(self, **kwds)
+        MeshVisual.__init__(self, **kwds)
         self.set_data(x, y, z, colors)
 
     def set_data(self, x=None, y=None, z=None, colors=None):
@@ -131,7 +131,7 @@ class SurfacePlot(Mesh):
             self.__meshdata.set_vertices(
                 self.__vertices.reshape(self.__vertices.shape[0] *
                                         self.__vertices.shape[1], 3))
-            Mesh.set_data(self, meshdata=self.__meshdata)
+            MeshVisual.set_data(self, meshdata=self.__meshdata)
 
     def generate_faces(self):
         cols = self._z.shape[1]-1

@@ -11,25 +11,25 @@ a scenegraph. For scenegraph use, see the complementary Visual+Node classes
 defined in vispy.scene.
 """
 
-__all__ = ['Visual', 'Cube', 'Ellipse', 'GridLines', 'Image', 'Line',
-           'LinePlot', 'Markers', 'marker_types', 'Mesh', 'Polygon',
-           'Rectangle', 'RegularPolygon', 'SurfacePlot', 'Text', 'XYZAxis']
+__all__ = ['Visual', 'CubeVisual', 'EllipseVisual', 'GridLinesVisual', 'ImageVisual', 'LineVisual',
+           'LinePlotVisual', 'MarkersVisual', 'marker_types', 'MeshVisual', 'PolygonVisual',
+           'RectangleVisual', 'RegularPolygonVisual', 'SurfacePlotVisual', 'Text', 'XYZAxisVisual']
 
 from .node import Node  # noqa
 from .visual import Visual  # noqa
-from .line import Line  # noqa
-from .markers import Markers, marker_types  # noqa
-from .mesh import Mesh  # noqa
-from .image import Image  # noqa
-from .polygon import Polygon  # noqa
-from .ellipse import Ellipse  # noqa
-from .regular_polygon import RegularPolygon  # noqa
-from .rectangle import Rectangle  # noqa
+from .line import LineVisual  # noqa
+from .markers import MarkersVisual, marker_types  # noqa
+from .mesh import MeshVisual  # noqa
+from .image import ImageVisual  # noqa
+from .polygon import PolygonVisual  # noqa
+from .ellipse import EllipseVisual  # noqa
+from .regular_polygon import RegularPolygonVisual  # noqa
+from .rectangle import RectangleVisual  # noqa
 from .text import Text  # noqa
-from .gridlines import GridLines  # noqa
-from .surface_plot import SurfacePlot  # noqa
-from .isosurface import Isosurface  # noqa
-from .isocurve import Isocurve  # noqa
-from .xyz_axis import XYZAxis  # noqa
-from .line_plot import LinePlot  # noqa
-from .cube import Cube  # noqa
+from .gridlines import GridLinesVisual  # noqa
+from .surface_plot import SurfacePlotVisual  # noqa
+from .isosurface import IsosurfaceVisual  # noqa
+from .isocurve import IsocurveVisual  # noqa
+from .xyz_axis import XYZAxisVisual  # noqa
+from .line_plot import LinePlotVisual  # noqa
+from .cube import CubeVisual  # noqa

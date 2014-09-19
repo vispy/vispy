@@ -13,22 +13,22 @@ from .components import (TextureComponent, VertexTextureCoordinateComponent,
                           TextureCoordinateComponent)
 
 
-class Image(ModularMesh):
+class ImageVisual(ModularMesh):
     """Visual subclass displaying an image.
 
     Parameters
     ----------
     data : (height, width, 4) ubyte array
-        Image data.
+        ImageVisual data.
     method : str
         Selects method of rendering image in case of non-linear transforms.
         Each method produces similar results, but may trade efficiency
         and accuracy. If the transform is linear, this parameter is ignored
         and a single quad is drawn around the area of the image.
 
-            * 'subdivide': Image is represented as a grid of triangles with
+            * 'subdivide': ImageVisual is represented as a grid of triangles with
               texture coordinates linearly mapped.
-            * 'impostor': Image is represented as a quad covering the entire
+            * 'impostor': ImageVisual is represented as a quad covering the entire
               view, with texture coordinates determined by the transform.
               This produces the best transformation results, but may be slow.
 
@@ -37,7 +37,7 @@ class Image(ModularMesh):
         columns in the image grid.
     """
     def __init__(self, data, method='subdivide', grid=(10, 10), **kwargs):
-        super(Image, self).__init__(**kwargs)
+        super(ImageVisual, self).__init__(**kwargs)
 
         self._data = None
 
@@ -56,7 +56,7 @@ class Image(ModularMesh):
         if image is not None:
             self._data = image
             self._texture = None
-        super(Image, self).set_data(**kwds)
+        super(ImageVisual, self).set_data(**kwds)
 
     @property
     def interpolation(self):
@@ -156,4 +156,4 @@ class Image(ModularMesh):
             tr = event.render_transform.shader_map()
             self._program.vert['map_local_to_nd'] = tr
 
-        super(Image, self).draw(event)
+        super(ImageVisual, self).draw(event)

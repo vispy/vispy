@@ -11,10 +11,10 @@ from __future__ import division
 
 import numpy as np
 from ..color import Color
-from .polygon import Polygon, Mesh, Line
+from .polygon import PolygonVisual, MeshVisual, LineVisual
 
 
-class Ellipse(Polygon):
+class EllipseVisual(PolygonVisual):
     """
     Displays a 2D ellipse
 
@@ -38,7 +38,7 @@ class Ellipse(Polygon):
     def __init__(self, pos=None, color='black', border_color=None,
                  radius=(0.1, 0.1), start_angle=0., span_angle=360.,
                  num_segments=100, **kwds):
-        super(Ellipse, self).__init__()
+        super(EllipseVisual, self).__init__()
         self._vertices = None
         self._pos = pos
         self._color = Color(color)
@@ -111,7 +111,7 @@ class Ellipse(Polygon):
     @num_segments.setter
     def num_segments(self, num_segments):
         if num_segments < 1:
-            raise ValueError('Ellipse must consist of more than 1 segment')
+            raise ValueError('EllipseVisual must consist of more than 1 segment')
         self._num_segments = num_segments
         self._update()
 
@@ -121,9 +121,9 @@ class Ellipse(Polygon):
                                     start_angle=self._start_angle,
                                     span_angle=self._span_angle,
                                     num_segments=self._num_segments)
-            self.mesh = Mesh(vertices=self._vertices, color=self._color.rgba,
+            self.mesh = MeshVisual(vertices=self._vertices, color=self._color.rgba,
                              mode='triangle_fan')
             if not self._border_color.is_blank():
-                self.border = Line(pos=self._vertices[1:],
+                self.border = LineVisual(pos=self._vertices[1:],
                                    color=self._border_color.rgba)
         #self.update()

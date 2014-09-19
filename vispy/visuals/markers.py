@@ -262,7 +262,7 @@ _marker_dict = {
 marker_types = tuple(sorted(list(_marker_dict.keys())))
 
 
-class Markers(Visual):
+class MarkersVisual(Visual):
     """ Visual displaying marker symbols.
     """
     def __init__(self):

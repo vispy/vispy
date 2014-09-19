@@ -4,4 +4,4 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from .text import Text  # noqa
+from .text import TextVisual  # noqa

@@ -4,12 +4,12 @@
 
 import numpy as np
 
-from .line import Line
-from .markers import Markers
+from .line import LineVisual
+from .markers import MarkersVisual
 from .visual import Visual
 
 
-class LinePlot(Visual):
+class LinePlotVisual(Visual):
     """Visual displaying a plot line with optional markers.
 
     Parameters
@@ -17,7 +17,7 @@ class LinePlot(Visual):
     *args : array | two arrays
         Arguments can be passed as (Y,), (X, Y) or (np.array((X, Y))).
     **kwargs : keyword arguments
-        Keyword arguments to pass on to the Line and Marker visuals.
+        Keyword arguments to pass on to the LineVisual and Marker visuals.
         Supported arguments are width, connect, color, edge_color, face_color,
         and edge_width.
 
@@ -25,13 +25,13 @@ class LinePlot(Visual):
     --------
     All of these syntaxes will work:
 
-        >>> LinePlot(y_vals)
-        >>> LinePlot(x_vals, y_vals)
-        >>> LinePlot(xy_vals)
+        >>> LinePlotVisual(y_vals)
+        >>> LinePlotVisual(x_vals, y_vals)
+        >>> LinePlotVisual(xy_vals)
 
     See also
     --------
-    Line, Markers
+    LineVisual, MarkersVisual
     """
     _line_kwds = ['width', 'connect', 'color']
     _marker_kwds = ['edge_color', 'face_color', 'edge_width']
@@ -43,8 +43,8 @@ class LinePlot(Visual):
                 my_kwds[k] = kwds.pop(k)
 
         Visual.__init__(self, **kwds)
-        self._line = Line()
-        self._markers = Markers()
+        self._line = LineVisual()
+        self._markers = MarkersVisual()
 
         self.set_data(*args, **my_kwds)
 

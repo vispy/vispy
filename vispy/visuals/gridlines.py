@@ -72,7 +72,7 @@ void main() {
 """
 
 
-class GridLines(Visual):
+class GridLinesVisual(Visual):
     """
     """
     def __init__(self, scale=(1, 1), **kwds):

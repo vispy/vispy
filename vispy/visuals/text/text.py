@@ -200,7 +200,7 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
     return VertexBuffer(vertices)
 
 
-class Text(Visual):
+class TextVisual(Visual):
     """Visual that displays text
 
     Parameters
@@ -225,8 +225,6 @@ class Text(Visual):
         Horizontal text anchor.
     anchor_y : str
         Vertical text anchor.
-    parent : instance of Node
-        The parent of the Text visual.
     """
 
     VERTEX_SHADER = """

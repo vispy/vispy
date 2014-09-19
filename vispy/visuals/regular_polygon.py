@@ -4,16 +4,16 @@
 
 
 """
-RegularPolygon visual based on EllipseVisual
+RegularPolygonVisual visual based on EllipseVisual
 """
 
 from __future__ import division
 
 from ..color import Color
-from .ellipse import Ellipse, Mesh, Line
+from .ellipse import EllipseVisual, MeshVisual, LineVisual
 
 
-class RegularPolygon(Ellipse):
+class RegularPolygonVisual(EllipseVisual):
     """
     Displays a regular polygon
 
@@ -34,7 +34,7 @@ class RegularPolygon(Ellipse):
     """
     def __init__(self, pos=None, color='black', border_color=None,
                  radius=0.1, sides=4, **kwds):
-        super(Ellipse, self).__init__()
+        super(EllipseVisual, self).__init__()
         self._pos = pos
         self._color = Color(color)
         self._border_color = Color(border_color)
@@ -51,7 +51,7 @@ class RegularPolygon(Ellipse):
     @sides.setter
     def sides(self, sides):
         if sides < 3:
-            raise ValueError('Polygon must have at least 3 sides, not %s'
+            raise ValueError('PolygonVisual must have at least 3 sides, not %s'
                              % sides)
         self._sides = sides
         self._update()
@@ -62,8 +62,8 @@ class RegularPolygon(Ellipse):
                                     start_angle=0.,
                                     span_angle=360.,
                                     num_segments=self._sides)
-            self.mesh = Mesh(vertices=self._vertices, color=self._color.rgba,
+            self.mesh = MeshVisual(vertices=self._vertices, color=self._color.rgba,
                              mode='triangle_fan')
             if not self._border_color.is_blank():
-                self.border = Line(pos=self._vertices[1:],
+                self.border = LineVisual(pos=self._vertices[1:],
                                    color=self._border_color.rgba)

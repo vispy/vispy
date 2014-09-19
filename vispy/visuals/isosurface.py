@@ -4,11 +4,11 @@
 
 from __future__ import division
 
-from .mesh import Mesh
+from .mesh import MeshVisual
 from ..geometry.isosurface import isosurface
 
 
-class Isosurface(Mesh):
+class IsosurfaceVisual(MeshVisual):
     """Displays an isosurface of a 3D scalar array.
 
     Parameters
@@ -25,7 +25,7 @@ class Isosurface(Mesh):
         self._data = None
         self._level = level
         self._recompute = True
-        Mesh.__init__(self, **kwds)
+        MeshVisual.__init__(self, **kwds)
         if data is not None:
             self.set_data(data)
 
@@ -61,7 +61,7 @@ class Isosurface(Mesh):
         
         if self._recompute:
             verts, faces = isosurface(self._data, self._level)
-            Mesh.set_data(self, vertices=verts, faces=faces)
+            MeshVisual.set_data(self, vertices=verts, faces=faces)
             self._recompute = False
             
-        Mesh.draw(self, event)
+        MeshVisual.draw(self, event)

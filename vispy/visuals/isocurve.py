@@ -6,11 +6,11 @@ from __future__ import division
 
 import numpy as np
 
-from .line import Line
+from .line import LineVisual
 from ..geometry.isocurve import isocurve
 
 
-class Isocurve(Line):
+class IsocurveVisual(LineVisual):
     """Displays an isocurve of a 2D scalar array.
 
     Parameters
@@ -29,7 +29,7 @@ class Isocurve(Line):
         self._recompute = True
         kwds['mode'] = 'gl'
         kwds['antialias'] = False
-        Line.__init__(self, **kwds)
+        LineVisual.__init__(self, **kwds)
         if data is not None:
             self.set_data(data)
 
@@ -78,7 +78,7 @@ class Isocurve(Line):
             connect[gaps[:-1]] = False
             
             verts = np.array(verts)
-            Line.set_data(self, pos=verts, connect=connect)
+            LineVisual.set_data(self, pos=verts, connect=connect)
             self._recompute = False
             
-        Line.draw(self, event)
+        LineVisual.draw(self, event)

@@ -13,13 +13,13 @@ import numpy as np
 
 from .. import gloo
 from .visual import Visual
-from .mesh import Mesh
-from .line import Line
+from .mesh import MeshVisual
+from .line import LineVisual
 from ..color import Color
 from ..geometry import PolygonData
 
 
-class Polygon(Visual):
+class PolygonVisual(Visual):
     """
     Displays a 2D polygon
 
@@ -34,7 +34,7 @@ class Polygon(Visual):
     """
     def __init__(self, pos=None, color='black',
                  border_color=None, **kwds):
-        super(Polygon, self).__init__(**kwds)
+        super(PolygonVisual, self).__init__(**kwds)
 
         self.mesh = None
         self.border = None
@@ -97,7 +97,7 @@ class Polygon(Visual):
         self.data = PolygonData(vertices=np.array(self._pos, dtype=np.float32))
         if self._pos is not None:
             pts, tris = self.data.triangulate()
-            self.mesh = Mesh(vertices=pts, faces=tris.astype(np.uint32),
+            self.mesh = MeshVisual(vertices=pts, faces=tris.astype(np.uint32),
                              color=self._color.rgba)
             if not self._border_color.is_blank():
                 # Close border if it is not already.
@@ -105,7 +105,7 @@ class Polygon(Visual):
                 if np.any(border_pos[0] != border_pos[1]):
                     border_pos = np.concatenate([border_pos, border_pos[:1]], 
                                                 axis=0)
-                self.border = Line(pos=border_pos,
+                self.border = LineVisual(pos=border_pos,
                                    color=self._border_color.rgba, 
                                    connect='strip')
         #self.update()

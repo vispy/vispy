@@ -1,10 +1,10 @@
 
 import numpy as np
 
-from .line import Line
+from .line import LineVisual
 
 
-class XYZAxis(Line):
+class XYZAxisVisual(LineVisual):
     """
     Simple 3D axis for indicating coordinate system orientation. Axes are
     x=red, y=green, z=blue.
@@ -22,5 +22,5 @@ class XYZAxis(Line):
                           [0, 1, 0, 1],
                           [0, 0, 1, 1],
                           [0, 0, 1, 1]])
-        Line.__init__(self, pos=verts, color=color, connect='segments',
+        LineVisual.__init__(self, pos=verts, color=color, connect='segments',
                       mode='gl', **kwds)

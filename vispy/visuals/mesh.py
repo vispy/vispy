@@ -4,7 +4,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-""" A Mesh Visual that uses the new shader Function.
+""" A MeshVisual Visual that uses the new shader Function.
 """
 
 from __future__ import division
@@ -69,7 +69,7 @@ vec4 vec2to4(vec2 xyz) {
 """)
 
 
-class Mesh(Visual):
+class MeshVisual(Visual):
     def __init__(self, vertices=None, faces=None, vertex_colors=None,
                  face_colors=None, color=(0.5, 0.5, 1, 1), meshdata=None,
                  shading=None, mode='triangles', **kwds):
@@ -104,7 +104,7 @@ class Mesh(Visual):
         self.shading = shading
         # Note we do not call subclass set_data -- often the signatures
         # do no match.
-        Mesh.set_data(self, vertices=vertices, faces=faces,
+        MeshVisual.set_data(self, vertices=vertices, faces=faces,
                       vertex_colors=vertex_colors,
                       face_colors=face_colors, meshdata=meshdata)
 
