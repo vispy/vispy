@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from ...visuals.visual import Visual
-from ...visuals.line import Line
+from ...visuals.line import LineVisual
 from ...visuals.transforms import STTransform
 from ...util.event import Event
 from ...geometry import Rect
@@ -46,7 +46,7 @@ class Widget(Visual):
         # todo: rename to bordercolor? -> borderwidth
         self._border_color = tuple(Color(border_color).rgba)
         # for drawing border
-        self._visual = Line(color=self._border_color, mode='gl')
+        self._visual = LineVisual(color=self._border_color, mode='gl')
         # whether this widget should clip its children
         self._clip = clip
         # reserved space inside border

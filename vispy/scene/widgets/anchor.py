@@ -17,7 +17,7 @@ class Anchor(Node):
 
         root = Box()
         view = ViewBox(parent=box)
-        plot = Line(parent=ViewBox)
+        plot = LineVisual(parent=ViewBox)
         anchor = Anchor(parent=root, anchor_to=plot, anchor_pos=(10, 0))
         text = Text(parent=anchor,
                     text="Always points to (10,0) relative to line.")

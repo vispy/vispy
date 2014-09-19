@@ -68,11 +68,34 @@ class Visual(object):
         Return the boundaries of this visual along *axis*, which may be 0, 1, 
         or 2. 
         
+        """
+        return None
+
+    def bounds(self, mode, axis):
+        """ Return the (min, max) bounding values describing the location of
+        this node in its local coordinate system.
+        
+        Parameters
+        ----------
+        mode : str
+            Describes the type of boundary requested. Can be "visual", "data",
+            or "mouse".
+        axis : 0, 1, 2
+            The axis along which to measure the bounding values.
+        
+        Returns
+        -------
+        None or (min, max) tuple. 
+        
+        Notes
+        -----
         This is used primarily to allow automatic ViewBox zoom/pan.
         By default, this method returns None which indicates the object should 
         be ignored for automatic zooming along *axis*.
         
         A scenegraph may also use this information to cull visuals from the
         display list.
+        
         """
         return None
+

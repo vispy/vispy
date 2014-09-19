@@ -20,7 +20,7 @@ from __future__ import division
 
 import numpy as np
 
-from ..visuals.node import Node
+from .node import Node
 from ..geometry import Rect
 from ..visuals.transforms import (STTransform, PerspectiveTransform, 
                                   NullTransform, AffineTransform)

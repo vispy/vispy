@@ -4,7 +4,7 @@
 
 from __future__ import division
 
-from ..visuals import Node
+from .node import Node
 from .systems import DrawingSystem, MouseInputSystem
 
 

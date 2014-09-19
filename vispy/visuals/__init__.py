@@ -13,9 +13,8 @@ defined in vispy.scene.
 
 __all__ = ['Visual', 'CubeVisual', 'EllipseVisual', 'GridLinesVisual', 'ImageVisual', 'LineVisual',
            'LinePlotVisual', 'MarkersVisual', 'marker_types', 'MeshVisual', 'PolygonVisual',
-           'RectangleVisual', 'RegularPolygonVisual', 'SurfacePlotVisual', 'Text', 'XYZAxisVisual']
+           'RectangleVisual', 'RegularPolygonVisual', 'SurfacePlotVisual', 'TextVisual', 'XYZAxisVisual']
 
-from .node import Node  # noqa
 from .visual import Visual  # noqa
 from .line import LineVisual  # noqa
 from .markers import MarkersVisual, marker_types  # noqa
@@ -25,7 +24,7 @@ from .polygon import PolygonVisual  # noqa
 from .ellipse import EllipseVisual  # noqa
 from .regular_polygon import RegularPolygonVisual  # noqa
 from .rectangle import RectangleVisual  # noqa
-from .text import Text  # noqa
+from .text import TextVisual  # noqa
 from .gridlines import GridLinesVisual  # noqa
 from .surface_plot import SurfacePlotVisual  # noqa
 from .isosurface import IsosurfaceVisual  # noqa
