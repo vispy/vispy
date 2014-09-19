@@ -20,10 +20,10 @@ from __future__ import division
 
 import numpy as np
 
-from .entity import Entity
-from ..geometry import Rect
-from .transforms import (STTransform, PerspectiveTransform, NullTransform,
-                         AffineTransform)
+from ..entity import Entity
+from ...geometry import Rect
+from ..transforms import (STTransform, PerspectiveTransform, NullTransform,
+                          AffineTransform)
 
 
 def make_camera(cam_type, *args, **kwds):

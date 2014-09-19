@@ -3,11 +3,14 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from __future__ import division
 
+import numpy as np
+
 from ..cameras import PanZoomCamera
 from ..transforms.nonlinear import MagnifyTransform, Magnify1DTransform
+from ...app import Timer
 
 
-class MagCamera(vispy.scene.cameras.PanZoomCamera):
+class MagnifyCamera(PanZoomCamera):
     """ Camera implementing a MagnifyTransform combined with PanZoomCamera.
     
     This Camera uses the mouse cursor position to set the center position of
@@ -37,9 +40,9 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
         self.mag_target = self.mag.mag
         self.mag._mag = self.mag_target
         self.mouse_pos = None
-        self.timer = app.Timer(interval=0.016, connect=self.on_timer)
+        self.timer = Timer(interval=0.016, connect=self.on_timer)
         
-        super(MagCamera, self).__init__()
+        super(MagnifyCamera, self).__init__()
 
         # This tells the camera to insert the magnification transform at the
         # beginning of the transform it applies to the scene. This is the 
@@ -65,7 +68,7 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
             self.mag_target = m
         else:
             # send everything _except_ wheel events to the superclass
-            super(MagCamera, self).view_mouse_event(event)
+            super(MagnifyCamera, self).view_mouse_event(event)
             
         # start the timer to smoothly modify the transform properties. 
         self.timer.start()
@@ -103,5 +106,5 @@ class MagCamera(vispy.scene.cameras.PanZoomCamera):
         self.view_resize_event(None)
 
 
-class Mag1DCamera(MagCamera):
+class Magnify1DCamera(MagnifyCamera):
     transform_class = Magnify1DTransform

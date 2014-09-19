@@ -15,7 +15,6 @@ to respond to user input.
 
 import numpy as np
 import vispy.scene
-from vispy import app
 from vispy.scene import visuals
 from vispy.scene.cameras import MagnifyCamera, Magnify1DCamera
 from vispy.scene.transforms import STTransform
@@ -35,7 +34,7 @@ vb3 = grid.add_view(row=1, col=1)
 # Top viewbox: Show a plot line containing fine structure with a 1D 
 # magnigication transform.
 #
-vb1.camera = Magnify1DCamera(mag=4, size_factor=0.6, radius_ratio=0.8)
+vb1.camera = Magnify1DCamera(mag=4, size_factor=0.6, radius_ratio=0.6)
 vb1.camera.rect = 0, 30, 100000, 100
 
 pos = np.empty((100000, 2))
