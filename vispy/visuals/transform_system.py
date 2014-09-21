@@ -189,7 +189,7 @@ class TransformSystem(object):
         """ Transform mapping from pixel coordinate frame to rendering
         coordinate frame.
         """
-        return self._pixel_to_render
+        return self._buffer_to_render
 
     @buffer_to_render.setter
     def buffer_to_render(self, tr):
@@ -205,5 +205,5 @@ class TransformSystem(object):
         or antialiasing.
         """
         return (self.buffer_to_render * 
-                self.doc_to_buffer *
-                self.visual_to_doc)
+                self.document_to_buffer *
+                self.visual_to_document)
