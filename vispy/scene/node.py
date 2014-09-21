@@ -6,10 +6,10 @@ from __future__ import division
 
 from ..util.event import EmitterGroup, Event
 from ..visuals.transforms import NullTransform, BaseTransform, create_transform
+from ..visuals import Visual
 
-
-class Node(object):
-    """ Base class representing an object in a scene. 
+class Node(Visual):
+    """ Base class representing an object in a scene.
 
     A group of nodes connected through parent-child relationships define a 
     scenegraph. Nodes may have any number of children or parents, although 
@@ -37,18 +37,16 @@ class Node(object):
     """
 
     def __init__(self, parent=None, name=None):
-        self.events = EmitterGroup(source=self,
-                                   auto_connect=True,
-                                   parents_change=Event,
-                                   active_parent_change=Event,
-                                   children_change=Event,
-                                   mouse_press=Event,
-                                   mouse_move=Event,
-                                   mouse_release=Event,
-                                   mouse_wheel=Event,
-                                   update=Event,
-                                   transform_change=Event,
-                                   )
+        super(Node, self).__init__()
+        
+        #if not hasattr(self, 'events'):
+            #self.events = EmitterGroup(source=self, auto_connect=True)
+            
+        # Add some events to the emitter groups:
+        events = ['parents_change', 'children_change', 'transform_change',
+                  'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel']
+        self.events.add(**dict([(ev, Event) for ev in events]))
+        
         self.name = name
 
         # Entities are organized in a parent-children hierarchy
@@ -157,6 +155,13 @@ class Node(object):
         self._children.remove(ent)
         self.events.children_change(removed=ent)
         ent.events.update.disconnect(self.events.update)
+
+    def update(self):
+        """
+        Emit an event to inform listeners that properties of this Node or its
+        children have changed.
+        """
+        self.events.update()
 
     @property
     def document(self):
@@ -305,12 +310,6 @@ class Node(object):
             event._set_path(path)
             node = path[-1]
             getattr(node.events, event.type)(event)
-
-    def update(self):
-        """
-        Emit an event to inform Canvases that this Node needs to be redrawn.
-        """
-        self.events.update()
 
     def __repr__(self):
         name = "" if self.name is None else " name="+self.name

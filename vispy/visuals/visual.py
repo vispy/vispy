@@ -4,7 +4,7 @@
 
 from __future__ import division
 
-from ..util import event
+from ..util.event import EmitterGroup, Event
 
 """
 API Issues to work out:
@@ -31,8 +31,11 @@ class Visual(object):
     """
 
     def __init__(self, **kwargs):
-        # Add event for bounds changing
-        self.events.add(bounds_change=event.Event)
+        self.events = EmitterGroup(source=self,
+                                   auto_connect=True,
+                                   update=Event,
+                                   bounds_change=Event,
+                                   )
 
     def _update(self):
         """
@@ -98,4 +101,10 @@ class Visual(object):
         
         """
         return None
+
+    def update(self):
+        """
+        Emit an event to inform listeners that this Visual needs to be redrawn.
+        """
+        self.events.update()
 
