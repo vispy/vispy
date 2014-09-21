@@ -55,7 +55,7 @@ class IsosurfaceVisual(MeshVisual):
         self._recompute = True
         self.update()
 
-    def draw(self, event):
+    def draw(self, transforms):
         if self._data is None or self._level is None:
             return
         
@@ -64,4 +64,4 @@ class IsosurfaceVisual(MeshVisual):
             MeshVisual.set_data(self, vertices=verts, faces=faces)
             self._recompute = False
             
-        MeshVisual.draw(self, event)
+        MeshVisual.draw(self, transforms)

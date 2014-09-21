@@ -321,12 +321,11 @@ class MarkersVisual(Visual):
         self._marker_fun['v_size'] = self._v_size_var
         self._program.frag['marker'] = self._marker_fun
 
-    def draw(self, event=None):
+    def draw(self, transforms):
         set_state(depth_test=False, blend=True,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
-        if event is not None:
-            xform = event.get_full_transform().shader_map()
-            self._program.vert['transform'] = xform
+        xform = transforms.get_full_transform().shader_map()
+        self._program.vert['transform'] = xform
         self._program.prepare()
         self._program['u_antialias'] = 1
         self._program.bind(self._vbo)

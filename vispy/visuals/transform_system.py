@@ -67,11 +67,50 @@ class TransformSystem(object):
     Next, we supply the complete chain of transforms when drawing the visual:
     
         def draw(tr_sys):
-            self.program['transform'] = tr_sys.get_full_transform()
+            tr = tr_sys.get_full_transform()
+            self.program['transform'] = tr.shader_map()
             self.program['a_position'] = self.vertex_buffer
             self.program.draw('triangles')
     
-    2. Draw a visual with 2 mm line width.
+    2. Draw a visual with 2 mm line width. To start, we need normal vectors for
+    each vertex, which tell us the direction the vertex should move in order to
+    set the line width::
+    
+        vec4 a_position;
+        vec4 a_normal;
+        float u_line_width;
+        float u_dpi;
+        void main() {
+            // map vertex position and normal vector to the document cs
+            vec4 doc_pos = $visual_to_doc(a_position);
+            vec4 doc_normal = $visual_to_doc(a_position + a_normal) - doc_pos;
+            
+            // Use DPI to convert mm line width to logical pixels
+            float px_width = (u_line_width / 25.4) * dpi;
+            
+            // expand by line width
+            doc_pos += normalize(doc_normal) * px_width;
+            
+            // finally, map the remainder of the wat to normalized device 
+            // coordinates.
+            gl_Position = $doc_to_render(a_position);
+        }
+    
+    In this case, we need to access
+    the transforms independently, so ``get_full_transform()`` is not useful 
+    here::
+    
+        def draw(tr_sys):
+            # Send two parts of the full transform separately
+            self.program['visual_to_doc'] = tr_sys.visual_to_doc.shader_map()
+            doc_to_render = tr_sys.buffer_to_render * tr_sys.doc_to_buffer
+            self.program['visual_to_doc'] = doc_to_render.shader_map()
+            
+            self.program['u_line_width'] = self.line_width
+            self.program['u_dpi'] = tr_sys.dpi
+            self.program['a_position'] = self.vertex_buffer
+            self.program['a_normal'] = self.normal_buffer
+            self.program.draw('triangles')
 
     3. Draw a triangle with antialiasing at the edge.
     

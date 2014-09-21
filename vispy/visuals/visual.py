@@ -42,9 +42,9 @@ class Visual(object):
         This method is called internally whenever the Visual needs to be 
         redrawn. By default, it emits the update event.
         """
-        self.events.update()
+        self.transformss.update()
 
-    def draw(self, event):
+    def draw(self, transforms):
         """
         Draw this visual now.
         The default implementation does nothing.
@@ -54,8 +54,8 @@ class Visual(object):
         ``SceneCanvas.draw_visual(...)``. It is uncommon to call this method 
         manually.
         
-        The *event* argument is a SceneDrawEvent instance that provides access 
-        to transforms that the visual
+        The *transforms* argument is a TransformSystem instance that provides 
+        access to transforms that the visual
         may use to determine its relationship to the document coordinate
         system (which provides physical measurements) and the framebuffer
         coordinate system (which is necessary for antialiasing calculations). 
@@ -65,14 +65,6 @@ class Visual(object):
         Transform.shader_map().
         """
         pass
-
-    def bounds(self, axis):
-        """
-        Return the boundaries of this visual along *axis*, which may be 0, 1, 
-        or 2. 
-        
-        """
-        return None
 
     def bounds(self, mode, axis):
         """ Return the (min, max) bounding values describing the location of

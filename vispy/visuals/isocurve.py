@@ -59,7 +59,7 @@ class IsocurveVisual(LineVisual):
         self._recompute = True
         self.update()
 
-    def draw(self, event):
+    def draw(self, transforms):
         if self._data is None or self._level is None:
             return
         
@@ -81,4 +81,4 @@ class IsocurveVisual(LineVisual):
             LineVisual.set_data(self, pos=verts, connect=connect)
             self._recompute = False
             
-        LineVisual.draw(self, event)
+        LineVisual.draw(self, transforms)

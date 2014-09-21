@@ -40,8 +40,8 @@ class CubeVisual(MeshVisual):
         else:
             self._outline = None
 
-    def draw(self, event):
-        MeshVisual.draw(self, event)
+    def draw(self, transforms):
+        MeshVisual.draw(self, transforms)
         if self._outline:
             set_state(polygon_offset=(1, 1), polygon_offset_fill=True)
-            self._outline.draw(event)
+            self._outline.draw(transforms)

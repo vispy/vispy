@@ -438,7 +438,7 @@ class TextVisual(Visual):
         assert len(pos) == 2
         self._pos = tuple(pos)
 
-    def draw(self, event=None):
+    def draw(self, transforms):
         # attributes / uniforms are not available until program is built
         if len(self.text) == 0:
             return
@@ -454,13 +454,9 @@ class TextVisual(Visual):
                              dtype=np.uint32)[:, np.newaxis])
             self._ib = IndexBuffer(idx.ravel())
 
-        if event is not None:
-            xform = event.get_full_transform().shader_map()
-            px_scale = event.framebuffer_cs.transform.scale
-        else:
-            xform = self.transform.shader_map()
-            # Rather arbitrary scale. With size=12 it takes up ~1/10 of space
-            px_scale = 0.01, 0.01
+        xform = transforms.get_full_transform().shader_map()
+        px_scale = transforms.framebuffer_cs.transform.scale
+        
         self._program.vert['transform'] = xform
         self._program.prepare()  # Force ModularProgram to set shaders
         # todo: do some testing to verify that the scaling is correct

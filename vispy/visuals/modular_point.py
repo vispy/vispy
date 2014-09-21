@@ -34,7 +34,7 @@ class ModularPointVisual(ModularVisual):
     def primitive(self):
         return gloo.gl.GL_POINTS
 
-    def draw(self, event):
+    def draw(self, transforms):
         # HACK: True OpenGL ES does not need to enable point sprite and does
         # not define these two constants. Desktop OpenGL needs to enable these
         # two modes but we do not have these two constants because our GL
@@ -43,4 +43,4 @@ class ModularPointVisual(ModularVisual):
         GL_POINT_SPRITE = 34913
         gloo.gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
         gloo.gl.glEnable(GL_POINT_SPRITE)
-        super(ModularPointVisual, self).draw(event)
+        super(ModularPointVisual, self).draw(transforms)

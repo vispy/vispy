@@ -277,13 +277,13 @@ class ModularVisual(Visual):
         self.events.update()
 
 # no need if we use the drawing system
-#     def on_draw(self, event):
-#         """ when we get a draw event from the scenegraph
+#     def on_draw(self, transforms):
+#         """ when we get a draw transforms from the scenegraph
 #         """
-#         self._visual.transform = event.viewport_transform
+#         self._visual.transform = transforms.viewport_transform
 #         self.draw()
 
-    def draw(self, event):
+    def draw(self, transforms):
         """
         Draw this visual now.
 
@@ -293,7 +293,7 @@ class ModularVisual(Visual):
         """
         self._activate_gl_options()
         mode = self._draw_mode()
-        self._activate_components(mode, event)
+        self._activate_components(mode, transforms)
         self._program.draw(self.primitive, self.vertex_index)
 
     # todo: should this be called "buffer_mode" ?
@@ -319,7 +319,7 @@ class ModularVisual(Visual):
     def _activate_gl_options(self):
         gloo.set_state(self._gl_options[0], **self._gl_options[1])
 
-    def _activate_components(self, mode, event):
+    def _activate_components(self, mode, transforms):
         """
         This is called immediately before drawing to inform all components
         that a draw is about to occur and to let them assign program
@@ -338,16 +338,16 @@ class ModularVisual(Visual):
             comps.extend(comp._deps)
             all_comps |= set(comp._deps)
 
-        self._activate_transform(event)
+        self._activate_transform(transforms)
         
         for comp in all_comps:
             comp.activate(self._program, mode)
 
-    def _activate_transform(self, event):
+    def _activate_transform(self, transforms):
         # TODO: this must be optimized.
         # Allow using as plain visual or in a scenegraph
-        t = event.get_full_transform().shader_map()
+        t = transforms.get_full_transform().shader_map()
         self._program.vert['map_local_to_nd'] = t
 
-    def _program_changed(self, event):
+    def _program_changed(self, transforms):
         self.update()

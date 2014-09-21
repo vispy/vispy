@@ -71,7 +71,7 @@ class ImageVisual(ModularMesh):
     def size(self):
         return self._data.shape[:2][::-1]
 
-    def _build_data(self, event):
+    def _build_data(self, transforms):
         # Construct complete data array with position and optionally color
         if self.transform.Linear:
             method = 'subdivide'
@@ -115,7 +115,7 @@ class ImageVisual(ModularMesh):
 
             self._tex_transform.scale = (1./self._data.shape[0],
                                          1./self._data.shape[1])
-            ctr = event.get_full_transform().inverse
+            ctr = transforms.get_full_transform().inverse
             total_transform = self._tex_transform * ctr
             tex_coord_comp = VertexTextureCoordinateComponent(total_transform)
             tr = NullTransform().shader_map()
@@ -130,7 +130,7 @@ class ImageVisual(ModularMesh):
         self.color_components = [TextureComponent(self._texture,
                                                   tex_coord_comp)]
 
-    def _activate_transform(self, event=None):
+    def _activate_transform(self, transforms=None):
         # this is handled in _build_data instead.
         pass
 
@@ -140,7 +140,7 @@ class ImageVisual(ModularMesh):
         else:
             return (0, self.size[axis])
 
-    def draw(self, event):
+    def draw(self, transforms):
         if self._data is None:
             return
 
@@ -151,9 +151,9 @@ class ImageVisual(ModularMesh):
 
         # always have to rebuild for impostor, only first for subdivide
         if self._texture is None or method == 'impostor':
-            self._build_data(event)
+            self._build_data(transforms)
         if method == 'subdivide':
-            tr = event.get_full_transform().shader_map()
+            tr = transforms.get_full_transform().shader_map()
             self._program.vert['map_local_to_nd'] = tr
 
-        super(ImageVisual, self).draw(event)
+        super(ImageVisual, self).draw(transforms)

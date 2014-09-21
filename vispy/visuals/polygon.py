@@ -116,11 +116,11 @@ class PolygonVisual(Visual):
     def update_gl_options(self, *args, **kwds):
         self.mesh.update_gl_options(*args, **kwds)
 
-    def draw(self, event):
+    def draw(self, transforms):
         if self.mesh is not None:
             gloo.set_state(polygon_offset_fill=True, 
                            cull_face='front_and_back')
             gloo.set_polygon_offset(1, 1)
-            self.mesh.draw(event)
+            self.mesh.draw(transforms)
         if self.border is not None:
-            self.border.draw(event)
+            self.border.draw(transforms)

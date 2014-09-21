@@ -90,12 +90,11 @@ class GridLinesVisual(Visual):
             self._vbo = gloo.VertexBuffer(quad)
         return self._vbo
 
-    def draw(self, event):
+    def draw(self, transforms):
         gloo.set_state('additive', cull_face='front_and_back')
 
-        doc_to_ndc = event.node_transform(map_from=event.document_cs,
-                                            map_to=event.render_cs)
-        local_to_doc = event.document_transform()
+        doc_to_ndc = transforms.doc_to_buffer * transforms.buffer_to_render
+        local_to_doc = transforms.visual_to_doc
 
         self._program.frag['map_nd_to_doc'] = doc_to_ndc.shader_imap()
         self._program.frag['map_doc_to_local'] = local_to_doc.shader_imap()

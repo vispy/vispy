@@ -87,10 +87,6 @@ class LinePlotVisual(Visual):
     def bounds(self, mode, axis):
         return self._line.bounds(mode, axis)
 
-    def draw(self, event):
+    def draw(self, transforms):
         for v in self._line, self._markers:
-            event.push_node(v)
-            try:
-                v.draw(event)
-            finally:
-                event.pop_node()
+            v.draw(transforms)

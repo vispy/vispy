@@ -211,15 +211,15 @@ class MeshVisual(Visual):
         assert value in (None, 'flat', 'smooth')
         self._shading = value
 
-    def draw(self, event):
+    def draw(self, transforms):
         set_state('translucent', depth_test=True, cull_face='front_and_back')
         if self._data_changed:
             self._data_changed = False
             self._update_data()
 
-        self._program.vert['transform'] = event.get_full_transform().shader_map()
+        self._program.vert['transform'] = transforms.get_full_transform().shader_map()
         if self._phong is not None:
-            self._phong['transform'] = event.document_transform().shader_map()
+            self._phong['transform'] = transforms.document_transform().shader_map()
 
         # Draw
         if self._indexed:

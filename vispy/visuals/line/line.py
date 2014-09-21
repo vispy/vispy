@@ -368,16 +368,16 @@ class LineVisual(Visual):
         else:
             return (0, 0)
 
-    def draw(self, event):
+    def draw(self, transforms):
         if self.mode == 'gl':
-            self._gl_draw(event)
+            self._gl_draw(transforms)
         else:
-            self._agg_draw(event)
+            self._agg_draw(transforms)
 
-    def _gl_draw(self, event):
+    def _gl_draw(self, transforms):
         if self._pos is None:
             return
-        xform = event.get_full_transform().shader_map()
+        xform = transforms.get_full_transform().shader_map()
         self._gl_program.vert['transform'] = xform
         self._gl_program.vert['position'] = self._pos_expr
         if isinstance(self._color, Function):
@@ -423,15 +423,14 @@ class LineVisual(Visual):
             if GL and self._width > 1:
                 GL.glLineWidth(1)
 
-    def _agg_draw(self, event):
+    def _agg_draw(self, transforms):
         if self._pos is None:
             return
         gloo.set_state('translucent', depth_test=False)
-        data_doc = event.document_transform()
-        doc_px = event.node_transform(map_from=event.document_cs,
-                                        map_to=event.framebuffer_cs)
-        px_ndc = event.node_transform(map_from=event.framebuffer_cs,
-                                        map_to=event.render_cs)
+        data_doc = transforms.visual_to_document
+        doc_px = transforms.document_to_buffer
+        px_ndc = transforms.buffer_to_render
+        
         vert = self._agg_program.vert
         vert['doc_px_transform'] = doc_px.shader_map()
         vert['px_ndc_transform'] = px_ndc.shader_map()
