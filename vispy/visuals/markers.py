@@ -325,7 +325,7 @@ class MarkersVisual(Visual):
         set_state(depth_test=False, blend=True,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
         if event is not None:
-            xform = event.render_transform.shader_map()
+            xform = event.get_full_transform().shader_map()
             self._program.vert['transform'] = xform
         self._program.prepare()
         self._program['u_antialias'] = 1

@@ -377,7 +377,7 @@ class LineVisual(Visual):
     def _gl_draw(self, event):
         if self._pos is None:
             return
-        xform = event.render_transform.shader_map()
+        xform = event.get_full_transform().shader_map()
         self._gl_program.vert['transform'] = xform
         self._gl_program.vert['position'] = self._pos_expr
         if isinstance(self._color, Function):

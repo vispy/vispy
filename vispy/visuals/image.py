@@ -115,7 +115,7 @@ class ImageVisual(ModularMesh):
 
             self._tex_transform.scale = (1./self._data.shape[0],
                                          1./self._data.shape[1])
-            ctr = event.render_transform.inverse
+            ctr = event.get_full_transform().inverse
             total_transform = self._tex_transform * ctr
             tex_coord_comp = VertexTextureCoordinateComponent(total_transform)
             tr = NullTransform().shader_map()
@@ -153,7 +153,7 @@ class ImageVisual(ModularMesh):
         if self._texture is None or method == 'impostor':
             self._build_data(event)
         if method == 'subdivide':
-            tr = event.render_transform.shader_map()
+            tr = event.get_full_transform().shader_map()
             self._program.vert['map_local_to_nd'] = tr
 
         super(ImageVisual, self).draw(event)

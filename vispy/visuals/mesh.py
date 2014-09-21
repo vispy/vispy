@@ -216,8 +216,8 @@ class MeshVisual(Visual):
         if self._data_changed:
             self._data_changed = False
             self._update_data()
-    
-        self._program.vert['transform'] = event.render_transform.shader_map()
+
+        self._program.vert['transform'] = event.get_full_transform().shader_map()
         if self._phong is not None:
             self._phong['transform'] = event.document_transform().shader_map()
 

@@ -8,35 +8,37 @@ Demonstration of Cube
 
 import sys
 
-from vispy import gloo
-from vispy.app import Timer
-from vispy.scene import visuals, transforms, SceneCanvas
+from vispy import app, gloo
+from vispy.visuals import CubeVisual, TransformSystem, transforms
 
 
-class Canvas(SceneCanvas):
+class Canvas(app.Canvas):
     def __init__(self):
-        self.cube = visuals.CubeVisual((1.0, 0.5, 0.25), color='red',
-                                       edge_color='black')
+        self.cube = CubeVisual((1.0, 0.5, 0.25), color='red',
+                               edge_color='black')
         self.theta = 0
         self.phi = 0
 
-        SceneCanvas.__init__(self, 'Cube', keys='interactive',
-                             size=(400, 400))
-        self.cube.transform = transforms.AffineTransform()
-        self._timer = Timer('auto', connect=self.on_timer, start=True)
+        app.Canvas.__init__(self, 'Cube', keys='interactive',
+                            size=(400, 400))
+        self.cube_transform = transforms.AffineTransform()
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_draw(self, event):
         gloo.clear('white')
-        self.draw_visual(self.cube, event)
+        # Create a TransformSystem that will tell the visual how to draw
+        tr_sys = TransformSystem(self)
+        tr_sys.visual_to_doc = self.cube_transform
+        self.cube.draw(tr_sys)
 
     def on_timer(self, event):
         self.theta += .5
         self.phi += .5
-        self.cube.transform.reset()
-        self.cube.transform.rotate(self.theta, (0, 0, 1))
-        self.cube.transform.rotate(self.phi, (0, 1, 0))
-        self.cube.transform.scale((100, 100, 0.001))
-        self.cube.transform.translate((200, 200))
+        self.cube_transform.reset()
+        self.cube_transform.rotate(self.theta, (0, 0, 1))
+        self.cube_transform.rotate(self.phi, (0, 1, 0))
+        self.cube_transform.scale((100, 100, 0.001))
+        self.cube_transform.translate((200, 200))
         self.update()
 
 if __name__ == '__main__':

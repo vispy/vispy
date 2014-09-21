@@ -26,8 +26,9 @@ class TransformSystem(object):
     * **Buffer** - The buffer coordinate system has units of _physical_ pixels,
       and should usually represent the coordinates of the current framebuffer
       being rendered to. Visuals use this coordinate system primarily for
-      antialiasing calculations. In most cases, this will be a null transform 
-      because the framebuffer will be the back buffer of a canvas, and the 
+      antialiasing calculations. In most cases, this will have the same scale 
+      as the document coordinate system
+      because the active framebuffer is the back buffer of the canvas, and the 
       canvas will have _logical_ and _physical_ pixels of the same size. In the
       case of high-resolution displays, or when rendering to an off-screen 
       framebuffer with different scaling or boundaries than the canvas. 
@@ -35,6 +36,21 @@ class TransformSystem(object):
       vertexes returned by a vertex shader. It has coordinates (-1, -1) to 
       (1, 1) across the current glViewport. In OpenGL terminology, this is 
       called normalized device coordinates.
+
+    Parameters
+    ----------
+    
+    canvas : Canvas
+        The canvas being drawn to.
+    dpi : float 
+        The dot-per-inch resolution of the document coordinate system. By 
+        default this is set to the resolution of the canvas.
+        
+    Notes
+    -----
+    
+    By default, TransformSystems are configured such that the document 
+    coordinate system matches the logical pixels of the canvas, 
 
     Examples of use by Visuals
     --------------------------
@@ -51,15 +67,15 @@ class TransformSystem(object):
     Next, we supply the complete chain of transforms when drawing the visual:
     
         def draw(tr_sys):
-            self.program['transform'] = (tr_sys.buffer_to_render * 
-                                         tr_sys.doc_to_buffer *
-                                         tr_sys.visual_to_doc)
+            self.program['transform'] = tr_sys.get_full_transform()
             self.program['a_position'] = self.vertex_buffer
             self.program.draw('triangles')
     
     2. Draw a visual with 2 mm line width.
 
     3. Draw a triangle with antialiasing at the edge.
+    
+    4. Using inverse transforms in the fragment shader
 
     Examples of creating TransformSystem instances
     ----------------------------------------------
@@ -70,11 +86,25 @@ class TransformSystem(object):
     
     """
 
-    def __init__(self, canvas):
+    def __init__(self, canvas, dpi=72):
         self._canvas = canvas
+        self._dpi = dpi
+        
+        # Null by default; visuals draw directly to the document coordinate
+        # system.
         self._visual_to_document = NullTransform()
-        self._document_to_buffer = NullTransform()
-        self._buffer_to_render = STTransform()
+        
+        # By default, this should invert the y axis -- no difference between 
+        # the scale of logical and physical pixels.
+        map_from = [(0, 0), canvas.size]
+        map_to = [(0, canvas.size[1]), (canvas.size[0], 0)]
+        self._document_to_buffer = STTransform.from_mapping(map_from, map_to)
+        
+        # Automatically configure buffer coordinate system to match the canvas 
+        map_from = [(0, 0), canvas.size]
+        map_to = [(-1, -1), (1, 1)]
+        self._buffer_to_render = STTransform.from_mapping(map_from, map_to)
+        
 
     @property
     def canvas(self):
@@ -87,6 +117,11 @@ class TransformSystem(object):
         """ Physical resolution of the document coordinate system (dots per
         inch).
         """
+        return self._dpi
+
+    @dpi.setter
+    def dpi(self, dpi):
+        self._dpi = dpi
 
     @property
     def visual_to_document(self):
@@ -95,6 +130,10 @@ class TransformSystem(object):
         """
         return self._visual_to_document
         
+    @visual_to_document.setter
+    def visual_to_document(self, tr):
+        self._visual_to_document = tr
+        
     @property
     def document_to_buffer(self):
         """ Transform mapping from document coordinate frame to the framebuffer
@@ -102,10 +141,30 @@ class TransformSystem(object):
         """
         return self._document_to_buffer
         
+    @document_to_buffer.setter
+    def document_to_buffer(self, tr):
+        self._document_to_buffer = tr
+        
     @property
     def buffer_to_render(self):
         """ Transform mapping from pixel coordinate frame to rendering
         coordinate frame.
         """
         return self._pixel_to_render
-    
+
+    @buffer_to_render.setter
+    def buffer_to_render(self, tr):
+        self._buffer_to_render = tr
+
+    def get_full_transform(self):
+        """ Convenience method that returns the composition of all three
+        transforms::
+        
+            buffer_to_render * document_to_buffer * visual_to_document
+        
+        This is used for visuals that do not require physical measurements
+        or antialiasing.
+        """
+        return (self.buffer_to_render * 
+                self.doc_to_buffer *
+                self.visual_to_doc)

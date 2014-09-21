@@ -455,7 +455,7 @@ class TextVisual(Visual):
             self._ib = IndexBuffer(idx.ravel())
 
         if event is not None:
-            xform = event.render_transform.shader_map()
+            xform = event.get_full_transform().shader_map()
             px_scale = event.framebuffer_cs.transform.scale
         else:
             xform = self.transform.shader_map()

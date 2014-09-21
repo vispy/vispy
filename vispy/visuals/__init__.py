@@ -15,6 +15,7 @@ __all__ = ['Visual', 'CubeVisual', 'EllipseVisual', 'GridLinesVisual', 'ImageVis
            'LinePlotVisual', 'MarkersVisual', 'marker_types', 'MeshVisual', 'PolygonVisual',
            'RectangleVisual', 'RegularPolygonVisual', 'SurfacePlotVisual', 'TextVisual', 'XYZAxisVisual']
 
+from .transform_system import TransformSystem  # noqa
 from .visual import Visual  # noqa
 from .line import LineVisual  # noqa
 from .markers import MarkersVisual, marker_types  # noqa
