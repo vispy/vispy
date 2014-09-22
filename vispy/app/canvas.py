@@ -10,6 +10,7 @@ from time import sleep
 
 from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
+from ..util.dpi import get_dpi
 from ..ext.six import string_types
 from . import Application, use_app
 from ..gloo.context import GLContext, get_new_context
