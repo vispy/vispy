@@ -16,6 +16,7 @@ class TransformSystem(object):
     * **Visual** - arbitrary local coordinate frame of the visual. Vertex 
       buffers used by the visual are usually specified in this coordinate
       system.
+      
     * **Document** - This coordinate system has units of _logical_ pixels, and
       should usually represent the pixel coordinates of the canvas being drawn
       to. Visuals use this coordinate system to make measurements for font
@@ -23,6 +24,7 @@ class TransformSystem(object):
       units (px, pt, mm, in, etc.). Note that, by convention, _logical_ pixels
       are not necessarily the same size as the _physical_ pixels in the 
       framebuffer that is being rendered to.
+      
     * **Buffer** - The buffer coordinate system has units of _physical_ pixels,
       and should usually represent the coordinates of the current framebuffer
       being rendered to. Visuals use this coordinate system primarily for
@@ -32,6 +34,7 @@ class TransformSystem(object):
       canvas will have _logical_ and _physical_ pixels of the same size. In the
       case of high-resolution displays, or when rendering to an off-screen 
       framebuffer with different scaling or boundaries than the canvas. 
+      
     * **Render** - This coordinate system is the obligatory system for 
       vertexes returned by a vertex shader. It has coordinates (-1, -1) to 
       (1, 1) across the current glViewport. In OpenGL terminology, this is 

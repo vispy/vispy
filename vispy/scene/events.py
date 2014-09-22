@@ -5,10 +5,10 @@
 from __future__ import division
 
 from ..util.event import Event
-from ..visuals.transforms import TransformCache
+from ..visuals.transforms import TransformCache, TransformSystem
 
 
-class SceneEvent(Event):
+class SceneEvent(Event, TransformSystem):
     """
     SceneEvent is an Event that tracks its path through a scenegraph,
     beginning at a Canvas. It exposes information useful during drawing
@@ -16,8 +16,8 @@ class SceneEvent(Event):
     """
 
     def __init__(self, type, canvas, transform_cache=None):
-        super(SceneEvent, self).__init__(type=type)
-        self._canvas = canvas
+        Event.__init__(self, type=type)
+        TransformSystem.__init__(self, cavnas)
 
         # Init stacks
         self._stack = []  # list of entities
@@ -131,13 +131,13 @@ class SceneEvent(Event):
         return self.canvas.canvas_cs
 
     @property
-    def framebuffer_cs(self):
+    def buffer_cs(self):
         """ The node for the current framebuffer coordinate system. This
         coordinate system corresponds to the physical pixels being rendered
         to, with the origin in lower-right, and the framebufer (width, height)
         in upper-left. It is used mainly for making antialiasing measurements.
         """
-        return self.canvas.framebuffer_cs
+        return self.canvas.buffer_cs
 
     @property
     def render_cs(self):
@@ -149,74 +149,43 @@ class SceneEvent(Event):
         """
         return self.canvas.render_cs
 
-    def document_transform(self, node=None):
-        """ Return the transform that maps from *node* to the current
-        document coordinate system.
-
-        If *node* is not specified, then the top node on the stack is used.
+    @property
+    def visual_to_document(self):
+        """ Transform mapping from visual local coordinate frame to document
+        coordinate frame.
         """
         return self.node_transform(map_to=self.document_cs, map_from=node)
-
-    def map_node_to_document(self, node, obj):
-        return self.document_transform(node).map(obj)
-
-    def map_document_to_node(self, node, obj):
-        return self.document_transform(node).imap(obj)
-
-    def map_to_document(self, obj):
-        return self.document_transform().map(obj)
-
-    def map_from_document(self, obj):
-        return self.document_transform().imap(obj)
-
-    def canvas_transform(self, node=None):
-        """ Return the transform that maps from *node* to the current
-        logical-pixel coordinate system defined by the Canvas.
-
-        Canvas_transform is used mainly for mouse interaction.
-        For measuring distance in physical units, the use of document_transform
-        is preferred.
-
-        If *node* is not specified, then the top node on the stack is used.
-        """
-        return self.node_transform(map_to=self.canvas_cs, map_from=node)
-
-    def map_node_to_canvas(self, node, obj):
-        return self.canvas_transform(node).map(obj)
-
-    def map_canvas_to_node(self, node, obj):
-        return self.canvas_transform(node).imap(obj)
-
-    def map_to_canvas(self, obj):
-        return self.canvas_transform().map(obj)
-
-    def map_from_canvas(self, obj):
-        return self.canvas_transform().imap(obj)
-
-    def framebuffer_transform(self, node=None):
-        """ Return the transform that maps from *node* to the current
-        framebuffer coordinate system.
-
-        If *node* is not specified, then the top node on the stack is used.
-        """
-        return self.node_transform(map_to=self.framebuffer_cs, 
-                                     map_from=node)
-
-    def map_node_to_framebuffer(self, node, obj):
-        return self.framebuffer_transform(node).map(obj)
-
-    def map_framebuffer_to_node(self, node, obj):
-        return self.framebuffer_transform(node).imap(obj)
-
-    def map_to_framebuffer(self, obj):
-        return self.framebuffer_transform().map(obj)
-
-    def map_from_framebuffer(self, obj):
-        return self.framebuffer_transform().imap(obj)
-
+        
+    @visual_to_document.setter
+    def visual_to_document(self, tr):
+        raise RuntimeError("Cannot set transforms on SceneEvent.")
+        
     @property
-    def render_transform(self):
-        """ The transform that maps from the current node to
+    def document_to_buffer(self):
+        """ Transform mapping from document coordinate frame to the framebuffer
+        (physical pixel) coordinate frame.
+        """
+        return self.node_transform(map_to=self.buffer_cs, 
+                                   map_from=self.document_cs)
+        
+    @document_to_buffer.setter
+    def document_to_buffer(self, tr):
+        raise RuntimeError("Cannot set transforms on SceneEvent.")
+        
+    @property
+    def buffer_to_render(self):
+        """ Transform mapping from pixel coordinate frame to rendering
+        coordinate frame.
+        """
+        return self.node_transform(map_to=self.render_cs, 
+                                   map_from=self.buffer_cs)
+
+    @buffer_to_render.setter
+    def buffer_to_render(self, tr):
+        raise RuntimeError("Cannot set transforms on SceneEvent.")
+
+    def get_full_transform(self):
+        """ Return the transform that maps from the current node to
         normalized device coordinates within the current glViewport and
         FBO.
 
