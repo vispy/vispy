@@ -124,3 +124,21 @@ class Polygon(Visual):
             self.mesh.draw(event)
         if self.border is not None:
             self.border.draw(event)
+
+    def bounds(self, mode, axis):
+        """ Return the (min, max) bounding values describing the location of
+        this entity in its local coordinate system.
+        
+        Parameters
+        ----------
+        mode : str
+            Describes the type of boundary requested. Can be "visual", "data",
+            or "mouse".
+        axis : 0, 1, 2
+            The axis along which to measure the bounding values.
+        
+        Returns
+        -------
+        None or (min, max) tuple. 
+        """
+        return self.mesh.bounds(mode, axis)

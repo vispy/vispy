@@ -13,6 +13,7 @@ from ...color import Color
 from ...gloo import set_state, VertexBuffer, _check_valid
 from ..shaders import ModularProgram, Function, Variable
 from .visual import Visual
+from ...geometry import _bbox
 
 
 vert = """
@@ -331,3 +332,29 @@ class Markers(Visual):
         self._program['u_antialias'] = 1
         self._program.bind(self._vbo)
         self._program.draw('points')
+
+    def bounds(self, mode, axis):
+        """ Return the (min, max) bounding values describing the location of
+        this entity in its local coordinate system.
+        
+        Parameters
+        ----------
+        mode : str
+            Describes the type of boundary requested. Can be "visual", "data",
+            or "mouse".
+        axis : 0, 1, 2
+            The axis along which to measure the bounding values.
+        
+        Returns
+        -------
+        None or (min, max) tuple. 
+        """
+        bb = None
+        if mode == 'visual':
+            if self.pos is not None:
+                bbox = _bbox(self.pos)
+                if axis == 2 and bbox.shape[1] == 2:
+                    bb = (0.0, 0.0)
+                else:
+                    bb = tuple(bbox[:, axis])
+        return bb

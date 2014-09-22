@@ -15,6 +15,7 @@ from .visual import Visual
 from ..shaders import ModularProgram, Function, Varying
 from ...gloo import VertexBuffer, IndexBuffer, set_state
 from ...geometry import MeshData
+from ...geometry import _bbox
 from ...color import Color
 
 ## Snippet templates (defined as string to force user to create fresh Function)
@@ -221,3 +222,29 @@ class Mesh(Visual):
             self._program.draw(self._mode, self._faces)
         else:
             self._program.draw(self._mode)
+
+    def bounds(self, mode, axis):
+        """ Return the (min, max) bounding values describing the location of
+        this entity in its local coordinate system.
+        
+        Parameters
+        ----------
+        mode : str
+            Describes the type of boundary requested. Can be "visual", "data",
+            or "mouse".
+        axis : 0, 1, 2
+            The axis along which to measure the bounding values.
+        
+        Returns
+        -------
+        None or (min, max) tuple. 
+        """
+        bb = None
+        if mode == 'visual':
+            if self._meshdata is not None:
+                bbox = _bbox(self._meshdata.vertices())
+                if axis == 2 and bbox.shape[1] == 2:
+                    bb = (0.0, 0.0)
+                else:
+                    bb = tuple(bbox[:, axis])
+        return bb

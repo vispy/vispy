@@ -3,12 +3,12 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-A brief explanation of how cameras work 
+A brief explanation of how cameras work
 ---------------------------------------
 
-A Camera is responsible for setting the transform of a SubScene object such 
-that a certain part of the scene is mapped to the bounding rectangle of the 
-ViewBox. 
+A Camera is responsible for setting the transform of a SubScene object such
+that a certain part of the scene is mapped to the bounding rectangle of the
+ViewBox.
 
 The view of a camera is determined by its transform (that it has as
 being an entity) and its projection. The former is essentially the
@@ -24,11 +24,12 @@ from .entity import Entity
 from ..geometry import Rect
 from .transforms import (STTransform, PerspectiveTransform, NullTransform,
                          AffineTransform)
+from ..geometry import _bsphere
 
 
 def make_camera(cam_type, *args, **kwds):
-    """ Factory function for creating new cameras. 
-    
+    """ Factory function for creating new cameras.
+
     Parameters
     ----------
     cam_type : str
@@ -45,18 +46,18 @@ def make_camera(cam_type, *args, **kwds):
         'panzoom': PanZoomCamera,
         'turntable': TurntableCamera,
     }
-    
-    try: 
+
+    try:
         return cam_types[cam_type](*args, **kwds)
     except KeyError:
-        raise KeyError('Unknown camera type "%s". Options are: %s' % 
+        raise KeyError('Unknown camera type "%s". Options are: %s' %
                        (cam_type, cam_types.keys()))
 
 
 class BaseCamera(Entity):
-    """ Camera describes the perspective from which a ViewBox views its 
+    """ Camera describes the perspective from which a ViewBox views its
     subscene, and the way that user interaction affects that perspective.
-    
+
     Most functionality is implemented in subclasses. This base class has
     no user interaction and causes the subscene to use the same coordinate
     system as the ViewBox.
@@ -80,17 +81,17 @@ class BaseCamera(Entity):
         user interaction.
         """
         return self._interactive
-    
+
     @interactive.setter
     def interactive(self, b):
         self._interactive = b
 
     @property
     def viewbox(self):
-        """ The ViewBox that this Camera is attached to.        
+        """ The ViewBox that this Camera is attached to.  
         """
         return self._viewbox
-    
+
     @viewbox.setter
     def viewbox(self, vb):
         if self._viewbox is not None:
@@ -100,62 +101,62 @@ class BaseCamera(Entity):
             self.connect()
             self.parent = vb.scene
         self._update_transform()
-    
+
     def connect(self):
         self._viewbox.events.mouse_press.connect(self.view_mouse_event)
         self._viewbox.events.mouse_release.connect(self.view_mouse_event)
         self._viewbox.events.mouse_move.connect(self.view_mouse_event)
         self._viewbox.events.mouse_wheel.connect(self.view_mouse_event)
         self._viewbox.events.resize.connect(self.view_resize_event)
-    
+
     def disconnect(self):
         self._viewbox.events.mouse_press.disconnect(self.view_mouse_event)
         self._viewbox.events.mouse_release.disconnect(self.view_mouse_event)
         self._viewbox.events.mouse_move.disconnect(self.view_mouse_event)
         self._viewbox.events.mouse_wheel.disconnect(self.view_mouse_event)
         self._viewbox.events.resize.disconnect(self.view_resize_event)
-    
+
     def view_mouse_event(self, event):
         """
-        The ViewBox received a mouse event; update transform 
+        The ViewBox received a mouse event; update transform
         accordingly.
         """
         pass
-        
+
     def view_resize_event(self, event):
         """
         The ViewBox was resized; update the transform accordingly.
         """
         pass
-    
+
     def _update_transform(self):
         """ Subclasses should reimplement this method to update the scene
         transform by calling self._set_scene_transform.
         """
         self._set_scene_transform(self.transform)
-        
+
     def _set_scene_transform(self, tr):
         """ Called by subclasses to configure the viewbox scene transform.
         """
-        # todo: check whether transform has changed, connect to 
+        # todo: check whether transform has changed, connect to
         # transform.changed event
         self._scene_transform = tr
         if self.viewbox is not None:
             self.viewbox.scene.transform = self._scene_transform
             self.viewbox.update()
 
-    
+
 class PanZoomCamera(BaseCamera):
     """
     Camera implementing 2D pan/zoom mouse interaction. Primarily intended for
     displaying plot data.
 
-    By default, this camera inverts the y axis of the scene. This usually 
-    results in the scene +y axis pointing upward because widgets (including 
+    By default, this camera inverts the y axis of the scene. This usually
+    results in the scene +y axis pointing upward because widgets (including
     ViewBox) have their +y axis pointing downward.
-    
+
     User interaction:
-    
+
     * Dragging left mouse button pans the view
     * Dragging right mouse button vertically zooms the view y-axis
     * Dragging right mouse button horizontally zooms the view x-axis
@@ -173,10 +174,10 @@ class PanZoomCamera(BaseCamera):
         self._rect = Rect((0, 0), (1, 1))  # visible range in scene
         self._invert = [False, True]
         self.transform = STTransform()
-        
+
     def zoom(self, zoom, center):
         """ Zoom the view around a center point.
-        
+
         Parameters
         ----------
         zoom : length-2 sequence
@@ -187,19 +188,19 @@ class PanZoomCamera(BaseCamera):
         """
         # TODO: would be nice if STTransform had a nice scale(s, center) 
         # method like AffineTransform.
-        transform = (STTransform(translate=center) * 
-                     STTransform(scale=zoom) * 
+        transform = (STTransform(translate=center) *
+                     STTransform(scale=zoom) *
                      STTransform(translate=-center))
-        
+
         self.rect = transform.map(self.rect)
-        
+
     def pan(self, pan):
         """ Pan the view.
-        
+
         Parameters
         ----------
         pan : length-2 sequence
-            The distance to pan the view, in the coordinate system of the 
+            The distance to pan the view, in the coordinate system of the
             scene.
         """
         self.rect = self.rect + pan
@@ -217,7 +218,7 @@ class PanZoomCamera(BaseCamera):
         if by is not None:
             bounds.bottom = by[0]
             bounds.top = by[1]
-            
+
         if padding != 0:
             pw = bounds.width * padding * 0.5
             ph = bounds.height * padding * 0.5
@@ -231,19 +232,19 @@ class PanZoomCamera(BaseCamera):
     def rect(self):
         """ The rectangular border of the ViewBox visible area, expressed in
         the coordinate system of the scene.
-        
+
         By definition, the +y axis of this rect is opposite the +y axis of the
-        ViewBox. 
+        ViewBox.
         """
         return self._rect
-        
+
     @rect.setter
     def rect(self, args):
         """
-        Set the bounding rect of the visible area in the subscene. 
-        
+        Set the bounding rect of the visible area in the subscene.
+
         By definition, the +y axis of this rect is opposite the +y axis of the
-        ViewBox. 
+        ViewBox.
         """
         if isinstance(args, tuple):
             self._rect = Rect(*args)
@@ -251,30 +252,30 @@ class PanZoomCamera(BaseCamera):
             self._rect = Rect(args)
         self._update_transform()
 
-    @property 
+    @property
     def invert_y(self):
-        """ Boolean indicating whether the y axis of the SubScene is inverted 
+        """ Boolean indicating whether the y axis of the SubScene is inverted
         relative to the ViewBox.
-        
+
         Default is True--this camera inverts the y axis of the scene. In most
-        cases, this results in the scene +y axis pointing upward because 
+        cases, this results in the scene +y axis pointing upward because
         widgets (including ViewBox) have their +y axis pointing downward.
         """
         return self._invert[1]
-    
+
     @invert_y.setter
     def invert_y(self, inv):
         if not isinstance(inv, bool):
             raise TypeError("Invert must be boolean.")
         self._invert[1] = inv
         self._update_transform()
-        
+
     def view_resize_event(self, event):
         self._update_transform()
 
     def view_mouse_event(self, event):
         """
-        The SubScene received a mouse event; update transform 
+        The SubScene received a mouse event; update transform
         accordingly.
         """
         if event.handled or not self.interactive:
@@ -285,7 +286,7 @@ class PanZoomCamera(BaseCamera):
             center = self._scene_transform.imap(event.pos[:2])
             self.zoom((scale, scale), center)
             event.handled = True
-            
+
         elif event.type == 'mouse_move':
             if 1 in event.buttons:
                 p1 = np.array(event.last_event.pos)[:2]
@@ -301,34 +302,34 @@ class PanZoomCamera(BaseCamera):
                 p2 = np.array(event.pos)[:2]
                 p1c = event.map_to_canvas(p1)[:2]
                 p2c = event.map_to_canvas(p2)[:2]
-                
+
                 scale = 1.03 ** ((p1c-p2c) * np.array([1, -1]))
                 center = self._scene_transform.imap(event.press_event.pos[:2])
-                
+
                 self.zoom(scale, center)
                 event.handled = True
-        
+
         if event.handled:
             self._update_transform()
 
     def _update_transform(self):
         if self.viewbox is None:
             return
-        
+
         vbr = self.viewbox.rect.flipped(x=self._invert[0], y=self._invert[1])
         self.transform.set_mapping(self.rect, vbr)
         self._set_scene_transform(self.transform)
 
-        
+
 class PerspectiveCamera(BaseCamera):
     """ Base class for 3D cameras supporting orthographic and perspective
     projections.
-    
+
     User interaction:
-    
+
     * Dragging left mouse button orbits the view around its center point.
     * Mouse wheel changes the field of view angle.
-    
+
     Parameters
     ----------
     mode : str
@@ -544,7 +545,20 @@ class TurntableCamera(PerspectiveCamera):
         """
         if event.handled or not self.interactive:
             return
-        
+
+        if event.type == 'mouse_press' and event.button == 5:
+            center, radius = self.cal_bsphere()
+            if center is not None:
+                # FIXME: error when use self.center(center)
+                self._center = center
+                self._update_transform()
+                if self.mode == 'ortho':
+                    self.width = radius*2.0
+                else:
+                    angle = 2.0*np.rad2deg(np.arctan(radius/self.distance))
+                    self.fov = np.clip(angle, 0, 179)
+                self._update_camera_pos()            
+
         if event.type == 'mouse_wheel':
             s = 1.1 ** -event.delta[1]
             if self.mode == 'ortho':
@@ -560,6 +574,41 @@ class TurntableCamera(PerspectiveCamera):
             p2c = event.map_to_canvas(p2)[:2]
             d = p2c - p1c
             self.orbit(-d[0], d[1])
+
+
+    def cal_bsphere(self, with_transform=False):
+        #TODO: with_transform=True
+        children = self._viewbox.children[0] 
+        x = self._bounds_tree(children, axis=0, mode='visual',
+                                with_transform=with_transform)
+        x = np.array(x).flatten()        
+        y = self._bounds_tree(children, axis=1, mode='visual',
+                                with_transform=with_transform)
+        y = np.array(y).flatten()
+        z = self._bounds_tree(children, axis=2, mode='visual',
+                                with_transform=with_transform)
+        z = np.array(z).flatten()
+        if x.size != 0:
+            xyz = np.zeros((x.size, 3))
+            xyz[:, 0] = x
+            xyz[:, 1] = y
+            xyz[:, 2] = z
+    
+            return _bsphere(xyz)
+        else:
+            return None, None
+
+    def _bounds_tree(self, children, axis=0, mode='visual',
+                     with_transform=False):
+        # TODO: with_transform=True
+        output = []
+        n_children = len(children.children)
+        for child in children.children:
+            if child.bounds(mode, axis) is not None:
+                output.append(child.bounds(mode, axis))
+            self._bounds_tree(child, axis=axis, mode=mode,
+                              with_transform=with_transform)
+        return output
 
     def _update_camera_pos(self):
         """ Set the camera position / orientation based on elevation,
