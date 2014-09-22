@@ -25,10 +25,11 @@ class Canvas(app.Canvas):
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_draw(self, event):
+        gloo.set_viewport(0, 0, *self.size)
         gloo.clear('white')
         # Create a TransformSystem that will tell the visual how to draw
         tr_sys = TransformSystem(self)
-        tr_sys.visual_to_doc = self.cube_transform
+        tr_sys.visual_to_document = self.cube_transform
         self.cube.draw(tr_sys)
 
     def on_timer(self, event):
