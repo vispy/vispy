@@ -72,9 +72,9 @@ class TransformSystem(object):
             self.program['a_position'] = self.vertex_buffer
             self.program.draw('triangles')
     
-    2. Draw a visual with 2 mm line width. To start, we need normal vectors for
-    each vertex, which tell us the direction the vertex should move in order to
-    set the line width::
+    2. Draw a line whose width is given in mm. To start, we need normal vectors
+    for each vertex, which tell us the direction the vertex should move in 
+    order to set the line width::
     
         vec4 a_position;
         vec4 a_normal;
