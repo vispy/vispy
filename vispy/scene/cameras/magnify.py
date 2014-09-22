@@ -77,7 +77,7 @@ class MagnifyCamera(PanZoomCamera):
     
     def on_timer(self, event=None):
         # Smoothly update center and magnification properties of the transform
-        s = 0.0001**event.dt
+        s = 1e-10**event.dt
             
         c = np.array(self.mag.center)
         c1 = c * s + self.mouse_pos * (1-s)
