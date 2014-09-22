@@ -23,7 +23,7 @@ import numpy as np
 from ..entity import Entity
 from ...geometry import Rect
 from ..transforms import (STTransform, PerspectiveTransform, NullTransform,
-                          AffineTransform)
+                          AffineTransform, TransformCache)
 
 
 def make_camera(cam_type, *args, **kwds):
@@ -74,6 +74,7 @@ class BaseCamera(Entity):
         self._pre_transform = None
         super(BaseCamera, self).__init__(**kwargs)
         self.transform = NullTransform()
+        self._transform_cache = TransformCache()
 
     @property
     def interactive(self):
@@ -161,7 +162,8 @@ class BaseCamera(Entity):
         if pre_tr is None:
             self._scene_transform = tr
         else:
-            self._scene_transform = pre_tr * tr
+            self._transform_cache.roll()
+            self._scene_transform = self._transform_cache.get([pre_tr, tr])
             
         if self.viewbox is not None:
             self.viewbox.scene.transform = self._scene_transform
