@@ -125,8 +125,11 @@ class TransformSystem(object):
     
     """
 
-    def __init__(self, canvas, dpi=72):
+    def __init__(self, canvas, dpi=None):
         self._canvas = canvas
+        
+        if dpi is None:
+            dpi = canvas.dpi
         self._dpi = dpi
         
         # Null by default; visuals draw directly to the document coordinate

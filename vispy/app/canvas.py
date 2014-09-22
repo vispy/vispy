@@ -78,12 +78,16 @@ class Canvas(object):
         be callable.
     parent : widget-object
         The parent widget if this makes sense for the used backend.
+    dpi : float | None
+        Resolution in dots-per-inch to use for the canvas. If dpi is None, 
+        then the operating system will be queried for the value.
     """
     
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
                  init_gloo=True, vsync=False, resizable=True, decorate=True,
-                 fullscreen=False, context=None, keys=None, parent=None):
+                 fullscreen=False, context=None, keys=None, parent=None,
+                 dpi=None):
 
         size = [int(s) for s in size]
         if len(size) != 2:
@@ -102,6 +106,10 @@ class Canvas(object):
         self._backend = None
         self._closed = False
         
+        if dpi is None:
+            dpi = get_dpi()
+        self._dpi = dpi
+
         # Create events
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
@@ -241,6 +249,17 @@ class Canvas(object):
         """ The native widget object on which this Canvas is based.
         """
         return self._backend._vispy_get_native_canvas()
+    
+    @property
+    def dpi(self):
+        """ The physical resolution of the canvas in dots per inch. 
+        """
+        return self._dpi
+    
+    @dpi.setter
+    def dpi(self, d):
+        self._dpi = dpi
+        self.update()
 
     def connect(self, fun):
         """ Connect a function to an event. The name of the function
