@@ -85,9 +85,9 @@ grid2 = visuals.GridLines(parent=vb3.scene)
 
 # Add helpful text
 text1 = visuals.Text("mouse wheel = magnify", pos=(100, 15), font_size=14, 
-                    color='white', parent=canvas.scene)
+                     color='white', parent=canvas.scene)
 text2 = visuals.Text("right button = zoom", pos=(100, 30), font_size=14, 
-                    color='white', parent=canvas.scene)
+                     color='white', parent=canvas.scene)
 
 
 if __name__ == '__main__':
