@@ -17,7 +17,7 @@ class SceneEvent(Event, TransformSystem):
 
     def __init__(self, type, canvas, transform_cache=None):
         Event.__init__(self, type=type)
-        TransformSystem.__init__(self, cavnas)
+        TransformSystem.__init__(self, canvas)
 
         # Init stacks
         self._stack = []  # list of entities
