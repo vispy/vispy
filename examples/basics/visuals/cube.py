@@ -9,7 +9,7 @@ Demonstration of Cube
 import sys
 
 from vispy import app, gloo
-from vispy.visuals import CubeVisual, TransformSystem, transforms
+from vispy.visuals import CubeVisual, transforms
 
 
 class Canvas(app.Canvas):
@@ -28,7 +28,7 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, *self.size)
         gloo.clear('white')
         # Create a TransformSystem that will tell the visual how to draw
-        tr_sys = TransformSystem(self)
+        tr_sys = transforms.TransformSystem(self)
         tr_sys.visual_to_document = self.cube_transform
         self.cube.draw(tr_sys)
 
