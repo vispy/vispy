@@ -4,7 +4,7 @@
 
 from __future__ import division
 
-from .transforms import NullTransform, STTransform
+from .linear import NullTransform, STTransform
 
 
 class TransformSystem(object):

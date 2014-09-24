@@ -36,12 +36,9 @@ class Node(Visual):
         The name used to identify the node.
     """
 
-    def __init__(self, parent=None, name=None):
-        super(Node, self).__init__()
+    def __init__(self, parent=None, name=None, **kwds):
+        Visual.__init__(self, **kwds)
         
-        #if not hasattr(self, 'events'):
-            #self.events = EmitterGroup(source=self, auto_connect=True)
-            
         # Add some events to the emitter groups:
         events = ['parents_change', 'children_change', 'transform_change',
                   'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel']
@@ -295,22 +292,12 @@ class Node(Visual):
         tr2 = cp.node_transform(self)
         return tr2.inverse * tr
         
-    def _process_mouse_event(self, event):
-        """
-        Propagate a mouse event through the scene tree starting at this Node.
-        """
-        # 1. find all entities whose mouse-area includes the click point.
-        # 2. send the event to each node one at a time
-        #    (we should use a specialized emitter for this, rather than
-        #     rebuild the emitter machinery!)
-
-        # TODO: for now we send the event to all entities; need to use
-        # picking to decide which entities should receive the event.
-        for enter, path in self.walk():
-            event._set_path(path)
-            node = path[-1]
-            getattr(node.events, event.type)(event)
-
     def __repr__(self):
         name = "" if self.name is None else " name="+self.name
         return "<%s%s at 0x%x>" % (self.__class__.__name__, name, id(self))
+
+
+class VisualNode(Node):
+    """ Todo: separate Node / VisualNode, or get rid of Node entirely?
+    """
+    
