@@ -267,7 +267,7 @@ logger.log_exception = log_exception  # make this easier to reach
 
 
 def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
-                      cb_event=None, entity=None):
+                      cb_event=None, node=None):
     """Helper for prining errors in callbacks
 
     See EventEmitter._invoke_callback for a use example.
@@ -280,7 +280,7 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
         cb, event = cb_event
         exp_type = 'callback'
     else:
-        exp_type = 'entity'
+        exp_type = 'node'
     type_, value, tb = sys.exc_info()
     tb = tb.tb_next  # Skip *this* frame
     sys.last_type = type_
@@ -297,7 +297,7 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
             if exp_type == 'callback':
                 key = repr(cb) + repr(event)
             else:
-                key = repr(entity)
+                key = repr(node)
             if key in registry:
                 registry[key] += 1
                 if print_callback_errors == 'first':
@@ -317,12 +317,12 @@ def _handle_exception(ignore_callback_errors, print_callback_errors, obj,
             if exp_type == 'callback':
                 logger.warning("Error invoking callback %s for "
                                "event: %s" % (cb, event))
-            else:  # == 'entity':
-                logger.warning("Error drawing entity %s" % entity)
+            else:  # == 'node':
+                logger.warning("Error drawing node %s" % node)
         elif this_print is not None:
             if exp_type == 'callback':
                 logger.warning("Error invoking callback %s repeat %s"
                                % (cb, this_print))
-            else:  # == 'entity':
-                logger.warning("Error drawing entity %s repeat %s"
-                               % (entity, this_print))
+            else:  # == 'node':
+                logger.warning("Error drawing node %s repeat %s"
+                               % (node, this_print))
