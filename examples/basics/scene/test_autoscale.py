@@ -16,6 +16,9 @@ import numpy as np
 from vispy import app
 from vispy import scene
 
+from vispy.scene.transforms import (AffineTransform, STTransform, arg_to_array,
+                                    LogTransform, PolarTransform,
+                                    BaseTransform)
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
@@ -73,6 +76,11 @@ line1.add_parent(vb2.scene)
 cube = scene.visuals.Cube((1.0, 0.5, 0.25), color='red',
                          edge_color='black')
 cube.add_parent(vb2.scene)
+
+tr = AffineTransform()
+tr.rotate(30, (0, 0, 1))
+tr.scale((3, 3))
+cube.transform = (tr*STTransform(translate=(-5, -5)))
 
 #TODO: add markers !!!
 
