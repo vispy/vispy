@@ -24,9 +24,23 @@ class SceneEvent(Event, TransformSystem):
         self._stack_ids = set()
         self._viewbox_stack = []
         self._doc_stack = []
+        self._children_handled = False
+        
         if transform_cache is None:
             transform_cache = TransformCache()
         self._transform_cache = transform_cache
+
+    @property
+    def children_handled(self):
+        """ Flag indicating whether the current node's children have already
+        been processed. This is used to prevent systems from recursing over
+        the node's children.
+        """
+        return self._children_handled
+
+    @children_handled.setter
+    def children_handled(self, h):
+        self._children_handled = h
 
     @property
     def canvas(self):
@@ -148,6 +162,12 @@ class SceneEvent(Event, TransformSystem):
         must ultimately be mapped here.
         """
         return self.canvas.render_cs
+
+    @property
+    def node_cs(self):
+        """ The node at the top of the node stack.
+        """
+        return self._stack[-1]
 
     @property
     def visual_to_document(self):
@@ -354,3 +374,8 @@ class SceneMouseEvent(SceneEvent):
         #ev._ra_stack = self._ra_stack[:]
         ev._viewbox_stack = self._viewbox_stack[:]
         return ev
+
+    def map_from_canvas(self, obj):
+        tr = self.node_transform(map_from=self.canvas_cs, 
+                                 map_to=self.node_cs)
+        return tr.map(obj)

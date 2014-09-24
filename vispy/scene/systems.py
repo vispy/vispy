@@ -19,11 +19,9 @@ class DrawingSystem(object):
         # Iterate over entities
         #assert isinstance(subscene, SubScene)  # LC: allow any part of the
                                                 #     scene to be drawn
-        self._process_node(event, subscene, force_recurse=True)
+        self._process_node(event, subscene)
 
-    def _process_node(self, event, node, force_recurse=False):
-        event.canvas._process_node_count += 1
-
+    def _process_node(self, event, node):
         if isinstance(node, Visual):
             try:
                 node.draw(event)
@@ -33,14 +31,7 @@ class DrawingSystem(object):
                 _handle_exception(False, 'reminders', self, node=node)
 
         # Processs children; recurse.
-        # Do not go into subscenes (SubScene.draw processes the subscene)
-        
-        # import here to break import cycle.
-        # (LC: we should be able to remove this
-        # check entirely.)
-        from .subscene import SubScene
-        
-        if force_recurse or not isinstance(node, SubScene):
+        if not event.children_handled:
             for sub_node in node.children:
                 event.push_node(sub_node)
                 try:
