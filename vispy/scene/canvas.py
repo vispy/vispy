@@ -100,10 +100,10 @@ class SceneCanvas(app.Canvas):
 
         # Set up default node stack: ndc -> fb -> canvas -> scene
         self.render_cs = Node(name="render_cs")
-        self.framebuffer_cs = Node(parent=self.render_cs, 
-                                     name="framebuffer_cs")
-        self.framebuffer_cs.transform = STTransform()
-        self.canvas_cs = Node(parent=self.framebuffer_cs,
+        self.buffer_cs = Node(parent=self.render_cs, 
+                                     name="buffer_cs")
+        self.buffer_cs.transform = STTransform()
+        self.canvas_cs = Node(parent=self.buffer_cs,
                                 name="canvas_cs")
         self.canvas_cs.transform = STTransform()
         # By default, the document coordinate system is the canvas.
@@ -221,7 +221,7 @@ class SceneCanvas(app.Canvas):
             self.canvas_fb_transform
             
             scene_event.push_node(self.render_cs)
-            scene_event.push_node(self.framebuffer_cs)
+            scene_event.push_node(self.buffer_cs)
             scene_event.push_node(self.canvas_cs)
             scene_event.push_node(visual)
             visual.draw(scene_event)
@@ -239,7 +239,7 @@ class SceneCanvas(app.Canvas):
         scene_event = SceneMouseEvent(canvas=self, event=event,
                                       transform_cache=tr_cache)
         scene_event.push_node(self.render_cs)
-        scene_event.push_node(self.framebuffer_cs)
+        scene_event.push_node(self.buffer_cs)
         scene_event.push_node(self.canvas_cs)
         scene_event.push_node(self._scene)
         self._scene._process_mouse_event(scene_event)
@@ -375,8 +375,8 @@ class SceneCanvas(app.Canvas):
         map_from = [[x, y], [x+w, y+h]]
         map_to = [[-1, -1], [1, 1]]
         
-        self.framebuffer_cs.transform.set_mapping(map_from, map_to)
-        return self.framebuffer_cs.transform
+        self.buffer_cs.transform.set_mapping(map_from, map_to)
+        return self.buffer_cs.transform
     
     @property
     def render_transform(self):

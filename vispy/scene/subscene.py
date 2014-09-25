@@ -35,10 +35,23 @@ class SubScene(Node):
         self._systems = {}
         self._systems['draw'] = DrawingSystem()
         self._systems['mouse'] = MouseInputSystem()
+        self._drawing = False
     
     def draw(self, event):
+        # Temporary workaround to avoid infinite recursion. A better solution
+        # would be for ViewBox and Canvas to handle the systems, rather than
+        # subscene.
+        if self._drawing:
+            return
+        
         # Invoke our drawing system
-        self.process_system(event, 'draw') 
+        try:
+            self._drawing = True
+            self.process_system(event, 'draw')
+            # Tell the prior drawing system to ignore children
+            event.children_handled = True
+        finally:
+            self._drawing = False
     
     def _process_mouse_event(self, event):
         self.process_system(event, 'mouse') 

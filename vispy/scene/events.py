@@ -170,11 +170,20 @@ class SceneEvent(Event, TransformSystem):
         return self._stack[-1]
 
     @property
+    def visual_to_canvas(self):
+        """ Transform mapping from visual local coordinate frame to canvas
+        coordinate frame.
+        """
+        return self.node_transform(map_to=self.canvas_cs, 
+                                   map_from=self._stack[-1])
+        
+    @property
     def visual_to_document(self):
         """ Transform mapping from visual local coordinate frame to document
         coordinate frame.
         """
-        return self.node_transform(map_to=self.document_cs, map_from=node)
+        return self.node_transform(map_to=self.document_cs, 
+                                   map_from=self._stack[-1])
         
     @visual_to_document.setter
     def visual_to_document(self, tr):
