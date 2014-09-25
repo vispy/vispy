@@ -639,6 +639,7 @@ class GlirTexture2D(GlirTexture):
 GL_SAMPLER_3D = gl.Enum('GL_SAMPLER_3D', 35679)
 GL_TEXTURE_3D = gl.Enum('GL_TEXTURE_3D', 32879)
 
+
 def _check_pyopengl_3D():
     """Helper to ensure users have OpenGL for 3D texture support (for now)"""
     try:

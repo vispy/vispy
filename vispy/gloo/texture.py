@@ -8,7 +8,6 @@ import numpy as np
 from . import gl
 from .globject import GLObject
 from .wrappers import _check_conversion
-from ..util import logger
 
 GL_SAMPLER_3D = gl.Enum('GL_SAMPLER_3D', 35679)  # needed by Program
 
@@ -157,7 +156,7 @@ class BaseTexture(GLObject):
                       'linear': gl.GL_LINEAR}
         self._interpolation = _check_value(value, valid_dict)
         self._context.glir.command('SET', self._id, 'interpolation', 
-                                    self._interpolation)
+                                   self._interpolation)
 
     def resize(self, shape, format=None):
         """ Set the texture size and format
@@ -231,7 +230,7 @@ class BaseTexture(GLObject):
         # Maybe resize to purge DATA commands?
         if offset is None:
             self.resize(data.shape)
-        elif all([i==0 for i in offset]) and data.shape == self.shape:
+        elif all([i == 0 for i in offset]) and data.shape == self.shape:
             self.resize(data.shape)
         
         # Convert offset to something usable
@@ -382,8 +381,6 @@ class Texture3D(BaseTexture):
     _GLIR_TYPE = 'Texture3D'
     
     def __init__(self, data=None, shape=None, format=None, **kwargs):
-        # Import from PyOpenGL
-        _gl = _check_pyopengl_3D()
         BaseTexture.__init__(self, data, shape, format, **kwargs)
 
     @property
