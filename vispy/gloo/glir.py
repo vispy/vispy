@@ -49,8 +49,8 @@ class GlirQueue(object):
                     t.append('array %s' % str(e.shape))
                 elif isinstance(e, str):
                     s = e.strip()
-                    if len(s) > 10:
-                        s = s[:10] + '... %i lines' % e.count('\n')
+                    if len(s) > 20:
+                        s = s[:18] + '... %i lines' % (e.count('\n')+1)
                     t.append(s)
                 else:
                     t.append(e)
@@ -83,6 +83,9 @@ class GlirParser(object):
         self._classmap = {'VERTEXBUFFER': GlirVertexBuffer,
                           'INDEXBUFFER': GlirIndexBuffer,
                           'PROGRAM': GlirProgram,
+                          'Texture2D': GlirTexture2D,
+                          'Texture3D': GlirTexture3D,
+                          
                           }
     
     def get_object(self, id):
@@ -134,6 +137,8 @@ class GlirParser(object):
                     ob.set_attribute(*args)
                 elif cmd == 'DRAW':
                     ob.draw(*args)
+                elif cmd == 'SET':
+                    getattr(ob, 'set_'+args[0])(*args[1:])
                 else:
                     print('Invalud GLIR command %r' % cmd)
 
@@ -151,7 +156,7 @@ class GlirProgram(GlirObject):
     
     UTYPEMAP = {
         'float': 'glUniform1fv',
-        'vec2': 'glUniform2ifv',
+        'vec2': 'glUniform2fv',
         'vec3': 'glUniform3fv',
         'vec4': 'glUniform4fv',
         'int': 'glUniform1iv',
@@ -428,6 +433,8 @@ class GlirProgram(GlirObject):
     def _get_free_unit(self, units):
         """ Get free number given a list of numbers. For texture unit.
         """
+        if not units:
+            return 1
         min_unit, max_unit = min(units), max(units)
         if min_unit > 1:
             return min_unit - 1
@@ -533,3 +540,154 @@ class GlirVertexBuffer(GlirBuffer):
 
 class GlirIndexBuffer(GlirBuffer):
     _target = gl.GL_ELEMENT_ARRAY_BUFFER
+
+
+class GlirTexture(GlirObject):
+    _target = None
+    
+    _types = {
+        np.dtype(np.int8): gl.GL_BYTE,
+        np.dtype(np.uint8): gl.GL_UNSIGNED_BYTE,
+        np.dtype(np.int16): gl.GL_SHORT,
+        np.dtype(np.uint16): gl.GL_UNSIGNED_SHORT,
+        np.dtype(np.int32): gl.GL_INT,
+        np.dtype(np.uint32): gl.GL_UNSIGNED_INT,
+        # np.dtype(np.float16) : gl.GL_HALF_FLOAT,
+        np.dtype(np.float32): gl.GL_FLOAT,
+        # np.dtype(np.float64) : gl.GL_DOUBLE
+    }
+    
+    def __init__(self, parser):
+        self._handle = gl.glCreateTexture()
+    
+    def delete(self):
+        gl.glDeleteTexture(self._handle)
+    
+    def activate(self):
+        gl.glBindTexture(self._target, self._handle)
+        
+        
+    def deactivate(self):
+        gl.glBindTexture(self._target, 0)
+    
+    # Taken from pygly
+    def _get_alignment(self, width):
+        """Determines a textures byte alignment.
+
+        If the width isn't a power of 2
+        we need to adjust the byte alignment of the image.
+        The image height is unimportant
+
+        www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
+        """
+        # we know the alignment is appropriate
+        # if we can divide the width by the
+        # alignment cleanly
+        # valid alignments are 1,2,4 and 8
+        # put 4 first, since it's the default
+        alignments = [4, 8, 2, 1]
+        for alignment in alignments:
+            if width % alignment == 0:
+                return alignment
+    
+    # todo: we could also do (SET id DATA) for setting data :/
+    def set_wrapping(self, wrapping):
+        self.activate()
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S,
+                           wrapping[0])
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T,
+                           wrapping[1])
+    
+    def set_interpolation(self, interpolation):
+        self.activate()
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER,
+                           interpolation[0])
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER,
+                           interpolation[1])
+
+
+class GlirTexture2D(GlirTexture):
+    _target = gl.GL_TEXTURE_2D
+    
+    def set_size(self, shape, format):
+        # Shape is height, width
+        self._format = format
+        gl.glTexImage2D(self._target, 0, self._format, self._format,
+                        gl.GL_BYTE, shape)
+    
+    def set_data(self, offset, data):
+        y, x = offset
+        # Get gtype
+        gtype = self._types.get(np.dtype(data.dtype), None)
+        print(gtype, self._format)
+        if gtype is None:
+            raise ValueError("Type %r not allowed for texture" % data.dtype)
+        # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+        alignment = self._get_alignment(data.shape[-2]*data.shape[-1])
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+        # Upload
+        gl.glTexSubImage2D(self._target, 0, x, y, self._format,
+                           gtype, data)
+        # Set alignment back
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+
+
+GL_SAMPLER_3D = gl.Enum('GL_SAMPLER_3D', 35679)
+GL_TEXTURE_3D = gl.Enum('GL_TEXTURE_3D', 32879)
+
+def _check_pyopengl_3D():
+    """Helper to ensure users have OpenGL for 3D texture support (for now)"""
+    try:
+        import OpenGL.GL as _gl
+    except ImportError:
+        raise ImportError('PyOpenGL is required for 3D texture support')
+    return _gl
+
+
+def glTexImage3D(target, level, internalformat, format, type, pixels):
+    # Import from PyOpenGL
+    _gl = _check_pyopengl_3D()
+    border = 0
+    assert isinstance(pixels, (tuple, list))  # the only way we use this now
+    depth, height, width = pixels
+    _gl.glTexImage3D(target, level, internalformat,
+                     width, height, depth, border, format, type, None)
+
+
+def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
+                    format, type, pixels):
+    # Import from PyOpenGL
+    _gl = _check_pyopengl_3D()
+    depth, height, width = pixels.shape[:3]
+    _gl.glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
+                        width, height, depth, format, type, pixels)
+
+
+class GlirTexture3D(GlirTexture):
+    _target = GL_TEXTURE_3D
+        
+    def set_size(self, shape, format):
+        # Shape is depth, height, width
+        self._format = format
+        glTexImage3D(self._target, 0, self._format, self._format,
+                     gl.GL_BYTE, shape)
+    
+    def set_data(self, offset, data):
+        z, y, x = offset
+        # Get gtype
+        gtype = self._types.get(np.dtype(self.dtype), None)
+        if gtype is None:
+            raise ValueError("Type not allowed for texture")
+        # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+        alignment = self._get_alignment(data.shape[-3] *
+                                        data.shape[-2] * data.shape[-1])
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+        # Upload
+        glTexSubImage3D(self._target, 0, x, y, z, self._format,
+                        gtype, data)
+        # Set alignment back
+        if alignment != 4:
+            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)

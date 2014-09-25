@@ -108,7 +108,7 @@ class Canvas(app.Canvas):
         self.image['colormaps'].interpolation = 'linear'
         self.image['colormaps_shape'] = colormaps.shape[1], colormaps.shape[0]
 
-        self.image['image'] = I
+        self.image['image'] = I.astype('float32')
         self.image['image'].interpolation = 'linear'
         self.image['image_shape'] = I.shape[1], I.shape[0]
         app.Canvas.__init__(self, show=True, size=(512, 512),

@@ -318,7 +318,15 @@ class Program(GLObject):
                                                name, type, data)
             
             elif kind == 'attribute':
-                if not isinstance(data, (float, tuple)):
+                # Is this a constant value per vertex
+                is_constant = False
+                isscalar = lambda x: isinstance(x, (float, int))
+                if isscalar(data):
+                    is_constant = True
+                elif isinstance(data, tuple):
+                    is_constant = all([isscalar(e) for e in data])
+                
+                if not is_constant:
                     # VBO data; overwrite or update
                     vbo = self._user_variables.get(name, None)
                     if isinstance(data, DataBuffer):

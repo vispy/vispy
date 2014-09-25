@@ -59,24 +59,14 @@ class BaseTexture(GLObject):
     Parameters
     ----------
 
-    target : GLEnum
-        gl.GL_TEXTURE2D
-        gl.GL_TEXTURE_CUBE_MAP
     data : ndarray
         Texture data (optional)
     shape : tuple of integers
         Texture shape (optional)
-    dtype : dtype
-        Texture data type (optional)
     base : Texture
         Base texture of this texture
     offset : tuple of integers
         Offset of this texture relative to base texture
-    store : bool
-        Specify whether this object stores a reference to the data,
-        allowing the data to be updated regardless of striding. Note
-        that modifying the data after passing it here might result in
-        undesired behavior, unless a copy is given. Default True.
     resizeable : bool
         Indicates whether texture can be resized
     interpolation : str
@@ -120,75 +110,45 @@ class BaseTexture(GLObject):
         # np.dtype(np.float64) : gl.GL_DOUBLE
     }
 
-    def __init__(self, data=None, shape=None, dtype=None, base=None,
-                 target=None, offset=None, store=True, resizeable=True,
+    def __init__(self, data=None, shape=None, base=None,
+                 offset=None, resizeable=True,
                  interpolation=None, wrapping=None,
                  format=None):
         GLObject.__init__(self)
-        self._data = None
-        self._base = base
-        self._store = store
-        self._copy = False  # flag to indicate that a copy is made
-        self._target = target
+        self._shape = tuple([0 for i in range(self._ndim+1)])
         self._offset = offset
-        self._pending_data = []
         self._resizeable = resizeable
+        # For views on texture
+        self._base = base
         self._valid = True
         self._views = []
 
         # Extra stages that are handled in _activate()
-        self._need_resize = False
-        self._need_parameterization = True
         if base is None:
             self.interpolation = 'nearest'
             self.wrapping = 'clamp_to_edge'
 
-        # Do we have data to build texture upon ?
+        # Do we have data to build texture upon?
         if data is not None:
-            self._need_resize = True
-            # Handle dtype
-            if dtype is not None:
-                data = np.array(data, dtype=dtype, copy=False)
-            else:
-                data = np.array(data, copy=False)
-            self._dtype = data.dtype
-            # Handle shape
-            data = self._normalize_shape(data)
             if shape is not None:
-                raise ValueError('Texture needs data or shape, nor both.')
-            self._shape = data.shape
-            # Handle storage
-            if self._store:
-                if not data.flags["C_CONTIGUOUS"]:
-                    logger.warning("Copying discontiguous data as CPU storage")
-                    self._copy = True
-                    data = data.copy()
-                self._data = data
-            # Set data
+                raise ValueError('Texture needs data or shape, nor both.')  
             self.set_data(data, copy=False)
-        elif dtype is not None:
-            if shape is not None:
-                self._need_resize = True
-            shape = shape or ()
-            self._shape = self._normalize_shape(shape)
-            self._dtype = dtype
-            if self._store:
-                self._data = np.zeros(self._shape, dtype=self._dtype)
+#             data = np.array(data, copy=False)
+#             # Handle shape
+#             data = self._normalize_shape(data)
+#             
+#             self._shape = data.shape
+#             # Set data
+#             self.set_data(data, copy=False)
+        elif shape is not None:
+            self.resize(shape)
         else:
             raise ValueError("Either data or dtype must be given")
 
         if offset is None:
-            self._offset = (0,) * len(self._shape)
+            self._offset = tuple([0 for i in self.shape[:-1]])
         else:
             self._offset = offset
-
-        # Check dtype
-        if hasattr(self._dtype, 'fields') and self._dtype.fields:
-            raise ValueError("Texture dtype cannot be structured")
-
-        self._gtype = BaseTexture._types.get(np.dtype(self.dtype), None)
-        if self._gtype is None:
-            raise ValueError("Type not allowed for texture")
 
         # Get and check format
         valid_dict = {'luminance': gl.GL_LUMINANCE,
@@ -245,7 +205,8 @@ class BaseTexture(GLObject):
 
     @property
     def shape(self):
-        """ Texture shape """
+        """ Texture shape (last dimension indictates number of color channels)
+        """
         return self._shape
 
     @property
@@ -254,19 +215,9 @@ class BaseTexture(GLObject):
         return self._offset
 
     @property
-    def dtype(self):
-        """ Texture data type """
-        return self._dtype
-
-    @property
     def base(self):
         """ Texture base if this texture is a view on another texture """
         return self._base
-
-    @property
-    def data(self):
-        """ Texture CPU storage """
-        return self._data
 
     @property
     def wrapping(self):
@@ -285,7 +236,7 @@ class BaseTexture(GLObject):
                       'clamp_to_edge': gl.GL_CLAMP_TO_EDGE,
                       'mirrored_repeat': gl.GL_MIRRORED_REPEAT}
         self._wrapping = _check_value(value, valid_dict)
-        self._need_parameterization = True
+        self._context.glir.command('SET', self._id, 'wrapping', self._wrapping)
 
     @property
     def interpolation(self):
@@ -303,23 +254,20 @@ class BaseTexture(GLObject):
         valid_dict = {'nearest': gl.GL_NEAREST,
                       'linear': gl.GL_LINEAR}
         self._interpolation = _check_value(value, valid_dict)
-        self._need_parameterization = True
+        self._context.glir.command('SET', self._id, 'interpolation', 
+                                    self._interpolation)
 
     def resize(self, shape):
         """ Resize the texture (deferred operation)
-
+        
         Parameters
         ----------
-
+        
         shape : tuple of integers
             New texture shape
-
-        Notes
-        -----
-        This clears any pending operations.
         """
         shape = self._normalize_shape(shape)
-
+        
         if not self._resizeable:
             raise RuntimeError("Texture is not resizeable")
 
@@ -328,9 +276,10 @@ class BaseTexture(GLObject):
 
         if len(shape) != len(self.shape):
             raise ValueError("New shape has wrong number of dimensions")
-
-        if shape == self.shape:
-            return
+        
+        # todo: do this check or not? At least make consistent with buffer
+#         if shape == self.shape:
+#             return
 
         # Reset format if size of last dimension differs
         if shape[-1] != self.shape[-1]:
@@ -344,13 +293,8 @@ class BaseTexture(GLObject):
             view._valid = False
         self._views = []
 
-        self._pending_data = []
-        self._need_resize = True
         self._shape = shape
-        if self._data is not None and self._store:
-            self._data = np.resize(self._data, self._shape)
-        else:
-            self._data = None
+        self._context.glir.command('SIZE', self._id, self._shape[:-1], self._format)
 
     def set_data(self, data, offset=None, copy=False):
         """
@@ -379,12 +323,7 @@ class BaseTexture(GLObject):
         if self.base is not None:
             self.base.set_data(data, offset=self.offset, copy=copy)
             return
-
-        # Force using the same data type. We could probably allow it,
-        # but with the views and data storage, this is rather complex.
-        if data.dtype != self.dtype:
-            raise ValueError('Cannot set texture data with another dtype.')
-
+        
         # Copy if needed, check/normalize shape
         data = np.array(data, copy=copy)
         data = self._normalize_shape(data)
@@ -398,84 +337,84 @@ class BaseTexture(GLObject):
             if data.shape != self.shape:
                 self.resize(data.shape)
 
-        if offset is None or offset == (0,) * len(self.shape):
+        if offset is None or all([i==0 for i in offset]):
             if data.shape == self.shape:
-                self._pending_data = []
-
+                # Discard previously set data
+                self._context.glir.command('SIZE', self._id, self.shape[:-1], 
+                                           self._format)
             # Convert offset to something usable
-            offset = (0,) * len(self.shape)
-
+            offset = tuple([0 for i in self._shape[:-1]])
+        assert len(offset) == len(self._shape)-1
+        
         # Check if data fits
-        for i in range(len(data.shape)):
+        for i in range(len(data.shape)-1):
             if offset[i] + data.shape[i] > self.shape[i]:
                 raise ValueError("Data is too large")
 
-        if self._store:
-            pass
-            # todo: @nico should we not update self._data?
-            # but we need to keep the offset into account.
-
-        self._pending_data.append((data, offset))
-
-    def __getitem__(self, key):
-        """ x.__getitem__(y) <==> x[y] """
-        if self.base is not None:
-            raise ValueError("Can only access data from a base texture")
-
-        # Make sure key is a tuple
-        if isinstance(key, (int, slice)) or key == Ellipsis:
-            key = (key,)
-
-        # Default is to access the whole texture
-        shape = self.shape
-        slices = [slice(0, shape[i]) for i in range(len(shape))]
-
-        # Check last key/Ellipsis to decide on the order
-        keys = key[::+1]
-        dims = range(0, len(key))
-        if key[0] == Ellipsis:
-            keys = key[::-1]
-            dims = range(len(self.shape) - 1,
-                         len(self.shape) - 1 - len(keys), -1)
-
-        # Find exact range for each key
-        for k, dim in zip(keys, dims):
-            size = self.shape[dim]
-            if isinstance(k, int):
-                if k < 0:
-                    k += size
-                if k < 0 or k > size:
-                    raise IndexError("Texture assignment index out of range")
-                start, stop = k, k + 1
-                slices[dim] = slice(start, stop, 1)
-            elif isinstance(k, slice):
-                start, stop, step = k.indices(size)
-                if step != 1:
-                    raise ValueError("Cannot access non-contiguous data")
-                if stop < start:
-                    start, stop = stop, start
-                slices[dim] = slice(start, stop, step)
-            elif k == Ellipsis:
-                pass
-            else:
-                raise TypeError("Texture indices must be integers")
-
-        offset = tuple([s.start for s in slices])
-        shape = tuple([s.stop - s.start for s in slices])
-        data = None
-        if self.data is not None:
-            data = self.data[slices]
-
-        T = self.__class__(dtype=self.dtype, shape=shape,
-                           base=self, offset=offset, resizeable=False)
-        T._data = data
-        self._views.append(T)
-        return T
+        self._context.glir.command('DATA', self._id, offset, data)
+    
+    # todo: remove this? I dont see the point ...
+    # It allows doing this:
+    #   tex2 = tex1[100:200,100:200]
+    #   tex2.set_data(X)
+    # Which can also be done with
+    #   tex1[100:200,100:200] = X
+    #
+#     def __getitem__(self, key):
+#         """ x.__getitem__(y) <==> x[y] """
+#         if self.base is not None:
+#             raise ValueError("Can only access data from a base texture")
+# 
+#         # Make sure key is a tuple
+#         if isinstance(key, (int, slice)) or key == Ellipsis:
+#             key = (key,)
+# 
+#         # Default is to access the whole texture
+#         shape = self.shape
+#         slices = [slice(0, shape[i]) for i in range(len(shape))]
+# 
+#         # Check last key/Ellipsis to decide on the order
+#         keys = key[::+1]
+#         dims = range(0, len(key))
+#         if key[0] == Ellipsis:
+#             keys = key[::-1]
+#             dims = range(len(self.shape) - 1,
+#                          len(self.shape) - 1 - len(keys), -1)
+# 
+#         # Find exact range for each key
+#         for k, dim in zip(keys, dims):
+#             size = self.shape[dim]
+#             if isinstance(k, int):
+#                 if k < 0:
+#                     k += size
+#                 if k < 0 or k > size:
+#                     raise IndexError("Texture assignment index out of range")
+#                 start, stop = k, k + 1
+#                 slices[dim] = slice(start, stop, 1)
+#             elif isinstance(k, slice):
+#                 start, stop, step = k.indices(size)
+#                 if step != 1:
+#                     raise ValueError("Cannot access non-contiguous data")
+#                 if stop < start:
+#                     start, stop = stop, start
+#                 slices[dim] = slice(start, stop, step)
+#             elif k == Ellipsis:
+#                 pass
+#             else:
+#                 raise TypeError("Texture indices must be integers")
+# 
+#         offset = tuple([s.start for s in slices])
+#         shape = tuple([s.stop - s.start for s in slices])
+#         
+#         T = self.__class__(shape=shape,
+#                            base=self, offset=offset, resizeable=False)
+#         self._views.append(T)
+#         return T
 
     def __setitem__(self, key, data):
         """ x.__getitem__(y) <==> x[y] """
         if self.base is not None and not self._valid:
-            raise ValueError("This texture view has been invalited")
+            raise ValueError("This texture view has been invalidated")
 
         # Make sure key is a tuple
         if isinstance(key, (int, slice)) or key == Ellipsis:
@@ -518,18 +457,13 @@ class BaseTexture(GLObject):
         offset = tuple([s.start for s in slices])
         shape = tuple([s.stop - s.start for s in slices])
         size = np.prod(shape) if len(shape) > 0 else 1
-
-        # We have CPU storage
-        if self.data is not None:
-            self.data[key] = data
-            data = self.data[key]
-        else:
-            # Make sure data is an array
-            if not isinstance(data, np.ndarray):
-                data = np.array(data, dtype=self.dtype, copy=False)
-            # Make sure data is big enough
-            if data.size != size:
-                data = np.resize(data, size).reshape(shape)
+        
+        # Make sure data is an array
+        if not isinstance(data, np.ndarray):
+            data = np.array(data, copy=False)
+        # Make sure data is big enough
+        if data.size != size:
+            data = np.resize(data, size).reshape(shape)
 
         # Set data (deferred)
         if self.base is None:
@@ -537,83 +471,81 @@ class BaseTexture(GLObject):
         else:
             offset = self.offset + offset
             self.base.set_data(data=data, offset=offset, copy=False)
-
-    def _parameterize(self):
-        """ Paramaterize texture """
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER,
-                           self._interpolation[0])
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER,
-                           self._interpolation[1])
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S,
-                           self._wrapping[0])
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T,
-                           self._wrapping[1])
+    
+#     def _parameterize(self):
+#         """ Paramaterize texture """
+#         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER,
+#                            self._interpolation[0])
+#         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER,
+#                            self._interpolation[1])
+#         gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S,
+#                            self._wrapping[0])
+#         gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T,
+#                            self._wrapping[1])
 
     def _create(self):
-        """ Create texture on GPU """
-        logger.debug("GPU: Creating texture")
-        self._handle = gl.glCreateTexture()
+        pass
 
     def _delete(self):
-        """ Delete texture from GPU """
-        logger.debug("GPU: Deleting texture")
-        gl.glDeleteTexture(self._handle)
+        pass
 
     def _activate(self):
         """ Activate texture on GPU """
+        return
+        
+        
         logger.debug("GPU: Activate texture")
         gl.glBindTexture(self.target, self._handle)
-
+        
+        
         # We let base texture to handle all operations
         if self.base is not None:
             return
-
-        # Resize if necessary
-        if self._need_resize:
-            self._resize()
-            self._need_resize = False
-
-        # Reparameterize if necessary
-        if self._need_parameterization:
-            self._parameterize()
-            self._need_parameterization = False
-
-        # Update pending data if necessary
-        if self._pending_data:
-            logger.debug("GPU: Updating texture (%d pending operation(s))" %
-                         len(self._pending_data))
-            self._update_data()
+# 
+#         # Resize if necessary
+#         if self._need_resize:
+#             self._resize()
+#             self._need_resize = False
+# 
+#         # Reparameterize if necessary
+#         if self._need_parameterization:
+#             self._parameterize()
+#             self._need_parameterization = False
+# 
+#         # Update pending data if necessary
+#         if self._pending_data:
+#             logger.debug("GPU: Updating texture (%d pending operation(s))" %
+#                          len(self._pending_data))
+#             self._update_data()
 
     def _deactivate(self):
         """ Deactivate texture on GPU """
-        logger.debug("GPU: Deactivate texture")
-        gl.glBindTexture(self._target, 0)
+        pass
 
-    # Taken from pygly
-    def _get_alignment(self, width):
-        """Determines a textures byte alignment.
-
-        If the width isn't a power of 2
-        we need to adjust the byte alignment of the image.
-        The image height is unimportant
-
-        www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
-        """
-        # we know the alignment is appropriate
-        # if we can divide the width by the
-        # alignment cleanly
-        # valid alignments are 1,2,4 and 8
-        # put 4 first, since it's the default
-        alignments = [4, 8, 2, 1]
-        for alignment in alignments:
-            if width % alignment == 0:
-                return alignment
+#     # Taken from pygly
+#     def _get_alignment(self, width):
+#         """Determines a textures byte alignment.
+# 
+#         If the width isn't a power of 2
+#         we need to adjust the byte alignment of the image.
+#         The image height is unimportant
+# 
+#         www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
+#         """
+#         # we know the alignment is appropriate
+#         # if we can divide the width by the
+#         # alignment cleanly
+#         # valid alignments are 1,2,4 and 8
+#         # put 4 first, since it's the default
+#         alignments = [4, 8, 2, 1]
+#         for alignment in alignments:
+#             if width % alignment == 0:
+#                 return alignment
 
     def __repr__(self):
-        return "<%s shape=%r dtype=%r format=%r target=%r at 0x%x>" % (
+        return "<%s shape=%r format=%r at 0x%x>" % (
             self.__class__.__name__,
-            self._shape, self._dtype, self._format, self._target,
-            id(self))
+            self._shape, self._format, id(self))
 
 
 # --------------------------------------------------------- Texture2D class ---
@@ -627,13 +559,6 @@ class Texture2D(BaseTexture):
         Texture data (optional), shaped as HxW.
     shape : tuple of integers
         Texture shape (optional), with shape HxW.
-    dtype : dtype
-        Texture data type (optional)
-    store : bool
-        Specify whether this object stores a reference to the data,
-        allowing the data to be updated regardless of striding. Note
-        that modifying the data after passing it here might result in
-        undesired behavior, unless a copy is given. Default True.
     format : str | ENUM
         The format of the texture: 'luminance', 'alpha', 'luminance_alpha',
         'rgb', or 'rgba' (or ENUMs GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA,
@@ -642,18 +567,18 @@ class Texture2D(BaseTexture):
         'luminance' is assumed.
     """
     _ndim = 2
-
-    def __init__(self, data=None, shape=None, dtype=None, store=True,
-                 format=None, interpolation=None, wrapping=None, **kwargs):
+    _GLIR_TYPE = 'Texture2D'
+    
+    def __init__(self, data=None, shape=None, format=None, interpolation=None, wrapping=None, **kwargs):
 
         # We don't want these parameters to be seen from outside (because they
         # are only used internally)
         offset = kwargs.get("offset", None)
         base = kwargs.get("base", None)
         resizeable = kwargs.get("resizeable", True)
-        BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype,
-                             base=base, resizeable=resizeable, store=store,
-                             target=gl.GL_TEXTURE_2D, offset=offset,
+        BaseTexture.__init__(self, data=data, shape=shape, 
+                             base=base, resizeable=resizeable, 
+                             offset=offset,
                              interpolation=interpolation, wrapping=wrapping,
                              format=format)
 
@@ -673,30 +598,30 @@ class Texture2D(BaseTexture):
         """
         return 'uniform', 'sampler2D'
 
-    def _resize(self):
-        """ Texture resize on GPU """
-        logger.debug("GPU: Resizing texture(%sx%s)" %
-                     (self.width, self.height))
-        shape = self.height, self.width
-        gl.glTexImage2D(self.target, 0, self._format, self._format,
-                        self._gtype, shape)
-
-    def _update_data(self):
-        """ Texture update on GPU """
-        # Update data
-        while self._pending_data:
-            data, offset = self._pending_data.pop(0)
-            x = y = 0
-            if offset is not None:
-                y, x = offset[0], offset[1]
-            # Set alignment (width is nbytes_per_pixel * npixels_per_line)
-            alignment = self._get_alignment(data.shape[-2]*data.shape[-1])
-            if alignment != 4:
-                gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
-            gl.glTexSubImage2D(self.target, 0, x, y, self._format,
-                               self._gtype, data)
-            if alignment != 4:
-                gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+#     def _resize(self):
+#         """ Texture resize on GPU """
+#         logger.debug("GPU: Resizing texture(%sx%s)" %
+#                      (self.width, self.height))
+#         shape = self.height, self.width
+#         gl.glTexImage2D(self.target, 0, self._format, self._format,
+#                         self._gtype, shape)
+# 
+#     def _update_data(self):
+#         """ Texture update on GPU """
+#         # Update data
+#         while self._pending_data:
+#             data, offset = self._pending_data.pop(0)
+#             x = y = 0
+#             if offset is not None:
+#                 y, x = offset[0], offset[1]
+#             # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+#             alignment = self._get_alignment(data.shape[-2]*data.shape[-1])
+#             if alignment != 4:
+#                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+#             gl.glTexSubImage2D(self.target, 0, x, y, self._format,
+#                                self._gtype, data)
+#             if alignment != 4:
+#                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
 
 # --------------------------------------------------------- Texture3D class ---
@@ -709,13 +634,6 @@ class Texture3D(BaseTexture):
         Texture data (optional), shaped as DxHxW.
     shape : tuple of integers
         Texture shape (optional) DxHxW.
-    dtype : dtype
-        Texture data type (optional)
-    store : bool
-        Specify whether this object stores a reference to the data,
-        allowing the data to be updated regardless of striding. Note
-        that modifying the data after passing it here might result in
-        undesired behavior, unless a copy is given. Default True.
     format : str | ENUM
         The format of the texture: 'luminance', 'alpha', 'luminance_alpha',
         'rgb', or 'rgba' (or ENUMs GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA,
@@ -724,9 +642,9 @@ class Texture3D(BaseTexture):
         'luminance' is assumed.
     """
     _ndim = 3
-
-    def __init__(self, data=None, shape=None, dtype=None, store=True,
-                 interpolation=None, wrapping=None,
+    _GLIR_TYPE = 'Texture3D'
+    
+    def __init__(self, data=None, shape=None, interpolation=None, wrapping=None,
                  format=None, **kwargs):
 
         # Import from PyOpenGL
@@ -737,9 +655,8 @@ class Texture3D(BaseTexture):
         offset = kwargs.get("offset", None)
         base = kwargs.get("base", None)
         resizeable = kwargs.get("resizeable", True)
-        BaseTexture.__init__(self, data=data, shape=shape, dtype=dtype,
-                             base=base, resizeable=resizeable, store=store,
-                             target=_gl.GL_TEXTURE_3D, offset=offset,
+        BaseTexture.__init__(self, data=data, shape=shape, 
+                             base=base, resizeable=resizeable, offset=offset,
                              interpolation=interpolation, wrapping=wrapping,
                              format=format)
 
@@ -764,29 +681,29 @@ class Texture3D(BaseTexture):
         """
         return 'uniform', 'sampler3D'
 
-    def _resize(self):
-        """ Texture resize on GPU """
-        logger.debug("GPU: Resizing texture(%sx%sx%s)" %
-                     (self.depth, self.height, self.width))
-        glTexImage3D(self.target, 0, self._format, self._format,
-                     self._gtype, (self.depth, self.height, self.width))
-
-    def _update_data(self):
-        """ Texture update on GPU """
-        while self._pending_data:
-            data, offset = self._pending_data.pop(0)
-            z = y = x = 0
-            if offset is not None:
-                z, y, x = offset[0], offset[1], offset[2]
-            # Set alignment (width is nbytes_per_pixel * npixels_per_line)
-            alignment = self._get_alignment(data.shape[-3] *
-                                            data.shape[-2] * data.shape[-1])
-            if alignment != 4:
-                gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
-            glTexSubImage3D(self.target, 0, x, y, z, self._format,
-                            self._gtype, data)
-            if alignment != 4:
-                gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+#     def _resize(self):
+#         """ Texture resize on GPU """
+#         logger.debug("GPU: Resizing texture(%sx%sx%s)" %
+#                      (self.depth, self.height, self.width))
+#         glTexImage3D(self.target, 0, self._format, self._format,
+#                      self._gtype, (self.depth, self.height, self.width))
+# 
+#     def _update_data(self):
+#         """ Texture update on GPU """
+#         while self._pending_data:
+#             data, offset = self._pending_data.pop(0)
+#             z = y = x = 0
+#             if offset is not None:
+#                 z, y, x = offset[0], offset[1], offset[2]
+#             # Set alignment (width is nbytes_per_pixel * npixels_per_line)
+#             alignment = self._get_alignment(data.shape[-3] *
+#                                             data.shape[-2] * data.shape[-1])
+#             if alignment != 4:
+#                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
+#             glTexSubImage3D(self.target, 0, x, y, z, self._format,
+#                             self._gtype, data)
+#             if alignment != 4:
+#                 gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
 
 
 # ------------------------------------------------------ TextureAtlas class ---
