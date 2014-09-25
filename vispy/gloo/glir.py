@@ -3,6 +3,7 @@
 """
 
 import sys
+import re
 
 import numpy as np
 
@@ -46,6 +47,11 @@ class GlirQueue(object):
             for e in command:
                 if isinstance(e, np.ndarray):
                     t.append('array %s' % str(e.shape))
+                elif isinstance(e, str):
+                    s = e.strip()
+                    if len(s) > 10:
+                        s = s[:10] + '... %i lines' % e.count('\n')
+                    t.append(s)
                 else:
                     t.append(e)
             print(tuple(t))
@@ -76,7 +82,13 @@ class GlirParser(object):
         self._invalid_objects = set()
         self._classmap = {'VERTEXBUFFER': GlirVertexBuffer,
                           'INDEXBUFFER': GlirIndexBuffer,
+                          'PROGRAM': GlirProgram,
                           }
+    
+    def get_object(self, id):
+        """ Get the object with the given id or None if it does not exist.
+        """
+        return self._objects.get(id, None)
     
     def parse(self, commands):
         """ Parse a list of commands.
@@ -89,7 +101,7 @@ class GlirParser(object):
                 # Creating an object
                 if args[0] is not None:
                     klass = self._classmap[args[0]]
-                    self._objects[id] = klass()
+                    self._objects[id] = klass(self)
                 else:
                     self._invalid_objects.add(id)
             elif cmd == 'DELETE':
@@ -114,23 +126,343 @@ class GlirParser(object):
                     ob.set_size(*args)
                 elif cmd == 'DATA':
                     ob.set_data(*args)
+                elif cmd == 'SHADERS':
+                    ob.set_shaders(*args)
+                elif cmd == 'UNIFORM':
+                    ob.set_uniform(*args)
+                elif cmd == 'ATTRIBUTE':
+                    ob.set_attribute(*args)
+                elif cmd == 'DRAW':
+                    ob.draw(*args)
                 else:
                     print('Invalud GLIR command %r' % cmd)
-                # SET_UNIFORM SET_ATTRIBUTE SET_SHADERS DRAW
 
 
 ## GLIR objects
 
 
 class GlirObject(object):
-    pass
+    @property
+    def handle(self):
+        return self._handle
+
+
+class GlirProgram(GlirObject):
     
+    UTYPEMAP = {
+        'float': 'glUniform1fv',
+        'vec2': 'glUniform2ifv',
+        'vec3': 'glUniform3fv',
+        'vec4': 'glUniform4fv',
+        'int': 'glUniform1iv',
+        'ivec2': 'glUniform2iv',
+        'ivec3': 'glUniform3iv',
+        'ivec4': 'glUniform4iv',
+        'bool': 'glUniform1iv',
+        'bvec2': 'glUniform2iv',
+        'bvec3': 'glUniform3iv',
+        'bvec4': 'glUniform4iv',
+        'mat2': 'glUniformMatrix2fv',
+        'mat3': 'glUniformMatrix3fv',
+        'mat4': 'glUniformMatrix4fv',
+        'sampler2D': 'glUniform1i',
+        'sampler3D': 'glUniform1i',
+    }
     
+    ATYPEMAP = {
+        'float': 'glVertexAttrib1f',
+        'vec2': 'glVertexAttrib2f',
+        'vec3': 'glVertexAttrib3f',
+        'vec4': 'glVertexAttrib4f',
+    }
+    
+    ATYPEINFO = {
+        'float': (1, gl.GL_FLOAT, np.float32),
+        'vec2': (2, gl.GL_FLOAT, np.float32),
+        'vec3': (3, gl.GL_FLOAT, np.float32),
+        'vec4': (4, gl.GL_FLOAT, np.float32),
+    }
+    
+    def __init__(self, parser):
+        self._parser = parser
+        self._parser._current_program = 0 
+        self._handle = gl.glCreateProgram()
+        self._validated = False
+        # Keeping track of uniforms/attributes
+        self._handles = {}  # cache with handles to attributes/uniforms
+        self._unset_variables = set()
+        # Store samplers in buffers that are bount to uniforms/attributes
+        # todo: store these by id?
+        self._samplers = {}  # name -> (unit, GlirTexture)
+        self._buffers = {}  # name -> GlirBuffer
+    
+    def delete(self):
+        gl.glDeleteProgram(self._handle)
+    
+    def use_this_program(self):
+        """ Avoid overhead in calling glUseProgram with same arg.
+        Warning: this will break if glUseProgram is used somewhere else.
+        Per context we keep track of one current program.
+        """
+        if id != self._parser._current_program:
+            self._parser._current_program = id
+            gl.glUseProgram(self._handle)
+    
+    def activate(self):
+        self.use_this_program()
+        # Activate textures
+        for tex, unit in self._samplers.values():
+            gl.glActiveTexture(gl.GL_TEXTURE0 + unit)
+            tex.activate()
+        # Activate buffers
+        for vbo in self._buffers.values():
+            vbo.activate()
+        # Validate. We need to validate after textures units get assigned
+        if not self._validated:
+            self._validated = True
+            # Validate ourselves
+            if self._unset_variables:
+                logger.warn('Program has unset variables: %r' % 
+                            self._unset_variables)
+            # Validate via OpenGL
+            gl.glValidateProgram(self._handle)
+            if not gl.glGetProgramParameter(self._handle, 
+                                            gl.GL_VALIDATE_STATUS):
+                print(gl.glGetProgramInfoLog(self._handle))
+                raise RuntimeError('Program validation error')
+    
+    def deactivate(self):
+        # No need to deactivate each texture/buffer!
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        # todo: deactivate texture
+        # No need to deactivate this program, AFAIK there is no situation
+        # where current program should be 0.
+    
+    def set_shaders(self, vert, frag):
+        """ This function takes care of setting the shading code and
+        compiling+linking it into a working program object that is ready
+        to use.
+        """
+        # Create temporary shader objects
+        vert_handle = gl.glCreateShader(gl.GL_VERTEX_SHADER)
+        frag_handle = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
+        # For both vertex and fragment shader: set source, compile, check
+        for code, handle, type in [(vert, vert_handle, 'vertex'), 
+                                   (frag, frag_handle, 'fragment')]:
+            gl.glShaderSource(handle, code)
+            gl.glCompileShader(handle)
+            status = gl.glGetShaderParameter(handle, gl.GL_COMPILE_STATUS)
+            if not status:
+                errors = gl.glGetShaderInfoLog(handle)
+                errormsg = self._get_error(code, errors, 4)
+                raise RuntimeError("Shader compilation error in %s:\n%s" % 
+                                   (type + ' shader', errormsg))
+        # Attach shaders
+        gl.glAttachShader(self._handle, vert_handle)
+        gl.glAttachShader(self._handle, frag_handle)
+        # Link the program and check
+        gl.glLinkProgram(self._handle)
+        if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
+            print(gl.glGetProgramInfoLog(self._handle))
+            raise RuntimeError('Program linking error')
+        # Now we can remove the shaders. We no longer need them and it
+        # frees up precious GPU memory:
+        # http://gamedev.stackexchange.com/questions/47910
+        gl.glDetachShader(self._handle, vert_handle)
+        gl.glDetachShader(self._handle, frag_handle)
+        gl.glDeleteShader(vert_handle)
+        gl.glDeleteShader(frag_handle)
+        # Now we know what variables will be used by the program
+        self._unset_variables = self._get_active_attributes_and_uniforms()
+        self._handles = {}
+        
+    def _get_active_attributes_and_uniforms(self):
+        """ Retrieve active attributes and uniforms to be able to check that
+        all uniforms/attributes are set by the user.
+        """
+        # This match a name of the form "name[size]" (= array)
+        regex = re.compile("""(?P<name>\w+)\s*(\[(?P<size>\d+)\])\s*""")
+        # Get how many active attributes and uniforms there are
+        cu = gl.glGetProgramParameter(self._handle, gl.GL_ACTIVE_UNIFORMS)
+        ca = gl.glGetProgramParameter(self.handle, gl.GL_ACTIVE_ATTRIBUTES)
+        # Get info on each one
+        attributes = []
+        uniforms = []
+        for container, count, func in [(attributes, ca, gl.glGetActiveAttrib),
+                                       (uniforms, cu, gl.glGetActiveUniform)]:
+            for i in range(count):
+                name, size, gtype = func(self._handle, i)
+                m = regex.match(name)  # Check if xxx[0] instead of xx
+                if m:
+                    name = m.group('name')
+                    for i in range(size):
+                        container.append(('%s[%d]' % (name, i), gtype))
+                else:
+                    container.append((name, gtype))
+        #return attributes, uniforms
+        return set([v[0] for v in attributes] + [v[0] for v in uniforms])
+    
+    def _parse_error(self, error):
+        """ Parses a single GLSL error and extracts the linenr and description
+        """
+        error = str(error)
+        # Nvidia
+        # 0(7): error C1008: undefined variable "MV"
+        m = re.match(r'(\d+)\((\d+)\)\s*:\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(3)
+        # ATI / Intel
+        # ERROR: 0:131: '{' : syntax error parse error
+        m = re.match(r'ERROR:\s(\d+):(\d+):\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(3)
+        # Nouveau
+        # 0:28(16): error: syntax error, unexpected ')', expecting '('
+        m = re.match(r'(\d+):(\d+)\((\d+)\):\s(.*)', error)
+        if m:
+            return int(m.group(2)), m.group(4)
+        # Other ...
+        return None, error
+
+    def _get_error(self, code, errors, indentation=0):
+        """Get error and show the faulty line + some context
+        """
+        # Init
+        results = []
+        lines = None
+        if code is not None:
+            lines = [line.strip() for line in code.split('\n')]
+
+        for error in errors.split('\n'):
+            # Strip; skip empy lines
+            error = error.strip()
+            if not error:
+                continue
+            # Separate line number from description (if we can)
+            linenr, error = self._parse_error(error)
+            if None in (linenr, lines):
+                results.append('%s' % error)
+            else:
+                results.append('on line %i: %s' % (linenr, error))
+                if linenr > 0 and linenr < len(lines):
+                    results.append('  %s' % lines[linenr - 1])
+
+        # Add indentation and return
+        results = [' ' * indentation + r for r in results]
+        return '\n'.join(results)
+    
+    def set_uniform(self, name, type, value):
+        """ Set a uniform value. Value is assumed to have been checked.
+        """
+        # Get handle for the uniform, first try cache
+        handle = self._handles.get(name, -1)
+        if handle < 0:
+            handle = gl.glGetUniformLocation(self._handle, name)
+            self._unset_variables.discard(name)  # Mark as set
+            self._handles[name] = handle  # Store in cache
+            if handle < 0:
+                logger.warn('Variable %s is not an active uniform' % name)
+                return
+        # Look up function to call
+        funcname = self.UTYPEMAP[type]
+        func = getattr(gl, funcname)
+        # Program needs to be active in order to set uniforms
+        self.use_this_program()
+        # Triage depending on type 
+        if type.startswith('mat'):
+            # Value is matrix, these gl funcs have alternative signature
+            transpose = False  # OpenGL ES 2.0 does not support transpose
+            func(handle, 1, transpose, value)
+        elif type.startswith('sampler'):
+            # Sampler: the value is the id of the texture
+            tex = self._parser.get_object(value)
+            if tex is None:
+                raise RuntimeError('Could not find texture with id %i' % value)
+            self._samplers.pop(name, None)  # First remove possibly old version
+            unit = self._get_free_unit([s[1] for s in self._samplers.values()])
+            self._samplers[name] = tex, unit
+            gl.glUniform1i(handle, unit)
+        else:
+            # Regular uniform
+            func(handle, 1, value)
+    
+    def set_attribute(self, name, type, value):
+        """ Set an attribute value. Value is assumed to have been checked.
+        """
+        # Get handle for the attribute, first try cache
+        handle = self._handles.get(name, -1)
+        if handle < 0:
+            handle = gl.glGetAttribLocation(self._handle, name)
+            self._unset_variables.discard(name)  # Mark as set
+            self._handles[name] = handle  # Store in cache
+            if handle < 0:
+                logger.warn('Variable %s is not an active attribute' % name)
+                return
+        # Program needs to be active in order to set uniforms
+        self.use_this_program()
+        # Triage depending on VBO or tuple data
+        if value[0] == 0:
+            # Look up function call
+            funcname = self.ATYPEMAP[type]
+            func = getattr(gl, funcname)
+            # Set data
+            gl.glDisableVertexAttribArray(handle)
+            func(handle, *value[1:])
+            self._buffers.pop(name, None)
+        else:
+            # Get meta data
+            vbo_id, stride, offset = value
+            size, gtype, dtype = self.ATYPEINFO[type]
+            # Get associated VBO
+            vbo = self._parser.get_object(vbo_id)
+            if vbo is None:
+                raise RuntimeError('Could not find VBO with id %i' % vbo_id)
+            # Set data
+            vbo.activate()
+            gl.glEnableVertexAttribArray(handle)
+            gl.glVertexAttribPointer(
+                handle, size, gtype, gl.GL_FALSE, stride, offset)
+            # Store
+            self._buffers[name] = vbo
+    
+    def _get_free_unit(self, units):
+        """ Get free number given a list of numbers. For texture unit.
+        """
+        min_unit, max_unit = min(units), max(units)
+        if min_unit > 1:
+            return min_unit - 1
+        elif len(units) < (max_unit - min_unit + 1):
+            return set(range(min_unit+1, max_unit)).difference(units).pop()
+        else:
+            return max_unit + 1
+    
+    def draw(self, mode, selection):
+        """ Draw program in given mode, with given selection (IndexBuffer or
+        first, count).
+        """
+        # Init
+        self.activate()
+        gl.check_error('Check before draw')
+        # Draw
+        if len(selection) == 3:
+            id, gtype, count = selection
+            ibuf = self._parser.get_object(id)
+            ibuf.activate()
+            gl.glDrawElements(mode, count, gtype, None)
+            ibuf.deactivate()
+        else:
+            first, count = selection
+            gl.glDrawArrays(mode, first, count)
+        # Wrap up
+        gl.check_error('Check after draw')
+        self.deactivate()
+
+
 class GlirBuffer(GlirObject):
     _target = None
     _usage = gl.GL_DYNAMIC_DRAW  # STATIC_DRAW, STREAM_DRAW or DYNAMIC_DRAW
     
-    def __init__(self):
+    def __init__(self, parser):
         self._handle = gl.glCreateBuffer()
         self._buffer_size = 0
         self._bufferSubDataOk = False

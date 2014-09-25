@@ -34,6 +34,7 @@ class GLObject(object):
         if not hasattr(self._context, 'glir'):
             self._context.glir = GlirQueue()
         
+        print(self._GLIR_TYPE, 'takes', self._context)
         # Give glir command to create GL representation of this object
         if not self._GLIR_TYPE:
             #raise ValueError('GLObject %r must set GLIR_TYPE' % type(self))
@@ -81,6 +82,13 @@ class GLObject(object):
         self._deactivate()
         self._context.glir.command('DEACTIVATE', self._id)
 
+    @property
+    def id(self):
+        """ The id of this GL object used to reference the GL object
+        in GLIR. id's are unique within a process.
+        """
+        return self._id
+    
     # todo: everything below needs removed
     
     @property

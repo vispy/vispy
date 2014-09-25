@@ -142,7 +142,7 @@ class Canvas(object):
             raise ValueError('Invalid value for app %r' % app)
         
         # Ensure context is a GLContext object
-        context = context or GLContext()
+        context = context or {}
         if isinstance(context, dict):
             config, context = context, get_new_context()
             context.set_config(config)  # GLContext checks the dict keys

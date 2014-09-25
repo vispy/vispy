@@ -131,6 +131,7 @@ class Buffer(GLObject):
     def _create(self):
         # Big hack in transition phase
         # variables.py needs the handle :(
+        return
         glir = self._context.glir
         try:
             self._handle = glir._parser._objects[self._id]._handle
@@ -145,6 +146,7 @@ class Buffer(GLObject):
         pass
 
     def _activate(self):
+        return
         # Big hack in transition phase
         # variables.py needs to activate us
         from . import gl
@@ -154,6 +156,7 @@ class Buffer(GLObject):
         gl.glBindBuffer(target, self._handle)
        
     def _deactivate(self):
+        return
         from . import gl
         target = gl.GL_ARRAY_BUFFER
         if isinstance(self, IndexBuffer):
@@ -406,7 +409,12 @@ class DataBufferView(DataBuffer):
         self._size = stop - start
         self._dtype = base.dtype
         self._nbytes = self.size * self.itemsize
-
+    
+    # todo: make id a public method? And get rid of handle
+    @property
+    def _id(self):
+        return self._base._id
+    
     @property
     def handle(self):
         """ Name of this object on the GPU """

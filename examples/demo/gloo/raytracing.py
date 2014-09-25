@@ -213,7 +213,6 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(vertex, fragment)
         self.program['a_position'] = [(-1., -1.), (-1., +1.),
                                       (+1., -1.), (+1., +1.)]
-
         self.program['sphere_position_0'] = (.75, .1, 1.)
         self.program['sphere_radius_0'] = .6
         self.program['sphere_color_0'] = (0., 0., 1.)
@@ -236,7 +235,7 @@ class Canvas(app.Canvas):
     
     def on_timer(self, event):
         t = event.elapsed
-        self.program['u_time'] = t
+        #self.program['u_time'] = t
         self.program['sphere_position_0'] = (+.75, .1, 2.0 + 1.0 * cos(4*t))
         self.program['sphere_position_1'] = (-.75, .1, 2.0 - 1.0 * cos(4*t))
         self.update()
