@@ -484,10 +484,10 @@ class GlirBuffer(GlirObject):
         gl.glBindBuffer(self._target, 0)
     
     def set_size(self, nbytes):  # in bytes
-        gl.glBindBuffer(self._target, self._handle)
-        
-        gl.glBufferData(self._target, nbytes, self._usage)
-        self._buffer_size = nbytes
+        if nbytes != self._buffer_size:
+            gl.glBindBuffer(self._target, self._handle)
+            gl.glBufferData(self._target, nbytes, self._usage)
+            self._buffer_size = nbytes
     
     def set_data(self, offset, data):
         gl.glBindBuffer(self._target, self._handle)
@@ -559,14 +559,15 @@ class GlirTexture(GlirObject):
     
     def __init__(self, parser):
         self._handle = gl.glCreateTexture()
+        self._shape_format = 0
     
     def delete(self):
         gl.glDeleteTexture(self._handle)
     
     def activate(self):
+        # todo: NO NEED FOR AN ACTIVATE COMMAND, EXCEPT FBO!
         gl.glBindTexture(self._target, self._handle)
-        
-        
+    
     def deactivate(self):
         gl.glBindTexture(self._target, 0)
     
@@ -611,9 +612,10 @@ class GlirTexture2D(GlirTexture):
     
     def set_size(self, shape, format):
         # Shape is height, width
-        self._format = format
-        gl.glTexImage2D(self._target, 0, self._format, self._format,
-                        gl.GL_BYTE, shape)
+        if (shape, format) != self._shape_format:
+            self._format = format
+            gl.glTexImage2D(self._target, 0, self._format, self._format,
+                            gl.GL_BYTE, shape[:2])
     
     def set_data(self, offset, data):
         y, x = offset
@@ -670,9 +672,10 @@ class GlirTexture3D(GlirTexture):
         
     def set_size(self, shape, format):
         # Shape is depth, height, width
-        self._format = format
-        glTexImage3D(self._target, 0, self._format, self._format,
-                     gl.GL_BYTE, shape)
+        if (shape, format) != self._shape_format:
+            self._format = format
+            glTexImage3D(self._target, 0, self._format, self._format,
+                         gl.GL_BYTE, shape[:3])
     
     def set_data(self, offset, data):
         z, y, x = offset

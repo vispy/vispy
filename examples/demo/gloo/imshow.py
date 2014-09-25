@@ -71,8 +71,6 @@ uniform float vmax;
 uniform float cmap;
 
 uniform sampler2D image;
-uniform vec2 image_shape;
-
 uniform sampler2D colormaps;
 uniform vec2 colormaps_shape;
 
@@ -110,7 +108,6 @@ class Canvas(app.Canvas):
 
         self.image['image'] = I.astype('float32')
         self.image['image'].interpolation = 'linear'
-        self.image['image_shape'] = I.shape[1], I.shape[0]
         app.Canvas.__init__(self, show=True, size=(512, 512),
                             keys='interactive')
 
