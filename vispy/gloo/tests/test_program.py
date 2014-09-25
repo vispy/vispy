@@ -5,94 +5,137 @@
 # -----------------------------------------------------------------------------
 import unittest
 
-from vispy.gloo import gl
+import numpy as np
+
+from vispy.gloo import get_a_context
 from vispy.gloo.program import Program
-from vispy.gloo.shader import VertexShader, FragmentShader
 from vispy.testing import run_tests_if_main
-from vispy.util import use_log_level
+
+
+def teardown_module():
+    # Clear the BS commands that we produced here
+    c = get_a_context()
+    c.glir.clear()
 
 
 class ProgramTest(unittest.TestCase):
 
     def test_init(self):
+        
+        # Test ok init, no shaders
         program = Program()
-        assert program._handle == -1
-        assert program.shaders == []
-
-    def test_delete_no_context(self):
-        program = Program()
-        program.delete()
-
-    def test_init_from_string(self):
+        assert program._user_variables == {}
+        assert program._code_variables == {}
+        assert program._pending_variables == {}
+        assert program.shaders == ('', '')
+        
+        # Test ok init, with shader
+        program = Program('A', 'B')
+        assert program.shaders == ('A', 'B')
+        
+        # False inits
+        self.assertRaises(ValueError, Program, 'A', None)
+        self.assertRaises(ValueError, Program, None, 'B')
+        self.assertRaises(ValueError, Program, 3, 'B')
+        self.assertRaises(ValueError, Program, 3, None)
+        self.assertRaises(ValueError, Program, 'A', 3)
+        self.assertRaises(ValueError, Program, None, 3)
+    
+    def test_setting_shaders(self):
         program = Program("A", "B")
-        assert len(program.shaders) == 2
-        assert program.shaders[0].code == "A"
-        assert program.shaders[1].code == "B"
-
-    def test_init_from_shader(self):
-        program = Program(VertexShader("A"), FragmentShader("B"))
-        assert len(program.shaders) == 2
-        assert program.shaders[0].code == "A"
-        assert program.shaders[1].code == "B"
-
-    def test_unique_shader(self):
-        vert = VertexShader("A")
-        frag = FragmentShader("B")
-        program = Program([vert, vert], [frag, frag, frag])
-        assert len(program.shaders) == 2
+        assert program.shaders[0] == "A"
+        assert program.shaders[1] == "B"
+        
+        program.set_shaders('C', 'D')
+        assert program.shaders[0] == "C"
+        assert program.shaders[1] == "D"
 
     def test_uniform(self):
-        vert = VertexShader("uniform float A;")
-        frag = FragmentShader("uniform float A; uniform vec4 B;")
-        program = Program(vert, frag)
-        assert ("A", gl.GL_FLOAT) in program.all_uniforms
-        assert ("B", gl.GL_FLOAT_VEC4) in program.all_uniforms
-        assert len(program.all_uniforms) == 2
-
+        # Init program
+        program = Program("uniform float A;", 
+                          "uniform float A; uniform vec4 B;")
+        assert ('uniform', 'float', 'A') in program.variables
+        assert ('uniform', 'vec4', 'B') in program.variables
+        assert len(program.variables) == 2
+        
+        # Set existing uniforms
+        program['A'] = 3.0
+        assert isinstance(program['A'], np.ndarray)
+        assert program['A'] == 3.0
+        assert 'A' in program._user_variables
+        #
+        program['B'] = 1.0, 2.0, 3.0, 4.0
+        assert isinstance(program['B'], np.ndarray)
+        assert all(program['B'] == np.array((1.0, 2.0, 3.0, 4.0), np.float32))
+        assert 'B' in program._user_variables
+        
+        # Set non-exisint uniforms
+        program['C'] = 1.0, 2.0
+        assert program['C'] == (1.0, 2.0)
+        assert 'C' not in program._user_variables
+        assert 'C' in program._pending_variables
+        
+        # C should be taken up when code comes along that mentions it
+        program.set_shaders("uniform float A; uniform vec2 C;", 
+                            "uniform float A; uniform vec4 B;")
+        assert isinstance(program['C'], np.ndarray)
+        assert all(program['C'] == np.array((1.0, 2.0), np.float32))
+        assert 'C' in program._user_variables
+        assert 'C' not in program._pending_variables
+        
+        # Set wrong values
+        self.assertRaises(ValueError, program.__setitem__, 'A', (1.0, 2.0))
+        self.assertRaises(ValueError, program.__setitem__, 'B', (1.0, 2.0))
+        self.assertRaises(ValueError, program.__setitem__, 'C', 1.0)
+        
+        # Set wrong values beforehand
+        program['D'] = 1.0, 2.0
+        self.assertRaises(ValueError, program.set_shaders, 
+                          '', 'uniform vec3 D;')
+    
     def test_attributes(self):
-        vert = VertexShader("attribute float A;")
-        frag = FragmentShader("")
-        program = Program(vert, frag)
-        assert program.all_attributes == [("A", gl.GL_FLOAT)]
+        program = Program("attribute float A; attribute vec4 B;", "")
+        assert ('attribute', 'float', 'A') in program.variables
+        assert ('attribute', 'vec4', 'B') in program.variables
+        assert len(program.variables) == 2
+        
+        from vispy.gloo import VertexBuffer
+        vbo = VertexBuffer(dtype=np.float32)
+        
+        # Set existing uniforms
+        program['A'] = vbo
+        assert program['A'] == vbo
+        assert 'A' in program._user_variables
+        
+        # Set non-exisint uniforms
+        program['C'] = vbo
+        assert program['C'] == vbo
+        assert 'C' not in program._user_variables
+        assert 'C' in program._pending_variables
+        
+        # C should be taken up when code comes along that mentions it
+        program.set_shaders("attribute float A; attribute vec2 C;", "")
+        assert program['C'] == vbo
+        assert 'C' in program._user_variables
+        assert 'C' not in program._pending_variables
+        
+        # Set wrong values
+        self.assertRaises(ValueError, program.__setitem__, 'A', 'asddas')
+        
+        # Set wrong values beforehand
+        program['D'] = ""
+        self.assertRaises(ValueError, program.set_shaders, 
+                          'attribute vec3 D;', '')
+        
+        # Set to one value per vertex
+        program.set_shaders("attribute float A; attribute vec2 C;", "")
+        program['A'] = 1.0
+        assert program['A'] == 1.0
+        program['C'] = 1.0, 2.0 
+        assert all(program['C'] == np.array((1.0, 2.0), np.float32))
+        #
+        self.assertRaises(ValueError, program.__setitem__, 'A', (1.0, 2.0))
+        self.assertRaises(ValueError, program.__setitem__, 'C', 1.0)
 
-    def test_attach(self):
-        vert = VertexShader("A")
-        frag = FragmentShader("B")
-        program = Program(vert)
-        program.attach(frag)
-        assert len(program.shaders) == 2
-        assert program.shaders[0].code == "A"
-        assert program.shaders[1].code == "B"
 
-    def test_detach(self):
-        vert = VertexShader("A")
-        frag = FragmentShader("B")
-        program = Program(vert, frag)
-        program.detach(frag)
-        assert len(program.shaders) == 1
-        assert program.shaders[0].code == "A"
-
-    def test_failed_build(self):
-        vert = VertexShader("A")
-        frag = FragmentShader("B")
-
-        program = Program(vert=vert)
-        program._need_create = False  # fool program that it already exists
-        self.assertRaises(ValueError, program.activate)
-
-        program = Program(frag=frag)
-        program._need_create = False  # fool program that it already exists
-        self.assertRaises(ValueError, program.activate)
-
-    def test_setitem(self):
-        vert = VertexShader("")
-        frag = FragmentShader("")
-
-        program = Program(vert, frag)
-        #with self.assertRaises(ValueError):
-        #    program["A"] = 1
-        with use_log_level('error', record=True, print_msg=False):
-            self.assertRaises(KeyError, program.__setitem__, "A", 1)
-
-
-run_tests_if_main()
+run_tests_if_main(True)

@@ -106,28 +106,20 @@ class Program(GLObject):
         self._shaders = '', '' 
         
         # Init description of variables obtained from source code
-        self._code_variables = None  # name -> (kind, type, name)
+        self._code_variables = {}  # name -> (kind, type, name)
         # Init user-defined data for attributes and uniforms
         self._user_variables = {}  # name -> data / buffer / texture
         # Init pending user-defined data
-        self._pending_variables = []  # List of (name, data) tuples
+        self._pending_variables = {}  # name -> data
         
         # todo: we *could* allow vert and frag to be a tuple/list of shaders,
         # but that would complicate the GLIR implementation, and it seems 
         # unncessary
         
-        # Check shaders
-        if not (vert is None or isinstance(vert, string_types)):
-            raise ValueError('Vert must be str or None')
-        if not (frag is None or isinstance(frag, string_types)):
-            raise ValueError('Frag must be str or None')
-        
-        # Set shaders (or not)
+        # Check and set shaders
         if isinstance(vert, string_types) and isinstance(frag, string_types):
             self.set_shaders(vert, frag)
-        elif vert is None and frag is None:
-            pass
-        else:
+        elif not (vert is None and frag is None):
             raise ValueError('Vert and frag must either both be str or None')
         
         # Build associated structured vertex buffer if count is given.
@@ -136,7 +128,7 @@ class Program(GLObject):
         # All assignments must be done before the GLIR commands are
         # send away for parsing (in draw) though.
         self._count = count
-        self._buffer = None
+        self._buffer = None  # Set to None in draw()
         if self._count > 0:
             dtype = []
             for kind, type, name in self._code_variables.values():
@@ -256,9 +248,9 @@ class Program(GLObject):
         """ Try to apply the variables that were set but not known yet.
         """
         # Clear our list of pending variables
-        self._pending_variables, pending = [], self._pending_variables
+        self._pending_variables, pending = {}, self._pending_variables
         # Try to apply it. On failure, it will be added again
-        for name, data in pending:
+        for name, data in pending.items():
             self[name] = data
     
     def __setitem__(self, name, data):
@@ -345,6 +337,8 @@ class Program(GLObject):
                     # Single-value attribute; convert to array and check size
                     _, _, dtype, numel = self._gtypes[type]
                     data = np.array(data, dtype=dtype)
+                    if data.ndim == 0:
+                        data.shape = data.size
                     if data.size != numel:
                         raise ValueError('Attribute %r needs %i elements, '
                                          'not %i.' % (name, numel, data.size))
@@ -359,13 +353,15 @@ class Program(GLObject):
             # This variable is not defined in the current source code,
             # so we cannot establish whether this is a uniform or
             # attribute, nor check its type. Try again later.
-            self._pending_variables.append((name, data))
+            self._pending_variables[name] = data
     
     def __getitem__(self, name):
         """ Get user-defined data for attributes and uniforms.
         """
         if name in self._user_variables:
             return self._user_variables[name]
+        elif name in self._pending_variables:
+            return self._pending_variables[name]
         else:
             raise KeyError("Unknown uniform or attribute %s" % name)
     
@@ -392,9 +388,9 @@ class Program(GLObject):
         
         # Check leftover variables, warn, discard them
         # In GLIR we check whether all attributes are indeed set
-        for name, val in self._pending_variables:
+        for name in self._pending_variables:
             logger.warn('Variable %r is given but not known.' % name)
-        self._pending_variables = []
+        self._pending_variables = {}
         
         # Check attribute sizes
         attributes = [vbo for vbo in self._user_variables.values() 

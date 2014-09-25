@@ -193,10 +193,14 @@ class DataBuffer(Buffer):
         # Convert data to array+dtype if needed
         if data is not None:
             nbytes = None
+            data_type = data.__class__.__name__
             if dtype is not None:
                 data = np.array(data, dtype=dtype, copy=False)
             else:
                 data = np.array(data, copy=False)
+            # Check whether the given data turned up a sensible array
+            if not data.strides:
+                raise ValueError("Cannot turn %r ob into a buffer" % data_type)
 
         # Create buffer from dtype and size
         elif dtype is not None:
@@ -238,6 +242,8 @@ class DataBuffer(Buffer):
             data is actually uploaded to GPU memory.
             Asking explicitly for a copy will prevent this behavior.
         """
+        if not isinstance(data, np.ndarray):
+            raise ValueError('Data must be a ndarray')
         data = self._prepare_data(data, **kwds)
         
         self._dtype = data.dtype
