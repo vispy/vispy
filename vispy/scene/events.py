@@ -258,29 +258,35 @@ class SceneEvent(Event, TransformSystem):
             map_to = self.render_cs
         if map_from is None:
             map_from = self._stack[-1]
-
         fwd_path = self._node_path(map_from, map_to)
-        fwd_path.reverse()
-
-        if fwd_path[0] is map_to:
+        
+        if fwd_path[-1] is map_to:
+            fwd_path = fwd_path[:-1]
             rev_path = []
-            fwd_path = fwd_path[1:]
         else:
             # If we have still not reached the end, try traversing from the
-            # opposite end and stop when paths intersect
-            rev_path = self._node_path(map_to, self._stack[0])
-            connected = False
-            for i in range(1, len(rev_path)):
-                if rev_path[i] in fwd_path:
-                    rev_path = rev_path[:i]
+            # opposite end
+            rev_path = self._node_path(map_to, map_from)
+            if rev_path[-1] is map_from:
+                fwd_path = []
+                rev_path = rev_path[:-1]
+                
+            else:
+                # Find earliest intersection of fwd and rev paths
+                connected = False
+                while fwd_path[-1] is rev_path[-1]:
                     connected = True
+                    fwd_path = fwd_path[:-1]
+                    rev_path = rev_path[:-1]
 
-            if not connected:
-                raise RuntimeError("Unable to find unique path from %r to %r" %
-                                   (map_from, map_to))
-
-        transforms = ([e.transform for e in fwd_path] +
-                      [e.transform.inverse for e in rev_path])
+                if not connected:
+                    raise RuntimeError("Unable to find unique path from %r to "
+                                       "%r" % (map_from, map_to))
+            
+        # starting node must come _last_ in the transform chain
+        fwd_path = fwd_path[::-1]
+        transforms = ([e.transform.inverse for e in rev_path] + 
+                      [e.transform for e in fwd_path])
         return self._transform_cache.get(transforms)
 
     def _node_path(self, start, end):
@@ -306,12 +312,11 @@ class SceneEvent(Event, TransformSystem):
             try:
                 ind = self._stack.index(node)
                 # copy stack onto path one node at a time
-                while ind > -1 and path[-1] is not end:
+                while ind > 0 and path[-1] is not end:
                     ind -= 1
                     path.append(self._stack[ind])
             except IndexError:
                 pass
-
         return path
 
 
@@ -384,6 +389,11 @@ class SceneMouseEvent(SceneEvent):
         ev._viewbox_stack = self._viewbox_stack[:]
         return ev
 
+    def map_to_canvas(self, obj):
+        tr = self.node_transform(map_from=self.node_cs, 
+                                 map_to=self.canvas_cs)
+        return tr.map(obj)
+    
     def map_from_canvas(self, obj):
         tr = self.node_transform(map_from=self.canvas_cs, 
                                  map_to=self.node_cs)
