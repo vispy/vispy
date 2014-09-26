@@ -109,7 +109,7 @@ class Canvas(object):
         
         if dpi is None:
             dpi = get_dpi()
-        self._dpi = dpi
+        self.dpi = dpi
 
         # Create events
         self.events = EmitterGroup(source=self,
@@ -259,7 +259,7 @@ class Canvas(object):
     
     @dpi.setter
     def dpi(self, d):
-        self._dpi = dpi
+        self._dpi = float(dpi)
         self.update()
 
     def connect(self, fun):
