@@ -55,7 +55,7 @@ Even when Vispy is mature enough, knowing OpenGL will still let you write
 entirely custom interactive visualizations that fully leverage the power of
 GPUs.
 
-  * `A tutorial about Vispy <http://ipython-books.github.io/featured-06.html>`_, by Cyrille Rossant, published in the `IPython Cookbook <http://ipython-books.github.io/>`_
+  * `A tutorial about Vispy <http://ipython-books.github.io/featured-06/>`_, by Cyrille Rossant, published in the `IPython Cookbook <http://ipython-books.github.io/>`_
   * `A tutorial about modern OpenGL and Vispy, by Nicolas Rougier <http://www.loria.fr/~rougier/teaching/opengl/>`_
   * A paper on the fundamentals behing Vispy: `Rossant C and Harris KD, Hardware-accelerated interactive data visualization for neuroscience in Python, Frontiers in Neuroinformatics 2013 <http://journal.frontiersin.org/Journal/10.3389/fninf.2013.00036/full>`_
   * A free online book on modern OpenGL (but not Python): `Learning Modern 3D Graphics Programming, by Jason L. McKesson <http://www.arcsynthesis.org/gltut/>`_
