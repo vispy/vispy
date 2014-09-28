@@ -281,6 +281,9 @@ class PanZoomCamera(BaseCamera):
         if event.handled or not self.interactive:
             return
         
+        if event.type == 'mouse_press' and event.button == 5:
+            pass
+        
         if event.type == 'mouse_wheel':
             scale = 1.1 ** -event.delta[1]
             center = self._scene_transform.imap(event.pos[:2])
@@ -567,48 +570,109 @@ class TurntableCamera(PerspectiveCamera):
                 self.fov = np.clip(self.fov * s, 0, 179)
             self._update_camera_pos()
         
-        elif event.type == 'mouse_move' and 1 in event.buttons:
-            p1 = np.array(event.last_event.pos)[:2]
-            p2 = np.array(event.pos)[:2]
-            p1c = event.map_to_canvas(p1)[:2]
-            p2c = event.map_to_canvas(p2)[:2]
-            d = p2c - p1c
-            self.orbit(-d[0], d[1])
+        elif event.type == 'mouse_move':          
+            if 2 in event.buttons:
+                p1 = np.array(event.last_event.pos)[:2]
+                p2 = np.array(event.pos)[:2]
+                p1c = event.map_to_canvas(p1)[:2]
+                p2c = event.map_to_canvas(p2)[:2]
+                d = p2c - p1c                  
+                self.orbit(-d[0], d[1])
+            if 1 in event.buttons:
+                p1 = np.array(event.last_event.pos)[:3]
+                p2 = np.array(event.pos)[:3]
+                p1c = event.map_to_canvas(p1)[:3]
+                p2c = event.map_to_canvas(p2)[:3]
+                d = p2c - p1c
+                center = np.array(self.center)
+                cPos =self.transform.inverse.imap(center)[:3]
+                cVec = center - cPos
+                if self.mode == 'ortho':
+                    xDist = self.width
+                else:    
+                    xDist = self.distance * 2. * np.tan(0.5 * self.fov * np.pi / 180.)  ## approx. width of view at distance of center point
+                print(xDist)
+                
+                
+#                print(self.up)
+#                if self.up == 'z':
+#                    zVec = np.array([0,0,1], dtype=np.float)
+#                    xVec = np.cross()
+#                    print(self.transform)
 
+#    def pan(self, dx, dy, dz, relative=False):
+#        """
+#        Moves the center (look-at) position while holding the camera in place. 
+#        
+#        If relative=True, then the coordinates are interpreted such that x
+#        if in the global xy plane and points to the right side of the view, y is
+#        in the global xy plane and orthogonal to x, and z points in the global z
+#        direction. Distances are scaled roughly such that a value of 1.0 moves
+#        by one pixel on screen.
+#        
+#        """
+#        if not relative:
+#            self.opts['center'] += QtGui.QVector3D(dx, dy, dz)
+#        else:
+#            cPos = self.cameraPosition()
+#            cVec = self.opts['center'] - cPos
+#            dist = cVec.length()  ## distance from camera to center
+#            xDist = dist * 2. * np.tan(0.5 * self.opts['fov'] * np.pi / 180.)  ## approx. width of view at distance of center point
+#            xScale = xDist / self.width()
+#            zVec = QtGui.QVector3D(0,0,1)
+#            xVec = QtGui.QVector3D.crossProduct(zVec, cVec).normalized()
+#            yVec = QtGui.QVector3D.crossProduct(xVec, zVec).normalized()
+#            self.opts['center'] = self.opts['center'] + xVec * xScale * dx + yVec * xScale * dy + zVec * xScale * dz
+#        self.update()
 
-    def cal_bsphere(self, with_transform=False):
-        #TODO: with_transform=True
-        children = self._viewbox.children[0] 
-        x = self._bounds_tree(children, axis=0, mode='visual',
-                                with_transform=with_transform)
-        x = np.array(x).flatten()        
-        y = self._bounds_tree(children, axis=1, mode='visual',
-                                with_transform=with_transform)
-        y = np.array(y).flatten()
-        z = self._bounds_tree(children, axis=2, mode='visual',
-                                with_transform=with_transform)
-        z = np.array(z).flatten()
-        if x.size != 0:
-            xyz = np.zeros((x.size, 3))
-            xyz[:, 0] = x
-            xyz[:, 1] = y
-            xyz[:, 2] = z
-    
-            return _bsphere(xyz)
-        else:
-            return None, None
+#                self._center += d * scale
+#                self._update_transform()
+#                self._update_camera_pos()
 
-    def _bounds_tree(self, children, axis=0, mode='visual',
-                     with_transform=False):
-        # TODO: with_transform=True
-        output = []
+    def cal_bsphere(self):
+        children = self._viewbox.children[0]
+        print(self._viewbox)
+        listChild = self._bounds_tree(children, axis=0, mode='visual')
+        for child in listChild:
+            print(child)
+            print(self._viewbox.scene.entity_transform(child))
+        return None, None
+#        children = self._viewbox.children[0] 
+#        x, tran = self._bounds_tree(children, axis=0, mode='visual')
+#        x = np.array(x).flatten()        
+#        y, tran = self._bounds_tree(children, axis=1, mode='visual')
+#        y = np.array(y).flatten()
+#        z, tran = self._bounds_tree(children, axis=2, mode='visual')
+#        z = np.array(z).flatten()
+#        if x.size != 0:
+#            xyz = np.zeros((x.size, 3))
+#            xyz[:, 0] = x
+#            xyz[:, 1] = y
+#            xyz[:, 2] = z
+#            for pos, tr in enumerate(tran):
+#                xyz[pos*2, :] = tr.imap(xyz[pos*2, :])[:3]
+#                xyz[pos*2+1, :] = tr.imap(xyz[pos*2+1, :])[:3]
+#            return _bsphere(xyz)
+#        else:
+#            return None, None
+
+    def _bounds_tree(self, children, axis=0, mode='visual'):
+        outChild = []
         n_children = len(children.children)
         for child in children.children:
             if child.bounds(mode, axis) is not None:
-                output.append(child.bounds(mode, axis))
-            self._bounds_tree(child, axis=axis, mode=mode,
-                              with_transform=with_transform)
-        return output
+                outChild.append(child)
+            self._bounds_tree(child, axis=axis, mode=mode)
+        return outChild
+#        outX = []
+#        outTR = []
+#        n_children = len(children.children)
+#        for child in children.children:
+#            if child.bounds(mode, axis) is not None:
+#                outX.append(child.bounds(mode, axis))
+#                outTR.append(child.transform)
+#            self._bounds_tree(child, axis=axis, mode=mode)
+#        return outX, outTR
 
     def _update_camera_pos(self):
         """ Set the camera position / orientation based on elevation,

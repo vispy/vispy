@@ -78,9 +78,11 @@ cube = scene.visuals.Cube((1.0, 0.5, 0.25), color='red',
 cube.add_parent(vb2.scene)
 
 tr = AffineTransform()
-tr.rotate(30, (0, 0, 1))
-tr.scale((3, 3))
+#tr.rotate(30, (0, 0, 1))
+#tr.scale((3, 3))
 cube.transform = (tr*STTransform(translate=(-5, -5)))
+print(cube.entity_transform(vb2.scene).imap((0,0,0)))
+print(vb2.scene.entity_transform(cube).map((0,0,0)))
 
 #TODO: add markers !!!
 
@@ -99,11 +101,13 @@ box1.add_parent(vb2.scene)
 
 box2 = scene.visuals.Line(pos=(box * 2 - 1),  color=(0, 0.7, 0, 1), mode='gl',
                           name='nd box', parent=vb1.scene)
+box2.transform = tr
 box2.add_parent(vb2.scene)
 
 # These boxes are only added to the 3D view.
 box3 = scene.visuals.Line(pos=box + z, color=(1, 0, 0, 1), mode='gl',
                           name='unit box', parent=vb2.scene)
+print(box3.entity_transform(vb2.scene).imap((0,0,0)))                          
 box4 = scene.visuals.Line(pos=((box + z) * 2 - 1), color=(0, 1, 0, 1),
                           mode='gl', name='nd box', parent=vb2.scene)
 
