@@ -93,8 +93,9 @@ class GridLinesVisual(Visual):
     def draw(self, transforms):
         gloo.set_state('additive', cull_face='front_and_back')
 
-        doc_to_ndc = transforms.doc_to_framebuffer * transforms.framebuffer_to_render
-        local_to_doc = transforms.visual_to_doc
+        doc_to_ndc = (transforms.document_to_framebuffer * 
+                      transforms.framebuffer_to_render)
+        local_to_doc = transforms.visual_to_document
 
         self._program.frag['map_nd_to_doc'] = doc_to_ndc.shader_imap()
         self._program.frag['map_doc_to_local'] = local_to_doc.shader_imap()
