@@ -360,13 +360,16 @@ class Line(Visual):
         self.update()
 
     def bounds(self, mode, axis):
-        if 'pos' not in self._origs:
-            return None
-        data = self._origs['pos']
-        if data.shape[1] > axis:
-            return (data[:, axis].min(), data[:, axis].max())
+        if mode == 'visual':
+            if 'pos' not in self._origs:
+                return None
+            data = self._origs['pos']
+            if data.shape[1] > axis:
+                return (data[:, axis].min(), data[:, axis].max())
+            else:
+                return (0, 0)
         else:
-            return (0, 0)
+            return None
 
     def draw(self, event):
         if self.mode == 'gl':

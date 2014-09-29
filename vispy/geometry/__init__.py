@@ -15,5 +15,5 @@ from .polygon import PolygonData  # noqa
 from .meshdata import MeshData  # noqa
 from .rect import Rect  # noqa
 from .triangulation import Triangulation  # noqa
-from .calculations import _calculate_normals, _fast_cross_3d  # noqa
+from .calculations import _calculate_normals, _fast_cross_3d, _bbox, _bsphere  # noqa
 from .generation import create_cube, create_cylinder, create_sphere  # noqa

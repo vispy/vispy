@@ -135,10 +135,13 @@ class Image(ModularMesh):
         pass
 
     def bounds(self, mode, axis):
-        if axis > 1:
-            return (0, 0)
+        if mode == 'visual':
+            if axis > 1:
+                return (0, 0)
+            else:
+                return (0, self.size[axis])
         else:
-            return (0, self.size[axis])
+            return None
 
     def draw(self, event):
         if self._data is None:
