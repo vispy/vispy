@@ -258,7 +258,7 @@ class Canvas(object):
         return self._dpi
     
     @dpi.setter
-    def dpi(self, d):
+    def dpi(self, dpi):
         self._dpi = float(dpi)
         self.update()
 

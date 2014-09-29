@@ -428,8 +428,8 @@ class LineVisual(Visual):
             return
         gloo.set_state('translucent', depth_test=False)
         data_doc = transforms.visual_to_document
-        doc_px = transforms.document_to_buffer
-        px_ndc = transforms.buffer_to_render
+        doc_px = transforms.document_to_framebuffer
+        px_ndc = transforms.framebuffer_to_render
         
         vert = self._agg_program.vert
         vert['doc_px_transform'] = doc_px.shader_map()

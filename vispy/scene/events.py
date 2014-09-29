@@ -145,13 +145,13 @@ class SceneEvent(Event, TransformSystem):
         return self.canvas.canvas_cs
 
     @property
-    def buffer_cs(self):
+    def framebuffer_cs(self):
         """ The node for the current framebuffer coordinate system. This
         coordinate system corresponds to the physical pixels being rendered
         to, with the origin in lower-right, and the framebufer (width, height)
         in upper-left. It is used mainly for making antialiasing measurements.
         """
-        return self.canvas.buffer_cs
+        return self.canvas.framebuffer_cs
 
     @property
     def render_cs(self):
@@ -190,27 +190,27 @@ class SceneEvent(Event, TransformSystem):
         raise RuntimeError("Cannot set transforms on SceneEvent.")
         
     @property
-    def document_to_buffer(self):
+    def document_to_framebuffer(self):
         """ Transform mapping from document coordinate frame to the framebuffer
         (physical pixel) coordinate frame.
         """
-        return self.node_transform(map_to=self.buffer_cs, 
+        return self.node_transform(map_to=self.framebuffer_cs, 
                                    map_from=self.document_cs)
         
-    @document_to_buffer.setter
-    def document_to_buffer(self, tr):
+    @document_to_framebuffer.setter
+    def document_to_framebuffer(self, tr):
         raise RuntimeError("Cannot set transforms on SceneEvent.")
         
     @property
-    def buffer_to_render(self):
+    def framebuffer_to_render(self):
         """ Transform mapping from pixel coordinate frame to rendering
         coordinate frame.
         """
         return self.node_transform(map_to=self.render_cs, 
-                                   map_from=self.buffer_cs)
+                                   map_from=self.framebuffer_cs)
 
-    @buffer_to_render.setter
-    def buffer_to_render(self, tr):
+    @framebuffer_to_render.setter
+    def framebuffer_to_render(self, tr):
         raise RuntimeError("Cannot set transforms on SceneEvent.")
 
     def get_full_transform(self):

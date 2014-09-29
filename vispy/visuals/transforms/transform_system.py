@@ -106,7 +106,7 @@ class TransformSystem(object):
         def draw(tr_sys):
             # Send two parts of the full transform separately
             self.program['visual_to_doc'] = tr_sys.visual_to_doc.shader_map()
-            doc_to_render = tr_sys.buffer_to_render * tr_sys.doc_to_buffer
+            doc_to_render = tr_sys.framebuffer_to_render * tr_sys.doc_to_framebuffer
             self.program['visual_to_doc'] = doc_to_render.shader_map()
             
             self.program['u_line_width'] = self.line_width
@@ -143,12 +143,12 @@ class TransformSystem(object):
         # the scale of logical and physical pixels.
         map_from = [(0, 0), canvas.size]
         map_to = [(0, canvas.size[1]), (canvas.size[0], 0)]
-        self._document_to_buffer = STTransform.from_mapping(map_from, map_to)
+        self._document_to_framebuffer = STTransform.from_mapping(map_from, map_to)
         
         # Automatically configure buffer coordinate system to match the canvas 
         map_from = [(0, 0), canvas.size]
         map_to = [(-1, -1), (1, 1)]
-        self._buffer_to_render = STTransform.from_mapping(map_from, map_to)
+        self._framebuffer_to_render = STTransform.from_mapping(map_from, map_to)
         
 
     @property
@@ -180,36 +180,36 @@ class TransformSystem(object):
         self._visual_to_document = tr
         
     @property
-    def document_to_buffer(self):
+    def document_to_framebuffer(self):
         """ Transform mapping from document coordinate frame to the framebuffer
         (physical pixel) coordinate frame.
         """
-        return self._document_to_buffer
+        return self._document_to_framebuffer
         
-    @document_to_buffer.setter
-    def document_to_buffer(self, tr):
-        self._document_to_buffer = tr
+    @document_to_framebuffer.setter
+    def document_to_framebuffer(self, tr):
+        self._document_to_framebuffer = tr
         
     @property
-    def buffer_to_render(self):
+    def framebuffer_to_render(self):
         """ Transform mapping from pixel coordinate frame to rendering
         coordinate frame.
         """
-        return self._buffer_to_render
+        return self._framebuffer_to_render
 
-    @buffer_to_render.setter
-    def buffer_to_render(self, tr):
-        self._buffer_to_render = tr
+    @framebuffer_to_render.setter
+    def framebuffer_to_render(self, tr):
+        self._framebuffer_to_render = tr
 
     def get_full_transform(self):
         """ Convenience method that returns the composition of all three
         transforms::
         
-            buffer_to_render * document_to_buffer * visual_to_document
+            framebuffer_to_render * document_to_framebuffer * visual_to_document
         
         This is used for visuals that do not require physical measurements
         or antialiasing.
         """
-        return (self.buffer_to_render * 
-                self.document_to_buffer *
+        return (self.framebuffer_to_render * 
+                self.document_to_framebuffer *
                 self.visual_to_document)

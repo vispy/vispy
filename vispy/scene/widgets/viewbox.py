@@ -224,7 +224,7 @@ class ViewBox(Widget):
 
     def _prepare_viewport(self, event):
         fb_transform = event.node_transform(map_from=event.node_cs,
-                                            map_to=event.buffer_cs)
+                                            map_to=event.framebuffer_cs)
         p1 = fb_transform.map((0, 0))
         p2 = fb_transform.map(self.size)
         return p1[0], p1[1], p2[0]-p1[0], p2[1]-p1[1]
