@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from .line import Line
-from ...geometry.isocurve import isocurve, isocurve_for_trisurface
+from ...geometry.isocurve import isocurve
 
 
 class Isocurve(Line):
