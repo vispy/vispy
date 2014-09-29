@@ -16,9 +16,7 @@ import numpy as np
 from vispy import app
 from vispy import scene
 
-from vispy.scene.transforms import (AffineTransform, STTransform, arg_to_array,
-                                    LogTransform, PolarTransform,
-                                    BaseTransform)
+from vispy.scene.transforms import (AffineTransform, STTransform)
 
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
