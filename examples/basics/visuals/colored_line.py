@@ -14,7 +14,7 @@ import vispy
 from vispy import app
 from vispy.color import colormaps
 from vispy.scene import visuals
-from vispy.scene.transforms import STTransform
+from vispy.visuals.transforms import STTransform
 from vispy.ext.six import next
 
 colormaps = itertools.cycle(colormaps)

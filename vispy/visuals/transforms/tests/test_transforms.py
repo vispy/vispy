@@ -4,7 +4,7 @@
 
 import numpy as np
 
-import vispy.scene.transforms as tr
+import vispy.visuals.transforms as tr
 from vispy.geometry import Rect
 from vispy.testing import run_tests_if_main
 

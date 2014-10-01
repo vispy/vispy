@@ -11,7 +11,7 @@ import numpy as np
 
 from vispy import app, gloo
 from vispy.scene.visuals import Markers, marker_types
-from vispy.scene.transforms import STTransform
+from vispy.visuals.transforms import STTransform
 
 n = 540
 pos = np.zeros((n, 2))

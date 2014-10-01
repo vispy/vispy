@@ -10,7 +10,7 @@ import numpy as np
 import vispy.app
 from vispy import gloo
 from vispy.scene import visuals
-from vispy.scene.transforms import STTransform
+from vispy.visuals.transforms import STTransform
 
 image = np.random.normal(size=(100, 100, 3), loc=128,
                          scale=50).astype(np.ubyte)

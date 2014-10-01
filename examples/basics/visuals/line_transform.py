@@ -14,7 +14,7 @@ import numpy as np
 import vispy.app
 from vispy import gloo
 from vispy.scene import visuals
-from vispy.scene.transforms import (STTransform, LogTransform,
+from vispy.visuals.transforms import (STTransform, LogTransform,
                                     AffineTransform, PolarTransform)
 
 import vispy.util

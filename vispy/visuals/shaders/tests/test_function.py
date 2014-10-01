@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
-from vispy.scene.shaders.function import (Function, Variable, Varying,
+from vispy.visuals.shaders.function import (Function, Variable, Varying,
                                           MainFunction, FunctionChain)
 
 # Users normally don't need these, but I want to test them
-from vispy.scene.shaders.function import FunctionCall, TextExpression
+from vispy.visuals.shaders.function import FunctionCall, TextExpression
 
 from nose.tools import assert_raises, assert_equal, assert_not_equal  # noqa
 from vispy.testing import (assert_in, assert_not_in, assert_is,

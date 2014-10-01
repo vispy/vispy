@@ -3,7 +3,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 import re
 
-from vispy.scene.shaders.parsing import re_identifier, find_program_variables
+from vispy.visuals.shaders.parsing import re_identifier, find_program_variables
 from vispy.testing import run_tests_if_main
 
 

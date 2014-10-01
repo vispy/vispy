@@ -11,7 +11,7 @@ import numpy as np
 import vispy.app
 from vispy import gloo
 from vispy.scene import visuals
-from vispy.scene.transforms import (AffineTransform, STTransform, arg_to_array,
+from vispy.visuals.transforms import (AffineTransform, STTransform, arg_to_array,
                                     LogTransform, PolarTransform, 
                                     BaseTransform)
 

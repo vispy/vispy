@@ -14,10 +14,10 @@ import numpy as np
 import vispy.app
 import vispy.gloo as gloo
 from vispy.scene.visuals.modular_line import ModularLine
-from vispy.scene.transforms import BaseTransform, STTransform, arg_to_array
+from vispy.visuals.transforms import BaseTransform, STTransform, arg_to_array
 from vispy.scene.components import (VisualComponent, VertexColorComponent,
                                     XYPosComponent)
-from vispy.scene.shaders import Varying
+from vispy.visuals.shaders import Varying
 
 # vertex positions of data to draw
 N = 50

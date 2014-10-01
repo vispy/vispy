@@ -9,9 +9,9 @@ from math import exp
 
 from vispy import app
 from vispy import gloo
-from vispy.scene.shaders import ModularProgram
+from vispy.visuals.shaders import ModularProgram
 from vispy.scene.visuals import Visual
-from vispy.scene.transforms import STTransform, LogTransform
+from vispy.visuals.transforms import STTransform, LogTransform
 
 
 class PanZoomTransform(STTransform):

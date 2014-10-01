@@ -14,7 +14,7 @@ from vispy.scene.visuals.modular_mesh import ModularMesh
 from vispy.scene.components import (VertexColorComponent, GridContourComponent,
                                     VertexNormalComponent, ShadingComponent)
 from vispy.geometry import create_sphere
-from vispy.scene.transforms import (STTransform, AffineTransform,
+from vispy.visuals.transforms import (STTransform, AffineTransform,
                                     ChainTransform)
 
 

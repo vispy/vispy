@@ -12,7 +12,7 @@ import numpy as np
 
 import vispy.app
 from vispy.scene import visuals
-from vispy.scene.transforms import STTransform
+from vispy.visuals.transforms import STTransform
 
 # vertex positions of data to draw
 N = 200

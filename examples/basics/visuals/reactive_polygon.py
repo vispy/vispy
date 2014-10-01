@@ -23,7 +23,7 @@ class Canvas(vispy.scene.SceneCanvas):
     def __init__(self):
         self.polygon = visuals.Polygon(pos=pos, color=(1, 0, 0, 1),
                                        border_color=(1, 1, 1, 1))
-        self.polygon.transform = vispy.scene.transforms.STTransform(
+        self.polygon.transform = vispy.visuals.transforms.STTransform(
             scale=(500, 500),
             translate=(400, 400))
         
