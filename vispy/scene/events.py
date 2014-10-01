@@ -24,23 +24,22 @@ class SceneEvent(Event, TransformSystem):
         self._stack_ids = set()
         self._viewbox_stack = []
         self._doc_stack = []
-        self._children_handled = False
+        self._handled_children = []
         
         if transform_cache is None:
             transform_cache = TransformCache()
         self._transform_cache = transform_cache
 
     @property
-    def children_handled(self):
-        """ Flag indicating whether the current node's children have already
-        been processed. This is used to prevent systems from recursing over
-        the node's children.
+    def handled_children(self):
+        """ List of children of the current node that have already been 
+        handled.
+        
+        Nodes that manually process their children (as opposed to allowing
+        drawing / mouse systems to handle them automatically) may append nodes
+        to this list to prevent systems from handling them.
         """
-        return self._children_handled
-
-    @children_handled.setter
-    def children_handled(self, h):
-        self._children_handled = h
+        return self._handled_children[-1]
 
     @property
     def canvas(self):
@@ -67,6 +66,7 @@ class SceneEvent(Event, TransformSystem):
     def push_node(self, node):
         """ Push an node on the stack. """
         self._stack.append(node)
+        self._handled_children.append([])
         if id(node) in self._stack_ids:
             raise RuntimeError("Scenegraph cycle detected; cannot push %r" % 
                                node)
@@ -78,6 +78,7 @@ class SceneEvent(Event, TransformSystem):
     def pop_node(self):
         """ Pop an node from the stack. """
         ent = self._stack.pop(-1)
+        self._handled_children.pop(-1)
         self._stack_ids.remove(id(ent))
         if ent.document is not None:
             assert ent.document == self.pop_document()

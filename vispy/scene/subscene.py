@@ -48,8 +48,6 @@ class SubScene(Node):
         try:
             self._drawing = True
             self.process_system(event, 'draw')
-            # Tell the prior drawing system to ignore children
-            event.children_handled = True
         finally:
             self._drawing = False
     

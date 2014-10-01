@@ -15,13 +15,8 @@ class DrawingSystem(object):
     per viewbox.
 
     """
-    def process(self, event, subscene):
-        # Iterate over entities
-        #assert isinstance(subscene, SubScene)  # LC: allow any part of the
-                                                #     scene to be drawn
-        self._process_node(event, subscene)
-
-    def _process_node(self, event, node):
+    def process(self, event, node):
+        # Draw this node if it is a visual
         if isinstance(node, Visual):
             try:
                 node.draw(event)
@@ -30,33 +25,25 @@ class DrawingSystem(object):
                 # debugging)
                 _handle_exception(False, 'reminders', self, node=node)
 
-        # Processs children; recurse.
-        if not event.children_handled:
-            for sub_node in node.children:
-                event.push_node(sub_node)
-                try:
-                    self._process_node(event, sub_node)
-                finally:
-                    event.pop_node()
+        # Processs children recursively, unless the node has already
+        # handled them.
+        for sub_node in node.children:
+            if sub_node in event.handled_children:
+                continue
+            event.push_node(sub_node)
+            try:
+                self.process(event, sub_node)
+            finally:
+                event.pop_node()
 
 
 class MouseInputSystem(object):
-    def process(self, event, subscene):
+    def process(self, event, node):
         # For simplicity, this system delivers the event to each node
         # in the scenegraph, except for widgets that are not under the 
         # press_event. 
-        # TODO: 
-        #  1. This eventually should be replaced with a picking system.
-        #  2. We also need to ensure that if one node accepts a press 
-        #     event, it will also receive all subsequent mouse events
-        #     until the button is released.
+        # TODO: This eventually should be replaced with a picking system.
         
-        self._process_node(event, subscene)
-    
-    def _process_node(self, event, node):
-        # Push node and set its total transform
-        #event.push_node(node)
-
         from .widgets.widget import Widget
         if isinstance(node, Widget):
             # widgets are rectangular; easy to do mouse collision 
@@ -72,7 +59,7 @@ class MouseInputSystem(object):
             for sub_node in node.children:
                 event.push_node(sub_node)
                 try:
-                    self._process_node(event, sub_node)
+                    self.process(event, sub_node)
                 finally:
                     event.pop_node()
                 if event.handled:

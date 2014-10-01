@@ -53,7 +53,7 @@ class ViewBox(Widget):
         # Each viewbox has a scene widget, which has a transform that
         # represents the transformation imposed by camera.
         if scene is None:
-            self._scene = SubScene()
+            self._scene = SubScene(name=self.name + "_Scene")
         elif isinstance(scene, SubScene):
             self._scene = scene
         else:
@@ -186,7 +186,11 @@ class ViewBox(Widget):
         super(ViewBox, self).draw(event)
 
         event.push_viewbox(self)
-
+        
+        # make sure the current drawing system does not attempt to draw
+        # the scene.
+        event.handled_children.append(self.scene)
+        
         if fbo:
             canvas_transform = event.visual_to_canvas
             offset = canvas_transform.map((0, 0))[:2]
