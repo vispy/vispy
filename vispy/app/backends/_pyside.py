@@ -13,11 +13,13 @@ from ...util import logger
 try:
     # Make sure no conflicting libraries have been imported.
     for lib in ['PyQt4', 'PyQt5']:
+        lib += '.QtCore'
         if lib in sys.modules:
             raise RuntimeError("Refusing to import PySide because %s is "
                                "already imported." % lib)
-    # Try importing
-    from PySide import QtGui, QtCore, QtOpenGL  # noqa
+    # Try importing (QtOpenGL first to fail without import QtCore)
+    from PySide import QtOpenGL  # noqa
+    from PySide import QtGui, QtCore  # noqa
 except Exception as exp:
     # Fail: this backend cannot be used
     available, testable, why_not, which = False, False, str(exp), None
