@@ -9,13 +9,13 @@ Simple demonstration of Mesh visual.
 import numpy as np
 import vispy.app
 from vispy import gloo
-from vispy.scene.visuals import Mesh
+from vispy.visuals import Mesh
 from vispy.geometry import create_sphere
 from vispy.visuals.transforms import (STTransform, AffineTransform,
                                     ChainTransform)
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
         self.meshes = []
         self.rotation = AffineTransform()
@@ -66,7 +66,7 @@ class Canvas(vispy.scene.SceneCanvas):
                                                          scale=(s, s, 1)),
                                              self.rotation])
 
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+        vispy.app.Canvas.__init__(self, keys='interactive')
 
         self.size = (800, 800)
         self.show()

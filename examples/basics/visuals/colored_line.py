@@ -13,7 +13,7 @@ import numpy as np
 import vispy
 from vispy import app
 from vispy.color import colormaps
-from vispy.scene import visuals
+from vispy import visuals
 from vispy.visuals.transforms import STTransform
 from vispy.ext.six import next
 
@@ -26,9 +26,9 @@ pos[:, 0] = np.linspace(10, 390, N)
 pos[:, 1] = np.random.normal(size=N, scale=20, loc=0)
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive',
+        vispy.app.Canvas.__init__(self, keys='interactive',
                                          size=(400, 200), show=True)
         # Create a visual that updates the line with different colormaps
         color = next(colormaps)

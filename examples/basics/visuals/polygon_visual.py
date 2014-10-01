@@ -10,7 +10,7 @@ import sys
 import numpy as np
 
 from vispy import gloo
-from vispy.scene import visuals, transforms, SceneCanvas
+from vispy import visuals, transforms, SceneCanvas
 
 # vertex positions of polygon data to draw
 pos = np.array([[0, 0, 0],

@@ -9,7 +9,7 @@ Simple demonstration of PointsVisual.
 import numpy as np
 import vispy.app
 from vispy import gloo
-from vispy.scene.visuals.modular_point import ModularPoint
+from vispy.visuals.modular_point import ModularPoint
 
 # vertex positions of data to draw
 N = 200
@@ -18,10 +18,10 @@ pos[:, 0] = np.linspace(50., 750., N)
 pos[:, 1] = np.random.normal(size=N, scale=100, loc=400).astype(np.float32)
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
         self.points = ModularPoint(pos, color=(0, 1, 0, 1))
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+        vispy.app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 

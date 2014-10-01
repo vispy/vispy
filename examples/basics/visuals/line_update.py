@@ -8,7 +8,7 @@ Demonstration of animated Line visual.
 
 import numpy as np
 import vispy.app
-from vispy.scene import visuals
+from vispy import visuals
 
 # vertex positions of data to draw
 N = 200
@@ -22,9 +22,9 @@ color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive',
+        vispy.app.Canvas.__init__(self, keys='interactive',
                                          size=(800, 800), show=True)
         self.line = visuals.Line(pos, color, parent=self.scene)
         self.line.events.update.connect(lambda evt: self.update)

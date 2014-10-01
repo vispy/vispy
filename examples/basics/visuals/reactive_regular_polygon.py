@@ -8,11 +8,11 @@ Simple demonstration of reactive RegularPolygonVisual.
 
 import vispy
 from vispy import gloo, app
-from vispy.scene import visuals
+from vispy import visuals
 import numpy as np
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
         self.rpolygon = visuals.RegularPolygon(pos=(400.0, 400.0, 0), 
                                                radius=80.,
@@ -20,7 +20,7 @@ class Canvas(vispy.scene.SceneCanvas):
                                                border_color=(1, 1, 1, 1),
                                                sides=4)
         
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+        vispy.app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
         

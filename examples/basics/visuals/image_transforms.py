@@ -10,7 +10,7 @@ Simple demonstration of ImageVisual.
 import numpy as np
 import vispy.app
 from vispy import gloo
-from vispy.scene import visuals
+from vispy import visuals
 from vispy.visuals.transforms import (AffineTransform, STTransform, arg_to_array,
                                     LogTransform, PolarTransform, 
                                     BaseTransform)
@@ -24,7 +24,7 @@ image = ((image-image.min()) *
          (253. / (image.max()-image.min()))).astype(np.ubyte)
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
         self.images = [visuals.Image(image, method='impostor')
                        for i in range(4)]
@@ -53,7 +53,7 @@ class Canvas(vispy.scene.SceneCanvas):
                                     STTransform(scale=(np.pi/200, 0.005),
                                                 translate=(-3*np.pi/4., 0.1)))
 
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+        vispy.app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 

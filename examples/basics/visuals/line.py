@@ -11,7 +11,7 @@ import sys
 import numpy as np
 
 import vispy.app
-from vispy.scene import visuals
+from vispy import visuals
 from vispy.visuals.transforms import STTransform
 
 # vertex positions of data to draw
@@ -32,9 +32,9 @@ connect[:, 1] = connect[:, 0] + 1
 connect[N/2, 1] = N/2  # put a break in the middle
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive',
+        vispy.app.Canvas.__init__(self, keys='interactive',
                                          size=(800, 800), show=True)
         # Create several visuals demonstrating different features of Line
         self.lines = [

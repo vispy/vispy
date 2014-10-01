@@ -13,9 +13,9 @@ subclassing the original ModularLine class.
 import numpy as np
 import vispy.app
 import vispy.gloo as gloo
-from vispy.scene.visuals.modular_line import ModularLine
+from vispy.visuals.modular_line import ModularLine
 from vispy.visuals.transforms import BaseTransform, STTransform, arg_to_array
-from vispy.scene.components import (VisualComponent, VertexColorComponent,
+from vispy.visuals.components import (VisualComponent, VertexColorComponent,
                                     XYPosComponent)
 from vispy.visuals.shaders import Varying
 
@@ -140,7 +140,7 @@ class WobbleComponent(VisualComponent):
         self._visual._program._need_build = True
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
 
         self.line = ModularLine()
@@ -153,7 +153,7 @@ class Canvas(vispy.scene.SceneCanvas):
         dasher = DashComponent(pos)
         self.line.color_components = [VertexColorComponent(color), dasher]
 
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+        vispy.app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 

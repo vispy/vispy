@@ -13,7 +13,7 @@ information, but different transformations.
 import numpy as np
 import vispy.app
 from vispy import gloo
-from vispy.scene import visuals
+from vispy import visuals
 from vispy.visuals.transforms import (STTransform, LogTransform,
                                     AffineTransform, PolarTransform)
 
@@ -32,7 +32,7 @@ color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
 
         # Define several Line visuals that use the same position data
@@ -72,7 +72,7 @@ class Canvas(vispy.scene.SceneCanvas):
                                    STTransform(scale=(0.01, 0.1),
                                                translate=(4, 20)))
 
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+        vispy.app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 

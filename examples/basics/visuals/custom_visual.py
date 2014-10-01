@@ -10,7 +10,7 @@ from math import exp
 from vispy import app
 from vispy import gloo
 from vispy.visuals.shaders import ModularProgram
-from vispy.scene.visuals import Visual
+from vispy.visuals import Visual
 from vispy.visuals.transforms import STTransform, LogTransform
 
 

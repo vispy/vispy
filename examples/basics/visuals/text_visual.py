@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 
 from vispy import scene, gloo
-from vispy.scene.visuals import Text
+from vispy.visuals import Text
 
 
 class Canvas(scene.SceneCanvas):

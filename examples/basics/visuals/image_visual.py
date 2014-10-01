@@ -9,18 +9,18 @@ Simple demonstration of ImageVisual.
 import numpy as np
 import vispy.app
 from vispy import gloo
-from vispy.scene import visuals
+from vispy import visuals
 from vispy.visuals.transforms import STTransform
 
 image = np.random.normal(size=(100, 100, 3), loc=128,
                          scale=50).astype(np.ubyte)
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
         self.image = visuals.Image(image, method='subdivide')
         self.image.transform = STTransform(scale=(7, 7), translate=(50, 50))
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+        vispy.app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 

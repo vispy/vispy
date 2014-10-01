@@ -9,7 +9,7 @@ Simple demonstration of LineVisual.
 import numpy as np
 import vispy.app
 from vispy import gloo
-from vispy.scene.visuals.modular_line import ModularLine
+from vispy.visuals.modular_line import ModularLine
 
 # vertex positions of data to draw
 N = 200
@@ -23,10 +23,10 @@ color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
         self.line = ModularLine(pos=pos, color=color)
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+        vispy.app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 
