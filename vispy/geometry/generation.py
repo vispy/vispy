@@ -280,12 +280,12 @@ def create_arrow(rows, cols, radius=0.1, length=1.0,
                                  length=cyl_L)
     # create the cone
     md_con = create_cone(cols, radius=cone_radius, length=con_L)
-    verts = md_con.vertices()
+    verts = md_con.get_vertices()
     nbr_verts_con = verts.size//3
-    faces = md_con.faces()
+    faces = md_con.get_faces()
     if md_cyl is not None:
         trans = np.array([[0.0, 0.0, cyl_L]])
-        verts = np.vstack((verts+trans, md_cyl.vertices()))
-        faces = np.vstack((faces, md_cyl.faces()+nbr_verts_con))
+        verts = np.vstack((verts+trans, md_cyl.get_vertices()))
+        faces = np.vstack((faces, md_cyl.get_faces()+nbr_verts_con))
 
     return MeshData(vertices=verts, faces=faces)

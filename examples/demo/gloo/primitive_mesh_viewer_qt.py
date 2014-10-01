@@ -83,7 +83,7 @@ void main()
 }
 """
 
-DEFAULT_COLOR = [0, 1, 1, 1]
+DEFAULT_COLOR = np.array([[0, 1, 1, 1]], dtype=np.uint32)
 # -----------------------------------------------------------------------------
 
 
@@ -104,12 +104,12 @@ class MyMeshData(md.MeshData):
         vtype = [('a_position', np.float32, 3),
                  ('a_normal', np.float32, 3),
                  ('a_color', np.float32, 4)]
-        vertices = self.vertices()
-        normals = self.vertex_normals()
-        faces = np.uint32(self.faces())
+        vertices = self.get_vertices()
+        normals = self.get_vertex_normals()
+        faces = np.uint32(self.get_faces())
 
-        edges = np.uint32(self.edges().reshape((-1)))
-        colors = self.vertex_colors()
+        edges = np.uint32(self.get_edges().reshape((-1)))
+        colors = self.get_vertex_colors()
 
         nbrVerts = vertices.shape[0]
         V = np.zeros(nbrVerts, dtype=vtype)
@@ -365,9 +365,10 @@ class MainWindow(QtGui.QMainWindow):
             return
 
         self.canvas.visible = param.props['visible']
-        self.mesh.set_vertices(mesh.vertices())
-        self.mesh.set_faces(mesh.faces())
-        self.mesh.set_vertex_colors(DEFAULT_COLOR)
+        self.mesh.set_vertices(mesh.get_vertices())
+        self.mesh.set_faces(mesh.get_faces())
+        colors = np.tile(DEFAULT_COLOR, (self.mesh.n_vertices, 1))
+        self.mesh.set_vertex_colors(colors)
         vertices, filled, outline = self.mesh.get_glTriangles()
         self.canvas.set_data(vertices, filled, outline)
 
