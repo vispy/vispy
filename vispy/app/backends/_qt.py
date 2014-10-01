@@ -48,7 +48,7 @@ def _check_imports(lib):
 # via _pyside or _pyqt4 or _pyqt5
 if qt_lib == 'pyqt4':
     _check_imports('PyQt4')
-    from PtQt4 import QtOpenGL
+    from PyQt4 import QtOpenGL
     from PyQt4 import QtGui, QtCore
 elif qt_lib == 'pyqt5':
     _check_imports('PyQt5')
