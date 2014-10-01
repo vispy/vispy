@@ -73,7 +73,7 @@ class ImageVisual(ModularMesh):
 
     def _build_data(self, transforms):
         # Construct complete data array with position and optionally color
-        if self.transform.Linear:
+        if transforms.get_full_transform().Linear:
             method = 'subdivide'
             grid = (1, 1)
         else:
@@ -144,7 +144,7 @@ class ImageVisual(ModularMesh):
         if self._data is None:
             return
 
-        if self.transform.Linear:
+        if transforms.get_full_transform().Linear:
             method = 'subdivide'
         else:
             method = self.method
