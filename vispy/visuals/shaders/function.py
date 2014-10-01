@@ -608,7 +608,11 @@ class Function(ShaderObject):
         return code
 
     def __repr__(self):
-        args = ', '.join([' '.join(arg) for arg in self.args])
+        try:
+            args = ', '.join([' '.join(arg) for arg in self.args])
+        except Exception:
+            return ('<%s (error parsing signature) at 0x%x>' % 
+                    (self.__class__.__name__, id(self)))
         return '<%s "%s %s(%s)" at 0x%x>' % (self.__class__.__name__, 
                                              self.rtype,
                                              self.name,

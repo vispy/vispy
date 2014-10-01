@@ -28,6 +28,7 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear('black')
+        gloo.set_viewport(0, 0, *self.size)
         tr_sys = visuals.transforms.TransformSystem(self)
         self.line.draw(tr_sys)
 

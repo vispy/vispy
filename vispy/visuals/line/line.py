@@ -10,7 +10,7 @@ from __future__ import division
 import numpy as np
 
 from ... import gloo
-from ...color import ColorArray, get_colormap
+from ...color import Color, ColorArray, get_colormap
 from ...ext.six import string_types
 from ..shaders import ModularProgram, Function
 from ..visual import Visual
@@ -189,24 +189,15 @@ class LineVisual(Visual):
               but produces much lower-quality results and is not guaranteed to
               obey the requested line width or join/endcap styles.
     antialias : bool
-        For mode='gl', specifies whether to use line smoothing or not.
+        Enables or disables antialiasing.
+        For mode='gl', this specifies whether to use GL's line smoothing, which
+        may be unavailable or inconsistent on some platforms.
     """
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
                  connect='strip', mode='gl', antialias=False, **kwds):
-        # todo: Get rid of aa argument? It's a bit awkward since ...
-        # - line_smooth is not supported on ES 2.0
-        # - why on earth would you turn off aa with agg?
         Visual.__init__(self, **kwds)
         self._pos = pos
-        if isinstance(color, string_types):
-            try:
-                self._color = Function(get_colormap(color))
-            except KeyError:
-                self._color = ColorArray(color)
-        elif isinstance(color, Function):
-            self._color = Function(color)
-        else:
-            self._color = ColorArray(color)
+        self._color = color
         self._width = float(width)
         assert connect is not None  # can't be to start
         self._connect = connect
@@ -299,7 +290,7 @@ class LineVisual(Visual):
                 try:
                     self._color = Function(get_colormap(color))
                 except KeyError:
-                    self._color = Function(color)
+                    self._color = Color(color).rgba
             elif isinstance(color, Function):
                 self._color = Function(color)
             else:
@@ -393,18 +384,18 @@ class LineVisual(Visual):
         
         # Do we want to use OpenGL, and can we?
         GL = None
-        if self._width > 1 or self._antialias:
-            try:
-                import OpenGL.GL as GL
-            except ImportError:
-                pass
+        try:
+            import OpenGL.GL as GL
+        except ImportError:
+            pass
         
         # Turn on line smooth and/or line width
         if GL:
             if self._antialias:
                 GL.glEnable(GL.GL_LINE_SMOOTH)
-            if GL and self._width > 1:
-                GL.glLineWidth(self._width)
+            else:
+                GL.glDisable(GL.GL_LINE_SMOOTH)
+            GL.glLineWidth(self._width)
         
         # Draw
         if self._connect == 'strip':
@@ -415,13 +406,6 @@ class LineVisual(Visual):
             self._gl_program.draw('lines', self._connect)
         else:
             raise ValueError("Invalid line connect mode: %r" % self._connect)
-        
-        # Turn off line smooth and/or line width
-        if GL:
-            if self._antialias:
-                GL.glDisable(GL.GL_LINE_SMOOTH)
-            if GL and self._width > 1:
-                GL.glLineWidth(1)
 
     def _agg_draw(self, transforms):
         if self._pos is None:
