@@ -53,7 +53,7 @@ class ViewBox(Widget):
         # Each viewbox has a scene widget, which has a transform that
         # represents the transformation imposed by camera.
         if scene is None:
-            self._scene = SubScene(name=self.name + "_Scene")
+            self._scene = SubScene(name=str(self.name) + "_Scene")
         elif isinstance(scene, SubScene):
             self._scene = scene
         else:

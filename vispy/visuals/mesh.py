@@ -220,7 +220,7 @@ class MeshVisual(Visual):
         full_tr = transforms.get_full_transform().shader_map()
         self._program.vert['transform'] = full_tr
         if self._phong is not None:
-            doc_tr = transforms.visual_to_document().shader_map()
+            doc_tr = transforms.visual_to_document.shader_map()
             self._phong['transform'] = doc_tr
 
         # Draw
