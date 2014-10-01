@@ -176,7 +176,9 @@ class Application(object):
                 logger.debug('Selected backend %s' % module_name)
                 break
         else:
-            raise RuntimeError('Could not import any of the backends.')
+            raise RuntimeError('Could not import any of the backends. '
+                               'You need to install any of %s. We recommend '
+                               'PyQt' % [b[0] for b in CORE_BACKENDS])
 
         # Store classes for app backend and canvas backend
         self._backend = self.backend_module.ApplicationBackend()
