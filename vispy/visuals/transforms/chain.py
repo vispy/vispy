@@ -18,6 +18,7 @@ class ChainTransform(BaseTransform):
     Arguments:
 
     transforms : list of BaseTransform instances
+        See ``transforms`` property.
     """
     glsl_map = None
     glsl_imap = None
@@ -45,7 +46,23 @@ class ChainTransform(BaseTransform):
 
     @property
     def transforms(self):
-        """ Get the list of transform that make up the transform chain.
+        """ The list of transform that make up the transform chain.
+        
+        The order of transforms is given such that the last transform in the 
+        list is the first to be invoked when mapping coordinates through 
+        the chain. 
+        
+        For example, the following two mappings are equivalent::
+        
+            # Map coordinates through individual transforms:
+            trans1 = STTransform(scale=(2, 3), translate=(0, 1))
+            trans2 = PolarTransform()
+            mapped = trans1.map(trans2.map(coords))
+            
+            # Equivalent mapping through chain:
+            chain = ChainTransform([trans1, trans2])
+            mapped = chain.map(coords)
+            
         """
         return self._transforms
 

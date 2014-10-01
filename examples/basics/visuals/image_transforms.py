@@ -11,9 +11,10 @@ import numpy as np
 import vispy.app
 from vispy import gloo
 from vispy import visuals
-from vispy.visuals.transforms import (AffineTransform, STTransform, arg_to_array,
-                                    LogTransform, PolarTransform, 
-                                    BaseTransform)
+from vispy.visuals.transforms import (AffineTransform, STTransform, 
+                                      arg_to_array, TransformSystem,
+                                      LogTransform, PolarTransform, 
+                                      BaseTransform)
 
 image = np.random.normal(size=(100, 100, 3))
 image[20:80, 20:80] += 3.
@@ -26,7 +27,7 @@ image = ((image-image.min()) *
 
 class Canvas(vispy.app.Canvas):
     def __init__(self):
-        self.images = [visuals.Image(image, method='impostor')
+        self.images = [visuals.ImageVisual(image, method='impostor')
                        for i in range(4)]
         self.images[0].transform = (STTransform(scale=(30, 30),
                                                 translate=(600, 600)) * 
@@ -59,9 +60,13 @@ class Canvas(vispy.app.Canvas):
 
     def on_draw(self, ev):
         gloo.clear(color='black', depth=True)
-        self.push_viewport((0, 0) + self.size)
+        gloo.set_viewport(0, 0, *self.size)
+        # Create a TransformSystem that will tell the visual how to draw
+        tr_sys = TransformSystem(self)
         for img in self.images:
-            self.draw_visual(img)
+            tr_sys.visual_to_document = img.transform
+            img.draw(tr_sys)
+
 
 
 # A simple custom Transform

@@ -514,11 +514,11 @@ class MouseEvent(Event):
                  modifiers=None, delta=None, last_event=None, press_event=None,
                  **kwds):
         Event.__init__(self, type, **kwds)
-        self._pos = (0, 0) if (pos is None) else (pos[0], pos[1])
+        self._pos = np.array([0, 0]) if (pos is None) else np.array(pos)
         self._button = int(button) if (button is not None) else None
         self._buttons = [] if (buttons is None) else buttons
         self._modifiers = tuple(modifiers or ())
-        self._delta = (0.0, 0.0) if (delta is None) else (delta[0], delta[1])
+        self._delta = np.zeros(2) if (delta is None) else np.array(delta)
         self._last_event = last_event
         self._press_event = press_event
 

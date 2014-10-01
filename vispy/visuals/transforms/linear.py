@@ -97,30 +97,69 @@ class STTransform(BaseTransform):
         return self._scale.copy()
 
     @scale.setter
-    def scale(self, s, update=True):
-        if np.all(s == self._scale[:len(s)]):
-            return
-        self._scale[:len(s)] = s[:4]
-        self._scale[len(s):] = 1.0
-        if update:
-            self.shader_map()  # update shader variables
-            self.shader_imap()
-            self._update()
+    def scale(self, s):
+        s = as_vec4(s, default=(1, 1, 1, 1))
+        self._set_st(scale=s)
 
     @property
     def translate(self):
         return self._translate.copy()
 
     @translate.setter
-    def translate(self, t, update=True):
-        if np.all(t == self._translate[:len(t)]):
-            return
-        self._translate[:len(t)] = t[:4]
-        self._translate[len(t):] = 0.0
+    def translate(self, t):
+        t = as_vec4(t, default=(0, 0, 0, 0))
+        self._set_st(translate=t)
+        
+    def _set_st(self, scale=None, translate=None):
+        update = False
+        
+        if scale is not None and not np.all(scale == self._scale):
+            self._scale[:] = scale
+            update = True
+            
+        if translate is not None and not np.all(translate == self._translate):
+            self._translate[:] = translate
+            update = True
+        
         if update:
             self.shader_map()  # update shader variables
             self.shader_imap()
             self._update()
+
+    def move(self, move):
+        """Change the translation of this transform by the amount given.
+        
+        Parameters:
+        -----------
+        move : array-like
+            The values to be added to the current translation of the transform.
+        """
+        move = as_vec4(move, default=(0, 0, 0, 0))
+        self.translate = self.translate + move
+
+    def zoom(self, zoom, center=(0, 0, 0), mapped=True):
+        """Update the transform such that its scale factor is changed, but
+        the specified center point is left unchanged.
+        
+        Parameters
+        ----------
+        zoom : array-like
+            Values to multiply the transform's current scale
+            factors.
+        center : array-like
+            The center point around which the scaling will take place.
+        mapped : bool
+            Whether *center* is expressed in mapped coordinates (True) or 
+            unmapped coordinates (False). 
+        """
+        zoom = as_vec4(zoom, default=(1, 1, 1, 1))
+        center = as_vec4(center, default=(0, 0, 0, 0))
+        scale = self.scale * zoom
+        if mapped:
+            trans = center - (center - self.translate) * zoom
+        else:
+            trans = self.scale * (1 - zoom) * center + self.translate
+        self._set_st(scale=scale, translate=trans)
 
     def as_affine(self):
         m = AffineTransform()
@@ -179,9 +218,9 @@ class STTransform(BaseTransform):
         s[mask] = 1.0
         s[x0[1] == x0[0]] = 1.0
         t = x1[0] - s * x0[0]
-        
-        STTransform.scale.fset(self, s, update=False)
-        self.translate = t
+        s = as_vec4(s, default=(1, 1, 1, 1))
+        t = as_vec4(t, default=(0, 0, 0, 0))
+        self._set_st(scale=s, translate=t)
 
     def __mul__(self, tr):
         if isinstance(tr, STTransform):
