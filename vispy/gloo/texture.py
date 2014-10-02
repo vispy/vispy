@@ -3,6 +3,7 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+
 import numpy as np
 
 from . import gl
@@ -33,7 +34,7 @@ class BaseTexture(GLObject):
     shape : tuple of integers
         Texture shape (optional)
     format : str | enum
-        See set_size.
+        See resize.
     resizeable : bool
         Indicates whether texture can be resized. Default True.
     interpolation : str
@@ -81,7 +82,7 @@ class BaseTexture(GLObject):
         self._format = format
         
         # Init more (wrapping and interp are important to set to get an inage)
-        self._resizeable = resizeable
+        self._resizeable = bool(resizeable)
         self.interpolation = interpolation or 'nearest'
         self.wrapping = wrapping or 'clamp_to_edge'
         

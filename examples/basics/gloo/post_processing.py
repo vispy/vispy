@@ -18,6 +18,7 @@ from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer, DepthBuffer, set_viewport, set_state)
 
+
 cube_vertex = """
 uniform mat4 model;
 uniform mat4 view;
@@ -109,8 +110,7 @@ class Canvas(app.Canvas):
         self.cube['view'] = view
 
         depth = DepthBuffer((512, 512))
-        color = Texture2D(shape=(512, 512, 3), interpolation='linear',
-                          dtype=np.dtype(np.float32))
+        color = Texture2D(shape=(512, 512, 3), interpolation='linear')
         self.framebuffer = FrameBuffer(color=color, depth=depth)
 
         self.quad = Program(quad_vertex, quad_fragment, count=4)

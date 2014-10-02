@@ -80,12 +80,14 @@ class GlirParser(object):
     def __init__(self):
         self._objects = {}
         self._invalid_objects = set()
-        self._classmap = {'VERTEXBUFFER': GlirVertexBuffer,
+        # todo: all caps or not?
+        self._classmap = {'PROGRAM': GlirProgram,
+                          'VERTEXBUFFER': GlirVertexBuffer,
                           'INDEXBUFFER': GlirIndexBuffer,
-                          'PROGRAM': GlirProgram,
                           'Texture2D': GlirTexture2D,
                           'Texture3D': GlirTexture3D,
-                          
+                          'RenderBuffer': GlirRenderBuffer,
+                          'FrameBuffer': GlirFrameBuffer,
                           }
     
     def get_object(self, id):
@@ -100,11 +102,13 @@ class GlirParser(object):
         for command in commands:
             cmd, id, args = command[0], command[1], command[2:]
             
-            if cmd == 'CREATE':
+            if cmd == 'CMD':
+                getattr(gl, id)(*args)
+            elif cmd == 'CREATE':
                 # Creating an object
                 if args[0] is not None:
                     klass = self._classmap[args[0]]
-                    self._objects[id] = klass(self)
+                    self._objects[id] = klass(self, id)
                 else:
                     self._invalid_objects.add(id)
             elif cmd == 'DELETE':
@@ -137,19 +141,34 @@ class GlirParser(object):
                     ob.set_attribute(*args)
                 elif cmd == 'DRAW':
                     ob.draw(*args)
+                elif cmd == 'ATTACH':  # FrameBuffer
+                    ob.attach(*args)
                 elif cmd == 'SET':
                     getattr(ob, 'set_'+args[0])(*args[1:])
                 else:
-                    print('Invalud GLIR command %r' % cmd)
+                    print('Invalid GLIR command %r' % cmd)
 
 
 ## GLIR objects
 
 
 class GlirObject(object):
+    def __init__(self, parser, id):
+        self._parser = parser
+        self._id = id
+        self._handle = -1  # Must be set by subclass in create()
+        self.create()
+    
     @property
     def handle(self):
         return self._handle
+    
+    @property
+    def id(self):
+        return self._id
+    
+    def __repr__(self):
+        return '<%s %i at 0x%x>' % (self.__class__.__name__, self.id, id(self))
 
 
 class GlirProgram(GlirObject):
@@ -188,9 +207,8 @@ class GlirProgram(GlirObject):
         'vec4': (4, gl.GL_FLOAT, np.float32),
     }
     
-    def __init__(self, parser):
-        self._parser = parser
-        self._parser._current_program = 0 
+    def create(self):
+        self._parser._current_program = 0  # Keep track of curent program
         self._handle = gl.glCreateProgram()
         self._validated = False
         # Keeping track of uniforms/attributes
@@ -199,7 +217,7 @@ class GlirProgram(GlirObject):
         # Store samplers in buffers that are bount to uniforms/attributes
         # todo: store these by id?
         self._samplers = {}  # name -> (unit, GlirTexture)
-        self._buffers = {}  # name -> GlirBuffer
+        self._attributes = {}  # name -> (vbo-handle, attr-handle, func, args)
     
     def delete(self):
         gl.glDeleteProgram(self._handle)
@@ -209,8 +227,8 @@ class GlirProgram(GlirObject):
         Warning: this will break if glUseProgram is used somewhere else.
         Per context we keep track of one current program.
         """
-        if id != self._parser._current_program:
-            self._parser._current_program = id
+        if self._handle != self._parser._current_program:
+            self._parser._current_program = self._handle
             gl.glUseProgram(self._handle)
     
     def activate(self):
@@ -219,22 +237,32 @@ class GlirProgram(GlirObject):
         for tex, unit in self._samplers.values():
             gl.glActiveTexture(gl.GL_TEXTURE0 + unit)
             tex.activate()
-        # Activate buffers
-        for vbo in self._buffers.values():
-            vbo.activate()
+        # Activate attributes
+        for vbo_handle, attr_handle, func, args in self._attributes.values():
+            if vbo_handle:
+                gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbo_handle)
+                gl.glEnableVertexAttribArray(attr_handle)
+                func(attr_handle, *args)
+            else:
+                gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+                gl.glDisableVertexAttribArray(attr_handle)
+                func(attr_handle, *args)
         # Validate. We need to validate after textures units get assigned
         if not self._validated:
             self._validated = True
-            # Validate ourselves
-            if self._unset_variables:
-                logger.warn('Program has unset variables: %r' % 
-                            self._unset_variables)
-            # Validate via OpenGL
-            gl.glValidateProgram(self._handle)
-            if not gl.glGetProgramParameter(self._handle, 
-                                            gl.GL_VALIDATE_STATUS):
-                print(gl.glGetProgramInfoLog(self._handle))
-                raise RuntimeError('Program validation error')
+            self._validate()
+    
+    def _validate(self):
+        # Validate ourselves
+        if self._unset_variables:
+            logger.warn('Program has unset variables: %r' % 
+                        self._unset_variables)
+        # Validate via OpenGL
+        gl.glValidateProgram(self._handle)
+        if not gl.glGetProgramParameter(self._handle, 
+                                        gl.GL_VALIDATE_STATUS):
+            print(gl.glGetProgramInfoLog(self._handle))
+            raise RuntimeError('Program validation error')
     
     def deactivate(self):
         # No need to deactivate each texture/buffer!
@@ -242,7 +270,9 @@ class GlirProgram(GlirObject):
         # todo: deactivate texture
         # No need to deactivate this program, AFAIK there is no situation
         # where current program should be 0.
-    
+#         self._parser._current_program = 0
+#         gl.glUseProgram(0)
+            
     def set_shaders(self, vert, frag):
         """ This function takes care of setting the shading code and
         compiling+linking it into a working program object that is ready
@@ -411,9 +441,7 @@ class GlirProgram(GlirObject):
             funcname = self.ATYPEMAP[type]
             func = getattr(gl, funcname)
             # Set data
-            gl.glDisableVertexAttribArray(handle)
-            func(handle, *value[1:])
-            self._buffers.pop(name, None)
+            self._attributes[name] = 0, handle, func, value[1:]
         else:
             # Get meta data
             vbo_id, stride, offset = value
@@ -423,12 +451,9 @@ class GlirProgram(GlirObject):
             if vbo is None:
                 raise RuntimeError('Could not find VBO with id %i' % vbo_id)
             # Set data
-            vbo.activate()
-            gl.glEnableVertexAttribArray(handle)
-            gl.glVertexAttribPointer(
-                handle, size, gtype, gl.GL_FALSE, stride, offset)
-            # Store
-            self._buffers[name] = vbo
+            func = gl.glVertexAttribPointer
+            args = size, gtype, gl.GL_FALSE, stride, offset
+            self._attributes[name] = vbo.handle, handle, func, args
     
     def _get_free_unit(self, units):
         """ Get free number given a list of numbers. For texture unit.
@@ -452,12 +477,14 @@ class GlirProgram(GlirObject):
         gl.check_error('Check before draw')
         # Draw
         if len(selection) == 3:
+            # Selection based on indices
             id, gtype, count = selection
             ibuf = self._parser.get_object(id)
             ibuf.activate()
             gl.glDrawElements(mode, count, gtype, None)
             ibuf.deactivate()
         else:
+            # Selection based on start and count
             first, count = selection
             gl.glDrawArrays(mode, first, count)
         # Wrap up
@@ -469,7 +496,7 @@ class GlirBuffer(GlirObject):
     _target = None
     _usage = gl.GL_DYNAMIC_DRAW  # STATIC_DRAW, STREAM_DRAW or DYNAMIC_DRAW
     
-    def __init__(self, parser):
+    def create(self):
         self._handle = gl.glCreateBuffer()
         self._buffer_size = 0
         self._bufferSubDataOk = False
@@ -557,9 +584,9 @@ class GlirTexture(GlirObject):
         # np.dtype(np.float64) : gl.GL_DOUBLE
     }
     
-    def __init__(self, parser):
+    def create(self):
         self._handle = gl.glCreateTexture()
-        self._shape_format = 0
+        self._shape_format = 0  # To make setting size cheap
     
     def delete(self):
         gl.glDeleteTexture(self._handle)
@@ -613,15 +640,15 @@ class GlirTexture2D(GlirTexture):
     def set_size(self, shape, format):
         # Shape is height, width
         if (shape, format) != self._shape_format:
-            self._format = format
-            gl.glTexImage2D(self._target, 0, self._format, self._format,
+            self._shape_format = shape, format
+            gl.glTexImage2D(self._target, 0, format, format,
                             gl.GL_BYTE, shape[:2])
     
     def set_data(self, offset, data):
+        shape, format = self._shape_format
         y, x = offset
         # Get gtype
         gtype = self._types.get(np.dtype(data.dtype), None)
-        print(gtype, self._format)
         if gtype is None:
             raise ValueError("Type %r not allowed for texture" % data.dtype)
         # Set alignment (width is nbytes_per_pixel * npixels_per_line)
@@ -629,8 +656,7 @@ class GlirTexture2D(GlirTexture):
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
         # Upload
-        gl.glTexSubImage2D(self._target, 0, x, y, self._format,
-                           gtype, data)
+        gl.glTexSubImage2D(self._target, 0, x, y, format, gtype, data)
         # Set alignment back
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
@@ -674,11 +700,12 @@ class GlirTexture3D(GlirTexture):
     def set_size(self, shape, format):
         # Shape is depth, height, width
         if (shape, format) != self._shape_format:
-            self._format = format
-            glTexImage3D(self._target, 0, self._format, self._format,
+            self._shape_format = shape, format
+            glTexImage3D(self._target, 0, format, format,
                          gl.GL_BYTE, shape[:3])
     
     def set_data(self, offset, data):
+        shape, format = self._shape_format
         z, y, x = offset
         # Get gtype
         gtype = self._types.get(np.dtype(self.dtype), None)
@@ -690,8 +717,101 @@ class GlirTexture3D(GlirTexture):
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
         # Upload
-        glTexSubImage3D(self._target, 0, x, y, z, self._format,
-                        gtype, data)
+        glTexSubImage3D(self._target, 0, x, y, z, format, gtype, data)
         # Set alignment back
         if alignment != 4:
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+
+
+class GlirRenderBuffer(GlirObject):
+    
+    def create(self):
+        self._handle = gl.glCreateRenderbuffer()
+        self._shape_format = 0  # To make setting size cheap
+    
+    def delete(self):
+        gl.glDeleteRenderbuffer(self._handle)
+    
+    def activate(self):
+        gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self._handle)
+    
+    def deactivate(self):
+        gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
+    
+    def set_size(self, shape, format):
+        if (shape, format) != self._shape_format:
+            self._shape_format = shape, format
+            self.activate()
+            gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, format,
+                                    shape[1], shape[0])
+
+
+class GlirFrameBuffer(GlirObject):
+    
+    def create(self):
+        self._parser._fb_stack = [0]  # To keep track of active FB
+        self._handle = gl.glCreateFramebuffer()
+        self._validated = False
+    
+    def delete(self):
+        gl.glDeleteFramebuffer(self._handle)
+
+    def activate(self, validate=True):
+        if validate and not self._validated:
+            self._validated = True
+            self._validate()
+        if self._parser._fb_stack[-1] != self._handle:
+            self._parser._fb_stack.append(self._handle)
+            gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
+        
+    def deactivate(self):
+        while self._handle in self._parser._fb_stack:
+            self._parser._fb_stack.remove(self._handle)
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._parser._fb_stack[-1])
+    
+    def attach(self, attachment, buffer_id):
+        self.activate(False)
+        if buffer_id == 0:
+            gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, attachment,
+                                         gl.GL_RENDERBUFFER, 0)
+        else:
+            buffer = self._parser.get_object(buffer_id)
+            if isinstance(buffer, GlirRenderBuffer):
+                buffer.activate()
+                gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, attachment,
+                                             gl.GL_RENDERBUFFER, buffer.handle)
+                buffer.deactivate()
+            elif isinstance(buffer, GlirTexture2D):
+                buffer.activate()
+                # INFO: 0 is for mipmap level 0 (default) of the texture
+                gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, attachment,
+                                          gl.GL_TEXTURE_2D, buffer.handle, 0)
+                buffer.deactivate()
+            else:
+                raise ValueError("Invalid attachment: %s" % type(buffer))
+        self._validated = False
+        self.deactivate()
+    
+    def _validate(self):
+        res = gl.glCheckFramebufferStatus(gl.GL_FRAMEBUFFER)
+        if res == gl.GL_FRAMEBUFFER_COMPLETE:
+            pass
+        elif res == 0:
+            raise RuntimeError('Target not equal to GL_FRAMEBUFFER')
+        elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+            raise RuntimeError(
+                'FrameBuffer attachments are incomplete.')
+        elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+            raise RuntimeError(
+                'No valid attachments in the FrameBuffer.')
+        elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
+            raise RuntimeError(
+                'attachments do not have the same width and height.')
+        #elif res == gl.GL_FRAMEBUFFER_INCOMPLETE_FORMATS: # not in es 2.0
+        #    raise RuntimeError('Internal format of attachment '
+        #                       'is not renderable.')
+        elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
+            raise RuntimeError('Combination of internal formats used '
+                                'by attachments is not supported.')
+        else:
+            raise RuntimeError('Unknown framebuffer error: %r.' % res)

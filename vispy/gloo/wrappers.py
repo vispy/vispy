@@ -8,6 +8,7 @@ import numpy as np
 from copy import deepcopy
 
 from . import gl
+from .context import get_a_context
 from ..ext.six import string_types
 from ..color import Color
 
@@ -85,7 +86,9 @@ def set_viewport(*args):
         individual components, or as a single tuple with four values.
     """
     x, y, w, h = args[0] if len(args) == 1 else args
-    gl.glViewport(int(x), int(y), int(w), int(h))
+    #gl.glViewport(int(x), int(y), int(w), int(h))
+    c = get_a_context()
+    c.glir.command('CMD', 'glViewport', int(x), int(y), int(w), int(h))
 
 
 def set_depth_range(near=0., far=1.):
@@ -188,7 +191,9 @@ def clear(color=True, depth=True, stencil=True):
         if not isinstance(stencil, bool):
             set_clear_stencil(stencil)
         bits |= gl.GL_STENCIL_BUFFER_BIT
-    gl.glClear(bits)
+    #gl.glClear(bits)
+    c = get_a_context()
+    c.glir.command('CMD', 'glClear', bits)
 
 
 def set_clear_color(color='black', alpha=None):
@@ -201,7 +206,9 @@ def set_clear_color(color='black', alpha=None):
     color : str | tuple | instance of Color
         Color to use. See vispy.color.Color for options.
     """
-    gl.glClearColor(*Color(color, alpha).rgba)
+    c = get_a_context()
+    c.glir.command('CMD', 'glClearColor', *Color(color, alpha).rgba)
+    #gl.glClearColor(*Color(color, alpha).rgba)
 
 
 def set_clear_depth(depth=1.0):
