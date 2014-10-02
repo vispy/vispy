@@ -7,7 +7,7 @@ from __future__ import division
 import numpy as np
 
 from .line import Line
-from ...color import Color, ColorArray, get_colormap_py
+from ...color import ColorArray, get_colormap_py
 from ...ext.six import string_types
 
 
@@ -69,8 +69,6 @@ def iso_mesh_line(vertices, tris, vertex_data, level, tol=1e-14):
                                np.roll(tris, -1, axis=1).reshape((-1)))).T
             edge_datas = vertex_data[edges]
             edge_coors = verts[edges].reshape(tris.shape[0]*3, 2, 3)
-            lmin = level.min()
-            lmax = level.max()
             for lev in level:
                 # index for select edges with vertices have only False - True
                 # or True - False at extremity
@@ -97,7 +95,8 @@ def iso_mesh_line(vertices, tris, vertex_data, level, tol=1e-14):
                         connects = np.append(connects, connect, axis=0)
                         lines = np.append(lines, point[ui], axis=0)
                         vertex_level = np.append(vertex_level,
-                                                np.zeros(len(point[ui])) + lev)
+                                                 np.zeros(len(point[ui])) +
+                                                 lev)
                     else:
                         lines = point[ui]
                         connects = idx[order.argsort()].reshape((nbr, 2))
