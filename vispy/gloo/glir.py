@@ -1,5 +1,11 @@
-""" Implementation to execute GL Intermediate Representation (GLIR)
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+# -----------------------------------------------------------------------------
 
+""" 
+Implementation to execute GL Intermediate Representation (GLIR)
 """
 
 import sys
@@ -125,13 +131,13 @@ class GlirParser(object):
                               (cmd, id))
                     continue
                 #
-                if cmd == 'ACTIVATE':
+                if cmd == 'ACTIVATE':  # Only for FBO
                     ob.activate()
                 elif cmd == 'DEACTIVATE':
                     ob.deactivate()
-                elif cmd == 'SIZE':
+                elif cmd == 'SIZE':  # For Buffer, RenderBuffer and Texture
                     ob.set_size(*args)
-                elif cmd == 'DATA':
+                elif cmd == 'DATA':  # For Buffer and Texture
                     ob.set_data(*args)
                 elif cmd == 'SHADERS':
                     ob.set_shaders(*args)
@@ -143,7 +149,7 @@ class GlirParser(object):
                     ob.draw(*args)
                 elif cmd == 'ATTACH':  # FrameBuffer
                     ob.attach(*args)
-                elif cmd == 'SET':
+                elif cmd == 'SET':  # Texture wrapping and interpolation
                     getattr(ob, 'set_'+args[0])(*args[1:])
                 else:
                     print('Invalid GLIR command %r' % cmd)
@@ -265,13 +271,14 @@ class GlirProgram(GlirObject):
             raise RuntimeError('Program validation error')
     
     def deactivate(self):
-        # No need to deactivate each texture/buffer!
+        # No need to deactivate each texture/buffer, just set to 0
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-        # todo: deactivate texture
-        # No need to deactivate this program, AFAIK there is no situation
-        # where current program should be 0.
-#         self._parser._current_program = 0
-#         gl.glUseProgram(0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+        if USE_TEX_3D:
+            gl.glBindTexture(gl.GL_TEXTURE_3D, 0)
+        # Deactivate program
+        self._parser._current_program = 0
+        gl.glUseProgram(0)
             
     def set_shaders(self, vert, frag):
         """ This function takes care of setting the shading code and
@@ -592,7 +599,7 @@ class GlirTexture(GlirObject):
         gl.glDeleteTexture(self._handle)
     
     def activate(self):
-        # todo: NO NEED FOR AN ACTIVATE COMMAND, EXCEPT FBO!
+        # todo: NO NEED FOR AN ACTIVATE COMMAND, EXCEPT FBO and IndexBuffer?
         gl.glBindTexture(self._target, self._handle)
     
     def deactivate(self):
@@ -664,10 +671,12 @@ class GlirTexture2D(GlirTexture):
 
 GL_SAMPLER_3D = gl.Enum('GL_SAMPLER_3D', 35679)
 GL_TEXTURE_3D = gl.Enum('GL_TEXTURE_3D', 32879)
-
+USE_TEX_3D = False
 
 def _check_pyopengl_3D():
     """Helper to ensure users have OpenGL for 3D texture support (for now)"""
+    global USE_TEX_3D
+    USE_TEX_3D = True
     try:
         import OpenGL.GL as _gl
     except ImportError:
