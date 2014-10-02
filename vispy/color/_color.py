@@ -632,7 +632,7 @@ fire = """
 """
 
 grays = """
-    vec4 gray(float t) {
+    vec4 grays(float t) {
         return vec4(t,t,t,1.0);
     }
 """
