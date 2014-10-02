@@ -575,7 +575,7 @@ class VertexBuffer(DataBuffer):
         Buffer size (optional)
     """
     
-    _GLIR_TYPE = 'VERTEXBUFFER'
+    _GLIR_TYPE = 'VertexBuffer'
 
     def __init__(self, data=None, dtype=None, size=0):
 
@@ -658,7 +658,7 @@ class IndexBuffer(DataBuffer):
         Buffer size (optional)
     """
     
-    _GLIR_TYPE = 'INDEXBUFFER'
+    _GLIR_TYPE = 'IndexBuffer'
     
     def __init__(self, data=None, dtype=np.uint32, size=0):
 

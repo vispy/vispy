@@ -88,7 +88,7 @@ def set_viewport(*args):
     x, y, w, h = args[0] if len(args) == 1 else args
     #gl.glViewport(int(x), int(y), int(w), int(h))
     c = get_a_context()
-    c.glir.command('CMD', 'glViewport', int(x), int(y), int(w), int(h))
+    c.glir.command('SET', 'glViewport', int(x), int(y), int(w), int(h))
 
 
 def set_depth_range(near=0., far=1.):
@@ -193,7 +193,7 @@ def clear(color=True, depth=True, stencil=True):
         bits |= gl.GL_STENCIL_BUFFER_BIT
     #gl.glClear(bits)
     c = get_a_context()
-    c.glir.command('CMD', 'glClear', bits)
+    c.glir.command('SET', 'glClear', bits)
 
 
 def set_clear_color(color='black', alpha=None):
@@ -207,7 +207,7 @@ def set_clear_color(color='black', alpha=None):
         Color to use. See vispy.color.Color for options.
     """
     c = get_a_context()
-    c.glir.command('CMD', 'glClearColor', *Color(color, alpha).rgba)
+    c.glir.command('SET', 'glClearColor', *Color(color, alpha).rgba)
     #gl.glClearColor(*Color(color, alpha).rgba)
 
 

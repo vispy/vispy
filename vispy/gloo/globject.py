@@ -33,12 +33,12 @@ class GLObject(object):
         self._context = get_a_context()
         if not hasattr(self._context, 'glir'):
             self._context.glir = GlirQueue()
+        #print(self._GLIR_TYPE, 'takes', self._context)
         
-        print(self._GLIR_TYPE, 'takes', self._context)
         # Give glir command to create GL representation of this object
         if not self._GLIR_TYPE:
-            #raise ValueError('GLObject %r must set GLIR_TYPE' % type(self))
-            print('TODO: GLObject %r must set GLIR_TYPE' % type(self))
+            raise ValueError('GLObject %r must set GLIR_TYPE' % type(self))
+            #print('TODO: GLObject %r must set GLIR_TYPE' % type(self))
         self._context.glir.command('CREATE', self._id, self._GLIR_TYPE)
     
     def __del__(self):
@@ -74,13 +74,13 @@ class GLObject(object):
             self._create()
             self._need_create = False
         self._activate()
-        self._context.glir.command('ACTIVATE', self._id)
+        #self._context.glir.command('ACTIVATE', self._id)
     
     def deactivate(self):
         """ Deactivate the object on GPU """
 
         self._deactivate()
-        self._context.glir.command('DEACTIVATE', self._id)
+        #self._context.glir.command('DEACTIVATE', self._id)
 
     @property
     def id(self):

@@ -167,11 +167,11 @@ class FrameBuffer(GLObject):
             self.stencil_buffer = stencil
     
     def __enter__(self):
-        self.activate()
+        self._context.glir.command('USE', self._id, True)
         return self
 
     def __exit__(self, t, val, trace):
-        self.deactivate()
+        self._context.glir.command('USE', self._id, False)
 
     @property
     def color_buffer(self):

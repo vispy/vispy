@@ -86,10 +86,9 @@ class GlirParser(object):
     def __init__(self):
         self._objects = {}
         self._invalid_objects = set()
-        # todo: all caps or not?
-        self._classmap = {'PROGRAM': GlirProgram,
-                          'VERTEXBUFFER': GlirVertexBuffer,
-                          'INDEXBUFFER': GlirIndexBuffer,
+        self._classmap = {'Program': GlirProgram,
+                          'VertexBuffer': GlirVertexBuffer,
+                          'IndexBuffer': GlirIndexBuffer,
                           'Texture2D': GlirTexture2D,
                           'Texture3D': GlirTexture3D,
                           'RenderBuffer': GlirRenderBuffer,
@@ -108,7 +107,8 @@ class GlirParser(object):
         for command in commands:
             cmd, id, args = command[0], command[1], command[2:]
             
-            if cmd == 'CMD':
+            if cmd == 'SET':
+                # GL function call
                 getattr(gl, id)(*args)
             elif cmd == 'CREATE':
                 # Creating an object
@@ -130,27 +130,30 @@ class GlirParser(object):
                         print('Cannot %s object %i because it does not exist' %
                               (cmd, id))
                     continue
-                #
-                if cmd == 'ACTIVATE':  # Only for FBO
-                    ob.activate()
-                elif cmd == 'DEACTIVATE':
-                    ob.deactivate()
-                elif cmd == 'SIZE':  # For Buffer, RenderBuffer and Texture
-                    ob.set_size(*args)
-                elif cmd == 'DATA':  # For Buffer and Texture
-                    ob.set_data(*args)
-                elif cmd == 'SHADERS':
-                    ob.set_shaders(*args)
-                elif cmd == 'UNIFORM':
-                    ob.set_uniform(*args)
-                elif cmd == 'ATTRIBUTE':
-                    ob.set_attribute(*args)
-                elif cmd == 'DRAW':
+                # Triage over command. Order of commands is set so most
+                # common ones occur first.
+                if cmd == 'DRAW':  # Program
                     ob.draw(*args)
+                elif cmd == 'UNIFORM':  # Program
+                    ob.set_uniform(*args)
+                elif cmd == 'ATTRIBUTE':  # Program
+                    ob.set_attribute(*args)
+                elif cmd == 'DATA':  # VertexBuffer, IndexBuffer, Texture
+                    ob.set_data(*args)
+                elif cmd == 'SIZE':  # VertexBuffer, IndexBuffer
+                    ob.set_size(*args)
+                elif cmd == 'SHAPE':  # Texture2D, Texture3D, RenderBuffer
+                    ob.set_shape(*args)
                 elif cmd == 'ATTACH':  # FrameBuffer
                     ob.attach(*args)
-                elif cmd == 'SET':  # Texture wrapping and interpolation
-                    getattr(ob, 'set_'+args[0])(*args[1:])
+                elif cmd == 'USE':  # FrameBuffer
+                    ob.use(*args)
+                elif cmd == 'SHADERS':  # Program
+                    ob.set_shaders(*args)
+                elif cmd == 'WRAPPING':  # Texture2D, Texture3D
+                    ob.set_wrapping(*args)
+                elif cmd == 'INTERPOLATION':  # Texture2D, Texture3D
+                    ob.set_interpolation(*args)
                 else:
                     print('Invalid GLIR command %r' % cmd)
 
@@ -628,23 +631,22 @@ class GlirTexture(GlirObject):
     # todo: we could also do (SET id DATA) for setting data :/
     def set_wrapping(self, wrapping):
         self.activate()
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S,
-                           wrapping[0])
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T,
-                           wrapping[1])
+        if len(wrapping) == 3:
+            GL_TEXTURE_WRAP_R = 32882
+            gl.glTexParameterf(self._target, GL_TEXTURE_WRAP_R, wrapping[0])
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_S, wrapping[-2])
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_WRAP_T, wrapping[-1])
     
-    def set_interpolation(self, interpolation):
+    def set_interpolation(self, min, mag):
         self.activate()
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER,
-                           interpolation[0])
-        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER,
-                           interpolation[1])
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER, min)
+        gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER, mag)
 
 
 class GlirTexture2D(GlirTexture):
     _target = gl.GL_TEXTURE_2D
     
-    def set_size(self, shape, format):
+    def set_shape(self, shape, format):
         # Shape is height, width
         if (shape, format) != self._shape_format:
             self._shape_format = shape, format
@@ -706,7 +708,7 @@ def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
 class GlirTexture3D(GlirTexture):
     _target = GL_TEXTURE_3D
         
-    def set_size(self, shape, format):
+    def set_shape(self, shape, format):
         # Shape is depth, height, width
         if (shape, format) != self._shape_format:
             self._shape_format = shape, format
@@ -765,21 +767,27 @@ class GlirFrameBuffer(GlirObject):
     def delete(self):
         gl.glDeleteFramebuffer(self._handle)
 
-    def activate(self, validate=True):
-        if validate and not self._validated:
-            self._validated = True
-            self._validate()
+    def use(self, yes):
+        if yes:
+            if not self._validated:
+                self._validated = True
+                self._validate()
+            self.activate()
+        else:
+            self.deactivate()
+    
+    def activate(self):
         if self._parser._fb_stack[-1] != self._handle:
             self._parser._fb_stack.append(self._handle)
             gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
-        
+    
     def deactivate(self):
         while self._handle in self._parser._fb_stack:
             self._parser._fb_stack.remove(self._handle)
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._parser._fb_stack[-1])
     
     def attach(self, attachment, buffer_id):
-        self.activate(False)
+        self.activate()
         if buffer_id == 0:
             gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, attachment,
                                          gl.GL_RENDERBUFFER, 0)

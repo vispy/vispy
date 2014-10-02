@@ -75,7 +75,7 @@ class Program(GLObject):
     function. OpenGL ES 2.0 does not support a list of shaders.
     """
     
-    _GLIR_TYPE = 'PROGRAM'
+    _GLIR_TYPE = 'Program'
     
     _gtypes = {  # GL_TYPE, GL_BASE_TYPE, DTYPE, NUMEL
         'float':        (gl.GL_FLOAT,       gl.GL_FLOAT,    np.float32, 1),

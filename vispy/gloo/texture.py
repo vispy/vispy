@@ -13,12 +13,13 @@ from .wrappers import _check_conversion
 GL_SAMPLER_3D = gl.Enum('GL_SAMPLER_3D', 35679)  # needed by Program
 
 
-def _check_value(value, valid_dict):
+def _check_value(value, valid_dict, numel=2):
     """Helper for checking interpolation and wrapping"""
     if not isinstance(value, (tuple, list)):
-        value = [value] * 2
-    if len(value) != 2:
-        raise ValueError('value must be a single value, or a 2-element list')
+        value = [value] * numel
+    if len(value) != numel:
+        raise ValueError('value must be a single value, or a %i-element list' %
+                         numel)
     return tuple(_check_conversion(v, valid_dict) for v in value)
 
 
@@ -135,15 +136,16 @@ class BaseTexture(GLObject):
     def wrapping(self):
         """ Texture wrapping mode """
         value = self._wrapping
-        return value[0] if value[0] == value[1] else value
+        return value[0] if all([v == value[0] for v in value]) else value
 
     @wrapping.setter
     def wrapping(self, value):
         valid_dict = {'repeat': gl.GL_REPEAT,
                       'clamp_to_edge': gl.GL_CLAMP_TO_EDGE,
                       'mirrored_repeat': gl.GL_MIRRORED_REPEAT}
-        self._wrapping = _check_value(value, valid_dict)
-        self._context.glir.command('SET', self._id, 'wrapping', self._wrapping)
+        numel = 3 if isinstance(self, Texture3D) else 2
+        self._wrapping = _check_value(value, valid_dict, numel)
+        self._context.glir.command('WRAPPING', self._id, self._wrapping)
 
     @property
     def interpolation(self):
@@ -156,9 +158,9 @@ class BaseTexture(GLObject):
         valid_dict = {'nearest': gl.GL_NEAREST,
                       'linear': gl.GL_LINEAR}
         self._interpolation = _check_value(value, valid_dict)
-        self._context.glir.command('SET', self._id, 'interpolation', 
-                                   self._interpolation)
-
+        self._context.glir.command('INTERPOLATION', self._id, 
+                                   *self._interpolation)
+    
     def resize(self, shape, format=None):
         """ Set the texture size and format
         
@@ -198,7 +200,7 @@ class BaseTexture(GLObject):
         # Store and send GLIR command
         self._shape = shape
         self._format = format
-        self._context.glir.command('SIZE', self._id, self._shape, self._format)
+        self._context.glir.command('SHAPE', self._id, self._shape, self._format)
 
     def set_data(self, data, offset=None, copy=False):
         """ Set texture data
