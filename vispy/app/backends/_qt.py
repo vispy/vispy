@@ -397,10 +397,15 @@ class CanvasBackend(BaseCanvasBackend, QtOpenGL.QGLWidget):
             return
         # Get scrolling
         deltax, deltay = 0.0, 0.0
-        if ev.orientation == QtCore.Qt.Horizontal:
-            deltax = ev.delta() / 120.0
+        if hasattr(ev, 'orientation'):
+            if ev.orientation == QtCore.Qt.Horizontal:
+                deltax = ev.delta() / 120.0
+            else:
+                deltay = ev.delta() / 120.0
         else:
-            deltay = ev.delta() / 120.0
+            # PyQt5
+            delta = ev.angleDelta()
+            deltax, deltay = delta.x() / 120.0, delta.y() / 120.0
         # Emit event
         self._vispy_canvas.events.mouse_wheel(
             native=ev,
