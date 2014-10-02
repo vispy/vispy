@@ -3,18 +3,18 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
 """
-Base code for the PySide and PyQt4 backends. Note that this is *not*
-(anymore) a backend by itself! One has to explicitly use either PySide
-or PyQt4. Note that the automatic backend selection prefers a GUI
-toolkit that is already imported.
+Base code for the Qt backends. Note that this is *not* (anymore) a
+backend by itself! One has to explicitly use either PySide, PyQt4 or
+PyQt5. Note that the automatic backend selection prefers a GUI toolkit
+that is already imported.
 
-The _pyside and _pyqt4 modules will import * from this module, and also
-keep a ref to the module object. Note that if both the PySide and PyQt4
-backend are used, this module is actually reloaded. This is a sorts of
-poor mans "subclassing" to get a working version for both backends using
-the same code.
+The _pyside, _pyqt4 and _pyqt5 modules will import * from this module,
+and also keep a ref to the module object. Note that if two of the
+backends are used, this module is actually reloaded. This is a sorts
+of poor mans "subclassing" to get a working version for both backends
+using the same code.
 
-Note that it is strongly discouraged to use the PySide and PyQt4
+Note that it is strongly discouraged to use the PySide/PyQt4/PyQt5
 backends simultaneously. It is known to cause unpredictable behavior
 and segfaults.
 """
@@ -39,18 +39,25 @@ def _check_imports(lib):
     libs = ['PyQt4', 'PyQt5', 'PySide']
     libs.remove(lib)
     for lib2 in libs:
+        lib2 += '.QtCore'
         if lib2 in sys.modules:
             raise RuntimeError("Refusing to import %s because %s is already "
                                "imported." % (lib, lib2))
 
 # Get what qt lib to try. This tells us wheter this module is imported
-# via _pyside or _pyqt4
+# via _pyside or _pyqt4 or _pyqt5
 if qt_lib == 'pyqt4':
     _check_imports('PyQt4')
-    from PyQt4 import QtGui, QtCore, QtOpenGL
+    from PyQt4 import QtOpenGL
+    from PyQt4 import QtGui, QtCore
+elif qt_lib == 'pyqt5':
+    _check_imports('PyQt5')
+    from PyQt5 import QtOpenGL
+    from PyQt5 import QtGui, QtCore, QtWidgets
 elif qt_lib == 'pyside':
     _check_imports('PySide')
-    from PySide import QtGui, QtCore, QtOpenGL
+    from PySide import QtOpenGL
+    from PySide import QtGui, QtCore
 elif qt_lib:
     raise RuntimeError("Invalid value for qt_lib %r." % qt_lib)
 else:
@@ -114,7 +121,11 @@ def message_handler(msg_type, msg):
     else:
         logger.warning(msg)
 
-QtCore.qInstallMsgHandler(message_handler)
+try:
+    QtCore.qInstallMsgHandler(message_handler)
+except AttributeError:
+    QtCore.qInstallMessageHandler(message_handler)  # PyQt5
+
 
 # -------------------------------------------------------------- capability ---
 
@@ -164,11 +175,9 @@ class ApplicationBackend(BaseApplicationBackend):
         BaseApplicationBackend.__init__(self)
 
     def _vispy_get_backend_name(self):
-        if 'pyside' in QtCore.__name__.lower():
-            return 'PySide (qt)'
-        else:
-            return 'PyQt4 (qt)'
-
+        name = QtCore.__name__.split('.')[0]
+        return name + ' (qt)'
+    
     def _vispy_process_events(self):
         app = self._vispy_get_native_app()
         app.flush()
@@ -186,11 +195,17 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def _vispy_get_native_app(self):
         # Get native app in save way. Taken from guisupport.py
-        app = QtGui.QApplication.instance()
-        if app is None:
-            app = QtGui.QApplication([''])
+        if hasattr(QtGui, 'QApplication'):
+            app = QtGui.QApplication.instance()
+            if app is None:
+                app = QtGui.QApplication([''])
+        else:
+            # PyQt5
+            app = QtWidgets.QApplication.instance()
+            if app is None:
+                app = QtWidgets.QApplication([''])
         # Store so it won't be deleted, but not on a vispy object,
-        # or an application may produce error when closed
+        # or an application may produce error when closed.
         QtGui._qApp = app
         # Return
         return app
@@ -198,7 +213,7 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 
-class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
+class CanvasBackend(BaseCanvasBackend, QtOpenGL.QGLWidget):
 
     """Qt backend for Canvas abstract class."""
 
@@ -382,10 +397,15 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
             return
         # Get scrolling
         deltax, deltay = 0.0, 0.0
-        if ev.orientation == QtCore.Qt.Horizontal:
-            deltax = ev.delta() / 120.0
+        if hasattr(ev, 'orientation'):
+            if ev.orientation == QtCore.Qt.Horizontal:
+                deltax = ev.delta() / 120.0
+            else:
+                deltay = ev.delta() / 120.0
         else:
-            deltay = ev.delta() / 120.0
+            # PyQt5
+            delta = ev.angleDelta()
+            deltax, deltay = delta.x() / 120.0, delta.y() / 120.0
         # Emit event
         self._vispy_canvas.events.mouse_wheel(
             native=ev,
@@ -430,9 +450,10 @@ class CanvasBackend(QtOpenGL.QGLWidget, BaseCanvasBackend):
 class TimerBackend(BaseTimerBackend, QtCore.QTimer):
 
     def __init__(self, vispy_timer):
-        if QtGui.QApplication.instance() is None:
-            global QAPP
-            QAPP = QtGui.QApplication([])
+        # Make sure there is an app
+        app = ApplicationBackend()
+        app._vispy_get_native_app()
+        # Init
         BaseTimerBackend.__init__(self, vispy_timer)
         QtCore.QTimer.__init__(self)
         self.timeout.connect(self._vispy_timeout)
