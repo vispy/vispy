@@ -25,7 +25,7 @@ def normalize(mag, cmin, cmax):
         return np.zeros(shape) + 0.5
 
 
-def iso_mesh_line(vertices, tris, vertex_data, level, tol=1e-14):
+def iso_mesh_line(vertices, tris, vertex_data, level):
     """
     Generate isocurve from vertex data in a surface mesh with triangular
     element using marching squares algorithm.
@@ -82,25 +82,17 @@ def iso_mesh_line(vertices, tris, vertex_data, level, tol=1e-14):
                                   (edge_datas_Ok[:, 1] - edge_datas_Ok[:, 0])])
                 point = xyz[:, 0, :] + ratio.T*(xyz[:, 1, :] - xyz[:, 0, :])
                 nbr = point.shape[0]//2
-                if nbr != 0:
-                    order = np.lexsort(point.T)
-                    point = point[order]
-                    diff = np.diff(point, axis=0)
-                    ui = np.ones(len(point), 'bool')
-                    ui[1:] = np.logical_not((diff < tol).all(axis=1))
-                    idx = np.cumsum(ui) - 1
-                    if connects is not None:
-                        connect = idx[order.argsort()].reshape((nbr, 2)) + \
-                            len(lines)
-                        connects = np.append(connects, connect, axis=0)
-                        lines = np.append(lines, point[ui], axis=0)
-                        vertex_level = np.append(vertex_level,
-                                                 np.zeros(len(point[ui])) +
-                                                 lev)
-                    else:
-                        lines = point[ui]
-                        connects = idx[order.argsort()].reshape((nbr, 2))
-                        vertex_level = np.zeros(len(point[ui])) + lev
+                if connects is not None:
+                    connect = np.arange(0, nbr*2).reshape((nbr, 2)) + len(lines)
+                    connects = np.append(connects, connect, axis=0)
+                    lines = np.append(lines, point, axis=0)
+                    vertex_level = np.append(vertex_level,
+                                             np.zeros(len(point)) +
+                                             lev)
+                else:
+                    lines = point
+                    connects = np.arange(0, nbr*2).reshape((nbr, 2)) + len(lines)
+                    vertex_level = np.zeros(len(point)) + lev
 
     return lines, connects, vertex_level
 
