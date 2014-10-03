@@ -39,5 +39,5 @@ iso = Isoline(vertices=vertices, tris=tris, data=vertices[:, 2], level=cl,
 axis = scene.visuals.XYZAxis(parent=view.scene)
 
 
-if sys.flags.interactive == 0:
+if __name__ == '__main__':
     app.run()
