@@ -12,11 +12,11 @@ This example demonstrates isocurve for triangular mesh with vertice data and a
 import sys
 import numpy as np
 
-from vispy import app, scene
+from vispy import scene
 
 from vispy.geometry.generation import create_sphere
 from vispy.scene.visuals.isoline import Isoline
-from vispy.color._color import colormaps, get_colormap
+from vispy.color._color import colormaps
 
 try:
     from sip import setapi
@@ -27,11 +27,13 @@ except ImportError:
 
 from PyQt4 import QtGui, QtCore
 
+
 class ObjectWidget(QtGui.QWidget):
     """
     Widget for editing OBJECT parameters
     """
     signal_objet_changed = QtCore.pyqtSignal(name='objectChanged')
+
     def __init__(self, parent=None):
         super(ObjectWidget, self).__init__(parent)
 
@@ -39,7 +41,7 @@ class ObjectWidget(QtGui.QWidget):
         self.nbr_steps = QtGui.QSpinBox()
         self.nbr_steps.setMinimum(3)
         self.nbr_steps.setMaximum(100)
-        self.nbr_steps.setValue(6) 
+        self.nbr_steps.setValue(6)
         self.nbr_steps.valueChanged.connect(self.update_param)
 
         l_cmap = QtGui.QLabel("Cmap ")
@@ -47,18 +49,18 @@ class ObjectWidget(QtGui.QWidget):
         self.combo = QtGui.QComboBox(self)
         self.combo.addItems(self.cmap)
         self.combo.currentIndexChanged.connect(self.update_param)
-        
+
         gbox = QtGui.QGridLayout()
         gbox.addWidget(l_cmap, 0, 0)
         gbox.addWidget(self.combo, 0, 1)
         gbox.addWidget(l_nbr_steps, 1, 0)
-        gbox.addWidget(self.nbr_steps, 1, 1)        
-        
+        gbox.addWidget(self.nbr_steps, 1, 1)
+
         vbox = QtGui.QVBoxLayout()
         vbox.addLayout(gbox)
         vbox.addStretch(1.0)
 
-        self.setLayout(vbox)        
+        self.setLayout(vbox)
 
     def update_param(self, option):
         self.signal_objet_changed.emit()
@@ -71,13 +73,13 @@ class MainWindow(QtGui.QMainWindow):
 
         self.resize(700, 500)
         self.setWindowTitle('vispy example ...')
-        
+
         splitter = QtGui.QSplitter(QtCore.Qt.Horizontal)
-        
+
         self.canvas = Canvas()
         self.canvas.create_native()
         self.canvas.native.setParent(self)
-        
+
         self.props = ObjectWidget()
         splitter.addWidget(self.props)
         splitter.addWidget(self.canvas.native)
@@ -112,8 +114,8 @@ class Canvas(scene.SceneCanvas):
                            parent=self.view.scene)
 
         # Add a 3D axis to keep us oriented
-        axis = scene.visuals.XYZAxis(parent=self.view.scene)
-    
+        scene.visuals.XYZAxis(parent=self.view.scene)
+
     def set_data(self, n_levels, cmap):
         self.iso.set_color(cmap)
         cl = np.linspace(-self.radius, self.radius, n_levels + 2)[1:-1]

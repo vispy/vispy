@@ -83,7 +83,8 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
                 point = xyz[:, 0, :] + ratio.T*(xyz[:, 1, :] - xyz[:, 0, :])
                 nbr = point.shape[0]//2
                 if connects is not None:
-                    connect = np.arange(0, nbr*2).reshape((nbr, 2)) + len(lines)
+                    connect = np.arange(0, nbr*2).reshape((nbr, 2)) + \
+                        len(lines)
                     connects = np.append(connects, connect, axis=0)
                     lines = np.append(lines, point, axis=0)
                     vertex_level = np.append(vertex_level,
@@ -91,7 +92,8 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
                                              lev)
                 else:
                     lines = point
-                    connects = np.arange(0, nbr*2).reshape((nbr, 2)) + len(lines)
+                    connects = np.arange(0, nbr*2).reshape((nbr, 2)) + \
+                        len(lines)
                     vertex_level = np.zeros(len(point)) + lev
 
     return lines, connects, vertex_level

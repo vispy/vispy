@@ -8,7 +8,6 @@
 This example demonstrates isocurve for triangular mesh with vertice data.
 """
 
-import sys
 import numpy as np
 
 from vispy import app, scene
@@ -32,11 +31,11 @@ tris = mesh.get_faces()
 
 cl = np.linspace(-radius, radius, nbr_level+2)[1:-1]
 
-iso = Isoline(vertices=vertices, tris=tris, data=vertices[:, 2], level=cl,
-              color_lev='autumn', parent=view.scene)
+Isoline(vertices=vertices, tris=tris, data=vertices[:, 2], level=cl,
+        color_lev='autumn', parent=view.scene)
 
 # Add a 3D axis to keep us oriented
-axis = scene.visuals.XYZAxis(parent=view.scene)
+scene.visuals.XYZAxis(parent=view.scene)
 
 
 if __name__ == '__main__':
