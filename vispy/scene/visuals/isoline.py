@@ -140,13 +140,12 @@ class Isoline(Line):
         self.set_data(vertices=vertices, tris=tris, data=data)
 
     @property
-    def level(self):
+    def get_level(self):
         """ The threshold at which the isocurves are constructed from the data.
         """
         return self._level
 
-    @level.setter
-    def level(self, level):
+    def set_level(self, level):
         self._level = level
         self._recompute = True
         self.update()
