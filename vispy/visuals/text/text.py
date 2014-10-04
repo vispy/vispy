@@ -455,7 +455,7 @@ class TextVisual(Visual):
             self._ib = IndexBuffer(idx.ravel())
 
         xform = transforms.get_full_transform().shader_map()
-        px_scale = transforms.framebuffer_cs.transform.scale
+        px_scale = transforms.framebuffer_to_render.scale
         
         self._program.vert['transform'] = xform
         self._program.prepare()  # Force ModularProgram to set shaders
