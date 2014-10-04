@@ -323,8 +323,10 @@ class LineVisual(Visual):
         if pos is not None:
             self._pos = pos
             pos_arr = np.ascontiguousarray(pos, dtype=np.float32)
+            # todo: recycle one buffer rather than creating on every update
             vbo = gloo.VertexBuffer(pos_arr)
             if pos_arr.shape[-1] == 2:
+                # todo: creating new function calls causes a rebuild.
                 self._pos_expr = vec2to4(vbo)
             elif pos_arr.shape[-1] == 3:
                 self._pos_expr = vec3to4(vbo)

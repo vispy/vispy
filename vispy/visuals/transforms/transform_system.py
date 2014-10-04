@@ -150,6 +150,7 @@ class TransformSystem(object):
         map_to = [(-1, -1), (1, 1)]
         self._framebuffer_to_render = STTransform.from_mapping(map_from, map_to)
         
+        self._full_transform = None
 
     @property
     def canvas(self):
@@ -177,7 +178,9 @@ class TransformSystem(object):
         
     @visual_to_document.setter
     def visual_to_document(self, tr):
-        self._visual_to_document = tr
+        if self._visual_to_document is not tr:
+            self._visual_to_document = tr
+            self._full_transform = None
         
     @property
     def document_to_framebuffer(self):
@@ -188,7 +191,9 @@ class TransformSystem(object):
         
     @document_to_framebuffer.setter
     def document_to_framebuffer(self, tr):
-        self._document_to_framebuffer = tr
+        if self._document_to_framebuffer is not tr:
+            self._document_to_framebuffer = tr
+            self._full_transform = None
         
     @property
     def framebuffer_to_render(self):
@@ -199,7 +204,9 @@ class TransformSystem(object):
 
     @framebuffer_to_render.setter
     def framebuffer_to_render(self, tr):
-        self._framebuffer_to_render = tr
+        if self._framebuffer_to_render is not tr:
+            self._framebuffer_to_render = tr
+            self._full_transform = None
 
     def get_full_transform(self):
         """ Convenience method that returns the composition of all three
@@ -210,6 +217,8 @@ class TransformSystem(object):
         This is used for visuals that do not require physical measurements
         or antialiasing.
         """
-        return (self.framebuffer_to_render * 
-                self.document_to_framebuffer *
-                self.visual_to_document)
+        if self._full_transform is None:
+            self._full_transform = (self.framebuffer_to_render * 
+                                    self.document_to_framebuffer *
+                                    self.visual_to_document)
+        return self._full_transform

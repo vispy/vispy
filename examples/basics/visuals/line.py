@@ -70,14 +70,18 @@ class Canvas(app.Canvas):
         for text in self.texts:
             text.transform = NullTransform()
         self.visuals = self.lines + self.texts
+        
+        # create a TransformSystem for each visual.
+        # (these are stored as attributes of each visual for convenience)
+        for visual in self.visuals:
+            visual.tr_sys = visuals.transforms.TransformSystem(self)
+            visual.tr_sys.visual_to_document = visual.transform
 
     def on_draw(self, event):
         gloo.clear('black')
         gloo.set_viewport(0, 0, *self.size)
-        tr_sys = visuals.transforms.TransformSystem(self)
         for visual in self.visuals:
-            tr_sys.visual_to_document = visual.transform
-            visual.draw(tr_sys)
+            visual.draw(visual.tr_sys)
 
 
 if __name__ == '__main__':
