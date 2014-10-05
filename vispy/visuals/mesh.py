@@ -199,6 +199,8 @@ class MeshVisual(Visual):
             self._phong['ambient'] = (0.3, 0.3, 0.3, 1.0)
 
             self._program.frag['color'] = self._phong(self._color_var)
+            
+        self._data_changed = False
 
     @property
     def shading(self):
