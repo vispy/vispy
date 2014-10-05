@@ -46,21 +46,6 @@ class PolygonVisual(Visual):
         #self.set_gl_options(glopts)
 
     @property
-    def transform(self):
-        """ The transform that maps the local coordinate frame to the
-        coordinate frame of the parent.
-        """
-        return Visual.transform.fget(self)
-
-    @transform.setter
-    def transform(self, tr):
-        Visual.transform.fset(self, tr)
-        if self.mesh is not None:
-            self.mesh.transform = tr
-        if self.border is not None:
-            self.border.transform = tr
-
-    @property
     def pos(self):
         """ The vertex position of the polygon.
         """

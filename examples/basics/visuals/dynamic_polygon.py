@@ -54,12 +54,12 @@ class Canvas(app.Canvas):
                                                    translate=(600, 600))
         self.visuals.append(polygon)
 
-        ellipse = visuals.EllipseVisual(pos=(0, 0, 0), radius=(100, 150),
+        ellipse = visuals.EllipseVisual(pos=(0, 0, 0), radius=(100, 100),
                                   color=(0.2, 0.2, 0.8, 1),
                                   border_color=(1, 1, 1, 1),
                                   start_angle=180., span_angle=150.)
         ellipse.transform = transforms.STTransform(scale=(0.9, 1.5),
-                                                   translate=(200, 300))
+                                                   translate=(200, 200))
         self.visuals.append(ellipse)
 
         rect = visuals.RectangleVisual(pos=(600, 200, 0), height=200.,
@@ -82,6 +82,7 @@ class Canvas(app.Canvas):
             v.tr_sys.visual_to_document = v.transform
 
         self.show()
+        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_draw(self, ev):
         gloo.set_clear_color((0, 0, 0, 1))
@@ -89,6 +90,24 @@ class Canvas(app.Canvas):
         gloo.clear()
         for vis in self.visuals:
             vis.draw(vis.tr_sys)
+
+
+    def on_timer(self, event):
+        polygon, ellipse, rect, rpolygon = self.visuals
+        r = ellipse.radius
+        ellipse.radius = r[0], r[1] +  np.sin(event.elapsed * 10)
+        ellipse.span_angle = (ellipse.span_angle + 100. * event.dt) % 360
+        
+        polygon.color = (0.3 * (0.5 + np.sin(event.elapsed*2 + 0)),
+                         0.3 * (0.5 + np.sin(event.elapsed*2 + np.pi * 2./3.)),
+                         0.3 * (0.5 + np.sin(event.elapsed*2 + np.pi * 4./3.)),
+                        )
+        polygon.border_color = (.8, .8, .8, 0.5 + (0.5 * np.sin(event.elapsed*10)))
+        
+        rpolygon.radius = 100 + 10 * np.sin(event.elapsed * 3.1)
+        rpolygon.sides = int(20 + 17 * np.sin(event.elapsed))
+        
+        self.update()
 
 
 if __name__ == '__main__':

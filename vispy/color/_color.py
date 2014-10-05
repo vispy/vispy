@@ -57,7 +57,7 @@ def _user_to_rgba(color, expand=True):
         color = np.concatenate((color, np.ones((color.shape[0], 1))),
                                axis=1)
     if color.min() < 0 or color.max() > 1:
-        logger.warning('Color will be clipped between 0 and 1: %s' % color)
+        logger.debug('Color will be clipped between 0 and 1: %s' % color)
         color = np.clip(color, 0, 1)
     return color
 
