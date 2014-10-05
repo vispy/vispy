@@ -7,7 +7,6 @@
 from . import gl
 from .globject import GLObject
 from .texture import Texture2D
-from ..util import logger
 from .wrappers import _check_valid, read_pixels
 from ..ext.six import string_types
 
@@ -76,7 +75,7 @@ class RenderBuffer(GLObject):
         elif isinstance(format, int):
             pass  # Do not check, maybe user needs desktop GL formats
         elif isinstance(format, string_types):
-            formats = {'color': gl.GL_RGBA,  #  todo: on ES 2.0 -> gl.gl_RGBA4
+            formats = {'color': gl.GL_RGBA,  # todo: on ES 2.0 -> gl.gl_RGBA4
                        'depth': gl.GL_DEPTH_COMPONENT16,
                        'stencil': gl.GL_STENCIL_INDEX8}
             if format in formats:
@@ -101,8 +100,7 @@ class RenderBuffer(GLObject):
     def _activate(self):
         """ Activate buffer on GPU """
         pass
-        
-
+    
     def _deactivate(self):
         """ Deactivate buffer on GPU """
         pass
@@ -127,7 +125,7 @@ class DepthBuffer(RenderBuffer):
 
 
 class StencilBuffer(RenderBuffer):
-   def __init__(self, shape, format=gl.GL_STENCIL_INDEX8, resizeable=True):
+    def __init__(self, shape, format=gl.GL_STENCIL_INDEX8, resizeable=True):
         RenderBuffer.__init__(self, shape, format, resizeable)
         #logger.warn('StencilBuffer is deprecated, use RenderBuffer instead')
 

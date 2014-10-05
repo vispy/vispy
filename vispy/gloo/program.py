@@ -219,7 +219,7 @@ class Program(GLObject):
                 if size >= 1:
                     for i in range(size):
                         name = '%s[%d]' % (m.group('name'), i)
-                        self._code_variables[name] = kind, name, gtype
+                        self._code_variables[name] = kind, gtype, name 
                 else:
                     name = m.group('name')
                     self._code_variables[name] = kind, gtype, name
@@ -306,7 +306,7 @@ class Program(GLObject):
                 else:
                     # Normal uniform; convert to np array and check size
                     _, _, dtype, numel = self._gtypes[type]
-                    data = np.array(data, dtype=dtype)
+                    data = np.array(data, dtype=dtype).ravel()
                     if data.ndim == 0:
                         data.shape = data.size
                     if data.size != numel:
@@ -428,7 +428,7 @@ class Program(GLObject):
                             indices)
         
         # Process GLIR commands
-        self._context.glir.show()
+        #self._context.glir.show()
         self._context.glir.parse()
         
         # todo: check errors via GLIR feedback mechanism?

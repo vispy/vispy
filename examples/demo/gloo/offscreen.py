@@ -22,7 +22,6 @@ The method consists of:
      scenario).
 
 """
-import numpy as np
 
 from vispy import gloo
 from vispy import app
@@ -104,7 +103,7 @@ class Canvas(app.Canvas):
         app.Canvas.__init__(self, show=False, size=size)
         self._t0 = time()
         # Texture where we render the scene.
-        self._rendertex = gloo.Texture2D(shape=self.size, dtype=np.float32)
+        self._rendertex = gloo.Texture2D(shape=self.size)
         # FBO.
         self._fbo = gloo.FrameBuffer(self._rendertex,
                                      gloo.DepthBuffer(self.size))

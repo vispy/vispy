@@ -25,8 +25,8 @@ uniform mat4 view;
 uniform mat4 projection;
 attribute vec3 position;
 attribute vec2 texcoord;
-attribute vec3 normal;
-attribute vec4 color;
+attribute vec3 normal;  // not used in this example
+attribute vec4 color;  // not used in this example
 varying vec2 v_texcoord;
 void main()
 {

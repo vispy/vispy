@@ -9,6 +9,14 @@ from .context import get_a_context
 from .glir import GlirQueue
 
 
+# Init first context ...
+def _init_context():
+    c = get_a_context()
+    if not hasattr(c, 'glir'):
+        c.glir = GlirQueue()
+_init_context()
+
+
 class GLObject(object):
     """ Generic GL object that may live both on CPU and GPU 
     """

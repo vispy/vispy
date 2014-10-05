@@ -165,8 +165,7 @@ class MainWindow(QtGui.QWidget):
     def on_compile(self):
         vert_code = str(self.vertEdit.toPlainText())
         frag_code = str(self.fragEdit.toPlainText())
-        self.canvas.program.shaders[0].code = vert_code
-        self.canvas.program.shaders[1].code = frag_code
+        self.canvas.program.set_shaders(vert_code, frag_code)
         # Because the code has changed, the variables are re-created,
         # so we need to reset them. This can be considered a bug in gloo
         # and should be addressed at some point.

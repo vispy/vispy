@@ -91,7 +91,8 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(vertex, fragment)
         self.program['a_position'] = [(-1., -1.), (-1., +1.),
                                       (+1., -1.), (+1., +1.)]
-
+        
+        self.program['u_time'] = 0.0
         self.timer = app.Timer('auto', connect=self.on_timer, start=True)
 
     def on_timer(self, event):

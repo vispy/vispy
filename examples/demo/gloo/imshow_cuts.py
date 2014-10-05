@@ -120,12 +120,12 @@ class Canvas(app.Canvas):
         self.image['cmap'] = 0  # Colormap index to use
         self.image['colormaps'] = colormaps
         self.image['n_colormaps'] = colormaps.shape[0]
-        self.image['image'] = I
+        self.image['image'] = I.astype('float32')
         self.image['image'].interpolation = 'linear'
 
-        self.lines = Program(lines_vertex, lines_fragment, 4+4+514+514)
-        self.lines["position"] = np.zeros((4+4+514+514, 2))
-        color = np.zeros((4+4+514+514, 4))
+        self.lines = Program(lines_vertex, lines_fragment)
+        self.lines["position"] = np.zeros((4+4+514+514, 2), np.float32)
+        color = np.zeros((4+4+514+514, 4), np.float32)
         color[1:1+2, 3] = 0.25
         color[5:5+2, 3] = 0.25
         color[9:9+512, 3] = 0.5

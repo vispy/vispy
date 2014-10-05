@@ -89,8 +89,8 @@ class Canvas(app.Canvas):
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        self.program['model'] = self.model
-        self.program['view'] = self.view
+        #self.program['model'] = self.model
+        #self.program['view'] = self.view
 
     def create_mesh(self, x, y, u, v):
         tri = scipy.spatial.Delaunay(np.column_stack([x, y]))

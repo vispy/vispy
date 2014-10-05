@@ -27,6 +27,8 @@ class Canvas(app.Canvas):
         self.tick += 1 / 60.0
         c = abs(math.sin(self.tick))
         gloo.set_clear_color((c, c, c, 1))
+        # todo: EEK this does not work, because GL command is deferred via GLIR
+        # but GLIR commands never gets processed
         self.update()
 
 if __name__ == '__main__':

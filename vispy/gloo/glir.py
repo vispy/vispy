@@ -109,7 +109,10 @@ class GlirParser(object):
             
             if cmd == 'SET':
                 # GL function call
-                getattr(gl, id)(*args)
+                try:
+                    getattr(gl, id)(*args)
+                except AttributeError:
+                    logger.warn('Invalid gl command: %r' % id)
             elif cmd == 'CREATE':
                 # Creating an object
                 if args[0] is not None:
@@ -127,8 +130,8 @@ class GlirParser(object):
                 ob = self._objects.get(id, None)
                 if ob is None:
                     if id not in self._invalid_objects:
-                        print('Cannot %s object %i because it does not exist' %
-                              (cmd, id))
+                        logger.warn('Cannot %s object %i because it does '
+                                    'not exist' % (cmd, id))
                     continue
                 # Triage over command. Order of commands is set so most
                 # common ones occur first.
@@ -155,7 +158,7 @@ class GlirParser(object):
                 elif cmd == 'INTERPOLATION':  # Texture2D, Texture3D
                     ob.set_interpolation(*args)
                 else:
-                    print('Invalid GLIR command %r' % cmd)
+                    logger.warn('Invalid GLIR command %r' % cmd)
 
 
 ## GLIR objects
@@ -278,7 +281,7 @@ class GlirProgram(GlirObject):
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
         if USE_TEX_3D:
-            gl.glBindTexture(gl.GL_TEXTURE_3D, 0)
+            gl.glBindTexture(GL_TEXTURE_3D, 0)
         # Deactivate program - should not be necessary. In single-program
         # apps it would not even make sense.
         #self._parser._current_program = 0
@@ -654,10 +657,12 @@ class GlirTexture2D(GlirTexture):
         # Shape is height, width
         if (shape, format) != self._shape_format:
             self._shape_format = shape, format
+            self.activate()
             gl.glTexImage2D(self._target, 0, format, format,
                             gl.GL_BYTE, shape[:2])
     
     def set_data(self, offset, data):
+        self.activate()
         shape, format = self._shape_format
         y, x = offset
         # Get gtype
@@ -678,6 +683,7 @@ class GlirTexture2D(GlirTexture):
 GL_SAMPLER_3D = gl.Enum('GL_SAMPLER_3D', 35679)
 GL_TEXTURE_3D = gl.Enum('GL_TEXTURE_3D', 32879)
 USE_TEX_3D = False
+
 
 def _check_pyopengl_3D():
     """Helper to ensure users have OpenGL for 3D texture support (for now)"""
@@ -723,7 +729,7 @@ class GlirTexture3D(GlirTexture):
         shape, format = self._shape_format
         z, y, x = offset
         # Get gtype
-        gtype = self._types.get(np.dtype(self.dtype), None)
+        gtype = self._types.get(np.dtype(data.dtype), None)
         if gtype is None:
             raise ValueError("Type not allowed for texture")
         # Set alignment (width is nbytes_per_pixel * npixels_per_line)
@@ -758,7 +764,7 @@ class GlirRenderBuffer(GlirObject):
             self._shape_format = shape, format
             self.activate()
             gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, format,
-                                    shape[1], shape[0])
+                                     shape[1], shape[0])
 
 
 class GlirFrameBuffer(GlirObject):
@@ -833,6 +839,6 @@ class GlirFrameBuffer(GlirObject):
         #                       'is not renderable.')
         elif res == gl.GL_FRAMEBUFFER_UNSUPPORTED:
             raise RuntimeError('Combination of internal formats used '
-                                'by attachments is not supported.')
+                               'by attachments is not supported.')
         else:
             raise RuntimeError('Unknown framebuffer error: %r.' % res)
