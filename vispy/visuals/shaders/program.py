@@ -2,7 +2,7 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-from __future__ import division, print_function
+from __future__ import division
 
 from ...gloo import Program
 from ...util import logger

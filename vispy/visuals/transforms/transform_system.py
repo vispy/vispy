@@ -29,9 +29,9 @@ class TransformSystem(object):
       and should usually represent the coordinates of the current framebuffer
       being rendered to. Visuals use this coordinate system primarily for
       antialiasing calculations. In most cases, this will have the same scale 
-      as the document coordinate system
-      because the active framebuffer is the back buffer of the canvas, and the 
-      canvas will have _logical_ and _physical_ pixels of the same size. In the
+      as the document coordinate system because the active framebuffer is the 
+      back buffer of the canvas, and the canvas will have _logical_ and 
+      _physical_ pixels of the same size. The scale may be different in the 
       case of high-resolution displays, or when rendering to an off-screen 
       framebuffer with different scaling or boundaries than the canvas. 
       
@@ -94,7 +94,7 @@ class TransformSystem(object):
             // expand by line width
             doc_pos += normalize(doc_normal) * px_width;
             
-            // finally, map the remainder of the wat to normalized device 
+            // finally, map the remainder of the way to normalized device 
             // coordinates.
             gl_Position = $doc_to_render(a_position);
         }

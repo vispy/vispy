@@ -1,5 +1,12 @@
 from .. import visuals
-from .node import VisualNode
+from .node import Node
+
+_doc_template = """Class inheriting from visuals.%sVisual and scene.Node.
+
+Instances of this class may be added to a scenegraph using the methods and
+properties defined by Node, and will display the visual output defined by
+visuals.%sVisual.
+"""
 
 
 def create_visual_node(subclass):
@@ -9,18 +16,17 @@ def create_visual_node(subclass):
     clsname = clsname[:-6]
     
     # Generate new docstring
-    doc = ("Class inheriting from VisualNode and %s" % 
-                   clsname)
+    doc = _doc_template % (clsname, clsname)
     
     # New __init__ method
     def __init__(self, *args, **kwds):
         parent = kwds.pop('parent', None)
         name = kwds.pop('name', None)
         subclass.__init__(self, *args, **kwds)
-        VisualNode.__init__(self, parent=parent, name=name)
+        Node.__init__(self, parent=parent, name=name)
     
     # Create new class
-    cls = type(clsname, (subclass, VisualNode), {'__init__': __init__, 
+    cls = type(clsname, (subclass, Node), {'__init__': __init__, 
                                                  '__doc__': doc})
     
     return cls

@@ -24,10 +24,6 @@ class Node(Visual):
     coordinate system, and the Nodes and edges in the scenegraph can be though
     of as coordinate systems connected by transformation functions.
     
-    Although Nodes are typically used to represent a visual object, the Node
-    class itself does not define any visual or interactive properties; these 
-    are defined in subclasses that also inherit from Visual.
-
     Parameters
     ----------
     parent : Node
@@ -295,9 +291,4 @@ class Node(Visual):
     def __repr__(self):
         name = "" if self.name is None else " name="+self.name
         return "<%s%s at 0x%x>" % (self.__class__.__name__, name, id(self))
-
-
-class VisualNode(Node):
-    """ Todo: separate Node / VisualNode, or get rid of Node entirely?
-    """
     
