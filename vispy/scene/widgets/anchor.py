@@ -3,8 +3,8 @@ from ..node import Node
 
 class Anchor(Node):
     """
-    Anchor is an node derives parts of its transform from some other
-    corrdinate system in the scene.
+    Anchor is a node derives parts of its transform from some other
+    coordinate system in the scene.
 
     The purpose is to allow children of an Anchor to draw using a position
     (and optionally rotation) specified by one coordinate system, and scaling/
