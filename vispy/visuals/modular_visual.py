@@ -346,7 +346,7 @@ class ModularVisual(Visual):
     def _activate_transform(self, transforms):
         # TODO: this must be optimized.
         # Allow using as plain visual or in a scenegraph
-        t = transforms.get_full_transform().shader_map()
+        t = transforms.get_full_transform()
         self._program.vert['map_local_to_nd'] = t
 
     def _program_changed(self, transforms):

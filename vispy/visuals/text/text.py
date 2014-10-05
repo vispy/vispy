@@ -454,7 +454,7 @@ class TextVisual(Visual):
                              dtype=np.uint32)[:, np.newaxis])
             self._ib = IndexBuffer(idx.ravel())
 
-        xform = transforms.get_full_transform().shader_map()
+        xform = transforms.get_full_transform()
         px_scale = transforms.framebuffer_to_render.scale
         
         self._program.vert['transform'] = xform

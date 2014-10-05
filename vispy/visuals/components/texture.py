@@ -93,7 +93,7 @@ class VertexTextureCoordinateComponent(VisualComponent):
 
     def activate(self, program, mode):
         ff = self.coord_shader()
-        ff['map_local_to_tex'] = self.transform.shader_map()
+        ff['map_local_to_tex'] = self.transform
         self._funcs['vert_post_hook']['local_pos'] = \
             self.visual._program.vert['local_pos']
 

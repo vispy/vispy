@@ -324,7 +324,7 @@ class MarkersVisual(Visual):
     def draw(self, transforms):
         set_state(depth_test=False, blend=True,
                   blend_func=('src_alpha', 'one_minus_src_alpha'))
-        xform = transforms.get_full_transform().shader_map()
+        xform = transforms.get_full_transform()
         self._program.vert['transform'] = xform
         self._program.prepare()
         self._program['u_antialias'] = 1

@@ -208,7 +208,7 @@ class Console(Widget):
         super(Console, self).draw(event)
         if event is None:
             raise RuntimeError('Event cannot be None')
-        xform = event.get_full_transform().shader_map()
+        xform = event.get_full_transform()
         px_scale = event.framebuffer_cs.transform.scale[:2]
         n_pix = (self.font_size / 72.) * 92.  # num of pixels tall
         # The -2 here is because the char_height has a gap built in

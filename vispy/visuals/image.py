@@ -118,7 +118,7 @@ class ImageVisual(ModularMesh):
             ctr = transforms.get_full_transform().inverse
             total_transform = self._tex_transform * ctr
             tex_coord_comp = VertexTextureCoordinateComponent(total_transform)
-            tr = NullTransform().shader_map()
+            tr = NullTransform()
             self._program.vert['map_local_to_nd'] = tr
         else:
             raise ValueError("Unknown image draw method '%s'" % method)
@@ -153,7 +153,7 @@ class ImageVisual(ModularMesh):
         if self._texture is None or method == 'impostor':
             self._build_data(transforms)
         if method == 'subdivide':
-            tr = transforms.get_full_transform().shader_map()
+            tr = transforms.get_full_transform()
             self._program.vert['map_local_to_nd'] = tr
 
         super(ImageVisual, self).draw(transforms)

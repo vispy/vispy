@@ -97,8 +97,8 @@ class GridLinesVisual(Visual):
                       transforms.framebuffer_to_render)
         local_to_doc = transforms.visual_to_document
 
-        self._program.frag['map_nd_to_doc'] = doc_to_ndc.shader_imap()
-        self._program.frag['map_doc_to_local'] = local_to_doc.shader_imap()
+        self._program.frag['map_nd_to_doc'] = doc_to_ndc.inverse
+        self._program.frag['map_doc_to_local'] = local_to_doc.inverse
         self._program.prepare()
         self._program['pos'] = self._buffer()
         self._program['scale'] = self._scale

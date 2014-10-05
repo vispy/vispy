@@ -370,7 +370,7 @@ class LineVisual(Visual):
     def _gl_draw(self, transforms):
         if self._pos is None:
             return
-        xform = transforms.get_full_transform().shader_map()
+        xform = transforms.get_full_transform()
         self._gl_program.vert['transform'] = xform
         self._gl_program.vert['position'] = self._pos_expr
         if isinstance(self._color, Function):
@@ -418,9 +418,9 @@ class LineVisual(Visual):
         px_ndc = transforms.framebuffer_to_render
         
         vert = self._agg_program.vert
-        vert['doc_px_transform'] = doc_px.shader_map()
-        vert['px_ndc_transform'] = px_ndc.shader_map()
-        vert['transform'] = data_doc.shader_map()
+        vert['doc_px_transform'] = doc_px
+        vert['px_ndc_transform'] = px_ndc
+        vert['transform'] = data_doc
         self._agg_program.prepare()
         self._agg_program.bind(self._vbo)
         uniforms = dict(closed=False, miter_limit=4.0, dash_phase=0.0)
