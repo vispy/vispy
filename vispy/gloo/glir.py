@@ -279,9 +279,10 @@ class GlirProgram(GlirObject):
         gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
         if USE_TEX_3D:
             gl.glBindTexture(gl.GL_TEXTURE_3D, 0)
-        # Deactivate program
-        self._parser._current_program = 0
-        gl.glUseProgram(0)
+        # Deactivate program - should not be necessary. In single-program
+        # apps it would not even make sense.
+        #self._parser._current_program = 0
+        #gl.glUseProgram(0)
             
     def set_shaders(self, vert, frag):
         """ This function takes care of setting the shading code and
@@ -324,6 +325,7 @@ class GlirProgram(GlirObject):
     def _get_active_attributes_and_uniforms(self):
         """ Retrieve active attributes and uniforms to be able to check that
         all uniforms/attributes are set by the user.
+        Other GLIR implementations may omit this.
         """
         # This match a name of the form "name[size]" (= array)
         regex = re.compile("""(?P<name>\w+)\s*(\[(?P<size>\d+)\])\s*""")
@@ -349,6 +351,7 @@ class GlirProgram(GlirObject):
     
     def _parse_error(self, error):
         """ Parses a single GLSL error and extracts the linenr and description
+        Other GLIR implementations may omit this.
         """
         error = str(error)
         # Nvidia
@@ -371,6 +374,7 @@ class GlirProgram(GlirObject):
 
     def _get_error(self, code, errors, indentation=0):
         """Get error and show the faulty line + some context
+        Other GLIR implementations may omit this.
         """
         # Init
         results = []
