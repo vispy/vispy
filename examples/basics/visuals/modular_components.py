@@ -11,8 +11,7 @@ subclassing the original ModularLine class.
 """
 
 import numpy as np
-import vispy.app
-import vispy.gloo as gloo
+from vispy import app, gloo, visuals
 from vispy.visuals.modular_line import ModularLine
 from vispy.visuals.transforms import BaseTransform, STTransform, arg_to_array
 from vispy.visuals.components import (VisualComponent, VertexColorComponent,
@@ -140,32 +139,33 @@ class WobbleComponent(VisualComponent):
         self._visual._program._need_build = True
 
 
-class Canvas(vispy.app.Canvas):
+class Canvas(app.Canvas):
     def __init__(self):
 
         self.line = ModularLine()
-        self.line.transform = (STTransform(scale=(40, 100), 
-                                           translate=(400, 400)) *
-                               SineTransform() *
-                               STTransform(scale=(10, 3)))
         self.wobbler = WobbleComponent(pos)
         self.line.pos_components = [XYPosComponent(pos), self.wobbler]
         dasher = DashComponent(pos)
         self.line.color_components = [VertexColorComponent(color), dasher]
 
-        vispy.app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 
-        self.timer = vispy.app.Timer(connect=self.wobble,
+        self.timer = app.Timer(connect=self.wobble,
                                      interval=0.02,
                                      start=True)
+        
+        self.tr_sys = visuals.transforms.TransformSystem(self)
+        self.tr_sys.visual_to_document = (STTransform(scale=(40, 100), 
+                                                      translate=(400, 400)) *
+                                          SineTransform() *
+                                          STTransform(scale=(10, 3)))
 
     def on_draw(self, ev):
         gloo.set_clear_color('black')
         gloo.clear(color=True, depth=True)
-
-        self.draw_visual(self.line)
+        self.line.draw(self.tr_sys)
 
     def wobble(self, ev):
         self.wobbler.phase += 0.1
@@ -176,4 +176,4 @@ if __name__ == '__main__':
     win = Canvas()
     import sys
     if sys.flags.interactive != 1:
-        vispy.app.run()
+        app.run()

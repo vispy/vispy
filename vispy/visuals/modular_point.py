@@ -9,12 +9,12 @@ from .modular_visual import ModularVisual
 from .shaders import Function
 
 
-class ModularPointVisual(ModularVisual):
+class ModularPoint(ModularVisual):
     """
     Displays multiple point sprites.
     """
     def __init__(self, pos=None, color=None, **kwargs):
-        super(ModularPointVisual, self).__init__(**kwargs)
+        super(ModularPoint, self).__init__(**kwargs)
 
         glopts = kwargs.pop('gl_options', 'translucent')
         self.set_gl_options(glopts)
@@ -43,4 +43,4 @@ class ModularPointVisual(ModularVisual):
         GL_POINT_SPRITE = 34913
         gloo.gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
         gloo.gl.glEnable(GL_POINT_SPRITE)
-        super(ModularPointVisual, self).draw(transforms)
+        super(ModularPoint, self).draw(transforms)

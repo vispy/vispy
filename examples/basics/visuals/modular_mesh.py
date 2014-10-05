@@ -8,8 +8,7 @@ Simple demonstration of LineVisual.
 """
 
 import numpy as np
-import vispy.app
-from vispy import gloo
+from vispy import app, gloo, visuals
 from vispy.visuals.modular_mesh import ModularMesh
 from vispy.visuals.components import (VertexColorComponent, GridContourComponent,
                                     VertexNormalComponent, ShadingComponent)
@@ -18,8 +17,10 @@ from vispy.visuals.transforms import (STTransform, AffineTransform,
                                     ChainTransform)
 
 
-class Canvas(vispy.app.Canvas):
+class Canvas(app.Canvas):
     def __init__(self):
+        app.Canvas.__init__(self, keys='interactive')
+        
         self.meshes = []
         self.rotation = AffineTransform()
 
@@ -96,13 +97,14 @@ class Canvas(vispy.app.Canvas):
             mesh.transform = ChainTransform([STTransform(translate=(x, y),
                                                          scale=(s, s, 1)),
                                              self.rotation])
+            mesh.tr_sys = visuals.transforms.TransformSystem(self)
+            mesh.tr_sys.visual_to_document = mesh.transform
 
-        vispy.app.Canvas.__init__(self, keys='interactive')
 
         self.size = (800, 800)
         self.show()
 
-        self.timer = vispy.app.Timer(connect=self.rotate)
+        self.timer = app.Timer(connect=self.rotate)
         self.timer.start(0.016)
 
     def rotate(self, event):
@@ -116,11 +118,11 @@ class Canvas(vispy.app.Canvas):
         gloo.set_clear_color('black')
         gloo.clear(color=True, depth=True)
         for mesh in self.meshes:
-            self.draw_visual(mesh)
+            mesh.draw(mesh.tr_sys)
 
 
 if __name__ == '__main__':
     win = Canvas()
     import sys
     if sys.flags.interactive != 1:
-        vispy.app.run()
+        app.run()
