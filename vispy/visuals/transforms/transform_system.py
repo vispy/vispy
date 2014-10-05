@@ -167,6 +167,7 @@ class TransformSystem(object):
 
     @dpi.setter
     def dpi(self, dpi):
+        assert dpi > 0
         self._dpi = dpi
 
     @property
