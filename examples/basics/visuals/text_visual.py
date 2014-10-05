@@ -5,20 +5,21 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from vispy import scene, gloo
-from vispy.visuals import Text
+from vispy import app, gloo, visuals
 
 
-class Canvas(scene.SceneCanvas):
+class Canvas(app.Canvas):
     def __init__(self):
-        scene.SceneCanvas.__init__(self, title='Glyphs', keys='interactive')
+        app.Canvas.__init__(self, title='Glyphs', keys='interactive')
         self.font_size = 48.
-        self.text = Text('', bold=True)
+        self.text = visuals.TextVisual('', bold=True)
+        self.tr_sys = visuals.transforms.TransformSystem(self)
         self.apply_zoom()
 
     def on_draw(self, event):
         gloo.clear(color='white')
-        self.draw_visual(self.text)
+        gloo.set_viewport(0, 0, *self.size)
+        self.text.draw(self.tr_sys)
 
     def on_mouse_wheel(self, event):
         """Use the mouse wheel to zoom."""
