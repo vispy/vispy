@@ -42,7 +42,7 @@ class Visual(object):
         This method is called internally whenever the Visual needs to be 
         redrawn. By default, it emits the update event.
         """
-        self.transformss.update()
+        self.events.update()
 
     def draw(self, transforms):
         """
