@@ -158,21 +158,6 @@ class Program(GLObject):
         """ Source code for vertex and fragment shader
         """
         return self._shaders
-
-    # todo: remove these
-    def _create(self):
-        pass
-
-    def _delete(self):
-        pass
-    
-    def _activate(self):
-        """Activate the program as part of current rendering state."""
-        return
-
-    def _deactivate(self):
-        """Deactivate the program."""
-        pass
     
     @property
     def variables(self):

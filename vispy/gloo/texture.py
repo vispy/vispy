@@ -310,20 +310,6 @@ class BaseTexture(GLObject):
         # Set data (deferred)
         self.set_data(data=data, offset=offset, copy=False)
     
-    def _create(self):
-        pass
-
-    def _delete(self):
-        pass
-
-    def _activate(self):
-        """ Activate texture on GPU """
-        return
-
-    def _deactivate(self):
-        """ Deactivate texture on GPU """
-        pass
-
     def __repr__(self):
         return "<%s shape=%r format=%r at 0x%x>" % (
             self.__class__.__name__, self._shape, self._format, id(self))

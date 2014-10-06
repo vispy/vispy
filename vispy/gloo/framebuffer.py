@@ -89,22 +89,6 @@ class RenderBuffer(GLObject):
         self._format = format
         self._context.glir.command('SIZE', self._id, self._shape, self._format)
 
-    def _create(self):
-        """ Create buffer on GPU """
-        pass
-
-    def _delete(self):
-        """ Delete buffer from GPU """
-        pass
-
-    def _activate(self):
-        """ Activate buffer on GPU """
-        pass
-    
-    def _deactivate(self):
-        """ Deactivate buffer on GPU """
-        pass
-
 
 # These are convenience classes
 
@@ -280,19 +264,3 @@ class FrameBuffer(GLObject):
         #gl.glReadBuffer(buffer._target)
         
         return read_pixels((0, 0, w, h), alpha=alpha)
-
-    def _create(self):
-        """ Create framebuffer on GPU """
-        pass
-
-    def _delete(self):
-        """ Delete buffer from GPU """
-        pass
-
-    def _activate(self):
-        """ Activate framebuffer on GPU """
-        return
-    
-    def _deactivate(self):
-        """ Deactivate framebuffer on GPU """
-        pass

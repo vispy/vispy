@@ -128,45 +128,6 @@ class Buffer(GLObject):
             view._valid = False
         self._views = []
 
-    def _create(self):
-        # Big hack in transition phase
-        # variables.py needs the handle :(
-        return
-        glir = self._context.glir
-        try:
-            self._handle = glir._parser._objects[self._id]._handle
-        except KeyError:
-            glir.parse()
-            self._handle = glir._parser._objects[self._id]._handle
-
-    def _delete(self):
-        pass
-
-    def _resize_bytes(self):
-        pass
-
-    def _activate(self):
-        return
-        # Big hack in transition phase
-        # variables.py needs to activate us
-        from . import gl
-        target = gl.GL_ARRAY_BUFFER
-        if isinstance(self, IndexBuffer):
-            target = gl.GL_ELEMENT_ARRAY_BUFFER
-        gl.glBindBuffer(target, self._handle)
-       
-    def _deactivate(self):
-        return
-        from . import gl
-        target = gl.GL_ARRAY_BUFFER
-        if isinstance(self, IndexBuffer):
-            target = gl.GL_ELEMENT_ARRAY_BUFFER
-        gl.glBindBuffer(target, 0)
-        # todo: remove when Program uses GLIR
-    
-    def _update_data(self):
-        pass
-
 
 # -------------------------------------------------------- DataBuffer class ---
 class DataBuffer(Buffer):
@@ -416,33 +377,10 @@ class DataBufferView(DataBuffer):
         self._dtype = base.dtype
         self._nbytes = self.size * self.itemsize
     
-    # todo: make id a public method? And get rid of handle
     @property
-    def _id(self):
-        return self._base._id
+    def id(self):
+        return self._base.id
     
-    @property
-    def handle(self):
-        """ Name of this object on the GPU """
-
-        return self._base.handle
-
-    @property
-    def target(self):
-        """ OpenGL type of object. """
-
-        return self._base.target
-
-    def activate(self):
-        """ Activate the object on GPU """
-
-        self._base.activate()
-
-    def deactivate(self):
-        """ Deactivate the object on GPU """
-
-        self._base.deactivate()
-
     def set_data(self, data, copy=False):
         raise ValueError("Cannot set_data on buffer view; only set_subdata is "
                          "allowed.")
