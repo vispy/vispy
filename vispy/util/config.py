@@ -21,25 +21,117 @@ from ..ext.six import string_types
 from .logs import logger, set_log_level, use_log_level
 
 
-class _TempDir(str):
-    """Class for creating and auto-destroying temp dir
-
-    This is designed to be used with testing modules.
-
-    We cannot simply use __del__() method for cleanup here because the rmtree
-    function may be cleaned up before this object, so we use the atexit module
-    instead.
+def _init():
+    """ Create global Config object, parse command flags
     """
-    def __new__(self):
-        new = str.__new__(self, tempfile.mkdtemp())
-        return new
+    global config, _data_path, _allowed_config_keys
+    
+    _data_path = _get_vispy_app_dir()
+    if _data_path is not None:
+        _data_path = op.join(_data_path, 'data')
+    
+    # All allowed config keys and the types they may have
+    _allowed_config_keys = {
+        'data_path': (str,), 
+        'default_backend': (str,), 
+        'gl_debug': (bool,), 
+        'logging_level': (str,),
+        'qt_lib': (str,), 
+        'dpi': (int, type(None)),
+    }
 
-    def __init__(self):
-        self._path = self.__str__()
-        atexit.register(self.cleanup)
+    # Default values for all config options
+    default_config_options = {
+        'data_path': _data_path, 
+        'default_backend': 'qt', 
+        'gl_debug': False, 
+        'logging_level': 'info',
+        'qt_lib': 'any',
+        'dpi': None,
+    }
 
-    def cleanup(self):
-        rmtree(self._path, ignore_errors=True)
+    config = Config(**default_config_options)
+
+    try:
+        config.update(**_load_config())
+    except Exception as err:
+        raise Exception('Error while reading vispy config file "%s":\n  %s' %
+                        (_get_config_fname(), err.message))
+    set_log_level(config['logging_level'])
+
+    _parse_command_line_arguments()
+
+
+###############################################################################
+# Command line flag parsing
+
+VISPY_HELP = """
+VisPy command line arguments:
+
+  --vispy-backend=(qt|pyqt|pyside|glut|glfw|pyglet)
+    Selects the backend system for VisPy to use. This will override the default
+    backend selection in your configuration file.
+    
+  --vispy-log=(debug|info|warning|error|critical)[,search string]
+    Sets the verbosity of logging output. The default is 'warning'. If a search
+    string is given, messages will only be displayed if they match the string,
+    or if their call location (module.class:method(line) or 
+    module:function(line)) matches the string.    
+    
+  --vispy-dpi=resolution
+    Force the screen resolution to a certain value (in pixels per inch). By 
+    default, the OS is queried to determine the screen DPI.
+    
+  --vispy-fps
+    Print the framerate (in Frames Per Second) in the console.
+    
+  --vispy-gl-debug
+    Enables error checking for all OpenGL calls.
+
+  --vispy-profile
+    Enable profiling and print the results when the program exits.
+    
+  --vispy-help
+    Display this help message.
+
+"""
+
+
+def _parse_command_line_arguments():
+    """ Transform vispy specific command line args to vispy config.
+    Put into a function so that any variables dont leak in the vispy namespace.
+    """
+    # Get command line args for vispy
+    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-log=', 'vispy-help',
+                'vispy-profile', 'vispy-dpi=']
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], '', argnames)
+    except getopt.GetoptError:
+        opts = []
+    # Use them to set the config values
+    for o, a in opts:
+        if o.startswith('--vispy'):
+            if o == '--vispy-backend':
+                config['default_backend'] = a
+                logger.info('vispy backend: %s', a)
+            elif o == '--vispy-gl-debug':
+                config['gl_debug'] = True
+            elif o == '--vispy-log':
+                if ',' in a:
+                    verbose, match = a.split(',')
+                else:
+                    verbose = a
+                    match = None
+                config['logging_level'] = a
+                set_log_level(verbose, match)
+            elif o == '--vispy-profile':
+                _enable_profiling()
+            elif o == '--vispy-help':
+                print(VISPY_HELP)
+            elif o == '--vispy-dpi':
+                config['dpi'] = int(a)
+            else:
+                logger.warning("Unsupported vispy flag: %s" % o)
 
 
 ###############################################################################
@@ -129,13 +221,13 @@ class Config(object):
 
     def _check_key_val(self, key, val):
         # check values against acceptable ones
-        known_keys = get_config_keys()
+        known_keys = _allowed_config_keys
         if key not in known_keys:
             raise KeyError('key "%s" not in known keys: "%s"'
                            % (key, known_keys))
-        if not isinstance(val, (string_types, bool)):
-            raise TypeError('Value for key "%s" must be str or bool, not %s'
-                            % (key, type(val)))
+        if not isinstance(val, known_keys[key]):
+            raise TypeError('Value for key "%s" must be one of %s, not %s.'
+                            % (key, known_keys[key], type(val)))
 
     def update(self, **kwargs):
         for key, val in kwargs.items():
@@ -148,15 +240,14 @@ class Config(object):
 
 
 def get_config_keys():
-    """The config keys known by vispy
+    """The config keys known by vispy and their allowed data types.
 
     Returns
     -------
-    keys : tuple
-        List of known config keys.
+    keys : dict
+        Dict of {key: (types,)} pairs.
     """
-    return ('data_path', 'default_backend', 'gl_debug', 'logging_level',
-            'qt_lib')
+    return _allowed_config_keys.copy()
 
 
 def _get_config_fname():
@@ -202,20 +293,6 @@ def save_config(**kwargs):
         json.dump(current_config, fid, sort_keys=True, indent=0)
 
 
-_data_path = _get_vispy_app_dir()
-if _data_path is not None:
-    _data_path = op.join(_data_path, 'data')
-config = Config(default_backend='qt', qt_lib='any',
-                gl_debug=False, logging_level='info',
-                data_path=_data_path)
-try:
-    config.update(**_load_config())
-except Exception as err:
-    raise Exception('Error while reading vispy config file "%s":\n  %s' %
-                    (_get_config_fname(), err.message))
-set_log_level(config['logging_level'])
-
-
 def set_data_dir(directory=None, create=False, save=False):
     """Set vispy data download directory"""
     if directory is None:
@@ -231,72 +308,6 @@ def set_data_dir(directory=None, create=False, save=False):
     config.update(data_path=directory)
     if save:
         save_config(data_path=directory)
-
-
-###############################################################################
-# System information and parsing
-
-VISPY_HELP = """
-VisPy command line arguments:
-
-  --vispy-backend=(qt|pyqt|pyside|glut|glfw|pyglet)
-    Selects the backend system for VisPy to use. This will override the default
-    backend selection in your configuration file.
-    
-  --vispy-log=(debug|info|warning|error|critical)[,search string]
-    Sets the verbosity of logging output. The default is 'warning'. If a search
-    string is given, messages will only be displayed if they match the string,
-    or if their call location (module.class:method(line) or 
-    module:function(line)) matches the string.    
-    
-  --vispy-fps
-    Print the framerate (in Frames Per Second) in the console.
-    
-  --vispy-gl-debug
-    Enables error checking for all OpenGL calls.
-
-  --vispy-profile
-    Enable profiling and print the results when the program exits.
-    
-  --vispy-help
-    Display this help message.
-
-"""
-
-
-def _parse_command_line_arguments():
-    """ Transform vispy specific command line args to vispy config.
-    Put into a function so that any variables dont leak in the vispy namespace.
-    """
-    # Get command line args for vispy
-    argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-log=', 'vispy-help',
-                'vispy-profile']
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], '', argnames)
-    except getopt.GetoptError:
-        opts = []
-    # Use them to set the config values
-    for o, a in opts:
-        if o.startswith('--vispy'):
-            if o == '--vispy-backend':
-                config['default_backend'] = a
-                logger.info('vispy backend: %s', a)
-            elif o == '--vispy-gl-debug':
-                config['gl_debug'] = True
-            elif o == '--vispy-log':
-                if ',' in a:
-                    verbose, match = a.split(',')
-                else:
-                    verbose = a
-                    match = None
-                config['logging_level'] = a
-                set_log_level(verbose, match)
-            elif o == '--vispy-profile':
-                _enable_profiling()
-            elif o == '--vispy-help':
-                print(VISPY_HELP)
-            else:
-                logger.warning("Unsupported vispy flag: %s" % o)
 
 
 def _enable_profiling():
@@ -376,3 +387,28 @@ def sys_info(fname=None, overwrite=False):
         with open(fname, 'w') as fid:
             fid.write(out)
     return out
+
+
+class _TempDir(str):
+    """Class for creating and auto-destroying temp dir
+
+    This is designed to be used with testing modules.
+
+    We cannot simply use __del__() method for cleanup here because the rmtree
+    function may be cleaned up before this object, so we use the atexit module
+    instead.
+    """
+    def __new__(self):
+        new = str.__new__(self, tempfile.mkdtemp())
+        return new
+
+    def __init__(self):
+        self._path = self.__str__()
+        atexit.register(self.cleanup)
+
+    def cleanup(self):
+        rmtree(self._path, ignore_errors=True)
+
+
+# initialize config options
+_init()

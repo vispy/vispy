@@ -11,6 +11,7 @@ from time import sleep
 from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..util.dpi import get_dpi
+from ..util import config
 from ..ext.six import string_types
 from . import Application, use_app
 from ..gloo.context import GLContext, get_new_context
@@ -81,7 +82,8 @@ class Canvas(object):
         The parent widget if this makes sense for the used backend.
     dpi : float | None
         Resolution in dots-per-inch to use for the canvas. If dpi is None, 
-        then the operating system will be queried for the value.
+        then the value will be determined by querying the global config first,
+        and then the operating system.
     """
     
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
@@ -107,6 +109,8 @@ class Canvas(object):
         self._backend = None
         self._closed = False
         
+        if dpi is None:
+            dpi = config['dpi']
         if dpi is None:
             dpi = get_dpi()
         self.dpi = dpi

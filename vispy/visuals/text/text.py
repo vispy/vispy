@@ -460,7 +460,7 @@ class TextVisual(Visual):
         self._program.vert['transform'] = xform
         self._program.prepare()  # Force ModularProgram to set shaders
         # todo: do some testing to verify that the scaling is correct
-        ps = (self._font_size / 72.) * 92.
+        ps = (self._font_size / 72.) * transforms.dpi
         self._program['u_npix'] = ps
         self._program['u_font_atlas_shape'] = self._font._atlas.shape[:2]
         self._program['u_kernel'] = self._font._kernel

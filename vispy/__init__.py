@@ -27,9 +27,6 @@ version_info = 0, 3, 0, ''  # major, minor, patch, extra
 # Nice string for the version (mimic how IPython composes its version str)
 __version__ = '-'.join(map(str, version_info)).replace('-', '.', 2).strip('-')
 
-from .util import (_parse_command_line_arguments, config,  # noqa
-                   set_log_level, keys, sys_info)  # noqa
+from .util import config, set_log_level, keys, sys_info  # noqa
 from .util.wrappers import use  # noqa
 from .testing import test  # noqa
-
-_parse_command_line_arguments()
