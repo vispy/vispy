@@ -21,7 +21,7 @@ class GLObject(object):
     """ Generic GL object that may live both on CPU and GPU 
     """
     
-    _GLIR_TYPE = None
+    _GLIR_TYPE = 'DummyGlirType'
     
     # Internal id counter to keep track of GPU objects
     _idcount = 0

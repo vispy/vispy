@@ -180,8 +180,10 @@ class Canvas(object):
         # self._backend = set by BaseCanvasBackend 
         self._backend_kwargs = None  # Clean up
         
+        # Connect to draw event (append to the end)
+        # Process GLIR commands at each paint event
+        self.events.draw.connect(self.context.glir.parse, position='last')
         if self._autoswap:
-            # append to the end
             self.events.draw.connect((self, 'swap_buffers'),
                                      ref=True, position='last')
 
@@ -396,9 +398,9 @@ class Canvas(object):
     def __exit__(self, type, value, traceback):
         # ensure all GL calls are complete
         if not self._closed:
-            from ..gloo import gl
+            from .. import gloo
             self._backend._vispy_set_current()
-            gl.glFinish()
+            gloo.finish()
             self.close()
         sleep(0.1)  # ensure window is really closed/destroyed
 

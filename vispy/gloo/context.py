@@ -19,6 +19,9 @@ an OpenGL context.
 from copy import deepcopy
 import weakref
 
+from .glir import GlirQueue
+
+
 _default_dict = dict(red_size=8, green_size=8, blue_size=8, alpha_size=8,
                      depth_size=16, stencil_size=0, double_buffer=True,
                      stereo=False, samples=0)
@@ -102,6 +105,7 @@ class GLContext(object):
         self._backend_canvas = lambda x=None: None
         self._name = None
         self.set_config(config)
+        self._glir = GlirQueue()
     
     def set_config(self, config):
         """ Set the config of this context. Setting the config after
@@ -115,6 +119,18 @@ class GLContext(object):
                 raise KeyError('Key %r is not a valid GL config key.' % key)
             if not isinstance(val, type(_default_dict[key])):
                 raise TypeError('Context value of %r has invalid type.' % key)
+    
+    @property
+    def glir(self):
+        """ The glir queue object
+        
+        The glir queue can be used to give GLIR commands, which will be parsed
+        at the right moment (by the app canvas).
+        """
+        # There are three moments where the queue is parsed:
+        # - On canvas.events.paint
+        # - On gloo.flush() and gloo.finish()
+        return self._glir
     
     def take(self, name, backend_canvas):
         """ Claim ownership for this context. This can only be done if it is

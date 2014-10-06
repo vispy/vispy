@@ -9,6 +9,7 @@ import numpy as np
 from . import gl
 from .globject import GLObject
 from .wrappers import _check_conversion
+from ..ext.six import string_types
 
 GL_SAMPLER_3D = gl.Enum('GL_SAMPLER_3D', 35679)  # needed by Program
 
@@ -79,23 +80,26 @@ class BaseTexture(GLObject):
         GLObject.__init__(self)
         
         # Init shape and format
+        self._resizeable = True  # at least while we're in init
         self._shape = tuple([0 for i in range(self._ndim+1)])
         self._format = format
-        
-        # Init more (wrapping and interp are important to set to get an inage)
-        self._resizeable = bool(resizeable)
-        self.interpolation = interpolation or 'nearest'
-        self.wrapping = wrapping or 'clamp_to_edge'
         
         # Set data or shape
         if data is not None:
             if shape is not None:
                 raise ValueError('Texture needs data or shape, not both.')
+            data = np.array(data, copy=False)
+            self.resize(data.shape, format)  # So we can test the combination
             self.set_data(data)
         elif shape is not None:
             self.resize(shape, format)
         else:
             raise ValueError("Either data or shape must be given")
+        
+        # Init more (wrapping and interp are important to set to get an inage)
+        self._resizeable = bool(resizeable)
+        self.interpolation = interpolation or 'nearest'
+        self.wrapping = wrapping or 'clamp_to_edge'
     
     def _normalize_shape(self, data_or_shape):
         # Get data and shape from input
@@ -194,6 +198,8 @@ class BaseTexture(GLObject):
                 format = self._format
         if format is None:
             raise ValueError("Cannot determine texture format from shape")
+        if isinstance(format, string_types):
+            format = getattr(gl, 'GL_' + format.upper())
         if shape[-1] != self._inv_formats[format]:
             raise ValueError('Format does not match with given shape.')
         
@@ -228,7 +234,7 @@ class BaseTexture(GLObject):
         data = self._normalize_shape(data)
 
         # Check data has the right shape
-        if len(data.shape) != self._ndim + 1:
+        if len(data.shape) not in (self._ndim, self._ndim + 1):
             raise ValueError("Data has wrong shape")
 
         # Maybe resize to purge DATA commands?
@@ -290,7 +296,7 @@ class BaseTexture(GLObject):
             else:
                 raise TypeError("Texture indices must be integers")
 
-        offset = tuple([s.start for s in slices])
+        offset = tuple([s.start for s in slices])[:self._ndim]
         shape = tuple([s.stop - s.start for s in slices])
         size = np.prod(shape) if len(shape) > 0 else 1
         
@@ -298,8 +304,8 @@ class BaseTexture(GLObject):
         if not isinstance(data, np.ndarray):
             data = np.array(data, copy=False)
         # Make sure data is big enough
-        if data.size != size:
-            data = np.resize(data, size).reshape(shape)
+        if data.shape != shape:
+            data = np.resize(data, shape)
 
         # Set data (deferred)
         self.set_data(data=data, offset=offset, copy=False)

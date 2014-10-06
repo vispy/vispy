@@ -11,7 +11,7 @@ from . import gl
 from .context import get_a_context
 from ..ext.six import string_types
 from ..color import Color
-from ..util import logger
+#from ..util import logger
 
 
 __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',
@@ -22,9 +22,9 @@ __all__ = ('set_viewport', 'set_depth_range', 'set_front_face',
            'set_stencil_op', 'set_depth_func', 'set_depth_mask',
            'set_color_mask', 'set_sample_coverage',
            'get_state_presets', 'set_state', 'finish', 'flush',
-           'get_parameter', 'read_pixels', 'set_hint',
+           'read_pixels', 'set_hint',
            'get_gl_configuration', '_check_valid')
-# Removed: 'check_error'
+# Removed: 'check_error', 'get_parameter'
 
 _setters = [s[4:] for s in __all__
             if s.startswith('set_') and s != 'set_state']
@@ -587,48 +587,35 @@ def set_state(preset=None, **kwargs):
 
 
 #
-# glFinish, glFlush, glGetParameter, glReadPixels, glHint
+# glFinish, glFlush, glReadPixels, glHint
 #
 
 # todo: remove all non-deferred (i.e. non-GLIR) functions here
 
 def finish():
     """Wait for GL commands to to finish
-
-    This is a wrapper for glFinish().
+    
+    This creates a GLIR command for glFinish and then processes the
+    GLIR commands. If the GLIR interpreter is remote (e.g. WebGL), this
+    function will return before GL has finished processing the commands.
     """
     #gl.glFinish()
-    logger.warn('You should probably not be calling gloo.finish().')
+    #logger.warn('You should probably not be calling gloo.finish().')
     c = get_a_context()
     c.glir.command('SET', 'glFinish')
+    c.glir.parse()  # Process GLIR commands
 
 
 def flush():
     """Flush GL commands
 
-    This is a wrapper for glFlush().
+    This is a wrapper for glFlush(). This also flushes the GLIR command queue.
     """
     #gl.glFlush()
-    logger.warn('You should probably not be calling gloo.flush().')
+    #logger.warn('You should probably not be calling gloo.flush().')
     c = get_a_context()
     c.glir.command('SET', 'glFlush')
-
-
-def get_parameter(name):
-    """Get OpenGL parameter value
-
-    Unlike all other functions in vispy.gloo, this function directly executes
-    an OpenGL command.
-    
-    Parameters
-    ----------
-    name : str
-        The name of the parameter to get.
-    """
-    if not isinstance(name, string_types):
-        raise TypeError('name bust be a string')
-    logger.warn('You should probably not be calling gloo.get_parameter().')
-    return gl.glGetParameter(_gl_attr(name))
+    c.glir.parse()  # Process GLIR commands
 
 
 def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
@@ -659,13 +646,15 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
         The array shape is (h, w, 3) or (h, w, 4), with the top-left corner 
         of the framebuffer at index [0, 0] in the returned array.
     """
+    # todo: this function wont work if we have a remote GLIR interpreter
+    finish()  # Finish first, also flushes GLIR commands
     type_dict = {'unsigned_byte': gl.GL_UNSIGNED_BYTE,
                  np.uint8: gl.GL_UNSIGNED_BYTE,
                  'float': gl.GL_FLOAT,
                  np.float32: gl.GL_FLOAT}
     type_ = _check_conversion(out_type, type_dict)
     if viewport is None:
-        viewport = get_parameter('viewport')
+        viewport = gl.glGetParameter(gl.GL_VIEWPORT)
     viewport = np.array(viewport, int)
     if viewport.ndim != 1 or viewport.size != 4:
         raise ValueError('viewport should be 1D 4-element array-like, not %s'

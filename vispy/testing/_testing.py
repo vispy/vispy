@@ -336,8 +336,7 @@ def TestingCanvas(bgcolor='black', size=(100, 100)):
 
         def draw_visual(self, visual):
             SceneCanvas.draw_visual(self, visual)
-            gloo.gl.glFlush()
-            gloo.gl.glFinish()
+            gloo.finish()
 
     return TestingCanvas(bgcolor, size)
 

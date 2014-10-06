@@ -37,7 +37,7 @@ class Buffer(GLObject):
     nbytes : int
         Buffer byte size
     """
-
+    
     def __init__(self, data=None, nbytes=None):
         GLObject.__init__(self)
         self._views = []  # Views on this buffer

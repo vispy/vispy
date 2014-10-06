@@ -17,7 +17,8 @@ import sys
 
 from ._sdf import SDFRenderer
 from ....gloo import (TextureAtlas, set_state, IndexBuffer, VertexBuffer,
-                      set_viewport, get_parameter)
+                      set_viewport)
+from ....gloo import gl
 from ....gloo.wrappers import _check_valid
 from ....ext.six import string_types
 from ....util.fonts import _load_glyph
@@ -145,7 +146,8 @@ def _text_to_vbo(text, font, anchor_x, anchor_y, lowres_size):
         text = text.decode('utf-8')
     # Need to store the original viewport, because the font[char] will
     # trigger SDF rendering, which changes our viewport
-    orig_viewport = get_parameter('viewport')
+    # todo: get rid of call to glGetParameter!
+    orig_viewport = gl.glGetParameter(gl.GL_VIEWPORT)
     for ii, char in enumerate(text):
         glyph = font[char]
         kerning = glyph['kerning'].get(prev, 0.) * ratio

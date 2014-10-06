@@ -68,7 +68,7 @@ class GlirQueue(object):
         self._commands, ret = [], self._commands
         return ret
         
-    def parse(self):
+    def parse(self, event=False):
         """ Interpret all commands; do the OpenGL calls.
         """
         self._parser.parse(self.clear())

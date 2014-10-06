@@ -10,6 +10,13 @@ from vispy.testing import run_tests_if_main
 from vispy.gloo.buffer import Buffer, DataBuffer, VertexBuffer, IndexBuffer
 
 
+def teardown_module():
+    # Clear the BS commands that we produced here
+    from vispy.gloo.context import get_a_context
+    c = get_a_context()
+    c.glir.clear()
+
+
 # -----------------------------------------------------------------------------
 class BufferTest(unittest.TestCase):
 

@@ -26,7 +26,6 @@ def test_wrappers():
             gloo.set_state(state)
         assert_raises(ValueError, gloo.set_blend_color, (0., 0.))  # bad color
         assert_raises(TypeError, gloo.set_hint, 1, 2)  # need strs
-        assert_raises(TypeError, gloo.get_parameter, 1)  # need str
         # this doesn't exist in ES 2.0 namespace
         assert_raises(ValueError, gloo.set_hint, 'fog_hint', 'nicest')
         # test bad enum
@@ -69,9 +68,9 @@ def test_wrappers():
         gloo.flush()
         gloo.finish()
         # check some results
-        assert_array_equal(gloo.get_parameter('viewport'), viewport)
-        assert_equal(gloo.get_parameter('front_face'), gl.GL_CW)
-        assert_equal(gloo.get_parameter('blend_color'), blend_color + (1,))
+        assert_array_equal(gl.glGetParameter(gl.GL_VIEWPORT), viewport)
+        assert_equal(gl.glGetParameter(gl.GL_FRONT_FACE), gl.GL_CW)
+        assert_equal(gl.glGetParameter(gl.GL_BLEND_COLOR), blend_color + (1,))
 
 
 @requires_application()

@@ -14,6 +14,13 @@ from vispy.gloo.util import draw_texture, _screenshot
 from vispy.testing import requires_application, has_pyopengl, run_tests_if_main
 
 
+def teardown_module():
+    # Clear the BS commands that we produced here
+    from vispy.gloo.context import get_a_context
+    c = get_a_context()
+    c.glir.clear()
+
+
 @requires_application()
 def test_use_textures():
     """Test using textures and FBO"""
@@ -28,7 +35,7 @@ def test_use_framebuffer():
     data = np.random.rand(*shape).astype(np.float32)
     orig_tex = Texture2D(data)
     use_shape = shape + (3,)
-    fbo_tex = Texture2D(shape=use_shape, dtype=np.ubyte, format='rgb')
+    fbo_tex = Texture2D(shape=use_shape, format='rgb')
     rbo = ColorBuffer(shape=shape)
     fbo = FrameBuffer(color=fbo_tex)
     with Canvas(size=shape[::-1]) as c:
@@ -90,14 +97,14 @@ def test_use_texture3D():
     # populate the depth "slices" with different gray colors in the bottom left
     for ii, val in enumerate(vals):
         data[ii, :2, :3] = val / 255.
-    program = Program(VERT_SHADER, FRAG_SHADER)
-    program['a_pos'] = [[-1., -1.], [1., -1.], [-1., 1.], [1., 1.]]
-    tex = Texture3D(data, interpolation='nearest')
-    assert_equal(tex.width, w)
-    assert_equal(tex.height, h)
-    assert_equal(tex.depth, d)
-    program['u_texture'] = tex
     with Canvas(size=(100, 100)):
+        program = Program(VERT_SHADER, FRAG_SHADER)
+        program['a_pos'] = [[-1., -1.], [1., -1.], [-1., 1.], [1., 1.]]
+        tex = Texture3D(data, interpolation='nearest')
+        assert_equal(tex.width, w)
+        assert_equal(tex.height, h)
+        assert_equal(tex.depth, d)
+        program['u_texture'] = tex
         for ii, val in enumerate(vals):
             set_viewport(0, 0, w, h)
             clear(color='black')
