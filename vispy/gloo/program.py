@@ -148,6 +148,8 @@ class Program(GLObject):
         frag : str
             Source code for fragment shaders.
         """
+        if not vert or not frag:
+            raise ValueError('Vertex and fragment code must both be non-empty')
         # Store source code, send it to glir, parse the code for variables
         self._shaders = vert, frag
         self._context.glir.command('SHADERS', self._id, vert, frag)
@@ -323,7 +325,7 @@ class Program(GLObject):
                         data = VertexBuffer(data)
                     # Store and send GLIR command
                     self._user_variables[name] = data
-                    value = (data._id, data.stride, data.offset)
+                    value = (data.id, data.stride, data.offset)
                     self._context.glir.command('ATTRIBUTE', self._id, 
                                                name, type, value)
                 else:

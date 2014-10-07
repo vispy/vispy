@@ -272,7 +272,7 @@ class ViewBox(Widget):
             self._myprogram = gloo.Program(render_vertex, render_fragment)
             # Create texture
             self._tex = gloo.Texture2D(shape=(10, 10, 4), 
-                                       interpolation='linear', dtype=np.uint8)
+                                       interpolation='linear')
             self._myprogram['u_texture'] = self._tex
             # Create texcoords and vertices
             # Note y-axis is inverted here because the viewbox coordinate

@@ -9,8 +9,8 @@ Adapted to `vispy` by Eric Larson <larson.eric.d@gmail.com>.
 
 import numpy as np
 from os import path as op
-from ....gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
-                      VertexBuffer, Texture2D, set_viewport, set_state)
+from ....gloo import (Program, FrameBuffer, VertexBuffer, Texture2D, 
+                      set_viewport, set_state)
 
 this_dir = op.dirname(__file__)
 
@@ -219,10 +219,9 @@ void main( void )
 
 class SDFRenderer(object):
     def __init__(self):
-        vert_shader = VertexShader(vert)
-        self.program_seed = Program(vert_shader, FragmentShader(frag_seed))
-        self.program_flood = Program(vert_shader, FragmentShader(frag_flood))
-        self.program_insert = Program(vert_shader, FragmentShader(frag_insert))
+        self.program_seed = Program(vert, frag_seed)
+        self.program_flood = Program(vert, frag_flood)
+        self.program_insert = Program(vert, frag_insert)
         self.programs = [self.program_seed, self.program_flood,
                          self.program_insert]
 
@@ -279,14 +278,12 @@ class SDFRenderer(object):
 
         comp_texs = []
         for _ in range(2):
-            tex = Texture2D(shape=sdf_size + (4,), dtype=np.float32,
-                            interpolation='nearest', 
-                            wrapping='clamp_to_edge',
-                            format='rgba')
+            tex = Texture2D(shape=sdf_size + (4,), format='rgba',
+                            interpolation='nearest', wrapping='clamp_to_edge')
             comp_texs.append(tex)
         self.fbo_to[0].color_buffer = comp_texs[0]
         self.fbo_to[1].color_buffer = comp_texs[1]
-        for program in self.programs:
+        for program in self.programs[1:]:  # program_seed does not need this
             program['u_texh'], program['u_texw'] = sdf_size
 
         # Do the rendering

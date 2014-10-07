@@ -148,12 +148,24 @@ class FrameBuffer(GLObject):
         if stencil is not None:
             self.stencil_buffer = stencil
     
-    def __enter__(self):
+    def activate(self):
+        """ Activate/use this frame buffer.
+        """
         self._context.glir.command('USE', self._id, True)
+    
+    # todo: activate/deactivate vs use
+    def deactivate(self):
+        """ Stop using this frame buffer, the previous framebuffer will be
+        active.
+        """
+        self._context.glir.command('USE', self._id, False)
+    
+    def __enter__(self):
+        self.activate()
         return self
 
     def __exit__(self, t, val, trace):
-        self._context.glir.command('USE', self._id, False)
+        self.deactivate()
 
     @property
     def color_buffer(self):

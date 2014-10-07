@@ -20,7 +20,7 @@ class ModularProgram(Program):
     program variables.
     """
     def __init__(self, vcode, fcode):
-        Program.__init__(self, '', '')
+        Program.__init__(self)
         
         self.changed = EventEmitter(source=self, type='program_change')
         
@@ -30,7 +30,7 @@ class ModularProgram(Program):
         self.frag.changed.connect(self._source_changed)
         
         # Cache state of Variables so we know which ones require update
-        self._variable_state = {}
+        #self._variable_state = {}
         
         self._need_build = True
 
@@ -38,7 +38,6 @@ class ModularProgram(Program):
         """ Prepare the Program so we can set attributes and uniforms.
         """
         # TEMP function to fix sync issues for now
-        self._create()
         if self._need_build:
             self._build()
             self._need_build = False
@@ -48,24 +47,19 @@ class ModularProgram(Program):
         if ev.code_changed:
             self._need_build = True
         self.changed()
-        
+    
+    def draw(self, *args, **kwargs):
+        self.prepare()
+        Program.draw(self, *args, **kwargs)
+    
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s" % self)
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
         code = self.compiler.compile()
-        self.shaders[0].code = code['vert']
-        self.shaders[1].code = code['frag']
-        
+        self.set_shaders(code['vert'], code['frag'])
         logger.debug('==== Vertex Shader ====\n\n' + code['vert'] + "\n")
         logger.debug('==== Fragment shader ====\n\n' + code['frag'] + "\n")
         
-        self._create_variables()  # force update
-        self._variable_state = {}
-        
-        # and continue.
-        super(ModularProgram, self)._build()
-
-    def _activate_variables(self):
         # set all variables
         settable_vars = 'attribute', 'uniform'
         logger.debug("Apply variables:")
@@ -76,8 +70,6 @@ class ModularProgram(Program):
             name = self.compiler[dep]
             logger.debug("    %s = %s", name, dep.value)
             state_id = dep.state_id
-            if self._variable_state.get(name, None) != state_id:
+            if True:  # self._variable_state.get(name, None) != state_id:
                 self[name] = dep.value
-                self._variable_state[name] = state_id
-        
-        super(ModularProgram, self)._activate_variables()        
+                #self._variable_state[name] = state_id      

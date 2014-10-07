@@ -4,9 +4,8 @@ from nose.tools import assert_equal, assert_raises
 
 from vispy.testing import requires_application, SkipTest, run_tests_if_main
 from vispy.app import Canvas, use_app
-from vispy.gloo import (get_gl_configuration, VertexShader, FragmentShader,
-                        Program, check_error)
-
+from vispy.gloo import get_gl_configuration, Program
+from vispy.gloo.gl import check_error
 
 @requires_application()
 def test_context_properties():
@@ -49,28 +48,37 @@ def test_context_properties():
 def test_context_sharing():
     """Test context sharing"""
     with Canvas() as c1:
-        vert = VertexShader("uniform vec4 pos;"
-                            "void main (void) {gl_Position = pos;}")
-        frag = FragmentShader("uniform vec4 pos;"
-                              "void main (void) {gl_FragColor = pos;}")
+        vert = "uniform vec4 pos;\nvoid main (void) {gl_Position = pos;}"
+        frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
         program['pos'] = [1, 2, 3, 4]
-        program.activate()  # should print
+        program._context.glir.parse()
 
         def check():
-            program.activate()
+            # Do something to program and see if it worked
+            #program['pos'] = [1, 2, 3, 4]  # Setting of uniform not allowed?
+            program.set_shaders(vert, frag)
+            program._context.glir.parse()  # Execute that command
             check_error()
-
+        
+        # Check while c1 is active
+        check()
+        
+        # Check while c2 is active (with different context)
         with Canvas() as c2:
             # pyglet always shares
             if 'pyglet' not in c2.app.backend_name.lower():
                 assert_raises(RuntimeError, check)
+        
+        # Tests unable to create canvas on glut
         if c1.app.backend_name.lower() in ('glut',):
             assert_raises(RuntimeError, Canvas, context=c1.context)
-        else:
-            with Canvas(context=c1.context) as c2:
-                assert c1.context is c2.context  # Same context object
-                check()
+            return
+        
+        # Check while c2 is active (with *same* context)
+        with Canvas(context=c1.context) as c2:
+            assert c1.context is c2.context  # Same context object
+            check()
 
 
 run_tests_if_main()
