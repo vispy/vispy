@@ -30,17 +30,15 @@ class ModularProgram(Program):
         self.frag.changed.connect(self._source_changed)
         
         # Cache state of Variables so we know which ones require update
-        #self._variable_state = {}
+        self._variable_state = {}
         
         self._need_build = True
 
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.
         """
-        # TEMP function to fix sync issues for now
-        if self._need_build:
-            self._build()
-            self._need_build = False
+        pass
+        # todo: remove!
     
     def _source_changed(self, ev):
         logger.debug("ModularProgram source changed: %s" % self)
@@ -49,7 +47,10 @@ class ModularProgram(Program):
         self.changed()
     
     def draw(self, *args, **kwargs):
-        self.prepare()
+        if self._need_build:
+            self._build()
+            self._need_build = False
+        self.update_variables()
         Program.draw(self, *args, **kwargs)
     
     def _build(self):
@@ -59,7 +60,9 @@ class ModularProgram(Program):
         self.set_shaders(code['vert'], code['frag'])
         logger.debug('==== Vertex Shader ====\n\n' + code['vert'] + "\n")
         logger.debug('==== Fragment shader ====\n\n' + code['frag'] + "\n")
-        
+        self._variable_state = {}  # todo: unnecessary?
+    
+    def update_variables(self):
         # set all variables
         settable_vars = 'attribute', 'uniform'
         logger.debug("Apply variables:")
@@ -70,6 +73,6 @@ class ModularProgram(Program):
             name = self.compiler[dep]
             logger.debug("    %s = %s", name, dep.value)
             state_id = dep.state_id
-            if True:  # self._variable_state.get(name, None) != state_id:
+            if self._variable_state.get(name, None) != state_id:
                 self[name] = dep.value
-                #self._variable_state[name] = state_id      
+                self._variable_state[name] = state_id      

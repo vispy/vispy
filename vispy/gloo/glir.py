@@ -33,7 +33,14 @@ class GlirQueue(object):
         self._commands = []
         self._parser = GlirParser()
         self._invalid_objects = set()
+        self._verbose = False
         # todo: allow different kind of parsers, like a parser that sends to JS
+    
+    def set_verbose(self, vebose):
+        """ Set verbose or not. If True, the GLIR commands are printed
+        right before they get parsed.
+        """
+        self._verbose = True
     
     def command(self, *args):
         """ Send a command. See the command spec at:
@@ -71,6 +78,8 @@ class GlirQueue(object):
     def parse(self, event=False):
         """ Interpret all commands; do the OpenGL calls.
         """
+        if self._verbose:
+            self.show()
         self._parser.parse(self.clear())
 
 
