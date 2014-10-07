@@ -166,11 +166,8 @@ class MainWindow(QtGui.QWidget):
         vert_code = str(self.vertEdit.toPlainText())
         frag_code = str(self.fragEdit.toPlainText())
         self.canvas.program.set_shaders(vert_code, frag_code)
-        # Because the code has changed, the variables are re-created,
-        # so we need to reset them. This can be considered a bug in gloo
-        # and should be addressed at some point.
-        self.canvas.program['u_projection'] = self.canvas.projection
-        self.canvas.program['u_view'] = self.canvas.view
+        # Note how we do not need to reset our variables, they are
+        # re-set automatically (by gloo)
         
 
 if __name__ == '__main__':

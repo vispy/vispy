@@ -590,8 +590,6 @@ def set_state(preset=None, **kwargs):
 # glFinish, glFlush, glReadPixels, glHint
 #
 
-# todo: remove all non-deferred (i.e. non-GLIR) functions here
-
 def finish():
     """Wait for GL commands to to finish
     
@@ -603,7 +601,7 @@ def finish():
     #logger.warn('You should probably not be calling gloo.finish().')
     c = get_a_context()
     c.glir.command('SET', 'glFinish')
-    c.glir.parse()  # Process GLIR commands
+    c.glir.flush()  # Process GLIR commands
 
 
 def flush():
@@ -615,7 +613,7 @@ def flush():
     #logger.warn('You should probably not be calling gloo.flush().')
     c = get_a_context()
     c.glir.command('SET', 'glFlush')
-    c.glir.parse()  # Process GLIR commands
+    c.glir.flush()  # Process GLIR commands
 
 
 def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):

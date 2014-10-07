@@ -46,10 +46,6 @@ for key in ('points', 'lines', 'line_strip', 'line_loop',
     _known_draw_modes[x] = x  # for speed in this case
 
 
-# todo: remove this when everything works!
-gl.use_gl('desktop debug')
-
-
 # ----------------------------------------------------------- Program class ---
 class Program(GLObject):
     """ Shader program object
@@ -112,7 +108,7 @@ class Program(GLObject):
         # Init pending user-defined data
         self._pending_variables = {}  # name -> data
         
-        # todo: we *could* allow vert and frag to be a tuple/list of shaders,
+        # NOTE: we *could* allow vert and frag to be a tuple/list of shaders,
         # but that would complicate the GLIR implementation, and it seems 
         # unncessary
         
@@ -153,8 +149,13 @@ class Program(GLObject):
         # Store source code, send it to glir, parse the code for variables
         self._shaders = vert, frag
         self._context.glir.command('SHADERS', self._id, vert, frag)
+        # All current variables become pending variables again
+        for key, val in self._user_variables.items():
+            self._pending_variables[key] = val
+        self._user_variables = {}
+        # Parse code (and process pending variables)
         self._parse_variables_from_code()
-
+    
     @property
     def shaders(self):
         """ Source code for vertex and fragment shader
@@ -260,9 +261,7 @@ class Program(GLObject):
         created if necessary.
         """
         
-        # todo: we need to resend the UNIFORM and/or ATTRIBUTE after set source
-        
-        # Deal with local buffef storage (see count argument in __init__)
+        # Deal with local buffer storage (see count argument in __init__)
         if (self._buffer is not None) and not isinstance(data, DataBuffer):
             if name in self._buffer.dtype.names:
                 self._buffer[name] = data
@@ -415,7 +414,4 @@ class Program(GLObject):
                             indices)
         
         # Process GLIR commands
-        #self._context.glir.show()
-        flush()  # also does self._context.glir.parse()
-        
-        # todo: check errors via GLIR feedback mechanism?
+        self._context.glir.flush()

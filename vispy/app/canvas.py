@@ -182,7 +182,7 @@ class Canvas(object):
         
         # Connect to draw event (append to the end)
         # Process GLIR commands at each paint event
-        self.events.draw.connect(self.context.glir.parse, position='last')
+        self.events.draw.connect(self.context.glir.flush, position='last')
         if self._autoswap:
             self.events.draw.connect((self, 'swap_buffers'),
                                      ref=True, position='last')

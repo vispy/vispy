@@ -127,9 +127,10 @@ class GLContext(object):
         The glir queue can be used to give GLIR commands, which will be parsed
         at the right moment (by the app canvas).
         """
-        # There are three moments where the queue is parsed:
+        # There are three moments where the queue is flushed:
         # - On canvas.events.paint
         # - On gloo.flush() and gloo.finish()
+        # - On gloo.Program.draw()
         return self._glir
     
     def take(self, name, backend_canvas):

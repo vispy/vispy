@@ -74,13 +74,28 @@ class GlirQueue(object):
         """
         self._commands, ret = [], self._commands
         return ret
-        
-    def parse(self, event=False):
-        """ Interpret all commands; do the OpenGL calls.
+    
+    def flush(self, event=False):
+        """ Flush all current commands to the GLIR interpreter.
         """
         if self._verbose:
             self.show()
-        self._parser.parse(self.clear())
+        self._parser.parse(self._filter(self.clear()))
+    
+    def _filter(self, commands):
+        """ Filter DATA/SIZE/SHAPE commands that are overridden by a 
+        SHAPE/SIZE command.
+        """
+        resized = set()
+        commands2 = []
+        for command in reversed(commands):
+            if command[0] in ('SHAPE', 'SIZE'):
+                resized.add(command[1])
+            elif command[1] in resized:
+                if command[0] in ('SHAPE', 'SIZE', 'DATA'):
+                    continue  # remove this command
+            commands2.append(command)
+        return list(reversed(commands2))
 
 
 class GlirParser(object):
@@ -236,8 +251,7 @@ class GlirProgram(GlirObject):
         self._handles = {}  # cache with handles to attributes/uniforms
         self._unset_variables = set()
         # Store samplers in buffers that are bount to uniforms/attributes
-        # todo: store these by id?
-        self._samplers = {}  # name -> (unit, GlirTexture)
+        self._samplers = {}  # name -> (tex-target, tex-handle, unit)
         self._attributes = {}  # name -> (vbo-handle, attr-handle, func, args)
     
     def delete(self):
@@ -255,9 +269,9 @@ class GlirProgram(GlirObject):
     def activate(self):
         self.use_this_program()
         # Activate textures
-        for tex, unit in self._samplers.values():
+        for target, handle, unit in self._samplers.values():
             gl.glActiveTexture(gl.GL_TEXTURE0 + unit)
-            tex.activate()
+            gl.glBindTexture(target, handle)
         # Activate attributes
         for vbo_handle, attr_handle, func, args in self._attributes.values():
             if vbo_handle:
@@ -441,7 +455,7 @@ class GlirProgram(GlirObject):
                 raise RuntimeError('Could not find texture with id %i' % value)
             self._samplers.pop(name, None)  # First remove possibly old version
             unit = self._get_free_unit([s[1] for s in self._samplers.values()])
-            self._samplers[name] = tex, unit
+            self._samplers[name] = tex._target, tex.handle, unit
             gl.glUniform1i(handle, unit)
         else:
             # Regular uniform
@@ -569,23 +583,8 @@ class GlirBuffer(GlirObject):
                 logger.debug("Using glBufferData instead of " +
                              "glBufferSubData (known ATI bug).")
             else:
-                raise
-    
-    def exec_commands(self, commands):
-        
-        # todo: move this in the queue, before sending it of to a parser
-        # Efficiency: purge all data commands that are followed by a resize
-        data_commands = []
-        other_commands = []
-        for command in commands:
-            if command[0] == 'resize':
-                data_commands = []
-            if command[0] == 'data':
-                data_commands.append(command)
-            else:
-                other_commands.append(command)
-        commands = other_commands + data_commands
-
+                raise    
+  
 
 class GlirVertexBuffer(GlirBuffer):
     _target = gl.GL_ARRAY_BUFFER
@@ -618,7 +617,6 @@ class GlirTexture(GlirObject):
         gl.glDeleteTexture(self._handle)
     
     def activate(self):
-        # todo: NO NEED FOR AN ACTIVATE COMMAND, EXCEPT FBO and IndexBuffer?
         gl.glBindTexture(self._target, self._handle)
     
     def deactivate(self):
@@ -644,7 +642,6 @@ class GlirTexture(GlirObject):
             if width % alignment == 0:
                 return alignment
     
-    # todo: we could also do (SET id DATA) for setting data :/
     def set_wrapping(self, wrapping):
         self.activate()
         if len(wrapping) == 3:
