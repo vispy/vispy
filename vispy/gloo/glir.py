@@ -110,6 +110,7 @@ class GlirParser(object):
     def __init__(self):
         self._objects = {}
         self._invalid_objects = set()
+        self.env = {}  # Dict to use. Is cleared on each draw
         self._classmap = {'Program': GlirProgram,
                           'VertexBuffer': GlirVertexBuffer,
                           'IndexBuffer': GlirIndexBuffer,
@@ -131,12 +132,15 @@ class GlirParser(object):
         for command in commands:
             cmd, id, args = command[0], command[1], command[2:]
             
-            if cmd == 'SET':
+            if cmd == 'CURRENT':
+                # This context is made current
+                self.env.clear()
+            elif cmd == 'SET':
                 # GL function call
                 try:
                     getattr(gl, id)(*args)
                 except AttributeError:
-                    logger.warn('Invalid gl command: %r' % id)
+                    logger.warning('Invalid gl command: %r' % id)
             elif cmd == 'CREATE':
                 # Creating an object
                 if args[0] is not None:
@@ -154,8 +158,8 @@ class GlirParser(object):
                 ob = self._objects.get(id, None)
                 if ob is None:
                     if id not in self._invalid_objects:
-                        logger.warn('Cannot %s object %i because it does '
-                                    'not exist' % (cmd, id))
+                        logger.warning('Cannot %s object %i because it does '
+                                       'not exist' % (cmd, id))
                     continue
                 # Triage over command. Order of commands is set so most
                 # common ones occur first.
@@ -182,7 +186,7 @@ class GlirParser(object):
                 elif cmd == 'INTERPOLATION':  # Texture2D, Texture3D
                     ob.set_interpolation(*args)
                 else:
-                    logger.warn('Invalid GLIR command %r' % cmd)
+                    logger.warning('Invalid GLIR command %r' % cmd)
 
 
 ## GLIR objects
@@ -244,7 +248,6 @@ class GlirProgram(GlirObject):
     }
     
     def create(self):
-        self._parser._current_program = 0  # Keep track of curent program
         self._handle = gl.glCreateProgram()
         self._validated = False
         # Keeping track of uniforms/attributes
@@ -262,16 +265,16 @@ class GlirProgram(GlirObject):
         Warning: this will break if glUseProgram is used somewhere else.
         Per context we keep track of one current program.
         """
-        if self._handle != self._parser._current_program:
-            self._parser._current_program = self._handle
+        if self._handle != self._parser.env.get('current_program', False):
+            self._parser.env['current_program'] = self._handle
             gl.glUseProgram(self._handle)
     
     def activate(self):
         self.use_this_program()
         # Activate textures
-        for target, handle, unit in self._samplers.values():
+        for tex_target, tex_handle, unit in self._samplers.values():
             gl.glActiveTexture(gl.GL_TEXTURE0 + unit)
-            gl.glBindTexture(target, handle)
+            gl.glBindTexture(tex_target, tex_handle)
         # Activate attributes
         for vbo_handle, attr_handle, func, args in self._attributes.values():
             if vbo_handle:
@@ -290,8 +293,8 @@ class GlirProgram(GlirObject):
     def _validate(self):
         # Validate ourselves
         if self._unset_variables:
-            logger.warn('Program has unset variables: %r' % 
-                        self._unset_variables)
+            logger.warning('Program has unset variables: %r' % 
+                           self._unset_variables)
         # Validate via OpenGL
         gl.glValidateProgram(self._handle)
         if not gl.glGetProgramParameter(self._handle, 
@@ -305,9 +308,9 @@ class GlirProgram(GlirObject):
         gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
         if USE_TEX_3D:
             gl.glBindTexture(GL_TEXTURE_3D, 0)
-        # Deactivate program - should not be necessary. In single-program
-        # apps it would not even make sense.
-        #self._parser._current_program = 0
+        #Deactivate program - should not be necessary. In single-program
+        #apps it would not even make sense.
+        #self._parser.env['current_program'] = 0
         #gl.glUseProgram(0)
             
     def set_shaders(self, vert, frag):
@@ -436,7 +439,7 @@ class GlirProgram(GlirObject):
             self._unset_variables.discard(name)  # Mark as set
             self._handles[name] = handle  # Store in cache
             if handle < 0:
-                logger.warn('Variable %s is not an active uniform' % name)
+                logger.warning('Variable %s is not an active uniform' % name)
                 return
         # Look up function to call
         funcname = self.UTYPEMAP[type]
@@ -471,7 +474,7 @@ class GlirProgram(GlirObject):
             self._unset_variables.discard(name)  # Mark as set
             self._handles[name] = handle  # Store in cache
             if handle < 0:
-                logger.warn('Variable %s is not an active attribute' % name)
+                logger.warning('Variable %s is not an active attribute' % name)
                 return
         # Program needs to be active in order to set uniforms
         self.use_this_program()
@@ -552,13 +555,12 @@ class GlirBuffer(GlirObject):
     
     def set_size(self, nbytes):  # in bytes
         if nbytes != self._buffer_size:
-            gl.glBindBuffer(self._target, self._handle)
+            self.activate()
             gl.glBufferData(self._target, nbytes, self._usage)
             self._buffer_size = nbytes
     
     def set_data(self, offset, data):
-        gl.glBindBuffer(self._target, self._handle)
-        
+        self.activate()
         nbytes = data.nbytes
         
         # Determine whether to check errors to try handling the ATI bug
@@ -727,11 +729,13 @@ class GlirTexture3D(GlirTexture):
     def set_shape(self, shape, format):
         # Shape is depth, height, width
         if (shape, format) != self._shape_format:
+            self.activate()
             self._shape_format = shape, format
             glTexImage3D(self._target, 0, format, format,
                          gl.GL_BYTE, shape[:3])
     
     def set_data(self, offset, data):
+        self.activate()
         shape, format = self._shape_format
         z, y, x = offset
         # Get gtype
@@ -776,7 +780,7 @@ class GlirRenderBuffer(GlirObject):
 class GlirFrameBuffer(GlirObject):
     
     def create(self):
-        self._parser._fb_stack = [0]  # To keep track of active FB
+        #self._parser._fb_stack = [0]  # To keep track of active FB
         self._handle = gl.glCreateFramebuffer()
         self._validated = False
     
@@ -793,14 +797,16 @@ class GlirFrameBuffer(GlirObject):
             self.deactivate()
     
     def activate(self):
-        if self._parser._fb_stack[-1] != self._handle:
-            self._parser._fb_stack.append(self._handle)
+        stack = self._parser.env.setdefault('fb_stack', [0])
+        if stack[-1] != self._handle:
+            stack.append(self._handle)
             gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._handle)
     
     def deactivate(self):
-        while self._handle in self._parser._fb_stack:
-            self._parser._fb_stack.remove(self._handle)
-        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self._parser._fb_stack[-1])
+        stack = self._parser.env.setdefault('fb_stack', [0])
+        while self._handle in stack:
+            stack.remove(self._handle)
+        gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, stack[-1])
     
     def attach(self, attachment, buffer_id):
         self.activate()

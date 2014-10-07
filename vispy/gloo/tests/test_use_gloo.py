@@ -33,12 +33,13 @@ def test_use_framebuffer():
     """Test drawing to a framebuffer"""
     shape = (100, 300)  # for some reason Windows wants a tall window...
     data = np.random.rand(*shape).astype(np.float32)
-    orig_tex = Texture2D(data)
     use_shape = shape + (3,)
-    fbo_tex = Texture2D(shape=use_shape, format='rgb')
-    rbo = ColorBuffer(shape=shape)
-    fbo = FrameBuffer(color=fbo_tex)
     with Canvas(size=shape[::-1]) as c:
+        orig_tex = Texture2D(data)
+        fbo_tex = Texture2D(shape=use_shape, format='rgb')
+        rbo = ColorBuffer(shape=shape)
+        fbo = FrameBuffer(color=fbo_tex)
+        c.context.glir.set_verbose(True)
         assert_equal(c.size, shape[::-1])
         set_viewport((0, 0) + c.size)
         with fbo:

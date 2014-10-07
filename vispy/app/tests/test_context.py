@@ -7,6 +7,7 @@ from vispy.app import Canvas, use_app
 from vispy.gloo import get_gl_configuration, Program
 from vispy.gloo.gl import check_error
 
+
 @requires_application()
 def test_context_properties():
     """Test setting context properties"""
@@ -52,13 +53,12 @@ def test_context_sharing():
         frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
         program['pos'] = [1, 2, 3, 4]
-        program._context.glir.parse()
+        program._context.glir.flush()
 
         def check():
             # Do something to program and see if it worked
-            #program['pos'] = [1, 2, 3, 4]  # Setting of uniform not allowed?
-            program.set_shaders(vert, frag)
-            program._context.glir.parse()  # Execute that command
+            program['pos'] = [1, 2, 3, 4]  # Do command
+            program._context.glir.flush()  # Execute that command
             check_error()
         
         # Check while c1 is active

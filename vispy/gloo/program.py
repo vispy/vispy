@@ -34,7 +34,7 @@ from . import gl  # Only used for constants, no function calls here
 from .globject import GLObject
 from .buffer import VertexBuffer, IndexBuffer, DataBuffer
 from .texture import BaseTexture, Texture2D, Texture3D, GL_SAMPLER_3D
-from .wrappers import _check_conversion, flush
+from .wrappers import _check_conversion
 from ..util import logger
 from ..ext.six import string_types
 

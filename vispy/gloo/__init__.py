@@ -58,4 +58,3 @@ from .framebuffer import FrameBuffer, RenderBuffer  # noqa
 from .framebuffer import ColorBuffer, DepthBuffer, StencilBuffer  # noqa/compat
 from .wrappers import *  # noqa
 from . import util  # noqa
-

@@ -260,6 +260,7 @@ class SDFRenderer(object):
 
         # calculate positive half (outside object)
         orig_tex[:, :, 0] = data
+        
         edf_pos_tex = self._render_edf(orig_tex)
 
         # render final product to output texture

@@ -84,6 +84,10 @@ class BaseTexture(GLObject):
         self._shape = tuple([0 for i in range(self._ndim+1)])
         self._format = format
         
+        # Set texture parameters (before setting data)
+        self.interpolation = interpolation or 'nearest'
+        self.wrapping = wrapping or 'clamp_to_edge'
+        
         # Set data or shape
         if data is not None:
             if shape is not None:
@@ -96,10 +100,8 @@ class BaseTexture(GLObject):
         else:
             raise ValueError("Either data or shape must be given")
         
-        # Init more (wrapping and interp are important to set to get an inage)
+        # Set resizable (at end of init)
         self._resizeable = bool(resizeable)
-        self.interpolation = interpolation or 'nearest'
-        self.wrapping = wrapping or 'clamp_to_edge'
     
     def _normalize_shape(self, data_or_shape):
         # Get data and shape from input

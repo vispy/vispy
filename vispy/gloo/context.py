@@ -173,6 +173,7 @@ class GLContext(object):
         if apply_backend:
             self.backend_canvas._vispy_set_current()
         GLContext._current_context = self
+        self._glir.command('CURRENT', 0)
     
     @property
     def iscurrent(self):
