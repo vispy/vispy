@@ -91,7 +91,7 @@ def set_viewport(*args):
     x, y, w, h = args[0] if len(args) == 1 else args
     #gl.glViewport(int(x), int(y), int(w), int(h))
     c = get_a_context()
-    c.glir.command('SET', 'glViewport', int(x), int(y), int(w), int(h))
+    c.glir.command('FUNC', 'glViewport', int(x), int(y), int(w), int(h))
 
 
 def set_depth_range(near=0., far=1.):
@@ -106,7 +106,7 @@ def set_depth_range(near=0., far=1.):
     """
     #gl.glDepthRange(float(near), float(far))
     c = get_a_context()
-    c.glir.command('SET', 'glDepthRange', float(near), float(far))
+    c.glir.command('FUNC', 'glDepthRange', float(near), float(far))
 
 
 def set_front_face(mode='ccw'):
@@ -119,7 +119,7 @@ def set_front_face(mode='ccw'):
     """
     #gl.glFrontFace(_gl_attr(mode))
     c = get_a_context()
-    c.glir.command('SET', 'glFrontFace', _gl_attr(mode))
+    c.glir.command('FUNC', 'glFrontFace', _gl_attr(mode))
 
 
 def set_cull_face(mode='back'):
@@ -132,7 +132,7 @@ def set_cull_face(mode='back'):
     """
     #gl.glCullFace(_gl_attr(mode))
     c = get_a_context()
-    c.glir.command('SET', 'glCullFace', _gl_attr(mode))
+    c.glir.command('FUNC', 'glCullFace', _gl_attr(mode))
 
 
 def set_line_width(width=1.):
@@ -148,7 +148,7 @@ def set_line_width(width=1.):
         raise RuntimeError('Cannot have width < 0')
     #gl.glLineWidth(width)
     c = get_a_context()
-    c.glir.command('SET', 'glLineWidth', width)
+    c.glir.command('FUNC', 'glLineWidth', width)
 
 
 def set_polygon_offset(factor=0., units=0.):
@@ -164,7 +164,7 @@ def set_polygon_offset(factor=0., units=0.):
     """
     #gl.glPolygonOffset(float(factor), float(units))
     c = get_a_context()
-    c.glir.command('SET', 'glPolygonOffset', float(factor), float(units))
+    c.glir.command('FUNC', 'glPolygonOffset', float(factor), float(units))
 
 
 ###############################################################################
@@ -206,7 +206,7 @@ def clear(color=True, depth=True, stencil=True):
         bits |= gl.GL_STENCIL_BUFFER_BIT
     #gl.glClear(bits)
     c = get_a_context()
-    c.glir.command('SET', 'glClear', bits)
+    c.glir.command('FUNC', 'glClear', bits)
 
 
 def set_clear_color(color='black', alpha=None):
@@ -221,7 +221,7 @@ def set_clear_color(color='black', alpha=None):
     """
     #gl.glClearColor(*Color(color, alpha).rgba)
     c = get_a_context()
-    c.glir.command('SET', 'glClearColor', *Color(color, alpha).rgba)
+    c.glir.command('FUNC', 'glClearColor', *Color(color, alpha).rgba)
 
 
 def set_clear_depth(depth=1.0):
@@ -236,7 +236,7 @@ def set_clear_depth(depth=1.0):
     """
     #gl.glClearDepth(float(depth))
     c = get_a_context()
-    c.glir.command('SET', 'glClearDepth', float(depth))
+    c.glir.command('FUNC', 'glClearDepth', float(depth))
 
 
 def set_clear_stencil(index=0):
@@ -251,7 +251,7 @@ def set_clear_stencil(index=0):
     """
     #gl.glClearStencil(int(index))
     c = get_a_context()
-    c.glir.command('SET', 'glClearStencil', int(index))
+    c.glir.command('FUNC', 'glClearStencil', int(index))
 
 
 # glBlendFunc(Separate), glBlendColor, glBlendEquation(Separate)
@@ -276,7 +276,7 @@ def set_blend_func(srgb='one', drgb='zero',
     #gl.glBlendFuncSeparate(_gl_attr(srgb), _gl_attr(drgb),
     #                      _gl_attr(salpha), _gl_attr(dalpha))
     c = get_a_context()
-    c.glir.command('SET', 'glBlendFuncSeparate', 
+    c.glir.command('FUNC', 'glBlendFuncSeparate', 
                    _gl_attr(srgb), _gl_attr(drgb),
                    _gl_attr(salpha), _gl_attr(dalpha))
 
@@ -291,7 +291,7 @@ def set_blend_color(color):
     """
     #gl.glBlendColor(*Color(color).rgba)
     c = get_a_context()
-    c.glir.command('SET', 'glBlendColor', *Color(color).rgba)
+    c.glir.command('FUNC', 'glBlendColor', *Color(color).rgba)
 
 
 def set_blend_equation(mode_rgb, mode_alpha=None):
@@ -311,7 +311,7 @@ def set_blend_equation(mode_rgb, mode_alpha=None):
     mode_alpha = mode_rgb if mode_alpha is None else mode_alpha
     #gl.glBlendEquationSeparate(_gl_attr(mode_rgb), _gl_attr(mode_alpha))
     c = get_a_context()
-    c.glir.command('SET', 'glBlendEquationSeparate', 
+    c.glir.command('FUNC', 'glBlendEquationSeparate', 
                    _gl_attr(mode_rgb), _gl_attr(mode_alpha))
 
 
@@ -334,7 +334,7 @@ def set_scissor(x, y, w, h):
     """
     #gl.glScissor(int(x), int(y), int(w), int(h))
     c = get_a_context()
-    c.glir.command('SET', 'glScissor', int(x), int(y), int(w), int(h))
+    c.glir.command('FUNC', 'glScissor', int(x), int(y), int(w), int(h))
 
 
 def set_stencil_func(func='always', ref=0, mask=8, face='front_and_back'):
@@ -354,7 +354,7 @@ def set_stencil_func(func='always', ref=0, mask=8, face='front_and_back'):
     #gl.glStencilFuncSeparate(_gl_attr(face), _gl_attr(func),
     #                         int(ref), int(mask))
     c = get_a_context()
-    c.glir.command('SET', 'glStencilFuncSeparate', 
+    c.glir.command('FUNC', 'glStencilFuncSeparate', 
                    _gl_attr(face), _gl_attr(func), int(ref), int(mask))
 
 
@@ -370,7 +370,7 @@ def set_stencil_mask(mask=8, face='front_and_back'):
     """
     #gl.glStencilMaskSeparate(_gl_attr(face), int(mask))
     c = get_a_context()
-    c.glir.command('SET', 'glStencilMaskSeparate', _gl_attr(face), int(mask))
+    c.glir.command('FUNC', 'glStencilMaskSeparate', _gl_attr(face), int(mask))
 
 
 def set_stencil_op(sfail='keep', dpfail='keep', dppass='keep',
@@ -395,7 +395,7 @@ def set_stencil_op(sfail='keep', dpfail='keep', dppass='keep',
     #gl.glStencilOpSeparate(_gl_attr(face), _gl_attr(sfail),
     #                       _gl_attr(dpfail), _gl_attr(dppass))
     c = get_a_context()
-    c.glir.command('SET', 'glStencilOpSeparate', 
+    c.glir.command('FUNC', 'glStencilOpSeparate', 
                    _gl_attr(face), _gl_attr(sfail),
                    _gl_attr(dpfail), _gl_attr(dppass))
 
@@ -413,7 +413,7 @@ def set_depth_func(func='less'):
     """
     #gl.glDepthFunc(_gl_attr(func))
     c = get_a_context()
-    c.glir.command('SET', 'glDepthFunc', _gl_attr(func))
+    c.glir.command('FUNC', 'glDepthFunc', _gl_attr(func))
 
 
 def set_depth_mask(flag):
@@ -426,7 +426,7 @@ def set_depth_mask(flag):
     """
     #gl.glDepthMask(_gl_bool(flag))
     c = get_a_context()
-    c.glir.command('SET', 'glDepthMask', _gl_bool(flag))
+    c.glir.command('FUNC', 'glDepthMask', _gl_bool(flag))
 
 
 def set_color_mask(red, green, blue, alpha):
@@ -446,7 +446,7 @@ def set_color_mask(red, green, blue, alpha):
     #gl.glColorMask(_gl_bool(red), _gl_bool(green), _gl_bool(blue),
     #               _gl_bool(alpha))
     c = get_a_context()
-    c.glir.command('SET', 'glColorMask', _gl_bool(red), _gl_bool(green), 
+    c.glir.command('FUNC', 'glColorMask', _gl_bool(red), _gl_bool(green), 
                    _gl_bool(blue), _gl_bool(alpha))
 
 
@@ -462,7 +462,7 @@ def set_sample_coverage(value=1.0, invert=False):
     """
     #gl.glSampleCoverage(float(value), _gl_bool(invert))
     c = get_a_context()
-    c.glir.command('SET', 'glSampleCoverage', float(value), _gl_bool(invert))
+    c.glir.command('FUNC', 'glSampleCoverage', float(value), _gl_bool(invert))
 
 
 ###############################################################################
@@ -565,7 +565,7 @@ def set_state(preset=None, **kwargs):
         if isinstance(cull_face, bool):
             funcname = 'glEnable' if cull_face else 'glDisable'
             #func(_gl_attr('cull_face'))
-            c.glir.command('SET', funcname, _gl_attr('cull_face'))
+            c.glir.command('FUNC', funcname, _gl_attr('cull_face'))
         else:
             set_cull_face(*_to_args(cull_face))
 
@@ -583,7 +583,7 @@ def set_state(preset=None, **kwargs):
     for key, val in kwargs.items():
         funcname = 'glEnable' if val else 'glDisable'
         #func(_gl_attr(key))
-        c.glir.command('SET', funcname, _gl_attr(key))
+        c.glir.command('FUNC', funcname, _gl_attr(key))
 
 
 #
@@ -600,7 +600,7 @@ def finish():
     #gl.glFinish()
     #logger.warn('You should probably not be calling gloo.finish().')
     c = get_a_context()
-    c.glir.command('SET', 'glFinish')
+    c.glir.command('FUNC', 'glFinish')
     c.glir.flush()  # Process GLIR commands
 
 
@@ -612,7 +612,7 @@ def flush():
     #gl.glFlush()
     #logger.warn('You should probably not be calling gloo.flush().')
     c = get_a_context()
-    c.glir.command('SET', 'glFlush')
+    c.glir.command('FUNC', 'glFlush')
     c.glir.flush()  # Process GLIR commands
 
 
@@ -686,7 +686,7 @@ def set_hint(target, mode):
         raise TypeError('target and mode must both be strings')
     #gl.glHint(_gl_attr(target), _gl_attr(mode))
     c = get_a_context()
-    c.glir.command('SET', 'glHint', _gl_attr(target), _gl_attr(mode))
+    c.glir.command('FUNC', 'glHint', _gl_attr(target), _gl_attr(mode))
 
 
 ###############################################################################

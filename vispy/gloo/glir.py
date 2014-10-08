@@ -135,7 +135,7 @@ class GlirParser(object):
             if cmd == 'CURRENT':
                 # This context is made current
                 self.env.clear()
-            elif cmd == 'SET':
+            elif cmd == 'FUNC':
                 # GL function call
                 try:
                     getattr(gl, id)(*args)
