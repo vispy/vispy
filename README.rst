@@ -24,6 +24,7 @@ large datasets. Applications of Vispy include:
 Announcements
 -------------
 
+- `Vispy tutorial in the IPython Cookbook <http://ipython-books.github.io/featured-06/>`__
 - **Release!** Version 0.3, August 29, 2014
 - **EuroSciPy 2014**: talk at Saturday 30, and sprint at Sunday 31, August 2014
 - `Article in Linux Magazine, French Edition <https://github.com/vispy/linuxmag-article>`__, July 2014
