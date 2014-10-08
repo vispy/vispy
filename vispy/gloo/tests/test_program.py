@@ -40,6 +40,9 @@ class ProgramTest(unittest.TestCase):
         self.assertRaises(ValueError, Program, 3, None)
         self.assertRaises(ValueError, Program, 'A', 3)
         self.assertRaises(ValueError, Program, None, 3)
+        self.assertRaises(ValueError, Program, "", "")
+        self.assertRaises(ValueError, Program, "foo", "")
+        self.assertRaises(ValueError, Program, "", "foo")
     
     def test_setting_shaders(self):
         program = Program("A", "B")
@@ -94,7 +97,7 @@ class ProgramTest(unittest.TestCase):
                           '', 'uniform vec3 D;')
     
     def test_attributes(self):
-        program = Program("attribute float A; attribute vec4 B;", "")
+        program = Program("attribute float A; attribute vec4 B;", "foo")
         assert ('attribute', 'float', 'A') in program.variables
         assert ('attribute', 'vec4', 'B') in program.variables
         assert len(program.variables) == 2
@@ -114,7 +117,7 @@ class ProgramTest(unittest.TestCase):
         assert 'C' in program._pending_variables
         
         # C should be taken up when code comes along that mentions it
-        program.set_shaders("attribute float A; attribute vec2 C;", "")
+        program.set_shaders("attribute float A; attribute vec2 C;", "foo")
         assert program['C'] == vbo
         assert 'C' in program._user_variables
         assert 'C' not in program._pending_variables
@@ -128,7 +131,7 @@ class ProgramTest(unittest.TestCase):
                           'attribute vec3 D;', '')
         
         # Set to one value per vertex
-        program.set_shaders("attribute float A; attribute vec2 C;", "")
+        program.set_shaders("attribute float A; attribute vec2 C;", "foo")
         program['A'] = 1.0
         assert program['A'] == 1.0
         program['C'] = 1.0, 2.0 
@@ -138,4 +141,4 @@ class ProgramTest(unittest.TestCase):
         self.assertRaises(ValueError, program.__setitem__, 'C', 1.0)
 
 
-run_tests_if_main(True)
+run_tests_if_main()

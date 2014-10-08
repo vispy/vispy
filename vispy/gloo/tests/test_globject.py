@@ -7,21 +7,25 @@ import unittest
 
 from vispy.testing import run_tests_if_main
 from vispy.gloo.globject import GLObject
+from vispy.gloo.context import get_a_context
 
 
-# -----------------------------------------------------------------------------
-class GLObjectTest(unittest.TestCase):
+def test_globject():
+    """ Test gl object uinique id and GLIR CREATE command """
+    c = get_a_context()
+    c.glir.clear()
+    
+    objects = [GLObject() for i in range(10)]
+    ids = [ob.id for ob in objects]
+    
+    # Verify that each id is unique (test should not care how)
+    assert len(set(ids)) == len(objects)
+    
+    # Verify that glir commands have been created
+    commands = c.glir.clear()
+    assert len(commands) == len(objects)
+    for cmd in commands:
+        assert cmd[0] == 'CREATE'
 
-    # Default init
-    # ------------
-    def test_init_default(self):
-        O = GLObject()
-
-        assert O._handle == -1
-        assert O._target is None
-        assert O._need_create is True
-        assert O._need_delete is False
-        assert O._id > 0
-        assert O._id == GLObject._idcount
 
 run_tests_if_main()
