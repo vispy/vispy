@@ -29,10 +29,10 @@ before_install:
     - REDIRECT_TO=/dev/stdout  # change to /dev/null to silence Travis
     # install a newer cmake since at this time Travis only has version 2.8.7
     - if [ "${PYTHON}" != "2.6" ] && [ "${DEPS}" == "full" ]; then
-        travis_retry sudo add-apt-repository ppa:kalakris/cmake
-        travis_retry sudo apt-get update -qq
-        travis_retry sudo apt-get install cmake
-      fi
+        travis_retry sudo add-apt-repository ppa:kalakris/cmake;
+        travis_retry sudo apt-get update -qq;
+        travis_retry sudo apt-get install cmake;
+      fi;
     - if [ "${PYTHON}" != "2.7" ]; then
         wget -q http://repo.continuum.io/miniconda/Miniconda-3.6.0-Linux-x86_64.sh -O miniconda.sh;
         chmod +x miniconda.sh;
