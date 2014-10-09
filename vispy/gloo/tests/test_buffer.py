@@ -476,7 +476,7 @@ class VertexBufferTest(unittest.TestCase):
         #
         V = VertexBuffer([[1, 2], [3, 4], [5, 6]])
         assert V.size == 3
-        assert V.itemsize == 2* 4
+        assert V.itemsize == 2 * 4
         
         # Convert
         data = np.zeros((10,), 'uint8')
@@ -484,7 +484,7 @@ class VertexBufferTest(unittest.TestCase):
         assert B.dtype[0].base == np.uint8
         assert B.dtype[0].itemsize == 1
         #
-        data = np.zeros((10,2), 'uint8')
+        data = np.zeros((10, 2), 'uint8')
         B = VertexBuffer(data)
         assert B.dtype[0].base == np.uint8
         assert B.dtype[0].itemsize == 2
@@ -494,7 +494,7 @@ class VertexBufferTest(unittest.TestCase):
         B = VertexBuffer(data[::2])
         
         # This is converted to 1D
-        B = VertexBuffer([[1,2,3,4,5],[1,2,3,4,5]])
+        B = VertexBuffer([[1, 2, 3, 4, 5], [1, 2, 3, 4, 5]])
         assert B.size == 10 
          
         # Not allowed
@@ -551,11 +551,11 @@ class IndexBufferTest(unittest.TestCase):
         
         # Prepare some data
         dtype = np.dtype([('position', np.float32, 3),
-                          ('texcoord', np.float32, 2),])
+                          ('texcoord', np.float32, 2), ])
         sdata = np.zeros(10, dtype=dtype)
         
         # Normal data is
-        data = np.zeros([1,2,3], np.uint8)
+        data = np.zeros([1, 2, 3], np.uint8)
         B = IndexBuffer(data)
         assert B.dtype == np.uint8
         
