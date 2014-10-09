@@ -63,6 +63,9 @@ class ModularProgram(Program):
         self._variable_state = {}  # todo: unnecessary?
     
     def update_variables(self):
+        # Clear any variables that we may have set another time.
+        # Otherwise we get lots of warnings.
+        self._pending_variables = {}
         # set all variables
         settable_vars = 'attribute', 'uniform'
         logger.debug("Apply variables:")

@@ -409,7 +409,7 @@ class GlirProgram(GlirObject):
             self._unset_variables.discard(name)  # Mark as set
             self._handles[name] = handle  # Store in cache
             if handle < 0:
-                logger.warning('Variable %s is not an active uniform' % name)
+                logger.info('Variable %s is not an active uniform' % name)
                 return
         # Look up function to call
         funcname = self.UTYPEMAP[type]
@@ -446,7 +446,7 @@ class GlirProgram(GlirObject):
             self._unset_variables.discard(name)  # Mark as set
             self._handles[name] = handle  # Store in cache
             if handle < 0:
-                logger.warning('Variable %s is not an active attribute' % name)
+                logger.info('Variable %s is not an active attribute' % name)
                 return
         # Program needs to be active in order to set uniforms
         self.activate()

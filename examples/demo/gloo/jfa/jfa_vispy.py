@@ -16,8 +16,8 @@ from os import path as op
 import sys
 
 from vispy import app
-from vispy.gloo import (Program, VertexShader, FragmentShader, FrameBuffer,
-                        VertexBuffer, Texture2D, set_viewport)
+from vispy.gloo import (Program, FrameBuffer, VertexBuffer, Texture2D, 
+                        set_viewport)
 from vispy.io import load_data_file, imread
 
 this_dir = op.abspath(op.dirname(__file__))
@@ -30,8 +30,8 @@ class Canvas(app.Canvas):
         self._timer = app.Timer('auto', self.update, start=True)
 
     def _setup_textures(self, fname):
-        data = imread(load_data_file('jfa/' + fname))[::-1].copy()
-        self.texture_size = data.shape
+        data = imread(load_data_file('jfa/' + fname))[::-1, :, 0].copy()
+        self.texture_size = data.shape[:2]
         self.orig_tex = Texture2D(data, format='luminance', wrapping='repeat',
                                   interpolation='nearest')
         self.comp_texs = []
@@ -42,18 +42,18 @@ class Canvas(app.Canvas):
             self.comp_texs.append(tex)
         self.fbo_to[0].color_buffer = self.comp_texs[0]
         self.fbo_to[1].color_buffer = self.comp_texs[1]
-        for program in self.programs:
+        for program in self.programs[1:2]:
             program['texw'], program['texh'] = self.texture_size
 
     def on_initialize(self, event):
         with open(op.join(this_dir, 'vertex_vispy.glsl'), 'rb') as fid:
-            vert = VertexShader(fid.read().decode('ASCII'))
+            vert = fid.read().decode('ASCII')
         with open(op.join(this_dir, 'fragment_seed.glsl'), 'rb') as f:
-            frag_seed = FragmentShader(f.read().decode('ASCII'))
+            frag_seed = f.read().decode('ASCII')
         with open(op.join(this_dir, 'fragment_flood.glsl'), 'rb') as f:
-            frag_flood = FragmentShader(f.read().decode('ASCII'))
+            frag_flood = f.read().decode('ASCII')
         with open(op.join(this_dir, 'fragment_display.glsl'), 'rb') as f:
-            frag_display = FragmentShader(f.read().decode('ASCII'))
+            frag_display = f.read().decode('ASCII')
         self.programs = [Program(vert, frag_seed),
                          Program(vert, frag_flood),
                          Program(vert, frag_display)]
@@ -67,7 +67,6 @@ class Canvas(app.Canvas):
         vertices['texcoord'] = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]]
         vertices = VertexBuffer(vertices)
         for program in self.programs:
-            program['step'] = 0
             program.bind(vertices)
 
     def on_draw(self, event):

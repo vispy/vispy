@@ -46,6 +46,7 @@ class Canvas(app.Canvas):
                                  (0, 0, 1, 1), (1, 1, 0, 1)]
         self.program['position'] = [(-1, -1), (-1, +1),
                                     (+1, -1), (+1, +1)]
+        self.program['theta'] = 0.0
         self.clock = 0
         self.timer.start()
 
