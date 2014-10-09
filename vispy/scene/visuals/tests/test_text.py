@@ -3,6 +3,7 @@ from vispy.scene.visuals import Text
 from vispy.testing import (requires_application, TestingCanvas,
                            assert_image_equal, run_tests_if_main)
 
+
 @requires_application()
 def test_text():
     """Test basic text support"""

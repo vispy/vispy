@@ -250,6 +250,7 @@ class GlirProgram(GlirObject):
     def create(self):
         self._handle = gl.glCreateProgram()
         self._validated = False
+        self._linked = False
         # Keeping track of uniforms/attributes
         self._handles = {}  # cache with handles to attributes/uniforms
         self._unset_variables = set()
@@ -260,7 +261,7 @@ class GlirProgram(GlirObject):
     def delete(self):
         gl.glDeleteProgram(self._handle)
     
-    def use_this_program(self):
+    def activate(self):
         """ Avoid overhead in calling glUseProgram with same arg.
         Warning: this will break if glUseProgram is used somewhere else.
         Per context we keep track of one current program.
@@ -269,55 +270,21 @@ class GlirProgram(GlirObject):
             self._parser.env['current_program'] = self._handle
             gl.glUseProgram(self._handle)
     
-    def activate(self):
-        self.use_this_program()
-        # Activate textures
-        for tex_target, tex_handle, unit in self._samplers.values():
-            gl.glActiveTexture(gl.GL_TEXTURE0 + unit)
-            gl.glBindTexture(tex_target, tex_handle)
-        # Activate attributes
-        for vbo_handle, attr_handle, func, args in self._attributes.values():
-            if vbo_handle:
-                gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbo_handle)
-                gl.glEnableVertexAttribArray(attr_handle)
-                func(attr_handle, *args)
-            else:
-                gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-                gl.glDisableVertexAttribArray(attr_handle)
-                func(attr_handle, *args)
-        # Validate. We need to validate after textures units get assigned
-        if not self._validated:
-            self._validated = True
-            self._validate()
-    
-    def _validate(self):
-        # Validate ourselves
-        if self._unset_variables:
-            logger.warning('Program has unset variables: %r' % 
-                           self._unset_variables)
-        # Validate via OpenGL
-        gl.glValidateProgram(self._handle)
-        if not gl.glGetProgramParameter(self._handle, 
-                                        gl.GL_VALIDATE_STATUS):
-            print(gl.glGetProgramInfoLog(self._handle))
-            raise RuntimeError('Program validation error')
-    
     def deactivate(self):
-        # No need to deactivate each texture/buffer, just set to 0
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
-        if USE_TEX_3D:
-            gl.glBindTexture(GL_TEXTURE_3D, 0)
-        #Deactivate program - should not be necessary. In single-program
-        #apps it would not even make sense.
-        #self._parser.env['current_program'] = 0
-        #gl.glUseProgram(0)
-            
+        """ Avoid overhead in calling glUseProgram with same arg.
+        Warning: this will break if glUseProgram is used somewhere else.
+        Per context we keep track of one current program.
+        """
+        if self._parser.env.get('current_program', 0) != 0:
+            self._parser.env['current_program'] = 0
+            gl.glUseProgram(0)
+    
     def set_shaders(self, vert, frag):
         """ This function takes care of setting the shading code and
         compiling+linking it into a working program object that is ready
         to use.
         """
+        self._linked = False
         # Create temporary shader objects
         vert_handle = gl.glCreateShader(gl.GL_VERTEX_SHADER)
         frag_handle = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
@@ -350,6 +317,7 @@ class GlirProgram(GlirObject):
         # Now we know what variables will be used by the program
         self._unset_variables = self._get_active_attributes_and_uniforms()
         self._handles = {}
+        self._linked = True
         
     def _get_active_attributes_and_uniforms(self):
         """ Retrieve active attributes and uniforms to be able to check that
@@ -432,6 +400,8 @@ class GlirProgram(GlirObject):
     def set_uniform(self, name, type, value):
         """ Set a uniform value. Value is assumed to have been checked.
         """
+        if not self._linked:
+            raise RuntimeError('Cannot set uniform when program has no code')
         # Get handle for the uniform, first try cache
         handle = self._handles.get(name, -1)
         if handle < 0:
@@ -445,7 +415,7 @@ class GlirProgram(GlirObject):
         funcname = self.UTYPEMAP[type]
         func = getattr(gl, funcname)
         # Program needs to be active in order to set uniforms
-        self.use_this_program()
+        self.activate()
         # Triage depending on type 
         if type.startswith('mat'):
             # Value is matrix, these gl funcs have alternative signature
@@ -467,6 +437,8 @@ class GlirProgram(GlirObject):
     def set_attribute(self, name, type, value):
         """ Set an attribute value. Value is assumed to have been checked.
         """
+        if not self._linked:
+            raise RuntimeError('Cannot set attribute when program has no code')
         # Get handle for the attribute, first try cache
         handle = self._handles.get(name, -1)
         if handle < 0:
@@ -477,7 +449,7 @@ class GlirProgram(GlirObject):
                 logger.warning('Variable %s is not an active attribute' % name)
                 return
         # Program needs to be active in order to set uniforms
-        self.use_this_program()
+        self.activate()
         # Triage depending on VBO or tuple data
         if value[0] == 0:
             # Look up function call
@@ -511,12 +483,57 @@ class GlirProgram(GlirObject):
         else:
             return max_unit + 1
     
+    def _pre_draw(self):
+        self.activate()
+        # Activate textures
+        for tex_target, tex_handle, unit in self._samplers.values():
+            gl.glActiveTexture(gl.GL_TEXTURE0 + unit)
+            gl.glBindTexture(tex_target, tex_handle)
+        # Activate attributes
+        for vbo_handle, attr_handle, func, args in self._attributes.values():
+            if vbo_handle:
+                gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbo_handle)
+                gl.glEnableVertexAttribArray(attr_handle)
+                func(attr_handle, *args)
+            else:
+                gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+                gl.glDisableVertexAttribArray(attr_handle)
+                func(attr_handle, *args)
+        # Validate. We need to validate after textures units get assigned
+        if not self._validated:
+            self._validated = True
+            self._validate()
+    
+    def _validate(self):
+        # Validate ourselves
+        if self._unset_variables:
+            logger.warning('Program has unset variables: %r' % 
+                           self._unset_variables)
+        # Validate via OpenGL
+        gl.glValidateProgram(self._handle)
+        if not gl.glGetProgramParameter(self._handle, 
+                                        gl.GL_VALIDATE_STATUS):
+            print(gl.glGetProgramInfoLog(self._handle))
+            raise RuntimeError('Program validation error')
+    
+    def _post_draw(self):
+        # No need to deactivate each texture/buffer, just set to 0
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+        if USE_TEX_3D:
+            gl.glBindTexture(GL_TEXTURE_3D, 0)
+        #Deactivate program - should not be necessary. In single-program
+        #apps it would not even make sense.
+        #self.deactivate()
+    
     def draw(self, mode, selection):
         """ Draw program in given mode, with given selection (IndexBuffer or
         first, count).
         """
+        if not self._linked:
+            raise RuntimeError('Cannot draw program if code has not been set')
         # Init
-        self.activate()
+        self._pre_draw()
         gl.check_error('Check before draw')
         # Draw
         if len(selection) == 3:
@@ -532,7 +549,7 @@ class GlirProgram(GlirObject):
             gl.glDrawArrays(mode, first, count)
         # Wrap up
         gl.check_error('Check after draw')
-        self.deactivate()
+        self._post_draw()
 
 
 class GlirBuffer(GlirObject):

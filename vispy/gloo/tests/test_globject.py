@@ -3,7 +3,6 @@
 # Copyright (c) 2014, Nicolas P. Rougier. All rights reserved.
 # Distributed under the terms of the new BSD License.
 # -----------------------------------------------------------------------------
-import unittest
 
 from vispy.testing import run_tests_if_main
 from vispy.gloo.globject import GLObject

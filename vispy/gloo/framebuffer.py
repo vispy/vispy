@@ -177,7 +177,7 @@ class FrameBuffer(GLObject):
         target = gl.GL_COLOR_ATTACHMENT0
         if isinstance(buffer, (ColorBuffer, Texture2D)) or buffer is None:
             self._color_buffer = buffer
-            id = buffer.id if buffer else 0
+            id = 0 if buffer is None else buffer.id
             self._context.glir.command('ATTACH', self._id, target, id)
         else:
             raise TypeError("Buffer must be a ColorBuffer, Texture2D or None."
@@ -193,7 +193,7 @@ class FrameBuffer(GLObject):
         target = gl.GL_DEPTH_ATTACHMENT
         if isinstance(buffer, (DepthBuffer, Texture2D)) or buffer is None:
             self._depth_buffer = buffer
-            id = buffer.id if buffer else 0
+            id = 0 if buffer is None else buffer.id
             self._context.glir.command('ATTACH', self._id, target, id)
         else:
             raise TypeError("Buffer must be a DepthBuffer, Texture2D or None."
@@ -209,7 +209,7 @@ class FrameBuffer(GLObject):
         target = gl.GL_STENCIL_ATTACHMENT
         if isinstance(buffer, StencilBuffer) or buffer is None:
             self._stencil_buffer = buffer
-            id = buffer.id if buffer else 0
+            id = 0 if buffer is None else buffer.id
             self._context.glir.command('ATTACH', self._id, target, id)
         else:
             raise TypeError("Buffer must be a StencilBuffer, Texture2D or "
