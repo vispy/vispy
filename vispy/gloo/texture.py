@@ -208,7 +208,7 @@ class BaseTexture(GLObject):
         # Store and send GLIR command
         self._shape = shape
         self._format = format
-        self._context.glir.command('SHAPE', self._id, 
+        self._context.glir.command('SIZE', self._id, 
                                    self._shape, self._format)
 
     def set_data(self, data, offset=None, copy=False):

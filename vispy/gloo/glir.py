@@ -83,16 +83,16 @@ class GlirQueue(object):
         self._parser.parse(self._filter(self.clear()))
     
     def _filter(self, commands):
-        """ Filter DATA/SIZE/SHAPE commands that are overridden by a 
-        SHAPE/SIZE command.
+        """ Filter DATA/SIZE commands that are overridden by a 
+        SIZE command.
         """
         resized = set()
         commands2 = []
         for command in reversed(commands):
-            if command[0] in ('SHAPE', 'SIZE'):
+            if command[0] == 'SIZE':
                 resized.add(command[1])
             elif command[1] in resized:
-                if command[0] in ('SHAPE', 'SIZE', 'DATA'):
+                if command[0] in ('SIZE', 'DATA'):
                     continue  # remove this command
             commands2.append(command)
         return list(reversed(commands2))
@@ -171,10 +171,8 @@ class GlirParser(object):
                     ob.set_attribute(*args)
                 elif cmd == 'DATA':  # VertexBuffer, IndexBuffer, Texture
                     ob.set_data(*args)
-                elif cmd == 'SIZE':  # VertexBuffer, IndexBuffer
-                    ob.set_size(*args)
-                elif cmd == 'SHAPE':  # Texture2D, Texture3D, RenderBuffer
-                    ob.set_shape(*args)
+                elif cmd == 'SIZE':  # VertexBuffer, IndexBuffer, 
+                    ob.set_size(*args)  # Texture2D, Texture3D, RenderBuffer
                 elif cmd == 'ATTACH':  # FrameBuffer
                     ob.attach(*args)
                 elif cmd == 'USE':  # FrameBuffer
@@ -680,7 +678,7 @@ class GlirTexture(GlirObject):
 class GlirTexture2D(GlirTexture):
     _target = gl.GL_TEXTURE_2D
     
-    def set_shape(self, shape, format):
+    def set_size(self, shape, format):
         # Shape is height, width
         if (shape, format) != self._shape_format:
             self._shape_format = shape, format
@@ -745,7 +743,7 @@ def glTexSubImage3D(target, level, xoffset, yoffset, zoffset,
 class GlirTexture3D(GlirTexture):
     _target = GL_TEXTURE_3D
         
-    def set_shape(self, shape, format):
+    def set_size(self, shape, format):
         # Shape is depth, height, width
         if (shape, format) != self._shape_format:
             self.activate()

@@ -138,7 +138,7 @@ class Texture2DTest(unittest.TestCase):
         T.resize((5, 5))
         assert T.shape == (5, 5, 1)
         glir_cmd = T._context.glir.clear()[-1]
-        assert glir_cmd[0] == 'SHAPE'
+        assert glir_cmd[0] == 'SIZE'
     
     # Resize with bad shape
     # ---------------------------------
@@ -166,7 +166,7 @@ class Texture2DTest(unittest.TestCase):
         T.set_data(np.ones((20, 20), np.uint8))
         assert T.shape == (20, 20, 1)
         glir_cmds = T._context.glir.clear()
-        assert glir_cmds[-2][0] == 'SHAPE'
+        assert glir_cmds[-2][0] == 'SIZE'
         assert glir_cmds[-1][0] == 'DATA'
     
     # Set undersized data
@@ -177,7 +177,7 @@ class Texture2DTest(unittest.TestCase):
         T.set_data(np.ones((5, 5), np.uint8))
         assert T.shape == (5, 5, 1)
         glir_cmds = T._context.glir.clear()
-        assert glir_cmds[-2][0] == 'SHAPE'
+        assert glir_cmds[-2][0] == 'SIZE'
         assert glir_cmds[-1][0] == 'DATA'
 
     # Set misplaced data
@@ -285,7 +285,7 @@ class Texture3DTest(unittest.TestCase):
         T.resize((5, 5, 5))
         assert T.shape == (5, 5, 5, 1)
         glir_cmd = T._context.glir.clear()[-1]
-        assert glir_cmd[0] == 'SHAPE'
+        assert glir_cmd[0] == 'SIZE'
         assert glir_cmd[2] == (5, 5, 5, 1)
     
     # Resize with bad shape
