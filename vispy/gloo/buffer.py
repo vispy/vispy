@@ -176,11 +176,8 @@ class DataBuffer(Buffer):
         
         Buffer.__init__(self, data=data, nbytes=nbytes)
     
-    def _prepare_data(self, data, **kwds):
-        if len(kwds) > 0:
-            raise ValueError("Unexpected keyword arguments: %r" %
-                             list(kwds.keys()))
-        # Subclasses override this
+    def _prepare_data(self, data):
+        # Needs to be overrriden
         return data
 
     def set_subdata(self, data, offset=0, copy=False, **kwds):
@@ -381,16 +378,12 @@ class DataBufferView(DataBuffer):
     def id(self):
         return self._base.id
     
-    def set_data(self, data, copy=False):
-        raise ValueError("Cannot set_data on buffer view; only set_subdata is "
-                         "allowed.")
-
-    @property
-    def dtype(self):
-        """ Buffer dtype """
-
-        return self._dtype
-
+    def set_subdata(self, data, offset=0, copy=False, **kwds):
+        raise RuntimeError("Cannot set data on buffer view.")
+    
+    def set_data(self, data, copy=False, **kwds):
+        raise RuntimeError("Cannot set data on buffer view.")
+    
     @property
     def offset(self):
         """ Buffer offset (in bytes) relative to base """
@@ -398,100 +391,18 @@ class DataBufferView(DataBuffer):
         return self._offset
 
     @property
-    def stride(self):
-        """ Stride of data in memory """
-
-        return self._stride
-
-    @property
     def base(self):
         """Buffer base if this buffer is a view on another buffer. """
-
         return self._base
-
-    @property
-    def size(self):
-        """ Number of elements in the buffer """
-        return self._size
-
-    @property
-    def data(self):
-        """ Buffer CPU storage """
-
-        return self.base.data
-
-    @property
-    def itemsize(self):
-        """ The total number of bytes required to store the array data """
-
-        return self._itemsize
-
-    @property
-    def glsl_type(self):
-        """ GLSL declaration strings required for a variable to hold this data.
-        """
-        dtshape = self.dtype[0].shape
-        n = dtshape[0] if dtshape else 1
-        if n > 1:
-            dtype = 'vec%d' % n
-        else:
-            dtype = 'float' if 'f' in self.dtype[0].base.kind else 'int'
-        return 'attribute', dtype
-
+    
     def resize_bytes(self, size):
-        raise TypeError("Cannot resize buffer view.")
+        raise RuntimeError("Cannot resize buffer view.")
 
     def __getitem__(self, key):
-        """ Create a view on this buffer. """
-
-        raise ValueError("Can only access data from a base buffer")
+        raise RuntimeError("Can only access data from a base buffer")
 
     def __setitem__(self, key, data):
-        """ Set data (deferred operation) """
-
-        if not self._valid:
-            raise ValueError("This buffer view has been invalidated")
-
-        if isinstance(key, string_types):
-            raise ValueError(
-                "Cannot set a specific field on a non-base buffer")
-
-        elif key == Ellipsis and self.base is not None:
-            # WARNING: do we check data size
-            #          or do we let numpy raises an error ?
-            self.base[self._key] = data
-            return
-        # Setting one or several elements
-        elif isinstance(key, int):
-            if key < 0:
-                key += self.size
-            if key < 0 or key > self.size:
-                raise IndexError("Buffer assignment index out of range")
-            start, stop, step = key, key + 1, 1
-        elif isinstance(key, slice):
-            start, stop, step = key.indices(self.size)
-            if stop < start:
-                start, stop = stop, start
-        elif key == Ellipsis:
-            start, stop = 0, self.size
-        else:
-            raise TypeError("Buffer indices must be integers or strings")
-
-        # Set data on base buffer
-        base = self.base
-        # Base buffer has CPU storage
-        if base.data is not None:
-            # WARNING: do we check data size
-            #          or do we let numpy raises an error ?
-            base.data[key] = data
-            offset = start * base.itemsize
-            data = base.data[start:stop]
-            base.set_subdata(data=data, offset=offset, copy=False)
-        # Base buffer has no CPU storage, we cannot do operation
-        else:
-            raise ValueError(
-                """Cannot set non contiguous data """
-                """on buffer without CPU storage""")
+        raise RuntimeError("Cannot set data on Buffer view")
 
     def __repr__(self):
         return ("<DataBufferView on %r at offset=%d size=%d>" % 
@@ -545,10 +456,11 @@ class VertexBuffer(DataBuffer):
                 msg = ("Data basetype %r not allowed for Buffer/%s"
                        % (btype, name))
                 raise TypeError(msg)
-            elif count not in [1, 2, 3, 4]:
-                msg = ("Data basecount %s not allowed for Buffer/%s"
-                       % (count, name))
-                raise TypeError(msg)
+            # Test count - never happens because we convert in _prepare_data
+            #elif count not in [1, 2, 3, 4]:
+            #    msg = ("Data basecount %s not allowed for Buffer/%s"
+            #           % (count, name))
+            #    raise TypeError(msg)
 
     def _prepare_data(self, data, convert=False):
         # Build a structured view of the data if:
@@ -598,7 +510,7 @@ class IndexBuffer(DataBuffer):
     
     _GLIR_TYPE = 'IndexBuffer'
     
-    def __init__(self, data=None, dtype=np.uint32, size=0):
+    def __init__(self, data=None, dtype=None, size=0):
 
         if dtype and not np.dtype(dtype).isbuiltin:
             raise TypeError("Element buffer dtype cannot be structured")
@@ -614,6 +526,6 @@ class IndexBuffer(DataBuffer):
         if not data.dtype.isbuiltin:
             raise TypeError("Element buffer dtype cannot be structured")
         else:
-            if convert is True and data.dtype is not np.uint32:
+            if convert and data.dtype is not np.uint32:
                 data = data.astype(np.uint32)
         return data
