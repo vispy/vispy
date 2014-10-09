@@ -30,7 +30,9 @@ class Canvas(app.Canvas):
         self._timer = app.Timer('auto', self.update, start=True)
 
     def _setup_textures(self, fname):
-        data = imread(load_data_file('jfa/' + fname))[::-1, :, 0].copy()
+        data = imread(load_data_file('jfa/' + fname))[::-1].copy()
+        if data.ndim == 3:
+            data = data[:, :, 0]  # Travis gets 2, I get three?
         self.texture_size = data.shape[:2]
         self.orig_tex = Texture2D(data, format='luminance', wrapping='repeat',
                                   interpolation='nearest')
