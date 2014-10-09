@@ -175,7 +175,7 @@ class GlirParser(object):
                     ob.set_size(*args)  # Texture2D, Texture3D, RenderBuffer
                 elif cmd == 'ATTACH':  # FrameBuffer
                     ob.attach(*args)
-                elif cmd == 'USE':  # FrameBuffer
+                elif cmd == 'FRAMEBUFFER':  # FrameBuffer
                     ob.use(*args)
                 elif cmd == 'SHADERS':  # Program
                     ob.set_shaders(*args)
