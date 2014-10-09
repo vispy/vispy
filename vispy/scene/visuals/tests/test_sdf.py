@@ -10,9 +10,8 @@ from vispy import gloo
 from vispy.testing import requires_application, run_tests_if_main
 
 
-# TODO: FOR SOME REASON THIS TEST FAILS. NO IDEA WHY. ARG!
 @requires_application()
-def ___test_text():
+def test_sdf():
     """Test basic text support - sdf"""
     # test a simple cases
     data = (np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -31,7 +30,6 @@ def ___test_text():
     expd = np.round(256 * expd).astype(np.int)
 
     with Canvas(size=(100, 100)) as c:
-        c.context.glir.set_verbose(True)
         tex = gloo.Texture2D(shape=data.shape + (3,), format='rgb')
         SDFRenderer().render_to_texture(data, tex, (0, 0), data.shape[::-1])
         gloo.set_viewport(0, 0, *data.shape[::-1])

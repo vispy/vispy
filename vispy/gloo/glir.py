@@ -457,7 +457,7 @@ class GlirProgram(GlirObject):
             if tex is None:
                 raise RuntimeError('Could not find texture with id %i' % value)
             self._samplers.pop(name, None)  # First remove possibly old version
-            unit = self._get_free_unit([s[1] for s in self._samplers.values()])
+            unit = self._get_free_unit([s[2] for s in self._samplers.values()])
             self._samplers[name] = tex._target, tex.handle, unit
             gl.glUniform1i(handle, unit)
         else:
