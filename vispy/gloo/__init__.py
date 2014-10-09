@@ -37,9 +37,7 @@ Example::
     progress and there are still a few known limitations. Most notably:
 
     * TextureCubeMap is not yet implemented
-    * FBO's can only do 2D textures (not 3D textures or cube maps)
-    * Sharing of Shaders and RenderBuffers (between multiple Program's and
-      FrameBuffers, respectively) is not well supported.
+    * FBO's can only do 2D textures (not 3D textures or cube maps) 
     * No support for compressed textures.
 
 """

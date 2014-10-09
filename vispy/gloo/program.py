@@ -52,7 +52,10 @@ class Program(GLObject):
 
     A Program is an object to which shaders can be attached and linked to
     create the final program.
-
+    
+    Uniforms and attributes can be set using indexing: e.g.
+    ``program['a_pos'] = pos_data`` and ``program['u_color'] = (1, 0, 0)``.
+    
     Parameters
     ----------
     vert : str

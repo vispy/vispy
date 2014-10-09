@@ -13,7 +13,6 @@ canvas = app.Canvas(show=True, keys='interactive')
 def on_draw(event):
     gloo.set_clear_color((0.2, 0.4, 0.6, 1.0))
     gloo.clear()
-    gloo.context.get_a_context().glir.parse()
 
 if __name__ == '__main__' and sys.flags.interactive == 0:
     app.run()
