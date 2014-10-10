@@ -6,22 +6,9 @@
 
 import numpy as np
 
-from . import gl
 from .globject import GLObject
 from .wrappers import _check_conversion
 from ..ext.six import string_types
-
-GL_SAMPLER_3D = gl.Enum('GL_SAMPLER_3D', 35679)  # needed by Program
-
-
-def _check_value(value, valid_dict, numel=2):
-    """Helper for checking interpolation and wrapping"""
-    if not isinstance(value, (tuple, list)):
-        value = [value] * numel
-    if len(value) != numel:
-        raise ValueError('value must be a single value, or a %i-element list' %
-                         numel)
-    return tuple(_check_conversion(v, valid_dict) for v in value)
 
 
 # ----------------------------------------------------------- Texture class ---
@@ -61,18 +48,6 @@ class BaseTexture(GLObject):
         'LUMINANCE_ALPHA': 2,
         'RGB': 3,
         'RGBA': 4,
-    }
-
-    _types = {
-        np.dtype(np.int8): gl.GL_BYTE,
-        np.dtype(np.uint8): gl.GL_UNSIGNED_BYTE,
-        np.dtype(np.int16): gl.GL_SHORT,
-        np.dtype(np.uint16): gl.GL_UNSIGNED_SHORT,
-        np.dtype(np.int32): gl.GL_INT,
-        np.dtype(np.uint32): gl.GL_UNSIGNED_INT,
-        # np.dtype(np.float16) : gl.GL_HALF_FLOAT,
-        np.dtype(np.float32): gl.GL_FLOAT,
-        # np.dtype(np.float64) : gl.GL_DOUBLE
     }
 
     def __init__(self, data=None, shape=None, format=None, resizeable=True,
@@ -201,7 +176,7 @@ class BaseTexture(GLObject):
             raise ValueError("New shape has wrong number of dimensions")
         
         # Determine format
-        ambiguous = gl.GL_ALPHA, gl.GL_LUMINANCE, 'ALPHA', 'LUMINANCE'
+        ambiguous = 'ALPHA', 'LUMINANCE'
         if format is None:
             format = self._formats.get(shape[-1], None)
             # Keep current format if format is ambiguous
@@ -210,11 +185,9 @@ class BaseTexture(GLObject):
         if format is None:
             raise ValueError("Cannot determine texture format from shape")
         if isinstance(format, int):
-            M = dict([(getattr(gl, 'GL_' + f), f) in self._inv_formats])
-            try:
-                format = M[format]
-            except KeyError:
-                raise ValueError('Invalid texture format: %r.' % format)
+            raise ValueError('Texture format must be a string (for now)')
+            # todo: maybe we can later remove this restriction, but for now
+            # let's make sure our code uses strings everywhere
         elif isinstance(format, string_types):
             format = format.upper()
         # Check

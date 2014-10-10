@@ -30,20 +30,12 @@ Done by GLIR:
 import re
 import numpy as np
 
-from . import gl  # Only used for constants, no function calls here
 from .globject import GLObject
 from .buffer import VertexBuffer, IndexBuffer, DataBuffer
-from .texture import BaseTexture, Texture2D, Texture3D, GL_SAMPLER_3D
+from .texture import BaseTexture, Texture2D, Texture3D
 from .wrappers import _check_conversion
 from ..util import logger
 from ..ext.six import string_types
-
-_known_draw_modes = dict()
-for key in ('points', 'lines', 'line_strip', 'line_loop',
-            'triangles', 'triangle_strip', 'triangle_fan'):
-    x = getattr(gl, 'GL_' + key.upper())
-    _known_draw_modes[key] = x
-    _known_draw_modes[x] = x  # for speed in this case
 
 
 # ----------------------------------------------------------- Program class ---
@@ -76,25 +68,25 @@ class Program(GLObject):
     
     _GLIR_TYPE = 'Program'
     
-    _gtypes = {  # GL_TYPE, GL_BASE_TYPE, DTYPE, NUMEL
-        'float':        (gl.GL_FLOAT,       gl.GL_FLOAT,    np.float32, 1),
-        'vec2':         (gl.GL_FLOAT_VEC2,  gl.GL_FLOAT,    np.float32, 2),
-        'vec3':         (gl.GL_FLOAT_VEC3,  gl.GL_FLOAT,    np.float32, 3),
-        'vec4':         (gl.GL_FLOAT_VEC4,  gl.GL_FLOAT,    np.float32, 4),
-        'int':          (gl.GL_INT,         gl.GL_INT,      np.int32,   1),
-        'ivec2':        (gl.GL_INT_VEC2,    gl.GL_INT,      np.int32,   2),
-        'ivec3':        (gl.GL_INT_VEC3,    gl.GL_INT,      np.int32,   3),
-        'ivec4':        (gl.GL_INT_VEC4,    gl.GL_INT,      np.int32,   4),
-        'bool':         (gl.GL_BOOL,        gl.GL_BOOL,     np.bool,    1),
-        'bvec2':        (gl.GL_BOOL_VEC2,   gl.GL_BOOL,     np.bool,    2),
-        'bvec3':        (gl.GL_BOOL_VEC3,   gl.GL_BOOL,     np.bool,    3),
-        'bvec4':        (gl.GL_BOOL_VEC4,   gl.GL_BOOL,     np.bool,    4),
-        'mat2':         (gl.GL_FLOAT_MAT2,  gl.GL_FLOAT,    np.float32, 4),
-        'mat3':         (gl.GL_FLOAT_MAT3,  gl.GL_FLOAT,    np.float32, 9),
-        'mat4':         (gl.GL_FLOAT_MAT4,  gl.GL_FLOAT,    np.float32, 16),
-        # 'sampler1D':  (gl.GL_SAMPLER_1D,  gl.GL_UNSIGNED_INT, np.uint32, 1),
-        'sampler2D':    (gl.GL_SAMPLER_2D,  gl.GL_UNSIGNED_INT, np.uint32, 1),
-        'sampler3D':    (GL_SAMPLER_3D,     gl.GL_UNSIGNED_INT, np.uint32, 1),
+    _gtypes = {  # DTYPE, NUMEL
+        'float':        (np.float32, 1),
+        'vec2':         (np.float32, 2),
+        'vec3':         (np.float32, 3),
+        'vec4':         (np.float32, 4),
+        'int':          (np.int32,   1),
+        'ivec2':        (np.int32,   2),
+        'ivec3':        (np.int32,   3),
+        'ivec4':        (np.int32,   4),
+        'bool':         (np.bool,    1),
+        'bvec2':        (np.bool,    2),
+        'bvec3':        (np.bool,    3),
+        'bvec4':        (np.bool,    4),
+        'mat2':         (np.float32, 4),
+        'mat3':         (np.float32, 9),
+        'mat4':         (np.float32, 16),
+        # 'sampler1D':  (np.uint32, 1),
+        'sampler2D':    (np.uint32, 1),
+        'sampler3D':    (np.uint32, 1),
     }
     
     # ---------------------------------
@@ -132,7 +124,7 @@ class Program(GLObject):
             dtype = []
             for kind, type, name in self._code_variables.values():
                 if kind == 'attribute':
-                    _, _, dt, numel = self._gtypes[type]
+                    dt, numel = self._gtypes[type]
                     dtype.append((name, dt, numel))
             self._buffer = np.zeros(self._count, dtype=dtype)
             self.bind(VertexBuffer(self._buffer))
@@ -204,7 +196,7 @@ class Program(GLObject):
                                flags=re.MULTILINE)
             for m in re.finditer(regex, code):
                 size = -1
-                gtype = m.group('type')  # Program._gtypes[m.group('type')]
+                gtype = m.group('type')
                 if m.group('size'):
                     size = int(m.group('size'))
                 if size >= 1:
@@ -294,7 +286,7 @@ class Program(GLObject):
                                                name, type, data.id)
                 else:
                     # Normal uniform; convert to np array and check size
-                    _, _, dtype, numel = self._gtypes[type]
+                    dtype, numel = self._gtypes[type]
                     data = np.array(data, dtype=dtype).ravel()
                     if data.ndim == 0:
                         data.shape = data.size
@@ -332,7 +324,7 @@ class Program(GLObject):
                                                name, type, value)
                 else:
                     # Single-value attribute; convert to array and check size
-                    _, _, dtype, numel = self._gtypes[type]
+                    dtype, numel = self._gtypes[type]
                     data = np.array(data, dtype=dtype)
                     if data.ndim == 0:
                         data.shape = data.size
@@ -381,7 +373,9 @@ class Program(GLObject):
         self._buffer = None
         
         # Check if mode is valid
-        _check_conversion(mode, _known_draw_modes)
+        if mode.lower() not in {'points', 'lines', 'line_strip', 'line_loop',
+                                'triangles', 'triangle_strip', 'triangle_fan'}:
+            raise ValueError('Invalid draw mode: %r' % mode)
         
         # Check leftover variables, warn, discard them
         # In GLIR we check whether all attributes are indeed set
