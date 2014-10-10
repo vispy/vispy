@@ -4,7 +4,6 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 
-from . import gl
 from .globject import GLObject
 from .texture import Texture2D
 from .wrappers import _check_valid, read_pixels
@@ -74,12 +73,8 @@ class RenderBuffer(GLObject):
         elif isinstance(format, int):
             pass  # Do not check, maybe user needs desktop GL formats
         elif isinstance(format, string_types):
-            formats = {'color': gl.GL_RGBA,  # todo: on ES 2.0 -> gl.gl_RGBA4
-                       'depth': gl.GL_DEPTH_COMPONENT16,
-                       'stencil': gl.GL_STENCIL_INDEX8}
-            if format in formats:
-                format = formats[format]
-            else:
+            formats = {'color', 'depth', 'stencil'}
+            if format not in formats:
                 raise ValueError('RenderBuffer format must be "color", "depth"'
                                  ' or "stencil", not %r' % format)
         
@@ -150,7 +145,6 @@ class FrameBuffer(GLObject):
 
     @color_buffer.setter
     def color_buffer(self, buffer):
-        target = gl.GL_COLOR_ATTACHMENT0
         # Auto-format for render buffer
         if isinstance(buffer, RenderBuffer) and buffer._format is None:
             buffer.resize(buffer.shape, 'color')
@@ -158,7 +152,7 @@ class FrameBuffer(GLObject):
         if isinstance(buffer, (Texture2D, RenderBuffer)) or buffer is None:
             self._color_buffer = buffer
             id = 0 if buffer is None else buffer.id
-            self._context.glir.command('ATTACH', self._id, target, id)
+            self._context.glir.command('ATTACH', self._id, 'color', id)
         else:
             raise TypeError("Buffer must be a RenderBuffer, Texture2D or None."
                             " (got %s)" % type(buffer))
@@ -170,7 +164,6 @@ class FrameBuffer(GLObject):
 
     @depth_buffer.setter
     def depth_buffer(self, buffer):
-        target = gl.GL_DEPTH_ATTACHMENT
         # Auto-format for render buffer
         if isinstance(buffer, RenderBuffer) and buffer._format is None:
             buffer.resize(buffer.shape, 'depth')
@@ -178,7 +171,7 @@ class FrameBuffer(GLObject):
         if isinstance(buffer, (Texture2D, RenderBuffer)) or buffer is None:
             self._depth_buffer = buffer
             id = 0 if buffer is None else buffer.id
-            self._context.glir.command('ATTACH', self._id, target, id)
+            self._context.glir.command('ATTACH', self._id, 'depth', id)
         else:
             raise TypeError("Buffer must be a RenderBuffer, Texture2D or None."
                             " (got %s)" % type(buffer))
@@ -190,7 +183,6 @@ class FrameBuffer(GLObject):
 
     @stencil_buffer.setter
     def stencil_buffer(self, buffer):
-        target = gl.GL_STENCIL_ATTACHMENT
         # Auto-format for render buffer
         if isinstance(buffer, RenderBuffer) and buffer._format is None:
             buffer.resize(buffer.shape, 'stencil')
@@ -198,7 +190,7 @@ class FrameBuffer(GLObject):
         if isinstance(buffer, RenderBuffer) or buffer is None:
             self._stencil_buffer = buffer
             id = 0 if buffer is None else buffer.id
-            self._context.glir.command('ATTACH', self._id, target, id)
+            self._context.glir.command('ATTACH', self._id, 'stencil', id)
         else:
             raise TypeError("Buffer must be a RenderBuffer, Texture2D or "
                             "None. (got %s)" % type(buffer))

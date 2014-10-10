@@ -49,18 +49,18 @@ class BaseTexture(GLObject):
     _ndim = 2
 
     _formats = {
-        1: gl.GL_LUMINANCE,  # or ALPHA,
-        2: gl.GL_LUMINANCE_ALPHA,
-        3: gl.GL_RGB,
-        4: gl.GL_RGBA
+        1: 'LUMINANCE',  # or ALPHA,
+        2: 'LUMINANCE_ALPHA',
+        3: 'RGB',
+        4: 'RGBA'
     }
-
+    
     _inv_formats = {
-        gl.GL_LUMINANCE: 1,
-        gl.GL_ALPHA: 1,
-        gl.GL_LUMINANCE_ALPHA: 2,
-        gl.GL_RGB: 3,
-        gl.GL_RGBA: 4
+        'LUMINANCE': 1,
+        'ALPHA': 1,
+        'LUMINANCE_ALPHA': 2,
+        'RGB': 3,
+        'RGBA': 4,
     }
 
     _types = {
@@ -146,13 +146,18 @@ class BaseTexture(GLObject):
 
     @wrapping.setter
     def wrapping(self, value):
-        valid_dict = {'repeat': gl.GL_REPEAT,
-                      'clamp_to_edge': gl.GL_CLAMP_TO_EDGE,
-                      'mirrored_repeat': gl.GL_MIRRORED_REPEAT}
+        valid = {'repeat', 'clamp_to_edge', 'mirrored_repeat'}
         numel = 3 if isinstance(self, Texture3D) else 2
-        self._wrapping = _check_value(value, valid_dict, numel)
+        if isinstance(value, string_types):
+            value = (value,) * numel
+        if not isinstance(value, tuple):
+            raise ValueError('Invalid value for wrapping: %r' % value)
+        for val in value:
+            if not val in valid:
+                raise ValueError('Invalid value for wrapping: %r' % val)
+        self._wrapping = value
         self._context.glir.command('WRAPPING', self._id, self._wrapping)
-
+    
     @property
     def interpolation(self):
         """ Texture interpolation for minification and magnification. """
@@ -161,9 +166,15 @@ class BaseTexture(GLObject):
 
     @interpolation.setter
     def interpolation(self, value):
-        valid_dict = {'nearest': gl.GL_NEAREST,
-                      'linear': gl.GL_LINEAR}
-        self._interpolation = _check_value(value, valid_dict)
+        valid = {'nearest', 'linear'}
+        if isinstance(value, string_types):
+            value = (value,) * 2
+        if not isinstance(value, tuple):
+            raise ValueError('Invalid value for interpolation: %r' % value)
+        for val in value:
+            if not val in valid:
+                raise ValueError('Invalid value for interpolation: %r' % val)
+        self._interpolation = value
         self._context.glir.command('INTERPOLATION', self._id, 
                                    *self._interpolation)
     
@@ -177,11 +188,9 @@ class BaseTexture(GLObject):
             may be specified to indicate the number of color channels.
         format : str | enum
             The format of the texture: 'luminance', 'alpha',
-            'luminance_alpha', 'rgb', or 'rgba' (or ENUMs GL_LUMINANCE,
-            ALPHA, GL_LUMINANCE_ALPHA, or GL_RGB, GL_RGBA). If not given
-            the format is chosen automatically based on the number of
-            channels. When the data has one channel, 'luminance' is
-            assumed.
+            'luminance_alpha', 'rgb', or 'rgba'. If not given the format
+            is chosen automatically based on the number of channels.
+            When the data has one channel, 'luminance' is assumed.
         """
         shape = self._normalize_shape(shape)
         
@@ -192,7 +201,7 @@ class BaseTexture(GLObject):
             raise ValueError("New shape has wrong number of dimensions")
         
         # Determine format
-        ambiguous = gl.GL_ALPHA, gl.GL_LUMINANCE
+        ambiguous = gl.GL_ALPHA, gl.GL_LUMINANCE, 'ALPHA', 'LUMINANCE'
         if format is None:
             format = self._formats.get(shape[-1], None)
             # Keep current format if format is ambiguous
@@ -200,9 +209,18 @@ class BaseTexture(GLObject):
                 format = self._format
         if format is None:
             raise ValueError("Cannot determine texture format from shape")
-        if isinstance(format, string_types):
-            format = getattr(gl, 'GL_' + format.upper())
-        if shape[-1] != self._inv_formats[format]:
+        if isinstance(format, int):
+            M = dict([(getattr(gl, 'GL_' + f), f) in self._inv_formats])
+            try:
+                format = M[format]
+            except KeyError:
+                raise ValueError('Invalid texture format: %r.' % format)
+        elif isinstance(format, string_types):
+            format = format.upper()
+        # Check
+        if format not in self._inv_formats:
+            raise ValueError('Invalid texture format: %r.' % format)
+        elif shape[-1] != self._inv_formats[format]:
             raise ValueError('Format does not match with given shape.')
         
         # Store and send GLIR command

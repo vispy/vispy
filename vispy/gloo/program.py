@@ -362,14 +362,14 @@ class Program(GLObject):
         else:
             raise KeyError("Unknown uniform or attribute %s" % name)
     
-    def draw(self, mode=gl.GL_TRIANGLES, indices=None, check_error=True):
+    def draw(self, mode='triangles', indices=None, check_error=True):
         """ Draw the attribute arrays in the specified mode.
 
         Parameters
         ----------
         mode : str | GL_ENUM
-            GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP,
-            GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
+            'points', 'lines', 'line_strip', 'line_loop', 'triangles',
+            'triangle_strip', or 'triangle_fan'.
         indices : array
             Array of indices to draw.
         check_error:
@@ -380,8 +380,8 @@ class Program(GLObject):
         # Invalidate buffer (data has already been send)
         self._buffer = None
         
-        # Get mode
-        mode = _check_conversion(mode, _known_draw_modes)
+        # Check if mode is valid
+        _check_conversion(mode, _known_draw_modes)
         
         # Check leftover variables, warn, discard them
         # In GLIR we check whether all attributes are indeed set
@@ -403,9 +403,9 @@ class Program(GLObject):
         # Indexbuffer
         if isinstance(indices, IndexBuffer):
             logger.debug("Program drawing %r with index buffer" % mode)
-            gltypes = {np.dtype(np.uint8): gl.GL_UNSIGNED_BYTE,
-                       np.dtype(np.uint16): gl.GL_UNSIGNED_SHORT,
-                       np.dtype(np.uint32): gl.GL_UNSIGNED_INT}
+            gltypes = {np.dtype(np.uint8): 'UNSIGNED_BYTE',
+                       np.dtype(np.uint16): 'UNSIGNED_SHORT',
+                       np.dtype(np.uint32): 'UNSIGNED_INT'}
             selection = indices.id, gltypes[indices.dtype], indices.size
             self._context.glir.command('DRAW', self._id, mode, selection)
         elif indices is None:

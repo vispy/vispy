@@ -14,7 +14,14 @@ import re
 import numpy as np
 
 from . import gl
+from ..ext.six import string_types
 from ..util import logger
+
+
+def as_enum(enum):
+    if isinstance(enum, string_types):
+        enum = getattr(gl, 'GL_' + enum.upper())
+    return enum
 
 
 class GlirQueue(object):
@@ -144,6 +151,7 @@ class GlirParser(object):
                 gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
             elif cmd == 'FUNC':
                 # GL function call
+                args = [as_enum(a) for a in args]
                 try:
                     getattr(gl, id)(*args)
                 except AttributeError:
@@ -542,13 +550,14 @@ class GlirProgram(GlirObject):
         # Init
         self._pre_draw()
         gl.check_error('Check before draw')
+        mode = as_enum(mode)
         # Draw
         if len(selection) == 3:
             # Selection based on indices
             id, gtype, count = selection
             ibuf = self._parser.get_object(id)
             ibuf.activate()
-            gl.glDrawElements(mode, count, gtype, None)
+            gl.glDrawElements(mode, count, as_enum(gtype), None)
             ibuf.deactivate()
         else:
             # Selection based on start and count
@@ -670,6 +679,7 @@ class GlirTexture(GlirObject):
     
     def set_wrapping(self, wrapping):
         self.activate()
+        wrapping = [as_enum(w) for w in wrapping]
         if len(wrapping) == 3:
             GL_TEXTURE_WRAP_R = 32882
             gl.glTexParameterf(self._target, GL_TEXTURE_WRAP_R, wrapping[0])
@@ -678,6 +688,7 @@ class GlirTexture(GlirObject):
     
     def set_interpolation(self, min, mag):
         self.activate()
+        min, mag = as_enum(min), as_enum(mag)
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MIN_FILTER, min)
         gl.glTexParameterf(self._target, gl.GL_TEXTURE_MAG_FILTER, mag)
 
@@ -687,6 +698,7 @@ class GlirTexture2D(GlirTexture):
     
     def set_size(self, shape, format):
         # Shape is height, width
+        format = as_enum(format)
         if (shape, format) != self._shape_format:
             self._shape_format = shape, format
             self.activate()
@@ -751,6 +763,7 @@ class GlirTexture3D(GlirTexture):
     _target = GL_TEXTURE_3D
         
     def set_size(self, shape, format):
+        format = as_enum(format)
         # Shape is depth, height, width
         if (shape, format) != self._shape_format:
             self.activate()
@@ -794,6 +807,8 @@ class GlirRenderBuffer(GlirObject):
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, 0)
     
     def set_size(self, shape, format):
+        if isinstance(format, string_types):
+            format = GlirFrameBuffer._formats[format][1]
         if (shape, format) != self._shape_format:
             self._shape_format = shape, format
             self.activate()
@@ -802,6 +817,11 @@ class GlirRenderBuffer(GlirObject):
 
 
 class GlirFrameBuffer(GlirObject):
+    
+    # todo: on ES 2.0 -> gl.gl_RGBA4
+    _formats = {'color': (gl.GL_COLOR_ATTACHMENT0, gl.GL_RGBA),
+                'depth': (gl.GL_DEPTH_ATTACHMENT, gl.GL_DEPTH_COMPONENT16),
+                'stencil': (gl.GL_STENCIL_ATTACHMENT, gl.GL_STENCIL_INDEX8)}
     
     def create(self):
         #self._parser._fb_stack = [0]  # To keep track of active FB
@@ -833,6 +853,7 @@ class GlirFrameBuffer(GlirObject):
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, stack[-1])
     
     def attach(self, attachment, buffer_id):
+        attachment = GlirFrameBuffer._formats[attachment][0]
         self.activate()
         if buffer_id == 0:
             gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, attachment,

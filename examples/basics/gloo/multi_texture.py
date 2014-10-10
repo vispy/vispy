@@ -30,7 +30,7 @@ im1[:, 20:, 2] = 1.0
 data = np.zeros(4, dtype=[('a_position', np.float32, 2),
                           ('a_texcoord', np.float32, 2)])
 data['a_position'] = np.array([[-1, -1], [+1, -1], [-1, +1], [+1, +1]])
-data['a_texcoord'] = np.array([[1, 0], [1, 1], [0, 0], [0, 1]])
+data['a_texcoord'] = np.array([[1, 0], [1, 1.2], [0, 0], [0, 1.2]])
 
 
 VERT_SHADER = """

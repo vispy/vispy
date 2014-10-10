@@ -18,7 +18,7 @@ class Buffer(GLObject):
     """ Generic GPU buffer.
 
     A generic buffer is an interface used to upload data to a GPU array buffer
-    (gl.GL_ARRAY_BUFFER or gl.GL_ELEMENT_ARRAY_BUFFER). It keeps track of
+    (ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER). It keeps track of
     buffer size but does not have any CPU storage. You can consider it as
     write-only.
 
