@@ -542,6 +542,10 @@ class IndexBufferTest(unittest.TestCase):
             V = IndexBuffer(dtype=dtype)
             assert V.dtype == dtype
         
+        # Select uint32 if no data
+        V = IndexBuffer()
+        V.dtype == np.uint32
+        
         # Not allowed dtypes
         for dtype in (np.int8, np.int16, np.int32,
                       np.float16, np.float32, np.float64):

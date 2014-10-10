@@ -14,8 +14,8 @@ Conway game of life.
 """
 
 import numpy as np
-from vispy.gloo import (Program, FrameBuffer, RenderBuffer, clear, set_viewport,
-                        set_state)
+from vispy.gloo import (Program, FrameBuffer, RenderBuffer, 
+                        clear, set_viewport, set_state)
 from vispy import app
 
 

@@ -7,6 +7,7 @@ import unittest
 
 import numpy as np
 
+from vispy import gloo
 from vispy.gloo import get_a_context
 from vispy.gloo.program import Program
 from vispy.testing import run_tests_if_main
@@ -54,6 +55,12 @@ class ProgramTest(unittest.TestCase):
         assert program.shaders[1] == "D"
 
     def test_uniform(self):
+        
+        # Text array unoforms
+        program = Program("uniform float A[10];", "foo")
+        assert ('uniform', 'float', 'A[0]') in program.variables
+        assert len(program.variables) == 10
+        
         # Init program
         program = Program("uniform float A;", 
                           "uniform float A; uniform vec4 B;")
@@ -77,6 +84,20 @@ class ProgramTest(unittest.TestCase):
         assert program['C'] == (1.0, 2.0)
         assert 'C' not in program._user_variables
         assert 'C' in program._pending_variables
+        
+        # Set samplers
+        program.set_shaders("uniform sampler2D T2; uniform sampler3D T3;", "f")
+        program['T2'] = np.zeros((10, 10), np.float32)
+        program['T3'] = np.zeros((10, 10, 10), np.float32)
+        assert isinstance(program['T2'], gloo.Texture2D)
+        assert isinstance(program['T3'], gloo.Texture3D)
+        
+        # Set samplers with textures
+        tex = gloo.Texture2D(shape=(10, 10))
+        program['T2'] = tex
+        assert program['T2'] is tex
+        program['T2'] = np.zeros((10, 10), np.float32)  # Update texture
+        assert program['T2'] is tex
         
         # C should be taken up when code comes along that mentions it
         program.set_shaders("uniform float A; uniform vec2 C;", 
@@ -109,6 +130,15 @@ class ProgramTest(unittest.TestCase):
         program['A'] = vbo
         assert program['A'] == vbo
         assert 'A' in program._user_variables
+        assert program._user_variables['A'] is vbo
+        
+        # Set data - update existing vbp
+        program['A'] = np.zeros((10,), np.float32)
+        assert program._user_variables['A'] is vbo
+        
+        # Set data - create new vbo
+        program['B'] = np.zeros((10, 4), np.float32)
+        assert isinstance(program._user_variables['B'], VertexBuffer)
         
         # Set non-exisint uniforms
         program['C'] = vbo
@@ -139,6 +169,69 @@ class ProgramTest(unittest.TestCase):
         #
         self.assertRaises(ValueError, program.__setitem__, 'A', (1.0, 2.0))
         self.assertRaises(ValueError, program.__setitem__, 'C', 1.0)
-
+        self.assertRaises(ValueError, program.bind, 'notavertexbuffer')
+    
+    def test_vbo(self):
+        # Test with count
+        program = Program('attribute float a; attribute vec2 b;', 'foo', 10)
+        assert program._count == 10
+        assert ('attribute', 'float', 'a') in program.variables
+        assert ('attribute', 'vec2', 'b') in program.variables
+        
+        # Set
+        program['a'] = np.ones((10,), np.float32)
+        assert np.all(program._buffer['a'] == 1)
+        
+    def test_vayings(self):
+        
+        # Varyings and constants are detected
+        program = Program("varying float A; const vec4 B;", "foo")
+        assert ('varying', 'float', 'A') in program.variables
+        assert ('const', 'vec4', 'B') in program.variables
+        
+        # But cannot be set
+        self.assertRaises(KeyError, program.__setitem__, 'A', 3.0)
+        self.assertRaises(KeyError, program.__setitem__, 'B', (1.0, 2.0, 3.0))
+        # And anything else also fails
+        self.assertRaises(KeyError, program.__getitem__, 'fooo')
+    
+    def test_draw(self):
+        # Init
+        program = Program("attribute float A;", "uniform float foo")
+        program['A'] = np.zeros((10,), np.float32)
+        
+        # We need to disable flushing to run this test
+        flush = program._context.glir.flush
+        program._context.glir.flush = lambda x=None: None
+        
+        try:
+            # Draw arrays
+            program.draw('triangles')
+            glir_cmd = program._context.glir.clear()[-1]
+            assert glir_cmd[0] == 'DRAW'
+            assert len(glir_cmd[-1]) == 2
+            
+            # Draw elements
+            indices = gloo.IndexBuffer()
+            program.draw('triangles', indices)
+            glir_cmd = program._context.glir.clear()[-1]
+            assert glir_cmd[0] == 'DRAW'
+            assert len(glir_cmd[-1]) == 3
+            
+            # Invalid mode
+            self.assertRaises(ValueError, program.draw, 'nogeometricshape')
+            # Invalid index
+            self.assertRaises(TypeError, program.draw, 'triangles', 'notindex')
+            # No atributes
+            program = Program("attribute float A;", "uniform float foo")
+            self.assertRaises(RuntimeError, program.draw, 'triangles')
+            # Atributes with different sizes
+            program = Program("attribute float A; attribute float B;", "foo")
+            program['A'] = np.zeros((10,), np.float32)
+            program['B'] = np.zeros((11,), np.float32)
+            self.assertRaises(RuntimeError, program.draw, 'triangles')
+        
+        finally:
+            program._context.glir.flush = flush
 
 run_tests_if_main()

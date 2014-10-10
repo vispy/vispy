@@ -7,7 +7,6 @@
 import numpy as np
 
 from .globject import GLObject
-from .wrappers import _check_conversion
 from ..ext.six import string_types
 
 
@@ -36,18 +35,18 @@ class BaseTexture(GLObject):
     _ndim = 2
 
     _formats = {
-        1: 'LUMINANCE',  # or ALPHA,
-        2: 'LUMINANCE_ALPHA',
-        3: 'RGB',
-        4: 'RGBA'
+        1: 'luminance',  # or alpha,
+        2: 'luminance_alpha',
+        3: 'rgb',
+        4: 'rgba'
     }
     
     _inv_formats = {
-        'LUMINANCE': 1,
-        'ALPHA': 1,
-        'LUMINANCE_ALPHA': 2,
-        'RGB': 3,
-        'RGBA': 4,
+        'luminance': 1,
+        'alpha': 1,
+        'luminance_alpha': 2,
+        'rgb': 3,
+        'rgba': 4,
     }
 
     def __init__(self, data=None, shape=None, format=None, resizeable=True,
@@ -125,12 +124,14 @@ class BaseTexture(GLObject):
         numel = 3 if isinstance(self, Texture3D) else 2
         if isinstance(value, string_types):
             value = (value,) * numel
-        if not isinstance(value, tuple):
+        elif not isinstance(value, (tuple, list)):
             raise ValueError('Invalid value for wrapping: %r' % value)
+        elif len(value) != 2:
+            raise ValueError('Texture wrapping needs 1 or %i values' % numel)
         for val in value:
-            if not val in valid:
+            if val not in valid:
                 raise ValueError('Invalid value for wrapping: %r' % val)
-        self._wrapping = value
+        self._wrapping = tuple(value)
         self._context.glir.command('WRAPPING', self._id, self._wrapping)
     
     @property
@@ -144,12 +145,14 @@ class BaseTexture(GLObject):
         valid = {'nearest', 'linear'}
         if isinstance(value, string_types):
             value = (value,) * 2
-        if not isinstance(value, tuple):
+        elif not isinstance(value, (tuple, list)):
             raise ValueError('Invalid value for interpolation: %r' % value)
+        elif len(value) != 2:
+            raise ValueError('Texture interpolation needs 1 or 2 values')
         for val in value:
-            if not val in valid:
+            if val not in valid:
                 raise ValueError('Invalid value for interpolation: %r' % val)
-        self._interpolation = value
+        self._interpolation = tuple(value)
         self._context.glir.command('INTERPOLATION', self._id, 
                                    *self._interpolation)
     
@@ -172,24 +175,20 @@ class BaseTexture(GLObject):
         # Check
         if not self._resizeable:
             raise RuntimeError("Texture is not resizeable")
-        if len(shape) != self._ndim + 1:
-            raise ValueError("New shape has wrong number of dimensions")
         
         # Determine format
-        ambiguous = 'ALPHA', 'LUMINANCE'
+        ambiguous = 'alpha', 'luminance'
         if format is None:
-            format = self._formats.get(shape[-1], None)
+            format = self._formats[shape[-1]]
             # Keep current format if format is ambiguous
             if format in ambiguous and self._format in ambiguous:
                 format = self._format
-        if format is None:
-            raise ValueError("Cannot determine texture format from shape")
         if isinstance(format, int):
             raise ValueError('Texture format must be a string (for now)')
             # todo: maybe we can later remove this restriction, but for now
             # let's make sure our code uses strings everywhere
         elif isinstance(format, string_types):
-            format = format.upper()
+            format = format.lower()
         # Check
         if format not in self._inv_formats:
             raise ValueError('Invalid texture format: %r.' % format)
@@ -225,11 +224,7 @@ class BaseTexture(GLObject):
         # Copy if needed, check/normalize shape
         data = np.array(data, copy=copy)
         data = self._normalize_shape(data)
-
-        # Check data has the right shape
-        if len(data.shape) not in (self._ndim, self._ndim + 1):
-            raise ValueError("Data has wrong shape")
-
+        
         # Maybe resize to purge DATA commands?
         if offset is None:
             self.resize(data.shape)
@@ -280,7 +275,7 @@ class BaseTexture(GLObject):
             elif isinstance(k, slice):
                 start, stop, step = k.indices(size)
                 if step != 1:
-                    raise ValueError("Cannot access non-contiguous data")
+                    raise IndexError("Cannot access non-contiguous data")
                 if stop < start:
                     start, stop = stop, start
                 slices[dim] = slice(start, stop, step)
@@ -321,8 +316,7 @@ class Texture2D(BaseTexture):
         Texture shape (optional), with shape HxW.
     format : str | ENUM
         The format of the texture: 'luminance', 'alpha', 'luminance_alpha',
-        'rgb', or 'rgba' (or ENUMs GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA,
-        or GL_RGB, GL_RGBA). If not given the format is chosen automatically
+        'rgb', or 'rgba'. If not given the format is chosen automatically
         based on the number of channels. When the data has one channel,
         'luminance' is assumed.
     """
@@ -361,8 +355,7 @@ class Texture3D(BaseTexture):
         Texture shape (optional) DxHxW.
     format : str | ENUM
         The format of the texture: 'luminance', 'alpha', 'luminance_alpha',
-        'rgb', or 'rgba' (or ENUMs GL_LUMINANCE, ALPHA, GL_LUMINANCE_ALPHA,
-        or GL_RGB, GL_RGBA). If not given the format is chosen automatically
+        'rgb', or 'rgba'. If not given the format is chosen automatically
         based on the number of channels. When the data has one channel,
         'luminance' is assumed.
     """

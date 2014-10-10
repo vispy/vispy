@@ -33,7 +33,6 @@ import numpy as np
 from .globject import GLObject
 from .buffer import VertexBuffer, IndexBuffer, DataBuffer
 from .texture import BaseTexture, Texture2D, Texture3D
-from .wrappers import _check_conversion
 from ..util import logger
 from ..ext.six import string_types
 
@@ -276,7 +275,7 @@ class Program(GLObject):
                         return
                     elif type == 'sampler2D':
                         data = Texture2D(data)
-                    elif type == 'sampler2D':
+                    elif type == 'sampler3D':
                         data = Texture3D(data)
                     else:
                         assert False  # This should not happen
@@ -288,8 +287,6 @@ class Program(GLObject):
                     # Normal uniform; convert to np array and check size
                     dtype, numel = self._gtypes[type]
                     data = np.array(data, dtype=dtype).ravel()
-                    if data.ndim == 0:
-                        data.shape = data.size
                     if data.size != numel:
                         raise ValueError('Uniform %r needs %i elements, '
                                          'not %i.' % (name, numel, data.size))
@@ -337,7 +334,7 @@ class Program(GLObject):
                     self._context.glir.command('ATTRIBUTE', self._id, 
                                                name, type, value)
             else:
-                raise ValueError('Cannot set data for a %s.' % kind)
+                raise KeyError('Cannot set data for a %s.' % kind)
         else:
             # This variable is not defined in the current source code,
             # so we cannot establish whether this is a uniform or
