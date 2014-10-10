@@ -130,10 +130,9 @@ class FrameBuffer(GLObject):
         """
         self._context.glir.command('FRAMEBUFFER', self._id, True)
     
-    # todo: activate/deactivate vs use
     def deactivate(self):
         """ Stop using this frame buffer, the previous framebuffer will be
-        active.
+        made active.
         """
         self._context.glir.command('FRAMEBUFFER', self._id, False)
     

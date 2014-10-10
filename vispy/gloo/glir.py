@@ -141,6 +141,7 @@ class GlirParser(object):
             if cmd == 'CURRENT':
                 # This context is made current
                 self.env.clear()
+                gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
             elif cmd == 'FUNC':
                 # GL function call
                 try:
@@ -182,7 +183,7 @@ class GlirParser(object):
                 elif cmd == 'ATTACH':  # FrameBuffer
                     ob.attach(*args)
                 elif cmd == 'FRAMEBUFFER':  # FrameBuffer
-                    ob.use(*args)
+                    ob.set_framebuffer(*args)
                 elif cmd == 'SHADERS':  # Program
                     ob.set_shaders(*args)
                 elif cmd == 'WRAPPING':  # Texture2D, Texture3D
@@ -810,7 +811,7 @@ class GlirFrameBuffer(GlirObject):
     def delete(self):
         gl.glDeleteFramebuffer(self._handle)
 
-    def use(self, yes):
+    def set_framebuffer(self, yes):
         if yes:
             if not self._validated:
                 self._validated = True
