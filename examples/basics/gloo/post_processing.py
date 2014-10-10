@@ -16,7 +16,7 @@ from vispy import app
 from vispy.geometry import create_cube
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
-                        FrameBuffer, DepthBuffer, set_viewport, set_state)
+                        FrameBuffer, RenderBuffer, set_viewport, set_state)
 
 
 cube_vertex = """
@@ -108,10 +108,9 @@ class Canvas(app.Canvas):
         self.cube["texture"].interpolation = 'linear'
         self.cube['model'] = model
         self.cube['view'] = view
-
-        depth = DepthBuffer((512, 512))
+        
         color = Texture2D(shape=(512, 512, 3), interpolation='linear')
-        self.framebuffer = FrameBuffer(color=color, depth=depth)
+        self.framebuffer = FrameBuffer(color, RenderBuffer((512, 512)))
 
         self.quad = Program(quad_vertex, quad_fragment, count=4)
         self.quad['texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]

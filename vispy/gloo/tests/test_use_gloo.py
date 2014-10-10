@@ -8,8 +8,8 @@ from numpy.testing import assert_allclose
 from nose.tools import assert_raises, assert_equal
 
 from vispy.app import Canvas
-from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer,
-                        ColorBuffer, DepthBuffer, set_viewport, clear)
+from vispy.gloo import (Texture2D, Texture3D, Program, FrameBuffer, 
+                        RenderBuffer, set_viewport, clear)
 from vispy.gloo.util import draw_texture, _screenshot
 from vispy.testing import requires_application, has_pyopengl, run_tests_if_main
 
@@ -37,7 +37,7 @@ def test_use_framebuffer():
     with Canvas(size=shape[::-1]) as c:
         orig_tex = Texture2D(data)
         fbo_tex = Texture2D(shape=use_shape, format='rgb')
-        rbo = ColorBuffer(shape=shape)
+        rbo = RenderBuffer(shape=shape, 'color')
         fbo = FrameBuffer(color=fbo_tex)
         c.context.glir.set_verbose(True)
         assert_equal(c.size, shape[::-1])
@@ -51,7 +51,7 @@ def test_use_framebuffer():
         assert_raises(TypeError, FrameBuffer.depth_buffer.fset, fbo, 1.)
         assert_raises(TypeError, FrameBuffer.stencil_buffer.fset, fbo, 1.)
         fbo.color_buffer = rbo
-        fbo.depth_buffer = DepthBuffer(shape)
+        fbo.depth_buffer = RenderBuffer(shape)
         fbo.stencil_buffer = None
         print((fbo.color_buffer, fbo.depth_buffer, fbo.stencil_buffer))
         clear(color='black')

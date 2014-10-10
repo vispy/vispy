@@ -11,7 +11,7 @@
 # -----------------------------------------------------------------------------
 
 import numpy as np
-from vispy.gloo import (Program, FrameBuffer, DepthBuffer, set_viewport,
+from vispy.gloo import (Program, FrameBuffer, RenderBuffer, set_viewport,
                         clear, set_state)
 from vispy import app
 
@@ -181,7 +181,7 @@ class Canvas(app.Canvas):
         self.render['pingpong'] = self.pingpong
 
         self.fbo = FrameBuffer(self.compute["texture"],
-                               DepthBuffer(self.comp_size))
+                               RenderBuffer(self.comp_size))
         set_state(depth_test=False, clear_color='black')
 
     def on_draw(self, event):

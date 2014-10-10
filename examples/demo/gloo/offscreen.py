@@ -106,7 +106,7 @@ class Canvas(app.Canvas):
         self._rendertex = gloo.Texture2D(shape=self.size)
         # FBO.
         self._fbo = gloo.FrameBuffer(self._rendertex,
-                                     gloo.DepthBuffer(self.size))
+                                     gloo.RenderBuffer(self.size))
         # Regular program that will be rendered to the FBO.
         self.program = gloo.Program(vertex, fragment)
         self.program["position"] = [(-1, -1), (-1, 1), (1, 1),

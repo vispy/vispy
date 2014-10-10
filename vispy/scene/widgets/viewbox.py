@@ -290,8 +290,7 @@ class ViewBox(Widget):
         if True:  # fbo is None:
             self._fbo = 4
             self._fbo = fbo = gloo.FrameBuffer(self._tex,
-                                               depth=gloo.DepthBuffer((10,
-                                                                       10)))
+                                               gloo.RenderBuffer((10, 10)))
 
         # Set texture coords to make the texture be drawn in the right place
         # Note that we would just use -1..1 if we would use a Visual.
