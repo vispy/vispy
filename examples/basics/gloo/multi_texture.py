@@ -63,8 +63,7 @@ void main()
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = 500, 500
+        app.Canvas.__init__(self, size=(500, 500), keys='interactive')
         
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.program['u_tex1'] = gloo.Texture2D(im1, interpolation='linear')

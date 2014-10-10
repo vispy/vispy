@@ -8,7 +8,6 @@ import numpy as np
 from os import path as op
 from traceback import extract_stack, format_list
 
-# from . import gl  Ha, no more gl here!
 from . globject import GLObject
 from ..util import logger
 from ..ext.six import string_types
@@ -513,10 +512,12 @@ class IndexBuffer(DataBuffer):
     def __init__(self, data=None, dtype=None, size=0):
 
         if dtype and not np.dtype(dtype).isbuiltin:
-            raise TypeError("Element buffer dtype cannot be structured")
+            raise TypeError("IndexBuffer dtype cannot be structured")
 
         if isinstance(data, np.ndarray):
             pass
+        elif dtype is None:
+            dtype = np.uint32  # Default value if data not given
         elif dtype not in [np.uint8, np.uint16, np.uint32]:
             raise TypeError("Data type not allowed for IndexBuffer")
 

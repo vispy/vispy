@@ -36,6 +36,12 @@ class GlirQueue(object):
         self._verbose = False
         # todo: allow different kind of parsers, like a parser that sends to JS
     
+    def is_remote(self):
+        """ Get whether the GLIR commands are processed in this process
+        or remotely. In the latter case, gloo.gl cannot be used directly.
+        """
+        return False  # for now
+    
     def set_verbose(self, vebose):
         """ Set verbose or not. If True, the GLIR commands are printed
         right before they get parsed.

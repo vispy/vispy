@@ -644,7 +644,11 @@ def read_pixels(viewport=None, alpha=True, out_type='unsigned_byte'):
         The array shape is (h, w, 3) or (h, w, 4), with the top-left corner 
         of the framebuffer at index [0, 0] in the returned array.
     """
-    # todo: this function wont work if we have a remote GLIR interpreter
+    # Check whether the GL context is direct or remote
+    c = get_a_context()
+    if c.glir.is_remote():
+        raise RuntimeError('Cannot use read_pixels() with remote GLIR parser')
+    
     finish()  # Finish first, also flushes GLIR commands
     type_dict = {'unsigned_byte': gl.GL_UNSIGNED_BYTE,
                  np.uint8: gl.GL_UNSIGNED_BYTE,
@@ -735,12 +739,3 @@ def get_gl_configuration():
     config['samples'] = gl.glGetParameter(gl.GL_SAMPLES)
     gl.check_error('post-config check')
     return config
-
-
-# def check_error():
-#     """Check for OpenGL errors
-# 
-#     For efficiency, errors are only checked periodically. This forces
-#     a check for OpenGL errors.
-#     """
-#     gl.check_error('gloo check')

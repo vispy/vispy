@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # vispy: gallery 30
-# vispy: testskip
+# vispy: testskip - because this example sets inactive attributes on Travis
 
 """
 Demo of jump flooding algoritm for EDT using GLSL
