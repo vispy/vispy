@@ -11,24 +11,7 @@ from vispy import app
 from vispy.color import ColorArray
 from vispy.io import load_iris
 import numpy as np
-from scipy.linalg import expm, logm
-
-
-class OrthogonalPath(object):
-    """Implement a continuous path on the Lie group SO(n).
-
-            >>> op = OrthogonalPath(mat1, mat2)
-            >>> mat = op(t)
-
-    """
-    def __init__(self, mat, origin=None):
-        if origin is None:
-            origin = np.eye(len(mat))
-        self.a, self.b = np.matrix(origin), np.matrix(mat)
-        self._logainvb = logm(self.a.I * self.b)
-
-    def __call__(self, t):
-        return np.real(self.a * expm(t * self._logainvb))
+from scipy.linalg import logm
 
 # Load the Iris dataset and normalize.
 iris = load_iris()
@@ -124,14 +107,21 @@ class Canvas(app.Canvas):
         # Circulant matrix.
         circ = np.diagflat(np.ones(ndim-1), 1)
         circ[-1, 0] = -1 if ndim % 2 == 0 else 1
-        self._op = OrthogonalPath(np.eye(ndim), circ)
-        
+        self.logcirc = logm(circ)
+        # We will solve the equation dX/dt = log(circ) * X in real time
+        # to compute the matrix exponential expm(t*log(circ)).
+        self.mat = np.eye(ndim)
+        self.dt = .001
         self._timer = app.Timer('auto', connect=self.on_timer)
 
     def on_timer(self, event):
-        mat = self._op(event.elapsed)
-        self.program['u_vec1'] = mat[:, 0].squeeze()
-        self.program['u_vec2'] = mat[:, 1].squeeze()
+        # We advance the numerical solver from as many dt there have been
+        # since the last update.
+        for t in np.arange(0., event.dt, self.dt):
+            self.mat += self.dt * np.dot(self.logcirc, self.mat).real
+        # We just keep the first two columns of the matrix.
+        self.program['u_vec1'] = self.mat[:, 0].squeeze()
+        self.program['u_vec2'] = self.mat[:, 1].squeeze()
         self.update()
         
     def on_initialize(self, event):
