@@ -136,7 +136,7 @@ class BaseTexture(GLObject):
         value = (check_enum(value[0], 'tex wrapping', valid), 
                  check_enum(value[1], 'tex wrapping', valid))
         self._wrapping = value
-        self._context.glir.command('WRAPPING', self._id, *value)
+        self._context.glir.command('WRAPPING', self._id, value)
     
     @property
     def interpolation(self):
