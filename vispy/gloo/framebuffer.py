@@ -32,8 +32,9 @@ class RenderBuffer(GLObject):
     
     def __init__(self, shape=None, format=None, resizeable=True):
         GLObject.__init__(self)
-        self._resizeable = bool(resizeable)
+        self._resizeable = True
         self.resize(shape, format)
+        self._resizeable = bool(resizeable)
     
     @property
     def shape(self):
@@ -63,7 +64,7 @@ class RenderBuffer(GLObject):
         """
         
         if not self._resizeable:
-            raise RuntimeError("Buffer is not resizeable")
+            raise RuntimeError("RenderBuffer is not resizeable")
         # Check shape
         if not (isinstance(shape, tuple) and len(shape) in (2, 3)):
             raise ValueError('RenderBuffer shape must be a 2/3 element tuple')
@@ -77,9 +78,11 @@ class RenderBuffer(GLObject):
             if format not in formats:
                 raise ValueError('RenderBuffer format must be "color", "depth"'
                                  ' or "stencil", not %r' % format)
+        else:
+            raise ValueError('Invalid RenderBuffer format: %r' % format)
         
         # Store and send GLIR command
-        self._shape = shape
+        self._shape = tuple(shape[:2])
         self._format = format
         if self._format is not None:
             self._context.glir.command('SIZE', self._id, 
@@ -99,20 +102,16 @@ class FrameBuffer(GLObject):
         The depth buffer to attach to this frame buffer
     stencil : RenderBuffer (optional)
         The stencil buffer to attach to this frame buffer
-    resizable : bool
-        Whether the buffers are resizable (default True)
     """
     
     _GLIR_TYPE = 'FrameBuffer'
     
-    def __init__(self, color=None, depth=None, stencil=None, resizeable=True):
+    def __init__(self, color=None, depth=None, stencil=None):
         GLObject.__init__(self)
         # Init buffers
         self._color_buffer = None
         self._depth_buffer = None
         self._stencil_buffer = None
-        # Init args
-        self._resizeable = bool(resizeable)
         if color is not None:
             self.color_buffer = color
         if depth is not None:
@@ -200,11 +199,11 @@ class FrameBuffer(GLObject):
         """ The shape of the Texture/RenderBuffer attached to this FrameBuffer
         """
         if self.color_buffer is not None:
-            return self.color_buffer.shape
+            return self.color_buffer.shape[:2]  # in case its a texture
         if self.depth_buffer is not None:
-            return self.depth_buffer.shape
+            return self.depth_buffer.shape[:2]
         if self.stencil_buffer is not None:
-            return self.stencil_buffer.shape
+            return self.stencil_buffer.shape[:2]
         raise RuntimeError('FrameBuffer without buffers has undefined shape')
     
     def resize(self, shape):
@@ -212,24 +211,23 @@ class FrameBuffer(GLObject):
 
         Parameters
         ----------
-        shape : tuple of integers
-            New buffer shape, to be applied to all currently attached buffers.
+        shape : tuple of two integers
+            New buffer shape (h, w), to be applied to all currently
+            attached buffers. For buffers that are a texture, the number
+            of color channels is preserved.
         """
-        
         # Check
-        if not self._resizeable:
-            raise RuntimeError("FrameBuffer is not resizeable")
-        if not (isinstance(shape, tuple) and len(shape) in (2, 3)):
-            raise ValueError('RenderBuffer shape must be a 2/3 element tuple')
-        
+        if not (isinstance(shape, tuple) and len(shape) == 2):
+            raise ValueError('RenderBuffer shape must be a 2-element tuple')
         # Resize our buffers
-        if self.color_buffer is not None:
-            self.color_buffer.resize(shape)
-        if self.depth_buffer is not None:
-            self.depth_buffer.resize(shape)
-        if self.stencil_buffer is not None:
-            self.stencil_buffer.resize(shape)
-
+        for buf in (self.color_buffer, self.depth_buffer, self.stencil_buffer):
+            if buf is None:
+                continue
+            shape_ = shape
+            if isinstance(buf, Texture2D):
+                shape_ = shape + (self.color_buffer.shape[-1], )
+            buf.resize(shape_, buf.format)
+    
     def read(self, mode='color', alpha=True):
         """ Return array of pixel values in an attached buffer
         
