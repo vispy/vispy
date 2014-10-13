@@ -40,7 +40,7 @@ class TextureTest(unittest.TestCase):
     # Setting data and shape
     # ---------------------------------
     def test_init_dtype_shape(self):
-        T = Texture(shape=(10, 10))
+        T = Texture((10, 10))
         assert T._shape == (10, 10, 1)
         self.assertRaises(ValueError, Texture, shape=(10, 10),
                           data=np.zeros((10, 10), np.float32))
@@ -102,7 +102,7 @@ class TextureTest(unittest.TestCase):
 
     # Set properties
     def test_set_texture_properties(self):
-        T = Texture(shape=(10, 10))
+        T = Texture((10, 10))
         
         # Interpolation
         T.interpolation = 'nearest'

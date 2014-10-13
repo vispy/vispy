@@ -129,7 +129,7 @@ def test_framebuffer():
     assert R3.format == 'stencil'
     
     # Also with Texture luminance
-    T = gloo.Texture2D(shape=(20, 30))
+    T = gloo.Texture2D((20, 30))
     R = RenderBuffer(T.shape)
     assert T.format == 'luminance'
     F = FrameBuffer(T, R)
@@ -146,7 +146,7 @@ def test_framebuffer():
     assert R.format == 'depth'
     
     # Also with Texture RGB
-    T = gloo.Texture2D(shape=(20, 30, 3))
+    T = gloo.Texture2D((20, 30, 3))
     R = RenderBuffer(T.shape)
     assert T.format == 'rgb'
     F = FrameBuffer(T, R)

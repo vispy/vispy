@@ -18,10 +18,10 @@ class BaseTexture(GLObject):
 
     Parameters
     ----------
-    data : ndarray
-        Texture data (optional)
-    shape : tuple of integers
-        Texture shape (optional)
+    data : ndarray | tuple
+        Texture data in the form of a numpy array (or something that
+        can be turned into one). A tuple with the shape of the texture
+        can also be given.
     format : str | enum
         See resize.
     resizeable : bool
@@ -50,8 +50,8 @@ class BaseTexture(GLObject):
         'rgba': 4,
     }
 
-    def __init__(self, data=None, shape=None, format=None, resizeable=True,
-                 interpolation=None, wrapping=None):
+    def __init__(self, data=None, format=None, resizeable=True,
+                 interpolation=None, wrapping=None, shape=None):
         GLObject.__init__(self)
         
         # Init shape and format
@@ -63,7 +63,9 @@ class BaseTexture(GLObject):
         self.interpolation = interpolation or 'nearest'
         self.wrapping = wrapping or 'clamp_to_edge'
         
-        # Set data or shape
+        # Set data or shape (shape arg is for backward compat)
+        if isinstance(data, tuple):
+            shape, data = data, None
         if data is not None:
             if shape is not None:
                 raise ValueError('Texture needs data or shape, not both.')
@@ -316,7 +318,8 @@ class Texture2D(BaseTexture):
     ----------
 
     data : ndarray
-        Texture data (optional), shaped as HxW.
+        Texture data shaped as HxW, or a tuple with the shape for
+        the texture (H, W).
     shape : tuple of integers
         Texture shape (optional), with shape HxW.
     format : str | ENUM
@@ -328,8 +331,8 @@ class Texture2D(BaseTexture):
     _ndim = 2
     _GLIR_TYPE = 'Texture2D'
     
-    def __init__(self, data=None, shape=None, format=None, **kwargs):
-        BaseTexture.__init__(self, data, shape, format, **kwargs)
+    def __init__(self, data=None, format=None, **kwargs):
+        BaseTexture.__init__(self, data, format, **kwargs)
 
     @property
     def height(self):
@@ -354,10 +357,9 @@ class Texture3D(BaseTexture):
 
     Parameters
     ----------
-    data : ndarray
-        Texture data (optional), shaped as DxHxW.
-    shape : tuple of integers
-        Texture shape (optional) DxHxW.
+    data : ndarray | tuple
+        Texture data, shaped as DxHxW, or a tuple with the shape for
+        the texture (D, H, W).
     format : str | ENUM
         The format of the texture: 'luminance', 'alpha', 'luminance_alpha',
         'rgb', or 'rgba'. If not given the format is chosen automatically
@@ -367,8 +369,8 @@ class Texture3D(BaseTexture):
     _ndim = 3
     _GLIR_TYPE = 'Texture3D'
     
-    def __init__(self, data=None, shape=None, format=None, **kwargs):
-        BaseTexture.__init__(self, data, shape, format, **kwargs)
+    def __init__(self, data=None, format=None, **kwargs):
+        BaseTexture.__init__(self, data, format, **kwargs)
 
     @property
     def width(self):
