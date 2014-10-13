@@ -20,7 +20,10 @@ from ..util import logger
 
 def as_enum(enum):
     if isinstance(enum, string_types):
-        enum = getattr(gl, 'GL_' + enum.upper())
+        try:
+            enum = getattr(gl, 'GL_' + enum.upper())
+        except AttributeError:
+            raise ValueError('Could not find int value for enum %r' % enum)
     return enum
 
 

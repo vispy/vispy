@@ -34,6 +34,7 @@ from .globject import GLObject
 from .buffer import VertexBuffer, IndexBuffer, DataBuffer
 from .texture import BaseTexture, Texture2D, Texture3D
 from ..util import logger
+from .util import check_enum 
 from ..ext.six import string_types
 
 
@@ -370,8 +371,9 @@ class Program(GLObject):
         self._buffer = None
         
         # Check if mode is valid
-        if mode.lower() not in {'points', 'lines', 'line_strip', 'line_loop',
-                                'triangles', 'triangle_strip', 'triangle_fan'}:
+        mode = check_enum(mode)
+        if mode not in {'points', 'lines', 'line_strip', 'line_loop',
+                        'triangles', 'triangle_strip', 'triangle_fan'}:
             raise ValueError('Invalid draw mode: %r' % mode)
         
         # Check leftover variables, warn, discard them

@@ -8,6 +8,7 @@ import numpy as np
 
 from .globject import GLObject
 from ..ext.six import string_types
+from .util import check_enum
 
 
 # ----------------------------------------------------------- Texture class ---
@@ -120,19 +121,20 @@ class BaseTexture(GLObject):
 
     @wrapping.setter
     def wrapping(self, value):
-        valid = {'repeat', 'clamp_to_edge', 'mirrored_repeat'}
-        numel = 3 if isinstance(self, Texture3D) else 2
-        if isinstance(value, string_types):
-            value = (value,) * numel
-        elif not isinstance(value, (tuple, list)):
+        # Convert
+        if isinstance(value, int) or isinstance(value, string_types):
+            value = (value,) * 2
+        elif isinstance(value, (tuple, list)):
+            if len(value) != 2:
+                raise ValueError('Texture wrapping needs 1 or 2 values')
+        else:
             raise ValueError('Invalid value for wrapping: %r' % value)
-        elif len(value) != 2:
-            raise ValueError('Texture wrapping needs 1 or %i values' % numel)
-        for val in value:
-            if val not in valid:
-                raise ValueError('Invalid value for wrapping: %r' % val)
-        self._wrapping = tuple(value)
-        self._context.glir.command('WRAPPING', self._id, self._wrapping)
+        # Check and set
+        valid = {'repeat', 'clamp_to_edge', 'mirrored_repeat'}
+        value = (check_enum(value[0], 'tex wrapping', valid), 
+                 check_enum(value[1], 'tex wrapping', valid))
+        self._wrapping = value
+        self._context.glir.command('WRAPPING', self._id, *value)
     
     @property
     def interpolation(self):
@@ -142,19 +144,20 @@ class BaseTexture(GLObject):
 
     @interpolation.setter
     def interpolation(self, value):
-        valid = {'nearest', 'linear'}
-        if isinstance(value, string_types):
+        # Convert
+        if isinstance(value, int) or isinstance(value, string_types):
             value = (value,) * 2
-        elif not isinstance(value, (tuple, list)):
+        elif isinstance(value, (tuple, list)):
+            if len(value) != 2:
+                raise ValueError('Texture interpolation needs 1 or 2 values')
+        else:
             raise ValueError('Invalid value for interpolation: %r' % value)
-        elif len(value) != 2:
-            raise ValueError('Texture interpolation needs 1 or 2 values')
-        for val in value:
-            if val not in valid:
-                raise ValueError('Invalid value for interpolation: %r' % val)
-        self._interpolation = tuple(value)
-        self._context.glir.command('INTERPOLATION', self._id, 
-                                   *self._interpolation)
+        # Check and set
+        valid = {'nearest', 'linear'}
+        value = (check_enum(value[0], 'tex interpolation', valid), 
+                 check_enum(value[1], 'tex interpolation', valid))
+        self._interpolation = value
+        self._context.glir.command('INTERPOLATION', self._id, *value)
     
     def resize(self, shape, format=None):
         """ Set the texture size and format
@@ -183,6 +186,8 @@ class BaseTexture(GLObject):
             # Keep current format if format is ambiguous
             if format in ambiguous and self._format in ambiguous:
                 format = self._format
+        else:
+            format = check_enum(format)
         if isinstance(format, int):
             raise ValueError('Texture format must be a string (for now)')
             # todo: maybe we can later remove this restriction, but for now

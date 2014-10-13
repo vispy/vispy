@@ -14,6 +14,12 @@ from vispy.testing import requires_application, run_tests_if_main
 from vispy.gloo import read_pixels
 
 
+def assert_cmd_raises(E, fun, *args, **kwargs):
+    gloo.flush()  # no error here
+    fun(*args, **kwargs)
+    assert_raises(E, gloo.flush)
+
+
 @requires_application()
 def test_wrappers():
     """Test gloo wrappers"""
@@ -27,7 +33,7 @@ def test_wrappers():
         assert_raises(ValueError, gloo.set_blend_color, (0., 0.))  # bad color
         assert_raises(TypeError, gloo.set_hint, 1, 2)  # need strs
         # this doesn't exist in ES 2.0 namespace
-        assert_raises(ValueError, gloo.set_hint, 'fog_hint', 'nicest')
+        assert_cmd_raises(ValueError, gloo.set_hint, 'fog_hint', 'nicest')
         # test bad enum
         assert_raises(RuntimeError, gloo.set_line_width, -1)
 
