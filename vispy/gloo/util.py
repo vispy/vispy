@@ -66,7 +66,6 @@ def check_identifier(name):
     if '__' in name:
         return "Identifiers may not contain double-underscores."
     
-    # todo: must this not be 'gl' (as in glPosition)?
     if name[:3] == 'gl_' or name[:3] == 'GL_':
         return "Identifiers may not begin with gl_ or GL_."
 
