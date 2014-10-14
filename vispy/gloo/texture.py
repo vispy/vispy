@@ -191,7 +191,7 @@ class BaseTexture(GLObject):
         else:
             format = check_enum(format)
         if isinstance(format, int):
-            raise ValueError('Texture format must be a string (for now)')
+            raise ValueError('Texture format must be a string.')
             # todo: maybe we can later remove this restriction, but for now
             # let's make sure our code uses strings everywhere
         elif isinstance(format, string_types):

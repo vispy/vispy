@@ -49,11 +49,6 @@ def _check_valid(key, val, valid):
 #     return z
 
 
-def _gl_bool(x):
-    """Helper to convert to GL boolean"""
-    return gl.GL_TRUE if x else gl.GL_FALSE
-
-
 def _to_args(x):
     """Convert to args representation"""
     if not isinstance(x, (list, tuple, np.ndarray)):
@@ -424,7 +419,7 @@ def set_depth_mask(flag):
     """
     #gl.glDepthMask(_gl_bool(flag))
     c = get_a_context()
-    c.glir.command('FUNC', 'glDepthMask', _gl_bool(flag))
+    c.glir.command('FUNC', 'glDepthMask', bool(flag))
 
 
 def set_color_mask(red, green, blue, alpha):
@@ -444,8 +439,8 @@ def set_color_mask(red, green, blue, alpha):
     #gl.glColorMask(_gl_bool(red), _gl_bool(green), _gl_bool(blue),
     #               _gl_bool(alpha))
     c = get_a_context()
-    c.glir.command('FUNC', 'glColorMask', _gl_bool(red), _gl_bool(green), 
-                   _gl_bool(blue), _gl_bool(alpha))
+    c.glir.command('FUNC', 'glColorMask', bool(red), bool(green), 
+                   bool(blue), bool(alpha))
 
 
 def set_sample_coverage(value=1.0, invert=False):
@@ -460,7 +455,7 @@ def set_sample_coverage(value=1.0, invert=False):
     """
     #gl.glSampleCoverage(float(value), _gl_bool(invert))
     c = get_a_context()
-    c.glir.command('FUNC', 'glSampleCoverage', float(value), _gl_bool(invert))
+    c.glir.command('FUNC', 'glSampleCoverage', float(value), bool(invert))
 
 
 ###############################################################################
@@ -567,21 +562,32 @@ def set_state(preset=None, **kwargs):
         else:
             set_cull_face(*_to_args(cull_face))
 
-    # Now deal with other non-glEnable/glDisable args
-    for s in _setters:
-        if s in kwargs:
-            args = _to_args(kwargs.pop(s))
+#     # Now deal with other non-glEnable/glDisable args
+#     for s in _setters:
+#         if s in kwargs:
+#             args = _to_args(kwargs.pop(s))
+#             # these actually need tuples
+#             if s in ('blend_color', 'clear_color') and \
+#                     not isinstance(args[0], string_types):
+#                 args = [args]
+#             globals()['set_' + s](*args)
+    
+    # todo: Eric, you might want to check whether this is right
+    
+    # Iterate over kwargs
+    for key, val in kwargs.items():
+        if key in _setters:
+            # Setter
+            args = _to_args(val)
             # these actually need tuples
-            if s in ('blend_color', 'clear_color') and \
+            if key in ('blend_color', 'clear_color') and \
                     not isinstance(args[0], string_types):
                 args = [args]
-            globals()['set_' + s](*args)
-
-    # check values and translate
-    for key, val in kwargs.items():
-        funcname = 'glEnable' if val else 'glDisable'
-        #func(_gl_attr(key))
-        c.glir.command('FUNC', funcname, key)
+            globals()['set_' + key](*args)
+        else:
+            # Enable / disable
+            funcname = 'glEnable' if val else 'glDisable'
+            c.glir.command('FUNC', funcname, key)
 
 
 #

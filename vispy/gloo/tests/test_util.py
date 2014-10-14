@@ -39,4 +39,23 @@ def test_check_enum():
     assert util.check_enum(GL.GL_TRIANGLE_STRIP) == 'triangle_strip' 
 
 
+def test_check_identifier():
+    
+    # Tests check_identifier()
+    assert util.check_identifier('foo') is None
+    assert util.check_identifier('_fooBarBla') is None
+    assert util.check_identifier('_glPosition') is None
+    
+    # Wrong identifier
+    assert util.check_identifier('__').startswith('Identifier')
+    assert util.check_identifier('gl_').startswith('Identifier')
+    assert util.check_identifier('GL_').startswith('Identifier')
+    assert util.check_identifier('double').startswith('Identifier')
+        
+    # Test check_variable()
+    assert util.check_variable('foo') is None
+    assert util.check_variable('a' * 30) is None
+    assert util.check_variable('a' * 32)
+
+    
 run_tests_if_main()

@@ -118,6 +118,7 @@ class TextureTest(unittest.TestCase):
         iset = Texture.interpolation.fset
         self.assertRaises(ValueError, iset, T, ['linear'] * 3)
         self.assertRaises(ValueError, iset, T, True)
+        self.assertRaises(ValueError, iset, T, [])
         self.assertRaises(ValueError, iset, T, 'linearios')
         
         # Wrapping
@@ -136,6 +137,7 @@ class TextureTest(unittest.TestCase):
         wset = Texture.wrapping.fset
         self.assertRaises(ValueError, wset, T, ['repeat'] * 3)
         self.assertRaises(ValueError, wset, T, True)
+        self.assertRaises(ValueError, wset, T, [])
         self.assertRaises(ValueError, wset, T, 'repeatos')
 
 
@@ -170,6 +172,9 @@ class Texture2DTest(unittest.TestCase):
         assert T.shape == (5, 5, 1)
         glir_cmd = T._context.glir.clear()[-1]
         assert glir_cmd[0] == 'SIZE'
+        
+        # Wong arg
+        self.assertRaises(ValueError, T.resize, (5, 5), 4)
     
     # Resize with bad shape
     # ---------------------------------

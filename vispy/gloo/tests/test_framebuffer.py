@@ -127,6 +127,13 @@ def test_framebuffer():
     assert R1.format == 'color'
     assert R2.format == 'depth'
     assert R3.format == 'stencil'
+    # Shape from any buffer
+    F.color_buffer = None
+    assert F.shape == (10, 10)
+    F.depth_buffer = None
+    assert F.shape == (10, 10)
+    F.stencil_buffer = None
+    assert_raises(RuntimeError, FrameBuffer.shape.fget, F)
     
     # Also with Texture luminance
     T = gloo.Texture2D((20, 30))

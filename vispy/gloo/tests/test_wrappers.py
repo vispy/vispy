@@ -14,6 +14,110 @@ from vispy.testing import requires_application, run_tests_if_main
 from vispy.gloo import read_pixels
 
 
+def test_wrappers_basic_glir():
+    """ Test that basic gloo wrapper functions emit right GLIR command """
+    
+    c = gloo.get_a_context()
+    c.glir.clear()
+    
+    funcs = [('viewport', 0, 0, 10, 10),
+             ('depth_range', 0, 1),
+             ('front_face', 'ccw'),
+             ('cull_face', 'back'),
+             ('line_width', 1),
+             ('polygon_offset', 0, 0),
+             ('clear_color', ),
+             ('clear_depth', ),
+             ('clear_stencil', ),
+             ('blend_func', ),
+             ('blend_color', 'red'),
+             ('blend_equation', 'X'),
+             ('scissor', 0, 0, 10, 10),
+             ('stencil_func', ),
+             ('stencil_mask', ),
+             ('stencil_op', ),
+             ('depth_func', ),
+             ('depth_mask', 'X'),
+             ('color_mask', False, False, False, False),
+             ('sample_coverage', ),
+             ('hint', 'foo', 'bar'),
+             # not finish and flush, because that would flush the glir queue
+             ]
+    
+    for func in funcs:
+        name, args = func[0], func[1:]
+        f = getattr(gloo, 'set_' + name)
+        f(*args)
+    
+    cmds = c.glir.clear()
+    assert len(cmds) == len(funcs)
+    for i, func in enumerate(funcs):
+        cmd = cmds[i]
+        nameparts = [a.capitalize() for a in func[0].split('_')]
+        name = 'gl' + ''.join(nameparts)
+        assert cmd[0] == 'FUNC'
+        if cmd[1].endswith('Separate'):
+            assert cmd[1][:-8] == name
+        else:
+            assert cmd[1] == name
+
+
+def test_wrappers_glir():
+    """ Test that special wrapper functions do what they must do """
+
+    c = gloo.get_a_context()
+    c.glir.clear()
+    
+    # Test clear() function
+    gloo.clear()
+    cmds = c.glir.clear()
+    assert len(cmds) == 1
+    assert cmds[0][0] == 'FUNC'
+    assert cmds[0][1] == 'glClear'
+    #
+    gloo.clear(True, False, False)
+    cmds = c.glir.clear()
+    assert len(cmds) == 1
+    assert cmds[0][0] == 'FUNC'
+    assert cmds[0][1] == 'glClear'
+    assert cmds[0][2] == gl.GL_COLOR_BUFFER_BIT
+    #
+    gloo.clear('red')
+    cmds = c.glir.clear()
+    assert len(cmds) == 2
+    assert cmds[0][0] == 'FUNC'
+    assert cmds[0][1] == 'glClearColor'
+    assert cmds[1][0] == 'FUNC'
+    assert cmds[1][1] == 'glClear'
+    #
+    gloo.clear('red', 4, 3)
+    cmds = c.glir.clear()
+    assert len(cmds) == 4
+    assert cmds[0][1] == 'glClearColor'
+    assert cmds[1][1] == 'glClearDepth'
+    assert cmds[2][1] == 'glClearStencil'
+    assert cmds[3][1] == 'glClear'
+    
+    # Test set_state() function
+    gloo.set_state(foo=True, bar=False)
+    cmds = set(c.glir.clear())
+    assert len(cmds) == 2
+    assert ('FUNC', 'glEnable', 'foo') in cmds
+    assert ('FUNC', 'glDisable', 'bar') in cmds
+    #
+    gloo.set_state(viewport=(0, 0, 10, 10), clear_color='red')
+    cmds = sorted(c.glir.clear())
+    assert len(cmds) == 2
+    assert cmds[0][1] == 'glClearColor'
+    assert cmds[1][1] == 'glViewport'
+    #
+    presets = gloo.get_state_presets()
+    a_preset = list(presets.keys())[0]
+    gloo.set_state(a_preset)
+    cmds = sorted(c.glir.clear())
+    assert len(cmds) == len(presets[a_preset])
+
+
 def assert_cmd_raises(E, fun, *args, **kwargs):
     gloo.flush()  # no error here
     fun(*args, **kwargs)

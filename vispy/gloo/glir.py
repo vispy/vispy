@@ -19,6 +19,8 @@ from ..util import logger
 
 
 def as_enum(enum):
+    """ Turn a possibly string enum into an integer enum.
+    """
     if isinstance(enum, string_types):
         try:
             enum = getattr(gl, 'GL_' + enum.upper())
@@ -105,11 +107,11 @@ class GlirQueue(object):
         resized = set()
         commands2 = []
         for command in reversed(commands):
-            if command[0] == 'SIZE':
-                resized.add(command[1])
-            elif command[1] in resized:
+            if command[1] in resized:
                 if command[0] in ('SIZE', 'DATA'):
                     continue  # remove this command
+            elif command[0] == 'SIZE':
+                resized.add(command[1])
             commands2.append(command)
         return list(reversed(commands2))
 
