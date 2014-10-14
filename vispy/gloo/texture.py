@@ -132,7 +132,7 @@ class BaseTexture(GLObject):
         else:
             raise ValueError('Invalid value for wrapping: %r' % value)
         # Check and set
-        valid = {'repeat', 'clamp_to_edge', 'mirrored_repeat'}
+        valid = 'repeat', 'clamp_to_edge', 'mirrored_repeat'
         value = (check_enum(value[0], 'tex wrapping', valid), 
                  check_enum(value[1], 'tex wrapping', valid))
         self._wrapping = value
@@ -155,7 +155,7 @@ class BaseTexture(GLObject):
         else:
             raise ValueError('Invalid value for interpolation: %r' % value)
         # Check and set
-        valid = {'nearest', 'linear'}
+        valid = 'nearest', 'linear'
         value = (check_enum(value[0], 'tex interpolation', valid), 
                  check_enum(value[1], 'tex interpolation', valid))
         self._interpolation = value
