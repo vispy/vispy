@@ -185,6 +185,8 @@ class GlirParser(object):
                 # common ones occur first.
                 if cmd == 'DRAW':  # Program
                     ob.draw(*args)
+                elif cmd == 'TEXTURE':  # Program
+                    ob.set_texture(*args)
                 elif cmd == 'UNIFORM':  # Program
                     ob.set_uniform(*args)
                 elif cmd == 'ATTRIBUTE':  # Program
@@ -415,6 +417,33 @@ class GlirProgram(GlirObject):
         results = [' ' * indentation + r for r in results]
         return '\n'.join(results)
     
+    def set_texture(self, name, value):
+        """ Set a texture sampler. Value is the id of the texture to link.
+        """
+        if not self._linked:
+            raise RuntimeError('Cannot set uniform when program has no code')
+        # Get handle for the uniform, first try cache
+        handle = self._handles.get(name, -1)
+        if handle < 0:
+            handle = gl.glGetUniformLocation(self._handle, name)
+            self._unset_variables.discard(name)  # Mark as set
+            self._handles[name] = handle  # Store in cache
+            if handle < 0:
+                logger.warning('Variable %s is not an active uniform' % name)
+                return
+        # Program needs to be active in order to set uniforms
+        self.activate()
+        if True:
+            # Sampler: the value is the id of the texture
+            tex = self._parser.get_object(value)
+            if tex is None:
+                raise RuntimeError('Could not find texture with id %i' % value)
+            unit = len(self._samplers)
+            if name in self._samplers:
+                unit = self._samplers[name][-1]  # Use existing unit            
+            self._samplers[name] = tex._target, tex.handle, unit
+            gl.glUniform1i(handle, unit)
+    
     def set_uniform(self, name, type, value):
         """ Set a uniform value. Value is assumed to have been checked.
         """
@@ -439,15 +468,6 @@ class GlirProgram(GlirObject):
             # Value is matrix, these gl funcs have alternative signature
             transpose = False  # OpenGL ES 2.0 does not support transpose
             func(handle, 1, transpose, value)
-        elif type.startswith('sampler'):
-            # Sampler: the value is the id of the texture
-            tex = self._parser.get_object(value)
-            if tex is None:
-                raise RuntimeError('Could not find texture with id %i' % value)
-            self._samplers.pop(name, None)  # First remove possibly old version
-            unit = self._get_free_unit([s[2] for s in self._samplers.values()])
-            self._samplers[name] = tex._target, tex.handle, unit
-            gl.glUniform1i(handle, unit)
         else:
             # Regular uniform
             func(handle, 1, value)
@@ -489,19 +509,6 @@ class GlirProgram(GlirObject):
             func = gl.glVertexAttribPointer
             args = size, gtype, gl.GL_FALSE, stride, offset
             self._attributes[name] = vbo.handle, handle, func, args
-    
-    def _get_free_unit(self, units):
-        """ Get free number given a list of numbers. For texture unit.
-        """
-        if not units:
-            return 1
-        min_unit, max_unit = min(units), max(units)
-        if min_unit > 1:
-            return min_unit - 1
-        elif len(units) < (max_unit - min_unit + 1):
-            return set(range(min_unit+1, max_unit)).difference(units).pop()
-        else:
-            return max_unit + 1
     
     def _pre_draw(self):
         self.activate()

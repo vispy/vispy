@@ -282,8 +282,8 @@ class Program(GLObject):
                         assert False  # This should not happen
                     # Store and send GLIR command
                     self._user_variables[name] = data
-                    self._context.glir.command('UNIFORM', self._id, 
-                                               name, type, data.id)
+                    self._context.glir.command('TEXTURE', self._id,
+                                               name, data.id)
                 else:
                     # Normal uniform; convert to np array and check size
                     dtype, numel = self._gtypes[type]
