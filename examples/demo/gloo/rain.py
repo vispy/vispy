@@ -127,7 +127,7 @@ class Canvas(app.Canvas):
 
     def on_mouse_move(self, event):
         x, y = event.pos
-        h = self.size[1]  # gloo.get_parameter('viewport')[3]
+        h = self.size[1]
         self.data['a_position'][self.index] = x, h - y
         self.data['a_size'][self.index] = 5
         self.data['a_fg_color'][self.index] = 0, 0, 0, 1

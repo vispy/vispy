@@ -28,8 +28,6 @@ def get_docs_for_class(klass):
     props, funcs = set(), set()
 
     for att in sorted(dir(klass)):
-        #if klass is not gloo.GLObject and att in baseatts:
-        #    continue
         if att.startswith('_') or att.lower() != att:
             continue
         # Get ob and module name
@@ -65,7 +63,6 @@ def generate_overview_docs():
     lines = []
     lines.append('Overview of most important GLOO classes')
     lines.append('=' * len(lines[-1]))
-    #klasseses = ((getattr(gloo, d),) for d in dir(gloo) if d[0].isupper())
     klasseses = [(getattr(gloo, d),) for d in CLASSES]
     for klasses in klasseses:
         # Init line

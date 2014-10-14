@@ -455,11 +455,6 @@ class VertexBuffer(DataBuffer):
                 msg = ("Data basetype %r not allowed for Buffer/%s"
                        % (btype, name))
                 raise TypeError(msg)
-            # Test count - never happens because we convert in _prepare_data
-            #elif count not in [1, 2, 3, 4]:
-            #    msg = ("Data basecount %s not allowed for Buffer/%s"
-            #           % (count, name))
-            #    raise TypeError(msg)
 
     def _prepare_data(self, data, convert=False):
         # Build a structured view of the data if:

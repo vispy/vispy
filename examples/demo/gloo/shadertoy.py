@@ -109,7 +109,7 @@ class Canvas(app.Canvas):
         
     def on_timer(self, event):
         self.program['iGlobalTime'] = event.elapsed
-        #self.program['iDate'] = get_idate()  # not an active uniform
+        self.program['iDate'] = get_idate()  # used in some shadertoy examples
         self.update()
         
     def on_resize(self, event):

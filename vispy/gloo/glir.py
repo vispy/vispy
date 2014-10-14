@@ -128,7 +128,6 @@ class GlirParser(object):
     def __init__(self):
         self._objects = {}
         self._invalid_objects = set()
-        self.env = {}  # Dict to use. Is cleared on each draw
         self._classmap = {'Program': GlirProgram,
                           'VertexBuffer': GlirVertexBuffer,
                           'IndexBuffer': GlirIndexBuffer,
@@ -137,6 +136,11 @@ class GlirParser(object):
                           'RenderBuffer': GlirRenderBuffer,
                           'FrameBuffer': GlirFrameBuffer,
                           }
+        # We keep a dict that the GLIR objects use for storing
+        # per-context information. This dict is cleared each time
+        # that the context is made current. This seems necessary for
+        # when two Canvases share a context.
+        self.env = {}
     
     def get_object(self, id):
         """ Get the object with the given id or None if it does not exist.
@@ -277,6 +281,7 @@ class GlirProgram(GlirObject):
         # Store samplers in buffers that are bount to uniforms/attributes
         self._samplers = {}  # name -> (tex-target, tex-handle, unit)
         self._attributes = {}  # name -> (vbo-handle, attr-handle, func, args)
+        self._known_invalid = set()  # variables that we know are invalid
     
     def delete(self):
         gl.glDeleteProgram(self._handle)
@@ -337,6 +342,7 @@ class GlirProgram(GlirObject):
         # Now we know what variables will be used by the program
         self._unset_variables = self._get_active_attributes_and_uniforms()
         self._handles = {}
+        self._known_invalid = set()
         self._linked = True
         
     def _get_active_attributes_and_uniforms(self):
@@ -425,10 +431,13 @@ class GlirProgram(GlirObject):
         # Get handle for the uniform, first try cache
         handle = self._handles.get(name, -1)
         if handle < 0:
+            if name in self._known_invalid:
+                return
             handle = gl.glGetUniformLocation(self._handle, name)
             self._unset_variables.discard(name)  # Mark as set
             self._handles[name] = handle  # Store in cache
             if handle < 0:
+                self._known_invalid.add(name)
                 logger.warning('Variable %s is not an active uniform' % name)
                 return
         # Program needs to be active in order to set uniforms
@@ -452,10 +461,13 @@ class GlirProgram(GlirObject):
         # Get handle for the uniform, first try cache
         handle = self._handles.get(name, -1)
         if handle < 0:
+            if name in self._known_invalid:
+                return
             handle = gl.glGetUniformLocation(self._handle, name)
             self._unset_variables.discard(name)  # Mark as set
             self._handles[name] = handle  # Store in cache
             if handle < 0:
+                self._known_invalid.add(name)
                 logger.warning('Variable %s is not an active uniform' % name)
                 return
         # Look up function to call
@@ -480,10 +492,13 @@ class GlirProgram(GlirObject):
         # Get handle for the attribute, first try cache
         handle = self._handles.get(name, -1)
         if handle < 0:
+            if name in self._known_invalid:
+                return
             handle = gl.glGetAttribLocation(self._handle, name)
             self._unset_variables.discard(name)  # Mark as set
             self._handles[name] = handle  # Store in cache
             if handle < 0:
+                self._known_invalid.add(name)
                 if value[0] != 0 and value[2] > 0:  # VBO with offset
                     return  # Probably an unused element in a structured VBO
                 logger.warning('Variable %s is not an active attribute' % name)
