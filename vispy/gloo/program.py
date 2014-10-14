@@ -372,8 +372,8 @@ class Program(GLObject):
         
         # Check if mode is valid
         mode = check_enum(mode)
-        if mode not in {'points', 'lines', 'line_strip', 'line_loop',
-                        'triangles', 'triangle_strip', 'triangle_fan'}:
+        if mode not in ['points', 'lines', 'line_strip', 'line_loop',
+                        'triangles', 'triangle_strip', 'triangle_fan']:
             raise ValueError('Invalid draw mode: %r' % mode)
         
         # Check leftover variables, warn, discard them
