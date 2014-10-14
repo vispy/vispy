@@ -23,11 +23,11 @@ def test_check_enum():
     assert_raises(ValueError, util.check_enum, [])
     
     # Test with test
-    util.check_enum('RGB', 'test', {'rgb', 'alpha'}) == 'rgb' 
-    util.check_enum(gl.GL_ALPHA, 'test', {'rgb', 'alpha'}) == 'alpha' 
+    util.check_enum('RGB', 'test', ('rgb', 'alpha')) == 'rgb' 
+    util.check_enum(gl.GL_ALPHA, 'test', ('rgb', 'alpha')) == 'alpha' 
     #
-    assert_raises(ValueError, util.check_enum, 'RGB', 'test', {'a', 'b'})
-    assert_raises(ValueError, util.check_enum, gl.GL_ALPHA, 'test', {'a', 'b'})
+    assert_raises(ValueError, util.check_enum, 'RGB', 'test', ('a', 'b'))
+    assert_raises(ValueError, util.check_enum, gl.GL_ALPHA, 'test', ('a', 'b'))
     
     # Test PyOpenGL enums
     try:
