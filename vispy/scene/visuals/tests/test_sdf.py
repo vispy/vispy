@@ -30,7 +30,7 @@ def test_sdf():
     expd = np.round(256 * expd).astype(np.int)
 
     with Canvas(size=(100, 100)):
-        tex = gloo.Texture2D(shape=data.shape + (3,), format='rgb')
+        tex = gloo.Texture2D(data.shape + (3,), format='rgb')
         SDFRenderer().render_to_texture(data, tex, (0, 0), data.shape[::-1])
         gloo.set_viewport(0, 0, *data.shape[::-1])
         gloo.util.draw_texture(tex)

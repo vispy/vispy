@@ -80,7 +80,7 @@ class Canvas(app.Canvas):
 
         # Create texture to render to
         shape = self.size[1], self.size[0]
-        self._rendertex = gloo.Texture2D(shape=(shape + (3,)))
+        self._rendertex = gloo.Texture2D((shape + (3,)))
 
         # Create FBO, attach the color buffer and depth buffer
         self._fbo = gloo.FrameBuffer(self._rendertex, gloo.RenderBuffer(shape))

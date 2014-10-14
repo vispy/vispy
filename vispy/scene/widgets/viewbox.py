@@ -271,7 +271,7 @@ class ViewBox(Widget):
             # Create program
             self._myprogram = gloo.Program(render_vertex, render_fragment)
             # Create texture
-            self._tex = gloo.Texture2D(shape=(10, 10, 4), 
+            self._tex = gloo.Texture2D((10, 10, 4), 
                                        interpolation='linear')
             self._myprogram['u_texture'] = self._tex
             # Create texcoords and vertices

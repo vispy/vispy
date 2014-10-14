@@ -93,7 +93,7 @@ class ProgramTest(unittest.TestCase):
         assert isinstance(program['T3'], gloo.Texture3D)
         
         # Set samplers with textures
-        tex = gloo.Texture2D(shape=(10, 10))
+        tex = gloo.Texture2D((10, 10))
         program['T2'] = tex
         assert program['T2'] is tex
         program['T2'] = np.zeros((10, 10), np.float32)  # Update texture

@@ -109,7 +109,7 @@ class Canvas(app.Canvas):
         self.cube['model'] = model
         self.cube['view'] = view
         
-        color = Texture2D(shape=(512, 512, 3), interpolation='linear')
+        color = Texture2D((512, 512, 3), interpolation='linear')
         self.framebuffer = FrameBuffer(color, RenderBuffer((512, 512)))
 
         self.quad = Program(quad_vertex, quad_fragment, count=4)

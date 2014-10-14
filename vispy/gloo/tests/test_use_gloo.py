@@ -36,7 +36,7 @@ def test_use_framebuffer():
     use_shape = shape + (3,)
     with Canvas(size=shape[::-1]) as c:
         orig_tex = Texture2D(data)
-        fbo_tex = Texture2D(shape=use_shape, format='rgb')
+        fbo_tex = Texture2D(use_shape, format='rgb')
         rbo = RenderBuffer(shape, 'color')
         fbo = FrameBuffer(color=fbo_tex)
         c.context.glir.set_verbose(True)

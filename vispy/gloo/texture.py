@@ -32,6 +32,9 @@ class BaseTexture(GLObject):
     wrapping : str
         Wrapping mode, must be one of: 'repeat', 'clamp_to_edge', 
         'mirrored_repeat'. Default 'clamp_to_edge'.
+    shape : tuple
+        Optional. A tuple with the shape of the texture. If ``data``
+        is also a tuple, it will override the value of ``shape``.
     """
     _ndim = 2
 

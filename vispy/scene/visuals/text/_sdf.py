@@ -279,7 +279,7 @@ class SDFRenderer(object):
 
         comp_texs = []
         for _ in range(2):
-            tex = Texture2D(shape=sdf_size + (4,), format='rgba',
+            tex = Texture2D(sdf_size + (4,), format='rgba',
                             interpolation='nearest', wrapping='clamp_to_edge')
             comp_texs.append(tex)
         self.fbo_to[0].color_buffer = comp_texs[0]
