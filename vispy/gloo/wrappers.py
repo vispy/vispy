@@ -526,18 +526,6 @@ def set_state(preset=None, **kwargs):
             c.glir.command('FUNC', funcname, 'cull_face')
         else:
             set_cull_face(*_to_args(cull_face))
-
-#     # Now deal with other non-glEnable/glDisable args
-#     for s in _setters:
-#         if s in kwargs:
-#             args = _to_args(kwargs.pop(s))
-#             # these actually need tuples
-#             if s in ('blend_color', 'clear_color') and \
-#                     not isinstance(args[0], string_types):
-#                 args = [args]
-#             globals()['set_' + s](*args)
-    
-    # todo: Eric, you might want to check whether this is right
     
     # Iterate over kwargs
     for key, val in kwargs.items():

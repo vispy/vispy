@@ -49,6 +49,7 @@ class Canvas(app.Canvas):
             program['texw'], program['texh'] = self.texture_size
 
     def on_initialize(self, event):
+        # Note: read as bytes, then decode; py2.6 compat
         with open(op.join(this_dir, 'vertex_vispy.glsl'), 'rb') as fid:
             vert = fid.read().decode('ASCII')
         with open(op.join(this_dir, 'fragment_seed.glsl'), 'rb') as f:
