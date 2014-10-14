@@ -74,8 +74,7 @@ class RenderBuffer(GLObject):
         elif isinstance(format, int):
             pass  # Do not check, maybe user needs desktop GL formats
         elif isinstance(format, string_types):
-            formats = {'color', 'depth', 'stencil'}
-            if format not in formats:
+            if format not in ('color', 'depth', 'stencil'):
                 raise ValueError('RenderBuffer format must be "color", "depth"'
                                  ' or "stencil", not %r' % format)
         else:
