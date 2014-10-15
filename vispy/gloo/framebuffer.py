@@ -138,7 +138,6 @@ class FrameBuffer(GLObject):
     def __exit__(self, t, val, trace):
         self.deactivate()
     
-    
     def _set_buffer(self, buffer, format):
         formats = ('color', 'depth', 'stencil')
         assert format in formats
