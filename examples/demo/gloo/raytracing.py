@@ -42,7 +42,6 @@ const int PLANE = 1;
 const int SPHERE_0 = 2;
 const int SPHERE_1 = 3;
 
-uniform float u_time;
 uniform float u_aspect_ratio;
 varying vec2 v_position;
 
@@ -105,7 +104,7 @@ float intersect_plane(vec3 O, vec3 D, vec3 P, vec3 N) {
     return d;
 }
 
-vec3 run(float x, float y, float t) {
+vec3 run(float x, float y) {
     vec3 Q = vec3(x, y, 0.);
     vec3 D = normalize(Q - O);
     int depth = 0;
@@ -200,7 +199,7 @@ vec3 run(float x, float y, float t) {
 
 void main() {
     vec2 pos = v_position;
-    gl_FragColor = vec4(run(pos.x*u_aspect_ratio, pos.y, u_time), 1.);
+    gl_FragColor = vec4(run(pos.x*u_aspect_ratio, pos.y), 1.);
 }
 """
 
@@ -213,7 +212,6 @@ class Canvas(app.Canvas):
         self.program = gloo.Program(vertex, fragment)
         self.program['a_position'] = [(-1., -1.), (-1., +1.),
                                       (+1., -1.), (+1., +1.)]
-
         self.program['sphere_position_0'] = (.75, .1, 1.)
         self.program['sphere_radius_0'] = .6
         self.program['sphere_color_0'] = (0., 0., 1.)
@@ -236,7 +234,6 @@ class Canvas(app.Canvas):
     
     def on_timer(self, event):
         t = event.elapsed
-        self.program['u_time'] = t
         self.program['sphere_position_0'] = (+.75, .1, 2.0 + 1.0 * cos(4*t))
         self.program['sphere_position_1'] = (-.75, .1, 2.0 - 1.0 * cos(4*t))
         self.update()

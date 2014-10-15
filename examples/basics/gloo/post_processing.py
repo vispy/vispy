@@ -16,7 +16,8 @@ from vispy import app
 from vispy.geometry import create_cube
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
-                        FrameBuffer, DepthBuffer, set_viewport, set_state)
+                        FrameBuffer, RenderBuffer, set_viewport, set_state)
+
 
 cube_vertex = """
 uniform mat4 model;
@@ -24,8 +25,8 @@ uniform mat4 view;
 uniform mat4 projection;
 attribute vec3 position;
 attribute vec2 texcoord;
-attribute vec3 normal;
-attribute vec4 color;
+attribute vec3 normal;  // not used in this example
+attribute vec4 color;  // not used in this example
 varying vec2 v_texcoord;
 void main()
 {
@@ -107,11 +108,9 @@ class Canvas(app.Canvas):
         self.cube["texture"].interpolation = 'linear'
         self.cube['model'] = model
         self.cube['view'] = view
-
-        depth = DepthBuffer((512, 512))
-        color = Texture2D(shape=(512, 512, 3), interpolation='linear',
-                          dtype=np.dtype(np.float32))
-        self.framebuffer = FrameBuffer(color=color, depth=depth)
+        
+        color = Texture2D((512, 512, 3), interpolation='linear')
+        self.framebuffer = FrameBuffer(color, RenderBuffer((512, 512)))
 
         self.quad = Program(quad_vertex, quad_fragment, count=4)
         self.quad['texcoord'] = [(0, 0), (0, 1), (1, 0), (1, 1)]
@@ -125,12 +124,11 @@ class Canvas(app.Canvas):
         self._set_projection(self.size)
 
     def on_draw(self, event):
-        self.framebuffer.activate()
-        set_viewport(0, 0, 512, 512)
-        clear(color=True, depth=True)
-        set_state(depth_test=True)
-        self.cube.draw('triangles', self.indices)
-        self.framebuffer.deactivate()
+        with self.framebuffer:
+            set_viewport(0, 0, 512, 512)
+            clear(color=True, depth=True)
+            set_state(depth_test=True)
+            self.cube.draw('triangles', self.indices)
         set_viewport(0, 0, *self.size)
         clear(color=True)
         set_state(depth_test=False)

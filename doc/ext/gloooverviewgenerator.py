@@ -12,6 +12,10 @@ def main():
 def clean():
     pass
 
+EXCLUDE = ['ColorBuffer', 'DepthBuffer', 'StencilBuffer']
+CLASSES = ['Program', 'VertexBuffer', 'IndexBuffer', 'Texture2D', 'Texture3D',
+           'RenderBuffer', 'FrameBuffer']
+
 
 def get_docs_for_class(klass):
     """ Get props and methods for a class.
@@ -19,13 +23,11 @@ def get_docs_for_class(klass):
 
     # Prepare
     baseatts = dir(gloo.GLObject)
-    functype = type(gloo.GLObject.activate)
-    proptype = type(gloo.GLObject.handle)
+    functype = type(gloo.GLObject.delete)
+    proptype = type(gloo.GLObject.id)
     props, funcs = set(), set()
 
     for att in sorted(dir(klass)):
-        if klass is not gloo.GLObject and att in baseatts:
-            continue
         if att.startswith('_') or att.lower() != att:
             continue
         # Get ob and module name
@@ -41,6 +43,8 @@ def get_docs_for_class(klass):
                 break
         if actualklass == klass:
             modulename = ''
+        elif actualklass is gloo.GLObject:
+            modulename = gloo.GLObject.__module__.split('.')[-1]
         # Append
         if isinstance(attob, functype):
             funcs.add(' :meth:`~%s.%s.%s`,' % (
@@ -57,9 +61,9 @@ def generate_overview_docs():
     """
 
     lines = []
-    lines.append('Overview')
+    lines.append('Overview of most important GLOO classes')
     lines.append('=' * len(lines[-1]))
-    klasseses = ((getattr(gloo, d),) for d in dir(gloo) if d[0].isupper())
+    klasseses = [(getattr(gloo, d),) for d in CLASSES]
     for klasses in klasseses:
         # Init line
         line = '*'
@@ -85,3 +89,7 @@ def generate_overview_docs():
             lines.append(line[:-1])
 
     return '\n'.join(lines)
+
+
+if __name__ == '__main__':
+    print(generate_overview_docs())

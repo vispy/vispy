@@ -271,8 +271,7 @@ class ViewBox(Widget):
             # Create program
             self._myprogram = gloo.Program(render_vertex, render_fragment)
             # Create texture
-            self._tex = gloo.Texture2D(shape=(10, 10, 4), 
-                                       interpolation='linear', dtype=np.uint8)
+            self._tex = gloo.Texture2D((10, 10, 4), interpolation='linear')
             self._myprogram['u_texture'] = self._tex
             # Create texcoords and vertices
             # Note y-axis is inverted here because the viewbox coordinate
@@ -290,8 +289,7 @@ class ViewBox(Widget):
         if True:  # fbo is None:
             self._fbo = 4
             self._fbo = fbo = gloo.FrameBuffer(self._tex,
-                                               depth=gloo.DepthBuffer((10,
-                                                                       10)))
+                                               gloo.RenderBuffer((10, 10)))
 
         # Set texture coords to make the texture be drawn in the right place
         # Note that we would just use -1..1 if we would use a Visual.
@@ -309,6 +307,7 @@ class ViewBox(Widget):
         # Set fbo size (mind that this is set using shape!)
         resolution = [int(i+0.5) for i in self._resolution]  # set in draw()
         shape = resolution[1], resolution[0]
+        # todo: use fbo.resize(shape)
         fbo.color_buffer.resize(shape+(4,))
         fbo.depth_buffer.resize(shape)
 

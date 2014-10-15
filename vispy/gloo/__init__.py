@@ -37,9 +37,7 @@ Example::
     progress and there are still a few known limitations. Most notably:
 
     * TextureCubeMap is not yet implemented
-    * FBO's can only do 2D textures (not 3D textures or cube maps)
-    * Sharing of Shaders and RenderBuffers (between multiple Program's and
-      FrameBuffers, respectively) is not well supported.
+    * FBOs can only do 2D textures (not 3D textures or cube maps)
     * No support for compressed textures.
 
 """
@@ -47,13 +45,13 @@ Example::
 from __future__ import division
 
 from . import gl  # noqa
-from .context import GLContext, get_default_config, get_current_context  # noqa
+from .context import (GLContext, get_default_config,  # noqa
+                      get_current_context, get_a_context)  # noqa
 from .globject import GLObject  # noqa
 from .buffer import VertexBuffer, IndexBuffer  # noqa
 from .initialize import gl_initialize  # noqa
 from .texture import Texture2D, TextureAtlas, Texture3D  # noqa
-from .shader import VertexShader, FragmentShader  # noqa
 from .program import Program  # noqa
-from .framebuffer import (FrameBuffer, ColorBuffer, DepthBuffer,  # noqa
-                          StencilBuffer)  # noqa
+from .framebuffer import FrameBuffer, RenderBuffer  # noqa
 from .wrappers import *  # noqa
+from . import util  # noqa

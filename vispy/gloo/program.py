@@ -3,25 +3,39 @@
 # Copyright (c) 2014, Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
+
+
+"""
+Implementation of a GL Program object. 
+
+This class parses the source code to obtain the names and types of
+uniforms, attributes, varyings and constants. This information is used
+to provide the user with a natural way to set variables.
+
+Gloo vs GLIR
+------------
+
+Done in this class:
+  * Check the data shape given for uniforms and attributes
+  * Convert uniform data to array of the correct type
+  * Check whether any variables are set that are not present in source code
+
+Done by GLIR:
+  * Check whether a set uniform/attribute is not active (a warning is given)
+  * Check whether anactive attribute or uniform is not set (a warning is given)
+
+
+"""
+
 import re
 import numpy as np
 
-from . import gl
 from .globject import GLObject
-from .buffer import VertexBuffer, IndexBuffer
-from .shader import VertexShader, FragmentShader
-from .texture import GL_SAMPLER_3D
-from .variable import Uniform, Attribute
-from .wrappers import _check_conversion
+from .buffer import VertexBuffer, IndexBuffer, DataBuffer
+from .texture import BaseTexture, Texture2D, Texture3D
 from ..util import logger
+from .util import check_enum 
 from ..ext.six import string_types
-
-_known_draw_modes = dict()
-for key in ('points', 'lines', 'line_strip', 'line_loop',
-            'triangles', 'triangle_strip', 'triangle_fan'):
-    x = getattr(gl, 'GL_' + key.upper())
-    _known_draw_modes[key] = x
-    _known_draw_modes[x] = x  # for speed in this case
 
 
 # ----------------------------------------------------------- Program class ---
@@ -30,301 +44,172 @@ class Program(GLObject):
 
     A Program is an object to which shaders can be attached and linked to
     create the final program.
-
+    
+    Uniforms and attributes can be set using indexing: e.g.
+    ``program['a_pos'] = pos_data`` and ``program['u_color'] = (1, 0, 0)``.
+    
     Parameters
     ----------
-    vert : str, VertexShader, or list
+    vert : str
         The vertex shader to be used by this program
-    frag : str, FragmentShader, or list
+    frag : str
         The fragment shader to be used by this program
     count : int (optional)
-        Number of vertices this program will use. This can be given to
-        initialize a VertexBuffer during Program initialization.
-
+        The program will prepare a structured vertex buffer of count
+        vertices. All attributes set using ``prog['attr'] = X`` will
+        be combined into a structured vbo with interleaved elements, which
+        is more efficient than having one vbo per attribute.
+    
     Notes
     -----
     If several shaders are specified, only one can contain the main
     function. OpenGL ES 2.0 does not support a list of shaders.
     """
-
+    
+    _GLIR_TYPE = 'Program'
+    
+    _gtypes = {  # DTYPE, NUMEL
+        'float':        (np.float32, 1),
+        'vec2':         (np.float32, 2),
+        'vec3':         (np.float32, 3),
+        'vec4':         (np.float32, 4),
+        'int':          (np.int32,   1),
+        'ivec2':        (np.int32,   2),
+        'ivec3':        (np.int32,   3),
+        'ivec4':        (np.int32,   4),
+        'bool':         (np.bool,    1),
+        'bvec2':        (np.bool,    2),
+        'bvec3':        (np.bool,    3),
+        'bvec4':        (np.bool,    4),
+        'mat2':         (np.float32, 4),
+        'mat3':         (np.float32, 9),
+        'mat4':         (np.float32, 16),
+        # 'sampler1D':  (np.uint32, 1),
+        'sampler2D':    (np.uint32, 1),
+        'sampler3D':    (np.uint32, 1),
+    }
+    
     # ---------------------------------
     def __init__(self, vert=None, frag=None, count=0):
         GLObject.__init__(self)
-
+        
+        # Init source code for vertex and fragment shader
+        self._shaders = '', '' 
+        
+        # Init description of variables obtained from source code
+        self._code_variables = {}  # name -> (kind, type, name)
+        # Init user-defined data for attributes and uniforms
+        self._user_variables = {}  # name -> data / buffer / texture
+        # Init pending user-defined data
+        self._pending_variables = {}  # name -> data
+        
+        # NOTE: we *could* allow vert and frag to be a tuple/list of shaders,
+        # but that would complicate the GLIR implementation, and it seems 
+        # unncessary
+        
+        # Check and set shaders
+        if isinstance(vert, string_types) and isinstance(frag, string_types):
+            self.set_shaders(vert, frag)
+        elif not (vert is None and frag is None):
+            raise ValueError('Vert and frag must either both be str or None')
+        
+        # Build associated structured vertex buffer if count is given.
+        # This makes it easy to create a structured vertex buffer
+        # without having to create a numpy array with structured dtype.
+        # All assignments must be done before the GLIR commands are
+        # send away for parsing (in draw) though.
         self._count = count
-        self._buffer = None
-        
-        self._need_build = True
-        
-        # Init uniforms and attributes
-        self._uniforms = {}
-        self._attributes = {}
-        
-        # Get all vertex shaders
-        self._verts = []
-        if isinstance(vert, (str, VertexShader)):
-            verts = [vert]
-        elif isinstance(vert, (type(None), tuple, list)):
-            verts = vert or []
-        else:
-            raise ValueError('Vert must be str, VertexShader or list')
-        # Apply
-        for shader in verts:
-            if isinstance(shader, string_types):
-                self._verts.append(VertexShader(shader))
-            elif isinstance(shader, VertexShader):
-                if shader not in self._verts:
-                    self._verts.append(shader)
-            else:
-                T = type(shader)
-                raise ValueError('Cannot make a VertexShader of %r.' % T)
-
-        # Get all fragment shaders
-        self._frags = []
-        if isinstance(frag, (str, FragmentShader)):
-            frags = [frag]
-        elif isinstance(frag, (type(None), tuple, list)):
-            frags = frag or []
-        else:
-            raise ValueError('Frag must be str, FragmentShader or list')
-        # Apply
-        for shader in frags:
-            if isinstance(shader, string_types):
-                self._frags.append(FragmentShader(shader))
-            elif isinstance(shader, FragmentShader):
-                if shader not in self._frags:
-                    self._frags.append(shader)
-            else:
-                T = type(shader)
-                raise ValueError('Cannot make a FragmentShader of %r.' % T)
-
-        # Build uniforms and attributes
-        self._create_variables()
-
-        # Build associated structured vertex buffer if count is given
+        self._buffer = None  # Set to None in draw()
         if self._count > 0:
             dtype = []
-            for attribute in self._attributes.values():
-                dtype.append(attribute.dtype)
-            self._buffer = VertexBuffer(np.zeros(self._count, dtype=dtype))
-            self.bind(self._buffer)
+            for kind, type, name in self._code_variables.values():
+                if kind == 'attribute':
+                    dt, numel = self._gtypes[type]
+                    dtype.append((name, dt, numel))
+            self._buffer = np.zeros(self._count, dtype=dtype)
+            self.bind(VertexBuffer(self._buffer))
 
-    def attach(self, shaders):
-        """ Attach one or several vertex/fragment shaders to the program
-        
-        Note that GL ES 2.0 only supports one vertex and one fragment 
-        shader.
+    def set_shaders(self, vert, frag):
+        """ Set the vertex and fragment shaders.
         
         Parameters
         ----------
-        
-        shaders : list of shade objects
-            The shaders to attach.
+        vert : str
+            Source code for vertex shader.
+        frag : str
+            Source code for fragment shaders.
         """
-
-        if isinstance(shaders, (VertexShader, FragmentShader)):
-            shaders = [shaders]
-        for shader in shaders:
-            if isinstance(shader, VertexShader):
-                self._verts.append(shader)
-            else:
-                self._frags.append(shader)
-
-        # Ensure uniqueness of shaders
-        self._verts = list(set(self._verts))
-        self._frags = list(set(self._frags))
-
-        self._need_create = True
-        self._need_build = True
-
-        # Build uniforms and attributes
-        self._create_variables()
-
-    def detach(self, shaders):
-        """Detach one or several vertex/fragment shaders from the program.
+        if not vert or not frag:
+            raise ValueError('Vertex and fragment code must both be non-empty')
+        # Store source code, send it to glir, parse the code for variables
+        self._shaders = vert, frag
+        self._context.glir.command('SHADERS', self._id, vert, frag)
+        # All current variables become pending variables again
+        for key, val in self._user_variables.items():
+            self._pending_variables[key] = val
+        self._user_variables = {}
+        # Parse code (and process pending variables)
+        self._parse_variables_from_code()
     
-        Parameters
-        ----------
-        shaders : list of shade objects
-            The shaders to detach.
-        
-        Notes
-        -----
-        We don't need to defer attach/detach shaders since shader deletion
-        takes care of that.
+    @property
+    def shaders(self):
+        """ Source code for vertex and fragment shader
         """
-
-        if isinstance(shaders, (VertexShader, FragmentShader)):
-            shaders = [shaders]
-        for shader in shaders:
-            if isinstance(shader, VertexShader):
-                if shader in self._verts:
-                    self._verts.remove(shader)
+        return self._shaders
+    
+    @property
+    def variables(self):
+        """ A list of the variables in use by the current program
+        
+        The list is obtained by parsing the GLSL source code. 
+        
+        Returns
+        -------
+        variables : list
+            Each variable is represented as a tuple (kind, type, name),
+            where `kind` is 'attribute', 'uniform', 'varying' or 'const'.
+        """
+        # Note that internally the variables are stored as a dict
+        # that maps names -> tuples, for easy looking up by name.
+        return list(self._code_variables.values())
+    
+    def _parse_variables_from_code(self):
+        """ Parse uniforms, attributes and varyings from the source code.
+        """
+        
+        # Get one string of code with comments removed
+        code = '\n\n'.join(self._shaders)
+        code = re.sub(r'(.*)(//.*)', r'\1', code, re.M)
+        
+        # Regexp to look for variable names
+        var_regexp = ("\s*VARIABLE\s+(?P<type>\w+)\s+"  # type
+                      "(?P<name>\w+)\s*"  # name
+                      "(\[(?P<size>\d+)\])?"  # maybe size
+                      "(\s*\=\s*[0-9.]+)?"  # maybe default value
+                      "\s*;"  # end
+                      )
+        
+        # Parse uniforms, attributes and varyings
+        self._code_variables = {}
+        for kind in ('uniform', 'attribute', 'varying', 'const'):
+            regex = re.compile(var_regexp.replace('VARIABLE', kind),
+                               flags=re.MULTILINE)
+            for m in re.finditer(regex, code):
+                size = -1
+                gtype = m.group('type')
+                if m.group('size'):
+                    size = int(m.group('size'))
+                if size >= 1:
+                    for i in range(size):
+                        name = '%s[%d]' % (m.group('name'), i)
+                        self._code_variables[name] = kind, gtype, name 
                 else:
-                    raise RuntimeError("Shader is not attached to the program")
-            if isinstance(shader, FragmentShader):
-                if shader in self._frags:
-                    self._frags.remove(shader)
-                else:
-                    raise RuntimeError("Shader is not attached to the program")
-        self._need_build = True
-
-        # Build uniforms and attributes
-        self._create_variables()
-
-    def _create(self):
-        """
-        Create the GL program object if needed.
-        """
-        # Check if program has been created
-        if self._handle <= 0:
-            self._handle = gl.glCreateProgram()
-            if not self._handle:
-                raise RuntimeError("Cannot create program object")
-    
-    def _delete(self):
-        logger.debug("GPU: Deleting program")
-        gl.glDeleteProgram(self._handle)
-    
-    def _activate(self):
-        """Activate the program as part of current rendering state."""
+                    name = m.group('name')
+                    self._code_variables[name] = kind, gtype, name
         
-        #logger.debug("GPU: Activating program")
-        
-        # Check whether we need to rebuild shaders and create variables
-        if any(s._need_compile for s in self.shaders):
-            self._need_build = True
-        
-        # Stuff we need to do *before* glUse-ing the program
-        did_build = False
-        if self._need_build:
-            did_build = True
-            self._build()
-            self._need_build = False
-        
-        # Go and use the prrogram
-        gl.glUseProgram(self.handle)
-        
-        # Stuff we need to do *after* glUse-ing the program
-        self._activate_variables()
-        
-        # Validate. We need to validate after textures units get assigned
-        # (glUniform1i() gets called in _update() in variable.py)
-        if did_build:
-            gl.glValidateProgram(self._handle)
-            if not gl.glGetProgramParameter(self._handle, 
-                                            gl.GL_VALIDATE_STATUS):
-                print(gl.glGetProgramInfoLog(self._handle))
-                raise RuntimeError('Program validation error')
-    
-    def _deactivate(self):
-        """Deactivate the program."""
-
-        logger.debug("GPU: Deactivating program")
-        gl.glUseProgram(0)
-        self._deactivate_variables()
-    
-    def _build(self):
-        """
-        Build (link) the program and checks everything's ok.
-
-        A GL context must be available to be able to build (link)
-        """
-        # Check if we have something to link
-        if not self._verts:
-            raise ValueError("No vertex shader has been given")
-        if not self._frags:
-            raise ValueError("No fragment shader has been given")
-
-        # Detach any attached shaders
-        attached = gl.glGetAttachedShaders(self._handle)
-        for handle in attached:
-            gl.glDetachShader(self._handle, handle)
-
-        # Attach vertex and fragment shaders
-        for shader in self._verts:
-            shader.activate()
-            gl.glAttachShader(self._handle, shader.handle)
-        for shader in self._frags:
-            shader.activate()
-            gl.glAttachShader(self._handle, shader.handle)
-
-        logger.debug("GPU: Creating program")
-
-        # Link the program
-        gl.glLinkProgram(self._handle)
-        if not gl.glGetProgramParameter(self._handle, gl.GL_LINK_STATUS):
-            print(gl.glGetProgramInfoLog(self._handle))
-            raise RuntimeError('Program linking error')
-        
-        # Now we know what variable will be used by the program
-        self._enable_variables()
-    
-    def _create_variables(self):
-        """ Create the uniform and attribute objects based on the
-        provided GLSL. This method is called when the GLSL is changed.
-        """
-        
-        # todo: maybe we want to restore previously set variables, 
-        # so that uniforms and attributes do not have to be set each time
-        # that the shaders are updated. However, we should take into account
-        # that typically all shaders are removed (i.e. no variables are
-        # present) and then the new shaders are added.
-
-        # Build uniforms
-        self._uniforms = {}
-        count = 0
-        for (name, gtype) in self.all_uniforms:
-            uniform = Uniform(self, name, gtype)
-            # if gtype in (gl.GL_SAMPLER_1D, gl.GL_SAMPLER_2D):
-            if gtype in (gl.GL_SAMPLER_2D, GL_SAMPLER_3D):
-                uniform._unit = count
-                count += 1
-            self._uniforms[name] = uniform
-        
-        # Build attributes
-        self._attributes = {}
-        dtype = []
-        for (name, gtype) in self.all_attributes:
-            attribute = Attribute(self, name, gtype)
-            self._attributes[name] = attribute
-            dtype.append(attribute.dtype)
-    
-    def _enable_variables(self):  # previously _update
-        """ Enable the uniform and attribute objects that will actually be
-        used by the Program. i.e. variables that are optimised out are
-        disabled. This method is called after the program has been buid.
-        """
-        # Enable uniforms
-        active_uniforms = [name for (name, gtype) in self.active_uniforms]
-        for uniform in self._uniforms.values():
-            uniform.enabled = uniform.name in active_uniforms
-        # Enable attributes
-        active_attributes = [name for (name, gtype) in self.active_attributes]
-        for attribute in self._attributes.values():
-            attribute.enabled = attribute.name in active_attributes
-    
-    def _activate_variables(self):
-        """ Activate the uniforms and attributes so that the Program
-        can use them. This method is called when the Program gets activated.
-        """
-        for uniform in self._uniforms.values():
-            if uniform.enabled:
-                uniform.activate()
-        for attribute in self._attributes.values():
-            if attribute.enabled:
-                attribute.activate()
-
-    def _deactivate_variables(self):
-        """ Deactivate all enabled uniforms and attributes. This method
-        gets called when the Program gets deactivated.
-        """
-        for uniform in self._uniforms.values():
-            if uniform.enabled:
-                uniform.deactivate()
-        for attribute in self._attributes.values():
-            if attribute.enabled:
-                attribute.deactivate()
+        # Now that our code variables are up-to date, we can process
+        # the variables that were set but yet unknown.
+        self._process_pending_variables()
     
     def bind(self, data):
         """ Bind a VertexBuffer that has structured data
@@ -340,160 +225,166 @@ class Program(GLObject):
             raise ValueError('Program.bind() requires a VertexBuffer.')
         # Apply
         for name in data.dtype.names:
-            if name in self._attributes.keys():
-                self._attributes[name].set_data(data[name])
-            else:
-                logger.warning("%s has not been bound" % name)
-
+            self[name] = data[name]
+    
+    def _process_pending_variables(self):
+        """ Try to apply the variables that were set but not known yet.
+        """
+        # Clear our list of pending variables
+        self._pending_variables, pending = {}, self._pending_variables
+        # Try to apply it. On failure, it will be added again
+        for name, data in pending.items():
+            self[name] = data
+    
     def __setitem__(self, name, data):
-        try:
-            if name in self._uniforms.keys():
-                self._uniforms[name].set_data(data)
-            elif name in self._attributes.keys():
-                self._attributes[name].set_data(data)
-            else:
-                raise KeyError("Unknown uniform or attribute %s" % name)
-        except Exception:
-            logger.error("Could not set variable '%s' with value %s" % 
-                         (name, data))
-            raise
+        """ Setting uniform or attribute data
+        
+        This method requires the information about the variable that we
+        know from parsing the source code. If this information is not
+        yet available, the data is stored in a list of pending data,
+        and we attempt to set it once new shading code has been set.
+        
+        For uniforms, the data can represent a plain uniform or a
+        sampler. In the latter case, this method accepts a Texture
+        object or a numpy array which is used to update the existing
+        texture. A new texture is created if necessary.
 
+        For attributes, the data can be a tuple/float which GLSL will
+        use for the value of all vertices. This method also acceps VBO
+        data as a VertexBuffer object or a numpy array which is used
+        to update the existing VertexBuffer. A new VertexBuffer is
+        created if necessary.
+        """
+        
+        # Deal with local buffer storage (see count argument in __init__)
+        if (self._buffer is not None) and not isinstance(data, DataBuffer):
+            if name in self._buffer.dtype.names:
+                self._buffer[name] = data
+                return
+        
+        if name in self._code_variables:
+            kind, type, name = self._code_variables[name]
+            
+            if kind == 'uniform':
+                if type.startswith('sampler'):
+                    # Texture data; overwrite or update
+                    tex = self._user_variables.get(name, None)
+                    if isinstance(data, BaseTexture):
+                        pass
+                    elif tex and hasattr(tex, 'set_data'):
+                        tex.set_data(data)
+                        return
+                    elif type == 'sampler2D':
+                        data = Texture2D(data)
+                    elif type == 'sampler3D':
+                        data = Texture3D(data)
+                    else:
+                        assert False  # This should not happen
+                    # Store and send GLIR command
+                    self._user_variables[name] = data
+                    self._context.glir.command('TEXTURE', self._id,
+                                               name, data.id)
+                else:
+                    # Normal uniform; convert to np array and check size
+                    dtype, numel = self._gtypes[type]
+                    data = np.array(data, dtype=dtype).ravel()
+                    if data.size != numel:
+                        raise ValueError('Uniform %r needs %i elements, '
+                                         'not %i.' % (name, numel, data.size))
+                    # Store and send GLIR command
+                    self._user_variables[name] = data
+                    self._context.glir.command('UNIFORM', self._id, 
+                                               name, type, data)
+            
+            elif kind == 'attribute':
+                # Is this a constant value per vertex
+                is_constant = False
+                isscalar = lambda x: isinstance(x, (float, int))
+                if isscalar(data):
+                    is_constant = True
+                elif isinstance(data, tuple):
+                    is_constant = all([isscalar(e) for e in data])
+                
+                if not is_constant:
+                    # VBO data; overwrite or update
+                    vbo = self._user_variables.get(name, None)
+                    if isinstance(data, DataBuffer):
+                        pass
+                    elif vbo and hasattr(vbo, 'set_data'):
+                        vbo.set_data(data)
+                        return
+                    else:
+                        data = VertexBuffer(data)
+                    # Store and send GLIR command
+                    self._user_variables[name] = data
+                    value = (data.id, data.stride, data.offset)
+                    self._context.glir.command('ATTRIBUTE', self._id, 
+                                               name, type, value)
+                else:
+                    # Single-value attribute; convert to array and check size
+                    dtype, numel = self._gtypes[type]
+                    data = np.array(data, dtype=dtype)
+                    if data.ndim == 0:
+                        data.shape = data.size
+                    if data.size != numel:
+                        raise ValueError('Attribute %r needs %i elements, '
+                                         'not %i.' % (name, numel, data.size))
+                    # Store and send GLIR command
+                    self._user_variables[name] = data
+                    value = tuple([0] + [i for i in data])
+                    self._context.glir.command('ATTRIBUTE', self._id, 
+                                               name, type, value)
+            else:
+                raise KeyError('Cannot set data for a %s.' % kind)
+        else:
+            # This variable is not defined in the current source code,
+            # so we cannot establish whether this is a uniform or
+            # attribute, nor check its type. Try again later.
+            self._pending_variables[name] = data
+    
     def __getitem__(self, name):
-        if name in self._uniforms.keys():
-            return self._uniforms[name].data
-        elif name in self._attributes.keys():
-            return self._attributes[name].data
+        """ Get user-defined data for attributes and uniforms.
+        """
+        if name in self._user_variables:
+            return self._user_variables[name]
+        elif name in self._pending_variables:
+            return self._pending_variables[name]
         else:
             raise KeyError("Unknown uniform or attribute %s" % name)
-
-    @property
-    def all_uniforms(self):
-        """ Program uniforms obtained from shaders code """
-
-        uniforms = []
-        for shader in self._verts:
-            uniforms.extend(shader.uniforms)
-        for shader in self._frags:
-            uniforms.extend(shader.uniforms)
-        uniforms = list(set(uniforms))
-        return uniforms
-
-    @property
-    def active_uniforms(self):
-        """ Program active uniforms obtained from GPU """
-
-        count = gl.glGetProgramParameter(self.handle, gl.GL_ACTIVE_UNIFORMS)
-        # This match a name of the form "name[size]" (= array)
-        regex = re.compile("""(?P<name>\w+)\s*(\[(?P<size>\d+)\])\s*""")
-        uniforms = []
-        for i in range(count):
-            name, size, gtype = gl.glGetActiveUniform(self.handle, i)
-            # This checks if the uniform is an array
-            # Name will be something like xxx[0] instead of xxx
-            m = regex.match(name)
-            # When uniform is an array, size corresponds to the highest used
-            # index
-            if m:
-                name = m.group('name')
-                if size >= 1:
-                    for i in range(size):
-                        name = '%s[%d]' % (m.group('name'), i)
-                        uniforms.append((name, gtype))
-            else:
-                uniforms.append((name, gtype))
-
-        return uniforms
-
-    @property
-    def inactive_uniforms(self):
-        """ Program inactive uniforms obtained from GPU """
-
-        active_uniforms = self.active_uniforms
-        inactive_uniforms = self.all_uniforms
-        for uniform in active_uniforms:
-            if uniform in inactive_uniforms:
-                inactive_uniforms.remove(uniform)
-        return inactive_uniforms
-
-    @property
-    def all_attributes(self):
-        """ Program attributes obtained from shaders code """
-
-        attributes = []
-        for shader in self._verts:
-            attributes.extend(shader.attributes)
-        # No attribute in fragment shaders
-        attributes = list(set(attributes))
-        return attributes
-
-    @property
-    def active_attributes(self):
-        """ Program active attributes obtained from GPU """
-
-        count = gl.glGetProgramParameter(self.handle, gl.GL_ACTIVE_ATTRIBUTES)
-        attributes = []
-
-        # This match a name of the form "name[size]" (= array)
-        regex = re.compile("""(?P<name>\w+)\s*(\[(?P<size>\d+)\])""")
-
-        for i in range(count):
-            name, size, gtype = gl.glGetActiveAttrib(self.handle, i)
-
-            # This checks if the attribute is an array
-            # Name will be something like xxx[0] instead of xxx
-            m = regex.match(name)
-            # When attribute is an array, size corresponds to the highest used
-            # index
-            if m:
-                name = m.group('name')
-                if size >= 1:
-                    for i in range(size):
-                        name = '%s[%d]' % (m.group('name'), i)
-                        attributes.append((name, gtype))
-            else:
-                attributes.append((name, gtype))
-        return attributes
-
-    @property
-    def inactive_attributes(self):
-        """ Program inactive attributes obtained from GPU """
-
-        active_attributes = self.active_attributes
-        inactive_attributes = self.all_attributes
-        for attribute in active_attributes:
-            if attribute in inactive_attributes:
-                inactive_attributes.remove(attribute)
-        return inactive_attributes
-
-    @property
-    def shaders(self):
-        """ List of shaders currently attached to this program """
-
-        shaders = []
-        shaders.extend(self._verts)
-        shaders.extend(self._frags)
-        return shaders
-
-    def draw(self, mode=gl.GL_TRIANGLES, indices=None, check_error=True):
+    
+    def draw(self, mode='triangles', indices=None, check_error=True):
         """ Draw the attribute arrays in the specified mode.
 
         Parameters
         ----------
         mode : str | GL_ENUM
-            GL_POINTS, GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP,
-            GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
+            'points', 'lines', 'line_strip', 'line_loop', 'triangles',
+            'triangle_strip', or 'triangle_fan'.
         indices : array
             Array of indices to draw.
         check_error:
             Check error after draw.
+        
         """
-        mode = _check_conversion(mode, _known_draw_modes)
-        self.activate()
-        if check_error:  # need to do this after activating, too
-            gl.check_error('Check after draw activation')
-
-        # WARNING: The "list" of values from a dict is not a list (py3k)
-        attributes = list(self._attributes.values())
+        
+        # Invalidate buffer (data has already been send)
+        self._buffer = None
+        
+        # Check if mode is valid
+        mode = check_enum(mode)
+        if mode not in ['points', 'lines', 'line_strip', 'line_loop',
+                        'triangles', 'triangle_strip', 'triangle_fan']:
+            raise ValueError('Invalid draw mode: %r' % mode)
+        
+        # Check leftover variables, warn, discard them
+        # In GLIR we check whether all attributes are indeed set
+        for name in self._pending_variables:
+            logger.warn('Variable %r is given but not known.' % name)
+        self._pending_variables = {}
+        
+        # Check attribute sizes
+        attributes = [vbo for vbo in self._user_variables.values() 
+                      if isinstance(vbo, DataBuffer)]
         sizes = [a.size for a in attributes]
         if len(attributes) < 1:
             raise RuntimeError('Must have at least one attribute')
@@ -501,30 +392,22 @@ class Program(GLObject):
             msg = '\n'.join(['%s: %s' % (str(a), a.size) for a in attributes])
             raise RuntimeError('All attributes must have the same size, got:\n'
                                '%s' % msg)
-
+        
+        # Indexbuffer
         if isinstance(indices, IndexBuffer):
-            indices.activate()
-            logger.debug("Program drawing %d %r (using index buffer)", 
-                         indices.size, mode)
-            gltypes = {np.dtype(np.uint8): gl.GL_UNSIGNED_BYTE,
-                       np.dtype(np.uint16): gl.GL_UNSIGNED_SHORT,
-                       np.dtype(np.uint32): gl.GL_UNSIGNED_INT}
-            gl.glDrawElements(mode, indices.size, gltypes[indices.dtype], None)
-            indices.deactivate()
+            logger.debug("Program drawing %r with index buffer" % mode)
+            gltypes = {np.dtype(np.uint8): 'UNSIGNED_BYTE',
+                       np.dtype(np.uint16): 'UNSIGNED_SHORT',
+                       np.dtype(np.uint32): 'UNSIGNED_INT'}
+            selection = indices.id, gltypes[indices.dtype], indices.size
+            self._context.glir.command('DRAW', self._id, mode, selection)
         elif indices is None:
-            #count = (count or attributes[0].size) - first
-            first = 0
-            count = attributes[0].size
-            logger.debug("Program drawing %d %r (no index buffer)", 
-                         count, mode)
-            gl.glDrawArrays(mode, first, count)
+            selection = 0, attributes[0].size
+            logger.debug("Program drawing %r with %r" % (mode, selection))
+            self._context.glir.command('DRAW', self._id, mode, selection)
         else:
             raise TypeError("Invalid index: %r (must be IndexBuffer)" %
                             indices)
-
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-        self.deactivate()
-
-        # Check ok
-        if check_error:
-            gl.check_error('Check after drawing completes')
+        
+        # Process GLIR commands
+        self._context.glir.flush()

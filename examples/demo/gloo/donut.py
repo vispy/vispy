@@ -146,7 +146,8 @@ class Canvas(app.Canvas):
 
     def on_initialize(self, event):
         gloo.set_state('translucent', clear_color='white')
-
+        self.program['u_clock'] = 0.0
+    
     def on_key_press(self, event):
         if event.text == ' ':
             self.stop_rotation = not self.stop_rotation

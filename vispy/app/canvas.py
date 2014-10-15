@@ -12,7 +12,7 @@ from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
 from ..ext.six import string_types
 from . import Application, use_app
-from ..gloo.context import GLContext
+from ..gloo.context import GLContext, get_new_context
 
 # todo: add functions for asking about current mouse/keyboard state
 # todo: add hover enter/exit events
@@ -142,9 +142,10 @@ class Canvas(object):
             raise ValueError('Invalid value for app %r' % app)
         
         # Ensure context is a GLContext object
-        context = context or GLContext()
+        context = context or {}
         if isinstance(context, dict):
-            context = GLContext(context)  # GLContext checks the dict keys
+            config, context = context, get_new_context()
+            context.set_config(config)  # GLContext checks the dict keys
         elif not isinstance(context, GLContext):
             raise TypeError('context must be a dict or GLContext from '
                             'a Canvas with the same backend, not %s'
@@ -179,8 +180,10 @@ class Canvas(object):
         # self._backend = set by BaseCanvasBackend 
         self._backend_kwargs = None  # Clean up
         
+        # Connect to draw event (append to the end)
+        # Process GLIR commands at each paint event
+        self.events.draw.connect(self.context.glir.flush, position='last')
         if self._autoswap:
-            # append to the end
             self.events.draw.connect((self, 'swap_buffers'),
                                      ref=True, position='last')
 
@@ -395,9 +398,9 @@ class Canvas(object):
     def __exit__(self, type, value, traceback):
         # ensure all GL calls are complete
         if not self._closed:
-            from ..gloo import gl
+            from .. import gloo
             self._backend._vispy_set_current()
-            gl.glFinish()
+            gloo.finish()
             self.close()
         sleep(0.1)  # ensure window is really closed/destroyed
 

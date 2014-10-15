@@ -4,8 +4,7 @@
 """
 import sys
 
-from vispy import app
-from vispy import gloo
+from vispy import app, gloo
 
 canvas = app.Canvas(show=True, keys='interactive')
 

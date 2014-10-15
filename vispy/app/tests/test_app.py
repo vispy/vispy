@@ -13,7 +13,6 @@ from vispy.testing import (requires_application, SkipTest, assert_is,
 from vispy.util import keys, use_log_level
 
 from vispy.gloo.program import (Program, VertexBuffer, IndexBuffer)
-from vispy.gloo.shader import VertexShader, FragmentShader
 from vispy.gloo.util import _screenshot
 from vispy.gloo import gl
 from vispy.ext.six.moves import StringIO
@@ -236,37 +235,25 @@ def test_application():
         assert_equal(len(canvas.position), 2)  # XXX knawnfail, doesn't "take"
 
         # GLOO: should have an OpenGL context already, so these should work
-        vert = VertexShader("void main (void) {gl_Position = pos;}")
-        frag = FragmentShader("void main (void) {gl_FragColor = pos;}")
+        vert = "void main (void) {gl_Position = pos;}"
+        frag = "void main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
-        assert_raises(RuntimeError, program.activate)
-
-        vert = VertexShader("uniform vec4 pos;"
-                            "void main (void) {gl_Position = pos;}")
-        frag = FragmentShader("uniform vec4 pos;"
-                              "void main (void) {gl_FragColor = pos;}")
+        assert_raises(RuntimeError, program._context.glir.flush)
+        
+        vert = "uniform vec4 pos;\nvoid main (void) {gl_Position = pos;}"
+        frag = "uniform vec4 pos;\nvoid main (void) {gl_FragColor = pos;}"
         program = Program(vert, frag)
         #uniform = program.uniforms[0]
         program['pos'] = [1, 2, 3, 4]
-        program.activate()  # should print
-        #uniform.upload(program)
-        program.detach(vert)
-        program.detach(frag)
-        assert_raises(RuntimeError, program.detach, vert)
-        assert_raises(RuntimeError, program.detach, frag)
-
-        vert = VertexShader("attribute vec4 pos;"
-                            "void main (void) {gl_Position = pos;}")
-        frag = FragmentShader("void main (void) {}")
+        
+        vert = "attribute vec4 pos;\nvoid main (void) {gl_Position = pos;}"
+        frag = "void main (void) {}"
         program = Program(vert, frag)
         #attribute = program.attributes[0]
         program["pos"] = [1, 2, 3, 4]
-        program.activate()
-        #attribute.upload(program)
-        # cannot get element count
-        #assert_raises(RuntimeError, program.draw, 'POINTS')
-
+        
         # use a real program
+        program._context.glir.clear()
         vert = ("uniform mat4 u_model;"
                 "attribute vec2 a_position; attribute vec4 a_color;"
                 "varying vec4 v_color;"
@@ -296,10 +283,9 @@ def test_application():
         # bad programs
         frag_bad = ("varying vec4 v_colors")  # no semicolon
         program = Program(vert, frag_bad)
-        assert_raises(RuntimeError, program.activate)
+        assert_raises(RuntimeError, program._context.glir.flush)
         frag_bad = None  # no fragment code. no main is not always enough
-        program = Program(vert, frag_bad)
-        assert_raises(ValueError, program.activate)
+        assert_raises(ValueError, Program, vert, frag_bad)
 
         # Timer
         timer = Timer(interval=0.001, connect=on_mouse_move, iterations=2,

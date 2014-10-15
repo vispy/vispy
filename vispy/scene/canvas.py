@@ -169,8 +169,8 @@ class SceneCanvas(app.Canvas):
         offset = (0, 0) if region is None else region[:2]
         csize = self.size if region is None else region[2:]
         size = csize if size is None else size
-        fbo = gloo.FrameBuffer(color=gloo.ColorBuffer(size[::-1]), 
-                               depth=gloo.DepthBuffer(size[::-1]))
+        fbo = gloo.FrameBuffer(color=gloo.RenderBuffer(size[::-1]), 
+                               depth=gloo.RenderBuffer(size[::-1]))
         
         self.push_fbo(fbo, offset, csize)
         try:

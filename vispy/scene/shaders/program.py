@@ -20,7 +20,7 @@ class ModularProgram(Program):
     program variables.
     """
     def __init__(self, vcode, fcode):
-        Program.__init__(self, '', '')
+        Program.__init__(self)
         
         self.changed = EventEmitter(source=self, type='program_change')
         
@@ -37,35 +37,36 @@ class ModularProgram(Program):
     def prepare(self):
         """ Prepare the Program so we can set attributes and uniforms.
         """
-        # TEMP function to fix sync issues for now
-        self._create()
-        if self._need_build:
-            self._build()
-            self._need_build = False
+        pass
+        # todo: remove!
     
     def _source_changed(self, ev):
         logger.debug("ModularProgram source changed: %s" % self)
         if ev.code_changed:
             self._need_build = True
         self.changed()
-        
+    
+    def draw(self, *args, **kwargs):
+        if self._need_build:
+            self._build()
+            self._need_build = False
+        self.update_variables()
+        Program.draw(self, *args, **kwargs)
+    
     def _build(self):
         logger.debug("Rebuild ModularProgram: %s" % self)
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
         code = self.compiler.compile()
-        self.shaders[0].code = code['vert']
-        self.shaders[1].code = code['frag']
-        
+        self.set_shaders(code['vert'], code['frag'])
         logger.debug('==== Vertex Shader ====\n\n' + code['vert'] + "\n")
         logger.debug('==== Fragment shader ====\n\n' + code['frag'] + "\n")
-        
-        self._create_variables()  # force update
-        self._variable_state = {}
-        
-        # and continue.
-        super(ModularProgram, self)._build()
-
-    def _activate_variables(self):
+        # Note: No need to reset _variable_state, gloo.Program resends
+        # attribute/uniform data on settinh shaders
+    
+    def update_variables(self):
+        # Clear any variables that we may have set another time.
+        # Otherwise we get lots of warnings.
+        self._pending_variables = {}
         # set all variables
         settable_vars = 'attribute', 'uniform'
         logger.debug("Apply variables:")
@@ -78,6 +79,4 @@ class ModularProgram(Program):
             state_id = dep.state_id
             if self._variable_state.get(name, None) != state_id:
                 self[name] = dep.value
-                self._variable_state[name] = state_id
-        
-        super(ModularProgram, self)._activate_variables()        
+                self._variable_state[name] = state_id      

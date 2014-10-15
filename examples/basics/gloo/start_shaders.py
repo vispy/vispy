@@ -27,7 +27,8 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive')
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.program['a_position'] = np.random.uniform(-0.5, 0.5, size=(20, 2))
+        data = np.random.uniform(-0.5, 0.5, size=(20, 2))
+        self.program['a_position'] = data.astype(np.float32)
 
     def on_resize(self, event):
         width, height = event.size

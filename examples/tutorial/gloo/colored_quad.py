@@ -32,8 +32,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, size=(512, 512), title='Colored quad',
                             keys='interactive')
-
-    def on_initialize(self, event):
+        
         # Build program & data
         self.program = Program(vertex, fragment, count=4)
         self.program['color'] = [(1, 0, 0, 1), (0, 1, 0, 1),
