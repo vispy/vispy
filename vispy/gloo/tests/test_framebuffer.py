@@ -106,6 +106,8 @@ def test_framebuffer():
     assert_raises(TypeError, FrameBuffer.color_buffer.fset, F, [])
     assert_raises(TypeError, FrameBuffer.depth_buffer.fset, F, 'FOO')
     assert_raises(TypeError, FrameBuffer.stencil_buffer.fset, F, 'FOO')
+    color_buffer = RenderBuffer((9, 9), 'color')
+    assert_raises(ValueError, FrameBuffer.depth_buffer.fset, F, color_buffer)
     # But None is allowed!
     F.color_buffer = None
     
