@@ -455,7 +455,11 @@ class TextVisual(Visual):
             self._ib = IndexBuffer(idx.ravel())
 
         xform = transforms.get_full_transform()
-        px_scale = transforms.framebuffer_to_render.scale
+        
+        # Measure pixel scale
+        # (note this assumes a linear transform)
+        tr = transforms.framebuffer_to_render
+        px_scale = (tr.map((1, 1)) - tr.map((0, 0)))[:2]
         
         self._program.vert['transform'] = xform
         self._program.prepare()  # Force ModularProgram to set shaders

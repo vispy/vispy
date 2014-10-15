@@ -43,7 +43,7 @@ def _init():
     # Default values for all config options
     default_config_options = {
         'data_path': _data_path, 
-        'default_backend': 'qt', 
+        'default_backend': '', 
         'gl_debug': False, 
         'logging_level': 'info',
         'qt_lib': 'any',
