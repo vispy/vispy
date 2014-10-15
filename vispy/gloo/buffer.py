@@ -110,7 +110,8 @@ class Buffer(GLObject):
             # Use SIZE to discard any previous data setting
             self._context.glir.command('SIZE', self._id, nbytes)
         
-        self._context.glir.command('DATA', self._id, 0, data)
+        if nbytes:  # Only set data if there *is* data
+            self._context.glir.command('DATA', self._id, 0, data)
     
     def resize_bytes(self, size):
         """ Resize this buffer (deferred operation). 

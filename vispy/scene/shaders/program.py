@@ -60,7 +60,8 @@ class ModularProgram(Program):
         self.set_shaders(code['vert'], code['frag'])
         logger.debug('==== Vertex Shader ====\n\n' + code['vert'] + "\n")
         logger.debug('==== Fragment shader ====\n\n' + code['frag'] + "\n")
-        self._variable_state = {}  # todo: unnecessary?
+        # Note: No need to reset _variable_state, gloo.Program resends
+        # attribute/uniform data on settinh shaders
     
     def update_variables(self):
         # Clear any variables that we may have set another time.

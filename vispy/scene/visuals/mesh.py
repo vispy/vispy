@@ -131,7 +131,6 @@ class Mesh(Visual):
 
     def _update_data(self):
         md = self.mesh_data
-
         # Update vertex/index buffers
         if self.shading == 'smooth' and not md.has_face_indexed_data():
             v = md.get_vertices()
@@ -194,7 +193,7 @@ class Mesh(Visual):
             self._program.vert[self._normal_var] = normals
             self._phong['normal'] = self._normal_var
 
-            # Additional phong proprties
+            # Additional phong properties
             self._phong['light_dir'] = (1.0, 1.0, 5.0)
             self._phong['light_color'] = (1.0, 1.0, 1.0, 1.0)
             self._phong['ambient'] = (0.3, 0.3, 0.3, 1.0)
@@ -215,8 +214,9 @@ class Mesh(Visual):
     def draw(self, event):
         set_state('translucent', depth_test=True, cull_face='front_and_back')
         if self._data_changed:
+            self._data_changed = False
             self._update_data()
-
+    
         self._program.vert['transform'] = event.render_transform.shader_map()
         if self._phong is not None:
             self._phong['transform'] = event.document_transform().shader_map()
