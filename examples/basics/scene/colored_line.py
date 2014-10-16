@@ -9,9 +9,10 @@ Demonstration of various features of Line visual.
 """
 import itertools
 import numpy as np
+import sys
 
 import vispy
-from vispy import app
+from vispy import app, scene
 from vispy.color import colormaps
 from vispy import visuals
 from vispy.visuals.transforms import STTransform
@@ -26,30 +27,26 @@ pos[:, 0] = np.linspace(10, 390, N)
 pos[:, 1] = np.random.normal(size=N, scale=20, loc=0)
 
 
-class Canvas(vispy.app.Canvas):
-    def __init__(self):
-        vispy.app.Canvas.__init__(self, keys='interactive',
-                                         size=(400, 200), show=True)
-        # Create a visual that updates the line with different colormaps
-        color = next(colormaps)
-        self.line = visuals.Line(pos=pos, color=color, mode='gl')
-        self.line.transform = STTransform(translate=[0, 140])
-        # redraw the canvas if the visual requests an update
-        self.line.parent = self.central_widget
-        self.text = visuals.Text(color, bold=True, font_size=24, color='w',
-                                 pos=(200, 40), parent=self.central_widget)
+canvas = scene.SceneCanvas(keys='interactive', size=(400, 200), show=True)
 
-        self._timer = app.Timer(2.0, connect=self.on_timer, start=True)
+# Create a visual that updates the line with different colormaps
+color = next(colormaps)
+line = scene.Line(pos=pos, color=color, mode='gl')
+line.transform = STTransform(translate=[0, 140])
+line.parent = canvas.central_widget
 
-    # ---------------------------------
-    def on_timer(self, event):
-        color = next(colormaps)
-        self.line.set_data(pos=pos, color=color)
-        self.text.text = color
-        self.update()
+text = scene.Text(color, bold=True, font_size=24, color='w',
+                  pos=(200, 40), parent=canvas.central_widget)
+
+def on_timer(event):
+    global colormaps, line, text, pos
+    color = next(colormaps)
+    line.set_data(pos=pos, color=color)
+    text.text = color
+    
+timer = app.Timer(2.0, connect=on_timer, start=True)
 
 
 if __name__ == '__main__':
-    c = Canvas()
-    c.show()
-    app.run()
+    if sys.flags.interactive != 1:
+        canvas.app.run()
