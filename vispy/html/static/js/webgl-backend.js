@@ -32,7 +32,7 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 c.call(['FUNC', 'clearColor', 0, 0, 0, 1]);
                 c.call(['FUNC', 'clear', 'COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT']);
                 
-                this.c = c;
+                    this.c = c;
 
                 var that = this;
                 c.start_event_loop(function() {
