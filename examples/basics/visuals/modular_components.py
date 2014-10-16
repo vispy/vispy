@@ -16,7 +16,7 @@ from vispy import app, gloo, visuals
 from vispy.visuals.modular_line import ModularLine
 from vispy.visuals.transforms import BaseTransform, STTransform, arg_to_array
 from vispy.visuals.components import (VisualComponent, VertexColorComponent,
-                                    XYPosComponent)
+                                      XYPosComponent)
 from vispy.visuals.shaders import Varying
 
 # vertex positions of data to draw
@@ -154,8 +154,8 @@ class Canvas(app.Canvas):
         self.show()
 
         self.timer = app.Timer(connect=self.wobble,
-                                     interval=0.02,
-                                     start=True)
+                               interval=0.02,
+                               start=True)
         
         self.tr_sys = visuals.transforms.TransformSystem(self)
         self.tr_sys.visual_to_document = (STTransform(scale=(40, 100), 

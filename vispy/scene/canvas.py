@@ -101,10 +101,10 @@ class SceneCanvas(app.Canvas):
         # Set up default node stack: ndc -> fb -> canvas -> scene
         self.render_cs = Node(name="render_cs")
         self.framebuffer_cs = Node(parent=self.render_cs, 
-                                     name="framebuffer_cs")
+                                   name="framebuffer_cs")
         self.framebuffer_cs.transform = STTransform()
         self.canvas_cs = Node(parent=self.framebuffer_cs,
-                                name="canvas_cs")
+                              name="canvas_cs")
         self.canvas_cs.transform = STTransform()
         # By default, the document coordinate system is the canvas.
         self.canvas_cs.document = self.canvas_cs

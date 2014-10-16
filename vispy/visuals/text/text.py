@@ -17,7 +17,7 @@ import sys
 
 from ._sdf import SDFRenderer
 from ...gloo import (TextureAtlas, set_state, IndexBuffer, VertexBuffer,
-                      set_viewport)
+                     set_viewport)
 from ...gloo import gl
 from ...gloo.wrappers import _check_valid
 from ...ext.six import string_types

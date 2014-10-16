@@ -34,23 +34,29 @@ connect[N/2, 1] = N/2  # put a break in the middle
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive',
-                                         size=(800, 800), show=True)
+                            size=(800, 800), show=True)
         # Create several visuals demonstrating different features of Line
         self.lines = [
             # agg-mode lines:
-            visuals.LineVisual(pos=pos, color=color, mode='agg'),  # per-vertex color
-            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), mode='agg'),  # solid
-            visuals.LineVisual(pos=pos, color=color, width=5, mode='agg'),  # wide
+            # per-vertex color
+            visuals.LineVisual(pos=pos, color=color, mode='agg'),
+            # solid
+            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), mode='agg'),
+            # wide
+            visuals.LineVisual(pos=pos, color=color, width=5, mode='agg'),
+            
             # GL-mode lines:
             visuals.LineVisual(pos=pos, color=color, mode='gl'),
             visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), mode='gl'),
             visuals.LineVisual(pos=pos, color=color, width=5, mode='gl'),
             # GL-mode: "connect" not available in AGG mode yet
             
-            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), connect='segments',
-                         mode='gl'),  # only connect alternate vert pairs
-            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), connect=connect,
-                         mode='gl'),  # connect specific pairs
+            # only connect alternate vert pairs
+            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), 
+                               connect='segments', mode='gl'),
+            # connect specific pairs
+            visuals.LineVisual(pos=pos, color=(0, 0.5, 0.3, 1), 
+                               connect=connect, mode='gl'),
         ]
         counts = [0, 0]
         for i, line in enumerate(self.lines):
@@ -63,10 +69,10 @@ class Canvas(app.Canvas):
             # redraw the canvas if any visuals request an update
             line.events.update.connect(lambda evt: self.update())
         
-        self.texts = [visuals.TextVisual('GL', bold=True, font_size=24, color='w',
-                                   pos=(200, 40)),
-                      visuals.TextVisual('Agg', bold=True, font_size=24, color='w',
-                                   pos=(600, 40))]
+        self.texts = [visuals.TextVisual('GL', bold=True, font_size=24, 
+                                         color='w', pos=(200, 40)),
+                      visuals.TextVisual('Agg', bold=True, font_size=24,
+                                         color='w', pos=(600, 40))]
         for text in self.texts:
             text.transform = NullTransform()
         self.visuals = self.lines + self.texts

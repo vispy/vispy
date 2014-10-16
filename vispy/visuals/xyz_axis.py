@@ -23,4 +23,4 @@ class XYZAxisVisual(LineVisual):
                           [0, 0, 1, 1],
                           [0, 0, 1, 1]])
         LineVisual.__init__(self, pos=verts, color=color, connect='segments',
-                      mode='gl', **kwds)
+                            mode='gl', **kwds)

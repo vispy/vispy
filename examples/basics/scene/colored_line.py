@@ -11,10 +11,8 @@ import itertools
 import numpy as np
 import sys
 
-import vispy
 from vispy import app, scene
 from vispy.color import colormaps
-from vispy import visuals
 from vispy.visuals.transforms import STTransform
 from vispy.ext.six import next
 
@@ -37,6 +35,7 @@ line.parent = canvas.central_widget
 
 text = scene.Text(color, bold=True, font_size=24, color='w',
                   pos=(200, 40), parent=canvas.central_widget)
+
 
 def on_timer(event):
     global colormaps, line, text, pos

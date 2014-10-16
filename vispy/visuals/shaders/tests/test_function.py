@@ -2,7 +2,7 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 from vispy.visuals.shaders.function import (Function, Variable, Varying,
-                                          MainFunction, FunctionChain)
+                                            MainFunction, FunctionChain)
 
 # Users normally don't need these, but I want to test them
 from vispy.visuals.shaders.function import FunctionCall, TextExpression

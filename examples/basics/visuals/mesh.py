@@ -10,7 +10,7 @@ import numpy as np
 from vispy import app, gloo, visuals
 from vispy.geometry import create_sphere
 from vispy.visuals.transforms import (STTransform, AffineTransform,
-                                    ChainTransform)
+                                      ChainTransform)
 
 
 class Canvas(app.Canvas):
@@ -52,8 +52,10 @@ class Canvas(app.Canvas):
         vcolor[:, 1] = np.random.normal(size=nv)
         vcolor[:, 2] = np.linspace(0, 1, nv)
         self.meshes.append(visuals.MeshVisual(verts, faces, vcolor))
-        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor, shading='flat'))
-        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor, shading='smooth'))
+        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor, 
+                                              shading='flat'))
+        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor, 
+                                              shading='smooth'))
 
         # Lay out meshes in a grid
         grid = (3, 3)

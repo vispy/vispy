@@ -10,7 +10,7 @@ from .. import gloo
 from .transforms import STTransform, NullTransform
 from .modular_mesh import ModularMesh
 from .components import (TextureComponent, VertexTextureCoordinateComponent,
-                          TextureCoordinateComponent)
+                         TextureCoordinateComponent)
 
 
 class ImageVisual(ModularMesh):
@@ -26,11 +26,12 @@ class ImageVisual(ModularMesh):
         and accuracy. If the transform is linear, this parameter is ignored
         and a single quad is drawn around the area of the image.
 
-            * 'subdivide': ImageVisual is represented as a grid of triangles with
-              texture coordinates linearly mapped.
-            * 'impostor': ImageVisual is represented as a quad covering the entire
-              view, with texture coordinates determined by the transform.
-              This produces the best transformation results, but may be slow.
+            * 'subdivide': ImageVisual is represented as a grid of triangles
+              with texture coordinates linearly mapped.
+            * 'impostor': ImageVisual is represented as a quad covering the 
+              entire view, with texture coordinates determined by the 
+              transform. This produces the best transformation results, but may
+              be slow.
 
     grid: tuple (rows, cols)
         If method='subdivide', this tuple determines the number of rows and

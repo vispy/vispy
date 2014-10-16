@@ -4,9 +4,10 @@
 
 from __future__ import division
 
-from ..util.event import EmitterGroup, Event
+from ..util.event import Event
 from ..visuals.transforms import NullTransform, BaseTransform, create_transform
 from ..visuals import Visual
+
 
 class Node(Visual):
     """ Base class representing an object in a scene.
@@ -291,4 +292,3 @@ class Node(Visual):
     def __repr__(self):
         name = "" if self.name is None else " name="+self.name
         return "<%s%s at 0x%x>" % (self.__class__.__name__, name, id(self))
-    

@@ -68,7 +68,6 @@ class Canvas(vispy.app.Canvas):
             img.draw(tr_sys)
 
 
-
 # A simple custom Transform
 class SineTransform(BaseTransform):
     """

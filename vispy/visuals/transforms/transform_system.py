@@ -106,7 +106,8 @@ class TransformSystem(object):
         def draw(tr_sys):
             # Send two parts of the full transform separately
             self.program['visual_to_doc'] = tr_sys.visual_to_doc.shader_map()
-            doc_to_render = tr_sys.framebuffer_to_render * tr_sys.doc_to_framebuffer
+            doc_to_render = (tr_sys.framebuffer_to_render * 
+                             tr_sys.doc_to_framebuffer)
             self.program['visual_to_doc'] = doc_to_render.shader_map()
             
             self.program['u_line_width'] = self.line_width
@@ -143,12 +144,14 @@ class TransformSystem(object):
         # the scale of logical and physical pixels.
         map_from = [(0, 0), canvas.size]
         map_to = [(0, canvas.size[1]), (canvas.size[0], 0)]
-        self._document_to_framebuffer = STTransform.from_mapping(map_from, map_to)
+        tr = STTransform.from_mapping(map_from, map_to)
+        self._document_to_framebuffer = tr
         
         # Automatically configure buffer coordinate system to match the canvas 
         map_from = [(0, 0), canvas.size]
         map_to = [(-1, -1), (1, 1)]
-        self._framebuffer_to_render = STTransform.from_mapping(map_from, map_to)
+        tr = STTransform.from_mapping(map_from, map_to)
+        self._framebuffer_to_render = tr
         
         self._full_transform = None
 
@@ -217,7 +220,7 @@ class TransformSystem(object):
         
         This is used for visuals that do not require physical measurements
         or antialiasing.
-        """
+        """  # noqa
         if self._full_transform is None:
             self._full_transform = (self.framebuffer_to_render * 
                                     self.document_to_framebuffer *

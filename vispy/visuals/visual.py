@@ -99,4 +99,3 @@ class Visual(object):
         Emit an event to inform listeners that this Visual needs to be redrawn.
         """
         self.events.update()
-

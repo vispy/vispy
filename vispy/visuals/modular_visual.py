@@ -10,7 +10,7 @@ from .. import gloo
 from .visual import Visual
 from .shaders import ModularProgram, Variable
 from .components import (VisualComponent, XYPosComponent, XYZPosComponent,
-                          UniformColorComponent, VertexColorComponent)
+                         UniformColorComponent, VertexColorComponent)
 
 """
   - Should have swappable input component to allow a variety of different

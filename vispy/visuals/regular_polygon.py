@@ -62,8 +62,9 @@ class RegularPolygonVisual(EllipseVisual):
                                     start_angle=0.,
                                     span_angle=360.,
                                     num_segments=self._sides)
-            self.mesh = MeshVisual(vertices=self._vertices, color=self._color.rgba,
-                             mode='triangle_fan')
+            self.mesh = MeshVisual(vertices=self._vertices, 
+                                   color=self._color.rgba,
+                                   mode='triangle_fan')
             if not self._border_color.is_blank():
                 self.border = LineVisual(pos=self._vertices[1:],
-                                   color=self._border_color.rgba)
+                                         color=self._border_color.rgba)

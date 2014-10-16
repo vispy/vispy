@@ -254,7 +254,8 @@ class LineVisual(Visual):
             
         # do not call subclass set_data; this is often overridden with a 
         # different signature.
-        LineVisual.set_data(self, self._pos, self._color, self._width, self._connect)
+        LineVisual.set_data(self, self._pos, self._color, self._width, 
+                            self._connect)
 
     def set_data(self, pos=None, color=None, width=None, connect=None):
         """ Set the data used to draw this visual.

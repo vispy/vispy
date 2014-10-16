@@ -33,10 +33,10 @@ class CubeVisual(MeshVisual):
         vertices['position'] *= size
 
         MeshVisual.__init__(self, vertices['position'], filled_indices,
-                      vertex_colors, face_colors, color)
+                            vertex_colors, face_colors, color)
         if edge_color:
             self._outline = MeshVisual(vertices['position'], outline_indices,
-                                 color=edge_color, mode='lines')
+                                       color=edge_color, mode='lines')
         else:
             self._outline = None
 

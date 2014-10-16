@@ -83,7 +83,7 @@ class PolygonVisual(Visual):
         if self._pos is not None:
             pts, tris = self.data.triangulate()
             self.mesh = MeshVisual(vertices=pts, faces=tris.astype(np.uint32),
-                             color=self._color.rgba)
+                                   color=self._color.rgba)
             if not self._border_color.is_blank():
                 # Close border if it is not already.
                 border_pos = self._pos
@@ -91,8 +91,8 @@ class PolygonVisual(Visual):
                     border_pos = np.concatenate([border_pos, border_pos[:1]], 
                                                 axis=0)
                 self.border = LineVisual(pos=border_pos,
-                                   color=self._border_color.rgba, 
-                                   connect='strip')
+                                         color=self._border_color.rgba, 
+                                         connect='strip')
         #self.update()
 
     def set_gl_options(self, *args, **kwds):

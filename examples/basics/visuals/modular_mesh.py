@@ -10,11 +10,12 @@ Simple demonstration of LineVisual.
 import numpy as np
 from vispy import app, gloo, visuals
 from vispy.visuals.modular_mesh import ModularMesh
-from vispy.visuals.components import (VertexColorComponent, GridContourComponent,
-                                    VertexNormalComponent, ShadingComponent)
+from vispy.visuals.components import (VertexColorComponent, 
+                                      GridContourComponent,
+                                      VertexNormalComponent, ShadingComponent)
 from vispy.geometry import create_sphere
 from vispy.visuals.transforms import (STTransform, AffineTransform,
-                                    ChainTransform)
+                                      ChainTransform)
 
 
 class Canvas(app.Canvas):
@@ -99,7 +100,6 @@ class Canvas(app.Canvas):
                                              self.rotation])
             mesh.tr_sys = visuals.transforms.TransformSystem(self)
             mesh.tr_sys.visual_to_document = mesh.transform
-
 
         self.size = (800, 800)
         self.show()

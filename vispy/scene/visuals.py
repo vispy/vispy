@@ -27,7 +27,7 @@ def create_visual_node(subclass):
     
     # Create new class
     cls = type(clsname, (subclass, Node), {'__init__': __init__, 
-                                                 '__doc__': doc})
+                                           '__doc__': doc})
     
     return cls
 
@@ -36,8 +36,8 @@ __all__ = []
 for obj_name in dir(visuals):
     obj = getattr(visuals, obj_name)
     if (isinstance(obj, type) and 
-        issubclass(obj, visuals.Visual) and 
-        obj is not visuals.Visual):
+       issubclass(obj, visuals.Visual) and 
+       obj is not visuals.Visual):
         cls = create_visual_node(obj)
         globals()[cls.__name__] = cls
         __all__.append(cls.__name__)

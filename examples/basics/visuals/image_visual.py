@@ -33,7 +33,6 @@ class Canvas(vispy.app.Canvas):
         self.image.draw(tr_sys)
 
 
-
 if __name__ == '__main__':
     win = Canvas()
     import sys

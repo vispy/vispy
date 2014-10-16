@@ -17,8 +17,12 @@ import atexit
 from shutil import rmtree
 
 from .event import EmitterGroup, EventEmitter, Event
-from ..ext.six import string_types
 from .logs import logger, set_log_level, use_log_level
+
+
+config = None
+_data_path = None
+_allowed_config_keys = None
 
 
 def _init():
@@ -101,6 +105,7 @@ def _parse_command_line_arguments():
     """ Transform vispy specific command line args to vispy config.
     Put into a function so that any variables dont leak in the vispy namespace.
     """
+    global config
     # Get command line args for vispy
     argnames = ['vispy-backend=', 'vispy-gl-debug', 'vispy-log=', 'vispy-help',
                 'vispy-profile', 'vispy-dpi=']
@@ -200,7 +205,6 @@ class Config(object):
     Config.events.changed - Emits ConfigEvent whenever the configuration
     changes.
     """
-
     def __init__(self, **kwargs):
         self.events = EmitterGroup(source=self)
         self.events['changed'] = EventEmitter(
@@ -220,6 +224,7 @@ class Config(object):
         self.events.changed(changes={item: val})
 
     def _check_key_val(self, key, val):
+        global _allowed_config_keys
         # check values against acceptable ones
         known_keys = _allowed_config_keys
         if key not in known_keys:
@@ -247,6 +252,7 @@ def get_config_keys():
     keys : dict
         Dict of {key: (types,)} pairs.
     """
+    global _allowed_config_keys
     return _allowed_config_keys.copy()
 
 

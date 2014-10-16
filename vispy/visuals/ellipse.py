@@ -111,7 +111,8 @@ class EllipseVisual(PolygonVisual):
     @num_segments.setter
     def num_segments(self, num_segments):
         if num_segments < 1:
-            raise ValueError('EllipseVisual must consist of more than 1 segment')
+            raise ValueError('EllipseVisual must consist of more than 1 '
+                             'segment')
         self._num_segments = num_segments
         self._update()
 
@@ -121,9 +122,10 @@ class EllipseVisual(PolygonVisual):
                                     start_angle=self._start_angle,
                                     span_angle=self._span_angle,
                                     num_segments=self._num_segments)
-            self.mesh = MeshVisual(vertices=self._vertices, color=self._color.rgba,
-                             mode='triangle_fan')
+            self.mesh = MeshVisual(vertices=self._vertices,
+                                   color=self._color.rgba,
+                                   mode='triangle_fan')
             if not self._border_color.is_blank():
                 self.border = LineVisual(pos=self._vertices[1:],
-                                   color=self._border_color.rgba)
+                                         color=self._border_color.rgba)
         #self.update()

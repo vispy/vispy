@@ -162,11 +162,11 @@ class RectangleVisual(PolygonVisual):
     def _update(self):
         if self._pos is not None:
             self._generate_vertices(pos=self._pos, radius=self._radius,
-                                    height=self._height, width=self._width,
-                                    )
-            self.mesh = MeshVisual(vertices=self._vertices, color=self._color.rgba,
-                             mode='triangle_fan')
+                                    height=self._height, width=self._width)
+            self.mesh = MeshVisual(vertices=self._vertices, 
+                                   color=self._color.rgba,
+                                   mode='triangle_fan')
             if not self._border_color.is_blank():
                 self.border = LineVisual(pos=self._vertices[1:, ..., :2],
-                                   color=self._border_color.rgba)
+                                         color=self._border_color.rgba)
         #self.update()

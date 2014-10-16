@@ -11,9 +11,11 @@ a scenegraph. For scenegraph use, see the complementary Visual+Node classes
 defined in vispy.scene.
 """
 
-__all__ = ['Visual', 'CubeVisual', 'EllipseVisual', 'GridLinesVisual', 'ImageVisual', 'LineVisual',
-           'LinePlotVisual', 'MarkersVisual', 'marker_types', 'MeshVisual', 'PolygonVisual',
-           'RectangleVisual', 'RegularPolygonVisual', 'SurfacePlotVisual', 'TextVisual', 'XYZAxisVisual']
+__all__ = ['Visual', 'CubeVisual', 'EllipseVisual', 'GridLinesVisual', 
+           'ImageVisual', 'LineVisual', 'LinePlotVisual', 'MarkersVisual', 
+           'marker_types', 'MeshVisual', 'PolygonVisual', 'RectangleVisual', 
+           'RegularPolygonVisual', 'SurfacePlotVisual', 'TextVisual', 
+           'XYZAxisVisual']
 
 from .visual import Visual  # noqa
 from .line import LineVisual  # noqa
