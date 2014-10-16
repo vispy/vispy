@@ -119,12 +119,13 @@ def test_color_interpretation():
     assert_raises(ValueError, ColorArray, '#ffii00')  # non-hex
     assert_raises(ValueError, ColorArray, '#ff000')  # too short
     assert_raises(ValueError, ColorArray, [0, 0])  # not enough vals
-    with use_log_level('debug', record=True, print_msg=False) as w:
-        c = ColorArray([2., 0., 0.])  # val > 1
-        assert_true(np.all(c.rgb <= 1))
-        c = ColorArray([-1., 0., 0.])  # val < 0
-        assert_true(np.all(c.rgb >= 0))
-        assert_equal(len(w), 2)  # caught warnings
+    assert_raises(ValueError, ColorArray, [2, 0, 0])  # val > 1
+    assert_raises(ValueError, ColorArray, [-1, 0, 0])  # val < 0
+    c = ColorArray([2., 0., 0.], clip=True)  # val > 1
+    assert_true(np.all(c.rgb <= 1))
+    c = ColorArray([-1., 0., 0.], clip=True)  # val < 0
+    assert_true(np.all(c.rgb >= 0))
+    
     # make sure our color dict works
     for key in get_color_names():
         assert_true(ColorArray(key))
