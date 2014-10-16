@@ -73,7 +73,8 @@ void main() {
 
 
 class GridLinesVisual(Visual):
-    """
+    """ Displays regularly spaced grid lines in any coordinate system and at 
+    any scale.
     """
     def __init__(self, scale=(1, 1), **kwds):
         super(Visual, self).__init__(**kwds)
@@ -93,12 +94,13 @@ class GridLinesVisual(Visual):
     def draw(self, transforms):
         gloo.set_state('additive', cull_face='front_and_back')
 
-        doc_to_ndc = (transforms.document_to_framebuffer * 
-                      transforms.framebuffer_to_render)
+        doc_to_ndc = (transforms.framebuffer_to_render * 
+                      transforms.document_to_framebuffer)
         local_to_doc = transforms.visual_to_document
 
         self._program.frag['map_nd_to_doc'] = doc_to_ndc.inverse
         self._program.frag['map_doc_to_local'] = local_to_doc.inverse
+        
         self._program.prepare()
         self._program['pos'] = self._buffer()
         self._program['scale'] = self._scale
