@@ -89,7 +89,7 @@ class ApplicationBackend(BaseApplicationBackend):
         pass
 
     def _vispy_get_native_app(self):
-        pass
+        return self
 
 
 # ------------------------------------------------------------------ canvas ---
@@ -101,16 +101,16 @@ class CanvasBackend(BaseCanvasBackend):
         BaseCanvasBackend.__init__(self, *args)
         self._initialized = False
         # Test kwargs
-        if kwargs['size']:
-            raise RuntimeError('ipynb_webgl Canvas is not resizable')
-        if kwargs['position']:
-            raise RuntimeError('ipynb_webgl Canvas is not positionable')
-        if not kwargs['decorate']:
-            raise RuntimeError('ipynb_webgl Canvas is not decoratable (or not)')
-        if kwargs['vsync']:
-            raise RuntimeError('ipynb_webgl Canvas does not support vsync')
-        if kwargs['fullscreen']:
-            raise RuntimeError('ipynb_webgl Canvas does not support fullscreen')
+        # if kwargs['size']:
+        #     raise RuntimeError('ipynb_webgl Canvas is not resizable')
+        # if kwargs['position']:
+        #     raise RuntimeError('ipynb_webgl Canvas is not positionable')
+        # if not kwargs['decorate']:
+        #     raise RuntimeError('ipynb_webgl Canvas is not decoratable (or not)')
+        # if kwargs['vsync']:
+        #     raise RuntimeError('ipynb_webgl Canvas does not support vsync')
+        # if kwargs['fullscreen']:
+        #     raise RuntimeError('ipynb_webgl Canvas does not support fullscreen')
 
         # Create real canvas. It is a backend to this backend
         # kwargs['autoswap'] = False
@@ -123,7 +123,7 @@ class CanvasBackend(BaseCanvasBackend):
         # self._need_draw = False
 
         # Create IPython Widget
-        self._widget = VispyWidget(self._gen_event, size=canvas.size)
+        self._widget = VispyWidget(self._gen_event)
 
     @property
     def _vispy_context(self):
@@ -304,8 +304,7 @@ class VispyWidget(DOMWidget):
         #     return
         if msg['msg_type'] == 'events':
             events = msg['contents']
-            print("{0} events received.".format(len(events)))
-            # self.gen_event(msg)
+            self.gen_event(msg)
 
     @property
     def size(self):

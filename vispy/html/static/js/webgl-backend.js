@@ -9,10 +9,14 @@ require.config({
 IPython.load_extensions("vispy.min");
 // HACK: this is UGLY but I didn't find a better way to do it
 window.setTimeout(function() {
-                    require(["vispy"], function(vispy) {
-                       window.vispy = vispy;
-                    });
-                  }, 100);
+    require(["vispy"], 
+        function(vispy) {
+            window.vispy = vispy;
+        }, 
+        function(vispy) {
+           window.vispy = vispy;
+        });
+}, 100);
 
 // VispyWidget code
 require(["widgets/js/widget", "widgets/js/manager"],
@@ -30,25 +34,24 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 
                 this.c = c;
 
-                c.start_event_loop();
+                var that = this;
+                c.start_event_loop(function() {
+                    // Retrieve and flush the event queue.
+                    var events = that.c.event_queue.get();
+                    that.c.event_queue.clear();
+                    if (events.length == 0) {
+                        return;
+                    }
+                    // Create the message.
+                    var msg = {
+                        msg_type: 'events',
+                        contents: events
+                    };
+                    // Send the message.
+                    that.send(msg);
+                    
+                });
             },
-            
-            /*on_msg: function(e) {
-                this.send_events();
-            },
-            
-            send_events: function(){
-                // Retrieve and flush the event queue.
-                var events = this.c.event_queue.get();
-                this.c.event_queue.clear();
-                // Create the message.
-                var msg = {
-                    msg_type: 'events',
-                    contents: events
-                };
-                // Send the message.
-                this.send(msg);
-            },*/
         });
 
         IPython.WidgetManager.register_widget_view('VispyView', VispyView);
