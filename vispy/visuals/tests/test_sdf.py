@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from vispy.app import Canvas
-from vispy.scene.visuals.text._sdf import SDFRenderer
+from vispy.visuals.text._sdf import SDFRenderer
 from vispy import gloo
 from vispy.testing import requires_application, run_tests_if_main
 

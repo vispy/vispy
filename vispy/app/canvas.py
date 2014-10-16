@@ -157,8 +157,8 @@ class Canvas(object):
         # Ensure context is a GLContext object
         context = context or {}
         if isinstance(context, dict):
-            config, context = context, get_new_context()
-            context.set_config(config)  # GLContext checks the dict keys
+            gl_config, context = context, get_new_context()
+            context.set_config(gl_config)  # GLContext checks the dict keys
         elif not isinstance(context, GLContext):
             raise TypeError('context must be a dict or GLContext from '
                             'a Canvas with the same backend, not %s'
