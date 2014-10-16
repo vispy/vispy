@@ -64,7 +64,7 @@ class PolygonVisual(Visual):
 
     @color.setter
     def color(self, color):
-        self._color = Color(color)
+        self._color = Color(color, clip=True)
         self._update()
 
     @property
