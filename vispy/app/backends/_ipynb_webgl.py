@@ -59,29 +59,14 @@ except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 
 # ------------------------------------------------------------- application ---
-
-
 def _prepare_js():
     pkgdir = op.dirname(__file__)
-    path = op.join(pkgdir, '../../html/static/js/')
-    install_nbextension([op.join(path, 'vispy.min.js'),
-                         # op.join(path, 'vispy-loader.js')
-                         ])
-    script = """
-    require.config({
-        paths: {
-            "jquery-mousewheel": "//cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.11/jquery.mousewheel.min",
-        }
-    });
-    IPython.load_extensions("vispy.min");
-    // HACK: this is UGLY but I didn't find a better way to do it
-    window.setTimeout(function() {
-                        require(["vispy"], function(vispy) {
-                           window.vispy = vispy;
-                        });
-                      }, 100);
+    jsdir = op.join(pkgdir, '../../html/static/js/')
+    install_nbextension([op.join(jsdir, 'vispy.min.js'),])
 
-    """
+    backend_path = op.join(jsdir, 'webgl-backend.js')
+    with open(backend_path, 'r') as f:
+        script = f.read()
     display(Javascript(script))
 
 
@@ -137,8 +122,6 @@ class CanvasBackend(BaseCanvasBackend):
         # Show the widget, we will hide it after the first time it's drawn
         # self._need_draw = False
 
-        # Prepare Javascript code by displaying on notebook
-        self._prepare_js()
         # Create IPython Widget
         self._widget = VispyWidget(self._gen_event, size=canvas.size)
 
@@ -299,7 +282,7 @@ class TimerBackend(BaseTimerBackend):
 # ---------------------------------------------------------- IPython Widget ---
 
 class VispyWidget(DOMWidget):
-    _view_name = Unicode("Widget", sync=True)
+    _view_name = Unicode("VispyView", sync=True)
 
     # Define the custom state properties to sync with the front-end
     # format = Unicode('png', sync=True)
@@ -310,8 +293,8 @@ class VispyWidget(DOMWidget):
     # value = Unicode(sync=True)
 
     def __init__(self, gen_event, **kwargs):
-        super(Widget, self).__init__(**kwargs)
-        self.size = kwargs["size"]
+        super(VispyWidget, self).__init__(**kwargs)
+        self.size = kwargs.get("size", (0, 0))
         # self.interval = 50.0
         self.gen_event = gen_event
         self.on_msg(self.events_received)
