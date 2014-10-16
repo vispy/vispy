@@ -233,14 +233,8 @@ class MagnifyTransform(BaseTransform):
         self._radii = radii
         self._trans = None
         res = self._trans_resolution
-        self._trans_tex = (gloo.Texture2D(shape=(res, 1, 1), 
-                                          format=gloo.gl.GL_LUMINANCE, 
-                                          dtype=np.float32, 
-                                          interpolation='linear'), 
-                           gloo.Texture2D(shape=(res, 1, 1), 
-                                          format=gloo.gl.GL_LUMINANCE, 
-                                          dtype=np.float32, 
-                                          interpolation='linear'))
+        self._trans_tex = (gloo.Texture2D((res, 1, 1), interpolation='linear'), 
+                           gloo.Texture2D((res, 1, 1), interpolation='linear'))
         self._trans_tex_max = None
         super(MagnifyTransform, self).__init__()
         
