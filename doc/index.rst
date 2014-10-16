@@ -44,15 +44,6 @@ can:
   * Start using the higher-level interfaces (visuals, scene graph)
   
 
-VisPy user guide
-----------------
-
-
-
-VisPy developer guide
----------------------
-
-
 Learning the fundamentals of modern OpenGL
 ------------------------------------------
 
