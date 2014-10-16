@@ -18,7 +18,7 @@ from shutil import rmtree
 
 from .event import EmitterGroup, EventEmitter, Event
 from .logs import logger, set_log_level, use_log_level
-
+from ..ext.six import string_types
 
 config = None
 _data_path = None
@@ -36,11 +36,11 @@ def _init():
     
     # All allowed config keys and the types they may have
     _allowed_config_keys = {
-        'data_path': (str,), 
-        'default_backend': (str,), 
+        'data_path': string_types, 
+        'default_backend': string_types, 
         'gl_debug': (bool,), 
-        'logging_level': (str,),
-        'qt_lib': (str,), 
+        'logging_level': string_types,
+        'qt_lib': string_types, 
         'dpi': (int, type(None)),
     }
 
