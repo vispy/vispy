@@ -29,9 +29,11 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 c.call(['FUNC', 'clear', 'COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT']);
                 
                 this.c = c;
+
+                c.start_event_loop();
             },
             
-            on_msg: function(e) {
+            /*on_msg: function(e) {
                 this.send_events();
             },
             
@@ -46,7 +48,7 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 };
                 // Send the message.
                 this.send(msg);
-            },
+            },*/
         });
 
         IPython.WidgetManager.register_widget_view('VispyView', VispyView);
