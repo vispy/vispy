@@ -10,7 +10,7 @@ from vispy.testing import run_tests_if_main
 
 
 class _DummyObject:
-    """ To be able to import angle even in Linux, so that we can test the
+    """ To be able to import es2 even in Linux, so that we can test the
     names defined inside.
     """
     def LoadLibrary(self, fname):
@@ -40,19 +40,19 @@ def test_destop():
     _test_contant_names(desktop)
 
 
-def test_angle():
-    """ Angle backend should have all ES 2.0 names. No more, no less. """
-    # Import. Install a dummy lib so that at least we can import angle.
+def test_es2():
+    """ es2 backend should have all ES 2.0 names. No more, no less. """
+    # Import. Install a dummy lib so that at least we can import es2.
     try:
-        from vispy.gloo.gl import angle  # noqa
+        from vispy.gloo.gl import es2  # noqa
     except Exception:
         import ctypes
         ctypes.windll = _DummyObject()
-    from vispy.gloo.gl import angle  # noqa
+    from vispy.gloo.gl import es2  # noqa
 
     # Test
-    _test_function_names(angle)
-    _test_contant_names(angle)
+    _test_function_names(es2)
+    _test_contant_names(es2)
 
 
 @requires_pyopengl()
@@ -88,7 +88,7 @@ def _main():
     test_main()
     test_proxy()
     test_destop()
-    test_angle()
+    test_es2()
     test_pyopengl()
     test_webgl()
 

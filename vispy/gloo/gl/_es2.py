@@ -2,12 +2,12 @@
 
 THIS CODE IS AUTO-GENERATED. DO NOT EDIT.
 
-GL ES 2.0 API based on the Angle library (i.e. DirectX)
+GL ES 2.0 API (via Angle/DirectX on Windows)
 
 """
 
 import ctypes
-from .angle import _lib
+from .es2 import _lib
 
 
 _lib.glActiveTexture.argtypes = ctypes.c_uint,

@@ -46,15 +46,15 @@ def test_basics_pypengl():
 
 
 @requires_application()
-def test_functionality_angle():
-    """ Test angle GL backend for basic functionality. """
+def test_functionality_es2():
+    """ Test es2 GL backend for basic functionality. """
     if True:
-        raise SkipTest('Skip Angle functionality test for now.')
+        raise SkipTest('Skip es2 functionality test for now.')
     if sys.platform.startswith('win'):
-        raise SkipTest('Can only test angle functionality on Windows.')
+        raise SkipTest('Can only test es2 functionality on Windows.')
 
     glut_skip()
-    _test_basics('angle')
+    _test_basics('es2')
 
 
 def _test_basics(backend):

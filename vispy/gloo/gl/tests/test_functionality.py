@@ -60,14 +60,14 @@ def test_functionality_pyopengl():
 
 
 @requires_application()
-def test_functionality_angle():
-    """ Test angle GL backend for full functionality. """
+def test_functionality_es2():
+    """ Test es2 GL backend for full functionality. """
     if True:
-        raise SkipTest('Skip Angle functionality test for now.')
+        raise SkipTest('Skip es2 functionality test for now.')
     if sys.platform.startswith('win'):
-        raise SkipTest('Can only test angle functionality on Windows.')
+        raise SkipTest('Can only test es2 functionality on Windows.')
     glut_skip()
-    _test_functonality('angle')
+    _test_functonality('es2')
 
 
 def _clear_screen():
