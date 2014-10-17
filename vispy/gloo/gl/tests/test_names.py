@@ -10,7 +10,7 @@ from vispy.testing import run_tests_if_main
 
 
 class _DummyObject:
-    """ To be able to import angle even in Linux, so that we can test the
+    """ To be able to import es2 even in Linux, so that we can test the
     names defined inside.
     """
     def LoadLibrary(self, fname):
@@ -27,7 +27,7 @@ def _test_function_names(mod):
     assert_equal(fnames.difference(function_names), set())
 
 
-def _test_contant_names(mod):
+def _test_constant_names(mod):
     cnames = set([name for name in dir(mod) if name.startswith('GL')])
     assert_equal(constant_names.difference(cnames), set())
     assert_equal(cnames.difference(constant_names), set())
@@ -37,22 +37,22 @@ def test_destop():
     """ Desktop backend should have all ES 2.0 names. No more, no less. """
     from vispy.gloo.gl import desktop
     _test_function_names(desktop)
-    _test_contant_names(desktop)
+    _test_constant_names(desktop)
 
 
-def test_angle():
-    """ Angle backend should have all ES 2.0 names. No more, no less. """
-    # Import. Install a dummy lib so that at least we can import angle.
+def test_es2():
+    """ es2 backend should have all ES 2.0 names. No more, no less. """
+    # Import. Install a dummy lib so that at least we can import es2.
     try:
-        from vispy.gloo.gl import angle  # noqa
+        from vispy.gloo.gl import es2  # noqa
     except Exception:
         import ctypes
-        ctypes.windll = _DummyObject()
-    from vispy.gloo.gl import angle  # noqa
+        ctypes.TEST_DLL = _DummyObject()
+    from vispy.gloo.gl import es2  # noqa
 
     # Test
-    _test_function_names(angle)
-    _test_contant_names(angle)
+    _test_function_names(es2)
+    _test_constant_names(es2)
 
 
 @requires_pyopengl()
@@ -60,26 +60,19 @@ def test_pyopengl():
     """ Pyopengl backend should have all ES 2.0 names. No more, no less. """
     from vispy.gloo.gl import pyopengl
     _test_function_names(pyopengl)
-    _test_contant_names(pyopengl)
+    _test_constant_names(pyopengl)
 
 
 def test_proxy():
     """ GLProxy class should have all ES 2.0 names. No more, no less. """
     _test_function_names(gl.proxy)
-    _test_contant_names(gl._constants)
+    _test_constant_names(gl._constants)
 
 
 def test_main():
     """ Main gl namespace should have all ES 2.0 names. No more, no less. """
     _test_function_names(gl)
-    _test_contant_names(gl)
-
-
-def test_webgl():
-    """ Webgl backend should have all ES 2.0 names. No more, no less. """
-    from vispy.gloo.gl import webgl
-    _test_function_names(webgl)
-    _test_contant_names(webgl)
+    _test_constant_names(gl)
 
 
 def _main():
@@ -88,9 +81,8 @@ def _main():
     test_main()
     test_proxy()
     test_destop()
-    test_angle()
+    test_es2()
     test_pyopengl()
-    test_webgl()
 
 
 # Note: I took these names below from _main and _constants, which is a
@@ -120,7 +112,7 @@ glGetVertexAttribOffset glHint glIsBuffer glIsEnabled glIsFramebuffer
 glIsProgram glIsRenderbuffer glIsShader glIsTexture glLineWidth
 glLinkProgram glPixelStorei glPolygonOffset glReadPixels
 glRenderbufferStorage glSampleCoverage glScissor glShaderSource
-glShaderSource_compat glStencilFunc glStencilFuncSeparate glStencilMask
+glStencilFunc glStencilFuncSeparate glStencilMask
 glStencilMaskSeparate glStencilOp glStencilOpSeparate glTexImage2D
 glTexParameterf glTexParameteri glTexSubImage2D glUniform1f glUniform1fv
 glUniform1i glUniform1iv glUniform2f glUniform2fv glUniform2i

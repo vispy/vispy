@@ -14,6 +14,9 @@ from time import sleep, time
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import ptime, keys, logger
+from ... import config
+
+USE_EGL = config['gl_backend'].lower().startswith('es')
 
 # -------------------------------------------------------------------- init ---
 
@@ -85,7 +88,10 @@ try:
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
-    available, why_not, testable = True, None, True
+    if USE_EGL:
+        available, testable, why_not = False, False, 'EGL not supported'
+    else:
+        available, why_not, testable = True, None, True
     try:
         _get_glut_process_func()
     except RuntimeError:

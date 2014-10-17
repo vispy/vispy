@@ -208,7 +208,7 @@ EGL_ALPHA_FORMAT_PRE = EGL_VG_ALPHA_FORMAT_PRE
 ## The functions
 
 _lib.eglGetDisplay.argtypes = _c_int,
-_lib.eglGetDisplay.restype = c_void_p
+_lib.eglGetDisplay.restype = _c_int
 _lib.eglInitialize.argtypes = c_void_p, _POINTER(_c_int), _POINTER(_c_int)
 _lib.eglTerminate.argtypes = c_void_p,
 _lib.eglChooseConfig.argtypes = (c_void_p, _POINTER(_c_int),
