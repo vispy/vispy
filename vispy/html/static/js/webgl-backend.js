@@ -18,6 +18,8 @@ window.setTimeout(function() {
         });
 }, 100);
 
+var VISPY_DEBUG = true;
+
 // VispyWidget code
 require(["widgets/js/widget", "widgets/js/manager"],
     function(widget, manager){
@@ -29,10 +31,10 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 this.$el.append(canvas);
 
                 var c = vispy.init(canvas);
-                c.call(['FUNC', 'clearColor', 0, 0, 0, 1]);
-                c.call(['FUNC', 'clear', 'COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT']);
+                //c.command(['FUNC', 'clearColor', 0, 0, 0, 1]);
+                //c.command(['FUNC', 'clear', 'COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT']);
                 
-                    this.c = c;
+                this.c = c;
 
                 var that = this;
                 c.start_event_loop(function() {
@@ -52,6 +54,17 @@ require(["widgets/js/widget", "widgets/js/manager"],
                     
                 });
             },
+
+            on_msg: function(msg) {
+                // Receive the GLIR commands
+                if (msg.msg_type == 'glir_commands') {
+                    var commands = msg.contents;
+                    for (var i = 0; i < commands.length; i++) {
+                        var command = commands[i];
+                        this.c.command(command);
+                    }
+                }
+            }
         });
 
         IPython.WidgetManager.register_widget_view('VispyView', VispyView);

@@ -8,10 +8,13 @@ Vispy backend for the IPython notebook (WebGL approach).
 
 from __future__ import division
 
+import re
+import numpy as np
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from .. import Application, Canvas
 from ...util import logger
+from ...ext import six
 from vispy.gloo.context import get_a_context
 
 # Import for displaying Javascript on notebook
@@ -117,8 +120,8 @@ class CanvasBackend(BaseCanvasBackend):
         # kwargs['autoswap'] = False
 
         # Connect to events of canvas to keep up to date with size and draws
-        # canvas.events.draw.connect(self._on_draw)
-        # canvas.events.resize.connect(self._on_resize)
+        self._vispy_canvas.events.draw.connect(self._on_draw)
+        self._vispy_canvas.events.resize.connect(self._on_resize)
 
         # Show the widget, we will hide it after the first time it's drawn
         # self._need_draw = False
@@ -162,7 +165,8 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_update(self):
         # self._need_draw = True
-        pass
+        # print("update")
+        self._on_draw()
 
     def _vispy_close(self):
         # self._need_draw = False
@@ -175,6 +179,7 @@ class CanvasBackend(BaseCanvasBackend):
         pass
 
     def _on_resize(self, event=None):
+        print("resize")
         # Event handler that is called by the underlying canvas
         if self._vispy_canvas is None:
             return
@@ -196,73 +201,51 @@ class CanvasBackend(BaseCanvasBackend):
         # self._need_draw = False
 
         # Normal behavior
-        self._vispy_set_current()
-        self._vispy_canvas.events.draw(region=None)
+        glir_commands = self._context._glir.clear()
+        self._widget.send_glir_commands(glir_commands)
+        # self._vispy_set_current()
+        # self._vispy_canvas.events.draw(region=None)
 
     # Generate vispy events according to upcoming JS events
     def _gen_event(self, ev):
         if self._vispy_canvas is None:
             return
-        print(ev)
-        return
-        ev = ev.get("event")
-        # Parse and generate event
-        if ev.get("name") == "MouseEvent":
-            mouse = ev.get("properties")
-            # Generate
-            if mouse.get("type") == "mouse_move":
-                self._vispy_mouse_move(native=mouse,
-                                       pos=mouse.get("pos"),
-                                       modifiers=mouse.get("modifiers"),
-                                       )
-            elif mouse.get("type") == "mouse_press":
-                self._vispy_mouse_press(native=mouse,
-                                        pos=mouse.get("pos"),
-                                        button=mouse.get("button"),
-                                        modifiers=mouse.get("modifiers"),
-                                        )
-            elif mouse.get("type") == "mouse_release":
-                self._vispy_mouse_release(native=mouse,
-                                          pos=mouse.get("pos"),
-                                          button=mouse.get("button"),
-                                          modifiers=mouse.get("modifiers"),
-                                          )
-            elif mouse.get("type") == "mouse_wheel":
-                self._vispy_canvas.events.mouse_wheel(native=mouse,
-                                                      delta=mouse.get("delta"),
-                                                      pos=mouse.get("pos"),
-                                                      modifiers=mouse.get
-                                                      ("modifiers"),
-                                                      )
-        elif ev.get("name") == "KeyEvent":
-            key = ev.get("properties")
-            if key.get("type") == "key_press":
-                self._vispy_canvas.events.key_press(native=key,
-                                                    key=key.get("key"),
-                                                    text=key.get("text"),
-                                                    modifiers=key.get
-                                                    ("modifiers"),
-                                                    )
-            elif key.get("type") == "key_release":
-                self._vispy_canvas.events.key_release(native=key,
-                                                      key=key.get("key"),
-                                                      text=key.get("text"),
-                                                      modifiers=key.get
-                                                      ("modifiers"),
-                                                      )
-        # elif ev.get("name") == "PollEvent":  # Ticking from front-end (JS)
-        #     # Allthough the event originates from JS, this is basically
-        #     # a poll event from IPyhon's event loop, which we use to
-        #     # update the backend app and draw stuff if necessary. If we
-        #     # succeed to make IPython process GUI app events directly,
-        #     # this "JS timer" should not be necessary.
-        #     self._vispy_canvas.app.process_events()
-        #     if self._need_draw:
-        #         self._on_draw()
-        #     # Generate a timer event on every poll from JS
-        #     # AK: no, just use app.Timer as usual!
-        #     #self._vispy_canvas.events.timer(type="timer")
-
+        event_type = ev['type']
+        if event_type == "mouse_move":
+            self._vispy_mouse_move(native=ev,
+                                   pos=ev.get("pos"),
+                                   modifiers=ev.get("modifiers"),
+                                   )
+        elif event_type == "mouse_press":
+            self._vispy_mouse_press(native=ev,
+                                    pos=ev.get("pos"),
+                                    button=ev.get("button"),
+                                    modifiers=ev.get("modifiers"),
+                                    )
+        elif event_type == "mouse_release":
+            self._vispy_mouse_release(native=ev,
+                                      pos=ev.get("pos"),
+                                      button=ev.get("button"),
+                                      modifiers=ev.get("modifiers"),
+                                      )
+        elif event_type == "mouse_wheel":
+            self._vispy_canvas.events.mouse_wheel(native=ev,
+                                                  delta=ev.get("delta"),
+                                                  pos=ev.get("pos"),
+                                                  modifiers=ev.get("modifiers"),
+                                                  )
+        elif event_type == "key_press":
+            self._vispy_canvas.events.key_press(native=key,
+                                                key=key.get("key"),
+                                                text=key.get("text"),
+                                                modifiers=key.get("modifiers"),
+                                                )
+        elif event_type == "key_release":
+            self._vispy_canvas.events.key_release(native=key,
+                                                  key=key.get("key"),
+                                                  text=key.get("text"),
+                                                  modifiers=key.get("modifiers"),
+                                                  )
 
 
 # ------------------------------------------------------------------- timer ---
@@ -283,6 +266,26 @@ class TimerBackend(BaseTimerBackend):
 
 
 # ---------------------------------------------------------- IPython Widget ---
+
+def _serializable(c):
+    if isinstance(c, list):
+        return [_serializable(command) for command in c]
+    if isinstance(c, tuple):
+        return tuple(_serializable(command) for command in c)
+    elif isinstance(c, np.ndarray):
+        # TODO: more efficient (binary websocket??)
+        return c.tolist()
+    elif isinstance(c, six.string_types):
+        # replace glSomething by something (needed for WebGL commands)
+        if c.startswith('gl'):
+            return re.sub(r'^gl([A-Z])', lambda m: m.group(1).lower(), c)
+        else:
+            return c
+    else:
+        try:
+            return np.asscalar(c)
+        except:
+            return c
 
 class VispyWidget(DOMWidget):
     _view_name = Unicode("VispyView", sync=True)
@@ -307,7 +310,15 @@ class VispyWidget(DOMWidget):
         #     return
         if msg['msg_type'] == 'events':
             events = msg['contents']
-            self.gen_event(msg)
+            for ev in events:
+                self.gen_event(ev)
+
+    def send_glir_commands(self, commands):
+        msg = {
+            'msg_type': 'glir_commands',
+            'contents': _serializable(commands)
+        }
+        self.send(msg)
 
     @property
     def size(self):
