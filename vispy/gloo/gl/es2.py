@@ -51,24 +51,7 @@ else:
     raise RuntimeError('Unknown platform: %s' % sys.platform)
 
 
-## Compatibility
-
-
-def glShaderSource_compat(handle, code):
-    """ Easy for real ES 2.0.
-    """
-    glShaderSource(handle, [code])
-    return []
-
-
-def gl_initialize():
-    """ Initialize GL so it behaves more like ES 2.0.
-    """
-    pass
-
-
 ## Inject
-
 
 from . import _es2
 _copy_gl_functions(_es2, globals())

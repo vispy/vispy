@@ -172,7 +172,7 @@ class Program(GLObject):
         # Note that internally the variables are stored as a dict
         # that maps names -> tuples, for easy looking up by name.
         return list(self._code_variables.values())
-    
+   
     def _parse_variables_from_code(self):
         """ Parse uniforms, attributes and varyings from the source code.
         """
@@ -182,10 +182,12 @@ class Program(GLObject):
         code = re.sub(r'(.*)(//.*)', r'\1', code, re.M)
         
         # Regexp to look for variable names
-        var_regexp = ("\s*VARIABLE\s+(?P<type>\w+)\s+"  # type
+        var_regexp = ("\s*VARIABLE\s+"  # kind of variable
+                      "((highp|mediump|lowp)\s+)?"  # Precision (optional)
+                      "(?P<type>\w+)\s+"  # type
                       "(?P<name>\w+)\s*"  # name
-                      "(\[(?P<size>\d+)\])?"  # maybe size
-                      "(\s*\=\s*[0-9.]+)?"  # maybe default value
+                      "(\[(?P<size>\d+)\])?"  # size (optional)
+                      "(\s*\=\s*[0-9.]+)?"  # default value (optional)
                       "\s*;"  # end
                       )
         
@@ -206,11 +208,11 @@ class Program(GLObject):
                 else:
                     name = m.group('name')
                     self._code_variables[name] = kind, gtype, name
-        
+
         # Now that our code variables are up-to date, we can process
         # the variables that were set but yet unknown.
         self._process_pending_variables()
-    
+
     def bind(self, data):
         """ Bind a VertexBuffer that has structured data
         

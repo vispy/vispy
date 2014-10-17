@@ -52,7 +52,7 @@ class GlirQueue(object):
         """ Get whether the GLIR commands are processed in this process
         or remotely. In the latter case, gloo.gl cannot be used directly.
         """
-        return False  # for now
+        return self._parser.is_remote()
     
     def set_verbose(self, vebose):
         """ Set verbose or not. If True, the GLIR commands are printed
@@ -107,17 +107,101 @@ class GlirQueue(object):
         resized = set()
         commands2 = []
         for command in reversed(commands):
-            if command[1] in resized:
+            if command[0] == 'SHADERS':
+                convert = self._parser.convert_shaders()
+                if convert:
+                    shaders = self._convert_shaders(convert, command[2:])
+                    command = command[:2] + shaders
+            elif command[1] in resized:
                 if command[0] in ('SIZE', 'DATA'):
                     continue  # remove this command
             elif command[0] == 'SIZE':
                 resized.add(command[1])
             commands2.append(command)
         return list(reversed(commands2))
+    
+    
+    def _convert_shaders(self, convert, shaders):
+        """ Modify shading code so that we can write code once
+        and make it run "everywhere".
+        """
+        
+        # New version of the shaders
+        out = []
+        
+        if convert == 'es2':
+            
+            for isfragment, shader in enumerate(shaders):
+                has_version = False
+                has_prec_float = False
+                has_prec_int = False
+                lines = []
+                # Iterate over lines
+                for line in shader.lstrip().splitlines():
+                    has_version = has_version or line.startswith('#version')
+                    if line.startswith('precision '):
+                        has_prec_float = has_prec_float or 'float' in line
+                        has_prec_int = has_prec_int or 'int' in line
+                    lines.append(line.rstrip())
+                # Write
+                if True:
+                    lines.insert(has_version, '#line 0')
+                if not has_prec_float:
+                    lines.insert(has_version, 'precision highp float;')
+                if not has_prec_int:
+                    lines.insert(has_version, 'precision highp int;')
+                if not has_version:
+                    lines.insert(has_version, '#version 100')
+                out.append('\n'.join(lines))
+        
+        elif convert == 'desktop':
+            
+            for isfragment, shader in enumerate(shaders):
+                has_version = False
+                lines = []
+                # Iterate over lines
+                for line in shader.lstrip().splitlines():
+                    has_version = has_version or line.startswith('#version')
+                    if line.startswith('precision '):
+                        line = ''
+                    for prec in (' highp ', ' mediump ', ' lowp '):
+                        line = line.replace(prec, ' ')
+                    lines.append(line.rstrip())
+                # Write
+                if not has_version:
+                    lines.insert(0, '#version 120\n#line 0')
+                out.append('\n'.join(lines))
+        
+        else:
+            raise ValueError('Cannot convert shaders to %r.' % convert)
+        
+        return tuple(out)
 
 
-class GlirParser(object):
-    """ A class for interpreting GLIR commands
+class BaseGlirParser(object):
+    """ Base clas for GLIR parsers that can be attached to a GLIR queue.
+    """
+    
+    def is_remote(self):
+        """ Whether the code is executed remotely. i.e. gloo.gl cannot
+        be used.
+        """
+        raise NotImplementedError()
+    
+    def convert_shaders(self):
+        """ Whether to convert shading code. Valid values are 'es2' and
+        'desktop'. If None, the shaders are not modified.
+        """
+        raise NotImplementedError()
+    
+    def parse(self, commands):
+        """ Parse the GLIR commands. Or sent them away.
+        """
+        raise NotImplementedError()
+
+
+class GlirParser(BaseGlirParser):
+    """ A class for interpreting GLIR commands using gloo.gl
     
     We make use of relatively light GLIR objects that are instantiated
     on CREATE commands. These objects are stored by their id in a
@@ -142,10 +226,14 @@ class GlirParser(object):
         # when two Canvases share a context.
         self.env = {}
     
-    def get_object(self, id):
-        """ Get the object with the given id or None if it does not exist.
-        """
-        return self._objects.get(id, None)
+    def is_remote(self):
+        return False
+    
+    def convert_shaders(self):
+        if '.es' in gl.current_backend.__name__:
+            return 'es2'
+        else:
+            return 'desktop'
     
     def parse(self, commands):
         """ Parse a list of commands.
@@ -157,7 +245,7 @@ class GlirParser(object):
             if cmd == 'CURRENT':
                 # This context is made current
                 self.env.clear()
-                gl.gl_initialize()  # For desktop/es2 compat
+                self._gl_initialize()
                 gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
             elif cmd == 'FUNC':
                 # GL function call
@@ -212,6 +300,24 @@ class GlirParser(object):
                     ob.set_interpolation(*args)
                 else:
                     logger.warning('Invalid GLIR command %r' % cmd)
+    
+    def get_object(self, id):
+        """ Get the object with the given id or None if it does not exist.
+        """
+        return self._objects.get(id, None)
+    
+    def _gl_initialize(self):
+        """ Deal with compatibility; desktop does not have sprites
+        enabled by default. ES has.
+        """
+        if '.es' in gl.current_backend.__name__:
+            pass  # ES2: no action required
+        else:
+            # Desktop, enable sprites
+            GL_VERTEX_PROGRAM_POINT_SIZE = 34370
+            GL_POINT_SPRITE = 34913
+            gl.glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+            gl.glEnable(GL_POINT_SPRITE)
 
 
 ## GLIR objects
