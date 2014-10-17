@@ -474,6 +474,9 @@ class ProxyApiGenerator(ApiGenerator):
         
         def glShaderSource_compat(self, handle, code):
             return self("glShaderSource_compat", True, handle, code)
+        
+        def gl_initialize(self):
+            return self("gl_initialize", False)
     '''
     
     def _returns(self, des):

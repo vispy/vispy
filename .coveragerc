@@ -5,8 +5,8 @@ source = vispy
 # Omit fonts/_quartz.py and _win32 for platform specificity
 omit =
     */vispy/app/backends/_egl.py
-    */vispy/gloo/gl/angle.py
-    */vispy/gloo/gl/_angle.py
+    */vispy/gloo/gl/es2.py
+    */vispy/gloo/gl/_es2.py
     */vispy/testing/*
     */vispy/ext/*
     */vispy/geometry/_triangulation_debugger.py

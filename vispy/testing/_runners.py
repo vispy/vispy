@@ -141,7 +141,7 @@ def _flake():
         sys.argv[1:] = ['vispy']
     sys.argv.append('--ignore=E226,E241,E265,W291,W293')
     sys.argv.append('--exclude=six.py,py24_ordereddict.py,glfw.py,'
-                    '_proxy.py,_angle.py,_desktop.py,_pyopengl.py,'
+                    '_proxy.py,_es2.py,_desktop.py,_pyopengl.py,'
                     '_constants.py,png.py,decorator.py')
     try:
         from flake8.main import main

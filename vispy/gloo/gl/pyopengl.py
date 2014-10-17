@@ -58,6 +58,15 @@ def glShaderSource_compat(handle, code):
     return []
 
 
+def gl_initialize():
+    """ Initialize GL so it behaves more like ES 2.0.
+    """
+    GL_VERTEX_PROGRAM_POINT_SIZE = 34370
+    GL_POINT_SPRITE = 34913
+    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+    glEnable(GL_POINT_SPRITE)
+    
+
 def _patch():
     """ Monkey-patch pyopengl to fix a bug in glBufferSubData. """
     import sys

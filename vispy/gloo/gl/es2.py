@@ -61,6 +61,12 @@ def glShaderSource_compat(handle, code):
     return []
 
 
+def gl_initialize():
+    """ Initialize GL so it behaves more like ES 2.0.
+    """
+    pass
+
+
 ## Inject
 
 

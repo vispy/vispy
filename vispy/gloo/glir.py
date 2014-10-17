@@ -157,6 +157,7 @@ class GlirParser(object):
             if cmd == 'CURRENT':
                 # This context is made current
                 self.env.clear()
+                gl.gl_initialize()  # For desktop/es2 compat
                 gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0)
             elif cmd == 'FUNC':
                 # GL function call
@@ -730,7 +731,7 @@ class GlirTexture2D(GlirTexture):
             self._shape_format = shape, format
             self.activate()
             gl.glTexImage2D(self._target, 0, format, format,
-                            gl.GL_BYTE, shape[:2])
+                            gl.GL_UNSIGNED_BYTE, shape[:2])
     
     def set_data(self, offset, data):
         self.activate()
