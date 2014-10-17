@@ -12,6 +12,7 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from .. import Application, Canvas
 from ...util import logger
+from vispy.gloo.context import get_a_context
 
 # Import for displaying Javascript on notebook
 import os.path as op
@@ -123,16 +124,17 @@ class CanvasBackend(BaseCanvasBackend):
         # self._need_draw = False
 
         # Create IPython Widget
+        self._context = get_a_context()
         self._widget = VispyWidget(self._gen_event)
 
     @property
     def _vispy_context(self):
         """Context to return for sharing"""
-        pass
+        return self._context
     
     @_vispy_context.setter
     def _vispy_context(self, context):
-        pass
+        self._context = context
     
     def _vispy_warmup(self):
         pass
@@ -201,7 +203,8 @@ class CanvasBackend(BaseCanvasBackend):
     def _gen_event(self, ev):
         if self._vispy_canvas is None:
             return
-
+        print(ev)
+        return
         ev = ev.get("event")
         # Parse and generate event
         if ev.get("name") == "MouseEvent":
