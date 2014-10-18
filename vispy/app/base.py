@@ -183,7 +183,8 @@ class BaseCanvasBackend(object):
         if ev.button == self._vispy_mouse_data['press_event'].button:
             self._vispy_mouse_data['press_event'] = None
 
-        self._vispy_mouse_data['buttons'].remove(ev.button)
+        if ev.button in self._vispy_mouse_data['buttons']:
+            self._vispy_mouse_data['buttons'].remove(ev.button)
         self._vispy_mouse_data['last_event'] = ev
         return ev
 

@@ -28,7 +28,8 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 var that = this;
 
                 var canvas = $('<canvas></canvas>');
-                // canvas.css('width', '500px').css('height', '200px');
+                // canvas.css('border', '1px solid rgb(171, 171, 171)');
+                canvas.css('background-color', '#000');
                 this.$el.append(canvas);
                 this.$canvas = canvas;
                 this.width_changed();

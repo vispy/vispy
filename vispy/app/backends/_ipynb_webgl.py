@@ -180,13 +180,10 @@ class CanvasBackend(BaseCanvasBackend):
         return (self._widget.width, self._widget.height)
 
     def _on_resize(self, event=None):
-        print("resize")
-        if event:
-            print(event.size)
         # Event handler that is called by the underlying canvas
         if self._vispy_canvas is None:
             return
-        # self._widget.size = size
+        size = self._vispy_canvas.size
         # self._vispy_canvas.events.resize(size=size)
 
     def _on_draw(self, event=None):
@@ -235,6 +232,7 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_canvas.events.mouse_wheel(native=ev,
                                                   delta=ev.get("delta"),
                                                   pos=ev.get("pos"),
+                                                  button=ev.get("button"),
                                                   modifiers=ev.get("modifiers"),
                                                   )
         elif event_type == "key_press":
