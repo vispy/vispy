@@ -30,6 +30,7 @@ try:
     egl.eglInitialize(_EGL_DISPLAY)
     version = [egl.eglQueryString(_EGL_DISPLAY, x) for x in
                [egl.EGL_VERSION, egl.EGL_VENDOR, egl.EGL_CLIENT_APIS]]
+    version = [v.decode('utf-8') for v in version]
     version = version[0] + ' ' + version[1] + ': ' + version[2].strip()
     atexit.register(egl.eglTerminate, _EGL_DISPLAY)
 except Exception as exp:
@@ -132,7 +133,8 @@ class CanvasBackend(BaseCanvasBackend):
             context.take('egl', self)
             self._native_config = egl.eglChooseConfig(_EGL_DISPLAY)[0]
             self._native_context = egl.eglCreateContext(_EGL_DISPLAY, 
-                                                        context.config, None)
+                                                        self._native_config, 
+                                                        None)
         elif context.istaken == 'egl':
             self._native_config = context.backend_canvas._native_config
             self._native_context = context.backend_canvas._native_context

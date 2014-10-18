@@ -111,7 +111,7 @@ def use_gl(target='desktop'):
     * desktop - Use desktop (i.e. normal) OpenGL.
     * pyopengl - Use pyopengl (for fallback and testing). 
     * es2 - Use the ES2 library (Angle/DirectX on Windows)
-    * dummy - Prevent usage gloo.gl (for when rendering occrurs elsewhere)
+    * dummy - Prevent usage of gloo.gl (for when rendering occurs elsewhere)
 
     """
     target = target or 'desktop'

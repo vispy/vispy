@@ -27,7 +27,7 @@ def _test_function_names(mod):
     assert_equal(fnames.difference(function_names), set())
 
 
-def _test_contant_names(mod):
+def _test_constant_names(mod):
     cnames = set([name for name in dir(mod) if name.startswith('GL')])
     assert_equal(constant_names.difference(cnames), set())
     assert_equal(cnames.difference(constant_names), set())
@@ -37,7 +37,7 @@ def test_destop():
     """ Desktop backend should have all ES 2.0 names. No more, no less. """
     from vispy.gloo.gl import desktop
     _test_function_names(desktop)
-    _test_contant_names(desktop)
+    _test_constant_names(desktop)
 
 
 def test_es2():
@@ -47,12 +47,12 @@ def test_es2():
         from vispy.gloo.gl import es2  # noqa
     except Exception:
         import ctypes
-        ctypes.windll = _DummyObject()
+        ctypes.TEST_DLL = _DummyObject()
     from vispy.gloo.gl import es2  # noqa
 
     # Test
     _test_function_names(es2)
-    _test_contant_names(es2)
+    _test_constant_names(es2)
 
 
 @requires_pyopengl()
@@ -60,19 +60,19 @@ def test_pyopengl():
     """ Pyopengl backend should have all ES 2.0 names. No more, no less. """
     from vispy.gloo.gl import pyopengl
     _test_function_names(pyopengl)
-    _test_contant_names(pyopengl)
+    _test_constant_names(pyopengl)
 
 
 def test_proxy():
     """ GLProxy class should have all ES 2.0 names. No more, no less. """
     _test_function_names(gl.proxy)
-    _test_contant_names(gl._constants)
+    _test_constant_names(gl._constants)
 
 
 def test_main():
     """ Main gl namespace should have all ES 2.0 names. No more, no less. """
     _test_function_names(gl)
-    _test_contant_names(gl)
+    _test_constant_names(gl)
 
 
 def _main():

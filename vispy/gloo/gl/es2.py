@@ -16,7 +16,11 @@ from ._constants import *  # noqa
 
 ## Ctypes stuff
 
-if sys.platform.startswith('win'):
+if hasattr(ctypes, 'TEST_DLL'):
+    # Load dummy lib 
+    _lib = ctypes.TEST_DLL.LoadLibrary('')
+    
+elif sys.platform.startswith('win'):
     
     # todo: were are we going to put our libs?
     dirname = r'C:\Users\Almar\AppData\Local\Chromium\Application\34.0.1790.0'

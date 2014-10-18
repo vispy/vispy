@@ -120,7 +120,6 @@ class GlirQueue(object):
             commands2.append(command)
         return list(reversed(commands2))
     
-    
     def _convert_shaders(self, convert, shaders):
         """ Modify shading code so that we can write code once
         and make it run "everywhere".
