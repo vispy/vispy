@@ -9,6 +9,8 @@ Vispy backend for the IPython notebook (WebGL approach).
 from __future__ import division
 
 import re
+import base64
+
 import numpy as np
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
@@ -103,7 +105,7 @@ class CanvasBackend(BaseCanvasBackend):
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
-        self._initialized = False
+        # self._initialized = False
         # Test kwargs
         # if kwargs['size']:
         #     raise RuntimeError('ipynb_webgl Canvas is not resizable')
@@ -117,8 +119,8 @@ class CanvasBackend(BaseCanvasBackend):
         #     raise RuntimeError('ipynb_webgl Canvas does not support fullscreen')
 
         # Connect to events of canvas to keep up to date with size and draws
-        self._vispy_canvas.events.draw.connect(self._on_draw)
-        self._vispy_canvas.events.resize.connect(self._on_resize)
+        self._vispy_canvas.events.draw.connect(self._send_glir_commands, position='last')
+        # self._vispy_canvas.events.resize.connect(self._on_resize, position='last')
 
         # Create IPython Widget
         self._context = get_a_context()
@@ -159,7 +161,14 @@ class CanvasBackend(BaseCanvasBackend):
             display(self._widget)
 
     def _vispy_update(self):
-        self._on_draw()
+        if self._vispy_canvas is None:
+            return
+        self._send_glir_commands()
+        # self._vispy_canvas.events.draw(region=None)
+
+    def _send_glir_commands(self):
+        glir_commands = self._context._glir.clear()
+        self._widget.send_glir_commands(glir_commands)
 
     def _vispy_close(self):
         self._widget.quit()
@@ -169,27 +178,6 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _vispy_get_size(self):
         return (self._widget.width, self._widget.height)
-
-    def _on_resize(self, event=None):
-        # Event handler that is called by the underlying canvas
-        if self._vispy_canvas is None:
-            return
-        size = self._vispy_canvas.size
-
-    def _on_draw(self, event=None):
-        # Event handler that is called by the underlying canvas
-        if self._vispy_canvas is None:
-            return
-        # Handle initialization
-        if not self._initialized:
-            self._initialized = True
-            #self._vispy_canvas.events.add(timer=Event)
-            self._vispy_canvas.events.initialize()
-            self._on_resize()
-
-        # Normal behavior
-        glir_commands = self._context._glir.clear()
-        self._widget.send_glir_commands(glir_commands)
 
     # Generate vispy events according to upcoming JS events
     def _gen_event(self, ev):
@@ -259,8 +247,11 @@ def _serializable(c):
     if isinstance(c, tuple):
         return tuple(_serializable(command) for command in c)
     elif isinstance(c, np.ndarray):
-        # TODO: more efficient (binary websocket??)
-        return c.ravel().tolist()
+        # TODO: binary websocket (once the IPython PR has been merged)
+        return {
+            'storage_type': 'base64',
+            'buffer': base64.b64encode(c).decode('ascii'),
+        }
     elif isinstance(c, six.string_types):
         # replace glSomething by something (needed for WebGL commands)
         if c.startswith('gl'):

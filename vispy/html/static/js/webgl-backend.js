@@ -18,6 +18,8 @@ window.setTimeout(function() {
         });
 }, 100);
 
+window.VISPY_DEBUG = true;
+
 // VispyWidget code
 require(["widgets/js/widget", "widgets/js/manager"],
     function(widget, manager){
@@ -65,7 +67,6 @@ require(["widgets/js/widget", "widgets/js/manager"],
                     var commands = msg.contents;
                     for (var i = 0; i < commands.length; i++) {
                         var command = commands[i];
-                        console.debug(command);
                         this.c.command(command);
                     }
                 }
