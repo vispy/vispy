@@ -128,7 +128,7 @@ class CanvasBackend(BaseCanvasBackend):
 
         # Create IPython Widget
         self._context = get_a_context()
-        self._widget = VispyWidget(self._gen_event)
+        self._widget = VispyWidget(self._gen_event, size=kwargs.get('size', None))
 
     @property
     def _vispy_context(self):
@@ -152,7 +152,8 @@ class CanvasBackend(BaseCanvasBackend):
         pass
 
     def _vispy_set_size(self, w, h):
-        pass
+        self._widget.width = w
+        self._widget.height = h
 
     def _vispy_set_position(self, x, y):
         logger.warning('IPython notebook canvas cannot be repositioned.')
@@ -176,10 +177,12 @@ class CanvasBackend(BaseCanvasBackend):
         return 0, 0
 
     def _vispy_get_size(self):
-        pass
+        return (self._widget.width, self._widget.height)
 
     def _on_resize(self, event=None):
         print("resize")
+        if event:
+            print(event.size)
         # Event handler that is called by the underlying canvas
         if self._vispy_canvas is None:
             return
@@ -300,7 +303,9 @@ class VispyWidget(DOMWidget):
 
     def __init__(self, gen_event, **kwargs):
         super(VispyWidget, self).__init__(**kwargs)
-        self.size = kwargs.get("size", (0, 0))
+        w, h = kwargs.get('size', (500, 200))
+        self.width = w
+        self.height = h
         # self.interval = 50.0
         self.gen_event = gen_event
         self.on_msg(self.events_received)
@@ -320,13 +325,13 @@ class VispyWidget(DOMWidget):
         }
         self.send(msg)
 
-    @property
-    def size(self):
-        return self.width, self.height
+    # @property
+    # def size(self):
+    #     return self.width, self.height
 
-    @size.setter
-    def size(self, size):
-        self.width, self.height = size
+    # @size.setter
+    # def size(self, size):
+    #     self.width, self.height = size
 
     def quit(self):
         # self.is_closing = True
