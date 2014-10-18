@@ -260,7 +260,7 @@ def _serializable(c):
         return tuple(_serializable(command) for command in c)
     elif isinstance(c, np.ndarray):
         # TODO: more efficient (binary websocket??)
-        return c.tolist()
+        return c.ravel().tolist()
     elif isinstance(c, six.string_types):
         # replace glSomething by something (needed for WebGL commands)
         if c.startswith('gl'):
