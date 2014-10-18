@@ -116,15 +116,9 @@ class CanvasBackend(BaseCanvasBackend):
         # if kwargs['fullscreen']:
         #     raise RuntimeError('ipynb_webgl Canvas does not support fullscreen')
 
-        # Create real canvas. It is a backend to this backend
-        # kwargs['autoswap'] = False
-
         # Connect to events of canvas to keep up to date with size and draws
         self._vispy_canvas.events.draw.connect(self._on_draw)
         self._vispy_canvas.events.resize.connect(self._on_resize)
-
-        # Show the widget, we will hide it after the first time it's drawn
-        # self._need_draw = False
 
         # Create IPython Widget
         self._context = get_a_context()
@@ -165,12 +159,9 @@ class CanvasBackend(BaseCanvasBackend):
             display(self._widget)
 
     def _vispy_update(self):
-        # self._need_draw = True
-        # print("update")
         self._on_draw()
 
     def _vispy_close(self):
-        # self._need_draw = False
         self._widget.quit()
 
     def _vispy_get_position(self):
@@ -184,7 +175,6 @@ class CanvasBackend(BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         size = self._vispy_canvas.size
-        # self._vispy_canvas.events.resize(size=size)
 
     def _on_draw(self, event=None):
         # Event handler that is called by the underlying canvas
@@ -197,14 +187,9 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_canvas.events.initialize()
             self._on_resize()
 
-        # We are drawn, so no need for a redraw
-        # self._need_draw = False
-
         # Normal behavior
         glir_commands = self._context._glir.clear()
         self._widget.send_glir_commands(glir_commands)
-        # self._vispy_set_current()
-        # self._vispy_canvas.events.draw(region=None)
 
     # Generate vispy events according to upcoming JS events
     def _gen_event(self, ev):
@@ -225,7 +210,7 @@ class CanvasBackend(BaseCanvasBackend):
         elif event_type == "mouse_release":
             self._vispy_mouse_release(native=ev,
                                       pos=ev.get("pos"),
-                                      button=ev.get("button"),
+                                      # button=ev.get("button"),
                                       modifiers=ev.get("modifiers"),
                                       )
         elif event_type == "mouse_wheel":
@@ -249,7 +234,7 @@ class CanvasBackend(BaseCanvasBackend):
                                                   )
 
 
-# ------------------------------------------------------------------- timer ---
+# ------------------------------------------------------------------- Timer ---
 
 class TimerBackend(BaseTimerBackend):
 
@@ -291,26 +276,18 @@ def _serializable(c):
 class VispyWidget(DOMWidget):
     _view_name = Unicode("VispyView", sync=True)
 
-    # Define the custom state properties to sync with the front-end
-    # format = Unicode('png', sync=True)
     width = Int(sync=True)
     height = Int(sync=True)
-    # interval = Float(sync=True)
-    # is_closing = Bool(sync=True)
-    # value = Unicode(sync=True)
 
     def __init__(self, gen_event, **kwargs):
         super(VispyWidget, self).__init__(**kwargs)
         w, h = kwargs.get('size', (500, 200))
         self.width = w
         self.height = h
-        # self.interval = 50.0
         self.gen_event = gen_event
         self.on_msg(self.events_received)
 
     def events_received(self, _, msg):
-        # if self.is_closing:
-        #     return
         if msg['msg_type'] == 'events':
             events = msg['contents']
             for ev in events:
@@ -323,14 +300,5 @@ class VispyWidget(DOMWidget):
         }
         self.send(msg)
 
-    # @property
-    # def size(self):
-    #     return self.width, self.height
-
-    # @size.setter
-    # def size(self, size):
-    #     self.width, self.height = size
-
     def quit(self):
-        # self.is_closing = True
         self.close()
