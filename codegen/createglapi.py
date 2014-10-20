@@ -24,8 +24,9 @@ Some groups of functions (like glUniform and friends) are handled in
 *this* file.
 
 Even though the API is quite small, we want to generate several
-implementations, such as desktop, Angle, a generic proxy, webgl, a mock
-backend and possibly more. Therefore automation is crucial.
+implementations, such as desktop, es2 (angle on Windows), a generic
+proxy, a mock backend and possibly more. Therefore automation
+is crucial.
 
 Further notes
 -------------
@@ -469,10 +470,6 @@ class ProxyApiGenerator(ApiGenerator):
        
         def __call__(self, funcname, returns, *args):
             raise NotImplementedError()
-        
-        
-        def glShaderSource_compat(self, handle, code):
-            return self("glShaderSource_compat", True, handle, code)
     '''
     
     def _returns(self, des):
@@ -692,20 +689,20 @@ class DesktopApiGenerator(ApiGenerator):
             raise ValueError('unknown group func')
 
 
-class AngleApiGenrator(DesktopApiGenerator):
-    """ Generator for the Angle backend (GL to Directx conversion on
-    Windows). Very similar to the desktop API, but we do not need that
-    deferred loading of GL functions here.
+class Es2ApiGenrator(DesktopApiGenerator):
+    """ Generator for the es2 backend (i.e. Angle on Windows). Very
+    similar to the desktop API, but we do not need that deferred loading
+    of GL functions here.
     """
     
-    filename = os.path.join(GLDIR, '_angle.py')
+    filename = os.path.join(GLDIR, '_es2.py')
     write_c_sig = True
     define_argtypes_in_module = True
     
-    DESCRIPTION = "GL ES 2.0 API based on the Angle library (i.e. DirectX)"
+    DESCRIPTION = "GL ES 2.0 API (via Angle/DirectX on Windows)"
     PREAMBLE = """
     import ctypes
-    from .angle import _lib
+    from .es2 import _lib
     """
     
     def _native_call_line(self, name, es2func, cargstr=None, prefix='', indent=4):
@@ -773,7 +770,7 @@ class PyOpenGLApiGenrator(ApiGenerator):
 ## Generate
 
 # Generate
-for Gen in [ProxyApiGenerator, DesktopApiGenerator, AngleApiGenrator, 
+for Gen in [ProxyApiGenerator, DesktopApiGenerator, Es2ApiGenrator, 
             PyOpenGLApiGenrator]:
     gen = Gen()
     for des in functions:

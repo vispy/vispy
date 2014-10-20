@@ -110,9 +110,8 @@ def use_gl(target='desktop'):
     Available backends:
     * desktop - Use desktop (i.e. normal) OpenGL.
     * pyopengl - Use pyopengl (for fallback and testing). 
-    * angle - Use the Angle library to target DirectX (Windows only). (WIP)
-    * mock - Dummy backend that can be useful for testing. (not yet available)
-    * webgl - Send the GL commands to the browser. (not yet available)
+    * es2 - Use the ES2 library (Angle/DirectX on Windows)
+    * dummy - Prevent usage of gloo.gl (for when rendering occurs elsewhere)
 
     """
     target = target or 'desktop'

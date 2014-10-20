@@ -16,6 +16,9 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import keys, logger
 from ...util.ptime import time
+from ... import config
+
+USE_EGL = config['gl_backend'].lower().startswith('es')
 
 
 # -------------------------------------------------------------------- init ---
@@ -73,7 +76,10 @@ except Exception as exp:
         pass
     Frame = GLCanvas
 else:
-    available, testable, why_not = True, True, None
+    if USE_EGL:
+        available, testable, why_not = False, False, 'EGL not supported'
+    else:
+        available, testable, why_not = True, True, None
     which = 'wxPython ' + str(wx.__version__)
 
 

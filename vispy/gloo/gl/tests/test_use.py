@@ -33,13 +33,13 @@ def test_use_desktop():
             val2 = getattr(gl.pyopengl, name)
             assert_is(val1, val2)
     
-    # Use webgl
-    gl.use_gl('webgl')
+    # Use dummy
+    gl.use_gl('dummy')
     #
     for name in dir(gl.desktop):
         if name.lower().startswith('gl'):
             val1 = getattr(gl, name)
-            val2 = getattr(gl.webgl, name)
+            val2 = getattr(gl.dummy, name)
             assert_is(val1, val2)
     
     # Touch debug wrapper stuff

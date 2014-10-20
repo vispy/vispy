@@ -14,8 +14,11 @@ calculated, such that each explostion is unique.
 
 import time
 import numpy as np
-from vispy import gloo
-from vispy import app
+from vispy import gloo, app
+
+# import vispy
+# vispy.use('pyside', 'es2')
+
 
 # Create a texture
 radius = 32
@@ -37,7 +40,6 @@ data = np.zeros(N, [('a_lifetime', np.float32, 1),
 
 
 VERT_SHADER = """
-#version 120
 uniform float u_time;
 uniform vec3 u_centerPosition;
 attribute float a_lifetime;
@@ -62,17 +64,17 @@ void main () {
 }
 """
 
+# Deliberately add precision qualifiers to test automatic GLSL code conversion
 FRAG_SHADER = """
-#version 120
-
+precision highp float;
 uniform sampler2D texture1;
 uniform vec4 u_color;
 varying float v_lifetime;
-uniform sampler2D s_texture;
+uniform highp sampler2D s_texture;
 
 void main()
 {
-    vec4 texColor;
+    highp vec4 texColor;
     texColor = texture2D(s_texture, gl_PointCoord);
     gl_FragColor = vec4(u_color) * texColor;
     gl_FragColor.a *= v_lifetime;
@@ -85,7 +87,7 @@ class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive')
         self.size = 800, 600
-
+        
         # Create program
         self._program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self._program.bind(gloo.VertexBuffer(data))
@@ -119,7 +121,7 @@ class Canvas(app.Canvas):
             self._new_explosion()
 
     def _new_explosion(self):
-
+    
         # New centerpos
         centerpos = np.random.uniform(-0.5, 0.5, (3,))
         self._program['u_centerPosition'] = centerpos
