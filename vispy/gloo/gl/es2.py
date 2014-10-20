@@ -21,6 +21,7 @@ if hasattr(ctypes, 'TEST_DLL'):
     _lib = ctypes.TEST_DLL.LoadLibrary('')
     
 elif sys.platform.startswith('win'):
+    raise RuntimeError('ES 2.0 is not available on Windows yet')
     
     # todo: were are we going to put our libs?
     dirname = r'C:\Users\Almar\AppData\Local\Chromium\Application\34.0.1790.0'
