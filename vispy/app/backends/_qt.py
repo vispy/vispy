@@ -25,6 +25,7 @@ from time import sleep, time
 import os
 import sys
 import atexit
+import ctypes
 
 from ...util import logger
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
@@ -36,6 +37,17 @@ from . import qt_lib
 
 USE_EGL = config['gl_backend'].lower().startswith('es')
 
+# Get platform
+IS_LINUX = IS_OSX = IS_WIN = IS_RPI = False
+if sys.platform.startswith('linux'):
+    if os.uname()[4].startswith('arm'):
+        IS_RPI = True
+    else:
+        IS_LINUX = True
+elif sys.platform.startswith('darwin'):
+    IS_OSX = true
+elif sys.platform.startswith('win'):
+    IS_WIN = True
 
 # -------------------------------------------------------------------- init ---
 
@@ -414,7 +426,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
             from ...ext import egl as _egl
             egl = _egl
             # Use MESA driver on Linux
-            if sys.platform.startswith('linux'):
+            if IS_LINUX and not IS_RPI:
                 os.environ['EGL_SOFTWARE'] = 'true'
             # Create and init display
             _EGL_DISPLAY = egl.eglGetDisplay()
@@ -435,7 +447,11 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         # Init widget
         f = QtCore.Qt.Widget if dec else QtCore.Qt.FramelessWindowHint
         QWidget.__init__(self, parent, f)
-        if sys.platform.startswith('win'):
+        if 0:  # IS_LINUX or IS_RPI:
+            self.setAutoFillBackground(False)
+            self.setAttribute(QtCore.Qt.WA_NoSystemBackground, True)
+            self.setAttribute(QtCore.Qt.WA_OpaquePaintEvent, True)
+        elif IS_WIN:
             self.setAttribute(QtCore.Qt.WA_PaintOnScreen, True)
             self.setAutoFillBackground(False)
         
@@ -452,7 +468,10 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         winid = self.winId()
         
         # On Linux this is it
-        if sys.platform.startswith('linux'):
+        if IS_RPI:
+            nw = (ctypes.c_int * 3)(winid, self.width(), self.height())
+            return ctypes.pointer(nw)
+        elif IS_LINUX:
             return int(winid)  # Is int on PySide, but sip.voidptr on PyQt
         
         # Get window id from stupid capsule thingy
@@ -460,7 +479,6 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
         #logs.com/Shiren-Y/archive/2011/04/06/2007288.html&prev=/search%3Fq%3Dp
         # yside%2Bdirectx%26client%3Dfirefox-a%26hs%3DIsJ%26rls%3Dorg.mozilla:n
         #l:official%26channel%3Dfflb%26biw%3D1366%26bih%3D614
-        import ctypes
         # Prepare
         ctypes.pythonapi.PyCapsule_GetName.restype = ctypes.c_char_p
         ctypes.pythonapi.PyCapsule_GetName.argtypes = [ctypes.py_object]
@@ -498,7 +516,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
     def paintEvent(self, event):
         self._vispy_canvas.events.draw(region=None)
         
-        if sys.platform.startswith('linux'):
+        if IS_LINUX or IS_RPI:
             # Arg, cannot get GL to draw to the widget, so we take a 
             # screenshot and draw that for now ...
             # Further, QImage keeps a ref to the data that we pass, so
@@ -523,7 +541,7 @@ class CanvasBackendEgl(QtBaseCanvasBackend, QWidget):
             painter.end()
     
     def paintEngine(self):
-        if sys.platform.startswith('linux'):
+        if IS_LINUX and not IS_RPI:
             # For now we are drawing a screenshot
             return QWidget.paintEngine(self)
         else:
