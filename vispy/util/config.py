@@ -33,11 +33,12 @@ def _init():
     _data_path = _get_vispy_app_dir()
     if _data_path is not None:
         _data_path = op.join(_data_path, 'data')
-    
+
     # All allowed config keys and the types they may have
     _allowed_config_keys = {
         'data_path': string_types, 
-        'default_backend': string_types, 
+        'default_backend': string_types,
+        'gl_backend': string_types,
         'gl_debug': (bool,), 
         'logging_level': string_types,
         'qt_lib': string_types, 
@@ -47,8 +48,9 @@ def _init():
     # Default values for all config options
     default_config_options = {
         'data_path': _data_path, 
-        'default_backend': '', 
-        'gl_debug': False, 
+        'default_backend': '',
+        'gl_backend': 'desktop',
+        'gl_debug': False,
         'logging_level': 'info',
         'qt_lib': 'any',
         'dpi': None,

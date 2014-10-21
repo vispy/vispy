@@ -60,14 +60,14 @@ def test_functionality_pyopengl():
 
 
 @requires_application()
-def test_functionality_angle():
-    """ Test angle GL backend for full functionality. """
+def test_functionality_es2():
+    """ Test es2 GL backend for full functionality. """
     if True:
-        raise SkipTest('Skip Angle functionality test for now.')
-    if sys.platform.startswith('win'):
-        raise SkipTest('Can only test angle functionality on Windows.')
+        raise SkipTest('Skip es2 functionality test for now.')
+    if not sys.platform.startswith('win'):
+        raise SkipTest('Can only test es2 functionality on Windows.')
     glut_skip()
-    _test_functonality('angle')
+    _test_functonality('es2')
 
 
 def _clear_screen():
@@ -209,7 +209,6 @@ helements = None  # the OpenGL object ref
 
 ## The GL calls
 
-
 def _prepare_vis():
     
     objects = []
@@ -225,8 +224,8 @@ def _prepare_vis():
     objects.append((gl.glDeleteShader, hfrag))
     
     # Compile source code
-    gl.glShaderSource_compat(hvert, VERT)
-    gl.glShaderSource_compat(hfrag, FRAG)
+    gl.glShaderSource(hvert, VERT)
+    gl.glShaderSource(hfrag, FRAG)
     gl.glCompileShader(hvert)
     gl.glCompileShader(hfrag)
     

@@ -78,12 +78,14 @@ def use(app=None, gl=None):
         gl = 'webgl'
 
     # Apply now
+    if gl:
+        import vispy.gloo
+        from vispy import config
+        config['gl_backend'] = gl
+        vispy.gloo.gl.use_gl(gl)
     if app:
         import vispy.app
         vispy.app.use_app(app)
-    if gl:
-        import vispy.gloo
-        vispy.gloo.gl.use_gl(gl)
 
 
 def run_subprocess(command, return_code=False, **kwargs):

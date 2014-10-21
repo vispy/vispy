@@ -21,11 +21,6 @@ from ..gloo.context import GLContext, get_new_context
 # todo: add focus events
 
 
-def _gloo_initialize(event):
-    from ..gloo import gl_initialize
-    gl_initialize()
-
-
 class Canvas(object):
     """Representation of a GUI element with an OpenGL context
 
@@ -54,8 +49,6 @@ class Canvas(object):
         Note the canvas application can be accessed at ``canvas.app``.
     create_native : bool
         Whether to create the widget immediately. Default True.
-    init_gloo : bool
-        Initialize standard values in gloo (e.g., ``GL_POINT_SPRITE``).
     vsync : bool
         Enable vertical synchronization.
     resizable : bool
@@ -88,9 +81,8 @@ class Canvas(object):
     
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
-                 init_gloo=True, vsync=False, resizable=True, decorate=True,
-                 fullscreen=False, context=None, keys=None, parent=None,
-                 dpi=None):
+                 vsync=False, resizable=True, decorate=True, fullscreen=False,
+                 context=None, keys=None, parent=None, dpi=None):
         global config
         size = [int(s) for s in size]
         if len(size) != 2:
@@ -138,11 +130,6 @@ class Canvas(object):
                                  event_class=DrawEvent)
         self.events.add(paint=emitter)
         self.events.draw.connect(self.events.paint)
-
-        # Initialize gloo settings
-        if init_gloo:
-            self.events.initialize.connect(_gloo_initialize,
-                                           ref='gloo_initialize')
         
         # Get app instance
         if app is None:

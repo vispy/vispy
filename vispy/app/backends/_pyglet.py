@@ -15,6 +15,9 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import keys
 from ...util.ptime import time
+from ... import config
+
+USE_EGL = config['gl_backend'].lower().startswith('es')
 
 
 # -------------------------------------------------------------------- init ---
@@ -83,7 +86,10 @@ except Exception as exp:
     class _Window(object):
         pass
 else:
-    available, testable, why_not = True, True, None
+    if USE_EGL:
+        available, testable, why_not = False, False, 'EGL not supported'
+    else:
+        available, testable, why_not = True, True, None
     which = 'pyglet ' + str(pyglet.version)
     _Window = pyglet.window.Window
 
