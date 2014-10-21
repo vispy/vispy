@@ -80,10 +80,10 @@ def test_multiple_canvases():
             def on_timer(_):
                 global timer_ran
                 timer_ran = True
-            timeout = time() + 2.0
             Timer(0.1, app=app, connect=on_timer, iterations=1,
                   start=True)
-            #while not timer_ran and time() < timeout:
+            app.process_events()
+            sleep(0.2)
             app.process_events()
             assert_true(timer_ran)
 

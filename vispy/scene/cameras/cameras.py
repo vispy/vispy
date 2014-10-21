@@ -20,11 +20,11 @@ from __future__ import division
 
 import numpy as np
 
-from .node import Node
-from ..geometry import Rect
-from ..visuals.transforms import (STTransform, PerspectiveTransform, 
-                                  NullTransform, AffineTransform,
-                                  TransformCache)
+from ..node import Node
+from ...geometry import Rect
+from ...visuals.transforms import (STTransform, PerspectiveTransform, 
+                                   NullTransform, AffineTransform,
+                                   TransformCache)
 
 
 def make_camera(cam_type, *args, **kwds):

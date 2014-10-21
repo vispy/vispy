@@ -8,8 +8,7 @@ Demonstration of animated Line visual.
 """
 
 import numpy as np
-import vispy.app
-from vispy import scene
+from vispy import app, scene
 
 # vertex positions of data to draw
 N = 200
@@ -33,7 +32,7 @@ def update(ev):
     color = np.roll(color, 1, axis=0)
     line.set_data(pos=pos, color=color)
 
-timer = vispy.app.Timer()
+timer = app.Timer()
 timer.connect(update)
 timer.start(0)
 

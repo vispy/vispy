@@ -18,7 +18,7 @@ import numpy as np
 import vispy.scene
 from vispy.scene import visuals
 from vispy.scene.cameras import MagnifyCamera, Magnify1DCamera
-from vispy.scene.transforms import STTransform
+from vispy.visuals.transforms import STTransform
 from vispy.util import filter 
 
 # 

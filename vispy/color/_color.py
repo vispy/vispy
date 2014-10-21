@@ -60,8 +60,8 @@ def _user_to_rgba(color, expand=True, clip=False):
         if clip:
             color = np.clip(color, 0, 1)
         else:
-            raise ValueError("Color values must be between 0 and 1 "
-                "(or use clip=True to automatically clip the values).")
+            raise ValueError("Color values must be between 0 and 1 (or use "
+                             "clip=True to automatically clip the values).")
     return color
 
 

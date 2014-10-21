@@ -41,3 +41,4 @@ from . import visuals  # noqa
 from ..visuals import transforms  # noqa
 from . import widgets  # noqa
 from . import cameras  # noqa
+from .node import Node
