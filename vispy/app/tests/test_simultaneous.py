@@ -80,8 +80,8 @@ def test_multiple_canvases():
             def on_timer(_):
                 global timer_ran
                 timer_ran = True
-            Timer(0.1, app=app, connect=on_timer, iterations=1,
-                  start=True)
+            t = Timer(0.1, app=app, connect=on_timer, iterations=1,  # noqa
+                      start=True)
             app.process_events()
             sleep(0.2)
             app.process_events()

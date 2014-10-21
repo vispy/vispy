@@ -6,6 +6,10 @@ _doc_template = """Class inheriting from visuals.%sVisual and scene.Node.
 Instances of this class may be added to a scenegraph using the methods and
 properties defined by Node, and will display the visual output defined by
 visuals.%sVisual.
+
+Most VisualNode subclasses are generated automatically from the classes found 
+in vispy.visuals. For custom visuals, it is recommended to subclass from
+Visual rather than VisualNode.
 """
 
 

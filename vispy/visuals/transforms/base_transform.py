@@ -114,6 +114,19 @@ class BaseTransform(object):
         """
         return self._shader_imap
 
+    def _shader_object(self):
+        """ This method allows transforms to be assigned directly to shader
+        template variables. 
+        
+        Example::
+        
+            code = 'void main() { gl_Position = $transform($position); }'
+            func = shaders.Function(code)
+            tr = STTransform()
+            func['transform'] = tr  # use tr's forward mapping for $function
+        """
+        return self.shader_map()
+
     def update(self):
         """
         Called to inform any listeners that this transform has changed.

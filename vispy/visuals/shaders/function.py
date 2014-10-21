@@ -61,10 +61,10 @@ class ShaderObject(object):
             # gl_ names not allowed for variables
             ref = ref[3:].lower()
         
-        # Transforms are converted into their glsl map function. 
-        # This is a bit of a hack.. is there a nicer way?
-        if hasattr(obj, 'shader_map'):
-            obj = obj.shader_map()
+        # Allow any type of object to be converted to ShaderObject if it
+        # provides a magic method:
+        if hasattr(obj, '_shader_object'):
+            obj = obj._shader_object()
         
         if isinstance(obj, ShaderObject):
             if isinstance(obj, Variable) and obj.name is None:
