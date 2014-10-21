@@ -41,7 +41,7 @@ class ModularProgram(Program):
         # todo: remove!
     
     def _source_changed(self, ev):
-        logger.debug("ModularProgram source changed: %s" % self)
+        logger.debug("ModularProgram source changed: %s", self)
         if ev.code_changed:
             self._need_build = True
         self.changed()
@@ -54,14 +54,14 @@ class ModularProgram(Program):
         Program.draw(self, *args, **kwargs)
     
     def _build(self):
-        logger.debug("Rebuild ModularProgram: %s" % self)
+        logger.debug("Rebuild ModularProgram: %s", self)
         self.compiler = Compiler(vert=self.vert, frag=self.frag)
         code = self.compiler.compile()
         self.set_shaders(code['vert'], code['frag'])
-        logger.debug('==== Vertex Shader ====\n\n' + code['vert'] + "\n")
-        logger.debug('==== Fragment shader ====\n\n' + code['frag'] + "\n")
+        logger.debug('==== Vertex Shader ====\n\n%s\n', code['vert'])
+        logger.debug('==== Fragment shader ====\n\n%s\n', code['frag'])
         # Note: No need to reset _variable_state, gloo.Program resends
-        # attribute/uniform data on settinh shaders
+        # attribute/uniform data on setting shaders
     
     def update_variables(self):
         # Clear any variables that we may have set another time.

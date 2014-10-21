@@ -23,7 +23,8 @@ import numpy as np
 from .node import Node
 from ..geometry import Rect
 from ..visuals.transforms import (STTransform, PerspectiveTransform, 
-                                  NullTransform, AffineTransform)
+                                  NullTransform, AffineTransform,
+                                  TransformCache)
 
 
 def make_camera(cam_type, *args, **kwds):
@@ -71,8 +72,10 @@ class BaseCamera(Node):
     def __init__(self, **kwargs):
         self._viewbox = None
         self._interactive = True
+        self._pre_transform = None
         super(BaseCamera, self).__init__(**kwargs)
         self.transform = NullTransform()
+        self._transform_cache = TransformCache()
 
     @property
     def interactive(self):
@@ -99,6 +102,11 @@ class BaseCamera(Node):
         if self._viewbox is not None:
             self.connect()
             self.parent = vb.scene
+        self.view_changed()
+        
+    def view_changed(self):
+        """ Called when this camera is connected to a new view.
+        """
         self._update_transform()
     
     def connect(self):
@@ -114,6 +122,18 @@ class BaseCamera(Node):
         self._viewbox.events.mouse_move.disconnect(self.view_mouse_event)
         self._viewbox.events.mouse_wheel.disconnect(self.view_mouse_event)
         self._viewbox.events.resize.disconnect(self.view_resize_event)
+    
+    @property
+    def pre_transform(self):
+        """ A transform to apply to the beginning of the scene transform, in
+        addition to anything else provided by this Camera.
+        """
+        return self._pre_transform
+    
+    @pre_transform.setter
+    def pre_transform(self, tr):
+        self._pre_transform = tr
+        self._update_transform()
     
     def view_mouse_event(self, event):
         """
@@ -139,7 +159,13 @@ class BaseCamera(Node):
         """
         # todo: check whether transform has changed, connect to 
         # transform.changed event
-        self._scene_transform = tr
+        pre_tr = self.pre_transform
+        if pre_tr is None:
+            self._scene_transform = tr
+        else:
+            self._transform_cache.roll()
+            self._scene_transform = self._transform_cache.get([pre_tr, tr])
+            
         if self.viewbox is not None:
             self.viewbox.scene.transform = self._scene_transform
             self.viewbox.update()

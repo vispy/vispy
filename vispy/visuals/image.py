@@ -151,7 +151,7 @@ class ImageVisual(ModularMesh):
             method = self.method
 
         # always have to rebuild for impostor, only first for subdivide
-        if self._texture is None or method == 'impostor':
+        if self._texture is None:
             self._build_data(transforms)
         if method == 'subdivide':
             tr = transforms.get_full_transform()

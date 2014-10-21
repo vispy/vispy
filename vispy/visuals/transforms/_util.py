@@ -6,6 +6,7 @@ from __future__ import division
 
 import numpy as np
 from ...ext.decorator import decorator
+from ...util import logger
 
 
 def arg_to_array(func):
@@ -113,6 +114,7 @@ class TransformCache(object):
         key = tuple(map(id, path))
         item = self._cache.get(key, None)
         if item is None:
+            logger.debug("Transform cache miss: %s", key)
             item = [0, self._create(path)]
             self._cache[key] = item
         item[0] = 0  # reset age for this item
@@ -141,4 +143,5 @@ class TransformCache(object):
             item[0] += 1
 
         for key in rem:
+            logger.debug("TransformCache remove: %s", key)
             del self._cache[key]
