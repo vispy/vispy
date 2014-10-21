@@ -155,8 +155,8 @@ def get_config_keys():
     keys : tuple
         List of known config keys.
     """
-    return ('data_path', 'default_backend', 'gl_debug', 'logging_level',
-            'qt_lib')
+    return ('data_path', 'default_backend', 'gl_backend', 'gl_debug', 
+            'logging_level', 'qt_lib')
 
 
 def _get_config_fname():
@@ -205,7 +205,7 @@ def save_config(**kwargs):
 _data_path = _get_vispy_app_dir()
 if _data_path is not None:
     _data_path = op.join(_data_path, 'data')
-config = Config(default_backend='qt', qt_lib='any',
+config = Config(default_backend='qt', qt_lib='any', gl_backend='desktop',
                 gl_debug=False, logging_level='info',
                 data_path=_data_path)
 try:

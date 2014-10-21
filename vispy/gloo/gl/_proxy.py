@@ -13,10 +13,6 @@ class BaseGLProxy(object):
    
     def __call__(self, funcname, returns, *args):
         raise NotImplementedError()
-    
-    
-    def glShaderSource_compat(self, handle, code):
-        return self("glShaderSource_compat", True, handle, code)
 
 
     def glActiveTexture(self, texture):

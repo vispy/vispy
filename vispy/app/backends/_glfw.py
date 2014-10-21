@@ -26,6 +26,9 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from ...util import keys, logger
 from ...util.ptime import time
+from ... import config
+
+USE_EGL = config['gl_backend'].lower().startswith('es')
 
 
 # -------------------------------------------------------------------- init ---
@@ -85,8 +88,12 @@ try:
 except Exception as exp:
     available, testable, why_not, which = False, False, str(exp), None
 else:
-    available, testable, why_not = True, True, None
-    which = 'glfw ' + str(glfw.__version__)
+    if USE_EGL:
+        available, testable, why_not = False, False, 'EGL not supported'
+        which = 'glfw ' + str(glfw.__version__)
+    else:
+        available, testable, why_not = True, True, None
+        which = 'glfw ' + str(glfw.__version__)
 
 MOD_KEYS = [keys.SHIFT, keys.ALT, keys.CONTROL, keys.META]
 _GLFW_INITIALIZED = False

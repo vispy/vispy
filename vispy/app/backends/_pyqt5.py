@@ -8,7 +8,9 @@
 import sys
 from .. import backends
 from ...util import logger
+from ... import config
 
+USE_EGL = config['gl_backend'].lower().startswith('es')
 
 try:
     # Make sure no conflicting libraries have been imported.
@@ -18,7 +20,8 @@ try:
             raise RuntimeError("Refusing to import PyQt5 because %s is "
                                "already imported." % lib)
     # Try importing (QtOpenGL first to fail without import QtCore)
-    from PyQt5 import QtOpenGL  # noqa
+    if not USE_EGL:
+        from PyQt5 import QtOpenGL  # noqa
     from PyQt5 import QtGui, QtCore  # noqa
 except Exception as exp:
     # Fail: this backend cannot be used
