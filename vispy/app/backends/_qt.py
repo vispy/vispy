@@ -45,11 +45,12 @@ if sys.platform.startswith('linux'):
     else:
         IS_LINUX = True
 elif sys.platform.startswith('darwin'):
-    IS_OSX = true
+    IS_OSX = True
 elif sys.platform.startswith('win'):
     IS_WIN = True
 
 # -------------------------------------------------------------------- init ---
+
 
 def _check_imports(lib):
     # Make sure no conflicting libraries have been imported.
