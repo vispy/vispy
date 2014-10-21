@@ -83,8 +83,8 @@ def test_multiple_canvases():
             timeout = time() + 2.0
             Timer(0.1, app=app, connect=on_timer, iterations=1,
                   start=True)
-            while not timer_ran and time() < timeout:
-                app.process_events()
+            #while not timer_ran and time() < timeout:
+            app.process_events()
             assert_true(timer_ran)
 
     if app.backend_name.lower() == 'wx':
