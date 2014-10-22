@@ -186,7 +186,7 @@ class CanvasBackend(BaseCanvasBackend):
             logger.warning('IPython notebook canvas cannot be hidden.')
         else:
             display(self._widget)
-            self._vispy_canvas.events.draw(region=None)
+            self._vispy_update()
 
     def _vispy_update(self):
         if self._vispy_canvas is None:
@@ -232,16 +232,20 @@ class CanvasBackend(BaseCanvasBackend):
                                                   modifiers=ev.get("modifiers"),
                                                   )
         elif event_type == "key_press":
-            self._vispy_canvas.events.key_press(native=key,
-                                                key=key.get("key"),
-                                                text=key.get("text"),
-                                                modifiers=key.get("modifiers"),
+            self._vispy_canvas.events.key_press(native=ev,
+                                                key=ev.get("key"),
+                                                text=ev.get("text"),
+                                                modifiers=ev.get("modifiers"),
                                                 )
         elif event_type == "key_release":
-            self._vispy_canvas.events.key_release(native=key,
-                                                  key=key.get("key"),
-                                                  text=key.get("text"),
-                                                  modifiers=key.get("modifiers"),
+            self._vispy_canvas.events.key_release(native=ev,
+                                                  key=ev.get("key"),
+                                                  text=ev.get("text"),
+                                                  modifiers=ev.get("modifiers"),
+                                                  )
+        elif event_type == "resize":
+            self._vispy_canvas.events.resize(native=ev, 
+                                             size=ev.get("size")
                                                   )
 
 

@@ -36,6 +36,8 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 // Initialize the VispyCanvas.
                 var c = vispy.init(canvas);
                 this.c = c;
+                c.resize();
+                c.resizable();
 
                 // Track canvas size changes.
                 this.model.on('change:width', this.width_changed, this);
@@ -57,6 +59,7 @@ require(["widgets/js/widget", "widgets/js/manager"],
                         msg_type: 'events',
                         contents: events
                     };
+                    // console.debug(events);
                     // Send the message with the events to Python.
                     that.send(msg);
                 });
