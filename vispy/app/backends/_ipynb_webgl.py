@@ -52,6 +52,7 @@ Unicode = Int = Float = Bool = lambda *args, **kwargs: None
 
 # Try importing IPython
 try:
+    import tornado
     import IPython
     if IPython.version_info < (2,):
         raise RuntimeError('ipynb_webgl backend need IPython version >= 2.0')
@@ -252,18 +253,13 @@ class CanvasBackend(BaseCanvasBackend):
 # ------------------------------------------------------------------- Timer ---
 
 class TimerBackend(BaseTimerBackend):
-
-    # def __init__(self, vispy_timer):
-    #     pass
-
     def _vispy_start(self, interval):
-        pass
+        self._timer = tornado.ioloop.PeriodicCallback(self._vispy_timer._timeout, 
+            interval*1000)
+        self._timer.start()
 
     def _vispy_stop(self):
-        pass
-
-    def _vispy_timeout(self):
-        pass
+        self._timer.stop()
 
 
 # ---------------------------------------------------------- IPython Widget ---
