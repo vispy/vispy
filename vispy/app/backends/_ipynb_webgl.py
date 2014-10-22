@@ -130,14 +130,18 @@ class CanvasBackend(BaseCanvasBackend):
 
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, *args)
-
-        # Create IPython Widget
-        self._widget = VispyWidget(self._gen_event, size=kwargs.get('size', None))
-
-        # Get a context and create the WebGL parser.
+        BaseCanvasBackend.__init__(self, *args)        
         self._context = get_a_context()
+        self._create_widget(size=kwargs.get('size', None))
+
+    def _create_widget(self, size=None):
+        self._widget = VispyWidget(self._gen_event, size=size)
         self._context.glir.parser = WebGLGlirParser(self._widget)
+
+    def _reinit_widget(self):
+        self._vispy_canvas.events.initialize()
+        self._vispy_canvas.events.resize(size=(self._widget.width, self._widget.height))
+        self._vispy_canvas.events.draw()
 
     @property
     def _vispy_context(self):
@@ -172,10 +176,7 @@ class CanvasBackend(BaseCanvasBackend):
             logger.warning('IPython notebook canvas cannot be hidden.')
         else:
             display(self._widget)
-            # When the widget is displayed, called resize and draw events.
-            size = self._widget.width, self._widget.height
-            self._vispy_canvas.events.resize(size=size)
-            self._vispy_canvas.events.draw()
+            self._reinit_widget()
 
     def _vispy_update(self):
         if self._vispy_canvas is None:
