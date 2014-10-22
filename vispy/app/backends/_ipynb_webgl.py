@@ -177,14 +177,14 @@ class CanvasBackend(BaseCanvasBackend):
             self._vispy_canvas.events.resize(size=size)
             self._vispy_canvas.events.draw()
 
-
     def _vispy_update(self):
         if self._vispy_canvas is None:
             return
         self._vispy_canvas.events.draw()
 
     def _vispy_close(self):
-        self._widget.quit()
+        pass
+        # self._widget.quit()
 
     def _vispy_get_position(self):
         return 0, 0
@@ -308,5 +308,5 @@ class VispyWidget(DOMWidget):
         }
         self.send(msg)
 
-    def quit(self):
-        self.close()
+    # def quit(self):
+    #     self.close()

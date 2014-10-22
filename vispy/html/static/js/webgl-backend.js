@@ -8,14 +8,12 @@ require.config({
 // Load Vispy.js in the notebook.
 IPython.load_extensions("vispy.min");
 // HACK: this is UGLY but I didn't find a better way to do it
+var _vispy_loaded = function(vispy) {
+    window.vispy = vispy;
+    vispy.start_event_loop();
+};
 window.setTimeout(function() {
-    require(["vispy"], 
-        function(vispy) {
-            window.vispy = vispy;
-        }, 
-        function(vispy) {
-           window.vispy = vispy;
-        });
+    require(["vispy"], _vispy_loaded, _vispy_loaded);
 }, 100);
 
 // VispyWidget code
@@ -47,7 +45,7 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 window.VISPY_DEBUG = false;
 
                 // Start the event loop.
-                c.start_event_loop(function() {
+                c.event_tick = function() {
                     // Retrieve and flush the event queue.
                     var events = that.c.event_queue.get();
                     that.c.event_queue.clear();
@@ -62,7 +60,9 @@ require(["widgets/js/widget", "widgets/js/manager"],
                     // console.debug(events);
                     // Send the message with the events to Python.
                     that.send(msg);
-                });
+
+                    that.c.execute_pending_commands();
+                };
             },
 
             on_msg: function(msg) {
