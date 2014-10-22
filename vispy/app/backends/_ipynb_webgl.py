@@ -106,6 +106,7 @@ class ApplicationBackend(BaseApplicationBackend):
 class WebGLGlirParser(BaseGlirParser):
     def __init__(self, widget):
         self._widget = widget
+        self._commands = []
 
     def is_remote(self):
         return True
@@ -114,8 +115,12 @@ class WebGLGlirParser(BaseGlirParser):
         return 'es2'
     
     def parse(self, commands):
-        print(commands)
+        self._commands += commands
+        self._widget.send_glir_commands(commands)
 
+    @property
+    def commands(self):
+        return self._commands
 
 
 
@@ -181,16 +186,12 @@ class CanvasBackend(BaseCanvasBackend):
             logger.warning('IPython notebook canvas cannot be hidden.')
         else:
             display(self._widget)
+            self._vispy_canvas.events.draw(region=None)
 
     def _vispy_update(self):
         if self._vispy_canvas is None:
             return
-        # self._send_glir_commands()
         self._vispy_canvas.events.draw(region=None)
-
-    # def _send_glir_commands(self):
-    #     glir_commands = self._context._glir.clear()
-    #     self._widget.send_glir_commands(glir_commands)
 
     def _vispy_close(self):
         self._widget.quit()
@@ -267,7 +268,7 @@ def _serializable(c):
     if isinstance(c, list):
         return [_serializable(command) for command in c]
     if isinstance(c, tuple):
-        return tuple(_serializable(command) for command in c)
+        return list(_serializable(command) for command in c)
     elif isinstance(c, np.ndarray):
         # TODO: binary websocket (once the IPython PR has been merged)
         return {

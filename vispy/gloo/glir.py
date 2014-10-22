@@ -150,14 +150,16 @@ class GlirQueue(object):
                         has_prec_int = has_prec_int or 'int' in line
                     lines.append(line.rstrip())
                 # Write
-                if True:
-                    lines.insert(has_version, '#line 0')
+                # BUG: fails on WebGL (Chrome)
+                # if True:
+                #     lines.insert(has_version, '#line 0')
                 if not has_prec_float:
                     lines.insert(has_version, 'precision highp float;')
                 if not has_prec_int:
                     lines.insert(has_version, 'precision highp int;')
-                if not has_version:
-                    lines.insert(has_version, '#version 100')
+                # BUG: fails on WebGL (Chrome)
+                # if not has_version:
+                #     lines.insert(has_version, '#version 100')
                 out.append('\n'.join(lines))
         
         elif convert == 'desktop':
