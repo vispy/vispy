@@ -264,17 +264,22 @@ class TimerBackend(BaseTimerBackend):
 
 # ---------------------------------------------------------- IPython Widget ---
 
-def _serializable(c):
+def _serializable(c, serialize_array=True):
     if isinstance(c, list):
-        return [_serializable(command) for command in c]
+        return [_serializable(command, serialize_array=serialize_array) for command in c]
     if isinstance(c, tuple):
-        return list(_serializable(command) for command in c)
+        if c and c[0] == 'UNIFORM':
+            serialize_array = False
+        return list(_serializable(command, serialize_array=serialize_array) for command in c)
     elif isinstance(c, np.ndarray):
-        # TODO: binary websocket (once the IPython PR has been merged)
-        return {
-            'storage_type': 'base64',
-            'buffer': base64.b64encode(c).decode('ascii'),
-        }
+        if serialize_array:
+            # TODO: binary websocket (once the IPython PR has been merged)
+            return {
+                'storage_type': 'base64',
+                'buffer': base64.b64encode(c).decode('ascii'),
+            }
+        else:
+            return _serializable(c.ravel().tolist(), False)
     elif isinstance(c, six.string_types):
         # replace glSomething by something (needed for WebGL commands)
         if c.startswith('gl'):

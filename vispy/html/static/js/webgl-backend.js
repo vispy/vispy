@@ -18,8 +18,6 @@ window.setTimeout(function() {
         });
 }, 100);
 
-window.VISPY_DEBUG = true;
-
 // VispyWidget code
 require(["widgets/js/widget", "widgets/js/manager"],
     function(widget, manager){
@@ -42,6 +40,9 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 // Track canvas size changes.
                 this.model.on('change:width', this.width_changed, this);
                 this.model.on('change:height', this.height_changed, this);
+
+
+                window.VISPY_DEBUG = true;
 
                 // Start the event loop.
                 c.start_event_loop(function() {
