@@ -47,7 +47,14 @@ class GlirQueue(object):
         self._invalid_objects = set()
         self._verbose = False
         # todo: allow different kind of parsers, like a parser that sends to JS
-    
+    @property
+    def parser(self):
+        return self._parser
+
+    @parser.setter
+    def parser(self, parser):
+        self._parser = parser
+
     def is_remote(self):
         """ Get whether the GLIR commands are processed in this process
         or remotely. In the latter case, gloo.gl cannot be used directly.

@@ -18,6 +18,7 @@ from .. import Application, Canvas
 from ...util import logger
 from ...ext import six
 from vispy.gloo.context import get_a_context
+from vispy.gloo.glir import BaseGlirParser
 
 # Import for displaying Javascript on notebook
 import os.path as op
@@ -100,6 +101,24 @@ class ApplicationBackend(BaseApplicationBackend):
 
 # ------------------------------------------------------------------ canvas ---
 
+
+
+class WebGLGlirParser(BaseGlirParser):
+    def __init__(self, widget):
+        self._widget = widget
+
+    def is_remote(self):
+        return True
+    
+    def convert_shaders(self):
+        return 'es2'
+    
+    def parse(self, commands):
+        print(commands)
+
+
+
+
 class CanvasBackend(BaseCanvasBackend):
 
     # args are for BaseCanvasBackend, kwargs are for us.
@@ -119,12 +138,15 @@ class CanvasBackend(BaseCanvasBackend):
         #     raise RuntimeError('ipynb_webgl Canvas does not support fullscreen')
 
         # Connect to events of canvas to keep up to date with size and draws
-        self._vispy_canvas.events.draw.connect(self._send_glir_commands, position='last')
+        # self._vispy_canvas.events.draw.connect(self._send_glir_commands, position='last')
         # self._vispy_canvas.events.resize.connect(self._on_resize, position='last')
 
         # Create IPython Widget
-        self._context = get_a_context()
         self._widget = VispyWidget(self._gen_event, size=kwargs.get('size', None))
+
+        # Get a context and create the WebGL parser.
+        self._context = get_a_context()
+        self._context.glir.parser = WebGLGlirParser(self._widget)
 
     @property
     def _vispy_context(self):
@@ -163,12 +185,12 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_update(self):
         if self._vispy_canvas is None:
             return
-        self._send_glir_commands()
-        # self._vispy_canvas.events.draw(region=None)
+        # self._send_glir_commands()
+        self._vispy_canvas.events.draw(region=None)
 
-    def _send_glir_commands(self):
-        glir_commands = self._context._glir.clear()
-        self._widget.send_glir_commands(glir_commands)
+    # def _send_glir_commands(self):
+    #     glir_commands = self._context._glir.clear()
+    #     self._widget.send_glir_commands(glir_commands)
 
     def _vispy_close(self):
         self._widget.quit()
