@@ -83,7 +83,7 @@ class Canvas(object):
                  show=False, autoswap=True, app=None, create_native=True,
                  vsync=False, resizable=True, decorate=True, fullscreen=False,
                  context=None, keys=None, parent=None, dpi=None):
-        global config
+        
         size = [int(s) for s in size]
         if len(size) != 2:
             raise ValueError('size must be a 2-element list')
