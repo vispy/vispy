@@ -44,7 +44,7 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 this.model.on('change:height', this.height_changed, this);
 
 
-                window.VISPY_DEBUG = true;
+                window.VISPY_DEBUG = false;
 
                 // Start the event loop.
                 c.start_event_loop(function() {

@@ -116,6 +116,7 @@ class WebGLGlirParser(BaseGlirParser):
         return 'es2'
     
     def parse(self, commands):
+        # Uncomment for debugging.
         self._commands += commands
         self._widget.send_glir_commands(commands)
 
@@ -130,22 +131,6 @@ class CanvasBackend(BaseCanvasBackend):
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
-        # self._initialized = False
-        # Test kwargs
-        # if kwargs['size']:
-        #     raise RuntimeError('ipynb_webgl Canvas is not resizable')
-        # if kwargs['position']:
-        #     raise RuntimeError('ipynb_webgl Canvas is not positionable')
-        # if not kwargs['decorate']:
-        #     raise RuntimeError('ipynb_webgl Canvas is not decoratable (or not)')
-        # if kwargs['vsync']:
-        #     raise RuntimeError('ipynb_webgl Canvas does not support vsync')
-        # if kwargs['fullscreen']:
-        #     raise RuntimeError('ipynb_webgl Canvas does not support fullscreen')
-
-        # Connect to events of canvas to keep up to date with size and draws
-        # self._vispy_canvas.events.draw.connect(self._send_glir_commands, position='last')
-        # self._vispy_canvas.events.resize.connect(self._on_resize, position='last')
 
         # Create IPython Widget
         self._widget = VispyWidget(self._gen_event, size=kwargs.get('size', None))
@@ -187,12 +172,16 @@ class CanvasBackend(BaseCanvasBackend):
             logger.warning('IPython notebook canvas cannot be hidden.')
         else:
             display(self._widget)
-            self._vispy_update()
+            # When the widget is displayed, called resize and draw events.
+            size = self._widget.width, self._widget.height
+            self._vispy_canvas.events.resize(size=size)
+            self._vispy_canvas.events.draw()
+
 
     def _vispy_update(self):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.draw(region=None)
+        self._vispy_canvas.events.draw()
 
     def _vispy_close(self):
         self._widget.quit()
