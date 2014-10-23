@@ -14,9 +14,9 @@ class LinePlotVisual(Visual):
 
     Parameters
     ----------
-    *args : array | two arrays
+    args : array | two arrays
         Arguments can be passed as (Y,), (X, Y) or (np.array((X, Y))).
-    **kwargs : keyword arguments
+    kwargs : keyword arguments
         Keyword arguments to pass on to the LineVisual and Marker visuals.
         Supported arguments are width, connect, color, edge_color, face_color,
         and edge_width.

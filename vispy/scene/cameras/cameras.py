@@ -2,20 +2,6 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-A brief explanation of how cameras work 
----------------------------------------
-
-A Camera is responsible for setting the transform of a SubScene object such 
-that a certain part of the scene is mapped to the bounding rectangle of the 
-ViewBox. 
-
-The view of a camera is determined by its transform (that it has as
-being an node) and its projection. The former is essentially the
-position and orientation of the camera, the latter determines field of
-view and any non-linear transform (such as perspective).
-
-"""
 from __future__ import division
 
 import numpy as np
