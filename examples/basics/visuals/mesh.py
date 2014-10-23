@@ -16,6 +16,7 @@ from vispy.visuals.transforms import (STTransform, AffineTransform,
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, keys='interactive')
+        self.size = (800, 800)
         
         self.meshes = []
         self.rotation = AffineTransform()
@@ -70,7 +71,6 @@ class Canvas(app.Canvas):
             tr_sys.visual_to_document = transform
             mesh.tr_sys = tr_sys
 
-        self.size = (800, 800)
         self.show()
 
         self.timer = app.Timer(connect=self.rotate)
@@ -81,8 +81,8 @@ class Canvas(app.Canvas):
         self.update()
 
     def on_draw(self, ev):
-        gloo.set_clear_color('black')
-        gloo.clear(color=True, depth=True)
+        gloo.set_viewport(0, 0, *self.size)
+        gloo.clear(color='black', depth=True)
         for mesh in self.meshes:
             mesh.draw(mesh.tr_sys)
 
