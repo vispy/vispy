@@ -47,8 +47,10 @@ class GlirQueue(object):
         self._invalid_objects = set()
         self._verbose = False
         # todo: allow different kind of parsers, like a parser that sends to JS
+
     @property
     def parser(self):
+        """The GLIR parser associated to that queue."""
         return self._parser
 
     @parser.setter

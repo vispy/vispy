@@ -29,13 +29,13 @@ capability = dict(  # things that can be set by the backend
     title=True,  # But it only applies to the dummy window :P
     size=True,  # We cannot possibly say we dont, because Canvas always sets it
     position=True,  # Dito
-    show=True,  # Note: we don't alow this, but all scripts call show ...
+    show=True,
     vsync=False,
-    resizable=True,  # Yes, you can set to not be resizable (it always is)
+    resizable=True,
     decorate=False,
-    fullscreen=False,
+    fullscreen=True,
     context=True,
-    multi_window=True,
+    multi_window=False,
     scroll=True,
     parent=False,
 )
@@ -117,7 +117,7 @@ class WebGLGlirParser(BaseGlirParser):
     
     def parse(self, commands):
         # Uncomment for debugging.
-        self._commands += commands
+        # self._commands += commands
         self._widget.send_glir_commands(commands)
 
     @property
@@ -243,9 +243,13 @@ class CanvasBackend(BaseCanvasBackend):
 # ------------------------------------------------------------------- Timer ---
 
 class TimerBackend(BaseTimerBackend):
+    def __init__(self, *args, **kwargs):
+        super(TimerBackend, self).__init__(*args, **kwargs)
+        self._timer = tornado.ioloop.PeriodicCallback(
+            self._vispy_timer._timeout, 
+            interval * 1000)
+        
     def _vispy_start(self, interval):
-        self._timer = tornado.ioloop.PeriodicCallback(self._vispy_timer._timeout, 
-            interval*1000)
         self._timer.start()
 
     def _vispy_stop(self):
@@ -279,7 +283,7 @@ def _serializable(c, serialize_array=True):
     else:
         try:
             return np.asscalar(c)
-        except:
+        except Exception:
             return c
 
 class VispyWidget(DOMWidget):
