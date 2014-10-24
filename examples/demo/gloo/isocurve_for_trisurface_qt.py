@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 
 """
-This example demonstrates isocurve for triangular mesh with vertice data and a
+This example demonstrates isocurve for triangular mesh with vertex datas and a
  qt interface.
 """
 
