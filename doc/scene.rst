@@ -1,6 +1,6 @@
-===========
-Scene graph
-===========
+==========
+Scenegraph
+==========
 
 .. automodule:: vispy.scene
    :members:
@@ -23,9 +23,9 @@ vispy.scene.canvas
 
 ----
 
-vispy.scene.entity
-------------------
-.. automodule:: vispy.scene.entity
+vispy.scene.node
+----------------
+.. automodule:: vispy.scene.node
    :members:
 
 
@@ -33,23 +33,7 @@ vispy.scene.entity
 
 vispy.scene.events
 ------------------
-.. automodule:: vispy.scene.entity
-   :members:
-
-
-----
-
-vispy.scene.shaders
--------------------
-.. automodule:: vispy.scene.shaders
-   :members:
-
-
-----
-
-vispy.scene.transforms
-----------------------
-.. automodule:: vispy.scene.transforms
+.. automodule:: vispy.scene.events
    :members:
 
 

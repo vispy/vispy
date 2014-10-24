@@ -10,6 +10,8 @@ from time import sleep
 
 from ..util.event import EmitterGroup, Event, WarningEmitter
 from ..util.ptime import time
+from ..util.dpi import get_dpi
+from ..util import config
 from ..ext.six import string_types
 from . import Application, use_app
 from ..gloo.context import GLContext, get_new_context
@@ -71,13 +73,17 @@ class Canvas(object):
         be callable.
     parent : widget-object
         The parent widget if this makes sense for the used backend.
+    dpi : float | None
+        Resolution in dots-per-inch to use for the canvas. If dpi is None, 
+        then the value will be determined by querying the global config first,
+        and then the operating system.
     """
     
     def __init__(self, title='Vispy canvas', size=(800, 600), position=None,
                  show=False, autoswap=True, app=None, create_native=True,
-                 vsync=False, resizable=True, decorate=True, fullscreen=False, 
-                 context=None, keys=None, parent=None):
-
+                 vsync=False, resizable=True, decorate=True, fullscreen=False,
+                 context=None, keys=None, parent=None, dpi=None):
+        
         size = [int(s) for s in size]
         if len(size) != 2:
             raise ValueError('size must be a 2-element list')
@@ -95,6 +101,12 @@ class Canvas(object):
         self._backend = None
         self._closed = False
         
+        if dpi is None:
+            dpi = config['dpi']
+        if dpi is None:
+            dpi = get_dpi()
+        self.dpi = dpi
+
         # Create events
         self.events = EmitterGroup(source=self,
                                    initialize=Event,
@@ -132,8 +144,8 @@ class Canvas(object):
         # Ensure context is a GLContext object
         context = context or {}
         if isinstance(context, dict):
-            config, context = context, get_new_context()
-            context.set_config(config)  # GLContext checks the dict keys
+            gl_config, context = context, get_new_context()
+            context.set_config(gl_config)  # GLContext checks the dict keys
         elif not isinstance(context, GLContext):
             raise TypeError('context must be a dict or GLContext from '
                             'a Canvas with the same backend, not %s'
@@ -229,6 +241,17 @@ class Canvas(object):
         """ The native widget object on which this Canvas is based.
         """
         return self._backend._vispy_get_native_canvas()
+    
+    @property
+    def dpi(self):
+        """ The physical resolution of the canvas in dots per inch. 
+        """
+        return self._dpi
+    
+    @dpi.setter
+    def dpi(self, dpi):
+        self._dpi = float(dpi)
+        self.update()
 
     def connect(self, fun):
         """ Connect a function to an event. The name of the function
@@ -482,11 +505,11 @@ class MouseEvent(Event):
                  modifiers=None, delta=None, last_event=None, press_event=None,
                  **kwds):
         Event.__init__(self, type, **kwds)
-        self._pos = (0, 0) if (pos is None) else (pos[0], pos[1])
+        self._pos = np.array([0, 0]) if (pos is None) else np.array(pos)
         self._button = int(button) if (button is not None) else None
         self._buttons = [] if (buttons is None) else buttons
         self._modifiers = tuple(modifiers or ())
-        self._delta = (0.0, 0.0) if (delta is None) else (delta[0], delta[1])
+        self._delta = np.zeros(2) if (delta is None) else np.array(delta)
         self._last_event = last_event
         self._press_event = press_event
 

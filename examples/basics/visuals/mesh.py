@@ -7,16 +7,17 @@ Simple demonstration of Mesh visual.
 """
 
 import numpy as np
-import vispy.app
-from vispy import gloo
-from vispy.scene.visuals import Mesh
+from vispy import app, gloo, visuals
 from vispy.geometry import create_sphere
-from vispy.scene.transforms import (STTransform, AffineTransform,
-                                    ChainTransform)
+from vispy.visuals.transforms import (STTransform, AffineTransform,
+                                      ChainTransform)
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(app.Canvas):
     def __init__(self):
+        app.Canvas.__init__(self, keys='interactive')
+        self.size = (800, 800)
+        
         self.meshes = []
         self.rotation = AffineTransform()
 
@@ -25,8 +26,7 @@ class Canvas(vispy.scene.SceneCanvas):
         mdata = create_sphere(20, 40, 1.0)
 
         # Mesh with pre-indexed vertices, uniform color
-        self.meshes.append(Mesh(meshdata=mdata, color='r'))
-        #mesh.transform = STTransform(scale=(1, 1, .001), translate=(400, 400))
+        self.meshes.append(visuals.MeshVisual(meshdata=mdata, color='r'))
 
         ## Mesh with pre-indexed vertices, per-face color
         ##   Because vertices are pre-indexed, we get a different color
@@ -38,7 +38,7 @@ class Canvas(vispy.scene.SceneCanvas):
         fcolor[..., 0] = np.linspace(1, 0, nf)[:, np.newaxis]
         fcolor[..., 1] = np.random.normal(size=nf)[:, np.newaxis]
         fcolor[..., 2] = np.linspace(0, 1, nf)[:, np.newaxis]
-        mesh = Mesh(vertices=verts, face_colors=fcolor)
+        mesh = visuals.MeshVisual(vertices=verts, face_colors=fcolor)
         self.meshes.append(mesh)
 
         ## Mesh with unindexed vertices, per-vertex color
@@ -52,9 +52,11 @@ class Canvas(vispy.scene.SceneCanvas):
         vcolor[:, 0] = np.linspace(1, 0, nv)
         vcolor[:, 1] = np.random.normal(size=nv)
         vcolor[:, 2] = np.linspace(0, 1, nv)
-        self.meshes.append(Mesh(verts, faces, vcolor))
-        self.meshes.append(Mesh(verts, faces, vcolor, shading='flat'))
-        self.meshes.append(Mesh(verts, faces, vcolor, shading='smooth'))
+        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor))
+        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor, 
+                                              shading='flat'))
+        self.meshes.append(visuals.MeshVisual(verts, faces, vcolor, 
+                                              shading='smooth'))
 
         # Lay out meshes in a grid
         grid = (3, 3)
@@ -62,34 +64,31 @@ class Canvas(vispy.scene.SceneCanvas):
         for i, mesh in enumerate(self.meshes):
             x = 800. * (i % grid[0]) / grid[0] + 400. / grid[0] - 2
             y = 800. * (i // grid[1]) / grid[1] + 400. / grid[1] + 2
-            mesh.transform = ChainTransform([STTransform(translate=(x, y),
-                                                         scale=(s, s, 1)),
-                                             self.rotation])
+            transform = ChainTransform([STTransform(translate=(x, y),
+                                                    scale=(s, s, 1)),
+                                        self.rotation])
+            tr_sys = visuals.transforms.TransformSystem(self)
+            tr_sys.visual_to_document = transform
+            mesh.tr_sys = tr_sys
 
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
-
-        self.size = (800, 800)
         self.show()
 
-        self.timer = vispy.app.Timer(connect=self.rotate)
+        self.timer = app.Timer(connect=self.rotate)
         self.timer.start(0.016)
 
     def rotate(self, event):
         self.rotation.rotate(1, (0, 1, 0))
-        # TODO: altering rotation should trigger this automatically.
-        for m in self.meshes:
-            m._program._need_build = True
         self.update()
 
     def on_draw(self, ev):
-        gloo.set_clear_color('black')
-        gloo.clear(color=True, depth=True)
+        gloo.set_viewport(0, 0, *self.size)
+        gloo.clear(color='black', depth=True)
         for mesh in self.meshes:
-            self.draw_visual(mesh)
+            mesh.draw(mesh.tr_sys)
 
 
 if __name__ == '__main__':
     win = Canvas()
     import sys
     if sys.flags.interactive != 1:
-        vispy.app.run()
+        app.run()

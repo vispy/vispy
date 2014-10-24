@@ -5,7 +5,7 @@
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 # -----------------------------------------------------------------------------
 """
-Sandbox for experimenting with vispy.scene.shaders
+Sandbox for experimenting with vispy.visuals.shaders
 """
 from PyQt4 import QtCore
 from PyQt4.QtGui import *  # noqa
@@ -33,7 +33,7 @@ Instructions:
 """
 
 
-from vispy.scene.shaders import ModularProgram
+from vispy.visuals.shaders import ModularProgram
 
 vertex_shader = "void main() {}"
 fragment_shader = "void main() {}"
@@ -54,7 +54,7 @@ with no definition. By leaving this function undefined, any new function
 definition may be concatenated to the shader.
 """
 
-from vispy.scene.shaders import ModularProgram, Function
+from vispy.visuals.shaders import ModularProgram, Function
 
 # The hook is called 'input_position', and is used to provide the
 # value for gl_Position.
@@ -106,7 +106,7 @@ In this example, an anonymous function is assigned to a hook. When it is
 compiled into the complete program, it is renamed to match the hook.
 """
 
-from vispy.scene.shaders import ModularProgram, Function
+from vispy.visuals.shaders import ModularProgram, Function
 
 vertex_shader = """
 vec4 input_position();
@@ -155,7 +155,7 @@ a real program variable at compile time.
 In the next example, we will see how ModularProgram resolves name conflicts.
 """
 
-from vispy.scene.shaders import ModularProgram, Function
+from vispy.visuals.shaders import ModularProgram, Function
 import numpy as np
 
 vertex_shader = """
@@ -208,7 +208,7 @@ name.
 This example demonstrates dynamic naming of a program variable.
 """
 
-from vispy.scene.shaders import ModularProgram, Function
+from vispy.visuals.shaders import ModularProgram, Function
 import numpy as np
 
 vertex_shader = """
@@ -263,7 +263,7 @@ Function chains are another essential component of shader composition,
 allowing a list of functions to be executed in order.
 """
 
-from vispy.scene.shaders import ModularProgram, Function, FunctionChain
+from vispy.visuals.shaders import ModularProgram, Function, FunctionChain
 
 # Added a new hook to allow any number of functions to be executed
 # after gl_Position is set.
@@ -329,7 +329,7 @@ This is most commonly used for passing vertex positions through a composition
 of transform functions.
 """
 
-from vispy.scene.shaders import ModularProgram, Function, FunctionChain
+from vispy.visuals.shaders import ModularProgram, Function, FunctionChain
 
 
 vertex_shader = """
@@ -392,7 +392,7 @@ to a fragment shader, we will need to introduce some supporting code
 to the vertex shader.
 """
 
-from vispy.scene.shaders import (ModularProgram, Function, FunctionChain)
+from vispy.visuals.shaders import (ModularProgram, Function, FunctionChain)
 from vispy.gloo import VertexBuffer
 import numpy as np
 
@@ -453,7 +453,7 @@ FRAGMENT = program.frag_code
 """
 """
 
-from vispy.scene.shaders import (ModularProgram, Function, FunctionChain)
+from vispy.visuals.shaders import (ModularProgram, Function, FunctionChain)
 from vispy.gloo import VertexBuffer
 import numpy as np
 

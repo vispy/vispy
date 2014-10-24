@@ -116,7 +116,7 @@ def test_import_vispy_scene():
     """ Importing vispy.gloo.gl.desktop should not import PyOpenGL. """
     modnames = loaded_vispy_modules('vispy.scene', 2)
     more_modules = ['vispy.app', 'vispy.gloo', 'vispy.scene', 'vispy.color', 
-                    'vispy.io', 'vispy.geometry']
+                    'vispy.io', 'vispy.geometry', 'vispy.visuals']
     assert_equal(modnames, set(_min_modules + more_modules))
 
 

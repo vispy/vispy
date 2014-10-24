@@ -6,20 +6,20 @@ from __future__ import division
 
 import numpy as np
 
-from ..visuals.visual import Visual
-from ..visuals.line import Line
-from ..transforms import STTransform
+from ..node import Node
+from ...visuals.line import LineVisual
+from ...visuals.transforms import STTransform
 from ...util.event import Event
 from ...geometry import Rect
 from ...color import Color
 
 
-class Widget(Visual):
+class Widget(Node):
     """ A widget takes up a rectangular space, intended for use in
     a 2D pixel coordinate frame.
 
     The widget is positioned using the transform attribute (as any
-    entity), and its extent (size) is kept as a separate property.
+    node), and its extent (size) is kept as a separate property.
     
     Parameters
     ----------
@@ -41,12 +41,12 @@ class Widget(Visual):
 
     def __init__(self, pos=(0, 0), size=(10, 10), border_color='black',
                  clip=False, padding=0, margin=0, **kwargs):
-        Visual.__init__(self, **kwargs)
+        Node.__init__(self, **kwargs)
         
         # todo: rename to bordercolor? -> borderwidth
         self._border_color = tuple(Color(border_color).rgba)
         # for drawing border
-        self._visual = Line(color=self._border_color, mode='gl')
+        self._visual = LineVisual(color=self._border_color, mode='gl')
         # whether this widget should clip its children
         self._clip = clip
         # reserved space inside border

@@ -4,11 +4,11 @@
 
 from __future__ import division
 
-from .entity import Entity
+from .node import Node
 from .systems import DrawingSystem, MouseInputSystem
 
 
-class SubScene(Entity):
+class SubScene(Node):
     """ A subscene with entities.
 
     A subscene can be a child of a Canvas or a ViewBox. It is a
@@ -29,16 +29,27 @@ class SubScene(Entity):
     """
 
     def __init__(self, **kwargs):
-        Entity.__init__(self, **kwargs)
+        Node.__init__(self, **kwargs)
 
         # Initialize systems
         self._systems = {}
         self._systems['draw'] = DrawingSystem()
         self._systems['mouse'] = MouseInputSystem()
+        self._drawing = False
     
     def draw(self, event):
+        # Temporary workaround to avoid infinite recursion. A better solution
+        # would be for ViewBox and Canvas to handle the systems, rather than
+        # subscene.
+        if self._drawing:
+            return
+        
         # Invoke our drawing system
-        self.process_system(event, 'draw') 
+        try:
+            self._drawing = True
+            self.process_system(event, 'draw')
+        finally:
+            self._drawing = False
     
     def _process_mouse_event(self, event):
         self.process_system(event, 'mouse') 

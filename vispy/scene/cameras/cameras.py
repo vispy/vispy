@@ -2,28 +2,15 @@
 # Copyright (c) 2014, Vispy Development Team.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-"""
-A brief explanation of how cameras work 
----------------------------------------
-
-A Camera is responsible for setting the transform of a SubScene object such 
-that a certain part of the scene is mapped to the bounding rectangle of the 
-ViewBox. 
-
-The view of a camera is determined by its transform (that it has as
-being an entity) and its projection. The former is essentially the
-position and orientation of the camera, the latter determines field of
-view and any non-linear transform (such as perspective).
-
-"""
 from __future__ import division
 
 import numpy as np
 
-from ..entity import Entity
+from ..node import Node
 from ...geometry import Rect
-from ..transforms import (STTransform, PerspectiveTransform, NullTransform,
-                          AffineTransform, TransformCache)
+from ...visuals.transforms import (STTransform, PerspectiveTransform, 
+                                   NullTransform, AffineTransform,
+                                   TransformCache)
 
 
 def make_camera(cam_type, *args, **kwds):
@@ -53,7 +40,7 @@ def make_camera(cam_type, *args, **kwds):
                        (cam_type, cam_types.keys()))
 
 
-class BaseCamera(Entity):
+class BaseCamera(Node):
     """ Camera describes the perspective from which a ViewBox views its 
     subscene, and the way that user interaction affects that perspective.
     
@@ -63,7 +50,7 @@ class BaseCamera(Entity):
 
     Parameters
     ----------
-    parent : Entity
+    parent : Node
         The parent of the camera.
     name : str
         Name used to identify the camera in the scene.
@@ -188,7 +175,7 @@ class PanZoomCamera(BaseCamera):
 
     Parameters
     ----------
-    parent : Entity
+    parent : Node
         The parent of the camera.
     name : str
         Name used to identify the camera in the scene.
@@ -362,7 +349,7 @@ class PerspectiveCamera(BaseCamera):
         Field of view.
     width : float
         Width.
-    parent : Entity
+    parent : Node
         The parent of the camera.
     name : str
         Name used to identify the camera in the scene.
@@ -451,7 +438,7 @@ class PerspectiveCamera(BaseCamera):
         vrect = [[0, 0], self.viewbox.size]
         viewbox_tr = STTransform.from_mapping(unit, vrect)
         proj_tr = self._projection
-        cam_tr = self.entity_transform(self.viewbox.scene)
+        cam_tr = self.node_transform(self.viewbox.scene)
         
         tr = viewbox_tr * proj_tr * cam_tr
         self._set_scene_transform(tr)
@@ -486,7 +473,7 @@ class TurntableCamera(PerspectiveCamera):
         Distance away from the center.
     center : array-like
         3-element array defining the center point.
-    parent : Entity
+    parent : Node
         The parent of the camera.
     name : str
         Name used to identify the camera in the scene.

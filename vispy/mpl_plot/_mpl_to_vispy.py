@@ -24,7 +24,7 @@ from ..io import read_png
 
 from ..scene.visuals import Line, Markers, Text, Image
 from ..scene.widgets import ViewBox
-from ..scene.transforms import STTransform
+from ..visuals.transforms import STTransform
 from ..scene import SceneCanvas
 from ..testing import has_matplotlib
 

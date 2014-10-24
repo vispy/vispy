@@ -11,11 +11,9 @@ information, but different transformations.
 """
 
 import numpy as np
-import vispy.app
-from vispy import gloo
-from vispy.scene import visuals
-from vispy.scene.transforms import (STTransform, LogTransform,
-                                    AffineTransform, PolarTransform)
+from vispy import app, gloo, visuals
+from vispy.visuals.transforms import (STTransform, LogTransform,
+                                      AffineTransform, PolarTransform)
 
 import vispy.util
 vispy.util.use_log_level('debug')
@@ -32,7 +30,7 @@ color[:, 0] = np.linspace(0, 1, N)
 color[:, 1] = color[::-1, 0]
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(app.Canvas):
     def __init__(self):
 
         # Define several Line visuals that use the same position data
@@ -40,7 +38,7 @@ class Canvas(vispy.scene.SceneCanvas):
         colors = [color, (1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1),
                   (1, 1, 0, 1), (1, 1, 1, 1)]
 
-        self.lines = [visuals.Line(pos=pos, color=colors[i])
+        self.lines = [visuals.LineVisual(pos=pos, color=colors[i])
                       for i in range(6)]
 
         center = STTransform(translate=(400, 400))
@@ -72,20 +70,24 @@ class Canvas(vispy.scene.SceneCanvas):
                                    STTransform(scale=(0.01, 0.1),
                                                translate=(4, 20)))
 
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
+        
+        for line in self.lines:
+            tr_sys = visuals.transforms.TransformSystem(self)
+            tr_sys.visual_to_document = line.transform
+            line.tr_sys = tr_sys
 
     def on_draw(self, ev):
-        gloo.set_clear_color('black')
-        gloo.clear(color=True, depth=True)
+        gloo.clear('black', depth=True)
         gloo.set_viewport(0, 0, *self.size)
         for line in self.lines:
-            self.draw_visual(line)
+            line.draw(line.tr_sys)
 
 
 if __name__ == '__main__':
     win = Canvas()
     import sys
     if sys.flags.interactive != 1:
-        vispy.app.run()
+        app.run()

@@ -55,7 +55,7 @@ b1.add(l1)
 grid1 = scene.visuals.GridLines(parent=b1.scene)
 
 # Bottom-left grid cell shows the same data with log-transformed X
-e2 = scene.Entity(parent=b2.scene)
+e2 = scene.Node(parent=b2.scene)
 e2.transform = scene.transforms.LogTransform(base=(2, 0, 0))
 l2 = scene.visuals.Line(pos=pos, color=color, antialias=False, parent=e2,
                         mode='gl')
@@ -63,7 +63,7 @@ grid2 = scene.visuals.GridLines(parent=e2)
 
 # Bottom-right grid cell shows the same data again, but with a much more
 # interesting transformation.
-e3 = scene.Entity(parent=b3.scene)
+e3 = scene.Node(parent=b3.scene)
 affine = scene.transforms.AffineTransform()
 affine.scale((1, 0.1))
 affine.rotate(10, (0, 0, 1))

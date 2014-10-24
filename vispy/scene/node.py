@@ -1,0 +1,294 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014, Vispy Development Team.
+# Distributed under the (new) BSD License. See LICENSE.txt for more info.
+
+from __future__ import division
+
+from ..util.event import Event
+from ..visuals.transforms import NullTransform, BaseTransform, create_transform
+from ..visuals import Visual
+
+
+class Node(Visual):
+    """ Base class representing an object in a scene.
+
+    A group of nodes connected through parent-child relationships define a 
+    scenegraph. Nodes may have any number of children or parents, although 
+    it is uncommon to have more than one parent.
+
+    Each Node defines a ``transform`` property, which describes the position,
+    orientation, scale, etc. of the Node relative to its parent. The Node's
+    children inherit this property, and then further apply their own
+    transformations on top of that. 
+    
+    With the ``transform`` property, each Node implicitly defines a "local" 
+    coordinate system, and the Nodes and edges in the scenegraph can be though
+    of as coordinate systems connected by transformation functions.
+    
+    Parameters
+    ----------
+    parent : Node
+        The parent of the Node.
+    name : str
+        The name used to identify the node.
+    """
+
+    def __init__(self, parent=None, name=None, **kwds):
+        Visual.__init__(self, **kwds)
+        
+        # Add some events to the emitter groups:
+        events = ['parents_change', 'children_change', 'transform_change',
+                  'mouse_press', 'mouse_move', 'mouse_release', 'mouse_wheel']
+        self.events.add(**dict([(ev, Event) for ev in events]))
+        
+        self.name = name
+
+        # Entities are organized in a parent-children hierarchy
+        # todo: I think we want this to be a list. The order *may* be important
+        # for some drawing systems. Using a set may lead to inconsistency
+        self._children = set()
+        # TODO: use weakrefs for parents.
+        self._parents = set()
+        if parent is not None:
+            self.parents = parent
+            
+        self._document = None
+
+        # Components that all entities in vispy have
+        # todo: default transform should be trans-scale-rot transform
+        self._transform = NullTransform()
+    
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, n):
+        self._name = n
+
+    @property
+    def children(self):
+        """ The list of children of this node. The children are in
+        arbitrary order.
+        """
+        return list(self._children)
+
+    @property
+    def parent(self):
+        """ Get/set the parent. If the node has multiple parents while
+        using this property as a getter, an error is raised.
+        """
+        if not self._parents:
+            return None
+        elif len(self._parents) == 1:
+            return tuple(self._parents)[0]
+        else:
+            raise RuntimeError('Ambiguous parent: there are multiple parents.')
+
+    @parent.setter
+    def parent(self, parent):
+        # This is basically an alias
+        self.parents = parent
+
+    @property
+    def parents(self):
+        """ Get/set a tuple of parents.
+        """
+        return tuple(self._parents)
+
+    @parents.setter
+    def parents(self, parents):
+        # Test input
+        if isinstance(parents, Node):
+            parents = (parents,)
+        if not hasattr(parents, '__iter__'):
+            raise ValueError("Node.parents must be iterable (got %s)"
+                             % type(parents))
+
+        # Test that all parents are entities
+        for p in parents:
+            if not isinstance(p, Node):
+                raise ValueError('A parent of an node must be an node too,'
+                                 ' not %s.' % p.__class__.__name__)
+
+        # convert to set
+        prev = self._parents.copy()
+        parents = set(parents)
+
+        with self.events.parents_change.blocker():
+            # Remove from parents
+            for parent in prev - parents:
+                self.remove_parent(parent)
+            # Add new
+            for parent in parents - prev:
+                self.add_parent(parent)
+
+        self.events.parents_change(new=parents, old=prev)
+
+    def add_parent(self, parent):
+        if parent in self._parents:
+            return
+        self._parents.add(parent)
+        parent._add_child(self)
+        self.events.parents_change(added=parent)
+        self.update()
+
+    def remove_parent(self, parent):
+        if parent not in self._parents:
+            raise ValueError("Parent not in set of parents for this node.")
+        self._parents.remove(parent)
+        parent._remove_child(self)
+        self.events.parents_change(removed=parent)
+
+    def _add_child(self, ent):
+        self._children.add(ent)
+        self.events.children_change(added=ent)
+        ent.events.update.connect(self.events.update)
+
+    def _remove_child(self, ent):
+        self._children.remove(ent)
+        self.events.children_change(removed=ent)
+        ent.events.update.disconnect(self.events.update)
+
+    def update(self):
+        """
+        Emit an event to inform listeners that properties of this Node or its
+        children have changed.
+        """
+        self.events.update()
+
+    @property
+    def document(self):
+        """ The document is an optional property that is an node representing
+        the coordinate system from which this node should make physical 
+        measurements such as px, mm, pt, in, etc. This coordinate system 
+        should be used when determining line widths, font sizes, and any
+        other lengths specified in physical units.
+        
+        The default is None; in this case, a default document is used during
+        drawing (usually this is supplied by the SceneCanvas).
+        """
+        return self._document
+    
+    @document.setter
+    def document(self, doc):
+        if doc is not None and not isinstance(doc, Node):
+            raise TypeError("Document property must be Node or None.")
+        self._document = doc
+        self.update()
+
+    @property
+    def transform(self):
+        """ The transform that maps the local coordinate frame to the
+        coordinate frame of the parent.
+        """
+        return self._transform
+
+    @transform.setter
+    def transform(self, tr):
+        if self._transform is not None:
+            self._transform.changed.disconnect(self._transform_changed)
+        assert isinstance(tr, BaseTransform)
+        self._transform = tr
+        self._transform.changed.connect(self._transform_changed)
+        self._transform_changed(None)
+
+    def set_transform(self, type, *args, **kwds):
+        """ Create a new transform of *type* and assign it to this node.
+        All extra arguments are used in the construction of the transform.
+        """
+        self.transform = create_transform(type, *args, **kwds)
+
+    def _transform_changed(self, event):
+        self.events.transform_change()
+        self.update()
+
+    def _parent_chain(self):
+        """
+        Return the chain of parents starting from this node. The chain ends
+        at the first node with either no parents or multiple parents.
+        """
+        chain = [self]
+        while True:
+            try:
+                parent = chain[-1].parent
+            except Exception:
+                break
+            if parent is None:
+                break
+            chain.append(parent)
+        return chain
+
+    def describe_tree(self, with_transform=False):
+        """Create tree diagram of children
+
+        Parameters
+        ----------
+        with_transform : bool
+            If true, add information about node transform types.
+
+        Returns
+        ----------
+        tree : str
+            The tree diagram.
+        """
+        # inspired by https://github.com/mbr/asciitree/blob/master/asciitree.py
+        return self._describe_tree('', with_transform)
+
+    def _describe_tree(self, prefix, with_transform):
+        """Helper function to actuall construct the tree"""
+        extra = ': "%s"' % self.name if self.name is not None else ''
+        if with_transform:
+            extra += (' [%s]' % self.transform.__class__.__name__)
+        output = ''
+        if len(prefix) > 0:
+            output += prefix[:-3]
+            output += '  +--'
+        output += '%s%s\n' % (self.__class__.__name__, extra)
+
+        n_children = len(self.children)
+        for ii, child in enumerate(self.children):
+            sub_prefix = prefix + ('   ' if ii+1 == n_children else '  |')
+            output += child._describe_tree(sub_prefix, with_transform)
+        return output
+
+    def common_parent(self, node):
+        """
+        Return the common parent of two entities. If the entities have no
+        common parent, return None. Does not search past multi-parent branches.
+        """
+        p1 = self._parent_chain()
+        p2 = node._parent_chain()
+        for p in p1:
+            if p in p2:
+                return p
+        return None
+        
+    def node_transform(self, node):
+        """
+        Return the transform that maps from the coordinate system of
+        *node* to the local coordinate system of *self*.
+        
+        Note that there must be a _single_ path in the scenegraph that connects
+        the two entities; otherwise an exception will be raised.        
+        """
+        cp = self.common_parent(node)
+        # First map from node to common parent
+        tr = NullTransform()
+        
+        while node is not cp:
+            if node.transform is not None:
+                tr = node.transform * tr
+            
+            node = node.parent
+        
+        if node is self:
+            return tr
+        
+        # Now map from common parent to self
+        tr2 = cp.node_transform(self)
+        return tr2.inverse * tr
+        
+    def __repr__(self):
+        name = "" if self.name is None else " name="+self.name
+        return "<%s%s at 0x%x>" % (self.__class__.__name__, name, id(self))

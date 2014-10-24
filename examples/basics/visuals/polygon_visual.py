@@ -9,8 +9,8 @@ Demonstration of Polygon and subclasses
 import sys
 import numpy as np
 
-from vispy import gloo
-from vispy.scene import visuals, transforms, SceneCanvas
+from vispy import app, gloo, visuals
+from vispy.visuals import transforms
 
 # vertex positions of polygon data to draw
 pos = np.array([[0, 0, 0],
@@ -42,46 +42,54 @@ pos[::2] *= 0.4
 pos[-1] = pos[0]
 
 
-class Canvas(SceneCanvas):
+class Canvas(app.Canvas):
     def __init__(self):
+        app.Canvas.__init__(self, keys='interactive')
+        self.size = (800, 800)
         global pos
         self.visuals = []
-        polygon = visuals.Polygon(pos=pos, color=(0.8, .2, 0, 1),
-                                  border_color=(1, 1, 1, 1))
+        polygon = visuals.PolygonVisual(pos=pos, color=(0.8, .2, 0, 1),
+                                        border_color=(1, 1, 1, 1))
         polygon.transform = transforms.STTransform(scale=(200, 200),
                                                    translate=(600, 600))
         self.visuals.append(polygon)
 
-        ellipse = visuals.Ellipse(pos=(0, 0, 0), radius=(100, 150),
-                                  color=(0.2, 0.2, 0.8, 1),
-                                  border_color=(1, 1, 1, 1),
-                                  start_angle=180., span_angle=150.)
+        ellipse = visuals.EllipseVisual(pos=(0, 0, 0), radius=(100, 150),
+                                        color=(0.2, 0.2, 0.8, 1),
+                                        border_color=(1, 1, 1, 1),
+                                        start_angle=180., span_angle=150.)
         ellipse.transform = transforms.STTransform(scale=(0.9, 1.5),
                                                    translate=(200, 300))
         self.visuals.append(ellipse)
 
-        rect = visuals.Rectangle(pos=(600, 200, 0), height=200.,
-                                 width=300.,
-                                 radius=[30., 30., 0., 0.],
-                                 color=(0.5, 0.5, 0.2, 1),
-                                 border_color='white')
+        rect = visuals.RectangleVisual(pos=(600, 200, 0), height=200.,
+                                       width=300.,
+                                       radius=[30., 30., 0., 0.],
+                                       color=(0.5, 0.5, 0.2, 1),
+                                       border_color='white')
+        rect.transform = transforms.NullTransform()
         self.visuals.append(rect)
 
-        rpolygon = visuals.RegularPolygon(pos=(200., 600., 0), radius=160,
-                                          color=(0.2, 0.8, 0.2, 1),
-                                          border_color=(1, 1, 1, 1),
-                                          sides=6)
+        rpolygon = visuals.RegularPolygonVisual(pos=(200., 600., 0), 
+                                                radius=160,
+                                                color=(0.2, 0.8, 0.2, 1),
+                                                border_color=(1, 1, 1, 1),
+                                                sides=6)
+        rpolygon.transform = transforms.NullTransform()
         self.visuals.append(rpolygon)
 
-        SceneCanvas.__init__(self, keys='interactive')
-        self.size = (800, 800)
+        for v in self.visuals:
+            v.tr_sys = transforms.TransformSystem(self)
+            v.tr_sys.visual_to_document = v.transform
+
         self.show()
 
     def on_draw(self, ev):
         gloo.set_clear_color((0, 0, 0, 1))
+        gloo.set_viewport(0, 0, *self.size)
         gloo.clear()
         for vis in self.visuals:
-            self.draw_visual(vis)
+            vis.draw(vis.tr_sys)
 
 
 if __name__ == '__main__':

@@ -20,16 +20,16 @@ from vispy import scene
 # Create canvas
 canvas = scene.SceneCanvas(size=(800, 600), show=True, keys='interactive')
 
-grid = canvas.central_widget.add_grid()
-
 # Create two ViewBoxes, place side-by-side
 # First ViewBox uses a 2D pan/zoom camera
-vb1 = scene.widgets.ViewBox(name='vb1', border_color='yellow', parent=grid)
+vb1 = scene.widgets.ViewBox(name='vb1', border_color='yellow',
+                            parent=canvas.scene)
 vb1.clip_method = 'fbo'
 vb1.camera.rect = (-1.2, -2, 2.4, 4)
 
 # Second ViewBox uses a 3D orthographic camera
-vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue', parent=grid)
+vb2 = scene.widgets.ViewBox(name='vb2', border_color='blue',
+                            parent=canvas.scene)
 vb2.parent = canvas.scene
 vb2.clip_method = 'viewport'
 vb2.set_camera('turntable', mode='ortho', elevation=30, azimuth=30, up='y',

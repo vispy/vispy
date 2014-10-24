@@ -5,31 +5,13 @@
 # -----------------------------------------------------------------------------
 from __future__ import division
 import numpy as np
-from math import exp
 
 from vispy import app
 from vispy import gloo
-from vispy.scene.shaders import ModularProgram
-from vispy.scene.visuals import Visual
-from vispy.scene.transforms import STTransform, LogTransform
-
-
-class PanZoomTransform(STTransform):
-    def move(self, dx):
-        """I call this when I want to translate."""
-        dx, dy = dx
-        self.translate = (self.translate[0] + dx/self.scale[0],
-                          self.translate[1] + dy/self.scale[1])
-
-    def zoom(self, dx, center=(0., 0.)):
-        """I call this when I want to zoom."""
-        dx, dy = dx
-        scale = (self.scale[0] * exp(2.5*dx),
-                 self.scale[1] * exp(2.5*dy))
-        tr = self.translate
-        self.translate = (tr[0] - center[0] * (1./self.scale[0] - 1./scale[0]),
-                          tr[1] + center[1] * (1./self.scale[1] - 1./scale[1]))
-        self.scale = scale
+from vispy.visuals.shaders import ModularProgram
+from vispy.visuals import Visual
+from vispy.visuals.transforms import (STTransform, LogTransform, 
+                                      TransformSystem, ChainTransform)
 
 
 class MarkerVisual(Visual):
@@ -107,8 +89,10 @@ class MarkerVisual(Visual):
         self._color = color
         self._size = size
         
-    def draw(self):
+    def draw(self, transforms):
         # attributes / uniforms are not available until program is built        
+        tr = transforms.get_full_transform()
+        self._program.vert['transform'] = tr.shader_map()
         self._program.prepare()  # Force ModularProgram to set shaders
         self._program['a_position'] = gloo.VertexBuffer(self._pos)
         self._program['a_color'] = gloo.VertexBuffer(self._color)
@@ -128,53 +112,28 @@ class Canvas(app.Canvas):
 
         self.points = MarkerVisual(pos=pos, color=color, size=size)
         
-        # This is just an instance I choose to use, nothing required in the
-        # Visual API here.
-        self.panzoom = PanZoomTransform()
-        
-        # Here, I set the `transform` hook to my PAN_ZOOM function.
-        # In addition, I provide a component instance.
-        # Vispy knows that every $variable in the Function is bound to
-        # component.$variable. Here, since pan and zoom are tuples,
-        # Vispy understands that it has to create two uniforms (u_$variable 
-        # for example).
-        tr = self.panzoom * LogTransform(base=(0, 2, 0))
-        self.points._program.vert['transform'] = tr.shader_map()
+        self.panzoom = STTransform(scale=(1, 0.2), translate=(0, 500))
+        w2 = (self.size[0]/2, self.size[1]/2)
+        self.transform = ChainTransform([self.panzoom,
+                                         STTransform(scale=w2, translate=w2),
+                                         LogTransform(base=(0, 2, 0))])
     
-    def on_initialize(self, even):
+    def on_initialize(self, event):
         gloo.set_state(blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
     
-    def _normalize(self, xy):
-        x, y = xy
-        w, h = float(self.width), float(self.height)
-        return x/(w/2.)-1., y/(h/2.)-1.
-        
     def on_mouse_move(self, event):
         if event.is_dragging:
-            x0, y0 = event.press_event.pos
-            x1, y1 = event.last_event.pos
-            x, y = event.pos
-            dxy = ((x - x1) / self.size[0] * 2, -(y - y1) / self.size[1] * 2)
+            dxy = event.pos - event.last_event.pos
             button = event.press_event.button
             
-            # This just updates my private PanZoom instance. Nothing magic
-            # happens.
             if button == 1:
                 self.panzoom.move(dxy)
             elif button == 2:
-                self.panzoom.zoom(dxy)
+                center = event.press_event.pos
+                self.panzoom.zoom(np.exp(dxy * (0.01, -0.01)), center)
                 
-            # The magic happens here. self.on_draw() is called, so 
-            # self.points.draw() is called. The two variables in the transform
-            # hook are bound to self.panzoom.pan and self.panzoom.zoom, so
-            # Vispy will automatically fetch those two values and update
-            # the two corresponding uniforms.
             self.update()
-            
-            # Force transform to update its shader. 
-            # (this should not be necessary)
-            self.panzoom.shader_map()
         
     def on_resize(self, event):
         self.width, self.height = event.size
@@ -182,7 +141,9 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear()
-        self.points.draw()
+        tr_sys = TransformSystem(self)
+        tr_sys.visual_to_document = self.transform
+        self.points.draw(tr_sys)
 
 if __name__ == '__main__':
     c = Canvas()

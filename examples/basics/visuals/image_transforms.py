@@ -10,10 +10,11 @@ Simple demonstration of ImageVisual.
 import numpy as np
 import vispy.app
 from vispy import gloo
-from vispy.scene import visuals
-from vispy.scene.transforms import (AffineTransform, STTransform, arg_to_array,
-                                    LogTransform, PolarTransform, 
-                                    BaseTransform)
+from vispy import visuals
+from vispy.visuals.transforms import (AffineTransform, STTransform, 
+                                      arg_to_array, TransformSystem,
+                                      LogTransform, PolarTransform, 
+                                      BaseTransform)
 
 image = np.random.normal(size=(100, 100, 3))
 image[20:80, 20:80] += 3.
@@ -24,9 +25,9 @@ image = ((image-image.min()) *
          (253. / (image.max()-image.min()))).astype(np.ubyte)
 
 
-class Canvas(vispy.scene.SceneCanvas):
+class Canvas(vispy.app.Canvas):
     def __init__(self):
-        self.images = [visuals.Image(image, method='impostor')
+        self.images = [visuals.ImageVisual(image, method='impostor')
                        for i in range(4)]
         self.images[0].transform = (STTransform(scale=(30, 30),
                                                 translate=(600, 600)) * 
@@ -53,15 +54,18 @@ class Canvas(vispy.scene.SceneCanvas):
                                     STTransform(scale=(np.pi/200, 0.005),
                                                 translate=(-3*np.pi/4., 0.1)))
 
-        vispy.scene.SceneCanvas.__init__(self, keys='interactive')
+        vispy.app.Canvas.__init__(self, keys='interactive')
         self.size = (800, 800)
         self.show()
 
     def on_draw(self, ev):
         gloo.clear(color='black', depth=True)
-        self.push_viewport((0, 0) + self.size)
+        gloo.set_viewport(0, 0, *self.size)
+        # Create a TransformSystem that will tell the visual how to draw
+        tr_sys = TransformSystem(self)
         for img in self.images:
-            self.draw_visual(img)
+            tr_sys.visual_to_document = img.transform
+            img.draw(tr_sys)
 
 
 # A simple custom Transform

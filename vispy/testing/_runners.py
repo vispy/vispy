@@ -217,7 +217,7 @@ else:
     raise RuntimeError('Bad example formatting: fix or add to exclude list')
 
 with canvas as c:
-    for _ in range(30):
+    for _ in range(5):
         c.update()
         c.app.process_events()
         time.sleep(1./60.)

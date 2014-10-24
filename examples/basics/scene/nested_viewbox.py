@@ -137,9 +137,9 @@ line22 = scene.visuals.Line(pos=pos * [[w2, h2]], color=color, mode='gl',
 
 # Set preferred clipping methods
 for vb in [vb1, vb11, vb21]:
-    vb.preferred_clip_method = CLIP_METHOD1
+    vb.clip_method = CLIP_METHOD1
 for vb in [vb2, vb12, vb22]:
-    vb.preferred_clip_method = CLIP_METHOD2
+    vb.clip_method = CLIP_METHOD2
 
 
 if __name__ == '__main__':

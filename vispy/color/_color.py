@@ -35,7 +35,7 @@ def _string_to_rgb(color):
     return color
 
 
-def _user_to_rgba(color, expand=True):
+def _user_to_rgba(color, expand=True, clip=False):
     """Convert color(s) from any set of fmts (str/hex/arr) to RGB(A) array"""
     if color is None:
         color = np.zeros(4, np.float32)
@@ -46,7 +46,7 @@ def _user_to_rgba(color, expand=True):
     # We have to treat this specially
     elif isinstance(color, (list, tuple)):
         if any(isinstance(c, string_types) for c in color):
-            color = [_user_to_rgba(c) for c in color]
+            color = [_user_to_rgba(c, expand=expand, clip=clip) for c in color]
             if any(len(c) > 1 for c in color):
                 raise RuntimeError('could not parse colors, are they nested?')
             color = [c[0] for c in color]
@@ -57,8 +57,11 @@ def _user_to_rgba(color, expand=True):
         color = np.concatenate((color, np.ones((color.shape[0], 1))),
                                axis=1)
     if color.min() < 0 or color.max() > 1:
-        logger.warning('Color will be clipped between 0 and 1: %s' % color)
-        color = np.clip(color, 0, 1)
+        if clip:
+            color = np.clip(color, 0, 1)
+        else:
+            raise ValueError("Color values must be between 0 and 1 (or use "
+                             "clip=True to automatically clip the values).")
     return color
 
 
@@ -290,9 +293,9 @@ class ColorArray(object):
     Under the hood, this class stores data in RGBA format suitable for use
     on the GPU.
     """
-    def __init__(self, color='black', alpha=None):
+    def __init__(self, color='black', alpha=None, clip=False):
         """Parse input type, and set attribute"""
-        rgba = _user_to_rgba(color)
+        rgba = _user_to_rgba(color, clip=clip)
         if alpha is not None:
             rgba[:, 3] = alpha
         self._rgba = None
@@ -550,11 +553,11 @@ class Color(ColorArray):
         then this will default to 1.0 (opaque). If float, it will override
         the alpha value in ``color``, if provided.
     """
-    def __init__(self, color='black', alpha=None):
+    def __init__(self, color='black', alpha=None, clip=False):
         """Parse input type, and set attribute"""
         if isinstance(color, (list, tuple)):
             color = np.array(color, np.float32)
-        rgba = _user_to_rgba(color)
+        rgba = _user_to_rgba(color, clip=clip)
         if rgba.shape[0] != 1:
             raise ValueError('color must be of correct shape')
         if alpha is not None:

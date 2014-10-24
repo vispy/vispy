@@ -53,7 +53,7 @@ class ViewBox(Widget):
         # Each viewbox has a scene widget, which has a transform that
         # represents the transformation imposed by camera.
         if scene is None:
-            self._scene = SubScene()
+            self._scene = SubScene(name=str(self.name) + "_Scene")
         elif isinstance(scene, SubScene):
             self._scene = scene
         else:
@@ -94,17 +94,17 @@ class ViewBox(Widget):
 
     @property
     def scene(self):
-        """ The root entity of the scene viewed by this ViewBox.
+        """ The root node of the scene viewed by this ViewBox.
         """
         return self._scene
 
-    def add(self, entity):
-        """ Add an Entity to the scene for this ViewBox. 
+    def add(self, node):
+        """ Add an Node to the scene for this ViewBox. 
         
         This is a convenience method equivalent to 
-        `entity.add_parent(viewbox.scene)`
+        `node.add_parent(viewbox.scene)`
         """
-        entity.add_parent(self.scene)
+        node.add_parent(self.scene)
 
     @property
     def clip_method(self):
@@ -158,7 +158,7 @@ class ViewBox(Widget):
         
         # Get current transform and calculate the 'scale' of the viewbox
         size = self.size
-        transform = event.document_transform()
+        transform = event.visual_to_document
         p0, p1 = transform.map((0, 0)), transform.map(size)
         res = (p1 - p0)[:2]
         res = abs(res[0]), abs(res[1])
@@ -186,20 +186,25 @@ class ViewBox(Widget):
         super(ViewBox, self).draw(event)
 
         event.push_viewbox(self)
-
+        
+        # make sure the current drawing system does not attempt to draw
+        # the scene.
+        event.handled_children.append(self.scene)
+        
         if fbo:
-            # Ask the canvas to activate the new FBO
-            offset = event.canvas_transform().map((0, 0))[:2]
-            size = event.canvas_transform().map(self.size)[:2] - offset
+            canvas_transform = event.visual_to_canvas
+            offset = canvas_transform.map((0, 0))[:2]
+            size = canvas_transform.map(self.size)[:2] - offset
             
-            # Draw subscene to FBO
+            # Ask the canvas to activate the new FBO
             event.push_fbo(fbo, offset, size)
-            event.push_entity(self.scene)
+            event.push_node(self.scene)
             try:
+                # Draw subscene to FBO
                 gloo.clear(color=self._bgcolor, depth=True)
                 self.scene.draw(event)
             finally:
-                event.pop_entity()
+                event.pop_node()
                 event.pop_fbo()
             
             gloo.set_state(cull_face=False)
@@ -207,11 +212,11 @@ class ViewBox(Widget):
         elif viewport:
             # Push viewport, draw, pop it
             event.push_viewport(viewport)
-            event.push_entity(self.scene)
+            event.push_node(self.scene)
             try:
                 self.scene.draw(event)
             finally:
-                event.pop_entity()
+                event.pop_node()
                 event.pop_viewport()
 
         else:
@@ -222,8 +227,10 @@ class ViewBox(Widget):
         event.pop_viewbox()
 
     def _prepare_viewport(self, event):
-        p1 = event.map_to_framebuffer((0, 0))
-        p2 = event.map_to_framebuffer(self.size)
+        fb_transform = event.node_transform(map_from=event.node_cs,
+                                            map_to=event.framebuffer_cs)
+        p1 = fb_transform.map((0, 0))
+        p2 = fb_transform.map(self.size)
         return p1[0], p1[1], p2[0]-p1[0], p2[1]-p1[1]
 
     def _prepare_fbo(self, event):
@@ -295,7 +302,7 @@ class ViewBox(Widget):
         # Note that we would just use -1..1 if we would use a Visual.
         coords = [[0, 0], [self.size[0], self.size[1]]]
         
-        transform = event.render_transform  # * self.scene.viewbox_transform
+        transform = event.get_full_transform()
         coords = transform.map(coords)
         x1, y1, z = coords[0][:3]
         x2, y2, z = coords[1][:3]
