@@ -32,8 +32,8 @@ tris = mesh.get_faces()
 
 cl = np.linspace(-radius, radius, nbr_level+2)[1:-1]
 
-scene.visuals.Isoline(vertices=vertices, tris=tris, data=vertices[:, 2], level=cl,
-        color_lev='autumn', parent=view.scene)
+scene.visuals.Isoline(vertices=vertices, tris=tris, data=vertices[:, 2],
+                      level=cl, color_lev='autumn', parent=view.scene)
 
 # Add a 3D axis to keep us oriented
 scene.visuals.XYZAxis(parent=view.scene)
