@@ -6,9 +6,9 @@ from __future__ import division
 
 import numpy as np
 
-from .line import Line
-from ...color import ColorArray, get_colormap_py
-from ...ext.six import string_types
+from .line import LineVisual
+from ..color import ColorArray, get_colormap_py
+from ..ext.six import string_types
 
 
 def normalize(mag, cmin, cmax):
@@ -99,7 +99,7 @@ def iso_mesh_line(vertices, tris, vertex_data, level):
     return lines, connects, vertex_level
 
 
-class Isoline(Line):
+class IsolineVisual(LineVisual):
     """Displays the isocurves of a tri mesh with data at vertices at different
     levels.
 
@@ -128,9 +128,8 @@ class Isoline(Line):
         self._color_lev = color_lev
         self._update_color_lev = True
         self._recompute = True
-        kwds['mode'] = 'gl'
         kwds['antialias'] = False
-        Line.__init__(self, **kwds)
+        LineVisual.__init__(self, mode='gl', **kwds)
         self.set_data(vertices=vertices, tris=tris, data=data)
 
     @property
@@ -183,7 +182,7 @@ class Isoline(Line):
                 colors = colors[0]
         return colors
 
-    def draw(self, event):
+    def draw(self, transforms):
         if (self._data is None or self._level is None or self._tris is None or
            self._vertices is None or self._color_lev is None):
             return
@@ -200,5 +199,5 @@ class Isoline(Line):
             self._cl = self._level_to_colors()
             self._update_color_lev = False
 
-        Line.set_data(self, pos=self._v, connect=self._c, color=self._cl)
-        Line.draw(self, event)
+        LineVisual.set_data(self, pos=self._v, connect=self._c, color=self._cl)
+        LineVisual.draw(self, transforms)

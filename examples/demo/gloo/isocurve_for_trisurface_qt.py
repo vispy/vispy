@@ -15,7 +15,6 @@ import numpy as np
 from vispy import scene
 
 from vispy.geometry.generation import create_sphere
-from vispy.scene.visuals.isoline import Isoline
 from vispy.color._color import colormaps
 
 try:
@@ -109,9 +108,10 @@ class Canvas(scene.SceneCanvas):
 
         cl = np.linspace(-self.radius, self.radius, 6 + 2)[1:-1]
 
-        self.iso = Isoline(vertices=vertices, tris=tris, data=vertices[:, 2],
-                           level=cl, color_lev='autumn',
-                           parent=self.view.scene)
+        self.iso = scene.visuals.Isoline(vertices=vertices, tris=tris,
+                                         data=vertices[:, 2],
+                                         level=cl, color_lev='autumn',
+                                         parent=self.view.scene)
 
         # Add a 3D axis to keep us oriented
         scene.visuals.XYZAxis(parent=self.view.scene)

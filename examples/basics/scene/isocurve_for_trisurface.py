@@ -13,7 +13,8 @@ import numpy as np
 from vispy import app, scene
 
 from vispy.geometry.generation import create_sphere
-from vispy.scene.visuals.isoline import Isoline
+
+import sys
 
 # Create a canvas with a 3D viewport
 canvas = scene.SceneCanvas(keys='interactive')
@@ -31,7 +32,7 @@ tris = mesh.get_faces()
 
 cl = np.linspace(-radius, radius, nbr_level+2)[1:-1]
 
-Isoline(vertices=vertices, tris=tris, data=vertices[:, 2], level=cl,
+scene.visuals.Isoline(vertices=vertices, tris=tris, data=vertices[:, 2], level=cl,
         color_lev='autumn', parent=view.scene)
 
 # Add a 3D axis to keep us oriented
@@ -39,4 +40,6 @@ scene.visuals.XYZAxis(parent=view.scene)
 
 
 if __name__ == '__main__':
-    app.run()
+    canvas.show()
+    if sys.flags.interactive == 0:
+        app.run()
