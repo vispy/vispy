@@ -77,12 +77,16 @@ fragment_shader = """
 varying float line_pos;
 
 void main() {
+    // Decrease the alpha linearly as we come within 1 pixel of the edge.
+    // Note: this only approximates the actual fraction of the pixel that is
+    // covered by the visual's geometry. A more accurate measurement would
+    // produce better antialiasing, but the effect would be subtle.
     float alpha = 1.0;
     if ((line_pos * $doc_fb_scale) < 1) {
-        alpha = line_pos;
+        alpha = $color.a * line_pos;
     }
     else if ((line_pos * $doc_fb_scale) > ($line_width - 1)) {
-        alpha = $line_width - line_pos;
+        alpha = $color.a * ($line_width - line_pos);
     }
     gl_FragColor = vec4($color.rgb, alpha);
 }
