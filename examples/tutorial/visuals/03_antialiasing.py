@@ -1,0 +1,169 @@
+"""
+   Tutorial: Creating Visuals
+        03. Antialiasing
+--------------------------------
+
+In [tutorial 1] we learned how to draw a simple rectangle, and in [tutorial 2]
+we expanded on this by using the Document coordinate system to draw a 
+rectangular border of a specific width. In this tutorial we introduce the
+Framebuffer coordinate system, which is used for antialiasing measurements. 
+
+In order to antialias our edges, we need to introduce a calculation to the
+fragment shader that computes, for each pixel being drawn, the fraction of the 
+pixel that is covered by the visual's geometry. At first glance, it may seem
+that the Document coordinate system is sufficient for this purpose because it
+has unit-length pixels. However, there are two situations when the actual 
+pixels being filled by the fragment shader are not the same size as the pixels
+on the canvas:
+
+1. High-resolution displays (such as retina displays) that report a canvas
+   resolution smaller than the actual framebuffer resolution.
+2. When exporting to an image with a different size than the canvas.
+
+In most cases the discrepancy between Document and Framebuffer coordinates can
+be corrected by a simple scale factor. However, this fails for some interesting
+corner cases where the transform is more complex, such as in VR applications 
+using optical distortion correction. Decide for yourself: is this Visual for 
+my personal use, or is it intended for a broader audience?
+"""
+
+from vispy import app, gloo, visuals, scene
+import numpy as np
+
+
+# Here we use the same vertex shader as in tutorial 2.
+vertex_shader = """
+void main() {
+    // First map the vertex to document coordinates
+    vec4 doc_pos = $visual_to_doc(vec4($position, 0, 1));
+    
+    vec4 adjusted;
+    if ( $adjust_dir.x == 0 ) {
+        adjusted = doc_pos;
+    }
+    else {
+        // Inner vertexes must be adjusted for line width
+        vec4 doc_x = $visual_to_doc(vec4($adjust_dir.x, 0, 0, 0)) - 
+                    $visual_to_doc(vec4(0, 0, 0, 0));
+        vec4 doc_y = $visual_to_doc(vec4(0, $adjust_dir.y, 0, 0)) - 
+                    $visual_to_doc(vec4(0, 0, 0, 0));
+        doc_x = normalize(doc_x);
+        doc_y = normalize(doc_y);
+                        
+        vec4 proj_y_x = dot(doc_x, doc_y) * doc_x;  // project y onto x
+        float cur_width = length(doc_y - proj_y_x);  // measure current weight
+        
+        // And now we can adjust vertex position for line width:
+        adjusted = doc_pos + ($line_width / cur_width) * (doc_x + doc_y);
+    }
+    
+    // Finally map the remainder of the way to render coordinates
+    gl_Position = $doc_to_render(adjusted);
+}
+"""
+
+# The fragment shader is updated to change the opacity of the color based on
+# the amount of the fragment that is covered by the visual's geometry.
+fragment_shader = """
+void main() {
+    gl_FragColor = $color;
+}
+"""
+
+class MyRectVisual(visuals.Visual):
+    """Visual that draws a rectangular outline.
+    
+    Parameters
+    ----------
+    x : float
+        x coordinate of rectangle origin
+    y : float
+        y coordinate of rectangle origin
+    w : float
+        width of rectangle
+    h : float
+        height of rectangle
+    weight : float
+        width of border (in px)
+    """
+    
+    def __init__(self, x, y, w, h, weight=4.0):
+        visuals.Visual.__init__(self)
+        
+        # 10 vertices for 8 triangles (using triangle_strip) forming a 
+        # rectangular outline
+        self.vert_buffer = gloo.VertexBuffer(np.array([
+            [x, y], 
+            [x, y], 
+            [x+w, y], 
+            [x+w, y], 
+            [x+w, y+h],
+            [x+w, y+h],
+            [x, y+h],
+            [x, y+h],
+            [x, y], 
+            [x, y], 
+            ], dtype=np.float32))
+        
+        # Direction each vertex should move to correct for line width
+        # (the length of this vector will be corrected in the shader)
+        self.adj_buffer = gloo.VertexBuffer(np.array([
+            [0, 0],
+            [1, 1],
+            [0, 0],
+            [-1, 1],
+            [0, 0],
+            [-1, -1],
+            [0, 0],
+            [1, -1],
+            [0, 0],
+            [1, 1],
+            ], dtype=np.float32))
+        
+        self.program = visuals.shaders.ModularProgram(vertex_shader, 
+                                                      fragment_shader)
+        
+        self.program.vert['position'] = self.vert_buffer
+        self.program.vert['adjust_dir'] = self.adj_buffer
+        self.program.vert['line_width'] = weight
+        self.program.frag['color'] = (1, 0, 0, 1)
+        
+    def draw(self, transforms):
+        gloo.set_state(cull_face='front_and_back')
+        
+        # Set the two transforms required by the vertex shader:
+        self.program.vert['visual_to_doc'] = transforms.visual_to_document
+        self.program.vert['doc_to_render'] = (
+            transforms.framebuffer_to_render *
+            transforms.document_to_framebuffer) 
+        
+        # Finally, draw the triangles.
+        self.program.draw('triangle_strip')
+
+
+# As in the previous tutorial, we auto-generate a Visual+Node class for use
+# in the scenegraph.
+MyRect = scene.visuals.create_visual_node(MyRectVisual)
+
+
+if __name__ == '__main__':
+    canvas = scene.SceneCanvas(keys='interactive', show=True)
+    
+    # This time we add a ViewBox to let the user zoom/pan
+    view = canvas.central_widget.add_view()
+    view.camera.rect = (0, 0, 800, 800)
+    
+    # ..and add the rects to the view instead of canvas.scene
+    rects = [MyRect(100, 100, 200, 300, parent=view.scene),
+             MyRect(500, 100, 200, 300, parent=view.scene)]
+
+    # Again, rotate one rectangle to ensure the transforms are working as we 
+    # expect.
+    tr = visuals.transforms.AffineTransform()
+    tr.rotate(25, (0, 0, 1))
+    rects[1].transform = tr
+
+    # ..and optionally start the event loop
+    import sys
+    if sys.flags.interactive == 0:
+        app.run()
