@@ -24,15 +24,21 @@ In most cases the discrepancy between Document and Framebuffer coordinates can
 be corrected by a simple scale factor. However, this fails for some interesting
 corner cases where the transform is more complex, such as in VR applications 
 using optical distortion correction. Decide for yourself: is this Visual for 
-my personal use, or is it intended for a broader audience?
+my personal use, or is it intended for a broader audience? For simplicity in 
+this example, we will use a simple scale factor.
+
 """
 
 from vispy import app, gloo, visuals, scene
 import numpy as np
 
 
-# Here we use the same vertex shader as in tutorial 2.
+# Here we use almost the same vertex shader as in tutorial 2.
+# The important difference is the addition of the line_pos variable,
+# which measures position across the width of the border line.
 vertex_shader = """
+varying float line_pos;  // how far we are across the border line
+
 void main() {
     // First map the vertex to document coordinates
     vec4 doc_pos = $visual_to_doc(vec4($position, 0, 1));
@@ -40,6 +46,7 @@ void main() {
     vec4 adjusted;
     if ( $adjust_dir.x == 0 ) {
         adjusted = doc_pos;
+        line_pos = $line_width;  // at the outside of the border
     }
     else {
         // Inner vertexes must be adjusted for line width
@@ -55,6 +62,8 @@ void main() {
         
         // And now we can adjust vertex position for line width:
         adjusted = doc_pos + ($line_width / cur_width) * (doc_x + doc_y);
+        
+        line_pos = 0;  // at the inside of the border
     }
     
     // Finally map the remainder of the way to render coordinates
@@ -65,11 +74,24 @@ void main() {
 # The fragment shader is updated to change the opacity of the color based on
 # the amount of the fragment that is covered by the visual's geometry.
 fragment_shader = """
+varying float line_pos;
+
 void main() {
-    gl_FragColor = $color;
+    float alpha = 1.0;
+    if ((line_pos * $doc_fb_scale) < 1) {
+        alpha = line_pos;
+    }
+    else if ((line_pos * $doc_fb_scale) > ($line_width - 1)) {
+        alpha = $line_width - line_pos;
+    }
+    gl_FragColor = vec4($color.rgb, alpha);
 }
 """
 
+
+# The visual class is defined almost exactly as in [tutorial 2]. The only 
+# major difference is that the draw() method now calculates a scale factor
+# for converting between document and framebuffer coordinates.
 class MyRectVisual(visuals.Visual):
     """Visual that draws a rectangular outline.
     
@@ -89,6 +111,7 @@ class MyRectVisual(visuals.Visual):
     
     def __init__(self, x, y, w, h, weight=4.0):
         visuals.Visual.__init__(self)
+        self.weight = weight
         
         # 10 vertices for 8 triangles (using triangle_strip) forming a 
         # rectangular outline
@@ -125,7 +148,8 @@ class MyRectVisual(visuals.Visual):
         
         self.program.vert['position'] = self.vert_buffer
         self.program.vert['adjust_dir'] = self.adj_buffer
-        self.program.vert['line_width'] = weight
+        # To compensate for antialiasing, add 1 to border width:
+        self.program.vert['line_width'] = weight + 1
         self.program.frag['color'] = (1, 0, 0, 1)
         
     def draw(self, transforms):
@@ -136,6 +160,14 @@ class MyRectVisual(visuals.Visual):
         self.program.vert['doc_to_render'] = (
             transforms.framebuffer_to_render *
             transforms.document_to_framebuffer) 
+        
+        # Set the scale factor between document and framebuffer coordinate
+        # systems. This assumes a simple linear / isotropic scale; more complex
+        # transforms will yield strange results!
+        fbs = np.linalg.norm(transforms.document_to_framebuffer.map([1, 0]) -
+                             transforms.document_to_framebuffer.map([0, 0]))
+        self.program.frag['doc_fb_scale'] = fbs
+        self.program.frag['line_width'] = (self.weight + 1) * fbs
         
         # Finally, draw the triangles.
         self.program.draw('triangle_strip')
@@ -162,6 +194,13 @@ if __name__ == '__main__':
     tr = visuals.transforms.AffineTransform()
     tr.rotate(25, (0, 0, 1))
     rects[1].transform = tr
+
+    # Add some text instructions
+    text = scene.visuals.Text("Drag right mouse button to zoom.", 
+                              color='w',
+                              anchor_x='left',
+                              parent=view,
+                              pos=(20, 30))
 
     # ..and optionally start the event loop
     import sys

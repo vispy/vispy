@@ -205,6 +205,13 @@ if __name__ == '__main__':
     tr = visuals.transforms.AffineTransform()
     tr.rotate(25, (0, 0, 1))
     rects[1].transform = tr
+    
+    # Add some text instructions
+    text = scene.visuals.Text("Drag right mouse button to zoom.", 
+                              color='w',
+                              anchor_x='left',
+                              parent=view,
+                              pos=(20, 30))
 
     # ..and optionally start the event loop
     import sys
