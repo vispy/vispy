@@ -7,6 +7,8 @@ Note that functions that take a matrix as input generally operate on that
 matrix in place.
 """
 
+from __future__ import division
+
 # Note: we use functions (e.g. sin) from math module because they're faster
 
 import math
