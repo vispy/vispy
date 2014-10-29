@@ -244,9 +244,10 @@ class TimerBackend(BaseTimerBackend):
         super(TimerBackend, self).__init__(*args, **kwargs)
         self._timer = tornado.ioloop.PeriodicCallback(
             self._vispy_timer._timeout,
-            interval * 1000)
+            1000)
 
     def _vispy_start(self, interval):
+        self._timer.callback_time = interval * 1000
         self._timer.start()
 
     def _vispy_stop(self):

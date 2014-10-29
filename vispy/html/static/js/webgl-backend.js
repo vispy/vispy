@@ -31,8 +31,6 @@ require(["widgets/js/widget", "widgets/js/manager"],
 
                 // Initialize the VispyCanvas.
                 this.c = vispy.init(canvas);
-                this.c.resize();
-                this.c.resizable();
 
                 this.c.on_resize(function (e) {
                     that.model.set('width', e.size[0]);
@@ -40,12 +38,14 @@ require(["widgets/js/widget", "widgets/js/manager"],
                     that.touch();
                 });
 
+                // Make sure the size is correctly set up upon first display.
                 this.size_changed();
+                this.c.resize();
+                this.c.resizable();
 
                 // Track canvas size changes.
                 this.model.on('change:width', this.size_changed, this);
                 this.model.on('change:height', this.size_changed, this);
-
 
                 window.VISPY_DEBUG = false;
 
