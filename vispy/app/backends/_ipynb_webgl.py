@@ -70,7 +70,9 @@ except Exception as exp:
 def _prepare_js():
     pkgdir = op.dirname(__file__)
     jsdir = op.join(pkgdir, '../../html/static/js/')
-    install_nbextension([op.join(jsdir, 'vispy.min.js')])
+    install_nbextension([op.join(jsdir, 'vispy.min.js'),
+                         op.join(jsdir, 'jquery.mousewheel.min.js'),
+                        ])
 
     backend_path = op.join(jsdir, 'webgl-backend.js')
     with open(backend_path, 'r') as f:

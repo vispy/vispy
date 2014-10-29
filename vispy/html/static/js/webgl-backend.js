@@ -1,12 +1,7 @@
-require.config({
-        paths: {
-            "jquery-mousewheel": "//cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.11/jquery.mousewheel.min",
-        }
-});
-
-
 // Load Vispy.js in the notebook.
 IPython.load_extensions("vispy.min");
+IPython.load_extensions("jquery.mousewheel.min");
+
 // HACK: this is UGLY but I didn't find a better way to do it
 var _vispy_loaded = function(vispy) {
     window.vispy = vispy;
