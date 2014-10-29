@@ -20,6 +20,10 @@ class BaseApplicationBackend(object):
     def _vispy_run(self):
         raise NotImplementedError()
 
+    def _vispy_reuse(self):
+        # Does nothing by default.
+        pass
+
     def _vispy_quit(self):
         raise NotImplementedError()
 

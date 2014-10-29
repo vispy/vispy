@@ -23,7 +23,7 @@ class Application(object):
     """Representation of the vispy application
 
     This wraps a native GUI application instance. Vispy has a default
-    instance of this class that can be created/obtained via 
+    instance of this class that can be created/obtained via
     `vispy.app.use_app()`.
 
     Parameters
@@ -32,21 +32,21 @@ class Application(object):
         The name of the backend application to use. If not specified,
         Vispy tries to select a backend automatically. See ``vispy.use()``
         for details.
-    
+
     Notes
     -----
     Upon creating an Application object, a backend is selected, but the
     native backend application object is only created when `create()`
     is called or `native` is used. The Canvas and Timer do this
     automatically.
-    
+
     """
 
     def __init__(self, backend_name=None):
         self._backend_module = None
         self._backend = None
         self._use(backend_name)
-    
+
     def __repr__(self):
         name = self.backend_name
         if not name:
@@ -86,6 +86,11 @@ class Application(object):
         """ Enter the native GUI event loop.
         """
         return self._backend._vispy_run()
+
+    def reuse(self):
+        """ The application is reused in an interactive session.
+        """
+        return self._backend._vispy_reuse()
 
     def quit(self):
         """ Quit the native GUI event loop.
@@ -164,8 +169,8 @@ class Application(object):
                     msg = ('Although %s is already imported, the %s backend '
                            'could not\nbe used ("%s"). \nNote that running '
                            'multiple GUI toolkits simultaneously can cause '
-                           'side effects.' % 
-                           (native_module_name, name, str(mod.why_not))) 
+                           'side effects.' %
+                           (native_module_name, name, str(mod.why_not)))
                     logger.warning(msg)
                 else:
                     # Inform otherwise

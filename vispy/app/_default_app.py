@@ -5,24 +5,24 @@
 from .application import Application
 
 # Initialize default app
-# Only for use within *this* module. 
+# Only for use within *this* module.
 # One should always call use_app() to obtain the default app.
 default_app = None
 
 
-def use_app(backend_name=None):
+def use_app(backend_name=None, call_reuse=True):
     """ Get/create the default Application object
-    
+
     It is safe to call this function multiple times, as long as
     backend_name is None or matches the already selected backend.
-    
+
     Parameters
     ----------
     backend_name : str | None
         The name of the backend application to use. If not specified, Vispy
         tries to select a backend automatically. See ``vispy.use()`` for
         details.
-    
+
     """
     global default_app
 
@@ -33,6 +33,8 @@ def use_app(backend_name=None):
         if backend_name and backend_name.lower() not in names:
             raise RuntimeError('Can only select a backend once.')
         else:
+            if call_reuse:
+                default_app.reuse()
             return default_app  # Current backend matches backend_name
 
     # Create default app
@@ -43,21 +45,21 @@ def use_app(backend_name=None):
 def create():
     """Create the native application.
     """
-    use_app()
+    use_app(call_reuse=False)
     return default_app.create()
 
 
 def run():
     """Enter the native GUI event loop.
     """
-    use_app()
+    use_app(call_reuse=False)
     return default_app.run()
 
 
 def quit():
     """Quit the native GUI event loop.
     """
-    use_app()
+    use_app(call_reuse=False)
     return default_app.quit()
 
 
@@ -67,5 +69,5 @@ def process_events():
     If the mainloop is not running, this should be done regularly to
     keep the visualization interactive and to keep the event system going.
     """
-    use_app()
+    use_app(call_reuse=False)
     return default_app.process_events()

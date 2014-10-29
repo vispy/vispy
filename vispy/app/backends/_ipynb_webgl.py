@@ -68,6 +68,7 @@ except Exception as exp:
 
 # ------------------------------------------------------------- application ---
 def _prepare_js():
+    print("Injecting JS.")
     pkgdir = op.dirname(__file__)
     jsdir = op.join(pkgdir, '../../html/static/js/')
     install_nbextension([op.join(jsdir, 'vispy.min.js')])
@@ -82,6 +83,9 @@ class ApplicationBackend(BaseApplicationBackend):
 
     def __init__(self):
         BaseApplicationBackend.__init__(self)
+        _prepare_js()
+
+    def _vispy_reuse(self):
         _prepare_js()
 
     def _vispy_get_backend_name(self):
