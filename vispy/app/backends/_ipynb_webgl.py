@@ -17,7 +17,6 @@ from ..base import (BaseApplicationBackend, BaseCanvasBackend,
 from .. import Application, Canvas
 from ...util import logger
 from ...ext import six
-from vispy.gloo.context import get_a_context
 from vispy.gloo.glir import BaseGlirParser
 
 # Import for displaying Javascript on notebook
@@ -88,7 +87,8 @@ class ApplicationBackend(BaseApplicationBackend):
         return 'ipynb_webgl'
 
     def _vispy_process_events(self):
-        pass
+        # TODO: may be implemented later.
+        raise NotImplementedError()
 
     def _vispy_run(self):
         pass
@@ -107,22 +107,15 @@ class ApplicationBackend(BaseApplicationBackend):
 class WebGLGlirParser(BaseGlirParser):
     def __init__(self, widget):
         self._widget = widget
-        self._commands = []
 
     def is_remote(self):
         return True
-    
+
     def convert_shaders(self):
         return 'es2'
-    
-    def parse(self, commands):
-        # Uncomment for debugging.
-        # self._commands += commands
-        self._widget.send_glir_commands(commands)
 
-    @property
-    def commands(self):
-        return self._commands
+    def parse(self, commands):
+        self._widget.send_glir_commands(commands)
 
 
 
@@ -130,9 +123,12 @@ class CanvasBackend(BaseCanvasBackend):
 
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
-        BaseCanvasBackend.__init__(self, *args)        
-        self._context = get_a_context()
-        self._create_widget(size=kwargs.get('size', None))
+        BaseCanvasBackend.__init__(self, *args)
+        # Maybe to ensure that exactly all arguments are passed?
+        title, size, position, show, vsync, resize, dec, fs, parent, context, \
+            = self._process_backend_kwargs(kwargs)
+        self._context = context
+        self._create_widget(size=size)
 
     def _create_widget(self, size=None):
         self._widget = VispyWidget(self._gen_event, size=size)
@@ -143,15 +139,6 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas.events.resize(size=(self._widget.width, self._widget.height))
         self._vispy_canvas.events.draw()
 
-    @property
-    def _vispy_context(self):
-        """Context to return for sharing"""
-        return self._context
-    
-    @_vispy_context.setter
-    def _vispy_context(self, context):
-        self._context = context
-    
     def _vispy_warmup(self):
         pass
 
@@ -184,8 +171,7 @@ class CanvasBackend(BaseCanvasBackend):
         self._vispy_canvas.events.draw()
 
     def _vispy_close(self):
-        pass
-        # self._widget.quit()
+        raise NotImplementedError()
 
     def _vispy_get_position(self):
         return 0, 0
@@ -235,7 +221,7 @@ class CanvasBackend(BaseCanvasBackend):
                                                   modifiers=ev.get("modifiers"),
                                                   )
         elif event_type == "resize":
-            self._vispy_canvas.events.resize(native=ev, 
+            self._vispy_canvas.events.resize(native=ev,
                                              size=ev.get("size")
                                                   )
 
@@ -246,9 +232,9 @@ class TimerBackend(BaseTimerBackend):
     def __init__(self, *args, **kwargs):
         super(TimerBackend, self).__init__(*args, **kwargs)
         self._timer = tornado.ioloop.PeriodicCallback(
-            self._vispy_timer._timeout, 
+            self._vispy_timer._timeout,
             interval * 1000)
-        
+
     def _vispy_start(self, interval):
         self._timer.start()
 
@@ -313,5 +299,3 @@ class VispyWidget(DOMWidget):
         }
         self.send(msg)
 
-    # def quit(self):
-    #     self.close()
