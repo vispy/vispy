@@ -20,7 +20,7 @@ window.setTimeout(function() {
 require(["widgets/js/widget", "widgets/js/manager"],
     function(widget, manager){
         var VispyView = IPython.DOMWidgetView.extend({
-            render: function(){ 
+            render: function(){
                 var that = this;
 
                 var canvas = $('<canvas></canvas>');
@@ -28,24 +28,29 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 canvas.css('background-color', '#000');
                 this.$el.append(canvas);
                 this.$canvas = canvas;
-                this.width_changed();
-                this.height_changed();
 
                 // Initialize the VispyCanvas.
-                var c = vispy.init(canvas);
-                this.c = c;
-                c.resize();
-                c.resizable();
+                this.c = vispy.init(canvas);
+                this.c.resize();
+                this.c.resizable();
+
+                this.c.on_resize(function (e) {
+                    that.model.set('width', e.size[0]);
+                    that.model.set('height', e.size[1]);
+                    that.touch();
+                });
+
+                this.size_changed();
 
                 // Track canvas size changes.
-                this.model.on('change:width', this.width_changed, this);
-                this.model.on('change:height', this.height_changed, this);
+                this.model.on('change:width', this.size_changed, this);
+                this.model.on('change:height', this.size_changed, this);
 
 
                 window.VISPY_DEBUG = false;
 
                 // Start the event loop.
-                c.event_tick = function() {
+                this.c.event_tick = function() {
                     // Retrieve and flush the event queue.
                     var events = that.c.event_queue.get();
                     that.c.event_queue.clear();
@@ -78,13 +83,11 @@ require(["widgets/js/widget", "widgets/js/manager"],
             },
 
             // When the model's size changes.
-            width_changed: function() {
-                this.$canvas.css('width', this.model.get('width') + 'px');
-            },
-            height_changed: function() {
-                this.$canvas.css('height', this.model.get('height') + 'px');
-            },
-
+            size_changed: function() {
+                var size = [this.model.get('width'), this.model.get('height')];
+                this.$canvas.css('width', size[0] + 'px');
+                this.$canvas.css('height', size[1] + 'px');
+            }
         });
 
         IPython.WidgetManager.register_widget_view('VispyView', VispyView);
