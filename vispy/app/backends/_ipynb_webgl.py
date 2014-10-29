@@ -68,7 +68,6 @@ except Exception as exp:
 
 # ------------------------------------------------------------- application ---
 def _prepare_js():
-    print("Injecting JS.")
     pkgdir = op.dirname(__file__)
     jsdir = op.join(pkgdir, '../../html/static/js/')
     install_nbextension([op.join(jsdir, 'vispy.min.js')])
@@ -169,7 +168,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_update(self):
         if self._vispy_canvas is None:
             return
-        self._vispy_canvas.events.draw()
+        tornado.ioloop.IOLoop.current().add_callback(self._vispy_canvas.events.draw)
 
     def _vispy_close(self):
         raise NotImplementedError()
