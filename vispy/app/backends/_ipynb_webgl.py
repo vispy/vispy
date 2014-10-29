@@ -127,6 +127,12 @@ class CanvasBackend(BaseCanvasBackend):
         title, size, position, show, vsync, resize, dec, fs, parent, context, \
             = self._process_backend_kwargs(kwargs)
         self._context = context
+
+        # Take the context.
+        if not context.istaken:
+            context.take('webgl', self)
+            # TODO: do something with context.config
+
         self._create_widget(size=size)
 
     def _create_widget(self, size=None):
@@ -134,6 +140,8 @@ class CanvasBackend(BaseCanvasBackend):
         self._context.glir.parser = WebGLGlirParser(self._widget)
 
     def _reinit_widget(self):
+        self._context.set_current()
+
         self._vispy_canvas.events.initialize()
         self._vispy_canvas.events.resize(size=(self._widget.width,
                                                self._widget.height))
@@ -168,6 +176,7 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_update(self):
         if self._vispy_canvas is None:
             return
+        # self._context.set_current()
         tornado.ioloop.IOLoop.current().add_callback(self._vispy_canvas.events.draw)
 
     def _vispy_close(self):
