@@ -51,21 +51,24 @@ require(["widgets/js/widget", "widgets/js/manager"],
 
                 // Start the event loop.
                 this.c.event_tick = function() {
+
                     // Retrieve and flush the event queue.
                     var events = that.c.event_queue.get();
-                    that.c.event_queue.clear();
-                    if (events.length == 0) {
-                        return;
-                    }
-                    // Create the message.
-                    var msg = {
-                        msg_type: 'events',
-                        contents: events
-                    };
-                    // console.debug(events);
-                    // Send the message with the events to Python.
-                    that.send(msg);
 
+                    that.c.event_queue.clear();
+                    // Send the events if the queue is not empty.
+                    if (events.length > 0) {
+                        // Create the message.
+                        var msg = {
+                            msg_type: 'events',
+                            contents: events
+                        };
+                        // console.debug(events);
+                        // Send the message with the events to Python.
+                        that.send(msg);
+                    }
+
+                    // Execute the pending GLIR commands.
                     that.c.execute_pending_commands();
                 };
             },
