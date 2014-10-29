@@ -180,13 +180,10 @@ class BaseCanvasBackend(object):
         # default method for delivering mouse release events to the canvas
         kwds.update(self._vispy_mouse_data)
         ev = self._vispy_canvas.events.mouse_release(**kwds)
-        if ev is None:
-            return
-        self._vispy_mouse_data['press_event'] = None
-        # TODO: this is a bit ugly, need to improve mouse button handling in
-        # app
-        ev._button = None
-        self._vispy_mouse_data['buttons'] = []
+        if ev.button == self._vispy_mouse_data['press_event'].button:
+            self._vispy_mouse_data['press_event'] = None
+
+        self._vispy_mouse_data['buttons'].remove(ev.button)
         self._vispy_mouse_data['last_event'] = ev
         return ev
 

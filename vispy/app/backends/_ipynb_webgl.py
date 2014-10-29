@@ -176,6 +176,21 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_get_size(self):
         return (self._widget.width, self._widget.height)
 
+    def _vispy_mouse_release(self, **kwds):
+        # HACK: override this method from the base canvas in order to
+        # avoid breaking other backends.
+        kwds.update(self._vispy_mouse_data)
+        ev = self._vispy_canvas.events.mouse_release(**kwds)
+        if ev is None:
+            return
+        self._vispy_mouse_data['press_event'] = None
+        # TODO: this is a bit ugly, need to improve mouse button handling in
+        # app
+        ev._button = None
+        self._vispy_mouse_data['buttons'] = []
+        self._vispy_mouse_data['last_event'] = ev
+        return ev
+
     # Generate vispy events according to upcoming JS events
     def _gen_event(self, ev):
         if self._vispy_canvas is None:
@@ -183,6 +198,7 @@ class CanvasBackend(BaseCanvasBackend):
         event_type = ev['type']
         if event_type == "mouse_move":
             self._vispy_mouse_move(native=ev,
+                                   button=ev["button"],
                                    pos=ev["pos"],
                                    modifiers=ev["modifiers"],
                                    )
@@ -195,7 +211,7 @@ class CanvasBackend(BaseCanvasBackend):
         elif event_type == "mouse_release":
             self._vispy_mouse_release(native=ev,
                                       pos=ev["pos"],
-                                      # button=ev["button"],
+                                      button=ev["button"],
                                       modifiers=ev["modifiers"],
                                       )
         elif event_type == "mouse_wheel":
