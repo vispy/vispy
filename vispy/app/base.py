@@ -46,13 +46,13 @@ class BaseCanvasBackend(object):
         from .canvas import Canvas  # Avoid circular import
         assert isinstance(vispy_canvas, Canvas)
         self._vispy_canvas = vispy_canvas
-        
+
         # We set the _backend attribute of the vispy_canvas to self,
         # because at the end of the __init__ of the CanvasBackend
         # implementation there might be a call to show or draw. By
         # setting it here, we ensure that the Canvas is "ready to go".
         vispy_canvas._backend = self
-        
+
         # Data used in the construction of new mouse events
         self._vispy_mouse_data = {
             'buttons': [],
@@ -65,10 +65,10 @@ class BaseCanvasBackend(object):
         Also checks whether the values of the backend arguments do not
         violate the backend capabilities.
         """
-        
+
         # Store context here
         self._vispy_context = kwargs['context']
-        
+
         # Verify given argument with capability of the backend
         app = self._vispy_canvas.app
         capability = app.backend_module.capability
@@ -82,12 +82,12 @@ class BaseCanvasBackend(object):
             if bool(kwargs[key]) - invert:
                 raise RuntimeError('Config %s is not supported by backend %s'
                                    % (key, app.backend_name))
-        
+
         # Return items in sequence
         keys = ['title', 'size', 'position', 'show', 'vsync', 'resizable',
                 'decorate', 'fullscreen', 'parent', 'context']
         return [kwargs[k] for k in keys]
-    
+
     def _vispy_set_current(self):
         # Make this the current context
         raise NotImplementedError()
@@ -183,7 +183,8 @@ class BaseCanvasBackend(object):
         if ev is None:
             return
         self._vispy_mouse_data['press_event'] = None
-        # TODO: this is a bit ugly, need to improve mouse button handling in app
+        # TODO: this is a bit ugly, need to improve mouse button handling in
+        # app
         ev._button = None
         self._vispy_mouse_data['buttons'] = []
         self._vispy_mouse_data['last_event'] = ev

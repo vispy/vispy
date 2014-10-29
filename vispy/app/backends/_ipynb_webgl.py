@@ -65,11 +65,12 @@ except Exception as exp:
     raise ImportError("The WebGL backend requires IPython >= 2.0")
     available, testable, why_not, which = False, False, str(exp), None
 
+
 # ------------------------------------------------------------- application ---
 def _prepare_js():
     pkgdir = op.dirname(__file__)
     jsdir = op.join(pkgdir, '../../html/static/js/')
-    install_nbextension([op.join(jsdir, 'vispy.min.js'),])
+    install_nbextension([op.join(jsdir, 'vispy.min.js')])
 
     backend_path = op.join(jsdir, 'webgl-backend.js')
     with open(backend_path, 'r') as f:
@@ -101,9 +102,6 @@ class ApplicationBackend(BaseApplicationBackend):
 
 
 # ------------------------------------------------------------------ canvas ---
-
-
-
 class WebGLGlirParser(BaseGlirParser):
     def __init__(self, widget):
         self._widget = widget
@@ -118,9 +116,7 @@ class WebGLGlirParser(BaseGlirParser):
         self._widget.send_glir_commands(commands)
 
 
-
 class CanvasBackend(BaseCanvasBackend):
-
     # args are for BaseCanvasBackend, kwargs are for us.
     def __init__(self, *args, **kwargs):
         BaseCanvasBackend.__init__(self, *args)
@@ -136,7 +132,8 @@ class CanvasBackend(BaseCanvasBackend):
 
     def _reinit_widget(self):
         self._vispy_canvas.events.initialize()
-        self._vispy_canvas.events.resize(size=(self._widget.width, self._widget.height))
+        self._vispy_canvas.events.resize(size=(self._widget.width,
+                                               self._widget.height))
         self._vispy_canvas.events.draw()
 
     def _vispy_warmup(self):
@@ -186,48 +183,46 @@ class CanvasBackend(BaseCanvasBackend):
         event_type = ev['type']
         if event_type == "mouse_move":
             self._vispy_mouse_move(native=ev,
-                                   pos=ev.get("pos"),
-                                   modifiers=ev.get("modifiers"),
+                                   pos=ev["pos"],
+                                   modifiers=ev["modifiers"],
                                    )
         elif event_type == "mouse_press":
             self._vispy_mouse_press(native=ev,
-                                    pos=ev.get("pos"),
-                                    button=ev.get("button"),
-                                    modifiers=ev.get("modifiers"),
+                                    pos=ev["pos"],
+                                    button=ev["button"],
+                                    modifiers=ev["modifiers"],
                                     )
         elif event_type == "mouse_release":
             self._vispy_mouse_release(native=ev,
-                                      pos=ev.get("pos"),
-                                      # button=ev.get("button"),
-                                      modifiers=ev.get("modifiers"),
+                                      pos=ev["pos"],
+                                      # button=ev["button"],
+                                      modifiers=ev["modifiers"],
                                       )
         elif event_type == "mouse_wheel":
             self._vispy_canvas.events.mouse_wheel(native=ev,
-                                                  delta=ev.get("delta"),
-                                                  pos=ev.get("pos"),
-                                                  button=ev.get("button"),
-                                                  modifiers=ev.get("modifiers"),
+                                                  delta=ev["delta"],
+                                                  pos=ev["pos"],
+                                                  button=ev["button"],
+                                                  modifiers=ev["modifiers"],
                                                   )
         elif event_type == "key_press":
             self._vispy_canvas.events.key_press(native=ev,
-                                                key=ev.get("key"),
-                                                text=ev.get("text"),
-                                                modifiers=ev.get("modifiers"),
+                                                key=ev["key"],
+                                                text=ev["text"],
+                                                modifiers=ev["modifiers"],
                                                 )
         elif event_type == "key_release":
             self._vispy_canvas.events.key_release(native=ev,
-                                                  key=ev.get("key"),
-                                                  text=ev.get("text"),
-                                                  modifiers=ev.get("modifiers"),
+                                                  key=ev["key"],
+                                                  text=ev["text"],
+                                                  modifiers=ev["modifiers"],
                                                   )
         elif event_type == "resize":
             self._vispy_canvas.events.resize(native=ev,
-                                             size=ev.get("size")
-                                                  )
+                                             size=ev["size"])
 
 
 # ------------------------------------------------------------------- Timer ---
-
 class TimerBackend(BaseTimerBackend):
     def __init__(self, *args, **kwargs):
         super(TimerBackend, self).__init__(*args, **kwargs)
@@ -243,14 +238,15 @@ class TimerBackend(BaseTimerBackend):
 
 
 # ---------------------------------------------------------- IPython Widget ---
-
 def _serializable(c, serialize_array=True):
     if isinstance(c, list):
-        return [_serializable(command, serialize_array=serialize_array) for command in c]
+        return [_serializable(command, serialize_array=serialize_array)
+                for command in c]
     if isinstance(c, tuple):
         if c and c[0] == 'UNIFORM':
             serialize_array = False
-        return list(_serializable(command, serialize_array=serialize_array) for command in c)
+        return list(_serializable(command, serialize_array=serialize_array)
+                    for command in c)
     elif isinstance(c, np.ndarray):
         if serialize_array:
             # TODO: binary websocket (once the IPython PR has been merged)
@@ -271,6 +267,7 @@ def _serializable(c, serialize_array=True):
             return np.asscalar(c)
         except Exception:
             return c
+
 
 class VispyWidget(DOMWidget):
     _view_name = Unicode("VispyView", sync=True)
@@ -298,4 +295,3 @@ class VispyWidget(DOMWidget):
             'contents': _serializable(commands)
         }
         self.send(msg)
-
