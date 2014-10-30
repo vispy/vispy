@@ -10,7 +10,7 @@ from ..node import Node
 from ...geometry import Rect
 from ...visuals.transforms import (STTransform, PerspectiveTransform, 
                                    NullTransform, AffineTransform,
-                                   TransformCache, ChainTransform)
+                                   TransformCache)
 
 
 def make_camera(cam_type, *args, **kwds):
@@ -439,7 +439,6 @@ class PerspectiveCamera(BaseCamera):
         unit = [[-1, 1], [1, -1]]
         vrect = [[0, 0], self.viewbox.size]
         self._viewbox_tr.set_mapping(unit, vrect)
-        proj_tr = self._projection
         transforms = self.node_path_transforms(self.viewbox.scene)
         camera_tr = self._transform_cache.get(transforms).inverse
         full_tr = self._transform_cache.get([self._viewbox_tr, 

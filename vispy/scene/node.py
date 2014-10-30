@@ -5,7 +5,8 @@
 from __future__ import division
 
 from ..util.event import Event
-from ..visuals.transforms import NullTransform, BaseTransform, create_transform
+from ..visuals.transforms import (NullTransform, BaseTransform, 
+                                  ChainTransform, create_transform)
 from ..visuals import Visual
 
 
@@ -319,22 +320,6 @@ class Node(Visual):
         the two entities; otherwise an exception will be raised.        
         """
         return ChainTransform(self.node_path_transforms(node))
-        #cp = self.common_parent(node)
-        ## First map from node to common parent
-        #tr = NullTransform()
-        
-        #while node is not cp:
-            #if node.transform is not None:
-                #tr = node.transform * tr
-            
-            #node = node.parent
-        
-        #if node is self:
-            #return tr
-        
-        ## Now map from common parent to self
-        #tr2 = cp.node_transform(self)
-        #return tr2.inverse * tr
         
     def __repr__(self):
         name = "" if self.name is None else " name="+self.name

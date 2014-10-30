@@ -94,7 +94,8 @@ class LineVisual(Visual):
                          'connect': False}
         # don't call subclass set_data; these often have different
         # signatures.
-        LineVisual.set_data(self, pos=pos, color=color, width=width, connect=connect)
+        LineVisual.set_data(self, pos=pos, color=color, width=width, 
+                            connect=connect)
         self._mode = 'none'
         self.antialias = antialias
         self.mode = mode
@@ -294,7 +295,6 @@ class _GLLineVisual(Visual):
                 GL.glDisable(GL.GL_LINE_SMOOTH)
             GL.glLineWidth(self._parent._width)
 
-        
         if self._parent._changed['connect']:
             self._connect = self._parent._interpret_connect()
             if isinstance(self._connect, np.ndarray):
@@ -313,12 +313,12 @@ class _GLLineVisual(Visual):
 
 class _AggLineVisual(Visual):
     _agg_vtype = np.dtype([('a_position', 'f4', 2),
-                        ('a_tangents', 'f4', 4),
-                        ('a_segment',  'f4', 2),
-                        ('a_angles',   'f4', 2),
-                        ('a_texcoord', 'f4', 2),
-                        ('alength', 'f4', 1),
-                        ('color', 'f4', 4)])
+                           ('a_tangents', 'f4', 4),
+                           ('a_segment',  'f4', 2),
+                           ('a_angles',   'f4', 2),
+                           ('a_texcoord', 'f4', 2),
+                           ('alength', 'f4', 1),
+                           ('color', 'f4', 4)])
     
     def __init__(self, parent):
         self._parent = parent
@@ -333,10 +333,10 @@ class _AggLineVisual(Visual):
         self._da = DashAtlas()
         dash_index, dash_period = self._da['solid']
         self._U = dict(dash_index=dash_index, dash_period=dash_period,
-                        linejoin=joins['round'],
-                        linecaps=(caps['round'], caps['round']),
-                        dash_caps=(caps['round'], caps['round']),
-                        antialias=1.0)
+                       linejoin=joins['round'],
+                       linecaps=(caps['round'], caps['round']),
+                       dash_caps=(caps['round'], caps['round']),
+                       antialias=1.0)
         self._dash_atlas = gloo.Texture2D(self._da._data)
 
     def draw(self, transforms):
@@ -345,7 +345,8 @@ class _AggLineVisual(Visual):
             if self._parent._pos is None:
                 return
             # todo: does this result in unnecessary copies?
-            self._pos = np.ascontiguousarray(self._parent._pos.astype(np.float32))
+            self._pos = np.ascontiguousarray(
+                self._parent._pos.astype(np.float32))
             bake = True
             
         if self._parent._changed['color']:
@@ -421,7 +422,7 @@ class _AggLineVisual(Visual):
         T1 = V['a_tangents'][:, :2]
         T2 = V['a_tangents'][:, 2:]
         A = np.arctan2(T1[:, 0]*T2[:, 1]-T1[:, 1]*T2[:, 0],
-                    T1[:, 0]*T2[:, 0]+T1[:, 1]*T2[:, 1])
+                       T1[:, 0]*T2[:, 0]+T1[:, 1]*T2[:, 1])
         V['a_angles'][:-1, 0] = A[:-1]
         V['a_angles'][:-1, 1] = A[+1:]
 
@@ -445,7 +446,8 @@ class _AggLineVisual(Visual):
         V['a_texcoord'][1::2, 1] = +1
         idx = np.repeat(idx, 2)
 
-        I = np.resize(np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32), (n-1)*(2*3))
+        I = np.resize(np.array([0, 1, 2, 1, 2, 3], dtype=np.uint32), 
+                      (n-1)*(2*3))
         I += np.repeat(4*np.arange(n-1, dtype=np.uint32), 6)
 
         # Length
@@ -457,8 +459,8 @@ class _AggLineVisual(Visual):
         elif color.ndim == 2 and len(color) == n:
             color = color[idx]
         else:
-            raise ValueError('Color length %s does not match number of vertices '
-                            '%s' % (len(color), n))
+            raise ValueError('Color length %s does not match number of '
+                             'vertices %s' % (len(color), n))
         V['color'] = color
 
         return V, I
