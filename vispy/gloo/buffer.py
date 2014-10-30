@@ -453,24 +453,10 @@ class IndexBuffer(DataBuffer):
     """
     
     _GLIR_TYPE = 'IndexBuffer'
-    
-    def __init__(self, data=None, dtype=None, size=0):
-
-        if dtype and not np.dtype(dtype).isbuiltin:
-            raise TypeError("IndexBuffer dtype cannot be structured")
-
-        if isinstance(data, np.ndarray):
-            pass
-        elif dtype is None:
-            dtype = np.uint32  # Default value if data not given
-        elif dtype not in [np.uint8, np.uint16, np.uint32]:
-            raise TypeError("Data type not allowed for IndexBuffer")
-
-        DataBuffer.__init__(self, data=data, dtype=dtype, size=size)
 
     def _prepare_data(self, data, convert=False):
         if isinstance(data, list):
-            data = np.array(data, dtype=np.int32)
+            data = np.array(data, dtype=np.uint32)
         if not isinstance(data, np.ndarray):
             raise ValueError('Data must be a ndarray (got %s)' % type(data))
         if not data.dtype.isbuiltin:
