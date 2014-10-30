@@ -21,6 +21,7 @@ require(["widgets/js/widget", "widgets/js/manager"],
                 var canvas = $('<canvas></canvas>');
                 // canvas.css('border', '1px solid rgb(171, 171, 171)');
                 canvas.css('background-color', '#000');
+                canvas.attr('tabindex', '1');
                 this.$el.append(canvas);
                 this.$canvas = canvas;
 

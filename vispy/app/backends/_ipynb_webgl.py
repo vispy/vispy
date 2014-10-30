@@ -15,7 +15,7 @@ import numpy as np
 from ..base import (BaseApplicationBackend, BaseCanvasBackend,
                     BaseTimerBackend)
 from .. import Application, Canvas
-from ...util import logger
+from ...util import logger, keys
 from ...ext import six
 from vispy.gloo.glir import BaseGlirParser
 
@@ -211,6 +211,15 @@ class CanvasBackend(BaseCanvasBackend):
         if self._vispy_canvas is None:
             return
         event_type = ev['type']
+        key_code = ev.get('key_code', None)
+        if key_code is None:
+            key, key_text = None, None
+        else:
+            if hasattr(keys, key_code):
+                key = getattr(keys, key_code)
+            else:
+                key = keys.Key(key_code)
+            key_text = six.text_type(key_code)
         if event_type == "mouse_move":
             self._vispy_mouse_move(native=ev,
                                    button=ev["button"],
@@ -238,14 +247,14 @@ class CanvasBackend(BaseCanvasBackend):
                                                   )
         elif event_type == "key_press":
             self._vispy_canvas.events.key_press(native=ev,
-                                                key=ev["key"],
-                                                text=ev["text"],
+                                                key=key,
+                                                text=key_text,
                                                 modifiers=ev["modifiers"],
                                                 )
         elif event_type == "key_release":
             self._vispy_canvas.events.key_release(native=ev,
-                                                  key=ev["key"],
-                                                  text=ev["text"],
+                                                  key=key,
+                                                  text=key_text,
                                                   modifiers=ev["modifiers"],
                                                   )
         elif event_type == "resize":
