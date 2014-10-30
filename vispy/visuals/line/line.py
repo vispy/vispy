@@ -92,7 +92,9 @@ class LineVisual(Visual):
         
         self._changed = {'pos': False, 'color': False, 'width': False, 
                          'connect': False}
-        self.set_data(pos=pos, color=color, width=width, connect=connect)
+        # don't call subclass set_data; these often have different
+        # signatures.
+        LineVisual.set_data(self, pos=pos, color=color, width=width, connect=connect)
         self._mode = 'none'
         self.antialias = antialias
         self.mode = mode
@@ -150,9 +152,6 @@ class LineVisual(Visual):
               connect.
             * bool numpy arrays specify which _adjacent_ pairs to connect.
         """
-        if isinstance(connect, np.ndarray) and connect.dtype == bool:
-            connect = self._convert_bool_connect(connect)
-        
         if pos is not None:
             self._pos = pos
             self._changed['pos'] = True
