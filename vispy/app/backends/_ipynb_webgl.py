@@ -161,6 +161,14 @@ class CanvasBackend(BaseCanvasBackend):
     def _vispy_set_title(self, title):
         pass
 
+    def _vispy_get_fullscreen(self):
+        # Not implemented yet.
+        pass
+
+    def _vispy_set_fullscreen(self, fullscreen):
+        # Not implemented yet.
+        pass
+
     def _vispy_set_size(self, w, h):
         self._widget.width = w
         self._widget.height = h
@@ -219,7 +227,11 @@ class CanvasBackend(BaseCanvasBackend):
                 key = getattr(keys, key_code)
             else:
                 key = keys.Key(key_code)
-            key_text = six.text_type(key_code)
+            # Generate the key text to pass to the event handler.
+            if key_code == 'SPACE':
+                key_text = ' '
+            else:
+                key_text = six.text_type(key_code)
         if event_type == "mouse_move":
             self._vispy_mouse_move(native=ev,
                                    button=ev["button"],
