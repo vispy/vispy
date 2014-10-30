@@ -30,7 +30,7 @@ class Visual(object):
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    update=Event,

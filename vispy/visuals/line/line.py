@@ -140,24 +140,6 @@ def _agg_bake(vertices, color, closed=False):
     return gloo.VertexBuffer(V), gloo.IndexBuffer(I)
 
 
-GL_VERTEX_SHADER = """
-    varying vec4 v_color;
-
-    void main(void)
-    {
-        gl_Position = $transform($position);
-        v_color = $color;
-    }
-"""
-
-GL_FRAGMENT_SHADER = """
-    varying vec4 v_color;
-    void main()
-    {
-        gl_FragColor = v_color;
-    }
-"""
-
 
 class LineVisual(Visual):
     """Line visual
@@ -194,30 +176,14 @@ class LineVisual(Visual):
         may be unavailable or inconsistent on some platforms.
     """
     def __init__(self, pos=None, color=(0.5, 0.5, 0.5, 1), width=1,
-                 connect='strip', mode='gl', antialias=False, **kwds):
-        Visual.__init__(self, **kwds)
-        self._pos = pos
-        self._color = color
-        self._width = float(width)
-        assert connect is not None  # can't be to start
-        self._connect = connect
+                 connect='strip', mode='gl', antialias=False):
+        Visual.__init__(self)
+        
+        self._changed = {'pos': False, 'color': False, 'width': False, 
+                         'connect': False}
+        self.set_data(pos=pos, color=color, width=width, connect=connect)
         self._mode = 'none'
-        self._origs = {}
         self.antialias = antialias
-        self._vbo = None
-        self._I = None
-        # Set up the GL program
-        self._gl_program = ModularProgram(GL_VERTEX_SHADER,
-                                          GL_FRAGMENT_SHADER)
-        # Set up the AGG program
-        self._agg_program = ModularProgram(AGG_VERTEX_SHADER,
-                                           AGG_FRAGMENT_SHADER)
-        # agg attributes
-        self._da = None
-        self._U = None
-        self._dash_atlas = None
-
-        # now actually set the mode, which will call set_data
         self.mode = mode
 
     @property
@@ -240,23 +206,16 @@ class LineVisual(Visual):
             raise ValueError('mode argument must be "agg" or "gl".')
         if mode == self._mode:
             return
-        # If the mode changed, reset everything
+        
         self._mode = mode
-        if self._mode == 'agg' and self._da is None:
-            self._da = DashAtlas()
-            dash_index, dash_period = self._da['solid']
-            self._U = dict(dash_index=dash_index, dash_period=dash_period,
-                           linejoin=joins['round'],
-                           linecaps=(caps['round'], caps['round']),
-                           dash_caps=(caps['round'], caps['round']),
-                           linewidth=self._width, antialias=1.0)
-            self._dash_atlas = gloo.Texture2D(self._da._data)
-            
-        # do not call subclass set_data; this is often overridden with a 
-        # different signature.
-        LineVisual.set_data(self, self._pos, self._color, self._width, 
-                            self._connect)
+        if mode == 'gl':
+            self._line_visual = _GLLineVisual(self)
+        elif mode == 'agg':
+            self._line_visual = _AggLineVisual(self)
 
+        for k in self._changed:
+            self._changed[k] = True
+        
     def set_data(self, pos=None, color=None, width=None, connect=None):
         """ Set the data used to draw this visual.
 
@@ -283,63 +242,202 @@ class LineVisual(Visual):
         if isinstance(connect, np.ndarray) and connect.dtype == bool:
             connect = self._convert_bool_connect(connect)
         
-        self._origs = {'pos': pos, 'color': color, 
-                       'width': width, 'connect': connect}
-        
-        if color is not None:
-            if isinstance(color, string_types):
-                try:
-                    self._color = Function(get_colormap(color))
-                except KeyError:
-                    self._color = Color(color).rgba
-            elif isinstance(color, Function):
-                self._color = Function(color)
-            else:
-                self._color = ColorArray(color).rgba
-                if len(self._color) == 1:
-                    self._color = self._color[0]
-                
-        if width is not None:
-            self._width = width
-            
-        if self.mode == 'gl':
-            self._gl_set_data(**self._origs)
-        else:
-            self._agg_set_data(**self._origs)
-
-    def _convert_bool_connect(self, connect):
-        # Convert a boolean connection array to a vertex index array
-        assert connect.ndim == 1
-        index = np.empty((len(connect), 2), dtype=np.uint32)
-        index[:] = np.arange(len(connect))[:, np.newaxis]
-        index[:, 1] += 1
-        return index[connect]
-            
-    def _gl_set_data(self, pos, color, width, connect):
-        if connect is not None:
-            if isinstance(connect, np.ndarray):
-                self._connect = gloo.IndexBuffer(connect.astype(np.uint32))
-            else:
-                self._connect = connect
         if pos is not None:
             self._pos = pos
-            pos_arr = np.ascontiguousarray(pos, dtype=np.float32)
-            # todo: recycle one buffer rather than creating on every update
-            vbo = gloo.VertexBuffer(pos_arr)
-            if pos_arr.shape[-1] == 2:
-                # todo: creating new function calls causes a rebuild.
-                self._pos_expr = vec2to4(vbo)
-            elif pos_arr.shape[-1] == 3:
-                self._pos_expr = vec3to4(vbo)
-            else:
-                raise TypeError("pos array should have 2 or 3 elements in last"
-                                " axis. shape=%r" % pos_arr.shape)
-            self._vbo = vbo
-        else:
-            self._pos = None
+            self._changed['pos'] = True
+        
+        if color is not None:
+            self._color = color
+            self._changed['color'] = True
+            
+        if width is not None:
+            self._width = width
+            self._changed['width'] = True
+            
+        if connect is not None:
+            self._connect = connect
+            self._changed['connect'] = True
+            
         self.update()
 
-    def _agg_set_data(self, pos, color, width, connect):
+    def _interpret_connect(self):
+        if isinstance(self._connect, np.ndarray):
+            # Convert a boolean connection array to a vertex index array
+            assert connect.ndim == 1
+            index = np.empty((len(connect), 2), dtype=np.uint32)
+            index[:] = np.arange(len(connect))[:, np.newaxis]
+            index[:, 1] += 1
+            return index[connect]
+        else:
+            return self._connect
+
+    def _interpret_color(self):
+        if isinstance(self._color, string_types):
+            try:
+                color = Function(get_colormap(self._color))
+            except KeyError:
+                color = Color(self._color).rgba
+        elif isinstance(self._color, Function):
+            color = Function(self._color)
+        else:
+            color = ColorArray(self._color).rgba
+            if len(color) == 1:
+                color = color[0]
+        return color
+            
+    def bounds(self, mode, axis):
+        if 'pos' not in self._origs:
+            return None
+        data = self._origs['pos']
+        if data.shape[1] > axis:
+            return (data[:, axis].min(), data[:, axis].max())
+        else:
+            return (0, 0)
+
+    def draw(self, transforms):
+        self._line_visual.draw(transforms)
+        for k in self._changed:
+            self._changed[k] = False
+
+
+class _GLLineVisual(Visual):
+    VERTEX_SHADER = """
+        varying vec4 v_color;
+
+        void main(void)
+        {
+            gl_Position = $transform($to_vec4($position));
+            v_color = $color;
+        }
+    """
+
+    FRAGMENT_SHADER = """
+        varying vec4 v_color;
+        void main()
+        {
+            gl_FragColor = v_color;
+        }
+    """
+
+    def __init__(self, parent):
+        self._parent = parent
+        self._pos_vbo = gloo.VertexBuffer()
+        self._color_vbo = gloo.VertexBuffer()
+        self._connect_ibo = gloo.IndexBuffer()
+        self._connect = None
+        
+        # Set up the GL program
+        self._program = ModularProgram(self.VERTEX_SHADER,
+                                       self.FRAGMENT_SHADER)
+    
+    #def set_data(self, pos, color, width, connect):
+        #if connect is not None:
+            #if isinstance(connect, np.ndarray):
+                #self._connect = gloo.IndexBuffer(connect.astype(np.uint32))
+            #else:
+                #self._connect = connect
+        #if pos is not None:
+            #self._pos = pos
+            #pos_arr = np.ascontiguousarray(pos, dtype=np.float32)
+            #if self._vbo is None:
+                #self._vbo = gloo.VertexBuffer(pos_arr)
+            #else:
+                #self._vbo.set_data(pos_arr)
+            #if pos_arr.shape[-1] == 2:
+                ## todo: creating new function calls causes a rebuild.
+                #self._pos_expr = vec2to4(vbo)
+            #elif pos_arr.shape[-1] == 3:
+                #self._pos_expr = vec3to4(vbo)
+            #else:
+                #raise TypeError("pos array should have 2 or 3 elements in last"
+                                #" axis. shape=%r" % pos_arr.shape)
+            #self._vbo = vbo
+        #else:
+            #self._pos = None
+        #self.update()
+
+    def draw(self, transforms):
+        if self._parent._changed['pos']:
+            if self._parent._pos is None:
+                return
+            pos = self._parent._pos
+            self._pos_vbo.set_data(pos)
+            self._program.vert['position'] = self._pos_vbo
+            if pos.shape[-1] == 2:
+                self._program.vert['to_vec4'] = vec2to4
+            elif pos.shape[-1] == 3:
+                self._program.vert['to_vec4'] = vec3to4
+            else:
+                raise TypeError("Got bad position array shape: %r" % pos.shape)
+            
+        if self._parent._changed['color']:
+            color = self._parent._interpret_color()
+            if isinstance(color, Function):
+                # TODO: Change to the parametric coordinate once that is done
+                self._program.vert['color'] = color(
+                    '(gl_Position.x + 1.0) / 2.0')
+            else:
+                if color.ndim == 1:
+                    self._program.vert['color'] = color
+                else:
+                    self._color_vbo.set_data(color)
+                    self._program.vert['color'] = self._color_vbo
+
+        xform = transforms.get_full_transform()
+        self._program.vert['transform'] = xform
+        
+        gloo.set_state('translucent')
+        
+        # Do we want to use OpenGL, and can we?
+        GL = None
+        try:
+            import OpenGL.GL as GL
+        except ImportError:
+            pass
+        
+        # Turn on line smooth and/or line width
+        if GL:
+            if self._parent._antialias:
+                GL.glEnable(GL.GL_LINE_SMOOTH)
+            else:
+                GL.glDisable(GL.GL_LINE_SMOOTH)
+            GL.glLineWidth(self._parent._width)
+
+        
+        if self._parent._changed['connect']:
+            self._connect = self._parent._interpret_connect()
+            if isinstance(self._connect, np.ndarray):
+                self._connect_ibo.set_data(self._connect)
+        
+        # Draw
+        if self._connect == 'strip':
+            self._program.draw('line_strip')
+        elif self._connect == 'segments':
+            self._program.draw('lines')
+        elif isinstance(self._connect, np.ndarray):
+            self._program.draw('lines', self._connect_ibo)
+        else:
+            raise ValueError("Invalid line connect mode: %r" % self._connect)
+    
+
+class _AggLineVisual(Visual):
+    def __init__(self, parent):
+        self._parent = parent
+        self._vbo = None
+        self._I = None
+        self._program = ModularProgram(AGG_VERTEX_SHADER,
+                                       AGG_FRAGMENT_SHADER)
+
+        self._da = DashAtlas()
+        dash_index, dash_period = self._da['solid']
+        self._U = dict(dash_index=dash_index, dash_period=dash_period,
+                        linejoin=joins['round'],
+                        linecaps=(caps['round'], caps['round']),
+                        dash_caps=(caps['round'], caps['round']),
+                        linewidth=self._width, antialias=1.0)
+        self._dash_atlas = gloo.Texture2D(self._da._data)
+    
+    def set_data(self, pos, color, width, connect):
         if connect is not None:
             if connect != 'strip':
                 raise NotImplementedError("Only 'strip' connection mode "
@@ -353,64 +451,7 @@ class LineVisual(Visual):
 
         self.update()
 
-    def bounds(self, mode, axis):
-        if 'pos' not in self._origs:
-            return None
-        data = self._origs['pos']
-        if data.shape[1] > axis:
-            return (data[:, axis].min(), data[:, axis].max())
-        else:
-            return (0, 0)
-
     def draw(self, transforms):
-        if self.mode == 'gl':
-            self._gl_draw(transforms)
-        else:
-            self._agg_draw(transforms)
-
-    def _gl_draw(self, transforms):
-        if self._pos is None:
-            return
-        xform = transforms.get_full_transform()
-        self._gl_program.vert['transform'] = xform
-        self._gl_program.vert['position'] = self._pos_expr
-        if isinstance(self._color, Function):
-            # TODO: Change to the parametric coordinate once that is done
-            self._gl_program.vert['color'] = self._color(
-                '(gl_Position.x + 1.0) / 2.0')
-        else:
-            if self._color.ndim == 1:
-                self._gl_program.vert['color'] = self._color
-            else:
-                self._gl_program.vert['color'] = gloo.VertexBuffer(self._color)
-        gloo.set_state('translucent')
-        
-        # Do we want to use OpenGL, and can we?
-        GL = None
-        try:
-            import OpenGL.GL as GL
-        except ImportError:
-            pass
-        
-        # Turn on line smooth and/or line width
-        if GL:
-            if self._antialias:
-                GL.glEnable(GL.GL_LINE_SMOOTH)
-            else:
-                GL.glDisable(GL.GL_LINE_SMOOTH)
-            GL.glLineWidth(self._width)
-        
-        # Draw
-        if self._connect == 'strip':
-            self._gl_program.draw('line_strip')
-        elif self._connect == 'segments':
-            self._gl_program.draw('lines')
-        elif isinstance(self._connect, gloo.IndexBuffer):
-            self._gl_program.draw('lines', self._connect)
-        else:
-            raise ValueError("Invalid line connect mode: %r" % self._connect)
-
-    def _agg_draw(self, transforms):
         if self._pos is None:
             return
         gloo.set_state('translucent', depth_test=False)
@@ -418,16 +459,16 @@ class LineVisual(Visual):
         doc_px = transforms.document_to_framebuffer
         px_ndc = transforms.framebuffer_to_render
         
-        vert = self._agg_program.vert
+        vert = self._program.vert
         vert['doc_px_transform'] = doc_px
         vert['px_ndc_transform'] = px_ndc
         vert['transform'] = data_doc
-        self._agg_program.prepare()
-        self._agg_program.bind(self._vbo)
+        self._program.prepare()
+        self._program.bind(self._vbo)
         uniforms = dict(closed=False, miter_limit=4.0, dash_phase=0.0)
         for n, v in uniforms.items():
-            self._agg_program[n] = v
+            self._program[n] = v
         for n, v in self._U.items():
-            self._agg_program[n] = v
-        self._agg_program['u_dash_atlas'] = self._dash_atlas
-        self._agg_program.draw('triangles', self._I)
+            self._program[n] = v
+        self._program['u_dash_atlas'] = self._dash_atlas
+        self._program.draw('triangles', self._I)
