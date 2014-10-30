@@ -10,7 +10,7 @@ from ..node import Node
 from ...geometry import Rect
 from ...visuals.transforms import (STTransform, PerspectiveTransform, 
                                    NullTransform, AffineTransform,
-                                   TransformCache)
+                                   TransformCache, ChainTransform)
 
 
 def make_camera(cam_type, *args, **kwds):
@@ -356,7 +356,9 @@ class PerspectiveCamera(BaseCamera):
     """
     def __init__(self, mode='ortho', fov=60., width=10., **kwargs):
         # projection transform and associated options
+        self._viewbox_tr = STTransform()
         self._projection = PerspectiveTransform()
+        self._transform_cache = TransformCache()
         self._mode = None
         self._fov = None
         self._width = None
@@ -436,12 +438,16 @@ class PerspectiveCamera(BaseCamera):
         # assemble complete transform mapping to viewbox bounds
         unit = [[-1, 1], [1, -1]]
         vrect = [[0, 0], self.viewbox.size]
-        viewbox_tr = STTransform.from_mapping(unit, vrect)
+        self._viewbox_tr.set_mapping(unit, vrect)
         proj_tr = self._projection
-        cam_tr = self.node_transform(self.viewbox.scene)
+        transforms = self.node_path_transforms(self.viewbox.scene)
+        camera_tr = self._transform_cache.get(transforms).inverse
+        full_tr = self._transform_cache.get([self._viewbox_tr, 
+                                             self._projection, 
+                                             camera_tr])
+        self._transform_cache.roll()
         
-        tr = viewbox_tr * proj_tr * cam_tr
-        self._set_scene_transform(tr)
+        self._set_scene_transform(full_tr)
 
     def set_perspective(self):
         """ Set perspective projection matrix.
