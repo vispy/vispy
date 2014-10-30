@@ -9,7 +9,7 @@ import numpy as np
 from .. import gloo
 from .visual import Visual
 from .shaders import ModularProgram
-
+from .transforms import TransformCache
 
 VERT = """
 attribute vec2 pos;
@@ -81,6 +81,7 @@ class GridLinesVisual(Visual):
         self._program = ModularProgram(VERT, FRAG)
         self._vbo = None
         self._scale = scale
+        self._tr_cache = TransformCache()
 
     def _buffer(self):
         if self._vbo is None:
@@ -94,8 +95,9 @@ class GridLinesVisual(Visual):
     def draw(self, transforms):
         gloo.set_state('additive', cull_face='front_and_back')
 
-        doc_to_ndc = (transforms.framebuffer_to_render * 
-                      transforms.document_to_framebuffer)
+        doc_to_ndc = self._tr_cache.get([transforms.framebuffer_to_render, 
+                                         transforms.document_to_framebuffer])
+        self._tr_cache.roll()
         local_to_doc = transforms.visual_to_document
 
         self._program.frag['map_nd_to_doc'] = doc_to_ndc.inverse
