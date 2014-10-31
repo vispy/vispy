@@ -22,6 +22,11 @@ def use_app(backend_name=None, call_reuse=True):
         The name of the backend application to use. If not specified, Vispy
         tries to select a backend automatically. See ``vispy.use()`` for
         details.
+    call_reuse : bool
+        Whether to call the backend's `reuse()` function (True by default).
+        Not implemented by default, but some backends need it. For example,
+        the notebook backends need to inject some JavaScript in a notebook as
+        soon as `use_app()` is called.
 
     """
     global default_app

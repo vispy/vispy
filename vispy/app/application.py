@@ -88,7 +88,10 @@ class Application(object):
         return self._backend._vispy_run()
 
     def reuse(self):
-        """ The application is reused in an interactive session.
+        """ Called when the application is reused in an interactive session.
+        This allow the backend to do stuff in the client when `use_app()` is
+        called multiple times by the user. For example, the notebook backends
+        need to inject JavaScript code as soon as `use_app()` is called.
         """
         return self._backend._vispy_reuse()
 
