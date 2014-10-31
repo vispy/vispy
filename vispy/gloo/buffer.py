@@ -148,14 +148,19 @@ class DataBuffer(Buffer):
         Byte offset of this buffer relative to base buffer
     """
 
-    def __init__(self, data=None, dtype=None, size=0):
+    def __init__(self, data=None):
         self._size = 0  # number of elements in buffer, set in resize_bytes()
+        self._dtype = None
+        self._stride = 0
+        self._itemsize = 0
         Buffer.__init__(self)
         if data is not None:
             self.set_data(data)
     
     def _prepare_data(self, data):
         # Needs to be overrriden
+        if not isinstance(data, np.ndarray):
+            raise TypeError("DataBuffer data must be numpy array.")
         return data
 
     def set_subdata(self, data, offset=0, copy=False, **kwds):
@@ -462,6 +467,11 @@ class IndexBuffer(DataBuffer):
         if not data.dtype.isbuiltin:
             raise TypeError("Element buffer dtype cannot be structured")
         else:
-            if convert and data.dtype is not np.uint32:
-                data = data.astype(np.uint32)
+            if convert:
+                if data.dtype is not np.uint32:
+                    data = data.astype(np.uint32)
+            else:
+                if data.dtype not in [np.uint32, np.uint16, np.uint8]:
+                    raise TypeError("Invalid dtype for IndexBuffer: %r" %
+                                    data.dtype)
         return data

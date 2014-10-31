@@ -203,9 +203,9 @@ class LineVisual(Visual):
         return color
             
     def bounds(self, mode, axis):
-        if 'pos' not in self._origs:
+        data = self._pos
+        if data is None:
             return None
-        data = self._origs['pos']
         if data.shape[1] > axis:
             return (data[:, axis].min(), data[:, axis].max())
         else:

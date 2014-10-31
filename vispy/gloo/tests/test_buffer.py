@@ -148,20 +148,8 @@ class DataBufferTest(unittest.TestCase):
         assert B.dtype == data.dtype
         
         # Given data must be actual numeric data
-        self.assertRaises(ValueError, DataBuffer, 'this is not nice data')
+        self.assertRaises(TypeError, DataBuffer, 'this is not nice data')
     
-    def test_dtype_init(self):
-        
-        # Data and dtype -> set dtype of data
-        data = np.ones(100)
-        B = DataBuffer(data, 'uint8')
-        glir_cmd = B._context.glir.clear()[-1]
-        assert glir_cmd[-1].dtype == np.uint8
-        
-        # Dtype and size
-        B = DataBuffer(dtype='int16', size=100)
-        assert B.nbytes == 200
-        
     # Default init with structured data
     # ---------------------------------
     def test_structured_init(self):
@@ -184,13 +172,6 @@ class DataBufferTest(unittest.TestCase):
         data = np.ones(100, np.float32)
         B = DataBuffer(data)
         assert B.stride == 4
-
-    # Empty init (not allowed)
-    # ------------------------
-    def test_empty_init(self):
-        # with self.assertRaises(ValueError):
-        #    B = DataBuffer()
-        self.assertRaises(ValueError, DataBuffer)
 
     # Wrong storage
     # -------------
@@ -464,10 +445,10 @@ class VertexBufferTest(unittest.TestCase):
     # -------------------------------
     def test_init_allowed_dtype(self):
         for dtype in (np.uint8, np.int8, np.uint16, np.int16, np.float32):
-            V = VertexBuffer(dtype=dtype)
+            V = VertexBuffer(np.zeros((10, 3), dtype=dtype))
             names = V.dtype.names
             assert V.dtype[names[0]].base == dtype
-            assert V.dtype[names[0]].shape == ()
+            assert V.dtype[names[0]].shape == (3,)
         
         # Tuple/list is also allowed
         V = VertexBuffer([1, 2, 3])
@@ -537,21 +518,22 @@ class IndexBufferTest(unittest.TestCase):
     # ------------------------------
     def test_init_allowed_dtype(self):
         
-        # Allowed dtypes
+        # allowed dtypes
         for dtype in (np.uint8, np.uint16, np.uint32):
-            V = IndexBuffer(dtype=dtype)
-            assert V.dtype == dtype
-        
-        # Select uint32 if no data
+            b = IndexBuffer(np.zeros(10, dtype=dtype))
+            b.dtype == dtype
+
+        # no data => no dtype
         V = IndexBuffer()
-        V.dtype == np.uint32
+        V.dtype is None
         
         # Not allowed dtypes
         for dtype in (np.int8, np.int16, np.int32,
                       np.float16, np.float32, np.float64):
             # with self.assertRaises(TypeError):
             #    V = IndexBuffer(dtype=dtype)
-            self.assertRaises(TypeError, IndexBuffer, dtype=dtype)
+            data = np.zeros(10, dtype=dtype)
+            self.assertRaises(TypeError, IndexBuffer, data)
         
         # Prepare some data
         dtype = np.dtype([('position', np.float32, 3),

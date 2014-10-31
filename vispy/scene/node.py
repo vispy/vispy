@@ -308,8 +308,8 @@ class Node(Visual):
         the other.
         """
         a, b = self.node_path(node)
-        return ([node.transform.inverse for node in b] + 
-                [node.transform for node in a[:-1]])[::-1]
+        return ([n.transform.inverse for n in b] + 
+                [n.transform for n in a[:-1]])[::-1]
         
     def node_transform(self, node):
         """
